@@ -164,12 +164,36 @@ extension SphinxOnionManager{
             if let tag = tag,
                 let sentMessage = sentMessage{
                 sentMessage.tag = tag
+                // Invalidate existing timer for this tag if it exists
+               messageTimers[tag]?.invalidate()
+               
+               // Create and store a new timer for the message
+               messageTimers[tag] = Timer.scheduledTimer(timeInterval: 10.0,
+                    target: self,
+                    selector: #selector(handleMessageTimerTimeout(_:)),
+                    userInfo: ["tag": tag],
+                    repeats: false
+               )
             }
             return sentMessage
         }
         catch{
             print("error")
         }
+    }
+    
+    @objc func handleMessageTimerTimeout(_ timer: Timer) {
+        if let userInfo = timer.userInfo as? [String: Any],
+           let tag = userInfo["tag"] as? String,
+           let cachedMessage = TransactionMessage.getMessageWith(tag: tag),
+           cachedMessage.status != TransactionMessage.TransactionMessageStatus.received.rawValue{
+            // Logic to handle timeout, now having access to the message tag
+            print("Watchdog timer fired: Message with tag \(tag) sending timeout")
+            // Invalidate timer
+            cachedMessage.status = TransactionMessage.TransactionMessageStatus.failed.rawValue
+            messageTimers.removeValue(forKey: tag)
+        }
+        timer.invalidate()
     }
     
     func processNewOutgoingMessage(

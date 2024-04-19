@@ -29,6 +29,8 @@ class SphinxOnionManager : NSObject {
     var stashedInviterAlias:String?=nil
     var watchdogTimer:Timer?=nil
     var nextMessageBlockWasReceived = false
+    var messageTimers: [String: Timer] = [:]
+
     
     var messageFetchParams : MessageFetchParams? = nil
     var newMessageSyncedListener: NSFetchedResultsController<TransactionMessage>?
