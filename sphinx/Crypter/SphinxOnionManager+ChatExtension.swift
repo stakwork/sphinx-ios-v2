@@ -160,7 +160,11 @@ extension SphinxOnionManager{
             print("sendMessage args seed: \(seed), uniqueTime: \(getTimeWithEntropy()), to: \(recipPubkey), msgType: \(msgType), msgJson: \(contentJSONString), state: \(String(describing: loadOnionStateAsData())), myAlias: \(nickname), myImg: \(String(describing: myImg)), amtMsat: \(UInt64(amtMsat)), isTribe: \(String(describing: recipContact == nil))")
             let rr = try! send(seed: seed, uniqueTime: getTimeWithEntropy(), to: recipPubkey, msgType: msgType, msgJson: contentJSONString, state: loadOnionStateAsData(), myAlias: nickname, myImg: myImg, amtMsat: amtMsat,isTribe: isTribe)
             let sentMessage = processNewOutgoingMessage(rr: rr, chat: chat, msgType: msgType, content: content, amount: amount,mediaKey:mediaKey,mediaToken: mediaToken, mediaType: mediaType, replyUUID: replyUUID, threadUUID: threadUUID,invoiceString: invoiceString)
-            handleRunReturn(rr: rr)
+            let tag = handleRunReturn(rr: rr, isMessageSend: true)
+            if let tag = tag,
+                let sentMessage = sentMessage{
+                sentMessage.id = tag
+            }
             return sentMessage
         }
         catch{
@@ -231,7 +235,7 @@ extension SphinxOnionManager{
                 message?.createdAt = date
                 message?.updatedAt = date
                 message?.uuid = sentUUID
-                message?.id = abs(UUID().hashValue)
+                message?.id = uniqueIntHashFromString(stringInput: UUID().uuidString)
                 message?.chat?.lastMessage = message
                 message?.managedObjectContext?.saveContext()
                 return message
@@ -387,7 +391,7 @@ extension SphinxOnionManager{
                             if let chat = chat{
                                 let groupActionMessage = TransactionMessage(context: self.managedContext)
                                 groupActionMessage.uuid = uuid
-                                groupActionMessage.id = Int(index) ?? Int(Int32(UUID().hashValue & 0x7FFFFFFF))
+                                groupActionMessage.id = Int(index) ?? self.uniqueIntHashFromString(stringInput: UUID().uuidString)
                                 groupActionMessage.chat = chat
                                 groupActionMessage.type = Int(type)
                                 groupActionMessage.chat?.lastMessage = groupActionMessage
@@ -446,7 +450,6 @@ extension SphinxOnionManager{
                 let index = Int(indexString){ //updates index of sent message
                     cachedMessage.id = index //sync self index
                     cachedMessage.updatedAt = Date()
-                    cachedMessage.status = (cachedMessage.chat?.type == Chat.ChatType.conversation.rawValue) ? TransactionMessage.TransactionMessageStatus.received.rawValue : TransactionMessage.TransactionMessageStatus.confirmed.rawValue
                     finalizeNewMessage(index: index, newMessage: cachedMessage)
                     print(rr)
             }

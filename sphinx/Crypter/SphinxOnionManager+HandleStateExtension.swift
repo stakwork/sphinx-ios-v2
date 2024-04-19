@@ -17,8 +17,10 @@ extension SphinxOnionManager {
     func handleRunReturn(
         rr: RunReturn,
         publishDelay:Double=0.5,
-        completion: (([String:AnyObject]) ->())? = nil
-    ){
+        completion: (([String:AnyObject]) ->())? = nil,
+        isMessageSend:Bool=false
+    )-> Int?{
+        var messageTagID : Int? = nil
         print("handleRR rr:\(rr)")
         if let sm = rr.stateMp{
             //update state map
@@ -129,8 +131,33 @@ extension SphinxOnionManager {
                 let sentStatus = SentStatus(JSONString: sentStatusJSON){
             processInvitePurchaseAcks(sentStatus: sentStatus) //if it's not a new invite, allow us to process the tags to find invite acks
         }
+        
+        handleIncomingTags(rr: rr)
+        
+        if isMessageSend,
+           rr.msgs.count > 0,
+           let tag = rr.msgs[0].tag{
+            messageTagID = uniqueIntHashFromString(stringInput: tag)
+        }
 
         purgeObsoleteState(keys: rr.stateToDelete)
+        
+        return messageTagID
+    }
+    
+    func handleIncomingTags(rr:RunReturn){
+        if let sentStatusJSON = rr.sentStatus,
+           let sentStatus = SentStatus(JSONString: sentStatusJSON),
+            let tag = sentStatus.tag,
+           var cachedMessage = TransactionMessage.getMessageWith(id: uniqueIntHashFromString(stringInput: tag)){
+            print("SENT STATUS FOUND:\(sentStatus)")
+            if(sentStatus.status == "COMPLETE"){
+                cachedMessage.status = (cachedMessage.chat?.type == Chat.ChatType.conversation.rawValue) ? TransactionMessage.TransactionMessageStatus.received.rawValue : TransactionMessage.TransactionMessageStatus.confirmed.rawValue
+            }
+            else if(sentStatus.status == "FAILED"){
+                cachedMessage.status = TransactionMessage.TransactionMessageStatus.failed.rawValue
+            }
+        }
     }
     
     func processInvitePurchaseAcks(sentStatus:SentStatus){

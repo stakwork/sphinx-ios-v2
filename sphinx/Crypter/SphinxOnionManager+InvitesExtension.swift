@@ -10,6 +10,10 @@ import Foundation
 
 extension SphinxOnionManager{//invites related
     
+    func uniqueIntHashFromString(stringInput:String) -> Int{
+        return Int(Int32(stringInput.hashValue & 0x7FFFFFFF))
+    }
+    
     func requestInviteCode(amountMsat:Int){
         guard let seed = getAccountSeed(),
             let selfContact = UserContact.getSelfContact(),
@@ -60,7 +64,7 @@ extension SphinxOnionManager{//invites related
     
     func createContactForInvite(code:String,nickname:String){
         let contact = UserContact(context: managedContext)
-        contact.id = Int(Int32(UUID().hashValue & 0x7FFFFFFF))
+        contact.id = uniqueIntHashFromString(stringInput: UUID().uuidString)
         contact.publicKey = ""//
         contact.isOwner = false//
         contact.nickname = nickname

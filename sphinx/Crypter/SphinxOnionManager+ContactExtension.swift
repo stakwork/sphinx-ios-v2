@@ -144,7 +144,7 @@ extension SphinxOnionManager{//contacts related
     ) -> UserContact?{
         
         let contact = UserContact.getContactWithInvitCode(inviteCode: code ?? "") ?? UserContact(context: managedContext)
-        contact.id = Int(Int32(UUID().hashValue & 0x7FFFFFFF))
+        contact.id = uniqueIntHashFromString(stringInput: UUID().uuidString)
         contact.publicKey = pubkey//
         contact.isOwner = false//
         contact.nickname = nickname
