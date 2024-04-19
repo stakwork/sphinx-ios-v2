@@ -1991,6 +1991,7 @@
 		CEEBBB4129DC6AEC0093923D /* ItemDescriptionTableViewHeaderCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ItemDescriptionTableViewHeaderCell.xib; sourceTree = "<group>"; };
 		CEEDEA152A1E8273004DC536 /* ProfileManageStorageSpecificChatOrContentFeedItemVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileManageStorageSpecificChatOrContentFeedItemVC.swift; sourceTree = "<group>"; };
 		CEEDEA172A1E84F7004DC536 /* ProfileManageStorageSpecificChatOrContentFeedItemVM.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileManageStorageSpecificChatOrContentFeedItemVM.swift; sourceTree = "<group>"; };
+		CEEF6E0D2BD2ECE300953752 /* sphinx 49.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 49.xcdatamodel"; sourceTree = "<group>"; };
 		CEEFD6062A66FD2D00FD7E73 /* ThreadListTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadListTableViewCell.swift; sourceTree = "<group>"; };
 		CEEFD6072A66FD2D00FD7E73 /* ThreadListTableViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ThreadListTableViewCell.xib; sourceTree = "<group>"; };
 		CEEFD60A2A6891E100FD7E73 /* ThreadHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadHeaderView.swift; sourceTree = "<group>"; };
@@ -6973,6 +6974,7 @@
 		47F35D4A2373156A0042A58F /* sphinx.xcdatamodeld */ = {
 			isa = XCVersionGroup;
 			children = (
+				CEEF6E0D2BD2ECE300953752 /* sphinx 49.xcdatamodel */,
 				CE7840162B922F4D002038AE /* sphinx 48.xcdatamodel */,
 				CECE3D9C2B6D4678009EE475 /* sphinx 47.xcdatamodel */,
 				CEBC3A132AFEA1F20081DB6F /* sphinx 46.xcdatamodel */,
@@ -7022,7 +7024,7 @@
 				475E4162238588A200928931 /* sphinx 2.xcdatamodel */,
 				47F35D4B2373156A0042A58F /* sphinx.xcdatamodel */,
 			);
-			currentVersion = CE7840162B922F4D002038AE /* sphinx 48.xcdatamodel */;
+			currentVersion = CEEF6E0D2BD2ECE300953752 /* sphinx 49.xcdatamodel */;
 			path = sphinx.xcdatamodeld;
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;

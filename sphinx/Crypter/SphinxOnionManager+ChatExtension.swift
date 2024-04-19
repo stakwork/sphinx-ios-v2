@@ -163,7 +163,7 @@ extension SphinxOnionManager{
             let tag = handleRunReturn(rr: rr, isMessageSend: true)
             if let tag = tag,
                 let sentMessage = sentMessage{
-                sentMessage.id = tag
+                sentMessage.tag = tag
             }
             return sentMessage
         }
@@ -331,7 +331,7 @@ extension SphinxOnionManager{
                let newUUID = message.uuid,
                var originalMessage = TransactionMessage.getMessageWith(uuid: omuuid){
                 originalMessage.uuid = newUUID
-                originalMessage.status = (originalMessage.status == (TransactionMessage.TransactionMessageStatus.deleted.rawValue)) ? (TransactionMessage.TransactionMessageStatus.deleted.rawValue) : (TransactionMessage.TransactionMessageStatus.received.rawValue)
+                if(originalMessage.status == (TransactionMessage.TransactionMessageStatus.deleted.rawValue)){ originalMessage.status = TransactionMessage.TransactionMessageStatus.deleted.rawValue}
                 finalizeSentMessage(localMsg: originalMessage, remoteMsg: message)
            }
             else if let fromMe = message.fromMe,
