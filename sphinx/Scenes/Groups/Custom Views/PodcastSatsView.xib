@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="21507" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+    <device id="retina6_1" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="21505"/>
+        <capability name="Named colors" minToolsVersion="9.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <customFonts key="customFonts">
+        <array key="Roboto-Medium.ttf">
+            <string>Roboto-Medium</string>
+        </array>
+        <array key="Roboto-Regular.ttf">
+            <string>Roboto-Regular</string>
+        </array>
+    </customFonts>
+    <objects>
+        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner" customClass="PodcastSatsView" customModule="sphinx" customModuleProvider="target">
+            <connections>
+                <outlet property="amountLabel" destination="itB-5r-bXI" id="9Ql-lw-fWV"/>
+                <outlet property="amountSlider" destination="fK6-6L-E3y" id="9H3-WC-dx0"/>
+                <outlet property="contentView" destination="iN0-l3-epB" id="zvO-9W-vh9"/>
+                <outlet property="suggestedAmountOutOfRangeLabel" destination="yDM-jE-4SB" id="W58-JD-fLR"/>
+                <outlet property="titleLabel" destination="4YR-gV-bqX" id="Hvw-Mj-Nfe"/>
+            </connections>
+        </placeholder>
+        <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
+        <view contentMode="scaleToFill" insetsLayoutMarginsFromSafeArea="NO" id="iN0-l3-epB">
+            <rect key="frame" x="0.0" y="0.0" width="414" height="60"/>
+            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+            <subviews>
+                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Sats per minute" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="4YR-gV-bqX">
+                    <rect key="frame" x="25" y="10" width="92.5" height="15.5"/>
+                    <fontDescription key="fontDescription" name="Roboto-Medium" family="Roboto" pointSize="13"/>
+                    <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                    <nil key="highlightedColor"/>
+                </label>
+                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="0" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="itB-5r-bXI">
+                    <rect key="frame" x="381" y="10" width="8" height="15.5"/>
+                    <fontDescription key="fontDescription" name="Roboto-Medium" family="Roboto" pointSize="13"/>
+                    <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                    <nil key="highlightedColor"/>
+                </label>
+                <slider opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" minValue="0.0" maxValue="15" translatesAutoresizingMaskIntoConstraints="NO" id="fK6-6L-E3y">
+                    <rect key="frame" x="23" y="15" width="368" height="31"/>
+                    <color key="tintColor" name="PrimaryGreen"/>
+                    <color key="minimumTrackTintColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                    <color key="thumbTintColor" name="PrimaryGreen"/>
+                </slider>
+                <label opaque="NO" userInteractionEnabled="NO" alpha="0.69999999999999996" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="yDM-jE-4SB">
+                    <rect key="frame" x="207" y="55" width="0.0" height="0.0"/>
+                    <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="8"/>
+                    <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                    <nil key="highlightedColor"/>
+                </label>
+            </subviews>
+            <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+            <constraints>
+                <constraint firstAttribute="trailing" secondItem="fK6-6L-E3y" secondAttribute="trailing" constant="25" id="834-YN-A0x"/>
+                <constraint firstAttribute="bottom" secondItem="fK6-6L-E3y" secondAttribute="bottom" constant="15" id="Opb-sD-f3C"/>
+                <constraint firstItem="4YR-gV-bqX" firstAttribute="top" secondItem="iN0-l3-epB" secondAttribute="top" constant="10" id="Wmb-LG-Nlo"/>
+                <constraint firstItem="4YR-gV-bqX" firstAttribute="leading" secondItem="fK6-6L-E3y" secondAttribute="leading" id="Y6w-lG-UQa"/>
+                <constraint firstItem="yDM-jE-4SB" firstAttribute="centerX" secondItem="iN0-l3-epB" secondAttribute="centerX" id="bNy-tM-36j"/>
+                <constraint firstItem="fK6-6L-E3y" firstAttribute="leading" secondItem="iN0-l3-epB" secondAttribute="leading" constant="25" id="bbG-Cs-Zda"/>
+                <constraint firstAttribute="bottom" secondItem="yDM-jE-4SB" secondAttribute="bottom" constant="5" id="ewZ-Ln-652"/>
+                <constraint firstItem="itB-5r-bXI" firstAttribute="trailing" secondItem="fK6-6L-E3y" secondAttribute="trailing" id="jCP-yb-hPq"/>
+                <constraint firstItem="itB-5r-bXI" firstAttribute="centerY" secondItem="4YR-gV-bqX" secondAttribute="centerY" id="umV-vX-oNF"/>
+            </constraints>
+            <freeformSimulatedSizeMetrics key="simulatedDestinationMetrics"/>
+            <point key="canvasLocation" x="137.68115942028987" y="152.67857142857142"/>
+        </view>
+    </objects>
+    <resources>
+        <namedColor name="PrimaryGreen">
+            <color red="0.28627450980392155" green="0.78823529411764703" blue="0.59607843137254901" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+    </resources>
+</document>

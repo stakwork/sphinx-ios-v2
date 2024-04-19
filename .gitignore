@@ -1,0 +1,17 @@
+## Build generated
+build/
+DerivedData/
+
+## Various settings
+xcuserdata/
+
+Pods/
+
+.env
+Private/
+
+.DS_Store
+.DS_Store
+.DS_Store
+
+universal-sphinxrs.a

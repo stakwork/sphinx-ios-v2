@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="20037" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+    <device id="retina6_1" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="20020"/>
+        <capability name="Named colors" minToolsVersion="9.0"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <scenes>
+        <!--Recommendation Feed Player Container View Controller-->
+        <scene sceneID="s0d-6b-0kx">
+            <objects>
+                <viewController storyboardIdentifier="RecommendationFeedPlayerContainerViewController" id="Y6W-OH-hqX" customClass="RecommendationFeedPlayerContainerViewController" customModule="sphinx" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="5EZ-qb-Rvc">
+                        <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="KCc-QQ-7kC">
+                                <rect key="frame" x="0.0" y="44" width="414" height="212"/>
+                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="212" id="ja4-8q-lIJ"/>
+                                </constraints>
+                            </view>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="MZm-C4-008" customClass="RecommendationDetailsView" customModule="sphinx" customModuleProvider="target">
+                                <rect key="frame" x="0.0" y="256" width="414" height="195"/>
+                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="195" id="usK-EP-hQk"/>
+                                </constraints>
+                            </view>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="2eD-B2-naH">
+                                <rect key="frame" x="0.0" y="451" width="414" height="445"/>
+                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                            </view>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="vDu-zF-Fre"/>
+                        <color key="backgroundColor" name="Body"/>
+                        <constraints>
+                            <constraint firstItem="MZm-C4-008" firstAttribute="trailing" secondItem="vDu-zF-Fre" secondAttribute="trailing" id="DdL-FY-DMd"/>
+                            <constraint firstItem="KCc-QQ-7kC" firstAttribute="leading" secondItem="vDu-zF-Fre" secondAttribute="leading" id="E71-kG-9Tr"/>
+                            <constraint firstItem="2eD-B2-naH" firstAttribute="top" secondItem="MZm-C4-008" secondAttribute="bottom" id="FPs-Sl-Sv6"/>
+                            <constraint firstAttribute="bottom" secondItem="2eD-B2-naH" secondAttribute="bottom" id="Kny-mT-OOp"/>
+                            <constraint firstItem="MZm-C4-008" firstAttribute="leading" secondItem="vDu-zF-Fre" secondAttribute="leading" id="WyX-Xa-3ha"/>
+                            <constraint firstItem="MZm-C4-008" firstAttribute="top" secondItem="KCc-QQ-7kC" secondAttribute="bottom" id="c1g-2C-2jx"/>
+                            <constraint firstItem="KCc-QQ-7kC" firstAttribute="top" secondItem="vDu-zF-Fre" secondAttribute="top" id="iF2-bn-OeF"/>
+                            <constraint firstItem="2eD-B2-naH" firstAttribute="leading" secondItem="vDu-zF-Fre" secondAttribute="leading" id="iVh-sh-Fv3"/>
+                            <constraint firstItem="2eD-B2-naH" firstAttribute="trailing" secondItem="vDu-zF-Fre" secondAttribute="trailing" id="vMN-pM-lCA"/>
+                            <constraint firstItem="KCc-QQ-7kC" firstAttribute="trailing" secondItem="vDu-zF-Fre" secondAttribute="trailing" id="y2y-6j-zbu"/>
+                        </constraints>
+                    </view>
+                    <connections>
+                        <outlet property="collectionViewContainer" destination="2eD-B2-naH" id="kZB-AT-dge"/>
+                        <outlet property="playerContainerView" destination="KCc-QQ-7kC" id="Lm3-yv-9q9"/>
+                        <outlet property="recommendationDetailsView" destination="MZm-C4-008" id="jIr-kc-Ki1"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="Ief-a0-LHa" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-1.4492753623188408" y="120.53571428571428"/>
+        </scene>
+        <!--Recommendation Feed Items Collection View Controller-->
+        <scene sceneID="9C3-57-SWO">
+            <objects>
+                <collectionViewController storyboardIdentifier="RecommendationFeedItemsCollectionViewController" id="L3a-3u-CfC" customClass="RecommendationFeedItemsCollectionViewController" customModule="sphinx" customModuleProvider="target" sceneMemberID="viewController">
+                    <collectionView key="view" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" dataMode="prototypes" id="ALa-ND-dZT">
+                        <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        <collectionViewFlowLayout key="collectionViewLayout" automaticEstimatedItemSize="YES" minimumLineSpacing="10" minimumInteritemSpacing="10" id="3se-Ry-v6e">
+                            <size key="itemSize" width="128" height="128"/>
+                            <size key="headerReferenceSize" width="0.0" height="0.0"/>
+                            <size key="footerReferenceSize" width="0.0" height="0.0"/>
+                            <inset key="sectionInset" minX="0.0" minY="0.0" maxX="0.0" maxY="0.0"/>
+                        </collectionViewFlowLayout>
+                        <cells/>
+                        <connections>
+                            <outlet property="dataSource" destination="L3a-3u-CfC" id="EWd-r3-2xO"/>
+                            <outlet property="delegate" destination="L3a-3u-CfC" id="qp4-Jo-WjW"/>
+                        </connections>
+                    </collectionView>
+                </collectionViewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="log-Ct-P7B" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="713" y="121"/>
+        </scene>
+        <!--Youtube Recommendation Feed Player View Controller-->
+        <scene sceneID="cDB-zv-4Ga">
+            <objects>
+                <viewController storyboardIdentifier="YoutubeRecommendationFeedPlayerViewController" id="iqy-FB-TkD" customClass="YoutubeRecommendationFeedPlayerViewController" customModule="sphinx" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="R0E-5Y-ryE">
+                        <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Kg1-9b-F9E" customClass="YTPlayerView">
+                                <rect key="frame" x="0.0" y="44" width="414" height="818"/>
+                                <color key="backgroundColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                            </view>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="Twk-wl-zW6"/>
+                        <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        <constraints>
+                            <constraint firstItem="Kg1-9b-F9E" firstAttribute="trailing" secondItem="Twk-wl-zW6" secondAttribute="trailing" id="FMZ-h1-BR8"/>
+                            <constraint firstItem="Kg1-9b-F9E" firstAttribute="leading" secondItem="Twk-wl-zW6" secondAttribute="leading" id="GDG-xA-U3O"/>
+                            <constraint firstItem="Kg1-9b-F9E" firstAttribute="top" secondItem="Twk-wl-zW6" secondAttribute="top" id="Zx4-g4-hQ1"/>
+                            <constraint firstItem="Twk-wl-zW6" firstAttribute="bottom" secondItem="Kg1-9b-F9E" secondAttribute="bottom" id="cQc-Tp-lwo"/>
+                        </constraints>
+                    </view>
+                    <connections>
+                        <outlet property="videoPlayerView" destination="Kg1-9b-F9E" id="GCT-EC-Lrk"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="Ruf-1K-XNf" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-174" y="-552"/>
+        </scene>
+        <!--Podcast Recommendation Feed Player View Controller-->
+        <scene sceneID="p12-I4-FTB">
+            <objects>
+                <viewController storyboardIdentifier="PodcastRecommendationFeedPlayerViewController" id="jlW-yE-SZF" customClass="PodcastRecommendationFeedPlayerViewController" customModule="sphinx" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="woR-uL-fvH">
+                        <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="aSp-wx-kNA">
+                                <rect key="frame" x="0.0" y="44" width="414" height="818"/>
+                                <color key="backgroundColor" name="Body"/>
+                            </imageView>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="dmX-HR-Wx7" customClass="PodcastPlayerPlaybackSliderView" customModule="sphinx" customModuleProvider="target">
+                                <rect key="frame" x="0.0" y="782" width="414" height="80"/>
+                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="80" id="wGa-Pb-btc"/>
+                                </constraints>
+                            </view>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="Dwq-ns-2jO"/>
+                        <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        <constraints>
+                            <constraint firstItem="dmX-HR-Wx7" firstAttribute="leading" secondItem="Dwq-ns-2jO" secondAttribute="leading" id="6mY-Id-BHr"/>
+                            <constraint firstItem="Dwq-ns-2jO" firstAttribute="bottom" secondItem="aSp-wx-kNA" secondAttribute="bottom" id="GMr-s3-Gvc"/>
+                            <constraint firstItem="dmX-HR-Wx7" firstAttribute="bottom" secondItem="Dwq-ns-2jO" secondAttribute="bottom" id="Iue-PY-SAi"/>
+                            <constraint firstItem="aSp-wx-kNA" firstAttribute="leading" secondItem="Dwq-ns-2jO" secondAttribute="leading" id="OMq-ig-chD"/>
+                            <constraint firstItem="aSp-wx-kNA" firstAttribute="top" secondItem="Dwq-ns-2jO" secondAttribute="top" id="Wfn-Gd-tRp"/>
+                            <constraint firstItem="dmX-HR-Wx7" firstAttribute="trailing" secondItem="Dwq-ns-2jO" secondAttribute="trailing" id="ZH0-jf-esP"/>
+                            <constraint firstItem="aSp-wx-kNA" firstAttribute="trailing" secondItem="Dwq-ns-2jO" secondAttribute="trailing" id="tuM-Pn-gBk"/>
+                        </constraints>
+                    </view>
+                    <connections>
+                        <outlet property="podcastPlaybackSliderView" destination="dmX-HR-Wx7" id="cIz-aZ-WD4"/>
+                        <outlet property="recommendationItemImageView" destination="aSp-wx-kNA" id="XOi-UI-fGo"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="oXV-ZO-H2P" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-842.02898550724649" y="-552.45535714285711"/>
+        </scene>
+    </scenes>
+    <resources>
+        <namedColor name="Body">
+            <color red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+    </resources>
+</document>
