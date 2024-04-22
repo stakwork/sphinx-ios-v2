@@ -101,8 +101,15 @@ class PaymentTransaction {
                 return nickname
             }
         } else if let receivedId = receiverId, let receiver = UserContact.getContactWith(id: receivedId), !isIncoming() {
-            if let nickname = receiver.nickname, !nickname.isEmpty {
+            guard let chatId = self.chatId,
+                  let chat = Chat.getChatWith(id: chatId) else{
+                return "-"
+            }
+            if chat.isGroup() == false, let nickname = receiver.nickname, !nickname.isEmpty {
                 return nickname
+            }
+            else{
+                return "-"
             }
         } else if let chatId = chatId, let chat = Chat.getChatWith(id: chatId) {
             if let originalMUUI = originalMessageUUID, !originalMUUI.isEmpty, !isIncoming() && chat.isGroup() {
