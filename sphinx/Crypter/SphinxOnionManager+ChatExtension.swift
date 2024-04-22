@@ -600,6 +600,8 @@ extension SphinxOnionManager{
             finalizeNewMessage(index: index, newMessage: newMessage)
         }
         
+        assignReceiverId(localMsg: newMessage)
+        
         return newMessage
     }
     

@@ -465,7 +465,7 @@ extension TransactionMessage {
         
         // Predicate to get transaction messages with a positive amount and not of type 'invoice'
         let predicate = NSPredicate(
-            format: "amount > 0 AND type != %d",
+            format: "amount > 0 AND type != %d AND (senderId == 0 OR receiverId == 0)",
             TransactionMessage.TransactionMessageType.invoice.rawValue
         )
         
