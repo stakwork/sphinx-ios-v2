@@ -52,14 +52,16 @@ extension SphinxOnionManager{//invoices related
         let result = self.sendMessage(to: contact, content: "", chat: chat,msgType: UInt8(type), threadUUID: nil, replyUUID: nil,invoiceString: invoiceString)
     }
     
-    func getTransactionHistory()->[PaymentTransaction]{
+    func getTransactionHistory() -> [PaymentTransaction] {
+        let context = CoreDataManager.sharedManager.persistentContainer.viewContext
         var history = [PaymentTransaction]()
-        for message in TransactionMessage.getAll().filter({$0.amount as! Int > 0 && $0.type != TransactionMessage.TransactionMessageType.invoice.rawValue}){
-            print(message)
-            let pmtTx = PaymentTransaction(fromTransactionMessage: message)
-            history.append(pmtTx)
+
+        let messages = TransactionMessage.fetchTransactionMessagesForHistory()
+        for message in messages{
+            history.append(PaymentTransaction(fromTransactionMessage: message))
         }
         
         return history
     }
+
 }

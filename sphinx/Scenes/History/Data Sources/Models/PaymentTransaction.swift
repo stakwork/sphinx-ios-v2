@@ -91,7 +91,11 @@ class PaymentTransaction {
     
     func getUsers() -> String? {
         var users = ""
-        
+        var chat : Chat? = nil
+        if let chatId = self.chatId,
+              var foundChat = Chat.getChatWith(id: chatId){
+            chat = foundChat
+        }
         guard let owner = ContactsService.sharedInstance.owner else {
             return nil
         }
@@ -100,9 +104,11 @@ class PaymentTransaction {
             if let nickname = sender.nickname, !nickname.isEmpty {
                 return nickname
             }
+            else{
+                return "unknown sender"
+            }
         } else if let receivedId = receiverId, let receiver = UserContact.getContactWith(id: receivedId), !isIncoming() {
-            guard let chatId = self.chatId,
-                  let chat = Chat.getChatWith(id: chatId) else{
+            guard let chat = chat else{
                 return "-"
             }
             if chat.isGroup() == false, let nickname = receiver.nickname, !nickname.isEmpty {
@@ -111,26 +117,16 @@ class PaymentTransaction {
             else{
                 return "-"
             }
-        } else if let chatId = chatId, let chat = Chat.getChatWith(id: chatId) {
-            if let originalMUUI = originalMessageUUID, !originalMUUI.isEmpty, !isIncoming() && chat.isGroup() {
-                if let originalM = TransactionMessage.getMessageWith(uuid: originalMUUI) {
-                    
-                    return originalM.getMessageSenderNickname(
-                        owner: owner,
-                        contact: ContactsService.sharedInstance.getContactWith(id: originalM.senderId)
-                    )
-                }
-            } else if !chat.isMyPublicGroup() {
-                for contact in chat.getContacts(includeOwner: false) {
-                    if let nickname = contact.nickname, !nickname.isEmpty {
-                        users = "\(users)\(nickname), "
-                    }
-                }
-                
-                if users.length > 2 {
-                    return String(users.dropLast(2))
-                }
+        } 
+        
+        if let chat = chat,
+            chat.isGroup() == true,
+           let message = TransactionMessage.getMessageWith(uuid: self.originalMessageUUID ?? ""){
+            if(self.isIncoming() == false),
+              let alias = chat.groupChatUserAlias(id: message.receiverId){
+                return alias
             }
+            return message.senderAlias
         }
         return nil
     }

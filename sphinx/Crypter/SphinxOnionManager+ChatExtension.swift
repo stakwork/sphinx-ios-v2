@@ -315,6 +315,11 @@ extension SphinxOnionManager{
         if let contact = localMsg.chat?.getContact(){
             receiverId = contact.id
         }
+        else if localMsg.type == 29,
+            let replyUUID = localMsg.replyUUID,
+            let replyMsg = TransactionMessage.getMessageWith(uuid: replyUUID){
+            receiverId = replyMsg.senderId
+        }
         localMsg.receiverId = receiverId
     }
     

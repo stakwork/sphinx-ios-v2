@@ -90,10 +90,10 @@ extension HistoryViewController : HistoryDataSourceDelegate {
         }
         
         page = page + 1
-        
-        API.sharedInstance.getTransactionsList(page: page, itemsPerPage: itemsPerPage, callback: { transactions in
-            self.checkResultsLimit(count: transactions.count)
-            self.historyDataSource.addMoreTransactions(transactions: transactions)
-        }, errorCallback: { })
+//        
+//        API.sharedInstance.getTransactionsList(page: page, itemsPerPage: itemsPerPage, callback: { transactions in
+//            self.checkResultsLimit(count: transactions.count)
+//            self.historyDataSource.addMoreTransactions(transactions: transactions)
+//        }, errorCallback: { })
     }
 }

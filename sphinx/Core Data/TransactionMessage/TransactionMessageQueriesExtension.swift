@@ -459,5 +459,30 @@ extension TransactionMessage {
         
         return messages
     }
+    
+    static func fetchTransactionMessagesForHistory() -> [TransactionMessage] {
+        let context = CoreDataManager.sharedManager.persistentContainer.viewContext
+        
+        // Predicate to get transaction messages with a positive amount and not of type 'invoice'
+        let predicate = NSPredicate(
+            format: "amount > 0 AND type != %d",
+            TransactionMessage.TransactionMessageType.invoice.rawValue
+        )
+        
+        // Sort descriptors to order by date in descending order
+        let sortDescriptors = [NSSortDescriptor(key: "date", ascending: false)]
+        
+        let fetchRequest = NSFetchRequest<TransactionMessage>(entityName: "TransactionMessage")
+        fetchRequest.predicate = predicate
+        fetchRequest.sortDescriptors = sortDescriptors
+        
+        do {
+            let fetchedMessages = try context.fetch(fetchRequest)
+            return fetchedMessages
+        } catch {
+            print("Error fetching transaction messages for history: \(error)")
+            return []
+        }
+    }
 
 }

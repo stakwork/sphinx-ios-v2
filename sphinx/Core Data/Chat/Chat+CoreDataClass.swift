@@ -519,6 +519,37 @@ public class Chat: NSManagedObject {
         }
     }
     
+    public func groupChatUserAlias(id: Int) -> String? {
+        // Get the managed object context
+        let context = CoreDataManager.sharedManager.persistentContainer.viewContext
+        
+        // Create a fetch request for TransactionMessage with a predicate to find the message with the given senderId
+        let fetchRequest = NSFetchRequest<TransactionMessage>(entityName: "TransactionMessage")
+        
+        
+        // Set the predicate to find the first message with a matching senderId
+        fetchRequest.predicate = NSPredicate(format: "chat == %@ AND senderId == %d", self, id)
+        
+        // Set fetch limit to 1, as we only need the first matching message
+        fetchRequest.fetchLimit = 1
+        
+        do {
+            // Execute the fetch request
+            let results = try context.fetch(fetchRequest)
+            
+            // If a matching message is found, return its senderAlias
+            if let matchingMessage = results.first {
+                return matchingMessage.senderAlias
+            }
+            
+            // If no matching message is found, return nil
+            return nil
+        } catch {
+            // If an error occurs, return nil
+            return nil
+        }
+    }
+    
     public func getContact() -> UserContact? {
         if self.type == Chat.ChatType.conversation.rawValue {
             return getConversationContact()
