@@ -174,6 +174,8 @@ extension SphinxOnionManager{
                     userInfo: ["tag": tag],
                     repeats: false
                )
+                
+                assignReceiverId(localMsg: sentMessage)
             }
             return sentMessage
         }
@@ -302,9 +304,18 @@ extension SphinxOnionManager{
             localMsg.senderPic = owner.avatarUrl
         }
         localMsg.senderId = UserData.sharedInstance.getUserId()
+        assignReceiverId(localMsg: localMsg)
         localMsg.managedObjectContext?.saveContext()
         
         NotificationCenter.default.post(name: .newOnionMessageWasReceived,object:nil, userInfo: ["message": localMsg])
+    }
+    
+    func assignReceiverId(localMsg:TransactionMessage){
+        var receiverId :Int = -1
+        if let contact = localMsg.chat?.getContact(){
+            receiverId = contact.id
+        }
+        localMsg.receiverId = receiverId
     }
     
     func isMessageTribeMessage(senderPubkey:String)->(Bool,Chat?){
@@ -347,10 +358,6 @@ extension SphinxOnionManager{
                 NotificationCenter.default.post(name: .newOnionMessageWasReceived,object:nil, userInfo: ["message": TransactionMessage()])
 
             }
-//            else if isExitedTribeMessage(senderPubkey: genericIncomingMessage.senderPubkey ?? ""){
-//                NotificationCenter.default.post(name: .newOnionMessageWasReceived,object:nil, userInfo: ["message": TransactionMessage()])
-//                return
-//            }
             else if let omuuid = genericIncomingMessage.originalUuid,//update uuid if it's changing/
                let newUUID = message.uuid,
                var originalMessage = TransactionMessage.getMessageWith(uuid: omuuid){
@@ -753,6 +760,8 @@ extension SphinxOnionManager{
                                threadUUID: nil,
                                replyUUID: nil
         ){
+            SphinxOnionManager.sharedInstance.assignReceiverId(localMsg: sentMessage)
+            sentMessage.managedObjectContext?.saveContext()
             completion(true, sentMessage)
         }
         else{

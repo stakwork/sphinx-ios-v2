@@ -61,19 +61,12 @@ class HistoryViewController: UIViewController {
         self.setNoResultsLabel(count: 0)
         self.checkResultsLimit(count: 0)
         
-        SphinxOnionManager.sharedInstance.getTransactionHistory()
-
-//        API.sharedInstance.getTransactionsList(page: page, itemsPerPage: itemsPerPage, callback: { transactions in
-//            self.setNoResultsLabel(count: transactions.count)
-//            self.checkResultsLimit(count: transactions.count)
-//            self.historyDataSource.loadTransactions(transactions: transactions)
-//            self.loading = false
-//        }, errorCallback: {
-//            self.checkResultsLimit(count: 0)
-//            self.historyTableView.alpha = 0.0
-//            self.loading = false
-//            AlertHelper.showAlert(title: "generic.error.title".localized, message: "error.loading.transactions".localized)
-//        })
+        let history = SphinxOnionManager.sharedInstance.getTransactionHistory()
+        
+        self.setNoResultsLabel(count: history.count)
+        self.checkResultsLimit(count: history.count)
+        self.historyDataSource.loadTransactions(transactions: history)
+        self.loading = false
     }
     
     func setNoResultsLabel(count: Int) {

@@ -152,7 +152,7 @@ extension SphinxOnionManager {
            var cachedMessage = TransactionMessage.getMessageWith(tag: tag){
             print("SENT STATUS FOUND:\(sentStatus)")
             if(sentStatus.status == "COMPLETE"){
-                cachedMessage.status = TransactionMessage.TransactionMessageStatus.received.rawValue
+                 cachedMessage.status = TransactionMessage.TransactionMessageStatus.received.rawValue
             }
             else if(sentStatus.status == "FAILED"){
                 cachedMessage.status = TransactionMessage.TransactionMessageStatus.failed.rawValue

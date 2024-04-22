@@ -54,7 +54,11 @@ extension SphinxOnionManager{//invoices related
     
     func getTransactionHistory()->[PaymentTransaction]{
         var history = [PaymentTransaction]()
-        
+        for message in TransactionMessage.getAll().filter({$0.amount as! Int > 0}){
+            print(message)
+            let pmtTx = PaymentTransaction(fromTransactionMessage: message)
+            history.append(pmtTx)
+        }
         
         return history
     }

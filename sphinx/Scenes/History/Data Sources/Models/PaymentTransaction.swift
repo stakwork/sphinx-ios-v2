@@ -53,6 +53,20 @@ class PaymentTransaction {
         self.errorMessage = errorMessage
     }
     
+    init(fromTransactionMessage transactionMessage: TransactionMessage) {
+        // Initialize properties using values from `TransactionMessage`
+        self.type = transactionMessage.type
+        self.amount = transactionMessage.amount?.intValue
+        self.date = transactionMessage.date ?? Date()
+        self.senderId = transactionMessage.senderId
+        self.receiverId = transactionMessage.receiverId
+        self.chatId = transactionMessage.chat?.id
+        self.originalMessageUUID = transactionMessage.uuid
+        self.paymentRequest = transactionMessage.invoice
+        self.paymentHash = transactionMessage.paymentHash
+        self.errorMessage = transactionMessage.errorMessage
+    }
+    
     func getDirection() -> TransactionDirection {
         let userId = UserData.sharedInstance.getUserId()
         if let senderId = senderId {
@@ -112,5 +126,31 @@ class PaymentTransaction {
             }
         }
         return nil
+    }
+    
+    func printDetails() {
+        print("Transaction Details:")
+        print("Type: \(type ?? 0)")  // Assuming '0' as a default 'unknown' type
+        print("Amount: \(amount ?? 0)")  // Print default as '0' if nil
+        print("Date: \(date?.description ?? "N/A")")  // Print 'N/A' if date is nil
+        print("SenderId: \(senderId ?? 0)")  // Print '0' if nil
+        print("ReceiverId: \(receiverId ?? 0)")  // Print '0' if nil
+        print("ChatId: \(chatId ?? 0)")  // Print '0' if nil
+        print("OriginalMessageUUID: \(originalMessageUUID ?? "N/A")")  // Print 'N/A' if nil
+        print("PaymentRequest: \(paymentRequest ?? "N/A")")  // Print 'N/A' if nil
+        print("PaymentHash: \(paymentHash ?? "N/A")")  // Print 'N/A' if nil
+        print("ErrorMessage: \(errorMessage ?? "No error")")  // Print 'No error' if nil
+        
+        // Optionally, print the calculated properties or methods outputs
+        let direction = getDirection() == .Incoming ? "Incoming" : "Outgoing"
+        print("Transaction Direction: \(direction)")
+        print("Is Incoming: \(isIncoming())")
+        print("Is Failed: \(isFailed())")
+        
+        if let users = getUsers() {
+            print("Users: \(users)")
+        } else {
+            print("Users: Unable to determine users involved.")
+        }
     }
 }
