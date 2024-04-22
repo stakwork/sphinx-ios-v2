@@ -60,6 +60,8 @@ class HistoryViewController: UIViewController {
         
         self.setNoResultsLabel(count: 0)
         self.checkResultsLimit(count: 0)
+        
+        SphinxOnionManager.sharedInstance.getTransactionHistory()
 
 //        API.sharedInstance.getTransactionsList(page: page, itemsPerPage: itemsPerPage, callback: { transactions in
 //            self.setNoResultsLabel(count: transactions.count)

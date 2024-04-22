@@ -51,4 +51,11 @@ extension SphinxOnionManager{//invoices related
         let type = TransactionMessage.TransactionMessageType.invoice.rawValue
         let result = self.sendMessage(to: contact, content: "", chat: chat,msgType: UInt8(type), threadUUID: nil, replyUUID: nil,invoiceString: invoiceString)
     }
+    
+    func getTransactionHistory()->[PaymentTransaction]{
+        var history = [PaymentTransaction]()
+        
+        
+        return history
+    }
 }
