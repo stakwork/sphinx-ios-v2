@@ -124,7 +124,8 @@ class PinCodeViewController: UIViewController {
     }
     
     func checkLaunchPIN(pin: String) {
-        if let doneCompletion = doneCompletion {
+        if let doneCompletion = doneCompletion,
+           pin == UserData.sharedInstance.getAppPin(){
             doneCompletion(pin)
         } else {
             let (valid, didChange) = GroupsPinManager.sharedInstance.isValidPin(pin)
