@@ -90,6 +90,12 @@ class MsgTotalCounts: Mappable {
 
 extension SphinxOnionManager{//account restore related
     
+    func isMnemonic(code:String)->Bool{
+        let words = code.split(separator: " ").map { String($0).trim().lowercased() }
+        let (error, _) = CrypterManager.sharedInstance.validateSeed(words: words)
+        return error == nil
+    }
+    
     func performAccountRestore(contactRestoreCallback: @escaping RestoreProgressCallback, messageRestoreCallback: @escaping RestoreProgressCallback,hideRestoreViewCallback: @escaping ()->()){
         self.messageRestoreCallback = messageRestoreCallback
         self.contactRestoreCallback = contactRestoreCallback

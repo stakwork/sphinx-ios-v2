@@ -9,6 +9,12 @@
 import Foundation
 
 class GroupsPinManager {
+    
+    public enum PinPresentationContext {
+        case launch
+        case enterForeground
+        case startingCall
+    }
 
     class var sharedInstance : GroupsPinManager {
         struct Static {
@@ -37,8 +43,8 @@ class GroupsPinManager {
         }
     }
     
-    func shouldAskForPin() -> Bool {
-        if !UserData.sharedInstance.isUserLogged() || userData.getPINNeverOverride() {
+    func shouldAskForPin(presentationContext:PinPresentationContext) -> Bool {
+        if UserData.sharedInstance.isUserLogged() || (userData.getPINNeverOverride() && presentationContext != .launch) {
             return false
         }
         if let date: Date = UserDefaults.Keys.lastPinDate.get() {
@@ -101,19 +107,26 @@ class GroupsPinManager {
     }
     
     func isValidPin(_ pin: String) -> (Bool, Bool) {
-        let didChange = pin != currentPin
-        
-        if let savedPin = userData.getAppPin(), !savedPin.isEmpty, savedPin == pin {
-            setCurrentPin(pin)
-            return (true, didChange)
+        SphinxOnionManager.sharedInstance.appSessionPin = pin
+        var isCorrectPin = false
+        if let mnemonic = UserData.sharedInstance.getMnemonic(),
+           SphinxOnionManager.sharedInstance.isMnemonic(code: mnemonic){
+            isCorrectPin = true
         }
-        
-        if let savedPrivacyPin = userData.getPrivacyPin(), !savedPrivacyPin.isEmpty, savedPrivacyPin == pin {
-            setCurrentPin(pin)
-            return (true, didChange)
-        }
-        
-        return (false, didChange)
+        return (isCorrectPin, false)
+//        let didChange = pin != currentPin
+//        
+//        if let savedPin = userData.getAppPin(), !savedPin.isEmpty, savedPin == pin {
+//            setCurrentPin(pin)
+//            return (true, didChange)
+//        }
+//        
+//        if let savedPrivacyPin = userData.getPrivacyPin(), !savedPrivacyPin.isEmpty, savedPrivacyPin == pin {
+//            setCurrentPin(pin)
+//            return (true, didChange)
+//        }
+//        
+//        return (false, didChange)
     }
     
     func logout() {

@@ -163,7 +163,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             return
         }
         
-        presentPINIfNeeded()
+        presentPINIfNeeded(presentationContext: .enterForeground)
         
         feedsManager.restoreContentFeedStatusInBackground()
         podcastPlayerController.finishAndSaveContentConsumed()
@@ -280,11 +280,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         }
 
         takeUserToInitialVC(isUserLogged: isUserLogged)
-        presentPINIfNeeded()
+        presentPINIfNeeded(presentationContext: .launch)
     }
 
-    func presentPINIfNeeded() {
-        if GroupsPinManager.sharedInstance.shouldAskForPin() {
+    func presentPINIfNeeded(presentationContext:GroupsPinManager.PinPresentationContext) {
+        if GroupsPinManager.sharedInstance.shouldAskForPin(presentationContext: presentationContext) {
             let pinVC = PinCodeViewController.instantiate()
             pinVC.loggingCompletion = {
                 if let currentVC = self.getCurrentVC() {
@@ -300,7 +300,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     ) {
         let rootViewController = StoryboardScene.Root.initialScene.instantiate()
         let mainCoordinator = MainCoordinator(rootViewController: rootViewController)
-
+        
         if let window = window {
             window.rootViewController = rootViewController
             window.makeKeyAndVisible()

@@ -59,6 +59,7 @@ class SphinxOnionManager : NSObject {
     var contactRestoreCallback : RestoreProgressCallback? = nil
     var hideRestoreCallback: (() -> ())? = nil
     public static let kMessageBatchSize = 50
+    var appSessionPin : String? = nil//nil
 
     
     //MARK: Hardcoded Values!

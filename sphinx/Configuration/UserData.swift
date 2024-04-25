@@ -45,12 +45,10 @@ class UserData {
     
     func isUserLogged() -> Bool {
         if(getMnemonic() != nil &&
-           getAppPin() != ""){ //v2
+           getAppPin() != nil){ //v2
             return SignupHelper.isLogged()
         }
-        return getAppPin() != "" &&
-               getNodeIP() != "" &&
-               getAuthToken() != "" &&
+        return getAppPin() != nil &&
                SignupHelper.isLogged()
     }
     
@@ -369,7 +367,10 @@ class UserData {
     }
     
     func save(pin: String) {
-        saveValueFor(value: pin, for: KeychainManager.KeychainKeys.pin, userDefaultKey: UserDefaults.Keys.defaultPIN)
+        if let existingMnemonic = self.getMnemonic(){
+            SphinxOnionManager.sharedInstance.appSessionPin = pin
+            self.save(walletMnemonic: existingMnemonic) //update mnemonic encryption
+        }
     }
     
     func save(privacyPin: String) {
@@ -428,7 +429,10 @@ class UserData {
     }
     
     func getAppPin() -> String? {
-        return getValueFor(keychainKey: KeychainManager.KeychainKeys.pin, userDefaultKey: UserDefaults.Keys.defaultPIN)
+        if let appPin = SphinxOnionManager.sharedInstance.appSessionPin{
+            return appPin
+        }
+        return nil
     }
     
     func getPrivacyPin() -> String? {
@@ -541,12 +545,30 @@ class UserData {
     }
     
     func save(walletMnemonic: String) {
-        let _ = keychainManager.save(value: walletMnemonic, forComposedKey: KeychainManager.KeychainKeys.walletMnemonic.rawValue)
+        if let pin = getAppPin(),
+           let encryptedMnemonic = SymmetricEncryptionManager.sharedInstance.encryptString(text: walletMnemonic, key: pin),
+            !encryptedMnemonic.isEmpty
+        {
+            print("successfully saved mnemonic")
+            let _ = keychainManager.save(value: encryptedMnemonic, forComposedKey: KeychainManager.KeychainKeys.walletMnemonic.rawValue)
+            return
+        }
+        return
     }
     
     func getMnemonic() -> String? {
-        if let value = keychainManager.getValueFor(composedKey: KeychainManager.KeychainKeys.walletMnemonic.rawValue), !value.isEmpty {
-            return value
+        if let pin = getAppPin(),
+           let encryptedMnemonic = keychainManager.getValueFor(composedKey: KeychainManager.KeychainKeys.walletMnemonic.rawValue),
+            !encryptedMnemonic.isEmpty
+        {
+            if let value = SymmetricEncryptionManager.sharedInstance.decryptString(text: encryptedMnemonic, key: pin){
+                return value
+            }
+            else if SphinxOnionManager.sharedInstance.isMnemonic(code: encryptedMnemonic){ // on legacy, requires migration to encrypted paradigm
+                save(walletMnemonic: encryptedMnemonic) // ensure we encrypt this time
+                return encryptedMnemonic
+            }
+            
         }
         return nil
     }

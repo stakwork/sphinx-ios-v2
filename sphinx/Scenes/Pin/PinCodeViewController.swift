@@ -131,7 +131,7 @@ class PinCodeViewController: UIViewController {
             if valid {
                 if didChange { reloadDashboard() }
                 UserDefaults.Keys.lastPinDate.set(Date())
-                
+                NotificationCenter.default.post(name: .userSuccessfullyEnteredPin, object: nil)
                 DelayPerformedHelper.performAfterDelay(seconds: didChange ? 0.5 : 0.0, completion: {
                     WindowsManager.sharedInstance.removeCoveringWindow()
                     

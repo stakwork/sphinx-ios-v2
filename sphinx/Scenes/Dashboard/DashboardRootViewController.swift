@@ -232,6 +232,10 @@ extension DashboardRootViewController {
         })
     }
     
+    override func viewDidDisappear(_ animated: Bool) {
+        NotificationCenter.default.removeObserver(self, name: .userSuccessfullyEnteredPin, object: nil)
+    }
+    
     func addAccessibilityIdentifiers(){
         bottomBar.accessibilityIdentifier = "bottomBar"
         bottomBarContainer.accessibilityIdentifier = "bottomBarContainer"
@@ -322,12 +326,20 @@ extension DashboardRootViewController {
         }
         
         setupAddTribeButton()
-        
     }
     
     func connectToV2Server(){
+        if SphinxOnionManager.sharedInstance.appSessionPin == nil {
+            NotificationCenter.default.addObserver(self, selector: #selector(retryConnectV2Server), name: .userSuccessfullyEnteredPin, object: nil)
+            return
+        }
         NotificationCenter.default.addObserver(self, selector: #selector(handleNewKeyExchangeReceived), name: .newContactKeyExchangeResponseWasReceived, object: nil)
         SphinxOnionManager.sharedInstance.connectToV2Server(contactRestoreCallback: contactRestoreCallback(percentage:), messageRestoreCallback: messageRestoreCallback(percentage:), hideRestoreViewCallback: hideRestoreViewCallback)
+    }
+    
+    @objc func retryConnectV2Server(){
+        NotificationCenter.default.removeObserver(self, name: .userSuccessfullyEnteredPin, object: nil)
+        connectToV2Server()
     }
     
     func hideRestoreViewCallback(){
