@@ -1799,6 +1799,16 @@ public func `listContacts`(`state`: Data) throws -> String {
     )
 }
 
+public func `contactPubkeyByChildIndex`(`state`: Data, `childIdx`: UInt64) throws -> String {
+    return try  FfiConverterString.lift(
+        try rustCallWithError(FfiConverterTypeSphinxError.lift) {
+    uniffi_sphinxrs_fn_func_contact_pubkey_by_child_index(
+        FfiConverterData.lower(`state`),
+        FfiConverterUInt64.lower(`childIdx`),$0)
+}
+    )
+}
+
 public func `getSubscriptionTopic`(`seed`: String, `uniqueTime`: String, `state`: Data) throws -> String {
     return try  FfiConverterString.lift(
         try rustCallWithError(FfiConverterTypeSphinxError.lift) {
@@ -2185,18 +2195,19 @@ public func `fetchFirstMsgsPerKey`(`seed`: String, `uniqueTime`: String, `state`
     )
 }
 
-public func `fetchPayments`(`seed`: String, `uniqueTime`: String, `state`: Data, `lastMsgIdx`: UInt64?, `limit`: UInt32?, `scid`: UInt64?, `remoteOnly`: Bool?, `minMsat`: UInt64?) throws -> RunReturn {
+public func `fetchPayments`(`seed`: String, `uniqueTime`: String, `state`: Data, `since`: UInt64?, `limit`: UInt32?, `scid`: UInt64?, `remoteOnly`: Bool?, `minMsat`: UInt64?, `reverse`: Bool?) throws -> RunReturn {
     return try  FfiConverterTypeRunReturn.lift(
         try rustCallWithError(FfiConverterTypeSphinxError.lift) {
     uniffi_sphinxrs_fn_func_fetch_payments(
         FfiConverterString.lower(`seed`),
         FfiConverterString.lower(`uniqueTime`),
         FfiConverterData.lower(`state`),
-        FfiConverterOptionUInt64.lower(`lastMsgIdx`),
+        FfiConverterOptionUInt64.lower(`since`),
         FfiConverterOptionUInt32.lower(`limit`),
         FfiConverterOptionUInt64.lower(`scid`),
         FfiConverterOptionBool.lower(`remoteOnly`),
-        FfiConverterOptionUInt64.lower(`minMsat`),$0)
+        FfiConverterOptionUInt64.lower(`minMsat`),
+        FfiConverterOptionBool.lower(`reverse`),$0)
 }
     )
 }
@@ -2312,6 +2323,9 @@ private var initializationResult: InitializationResult {
     if (uniffi_sphinxrs_checksum_func_list_contacts() != 18133) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_sphinxrs_checksum_func_contact_pubkey_by_child_index() != 7496) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_sphinxrs_checksum_func_get_subscription_topic() != 12763) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -2402,7 +2416,7 @@ private var initializationResult: InitializationResult {
     if (uniffi_sphinxrs_checksum_func_fetch_first_msgs_per_key() != 29398) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_sphinxrs_checksum_func_fetch_payments() != 18180) {
+    if (uniffi_sphinxrs_checksum_func_fetch_payments() != 58291) {
         return InitializationResult.apiChecksumMismatch
     }
 
