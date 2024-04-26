@@ -462,13 +462,16 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
     ) {
         if application.applicationState == .background {
-            if let childIndex = userInfo["child_idx"] as? UInt64,
-               let chat = SphinxOnionManager.sharedInstance.findChatForIndex(index: childIndex){
-                goTo(chat: chat)
-            }
-            else{
-                //throw error?
-            }
+            self.chatListViewModel.syncMessages(
+                onPushReceived: true,
+                progressCallback: { _ in },
+                completion: { (_, _) in
+                    completionHandler(.newData)
+                },
+                errorCompletion: {
+                    completionHandler(.noData)
+                }
+            )
         } else {
             completionHandler(.noData)
         }
