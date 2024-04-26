@@ -442,7 +442,7 @@ class UserData {
     }
     
     func clearStoredPin() {
-        let _ = keychainManager.deleteValueFor(composedKey: KeychainManager.KeychainKeys.pin.rawValue)
+        saveValueFor(value: "", for: KeychainManager.KeychainKeys.pin, userDefaultKey: UserDefaults.Keys.defaultPIN)
     }
     
     func getAppPin() -> String? {
