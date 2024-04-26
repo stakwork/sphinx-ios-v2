@@ -428,6 +428,23 @@ class UserData {
         return privateKeySuccess && publicKeySuccess
     }
     
+    func getStoredPin() -> String?{
+        let pin = getValueFor(keychainKey: KeychainManager.KeychainKeys.pin, userDefaultKey: UserDefaults.Keys.defaultPIN)
+        return (!pin.isEmpty) ? pin : nil
+    }
+    
+    func getStoredUnencryptedMnemonic() -> String?{
+        if let value = keychainManager.getValueFor(composedKey: KeychainManager.KeychainKeys.walletMnemonic.rawValue), !value.isEmpty{
+            return value
+        }
+        
+        return nil
+    }
+    
+    func clearStoredPin() {
+        let _ = keychainManager.deleteValueFor(composedKey: KeychainManager.KeychainKeys.pin.rawValue)
+    }
+    
     func getAppPin() -> String? {
         if let appPin = SphinxOnionManager.sharedInstance.appSessionPin{
             return appPin
