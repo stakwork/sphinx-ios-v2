@@ -163,6 +163,18 @@ extension SphinxOnionManager{//contacts related
         return contact
     }
     
+    func findChatForIndex(index:UInt64) -> Chat?{
+        do{
+            let pubkey = try contactPubkeyByChildIndex(state: loadOnionStateAsData(), childIdx: index)
+            let chat = Chat.getTribeChatWithOwnerPubkey(ownerPubkey: pubkey) ?? UserContact.getContactWithDisregardStatus(pubkey: pubkey)?.getChat()
+            return chat
+        }
+        catch{
+            
+        }
+        return nil
+    }
+    
     func createChat(for contact:UserContact){
         let contactID = NSNumber(value: contact.id)
         if let _ = Chat.getAll().filter({$0.contactIds.contains(contactID)}).first{
