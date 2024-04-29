@@ -185,16 +185,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func handlePushAndFetchData() {
-        let encryptedChild = getEncryptedIndexFrom(notification: notificationUserInfo)
-        
-        if let chat = SphinxOnionManager.sharedInstance.findChatForNotification(child: encryptedChild ?? "no_encrypted_index_found"){
+        if let encryptedChild = getEncryptedIndexFrom(notification: notificationUserInfo),
+           let chat = SphinxOnionManager.sharedInstance.findChatForNotification(child: encryptedChild){
             goTo(chat: chat)
         } else {
-            let childIndex = encryptedChild ?? "no_encrypted_index_found"
-            let message = "String:\(childIndex), Notification data: \(notificationUserInfo?.debugDescription ?? "No notification User Info")"
+            let message = "Notification data: \(notificationUserInfo?.debugDescription ?? "No notification User Info")"
             
             AlertHelper.showAlert(title: "Error finding matching contact for encrypted string", message: message, completion: {
-                ClipboardHelper.copyToClipboard(text: childIndex)
+                ClipboardHelper.copyToClipboard(text: message)
             })
         }
     }
@@ -540,7 +538,7 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
             let aps = notification["aps"] as? [String: AnyObject],
             let customData = aps["custom_data"] as? [String: AnyObject]
         {
-            if let chatId = customData["child_idx"] as? String {
+            if let chatId = customData["child"] as? String {
                 return chatId
             }
         }
