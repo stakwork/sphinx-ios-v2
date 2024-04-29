@@ -54,8 +54,8 @@ extension NewChatViewModel {
         
         let tuuid = threadUUID ?? replyingTo?.threadUUID ?? replyingTo?.uuid
         let validMessage = SphinxOnionManager.sharedInstance.sendMessage(to: contact, content: text, chat: chat,msgType: UInt8(type), threadUUID: tuuid, replyUUID: replyingTo?.uuid)
-        //validMessage?.makeProvisional(chat: self.chat)
-        //updateSnapshotWith(message: validMessage)
+        validMessage?.makeProvisional(chat: self.chat)
+        updateSnapshotWith(message: validMessage)
         completion(validMessage != nil)
     }
     
