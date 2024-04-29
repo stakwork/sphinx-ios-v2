@@ -185,15 +185,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func handlePushAndFetchData() {
-        if
-            let chatId = getChatIdFrom(notification: notificationUserInfo),
-            let chat = Chat.getChatWith(id: chatId)
-        {
-            reloadMessages() {
-                self.goTo(chat: chat)
-            }
-        } else if activatedFromBackground {
-            reloadContactsAndMessages()
+        let encryptedChild = getEncryptedIndexFrom(notification: notificationUserInfo)
+        
+        if let chat = SphinxOnionManager.sharedInstance.findChatForNotification(child: encryptedChild ?? "no_encrypted_index_found",userNotification: notificationUserInfo){
+            goTo(chat: chat)
         }
     }
     
@@ -524,6 +519,21 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
             let customData = aps["custom_data"] as? [String: AnyObject]
         {
             if let chatId = customData["chat_id"] as? Int {
+                return chatId
+            }
+        }
+        return nil
+    }
+    
+    func getEncryptedIndexFrom(
+        notification: [String: AnyObject]?
+    ) -> String? {
+        if
+            let notification = notification,
+            let aps = notification["aps"] as? [String: AnyObject],
+            let customData = aps["custom_data"] as? [String: AnyObject]
+        {
+            if let chatId = customData["child_idx"] as? String {
                 return chatId
             }
         }
