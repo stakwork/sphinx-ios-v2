@@ -163,25 +163,17 @@ extension SphinxOnionManager{//contacts related
         return contact
     }
     
-    func findChatForNotification(child:String, userNotification:[String: AnyObject]?) -> Chat?{
-        let message = "String:\(child), Notification data: \(userNotification)"
-        guard let seed = getAccountSeed() else{
-            AlertHelper.showAlert(title: "Error finding matching contact for encrypted string", message: message, completion: {
-                ClipboardHelper.copyToClipboard(text: child)
-            })
+    func findChatForNotification(child: String) -> Chat?{
+        guard let seed = getAccountSeed() else {
             return nil
-        }
-        do{
+        } 
+        do {
             let pubkey = try contactPubkeyByEncryptedChild(seed: seed, state: loadOnionStateAsData(), child: child)
             let chat = Chat.getTribeChatWithOwnerPubkey(ownerPubkey: pubkey) ?? UserContact.getContactWithDisregardStatus(pubkey: pubkey)?.getChat()
             return chat
+        } catch {
+            return nil
         }
-        catch{
-            AlertHelper.showAlert(title: "Error finding matching contact for encrypted string", message: message, completion: {
-                ClipboardHelper.copyToClipboard(text: child)
-            })
-        }
-        return nil
     }
     
     func createChat(for contact:UserContact){
