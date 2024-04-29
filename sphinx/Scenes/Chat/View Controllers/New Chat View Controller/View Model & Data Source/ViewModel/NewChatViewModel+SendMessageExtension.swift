@@ -54,55 +54,11 @@ extension NewChatViewModel {
         
         let tuuid = threadUUID ?? replyingTo?.threadUUID ?? replyingTo?.uuid
         let validMessage = SphinxOnionManager.sharedInstance.sendMessage(to: contact, content: text, chat: chat,msgType: UInt8(type), threadUUID: tuuid, replyUUID: replyingTo?.uuid)
+        validMessage?.makeProvisional(chat: self.chat)
+        updateSnapshotWith(message: validMessage)
         completion(validMessage != nil)
-        
     }
     
-    func createProvisionalAndSend(
-        messageText: String,
-        type: Int,
-        botAmount: Int,
-        completion: @escaping (Bool) -> ()
-    ) -> TransactionMessage? {
-        
-        let provisionalMessage = insertProvisionalMessage(
-            text: messageText,
-            type: type,
-            chat: chat
-        )
-        
-        sendMessage(
-            provisionalMessage: provisionalMessage,
-            text: messageText,
-            botAmount: botAmount,
-            completion: completion
-        )
-        
-        return provisionalMessage
-    }
-
-    func insertProvisionalMessage(
-        text: String,
-        type: Int,
-        chat: Chat?
-    ) -> TransactionMessage? {
-        
-        let message = TransactionMessage.createProvisionalMessage(
-            messageContent: text,
-            type: type,
-            date: Date(),
-            chat: chat,
-            replyUUID: replyingTo?.uuid,
-            threadUUID: threadUUID ?? replyingTo?.threadUUID ?? replyingTo?.uuid
-        )
-        
-        if chat == nil {
-            ///Sending first message. Chat does not exist yet
-            updateSnapshotWith(message: message)
-        }
-        
-        return message
-    }
     
     func updateSnapshotWith(
         message: TransactionMessage?

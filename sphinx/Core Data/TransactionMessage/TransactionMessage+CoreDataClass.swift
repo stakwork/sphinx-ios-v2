@@ -354,6 +354,22 @@ public class TransactionMessage: NSManagedObject {
         )
     }
     
+    func makeProvisional(chat:Chat?) -> TransactionMessage? {
+        
+        let managedContext = CoreDataManager.sharedManager.persistentContainer.viewContext
+        
+        let message = self
+        message.senderId = UserData.sharedInstance.getUserId()
+        message.receiverId = 0
+        message.status = TransactionMessageStatus.pending.rawValue
+        
+        if let chat = chat {
+            message.chat = Chat.getChatWith(id: chat.id, managedContext: managedContext)
+        }
+        
+        return message
+    }
+    
     static func createProvisional(
         messageContent: String?,
         date: Date,
