@@ -236,6 +236,13 @@ extension TransactionMessage {
         return status == TransactionMessageStatus.cancelled.rawValue
     }
     
+    func setAsLastMessageIfHighestIndex(){
+        if let lastMessageId = self.chat?.lastMessage?.id,
+           lastMessageId < self.id{
+            self.chat?.lastMessage = self
+        }
+    }
+    
     public func isConfirmedAsReceived() -> Bool {
         return
             self.status == TransactionMessageStatus.received.rawValue ||

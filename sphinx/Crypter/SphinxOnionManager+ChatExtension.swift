@@ -262,7 +262,7 @@ extension SphinxOnionManager{
                 message?.updatedAt = date
                 message?.uuid = sentUUID
                 message?.id = uniqueIntHashFromString(stringInput: UUID().uuidString)
-                message?.chat?.lastMessage = message
+                message?.setAsLastMessageIfHighestIndex()
                 message?.managedObjectContext?.saveContext()
                 return message
             }
@@ -270,7 +270,7 @@ extension SphinxOnionManager{
                     msgType == TransactionMessage.TransactionMessageType.delete.rawValue,
                     let messageToDelete = TransactionMessage.getMessageWith(uuid: replyUUID){
                 messageToDelete.status = TransactionMessage.TransactionMessageStatus.deleted.rawValue
-                messageToDelete.chat?.lastMessage = messageToDelete
+                messageToDelete.setAsLastMessageIfHighestIndex()
                 messageToDelete.managedObjectContext?.saveContext()
                 return messageToDelete
             }
@@ -430,7 +430,7 @@ extension SphinxOnionManager{
                                 groupActionMessage.id = Int(index) ?? self.uniqueIntHashFromString(stringInput: UUID().uuidString)
                                 groupActionMessage.chat = chat
                                 groupActionMessage.type = Int(type)
-                                groupActionMessage.chat?.lastMessage = groupActionMessage
+                                groupActionMessage.setAsLastMessageIfHighestIndex()
                                 groupActionMessage.senderAlias = csr.alias
                                 groupActionMessage.senderPic = csr.photoUrl
                                 groupActionMessage.createdAt = date
@@ -571,7 +571,6 @@ extension SphinxOnionManager{
         newMessage.chat = chat
         newMessage.replyUUID = message.replyUuid
         newMessage.threadUUID = message.threadUuid
-        newMessage.chat?.lastMessage = newMessage
         newMessage.chat?.seen = false
         newMessage.senderAlias = csr?.alias
         newMessage.senderPic = csr?.photoUrl
@@ -601,6 +600,8 @@ extension SphinxOnionManager{
         }
         
         assignReceiverId(localMsg: newMessage)
+        
+        newMessage.setAsLastMessageIfHighestIndex()
         
         return newMessage
     }
