@@ -540,7 +540,7 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
             let aps = notification["aps"] as? [String: AnyObject],
             let customData = aps["custom_data"] as? [String: AnyObject]
         {
-            if let chatId = customData["child_idx"] as? String {
+            if let chatId = customData["child"] as? String {
                 return chatId
             }
         }
