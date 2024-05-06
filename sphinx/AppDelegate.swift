@@ -185,15 +185,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func handlePushAndFetchData() {
+        guard let notificationUserInfo = notificationUserInfo else {
+            return
+        }
         if let encryptedChild = getEncryptedIndexFrom(notification: notificationUserInfo),
            let chat = SphinxOnionManager.sharedInstance.findChatForNotification(child: encryptedChild){
             goTo(chat: chat)
-        } else {
-            let message = "Notification data: \(notificationUserInfo?.debugDescription ?? "No notification User Info")"
-            
-            AlertHelper.showAlert(title: "Error finding matching contact for encrypted string", message: message, completion: {
-                ClipboardHelper.copyToClipboard(text: message)
-            })
         }
     }
     
