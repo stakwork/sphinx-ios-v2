@@ -561,10 +561,10 @@ class UserData {
     }
     
     func save(
-        walletMnemonic: String,
-        enteredPin: String? = nil
+        walletMnemonic: String
     ) {
-        if let pin = enteredPin ?? getAppPin(),
+        var defaultPin : String? = (SignupHelper.isPinSet() == false) ? (SphinxOnionManager.sharedInstance.defaultInitialSignupPin) : (nil)
+        if let pin = defaultPin ?? getAppPin(), // apply default pin if it's a sign up otherwise apply the getAppPin
            let encryptedMnemonic = SymmetricEncryptionManager.sharedInstance.encryptString(text: walletMnemonic, key: pin),
             !encryptedMnemonic.isEmpty
         {
@@ -572,10 +572,9 @@ class UserData {
         }
     }
     
-    func getMnemonic(
-        enteredPin: String? = nil
-    ) -> String? {
-        if let pin = enteredPin ?? getAppPin(),
+    func getMnemonic(enteredPin:String?=nil) -> String? {
+        var defaultPin : String? = (SignupHelper.isPinSet() == false) ? (SphinxOnionManager.sharedInstance.defaultInitialSignupPin) : (enteredPin)
+        if let pin = (defaultPin) ?? getAppPin(),
            let encryptedMnemonic = keychainManager.getValueFor(composedKey: KeychainManager.KeychainKeys.walletMnemonic.rawValue),
             !encryptedMnemonic.isEmpty
         {
@@ -583,7 +582,7 @@ class UserData {
                 return value
             }
             else if SphinxOnionManager.sharedInstance.isMnemonic(code: encryptedMnemonic){ // on legacy, requires migration to encrypted paradigm
-                save(walletMnemonic: encryptedMnemonic, enteredPin: enteredPin) // ensure we encrypt this time
+                save(walletMnemonic: encryptedMnemonic) // ensure we encrypt this time
                 return encryptedMnemonic
             }
             

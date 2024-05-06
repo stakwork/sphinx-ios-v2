@@ -30,8 +30,8 @@ extension SphinxOnionManager{//invites related
         }
     }
     
-    func redeemInvite(inviteCode:String){
-        guard let seed = getAccountSeed() else{
+    func redeemInvite(inviteCode:String,mnemonic:String){
+        guard let seed = getAccountSeed(mnemonic: mnemonic) else{
             return
         }
         do{
