@@ -21,7 +21,7 @@ extension RestoreUserFormViewController {
 
         guard validateCode(code) else { return }
         
-        if(isMnemonic(code: code)){
+        if(SphinxOnionManager.sharedInstance.isMnemonic(code: code)){
             goMnemonicRoute()
             return
         }
@@ -57,23 +57,16 @@ extension RestoreUserFormViewController {
         code.fixedRestoreCode.getRestoreKeys()
     }
     
-    func isMnemonic(code:String)->Bool{
-        let words = code.split(separator: " ").map { String($0).trim().lowercased() }
-        let (error, _) = CrypterManager.sharedInstance.validateSeed(words: words)
-        return error == nil
-    }
-
-    
     func isCodeValid(_ code: String) -> Bool {
        return (code.isRestoreKeysString ||
         code.fixedRestoreCode.isRestoreKeysString ||
-        isMnemonic(code: code))
+        SphinxOnionManager.sharedInstance.isMnemonic(code: code))
     }
     
     func goMnemonicRoute(){
         if let code = codeTextField.text,
            code.isEmpty == false,
-           isMnemonic(code: code){
+           SphinxOnionManager.sharedInstance.isMnemonic(code: code){
             UserData.sharedInstance.save(walletMnemonic: code)
             if let mnemonic = UserData.sharedInstance.getMnemonic(),
                SphinxOnionManager.sharedInstance.createMyAccount(mnemonic: mnemonic){

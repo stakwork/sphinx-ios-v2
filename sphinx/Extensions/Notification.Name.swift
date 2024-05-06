@@ -31,4 +31,5 @@ extension Notification.Name {
     static let invoiceIPaidSettled = Notification.Name("invoiceIPaidSettled")
     static let totalMessageCountReceived = Notification.Name("totalMessageCountReceived")
     static let inviteCodeAckReceived = Notification.Name("inviteCodeAckReceived")
+    static let userSuccessfullyEnteredPin = Notification.Name("userSuccessfullyEnteredPin")
 }

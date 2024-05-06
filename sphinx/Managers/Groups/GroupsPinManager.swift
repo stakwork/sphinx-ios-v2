@@ -9,6 +9,12 @@
 import Foundation
 
 class GroupsPinManager {
+    
+    public enum PinPresentationContext {
+        case launch
+        case enterForeground
+        case startingCall
+    }
 
     class var sharedInstance : GroupsPinManager {
         struct Static {
@@ -37,17 +43,19 @@ class GroupsPinManager {
         }
     }
     
-    func shouldAskForPin() -> Bool {
-        if !UserData.sharedInstance.isUserLogged() || userData.getPINNeverOverride() {
-            return false
-        }
-        if let date: Date = UserDefaults.Keys.lastPinDate.get() {
-            let timeSeconds = Double(UserData.sharedInstance.getPINHours() * 3600)
-            if Date().timeIntervalSince(date) > timeSeconds {
-                return true
+    func shouldAskForPin(presentationContext:PinPresentationContext) -> Bool {
+        if UserData.sharedInstance.isUserLogged() {
+            if userData.getPINNeverOverride() {
+                return false
+            }
+            if let date: Date = UserDefaults.Keys.lastPinDate.get() {
+                let timeSeconds = Double(UserData.sharedInstance.getPINHours() * 3600)
+                if Date().timeIntervalSince(date) > timeSeconds {
+                    return true
+                }
             }
         }
-        return currentPin.isEmpty
+        return SignupHelper.isLogged()
     }
     
     var shouldAvoidFaceID : Bool {
@@ -100,20 +108,12 @@ class GroupsPinManager {
         GroupsPinManager.sharedInstance.setCurrentPinOnUpdate(changingStandard: true, isOnStandard: isOnStandardMode, pin: newPin)
     }
     
-    func isValidPin(_ pin: String) -> (Bool, Bool) {
-        let didChange = pin != currentPin
-        
-        if let savedPin = userData.getAppPin(), !savedPin.isEmpty, savedPin == pin {
-            setCurrentPin(pin)
-            return (true, didChange)
+    func isValidPin(_ pin: String) -> Bool {
+        if let mnemonic = UserData.sharedInstance.getMnemonic(enteredPin: pin), SphinxOnionManager.sharedInstance.isMnemonic(code: mnemonic) {
+            SphinxOnionManager.sharedInstance.appSessionPin = pin
+            return true
         }
-        
-        if let savedPrivacyPin = userData.getPrivacyPin(), !savedPrivacyPin.isEmpty, savedPrivacyPin == pin {
-            setCurrentPin(pin)
-            return (true, didChange)
-        }
-        
-        return (false, didChange)
+        return false
     }
     
     func logout() {

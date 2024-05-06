@@ -58,6 +58,9 @@ class SphinxOnionManager : NSObject {
     var messageRestoreCallback : RestoreProgressCallback? = nil
     var contactRestoreCallback : RestoreProgressCallback? = nil
     var hideRestoreCallback: (() -> ())? = nil
+    var appSessionPin : String? = nil//nil
+    var defaultInitialSignupPin : String = "111111"
+    
     public static let kMessageBatchSize = 50
 
     

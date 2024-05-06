@@ -48,6 +48,7 @@ class PinCodeViewController: UIViewController {
         
         reloadDots()
         configureButtons()
+        
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -124,33 +125,55 @@ class PinCodeViewController: UIViewController {
     }
     
     func checkLaunchPIN(pin: String) {
-        if let doneCompletion = doneCompletion {
+        if let doneCompletion = doneCompletion, pin == UserData.sharedInstance.getAppPin() {
             doneCompletion(pin)
-        } else {
-            let (valid, didChange) = GroupsPinManager.sharedInstance.isValidPin(pin)
-            if valid {
-                if didChange { reloadDashboard() }
-                UserDefaults.Keys.lastPinDate.set(Date())
-                
-                DelayPerformedHelper.performAfterDelay(seconds: didChange ? 0.5 : 0.0, completion: {
-                    WindowsManager.sharedInstance.removeCoveringWindow()
-                    
-                    if let loggingCompletion = self.loggingCompletion {
-                        loggingCompletion()
-                    }
+        }  else if let storedPin = UserData.sharedInstance.getStoredPin() {// if migrating from stored pin act accordingly
+            if(storedPin == pin){
+                guard let unencryptedMnemonic = UserData.sharedInstance.getStoredUnencryptedMnemonic(),
+                      SphinxOnionManager.sharedInstance.isMnemonic(code: unencryptedMnemonic) else{
+                    loading = false
+                    AlertHelper.showAlert(title: "Data Corruption Error", message: "There was an issue migrating your account. Please try again with restore from your written mnemonic.")
+                    pinArray = []
+                    reloadDots()
+                    return
+                }
+                SphinxOnionManager.sharedInstance.appSessionPin = pin //store correct pin in non-volatile memory
+                UserData.sharedInstance.clearStoredPin() // wipe the pin from keychain
+                UserData.sharedInstance.save(walletMnemonic: unencryptedMnemonic)// save new mnemonic in refactored method that automatically encrypts with the pin
+                DelayPerformedHelper.performAfterDelay(seconds: 0.5, completion: {
+                    self.finalizePinEntry(pin: pin)
                 })
-            } else {
-                loading = false
-                AlertHelper.showAlert(title: "generic.error.title".localized, message: "invalid.pin".localized)
-                pinArray = []
-                reloadDots()
             }
+            else{
+                showInvalidPinError()
+            }
+        }
+        else {
+            finalizePinEntry(pin: pin)
         }
     }
     
-    func reloadDashboard() {
-        let appDelegate = UIApplication.shared.delegate as! AppDelegate
-        appDelegate.takeUserToInitialVC(isUserLogged: true)
+    func finalizePinEntry(pin:String){
+        let valid = GroupsPinManager.sharedInstance.isValidPin(pin)
+        if valid {
+            UserDefaults.Keys.lastPinDate.set(Date())
+            NotificationCenter.default.post(name: .userSuccessfullyEnteredPin, object: nil)
+            
+            WindowsManager.sharedInstance.removeCoveringWindow()
+            
+            if let loggingCompletion = self.loggingCompletion {
+                loggingCompletion()
+            }
+        } else {
+            showInvalidPinError()
+        }
+    }
+    
+    func showInvalidPinError(){
+        loading = false
+        AlertHelper.showAlert(title: "generic.error.title".localized, message: "invalid.pin".localized)
+        pinArray = []
+        reloadDots()
     }
     
     func shouldUseBiometricAuthentication() -> Bool {

@@ -163,7 +163,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             return
         }
         
-        presentPINIfNeeded()
+        presentPINIfNeeded(presentationContext: .enterForeground)
         
         feedsManager.restoreContentFeedStatusInBackground()
         podcastPlayerController.finishAndSaveContentConsumed()
@@ -279,12 +279,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             feedsManager.restoreContentFeedStatusInBackground()
         }
 
-        takeUserToInitialVC(isUserLogged: isUserLogged)
-        presentPINIfNeeded()
+        takeUserToInitialVC(isUserLogged: SignupHelper.isLogged())
+        presentPINIfNeeded(presentationContext: .launch)
     }
 
-    func presentPINIfNeeded() {
-        if GroupsPinManager.sharedInstance.shouldAskForPin() {
+    func presentPINIfNeeded(presentationContext:GroupsPinManager.PinPresentationContext) {
+        if GroupsPinManager.sharedInstance.shouldAskForPin(presentationContext: presentationContext) {
             let pinVC = PinCodeViewController.instantiate()
             pinVC.loggingCompletion = {
                 if let currentVC = self.getCurrentVC() {
@@ -300,7 +300,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     ) {
         let rootViewController = StoryboardScene.Root.initialScene.instantiate()
         let mainCoordinator = MainCoordinator(rootViewController: rootViewController)
-
+        
         if let window = window {
             window.rootViewController = rootViewController
             window.makeKeyAndVisible()
@@ -384,8 +384,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 if style != UIScreen.main.traitCollection.userInterfaceStyle {
                     style = UIScreen.main.traitCollection.userInterfaceStyle
 
-                    let isUserLogged = UserData.sharedInstance.isUserLogged()
-                    takeUserToInitialVC(isUserLogged: isUserLogged)
+                    takeUserToInitialVC(isUserLogged: SignupHelper.isLogged())
                 }
                 return
             }

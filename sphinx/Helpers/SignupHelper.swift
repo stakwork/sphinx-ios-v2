@@ -48,6 +48,10 @@ class SignupHelper {
         }
     }
     
+    public static func isPinSet() -> Bool {
+        return step >= SignupHelper.SignupStep.PINSet.rawValue
+    }
+    
     public static func isLogged() -> Bool {
         return step >= SignupHelper.SignupStep.SignupComplete.rawValue
     }

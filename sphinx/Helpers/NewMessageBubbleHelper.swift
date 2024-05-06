@@ -52,7 +52,7 @@ class NewMessageBubbleHelper {
         backColor: UIColor = UIColor.Sphinx.Text,
         backAlpha: CGFloat = 0.7
     ) {
-        if GroupsPinManager.sharedInstance.shouldAskForPin() {
+        if GroupsPinManager.sharedInstance.shouldAskForPin(presentationContext: .enterForeground) {
             return
         }
         
@@ -75,7 +75,7 @@ class NewMessageBubbleHelper {
         backColor: UIColor = UIColor.Sphinx.Text,
         backAlpha: CGFloat = 0.8
     ) {
-        if GroupsPinManager.sharedInstance.shouldAskForPin() {
+        if GroupsPinManager.sharedInstance.shouldAskForPin(presentationContext: .enterForeground) {
             return
         }
         

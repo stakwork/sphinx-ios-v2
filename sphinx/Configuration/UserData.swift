@@ -44,13 +44,10 @@ class UserData {
     }
     
     func isUserLogged() -> Bool {
-        if(getMnemonic() != nil &&
-           getAppPin() != ""){ //v2
+        if (getMnemonic() != nil) { //v2
             return SignupHelper.isLogged()
         }
-        return getAppPin() != "" &&
-               getNodeIP() != "" &&
-               getAuthToken() != "" &&
+        return getAppPin() != nil &&
                SignupHelper.isLogged()
     }
     
@@ -369,7 +366,11 @@ class UserData {
     }
     
     func save(pin: String) {
-        saveValueFor(value: pin, for: KeychainManager.KeychainKeys.pin, userDefaultKey: UserDefaults.Keys.defaultPIN)
+        if let existingMnemonic = self.getMnemonic(){
+            SphinxOnionManager.sharedInstance.appSessionPin = pin
+            SignupHelper.step = (SignupHelper.isPinSet() == false) ? SignupHelper.SignupStep.PINSet.rawValue : (SignupHelper.step)//update to ensure that default pin is no longer used!
+            self.save(walletMnemonic: existingMnemonic) //update mnemonic encryption
+        }
     }
     
     func save(privacyPin: String) {
@@ -427,8 +428,28 @@ class UserData {
         return privateKeySuccess && publicKeySuccess
     }
     
+    func getStoredPin() -> String?{
+        let pin = getValueFor(keychainKey: KeychainManager.KeychainKeys.pin, userDefaultKey: UserDefaults.Keys.defaultPIN)
+        return (!pin.isEmpty) ? pin : nil
+    }
+    
+    func getStoredUnencryptedMnemonic() -> String?{
+        if let value = keychainManager.getValueFor(composedKey: KeychainManager.KeychainKeys.walletMnemonic.rawValue), !value.isEmpty{
+            return value
+        }
+        
+        return nil
+    }
+    
+    func clearStoredPin() {
+        let _ = keychainManager.deleteValueFor(key: KeychainManager.KeychainKeys.pin.rawValue)
+    }
+    
     func getAppPin() -> String? {
-        return getValueFor(keychainKey: KeychainManager.KeychainKeys.pin, userDefaultKey: UserDefaults.Keys.defaultPIN)
+        if let appPin = SphinxOnionManager.sharedInstance.appSessionPin{
+            return appPin
+        }
+        return nil
     }
     
     func getPrivacyPin() -> String? {
@@ -540,13 +561,32 @@ class UserData {
         let _ = getAppPin()
     }
     
-    func save(walletMnemonic: String) {
-        let _ = keychainManager.save(value: walletMnemonic, forComposedKey: KeychainManager.KeychainKeys.walletMnemonic.rawValue)
+    func save(
+        walletMnemonic: String
+    ) {
+        var defaultPin : String? = (SignupHelper.isPinSet() == false) ? (SphinxOnionManager.sharedInstance.defaultInitialSignupPin) : (nil)
+        if let pin = defaultPin ?? getAppPin(), // apply default pin if it's a sign up otherwise apply the getAppPin
+           let encryptedMnemonic = SymmetricEncryptionManager.sharedInstance.encryptString(text: walletMnemonic, key: pin),
+            !encryptedMnemonic.isEmpty
+        {
+            let _ = keychainManager.save(value: encryptedMnemonic, forComposedKey: KeychainManager.KeychainKeys.walletMnemonic.rawValue)
+        }
     }
     
-    func getMnemonic() -> String? {
-        if let value = keychainManager.getValueFor(composedKey: KeychainManager.KeychainKeys.walletMnemonic.rawValue), !value.isEmpty {
-            return value
+    func getMnemonic(enteredPin:String?=nil) -> String? {
+        var defaultPin : String? = (SignupHelper.isPinSet() == false) ? (SphinxOnionManager.sharedInstance.defaultInitialSignupPin) : (enteredPin)
+        if let pin = (defaultPin) ?? getAppPin(),
+           let encryptedMnemonic = keychainManager.getValueFor(composedKey: KeychainManager.KeychainKeys.walletMnemonic.rawValue),
+            !encryptedMnemonic.isEmpty
+        {
+            if let value = SymmetricEncryptionManager.sharedInstance.decryptString(text: encryptedMnemonic, key: pin){
+                return value
+            }
+            else if SphinxOnionManager.sharedInstance.isMnemonic(code: encryptedMnemonic){ // on legacy, requires migration to encrypted paradigm
+                save(walletMnemonic: encryptedMnemonic) // ensure we encrypt this time
+                return encryptedMnemonic
+            }
+            
         }
         return nil
     }

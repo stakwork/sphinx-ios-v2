@@ -65,9 +65,9 @@ extension NewUserSignupFormViewController {
     }
     
     func handleInviteCodeV2SignUp(code:String){
-        if let mnemonic = UserData.sharedInstance.getMnemonic(),
+        if let mnemonic = UserData.sharedInstance.getMnemonic(enteredPin: SphinxOnionManager.sharedInstance.defaultInitialSignupPin),
            SphinxOnionManager.sharedInstance.createMyAccount(mnemonic: mnemonic){
-            SphinxOnionManager.sharedInstance.redeemInvite(inviteCode: code)
+            SphinxOnionManager.sharedInstance.redeemInvite(inviteCode: code, mnemonic: mnemonic)
             setupWatchdogTimer()
             listenForSelfContactRegistration()//get callbacks ready for sign up
             self.signup_v2_with_test_server()
