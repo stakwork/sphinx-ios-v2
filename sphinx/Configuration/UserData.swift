@@ -368,6 +368,7 @@ class UserData {
     func save(pin: String) {
         if let existingMnemonic = self.getMnemonic(){
             SphinxOnionManager.sharedInstance.appSessionPin = pin
+            SignupHelper.step = (SignupHelper.isPinSet() == false) ? SignupHelper.SignupStep.PINSet.rawValue : (SignupHelper.step)//update to ensure that default pin is no longer used!
             self.save(walletMnemonic: existingMnemonic) //update mnemonic encryption
         }
     }
