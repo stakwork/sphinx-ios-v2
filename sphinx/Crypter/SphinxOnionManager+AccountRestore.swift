@@ -216,6 +216,7 @@ extension SphinxOnionManager{//account restore related
     }
     
     @objc func processSyncCountsReceived(){
+        startWatchdogTimer()//reset wdt
         if let msgTotalCounts = self.msgTotalCounts,
            msgTotalCounts.hasOneValidCount(),
            messageFetchParams?.restoreInProgress != true{
@@ -307,13 +308,13 @@ extension SphinxOnionManager : NSFetchedResultsControllerDelegate{
            let firstForEachScidCount = msgTotalCounts?.firstMessageAvailableCount,
            params.messageCountForPhase >= firstForEachScidCount {
             // If all messages for this phase have been processed, move to the next phase
-            resetWatchdogTimer()
+            startWatchdogTimer()
             NotificationCenter.default.removeObserver(self, name: .newOnionMessageWasReceived, object: nil)
             doNextRestorePhase()
         } else if let params = messageFetchParams,
                   params.messageCountForPhase % params.fetchLimit == 0 {
             // If there are more messages to fetch in this phase, reset the watchdog timer and fetch the next block
-            resetWatchdogTimer()
+            startWatchdogTimer()
             
             // Calculate new start index for the next block of messages to fetch
             let newStartIndex = params.fetchStartIndex + params.messageCountForPhase
@@ -382,7 +383,7 @@ extension SphinxOnionManager : NSFetchedResultsControllerDelegate{
 
 
     
-    func resetWatchdogTimer() {
+    func startWatchdogTimer() {
         // Invalidate any existing timer
         watchdogTimer?.invalidate()
         
@@ -405,7 +406,7 @@ extension SphinxOnionManager : NSFetchedResultsControllerDelegate{
     func finishRestoration() {
         // Concluding the restoration or synchronization process
         NotificationCenter.default.removeObserver(self, name: .newOnionMessageWasReceived, object: nil)
-        resetWatchdogTimer()
+        startWatchdogTimer()
         messageFetchParams?.restoreInProgress = false
         // Additional logic for setting the last message index in UserData or similar actions
         if let counts = msgTotalCounts,
