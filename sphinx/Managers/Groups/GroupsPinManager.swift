@@ -55,7 +55,7 @@ class GroupsPinManager {
                 }
             }
         }
-        return true
+        return SignupHelper.isLogged()
     }
     
     var shouldAvoidFaceID : Bool {
