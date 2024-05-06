@@ -279,7 +279,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             feedsManager.restoreContentFeedStatusInBackground()
         }
 
-        takeUserToInitialVC(isUserLogged: isUserLogged)
+        takeUserToInitialVC(isUserLogged: SignupHelper.isLogged())
         presentPINIfNeeded(presentationContext: .launch)
     }
 
@@ -384,8 +384,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 if style != UIScreen.main.traitCollection.userInterfaceStyle {
                     style = UIScreen.main.traitCollection.userInterfaceStyle
 
-                    let isUserLogged = UserData.sharedInstance.isUserLogged()
-                    takeUserToInitialVC(isUserLogged: isUserLogged)
+                    takeUserToInitialVC(isUserLogged: SignupHelper.isLogged())
                 }
                 return
             }

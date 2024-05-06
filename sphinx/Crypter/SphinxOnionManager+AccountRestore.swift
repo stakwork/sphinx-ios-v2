@@ -445,7 +445,7 @@ extension SphinxOnionManager : NSFetchedResultsControllerDelegate{
     }
     
     func registerDeviceID(id:String){
-        guard let seed = getAccountSeed() else{
+        guard let seed = getAccountSeed(), let _ = mqtt else {
             return
         }
         let rr = try! setPushToken(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), pushToken: id)

@@ -44,8 +44,7 @@ class UserData {
     }
     
     func isUserLogged() -> Bool {
-        if(getMnemonic() != nil &&
-           getAppPin() != nil){ //v2
+        if (getMnemonic() != nil) { //v2
             return SignupHelper.isLogged()
         }
         return getAppPin() != nil &&
@@ -442,7 +441,7 @@ class UserData {
     }
     
     func clearStoredPin() {
-        saveValueFor(value: "", for: KeychainManager.KeychainKeys.pin, userDefaultKey: UserDefaults.Keys.defaultPIN)
+        let _ = keychainManager.deleteValueFor(key: KeychainManager.KeychainKeys.pin.rawValue)
     }
     
     func getAppPin() -> String? {
@@ -561,20 +560,22 @@ class UserData {
         let _ = getAppPin()
     }
     
-    func save(walletMnemonic: String) {
-        if let pin = getAppPin(),
+    func save(
+        walletMnemonic: String,
+        enteredPin: String? = nil
+    ) {
+        if let pin = enteredPin ?? getAppPin(),
            let encryptedMnemonic = SymmetricEncryptionManager.sharedInstance.encryptString(text: walletMnemonic, key: pin),
             !encryptedMnemonic.isEmpty
         {
-            print("successfully saved mnemonic")
             let _ = keychainManager.save(value: encryptedMnemonic, forComposedKey: KeychainManager.KeychainKeys.walletMnemonic.rawValue)
-            return
         }
-        return
     }
     
-    func getMnemonic() -> String? {
-        if let pin = getAppPin(),
+    func getMnemonic(
+        enteredPin: String? = nil
+    ) -> String? {
+        if let pin = enteredPin ?? getAppPin(),
            let encryptedMnemonic = keychainManager.getValueFor(composedKey: KeychainManager.KeychainKeys.walletMnemonic.rawValue),
             !encryptedMnemonic.isEmpty
         {
@@ -582,7 +583,7 @@ class UserData {
                 return value
             }
             else if SphinxOnionManager.sharedInstance.isMnemonic(code: encryptedMnemonic){ // on legacy, requires migration to encrypted paradigm
-                save(walletMnemonic: encryptedMnemonic) // ensure we encrypt this time
+                save(walletMnemonic: encryptedMnemonic, enteredPin: enteredPin) // ensure we encrypt this time
                 return encryptedMnemonic
             }
             

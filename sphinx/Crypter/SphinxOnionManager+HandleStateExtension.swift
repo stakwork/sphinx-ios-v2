@@ -19,7 +19,7 @@ extension SphinxOnionManager {
         publishDelay:Double=0.5,
         completion: (([String:AnyObject]) ->())? = nil,
         isMessageSend:Bool=false
-    )-> String?{
+    )-> String? {
         var messageTagID : String? = nil
         print("handleRR rr:\(rr)")
         if let sm = rr.stateMp{

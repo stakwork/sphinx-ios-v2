@@ -125,11 +125,9 @@ class PinCodeViewController: UIViewController {
     }
     
     func checkLaunchPIN(pin: String) {
-        if let doneCompletion = doneCompletion,
-           pin == UserData.sharedInstance.getAppPin(){
+        if let doneCompletion = doneCompletion, pin == UserData.sharedInstance.getAppPin() {
             doneCompletion(pin)
-        } 
-        else if let storedPin = UserData.sharedInstance.getStoredPin(){// if migrating from stored pin act accordingly
+        }  else if let storedPin = UserData.sharedInstance.getStoredPin() {// if migrating from stored pin act accordingly
             if(storedPin == pin){
                 guard let unencryptedMnemonic = UserData.sharedInstance.getStoredUnencryptedMnemonic(),
                       SphinxOnionManager.sharedInstance.isMnemonic(code: unencryptedMnemonic) else{
@@ -156,18 +154,16 @@ class PinCodeViewController: UIViewController {
     }
     
     func finalizePinEntry(pin:String){
-        let (valid, didChange) = GroupsPinManager.sharedInstance.isValidPin(pin)
+        let valid = GroupsPinManager.sharedInstance.isValidPin(pin)
         if valid {
-            if didChange { reloadDashboard() }
             UserDefaults.Keys.lastPinDate.set(Date())
             NotificationCenter.default.post(name: .userSuccessfullyEnteredPin, object: nil)
-            DelayPerformedHelper.performAfterDelay(seconds: didChange ? 0.5 : 0.0, completion: {
-                WindowsManager.sharedInstance.removeCoveringWindow()
-                
-                if let loggingCompletion = self.loggingCompletion {
-                    loggingCompletion()
-                }
-            })
+            
+            WindowsManager.sharedInstance.removeCoveringWindow()
+            
+            if let loggingCompletion = self.loggingCompletion {
+                loggingCompletion()
+            }
         } else {
             showInvalidPinError()
         }
@@ -178,11 +174,6 @@ class PinCodeViewController: UIViewController {
         AlertHelper.showAlert(title: "generic.error.title".localized, message: "invalid.pin".localized)
         pinArray = []
         reloadDots()
-    }
-    
-    func reloadDashboard() {
-        let appDelegate = UIApplication.shared.delegate as! AppDelegate
-        appDelegate.takeUserToInitialVC(isUserLogged: true)
     }
     
     func shouldUseBiometricAuthentication() -> Bool {
