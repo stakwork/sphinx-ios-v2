@@ -452,43 +452,31 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 extension AppDelegate: UNUserNotificationCenterDelegate {
     
-    private func modifyNotificationText(with chatName: String?, completion: @escaping () -> Void) {
-        guard let name = chatName else { return }
-        let newText = "New message from \(name)"
-
-        // Example of showing a modified local notification
-        let content = UNMutableNotificationContent()
-        content.title = "Sphinx Chat"
-        content.body = newText
-        content.sound = .default
-
-        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
-        UNUserNotificationCenter.current().add(request) { error in
-            if let error = error {
-                print("Error showing local notification: \(error)")
-            }
-            completion()
-        }
-    }
+//    private func modifyNotificationText(with chatName: String?, completion: @escaping () -> Void) {
+//        guard let name = chatName else { return }
+//        let newText = "New message from \(name)"
+//
+//        // Example of showing a modified local notification
+//        let content = UNMutableNotificationContent()
+//        content.title = "Sphinx Chat"
+//        content.body = newText
+//        content.sound = .default
+//
+//        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
+//        UNUserNotificationCenter.current().add(request) { error in
+//            if let error = error {
+//                print("Error showing local notification: \(error)")
+//            }
+//            completion()
+//        }
+//    }
 
     func application(
         _ application: UIApplication,
         didReceiveRemoteNotification userInfo: [AnyHashable : Any],
         fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
     ) {
-        if application.applicationState == .background {
-            guard let encryptedChild = getEncryptedIndexFrom(notification: userInfo as? [String: AnyObject]),
-                  let chat = SphinxOnionManager.sharedInstance.findChatForNotification(child: encryptedChild) else {
-                completionHandler(.noData)
-                return
-            }
-
-            modifyNotificationText(with: chat.name) {
-                completionHandler(.newData)
-            }
-        } else {
-            completionHandler(.noData)
-        }
+        completionHandler(.noData)
     }
 
     func userNotificationCenter(
