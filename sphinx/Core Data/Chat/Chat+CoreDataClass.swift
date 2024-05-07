@@ -426,6 +426,27 @@ public class Chat: NSManagedObject {
         unseenMentionsCount = mentionsCount
     }
     
+    static func updateMessageReadStatus(chatId: Int, lastReadId: Int) {
+        let managedContext = CoreDataManager.sharedManager.persistentContainer.viewContext
+        let fetchRequest: NSFetchRequest<TransactionMessage> = TransactionMessage.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "chat.id == %d", chatId)
+        
+        do {
+            let messages = try managedContext.fetch(fetchRequest)
+            for message in messages {
+                if message.id <= lastReadId {
+                    message.seen = true
+                } else {
+                    message.seen = false
+                    message.chat?.seen = false
+                }
+            }
+            try managedContext.save()
+        } catch let error as NSError {
+            print("Error updating messages read status: \(error), \(error.userInfo)")
+        }
+    }
+    
     static func calculateUnseenMessagesCount(
         mentions: Bool
     ) -> [Int: Int] {

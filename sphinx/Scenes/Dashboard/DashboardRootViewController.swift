@@ -329,12 +329,13 @@ extension DashboardRootViewController {
         
         setupAddTribeButton()
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 15.0, execute: {
-            if let chat = Chat.getChatWith(id: 806199208),
-               let contact = chat.getContact(){
-                SphinxOnionManager.sharedInstance.setReadLevel(index: 7, chat: chat, recipContact: contact)
-            }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: {
+//            if let chat = Chat.getChatWith(id: 1772889726),
+//               let contact = chat.getContact(){
+//                SphinxOnionManager.sharedInstance.setReadLevel(index: 378, chat: chat, recipContact: contact)
+//            }
             SphinxOnionManager.sharedInstance.getReads()
+            ContactsService.sharedInstance.forceUpdate()
         })
     }
     
