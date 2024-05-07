@@ -134,6 +134,8 @@ extension SphinxOnionManager {
         
         handleIncomingTags(rr: rr)
         
+        processReadStatus(rr: rr)
+        
         if isMessageSend,
            rr.msgs.count > 0,
            let tag = rr.msgs[0].tag{
@@ -143,6 +145,12 @@ extension SphinxOnionManager {
         purgeObsoleteState(keys: rr.stateToDelete)
         
         return messageTagID
+    }
+    
+    func processReadStatus(rr:RunReturn){
+        if let lastRead = rr.lastRead{
+            print(lastRead)
+        }
     }
     
     func handleIncomingTags(rr:RunReturn){

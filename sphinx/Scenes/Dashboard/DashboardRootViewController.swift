@@ -230,6 +230,8 @@ extension DashboardRootViewController {
         DelayPerformedHelper.performAfterDelay(seconds: 0.5, completion: {
             self.connectToV2Server()
         })
+        
+        
     }
     
     override func viewDidDisappear(_ animated: Bool) {
@@ -326,6 +328,14 @@ extension DashboardRootViewController {
         }
         
         setupAddTribeButton()
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 15.0, execute: {
+            if let chat = Chat.getChatWith(id: 806199208),
+               let contact = chat.getContact(){
+                SphinxOnionManager.sharedInstance.setReadLevel(index: 7, chat: chat, recipContact: contact)
+            }
+            SphinxOnionManager.sharedInstance.getReads()
+        })
     }
     
     func connectToV2Server(){
