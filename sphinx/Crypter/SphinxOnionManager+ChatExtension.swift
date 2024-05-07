@@ -69,7 +69,8 @@ extension SphinxOnionManager{
             mediaType:String?="file",
             threadUUID:String?,
             replyUUID:String?,
-            invoiceString:String?
+            invoiceString:String?,
+            tribeKickMember:String?=nil
         )->(String?,String?)?{
         var msg: [String: Any] = ["content": content]
         var mt: String? = nil
@@ -90,8 +91,9 @@ extension SphinxOnionManager{
             msg["invoice"] = invoiceString
             break
         case .groupKick:
-            if let member = recipPubkey{
-                msg["member"] = content
+            if let member = tribeKickMember{
+                msg["member"] = member
+                msg.removeValue(forKey: "content")
             }
             else{
                 return nil
@@ -126,7 +128,8 @@ extension SphinxOnionManager{
             mediaType:String?=nil,
             threadUUID:String?,
             replyUUID:String?,
-            invoiceString:String?=nil
+            invoiceString:String?=nil,
+            tribeKickMember:String?=nil
         )->TransactionMessage?{//
         guard let seed = getAccountSeed() else{
             return nil
@@ -144,7 +147,8 @@ extension SphinxOnionManager{
                 mediaType: mediaType,
                 threadUUID: threadUUID, 
                 replyUUID: replyUUID, 
-                invoiceString: invoiceString
+                invoiceString: invoiceString,
+                tribeKickMember: tribeKickMember
             ),
             let contentJSONString = contentJSONString else{
             return nil
