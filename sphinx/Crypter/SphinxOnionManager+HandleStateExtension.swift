@@ -137,6 +137,8 @@ extension SphinxOnionManager {
         
         processReadStatus(rr: rr)
         
+        processMuteLevels(rr: rr)
+        
         if isMessageSend,
            rr.msgs.count > 0,
            let tag = rr.msgs[0].tag{
@@ -171,9 +173,27 @@ extension SphinxOnionManager {
         }
     }
     
+    func processMuteLevels(rr:RunReturn){
+        if let muteLevels = rr.muteLevels{
+            let muteDict = extractMuteIds(jsonString: muteLevels)
+            updateMuteLevels(pubkeyToMuteLevelDict: muteDict)
+        }
+    }
+    
     func updateChatReadStatus(chatListUnreadDict: [Int: Int]) {
         for (chatId, lastReadId) in chatListUnreadDict {
             Chat.updateMessageReadStatus(chatId: chatId, lastReadId: lastReadId)
+        }
+    }
+    
+    func updateMuteLevels(pubkeyToMuteLevelDict: [String:Any]){
+        for (pubkey, muteLevel) in pubkeyToMuteLevelDict{
+            let chat = UserContact.getContactWith(pubkey: pubkey)?.getChat() ?? Chat.getTribeChatWithOwnerPubkey(ownerPubkey: pubkey)
+            if let level = muteLevel as? Int,
+               (chat?.notify ?? -1) != level{
+                chat?.notify = level
+                chat?.managedObjectContext?.saveContext()
+            }
         }
     }
 
@@ -195,6 +215,25 @@ extension SphinxOnionManager {
         }
         
         return []
+    }
+    
+    func extractMuteIds(jsonString:String)->[String:Any]{
+        if let jsonData = jsonString.data(using: .utf8) {
+            do {
+                // Parse the JSON data into a dictionary
+                if let jsonDict = try JSONSerialization.jsonObject(with: jsonData, options: []) as? [String: Any] {
+                    // Collect all values
+                    let values = jsonDict
+                    return values
+                }
+            } catch {
+                print("Error parsing JSON: \(error)")
+            }
+        } else {
+            print("Error creating Data from jsonString")
+        }
+        
+        return [:]
     }
     
     func handleIncomingTags(rr:RunReturn){

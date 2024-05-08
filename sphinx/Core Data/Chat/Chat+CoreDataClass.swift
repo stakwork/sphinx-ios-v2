@@ -364,9 +364,9 @@ public class Chat: NSManagedObject {
         
         unseenMessagesCount = 0
         unseenMentionsCount = 0
-
-        if shouldSync && receivedUnseenMessages.count > 0 {
-            API.sharedInstance.setChatMessagesAsSeen(chatId: self.id, callback: { _ in })
+        
+        if let highestIndex = self.lastMessage?.id{
+            SphinxOnionManager.sharedInstance.setReadLevel(index: UInt64(highestIndex), chat: self, recipContact: self.getContact())
         }
     }
     

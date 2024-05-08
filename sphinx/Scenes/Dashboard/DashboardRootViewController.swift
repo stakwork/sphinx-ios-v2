@@ -328,15 +328,12 @@ extension DashboardRootViewController {
         }
         
         setupAddTribeButton()
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: {
-//            if let chat = Chat.getChatWith(id: 1772889726),
-//               let contact = chat.getContact(){
-//                SphinxOnionManager.sharedInstance.setReadLevel(index: 378, chat: chat, recipContact: contact)
-//            }
-            SphinxOnionManager.sharedInstance.getReads()
-            ContactsService.sharedInstance.forceUpdate()
-        })
+    }
+    
+    func refreshUnreadStatus(){
+        SphinxOnionManager.sharedInstance.getReads()
+        SphinxOnionManager.sharedInstance.getMuteLevels()
+        self.loadContactsAndSyncMessages()
     }
     
     func connectToV2Server(){
@@ -345,7 +342,7 @@ extension DashboardRootViewController {
             return
         }
         NotificationCenter.default.addObserver(self, selector: #selector(handleNewKeyExchangeReceived), name: .newContactKeyExchangeResponseWasReceived, object: nil)
-        SphinxOnionManager.sharedInstance.connectToV2Server(contactRestoreCallback: contactRestoreCallback(percentage:), messageRestoreCallback: messageRestoreCallback(percentage:), hideRestoreViewCallback: hideRestoreViewCallback)
+        SphinxOnionManager.sharedInstance.connectToV2Server(contactRestoreCallback: contactRestoreCallback(percentage:), messageRestoreCallback: messageRestoreCallback(percentage:), hideRestoreViewCallback: hideRestoreViewCallback,didConnectAckCallback: refreshUnreadStatus)
     }
     
     @objc func retryConnectV2Server(){

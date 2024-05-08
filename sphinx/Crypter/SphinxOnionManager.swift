@@ -162,7 +162,7 @@ class SphinxOnionManager : NSObject {
         }
     }
 
-    func connectToV2Server(contactRestoreCallback: @escaping RestoreProgressCallback, messageRestoreCallback: @escaping RestoreProgressCallback,hideRestoreViewCallback: @escaping ()->()){
+    func connectToV2Server(contactRestoreCallback: @escaping RestoreProgressCallback, messageRestoreCallback: @escaping RestoreProgressCallback,hideRestoreViewCallback: @escaping ()->(),didConnectAckCallback: (()->())?=nil){
         let som = self
         guard let seed = som.getAccountSeed(),
               let myPubkey = som.getAccountOnlyKeysendPubkey(seed: seed),
@@ -196,6 +196,10 @@ class SphinxOnionManager : NSObject {
                         hideRestoreCallback()
                     }
                     som.syncMessagesSinceLastKnownIndexHeight()
+                }
+                
+                if let didConnectAckCallback = didConnectAckCallback{
+                    didConnectAckCallback()
                 }
             }
         })
