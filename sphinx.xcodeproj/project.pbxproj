@@ -322,7 +322,6 @@
 		47669F4623D1FBA500C17A77 /* GroupMembersDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47669F4523D1FBA500C17A77 /* GroupMembersDataSource.swift */; };
 		476A10B823A7E9E500817892 /* ContactTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 476A10B623A7E9E500817892 /* ContactTableViewCell.swift */; };
 		476A10B923A7E9E500817892 /* ContactTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 476A10B723A7E9E500817892 /* ContactTableViewCell.xib */; };
-		476A10BB23A91FCE00817892 /* API+ChatsExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 476A10BA23A91FCE00817892 /* API+ChatsExtension.swift */; };
 		476A10BE23AA8C8E00817892 /* SubscriptionDetailsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 476A10BD23AA8C8E00817892 /* SubscriptionDetailsViewController.swift */; };
 		476AAAA22A24F9F80092AC87 /* NewChatViewController+TribeExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 476AAAA12A24F9F80092AC87 /* NewChatViewController+TribeExtension.swift */; };
 		476EB46823C4F1AE009745E2 /* GroupContactCollectionViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 476EB46623C4F1AE009745E2 /* GroupContactCollectionViewCell.swift */; };
@@ -1438,7 +1437,6 @@
 		47669F4523D1FBA500C17A77 /* GroupMembersDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupMembersDataSource.swift; sourceTree = "<group>"; };
 		476A10B623A7E9E500817892 /* ContactTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactTableViewCell.swift; sourceTree = "<group>"; };
 		476A10B723A7E9E500817892 /* ContactTableViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ContactTableViewCell.xib; sourceTree = "<group>"; };
-		476A10BA23A91FCE00817892 /* API+ChatsExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+ChatsExtension.swift"; sourceTree = "<group>"; };
 		476A10BC23A9207700817892 /* sphinx 6.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 6.xcdatamodel"; sourceTree = "<group>"; };
 		476A10BD23AA8C8E00817892 /* SubscriptionDetailsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionDetailsViewController.swift; sourceTree = "<group>"; };
 		476AAAA12A24F9F80092AC87 /* NewChatViewController+TribeExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NewChatViewController+TribeExtension.swift"; sourceTree = "<group>"; };
@@ -3126,7 +3124,6 @@
 				F30884A82699181200CADDEB /* API+KarmaPurchaseUtils.swift */,
 				F360123226E96B31009B8DC0 /* API+FeedSearchUtils.swift */,
 				47AAFC81238EFCE600E30BDA /* API+AttachmentsExtension.swift */,
-				476A10BA23A91FCE00817892 /* API+ChatsExtension.swift */,
 				47669F3C23CF622000C17A77 /* API+GroupsExtension.swift */,
 				47AAFC79238706EA00E30BDA /* API+InviteExtension.swift */,
 				47CBB4EA23E9D9BE00743CBE /* API+LogsExtension.swift */,
@@ -5620,7 +5617,6 @@
 				475BDD2C232ACA0700C5BBD6 /* String.swift in Sources */,
 				47F7273825791D8600A794B9 /* ContactLinkPreviewView.swift in Sources */,
 				476A10BE23AA8C8E00817892 /* SubscriptionDetailsViewController.swift in Sources */,
-				476A10BB23A91FCE00817892 /* API+ChatsExtension.swift in Sources */,
 				4789E86C29E752BB0032B8F9 /* ContentFeedPaymentDestination+FetchUtils.swift in Sources */,
 				4703CFA125278C40007B685C /* API+RedeemSatsExtension.swift in Sources */,
 				CECFBF012965C85B00BAD935 /* DiscoverTribesTableViewCell.swift in Sources */,

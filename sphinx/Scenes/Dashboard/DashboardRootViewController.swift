@@ -230,6 +230,8 @@ extension DashboardRootViewController {
         DelayPerformedHelper.performAfterDelay(seconds: 0.5, completion: {
             self.connectToV2Server()
         })
+        
+        
     }
     
     override func viewDidDisappear(_ animated: Bool) {
@@ -328,13 +330,19 @@ extension DashboardRootViewController {
         setupAddTribeButton()
     }
     
+    func refreshUnreadStatus(){
+        SphinxOnionManager.sharedInstance.getReads()
+        SphinxOnionManager.sharedInstance.getMuteLevels()
+        self.loadContactsAndSyncMessages()
+    }
+    
     func connectToV2Server(){
         if SphinxOnionManager.sharedInstance.appSessionPin == nil {
             NotificationCenter.default.addObserver(self, selector: #selector(retryConnectV2Server), name: .userSuccessfullyEnteredPin, object: nil)
             return
         }
         NotificationCenter.default.addObserver(self, selector: #selector(handleNewKeyExchangeReceived), name: .newContactKeyExchangeResponseWasReceived, object: nil)
-        SphinxOnionManager.sharedInstance.connectToV2Server(contactRestoreCallback: contactRestoreCallback(percentage:), messageRestoreCallback: messageRestoreCallback(percentage:), hideRestoreViewCallback: hideRestoreViewCallback)
+        SphinxOnionManager.sharedInstance.connectToV2Server(contactRestoreCallback: contactRestoreCallback(percentage:), messageRestoreCallback: messageRestoreCallback(percentage:), hideRestoreViewCallback: hideRestoreViewCallback,didConnectAckCallback: refreshUnreadStatus)
     }
     
     @objc func retryConnectV2Server(){

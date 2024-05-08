@@ -364,9 +364,9 @@ public class Chat: NSManagedObject {
         
         unseenMessagesCount = 0
         unseenMentionsCount = 0
-
-        if shouldSync && receivedUnseenMessages.count > 0 {
-            API.sharedInstance.setChatMessagesAsSeen(chatId: self.id, callback: { _ in })
+        
+        if let highestIndex = self.lastMessage?.id{
+            SphinxOnionManager.sharedInstance.setReadLevel(index: UInt64(highestIndex), chat: self, recipContact: self.getContact())
         }
     }
     
@@ -424,6 +424,27 @@ public class Chat: NSManagedObject {
     ) {
         unseenMessagesCount = messagesCount
         unseenMentionsCount = mentionsCount
+    }
+    
+    static func updateMessageReadStatus(chatId: Int, lastReadId: Int) {
+        let managedContext = CoreDataManager.sharedManager.persistentContainer.viewContext
+        let fetchRequest: NSFetchRequest<TransactionMessage> = TransactionMessage.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "chat.id == %d", chatId)
+        
+        do {
+            let messages = try managedContext.fetch(fetchRequest)
+            for message in messages {
+                if message.id <= lastReadId {
+                    message.seen = true
+                } else {
+                    message.seen = false
+                    message.chat?.seen = false
+                }
+            }
+            try managedContext.save()
+        } catch let error as NSError {
+            print("Error updating messages read status: \(error), \(error.userInfo)")
+        }
     }
     
     static func calculateUnseenMessagesCount(
