@@ -398,7 +398,6 @@
 		4789E26124F03CF4003991BE /* CommonTabsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4789E26024F03CF4003991BE /* CommonTabsView.swift */; };
 		4789E26224F04752003991BE /* SettingsTabsView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 4789E26424F04752003991BE /* SettingsTabsView.xib */; };
 		4789E26C24F05481003991BE /* ProfileViewControllerRelayExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4789E26B24F05481003991BE /* ProfileViewControllerRelayExtension.swift */; };
-		4789E26E24F406F3003991BE /* RelayURLUpdateHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4789E26D24F406F3003991BE /* RelayURLUpdateHelper.swift */; };
 		4789E86C29E752BB0032B8F9 /* ContentFeedPaymentDestination+FetchUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4789E86B29E752BB0032B8F9 /* ContentFeedPaymentDestination+FetchUtils.swift */; };
 		478B05C4297832FC00A1B254 /* PodcastPlayerController+Payments.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478B05C3297832FC00A1B254 /* PodcastPlayerController+Payments.swift */; };
 		478B05C629786E1F00A1B254 /* PodcastPlayerController+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478B05C529786E1F00A1B254 /* PodcastPlayerController+Utils.swift */; };
@@ -471,7 +470,6 @@
 		47AAFC762387063300E30BDA /* API+MessagesExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AAFC752387063300E30BDA /* API+MessagesExtension.swift */; };
 		47AAFC782387063F00E30BDA /* API+SubscriptionsExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AAFC772387063F00E30BDA /* API+SubscriptionsExtension.swift */; };
 		47AAFC7A238706EA00E30BDA /* API+InviteExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AAFC79238706EA00E30BDA /* API+InviteExtension.swift */; };
-		47AAFC7C2387070D00E30BDA /* API+WalletExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AAFC7B2387070D00E30BDA /* API+WalletExtension.swift */; };
 		47AAFC7E238D7C8D00E30BDA /* PaymentRequestDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AAFC7D238D7C8D00E30BDA /* PaymentRequestDecoder.swift */; };
 		47AAFC80238EC5AA00E30BDA /* NewQRScannerProcessingCodeExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AAFC7F238EC5AA00E30BDA /* NewQRScannerProcessingCodeExtension.swift */; };
 		47AAFC82238EFCE600E30BDA /* API+AttachmentsExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AAFC81238EFCE600E30BDA /* API+AttachmentsExtension.swift */; };
@@ -1537,7 +1535,6 @@
 		4789E26624F04757003991BE /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/SettingsTabsView.strings; sourceTree = "<group>"; };
 		4789E26824F04758003991BE /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/SettingsTabsView.strings; sourceTree = "<group>"; };
 		4789E26B24F05481003991BE /* ProfileViewControllerRelayExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileViewControllerRelayExtension.swift; sourceTree = "<group>"; };
-		4789E26D24F406F3003991BE /* RelayURLUpdateHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelayURLUpdateHelper.swift; sourceTree = "<group>"; };
 		4789E86B29E752BB0032B8F9 /* ContentFeedPaymentDestination+FetchUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ContentFeedPaymentDestination+FetchUtils.swift"; sourceTree = "<group>"; };
 		478B05C3297832FC00A1B254 /* PodcastPlayerController+Payments.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PodcastPlayerController+Payments.swift"; sourceTree = "<group>"; };
 		478B05C529786E1F00A1B254 /* PodcastPlayerController+Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PodcastPlayerController+Utils.swift"; sourceTree = "<group>"; };
@@ -1653,7 +1650,6 @@
 		47AAFC752387063300E30BDA /* API+MessagesExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+MessagesExtension.swift"; sourceTree = "<group>"; };
 		47AAFC772387063F00E30BDA /* API+SubscriptionsExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+SubscriptionsExtension.swift"; sourceTree = "<group>"; };
 		47AAFC79238706EA00E30BDA /* API+InviteExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+InviteExtension.swift"; sourceTree = "<group>"; };
-		47AAFC7B2387070D00E30BDA /* API+WalletExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+WalletExtension.swift"; sourceTree = "<group>"; };
 		47AAFC7D238D7C8D00E30BDA /* PaymentRequestDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentRequestDecoder.swift; sourceTree = "<group>"; };
 		47AAFC7F238EC5AA00E30BDA /* NewQRScannerProcessingCodeExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewQRScannerProcessingCodeExtension.swift; sourceTree = "<group>"; };
 		47AAFC81238EFCE600E30BDA /* API+AttachmentsExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+AttachmentsExtension.swift"; sourceTree = "<group>"; };
@@ -3132,7 +3128,6 @@
 				47AAFC772387063F00E30BDA /* API+SubscriptionsExtension.swift */,
 				47AAFC732387062700E30BDA /* API+UsersExtension.swift */,
 				47BF7D4A25A8A59100593489 /* API+VersionsExtension.swift */,
-				47AAFC7B2387070D00E30BDA /* API+WalletExtension.swift */,
 				47D76E6827F10D89000DC021 /* API+AuthenticationExtension.swift */,
 				47F6CA0D287C6524005EBCB6 /* API+CrypterExtension.swift */,
 				474CCFA9291562180037E1D4 /* API+ActionsExtension.swift */,
@@ -3308,7 +3303,6 @@
 				47A06CA524A3AC9A00BE468C /* DeepLinksHandlerHelper.swift */,
 				470708A324B3669200A98DCA /* MetaDataCache.swift */,
 				4797E74924B89ECA00D13270 /* VideoCallHelper.swift */,
-				4789E26D24F406F3003991BE /* RelayURLUpdateHelper.swift */,
 				4705D39C2799B3B0009C0729 /* FeedBoostHelper.swift */,
 				475043C929719E3B00830E9E /* PodcastPlayerController */,
 				472BF0402B62BE89009D5E1B /* ChatTrackingHandler.swift */,
@@ -5357,7 +5351,6 @@
 				CEEBBB4229DC6AEC0093923D /* ItemDescriptionTableViewHeaderCell.swift in Sources */,
 				472092BF2A26378900468796 /* NewChatViewController+MentionsAutocomplete.swift in Sources */,
 				CE94A5102A4B2DF3001EDF7E /* ChatMentionAutocompleteTableViewCell.swift in Sources */,
-				4789E26E24F406F3003991BE /* RelayURLUpdateHelper.swift in Sources */,
 				475BDD5C232AE26E00C5BBD6 /* TransactionMessage+CoreDataClass.swift in Sources */,
 				478BD8B92829B70700C733FD /* TribeMemberPopupView.swift in Sources */,
 				472161D1293A67EA0088B87B /* RecommendationFeedItemsCollectionViewController.swift in Sources */,
@@ -5406,7 +5399,6 @@
 				475CD5AC287E1198003FF171 /* CrypterManager.swift in Sources */,
 				47E6A4F92A2FB2FC00A9509E /* NewMessageTableViewCell+BubbleExtension.swift in Sources */,
 				47E6A4D42A2E6FCD00A9509E /* GroupActionMessageView.swift in Sources */,
-				47AAFC7C2387070D00E30BDA /* API+WalletExtension.swift in Sources */,
 				477C525028C6307100C24117 /* NotificationsLevelViewController.swift in Sources */,
 				47ACBC0E265E9CB200D2FE47 /* PeopleModalsViewController.swift in Sources */,
 				473C3150279869D2007735CD /* RestoreProgressView.swift in Sources */,

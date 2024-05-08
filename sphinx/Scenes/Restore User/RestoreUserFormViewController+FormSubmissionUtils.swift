@@ -83,16 +83,6 @@ extension RestoreUserFormViewController {
         
         let pinCodeVC = PinCodeViewController.instantiate()
         
-        pinCodeVC.doneCompletion = { pin in
-            pinCodeVC.dismiss(animated: true, completion: { [weak self] in
-                guard let self = self else { return }
-                self.connectRestoredUser(
-                    encryptedKeys: encryptedKeys,
-                    pin: pin
-                )
-            })
-        }
-        
         pinCodeVC.modalPresentationStyle = .overFullScreen
         
         present(pinCodeVC, animated: true)
@@ -119,22 +109,6 @@ extension RestoreUserFormViewController {
         }
 
         userData.save(ip: keys[2], token: keys[3], pin: pin)
-
-        userData.getAndSaveTransportKey(forceGet: true) { [weak self] _ in
-            guard let self = self else { return }
-            
-            self.userData.getOrCreateHMACKey(forceGet: true) { [weak self] in
-                API.sharedInstance.getWalletLocalAndRemote(callback: { local, remote in
-                    guard let self = self else { return }
-                    
-                    self.goToWelcomeCompleteScene()
-                }, errorCallback: {
-                    guard let self = self else { return }
-                    
-                    self.errorRestoring(message: "generic.error.message".localized)
-                })
-            }
-        }
     }
     
     

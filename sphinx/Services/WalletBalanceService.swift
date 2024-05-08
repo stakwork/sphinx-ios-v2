@@ -34,17 +34,6 @@ public final class WalletBalanceService {
         return balance
     }
     
-    func getBalanceAll(completion: @escaping (Int, Int) -> ()) -> (Int, Int) {
-        API.sharedInstance.getWalletLocalAndRemote(callback: { local, remote in
-            self.balance = local
-            self.remoteBalance = remote
-            completion(local, remote)
-        }, errorCallback: {
-            completion(self.balance, self.remoteBalance)
-        })
-        return (balance, remoteBalance)
-    }
-    
     func updateBalance(labels: [UILabel]) {
         DispatchQueue.global().async {
             if let storedBalance = self.getBalance(){

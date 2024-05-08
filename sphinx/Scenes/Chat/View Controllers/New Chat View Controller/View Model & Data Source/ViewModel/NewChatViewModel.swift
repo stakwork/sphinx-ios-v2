@@ -81,13 +81,7 @@ class NewChatViewModel {
     
     func getChatBadges(){
         if let chat = chat, let tribeInfo = chat.tribeInfo {
-            API.sharedInstance.getAssetsByID(
-                assetIDs: tribeInfo.badgeIds,
-                callback: { results in
-                    self.availableBadges = results
-                },
-                errorCallback: {}
-            )
+            //@Tom do we plan on doing this in V2?
         }
     }
     
