@@ -70,7 +70,7 @@ extension NewUserSignupFormViewController {
             SphinxOnionManager.sharedInstance.redeemInvite(inviteCode: code, mnemonic: mnemonic)
             setupWatchdogTimer()
             listenForSelfContactRegistration()//get callbacks ready for sign up
-            self.signup_v2_with_test_server()
+            self.presentConnectingLoadingScreenVC()
         }
     }
     

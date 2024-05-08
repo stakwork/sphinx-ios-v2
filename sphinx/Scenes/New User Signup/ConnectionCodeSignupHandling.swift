@@ -156,10 +156,6 @@ extension ConnectionCodeSignupHandling {
         
     }
     
-    func signup_v2_with_test_server(){
-        presentConnectingLoadingScreenVC()
-    }
-    
     func finalizeSignup(){
         let som = SphinxOnionManager.sharedInstance
         if //let _ = som.currentServer,
