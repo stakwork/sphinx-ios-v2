@@ -47,7 +47,6 @@ class SwipableCell: UITableViewCell {
     // Buttons button1 and button3 are required. The horizontal order is: button 2, button3, button1
     @IBOutlet weak var button1: UIButton!
     @IBOutlet weak var button2: UIButton!
-    @IBOutlet weak var button3: UIButton!
     
     var isSwipeEnabled = true
     // State - is user moving a row, or scrolling a table
@@ -79,7 +78,6 @@ class SwipableCell: UITableViewCell {
         // Send buttons to back
         if button1 != nil { button1.superview!.sendSubviewToBack(button1)}
         if button2 != nil { button2.superview!.sendSubviewToBack(button2)}
-        if button3 != nil { button3.superview!.sendSubviewToBack(button3)}
     }
     
     // Showing or hiding Action buttons
@@ -182,8 +180,8 @@ class SwipableCell: UITableViewCell {
                         self.resetConstraintContstantsToZero(true, notifyDelegateDidClose:true);
                     }
                 } else {
+                    let buttonOnePlusHalfOfButton2 = self.button1.frame.width
                     //Cell was closing
-                    let buttonOnePlusHalfOfButton2 = self.button1.frame.width + (self.button3.frame.width / 2)
                     if self.rightConstraint.constant >= buttonOnePlusHalfOfButton2 {
                         //Re-open all the way
                         self.setConstraintsToShowAllButtons(true, notifyDelegateDidOpen:true);
@@ -281,7 +279,6 @@ class SwipableCell: UITableViewCell {
     func bringButtonsToFront() {
         if button1 != nil { button1.superview!.bringSubviewToFront(button1)}
         if button2 != nil { button2.superview!.bringSubviewToFront(button2)}
-        if button3 != nil { button3.superview!.bringSubviewToFront(button3)}
     }
     
     func buttonTotalWidth() -> CGFloat {
@@ -353,12 +350,10 @@ class SwipableCell: UITableViewCell {
     
     func hideButtons() {
         if button1 != nil { self.button1.isHidden = true }
-        if button3 != nil { self.button3.isHidden = true }
     }
     
     func showButtons() {
         self.button1.isHidden = false
-        self.button3.isHidden = false
     }
     
     // Returns prefered height of the inner content when expanded

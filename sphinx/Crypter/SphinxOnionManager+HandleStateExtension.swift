@@ -341,6 +341,48 @@ extension SphinxOnionManager {
         return state
     }
     
+    func deleteContactFromState(pubkey: String) {
+        // This is the key where contact information is stored. Ensure it matches how keys are stored in your UserDefaults.
+        let contactDictKey = "c/" + pubkey
+
+        // Load the current onion state from UserDefaults
+        var state = loadOnionState()
+
+        // Check if the contact's data exists
+        if state[contactDictKey] != nil {
+            print("Removing contact with pubkey:", pubkey)
+            
+            // Remove the contact data
+            state.removeValue(forKey: contactDictKey)
+            
+            // Save the updated state back to UserDefaults
+            saveUpdatedOnionState(state: state)
+        } else {
+            print("No contact found with the specified pubkey:", pubkey)
+        }
+    }
+
+    private func saveUpdatedOnionState(state: [String: [UInt8]]) {
+        for key in state.keys {
+            if let value = state[key] {
+                // Save each key-value pair to UserDefaults
+                UserDefaults.standard.set(value, forKey: key)
+            } else {
+                // If the value is nil, remove the key from UserDefaults
+                UserDefaults.standard.removeObject(forKey: key)
+            }
+        }
+        UserDefaults.standard.synchronize() // Ensure UserDefaults is synchronized
+        
+        // Update the local cache of keys
+        updateMutationKeys(with: state.keys.sorted())
+    }
+
+    private func updateMutationKeys(with keys: [String]) {
+        // Store the new keys in UserDefaults to keep track of what's stored
+        mutationKeys = keys
+    }
+    
 
     func storeOnionState(inc: [UInt8]) -> [NSNumber] {
         let muts = try? unpack(Data(inc))
@@ -377,6 +419,7 @@ extension SphinxOnionManager {
             UserDefaults.standard.synchronize()
         }
     }
+    
 
 }
 

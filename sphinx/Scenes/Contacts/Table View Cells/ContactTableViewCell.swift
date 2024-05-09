@@ -10,7 +10,6 @@ import UIKit
 
 protocol ContactCellDelegate: class {
     func shouldDeleteContact(contact: UserContact?, cell: UITableViewCell)
-    func shouldBlockContact(contact: UserContact?, cell: UITableViewCell)
     func shouldGoToContact(contact: UserContact?, cell: UITableViewCell)
 }
 
@@ -111,16 +110,6 @@ class ContactTableViewCell: SwipableCell {
             message: "address-boox.contact-delete.alert-message".localized,
             confirm: {
                 self.delegate?.shouldDeleteContact(contact: self.contact, cell: self)
-            }
-        )
-    }
-    
-    @IBAction func blockButtonTouched() {
-        AlertHelper.showTwoOptionsAlert(
-            title: "address-boox.contact-block.alert-title".localized,
-            message: "address-boox.contact-block.alert-message".localized,
-            confirm: {
-                self.delegate?.shouldBlockContact(contact: self.contact, cell: self)
             }
         )
     }
