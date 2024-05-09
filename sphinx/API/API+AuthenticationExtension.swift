@@ -219,4 +219,35 @@ extension API {
         }
     }
     
+    public func getHasAdmin(
+            completionHandler: @escaping GetHasAdminCompletionHandler
+        ){
+            guard let request = getURLRequest(
+                    route: "/has_admin",
+                    params: nil,
+                    method: "GET"
+            ) else {
+                completionHandler(.failure(.failedToCreateRequestURL))
+                return
+            }
+            
+           AF.request(request).responseJSON { response in
+                switch response.result {
+                case .success(let data):
+                    if let json = data as? NSDictionary {
+                        if let success = json["response"] as? Bool, success {
+                            completionHandler(.success(true))
+                            print("getHasAdmin success:\(success) & Status Code:\(String(describing: response.response?.statusCode))")
+                        } else {
+                            completionHandler(.success(false))
+                            print("getHasAdmin Status Code:\(String(describing: response.response?.statusCode))")
+                        }
+                    }
+                case .failure(let error):
+                    completionHandler(.failure(.networkError(error)))
+                    print("getHasAdmin Error: \(error) & Status Code:\(String(describing: response.response?.statusCode))")
+                }
+            }
+        }
+    
 }
