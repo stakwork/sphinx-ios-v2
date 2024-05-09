@@ -333,14 +333,19 @@ extension SphinxOnionManager{
         return (isTribe,chat)
     }
     
-    func isExitedTribeMessage(senderPubkey:String) -> Bool{
-        var (isTribe, chat) = isMessageTribeMessage(senderPubkey: senderPubkey)
-        Chat.getTribeChatWithOwnerPubkey(ownerPubkey: senderPubkey)
-        if isTribe == false{
+    func isExitedTribeMessage(senderPubkey: String) -> Bool {
+        guard let chat = Chat.getChatBySenderPubkey(senderPubkey: senderPubkey),
+              chat.isTribeChat() else {
             return false
         }
-        var lastActionIsExit = chat?.getAllMessages(limit: 1).filter({$0.type == TransactionMessage.TransactionMessageType.groupLeave.rawValue || $0.type == TransactionMessage.TransactionMessageType.groupKick.rawValue || $0.type == TransactionMessage.TransactionMessageType.groupDelete.rawValue}).count ?? 0 > 0
-        return isTribe
+
+        // Fetch latest leave, kick, or delete message if any
+        if let lastExitMessage = chat.getLastExitMessage() {
+            // Check if there are join messages after the last exit message
+            return !chat.hasJoinAfter(date: lastExitMessage.createdAt)
+        }
+
+        return false
     }
     
     //MARK: processes updates from general purpose messages like plaintext and attachments
@@ -396,7 +401,8 @@ extension SphinxOnionManager{
                    let index = message.index,
                    let timestamp = message.timestamp,
                    let date = timestampToDate(timestamp: timestamp),
-                   let csr = ContactServerResponse(JSONString: sender){
+                   let csr = ContactServerResponse(JSONString: sender),
+                   isExitedTribeMessage(senderPubkey: csr.pubkey ?? "") == false{
                     if type == TransactionMessage.TransactionMessageType.message.rawValue
                         || type == TransactionMessage.TransactionMessageType.call.rawValue
                         || type == TransactionMessage.TransactionMessageType.attachment.rawValue{

@@ -519,6 +519,56 @@ public class Chat: NSManagedObject {
         }
     }
     
+    func isTribeChat() -> Bool {
+        return type == ChatType.publicGroup.rawValue || type == ChatType.privateGroup.rawValue
+    }
+
+    func getLastExitMessage() -> TransactionMessage? {
+        let exitTypes = [TransactionMessage.TransactionMessageType.groupLeave.rawValue,
+                         TransactionMessage.TransactionMessageType.groupKick.rawValue,
+                         TransactionMessage.TransactionMessageType.groupDelete.rawValue]
+        
+        let fetchRequest: NSFetchRequest<TransactionMessage> = TransactionMessage.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "chat == %@ AND type IN %@", self, exitTypes)
+        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "createdAt", ascending: false)]
+        fetchRequest.fetchLimit = 1
+        
+        do {
+            return try CoreDataManager.sharedManager.persistentContainer.viewContext.fetch(fetchRequest).first
+        } catch {
+            print("Failed to fetch exit messages: \(error)")
+            return nil
+        }
+    }
+    
+    public static func getChatBySenderPubkey(senderPubkey: String) -> Chat? {
+        let fetchRequest: NSFetchRequest<Chat> = Chat.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "ownerPubkey == %@", senderPubkey)
+        fetchRequest.fetchLimit = 1
+        
+        do {
+            return try CoreDataManager.sharedManager.persistentContainer.viewContext.fetch(fetchRequest).first
+        } catch {
+            print("Error fetching chat by sender pubkey: \(error)")
+            return nil
+        }
+    }
+
+    func hasJoinAfter(date: Date) -> Bool {
+        let joinType = TransactionMessage.TransactionMessageType.groupJoin.rawValue
+        
+        let fetchRequest: NSFetchRequest<TransactionMessage> = TransactionMessage.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "chat == %@ AND type == %d AND createdAt > %@", self, joinType, date as NSDate)
+        
+        do {
+            let results = try CoreDataManager.sharedManager.persistentContainer.viewContext.fetch(fetchRequest)
+            return !results.isEmpty
+        } catch {
+            print("Failed to fetch join messages after date: \(error)")
+            return false
+        }
+    }
+    
     public func groupChatUserAlias(id: Int) -> String? {
         // Get the managed object context
         let context = CoreDataManager.sharedManager.persistentContainer.viewContext
