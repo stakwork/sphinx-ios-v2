@@ -735,26 +735,28 @@ extension DashboardRootViewController {
     }
     
     private func handleInvite(for contact: UserContact?) -> Bool {
-        if let invite = contact?.invite, (contact?.isPending() ?? false) {
-            
-            if invite.isPendingPayment() && !invite.isPaymentProcessed() {
-                
-                payInvite(invite: invite)
-                
-            } else {
-                
-                let (ready, title, message) = invite.getInviteStatusForAlert()
-                
-                if ready {
-                    goToInviteCodeString(inviteCode: contact?.invite?.inviteString ?? "")
-                } else {
-                    AlertHelper.showAlert(title: title, message: message)
-                }
-                
-            }
-            return true
-        }
         return false
+        //@Tom I deleted most related functions & earmarked this for deletion but wondering if I might have missed something here that needs to be added for v2. Let me know.
+//        if let invite = contact?.invite, (contact?.isPending() ?? false) {
+//            
+//            if invite.isPendingPayment() && !invite.isPaymentProcessed() {
+//                
+//                payInvite(invite: invite)
+//                
+//            } else {
+//                
+//                let (ready, title, message) = invite.getInviteStatusForAlert()
+//                
+//                if ready {
+//                    goToInviteCodeString(inviteCode: contact?.invite?.inviteString ?? "")
+//                } else {
+//                    AlertHelper.showAlert(title: title, message: message)
+//                }
+//                
+//            }
+//            return true
+//        }
+//        return false
     }
     
     private func goToInviteCodeString(
@@ -767,17 +769,7 @@ extension DashboardRootViewController {
         confirmAddfriendVC.qrCodeString = inviteCode
         navigationController?.present(confirmAddfriendVC, animated: true, completion: nil)
     }
-    
-    private func payInvite(invite: UserInvite) {
-        AlertHelper.showTwoOptionsAlert(title: "pay.invitation".localized, message: "", confirm: {
-            self.chatsListViewModel.payInvite(invite: invite, completion: { contact in
-                if let _ = contact {
-                    return
-                }
-                AlertHelper.showAlert(title: "generic.error.title".localized, message: "payment.failed".localized)
-            })
-        })
-    }
+
 }
 
 

@@ -469,7 +469,6 @@
 		47AAFC742387062700E30BDA /* API+UsersExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AAFC732387062700E30BDA /* API+UsersExtension.swift */; };
 		47AAFC762387063300E30BDA /* API+MessagesExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AAFC752387063300E30BDA /* API+MessagesExtension.swift */; };
 		47AAFC782387063F00E30BDA /* API+SubscriptionsExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AAFC772387063F00E30BDA /* API+SubscriptionsExtension.swift */; };
-		47AAFC7A238706EA00E30BDA /* API+InviteExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AAFC79238706EA00E30BDA /* API+InviteExtension.swift */; };
 		47AAFC7E238D7C8D00E30BDA /* PaymentRequestDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AAFC7D238D7C8D00E30BDA /* PaymentRequestDecoder.swift */; };
 		47AAFC80238EC5AA00E30BDA /* NewQRScannerProcessingCodeExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AAFC7F238EC5AA00E30BDA /* NewQRScannerProcessingCodeExtension.swift */; };
 		47AAFC82238EFCE600E30BDA /* API+AttachmentsExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AAFC81238EFCE600E30BDA /* API+AttachmentsExtension.swift */; };
@@ -1649,7 +1648,6 @@
 		47AAFC732387062700E30BDA /* API+UsersExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+UsersExtension.swift"; sourceTree = "<group>"; };
 		47AAFC752387063300E30BDA /* API+MessagesExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+MessagesExtension.swift"; sourceTree = "<group>"; };
 		47AAFC772387063F00E30BDA /* API+SubscriptionsExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+SubscriptionsExtension.swift"; sourceTree = "<group>"; };
-		47AAFC79238706EA00E30BDA /* API+InviteExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+InviteExtension.swift"; sourceTree = "<group>"; };
 		47AAFC7D238D7C8D00E30BDA /* PaymentRequestDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentRequestDecoder.swift; sourceTree = "<group>"; };
 		47AAFC7F238EC5AA00E30BDA /* NewQRScannerProcessingCodeExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewQRScannerProcessingCodeExtension.swift; sourceTree = "<group>"; };
 		47AAFC81238EFCE600E30BDA /* API+AttachmentsExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+AttachmentsExtension.swift"; sourceTree = "<group>"; };
@@ -3119,7 +3117,6 @@
 				F360123226E96B31009B8DC0 /* API+FeedSearchUtils.swift */,
 				47AAFC81238EFCE600E30BDA /* API+AttachmentsExtension.swift */,
 				47669F3C23CF622000C17A77 /* API+GroupsExtension.swift */,
-				47AAFC79238706EA00E30BDA /* API+InviteExtension.swift */,
 				47CBB4EA23E9D9BE00743CBE /* API+LogsExtension.swift */,
 				47AAFC752387063300E30BDA /* API+MessagesExtension.swift */,
 				47CD950F265EC70E009B06A4 /* API+PeopleExtension.swift */,
@@ -5617,7 +5614,6 @@
 				47308E0B24FEE6E600FFAC6F /* SocketEngineSpec.swift in Sources */,
 				CE030A6B2B97C0860067F9F1 /* SphinxOnionManager+InvoicesExtension.swift in Sources */,
 				47352E4A2440F54300E5CC7F /* MessageOptionsViewController.swift in Sources */,
-				47AAFC7A238706EA00E30BDA /* API+InviteExtension.swift in Sources */,
 				475BDD7F232C01FE00C5BBD6 /* QRCodeScannerView.swift in Sources */,
 				4701461D2A3D03E800A00DF8 /* NewChatViewModel+SendMessageExtension.swift in Sources */,
 				F3DC6B09273CABED00458E09 /* ContentFeed+CoreDataClass.swift in Sources */,

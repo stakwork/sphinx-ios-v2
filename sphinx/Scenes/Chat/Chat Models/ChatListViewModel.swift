@@ -341,36 +341,4 @@ final class ChatListViewModel {
         return false
     }
     
-    func payInvite(
-        invite: UserInvite,
-        completion: @escaping (UserContact?) -> ()
-    ) {
-        
-        guard let inviteString = invite.inviteString else {
-            completion(nil)
-            return
-        }
-        
-        let bubbleHelper = NewMessageBubbleHelper()
-        bubbleHelper.showLoadingWheel()
-        
-        API.sharedInstance.payInvite(
-            inviteString: inviteString,
-            callback: { inviteJson in
-                
-            bubbleHelper.hideLoadingWheel()
-            
-            if let invite = UserInvite.insertInvite(invite: inviteJson) {
-                if let contact = invite.contact {
-                    invite.setPaymentProcessed()
-                    completion(contact)
-                    return
-                }
-            }
-            completion(nil)
-        }, errorCallback: {
-            bubbleHelper.hideLoadingWheel()
-            completion(nil)
-        })
-    }
 }
