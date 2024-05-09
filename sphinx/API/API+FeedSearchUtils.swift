@@ -13,7 +13,7 @@ import SwiftyJSON
 
 
 extension API {
-    
+    //@Tom I won't touch this extension because I think it needs to be reimplemented
     public func searchForFeeds(
         with type: FeedType,
         matching queryString: String,
@@ -67,40 +67,41 @@ extension API {
         }
     }
     
-    public func getFeedRecommendations(
-        callback: @escaping RecommendationsCallback,
-        errorCallback: @escaping EmptyCallback
-    ) {
-        if(UserDefaults.Keys.shouldTrackActions.get(defaultValue: false) == false){
-            callback([])//skip the request and return nothing
-        }
-        guard let request = getURLRequest(route: "/feeds", method: "GET") else {
-            errorCallback()
-            return
-        }
-        
-        sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool, let recommendations = json["response"] as? NSArray, success {
-                        var recommendationsResults: [RecommendationResult] = []
-                        
-                        for r in recommendations {
-                            
-                            recommendationsResults.append(
-                                RecommendationResult.convertFrom(recommendationResult: JSON(r))
-                            )
-                        }
-                        
-                        callback(recommendationsResults)
-                    } else {
-                        errorCallback()
-                    }
-                }
-            case .failure(_):
-                errorCallback()
-            }
-        }
-    }
+    //@Tom need to decide whether we want this or want to reimplement on V2
+//    public func getFeedRecommendations(
+//        callback: @escaping RecommendationsCallback,
+//        errorCallback: @escaping EmptyCallback
+//    ) {
+//        if(UserDefaults.Keys.shouldTrackActions.get(defaultValue: false) == false){
+//            callback([])//skip the request and return nothing
+//        }
+//        guard let request = getURLRequest(route: "/feeds", method: "GET") else {
+//            errorCallback()
+//            return
+//        }
+//        
+//        sphinxRequest(request) { response in
+//            switch response.result {
+//            case .success(let data):
+//                if let json = data as? NSDictionary {
+//                    if let success = json["success"] as? Bool, let recommendations = json["response"] as? NSArray, success {
+//                        var recommendationsResults: [RecommendationResult] = []
+//                        
+//                        for r in recommendations {
+//                            
+//                            recommendationsResults.append(
+//                                RecommendationResult.convertFrom(recommendationResult: JSON(r))
+//                            )
+//                        }
+//                        
+//                        callback(recommendationsResults)
+//                    } else {
+//                        errorCallback()
+//                    }
+//                }
+//            case .failure(_):
+//                errorCallback()
+//            }
+//        }
+//    }
 }
