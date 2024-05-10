@@ -10,33 +10,7 @@ import Foundation
 import SwiftyJSON
 import Alamofire
 
-extension API {
-    func createGroup(
-        params: [String: AnyObject],
-        callback: @escaping CreateGroupCallback,
-        errorCallback: @escaping EmptyCallback
-    ){
-        guard let request = getURLRequest(route: "/group", params: params as NSDictionary?, method: "POST") else {
-            errorCallback()
-            return
-        }
-        
-        sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool, let response = json["response"] as? NSDictionary, success {
-                        callback(JSON(response))
-                        return
-                    }
-                }
-                errorCallback()
-            case .failure(_):
-                errorCallback()
-            }
-        }
-    }
-    
+extension API {    
     func editGroup(
         id: Int,
         params: [String: AnyObject],

@@ -50,12 +50,27 @@ class InviteActionsHelper {
         parameters["private"] = false as AnyObject
         parameters["tags"] = ["Podcast"] as AnyObject
         
-        API.sharedInstance.createGroup(params: parameters, callback: { chatJson in
-            let _ = Chat.insertChat(chat: chatJson)
-            completion()
-        }, errorCallback: {
-            completion()
-        })
+        guard let name = parameters["name"] as? String,
+            let description = parameters["description"] as? String else{
+            //Send Alert?
+            //self.showErrorAlert()
+            return
+        }
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(handleNewTribeNotification(_:)), name: .newTribeCreationComplete, object: nil)
+        SphinxOnionManager.sharedInstance.createTribe(params:parameters)
+    }
+    
+    @objc func handleNewTribeNotification(_ notification: Notification) {
+        NotificationCenter.default.removeObserver(self, name: .newTribeCreationComplete, object: nil)
+        if let tribeJSONString = notification.userInfo?["tribeJSON"] as? String,
+           let tribeJSON = try? tribeJSONString.toDictionary(),
+           let chatJSON = SphinxOnionManager.sharedInstance.mapChatJSON(rawTribeJSON: tribeJSON),
+           let chat = Chat.insertChat(chat: chatJSON)
+        {
+            chat.managedObjectContext?.saveContext()
+            return
+        }
     }
     
     func getTribeInfo(uuid: String, host: String, completion: @escaping () -> ()) {

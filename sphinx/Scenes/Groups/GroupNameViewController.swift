@@ -86,15 +86,27 @@ class GroupNameViewController: UIViewController {
             return
         }
         
-        API.sharedInstance.createGroup(params: params, callback: { chatJson in
-            if let chat = Chat.insertChat(chat: chatJson) {
-                self.finishCreatingGroup(chat: chat)
-            } else {
-                self.errorCreatingGroup()
-            }
-        }, errorCallback: {
-            self.errorCreatingGroup()
-        })
+        guard let name = params["name"] as? String,
+            let description = params["description"] as? String else{
+            //Send Alert?
+            return
+        }
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(handleNewTribeNotification(_:)), name: .newTribeCreationComplete, object: nil)
+        SphinxOnionManager.sharedInstance.createTribe(params:params)
+    }
+    
+    @objc func handleNewTribeNotification(_ notification: Notification) {
+        NotificationCenter.default.removeObserver(self, name: .newTribeCreationComplete, object: nil)
+        if let tribeJSONString = notification.userInfo?["tribeJSON"] as? String,
+           let tribeJSON = try? tribeJSONString.toDictionary(),
+           let chatJSON = SphinxOnionManager.sharedInstance.mapChatJSON(rawTribeJSON: tribeJSON),
+           let chat = Chat.insertChat(chat: chatJSON)
+        {
+            chat.managedObjectContext?.saveContext()
+            self.shouldDismissView()
+            return
+        }
     }
     
     func errorCreatingGroup() {
