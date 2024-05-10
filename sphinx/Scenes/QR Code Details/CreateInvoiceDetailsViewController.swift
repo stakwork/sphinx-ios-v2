@@ -75,21 +75,13 @@ class CreateInvoiceDetailsViewController: CommonPaymentViewController {
     }
     
     private func createPaymentRequest() {
-        var parameters = [String : AnyObject]()
-        
-        if let amount = invoiceDetails.amount {
-            parameters["amount"] = amount as AnyObject?
+        guard let amount = invoiceDetails.amount else{
+            return
         }
-        
-        API.sharedInstance.createInvoice(parameters: parameters, callback: { message, invoice in
-            if let message = message {
-                self.createLocalMessages(message: message)
-            } else if let invoice = invoice {
-                self.presentInvoiceDetailsVC(invoiceString: invoice)
-            }
-        }, errorCallback: {
-            self.createLocalMessages(message: nil)
-        })
+        guard let bolt11 = SphinxOnionManager.sharedInstance.createInvoice(amountMsat: amount) else{
+            return
+        }
+        self.presentInvoiceDetailsVC(invoiceString: bolt11)
     }
     
     private func presentInvoiceDetailsVC(invoiceString: String) {

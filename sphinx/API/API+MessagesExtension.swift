@@ -125,37 +125,6 @@ extension API {
         }
     }
     
-    public func createInvoice(
-        parameters: [String : AnyObject],
-        callback: @escaping CreateInvoiceCallback,
-        errorCallback: @escaping EmptyCallback
-    ) {
-        
-        guard let request = getURLRequest(route: "/invoices", params: parameters as NSDictionary?, method: "POST") else {
-            errorCallback()
-            return
-        }
-        
-        sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool, let response = json["response"] as? NSDictionary, success {
-                        if let invoiceString = response["invoice"] as? String {
-                            callback(nil, invoiceString)
-                        } else {
-                            callback(JSON(response), nil)
-                        }
-                    } else {
-                        errorCallback()
-                    }
-                }
-            case .failure(_):
-                errorCallback()
-            }
-        }
-    }
-    
     public func payInvoice(
         parameters: [String : AnyObject],
         callback: @escaping PayInvoiceCallback,
