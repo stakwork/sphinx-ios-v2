@@ -94,16 +94,15 @@ class InviteActionsHelper {
         let grouspManager = GroupsManager.sharedInstance
         let params = grouspManager.getParamsFrom(tribe: tribeInfo)
         
-        API.sharedInstance.joinTribe(params: params, callback: { chatJson in
-            if let chat = Chat.insertChat(chat: chatJson) {
-                chat.pricePerMessage = NSDecimalNumber(floatLiteral: Double(tribeInfo.pricePerMessage ?? 0))
-                
-                completion()
-            } else {
-                completion()
-            }
-        }, errorCallback: {
-            completion()
-        })
+        if let pubkey = tribeInfo.ownerPubkey,
+           let chatJSON = SphinxOnionManager.sharedInstance.getChatJSON(tribeInfo:tribeInfo),
+           let routeHint = tribeInfo.ownerRouteHint,
+           let chat = Chat.insertChat(chat: chatJSON){
+            let isPrivate = tribeInfo.privateTribe
+            SphinxOnionManager.sharedInstance.joinTribe(tribePubkey: pubkey, routeHint: routeHint, alias: UserContact.getOwner()?.nickname,isPrivate: isPrivate)
+            chat.status = (isPrivate) ? Chat.ChatStatus.pending.rawValue : Chat.ChatStatus.approved.rawValue
+            chat.type = Chat.ChatType.publicGroup.rawValue
+            chat.managedObjectContext?.saveContext()
+        }
     }
 }

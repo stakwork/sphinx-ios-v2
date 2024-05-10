@@ -63,21 +63,6 @@ extension GroupsManager {
         }
     }
     
-    func getChatJSON(tribeInfo:TribeInfo)->JSON?{
-        var chatDict : [String:Any] = [
-            "id":CrypterManager.sharedInstance.generateCryptographicallySecureRandomInt(upperBound: Int(1e5)),
-            "owner_pubkey": tribeInfo.ownerPubkey,
-            "name" : tribeInfo.name ?? "Unknown Name",
-            "private": tribeInfo.privateTribe ?? false,
-            "photo_url": tribeInfo.img ?? "",
-            "unlisted": tribeInfo.unlisted,
-            "price_per_message": tribeInfo.pricePerMessage ?? 0,
-            "escrow_amount": max(tribeInfo.amountToStake ?? 3, 3)
-        ]
-        let chatJSON = JSON(chatDict)
-        return chatJSON
-    }
-    
     func getV2Pubkey(qrString:String)->String?{
         if let url = URL(string: "\(API.kHUBServerUrl)?\(qrString)"),
             let components = URLComponents(url: url, resolvingAgainstBaseURL: true),
@@ -123,7 +108,7 @@ extension GroupsManager {
     
     func finalizeTribeJoin(tribeInfo:TribeInfo,qrString:String){
         if let pubkey = getV2Pubkey(qrString: qrString),
-           let chatJSON = getChatJSON(tribeInfo:tribeInfo),
+           let chatJSON = SphinxOnionManager.sharedInstance.getChatJSON(tribeInfo:tribeInfo),
            let routeHint = tribeInfo.ownerRouteHint,
            let chat = Chat.insertChat(chat: chatJSON){
             let isPrivate = tribeInfo.privateTribe

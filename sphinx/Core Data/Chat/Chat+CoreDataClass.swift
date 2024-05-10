@@ -774,7 +774,8 @@ public class Chat: NSManagedObject {
     func syncTribeWithServer() {
         DispatchQueue.global().async {
             let params: [String: AnyObject] = ["name" : self.name as AnyObject, "img": self.photoUrl as AnyObject]
-            API.sharedInstance.editGroup(id: self.id, params: params, callback: { _ in }, errorCallback: {})
+            //TODO: @Jim implement when edit group binding available
+//            API.sharedInstance.editGroup(id: self.id, params: params, callback: { _ in }, errorCallback: {})
         }
     }
     

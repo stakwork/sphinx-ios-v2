@@ -44,6 +44,21 @@ extension SphinxOnionManager{//tribes related1
         return chatJSON
     }
     
+    func getChatJSON(tribeInfo:GroupsManager.TribeInfo)->JSON?{
+        var chatDict : [String:Any] = [
+            "id":CrypterManager.sharedInstance.generateCryptographicallySecureRandomInt(upperBound: Int(1e5)),
+            "owner_pubkey": tribeInfo.ownerPubkey,
+            "name" : tribeInfo.name ?? "Unknown Name",
+            "private": tribeInfo.privateTribe ?? false,
+            "photo_url": tribeInfo.img ?? "",
+            "unlisted": tribeInfo.unlisted,
+            "price_per_message": tribeInfo.pricePerMessage ?? 0,
+            "escrow_amount": max(tribeInfo.amountToStake ?? 3, 3)
+        ]
+        let chatJSON = JSON(chatDict)
+        return chatJSON
+    }
+    
     func createTribe(params:[String:Any]){
         guard let seed = getAccountSeed(),
         let tribeServerPubkey = getTribePubkey() else{
