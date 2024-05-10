@@ -125,35 +125,6 @@ extension API {
         }
     }
     
-    public func payInvoice(
-        parameters: [String : AnyObject],
-        callback: @escaping PayInvoiceCallback,
-        errorCallback: @escaping ErrorCallback
-    ) {
-        
-        guard let request = getURLRequest(route: "/invoices", params: parameters as NSDictionary?, method: "PUT") else {
-            errorCallback("Unknown reason")
-            return
-        }
-        
-        sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool, let response = json["response"] as? NSDictionary, success {
-                        callback(JSON(response))
-                        return
-                    }
-                }
-                errorCallback(
-                    ((data as? NSDictionary)?["error"] as? String) ?? "Unknown reason"
-                )
-            case .failure(_):
-                errorCallback("Unknown reason")
-            }
-        }
-    }
-    
     public func setChatMessagesAsSeen(
         chatId: Int,
         callback: @escaping SuccessCallback
