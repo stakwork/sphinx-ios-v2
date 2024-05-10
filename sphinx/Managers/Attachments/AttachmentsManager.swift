@@ -219,18 +219,18 @@ class AttachmentsManager {
         guard let price = message.getAttachmentPrice(), let params = TransactionMessage.getPayAttachmentParams(message: message, amount: price, chat: chat) else {
             return
         }
-        
-        API.sharedInstance.payAttachment(params: params, callback: { m in
-            if let message = TransactionMessage.insertMessage(
-                m: m,
-                existingMessage: TransactionMessage.getMessageWith(id: m["id"].intValue)
-            ).0 {
-                callback(message)
-            }
-        }, errorCallback: {
-            callback(nil)
-
-        })
+        //TODO: @Jim implement paid messages
+//        API.sharedInstance.payAttachment(params: params, callback: { m in
+//            if let message = TransactionMessage.insertMessage(
+//                m: m,
+//                existingMessage: TransactionMessage.getMessageWith(id: m["id"].intValue)
+//            ).0 {
+//                callback(message)
+//            }
+//        }, errorCallback: {
+//            callback(nil)
+//
+//        })
     }
     
     func createLocalMessage(

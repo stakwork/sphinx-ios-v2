@@ -134,28 +134,6 @@ extension API {
         }
     }
     
-    public func payAttachment(params: [String : AnyObject], callback: @escaping MessageObjectCallback, errorCallback: @escaping EmptyCallback) {
-        guard let request = getURLRequest(route: "/purchase", params: params as NSDictionary?, method: "POST") else {
-            errorCallback()
-            return
-        }
-
-        sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool, let response = json["response"] as? NSDictionary, success {
-                        callback(JSON(response))
-                    } else {
-                        errorCallback()
-                    }
-                }
-            case .failure(_):
-                errorCallback()
-            }
-        }
-    }
-    
     public func getPaymentTemplates(token: String, callback: @escaping TemplatesCallback, errorCallback: @escaping EmptyCallback) {
         let url = "\(API.kAttachmentsServerUrl)/templates"
         
