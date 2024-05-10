@@ -99,32 +99,6 @@ extension API {
         }
     }
     
-    func deleteMessage(
-        messageId: Int,
-        callback:@escaping DeleteMessageCallback
-    ) {
-        
-        guard let request = getURLRequest(route: "/message/\(messageId)", method: "DELETE") else {
-            callback(false, JSON())
-            return
-        }
-
-        sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool, let response = json["response"] as? NSDictionary, success {
-                        callback(true, JSON(response))
-                    } else {
-                        callback(false, JSON())
-                    }
-                }
-            case .failure(_):
-                callback(false, JSON())
-            }
-        }
-    }
-    
     public func setChatMessagesAsSeen(
         chatId: Int,
         callback: @escaping SuccessCallback
