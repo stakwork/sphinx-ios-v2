@@ -38,31 +38,6 @@ extension API {
         }
     }
     
-    func deleteGroup(
-        id: Int,
-        callback: @escaping SuccessCallback
-    ) {
-        guard let request = getURLRequest(route: "/chat/\(id)", method: "DELETE") else {
-            callback(false)
-            return
-        }
-        
-        sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool, success {
-                        callback(true)
-                        return
-                    }
-                }
-                callback(false)
-            case .failure(_):
-                callback(false)
-            }
-        }
-    }
-    
     func addMembers(
         id: Int,
         params: [String: AnyObject],

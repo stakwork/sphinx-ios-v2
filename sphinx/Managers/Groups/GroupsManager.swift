@@ -78,15 +78,7 @@ class GroupsManager {
             completion(false)
             return
         }
-        
-        API.sharedInstance.deleteGroup(id: chat.id, callback: { success in
-            if success {
-                CoreDataManager.sharedManager.deleteChatObjectsFor(chat)
-                completion(true)
-            } else {
-                completion(false)
-            }
-        })
+        SphinxOnionManager.sharedInstance.deleteTribe(tribeChat: chat)
     }
     
     func respondToRequest(
