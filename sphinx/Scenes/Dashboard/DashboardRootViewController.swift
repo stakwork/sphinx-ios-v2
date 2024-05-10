@@ -606,31 +606,7 @@ extension DashboardRootViewController {
                     }
                 },
                 completionCallback: {
-                    self.chatsListViewModel.syncMessages(
-                        progressCallback: { progress in
-                            if (restoring) {
-                                self.isLoading = false
-                                let messagesProgress : Int = Int(Float(progress) * (1.0 - contentProgressShare - contactsProgressShare))
-                                
-                                if (progress >= 0) {
-                                    DispatchQueue.main.async {
-                                        self.restoreProgressView.showRestoreProgressView(
-                                            with: messagesProgress + Int(contentProgressShare * 100) + Int(contactsProgressShare * 100),
-                                            label: "restoring-messages".localized,
-                                            buttonEnabled: true
-                                        )
-                                    }
-                                } else {
-                                    self.newBubbleHelper.showLoadingWheel(text: "fetching.old.messages".localized)
-                                }
-                                
-                                self.contactsService.forceUpdate()
-                            }
-                        },
-                        completion: { (_,_) in
-                            self.finishLoading()
-                        }
-                    )
+                    
                 }
             )
         }

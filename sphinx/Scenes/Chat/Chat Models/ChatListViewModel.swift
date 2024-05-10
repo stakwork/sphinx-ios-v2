@@ -20,12 +20,7 @@ final class ChatListViewModel {
     ) {
         let restoring = self.isRestoring()
         
-        restoreContacts(
-            page: 1,
-            restoring: restoring,
-            progressCompletion: progressCompletion,
-            completion: completion
-        )
+        SphinxOnionManager.sharedInstance.restoreFirstScidMessages()
     }
             
     func restoreContacts(
@@ -111,146 +106,12 @@ final class ChatListViewModel {
     var newMessagesChatIds = [Int]()
     var syncing = false
     
-    func syncMessages(
-        chatId: Int? = nil,
-        onPushReceived: Bool = false,
-        progressCallback: @escaping (Int) -> (),
-        completion: @escaping (Int, Int) -> (),
-        errorCompletion: (() -> ())? = nil
-    ) {
-        if syncing {
-            errorCompletion?()
-            return
-        }
-        
-        syncMessagesTask = DispatchWorkItem { [weak self] in
-            guard let self = self else { return }
-            self.syncing = true
-            
-            self.newMessagesChatIds = []
-            self.syncMessagesDate = Date()
-            
-            let restoring = self.isRestoring()
-            
-            if !restoring {
-                UserDefaults.Keys.messagesFetchPage.removeValue()
-            }
-            
-            self.getMessagesPaginated(
-                restoring: restoring,
-                prevPageNewMessages: 0,
-                chatId: chatId,
-                date: self.syncMessagesDate,
-                onPushReceived: onPushReceived,
-                progressCallback: progressCallback,
-                completion: { chatNewMessagesCount, newMessagesCount in
-
-                    UserDefaults.Keys.messagesFetchPage.removeValue()
-                    
-                    self.syncing = false
-                    completion(chatNewMessagesCount, newMessagesCount)
-                }
-            )
-        }
-        syncMessagesTask?.perform()
-    }
-    
     func finishRestoring() {
         self.syncing = false
         syncMessagesTask?.cancel()
         
         UserDefaults.Keys.messagesFetchPage.removeValue()
         API.sharedInstance.lastSeenMessagesDate = syncMessagesDate
-    }
-    
-    func getMessagesPaginated(
-        restoring: Bool,
-        prevPageNewMessages: Int,
-        chatId: Int? = nil,
-        date: Date,
-        retry: Int = 0,
-        onPushReceived: Bool = false,
-        progressCallback: @escaping (Int) -> (),
-        completion: @escaping (Int, Int) -> ()
-    ) {
-        let page = UserDefaults.Keys.messagesFetchPage.get(defaultValue: 1)
-        
-        API.sharedInstance.getMessagesPaginated(
-            page: page,
-            date: date,
-            onPushReceived: onPushReceived,
-            callback: {(newMessagesTotal, newMessages) -> () in
-                
-                if self.syncMessagesTask?.isCancelled == true {
-                    return
-                }
-                
-                progressCallback(
-                    self.getRestoreProgress(
-                        currentPage: page,
-                        newMessagesTotal: newMessagesTotal,
-                        itemsPerPage: ChatListViewModel.kMessagesPerPage
-                    )
-                )
-                    
-                if newMessages.count > 0 {
-                    CoreDataManager.sharedManager.persistentContainer.viewContext.performAndWait({
-                        self.addMessages(
-                            messages: newMessages,
-                            chatId: chatId,
-                            completion: { (newMessagesCount, allMessagesCount) in
-                                
-                                if self.syncMessagesTask?.isCancelled == true {
-                                    return
-                                }
-                                
-                                if newMessages.count < ChatListViewModel.kMessagesPerPage {
-                                    
-                                    CoreDataManager.sharedManager.saveContext()
-                                    
-                                    if restoring {
-                                        SphinxSocketManager.sharedInstance.connectWebsocket(forceConnect: true)
-                                    }
-                                    
-                                    completion(newMessagesCount, allMessagesCount)
-                                    
-                                } else {
-                                    
-                                    CoreDataManager.sharedManager.saveContext()
-                                    UserDefaults.Keys.messagesFetchPage.set(page + 1)
-                                    
-                                    self.getMessagesPaginated(
-                                        restoring: restoring,
-                                        prevPageNewMessages: newMessagesCount + prevPageNewMessages,
-                                        chatId: chatId,
-                                        date: date,
-                                        progressCallback: progressCallback,
-                                        completion: completion
-                                    )
-                                    
-                                }
-                            }
-                        )
-                    })
-                } else {
-                    completion(0, 0)
-                }
-            }, errorCallback: {
-                completion(0, 0)
-//                if retry < 5 {
-//                    DelayPerformedHelper.performAfterDelay(seconds: 1.0, completion: {
-//                        self.getMessagesPaginated(
-//                            restoring: restoring,
-//                            prevPageNewMessages: prevPageNewMessages,
-//                            chatId: chatId,
-//                            date: date,
-//                            retry: retry + 1,
-//                            progressCallback: progressCallback,
-//                            completion: completion
-//                        )
-//                    })
-//                }
-            })
     }
     
     func getRestoreProgress(
