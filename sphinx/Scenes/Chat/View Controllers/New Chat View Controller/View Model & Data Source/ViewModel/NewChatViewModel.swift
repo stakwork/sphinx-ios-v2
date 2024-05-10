@@ -67,15 +67,16 @@ class NewChatViewModel {
     
     func getChatLeaderboards() {
         if let uuid = chat?.tribeInfo?.uuid {
-            API.sharedInstance.getTribeLeaderboard(
-                tribeUUID: uuid,
-                callback: { results in
-                    if let chatLeaderboardEntries = Mapper<ChatLeaderboardEntry>().mapArray(JSONObject: Array(results)) {
-                        self.chatLeaderboard = chatLeaderboardEntries
-                    }
-                },
-                errorCallback: {}
-            )
+            //TODO: @Jim reimplement on v2
+//            API.sharedInstance.getTribeLeaderboard(
+//                tribeUUID: uuid,
+//                callback: { results in
+//                    if let chatLeaderboardEntries = Mapper<ChatLeaderboardEntry>().mapArray(JSONObject: Array(results)) {
+//                        self.chatLeaderboard = chatLeaderboardEntries
+//                    }
+//                },
+//                errorCallback: {}
+//            )
         }
     }
     

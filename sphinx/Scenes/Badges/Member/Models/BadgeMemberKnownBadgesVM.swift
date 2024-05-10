@@ -45,18 +45,19 @@ class BadgeMemberKnownBadgesVM : NSObject {
     func fetchKnownBadges(){
         if let valid_id = chatID{
             vc.addLoadingView()
-            API.sharedInstance.getTribeAdminBadges(
-                chatID: valid_id,
-                callback: { results in
-                    if let mappedResults = Mapper<Badge>().mapArray(JSONObject: Array(results)) {
-                        self.knownBadges = mappedResults
-                        self.vc.removeLoadingView()
-                        self.tableView.reloadData()
-                    }
-                },
-                errorCallback: {
-                    self.vc.removeLoadingView()
-                })
+            //TODO: @Jim reimplement on v2
+//            API.sharedInstance.getTribeAdminBadges(
+//                chatID: valid_id,
+//                callback: { results in
+//                    if let mappedResults = Mapper<Badge>().mapArray(JSONObject: Array(results)) {
+//                        self.knownBadges = mappedResults
+//                        self.vc.removeLoadingView()
+//                        self.tableView.reloadData()
+//                    }
+//                },
+//                errorCallback: {
+//                    self.vc.removeLoadingView()
+//                })
         }
     }
     

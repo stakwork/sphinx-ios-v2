@@ -68,28 +68,28 @@ extension NewChatViewController : PinnedMessageViewDelegate, PinMessageDelegate 
         guard let chat = self.chat else {
             return
         }
-        
-        API.sharedInstance.pinChatMessage(
-            messageUUID: (pin ? message.uuid : "_"),
-            chatId: chat.id,
-            callback: { pinnedMessageUUID in
-                self.chat?.pinnedMessageUUID = pinnedMessageUUID
-                self.chat?.saveChat()
-                
-                self.configurePinnedMessageView()
-                
-                let vc = PinMessageViewController.instantiate(
-                    messageId: message.id,
-                    delegate: self,
-                    mode: pin ? .MessagePinned : .MessageUnpinned
-                )
-                vc.modalPresentationStyle = .overCurrentContext
-                self.present(vc, animated: false)
-            },
-            errorCallback: {
-                AlertHelper.showAlert(title: "generic.error.title".localized, message: "generic.error.message".localized)
-            }
-        )
+        //TODO: @Jim need to reimplement when pin feature available for bindings
+//        API.sharedInstance.pinChatMessage(
+//            messageUUID: (pin ? message.uuid : "_"),
+//            chatId: chat.id,
+//            callback: { pinnedMessageUUID in
+//                self.chat?.pinnedMessageUUID = pinnedMessageUUID
+//                self.chat?.saveChat()
+//                
+//                self.configurePinnedMessageView()
+//                
+//                let vc = PinMessageViewController.instantiate(
+//                    messageId: message.id,
+//                    delegate: self,
+//                    mode: pin ? .MessagePinned : .MessageUnpinned
+//                )
+//                vc.modalPresentationStyle = .overCurrentContext
+//                self.present(vc, animated: false)
+//            },
+//            errorCallback: {
+//                AlertHelper.showAlert(title: "generic.error.title".localized, message: "generic.error.message".localized)
+//            }
+//        )
     }
     
     func showMessagePinnedInfo(messageId: Int) {
