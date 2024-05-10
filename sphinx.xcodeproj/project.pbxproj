@@ -659,6 +659,7 @@
 		CE3133B12977747E00E91E3A /* BadgeAdminDetailVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE3133AA2977747E00E91E3A /* BadgeAdminDetailVC.swift */; };
 		CE3133B22977747E00E91E3A /* BadgeAdminListTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = CE3133AB2977747E00E91E3A /* BadgeAdminListTableViewCell.xib */; };
 		CE3133B32977747E00E91E3A /* BadgeAdminManagementListVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE3133AC2977747E00E91E3A /* BadgeAdminManagementListVC.swift */; };
+		CE3794AF2BEE5B5200C3CB36 /* API+MessagesExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE3794AE2BEE5B5200C3CB36 /* API+MessagesExtension.swift */; };
 		CE3D49922B18D149007E801D /* sphinxOnionAddContactUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE3D49912B18D149007E801D /* sphinxOnionAddContactUITests.swift */; };
 		CE3D49932B18D527007E801D /* sphinx.app in Resources */ = {isa = PBXBuildFile; fileRef = 4779F15E232AA0F200D35E81 /* sphinx.app */; platformFilter = ios; };
 		CE3D8CA129B0FF7100EDB637 /* FeedItemDetailVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE3D8CA029B0FF7100EDB637 /* FeedItemDetailVC.swift */; };
@@ -1860,6 +1861,7 @@
 		CE3133AA2977747E00E91E3A /* BadgeAdminDetailVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BadgeAdminDetailVC.swift; sourceTree = "<group>"; };
 		CE3133AB2977747E00E91E3A /* BadgeAdminListTableViewCell.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = BadgeAdminListTableViewCell.xib; sourceTree = "<group>"; };
 		CE3133AC2977747E00E91E3A /* BadgeAdminManagementListVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BadgeAdminManagementListVC.swift; sourceTree = "<group>"; };
+		CE3794AE2BEE5B5200C3CB36 /* API+MessagesExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "API+MessagesExtension.swift"; sourceTree = "<group>"; };
 		CE3D49912B18D149007E801D /* sphinxOnionAddContactUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = sphinxOnionAddContactUITests.swift; sourceTree = "<group>"; };
 		CE3D8CA029B0FF7100EDB637 /* FeedItemDetailVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedItemDetailVC.swift; sourceTree = "<group>"; };
 		CE3D8CA229B10FA500EDB637 /* FeedItemDetailVM.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedItemDetailVM.swift; sourceTree = "<group>"; };
@@ -3106,6 +3108,7 @@
 		475BDD26232AC96C00C5BBD6 /* API */ = {
 			isa = PBXGroup;
 			children = (
+				CE3794AE2BEE5B5200C3CB36 /* API+MessagesExtension.swift */,
 				4712994F292297AE0049CBE3 /* Parsing Models */,
 				475BDD27232AC97500C5BBD6 /* API.swift */,
 				F358212E2698BE6700A314F1 /* API+HubError.swift */,
@@ -5612,6 +5615,7 @@
 				F3B2518F26DD3F4100C96D42 /* PodcastEpisode+Computeds.swift in Sources */,
 				476EB46823C4F1AE009745E2 /* GroupContactCollectionViewCell.swift in Sources */,
 				47771C72259B8D9300990467 /* GroupsPinManager.swift in Sources */,
+				CE3794AF2BEE5B5200C3CB36 /* API+MessagesExtension.swift in Sources */,
 				47FA18D42434D47D00469C8F /* TransactionMessageInfoGetterExtension.swift in Sources */,
 				47C52C4527F49EA9007B43E2 /* HMACSigningManager.swift in Sources */,
 				470396DC2535D2EB007F9C23 /* PodcastEpisodesDataSource.swift in Sources */,

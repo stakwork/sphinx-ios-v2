@@ -125,41 +125,6 @@ extension API {
         }
     }
     
-    func sendDirectPayment(
-        params: [String: AnyObject],
-        callback: @escaping DirectPaymentResultsCallback,
-        errorCallback: @escaping ErrorCallback
-    ) {
-        
-        guard let request = getURLRequest(route: "/payment", params: params as NSDictionary?, method: "POST") else {
-            errorCallback("Unknown reason")
-            return
-        }
-        
-        sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let _ = json["success"] as? Bool {
-                        if let response = json["response"] as? NSDictionary {
-                            if let _ = response["destination_key"] as? String {
-                                callback(nil)
-                            } else {
-                                callback(JSON(response))
-                            }
-                            return
-                        }
-                    }
-                }
-                errorCallback(
-                    ((data as? NSDictionary)?["error"] as? String) ?? "Unknown reason"
-                )
-            case .failure(_):
-                errorCallback("Unknown reason")
-            }
-        }
-    }
-    
     public func createInvoice(
         parameters: [String : AnyObject],
         callback: @escaping CreateInvoiceCallback,
