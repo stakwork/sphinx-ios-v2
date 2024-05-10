@@ -157,17 +157,17 @@ class PersonModalView: CommonModalView {
                 showErrorMessage()
                 return
             }
-            
-            API.sharedInstance.sendMessage(params: params, callback: { m in
-                if let _ = TransactionMessage.insertMessage(
-                    m: m,
-                    existingMessage: TransactionMessage.getMessageWith(id: m["id"].intValue)
-                ).0 {
-                    self.delegate?.shouldDismissVC()
-                }
-            }, errorCallback: {
-                self.showErrorMessage()
-            })
+            //@Tom if you could just explain the purpose of this and how to initiate it I will make it possible on V2
+//            API.sharedInstance.sendMessage(params: params, callback: { m in
+//                if let _ = TransactionMessage.insertMessage(
+//                    m: m,
+//                    existingMessage: TransactionMessage.getMessageWith(id: m["id"].intValue)
+//                ).0 {
+//                    self.delegate?.shouldDismissVC()
+//                }
+//            }, errorCallback: {
+//                self.showErrorMessage()
+//            })
         } else {
             showErrorMessage()
         }

@@ -23,12 +23,10 @@ extension NewChatViewModel {
     }
     
     func shouldResendMessage(message: TransactionMessage) {
-        sendMessage(
-            provisionalMessage: message,
-            text: message.messageContent ?? "",
-            isResend: true,
-            completion: { _ in }
-        )
+        guard let chat = message.chat else{
+            return
+        }
+        SphinxOnionManager.sharedInstance.sendMessage(to: message.chat?.getContact(), content: message.messageContent ?? "", chat: chat, threadUUID: message.threadUUID, replyUUID: message.replyUUID)
     }
 }
 
@@ -93,8 +91,8 @@ extension NewChatViewModel {
         ) else {
             return
         }
-        
-        API.sharedInstance.sendMessage(params: params, callback: { _ in }, errorCallback: {})
+        //@Tom do we want to reimplement flag messages?
+//        API.sharedInstance.sendMessage(params: params, callback: { _ in }, errorCallback: {})
     }
 }
 
