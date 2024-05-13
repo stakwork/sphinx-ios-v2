@@ -335,7 +335,7 @@ extension SphinxOnionManager{
     
     func isExitedTribeMessage(senderPubkey:String) -> Bool{
         var (isTribe, chat) = isMessageTribeMessage(senderPubkey: senderPubkey)
-        Chat.getTribeChatWithOwnerPubkey(ownerPubkey: senderPubkey)
+        let _ = Chat.getTribeChatWithOwnerPubkey(ownerPubkey: senderPubkey)
         if isTribe == false{
             return false
         }
@@ -372,7 +372,7 @@ extension SphinxOnionManager{
            }
             else if let fromMe = message.fromMe,
                     fromMe == true,
-                    let sentTo = message.sentTo,
+                    let _ = message.sentTo,
                     let uuid = message.uuid,
                     TransactionMessage.getMessageWith(uuid: uuid) == nil,
                     //let contact = UserContact.getContactWithDisregardStatus(pubkey: sentTo),
@@ -403,7 +403,7 @@ extension SphinxOnionManager{
                         genericIncomingMessage.senderPubkey = csr.pubkey
                         genericIncomingMessage.uuid = uuid
                         genericIncomingMessage.index = index
-                        processGenericIncomingMessage(message: genericIncomingMessage, date: date,csr: csr,type: Int(type))
+                        let _ = processGenericIncomingMessage(message: genericIncomingMessage, date: date,csr: csr,type: Int(type))
                     }
                     else if type == TransactionMessage.TransactionMessageType.boost.rawValue ||
                             type == TransactionMessage.TransactionMessageType.directPayment.rawValue ||
@@ -476,7 +476,7 @@ extension SphinxOnionManager{
                         }
                         
                     }
-                    print("handleRunReturn message: \(message)")
+                    print("let _ = handleRunReturn message: \(message)")
                 }
             }
             else if isMyMessageNeedingIndexUpdate(msg: message),
@@ -591,7 +591,7 @@ extension SphinxOnionManager{
         
         if type == TransactionMessage.TransactionMessageType.payment.rawValue,
            let ph = message.paymentHash,
-           let invoice = TransactionMessage.getInvoiceWith(paymentHash: ph){
+           let _ = TransactionMessage.getInvoiceWith(paymentHash: ph){
             newMessage.setPaymentInvoiceAsPaid()
         }
         
@@ -633,7 +633,7 @@ extension SphinxOnionManager{
         amount:Int,
         type:Int
     ){
-        processGenericIncomingMessage(message: message, date: date,csr: csr,amount: amount,type: type)
+        let _ = processGenericIncomingMessage(message: message, date: date,csr: csr,amount: amount,type: type)
     }
     
     func processIncomingDeletion(message:GenericIncomingMessage, date:Date){
@@ -755,7 +755,7 @@ extension SphinxOnionManager{
         let muid = params["muid"] as? String ?? "YkZJhKWUYWcSRM5JmFhqwq7SJpeV_ayx1Feiu6oq3CE="
         guard let contact = chat.getContact(),
         let amount = params["amount"] as? Int,
-        let data = image.pngData() else{
+        let _ = image.pngData() else{
             completion(false,nil)
             return
         }
@@ -819,7 +819,7 @@ extension SphinxOnionManager{
         guard let recipPubkey = (recipContact?.publicKey ?? chat.ownerPubkey) else { return  }
         
         let rr = try! mute(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), pubkey: recipPubkey, muteLevel: muteLevel)
-        handleRunReturn(rr: rr)
+        let _ = handleRunReturn(rr: rr)
     }
     
     func getMuteLevels(){
@@ -827,7 +827,7 @@ extension SphinxOnionManager{
             return
         }
         let rr = try!  getMutes(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData())
-        handleRunReturn(rr: rr)
+        let _ = handleRunReturn(rr: rr)
     }
     
     func setReadLevel(
@@ -843,7 +843,7 @@ extension SphinxOnionManager{
         }
         
         let rr = try! read(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), pubkey: recipPubkey, msgIdx: index)
-        handleRunReturn(rr: rr)
+        let _ = handleRunReturn(rr: rr)
     }
     
     func getReads(){
@@ -851,7 +851,7 @@ extension SphinxOnionManager{
             return
         }
         let rr = try! sphinx.getReads(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData())
-        handleRunReturn(rr: rr)
+        let _ = handleRunReturn(rr: rr)
     }
 
 }

@@ -39,11 +39,7 @@ class SphinxOnionManager : NSObject {
     var shouldPostUpdates : Bool = false
     let tribeMinEscrowSats = 3
     
-    var vc: UIViewController! = nil{
-        didSet{
-            print("vc set:\(vc)")
-        }
-    }
+    var vc: UIViewController! = nil
     var mqtt: CocoaMQTT! = nil
     let managedContext = CoreDataManager.sharedManager.persistentContainer.viewContext
     
@@ -212,9 +208,9 @@ class SphinxOnionManager : NSObject {
     func subscribeAndPublishMyTopics(pubkey:String,idx:Int){
         do{
             let ret = try setNetwork(network: network)
-            handleRunReturn(rr: ret)
+            let _ = handleRunReturn(rr: ret)
             let ret2 = try setBlockheight(blockheight: 0)
-            handleRunReturn(rr: ret2)
+            let _ = handleRunReturn(rr: ret2)
             
             guard let seed = getAccountSeed() else{
                 return
@@ -232,7 +228,7 @@ class SphinxOnionManager : NSObject {
             ])
             
             let ret3 = try initialSetup(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData())
-            handleRunReturn(rr: ret3)
+            let _ = handleRunReturn(rr: ret3)
             
             let tribeMgmtTopic = try getTribeManagementTopic(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData())
             
@@ -312,7 +308,7 @@ class SphinxOnionManager : NSObject {
             let alias = owner?.nickname ?? ""
             let pic = owner?.avatarUrl ?? ""
             let ret4 = try handle(topic: message.topic, payload: Data(message.payload), seed: seed, uniqueTime: getTimeWithEntropy(), state: self.loadOnionStateAsData(), myAlias: alias, myImg: pic)
-            handleRunReturn(rr: ret4)
+            let _ = handleRunReturn(rr: ret4)
         }
         catch{
             

@@ -23,7 +23,7 @@ extension SphinxOnionManager{//invites related
         do{
             
             let rr = try! makeInvite(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), host: self.server_IP, amtMsat: UInt64(amountMsat), myAlias: nickname,tribeHost: "\(server_IP):8801", tribePubkey: defaultTribePubkey)
-            handleRunReturn(rr: rr)
+            let _ = handleRunReturn(rr: rr)
         }
         catch{
             return
@@ -36,7 +36,7 @@ extension SphinxOnionManager{//invites related
         }
         do{
             let rr = try! processInvite(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), inviteQr: inviteCode)
-            handleRunReturn(rr: rr)
+            let _ = handleRunReturn(rr: rr)
             if let lsp = rr.lspHost{
                 self.server_IP = lsp
             }

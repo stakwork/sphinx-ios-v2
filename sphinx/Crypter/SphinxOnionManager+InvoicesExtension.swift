@@ -17,7 +17,7 @@ extension SphinxOnionManager{//invoices related
             return nil
         }
         let rr = try! makeInvoice(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), amtMsat: UInt64(amountMsat), description: description ?? "")
-        handleRunReturn(rr: rr)
+        let _ = handleRunReturn(rr: rr)
         return rr.invoice
     }
     
@@ -26,7 +26,7 @@ extension SphinxOnionManager{//invoices related
             return
         }
         let rr = try! sphinx.payInvoice(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), bolt11: invoice, overpayMsat: nil)
-        handleRunReturn(rr: rr)
+        let _ = handleRunReturn(rr: rr)
     }
     
     func sendPaymentOfInvoiceMessage(message:TransactionMessage){
@@ -39,7 +39,7 @@ extension SphinxOnionManager{//invoices related
             return
         }
        let rr = try! payContactInvoice(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), bolt11: invoice, myAlias: nickname, myImg: selfContact.avatarUrl ?? "",isTribe: false)
-        handleRunReturn(rr: rr)
+        let _ = handleRunReturn(rr: rr)
     }
     
     

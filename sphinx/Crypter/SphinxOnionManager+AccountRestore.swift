@@ -112,7 +112,7 @@ extension SphinxOnionManager{//account restore related
         
         let rr = try! getMsgsCounts(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData())
         
-        handleRunReturn(rr: rr)
+        let _ = handleRunReturn(rr: rr)
     }
     
     @objc func processMessageCountReceived(){
@@ -187,7 +187,7 @@ extension SphinxOnionManager{//account restore related
         let safeIndex = max(lastMessageIndex,0)
         do{
             let rr = try fetchFirstMsgsPerKey(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), lastMsgIdx: UInt64(safeIndex), limit: UInt32(msgCountLimit), reverse: false)
-            handleRunReturn(rr: rr)
+            let _ = handleRunReturn(rr: rr)
         }
         catch{
             
@@ -218,7 +218,7 @@ extension SphinxOnionManager{//account restore related
         
         let rr = try! getMsgsCounts(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData())
         
-        handleRunReturn(rr: rr)
+        let _ = handleRunReturn(rr: rr)
     }
     
     @objc func processSyncCountsReceived(){
@@ -278,7 +278,7 @@ extension SphinxOnionManager{//account restore related
                 limit: UInt32(msgCountLimit),
                 reverse: reverse
             )
-            handleRunReturn(rr: rr)
+            let _ = handleRunReturn(rr: rr)
         } catch {
             // Handle error
         }
@@ -450,7 +450,7 @@ extension SphinxOnionManager : NSFetchedResultsControllerDelegate{
             return
         }
         let rr = try! setPushToken(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), pushToken: id)
-        handleRunReturn(rr: rr)
+        let _ = handleRunReturn(rr: rr)
     }
 
 }

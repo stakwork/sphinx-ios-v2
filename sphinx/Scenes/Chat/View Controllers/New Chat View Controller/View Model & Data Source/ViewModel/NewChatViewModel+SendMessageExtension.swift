@@ -41,7 +41,7 @@ extension NewChatViewModel {
             messageText = podcastComment.getJsonString(withComment: text) ?? text
         }
         
-        let (botAmount, wrongAmount) = isWrongBotCommandAmount(text: messageText)
+        let (_, wrongAmount) = isWrongBotCommandAmount(text: messageText)
         
         if wrongAmount {
             completion(false)

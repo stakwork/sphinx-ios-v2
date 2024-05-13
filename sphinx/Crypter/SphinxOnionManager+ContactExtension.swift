@@ -56,7 +56,7 @@ extension SphinxOnionManager{//contacts related
                 hexCode = try! codeFromInvite(inviteQr: inviteCode)
             }
             let rr = try! addContact(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), toPubkey: recipientPubkey, routeHint: "\(recipLspPubkey)_\(scid)", myAlias: (selfContact.nickname ?? nickname) ?? "", myImg: selfContact.avatarUrl ?? "", amtMsat: 1000, inviteCode: hexCode, theirAlias: nickname)
-            handleRunReturn(rr: rr)
+            let _ = handleRunReturn(rr: rr)
             print("INITIATED KEY EXCHANGE WITH ARGS:\(seed,getTimeWithEntropy(),loadOnionStateAsData(),recipientPubkey,"\(recipLspPubkey)_\(scid)",selfContact.avatarUrl,1000,hexCode,nickname) ")
             print("INITIATED KEY EXCHANGE WITH RR:\(rr)")
         }
@@ -99,7 +99,7 @@ extension SphinxOnionManager{//contacts related
                 else if type == TransactionMessage.TransactionMessageType.contactKey.rawValue, // incoming key exchange request
                         UserContact.getContactWithDisregardStatus(pubkey: senderPubkey) == nil,//don't respond to requests if already exists
                         let newContactRequest = createNewContact(pubkey: senderPubkey, nickname: csr.alias, photo_url: csr.photoUrl, person: csr.person,code:csr.code){//new contact from a key exchange message
-                    NotificationCenter.default.post(Notification(name: .newContactWasRegisteredWithServer, object: nil, userInfo: ["contactPubkey" : newContactRequest.publicKey]))
+                    NotificationCenter.default.post(Notification(name: .newContactWasRegisteredWithServer, object: nil, userInfo: ["contactPubkey" : newContactRequest.publicKey as Any]))
                     newContactRequest.status = UserContact.Status.Confirmed.rawValue
                     createChat(for: newContactRequest)
                     managedContext.saveContext()

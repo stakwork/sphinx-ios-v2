@@ -28,7 +28,7 @@ extension SphinxOnionManager{//tribes related1
         var chatDict = rawTribeJSON
         
         let mappedFields : [String:Any] = [
-            "id":CrypterManager.sharedInstance.generateCryptographicallySecureRandomInt(upperBound: Int(1e5)),
+            "id":CrypterManager.sharedInstance.generateCryptographicallySecureRandomInt(upperBound: Int(1e5)) as Any,
             "owner_pubkey": ownerPubkey,
             "name" : name,
             "is_tribe_i_created":true,
@@ -46,10 +46,10 @@ extension SphinxOnionManager{//tribes related1
     
     func getChatJSON(tribeInfo:GroupsManager.TribeInfo)->JSON?{
         var chatDict : [String:Any] = [
-            "id":CrypterManager.sharedInstance.generateCryptographicallySecureRandomInt(upperBound: Int(1e5)),
-            "owner_pubkey": tribeInfo.ownerPubkey,
+            "id":CrypterManager.sharedInstance.generateCryptographicallySecureRandomInt(upperBound: Int(1e5)) as Any,
+            "owner_pubkey": tribeInfo.ownerPubkey as Any,
             "name" : tribeInfo.name ?? "Unknown Name",
-            "private": tribeInfo.privateTribe ?? false,
+            "private": tribeInfo.privateTribe ,
             "photo_url": tribeInfo.img ?? "",
             "unlisted": tribeInfo.unlisted,
             "price_per_message": tribeInfo.pricePerMessage ?? 0,
@@ -72,7 +72,7 @@ extension SphinxOnionManager{//tribes related1
         }
         do{
             let rr = try! sphinx.createTribe(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), tribeServerPubkey: tribeServerPubkey, tribeJson: tribeJSONString)
-            handleRunReturn(rr: rr)
+            let _ = handleRunReturn(rr: rr)
         }
         catch{
             
@@ -93,7 +93,7 @@ extension SphinxOnionManager{//tribes related1
             
             let rr = try! sphinx.joinTribe(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), tribePubkey: tribePubkey, tribeRouteHint: routeHint, alias: alias ?? "test", amtMsat: UInt64(joinAmountMsats), isPrivate: isPrivate)
             DelayPerformedHelper.performAfterDelay(seconds: 1.0, completion: {
-                self.handleRunReturn(rr: rr)
+                let _ = self.handleRunReturn(rr: rr)
             })
             
         }
@@ -147,7 +147,7 @@ extension SphinxOnionManager{//tribes related1
     }
     
     func exitTribe(tribeChat:Chat){
-        self.sendMessage(
+        let _ = self.sendMessage(
             to: nil,
             content: "",
             chat: tribeChat,
@@ -168,7 +168,7 @@ extension SphinxOnionManager{//tribes related1
         do{
             let rr = try! listTribeMembers(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), tribeServerPubkey: tribeServerPubkey, tribePubkey: tribeChat.ownerPubkey ?? "")
             stashedCallback = completion
-            handleRunReturn(rr: rr)
+            let _ = handleRunReturn(rr: rr)
         }
         catch{
             
@@ -180,7 +180,7 @@ extension SphinxOnionManager{//tribes related1
             return
         }
         do{
-            sendMessage(to: nil, content: pubkey, chat: chat, msgType: UInt8(TransactionMessage.TransactionMessageType.groupKick.rawValue), recipPubkey: tribeServerPubkey, threadUUID: nil, replyUUID: nil)
+           let _ = sendMessage(to: nil, content: pubkey, chat: chat, msgType: UInt8(TransactionMessage.TransactionMessageType.groupKick.rawValue), recipPubkey: tribeServerPubkey, threadUUID: nil, replyUUID: nil)
         }
         catch{
             
@@ -199,7 +199,7 @@ extension SphinxOnionManager{//tribes related1
             type.rawValue == TransactionMessage.TransactionMessageType.memberReject.rawValue) == false{
             return
         }
-        sendMessage(to: nil, content: "", chat: chat, msgType: UInt8(type.rawValue), recipPubkey: tribeServerPubkey, threadUUID: nil, replyUUID: requestUuid)
+        let _ = sendMessage(to: nil, content: "", chat: chat, msgType: UInt8(type.rawValue), recipPubkey: tribeServerPubkey, threadUUID: nil, replyUUID: requestUuid)
     }
     
     
@@ -209,7 +209,7 @@ extension SphinxOnionManager{//tribes related1
             return
         }
         do{
-            sendMessage(to: nil, content: "", chat: tribeChat, msgType: UInt8(TransactionMessage.TransactionMessageType.groupDelete.rawValue), recipPubkey: tribeServerPubkey, threadUUID: nil, replyUUID: nil)
+            let _ = sendMessage(to: nil, content: "", chat: tribeChat, msgType: UInt8(TransactionMessage.TransactionMessageType.groupDelete.rawValue), recipPubkey: tribeServerPubkey, threadUUID: nil, replyUUID: nil)
         }
         catch{
             
