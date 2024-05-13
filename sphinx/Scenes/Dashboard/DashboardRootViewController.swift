@@ -533,8 +533,71 @@ extension DashboardRootViewController {
     internal func loadContactsAndSyncMessages(
         shouldShowHeaderLoadingWheel: Bool = false
     ) {
-        print("loadContactsAndSyncMessages")
+        self.shouldShowHeaderLoadingWheel = shouldShowHeaderLoadingWheel
+        
+        isLoading = true
         headerView.updateBalance()
+        
+        var contactsProgressShare : Float = 0.01
+        
+        chatsListViewModel.loadFriends(
+            progressCompletion: { restoring in
+                if restoring {
+                    
+                    contactsProgressShare += 0.01
+                    
+                    DispatchQueue.main.async {
+                        self.restoreProgressView.showRestoreProgressView(
+                            with: Int(contactsProgressShare * 100),
+                            label: "restoring-contacts".localized,
+                            buttonEnabled: false
+                        )
+                    }
+                }
+            }
+        ) { [weak self] restoring in
+            guard let self = self else { return }
+            
+            if restoring {
+                
+                DispatchQueue.main.async {
+                    self.restoreProgressView.showRestoreProgressView(
+                        with: Int(contactsProgressShare * 100),
+                        label: "restoring-contacts".localized,
+                        buttonEnabled: false
+                    )
+                }
+                
+                self.chatsListViewModel.askForNotificationPermissions()
+                self.contactsService.forceUpdate()
+            } else {
+                self.contactsService.configureFetchResultsController()
+            }
+            
+            var contentProgressShare : Float = 0.0
+            
+            self.syncContentFeedStatus(
+                restoring: restoring,
+                progressCallback:  { contentProgress in
+                    contentProgressShare = 0.1
+                    
+                    if (contentProgress >= 0 && restoring) {
+                        let contentProgress = Int(contentProgressShare * Float(contentProgress))
+                        
+                        DispatchQueue.main.async {
+                            self.restoreProgressView.showRestoreProgressView(
+                                with: contentProgress + Int(contactsProgressShare * 100),
+                                label: "restoring-content".localized,
+                                buttonEnabled: false
+                            )
+                        }
+                    }
+                },
+                completionCallback: {
+                    
+                }
+            )
+        }
     }
     
     internal func syncContentFeedStatus(
