@@ -173,7 +173,7 @@ class SphinxOnionManager : NSObject {
             return
         }
         som.disconnectMqtt()
-        DelayPerformedHelper.performAfterDelay(seconds: 2.0, completion: {
+        DelayPerformedHelper.performAfterDelay(seconds: 0.5, completion: {
             let success = som.connectToBroker(seed:seed,xpub: my_xpub)
             if(success == false) {
                 AlertHelper.showAlert(title: "Error", message: "Could not connect to MQTT Broker.")
