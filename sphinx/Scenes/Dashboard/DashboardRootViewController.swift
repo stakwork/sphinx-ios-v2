@@ -226,6 +226,9 @@ extension DashboardRootViewController {
         addAccessibilityIdentifiers()
         
         SphinxOnionManager.sharedInstance.fetchMyAccountFromState()
+        DelayPerformedHelper.performAfterDelay(seconds: 0.5, completion: {
+           self.connectToV2Server()
+       })
     }
     
     override func viewDidDisappear(_ animated: Bool) {
@@ -530,11 +533,8 @@ extension DashboardRootViewController {
     internal func loadContactsAndSyncMessages(
         shouldShowHeaderLoadingWheel: Bool = false
     ) {
-        self.shouldShowHeaderLoadingWheel = shouldShowHeaderLoadingWheel
-        
-        isLoading = true
+        print("loadContactsAndSyncMessages")
         headerView.updateBalance()
-        self.connectToV2Server()
     }
     
     internal func syncContentFeedStatus(
