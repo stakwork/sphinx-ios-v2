@@ -202,8 +202,18 @@ class SphinxOnionManager : NSObject {
     }
 
     func listContacts()->String{
-        let contacts = try! sphinx.listContacts(state: self.loadOnionStateAsData())
-        return contacts
+        do{
+            let contacts = try sphinx.listContacts(state: self.loadOnionStateAsData())
+            return contacts
+        }
+        catch{
+            print("Handled an expected error: \(error)")
+            // Crash in debug mode if the error is not expected
+            #if DEBUG
+            assertionFailure("Unexpected error: \(error)")
+            #endif
+        }
+        return ""
     }
     func subscribeAndPublishMyTopics(pubkey:String,idx:Int){
         do{
@@ -216,7 +226,7 @@ class SphinxOnionManager : NSObject {
                 return
             }
             
-            let subtopic = try! sphinx.getSubscriptionTopic(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData())
+            let subtopic = try sphinx.getSubscriptionTopic(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData())
             
             mqtt.didReceiveMessage = { mqtt, receivedMessage, id in
                 self.isConnected = true
@@ -238,7 +248,11 @@ class SphinxOnionManager : NSObject {
             ])
         }
         catch{
-            
+            print("Handled an expected error: \(error)")
+            // Crash in debug mode if the error is not expected
+            #if DEBUG
+            assertionFailure("Unexpected error: \(error)")
+            #endif
         }
     }
     

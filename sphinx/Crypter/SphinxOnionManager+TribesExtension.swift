@@ -71,11 +71,15 @@ extension SphinxOnionManager{//tribes related1
             return
         }
         do{
-            let rr = try! sphinx.createTribe(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), tribeServerPubkey: tribeServerPubkey, tribeJson: tribeJSONString)
+            let rr = try sphinx.createTribe(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), tribeServerPubkey: tribeServerPubkey, tribeJson: tribeJSONString)
             let _ = handleRunReturn(rr: rr)
         }
         catch{
-            
+            print("Handled an expected error: \(error)")
+            // Crash in debug mode if the error is not expected
+            #if DEBUG
+            assertionFailure("Unexpected error: \(error)")
+            #endif
         }
     }
     
@@ -91,14 +95,18 @@ extension SphinxOnionManager{//tribes related1
         }
         do{
             
-            let rr = try! sphinx.joinTribe(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), tribePubkey: tribePubkey, tribeRouteHint: routeHint, alias: alias ?? "test", amtMsat: UInt64(joinAmountMsats), isPrivate: isPrivate)
+            let rr = try sphinx.joinTribe(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), tribePubkey: tribePubkey, tribeRouteHint: routeHint, alias: alias ?? "test", amtMsat: UInt64(joinAmountMsats), isPrivate: isPrivate)
             DelayPerformedHelper.performAfterDelay(seconds: 1.0, completion: {
                 let _ = self.handleRunReturn(rr: rr)
             })
             
         }
         catch{
-            
+            print("Handled an expected error: \(error)")
+            // Crash in debug mode if the error is not expected
+            #if DEBUG
+            assertionFailure("Unexpected error: \(error)")
+            #endif
         }
     }
     
@@ -166,12 +174,16 @@ extension SphinxOnionManager{//tribes related1
             return
         }
         do{
-            let rr = try! listTribeMembers(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), tribeServerPubkey: tribeServerPubkey, tribePubkey: tribeChat.ownerPubkey ?? "")
+            let rr = try listTribeMembers(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), tribeServerPubkey: tribeServerPubkey, tribePubkey: tribeChat.ownerPubkey ?? "")
             stashedCallback = completion
             let _ = handleRunReturn(rr: rr)
         }
         catch{
-            
+            print("Handled an expected error: \(error)")
+            // Crash in debug mode if the error is not expected
+            #if DEBUG
+            assertionFailure("Unexpected error: \(error)")
+            #endif
         }
     }
     

@@ -109,10 +109,19 @@ extension SphinxOnionManager{//account restore related
         }
         
         NotificationCenter.default.addObserver(self, selector: #selector(processMessageCountReceived), name: .totalMessageCountReceived, object: nil)
+        do{
+            let rr = try getMsgsCounts(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData())
+            
+            let _ = handleRunReturn(rr: rr)
+        }
+        catch{
+            print("Handled an expected error: \(error)")
+            // Crash in debug mode if the error is not expected
+            #if DEBUG
+            assertionFailure("Unexpected error: \(error)")
+            #endif
+        }
         
-        let rr = try! getMsgsCounts(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData())
-        
-        let _ = handleRunReturn(rr: rr)
     }
     
     @objc func processMessageCountReceived(){
@@ -216,9 +225,18 @@ extension SphinxOnionManager{//account restore related
         
         NotificationCenter.default.addObserver(self, selector: #selector(processSyncCountsReceived), name: .totalMessageCountReceived, object: nil)
         
-        let rr = try! getMsgsCounts(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData())
-        
-        let _ = handleRunReturn(rr: rr)
+        do{
+            let rr = try getMsgsCounts(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData())
+            
+            let _ = handleRunReturn(rr: rr)
+        }
+        catch{
+            print("Handled an expected error: \(error)")
+            // Crash in debug mode if the error is not expected
+            #if DEBUG
+            assertionFailure("Unexpected error: \(error)")
+            #endif
+        }
     }
     
     @objc func processSyncCountsReceived(){
@@ -449,8 +467,18 @@ extension SphinxOnionManager : NSFetchedResultsControllerDelegate{
         guard let seed = getAccountSeed(), let _ = mqtt else {
             return
         }
-        let rr = try! setPushToken(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), pushToken: id)
-        let _ = handleRunReturn(rr: rr)
+        do{
+            let rr = try setPushToken(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), pushToken: id)
+            let _ = handleRunReturn(rr: rr)
+        }
+        catch{
+            print("Handled an expected error: \(error)")
+            // Crash in debug mode if the error is not expected
+            #if DEBUG
+            assertionFailure("Unexpected error: \(error)")
+            #endif
+        }
+        
     }
 
 }

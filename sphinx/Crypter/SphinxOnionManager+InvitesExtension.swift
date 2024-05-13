@@ -22,11 +22,15 @@ extension SphinxOnionManager{//invites related
         }
         do{
             
-            let rr = try! makeInvite(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), host: self.server_IP, amtMsat: UInt64(amountMsat), myAlias: nickname,tribeHost: "\(server_IP):8801", tribePubkey: defaultTribePubkey)
+            let rr = try makeInvite(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), host: self.server_IP, amtMsat: UInt64(amountMsat), myAlias: nickname,tribeHost: "\(server_IP):8801", tribePubkey: defaultTribePubkey)
             let _ = handleRunReturn(rr: rr)
         }
         catch{
-            return
+            print("Handled an expected error: \(error)")
+            // Crash in debug mode if the error is not expected
+            #if DEBUG
+            assertionFailure("Unexpected error: \(error)")
+            #endif
         }
     }
     
@@ -35,7 +39,7 @@ extension SphinxOnionManager{//invites related
             return
         }
         do{
-            let rr = try! processInvite(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), inviteQr: inviteCode)
+            let rr = try processInvite(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), inviteQr: inviteCode)
             let _ = handleRunReturn(rr: rr)
             if let lsp = rr.lspHost{
                 self.server_IP = lsp
@@ -46,7 +50,11 @@ extension SphinxOnionManager{//invites related
             self.stashedInviterAlias = rr.inviterAlias
         }
         catch{
-            return
+            print("Handled an expected error: \(error)")
+            // Crash in debug mode if the error is not expected
+            #if DEBUG
+            assertionFailure("Unexpected error: \(error)")
+            #endif
         }
     }
     
@@ -78,7 +86,16 @@ extension SphinxOnionManager{//invites related
         contact.privatePhoto = false
         contact.tipAmount = 0
         contact.blocked = false
-        contact.sentInviteCode = try! codeFromInvite(inviteQr: code)
+        do{
+            contact.sentInviteCode = try codeFromInvite(inviteQr: code)
+        }
+        catch{
+            print("Handled an expected error: \(error)")
+            // Crash in debug mode if the error is not expected
+            #if DEBUG
+            assertionFailure("Unexpected error: \(error)")
+            #endif
+        }
         let invite = UserInvite(context: managedContext)
         invite.inviteString = code
         invite.status = UserInvite.Status.Ready.rawValue

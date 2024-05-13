@@ -158,7 +158,7 @@ extension SphinxOnionManager{
             let escrowAmountSats = max(Int(truncating: chat.escrowAmount ?? 3), tribeMinEscrowSats)
             let amtMsat = (isTribe && amount == 0) ? UInt64(((Int(truncating: (chat.pricePerMessage ?? 0)) + escrowAmountSats) * 1000)) : UInt64((amount * 1000))
             print("sendMessage args seed: \(seed), uniqueTime: \(getTimeWithEntropy()), to: \(recipPubkey), msgType: \(msgType), msgJson: \(contentJSONString), state: \(String(describing: loadOnionStateAsData())), myAlias: \(nickname), myImg: \(String(describing: myImg)), amtMsat: \(UInt64(amtMsat)), isTribe: \(String(describing: recipContact == nil))")
-            let rr = try! send(seed: seed, uniqueTime: getTimeWithEntropy(), to: recipPubkey, msgType: msgType, msgJson: contentJSONString, state: loadOnionStateAsData(), myAlias: nickname, myImg: myImg, amtMsat: amtMsat,isTribe: isTribe)
+            let rr = try send(seed: seed, uniqueTime: getTimeWithEntropy(), to: recipPubkey, msgType: msgType, msgJson: contentJSONString, state: loadOnionStateAsData(), myAlias: nickname, myImg: myImg, amtMsat: amtMsat,isTribe: isTribe)
             let sentMessage = processNewOutgoingMessage(rr: rr, chat: chat, msgType: msgType, content: content, amount: amount,mediaKey:mediaKey,mediaToken: mediaToken, mediaType: mediaType, replyUUID: replyUUID, threadUUID: threadUUID,invoiceString: invoiceString)
             let tag = handleRunReturn(rr: rr, isMessageSend: true)
             if let tag = tag,
@@ -180,8 +180,14 @@ extension SphinxOnionManager{
             return sentMessage
         }
         catch{
-            print("error")
+            print("Handled an expected error: \(error)")
+            // Crash in debug mode if the error is not expected
+            #if DEBUG
+            assertionFailure("Unexpected error: \(error)")
+            #endif
         }
+        
+        return nil
     }
     
     @objc func handleMessageTimerTimeout(_ timer: Timer) {
@@ -818,16 +824,34 @@ extension SphinxOnionManager{
         }
         guard let recipPubkey = (recipContact?.publicKey ?? chat.ownerPubkey) else { return  }
         
-        let rr = try! mute(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), pubkey: recipPubkey, muteLevel: muteLevel)
-        let _ = handleRunReturn(rr: rr)
+        do{
+            let rr = try mute(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), pubkey: recipPubkey, muteLevel: muteLevel)
+            let _ = handleRunReturn(rr: rr)
+        }
+        catch{
+            print("Handled an expected error: \(error)")
+            // Crash in debug mode if the error is not expected
+            #if DEBUG
+            assertionFailure("Unexpected error: \(error)")
+            #endif
+        }
     }
     
     func getMuteLevels(){
         guard let seed = getAccountSeed() else{
             return
         }
-        let rr = try!  getMutes(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData())
-        let _ = handleRunReturn(rr: rr)
+        do{
+            let rr = try  getMutes(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData())
+            let _ = handleRunReturn(rr: rr)
+        }
+        catch{
+            print("Handled an expected error: \(error)")
+            // Crash in debug mode if the error is not expected
+            #if DEBUG
+            assertionFailure("Unexpected error: \(error)")
+            #endif
+        }
     }
     
     func setReadLevel(
@@ -842,16 +866,35 @@ extension SphinxOnionManager{
             return
         }
         
-        let rr = try! read(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), pubkey: recipPubkey, msgIdx: index)
-        let _ = handleRunReturn(rr: rr)
+        do{
+            let rr = try read(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), pubkey: recipPubkey, msgIdx: index)
+            let _ = handleRunReturn(rr: rr)
+        }
+        catch{
+            print("Handled an expected error: \(error)")
+            // Crash in debug mode if the error is not expected
+            #if DEBUG
+            assertionFailure("Unexpected error: \(error)")
+            #endif
+        }
     }
     
     func getReads(){
         guard let seed = getAccountSeed() else{
             return
         }
-        let rr = try! sphinx.getReads(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData())
-        let _ = handleRunReturn(rr: rr)
+        
+        do{
+            let rr = try sphinx.getReads(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData())
+            let _ = handleRunReturn(rr: rr)
+        }
+        catch{
+            print("Handled an expected error: \(error)")
+            // Crash in debug mode if the error is not expected
+            #if DEBUG
+            assertionFailure("Unexpected error: \(error)")
+            #endif
+        }
     }
 
 }

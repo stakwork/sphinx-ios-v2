@@ -53,15 +53,19 @@ extension SphinxOnionManager{//contacts related
             let _ = createNewContact(pubkey: recipientPubkey,nickname: nickname)
             var hexCode : String? = nil
             if let inviteCode = inviteCode{
-                hexCode = try! codeFromInvite(inviteQr: inviteCode)
+                hexCode = try codeFromInvite(inviteQr: inviteCode)
             }
-            let rr = try! addContact(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), toPubkey: recipientPubkey, routeHint: "\(recipLspPubkey)_\(scid)", myAlias: (selfContact.nickname ?? nickname) ?? "", myImg: selfContact.avatarUrl ?? "", amtMsat: 1000, inviteCode: hexCode, theirAlias: nickname)
+            let rr = try addContact(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), toPubkey: recipientPubkey, routeHint: "\(recipLspPubkey)_\(scid)", myAlias: (selfContact.nickname ?? nickname) ?? "", myImg: selfContact.avatarUrl ?? "", amtMsat: 1000, inviteCode: hexCode, theirAlias: nickname)
             let _ = handleRunReturn(rr: rr)
             print("INITIATED KEY EXCHANGE WITH ARGS:\(seed,getTimeWithEntropy(),loadOnionStateAsData(),recipientPubkey,"\(recipLspPubkey)_\(scid)",selfContact.avatarUrl,1000,hexCode,nickname) ")
             print("INITIATED KEY EXCHANGE WITH RR:\(rr)")
         }
         catch{
-            
+            print("Handled an expected error: \(error)")
+            // Crash in debug mode if the error is not expected
+            #if DEBUG
+            assertionFailure("Unexpected error: \(error)")
+            #endif
         }
         
     }
