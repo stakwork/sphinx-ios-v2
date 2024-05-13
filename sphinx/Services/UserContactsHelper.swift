@@ -188,15 +188,15 @@ class UserContactsHelper {
         API.sharedInstance.exchangeKeys(id: id, callback: { _ in }, errorCallback: {})
     }
 
-    public static func reloadSubscriptions(
-        contact: UserContact,
-        callback: @escaping (Bool) -> ()
-    ) {
-        API.sharedInstance.getSubscriptionsFor(contact: contact, callback: { subscriptions in
-            self.insertSubscriptions(subscriptions: subscriptions)
-            callback(true)
-        }, errorCallback: {
-            callback(false)
-        })
-    }
+//    public static func reloadSubscriptions(
+//        contact: UserContact,
+//        callback: @escaping (Bool) -> ()
+//    ) {
+//        API.sharedInstance.getSubscriptionsFor(contact: contact, callback: { subscriptions in
+//            self.insertSubscriptions(subscriptions: subscriptions)
+//            callback(true)
+//        }, errorCallback: {
+//            callback(false)
+//        })
+//    }
 }

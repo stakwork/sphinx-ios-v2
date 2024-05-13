@@ -63,21 +63,21 @@ extension API {
             errorCallback()
             return
         }
-        
-        sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool, success {
-                        callback()
-                        return
-                    }
-                }
-                errorCallback()
-            case .failure(_):
-                errorCallback()
-            }
-        }
+        //TODO: @Jim reimplement on v2 with keysend
+//        sphinxRequest(request) { response in
+//            switch response.result {
+//            case .success(let data):
+//                if let json = data as? NSDictionary {
+//                    if let success = json["success"] as? Bool, success {
+//                        callback()
+//                        return
+//                    }
+//                }
+//                errorCallback()
+//            case .failure(_):
+//                errorCallback()
+//            }
+//        }
     }
     
     func updateChat(chatId: Int, params: [String: AnyObject], callback: @escaping EmptyCallback, errorCallback:@escaping EmptyCallback) {
@@ -171,21 +171,21 @@ extension API {
             errorCallback()
             return
         }
-        
-        sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool, success {
-                        callback()
-                        return
-                    }
-                }
-                errorCallback()
-            case .failure(_):
-                errorCallback()
-            }
-        }
+        //TODO: @Jim reimplement on v2
+//        sphinxRequest(request) { response in
+//            switch response.result {
+//            case .success(let data):
+//                if let json = data as? NSDictionary {
+//                    if let success = json["success"] as? Bool, success {
+//                        callback()
+//                        return
+//                    }
+//                }
+//                errorCallback()
+//            case .failure(_):
+//                errorCallback()
+//            }
+//        }
     }
     
     func saveContentFeedStatusToRemote(
@@ -201,21 +201,21 @@ extension API {
             errorCallback()
             return
         }
-        
-        sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool, success {
-                        callback()
-                        return
-                    }
-                }
-                errorCallback()
-            case .failure(_):
-                errorCallback()
-            }
-        }
+        //TODO: @Jim reimplement on v2
+//        sphinxRequest(request) { response in
+//            switch response.result {
+//            case .success(let data):
+//                if let json = data as? NSDictionary {
+//                    if let success = json["success"] as? Bool, success {
+//                        callback()
+//                        return
+//                    }
+//                }
+//                errorCallback()
+//            case .failure(_):
+//                errorCallback()
+//            }
+//        }
     }
     
     func requestToCacheVideoRemotely(
@@ -235,16 +235,17 @@ extension API {
             return
         }
         
-        AF.request(request).responseJSON { response in
-            switch response.result {
-            case .success(let data):
-                print(data)
-                callback()
-            case .failure(let error):
-                print(error)
-                errorCallback()
-            }
-        }
+        //TODO: @Jim reimplement on v2
+//        AF.request(request).responseJSON { response in
+//            switch response.result {
+//            case .success(let data):
+//                print(data)
+//                callback()
+//            case .failure(let error):
+//                print(error)
+//                errorCallback()
+//            }
+//        }
         
     }
     
@@ -277,16 +278,17 @@ extension API {
             return
         }
         
-        getFileStatusAndLocation(url: url, completion: { status, location in
-            if let status = status,
-               status.lowercased()  == "completed" ,
-            let validPartialPath = location{
-                callback(self.getFullCachedFilePath(partialPath: validPartialPath))
-            }
-            else{
-                callback(nil)
-            }
-        })
+        //TODO: @Jim reimplement on v2
+//        getFileStatusAndLocation(url: url, completion: { status, location in
+//            if let status = status,
+//               status.lowercased()  == "completed" ,
+//            let validPartialPath = location{
+//                callback(self.getFullCachedFilePath(partialPath: validPartialPath))
+//            }
+//            else{
+//                callback(nil)
+//            }
+//        })
     }
     
     func getFileStatusAndLocation(url: URL, completion: @escaping (String?, String?) -> Void) {

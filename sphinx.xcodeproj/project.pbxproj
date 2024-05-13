@@ -32,7 +32,6 @@
 		470396DC2535D2EB007F9C23 /* PodcastEpisodesDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 470396DB2535D2EB007F9C23 /* PodcastEpisodesDataSource.swift */; };
 		4703CF932519425E007B685C /* PDFKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 47D03DF02510EA170077A968 /* PDFKit.framework */; };
 		4703CF97251D23E5007B685C /* LinkPreviewUIImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4703CF96251D23E5007B685C /* LinkPreviewUIImage.swift */; };
-		4703CFA125278C40007B685C /* API+RedeemSatsExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4703CFA025278C40007B685C /* API+RedeemSatsExtension.swift */; };
 		4705D3992799AAB5009C0729 /* CustomBoostView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4705D3982799AAB5009C0729 /* CustomBoostView.swift */; };
 		4705D39B2799AAC0009C0729 /* CustomBoostView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 4705D39A2799AAC0009C0729 /* CustomBoostView.xib */; };
 		4705D39D2799B3B0009C0729 /* FeedBoostHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4705D39C2799B3B0009C0729 /* FeedBoostHelper.swift */; };
@@ -1088,7 +1087,6 @@
 		470396DB2535D2EB007F9C23 /* PodcastEpisodesDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastEpisodesDataSource.swift; sourceTree = "<group>"; };
 		4703CF9225193701007B685C /* sphinx 22.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 22.xcdatamodel"; sourceTree = "<group>"; };
 		4703CF96251D23E5007B685C /* LinkPreviewUIImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkPreviewUIImage.swift; sourceTree = "<group>"; };
-		4703CFA025278C40007B685C /* API+RedeemSatsExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+RedeemSatsExtension.swift"; sourceTree = "<group>"; };
 		4705D3982799AAB5009C0729 /* CustomBoostView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomBoostView.swift; sourceTree = "<group>"; };
 		4705D39A2799AAC0009C0729 /* CustomBoostView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = CustomBoostView.xib; sourceTree = "<group>"; };
 		4705D39C2799B3B0009C0729 /* FeedBoostHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedBoostHelper.swift; sourceTree = "<group>"; };
@@ -3115,7 +3113,6 @@
 				47669F3C23CF622000C17A77 /* API+GroupsExtension.swift */,
 				47CD950F265EC70E009B06A4 /* API+PeopleExtension.swift */,
 				4794CA76252F5D66007C5022 /* API+PodcastExtension.swift */,
-				4703CFA025278C40007B685C /* API+RedeemSatsExtension.swift */,
 				47AAFC772387063F00E30BDA /* API+SubscriptionsExtension.swift */,
 				47AAFC732387062700E30BDA /* API+UsersExtension.swift */,
 				47BF7D4A25A8A59100593489 /* API+VersionsExtension.swift */,
@@ -5595,7 +5592,6 @@
 				47F7273825791D8600A794B9 /* ContactLinkPreviewView.swift in Sources */,
 				476A10BE23AA8C8E00817892 /* SubscriptionDetailsViewController.swift in Sources */,
 				4789E86C29E752BB0032B8F9 /* ContentFeedPaymentDestination+FetchUtils.swift in Sources */,
-				4703CFA125278C40007B685C /* API+RedeemSatsExtension.swift in Sources */,
 				CECFBF012965C85B00BAD935 /* DiscoverTribesTableViewCell.swift in Sources */,
 				47018F9B27D65B8D00797E0B /* CustomDismissibleView.swift in Sources */,
 				4726F0A625791CF900E20EA9 /* TribeLinkPreviewView.swift in Sources */,

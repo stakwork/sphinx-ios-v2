@@ -33,21 +33,21 @@ extension API {
             callback(false)
             return
         }
-        
-        sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool, success {
-                        callback(true)
-                        return
-                    }
-                }
-                callback(false)
-            case .failure(_):
-                callback(false)
-            }
-        }
+        //TODO: @Jim Need to reimplement for v2
+//        sphinxRequest(request) { response in
+//            switch response.result {
+//            case .success(let data):
+//                if let json = data as? NSDictionary {
+//                    if let success = json["success"] as? Bool, success {
+//                        callback(true)
+//                        return
+//                    }
+//                }
+//                callback(false)
+//            case .failure(_):
+//                callback(false)
+//            }
+//        }
     }
     
 }
