@@ -65,7 +65,9 @@ class LeftMenuViewController: UIViewController {
     
     
     var canUserBuyKarmaForNode: Bool {
-        UserContact.getOwner()?.isVirtualNode() ?? false
+        //TODO: @Jim reinstate for v2 if we decide to
+        false
+//        UserContact.getOwner()?.isVirtualNode() ?? false
     }
     
     var karmaPurchaseProduct: SKProduct? {
