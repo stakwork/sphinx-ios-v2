@@ -34,9 +34,10 @@ class DeepLinksHandlerHelper {
             return false
         }
         
-        if WindowsManager.sharedInstance.showRedeemSats() {
-            return false
-        }
+        //TODO: @Jim reinstate if we decide to
+//        if WindowsManager.sharedInstance.showRedeemSats() {
+//            return false
+//        }
         
         if WindowsManager.sharedInstance.showAuth() {
             return false

@@ -716,7 +716,9 @@ extension TransactionMessage {
     
     var isPinActionAllowed: Bool {
         get {
-            return (self.chat?.isMyPublicGroup() ?? false) && !isMessagePinned && messageContainText()
+            //TODO: @Jim reinstate for v2 when we're ready
+            return false
+//            return (self.chat?.isMyPublicGroup() ?? false) && !isMessagePinned && messageContainText()
         }
     }
     
