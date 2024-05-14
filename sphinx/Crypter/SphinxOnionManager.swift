@@ -30,6 +30,7 @@ class SphinxOnionManager : NSObject {
     var watchdogTimer:Timer?=nil
     var nextMessageBlockWasReceived = false
     var messageTimers: [String: Timer] = [:]
+    let kUniqueIntBaseValue = 100_000_000
 
     
     var messageFetchParams : MessageFetchParams? = nil

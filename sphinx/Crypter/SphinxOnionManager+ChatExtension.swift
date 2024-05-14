@@ -572,12 +572,11 @@ extension SphinxOnionManager{
         newMessage.receiverId = UserContact.getSelfContact()?.id ?? 0
         newMessage.push = false
         newMessage.seen = false
-        newMessage.chat?.seen = false
         newMessage.messageContent = content
         newMessage.chat = chat
+        newMessage.chat?.seen = false
         newMessage.replyUUID = message.replyUuid
         newMessage.threadUUID = message.threadUuid
-        newMessage.chat?.seen = false
         newMessage.senderAlias = csr?.alias
         newMessage.senderPic = csr?.photoUrl
         newMessage.mediaKey = message.mediaKey

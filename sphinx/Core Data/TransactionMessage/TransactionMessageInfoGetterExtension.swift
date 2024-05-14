@@ -238,7 +238,7 @@ extension TransactionMessage {
     
     func setAsLastMessageIfHighestIndex(){
         if let lastMessageId = self.chat?.lastMessage?.id,
-           lastMessageId < self.id{
+           lastMessageId < self.id || SphinxOnionManager.sharedInstance.messageIdIsFromHashed(msgId: lastMessageId){ //if it's a hashed id ignore it bc its not genuine signal from server (generated 
             self.chat?.lastMessage = self
         }
     }

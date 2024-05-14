@@ -10,9 +10,16 @@ import Foundation
 
 extension SphinxOnionManager{//invites related
     
-    func uniqueIntHashFromString(stringInput:String) -> Int{
-        return Int(Int32(stringInput.hashValue & 0x7FFFFFFF))
+    func messageIdIsFromHashed(msgId:Int)->Bool{
+        return msgId > SphinxOnionManager.sharedInstance.kUniqueIntBaseValue
     }
+    
+    func uniqueIntHashFromString(stringInput: String) -> Int {
+        let baseValue = kUniqueIntBaseValue
+        let hashValue = Int(Int32(stringInput.hashValue & 0x7FFFFFFF))
+        return hashValue + baseValue
+    }
+
     
     func requestInviteCode(amountMsat:Int){
         guard let seed = getAccountSeed(),
