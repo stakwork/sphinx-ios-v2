@@ -134,7 +134,7 @@ class GroupDetailsViewController: UIViewController {
     }
     
     func configureBadgeManagementView(){
-        //TODO: @Jim reinstate when ready for v2 badges 
+        //TODO: @Jim reinstate when ready for v2 badges
 //        if let chat = chat,
 //           chat.isMyPublicGroup(){
 //            badgeManagementContainerView.backgroundColor = UIColor.Sphinx.Body
