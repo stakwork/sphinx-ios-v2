@@ -12,21 +12,22 @@ import SwiftyJSON
 class InviteActionsHelper {
     
     func handleInviteActions(completion: @escaping () -> ()) {
-        if let inviteAction: String = UserDefaults.Keys.inviteAction.get(), !inviteAction.isEmpty {
-            if inviteAction.starts(with: "create_podcast") {
-                let podcastId = inviteAction.podcastId
-                if podcastId > 0 {
-                    getPodcastInfo(podcastId: podcastId, completion: completion)
-                    return
-                }
-            } else if inviteAction.starts(with: "join_tribe") {
-                let (uuid, host) = inviteAction.tribeUUIDAndHost
-                if let uuid = uuid, !uuid.isEmpty {
-                    getTribeInfo(uuid: uuid, host: host ?? "tribes.sphinx.chat", completion: completion)
-                    return
-                }
-            }
-        }
+        //TODO: @Jim need to rethink for v2!
+//        if let inviteAction: String = UserDefaults.Keys.inviteAction.get(), !inviteAction.isEmpty {
+//            if inviteAction.starts(with: "create_podcast") {
+//                let podcastId = inviteAction.podcastId
+//                if podcastId > 0 {
+//                    getPodcastInfo(podcastId: podcastId, completion: completion)
+//                    return
+//                }
+//            } else if inviteAction.starts(with: "join_tribe") {
+//                let (uuid, host) = inviteAction.tribeUUIDAndHost
+//                if let uuid = uuid, !uuid.isEmpty {
+//                    getTribeInfo(uuid: uuid, host: host ?? "tribes.sphinx.chat", completion: completion)
+//                    return
+//                }
+//            }
+//        }
         completion()
     }
     

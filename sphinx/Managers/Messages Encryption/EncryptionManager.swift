@@ -104,45 +104,6 @@ class EncryptionManager {
         let _ = deleteKey(keyClass: kSecAttrKeyClassPrivate, tag: PRIVATE_KEY)
     }
     
-    func getOrCreateKeys(completion: (() -> ())? = nil) -> (PrivateKey?, PublicKey?) {
-        let (privateKey, publicKey) = getKeysFromReferences()
-
-        if let privateKey = privateKey, let publicKey = publicKey {
-            saveKeysOnKeychain()
-            sendPublicKeyToServer(completion: completion)
-            return (privateKey, publicKey)
-        }
-        
-        if let owner = UserContact.getOwner(), let contactKey = owner.contactKey, !contactKey.isEmpty {
-            let keychainRestoredKeys = restoreFromKeychain()
-            
-            if let privateKey = keychainRestoredKeys.0, let publicKey = keychainRestoredKeys.1 {
-                
-                ownPublicKey = publicKey.reference
-                ownPrivateKey = privateKey.reference
-                
-                completion?()
-                
-                return (privateKey, publicKey)
-            }
-        }
-        
-        var keyPair : (privateKey: PrivateKey, publicKey: PublicKey)?
-        
-        do {
-            keyPair = try SwiftyRSA.generateRSAKeyPair(sizeInBits: KEY_SIZE)
-            
-            ownPublicKey = keyPair?.publicKey.reference
-            ownPrivateKey = keyPair?.privateKey.reference
-        } catch {
-            return (nil, nil)
-        }
-        
-        saveKeysOnKeychain()
-        sendPublicKeyToServer(completion: completion)
-        
-        return (keyPair?.privateKey, keyPair?.publicKey)
-    }
     
     func restoreFromKeychain() -> (PrivateKey?, PublicKey?) {
         let (privKeyString, pubKeyString) = userData.getEncryptionKeys()

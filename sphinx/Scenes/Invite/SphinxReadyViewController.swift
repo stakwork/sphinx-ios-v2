@@ -87,9 +87,7 @@ class SphinxReadyViewController: UIViewController {
     }
     
     func finishSignup() {
-        let (_, _) = EncryptionManager.sharedInstance.getOrCreateKeys() {
-            self.handleInviteActions()
-        }
+        self.handleInviteActions()
     }
     
     func handleInviteActions() {
