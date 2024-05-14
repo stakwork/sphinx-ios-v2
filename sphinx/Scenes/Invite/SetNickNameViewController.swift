@@ -67,22 +67,6 @@ class SetNickNameViewController: SetDataViewController {
         }
     }
     
-//    func insertAndUpdateOwner(contacts: [JSON]) {
-//        UserContactsHelper.insertContacts(contacts: contacts)
-//        UserData.sharedInstance.saveNewNodeOnKeychain()
-//        
-//        let id = UserData.sharedInstance.getUserId()
-//        let parameters = ["alias" : (nickNameField.text ?? "") as AnyObject]
-//        
-//        API.sharedInstance.updateUser(id: id, params: parameters, callback: { contact in
-//            self.loading = false
-//            let _ = UserContactsHelper.insertContact(contact: contact)
-//            self.goToProfilePicture()
-//        }, errorCallback: {
-//            AlertHelper.showAlert(title: "generic.error.title".localized, message: "generic.error.message".localized)
-//        })
-//    }
-    
     func goToProfilePicture() {
         let profilePictureVC = SetProfileImageViewController.instantiate(nickname: nickNameField.text ?? nil)
         profilePictureVC.isV2 = self.isV2

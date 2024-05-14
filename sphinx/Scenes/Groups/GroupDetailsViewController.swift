@@ -134,14 +134,15 @@ class GroupDetailsViewController: UIViewController {
     }
     
     func configureBadgeManagementView(){
-        if let chat = chat,
-           chat.isMyPublicGroup(){
-            badgeManagementContainerView.backgroundColor = UIColor.Sphinx.Body
-            badgeManagementContainerHeight.constant = 90
-            badgeManagementContainerView.isHidden = false
-            badgeManagementContainerView.isUserInteractionEnabled = true
-            badgeManagementContainerView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(didTapBadgeManagementView)))
-        }
+        //TODO: @Jim reinstate when ready for v2 badges 
+//        if let chat = chat,
+//           chat.isMyPublicGroup(){
+//            badgeManagementContainerView.backgroundColor = UIColor.Sphinx.Body
+//            badgeManagementContainerHeight.constant = 90
+//            badgeManagementContainerView.isHidden = false
+//            badgeManagementContainerView.isUserInteractionEnabled = true
+//            badgeManagementContainerView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(didTapBadgeManagementView)))
+//        }
     }
     
     @objc func didTapBadgeManagementView(){
