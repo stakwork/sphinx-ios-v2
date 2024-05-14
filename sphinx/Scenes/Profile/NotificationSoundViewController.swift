@@ -77,16 +77,17 @@ class NotificationSoundViewController: UIViewController {
         let file = notificationSoundHelper.getSelectedSound().file
         let parameters = ["notification_sound" : file as AnyObject]
 
-        API.sharedInstance.updateUser(id: id, params: parameters, callback: { contact in
-            let _ = UserContactsHelper.insertContact(contact: contact)
-
-            self.delegate?.didUpdateSound()
-            self.backButtonTouched()
-        }, errorCallback: {
-            AlertHelper.showAlert(title: "generic.error.title".localized, message: "generic.error.message".localized, completion: {
-                self.backButtonTouched()
-            })
-        })
+        //@Tom not exactly sure what this code is meant to do but I can reimplement
+//        API.sharedInstance.updateUser(id: id, params: parameters, callback: { contact in
+//            let _ = UserContactsHelper.insertContact(contact: contact)
+//
+//            self.delegate?.didUpdateSound()
+//            self.backButtonTouched()
+//        }, errorCallback: {
+//            AlertHelper.showAlert(title: "generic.error.title".localized, message: "generic.error.message".localized, completion: {
+//                self.backButtonTouched()
+//            })
+//        })
     }
 }
 

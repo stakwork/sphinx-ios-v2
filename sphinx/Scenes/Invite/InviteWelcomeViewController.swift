@@ -72,18 +72,7 @@ class InviteWelcomeViewController: UIViewController {
     
     @IBAction func nextButtonTouched() {
         loading = true
-        
-        if let inviter = currentInviter, let pubkey = inviter.pubkey {
-            UserContactsHelper.createContact(nickname: inviter.nickname, pubKey: pubkey, routeHint: inviter.routeHint, callback: { (success, _) in
-                if success {
-                    self.continueToPinView()
-                } else {
-                    self.didFailCreatingContact()
-                }
-            })
-        } else {
-            self.continueToPinView()
-        }
+        self.continueToPinView()
     }
     
     func continueToPinView() {

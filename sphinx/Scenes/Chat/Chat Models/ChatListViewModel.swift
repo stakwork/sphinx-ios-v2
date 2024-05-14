@@ -22,51 +22,6 @@ final class ChatListViewModel {
         
         SphinxOnionManager.sharedInstance.restoreFirstScidMessages()
     }
-            
-    func restoreContacts(
-        page: Int,
-        restoring: Bool,
-        progressCompletion: ((Bool) -> ())? = nil,
-        completion: @escaping (Bool) -> ()
-    ) {
-        API.sharedInstance.getLatestContacts(
-            page: page,
-            date: Date(),
-            nextPageCallback: {(contacts, chats, subscriptions, invites) -> () in
-                self.saveObjects(
-                    contacts: contacts,
-                    chats: chats,
-                    subscriptions: subscriptions,
-                    invites: invites
-                )
-                
-                self.restoreContacts(
-                    page: page + 1,
-                    restoring: restoring,
-                    progressCompletion: progressCompletion,
-                    completion: completion
-                )
-                
-                progressCompletion?(restoring)
-            },
-            callback: {(contacts, chats, subscriptions, invites) -> () in
-            
-                self.saveObjects(
-                    contacts: contacts,
-                    chats: chats,
-                    subscriptions: subscriptions,
-                    invites: invites
-                )
-                
-                CoreDataManager.sharedManager.persistentContainer.viewContext.saveContext()
-                    
-                self.forceKeychainSync()
-                self.authenticateWithMemesServer()
-                
-                completion(restoring)
-            }
-        )
-    }
     
     func saveObjects(
         contacts: [JSON],

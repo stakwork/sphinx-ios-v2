@@ -245,9 +245,6 @@ class NewContactViewController: KeyboardEventsViewController {
         else if routeHintTextField.text?.isV2RouteHint ?? false{
             createV2Contact()
         }
-        else {
-            createContact()
-        }
     }
     
     @IBAction func subscribeButtonTouched() {

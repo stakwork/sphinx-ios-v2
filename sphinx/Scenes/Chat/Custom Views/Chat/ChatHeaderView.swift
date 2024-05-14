@@ -115,9 +115,6 @@ class ChatHeaderView: UIView {
         setVolumeState(muted: chat?.isMuted() ?? false)
         configureImageOrInitials()
         
-        if let contact = contact, !contact.hasEncryptionKey() {
-            forceKeysExchange(contactId: contact.id)
-        }
     }
     
     func getHeaderName() -> String {
@@ -216,9 +213,6 @@ class ChatHeaderView: UIView {
         volumeButton.setImage(UIImage(named: muted ? "muteOnIcon" : "muteOffIcon"), for: .normal)
     }
     
-    func forceKeysExchange(contactId: Int) {
-        UserContactsHelper.exchangeKeys(id: contactId)
-    }
     
     func checkRoute() {
         let success = (contact?.status == UserContact.Status.Confirmed.rawValue) || (chat?.status == Chat.ChatStatus.approved.rawValue)

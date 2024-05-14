@@ -59,32 +59,6 @@ extension NewContactViewController {
             })
         }
     }
-   
-    func createContact() {
-        let nickname = nickNameTextField.text ?? ""
-        let pubkey = addressTextField.text ?? ""
-        let routeHint = routeHintTextField.text ?? ""
-        
-        if !pubkey.isEmpty && !pubkey.isPubKey {
-            showErrorAlert(message: "invalid.pubkey".localized)
-        } else if !routeHint.isEmpty && !routeHint.isRouteHint && !routeHint.isV2RouteHint {
-            showErrorAlert(message: "invalid.route.hint".localized)
-        } else if nickname.isEmpty || pubkey.isEmpty {
-            showErrorAlert(message: "nickname.address.required".localized)
-        } else {
-            let pin = groupPinContainer.getPin()
-            UserContactsHelper.createContact(nickname: nickname, pubKey: pubkey, routeHint: routeHint, pin: pin, callback: { (success, _) in
-                self.loading = false
-
-                if success {
-                    self.delegate?.shouldReloadContacts?(reload: true, dashboardTabIndex: 1)
-                    self.closeButtonTouched()
-                } else {
-                    self.showErrorAlert(message: "generic.error.message".localized)
-                }
-            })
-        }
-    }
     
     func showErrorAlert(message: String) {
         loading = false
