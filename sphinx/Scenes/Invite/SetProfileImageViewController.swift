@@ -20,6 +20,7 @@ class SetProfileImageViewController: SetDataViewController {
     var nickname: String? = nil
     var imageSet = false
     var isV2: Bool = false
+    var isRestoreFlow:Bool = false
     
     var imagePickerManager = ImagePickerManager.sharedInstance
     
@@ -109,8 +110,8 @@ class SetProfileImageViewController: SetDataViewController {
     
     func goToSphinxDesktopAd() {
         SignupHelper.step = SignupHelper.SignupStep.PersonalInfoSet.rawValue
-        
         let sphinxDesktopAdVC = SphinxDesktopAdViewController.instantiate()
+        sphinxDesktopAdVC.isRestoreFlow = self.isRestoreFlow
         self.navigationController?.pushViewController(sphinxDesktopAdVC, animated: true)
     }
 }

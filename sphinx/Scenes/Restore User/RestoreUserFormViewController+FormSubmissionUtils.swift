@@ -209,10 +209,13 @@ extension RestoreUserFormViewController : NSFetchedResultsControllerDelegate{
             let inviteWelcomeVC = InviteWelcomeViewController.instantiate(
                 inviter: inviter
             )
-            if let vc = self as? NewUserSignupFormViewController{
-                inviteWelcomeVC.isV2 = vc.isV2
-            }
-            self.navigationController?.pushViewController(inviteWelcomeVC, animated: true)
+            
+            SignupHelper.step = SignupHelper.SignupStep.InviterContactCreated.rawValue
+            
+            let setPinVC = SetPinCodeViewController.instantiate()
+            setPinVC.isV2 = true
+            setPinVC.isRestoreFlow = true
+            self.navigationController?.pushViewController(setPinVC, animated: true)
         }
     }
     
