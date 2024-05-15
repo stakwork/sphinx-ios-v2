@@ -352,13 +352,12 @@ extension SphinxOnionManager{
             if message.type == 33{
                 print(message)
                 print(genericIncomingMessage)
-                if let sender = message.sender,
-                   let csr =  ContactServerResponse(JSONString: sender),
-                   let recipientPubkey = csr.pubkey,
+                if let fullContactInfo = genericIncomingMessage.fullContactInfo,
+                let (recipientPubkey, recipLspPubkey,scid) = parseContactInfoString(fullContactInfo: fullContactInfo),
                    UserContact.getContactWithDisregardStatus(pubkey: recipientPubkey) == nil{
                     let pendingContact = self.createNewContact(pubkey: recipientPubkey,nickname: genericIncomingMessage.alias ?? "Unknown")
-                    pendingContact?.scid = nil
-                    pendingContact?.routeHint = nil
+                    pendingContact?.scid = scid
+                    pendingContact?.routeHint = recipLspPubkey
                     pendingContact?.status = UserContact.Status.Pending.rawValue
                 }
                 NotificationCenter.default.post(name: .newOnionMessageWasReceived,object:nil, userInfo: ["message": TransactionMessage()])
