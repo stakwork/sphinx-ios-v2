@@ -214,6 +214,12 @@ extension DashboardRootViewController {
         isLoading = true
         
         activeTab = .friends
+        //@Tom I could not figure out how to get searchBarContainer to enable touches. This is a hack that I discovered (going to "feed" seems to remedy the issue). Need more time to anlayze this and go past this temporary hack
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.01, execute: {
+            self.activeTab = .feed
+            self.activeTab = .friends
+        })
+        
         
         loadLastPlayedPod()
         
