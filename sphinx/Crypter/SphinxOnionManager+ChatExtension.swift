@@ -352,7 +352,7 @@ extension SphinxOnionManager{
             if message.type == 33{
                 print(message)
                 print(genericIncomingMessage)
-                if let sender = message.sender,
+                if let sender = message.sender,//
                    let csr =  ContactServerResponse(JSONString: sender),
                    let recipientPubkey = csr.pubkey,
                    UserContact.getContactWithDisregardStatus(pubkey: recipientPubkey) == nil{
