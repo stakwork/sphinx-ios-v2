@@ -195,6 +195,7 @@ extension SphinxOnionManager{
            let tag = userInfo["tag"] as? String,
            let cachedMessage = TransactionMessage.getMessageWith(tag: tag),
            cachedMessage.status != TransactionMessage.TransactionMessageStatus.received.rawValue,
+           cachedMessage.status != TransactionMessage.TransactionMessageStatus.deleted.rawValue,
            cachedMessage.type != TransactionMessage.TransactionMessageType.invoice.rawValue{// fix bug accidentally flagging paid invoice as failed
             // Logic to handle timeout, now having access to the message tag
             print("Watchdog timer fired: Message with tag \(tag) sending timeout")
