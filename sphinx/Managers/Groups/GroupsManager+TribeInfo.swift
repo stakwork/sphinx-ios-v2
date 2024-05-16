@@ -130,6 +130,10 @@ extension GroupsManager {
                 //1. parse tribe info
                 print(groupInfo)
                 
+                guard let pubkey = groupInfo["pubkey"].rawValue as? String,
+                      Chat.getTribeChatWithOwnerPubkey(ownerPubkey: pubkey) == nil else{
+                    return //ensure we don't accidentally create duplicates!
+                }
                 var chatDict : [String:Any] = [
                     "id":CrypterManager.sharedInstance.generateCryptographicallySecureRandomInt(upperBound: Int(1e5)),
                     "owner_pubkey": groupInfo["pubkey"],
