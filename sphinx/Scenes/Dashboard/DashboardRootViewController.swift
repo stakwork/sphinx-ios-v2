@@ -704,29 +704,27 @@ extension DashboardRootViewController {
         navigationController?.pushViewController(chatVC, animated: shouldAnimate)
     }
     
-    private func handleInvite(for contact: UserContact?) -> Bool {
+    private func handleInvite(for contact: UserContact?) -> Bool {        
+        if let invite = contact?.invite, (contact?.isPending() ?? false) {
+            
+            if invite.isPendingPayment() && !invite.isPaymentProcessed() {
+                //@Tom I deleted most related functions & earmarked this for deletion but wondering if I might have missed something here that needs to be added for v2. Let me know.
+                //payInvite(invite: invite)
+                
+            } else {
+                
+                let (ready, title, message) = invite.getInviteStatusForAlert()
+                
+                if ready {
+                    goToInviteCodeString(inviteCode: contact?.invite?.inviteString ?? "")
+                } else {
+                    AlertHelper.showAlert(title: title, message: message)
+                }
+                
+            }
+            return true
+        }
         return false
-        //@Tom I deleted most related functions & earmarked this for deletion but wondering if I might have missed something here that needs to be added for v2. Let me know.
-//        if let invite = contact?.invite, (contact?.isPending() ?? false) {
-//            
-//            if invite.isPendingPayment() && !invite.isPaymentProcessed() {
-//                
-//                payInvite(invite: invite)
-//                
-//            } else {
-//                
-//                let (ready, title, message) = invite.getInviteStatusForAlert()
-//                
-//                if ready {
-//                    goToInviteCodeString(inviteCode: contact?.invite?.inviteString ?? "")
-//                } else {
-//                    AlertHelper.showAlert(title: title, message: message)
-//                }
-//                
-//            }
-//            return true
-//        }
-//        return false
     }
     
     private func goToInviteCodeString(
