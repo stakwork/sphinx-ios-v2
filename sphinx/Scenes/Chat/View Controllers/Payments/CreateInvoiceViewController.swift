@@ -311,7 +311,7 @@ class CreateInvoiceViewController: CommonPaymentViewController {
     }
     
     private func sendDirectPayment() {
-        let fetchedChat = UserContact.getContactWith(pubkey: preloadedPubkey ?? "")?.getChat()
+        let fetchedChat = UserContact.getContactWith(pubkey: preloadedPubkey ?? "")?.getChat() ?? UserContact.getContactWith(pubkey: SphinxOnionManager.sharedInstance.parseContactInfoString(fullContactInfo: preloadedPubkey ?? "")?.0 ?? "")?.getChat()
         guard let chat = chat ?? fetchedChat else{
             AlertHelper.showAlert(title: "generic.error.title".localized, message: "contact.not.found".localized, completion: {
                 self.shouldDismissView()
