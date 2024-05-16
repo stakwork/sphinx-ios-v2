@@ -68,6 +68,7 @@ public class Chat: NSManagedObject {
     }
     
     static func insertChat(chat: JSON) -> Chat? {
+        
         if let id = getChatId(chat: chat) {
             let name = chat["name"].string ?? ""
             let photoUrl = chat["photo_url"].string ?? chat["img"].string ?? ""
@@ -92,6 +93,10 @@ public class Chat: NSManagedObject {
             
             let contactIds = chat["contact_ids"].arrayObject as? [NSNumber] ?? []
             let pendingContactIds = chat["pending_contact_ids"].arrayObject as? [NSNumber] ?? []
+            
+            let isInRemovedChatList = SphinxOnionManager.sharedInstance.isInRemovedTribeList(ownerPubkey: ownerPubkey)
+            print(isInRemovedChatList)
+            if isInRemovedChatList == true{return nil}
             
             let chat = Chat.createObject(
                 id: id,

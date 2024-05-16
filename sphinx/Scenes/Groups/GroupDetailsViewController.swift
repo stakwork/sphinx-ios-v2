@@ -247,7 +247,7 @@ class GroupDetailsViewController: UIViewController {
         
         AlertHelper.showTwoOptionsAlert(title: deleteLabel, message: confirmDeleteLabel, confirm: {
             self.loading = true
-            SphinxOnionManager.sharedInstance.deleteTribe(tribeChat: self.chat)
+            (isMyPublicGroup) ? (SphinxOnionManager.sharedInstance.deleteTribe(tribeChat: self.chat)): (SphinxOnionManager.sharedInstance.exitTribe(tribeChat: self.chat))
             DispatchQueue.main.async{
                 CoreDataManager.sharedManager.deleteChatObjectsFor(self.chat)
             }

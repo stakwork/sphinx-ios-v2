@@ -110,6 +110,34 @@ extension SphinxOnionManager{//tribes related1
         }
     }
     
+    func addToRemovedTribesList(chat:Chat?){
+        guard let chat = chat,
+              let ownerPubkey = chat.ownerPubkey,
+              chat.isPublicGroup() else{
+            return
+        }
+        
+        if var pubkeys: [String] = UserDefaults.Keys.removedTribeOwnerPubkeys.get(){
+            pubkeys.append(ownerPubkey)
+            UserDefaults.Keys.removedTribeOwnerPubkeys.set(pubkeys)
+        }
+        else{
+            UserDefaults.Keys.removedTribeOwnerPubkeys.set([ownerPubkey])
+        }
+    }
+    
+    func isInRemovedTribeList(ownerPubkey:String?)->Bool{
+        guard let ownerPubkey = ownerPubkey else{
+            return false
+        }
+        
+        if let pubkeys: [String] = UserDefaults.Keys.removedTribeOwnerPubkeys.get(){
+            return pubkeys.contains(ownerPubkey)
+        }
+        
+        return false
+    }
+    
     func extractHostAndTribeIdentifier(from urlString: String)->(String,String)? {
         guard let url = URL(string: urlString) else {
             print("Invalid URL")
@@ -163,6 +191,7 @@ extension SphinxOnionManager{//tribes related1
             threadUUID: nil,
             replyUUID: nil
         )
+        addToRemovedTribesList(chat: tribeChat)
     }
     
     func getTribeMembers(
@@ -191,12 +220,7 @@ extension SphinxOnionManager{//tribes related1
         guard let tribeServerPubkey = getTribePubkey() else{
             return
         }
-        do{
-           let _ = sendMessage(to: nil, content: pubkey, chat: chat, msgType: UInt8(TransactionMessage.TransactionMessageType.groupKick.rawValue), recipPubkey: tribeServerPubkey, threadUUID: nil, replyUUID: nil)
-        }
-        catch{
-            
-        }
+        let _ = sendMessage(to: nil, content: pubkey, chat: chat, msgType: UInt8(TransactionMessage.TransactionMessageType.groupKick.rawValue), recipPubkey: tribeServerPubkey, threadUUID: nil, replyUUID: nil)
     }
     
     func approveOrRejectTribeJoinRequest(
@@ -220,12 +244,9 @@ extension SphinxOnionManager{//tribes related1
         guard let tribeServerPubkey = getTribePubkey() else{
             return
         }
-        do{
-            let _ = sendMessage(to: nil, content: "", chat: tribeChat, msgType: UInt8(TransactionMessage.TransactionMessageType.groupDelete.rawValue), recipPubkey: tribeServerPubkey, threadUUID: nil, replyUUID: nil)
-        }
-        catch{
-            
-        }
+        let _ = sendMessage(to: nil, content: "", chat: tribeChat, msgType: UInt8(TransactionMessage.TransactionMessageType.groupDelete.rawValue), recipPubkey: tribeServerPubkey, threadUUID: nil, replyUUID: nil)
+        
+        addToRemovedTribesList(chat: tribeChat)
     }
     
     
