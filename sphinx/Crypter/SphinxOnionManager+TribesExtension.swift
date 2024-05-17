@@ -19,6 +19,46 @@ extension SphinxOnionManager{//tribes related1
         return tribePubkey
     }
     
+    func mapChatJSON(rawTribeJSON:[String:Any])->JSON?{
+        guard let name = rawTribeJSON["name"] as? String,
+              let ownerPubkey = rawTribeJSON["pubkey"] as? String,
+              ownerPubkey.isPubKey else{
+            return nil
+          }
+        var chatDict = rawTribeJSON
+        
+        let mappedFields : [String:Any] = [
+            "id":CrypterManager.sharedInstance.generateCryptographicallySecureRandomInt(upperBound: Int(1e5)) as Any,
+            "owner_pubkey": ownerPubkey,
+            "name" : name,
+            "is_tribe_i_created":true,
+            "type":Chat.ChatType.publicGroup.rawValue
+            //"created_at":createdAt
+        ]
+        
+        for key in mappedFields.keys{
+            chatDict[key] = mappedFields[key]
+        }
+        
+        let chatJSON = JSON(chatDict)
+        return chatJSON
+    }
+    
+    func getChatJSON(tribeInfo:GroupsManager.TribeInfo)->JSON?{
+        var chatDict : [String:Any] = [
+            "id":CrypterManager.sharedInstance.generateCryptographicallySecureRandomInt(upperBound: Int(1e5)) as Any,
+            "owner_pubkey": tribeInfo.ownerPubkey as Any,
+            "name" : tribeInfo.name ?? "Unknown Name",
+            "private": tribeInfo.privateTribe ,
+            "photo_url": tribeInfo.img ?? "",
+            "unlisted": tribeInfo.unlisted,
+            "price_per_message": tribeInfo.pricePerMessage ?? 0,
+            "escrow_amount": max(tribeInfo.amountToStake ?? 3, 3)
+        ]
+        let chatJSON = JSON(chatDict)
+        return chatJSON
+    }
+    
     func createTribe(params:[String:Any]){
         guard let seed = getAccountSeed(),
         let tribeServerPubkey = getTribePubkey() else{
@@ -31,11 +71,15 @@ extension SphinxOnionManager{//tribes related1
             return
         }
         do{
-            let rr = try! sphinx.createTribe(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), tribeServerPubkey: tribeServerPubkey, tribeJson: tribeJSONString)
-            handleRunReturn(rr: rr)
+            let rr = try sphinx.createTribe(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), tribeServerPubkey: tribeServerPubkey, tribeJson: tribeJSONString)
+            let _ = handleRunReturn(rr: rr)
         }
         catch{
-            
+            print("Handled an expected error: \(error)")
+            // Crash in debug mode if the error is not expected
+            #if DEBUG
+            assertionFailure("Unexpected error: \(error)")
+            #endif
         }
     }
     
@@ -51,15 +95,48 @@ extension SphinxOnionManager{//tribes related1
         }
         do{
             
-            let rr = try! sphinx.joinTribe(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), tribePubkey: tribePubkey, tribeRouteHint: routeHint, alias: alias ?? "test", amtMsat: UInt64(joinAmountMsats), isPrivate: isPrivate)
+            let rr = try sphinx.joinTribe(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), tribePubkey: tribePubkey, tribeRouteHint: routeHint, alias: alias ?? "test", amtMsat: UInt64(joinAmountMsats), isPrivate: isPrivate)
             DelayPerformedHelper.performAfterDelay(seconds: 1.0, completion: {
-                self.handleRunReturn(rr: rr)
+                let _ = self.handleRunReturn(rr: rr)
             })
             
         }
         catch{
-            
+            print("Handled an expected error: \(error)")
+            // Crash in debug mode if the error is not expected
+            #if DEBUG
+            assertionFailure("Unexpected error: \(error)")
+            #endif
         }
+    }
+    
+    func addToRemovedTribesList(chat:Chat?){
+        guard let chat = chat,
+              let ownerPubkey = chat.ownerPubkey,
+              chat.isPublicGroup() else{
+            return
+        }
+        
+        if var pubkeys: [String] = UserDefaults.Keys.removedTribeOwnerPubkeys.get(),
+           pubkeys.filter({$0 == ownerPubkey}).count == 0{ // only add once
+            pubkeys.append(ownerPubkey)
+            UserDefaults.Keys.removedTribeOwnerPubkeys.set(pubkeys)
+        }
+        else{
+            UserDefaults.Keys.removedTribeOwnerPubkeys.set([ownerPubkey])
+        }
+    }
+    
+    func isInRemovedTribeList(ownerPubkey:String?)->Bool{
+        guard let ownerPubkey = ownerPubkey else{
+            return false
+        }
+        
+        if let pubkeys: [String] = UserDefaults.Keys.removedTribeOwnerPubkeys.get(){
+            return pubkeys.contains(ownerPubkey)
+        }
+        
+        return false
     }
     
     func extractHostAndTribeIdentifier(from urlString: String)->(String,String)? {
@@ -107,7 +184,7 @@ extension SphinxOnionManager{//tribes related1
     }
     
     func exitTribe(tribeChat:Chat){
-        self.sendMessage(
+        let _ = self.sendMessage(
             to: nil,
             content: "",
             chat: tribeChat,
@@ -115,6 +192,7 @@ extension SphinxOnionManager{//tribes related1
             threadUUID: nil,
             replyUUID: nil
         )
+        addToRemovedTribesList(chat: tribeChat)
     }
     
     func getTribeMembers(
@@ -126,12 +204,16 @@ extension SphinxOnionManager{//tribes related1
             return
         }
         do{
-            let rr = try! listTribeMembers(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), tribeServerPubkey: tribeServerPubkey, tribePubkey: tribeChat.ownerPubkey ?? "")
+            let rr = try listTribeMembers(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), tribeServerPubkey: tribeServerPubkey, tribePubkey: tribeChat.ownerPubkey ?? "")
             stashedCallback = completion
-            handleRunReturn(rr: rr)
+            let _ = handleRunReturn(rr: rr)
         }
         catch{
-            
+            print("Handled an expected error: \(error)")
+            // Crash in debug mode if the error is not expected
+            #if DEBUG
+            assertionFailure("Unexpected error: \(error)")
+            #endif
         }
     }
     
@@ -139,12 +221,7 @@ extension SphinxOnionManager{//tribes related1
         guard let tribeServerPubkey = getTribePubkey() else{
             return
         }
-        do{
-            sendMessage(to: nil, content: "", chat: chat, msgType: UInt8(TransactionMessage.TransactionMessageType.groupKick.rawValue), recipPubkey: tribeServerPubkey, threadUUID: nil, replyUUID: nil, tribeKickMember: pubkey)
-        }
-        catch{
-            
-        }
+        let _ = sendMessage(to: nil, content: pubkey, chat: chat, msgType: UInt8(TransactionMessage.TransactionMessageType.groupKick.rawValue), recipPubkey: tribeServerPubkey, threadUUID: nil, replyUUID: nil)
     }
     
     func approveOrRejectTribeJoinRequest(
@@ -159,7 +236,7 @@ extension SphinxOnionManager{//tribes related1
             type.rawValue == TransactionMessage.TransactionMessageType.memberReject.rawValue) == false{
             return
         }
-        sendMessage(to: nil, content: "", chat: chat, msgType: UInt8(type.rawValue), recipPubkey: tribeServerPubkey, threadUUID: nil, replyUUID: requestUuid)
+        let _ = sendMessage(to: nil, content: "", chat: chat, msgType: UInt8(type.rawValue), recipPubkey: tribeServerPubkey, threadUUID: nil, replyUUID: requestUuid)
     }
     
     
@@ -168,12 +245,9 @@ extension SphinxOnionManager{//tribes related1
         guard let tribeServerPubkey = getTribePubkey() else{
             return
         }
-        do{
-            sendMessage(to: nil, content: "", chat: tribeChat, msgType: UInt8(TransactionMessage.TransactionMessageType.groupDelete.rawValue), recipPubkey: tribeServerPubkey, threadUUID: nil, replyUUID: nil)
-        }
-        catch{
-            
-        }
+        let _ = sendMessage(to: nil, content: "", chat: tribeChat, msgType: UInt8(TransactionMessage.TransactionMessageType.groupDelete.rawValue), recipPubkey: tribeServerPubkey, threadUUID: nil, replyUUID: nil)
+        
+        addToRemovedTribesList(chat: tribeChat)
     }
     
     

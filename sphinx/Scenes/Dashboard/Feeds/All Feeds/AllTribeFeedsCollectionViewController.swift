@@ -737,12 +737,12 @@ extension AllTribeFeedsCollectionViewController {
     
     func loadRecommendations() {
         updateLoadingRecommendations()
-        
-        API.sharedInstance.getFeedRecommendations(callback: { recommendations in
-            self.updateWithNew(recommendations: recommendations)
-        }, errorCallback: {
-            self.updateNoRecommendationsFound()
-        })
+        //@Tom commenting out in case we want to reinstate for V2
+//        API.sharedInstance.getFeedRecommendations(callback: { recommendations in
+//            self.updateWithNew(recommendations: recommendations)
+//        }, errorCallback: {
+//            self.updateNoRecommendationsFound()
+//        })
     }
     
     func scrollBackMostRecentFeed(){

@@ -109,10 +109,19 @@ extension SphinxOnionManager{//account restore related
         }
         
         NotificationCenter.default.addObserver(self, selector: #selector(processMessageCountReceived), name: .totalMessageCountReceived, object: nil)
+        do{
+            let rr = try getMsgsCounts(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData())
+            
+            let _ = handleRunReturn(rr: rr)
+        }
+        catch{
+            print("Handled an expected error: \(error)")
+            // Crash in debug mode if the error is not expected
+            #if DEBUG
+            assertionFailure("Unexpected error: \(error)")
+            #endif
+        }
         
-        let rr = try! getMsgsCounts(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData())
-        
-        handleRunReturn(rr: rr)
     }
     
     @objc func processMessageCountReceived(){
@@ -187,7 +196,7 @@ extension SphinxOnionManager{//account restore related
         let safeIndex = max(lastMessageIndex,0)
         do{
             let rr = try fetchFirstMsgsPerKey(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), lastMsgIdx: UInt64(safeIndex), limit: UInt32(msgCountLimit), reverse: false)
-            handleRunReturn(rr: rr)
+            let _ = handleRunReturn(rr: rr)
         }
         catch{
             
@@ -216,9 +225,18 @@ extension SphinxOnionManager{//account restore related
         
         NotificationCenter.default.addObserver(self, selector: #selector(processSyncCountsReceived), name: .totalMessageCountReceived, object: nil)
         
-        let rr = try! getMsgsCounts(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData())
-        
-        handleRunReturn(rr: rr)
+        do{
+            let rr = try getMsgsCounts(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData())
+            
+            let _ = handleRunReturn(rr: rr)
+        }
+        catch{
+            print("Handled an expected error: \(error)")
+            // Crash in debug mode if the error is not expected
+            #if DEBUG
+            assertionFailure("Unexpected error: \(error)")
+            #endif
+        }
     }
     
     @objc func processSyncCountsReceived(){
@@ -278,7 +296,7 @@ extension SphinxOnionManager{//account restore related
                 limit: UInt32(msgCountLimit),
                 reverse: reverse
             )
-            handleRunReturn(rr: rr)
+            let _ = handleRunReturn(rr: rr)
         } catch {
             // Handle error
         }
@@ -449,8 +467,18 @@ extension SphinxOnionManager : NSFetchedResultsControllerDelegate{
         guard let seed = getAccountSeed(), let _ = mqtt else {
             return
         }
-        let rr = try! setPushToken(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), pushToken: id)
-        handleRunReturn(rr: rr)
+        do{
+            let rr = try setPushToken(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), pushToken: id)
+            let _ = handleRunReturn(rr: rr)
+        }
+        catch{
+            print("Handled an expected error: \(error)")
+            // Crash in debug mode if the error is not expected
+            #if DEBUG
+            assertionFailure("Unexpected error: \(error)")
+            #endif
+        }
+        
     }
 
 }

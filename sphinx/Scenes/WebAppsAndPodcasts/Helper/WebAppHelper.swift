@@ -184,14 +184,15 @@ extension WebAppHelper : WKScriptMessageHandler {
     }
     
     func sendKeySend(_ dict: [String: AnyObject]) {
-        if let dest = dict["dest"] as? String, let amt = dict["amt"] as? Int {
-            let params = getParams(pubKey: dest, amount: amt)
-            API.sharedInstance.sendDirectPayment(params: params, callback: { payment in
-                self.sendKeySendResponse(dict: dict, success: true)
-            }, errorCallback: { _ in
-                self.sendKeySendResponse(dict: dict, success: false)
-            })
-        }
+        //TODO: @Jim need to add keysends back in
+//        if let dest = dict["dest"] as? String, let amt = dict["amt"] as? Int {
+//            let params = getParams(pubKey: dest, amount: amt)
+//            API.sharedInstance.sendDirectPayment(params: params, callback: { payment in
+//                self.sendKeySendResponse(dict: dict, success: true)
+//            }, errorCallback: { _ in
+//                self.sendKeySendResponse(dict: dict, success: false)
+//            })
+//        }
     }
     
     func getParams(pubKey: String, amount: Int) -> [String: AnyObject] {

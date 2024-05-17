@@ -32,7 +32,6 @@
 		470396DC2535D2EB007F9C23 /* PodcastEpisodesDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 470396DB2535D2EB007F9C23 /* PodcastEpisodesDataSource.swift */; };
 		4703CF932519425E007B685C /* PDFKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 47D03DF02510EA170077A968 /* PDFKit.framework */; };
 		4703CF97251D23E5007B685C /* LinkPreviewUIImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4703CF96251D23E5007B685C /* LinkPreviewUIImage.swift */; };
-		4703CFA125278C40007B685C /* API+RedeemSatsExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4703CFA025278C40007B685C /* API+RedeemSatsExtension.swift */; };
 		4705D3992799AAB5009C0729 /* CustomBoostView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4705D3982799AAB5009C0729 /* CustomBoostView.swift */; };
 		4705D39B2799AAC0009C0729 /* CustomBoostView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 4705D39A2799AAC0009C0729 /* CustomBoostView.xib */; };
 		4705D39D2799B3B0009C0729 /* FeedBoostHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4705D39C2799B3B0009C0729 /* FeedBoostHelper.swift */; };
@@ -398,7 +397,6 @@
 		4789E26124F03CF4003991BE /* CommonTabsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4789E26024F03CF4003991BE /* CommonTabsView.swift */; };
 		4789E26224F04752003991BE /* SettingsTabsView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 4789E26424F04752003991BE /* SettingsTabsView.xib */; };
 		4789E26C24F05481003991BE /* ProfileViewControllerRelayExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4789E26B24F05481003991BE /* ProfileViewControllerRelayExtension.swift */; };
-		4789E26E24F406F3003991BE /* RelayURLUpdateHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4789E26D24F406F3003991BE /* RelayURLUpdateHelper.swift */; };
 		4789E86C29E752BB0032B8F9 /* ContentFeedPaymentDestination+FetchUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4789E86B29E752BB0032B8F9 /* ContentFeedPaymentDestination+FetchUtils.swift */; };
 		478B05C4297832FC00A1B254 /* PodcastPlayerController+Payments.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478B05C3297832FC00A1B254 /* PodcastPlayerController+Payments.swift */; };
 		478B05C629786E1F00A1B254 /* PodcastPlayerController+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478B05C529786E1F00A1B254 /* PodcastPlayerController+Utils.swift */; };
@@ -468,10 +466,7 @@
 		47AA08C7234BB8E0002C69E2 /* ShareInviteCodeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AA08C6234BB8E0002C69E2 /* ShareInviteCodeViewController.swift */; };
 		47AAD79B29BB6646002B70C1 /* playing_bar.json in Resources */ = {isa = PBXBuildFile; fileRef = 47AAD79A29BB6646002B70C1 /* playing_bar.json */; };
 		47AAFC742387062700E30BDA /* API+UsersExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AAFC732387062700E30BDA /* API+UsersExtension.swift */; };
-		47AAFC762387063300E30BDA /* API+MessagesExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AAFC752387063300E30BDA /* API+MessagesExtension.swift */; };
 		47AAFC782387063F00E30BDA /* API+SubscriptionsExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AAFC772387063F00E30BDA /* API+SubscriptionsExtension.swift */; };
-		47AAFC7A238706EA00E30BDA /* API+InviteExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AAFC79238706EA00E30BDA /* API+InviteExtension.swift */; };
-		47AAFC7C2387070D00E30BDA /* API+WalletExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AAFC7B2387070D00E30BDA /* API+WalletExtension.swift */; };
 		47AAFC7E238D7C8D00E30BDA /* PaymentRequestDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AAFC7D238D7C8D00E30BDA /* PaymentRequestDecoder.swift */; };
 		47AAFC80238EC5AA00E30BDA /* NewQRScannerProcessingCodeExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AAFC7F238EC5AA00E30BDA /* NewQRScannerProcessingCodeExtension.swift */; };
 		47AAFC82238EFCE600E30BDA /* API+AttachmentsExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AAFC81238EFCE600E30BDA /* API+AttachmentsExtension.swift */; };
@@ -514,8 +509,6 @@
 		47C52C4527F49EA9007B43E2 /* HMACSigningManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C52C4427F49EA9007B43E2 /* HMACSigningManager.swift */; };
 		47C7C1782938E84D00264BF6 /* RecommendationResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C7C1772938E84D00264BF6 /* RecommendationResult.swift */; };
 		47C7D704278749CF006D2809 /* PeopleTorActionsView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 47C7D706278749CF006D2809 /* PeopleTorActionsView.xib */; };
-		47CBB4EB23E9D9BE00743CBE /* API+LogsExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47CBB4EA23E9D9BE00743CBE /* API+LogsExtension.swift */; };
-		47CC7CE223E3611600730E6F /* API+TransactionsExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47CC7CE123E3611600730E6F /* API+TransactionsExtension.swift */; };
 		47CC7CE523E361B800730E6F /* PaymentTransaction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47CC7CE423E361B800730E6F /* PaymentTransaction.swift */; };
 		47CC7CE923E4718600730E6F /* AttachmentFullScreenViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47CC7CE823E4718600730E6F /* AttachmentFullScreenViewController.swift */; };
 		47CD9508265EC2A4009B06A4 /* CommonModalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47CD9507265EC2A4009B06A4 /* CommonModalView.swift */; };
@@ -1094,7 +1087,6 @@
 		470396DB2535D2EB007F9C23 /* PodcastEpisodesDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastEpisodesDataSource.swift; sourceTree = "<group>"; };
 		4703CF9225193701007B685C /* sphinx 22.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 22.xcdatamodel"; sourceTree = "<group>"; };
 		4703CF96251D23E5007B685C /* LinkPreviewUIImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkPreviewUIImage.swift; sourceTree = "<group>"; };
-		4703CFA025278C40007B685C /* API+RedeemSatsExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+RedeemSatsExtension.swift"; sourceTree = "<group>"; };
 		4705D3982799AAB5009C0729 /* CustomBoostView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomBoostView.swift; sourceTree = "<group>"; };
 		4705D39A2799AAC0009C0729 /* CustomBoostView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = CustomBoostView.xib; sourceTree = "<group>"; };
 		4705D39C2799B3B0009C0729 /* FeedBoostHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedBoostHelper.swift; sourceTree = "<group>"; };
@@ -1538,7 +1530,6 @@
 		4789E26624F04757003991BE /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/SettingsTabsView.strings; sourceTree = "<group>"; };
 		4789E26824F04758003991BE /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/SettingsTabsView.strings; sourceTree = "<group>"; };
 		4789E26B24F05481003991BE /* ProfileViewControllerRelayExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileViewControllerRelayExtension.swift; sourceTree = "<group>"; };
-		4789E26D24F406F3003991BE /* RelayURLUpdateHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelayURLUpdateHelper.swift; sourceTree = "<group>"; };
 		4789E86B29E752BB0032B8F9 /* ContentFeedPaymentDestination+FetchUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ContentFeedPaymentDestination+FetchUtils.swift"; sourceTree = "<group>"; };
 		478B05C3297832FC00A1B254 /* PodcastPlayerController+Payments.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PodcastPlayerController+Payments.swift"; sourceTree = "<group>"; };
 		478B05C529786E1F00A1B254 /* PodcastPlayerController+Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PodcastPlayerController+Utils.swift"; sourceTree = "<group>"; };
@@ -1651,10 +1642,7 @@
 		47AA08C6234BB8E0002C69E2 /* ShareInviteCodeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareInviteCodeViewController.swift; sourceTree = "<group>"; };
 		47AAD79A29BB6646002B70C1 /* playing_bar.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = playing_bar.json; sourceTree = "<group>"; };
 		47AAFC732387062700E30BDA /* API+UsersExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+UsersExtension.swift"; sourceTree = "<group>"; };
-		47AAFC752387063300E30BDA /* API+MessagesExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+MessagesExtension.swift"; sourceTree = "<group>"; };
 		47AAFC772387063F00E30BDA /* API+SubscriptionsExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+SubscriptionsExtension.swift"; sourceTree = "<group>"; };
-		47AAFC79238706EA00E30BDA /* API+InviteExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+InviteExtension.swift"; sourceTree = "<group>"; };
-		47AAFC7B2387070D00E30BDA /* API+WalletExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+WalletExtension.swift"; sourceTree = "<group>"; };
 		47AAFC7D238D7C8D00E30BDA /* PaymentRequestDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentRequestDecoder.swift; sourceTree = "<group>"; };
 		47AAFC7F238EC5AA00E30BDA /* NewQRScannerProcessingCodeExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewQRScannerProcessingCodeExtension.swift; sourceTree = "<group>"; };
 		47AAFC81238EFCE600E30BDA /* API+AttachmentsExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+AttachmentsExtension.swift"; sourceTree = "<group>"; };
@@ -1706,8 +1694,6 @@
 		47C7D705278749CF006D2809 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/PeopleTorActionsView.xib; sourceTree = "<group>"; };
 		47C7D70B278749D5006D2809 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/PeopleTorActionsView.strings; sourceTree = "<group>"; };
 		47C7D70D278749D9006D2809 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/PeopleTorActionsView.strings; sourceTree = "<group>"; };
-		47CBB4EA23E9D9BE00743CBE /* API+LogsExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+LogsExtension.swift"; sourceTree = "<group>"; };
-		47CC7CE123E3611600730E6F /* API+TransactionsExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+TransactionsExtension.swift"; sourceTree = "<group>"; };
 		47CC7CE423E361B800730E6F /* PaymentTransaction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentTransaction.swift; sourceTree = "<group>"; };
 		47CC7CE823E4718600730E6F /* AttachmentFullScreenViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentFullScreenViewController.swift; sourceTree = "<group>"; };
 		47CD9507265EC2A4009B06A4 /* CommonModalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommonModalView.swift; sourceTree = "<group>"; };
@@ -3125,17 +3111,11 @@
 				F360123226E96B31009B8DC0 /* API+FeedSearchUtils.swift */,
 				47AAFC81238EFCE600E30BDA /* API+AttachmentsExtension.swift */,
 				47669F3C23CF622000C17A77 /* API+GroupsExtension.swift */,
-				47AAFC79238706EA00E30BDA /* API+InviteExtension.swift */,
-				47CBB4EA23E9D9BE00743CBE /* API+LogsExtension.swift */,
-				47AAFC752387063300E30BDA /* API+MessagesExtension.swift */,
 				47CD950F265EC70E009B06A4 /* API+PeopleExtension.swift */,
 				4794CA76252F5D66007C5022 /* API+PodcastExtension.swift */,
-				4703CFA025278C40007B685C /* API+RedeemSatsExtension.swift */,
 				47AAFC772387063F00E30BDA /* API+SubscriptionsExtension.swift */,
-				47CC7CE123E3611600730E6F /* API+TransactionsExtension.swift */,
 				47AAFC732387062700E30BDA /* API+UsersExtension.swift */,
 				47BF7D4A25A8A59100593489 /* API+VersionsExtension.swift */,
-				47AAFC7B2387070D00E30BDA /* API+WalletExtension.swift */,
 				47D76E6827F10D89000DC021 /* API+AuthenticationExtension.swift */,
 				47F6CA0D287C6524005EBCB6 /* API+CrypterExtension.swift */,
 				474CCFA9291562180037E1D4 /* API+ActionsExtension.swift */,
@@ -3311,7 +3291,6 @@
 				47A06CA524A3AC9A00BE468C /* DeepLinksHandlerHelper.swift */,
 				470708A324B3669200A98DCA /* MetaDataCache.swift */,
 				4797E74924B89ECA00D13270 /* VideoCallHelper.swift */,
-				4789E26D24F406F3003991BE /* RelayURLUpdateHelper.swift */,
 				4705D39C2799B3B0009C0729 /* FeedBoostHelper.swift */,
 				475043C929719E3B00830E9E /* PodcastPlayerController */,
 				472BF0402B62BE89009D5E1B /* ChatTrackingHandler.swift */,
@@ -5255,7 +5234,6 @@
 				F36C5EC027315EBB00F3D944 /* GeneralVideoFeedEpisodePlayerViewController GeneralVideoFeedEpisodePlayerViewController.swift in Sources */,
 				F3DC6B06273C9D8600458E09 /* ContentFeedKind.swift in Sources */,
 				47FA44132374B6D4005D8C63 /* SubscriptionAmountView.swift in Sources */,
-				47CC7CE223E3611600730E6F /* API+TransactionsExtension.swift in Sources */,
 				47DE1C452A6ED0A50029597B /* MessageThreadView.swift in Sources */,
 				476EB47223C5064C009745E2 /* GroupAllContactsDataSource.swift in Sources */,
 				47308E0024FEE6E600FFAC6F /* SocketLogger.swift in Sources */,
@@ -5361,7 +5339,6 @@
 				CEEBBB4229DC6AEC0093923D /* ItemDescriptionTableViewHeaderCell.swift in Sources */,
 				472092BF2A26378900468796 /* NewChatViewController+MentionsAutocomplete.swift in Sources */,
 				CE94A5102A4B2DF3001EDF7E /* ChatMentionAutocompleteTableViewCell.swift in Sources */,
-				4789E26E24F406F3003991BE /* RelayURLUpdateHelper.swift in Sources */,
 				475BDD5C232AE26E00C5BBD6 /* TransactionMessage+CoreDataClass.swift in Sources */,
 				478BD8B92829B70700C733FD /* TribeMemberPopupView.swift in Sources */,
 				472161D1293A67EA0088B87B /* RecommendationFeedItemsCollectionViewController.swift in Sources */,
@@ -5410,7 +5387,6 @@
 				475CD5AC287E1198003FF171 /* CrypterManager.swift in Sources */,
 				47E6A4F92A2FB2FC00A9509E /* NewMessageTableViewCell+BubbleExtension.swift in Sources */,
 				47E6A4D42A2E6FCD00A9509E /* GroupActionMessageView.swift in Sources */,
-				47AAFC7C2387070D00E30BDA /* API+WalletExtension.swift in Sources */,
 				477C525028C6307100C24117 /* NotificationsLevelViewController.swift in Sources */,
 				47ACBC0E265E9CB200D2FE47 /* PeopleModalsViewController.swift in Sources */,
 				473C3150279869D2007735CD /* RestoreProgressView.swift in Sources */,
@@ -5445,7 +5421,6 @@
 				F3DC6B25273F60FF00458E09 /* ContentFeedPaymentModel+CoreDataClass.swift in Sources */,
 				471161CF2915633D008EAFF2 /* ContentConsumedAction.swift in Sources */,
 				F3D52187272A9F8500918267 /* Chat+FetchUtils.swift in Sources */,
-				47AAFC762387063300E30BDA /* API+MessagesExtension.swift in Sources */,
 				472F9D3D2416B9F300EFC30A /* AudioRecordingTooltip.swift in Sources */,
 				47AF0D4C2551883400C98398 /* PodcastModels.swift in Sources */,
 				47BE85502465E09B00BE4AE8 /* BiometricAuthenticationHelper.swift in Sources */,
@@ -5467,7 +5442,6 @@
 				471940AF2339515A00F1BF5B /* QRCodeDetailViewController.swift in Sources */,
 				470146272A3F9AB500A00DF8 /* PaymentsViewModel.swift in Sources */,
 				4789E24D24EDB758003991BE /* AuthorizeAppView.swift in Sources */,
-				47CBB4EB23E9D9BE00743CBE /* API+LogsExtension.swift in Sources */,
 				475BDD5F232AE26E00C5BBD6 /* UserContact+CoreDataClass.swift in Sources */,
 				4754FA93272ADB02006295A5 /* DashboardNewsletterItemCollectionViewCell.swift in Sources */,
 				CE3D8CB029B1471900EDB637 /* FeedItemDetailActionCell.swift in Sources */,
@@ -5618,7 +5592,6 @@
 				47F7273825791D8600A794B9 /* ContactLinkPreviewView.swift in Sources */,
 				476A10BE23AA8C8E00817892 /* SubscriptionDetailsViewController.swift in Sources */,
 				4789E86C29E752BB0032B8F9 /* ContentFeedPaymentDestination+FetchUtils.swift in Sources */,
-				4703CFA125278C40007B685C /* API+RedeemSatsExtension.swift in Sources */,
 				CECFBF012965C85B00BAD935 /* DiscoverTribesTableViewCell.swift in Sources */,
 				47018F9B27D65B8D00797E0B /* CustomDismissibleView.swift in Sources */,
 				4726F0A625791CF900E20EA9 /* TribeLinkPreviewView.swift in Sources */,
@@ -5629,7 +5602,6 @@
 				47308E0B24FEE6E600FFAC6F /* SocketEngineSpec.swift in Sources */,
 				CE030A6B2B97C0860067F9F1 /* SphinxOnionManager+InvoicesExtension.swift in Sources */,
 				47352E4A2440F54300E5CC7F /* MessageOptionsViewController.swift in Sources */,
-				47AAFC7A238706EA00E30BDA /* API+InviteExtension.swift in Sources */,
 				475BDD7F232C01FE00C5BBD6 /* QRCodeScannerView.swift in Sources */,
 				4701461D2A3D03E800A00DF8 /* NewChatViewModel+SendMessageExtension.swift in Sources */,
 				F3DC6B09273CABED00458E09 /* ContentFeed+CoreDataClass.swift in Sources */,

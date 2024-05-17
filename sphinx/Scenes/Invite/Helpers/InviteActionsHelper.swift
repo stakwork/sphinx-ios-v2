@@ -12,21 +12,22 @@ import SwiftyJSON
 class InviteActionsHelper {
     
     func handleInviteActions(completion: @escaping () -> ()) {
-        if let inviteAction: String = UserDefaults.Keys.inviteAction.get(), !inviteAction.isEmpty {
-            if inviteAction.starts(with: "create_podcast") {
-                let podcastId = inviteAction.podcastId
-                if podcastId > 0 {
-                    getPodcastInfo(podcastId: podcastId, completion: completion)
-                    return
-                }
-            } else if inviteAction.starts(with: "join_tribe") {
-                let (uuid, host) = inviteAction.tribeUUIDAndHost
-                if let uuid = uuid, !uuid.isEmpty {
-                    getTribeInfo(uuid: uuid, host: host ?? "tribes.sphinx.chat", completion: completion)
-                    return
-                }
-            }
-        }
+        //TODO: @Jim need to rethink for v2!
+//        if let inviteAction: String = UserDefaults.Keys.inviteAction.get(), !inviteAction.isEmpty {
+//            if inviteAction.starts(with: "create_podcast") {
+//                let podcastId = inviteAction.podcastId
+//                if podcastId > 0 {
+//                    getPodcastInfo(podcastId: podcastId, completion: completion)
+//                    return
+//                }
+//            } else if inviteAction.starts(with: "join_tribe") {
+//                let (uuid, host) = inviteAction.tribeUUIDAndHost
+//                if let uuid = uuid, !uuid.isEmpty {
+//                    getTribeInfo(uuid: uuid, host: host ?? "tribes.sphinx.chat", completion: completion)
+//                    return
+//                }
+//            }
+//        }
         completion()
     }
     
@@ -50,12 +51,27 @@ class InviteActionsHelper {
         parameters["private"] = false as AnyObject
         parameters["tags"] = ["Podcast"] as AnyObject
         
-        API.sharedInstance.createGroup(params: parameters, callback: { chatJson in
-            let _ = Chat.insertChat(chat: chatJson)
-            completion()
-        }, errorCallback: {
-            completion()
-        })
+        guard let name = parameters["name"] as? String,
+            let description = parameters["description"] as? String else{
+            //Send Alert?
+            //self.showErrorAlert()
+            return
+        }
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(handleNewTribeNotification(_:)), name: .newTribeCreationComplete, object: nil)
+        SphinxOnionManager.sharedInstance.createTribe(params:parameters)
+    }
+    
+    @objc func handleNewTribeNotification(_ notification: Notification) {
+        NotificationCenter.default.removeObserver(self, name: .newTribeCreationComplete, object: nil)
+        if let tribeJSONString = notification.userInfo?["tribeJSON"] as? String,
+           let tribeJSON = try? tribeJSONString.toDictionary(),
+           let chatJSON = SphinxOnionManager.sharedInstance.mapChatJSON(rawTribeJSON: tribeJSON),
+           let chat = Chat.insertChat(chat: chatJSON)
+        {
+            chat.managedObjectContext?.saveContext()
+            return
+        }
     }
     
     func getTribeInfo(uuid: String, host: String, completion: @escaping () -> ()) {
@@ -79,16 +95,15 @@ class InviteActionsHelper {
         let grouspManager = GroupsManager.sharedInstance
         let params = grouspManager.getParamsFrom(tribe: tribeInfo)
         
-        API.sharedInstance.joinTribe(params: params, callback: { chatJson in
-            if let chat = Chat.insertChat(chat: chatJson) {
-                chat.pricePerMessage = NSDecimalNumber(floatLiteral: Double(tribeInfo.pricePerMessage ?? 0))
-                
-                completion()
-            } else {
-                completion()
-            }
-        }, errorCallback: {
-            completion()
-        })
+        if let pubkey = tribeInfo.ownerPubkey,
+           let chatJSON = SphinxOnionManager.sharedInstance.getChatJSON(tribeInfo:tribeInfo),
+           let routeHint = tribeInfo.ownerRouteHint,
+           let chat = Chat.insertChat(chat: chatJSON){
+            let isPrivate = tribeInfo.privateTribe
+            SphinxOnionManager.sharedInstance.joinTribe(tribePubkey: pubkey, routeHint: routeHint, alias: UserContact.getOwner()?.nickname,isPrivate: isPrivate)
+            chat.status = (isPrivate) ? Chat.ChatStatus.pending.rawValue : Chat.ChatStatus.approved.rawValue
+            chat.type = Chat.ChatType.publicGroup.rawValue
+            chat.managedObjectContext?.saveContext()
+        }
     }
 }

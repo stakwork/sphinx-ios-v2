@@ -92,67 +92,7 @@ class UserContactsHelper {
         contactKey: String? = nil,
         callback: @escaping (Bool) -> ()
     ) {
-        guard let contact = contact else {
-            return
-        }
-
-        var parameters: [String : AnyObject] = [:]
-
-        if let nickname = nickname {
-            parameters["alias"] = nickname as AnyObject
-        }
-
-        if let routeHint = routeHint {
-            parameters["route_hint"] = routeHint as AnyObject
-        }
-
-        if let contactKey = contactKey {
-            parameters["contact_key"] = contactKey as AnyObject
-        }
-
-        API.sharedInstance.updateUser(id: contact.id, params: parameters, callback: { contact in
-            DispatchQueue.main.async {
-                let _ = self.insertContact(contact: contact)
-                callback(true)
-            }
-        }, errorCallback: {
-            callback(false)
-        })
-    }
-
-    public static func createContact(
-        nickname: String,
-        pubKey: String,
-        routeHint: String? = nil,
-        photoUrl: String? = nil,
-        pin: String? = nil,
-        contactKey: String? = nil,
-        callback: @escaping (Bool, UserContact?) -> ()
-    ) {
-
-        var parameters = [String : AnyObject]()
-        parameters["alias"] = nickname as AnyObject
-        parameters["public_key"] = pubKey as AnyObject
-        parameters["status"] = UserContact.Status.Confirmed.rawValue as AnyObject
-
-        if let photoUrl = photoUrl {
-            parameters["photo_url"] = photoUrl as AnyObject
-        }
-
-        if let routeHint = routeHint {
-            parameters["route_hint"] = routeHint as AnyObject
-        }
-
-        if let contactKey = contactKey {
-            parameters["contact_key"] = contactKey as AnyObject
-        }
-
-        API.sharedInstance.createContact(params: parameters, callback: { contact in
-            let c = self.insertContact(contact: contact, pin: pin)
-            callback(true, c)
-        }, errorCallback: {
-            callback(false, nil)
-        })
+        //TODO: @Jim Reimplement on V2?
     }
     
     func createV2Contact(
@@ -184,19 +124,15 @@ class UserContactsHelper {
         }
     }
 
-    public static func exchangeKeys(id: Int) {
-        API.sharedInstance.exchangeKeys(id: id, callback: { _ in }, errorCallback: {})
-    }
-
-    public static func reloadSubscriptions(
-        contact: UserContact,
-        callback: @escaping (Bool) -> ()
-    ) {
-        API.sharedInstance.getSubscriptionsFor(contact: contact, callback: { subscriptions in
-            self.insertSubscriptions(subscriptions: subscriptions)
-            callback(true)
-        }, errorCallback: {
-            callback(false)
-        })
-    }
+//    public static func reloadSubscriptions(
+//        contact: UserContact,
+//        callback: @escaping (Bool) -> ()
+//    ) {
+//        API.sharedInstance.getSubscriptionsFor(contact: contact, callback: { subscriptions in
+//            self.insertSubscriptions(subscriptions: subscriptions)
+//            callback(true)
+//        }, errorCallback: {
+//            callback(false)
+//        })
+//    }
 }

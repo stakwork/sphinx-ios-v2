@@ -46,7 +46,7 @@ class GroupMembersDataSource: GroupAllContactsDataSource {
             self?.messageBubbleHelper.showGenericMessageView(text: "Error loading tribe members")
         }
         
-        // Schedule the watchdog timer to run after 10 seconds.
+        // Schedule the watchdog timer to run after 5 seconds.
         DispatchQueue.main.asyncAfter(deadline: .now() + 5, execute: watchdogTimer)
         
         SphinxOnionManager.sharedInstance.getTribeMembers(tribeChat: self.chat, completion: { [weak self] tribeMembers in

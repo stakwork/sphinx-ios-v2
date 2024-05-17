@@ -109,7 +109,6 @@ class GroupContactTableViewCell: SwipableCell {
     func configureDeleteButton(showDelete: Bool = false) {
         
         numberOfButtons = .oneButton
-        button3 = button1
         button1.tintColorDidChange()
         isSwipeEnabled = showDelete
     }

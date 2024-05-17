@@ -16,17 +16,36 @@ extension SphinxOnionManager{//invoices related
             let nickname = selfContact.nickname else{
             return nil
         }
-        let rr = try! makeInvoice(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), amtMsat: UInt64(amountMsat), description: description ?? "")
-        handleRunReturn(rr: rr)
-        return rr.invoice
+        do{
+            let rr = try makeInvoice(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), amtMsat: UInt64(amountMsat), description: description ?? "")
+            let _ = handleRunReturn(rr: rr)
+            return rr.invoice
+        }
+        catch{
+            print("Handled an expected error: \(error)")
+            // Crash in debug mode if the error is not expected
+            #if DEBUG
+            assertionFailure("Unexpected error: \(error)")
+            #endif
+            return nil
+        }
     }
     
     func payInvoice(invoice:String){
         guard let seed = getAccountSeed() else{
             return
         }
-        let rr = try! sphinx.payInvoice(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), bolt11: invoice, overpayMsat: nil)
-        handleRunReturn(rr: rr)
+        do{
+            let rr = try sphinx.payInvoice(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), bolt11: invoice, overpayMsat: nil)
+            let _ = handleRunReturn(rr: rr)
+        }
+        catch{
+            print("Handled an expected error: \(error)")
+            // Crash in debug mode if the error is not expected
+            #if DEBUG
+            assertionFailure("Unexpected error: \(error)")
+            #endif
+        }
     }
     
     func sendPaymentOfInvoiceMessage(message:TransactionMessage){
@@ -38,8 +57,18 @@ extension SphinxOnionManager{//invoices related
               let nickname = selfContact.nickname ?? chat.name else{
             return
         }
-       let rr = try! payContactInvoice(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), bolt11: invoice, myAlias: nickname, myImg: selfContact.avatarUrl ?? "",isTribe: false)
-        handleRunReturn(rr: rr)
+       
+        do{
+            let rr = try payContactInvoice(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), bolt11: invoice, myAlias: nickname, myImg: selfContact.avatarUrl ?? "",isTribe: false)
+             let _ = handleRunReturn(rr: rr)
+        }
+        catch{
+            print("Handled an expected error: \(error)")
+            // Crash in debug mode if the error is not expected
+            #if DEBUG
+            assertionFailure("Unexpected error: \(error)")
+            #endif
+        }
     }
     
     

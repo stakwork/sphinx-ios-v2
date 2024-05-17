@@ -165,24 +165,24 @@ class FeedBoostHelper : NSObject {
                 completion(provisionalMessage, false)
                 return
             }
-            
-            API.sharedInstance.sendMessage(params: params, callback: { m in
-                if let message = TransactionMessage.insertMessage(
-                    m: m,
-                    existingMessage: provisionalMessage
-                ).0 {
-                    message.setPaymentInvoiceAsPaid()
-                    
-                    completion(message, true)
-                    self.trackBoostAction(itemId: itemId, amount: amount)
-                }
-            }, errorCallback: {
-                 if let provisionalMessage = provisionalMessage {
-                    provisionalMessage.status = TransactionMessage.TransactionMessageStatus.failed.rawValue
-                    
-                    completion(provisionalMessage, false)
-                 }
-            })
+            //TODO: @Jim reimplement content boosts
+//            API.sharedInstance.sendMessage(params: params, callback: { m in
+//                if let message = TransactionMessage.insertMessage(
+//                    m: m,
+//                    existingMessage: provisionalMessage
+//                ).0 {
+//                    message.setPaymentInvoiceAsPaid()
+//                    
+//                    completion(message, true)
+//                    self.trackBoostAction(itemId: itemId, amount: amount)
+//                }
+//            }, errorCallback: {
+//                 if let provisionalMessage = provisionalMessage {
+//                    provisionalMessage.status = TransactionMessage.TransactionMessageStatus.failed.rawValue
+//                    
+//                    completion(provisionalMessage, false)
+//                 }
+//            })
         }
     }
     

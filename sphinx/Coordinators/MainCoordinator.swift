@@ -108,7 +108,6 @@ final class MainCoordinator: NSObject {
         DispatchQueue.global().async {
             CoreDataManager.sharedManager.deleteExpiredInvites()
             
-            let (_, _) = EncryptionManager.sharedInstance.getOrCreateKeys()
             AttachmentsManager.sharedInstance.runAuthentication()
         }
     }

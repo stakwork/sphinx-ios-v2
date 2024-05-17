@@ -238,7 +238,7 @@ extension TransactionMessage {
     
     func setAsLastMessageIfHighestIndex(){
         if let lastMessageId = self.chat?.lastMessage?.id,
-           lastMessageId < self.id{
+           lastMessageId < self.id || SphinxOnionManager.sharedInstance.messageIdIsFromHashed(msgId: lastMessageId){ //if it's a hashed id ignore it bc its not genuine signal from server (generated 
             self.chat?.lastMessage = self
         }
     }
@@ -716,7 +716,9 @@ extension TransactionMessage {
     
     var isPinActionAllowed: Bool {
         get {
-            return (self.chat?.isMyPublicGroup() ?? false) && !isMessagePinned && messageContainText()
+            //TODO: @Jim reinstate for v2 when we're ready
+            return false
+//            return (self.chat?.isMyPublicGroup() ?? false) && !isMessagePinned && messageContainText()
         }
     }
     

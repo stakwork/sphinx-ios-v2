@@ -288,58 +288,61 @@ class SubscriptionManager {
     }
     
     func createOrEditSubscription(completion: @escaping (Subscription?, String) -> ()) {
-        if let subscription = contact?.getCurrentSubscription(), subscription.id >= 0 {
-            editSubscription(subscription: subscription, completion: completion)
-            return
-        }
-        
-        let params = getSubscriptionParams()
-        
-        API.sharedInstance.createSubscription(parameters: params, callback: { subscription in
-            if let subscription = Subscription.insertSubscription(subscription: subscription) {
-                completion(subscription, "")
-            }
-        }, errorCallback: {
-            completion(nil, "generic.error.message".localized)
-        })
+        //TODO: @Jim reimplement on V2 or remove
+//        if let subscription = contact?.getCurrentSubscription(), subscription.id >= 0 {
+//            editSubscription(subscription: subscription, completion: completion)
+//            return
+//        }
+//        
+//        let params = getSubscriptionParams()
+//
+//        API.sharedInstance.createSubscription(parameters: params, callback: { subscription in
+//            if let subscription = Subscription.insertSubscription(subscription: subscription) {
+//                completion(subscription, "")
+//            }
+//        }, errorCallback: {
+//            completion(nil, "generic.error.message".localized)
+//        })
     }
     
     func editSubscription(subscription: Subscription, completion: @escaping (Subscription?, String) -> ()) {
         let params = getSubscriptionParams()
-        
-        API.sharedInstance.editSubscription(id: subscription.id, parameters: params, callback: { subscription in
-            if let subscription = Subscription.insertSubscription(subscription: subscription) {
-                completion(subscription, "")
-            }
-        }, errorCallback: {
-            completion(nil, "generic.error.message".localized)
-        })
+        //TODO: @Jim reimplement on V2 or remove
+//        API.sharedInstance.editSubscription(id: subscription.id, parameters: params, callback: { subscription in
+//            if let subscription = Subscription.insertSubscription(subscription: subscription) {
+//                completion(subscription, "")
+//            }
+//        }, errorCallback: {
+//            completion(nil, "generic.error.message".localized)
+//        })
     }
     
     func deleteSubscription(completion: @escaping (Bool) -> ()) {
-        if let subscription = contact?.getCurrentSubscription(), subscription.id >= 0 {
-            API.sharedInstance.deleteSubscription(id: subscription.id, callback: { success in
-                if success {
-                    self.deleteLocalSubscription(subscription: subscription)
-                }
-                completion(success)
-            })
-        }
+        //TODO: @Jim reimplement on V2 or remove
+//        if let subscription = contact?.getCurrentSubscription(), subscription.id >= 0 {
+//            API.sharedInstance.deleteSubscription(id: subscription.id, callback: { success in
+//                if success {
+//                    self.deleteLocalSubscription(subscription: subscription)
+//                }
+//                completion(success)
+//            })
+//        }
     }
     
     func toggleSubscriptionState(active: Bool, completion: @escaping (Subscription?, String) -> ()) {
-        if let subscription = contact?.getCurrentSubscription() {
-            let subscriptionId = subscription.id
-            let route = active ? "restart" : "pause"
-            
-            API.sharedInstance.toggleSubscriptionState(route: route, id: subscriptionId, callback: { s in
-                if let subscription = Subscription.insertSubscription(subscription: s) {
-                    completion(subscription, "")
-                }
-            }, errorCallback: {
-                completion(nil, "generic.error.message".localized)
-            })
-        }
+        //TODO: @Jim reimplement on V2 or remove
+//        if let subscription = contact?.getCurrentSubscription() {
+//            let subscriptionId = subscription.id
+//            let route = active ? "restart" : "pause"
+//            
+//            API.sharedInstance.toggleSubscriptionState(route: route, id: subscriptionId, callback: { s in
+//                if let subscription = Subscription.insertSubscription(subscription: s) {
+//                    completion(subscription, "")
+//                }
+//            }, errorCallback: {
+//                completion(nil, "generic.error.message".localized)
+//            })
+//        }
     }
     
     func deleteLocalSubscription(subscription: Subscription) {

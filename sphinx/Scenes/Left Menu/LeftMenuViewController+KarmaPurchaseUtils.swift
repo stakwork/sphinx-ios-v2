@@ -101,29 +101,29 @@ extension LeftMenuViewController {
             return
         }
 
-        API.sharedInstance.validateKarmaPurchase(
-            withAppStoreReceipt: receiptString,
-            forNodePubKey: ownerPubKey,
-            andRouteHint: routeHint
-        ) { result in
-            DispatchQueue.main.async {
-                self.stopPurchaseProgressIndicator()
-                
-                switch result {
-                case .success:
-                    print("Successfully purchased Karma")
-                    self.closeLeftMenu()
-                case .failure(_):
-                    AlertHelper.showAlert(
-                        title: "left-menu.karma-purchase-failed".localized,
-                        message: """
-                        \("error.app-store-receipt-validation-failed".localized)
-                        
-                        \("generic.contact-support".localized)
-                        """
-                    )
-                }
-            }
-        }
+//        API.sharedInstance.validateKarmaPurchase(
+//            withAppStoreReceipt: receiptString,
+//            forNodePubKey: ownerPubKey,
+//            andRouteHint: routeHint
+//        ) { result in
+//            DispatchQueue.main.async {
+//                self.stopPurchaseProgressIndicator()
+//                
+//                switch result {
+//                case .success:
+//                    print("Successfully purchased Karma")
+//                    self.closeLeftMenu()
+//                case .failure(_):
+//                    AlertHelper.showAlert(
+//                        title: "left-menu.karma-purchase-failed".localized,
+//                        message: """
+//                        \("error.app-store-receipt-validation-failed".localized)
+//                        
+//                        \("generic.contact-support".localized)
+//                        """
+//                    )
+//                }
+//            }
+//        }
     }
 }

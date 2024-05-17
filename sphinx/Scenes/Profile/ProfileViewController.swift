@@ -73,7 +73,6 @@ class ProfileViewController: NewKeyboardHandlerViewController {
         }
     }
     
-    let urlUpdateHelper = RelayURLUpdateHelper()
     let userData = UserData.sharedInstance
     
     var imagePickerManager = ImagePickerManager.sharedInstance

@@ -78,15 +78,7 @@ class GroupsManager {
             completion(false)
             return
         }
-        
-        API.sharedInstance.deleteGroup(id: chat.id, callback: { success in
-            if success {
-                CoreDataManager.sharedManager.deleteChatObjectsFor(chat)
-                completion(true)
-            } else {
-                completion(false)
-            }
-        })
+        SphinxOnionManager.sharedInstance.deleteTribe(tribeChat: chat)
     }
     
     func respondToRequest(
@@ -431,42 +423,6 @@ class GroupsManager {
             }
         }
         return (price, failureMessage)
-    }
-    
-    func getAndJoinDefaultTribe(completion: @escaping () -> ()) {
-        getDefatulTribeInfo(completion: completion)
-    }
-    
-    func getDefatulTribeInfo(completion: @escaping () -> ()) {
-        let planetTribeQuery = "sphinx.chat://?action=tribe&uuid=X3IWAiAW5vNrtOX5TLEJzqNWWr3rrUaXUwaqsfUXRMGNF7IWOHroTGbD4Gn2_rFuRZcsER0tZkrLw3sMnzj4RFAk_sx0&host=tribes.sphinx.chat"
-        var tribeInfo = getGroupInfo(query: planetTribeQuery)
-        
-        if tribeInfo != nil {
-            API.sharedInstance.getTribeInfo(host: tribeInfo?.host ?? "", uuid: tribeInfo?.uuid ?? "", callback: { groupInfo in
-                self.update(tribeInfo: &tribeInfo!, from: groupInfo)
-                self.joinDefaultTribe(tribeInfo: tribeInfo!, completion: completion)
-            }, errorCallback: {
-                completion()
-            })
-        } else {
-            completion()
-        }
-    }
-    
-    func joinDefaultTribe(tribeInfo: TribeInfo, completion: @escaping () -> ()) {
-        let params = getParamsFrom(tribe: tribeInfo)
-        
-        API.sharedInstance.joinTribe(params: params, callback: { chatJson in
-            if let chat = Chat.insertChat(chat: chatJson) {
-                chat.pricePerMessage = NSDecimalNumber(floatLiteral: Double(tribeInfo.pricePerMessage ?? 0))
-                
-                completion()
-            } else {
-                completion()
-            }
-        }, errorCallback: {
-            completion()
-        })
     }
 }
 

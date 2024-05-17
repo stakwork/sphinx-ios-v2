@@ -93,13 +93,14 @@ class SubscriptionDetailsViewController: UIViewController {
         }
         
         guard let contact = UserContact.getContactWith(pubkey: pubkey) else {
-            UserContactsHelper.createContact(nickname: subscription.nickname ?? "name.unknown".localized, pubKey: pubkey, photoUrl: subscription.imgurl, callback: { (success, _) in
-                if success {
-                    self.subscribe()
-                } else {
-                    self.showErrorAlert(message: "generic.error.message".localized)
-                }
-            })
+            //TODO: reimplement on V2 if we reinstate subscriptions
+//            UserContactsHelper.createContact(nickname: subscription.nickname ?? "name.unknown".localized, pubKey: pubkey, photoUrl: subscription.imgurl, callback: { (success, _) in
+//                if success {
+//                    self.subscribe()
+//                } else {
+//                    self.showErrorAlert(message: "generic.error.message".localized)
+//                }
+//            })
             return
         }
         

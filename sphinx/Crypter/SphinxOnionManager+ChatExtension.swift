@@ -162,7 +162,7 @@ extension SphinxOnionManager{
             let escrowAmountSats = max(Int(truncating: chat.escrowAmount ?? 3), tribeMinEscrowSats)
             let amtMsat = (isTribe && amount == 0) ? UInt64(((Int(truncating: (chat.pricePerMessage ?? 0)) + escrowAmountSats) * 1000)) : UInt64((amount * 1000))
             print("sendMessage args seed: \(seed), uniqueTime: \(getTimeWithEntropy()), to: \(recipPubkey), msgType: \(msgType), msgJson: \(contentJSONString), state: \(String(describing: loadOnionStateAsData())), myAlias: \(nickname), myImg: \(String(describing: myImg)), amtMsat: \(UInt64(amtMsat)), isTribe: \(String(describing: recipContact == nil))")
-            let rr = try! send(seed: seed, uniqueTime: getTimeWithEntropy(), to: recipPubkey, msgType: msgType, msgJson: contentJSONString, state: loadOnionStateAsData(), myAlias: nickname, myImg: myImg, amtMsat: amtMsat,isTribe: isTribe)
+            let rr = try send(seed: seed, uniqueTime: getTimeWithEntropy(), to: recipPubkey, msgType: msgType, msgJson: contentJSONString, state: loadOnionStateAsData(), myAlias: nickname, myImg: myImg, amtMsat: amtMsat,isTribe: isTribe)
             let sentMessage = processNewOutgoingMessage(rr: rr, chat: chat, msgType: msgType, content: content, amount: amount,mediaKey:mediaKey,mediaToken: mediaToken, mediaType: mediaType, replyUUID: replyUUID, threadUUID: threadUUID,invoiceString: invoiceString)
             let tag = handleRunReturn(rr: rr, isMessageSend: true)
             if let tag = tag,
@@ -184,15 +184,23 @@ extension SphinxOnionManager{
             return sentMessage
         }
         catch{
-            print("error")
+            print("Handled an expected error: \(error)")
+            // Crash in debug mode if the error is not expected
+            #if DEBUG
+            assertionFailure("Unexpected error: \(error)")
+            #endif
         }
+        
+        return nil
     }
     
     @objc func handleMessageTimerTimeout(_ timer: Timer) {
         if let userInfo = timer.userInfo as? [String: Any],
            let tag = userInfo["tag"] as? String,
            let cachedMessage = TransactionMessage.getMessageWith(tag: tag),
-           cachedMessage.status != TransactionMessage.TransactionMessageStatus.received.rawValue{
+           cachedMessage.status != TransactionMessage.TransactionMessageStatus.received.rawValue,
+           cachedMessage.status != TransactionMessage.TransactionMessageStatus.deleted.rawValue,
+           cachedMessage.type != TransactionMessage.TransactionMessageType.invoice.rawValue{// fix bug accidentally flagging paid invoice as failed
             // Logic to handle timeout, now having access to the message tag
             print("Watchdog timer fired: Message with tag \(tag) sending timeout")
             // Invalidate timer
@@ -339,7 +347,7 @@ extension SphinxOnionManager{
     
     func isExitedTribeMessage(senderPubkey:String) -> Bool{
         var (isTribe, chat) = isMessageTribeMessage(senderPubkey: senderPubkey)
-        Chat.getTribeChatWithOwnerPubkey(ownerPubkey: senderPubkey)
+        let _ = Chat.getTribeChatWithOwnerPubkey(ownerPubkey: senderPubkey)
         if isTribe == false{
             return false
         }
@@ -377,7 +385,7 @@ extension SphinxOnionManager{
            }
             else if let fromMe = message.fromMe,
                     fromMe == true,
-                    let sentTo = message.sentTo,
+                    let _ = message.sentTo,
                     let uuid = message.uuid,
                     TransactionMessage.getMessageWith(uuid: uuid) == nil,
                     //let contact = UserContact.getContactWithDisregardStatus(pubkey: sentTo),
@@ -408,7 +416,7 @@ extension SphinxOnionManager{
                         genericIncomingMessage.senderPubkey = csr.pubkey
                         genericIncomingMessage.uuid = uuid
                         genericIncomingMessage.index = index
-                        processGenericIncomingMessage(message: genericIncomingMessage, date: date,csr: csr,type: Int(type))
+                        let _ = processGenericIncomingMessage(message: genericIncomingMessage, date: date,csr: csr,type: Int(type))
                     }
                     else if type == TransactionMessage.TransactionMessageType.boost.rawValue ||
                             type == TransactionMessage.TransactionMessageType.directPayment.rawValue ||
@@ -481,7 +489,7 @@ extension SphinxOnionManager{
                         }
                         
                     }
-                    print("handleRunReturn message: \(message)")
+                    print("let _ = handleRunReturn message: \(message)")
                 }
             }
             else if isMyMessageNeedingIndexUpdate(msg: message),
@@ -571,12 +579,11 @@ extension SphinxOnionManager{
         newMessage.receiverId = UserContact.getSelfContact()?.id ?? 0
         newMessage.push = false
         newMessage.seen = false
-        newMessage.chat?.seen = false
         newMessage.messageContent = content
         newMessage.chat = chat
+        newMessage.chat?.seen = false
         newMessage.replyUUID = message.replyUuid
         newMessage.threadUUID = message.threadUuid
-        newMessage.chat?.seen = false
         newMessage.senderAlias = csr?.alias
         newMessage.senderPic = csr?.photoUrl
         newMessage.mediaKey = message.mediaKey
@@ -596,7 +603,7 @@ extension SphinxOnionManager{
         
         if type == TransactionMessage.TransactionMessageType.payment.rawValue,
            let ph = message.paymentHash,
-           let invoice = TransactionMessage.getInvoiceWith(paymentHash: ph){
+           let _ = TransactionMessage.getInvoiceWith(paymentHash: ph){
             newMessage.setPaymentInvoiceAsPaid()
         }
         
@@ -638,7 +645,7 @@ extension SphinxOnionManager{
         amount:Int,
         type:Int
     ){
-        processGenericIncomingMessage(message: message, date: date,csr: csr,amount: amount,type: type)
+        let _ = processGenericIncomingMessage(message: message, date: date,csr: csr,amount: amount,type: type)
     }
     
     func processIncomingDeletion(message:GenericIncomingMessage, date:Date){
@@ -760,7 +767,7 @@ extension SphinxOnionManager{
         let muid = params["muid"] as? String ?? "YkZJhKWUYWcSRM5JmFhqwq7SJpeV_ayx1Feiu6oq3CE="
         guard let contact = chat.getContact(),
         let amount = params["amount"] as? Int,
-        let data = image.pngData() else{
+        let _ = image.pngData() else{
             completion(false,nil)
             return
         }
@@ -823,16 +830,34 @@ extension SphinxOnionManager{
         }
         guard let recipPubkey = (recipContact?.publicKey ?? chat.ownerPubkey) else { return  }
         
-        let rr = try! mute(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), pubkey: recipPubkey, muteLevel: muteLevel)
-        handleRunReturn(rr: rr)
+        do{
+            let rr = try mute(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), pubkey: recipPubkey, muteLevel: muteLevel)
+            let _ = handleRunReturn(rr: rr)
+        }
+        catch{
+            print("Handled an expected error: \(error)")
+            // Crash in debug mode if the error is not expected
+            #if DEBUG
+            assertionFailure("Unexpected error: \(error)")
+            #endif
+        }
     }
     
     func getMuteLevels(){
         guard let seed = getAccountSeed() else{
             return
         }
-        let rr = try!  getMutes(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData())
-        handleRunReturn(rr: rr)
+        do{
+            let rr = try  getMutes(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData())
+            let _ = handleRunReturn(rr: rr)
+        }
+        catch{
+            print("Handled an expected error: \(error)")
+            // Crash in debug mode if the error is not expected
+            #if DEBUG
+            assertionFailure("Unexpected error: \(error)")
+            #endif
+        }
     }
     
     func setReadLevel(
@@ -847,16 +872,35 @@ extension SphinxOnionManager{
             return
         }
         
-        let rr = try! read(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), pubkey: recipPubkey, msgIdx: index)
-        handleRunReturn(rr: rr)
+        do{
+            let rr = try read(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), pubkey: recipPubkey, msgIdx: index)
+            let _ = handleRunReturn(rr: rr)
+        }
+        catch{
+            print("Handled an expected error: \(error)")
+            // Crash in debug mode if the error is not expected
+            #if DEBUG
+            assertionFailure("Unexpected error: \(error)")
+            #endif
+        }
     }
     
     func getReads(){
         guard let seed = getAccountSeed() else{
             return
         }
-        let rr = try! sphinx.getReads(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData())
-        handleRunReturn(rr: rr)
+        
+        do{
+            let rr = try sphinx.getReads(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData())
+            let _ = handleRunReturn(rr: rr)
+        }
+        catch{
+            print("Handled an expected error: \(error)")
+            // Crash in debug mode if the error is not expected
+            #if DEBUG
+            assertionFailure("Unexpected error: \(error)")
+            #endif
+        }
     }
 
 }

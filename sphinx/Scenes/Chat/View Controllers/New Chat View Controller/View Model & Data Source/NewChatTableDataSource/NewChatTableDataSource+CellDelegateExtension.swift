@@ -954,6 +954,7 @@ extension NewChatTableDataSource {
             CoreDataManager.sharedManager.deleteChatObjectsFor(chat)
             if let vc = self.delegate as? NewChatViewController{
                 vc.navigationController?.popViewController(animated: true)
+                self.messageBubbleHelper.hideLoadingWheel()
             }
         })
     }

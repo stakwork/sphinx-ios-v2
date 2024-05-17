@@ -346,15 +346,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         scheduleAppRefresh()
         
         chatListViewModel.loadFriends { _ in
-            self.chatListViewModel.syncMessages(
-                progressCallback: { _ in },
-                completion: { (_, _) in
-                    task.setTaskCompleted(success: true)
-                },
-                errorCompletion: {
-                    task.setTaskCompleted(success: true)
-                }
-            )
+            SphinxOnionManager.sharedInstance.syncMessagesSinceLastKnownIndexHeight()
         }
     }
     
@@ -417,10 +409,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         chatListViewModel.loadFriends() { [weak self] restoring in
             guard let self = self else { return }
             
-            self.chatListViewModel.syncMessages(
-                progressCallback: { _ in },
-                completion: { (_,_) in }
-            )
+            SphinxOnionManager.sharedInstance.syncMessagesSinceLastKnownIndexHeight()
         }
     }
     
@@ -429,17 +418,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     ) {
         let dashboardVC = getCurrentVC() as? DashboardRootViewController
         dashboardVC?.forceShowLoadingWheel()
-        
-        chatListViewModel.syncMessages(
-            progressCallback: { _ in },
-            completion: { (_,_) in
-                completion()
-                dashboardVC?.forceHideLoadingWheel()
-            },
-            errorCompletion: {
-                dashboardVC?.forceHideLoadingWheel()
-            }
-        )
+        SphinxOnionManager.sharedInstance.syncMessagesSinceLastKnownIndexHeight()
     }
 
     //Notifications bagde

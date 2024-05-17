@@ -92,9 +92,6 @@ class ConfirmAddFriendViewController: UIViewController {
         nickNameField.delegate = self
         
         amountField.textColor = kTextViewColor
-        
-        getLowestPrice()
-        
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -122,20 +119,6 @@ class ConfirmAddFriendViewController: UIViewController {
         
         // Remove observer
         NotificationCenter.default.removeObserver(self, name: .inviteCodeAckReceived, object: nil)
-    }
-    
-    func getLowestPrice() {
-        bottomLeftContainer.alpha = 0.0
-        createInvitationButton.isUserInteractionEnabled = false
-        
-        API.sharedInstance.getLowestPrice(callback: { price in
-            self.createInvitationButton.isUserInteractionEnabled = true
-            self.lowestPrice = Int(price)
-            self.configurePriceContainer(lowestPrice: Int(price))
-        }, errorCallback: {
-            self.bottomLeftContainer.alpha = 0.0
-            self.createInvitationButton.isUserInteractionEnabled = true
-        })
     }
     
     func configurePriceContainer(lowestPrice: Int) {

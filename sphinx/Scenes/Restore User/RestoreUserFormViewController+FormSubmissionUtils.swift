@@ -83,16 +83,6 @@ extension RestoreUserFormViewController {
         
         let pinCodeVC = PinCodeViewController.instantiate()
         
-        pinCodeVC.doneCompletion = { pin in
-            pinCodeVC.dismiss(animated: true, completion: { [weak self] in
-                guard let self = self else { return }
-                self.connectRestoredUser(
-                    encryptedKeys: encryptedKeys,
-                    pin: pin
-                )
-            })
-        }
-        
         pinCodeVC.modalPresentationStyle = .overFullScreen
         
         present(pinCodeVC, animated: true)
@@ -119,22 +109,6 @@ extension RestoreUserFormViewController {
         }
 
         userData.save(ip: keys[2], token: keys[3], pin: pin)
-
-        userData.getAndSaveTransportKey(forceGet: true) { [weak self] _ in
-            guard let self = self else { return }
-            
-            self.userData.getOrCreateHMACKey(forceGet: true) { [weak self] in
-                API.sharedInstance.getWalletLocalAndRemote(callback: { local, remote in
-                    guard let self = self else { return }
-                    
-                    self.goToWelcomeCompleteScene()
-                }, errorCallback: {
-                    guard let self = self else { return }
-                    
-                    self.errorRestoring(message: "generic.error.message".localized)
-                })
-            }
-        }
     }
     
     
@@ -235,10 +209,13 @@ extension RestoreUserFormViewController : NSFetchedResultsControllerDelegate{
             let inviteWelcomeVC = InviteWelcomeViewController.instantiate(
                 inviter: inviter
             )
-            if let vc = self as? NewUserSignupFormViewController{
-                inviteWelcomeVC.isV2 = vc.isV2
-            }
-            self.navigationController?.pushViewController(inviteWelcomeVC, animated: true)
+            
+            SignupHelper.step = SignupHelper.SignupStep.InviterContactCreated.rawValue
+            
+            let setPinVC = SetPinCodeViewController.instantiate()
+            setPinVC.isV2 = true
+            setPinVC.isRestoreFlow = true
+            self.navigationController?.pushViewController(setPinVC, animated: true)
         }
     }
     

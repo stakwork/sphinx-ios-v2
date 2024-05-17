@@ -16,6 +16,7 @@ class SetNickNameViewController: SetDataViewController {
     @IBOutlet weak var nickNameField: UITextField!
     @IBOutlet weak var loadingWheel: UIActivityIndicatorView!
     var isV2 : Bool = false
+    var isRestoreFlow : Bool = false
     
     static func instantiate() -> SetNickNameViewController {
         let viewController = StoryboardScene.Invite.setNickNameViewController.instantiate()
@@ -65,36 +66,12 @@ class SetNickNameViewController: SetDataViewController {
             selfContact.nickname = nickname
             self.goToProfilePicture()
         }
-        else if isV2 == false, let _ = validateNickname() {
-            loading = true
-            
-            API.sharedInstance.getContacts(callback: {(contacts, _, _) -> () in
-                self.insertAndUpdateOwner(contacts: contacts)
-            })
-        } else {
-            AlertHelper.showAlert(title: "generic.error.title".localized, message: "nickname.cannot.empty".localized)
-        }
-    }
-    
-    func insertAndUpdateOwner(contacts: [JSON]) {
-        UserContactsHelper.insertContacts(contacts: contacts)
-        UserData.sharedInstance.saveNewNodeOnKeychain()
-        
-        let id = UserData.sharedInstance.getUserId()
-        let parameters = ["alias" : (nickNameField.text ?? "") as AnyObject]
-        
-        API.sharedInstance.updateUser(id: id, params: parameters, callback: { contact in
-            self.loading = false
-            let _ = UserContactsHelper.insertContact(contact: contact)
-            self.goToProfilePicture()
-        }, errorCallback: {
-            AlertHelper.showAlert(title: "generic.error.title".localized, message: "generic.error.message".localized)
-        })
     }
     
     func goToProfilePicture() {
         let profilePictureVC = SetProfileImageViewController.instantiate(nickname: nickNameField.text ?? nil)
         profilePictureVC.isV2 = self.isV2
+        profilePictureVC.isRestoreFlow = self.isRestoreFlow
         self.navigationController?.pushViewController(profilePictureVC, animated: true)
     }
 }

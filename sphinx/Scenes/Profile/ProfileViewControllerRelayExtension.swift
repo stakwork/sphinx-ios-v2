@@ -12,11 +12,11 @@ extension ProfileViewController {
     func updateRelayURL() {
         view.endEditing(true)
         
-        if let relayURL = relayUrlTextField.text {
-            urlUpdateHelper.updateRelayURL(newValue: relayURL, completion: relayUpdateFinished)
-        } else {
-            relayUpdateFinished()
-        }
+//        if let relayURL = relayUrlTextField.text {
+//            urlUpdateHelper.updateRelayURL(newValue: relayURL, completion: relayUpdateFinished)
+//        } else {
+//            relayUpdateFinished()
+//        }
     }
     
     func relayUpdateFinished() {

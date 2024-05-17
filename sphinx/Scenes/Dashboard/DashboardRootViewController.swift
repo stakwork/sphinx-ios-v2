@@ -214,6 +214,12 @@ extension DashboardRootViewController {
         isLoading = true
         
         activeTab = .friends
+        //@Tom I could not figure out how to get searchBarContainer to enable touches. This is a hack that I discovered (going to "feed" seems to remedy the issue). Need more time to anlayze this and go past this temporary hack
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.01, execute: {
+            self.activeTab = .feed
+            self.activeTab = .friends
+        })
+        
         
         loadLastPlayedPod()
         
@@ -226,12 +232,9 @@ extension DashboardRootViewController {
         addAccessibilityIdentifiers()
         
         SphinxOnionManager.sharedInstance.fetchMyAccountFromState()
-        
         DelayPerformedHelper.performAfterDelay(seconds: 0.5, completion: {
-            self.connectToV2Server()
-        })
-        
-        
+           self.connectToV2Server()
+       })
     }
     
     override func viewDidDisappear(_ animated: Bool) {
@@ -352,6 +355,7 @@ extension DashboardRootViewController {
     
     func hideRestoreViewCallback(){
         self.restoreProgressView.hideViewAnimated()
+        self.isLoading = false
     }
     
     func contactRestoreCallback(percentage:Int){
@@ -540,16 +544,6 @@ extension DashboardRootViewController {
         isLoading = true
         headerView.updateBalance()
         
-        if chatsListViewModel.isRestoring() {
-            DispatchQueue.main.async {
-                self.restoreProgressView.showRestoreProgressView(
-                    with: 1,
-                    label: "restoring-contacts".localized,
-                    buttonEnabled: false
-                )
-            }
-        }
-        
         var contactsProgressShare : Float = 0.01
         
         chatsListViewModel.loadFriends(
@@ -606,31 +600,7 @@ extension DashboardRootViewController {
                     }
                 },
                 completionCallback: {
-                    self.chatsListViewModel.syncMessages(
-                        progressCallback: { progress in
-                            if (restoring) {
-                                self.isLoading = false
-                                let messagesProgress : Int = Int(Float(progress) * (1.0 - contentProgressShare - contactsProgressShare))
-                                
-                                if (progress >= 0) {
-                                    DispatchQueue.main.async {
-                                        self.restoreProgressView.showRestoreProgressView(
-                                            with: messagesProgress + Int(contentProgressShare * 100) + Int(contactsProgressShare * 100),
-                                            label: "restoring-messages".localized,
-                                            buttonEnabled: true
-                                        )
-                                    }
-                                } else {
-                                    self.newBubbleHelper.showLoadingWheel(text: "fetching.old.messages".localized)
-                                }
-                                
-                                self.contactsService.forceUpdate()
-                            }
-                        },
-                        completion: { (_,_) in
-                            self.finishLoading()
-                        }
-                    )
+                    
                 }
             )
         }
@@ -734,12 +704,12 @@ extension DashboardRootViewController {
         navigationController?.pushViewController(chatVC, animated: shouldAnimate)
     }
     
-    private func handleInvite(for contact: UserContact?) -> Bool {
+    private func handleInvite(for contact: UserContact?) -> Bool {        
         if let invite = contact?.invite, (contact?.isPending() ?? false) {
             
             if invite.isPendingPayment() && !invite.isPaymentProcessed() {
-                
-                payInvite(invite: invite)
+                //@Tom I deleted most related functions & earmarked this for deletion but wondering if I might have missed something here that needs to be added for v2. Let me know.
+                //payInvite(invite: invite)
                 
             } else {
                 
@@ -767,17 +737,7 @@ extension DashboardRootViewController {
         confirmAddfriendVC.qrCodeString = inviteCode
         navigationController?.present(confirmAddfriendVC, animated: true, completion: nil)
     }
-    
-    private func payInvite(invite: UserInvite) {
-        AlertHelper.showTwoOptionsAlert(title: "pay.invitation".localized, message: "", confirm: {
-            self.chatsListViewModel.payInvite(invite: invite, completion: { contact in
-                if let _ = contact {
-                    return
-                }
-                AlertHelper.showAlert(title: "generic.error.title".localized, message: "payment.failed".localized)
-            })
-        })
-    }
+
 }
 
 

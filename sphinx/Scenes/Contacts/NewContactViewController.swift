@@ -114,7 +114,8 @@ class NewContactViewController: KeyboardEventsViewController {
         saveButtonLabel.text = "save.upper".localized
         
         closeButton.isHidden = true
-        subscribeButton.isHidden = false
+        //TODO: @Jim reimplement or remove
+//        subscribeButton.isHidden = false
         backButton.isHidden = false
         contactImageView.isHidden = false
         contactInitials.isHidden = false
@@ -177,10 +178,10 @@ class NewContactViewController: KeyboardEventsViewController {
         
         if let contact = contact {
             setContactInfo(contact: contact)
-            
-            UserContactsHelper.reloadSubscriptions(contact: contact, callback: { _ in
-                self.setContactInfo(contact: contact)
-            })
+            //TODO: @Jim reimplement on V2 or remove
+//            UserContactsHelper.reloadSubscriptions(contact: contact, callback: { _ in
+//                self.setContactInfo(contact: contact)
+//            })
         } else if let pubkey = pubkey {
             let (pk, rh) = (pubkey.isV2Pubkey) ? pubkey.v2PubkeyComponents : pubkey.pubkeyComponents
             backButton.isHidden = true
@@ -243,9 +244,6 @@ class NewContactViewController: KeyboardEventsViewController {
         }
         else if routeHintTextField.text?.isV2RouteHint ?? false{
             createV2Contact()
-        }
-        else {
-            createContact()
         }
     }
     

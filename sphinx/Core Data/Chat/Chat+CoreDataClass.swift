@@ -68,6 +68,7 @@ public class Chat: NSManagedObject {
     }
     
     static func insertChat(chat: JSON) -> Chat? {
+        
         if let id = getChatId(chat: chat) {
             let name = chat["name"].string ?? ""
             let photoUrl = chat["photo_url"].string ?? chat["img"].string ?? ""
@@ -92,6 +93,10 @@ public class Chat: NSManagedObject {
             
             let contactIds = chat["contact_ids"].arrayObject as? [NSNumber] ?? []
             let pendingContactIds = chat["pending_contact_ids"].arrayObject as? [NSNumber] ?? []
+            
+            let isInRemovedChatList = SphinxOnionManager.sharedInstance.isInRemovedTribeList(ownerPubkey: ownerPubkey)
+            print(isInRemovedChatList)
+            if isInRemovedChatList == true{return nil}
             
             let chat = Chat.createObject(
                 id: id,
@@ -774,7 +779,8 @@ public class Chat: NSManagedObject {
     func syncTribeWithServer() {
         DispatchQueue.global().async {
             let params: [String: AnyObject] = ["name" : self.name as AnyObject, "img": self.photoUrl as AnyObject]
-            API.sharedInstance.editGroup(id: self.id, params: params, callback: { _ in }, errorCallback: {})
+            //TODO: @Jim implement when edit group binding available
+//            API.sharedInstance.editGroup(id: self.id, params: params, callback: { _ in }, errorCallback: {})
         }
     }
     

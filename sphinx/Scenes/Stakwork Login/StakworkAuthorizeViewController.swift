@@ -236,12 +236,13 @@ class StakworkAuthorizeViewController: UIViewController {
             return
         }
         let params: [String: AnyObject] = ["token": token as AnyObject, "pubkey": pubkey as AnyObject]
-        API.sharedInstance.redeemSats(url: host, params: params, callback: {
-            NotificationCenter.default.post(name: .onBalanceDidChange, object: nil)
-            self.closeButtonTouched()
-        }, errorCallback: {
-            self.showErrorAlert()
-        })
+        //TODO: @Jim redo this in v2 or remove
+//        API.sharedInstance.redeemSats(url: host, params: params, callback: {
+//            NotificationCenter.default.post(name: .onBalanceDidChange, object: nil)
+//            self.closeButtonTouched()
+//        }, errorCallback: {
+//            self.showErrorAlert()
+//        })
     }
     
     @IBAction func closeButtonTouched() {

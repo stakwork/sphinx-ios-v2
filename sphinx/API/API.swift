@@ -313,7 +313,6 @@ class API {
             case self.successStatusCode:
                 self.connectionStatus = .Connected
             case self.unauthorizedStatusCode:
-                self.getRelaykeys()
                 
                 self.connectionStatus = .Unauthorize
             default:
@@ -346,28 +345,6 @@ class API {
         }
         return request
     }
-    
-    func getRelaykeys() {
-        if let appDelegate = UIApplication.shared.delegate as? AppDelegate {
-            appDelegate.getRelayKeys()
-        }
-    }
-    
-//    func getHMACKeyAndRetry(
-//        _ urlRequest: URLRequestConvertible,
-//        completionHandler: @escaping (AFDataResponse<Any>) -> Void
-//    ) -> Bool {
-//        if UserData.sharedInstance.getHmacKey() == nil {
-//            UserData.sharedInstance.getAndSaveHMACKey(completion: {
-//                let _ = self.unauthorizedHandledRequest(
-//                    urlRequest,
-//                    completionHandler: completionHandler
-//                )
-//            })
-//            return true
-//        }
-//        return false
-//    }
 
     func networksConnectionLost() {
         DispatchQueue.main.async {

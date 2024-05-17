@@ -480,12 +480,8 @@ public class UserContact: NSManagedObject {
             
             let parameters : [String: AnyObject] = ["push_kit_token" : currentVoipDeviceId as AnyObject]
             let id = UserData.sharedInstance.getUserId()
-
-            API.sharedInstance.updateUser(id: id, params: parameters, callback: { contact in
-                UserDefaults.Keys.voipDeviceId.set(contact["push_kit_token"].string)
-            }, errorCallback: {
-                print("Error updating device id")
-            })
+            
+            //TODO: @Jim reimplement VoIP in V2
         }
     }
     
@@ -493,11 +489,12 @@ public class UserContact: NSManagedObject {
         let parameters : [String: AnyObject] = ["tip_amount" : amount as AnyObject]
         let id = UserData.sharedInstance.getUserId()
 
-        if let owner = UserContact.getOwner() {
-            API.sharedInstance.updateUser(id: id, params: parameters, callback: { success in
-                owner.tipAmount = amount
-            }, errorCallback: { })
-        }
+        //@Tom not exactly sure the purpose of this code but happy to reimplement
+//        if let owner = UserContact.getOwner() {
+//            API.sharedInstance.updateUser(id: id, params: parameters, callback: { success in
+//                owner.tipAmount = amount
+//            }, errorCallback: { })
+//        }
     }
 }
 

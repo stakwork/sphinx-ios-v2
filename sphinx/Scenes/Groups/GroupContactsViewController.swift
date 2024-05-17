@@ -50,38 +50,38 @@ class GroupContactsViewController: CommonGroupContactsViewController {
     
     @IBAction func nextButtonTouched() {
         groupsManager.setContactIds(contactIds: selectedContactIds)
-        
-        if let _ = chat {
-            addMembers()
-            return
-        }
-        
-        let groupNameVC = GroupNameViewController.instantiate(delegate: delegate)
-        self.navigationController?.pushViewController(groupNameVC, animated: true)
+        //TODO: @Jim need to re-implement when bidnings available
+//        if let _ = chat {
+//            addMembers()
+//            return
+//        }
+//        
+//        let groupNameVC = GroupNameViewController.instantiate(delegate: delegate)
+//        self.navigationController?.pushViewController(groupNameVC, animated: true)
     }
     
-    func addMembers() {
-        let (valid, params) = groupsManager.getAddMembersParams()
-        
-        guard let chat = chat, valid else {
-            AlertHelper.showAlert(title: "generic.error.title".localized, message: "generic.error.message".localized)
-            return
-        }
-        
-        loading = true
-        
-        API.sharedInstance.addMembers(id: chat.id, params: params, callback: { chatJson in
-            if let chat = Chat.insertChat(chat: chatJson) {
-                self.delegate?.shouldReloadChat?(chat: chat)
-            }
-            AlertHelper.showAlert(title: "generic.success.title".localized, message: "member.join.soon".localized, completion: {
-                self.backButtonTouched()
-            })
-        }, errorCallback: {
-            self.loading = false
-            AlertHelper.showAlert(title: "generic.error.title".localized, message: "generic.error.message".localized)
-        })
-    }
+//    func addMembers() {
+//        let (valid, params) = groupsManager.getAddMembersParams()
+//        
+//        guard let chat = chat, valid else {
+//            AlertHelper.showAlert(title: "generic.error.title".localized, message: "generic.error.message".localized)
+//            return
+//        }
+//        
+//        loading = true
+//        
+//        API.sharedInstance.addMembers(id: chat.id, params: params, callback: { chatJson in
+//            if let chat = Chat.insertChat(chat: chatJson) {
+//                self.delegate?.shouldReloadChat?(chat: chat)
+//            }
+//            AlertHelper.showAlert(title: "generic.success.title".localized, message: "member.join.soon".localized, completion: {
+//                self.backButtonTouched()
+//            })
+//        }, errorCallback: {
+//            self.loading = false
+//            AlertHelper.showAlert(title: "generic.error.title".localized, message: "generic.error.message".localized)
+//        })
+//    }
     
     @IBAction func backButtonTouched() {
         if let navigationController = self.navigationController, navigationController.viewControllers.count > 1 {

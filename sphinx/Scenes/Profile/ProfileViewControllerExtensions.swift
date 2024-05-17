@@ -71,7 +71,8 @@ extension ProfileViewController : UITextFieldDelegate {
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         if let text = textField.text {
             if textField.tag == ProfileFields.RelayUrl.rawValue {
-                updateRelayURL()
+                //@Tom do we need to reimplement an equivalent in V2?
+                //updateRelayURL()
                 return true
             }
             

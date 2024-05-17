@@ -113,14 +113,16 @@ extension NewQRScannerViewController {
     }
     
     func validateSubscriptionQR(string: String) -> Bool {
-        let subscriptionManager = SubscriptionManager.sharedInstance
-        subscriptionManager.resetValues()
-        
-        let (valid, subscription) = subscriptionManager.setValueFrom(subscriptionString: string)
-        if valid {
-            goToSubscriptionDetailsView(subscription: subscription)
-        }
-        return valid
+        return false
+        //TODO: @Jim reimplement or remove
+//        let subscriptionManager = SubscriptionManager.sharedInstance
+//        subscriptionManager.resetValues()
+//        
+//        let (valid, subscription) = subscriptionManager.setValueFrom(subscriptionString: string)
+//        if valid {
+//            goToSubscriptionDetailsView(subscription: subscription)
+//        }
+//        return valid
     }
     
     func presentPubkeySendVC(pubkey:String?=nil){
@@ -128,14 +130,14 @@ extension NewQRScannerViewController {
             delegate.sendSatsButtonTouched(pubkey: pubkey)
         }
     }
-    
-    func goToSubscriptionDetailsView(subscription: SubscriptionManager.SubscriptionQR) {
-        let subscriptionDetailsVC = SubscriptionDetailsViewController.instantiate(
-            subscriptionQR: subscription,
-            delegate: delegate
-        )
-        self.navigationController?.pushViewController(subscriptionDetailsVC, animated: true)
-    }
+    //TODO: @Jim reimplement or remove
+//    func goToSubscriptionDetailsView(subscription: SubscriptionManager.SubscriptionQR) {
+//        let subscriptionDetailsVC = SubscriptionDetailsViewController.instantiate(
+//            subscriptionQR: subscription,
+//            delegate: delegate
+//        )
+//        self.navigationController?.pushViewController(subscriptionDetailsVC, animated: true)
+//    }
     
     func validateDeepLinks(string: String) -> Bool {
         if let url = URL(string: string), DeepLinksHandlerHelper.storeLinkQueryFrom(url: url) {

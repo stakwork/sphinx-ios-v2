@@ -198,51 +198,14 @@ class JoinGroupDetailsViewController: KeyboardEventsViewController {
     
     func joinTribe(name: String?, imageUrl: String?) {
         if isV2Tribe,
-        let tribeInfo = tribeInfo{
+           let tribeInfo = tribeInfo{
             groupsManager.finalizeTribeJoin(tribeInfo: tribeInfo, qrString: qrString)
             self.closeButtonTouched()
         }
         else{
-            guard let name = name, !name.isEmpty else {
-                loading = false
-                AlertHelper.showAlert(title: "generic.error.title".localized, message: "alias.cannot.empty".localized)
-                return
-            }
-            
-            if let tribeInfo = tribeInfo {
-                var params = groupsManager.getParamsFrom(tribe: tribeInfo)
-                params["my_alias"] = name as AnyObject
-                params["my_photo_url"] = (imageUrl ?? "") as AnyObject
-                
-                API.sharedInstance.joinTribe(params: params, callback: { chatJson in
-                    if let chat = Chat.insertChat(chat: chatJson) {
-                        chat.tribeInfo = tribeInfo
-                        chat.pricePerMessage = NSDecimalNumber(floatLiteral: Double(tribeInfo.pricePerMessage ?? 0))
-                        
-                        
-                        if let feedUrl = tribeInfo.feedUrl {
-                            ContentFeed.fetchChatFeedContentInBackground(feedUrl: feedUrl, chatId: chat.id, completion: { feedId in
-                                
-                                if let feedId = feedId {
-                                    chat.contentFeed = ContentFeed.getFeedById(feedId: feedId)
-                                    chat.saveChat()
-                                }
-                                
-                                self.delegate?.shouldReloadContacts?(reload: true, dashboardTabIndex: 2)
-                                self.closeButtonTouched()
-                            })
-                        }
-                    } else {
-                        self.showErrorAndDismiss()
-                    }
-                }, errorCallback: {
-                    self.showErrorAndDismiss()
-                })
-            } else {
-                showErrorAndDismiss()
-            }
+            loading = false
+            AlertHelper.showAlert(title: "generic.error.title".localized, message: "alias.cannot.empty".localized)
         }
-       
     }
 }
 

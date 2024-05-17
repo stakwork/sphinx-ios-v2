@@ -101,24 +101,7 @@ class PaymentsViewModel : NSObject {
         return true
     }
     
-    func shouldSendDirectPayment(
-        parameters: [String: AnyObject],
-        callback: @escaping (TransactionMessage?) -> (),
-        errorCallback: @escaping () -> ()
-    ) {
-        API.sharedInstance.sendDirectPayment(params: parameters, callback: { payment in
-            if let payment = payment {
-                let (messageObject, success) = self.createLocalMessages(message: payment)
-                if let messageObject = messageObject, success {
-                    callback(messageObject)
-                    return
-                }
-            }
-            callback(nil)
-        }, errorCallback: { _ in
-            errorCallback()
-        })
-    }
+    
     
     func createLocalMessages(message: JSON?) -> (TransactionMessage?, Bool) {
         if let message = message {

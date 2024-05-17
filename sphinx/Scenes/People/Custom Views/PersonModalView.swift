@@ -123,28 +123,29 @@ class PersonModalView: CommonModalView {
             let routeHint = authInfo?.jsonBody["owner_route_hint"].string ?? ""
             let contactKey = authInfo?.jsonBody["owner_contact_key"].string ?? ""
             
-            UserContactsHelper.createContact(
-                nickname: nickname,
-                pubKey: pubkey,
-                routeHint: routeHint,
-                contactKey: contactKey,
-                callback: { (success, contact) in
-                    
-                    if let contactId = contact?.id, success {
-                        self.configureFetchResultsControllerFor(contactId: contactId)
-                        
-                        self.timeOutTimer = Timer.scheduledTimer(
-                            timeInterval: 30.0,
-                            target: self,
-                            selector: #selector(self.handleKeyExchangeTimeout),
-                            userInfo: nil,
-                            repeats: false
-                        )
-                        return
-                    }
-                    self.showErrorMessage()
-                }
-            )
+            //TODO: @Jim reimplement on v2 when ready
+//            UserContactsHelper.createContact(
+//                nickname: nickname,
+//                pubKey: pubkey,
+//                routeHint: routeHint,
+//                contactKey: contactKey,
+//                callback: { (success, contact) in
+//                    
+//                    if let contactId = contact?.id, success {
+//                        self.configureFetchResultsControllerFor(contactId: contactId)
+//                        
+//                        self.timeOutTimer = Timer.scheduledTimer(
+//                            timeInterval: 30.0,
+//                            target: self,
+//                            selector: #selector(self.handleKeyExchangeTimeout),
+//                            userInfo: nil,
+//                            repeats: false
+//                        )
+//                        return
+//                    }
+//                    self.showErrorMessage()
+//                }
+//            )
         }
     }
     
@@ -157,17 +158,17 @@ class PersonModalView: CommonModalView {
                 showErrorMessage()
                 return
             }
-            
-            API.sharedInstance.sendMessage(params: params, callback: { m in
-                if let _ = TransactionMessage.insertMessage(
-                    m: m,
-                    existingMessage: TransactionMessage.getMessageWith(id: m["id"].intValue)
-                ).0 {
-                    self.delegate?.shouldDismissVC()
-                }
-            }, errorCallback: {
-                self.showErrorMessage()
-            })
+            //@Tom if you could just explain the purpose of this and how to initiate it I will make it possible on V2
+//            API.sharedInstance.sendMessage(params: params, callback: { m in
+//                if let _ = TransactionMessage.insertMessage(
+//                    m: m,
+//                    existingMessage: TransactionMessage.getMessageWith(id: m["id"].intValue)
+//                ).0 {
+//                    self.delegate?.shouldDismissVC()
+//                }
+//            }, errorCallback: {
+//                self.showErrorMessage()
+//            })
         } else {
             showErrorMessage()
         }

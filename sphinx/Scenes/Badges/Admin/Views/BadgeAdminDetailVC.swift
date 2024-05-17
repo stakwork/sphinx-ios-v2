@@ -170,22 +170,23 @@ class BadgeAdminDetailVC : UIViewController{
         if let valid_badge = self.associatedBadge{
             let titleText = "badges.creation-success-title".localized
             let messageText = String(format: "badges.creation-success-message".localized, badgeQuantity)
-            API.sharedInstance.createTribeAdminBadge(
-                badge: valid_badge,
-                amount: self.badgeQuantity,
-                callback: { success in
-                    self.removeChildVC(child: self.loadingViewController)
-                    AlertHelper.showAlert(
-                    title: titleText,
-                    message: "\(messageText) \(String(describing: valid_badge.name ?? "badges.your-badge".localized))",
-                    completion: {
-                        self.navigationController?.popViewController(animated: true)
-                    })
-                },
-                errorCallback: {
-                    self.removeChildVC(child: self.loadingViewController)
-                    AlertHelper.showAlert(title: "Error", message: "Error creating this badge. Please try again.")
-                })
+            //@Jim implement when available on V2
+//            API.sharedInstance.createTribeAdminBadge(
+//                badge: valid_badge,
+//                amount: self.badgeQuantity,
+//                callback: { success in
+//                    self.removeChildVC(child: self.loadingViewController)
+//                    AlertHelper.showAlert(
+//                    title: titleText,
+//                    message: "\(messageText) \(String(describing: valid_badge.name ?? "badges.your-badge".localized))",
+//                    completion: {
+//                        self.navigationController?.popViewController(animated: true)
+//                    })
+//                },
+//                errorCallback: {
+//                    self.removeChildVC(child: self.loadingViewController)
+//                    AlertHelper.showAlert(title: "Error", message: "Error creating this badge. Please try again.")
+//                })
         }
         else{
             //handle error
@@ -289,30 +290,31 @@ class BadgeAdminDetailVC : UIViewController{
         let activationString = (badgeActivateDeactivateSwitch.isOn == true) ? "badges.activation-success".localized : "badges.deactivation-success".localized
         let failureString = (badgeActivateDeactivateSwitch.isOn == true) ? "activating" : "deactivating"
         if let valid_badge = associatedBadge{
-            API.sharedInstance.changeActivationStateAdminBadgeTemplates(
-            badge: valid_badge,
-            callback: { success in
-                self.removeChildVC(child: self.loadingViewController)
-                if(success){
-                    AlertHelper.showAlert(
-                        title: "badges.success".localized,
-                        message: activationString,
-                        completion: {
-                            self.navigationController?.popViewController(animated: true)
-                    })
-                }
-                else{
-                    self.badgeActivateDeactivateSwitch.isOn = !self.badgeActivateDeactivateSwitch.isOn
-                    AlertHelper.showAlert(title: "Error", message: "There was an error \(failureString) the badge.")
-                }
-                self.badgeActivateDeactivateSwitch.isUserInteractionEnabled = true
-            },
-            errorCallback: {
-                self.removeChildVC(child: self.loadingViewController)
-                self.badgeActivateDeactivateSwitch.isOn = !self.badgeActivateDeactivateSwitch.isOn 
-                AlertHelper.showAlert(title: "Error", message: "There was an error \(failureString) the badge.")
-                self.badgeActivateDeactivateSwitch.isUserInteractionEnabled = true
-            })
+            //TODO: @Jim reimplement when badges are implemented on v2
+//            API.sharedInstance.changeActivationStateAdminBadgeTemplates(
+//            badge: valid_badge,
+//            callback: { success in
+//                self.removeChildVC(child: self.loadingViewController)
+//                if(success){
+//                    AlertHelper.showAlert(
+//                        title: "badges.success".localized,
+//                        message: activationString,
+//                        completion: {
+//                            self.navigationController?.popViewController(animated: true)
+//                    })
+//                }
+//                else{
+//                    self.badgeActivateDeactivateSwitch.isOn = !self.badgeActivateDeactivateSwitch.isOn
+//                    AlertHelper.showAlert(title: "Error", message: "There was an error \(failureString) the badge.")
+//                }
+//                self.badgeActivateDeactivateSwitch.isUserInteractionEnabled = true
+//            },
+//            errorCallback: {
+//                self.removeChildVC(child: self.loadingViewController)
+//                self.badgeActivateDeactivateSwitch.isOn = !self.badgeActivateDeactivateSwitch.isOn 
+//                AlertHelper.showAlert(title: "Error", message: "There was an error \(failureString) the badge.")
+//                self.badgeActivateDeactivateSwitch.isUserInteractionEnabled = true
+//            })
         }
     }
     

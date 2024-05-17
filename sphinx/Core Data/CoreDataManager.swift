@@ -76,7 +76,6 @@ class CoreDataManager {
         for contact in UserContact.getPendingContacts() {
             if let invite = contact.invite, !contact.isOwner, !contact.isConfirmed() && invite.isExpired() {
                 invite.removeFromPaymentProcessed()
-                API.sharedInstance.deleteContact(id: contact.id, callback: { _ in })
                 deleteContactObjectsFor(contact)
             }
         }
@@ -100,9 +99,11 @@ class CoreDataManager {
         if let invite = contact.invite {
             invite.removeFromPaymentProcessed()
         }
-        
         contact.deleteColor()
         deleteObject(object: contact)
+        if let publicKey = contact.publicKey{
+            SphinxOnionManager.sharedInstance.deleteContactFromState(pubkey: publicKey)
+        }
         saveContext()
     }
     

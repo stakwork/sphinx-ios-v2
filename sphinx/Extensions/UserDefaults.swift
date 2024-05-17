@@ -85,6 +85,7 @@ extension UserDefaults {
         public static let sequence = DefaultKey<String>("sequence")
         
         public static let lastV2MessageIndex = DefaultKey<Int>("lastV2MessageIndex")
+        public static let removedTribeOwnerPubkeys = DefaultKey<[String]>("removedTribeOwnerPubkey")
     }
     
     class func resetUserDefaults() {

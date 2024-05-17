@@ -37,52 +37,54 @@ class BadgeAdminManagementListDataSource : NSObject{
     }
     
     func fetchTemplates(){
-        API.sharedInstance.getTribeAdminBadgeTemplates(
-            callback: { results in
-                if let mappedResults = Mapper<BadgeTemplate>().mapArray(JSONObject: Array(results)){
-                    for result in mappedResults{
-                        let newBadge = Badge()
-                        newBadge.name = result.name
-                        newBadge.icon_url = result.icon_url
-                        if let req = result.rewardRequirement,
-                           let type = result.rewardType,
-                           let humanizedType = result.getHumanizedRewardType(){
-                            newBadge.chat_id = self.chatID
-                            newBadge.reward_requirement = req
-                            newBadge.reward_type = type
-                            newBadge.memo = "\(humanizedType) at least \(req) sats in this tribe."
-                        }
-                        self.badgeTemplates.append(newBadge)
-                    }
-                    self.vc.badgeTableView.reloadData()
-                }
-            },
-            errorCallback: {}
-        )
+        //TODO: @Jim reimplement on v2
+//        API.sharedInstance.getTribeAdminBadgeTemplates(
+//            callback: { results in
+//                if let mappedResults = Mapper<BadgeTemplate>().mapArray(JSONObject: Array(results)){
+//                    for result in mappedResults{
+//                        let newBadge = Badge()
+//                        newBadge.name = result.name
+//                        newBadge.icon_url = result.icon_url
+//                        if let req = result.rewardRequirement,
+//                           let type = result.rewardType,
+//                           let humanizedType = result.getHumanizedRewardType(){
+//                            newBadge.chat_id = self.chatID
+//                            newBadge.reward_requirement = req
+//                            newBadge.reward_type = type
+//                            newBadge.memo = "\(humanizedType) at least \(req) sats in this tribe."
+//                        }
+//                        self.badgeTemplates.append(newBadge)
+//                    }
+//                    self.vc.badgeTableView.reloadData()
+//                }
+//            },
+//            errorCallback: {}
+//        )
     }
     
     func fetchBadges(){
-        API.sharedInstance.getTribeAdminBadges(
-            chatID: chatID,
-            callback: { results in
-                if let mappedResults = Mapper<Badge>().mapArray(JSONObject: Array(results)){
-                    
-                    let updateResults: [Badge] = mappedResults.map({
-                        $0.chat_id = self.chatID
-                        return $0
-                    }).sorted {
-                        if ($0.activationState && $1.activationState) {
-                            return ($0.name ?? "" > $1.name ?? "")
-                        }
-                        return ($0.activationState && !$1.activationState)
-                    }
-                    
-                    self.badges = updateResults
-                    self.vc.badgeTableView.reloadData()
-                }
-            },
-            errorCallback: {}
-        )
+        //TODO: @Jim reimplement on v2
+//        API.sharedInstance.getTribeAdminBadges(
+//            chatID: chatID,
+//            callback: { results in
+//                if let mappedResults = Mapper<Badge>().mapArray(JSONObject: Array(results)){
+//                    
+//                    let updateResults: [Badge] = mappedResults.map({
+//                        $0.chat_id = self.chatID
+//                        return $0
+//                    }).sorted {
+//                        if ($0.activationState && $1.activationState) {
+//                            return ($0.name ?? "" > $1.name ?? "")
+//                        }
+//                        return ($0.activationState && !$1.activationState)
+//                    }
+//                    
+//                    self.badges = updateResults
+//                    self.vc.badgeTableView.reloadData()
+//                }
+//            },
+//            errorCallback: {}
+//        )
     }
 }
 

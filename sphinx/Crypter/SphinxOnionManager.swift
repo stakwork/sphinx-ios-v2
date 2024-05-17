@@ -30,6 +30,7 @@ class SphinxOnionManager : NSObject {
     var watchdogTimer:Timer?=nil
     var nextMessageBlockWasReceived = false
     var messageTimers: [String: Timer] = [:]
+    let kUniqueIntBaseValue = 100_000_000
 
     
     var messageFetchParams : MessageFetchParams? = nil
@@ -39,11 +40,7 @@ class SphinxOnionManager : NSObject {
     var shouldPostUpdates : Bool = false
     let tribeMinEscrowSats = 3
     
-    var vc: UIViewController! = nil{
-        didSet{
-            print("vc set:\(vc)")
-        }
-    }
+    var vc: UIViewController! = nil
     var mqtt: CocoaMQTT! = nil
     let managedContext = CoreDataManager.sharedManager.persistentContainer.viewContext
     
@@ -67,7 +64,7 @@ class SphinxOnionManager : NSObject {
     //MARK: Hardcoded Values!
     var server_IP = "34.229.52.200"
     let server_PORT = 1883
-    let defaultTribePubkey = "032dbf9a31140897e52b66743f2c78e93cff2d5ecf6fe4814327d8912243106ff6"
+    let defaultTribePubkey = "02792ee5b9162f9a00686aaa5d5274e91fd42a141113007797b5c1872d43f78e07d"
     let network = "regtest"
     
     
@@ -173,7 +170,7 @@ class SphinxOnionManager : NSObject {
             return
         }
         som.disconnectMqtt()
-        DelayPerformedHelper.performAfterDelay(seconds: 2.0, completion: {
+        DelayPerformedHelper.performAfterDelay(seconds: 0.5, completion: {
             let success = som.connectToBroker(seed:seed,xpub: my_xpub)
             if(success == false) {
                 AlertHelper.showAlert(title: "Error", message: "Could not connect to MQTT Broker.")
@@ -206,21 +203,31 @@ class SphinxOnionManager : NSObject {
     }
 
     func listContacts()->String{
-        let contacts = try! sphinx.listContacts(state: self.loadOnionStateAsData())
-        return contacts
+        do{
+            let contacts = try sphinx.listContacts(state: self.loadOnionStateAsData())
+            return contacts
+        }
+        catch{
+            print("Handled an expected error: \(error)")
+            // Crash in debug mode if the error is not expected
+            #if DEBUG
+            assertionFailure("Unexpected error: \(error)")
+            #endif
+        }
+        return ""
     }
     func subscribeAndPublishMyTopics(pubkey:String,idx:Int){
         do{
             let ret = try setNetwork(network: network)
-            handleRunReturn(rr: ret)
+            let _ = handleRunReturn(rr: ret)
             let ret2 = try setBlockheight(blockheight: 0)
-            handleRunReturn(rr: ret2)
+            let _ = handleRunReturn(rr: ret2)
             
             guard let seed = getAccountSeed() else{
                 return
             }
             
-            let subtopic = try! sphinx.getSubscriptionTopic(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData())
+            let subtopic = try sphinx.getSubscriptionTopic(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData())
             
             mqtt.didReceiveMessage = { mqtt, receivedMessage, id in
                 self.isConnected = true
@@ -232,7 +239,7 @@ class SphinxOnionManager : NSObject {
             ])
             
             let ret3 = try initialSetup(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData())
-            handleRunReturn(rr: ret3)
+            let _ = handleRunReturn(rr: ret3)
             
             let tribeMgmtTopic = try getTribeManagementTopic(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData())
             
@@ -242,7 +249,11 @@ class SphinxOnionManager : NSObject {
             ])
         }
         catch{
-            
+            print("Handled an expected error: \(error)")
+            // Crash in debug mode if the error is not expected
+            #if DEBUG
+            assertionFailure("Unexpected error: \(error)")
+            #endif
         }
     }
     
@@ -312,7 +323,7 @@ class SphinxOnionManager : NSObject {
             let alias = owner?.nickname ?? ""
             let pic = owner?.avatarUrl ?? ""
             let ret4 = try handle(topic: message.topic, payload: Data(message.payload), seed: seed, uniqueTime: getTimeWithEntropy(), state: self.loadOnionStateAsData(), myAlias: alias, myImg: pic)
-            handleRunReturn(rr: ret4)
+            let _ = handleRunReturn(rr: ret4)
         }
         catch{
             

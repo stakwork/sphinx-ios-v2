@@ -135,29 +135,6 @@ extension ConnectionCodeSignupHandling {
     func signup(withConnectionCode connectionCode: String) {
         presentConnectingLoadingScreenVC()
         
-        API.sharedInstance.signupWithCode(
-            inviteString: connectionCode,
-            callback: { [weak self] (invite, ip, pubkey) in
-                guard let self = self else { return }
-                
-                SignupHelper.saveInviterInfo(invite: invite, code: connectionCode)
-            
-                self.connectToNode(ip: ip, pubkey: pubkey)
-            },
-            errorCallback: { [weak self] in
-                guard let self = self else { return }
-            
-                // TODO: Compute (and localize) the right  message here
-                self.handleSignupConnectionError(
-                    message: "signup.error-validation-invite-code".localized
-                )
-            }
-        )
-        
-    }
-    
-    func signup_v2_with_test_server(){
-        presentConnectingLoadingScreenVC()
     }
     
     func finalizeSignup(){
