@@ -117,7 +117,8 @@ extension SphinxOnionManager{//tribes related1
             return
         }
         
-        if var pubkeys: [String] = UserDefaults.Keys.removedTribeOwnerPubkeys.get(){
+        if var pubkeys: [String] = UserDefaults.Keys.removedTribeOwnerPubkeys.get(),
+           pubkeys.filter({$0 == ownerPubkey}).count == 0{ // only add once
             pubkeys.append(ownerPubkey)
             UserDefaults.Keys.removedTribeOwnerPubkeys.set(pubkeys)
         }
