@@ -140,7 +140,7 @@ extension SphinxOnionManager{//tribes related1
             return
         }
         do{
-            sendMessage(to: nil, content: pubkey, chat: chat, msgType: UInt8(TransactionMessage.TransactionMessageType.groupKick.rawValue), recipPubkey: tribeServerPubkey, threadUUID: nil, replyUUID: nil)
+            sendMessage(to: nil, content: "", chat: chat, msgType: UInt8(TransactionMessage.TransactionMessageType.groupKick.rawValue), recipPubkey: tribeServerPubkey, threadUUID: nil, replyUUID: nil, tribeKickMember: pubkey)
         }
         catch{
             
