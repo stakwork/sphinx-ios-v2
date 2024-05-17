@@ -799,6 +799,19 @@ extension SphinxOnionManager{
         return chat.getContact()?.publicKey ?? chat.ownerPubkey ?? nil
     }
     
+    func toggleChatSound(chatId: Int, muted: Bool, completion: @escaping (Chat?) -> ()) {
+        guard let chat = Chat.getChatWith(id: chatId) else{
+            return
+        }
+        
+        let level = muted ? Chat.NotificationLevel.MuteChat.rawValue : Chat.NotificationLevel.SeeAll.rawValue
+        
+        setMuteLevel(muteLevel: UInt8(level), chat: chat, recipContact: chat.getContact())
+        chat.notify = level
+        chat.managedObjectContext?.saveContext()
+        completion(chat)
+    }
+    
     func setMuteLevel(
         muteLevel:UInt8,
         chat:Chat,
@@ -829,7 +842,9 @@ extension SphinxOnionManager{
         guard let seed = getAccountSeed() else{
             return
         }
-        guard let recipPubkey = (recipContact?.publicKey ?? chat.ownerPubkey) else { return  }
+        guard let recipPubkey = (recipContact?.publicKey ?? chat.ownerPubkey) else {
+            return
+        }
         
         let rr = try! read(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), pubkey: recipPubkey, msgIdx: index)
         handleRunReturn(rr: rr)
