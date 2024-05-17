@@ -356,12 +356,13 @@ extension SphinxOnionManager{
             if message.type == 33{
                 print(message)
                 print(genericIncomingMessage)
-                if let fullContactInfo = genericIncomingMessage.fullContactInfo,
-                let (recipientPubkey, recipLspPubkey,scid) = parseContactInfoString(fullContactInfo: fullContactInfo),
+                if let sender = message.sender,//
+                   let csr =  ContactServerResponse(JSONString: sender),
+                   let recipientPubkey = csr.pubkey,
                    UserContact.getContactWithDisregardStatus(pubkey: recipientPubkey) == nil{
                     let pendingContact = self.createNewContact(pubkey: recipientPubkey,nickname: genericIncomingMessage.alias ?? "Unknown")
-                    pendingContact?.scid = scid
-                    pendingContact?.routeHint = recipLspPubkey
+                    pendingContact?.scid = nil
+                    pendingContact?.routeHint = nil
                     pendingContact?.status = UserContact.Status.Pending.rawValue
                 }
                 NotificationCenter.default.post(name: .newOnionMessageWasReceived,object:nil, userInfo: ["message": TransactionMessage()])
