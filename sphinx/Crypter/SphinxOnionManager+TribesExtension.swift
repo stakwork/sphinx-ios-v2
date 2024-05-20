@@ -110,6 +110,20 @@ extension SphinxOnionManager{//tribes related1
         }
     }
     
+    func shouldAddToRemovedTribesList(chat:Chat?)->Bool{
+        guard let chat = chat,
+              let ownerPubkey = chat.ownerPubkey,
+              chat.isPublicGroup() else{
+            return false
+        }
+        
+        if chat.getAllMessages().filter({$0.type == TransactionMessage.TransactionMessageType.groupDelete.rawValue}).count > 0{
+            return true
+        }
+        
+        return false
+    }
+    
     func addToRemovedTribesList(chat:Chat?){
         guard let chat = chat,
               let ownerPubkey = chat.ownerPubkey,

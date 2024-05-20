@@ -123,7 +123,7 @@ public class Chat: NSManagedObject {
                 date: date,
                 isTribeICreated: isTribeICreated
             )
-            
+            print("Inserting chat:\(String(describing: chat?.name))")
             return chat
         }
         return nil

@@ -438,6 +438,18 @@ extension SphinxOnionManager : NSFetchedResultsControllerDelegate{
             UserData.sharedInstance.setLastMessageIndex(index: maxIndex)
             resetFromRestore()
         }
+        purgeObsoleteChats()
+    }
+    
+    func purgeObsoleteChats(){
+        for chat in Chat.getAll(){
+            let shouldBlacklist = shouldAddToRemovedTribesList(chat: chat)
+            print("Chat:\(chat.name) shouldBlacklist:\(shouldBlacklist)")
+            if shouldBlacklist{
+                addToRemovedTribesList(chat: chat)
+                CoreDataManager.sharedManager.deleteChatObjectsFor(chat)
+            }
+        }
     }
     
     func resetFromRestore(){

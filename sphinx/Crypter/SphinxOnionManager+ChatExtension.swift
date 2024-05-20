@@ -546,6 +546,13 @@ extension SphinxOnionManager{
             contactDidChange ? (contact.managedObjectContext?.saveContext()) :()
         }
         else if let tribeChat = Chat.getTribeChatWithOwnerPubkey(ownerPubkey: pubkey){
+            if(SphinxOnionManager.sharedInstance.isInRemovedTribeList(ownerPubkey: pubkey)){
+                return nil
+            }
+            if(SphinxOnionManager.sharedInstance.shouldAddToRemovedTribesList(chat: tribeChat)){
+                SphinxOnionManager.sharedInstance.addToRemovedTribesList(chat: tribeChat)
+                return nil
+            }
             print("found tribeChat:\(tribeChat)")
             chat = tribeChat
             senderId = tribeChat.id
