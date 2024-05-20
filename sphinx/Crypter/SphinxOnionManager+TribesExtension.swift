@@ -116,20 +116,10 @@ extension SphinxOnionManager{//tribes related1
     
     func shouldAddToRemovedTribesList(chat:Chat?)->Bool{
         guard let chat = chat,
-              let ownerPubkey = chat.ownerPubkey,
               chat.isPublicGroup() else{
             return false
         }
-//        Chat.hasRemovalIndicators(chat: chat)
-        let allMessages = chat.getAllMessages()
-        if allMessages.filter({$0.type == TransactionMessage.TransactionMessageType.groupDelete.rawValue}).count > 0{ //don't show deleted tribes
-            return true
-        }
-        else if allMessages.filter({$0.type == TransactionMessage.TransactionMessageType.groupLeave.rawValue && $0.senderId == 0}).count > 0{//remove tribes we've already exited
-            return true
-        }
-        
-        return false
+        return Chat.hasRemovalIndicators(chat: chat)
     }
     
     func addToRemovedTribesList(chat:Chat?){
