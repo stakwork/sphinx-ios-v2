@@ -240,7 +240,7 @@ extension SphinxOnionManager{//tribes related1
         guard let tribeServerPubkey = getTribePubkey() else{
             return
         }
-        let _ = sendMessage(to: nil, content: pubkey, chat: chat, msgType: UInt8(TransactionMessage.TransactionMessageType.groupKick.rawValue), recipPubkey: tribeServerPubkey, threadUUID: nil, replyUUID: nil)
+        let _ = sendMessage(to: nil, content: pubkey, chat: chat, msgType: UInt8(TransactionMessage.TransactionMessageType.groupKick.rawValue), recipPubkey: tribeServerPubkey, threadUUID: nil, replyUUID: nil,tribeKickMember: pubkey)
     }
     
     func approveOrRejectTribeJoinRequest(
