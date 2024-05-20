@@ -458,21 +458,58 @@ public class Chat: NSManagedObject {
 
         let groupDeleteType = TransactionMessage.TransactionMessageType.groupDelete.rawValue
         let groupLeaveType = TransactionMessage.TransactionMessageType.groupLeave.rawValue
-        let predicate = NSPredicate(format: "chat == %@ AND (type == %d OR (type == %d AND senderId == %d))",
-                                    chat, groupDeleteType, groupLeaveType, 0)
+        let groupJoinType = TransactionMessage.TransactionMessageType.groupJoin.rawValue
 
-        let fetchRequest: NSFetchRequest<TransactionMessage> = TransactionMessage.fetchRequest()
-        fetchRequest.predicate = predicate
-        fetchRequest.fetchLimit = 1
+        // First, check for any groupDelete messages
+        let deletePredicate = NSPredicate(format: "chat == %@ AND type == %d", chat, groupDeleteType)
+        let deleteFetchRequest: NSFetchRequest<TransactionMessage> = TransactionMessage.fetchRequest()
+        deleteFetchRequest.predicate = deletePredicate
+        deleteFetchRequest.fetchLimit = 1
 
         do {
-            let messages = try managedContext.fetch(fetchRequest)
-            return !messages.isEmpty
+            let deleteMessages = try managedContext.fetch(deleteFetchRequest)
+            if !deleteMessages.isEmpty {
+                return true
+            }
         } catch {
-            print("Failed to fetch messages for removal check: \(error)")
+            print("Failed to fetch delete messages: \(error)")
             return false
         }
+
+        // Next, check for the latest groupLeave message
+        let leavePredicate = NSPredicate(format: "chat == %@ AND type == %d AND senderId == %d", chat, groupLeaveType, 0)
+        let leaveFetchRequest: NSFetchRequest<TransactionMessage> = TransactionMessage.fetchRequest()
+        leaveFetchRequest.predicate = leavePredicate
+        leaveFetchRequest.sortDescriptors = [NSSortDescriptor(key: "date", ascending: false)]
+        leaveFetchRequest.fetchLimit = 1
+
+        do {
+            let leaveMessages = try managedContext.fetch(leaveFetchRequest)
+            if let leaveMessage = leaveMessages.first, let leaveMessageDate = leaveMessage.date {
+                // Check for newer groupJoin messages
+                let joinPredicate = NSPredicate(format: "chat == %@ AND type == %d AND date > %@", chat, groupJoinType, leaveMessageDate as NSDate)
+                let joinFetchRequest: NSFetchRequest<TransactionMessage> = TransactionMessage.fetchRequest()
+                joinFetchRequest.predicate = joinPredicate
+                joinFetchRequest.fetchLimit = 1
+
+                do {
+                    let joinMessages = try managedContext.fetch(joinFetchRequest)
+                    if joinMessages.isEmpty {
+                        return true
+                    }
+                } catch {
+                    print("Failed to fetch join messages: \(error)")
+                    return false
+                }
+            }
+        } catch {
+            print("Failed to fetch leave messages: \(error)")
+            return false
+        }
+
+        return false
     }
+    
     
     static func calculateUnseenMessagesCount(
         mentions: Bool
