@@ -110,7 +110,7 @@ extension GroupsManager {
         if let pubkey = getV2Pubkey(qrString: qrString),
            let chatJSON = SphinxOnionManager.sharedInstance.getChatJSON(tribeInfo:tribeInfo),
            let routeHint = tribeInfo.ownerRouteHint,
-           let chat = Chat.insertChat(chat: chatJSON){
+           let chat = Chat.insertChat(chat: chatJSON,isFromDelibrateJoin: true){
             let isPrivate = tribeInfo.privateTribe
             SphinxOnionManager.sharedInstance.joinTribe(tribePubkey: pubkey, routeHint: routeHint, alias: UserContact.getOwner()?.nickname,isPrivate: isPrivate)
             chat.status = (isPrivate) ? Chat.ChatStatus.pending.rawValue : Chat.ChatStatus.approved.rawValue

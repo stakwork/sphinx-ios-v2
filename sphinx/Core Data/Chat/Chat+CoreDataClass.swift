@@ -67,7 +67,7 @@ public class Chat: NSManagedObject {
         }
     }
     
-    static func insertChat(chat: JSON) -> Chat? {
+    static func insertChat(chat: JSON,isFromDelibrateJoin:Bool=false) -> Chat? {
         
         if let id = getChatId(chat: chat) {
             let name = chat["name"].string ?? ""
@@ -96,7 +96,7 @@ public class Chat: NSManagedObject {
             
             let isInRemovedChatList = SphinxOnionManager.sharedInstance.isInRemovedTribeList(ownerPubkey: ownerPubkey)
             print(isInRemovedChatList)
-            if isInRemovedChatList == true{return nil}
+            if (isInRemovedChatList == true && isFromDelibrateJoin == false){return nil}
             
             let chat = Chat.createObject(
                 id: id,
@@ -332,6 +332,7 @@ public class Chat: NSManagedObject {
         return chats
     }
     
+    
     func getAllMessages(
         limit: Int? = nil,
         context: NSManagedObjectContext? = nil
@@ -449,6 +450,27 @@ public class Chat: NSManagedObject {
             try managedContext.save()
         } catch let error as NSError {
             print("Error updating messages read status: \(error), \(error.userInfo)")
+        }
+    }
+    
+    static func hasRemovalIndicators(chat: Chat) -> Bool {
+        let managedContext = CoreDataManager.sharedManager.persistentContainer.viewContext
+
+        let groupDeleteType = TransactionMessage.TransactionMessageType.groupDelete.rawValue
+        let groupLeaveType = TransactionMessage.TransactionMessageType.groupLeave.rawValue
+        let predicate = NSPredicate(format: "chat == %@ AND (type == %d OR (type == %d AND senderId == %d))",
+                                    chat, groupDeleteType, groupLeaveType, 0)
+
+        let fetchRequest: NSFetchRequest<TransactionMessage> = TransactionMessage.fetchRequest()
+        fetchRequest.predicate = predicate
+        fetchRequest.fetchLimit = 1
+
+        do {
+            let messages = try managedContext.fetch(fetchRequest)
+            return !messages.isEmpty
+        } catch {
+            print("Failed to fetch messages for removal check: \(error)")
+            return false
         }
     }
     

@@ -96,6 +96,10 @@ extension SphinxOnionManager{//tribes related1
         do{
             
             let rr = try sphinx.joinTribe(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), tribePubkey: tribePubkey, tribeRouteHint: routeHint, alias: alias ?? "test", amtMsat: UInt64(joinAmountMsats), isPrivate: isPrivate)
+            if(isInRemovedTribeList(ownerPubkey: tribePubkey)){
+                removeFromRemovedTribesList(ownerPubkey: tribePubkey)
+            }
+            
             DelayPerformedHelper.performAfterDelay(seconds: 1.0, completion: {
                 let _ = self.handleRunReturn(rr: rr)
             })
@@ -116,8 +120,12 @@ extension SphinxOnionManager{//tribes related1
               chat.isPublicGroup() else{
             return false
         }
-        
-        if chat.getAllMessages().filter({$0.type == TransactionMessage.TransactionMessageType.groupDelete.rawValue}).count > 0{
+//        Chat.hasRemovalIndicators(chat: chat)
+        let allMessages = chat.getAllMessages()
+        if allMessages.filter({$0.type == TransactionMessage.TransactionMessageType.groupDelete.rawValue}).count > 0{ //don't show deleted tribes
+            return true
+        }
+        else if allMessages.filter({$0.type == TransactionMessage.TransactionMessageType.groupLeave.rawValue && $0.senderId == 0}).count > 0{//remove tribes we've already exited
             return true
         }
         
@@ -138,6 +146,13 @@ extension SphinxOnionManager{//tribes related1
         }
         else{
             UserDefaults.Keys.removedTribeOwnerPubkeys.set([ownerPubkey])
+        }
+    }
+    
+    func removeFromRemovedTribesList(ownerPubkey:String){
+        if var pubkeys: [String] = UserDefaults.Keys.removedTribeOwnerPubkeys.get(){ // only add once
+            let newArray = pubkeys.filter({$0 != ownerPubkey})
+            UserDefaults.Keys.removedTribeOwnerPubkeys.set(newArray)
         }
     }
     
