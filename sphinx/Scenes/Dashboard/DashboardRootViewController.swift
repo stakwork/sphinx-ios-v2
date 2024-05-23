@@ -214,6 +214,7 @@ extension DashboardRootViewController {
         isLoading = true
         
         activeTab = .friends
+        
         //@Tom I could not figure out how to get searchBarContainer to enable touches. This is a hack that I discovered (going to "feed" seems to remedy the issue). Need more time to anlayze this and go past this temporary hack
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.01, execute: {
             self.activeTab = .feed
@@ -230,6 +231,8 @@ extension DashboardRootViewController {
         NotificationCenter.default.addObserver(self, selector: #selector(sizeDidChange), name: .onSizeConfigurationChanged, object: nil)
         
         addAccessibilityIdentifiers()
+        
+        connectToServer()
     }
     
     func addAccessibilityIdentifiers(){
@@ -301,8 +304,6 @@ extension DashboardRootViewController {
             self,
             withKey: PodcastDelegateKeys.DashboardView.rawValue
         )
-        
-        connectToServer()
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -328,6 +329,10 @@ extension DashboardRootViewController {
     }
     
     func connectToServer() {
+        if !UserData.sharedInstance.isUserLogged() {
+            return
+        }
+        
         som.fetchMyAccountFromState()
         
         DelayPerformedHelper.performAfterDelay(seconds: 0.5, completion: { [weak self] in

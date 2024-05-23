@@ -267,36 +267,15 @@ public class UserContact: NSManagedObject {
         return contacts
     }
     
-    public static func getSelfContact()->UserContact?{
-        return self.getContactWith(indices: [0]).first
-    }
-    
-    
-    public static func getContactWith(indices: [Int],
-                                      managedContext: NSManagedObjectContext? = nil) -> [UserContact] {
+    public static func getContactWith(
+        indices: [Int],
+        managedContext: NSManagedObjectContext? = nil
+    ) -> [UserContact] {
         var predicate: NSPredicate! = nil
         predicate = NSPredicate(format: "index IN %@", indices)
         let sortDescriptors = [NSSortDescriptor(key: "index", ascending: false)]
         let contacts: [UserContact] = CoreDataManager.sharedManager.getObjectsOfTypeWith(predicate: predicate, sortDescriptors: sortDescriptors, entityName: "UserContact",context:managedContext)
         return contacts
-    }
-    
-    public static func getNextAvailableContactIndex() -> Int? {
-        let fetchRequest: NSFetchRequest<UserContact> = UserContact.fetchRequest()
-        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "index", ascending: false)]
-        fetchRequest.fetchLimit = 1
-        
-        do {
-            let contacts = try CoreDataManager.sharedManager.persistentContainer.viewContext.fetch(fetchRequest)
-            if let highestIndexAvailable = contacts.first as? UserContact {
-                return Int(highestIndexAvailable.index) + 1
-            } else {
-                return 1
-            }
-        } catch {
-            print("Error fetching contacts: \(error)")
-            return nil
-        }
     }
     
     public static func getContactWith(id: Int) -> UserContact? {
@@ -322,8 +301,10 @@ public class UserContact: NSManagedObject {
         return contact
     }
     
-    public static func getContactWith(pubkey: String,
-                                      managedContext: NSManagedObjectContext? = nil) -> UserContact? {
+    public static func getContactWith(
+        pubkey: String,
+        managedContext: NSManagedObjectContext? = nil
+    ) -> UserContact? {
         let predicate = NSPredicate(format: "publicKey == %@ AND status == %d", pubkey, UserContact.Status.Confirmed.rawValue)
         let sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]
         let contact:UserContact? = CoreDataManager.sharedManager.getObjectOfTypeWith(predicate: predicate, sortDescriptors: sortDescriptors, entityName: "UserContact",managedContext: managedContext)
@@ -331,7 +312,7 @@ public class UserContact: NSManagedObject {
     }
     
     public static func getContactsWith(pubkeys: [String]) -> [UserContact] {
-        var predicate = NSPredicate(format: "publicKey IN %@ AND isOwner == %@", pubkeys, NSNumber(value: false))
+        let predicate = NSPredicate(format: "publicKey IN %@ AND isOwner == %@", pubkeys, NSNumber(value: false))
         let sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]
         
         let contacts: [UserContact] = CoreDataManager.sharedManager.getObjectsOfTypeWith(
@@ -353,8 +334,8 @@ public class UserContact: NSManagedObject {
         return contact
     }
     
-    public static func updateOwnerAlias(newNickname:String){
-        if var owner = getOwner(){
+    public static func updateOwnerAlias(newNickname: String){
+        if let owner = getOwner(){
             owner.nickname = newNickname
             owner.managedObjectContext?.saveContext()
         }
@@ -362,7 +343,7 @@ public class UserContact: NSManagedObject {
     
     func getAddress() -> String? {
         if let address = self.publicKey, !address.isEmpty {
-            let delimiter = self.routeHint?.isV2RouteHint == false ? ":" : "_"
+            let delimiter = "_"
             let routeHint = (self.routeHint ?? "").isEmpty ? "" : "\(delimiter)\((self.routeHint ?? ""))"
             return "\(address)\(routeHint)"
         }

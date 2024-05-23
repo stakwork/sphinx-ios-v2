@@ -35,7 +35,7 @@ extension SphinxOnionManager {//contacts related
         }
         
         guard let seed = getAccountSeed(),
-              let selfContact = UserContact.getSelfContact() else
+              let selfContact = UserContact.getOwner() else
         {
             return
         }

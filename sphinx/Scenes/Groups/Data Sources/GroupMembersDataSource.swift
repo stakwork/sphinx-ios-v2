@@ -56,7 +56,7 @@ class GroupMembersDataSource: GroupAllContactsDataSource {
             watchdogTimer.cancel()
             
             if let tribeMemberArray = tribeMembers["confirmedMembers"] as? [TribeMembersRRObject],
-               let selfContact = UserContact.getSelfContact(),
+               let selfContact = UserContact.getOwner(),
             let pendingMembersArray = tribeMembers["pendingMembers"] as? [TribeMembersRRObject] {
                 var contactsMap = tribeMemberArray.map({
                     var contact = JSON($0.toJSON())
@@ -131,7 +131,7 @@ class GroupMembersDataSource: GroupAllContactsDataSource {
             let nickname = contact["alias"].stringValue
             let avatarUrl = contact["photo_url"].stringValue
             let pubkey = contact["pubkey"].stringValue
-            let isOwner = pubkey == (UserContact.getSelfContact()?.publicKey ?? "-1")
+            let isOwner = pubkey == (UserContact.getOwner()?.publicKey ?? "-1")
             let pending = contact["pending"].boolValue
             
             if let initial = nickname.first {

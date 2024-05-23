@@ -276,6 +276,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             pinVC.loggingCompletion = {
                 if let currentVC = self.getCurrentVC() {
                     let _ = DeepLinksHandlerHelper.joinJitsiCall(vc: currentVC, forceJoin: true)
+                    
+                    if let currentVC = currentVC as? DashboardRootViewController {
+                        currentVC.connectToServer()
+                    }
                 }
             }
             WindowsManager.sharedInstance.showConveringWindowWith(rootVC: pinVC)

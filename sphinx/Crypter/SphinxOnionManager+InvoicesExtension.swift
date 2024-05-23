@@ -16,7 +16,7 @@ extension SphinxOnionManager {
         description: String? = nil
     ) -> String? {
             
-        guard let seed = getAccountSeed(), let selfContact = UserContact.getSelfContact(), let _ = selfContact.nickname else {
+        guard let seed = getAccountSeed(), let selfContact = UserContact.getOwner(), let _ = selfContact.nickname else {
             return nil
         }
             
@@ -59,7 +59,7 @@ extension SphinxOnionManager {
         guard message.type == TransactionMessage.TransactionMessageType.payment.rawValue,
               let invoice = message.invoice,
               let seed = getAccountSeed(),
-              let selfContact = UserContact.getSelfContact(),
+              let selfContact = UserContact.getOwner(),
               let chat = message.chat,
               let nickname = selfContact.nickname ?? chat.name else
         {

@@ -128,7 +128,7 @@ class PinCodeViewController: UIViewController {
         if let doneCompletion = doneCompletion, pin == UserData.sharedInstance.getAppPin() {
             doneCompletion(pin)
         }  else if let storedPin = UserData.sharedInstance.getStoredPin() {// if migrating from stored pin act accordingly
-            if(storedPin == pin){
+            if (storedPin == pin){
                 guard let unencryptedMnemonic = UserData.sharedInstance.getStoredUnencryptedMnemonic(),
                       SphinxOnionManager.sharedInstance.isMnemonic(code: unencryptedMnemonic) else {
                     loading = false

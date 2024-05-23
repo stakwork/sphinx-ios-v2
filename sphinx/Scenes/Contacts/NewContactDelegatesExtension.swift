@@ -41,7 +41,7 @@ extension NewContactViewController {
         
         if !pubkey.isEmpty && !pubkey.isPubKey {
             showErrorAlert(message: "invalid.pubkey".localized)
-        } else if !routeHint.isEmpty && !routeHint.isV2RouteHint {
+        } else if !routeHint.isEmpty && !routeHint.isRouteHint {
             showErrorAlert(message: "invalid.route.hint".localized)
         } else if nickname.isEmpty || pubkey.isEmpty {
             showErrorAlert(message: "nickname.address.required".localized)

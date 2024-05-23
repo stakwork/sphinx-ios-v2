@@ -21,10 +21,8 @@ extension RestoreUserFormViewController {
 
         guard validateCode(code) else { return }
         
-        if SphinxOnionManager.sharedInstance.isMnemonic(code: code) {
-            goMnemonicRoute()
-            return
-        }
+        UserData.sharedInstance.save(walletMnemonic: code)
+        continueRestore()
     }
     
     
@@ -40,7 +38,7 @@ extension RestoreUserFormViewController {
        return SphinxOnionManager.sharedInstance.isMnemonic(code: code)
     }
     
-    func goMnemonicRoute() {
+    func continueRestore() {
         if let mnemonic = UserData.sharedInstance.getMnemonic() {
             if SphinxOnionManager.sharedInstance.createMyAccount(mnemonic: mnemonic) {
                 setupWatchdogTimer()
