@@ -191,6 +191,8 @@
 		473F7BA6268B7F970063D0E0 /* OnionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 473F7BA5268B7F970063D0E0 /* OnionManager.swift */; };
 		4740538C244CFE0000826533 /* CustomImageScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4740538B244CFE0000826533 /* CustomImageScrollView.swift */; };
 		474064932745581C00FB7F93 /* PeopleTorActionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474064922745581C00FB7F93 /* PeopleTorActionsView.swift */; };
+		4741EBE92BFF6DCB00EFF49E /* SphinxOnionManager+StructsAndHelpersExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4741EBE82BFF6DCB00EFF49E /* SphinxOnionManager+StructsAndHelpersExtension.swift */; };
+		4741EBEB2BFF726300EFF49E /* SphinxOnionManager+ReadMuteExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4741EBEA2BFF726300EFF49E /* SphinxOnionManager+ReadMuteExtension.swift */; };
 		4746466C2988331A00FAF58B /* Dashboard.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4746466E2988331A00FAF58B /* Dashboard.storyboard */; };
 		4746467429883D7C00FAF58B /* pause_animation_light.json in Resources */ = {isa = PBXBuildFile; fileRef = 4746467329883D7C00FAF58B /* pause_animation_light.json */; };
 		47468079293E564B00F51457 /* PodcastPlayerControlsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47468078293E564B00F51457 /* PodcastPlayerControlsView.swift */; };
@@ -1282,6 +1284,8 @@
 		473F7BA5268B7F970063D0E0 /* OnionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnionManager.swift; sourceTree = "<group>"; };
 		4740538B244CFE0000826533 /* CustomImageScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomImageScrollView.swift; sourceTree = "<group>"; };
 		474064922745581C00FB7F93 /* PeopleTorActionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeopleTorActionsView.swift; sourceTree = "<group>"; };
+		4741EBE82BFF6DCB00EFF49E /* SphinxOnionManager+StructsAndHelpersExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SphinxOnionManager+StructsAndHelpersExtension.swift"; sourceTree = "<group>"; };
+		4741EBEA2BFF726300EFF49E /* SphinxOnionManager+ReadMuteExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SphinxOnionManager+ReadMuteExtension.swift"; sourceTree = "<group>"; };
 		4746466D2988331A00FAF58B /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Dashboard.storyboard; sourceTree = "<group>"; };
 		474646702988331C00FAF58B /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Dashboard.strings; sourceTree = "<group>"; };
 		474646722988334B00FAF58B /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/Dashboard.strings; sourceTree = "<group>"; };
@@ -4178,12 +4182,14 @@
 				CE4B53FC2AFC389C00708A0C /* SphinxOnionManager.swift */,
 				CE887EF92B1E5C7B00DBA670 /* SphinxOnionManager+ContactExtension.swift */,
 				CEAAE28A2B31F119009B283B /* SphinxOnionManager+HandleStateExtension.swift */,
+				4741EBE82BFF6DCB00EFF49E /* SphinxOnionManager+StructsAndHelpersExtension.swift */,
 				474C7A5328D3A7A1007A3E17 /* Sphinxrs-Bridging-Header.h */,
 				474C7A5228D3A7A1007A3E17 /* sphinxrs.swift */,
 				474C7A5428D3A7A1007A3E17 /* sphinxrsFFI.h */,
 				47F6CA0F287C695B005EBCB6 /* Nonce.swift */,
 				475CD5AB287E1198003FF171 /* CrypterManager.swift */,
 				CECE9C2A2AA7779E0039B843 /* WordsList.swift */,
+				4741EBEA2BFF726300EFF49E /* SphinxOnionManager+ReadMuteExtension.swift */,
 			);
 			path = Crypter;
 			sourceTree = "<group>";
@@ -5669,6 +5675,7 @@
 				F3D86DBE26B109FD00EB9711 /* DashboardFeedSquaredThumbnailCollectionViewCell.swift in Sources */,
 				47468FD923353E460072124A /* MediaLoader.swift in Sources */,
 				47183CB62548B74E00E6FD19 /* EpisodesHeaderView.swift in Sources */,
+				4741EBEB2BFF726300EFF49E /* SphinxOnionManager+ReadMuteExtension.swift in Sources */,
 				478C3D5724A947920003A1A4 /* UIApplication.swift in Sources */,
 				47D46A32237C83900005A548 /* UserContact+CoreDataProperties.swift in Sources */,
 				4728090A2A46147F0079BC40 /* InvoiceView.swift in Sources */,
@@ -5684,6 +5691,7 @@
 				CEEDEA182A1E84F7004DC536 /* ProfileManageStorageSpecificChatOrContentFeedItemVM.swift in Sources */,
 				4787F8742474490200CCE8B9 /* GroupTagsViewController.swift in Sources */,
 				CE9A185C2A1D7AF900F176DE /* ProfileManageStorageSourceDetailsVM.swift in Sources */,
+				4741EBE92BFF6DCB00EFF49E /* SphinxOnionManager+StructsAndHelpersExtension.swift in Sources */,
 				475C56652A7AA8B100E6F9A9 /* ThreadHeaderTableViewCell.swift in Sources */,
 				47AF0D37254C98D100C98398 /* BoostFireworksAnimationView.swift in Sources */,
 				47B9A645233BB54B00D2B022 /* AddressBookDataSource.swift in Sources */,

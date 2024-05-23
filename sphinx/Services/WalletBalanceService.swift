@@ -11,32 +11,25 @@ import UIKit
 
 public final class WalletBalanceService {
     
-    var balance: Int {
+    var balance: UInt64? {
         get {
-            return UserDefaults.Keys.channelBalance.get() ?? 0 as Int
+            if let balance = UserData.sharedInstance.getBalanceSats() {
+                return UInt64(balance)
+            }
+            return nil
         }
         set {
-            UserDefaults.Keys.channelBalance.set(newValue)
+            if let balance = newValue {
+                UserData.sharedInstance.save(balance: balance)
+            }
         }
     }
     
-    var remoteBalance: Int {
-        get {
-            return UserDefaults.Keys.remoteBalance.get() ?? 0 as Int
-        }
-        set {
-            UserDefaults.Keys.remoteBalance.set(newValue)
-        }
-    }
-    
-    func getBalance()->Int? {
-        let balance = UserData.sharedInstance.getBalanceSats()
-        return balance
-    }
+    init() {}
     
     func updateBalance(labels: [UILabel]) {
         DispatchQueue.global().async {
-            if let storedBalance = self.getBalance(){
+            if let storedBalance = self.balance {
                 self.updateLabels(labels: labels, balance: storedBalance.formattedWithSeparator)
             }
         }

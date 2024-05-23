@@ -12,134 +12,77 @@ import CocoaMQTT
 import ObjectMapper
 import SwiftyJSON
 
-extension SphinxOnionManager{//tribes related1
+///tribes related1
+extension SphinxOnionManager {
     
-    func getTribePubkey()->String?{
+    func getTribePubkey() -> String? {
         let tribePubkey = try? getDefaultTribeServer(state: loadOnionStateAsData())
         return tribePubkey
     }
     
-    func mapChatJSON(rawTribeJSON:[String:Any])->JSON?{
-        guard let name = rawTribeJSON["name"] as? String,
-              let ownerPubkey = rawTribeJSON["pubkey"] as? String,
-              ownerPubkey.isPubKey else{
-            return nil
-          }
-        var chatDict = rawTribeJSON
-        
-        let mappedFields : [String:Any] = [
-            "id":CrypterManager.sharedInstance.generateCryptographicallySecureRandomInt(upperBound: Int(1e5)) as Any,
-            "owner_pubkey": ownerPubkey,
-            "name" : name,
-            "is_tribe_i_created":true,
-            "type":Chat.ChatType.publicGroup.rawValue
-            //"created_at":createdAt
-        ]
-        
-        for key in mappedFields.keys{
-            chatDict[key] = mappedFields[key]
-        }
-        
-        let chatJSON = JSON(chatDict)
-        return chatJSON
-    }
-    
-    func getChatJSON(tribeInfo:GroupsManager.TribeInfo)->JSON?{
-        var chatDict : [String:Any] = [
-            "id":CrypterManager.sharedInstance.generateCryptographicallySecureRandomInt(upperBound: Int(1e5)) as Any,
-            "owner_pubkey": tribeInfo.ownerPubkey as Any,
-            "name" : tribeInfo.name ?? "Unknown Name",
-            "private": tribeInfo.privateTribe ,
-            "photo_url": tribeInfo.img ?? "",
-            "unlisted": tribeInfo.unlisted,
-            "price_per_message": tribeInfo.pricePerMessage ?? 0,
-            "escrow_amount": max(tribeInfo.amountToStake ?? 3, 3)
-        ]
-        let chatJSON = JSON(chatDict)
-        return chatJSON
-    }
-    
-    func createTribe(params:[String:Any]){
+    func createTribe(
+        params: [String: Any],
+        callback: @escaping (String) -> ()
+    ) {
         guard let seed = getAccountSeed(),
-        let tribeServerPubkey = getTribePubkey() else{
+              let tribeServerPubkey = getTribePubkey() else
+        {
             return
         }
         
         guard let tribeData = try? JSONSerialization.data(withJSONObject: params),
-              let tribeJSONString = String(data: tribeData, encoding: .utf8)
-               else{
+              let tribeJSONString = String(data: tribeData, encoding: .utf8) else
+        {
             return
         }
-        do{
-            let rr = try sphinx.createTribe(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), tribeServerPubkey: tribeServerPubkey, tribeJson: tribeJSONString)
+        
+        self.createTribeCallback = callback
+        
+        do {
+            let rr = try sphinx.createTribe(
+                seed: seed,
+                uniqueTime: getTimeWithEntropy(),
+                state: loadOnionStateAsData(),
+                tribeServerPubkey: tribeServerPubkey,
+                tribeJson: tribeJSONString
+            )
             let _ = handleRunReturn(rr: rr)
-        }
-        catch{
-            print("Handled an expected error: \(error)")
-            // Crash in debug mode if the error is not expected
-            #if DEBUG
-            assertionFailure("Unexpected error: \(error)")
-            #endif
+        } catch {
+            self.createTribeCallback = nil
+            print("Error creating tribe")
         }
     }
     
     func joinTribe(
-        tribePubkey:String,
-        routeHint:String,
-        joinAmountMsats:Int=1000,
-        alias:String?=nil,
-        isPrivate:Bool=false
+        tribePubkey: String,
+        routeHint: String,
+        joinAmountMsats: Int = 1000,
+        alias: String? = nil,
+        isPrivate: Bool = false
     ){
         guard let seed = getAccountSeed() else{
             return
         }
-        do{
+        do {
             
-            let rr = try sphinx.joinTribe(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), tribePubkey: tribePubkey, tribeRouteHint: routeHint, alias: alias ?? "test", amtMsat: UInt64(joinAmountMsats), isPrivate: isPrivate)
+            let rr = try sphinx.joinTribe(
+                seed: seed,
+                uniqueTime: getTimeWithEntropy(),
+                state: loadOnionStateAsData(),
+                tribePubkey: tribePubkey,
+                tribeRouteHint: routeHint,
+                alias: alias ?? "test",
+                amtMsat: UInt64(joinAmountMsats),
+                isPrivate: isPrivate
+            )
             DelayPerformedHelper.performAfterDelay(seconds: 1.0, completion: {
                 let _ = self.handleRunReturn(rr: rr)
             })
             
-        }
-        catch{
-            print("Handled an expected error: \(error)")
-            // Crash in debug mode if the error is not expected
-            #if DEBUG
-            assertionFailure("Unexpected error: \(error)")
-            #endif
-        }
+        } catch {}
     }
     
-    func addToRemovedTribesList(chat:Chat?){
-        guard let chat = chat,
-              let ownerPubkey = chat.ownerPubkey,
-              chat.isPublicGroup() else{
-            return
-        }
-        
-        if var pubkeys: [String] = UserDefaults.Keys.removedTribeOwnerPubkeys.get(),
-           pubkeys.filter({$0 == ownerPubkey}).count == 0{ // only add once
-            pubkeys.append(ownerPubkey)
-            UserDefaults.Keys.removedTribeOwnerPubkeys.set(pubkeys)
-        }
-        else{
-            UserDefaults.Keys.removedTribeOwnerPubkeys.set([ownerPubkey])
-        }
-    }
-    
-    func isInRemovedTribeList(ownerPubkey:String?)->Bool{
-        guard let ownerPubkey = ownerPubkey else{
-            return false
-        }
-        
-        if let pubkeys: [String] = UserDefaults.Keys.removedTribeOwnerPubkeys.get(){
-            return pubkeys.contains(ownerPubkey)
-        }
-        
-        return false
-    }
-    
-    func extractHostAndTribeIdentifier(from urlString: String)->(String,String)? {
+    func extractHostAndTribeIdentifier(from urlString: String) -> (String, String)? {
         guard let url = URL(string: urlString) else {
             print("Invalid URL")
             return nil
@@ -152,6 +95,7 @@ extension SphinxOnionManager{//tribes related1
         }
         
         let pathComponents = url.pathComponents
+        
         guard let tribeIdentifier = pathComponents.last, tribeIdentifier != "/" else {
             print("URL does not have a tribe identifier")
             return nil
@@ -159,14 +103,17 @@ extension SphinxOnionManager{//tribes related1
         
         print("Host: \(host)")
         print("Tribe Identifier: \(tribeIdentifier)")
+        
         return ("\(host):\(port)",tribeIdentifier)
     }
     
-    func joinInitialTribe(){
+    func joinInitialTribe() {
         guard let tribeURL = self.stashedInitialTribe,
-        let (host, pubkey) = extractHostAndTribeIdentifier(from: tribeURL) else{
+              let (host, pubkey) = extractHostAndTribeIdentifier(from: tribeURL) else
+        {
             return
         }
+        
         GroupsManager.sharedInstance.fetchTribeInfo(
             host: host,
             uuid: pubkey,
@@ -175,6 +122,7 @@ extension SphinxOnionManager{//tribes related1
                 let qrString = "action=tribeV2&pubkey=\(pubkey)&host=\(host)"
                 var tribeInfo = GroupsManager.TribeInfo(ownerPubkey:pubkey, host: host,uuid: pubkey)
                 self.stashedInitialTribe = nil
+                
                 GroupsManager.sharedInstance.update(tribeInfo: &tribeInfo, from: groupInfo)
                 GroupsManager.sharedInstance.finalizeTribeJoin(tribeInfo: tribeInfo, qrString: qrString)
                 
@@ -183,72 +131,123 @@ extension SphinxOnionManager{//tribes related1
         )
     }
     
-    func exitTribe(tribeChat:Chat){
+    func exitTribe(tribeChat: Chat) {
         let _ = self.sendMessage(
             to: nil,
             content: "",
             chat: tribeChat,
+            provisionalMessage: nil,
             msgType: UInt8(TransactionMessage.TransactionMessageType.groupLeave.rawValue),
             threadUUID: nil,
             replyUUID: nil
         )
-        addToRemovedTribesList(chat: tribeChat)
     }
     
     func getTribeMembers(
-        tribeChat:Chat,
+        tribeChat: Chat,
         completion: (([String:AnyObject]) ->())?
     ){
         guard let seed = getAccountSeed(),
-        let tribeServerPubkey = getTribePubkey() else{
+              let tribeServerPubkey = getTribePubkey() else
+        {
             return
         }
-        do{
-            let rr = try listTribeMembers(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), tribeServerPubkey: tribeServerPubkey, tribePubkey: tribeChat.ownerPubkey ?? "")
-            stashedCallback = completion
+        do {
+            let rr = try sphinx.listTribeMembers(
+                seed: seed,
+                uniqueTime: getTimeWithEntropy(),
+                state: loadOnionStateAsData(),
+                tribeServerPubkey: tribeServerPubkey,
+                tribePubkey: tribeChat.ownerPubkey ?? ""
+            )
+            tribeMembersCallback = completion
             let _ = handleRunReturn(rr: rr)
-        }
-        catch{
-            print("Handled an expected error: \(error)")
-            // Crash in debug mode if the error is not expected
-            #if DEBUG
-            assertionFailure("Unexpected error: \(error)")
-            #endif
-        }
+        } catch {}
     }
     
     func kickTribeMember(pubkey:String, chat:Chat){
         guard let tribeServerPubkey = getTribePubkey() else{
             return
         }
-        let _ = sendMessage(to: nil, content: pubkey, chat: chat, msgType: UInt8(TransactionMessage.TransactionMessageType.groupKick.rawValue), recipPubkey: tribeServerPubkey, threadUUID: nil, replyUUID: nil)
+        let _ = sendMessage(
+            to: nil,
+            content: "",
+            chat: chat,
+            provisionalMessage: nil,
+            msgType: UInt8(TransactionMessage.TransactionMessageType.groupKick.rawValue),
+            recipPubkey: tribeServerPubkey,
+            threadUUID: nil,
+            replyUUID: nil,
+            tribeKickMember: pubkey
+        )
     }
     
     func approveOrRejectTribeJoinRequest(
-        requestUuid:String,
+        requestUuid: String,
         chat: Chat,
         type: TransactionMessage.TransactionMessageType
     ){
         guard let tribeServerPubkey = getTribePubkey() else{
             return
         }
+        
         if (type.rawValue == TransactionMessage.TransactionMessageType.memberApprove.rawValue ||
-            type.rawValue == TransactionMessage.TransactionMessageType.memberReject.rawValue) == false{
+            type.rawValue == TransactionMessage.TransactionMessageType.memberReject.rawValue) == false {
             return
         }
-        let _ = sendMessage(to: nil, content: "", chat: chat, msgType: UInt8(type.rawValue), recipPubkey: tribeServerPubkey, threadUUID: nil, replyUUID: requestUuid)
+        
+        let _ = sendMessage(
+            to: nil,
+            content: "",
+            chat: chat,
+            provisionalMessage: nil,
+            msgType: UInt8(type.rawValue),
+            recipPubkey: tribeServerPubkey,
+            threadUUID: nil,
+            replyUUID: requestUuid
+        )
     }
     
-    
-    
-    func deleteTribe(tribeChat:Chat){
+    func deleteTribe(tribeChat: Chat) {
         guard let tribeServerPubkey = getTribePubkey() else{
             return
         }
-        let _ = sendMessage(to: nil, content: "", chat: tribeChat, msgType: UInt8(TransactionMessage.TransactionMessageType.groupDelete.rawValue), recipPubkey: tribeServerPubkey, threadUUID: nil, replyUUID: nil)
-        
-        addToRemovedTribesList(chat: tribeChat)
+        let _ = sendMessage(
+            to: nil,
+            content: "",
+            chat: tribeChat,
+            provisionalMessage: nil,
+            msgType: UInt8(TransactionMessage.TransactionMessageType.groupDelete.rawValue),
+            recipPubkey: tribeServerPubkey,
+            threadUUID: nil,
+            replyUUID: nil
+        )
     }
     
-    
+    func mapChatJSON(
+        rawTribeJSON: [String: Any]
+    ) -> JSON? {
+        guard let name = rawTribeJSON["name"] as? String,
+              let ownerPubkey = rawTribeJSON["pubkey"] as? String,
+              ownerPubkey.isPubKey else
+        {
+            return nil
+        }
+        var chatDict = rawTribeJSON
+        
+        let mappedFields : [String:Any] = [
+            "id": CrypterManager.sharedInstance.generateCryptographicallySecureRandomInt(upperBound: Int(1e5)) as Any,
+            "owner_pubkey": ownerPubkey,
+            "name" : name,
+            "is_tribe_i_created": true,
+            "type": Chat.ChatType.publicGroup.rawValue
+        ]
+        
+        for key in mappedFields.keys {
+            chatDict[key] = mappedFields[key]
+        }
+        
+        let chatJSON = JSON(chatDict)
+        return chatJSON
+    }
 }

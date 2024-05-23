@@ -51,21 +51,18 @@ class InviteActionsHelper {
         parameters["private"] = false as AnyObject
         parameters["tags"] = ["Podcast"] as AnyObject
         
-        guard let name = parameters["name"] as? String,
-            let description = parameters["description"] as? String else{
+        guard let _ = parameters["name"] as? String,
+            let _ = parameters["description"] as? String else{
             //Send Alert?
             //self.showErrorAlert()
             return
         }
         
-        NotificationCenter.default.addObserver(self, selector: #selector(handleNewTribeNotification(_:)), name: .newTribeCreationComplete, object: nil)
-        SphinxOnionManager.sharedInstance.createTribe(params:parameters)
+        SphinxOnionManager.sharedInstance.createTribe(params: parameters, callback: handleNewTribeNotification)
     }
     
-    @objc func handleNewTribeNotification(_ notification: Notification) {
-        NotificationCenter.default.removeObserver(self, name: .newTribeCreationComplete, object: nil)
-        if let tribeJSONString = notification.userInfo?["tribeJSON"] as? String,
-           let tribeJSON = try? tribeJSONString.toDictionary(),
+    func handleNewTribeNotification(tribeJSONString: String) {
+        if let tribeJSON = try? tribeJSONString.toDictionary(),
            let chatJSON = SphinxOnionManager.sharedInstance.mapChatJSON(rawTribeJSON: tribeJSON),
            let chat = Chat.insertChat(chat: chatJSON)
         {
@@ -91,16 +88,24 @@ class InviteActionsHelper {
         }
     }
     
-    func joinTribe(tribeInfo: GroupsManager.TribeInfo, completion: @escaping () -> ()) {
-        let grouspManager = GroupsManager.sharedInstance
-        let params = grouspManager.getParamsFrom(tribe: tribeInfo)
-        
+    func joinTribe(
+        tribeInfo: GroupsManager.TribeInfo,
+        completion: @escaping () -> ()
+    ) {
         if let pubkey = tribeInfo.ownerPubkey,
-           let chatJSON = SphinxOnionManager.sharedInstance.getChatJSON(tribeInfo:tribeInfo),
+           let chatJSON = GroupsManager.getChatJSON(tribeInfo: tribeInfo),
            let routeHint = tribeInfo.ownerRouteHint,
-           let chat = Chat.insertChat(chat: chatJSON){
+           let chat = Chat.insertChat(chat: chatJSON)
+        {
             let isPrivate = tribeInfo.privateTribe
-            SphinxOnionManager.sharedInstance.joinTribe(tribePubkey: pubkey, routeHint: routeHint, alias: UserContact.getOwner()?.nickname,isPrivate: isPrivate)
+            
+            SphinxOnionManager.sharedInstance.joinTribe(
+                tribePubkey: pubkey,
+                routeHint: routeHint,
+                alias: UserContact.getOwner()?.nickname,
+                isPrivate: isPrivate
+            )
+            
             chat.status = (isPrivate) ? Chat.ChatStatus.pending.rawValue : Chat.ChatStatus.approved.rawValue
             chat.type = Chat.ChatType.publicGroup.rawValue
             chat.managedObjectContext?.saveContext()

@@ -68,7 +68,6 @@ public class Chat: NSManagedObject {
     }
     
     static func insertChat(chat: JSON) -> Chat? {
-        
         if let id = getChatId(chat: chat) {
             let name = chat["name"].string ?? ""
             let photoUrl = chat["photo_url"].string ?? chat["img"].string ?? ""
@@ -94,9 +93,8 @@ public class Chat: NSManagedObject {
             let contactIds = chat["contact_ids"].arrayObject as? [NSNumber] ?? []
             let pendingContactIds = chat["pending_contact_ids"].arrayObject as? [NSNumber] ?? []
             
-            let isInRemovedChatList = SphinxOnionManager.sharedInstance.isInRemovedTribeList(ownerPubkey: ownerPubkey)
-            print(isInRemovedChatList)
-            if isInRemovedChatList == true{return nil}
+//            let isInRemovedChatList = SphinxOnionManager.sharedInstance.isInRemovedTribeList(ownerPubkey: ownerPubkey)
+//            if isInRemovedChatList == true{ return nil }
             
             let chat = Chat.createObject(
                 id: id,
@@ -786,7 +784,7 @@ public class Chat: NSManagedObject {
     
     func getJoinChatLink() -> String? {
         if let pubkey = self.ownerPubkey {
-            return "sphinx.chat://?action=tribeV2&pubkey=\(pubkey)&host=34.229.52.200:8801"
+            return "sphinx.chat://?action=tribeV2&pubkey=\(pubkey)&host=\(API.kTribesServer)"
         }
         return nil
     }

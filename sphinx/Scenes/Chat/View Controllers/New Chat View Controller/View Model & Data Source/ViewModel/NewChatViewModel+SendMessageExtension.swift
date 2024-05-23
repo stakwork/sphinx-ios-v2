@@ -26,6 +26,7 @@ extension NewChatViewModel {
         shouldSendMessage(
             text: text,
             type: type,
+            provisionalMessage: nil,
             completion: completion
         )
     }
@@ -33,6 +34,7 @@ extension NewChatViewModel {
     func shouldSendMessage(
         text: String,
         type: Int,
+        provisionalMessage: TransactionMessage?,
         completion: @escaping (Bool) -> ()
     ) {
         var messageText = text
@@ -53,7 +55,17 @@ extension NewChatViewModel {
         }
         
         let tuuid = threadUUID ?? replyingTo?.threadUUID ?? replyingTo?.uuid
-        let validMessage = SphinxOnionManager.sharedInstance.sendMessage(to: contact, content: text, chat: chat,msgType: UInt8(type), threadUUID: tuuid, replyUUID: replyingTo?.uuid)
+        
+        let validMessage = SphinxOnionManager.sharedInstance.sendMessage(
+            to: contact,
+            content: text,
+            chat: chat,
+            provisionalMessage: provisionalMessage,
+            msgType: UInt8(type),
+            threadUUID: tuuid,
+            replyUUID: replyingTo?.uuid
+        )
+        
         validMessage?.makeProvisional(chat: self.chat)
         updateSnapshotWith(message: validMessage)
         completion(validMessage != nil)
@@ -170,6 +182,7 @@ extension NewChatViewModel {
         self.shouldSendMessage(
             text: messageText,
             type: type,
+            provisionalMessage: nil,
             completion: { _ in }
         )
     }

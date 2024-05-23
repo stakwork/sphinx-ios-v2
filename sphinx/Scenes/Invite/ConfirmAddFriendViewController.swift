@@ -35,6 +35,8 @@ class ConfirmAddFriendViewController: UIViewController {
     let kTextViewColor = UIColor.Sphinx.Text
     var inviteRequestWatchdogTimer: Timer?
     
+    let som = SphinxOnionManager.sharedInstance
+    
     private var lowestPrice : Int?
     
     var loading = false {
@@ -104,10 +106,6 @@ class ConfirmAddFriendViewController: UIViewController {
     }
     
     @IBAction func createInvitationButtonTouched() {
-        if let lowestPrice = lowestPrice, walletBalanceService.balance <= lowestPrice {
-            AlertHelper.showAlert(title: "generic.error.title".localized, message: "invite.more.sats".localized)
-            return
-        }
         createInvite()
     }
     
@@ -116,24 +114,9 @@ class ConfirmAddFriendViewController: UIViewController {
         
         // Invalidate the timer when the view disappears
         inviteRequestWatchdogTimer?.invalidate()
-        
-        // Remove observer
-        NotificationCenter.default.removeObserver(self, name: .inviteCodeAckReceived, object: nil)
     }
     
-    func configurePriceContainer(lowestPrice: Int) {
-        let localBalance = walletBalanceService.balance
-        if localBalance > lowestPrice && lowestPrice > 0 {
-            amountLabel.text = lowestPrice.formattedWithSeparator
-            UIView.animate(withDuration: 0.3, animations: {
-                self.bottomLeftContainer.alpha = 1.0
-            })
-        } else {
-            bottomLeftContainer.alpha = 0.0
-        }
-    }
-    
-    func processRequestedInviteAck(code:String?){
+    func processRequestedInviteAck(code: String?){
         if let code = code{
             loading = false
             self.delegate?.shouldDismissView?()
@@ -150,48 +133,58 @@ class ConfirmAddFriendViewController: UIViewController {
     func createInvite() {
         view.endEditing(true)
         
-        if let amount = amountField.text,
-            let amountSats = Int(amount)
-        {
-            loading = true
-            inviteRequestWatchdogTimer = Timer.scheduledTimer(timeInterval: 10, target: self, selector: #selector(watchdogTimerFired), userInfo: nil, repeats: false)
-            NotificationCenter.default.addObserver(self, selector: #selector(handleInviteCodeAck(n:)), name: .inviteCodeAckReceived, object: nil)
-            SphinxOnionManager.sharedInstance.requestInviteCode(amountMsat: amountSats * 1000)
-        } else {
-            AlertHelper.showAlert(title: "generic.error.title".localized, message: "nickname.cannot.empty".localized)
+        guard let amount = amountField.text else {
+            return
         }
+        
+        guard let amountSats = Int(amount) else {
+            return
+        }
+        
+        loading = true
+        
+        inviteRequestWatchdogTimer = Timer.scheduledTimer(
+            timeInterval: 10,
+            target: self,
+            selector: #selector(watchdogTimerFired),
+            userInfo: nil,
+            repeats: false
+        )
+        
+        som.inviteCreationCallback = handleInviteCodeAck
+        som.requestInviteCode(amountMsat: amountSats * 1000)
     }
     
     @objc func watchdogTimerFired() {
-        // Show an alert to the user
-        loading = false
-        
         AlertHelper.showAlert(title: "Timeout", message: "The operation has timed out. Please try again.")
         
-        // Invalidate the timer
         inviteRequestWatchdogTimer?.invalidate()
         
-        // Remove the observer for invite code ACK
-        NotificationCenter.default.removeObserver(self, name: .inviteCodeAckReceived, object: nil)
+        som.inviteCreationCallback = nil
         
-        // Optionally, dismiss the view or handle the timeout appropriately
-        // self.dismiss(animated: true, completion: nil)
+        loading = false
+        delegate?.shouldDismissView?()
+        closeButtonTouched()
     }
     
-    @objc func handleInviteCodeAck(n:Notification){
-        guard let inviteCode = n.userInfo?["inviteCode"] as? String else{
+    func handleInviteCodeAck(
+        inviteCode: String?
+    ){
+        guard let inviteCode = inviteCode else {
             AlertHelper.showAlert(title: "generic.error.title".localized, message: "generic.error.message".localized)
             return
         }
         
-        loading = false
-        self.delegate?.shouldDismissView?()
-        self.closeButtonTouched()
         let nickname = nickNameField.text ?? "unknown"
-        SphinxOnionManager.sharedInstance.createContactForInvite(code: inviteCode, nickname: nickname)
+        
+        som.createContactForInvite(code: inviteCode, nickname: nickname)
         ClipboardHelper.copyToClipboard(text: inviteCode)
         
-        NotificationCenter.default.removeObserver(self, name: .inviteCodeAckReceived, object: nil)
+        som.inviteCreationCallback = nil
+        
+        loading = false
+        delegate?.shouldDismissView?()
+        closeButtonTouched()
     }
     
     func goToInviteCodeString(inviteCode: String) {

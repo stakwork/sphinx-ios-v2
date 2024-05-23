@@ -160,9 +160,19 @@ class API {
     
     public static let kPodcastIndexURL = "https://api.podcastindex.org"
     
-    public static let kTribesServerBaseURL = "https://tribes.sphinx.chat"
+    public static let kTestV2TribesServer = "34.229.52.200:8801"
     
-    public static let kTestV2TribesServer = "http://34.229.52.200:8801"
+    public static var kTribesServer : String {
+        get {
+            if let tribesServerUrl = UserDefaults.Keys.tribesServerURL.get(defaultValue: ""), tribesServerUrl != "" {
+                return tribesServerUrl
+            }
+            return kTestV2TribesServer
+        }
+        set {
+            UserDefaults.Keys.tribesServerURL.set(newValue)
+        }
+    }
     
 
     class func getUrl(route: String) -> String {
@@ -183,22 +193,7 @@ class API {
     }
 
     func session() -> Alamofire.Session? {
-        if !onionConnector.usingTor() {
-            return Alamofire.Session.default
-        }
-
-        switch (onionConnector.onionManager.state) {
-        case .connected:
-            guard let torSession = onionConnector.torSession else {
-                let appDelegate = UIApplication.shared.delegate as! AppDelegate
-                onionConnector.startTor(delegate: appDelegate)
-
-                return nil
-            }
-            return torSession
-        default:
-            return nil
-        }
+        return Alamofire.Session.default
     }
 
     func getURLRequest(
@@ -327,7 +322,6 @@ class API {
                     if self.errorCounter < 5 {
                         self.errorCounter = self.errorCounter + 1
                     } else if response.response != nil {
-                        self.getIPFromHUB()
                         return
                     }
                     completionHandler(response)
@@ -366,51 +360,6 @@ class API {
     
     func postMQTTStatusChange(){
         NotificationCenter.default.post(name: .onMQTTConnectionStatusChanged, object: nil)
-    }
-
-    func getIPFromHUB() {
-        self.errorCounter = 0
-
-        guard let ownerPubKey = UserData.sharedInstance.getUserPubKey() else {
-            return
-        }
-
-        let url = "\(API.kHUBServerUrl)/api/v1/nodes/\(ownerPubKey)"
-        guard let request = createRequest(url, bodyParams: nil, method: "GET") else {
-            return
-        }
-
-        AF.request(request).responseJSON { (response) in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let status = json["status"] as? String, status == "ok" {
-                        if let object = json["object"] as? NSDictionary {
-                            if let ip = object["node_ip"] as? String, !ip.isEmpty {
-                                UserData.sharedInstance.save(ip: ip)
-                                SphinxSocketManager.sharedInstance.reconnectSocketToNewIP()
-                                self.reloadDashboard()
-                                return
-                            }
-                        }
-                    }
-                }
-                self.retryGettingIPFromHUB()
-            case .failure(_):
-                self.retryGettingIPFromHUB()
-            }
-        }
-    }
-
-    func retryGettingIPFromHUB() {
-        DelayPerformedHelper.performAfterDelay(seconds: 5, completion: {
-            self.getIPFromHUB()
-        })
-    }
-
-    func reloadDashboard() {
-        let appDelegate = UIApplication.shared.delegate as! AppDelegate
-        appDelegate.reloadContactsAndMessages()
     }
 
     

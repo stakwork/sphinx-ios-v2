@@ -51,7 +51,7 @@ class SetNickNameViewController: SetDataViewController {
         nickNameField.becomeFirstResponder()
     }
     
-    func validateNickname()->String?{
+    func validateNickname() -> String?{
         if let nickname = nickNameField.text, nickname != ""{
             return nickname
         }
@@ -59,12 +59,10 @@ class SetNickNameViewController: SetDataViewController {
     }
     
     @IBAction func nextButtonTouched() {
-        if isV2,
-            let nickname = validateNickname(),
-            let selfContact = SphinxOnionManager.sharedInstance.pendingContact,
-            selfContact.isOwner == true{
-            selfContact.nickname = nickname
-            self.goToProfilePicture()
+        if let nickname = validateNickname(), let owner = UserContact.getOwner() {
+            owner.nickname = nickname
+            
+            goToProfilePicture()
         }
     }
     

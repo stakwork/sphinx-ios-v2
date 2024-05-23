@@ -19,8 +19,7 @@ extension API {
         page : Int = 0,
         tags : [String] = []
     ) {
-        var url = API.getUrl(route: "\(API.kTribesServerBaseURL)/tribes?limit=\(limit)&sortBy=member_count&page=\(page)")
-        url = "\(API.kTestV2TribesServer)/tribes"
+        var url = API.getUrl(route: "\(API.kTribesServer)/tribes?limit=\(limit)&sortBy=member_count&page=\(page)")
         if tags.isEmpty == false {
             url.append("&tags=")
             for tag in tags {

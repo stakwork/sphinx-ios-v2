@@ -135,7 +135,7 @@ public class ContentFeed: NSManagedObject {
         persistingIn managedObjectContext: NSManagedObjectContext,
         then completionHandler: ((Result<ContentFeed, Error>) -> Void)? = nil
     ) {
-        let tribesServerURL = "\(API.kTribesServerBaseURL)/feed?url=\(feedURLPath)&fulltext=true"
+        let tribesServerURL = "\(API.kTestV2TribesServer)/feed?url=\(feedURLPath)&fulltext=true"
         
         API.sharedInstance.getContentFeed(
             url: tribesServerURL,
@@ -186,7 +186,7 @@ public class ContentFeed: NSManagedObject {
         persistingIn managedObjectContext: NSManagedObjectContext,
         then completionHandler: ((Result<ContentFeed, Error>) -> Void)? = nil
     ) {
-        let tribesServerURL = "\(API.kTribesServerBaseURL)/feed?url=\(feedURLPath)&fulltext=true"
+        let tribesServerURL = "\(API.kTestV2TribesServer)/feed?url=\(feedURLPath)&fulltext=true"
         
         API.sharedInstance.getContentFeed(
             url: tribesServerURL,

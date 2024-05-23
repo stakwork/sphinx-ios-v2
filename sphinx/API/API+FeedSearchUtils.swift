@@ -21,7 +21,7 @@ extension API {
     ) {
         
         let route = (type == FeedType.Podcast) ? "search_podcasts" : "search_youtube"
-        let urlPath = "\(API.kTribesServerBaseURL)/\(route)"
+        let urlPath = "\(API.kTestV2TribesServer)/\(route)"
         
         var urlComponents = URLComponents(string: urlPath)!
         urlComponents.queryItems = [

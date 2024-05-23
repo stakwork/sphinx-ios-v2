@@ -32,13 +32,14 @@ class AlertHelper {
         message: String,
         on vc: UIViewController,
         additionAlertAction: UIAlertAction? = nil,
+        confirmLabel: String? = nil,
         completion: (() -> ())? = nil
     ) {
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
         if let additionAlertAction = additionAlertAction {
             alert.addAction(additionAlertAction)
         }
-        let alertAction = UIAlertAction(title: "Ok", style: .cancel, handler: { _ in
+        let alertAction = UIAlertAction(title: confirmLabel ?? "Ok", style: .cancel, handler: { _ in
             if let callback = completion {
                 callback()
             }

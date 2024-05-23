@@ -236,9 +236,13 @@ extension TransactionMessage {
         return status == TransactionMessageStatus.cancelled.rawValue
     }
     
-    func setAsLastMessageIfHighestIndex(){
-        if let lastMessageId = self.chat?.lastMessage?.id,
-           lastMessageId < self.id || SphinxOnionManager.sharedInstance.messageIdIsFromHashed(msgId: lastMessageId){ //if it's a hashed id ignore it bc its not genuine signal from server (generated 
+    func setAsLastMessage() {
+        guard let lastMessageDate = self.chat?.lastMessage?.date else {
+            self.chat?.lastMessage = self
+            return
+        }
+        
+        if lastMessageDate < self.date ?? Date() {
             self.chat?.lastMessage = self
         }
     }

@@ -18,14 +18,18 @@ extension NewChatViewController : ChatMessageTextFieldViewDelegate {
         
         ChatTrackingHandler.shared.deleteReplyableMessage(with: chat?.id)
         
-        chatViewModel.shouldSendMessage(text: text, type: type, completion: { success in
-            
-            if success {
-                self.scrollToBottomAfterSend()
+        chatViewModel.shouldSendMessage(
+            text: text,
+            type: type,
+            provisionalMessage: nil,
+            completion: { success in    
+                if success {
+                    self.scrollToBottomAfterSend()
+                }
+                
+                completion(success)
             }
-            
-            completion(success)
-        })
+        )
     }
     
     func scrollToBottomAfterSend() {

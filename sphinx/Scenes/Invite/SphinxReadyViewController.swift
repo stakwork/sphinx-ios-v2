@@ -49,9 +49,9 @@ class SphinxReadyViewController: UIViewController {
         loading = true
         
         let wbs = WalletBalanceService()
-        if let storedBalance = wbs.getBalance(){
+        if let storedBalance = wbs.balance {
             loading = false
-            self.setAttributedTitles(local: storedBalance, remote: 0)
+            self.setAttributedTitles(local: Int(storedBalance), remote: 0)
         }
     }
     

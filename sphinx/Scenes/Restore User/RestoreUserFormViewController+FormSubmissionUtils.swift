@@ -222,15 +222,11 @@ extension RestoreUserFormViewController : NSFetchedResultsControllerDelegate{
     func finalizeSignup(){
         let som = SphinxOnionManager.sharedInstance
         if //let _ = som.currentServer,
-           let contact = som.pendingContact,
-           contact.isOwner == true{
-            if let vc = self as? NewUserSignupFormViewController{
-                vc.isV2 = true
-            }
+            let owner = UserContact.getOwner() {
             som.isV2InitialSetup = true
+            
             self.proceedToNewUserWelcome()
-        }
-        else{
+        } else {
             self.navigationController?.popViewController(animated: true)
             AlertHelper.showAlert(title: "Error", message: "Unable to connect to Sphinx V2 Test Server")
         }

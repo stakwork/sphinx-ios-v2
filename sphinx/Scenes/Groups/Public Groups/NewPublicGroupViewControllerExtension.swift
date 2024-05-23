@@ -150,27 +150,21 @@ extension NewPublicGroupViewController {
     }
     
     func createGroup(params: [String: AnyObject]) {
-        guard let name = params["name"] as? String,
-            let description = params["description"] as? String else{
-            //Send Alert?
-            self.showErrorAlert()
+        guard let _ = params["name"] as? String, let _ = params["description"] as? String else {
+            showErrorAlert()
             return
         }
         
-        NotificationCenter.default.addObserver(self, selector: #selector(handleNewTribeNotification(_:)), name: .newTribeCreationComplete, object: nil)
-        SphinxOnionManager.sharedInstance.createTribe(params:params)
+        SphinxOnionManager.sharedInstance.createTribe(params: params, callback: handleNewTribeNotification)
     }
     
-
-    @objc func handleNewTribeNotification(_ notification: Notification) {
-        NotificationCenter.default.removeObserver(self, name: .newTribeCreationComplete, object: nil)
-        if let tribeJSONString = notification.userInfo?["tribeJSON"] as? String,
-           let tribeJSON = try? tribeJSONString.toDictionary(),
+    func handleNewTribeNotification(tribeJSONString: String) {
+        if let tribeJSON = try? tribeJSONString.toDictionary(),
            let chatJSON = SphinxOnionManager.sharedInstance.mapChatJSON(rawTribeJSON: tribeJSON),
            let chat = Chat.insertChat(chat: chatJSON)
         {
             chat.managedObjectContext?.saveContext()
-            self.shouldDismissView()
+            shouldDismissView()
             return
         }
         showErrorAlert()

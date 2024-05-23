@@ -19,14 +19,24 @@ extension NewChatViewModel {
             return
         }
         
-        SphinxOnionManager.sharedInstance.sendBoostReply(params: params, chat: chat)
+        let _ = SphinxOnionManager.sharedInstance.sendBoostReply(
+            params: params,
+            chat: chat
+        )
     }
     
     func shouldResendMessage(message: TransactionMessage) {
         guard let chat = message.chat else{
             return
         }
-        SphinxOnionManager.sharedInstance.sendMessage(to: message.chat?.getContact(), content: message.messageContent ?? "", chat: chat, threadUUID: message.threadUUID, replyUUID: message.replyUUID)
+        
+//        SphinxOnionManager.sharedInstance.sendMessage(
+//            to: message.chat?.getContact(),
+//            content: message.messageContent ?? "",
+//            chat: chat,
+//            threadUUID: message.threadUUID,
+//            replyUUID: message.replyUUID
+//        )
     }
 }
 
@@ -84,14 +94,14 @@ extension NewChatViewModel {
         contact: UserContact,
         text: String
     ) {
-        guard let params = TransactionMessage.getMessageParams(
-                contact: contact,
-                type: TransactionMessage.TransactionMessageType.message,
-                text: text
-        ) else {
-            return
-        }
-        //@Tom do we want to reimplement flag messages?
+//        guard let params = TransactionMessage.getMessageParams(
+//                contact: contact,
+//                type: TransactionMessage.TransactionMessageType.message,
+//                text: text
+//        ) else {
+//            return
+//        }
+        
 //        API.sharedInstance.sendMessage(params: params, callback: { _ in }, errorCallback: {})
     }
 }

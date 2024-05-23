@@ -175,7 +175,7 @@ class CreateInvoiceViewController: CommonPaymentViewController {
         
         if amount >= 0 && amount <= kMaximumAmount {
             let contactsCount = 1
-            let walletBalance = WalletBalanceService().balance
+            let walletBalance = WalletBalanceService().balance ?? 0
             let sending = (mode == PaymentsViewModel.PaymentMode.send || mode == PaymentsViewModel.PaymentMode.sendOnchain)
             
             if amount > walletBalance && sending && false {
@@ -311,30 +311,29 @@ class CreateInvoiceViewController: CommonPaymentViewController {
     }
     
     private func sendDirectPayment() {
-        let fetchedChat = UserContact.getContactWith(pubkey: preloadedPubkey ?? "")?.getChat() ?? UserContact.getContactWith(pubkey: SphinxOnionManager.sharedInstance.parseContactInfoString(fullContactInfo: preloadedPubkey ?? "")?.0 ?? "")?.getChat()
-        guard let chat = chat ?? fetchedChat else{
-            AlertHelper.showAlert(title: "generic.error.title".localized, message: "contact.not.found".localized, completion: {
-                self.shouldDismissView()
-            })
+        guard let chat = chat else {
             return
         }
+        
         let parameters = TransactionMessage.getPaymentParamsFor(
             payment: paymentsViewModel.payment,
             contact: contact,
             chat: chat
         )
         
-        let image =  #imageLiteral(resourceName: "appPinIcon")
-        SphinxOnionManager.sharedInstance.sendDirectPaymentMessage(params: parameters, chat: chat, image: image, completion: { success, _ in
-            if(success){
-                self.shouldDismissView()
-            }
-            else{
-                AlertHelper.showAlert(title: "generic.error.title".localized, message: "generic.error.message".localized, completion: {
+        SphinxOnionManager.sharedInstance.sendDirectPaymentMessage(
+            params: parameters,
+            chat: chat,
+            completion: { success, _ in
+                if (success) {
                     self.shouldDismissView()
-                })
+                } else {
+                    AlertHelper.showAlert(title: "generic.error.title".localized, message: "generic.error.message".localized, completion: {
+                        self.shouldDismissView()
+                    })
+                }
             }
-        })
+        )
     }
     
     private func createPaymentRequest() {

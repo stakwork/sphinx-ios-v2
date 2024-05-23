@@ -144,7 +144,8 @@ class AttachmentsManager {
     
     func uploadAndSendAttachment(
         attachmentObject: AttachmentObject,
-        chat:Chat?,
+        chat: Chat?,
+        provisionalMessage: TransactionMessage? = nil,
         replyingMessage: TransactionMessage? = nil,
         threadUUID: String? = nil
     ) {
@@ -153,7 +154,12 @@ class AttachmentsManager {
         
         guard let token: String = UserDefaults.Keys.attachmentsToken.get() else {
             self.authenticate(completion: { token in
-                self.uploadAndSendAttachment(attachmentObject: attachmentObject, chat: chat, replyingMessage: replyingMessage)
+                self.uploadAndSendAttachment(
+                    attachmentObject: attachmentObject,
+                    chat: chat,
+                    provisionalMessage: provisionalMessage,
+                    replyingMessage: replyingMessage
+                )
             }, errorCompletion: {
                 UserDefaults.Keys.attachmentsToken.removeValue()
                 self.uploadFailed()
@@ -164,14 +170,15 @@ class AttachmentsManager {
         
         if let _ = attachmentObject.data {
             uploadEncryptedData(attachmentObject: attachmentObject, token: token) { fileJSON, AttachmentObject in
-                let sentMessage = self.sendAttachment(
+                self.sendAttachment(
                     file: fileJSON,
-                    chat:chat,
+                    chat: chat,
                     attachmentObject: attachmentObject,
+                    provisionalMessage: provisionalMessage,
                     replyingMessage: replyingMessage,
                     threadUUID: threadUUID
+                    
                 )
-                self.provisionalMessage = sentMessage
             }
         }
     }
@@ -207,18 +214,25 @@ class AttachmentsManager {
         file: NSDictionary,
         chat:Chat?,
         attachmentObject: AttachmentObject,
+        provisionalMessage: TransactionMessage? = nil,
         replyingMessage: TransactionMessage? = nil,
         threadUUID: String? = nil
-    ) -> TransactionMessage? {
-        
-        return SphinxOnionManager.sharedInstance.sendAttachment(file: file, attachmentObject: attachmentObject, chat: chat,replyingMessage: replyingMessage,threadUUID: threadUUID)
+    ) {
+        let _ = SphinxOnionManager.sharedInstance.sendAttachment(
+            file: file,
+            attachmentObject: attachmentObject,
+            chat: chat,
+            provisionalMessage: provisionalMessage,
+            replyingMessage: replyingMessage,
+            threadUUID: threadUUID
+        )
         
     }
     
     func payAttachment(message: TransactionMessage, chat: Chat?, callback: @escaping (TransactionMessage?) -> ()) {
-        guard let price = message.getAttachmentPrice(), let params = TransactionMessage.getPayAttachmentParams(message: message, amount: price, chat: chat) else {
-            return
-        }
+//        guard let price = message.getAttachmentPrice(), let params = TransactionMessage.getPayAttachmentParams(message: message, amount: price, chat: chat) else {
+//            return
+//        }
         //TODO: @Jim implement paid messages
 //        API.sharedInstance.payAttachment(params: params, callback: { m in
 //            if let message = TransactionMessage.insertMessage(

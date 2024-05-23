@@ -35,6 +35,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     let newMessageBubbleHelper = NewMessageBubbleHelper()
     let chatListViewModel = ChatListViewModel()
     
+    let som = SphinxOnionManager.sharedInstance
+    
     var activatedFromBackground = false
 
     //Lifecycle events
@@ -73,7 +75,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         configureNotificationCenter()
         configureStoreKit()
         configureSVGRendering()
-        connectTor()
         connectMQTT()
         registerForVoIP()
         
@@ -168,7 +169,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         feedsManager.restoreContentFeedStatusInBackground()
         podcastPlayerController.finishAndSaveContentConsumed()
         
-        SphinxOnionManager.sharedInstance.connectToV2Server(contactRestoreCallback: {_ in }, messageRestoreCallback: {_ in }, hideRestoreViewCallback: {})
+        som.reconnectToServer()
     }
     
     func applicationDidBecomeActive(
@@ -257,15 +258,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         }
     }
     
-    func connectTor() {
-        if !SignupHelper.isLogged() { return }
-
-        if !onionConnector.usingTor() {
-            return
-        }
-        onionConnector.startTor(delegate: self)
-    }
-    
     //Initial VC
     func setInitialVC() {
         let isUserLogged = UserData.sharedInstance.isUserLogged()
@@ -345,9 +337,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func handleAppRefresh(task: BGTask) {
         scheduleAppRefresh()
         
-        chatListViewModel.loadFriends { _ in
-            SphinxOnionManager.sharedInstance.syncMessagesSinceLastKnownIndexHeight()
-        }
+        som.reconnectToServer()
     }
     
     func scheduleAppRefresh() {
@@ -402,23 +392,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         if let roowVController = window?.rootViewController as? RootViewController, let leftMenuVC = roowVController.getLeftMenuVC() {
             leftMenuVC.goToSupport()
         }
-    }
-
-    //Content fetch
-    func reloadContactsAndMessages() {
-        chatListViewModel.loadFriends() { [weak self] restoring in
-            guard let self = self else { return }
-            
-            SphinxOnionManager.sharedInstance.syncMessagesSinceLastKnownIndexHeight()
-        }
-    }
-    
-    func reloadMessages(
-        completion: @escaping () -> ()
-    ) {
-        let dashboardVC = getCurrentVC() as? DashboardRootViewController
-        dashboardVC?.forceShowLoadingWheel()
-        SphinxOnionManager.sharedInstance.syncMessagesSinceLastKnownIndexHeight()
     }
 
     //Notifications bagde
@@ -553,26 +526,6 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
                 }
             }
         }
-    }
-}
-
-extension AppDelegate : SphinxOnionConnectorDelegate {
-    func onionConnecting() {
-        newMessageBubbleHelper.showLoadingWheel(text: "establishing.tor.circuit".localized)
-    }
-    
-    func onionConnectionFinished() {
-        newMessageBubbleHelper.hideLoadingWheel()
-        
-        SphinxSocketManager.sharedInstance.reconnectSocketOnTor()
-        reloadContactsAndMessages()
-    }
-
-    func onionConnectionFailed() {
-        newMessageBubbleHelper.hideLoadingWheel()
-        newMessageBubbleHelper.showGenericMessageView(text: "tor.connection.failed".localized)
-        
-//        NotificationCenter.default.post(name: .onConnectionStatusChanged, object: nil)
     }
 }
 

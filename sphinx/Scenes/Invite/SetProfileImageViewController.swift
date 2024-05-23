@@ -96,13 +96,12 @@ class SetProfileImageViewController: SetDataViewController {
     }
     
     func updateProfile(photoUrl: String) {
-        if isV2,
-           let selfContact = SphinxOnionManager.sharedInstance.pendingContact{
+        if let selfContact = UserContact.getOwner() {
             selfContact.avatarUrl = photoUrl
+            
             self.loading = false
             self.goToSphinxDesktopAd()
-        }
-        else{
+        } else {
             self.loading = false
             AlertHelper.showAlert(title: "generic.error.title".localized, message: "generic.error.message".localized)
         }

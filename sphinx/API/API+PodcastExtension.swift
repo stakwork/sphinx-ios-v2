@@ -224,16 +224,16 @@ extension API {
         errorCallback: @escaping EmptyCallback
     ){
 
-        let videoURLPaths = getYoutubeVideoURLPaths(videoIDs: videoIDs)
-        var requestPath = API.getUrl(route: "\(API.kTribesServerBaseURL)/feed/download")
-        let params = [
-            "youtube_urls" : videoURLPaths
-        ]
-        
-        guard let request = createRequest(requestPath.percentEscaped ?? requestPath, bodyParams: params as NSDictionary, method: "POST") else {
-            errorCallback()
-            return
-        }
+//        let videoURLPaths = getYoutubeVideoURLPaths(videoIDs: videoIDs)
+//        var requestPath = API.getUrl(route: "\(API.kTestV2TribesServer)/feed/download")
+//        let params = [
+//            "youtube_urls" : videoURLPaths
+//        ]
+//        
+//        guard let request = createRequest(requestPath.percentEscaped ?? requestPath, bodyParams: params as NSDictionary, method: "POST") else {
+//            errorCallback()
+//            return
+//        }
         
         //TODO: @Jim reimplement on v2
 //        AF.request(request).responseJSON { response in

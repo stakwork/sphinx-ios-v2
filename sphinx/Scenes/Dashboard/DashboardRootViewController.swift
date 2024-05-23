@@ -59,6 +59,8 @@ class DashboardRootViewController: RootViewController {
     internal let newBubbleHelper = NewMessageBubbleHelper()
     
     internal let podcastPlayerController = PodcastPlayerController.sharedInstance
+    
+    let som = SphinxOnionManager.sharedInstance
 
     internal lazy var chatsListViewModel: ChatListViewModel = {
         ChatListViewModel()
@@ -230,11 +232,6 @@ extension DashboardRootViewController {
         NotificationCenter.default.addObserver(self, selector: #selector(sizeDidChange), name: .onSizeConfigurationChanged, object: nil)
         
         addAccessibilityIdentifiers()
-        
-        SphinxOnionManager.sharedInstance.fetchMyAccountFromState()
-        DelayPerformedHelper.performAfterDelay(seconds: 0.5, completion: {
-           self.connectToV2Server()
-       })
     }
     
     override func viewDidDisappear(_ animated: Bool) {
@@ -310,6 +307,8 @@ extension DashboardRootViewController {
             self,
             withKey: PodcastDelegateKeys.DashboardView.rawValue
         )
+        
+        connectToServer()
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -334,31 +333,43 @@ extension DashboardRootViewController {
     }
     
     func refreshUnreadStatus(){
-        SphinxOnionManager.sharedInstance.getReads()
-        SphinxOnionManager.sharedInstance.getMuteLevels()
-        self.loadContactsAndSyncMessages()
+        som.getReads()
+        som.getMuteLevels()
+        
+//        self.loadContactsAndSyncMessages()
     }
     
-    func connectToV2Server(){
-        if SphinxOnionManager.sharedInstance.appSessionPin == nil {
-            NotificationCenter.default.addObserver(self, selector: #selector(retryConnectV2Server), name: .userSuccessfullyEnteredPin, object: nil)
-            return
-        }
-        NotificationCenter.default.addObserver(self, selector: #selector(handleNewKeyExchangeReceived), name: .newContactKeyExchangeResponseWasReceived, object: nil)
-        SphinxOnionManager.sharedInstance.connectToV2Server(contactRestoreCallback: contactRestoreCallback(percentage:), messageRestoreCallback: messageRestoreCallback(percentage:), hideRestoreViewCallback: hideRestoreViewCallback,didConnectAckCallback: refreshUnreadStatus)
+    func connectToServer() {
+        som.fetchMyAccountFromState()
+        
+        DelayPerformedHelper.performAfterDelay(seconds: 0.5, completion: { [weak self] in
+            guard let self = self else {
+                return
+            }
+            
+            self.som.connectToServer(
+                connectingCallback: {
+//                    self.listViewController?.headerLoading = true
+                },
+                contactRestoreCallback: self.contactRestoreCallback(percentage:),
+                messageRestoreCallback: self.messageRestoreCallback(percentage:),
+                hideRestoreViewCallback: self.hideRestoreViewCallback
+            )
+        })
     }
     
-    @objc func retryConnectV2Server(){
-        NotificationCenter.default.removeObserver(self, name: .userSuccessfullyEnteredPin, object: nil)
-        connectToV2Server()
+    func reconnectToServer() {
+        som.reconnectToServer()
     }
     
     func hideRestoreViewCallback(){
         self.restoreProgressView.hideViewAnimated()
         self.isLoading = false
+        
+        self.refreshUnreadStatus()
     }
     
-    func contactRestoreCallback(percentage:Int){
+    func contactRestoreCallback(percentage: Int){
         DispatchQueue.main.async {
             let value = min(percentage,100)
             self.restoreProgressView.showRestoreProgressView(
@@ -370,7 +381,7 @@ extension DashboardRootViewController {
         }
     }
     
-    func messageRestoreCallback(percentage:Int){
+    func messageRestoreCallback(percentage: Int){
         let value = min(percentage,100)
         
         DispatchQueue.main.async {
@@ -381,12 +392,6 @@ extension DashboardRootViewController {
             )
             if value >= 100 {self.restoreProgressView.hideViewAnimated()}
         }
-    }
-    
-    @objc func handleNewKeyExchangeReceived(){
-        DelayPerformedHelper.performAfterDelay(seconds: 1.0, completion: {//slight delay to ensure new DB write goes through first
-            self.contactChatsContainerViewController.reloadCollectionView()
-        })
     }
 }
 

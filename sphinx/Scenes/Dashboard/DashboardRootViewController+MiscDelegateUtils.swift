@@ -16,7 +16,7 @@ extension DashboardRootViewController: QRCodeScannerDelegate {
 extension DashboardRootViewController: WindowsManagerDelegate {
 
     func didDismissCoveringWindows() {
-        self.connectToV2Server()
+        self.reconnectToServer()
     }
 }
 

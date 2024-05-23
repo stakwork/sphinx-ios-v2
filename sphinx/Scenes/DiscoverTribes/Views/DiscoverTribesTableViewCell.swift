@@ -67,17 +67,15 @@ class DiscoverTribesTableViewCell: UITableViewCell {
         self.descriptionLabel.textColor = UIColor.Sphinx.SecondaryText
     }
     
-    func configureJoinButton(tribeData:DiscoverTribeData,wasJoined:Bool){
+    func configureJoinButton(
+        tribeData: DiscoverTribeData,
+        wasJoined: Bool
+    ){
         joinButton.layer.cornerRadius = 15.0
         
-        let host = tribeData.host ?? API.kTribesServerBaseURL.replacingOccurrences(of: "https://", with: "")
+        let host = tribeData.host ?? API.kTestV2TribesServer
         
-        if let pubkey = tribeData.pubkey{
-            joinButton.isEnabled = true
-            cellURL = URL(string: "sphinx.chat://?action=tribeV2&pubkey=\(pubkey)&host=34.229.52.200:8801")
-            joinButton.addTarget(self, action: #selector(handleJoinTap), for: .touchUpInside)
-        }
-        else if let uuid = tribeData.uuid {
+        if let uuid = tribeData.uuid {
             joinButton.isEnabled = true
             cellURL = URL(string: "sphinx.chat://?action=tribe&uuid=\(uuid)&host=\(host)")
             joinButton.addTarget(self, action: #selector(handleJoinTap), for: .touchUpInside)
@@ -96,7 +94,7 @@ class DiscoverTribesTableViewCell: UITableViewCell {
         }
     }
     
-    @objc func handleJoinTap(){
+    @objc func handleJoinTap() {
         if let valid_url = cellURL{
             self.delegate?.handleJoin(url: valid_url)
         }

@@ -15,13 +15,12 @@ class SphinxDesktopAdViewController: UIViewController {
     
     static let desktopAppStoreURL = URL(string: "https://sphinx.chat/")!
     
-    var isRestoreFlow:Bool = false
+    var isRestoreFlow: Bool = false
     
     static func instantiate() -> SphinxDesktopAdViewController {
         let viewController = StoryboardScene.NewUserSignup.sphinxDesktopAdViewController.instantiate()
         return viewController
     }
-
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -37,10 +36,9 @@ class SphinxDesktopAdViewController: UIViewController {
     
     
     @IBAction func skipButtonTapped(_ sender: UIButton) {
-        if(isRestoreFlow){
+        if (isRestoreFlow) {
             goToApp()
-        }
-        else{
+        } else {
             let sphinxReadyVC = SphinxReadyViewController.instantiate()
             navigationController?.pushViewController(sphinxReadyVC, animated: true)
         }
