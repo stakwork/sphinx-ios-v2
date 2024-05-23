@@ -113,15 +113,6 @@ class API {
         case messages
     }
 
-    var lastSeenMessagesDate: Date? {
-        get {
-            return UserDefaults.Keys.lastSeenMessagesDate.get(defaultValue: nil)
-        }
-        set {
-            UserDefaults.Keys.lastSeenMessagesDate.set(newValue)
-        }
-    }
-
     public static var kAttachmentsServerUrl : String {
         get {
             if let fileServerURL = UserDefaults.Keys.fileServerURL.get(defaultValue: ""), fileServerURL != "" {
@@ -183,66 +174,8 @@ class API {
         
     }
 
-    class func getWebsocketUrl(route: String) -> String {
-        if route.contains("://") {
-            return getUrl(route: route)
-            .replacingOccurrences(of: "https://", with: "wss://")
-            .replacingOccurrences(of: "http://", with: "ws://")
-        }
-        return "wss://\(route)"
-    }
-
     func session() -> Alamofire.Session? {
         return Alamofire.Session.default
-    }
-
-    func getURLRequest(
-        route: String,
-        params: NSDictionary? = nil,
-        method: String,
-        additionalHeaders: [String: String] = [:]
-    ) -> URLRequest? {
-        
-        let ip = UserData.sharedInstance.getNodeIP()
-
-        if ip.isEmpty {
-            connectionStatus = .Unauthorize
-            postConnectionStatusChange()
-            return nil
-        }
-
-        let url = API.getUrl(route: "\(ip)\(route)")
-
-        return createAuthenticatedRequest(
-            url,
-            params: params,
-            method: method,
-            additionalHeaders: additionalHeaders
-        )
-    }
-    
-    func getUnauthenticatedURLRequest(
-        route: String,
-        params: NSDictionary? = nil,
-        method: String
-    ) -> URLRequest? {
-        
-        let ip = UserData.sharedInstance.getNodeIP()
-
-        if ip.isEmpty {
-            connectionStatus = .Unauthorize
-            postConnectionStatusChange()
-            return nil
-        }
-
-        let url = API.getUrl(route: "\(ip)\(route)")
-
-        return createRequest(
-            url,
-            bodyParams: params,
-            method: method
-        )
-
     }
 
     var errorCounter = 0
@@ -263,41 +196,17 @@ class API {
     var connectionStatus = ConnectionStatus.Connecting
 
     func sphinxRequest(
-        _ urlRequest: URLRequestConvertible,
+        _ urlRequest: URLRequest,
         completionHandler: @escaping (AFDataResponse<Any>) -> Void
     ) {
-        let _ = unauthorizedHandledRequest(urlRequest, completionHandler: completionHandler)
+        unauthorizedHandledRequest(urlRequest, completionHandler: completionHandler)
     }
-
-    func cancellableRequest(
-        _ urlRequest: URLRequestConvertible,
-        type: CancellableRequestType?,
-        completionHandler: @escaping (AFDataResponse<Any>) -> Void
-    ) {
-        if let cancellableRequest = cancellableRequest, type != nil && type == currentRequestType {
-            cancellableRequest.cancel()
-        }
-
-        let request = unauthorizedHandledRequest(urlRequest) { (response) in
-            self.postConnectionStatusChange()
-
-            completionHandler(response)
-        }
-
-        if (type != nil) { currentRequestType = type! }
-        cancellableRequest = request
-    }
-
-    func cleanMessagesRequest() {
-        cancellableRequest?.cancel()
-        cancellableRequest = nil
-    }
-
+    
     func unauthorizedHandledRequest(
-        _ urlRequest: URLRequestConvertible,
+        _ urlRequest: URLRequest,
         completionHandler: @escaping (AFDataResponse<Any>) -> Void
-    ) -> DataRequest? {
-        let request = session()?.request(
+    ) {
+        session()?.request(
             urlRequest,
             interceptor: interceptor
         ).responseJSON { (response) in
@@ -308,7 +217,6 @@ class API {
             case self.successStatusCode:
                 self.connectionStatus = .Connected
             case self.unauthorizedStatusCode:
-                
                 self.connectionStatus = .Unauthorize
             default:
                 if response.response == nil ||
@@ -337,7 +245,6 @@ class API {
                 completionHandler(response)
             }
         }
-        return request
     }
 
     func networksConnectionLost() {
@@ -362,7 +269,6 @@ class API {
         NotificationCenter.default.post(name: .onMQTTConnectionStatusChanged, object: nil)
     }
 
-    
     func createRequest(
         _ url: String,
         bodyParams: NSDictionary?,
@@ -401,65 +307,6 @@ class API {
                 } catch let error as NSError {
                     print("Error: " + error.localizedDescription)
                 }
-            }
-
-            return request
-        } else {
-            return nil
-        }
-    }
-
-    func createAuthenticatedRequest(
-        _ url: String,
-        params: NSDictionary?,
-        method: String,
-        additionalHeaders: [String: String] = [:]
-    ) -> URLRequest? {
-        
-        if !ConnectivityHelper.isConnectedToInternet {
-            networksConnectionLost()
-            return nil
-        }
-
-        if onionConnector.usingTor() && !onionConnector.isReady() {
-            onionConnector.startIfNeeded()
-            return nil
-        }
-
-        if let nsURL = NSURL(string: url) {
-            var request = URLRequest(url: nsURL as URL)
-            request.httpMethod = method
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.setValue("no-cache", forHTTPHeaderField: "Cache-Control")
-            
-            for (key, value) in UserData.sharedInstance.getAuthenticationHeader() {
-                request.setValue(value, forHTTPHeaderField: key)
-            }
-            
-            for (key, value) in additionalHeaders {
-                request.setValue(value, forHTTPHeaderField: key)
-            }
-
-            var bodyData: Data? = nil
-            
-            if let p = params {
-                do {
-                    try bodyData = JSONSerialization.data(withJSONObject: p, options: [])
-                } catch let error as NSError {
-                    print("Error: " + error.localizedDescription)
-                }
-            }
-            
-            if let bodyData = bodyData {
-                request.httpBody = bodyData
-            }
-            
-            for (key, value) in UserData.sharedInstance.getHMACHeader(
-                url: nsURL as URL,
-                method: method,
-                bodyData: bodyData
-            ) {
-                request.setValue(value, forHTTPHeaderField: key)
             }
 
             return request

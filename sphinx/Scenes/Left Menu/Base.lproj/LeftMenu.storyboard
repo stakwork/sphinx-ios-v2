@@ -216,55 +216,18 @@
                                     <constraint firstAttribute="height" constant="50" id="qbn-6Z-e9w"/>
                                 </constraints>
                             </view>
-                            <view hidden="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Xbn-IL-AeZ">
-                                <rect key="frame" x="0.0" y="667" width="375" height="0.0"/>
-                                <subviews>
-                                    <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="logoutIcon" translatesAutoresizingMaskIntoConstraints="NO" id="jwa-HY-vZP">
-                                        <rect key="frame" x="29" y="-10" width="20" height="20"/>
-                                        <color key="tintColor" name="Text"/>
-                                        <constraints>
-                                            <constraint firstAttribute="height" constant="20" id="2tT-ne-A5y"/>
-                                            <constraint firstAttribute="width" constant="20" id="WsK-UY-y6Y"/>
-                                        </constraints>
-                                    </imageView>
-                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="cRO-aH-zEt">
-                                        <rect key="frame" x="0.0" y="0.0" width="375" height="0.0"/>
-                                        <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="16"/>
-                                        <inset key="titleEdgeInsets" minX="75" minY="0.0" maxX="0.0" maxY="0.0"/>
-                                        <state key="normal" title="Logout">
-                                            <color key="titleColor" name="Text"/>
-                                        </state>
-                                        <connections>
-                                            <action selector="logoutButtonTouched" destination="5hS-8z-Ih2" eventType="touchUpInside" id="nOO-VU-RpJ"/>
-                                        </connections>
-                                    </button>
-                                </subviews>
-                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                <constraints>
-                                    <constraint firstItem="jwa-HY-vZP" firstAttribute="centerY" secondItem="Xbn-IL-AeZ" secondAttribute="centerY" id="Dht-d3-b0E"/>
-                                    <constraint firstAttribute="bottom" secondItem="cRO-aH-zEt" secondAttribute="bottom" id="I3C-ex-BLY"/>
-                                    <constraint firstAttribute="height" id="OGi-Qc-uaI"/>
-                                    <constraint firstItem="jwa-HY-vZP" firstAttribute="leading" secondItem="Xbn-IL-AeZ" secondAttribute="leading" constant="29" id="Vic-KD-bjR"/>
-                                    <constraint firstAttribute="trailing" secondItem="cRO-aH-zEt" secondAttribute="trailing" id="oki-Li-r9d"/>
-                                    <constraint firstItem="cRO-aH-zEt" firstAttribute="top" secondItem="Xbn-IL-AeZ" secondAttribute="top" id="qrS-Wg-N9z"/>
-                                    <constraint firstItem="cRO-aH-zEt" firstAttribute="leading" secondItem="Xbn-IL-AeZ" secondAttribute="leading" id="wuJ-b7-lzE"/>
-                                </constraints>
-                            </view>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="pSE-Fm-3cZ"/>
                         <color key="backgroundColor" name="ListBG"/>
                         <constraints>
-                            <constraint firstItem="Xbn-IL-AeZ" firstAttribute="trailing" secondItem="pSE-Fm-3cZ" secondAttribute="trailing" id="11M-Jf-vGS"/>
                             <constraint firstItem="0DB-ee-iYc" firstAttribute="leading" secondItem="pSE-Fm-3cZ" secondAttribute="leading" id="2TG-sd-SIX"/>
                             <constraint firstItem="RD4-u3-Oj6" firstAttribute="trailing" secondItem="pSE-Fm-3cZ" secondAttribute="trailing" id="5bi-7W-1PD"/>
                             <constraint firstItem="sYi-el-T55" firstAttribute="leading" secondItem="pSE-Fm-3cZ" secondAttribute="leading" id="FWm-lC-Cna"/>
                             <constraint firstItem="0DB-ee-iYc" firstAttribute="top" secondItem="sYi-el-T55" secondAttribute="bottom" id="GYw-Gp-56z"/>
+                            <constraint firstItem="0DB-ee-iYc" firstAttribute="bottom" secondItem="pSE-Fm-3cZ" secondAttribute="bottom" id="I5x-Le-dp8"/>
                             <constraint firstItem="0DB-ee-iYc" firstAttribute="trailing" secondItem="pSE-Fm-3cZ" secondAttribute="trailing" id="Rl6-Cq-Hbq"/>
-                            <constraint firstItem="Xbn-IL-AeZ" firstAttribute="top" secondItem="0DB-ee-iYc" secondAttribute="bottom" id="T1P-dj-aRK"/>
-                            <constraint firstItem="Xbn-IL-AeZ" firstAttribute="bottom" secondItem="pSE-Fm-3cZ" secondAttribute="bottom" id="TzV-bZ-Ggu"/>
                             <constraint firstItem="RD4-u3-Oj6" firstAttribute="top" secondItem="pSE-Fm-3cZ" secondAttribute="top" id="kMI-zy-q2E"/>
                             <constraint firstItem="sYi-el-T55" firstAttribute="top" secondItem="RD4-u3-Oj6" secondAttribute="bottom" id="mAR-Od-QGT"/>
-                            <constraint firstItem="Xbn-IL-AeZ" firstAttribute="leading" secondItem="pSE-Fm-3cZ" secondAttribute="leading" id="rhc-un-bpu"/>
                             <constraint firstItem="RD4-u3-Oj6" firstAttribute="leading" secondItem="pSE-Fm-3cZ" secondAttribute="leading" id="tVL-5b-jdV"/>
                             <constraint firstItem="sYi-el-T55" firstAttribute="trailing" secondItem="pSE-Fm-3cZ" secondAttribute="trailing" id="uuJ-Zm-7WG"/>
                         </constraints>
@@ -297,13 +260,13 @@
                                 <rect key="frame" x="0.0" y="20" width="375" height="50"/>
                                 <subviews>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="SUPPORT" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="gKM-ns-Slb">
-                                        <rect key="frame" x="153.5" y="16.5" width="68.5" height="17.5"/>
+                                        <rect key="frame" x="155" y="17" width="65.5" height="16.5"/>
                                         <fontDescription key="fontDescription" name="Montserrat-SemiBold" family="Montserrat" pointSize="14"/>
                                         <color key="textColor" name="Text"/>
                                         <nil key="highlightedColor"/>
                                     </label>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="jDe-xP-azY">
-                                        <rect key="frame" x="340" y="15" width="20" height="20"/>
+                                        <rect key="frame" x="338.5" y="13.5" width="23" height="23.5"/>
                                         <fontDescription key="fontDescription" name="MaterialIcons-Regular" family="Material Icons" pointSize="20"/>
                                         <color key="textColor" name="PrimaryRed"/>
                                         <nil key="highlightedColor"/>
@@ -488,7 +451,6 @@
         </scene>
     </scenes>
     <resources>
-        <image name="logoutIcon" width="18" height="17"/>
         <image name="walletIcon" width="23.5" height="19"/>
         <namedColor name="Body">
             <color red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>

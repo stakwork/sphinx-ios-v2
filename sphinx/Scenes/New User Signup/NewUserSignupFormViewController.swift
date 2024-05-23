@@ -33,6 +33,7 @@ class NewUserSignupFormViewController: UIViewController, ConnectionCodeSignupHan
     var isV2:Bool = false
     var server : Server? = nil
     var balance : String? = nil
+    let som = SphinxOnionManager.sharedInstance
     var selfContactFetchListener: NSFetchedResultsController<UserContact>?
     var watchdogTimer: Timer?
     
@@ -207,22 +208,20 @@ extension NewUserSignupFormViewController : ImportSeedViewDelegate{
     }
     
     func didTapConfirm() {
-        if(importSeedView.context == .SphinxOnionPrototype){
+        if (importSeedView.context == .SphinxOnionPrototype) {
             importSeedContainer.isHidden = true
             UserData.sharedInstance.save(walletMnemonic: importSeedView.textView.text)
-            if let code = codeTextField.text,
-               validateCode(code){
+            
+            if let code = codeTextField.text, validateCode(code) {
                 handleInviteCodeV2SignUp(code: code)
             }
-        }
-        else{
+        } else {
             let success = CrypterManager.sharedInstance.performWalletFinalization(
                 network: importSeedView.network,
                 host: importSeedView.host,
                 relay: importSeedView.relay,
                 enteredMnemonic: importSeedView.textView.text
             )
-            
             importSeedContainer.isHidden = !success
         }
     }

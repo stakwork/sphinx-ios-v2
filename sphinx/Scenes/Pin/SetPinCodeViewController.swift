@@ -182,11 +182,7 @@ class SetPinCodeViewController: UIViewController {
     }
     
     func getOldPin() -> String? {
-        if (pinMode == PinMode.Standard) {
-            return UserData.sharedInstance.getAppPin()
-        } else {
-            return UserData.sharedInstance.getPrivacyPin()
-        }
+        return UserData.sharedInstance.getAppPin()
     }
     
     func getPinString() -> String {

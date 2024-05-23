@@ -25,7 +25,7 @@ extension DashboardRootViewController: NewContactVCDelegate {
     
     func shouldReloadContacts(reload: Bool, dashboardTabIndex: Int) {
         if reload {
-            loadContactsAndSyncMessages()
+            ///Replace with SphinxOnionManager refresh
         }
         
         if dashboardTabIndex >= 0 || dashboardTabIndex <= 2 {

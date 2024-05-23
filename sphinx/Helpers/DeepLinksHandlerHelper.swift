@@ -65,7 +65,7 @@ class DeepLinksHandlerHelper {
     static func joinJitsiCall(vc: UIViewController, forceJoin: Bool = false) -> Bool {
         if let jitsiCall = UserDefaults.Keys.jitsiLinkUrl.get(defaultValue: ""), jitsiCall.isNotEmpty {
             
-            if !GroupsPinManager.sharedInstance.shouldAskForPin(presentationContext: .startingCall) || forceJoin {
+            if !GroupsPinManager.sharedInstance.shouldAskForPin() || forceJoin {
                 UserDefaults.Keys.jitsiLinkUrl.removeValue()
                 
                 VideoCallManager.sharedInstance.startVideoCall(link: jitsiCall)

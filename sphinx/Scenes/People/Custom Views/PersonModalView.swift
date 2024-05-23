@@ -154,10 +154,10 @@ class PersonModalView: CommonModalView {
             let text = initialMessageField.text
             let price = authInfo?.jsonBody["price_to_meet"].int ?? 0
             
-            guard let params = TransactionMessage.getMessageParams(contact: contact, type: TransactionMessage.TransactionMessageType.message, text: text, priceToMeet: price) else {
-                showErrorMessage()
-                return
-            }
+//            guard let params = TransactionMessage.getMessageParams(contact: contact, type: TransactionMessage.TransactionMessageType.message, text: text, priceToMeet: price) else {
+//                showErrorMessage()
+//                return
+//            }
             //@Tom if you could just explain the purpose of this and how to initiate it I will make it possible on V2
 //            API.sharedInstance.sendMessage(params: params, callback: { m in
 //                if let _ = TransactionMessage.insertMessage(

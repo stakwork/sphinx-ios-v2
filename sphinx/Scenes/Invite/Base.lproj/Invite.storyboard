@@ -618,89 +618,6 @@
             </objects>
             <point key="canvasLocation" x="509" y="913"/>
         </scene>
-        <!--Keychain Restore View Controller-->
-        <scene sceneID="nMq-xW-2QV">
-            <objects>
-                <viewController storyboardIdentifier="KeychainRestoreViewController" id="fsb-yD-1wr" customClass="KeychainRestoreViewController" customModule="sphinx" customModuleProvider="target" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="ria-wp-FIc">
-                        <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <subviews>
-                            <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="none" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="28" sectionFooterHeight="28" translatesAutoresizingMaskIntoConstraints="NO" id="MHO-hn-DlI">
-                                <rect key="frame" x="0.0" y="100" width="414" height="796"/>
-                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                            </tableView>
-                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Fw8-Ab-iRH">
-                                <rect key="frame" x="0.0" y="50" width="414" height="50"/>
-                                <subviews>
-                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="PrS-Jb-mYf">
-                                        <rect key="frame" x="207" y="25" width="0.0" height="0.0"/>
-                                        <fontDescription key="fontDescription" name="Montserrat-Bold" family="Montserrat" pointSize="14"/>
-                                        <color key="textColor" name="Text"/>
-                                        <nil key="highlightedColor"/>
-                                    </label>
-                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="BuQ-bP-Lal">
-                                        <rect key="frame" x="0.0" y="49" width="414" height="1"/>
-                                        <color key="backgroundColor" name="LightDivider"/>
-                                        <constraints>
-                                            <constraint firstAttribute="height" constant="1" id="cMS-kb-cV1"/>
-                                        </constraints>
-                                    </view>
-                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="luo-XS-Wk8">
-                                        <rect key="frame" x="379" y="15" width="20" height="20"/>
-                                        <fontDescription key="fontDescription" name="MaterialIcons-Regular" family="Material Icons" pointSize="20"/>
-                                        <color key="textColor" name="PrimaryRed"/>
-                                        <nil key="highlightedColor"/>
-                                    </label>
-                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="79h-pQ-0BS">
-                                        <rect key="frame" x="364" y="0.0" width="50" height="50"/>
-                                        <constraints>
-                                            <constraint firstAttribute="width" constant="50" id="j9D-rR-ct4"/>
-                                        </constraints>
-                                        <connections>
-                                            <action selector="closeButtonTouched" destination="e9j-Qn-kKd" eventType="touchUpInside" id="5RN-PB-S4c"/>
-                                            <action selector="closeButtonTouched" destination="fsb-yD-1wr" eventType="touchUpInside" id="upv-hC-qjH"/>
-                                        </connections>
-                                    </button>
-                                </subviews>
-                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                <constraints>
-                                    <constraint firstItem="luo-XS-Wk8" firstAttribute="centerY" secondItem="79h-pQ-0BS" secondAttribute="centerY" id="5nb-pm-OMq"/>
-                                    <constraint firstAttribute="trailing" secondItem="79h-pQ-0BS" secondAttribute="trailing" id="HYP-vM-mWg"/>
-                                    <constraint firstItem="PrS-Jb-mYf" firstAttribute="centerY" secondItem="Fw8-Ab-iRH" secondAttribute="centerY" id="Rnu-i8-wjF"/>
-                                    <constraint firstAttribute="bottom" secondItem="79h-pQ-0BS" secondAttribute="bottom" id="ghR-UT-ZQo"/>
-                                    <constraint firstItem="PrS-Jb-mYf" firstAttribute="centerX" secondItem="Fw8-Ab-iRH" secondAttribute="centerX" id="iMf-fb-b4F"/>
-                                    <constraint firstItem="luo-XS-Wk8" firstAttribute="centerX" secondItem="79h-pQ-0BS" secondAttribute="centerX" id="kW3-AK-1Qc"/>
-                                    <constraint firstAttribute="height" constant="50" id="lON-H1-i3o"/>
-                                    <constraint firstAttribute="trailing" secondItem="BuQ-bP-Lal" secondAttribute="trailing" id="m3y-fR-uz3"/>
-                                    <constraint firstItem="BuQ-bP-Lal" firstAttribute="leading" secondItem="Fw8-Ab-iRH" secondAttribute="leading" id="m9W-fC-b7I"/>
-                                    <constraint firstAttribute="bottom" secondItem="BuQ-bP-Lal" secondAttribute="bottom" id="r4J-md-hya"/>
-                                    <constraint firstItem="79h-pQ-0BS" firstAttribute="top" secondItem="Fw8-Ab-iRH" secondAttribute="top" id="zmb-m5-47O"/>
-                                </constraints>
-                            </view>
-                        </subviews>
-                        <viewLayoutGuide key="safeArea" id="6pQ-CF-f1B"/>
-                        <color key="backgroundColor" name="Body"/>
-                        <constraints>
-                            <constraint firstItem="Fw8-Ab-iRH" firstAttribute="trailing" secondItem="6pQ-CF-f1B" secondAttribute="trailing" id="7hm-YE-AMA"/>
-                            <constraint firstAttribute="bottom" secondItem="MHO-hn-DlI" secondAttribute="bottom" id="7uQ-5X-7SI"/>
-                            <constraint firstItem="MHO-hn-DlI" firstAttribute="top" secondItem="Fw8-Ab-iRH" secondAttribute="bottom" id="hmV-5G-EIe"/>
-                            <constraint firstItem="MHO-hn-DlI" firstAttribute="leading" secondItem="6pQ-CF-f1B" secondAttribute="leading" id="i90-ur-dAk"/>
-                            <constraint firstItem="MHO-hn-DlI" firstAttribute="trailing" secondItem="6pQ-CF-f1B" secondAttribute="trailing" id="jkQ-2t-Xjb"/>
-                            <constraint firstItem="Fw8-Ab-iRH" firstAttribute="leading" secondItem="6pQ-CF-f1B" secondAttribute="leading" id="q1h-bB-QwO"/>
-                            <constraint firstItem="Fw8-Ab-iRH" firstAttribute="top" secondItem="6pQ-CF-f1B" secondAttribute="top" id="rG1-J0-FNX"/>
-                        </constraints>
-                    </view>
-                    <size key="freeformSize" width="414" height="896"/>
-                    <connections>
-                        <outlet property="headerView" destination="Fw8-Ab-iRH" id="29J-YP-2fK"/>
-                        <outlet property="nodesTableView" destination="MHO-hn-DlI" id="kFX-uw-IbH"/>
-                    </connections>
-                </viewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="Qdh-ss-I3a" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="1208" y="913"/>
-        </scene>
         <!--Invite Welcome View Controller-->
         <scene sceneID="5c5-6L-KGG">
             <objects>
@@ -1160,9 +1077,6 @@ to use Sphinx!</string>
         <image name="tapToCopy" width="18.666666030883789" height="32"/>
         <namedColor name="Body">
             <color red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-        </namedColor>
-        <namedColor name="LightDivider">
-            <color red="0.86274509803921573" green="0.8784313725490196" blue="0.8901960784313725" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>
         <namedColor name="OnboardingAvatarPlaceholderBG">
             <color red="0.13200001418590546" green="0.18099997937679291" blue="0.22800000011920929" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>

@@ -984,15 +984,13 @@ extension SphinxOnionManager {
     }
     
     func sendDirectPaymentMessage(
-        params: [String: Any],
+        amount: Int,
+        muid: String?,
+        content: String?,
         chat: Chat,
         completion: @escaping (Bool, TransactionMessage?) -> ()
     ){
-        let muid = params["muid"] as? String
-        let mediaType = params["media_type"] as? String
-        let content = params["text"] as? String
-        
-        guard let contact = chat.getContact(), let amount = params["amount"] as? Int else {
+        guard let contact = chat.getContact() else {
             return
         }
         
@@ -1004,7 +1002,7 @@ extension SphinxOnionManager {
             amount: amount,
             msgType: UInt8(TransactionMessage.TransactionMessageType.directPayment.rawValue),
             muid: muid,
-            mediaType: mediaType,
+            mediaType: "image/png",
             threadUUID: nil,
             replyUUID: nil
         ) {

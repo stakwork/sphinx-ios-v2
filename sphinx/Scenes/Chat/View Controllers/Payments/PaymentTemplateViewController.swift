@@ -166,21 +166,22 @@ class PaymentTemplateViewController: CommonPaymentViewController {
     @IBAction func proceedButtonTouched() {
         loading = true
         
-        guard let validChat = chat,
-            paymentsViewModel.validatePayment(contact: contact)
-         else{
+        guard let validChat = chat, paymentsViewModel.validatePayment(contact: contact) else {
             loading = false
             AlertHelper.showAlert(title: "generic.error.title".localized, message: "generic.error.message".localized)
             return
         }
         
-        let params = TransactionMessage.getPaymentParamsFor(
-            payment: paymentsViewModel.payment,
-            contact: contact,
-            chat: chat
-        )
+        guard let amount = paymentsViewModel.payment.amount else {
+            loading = false
+            AlertHelper.showAlert(title: "generic.error.title".localized, message: "generic.error.message".localized)
+            return
+        }
+        
         SphinxOnionManager.sharedInstance.sendDirectPaymentMessage(
-            params: params,
+            amount: amount,
+            muid: paymentsViewModel.payment.muid,
+            content: paymentsViewModel.payment.message,
             chat: validChat
         ) { success, _ in
             if (success) {

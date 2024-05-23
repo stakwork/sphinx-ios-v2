@@ -48,10 +48,6 @@ class ContactsService: NSObject {
         configureFetchResultsController()
     }
     
-    func isRestoring() -> Bool {
-        return UserData.sharedInstance.getLastMessageIndex() == nil
-    }
-    
     func reset() {
         contacts = []
         allContacts = []

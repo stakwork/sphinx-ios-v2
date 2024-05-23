@@ -31,7 +31,6 @@ class GroupDetailsViewController: UIViewController {
     @IBOutlet weak var imageUploadLoadingWheel: UIActivityIndicatorView!
     @IBOutlet weak var imageUploadLabel: UILabel!
     @IBOutlet weak var tribeBadgesLabel: UILabel!
-    @IBOutlet weak var groupPinContainer: GroupPinView!
     
     @IBOutlet weak var badgeManagementContainerView: UIView!
     @IBOutlet weak var badgeManagementContainerHeight : NSLayoutConstraint!
@@ -87,8 +86,6 @@ class GroupDetailsViewController: UIViewController {
     func setGroupInfo() {
         groupImageView.layer.cornerRadius = groupImageView.frame.size.height / 2
         groupImageView.clipsToBounds = true
-        
-        groupPinContainer.configureWith(chat: chat)
         
         if let urlString = chat.photoUrl, let nsUrl = URL(string: urlString) {
             MediaLoader.asyncLoadImage(imageView: groupImageView, nsUrl: nsUrl, placeHolderImage: UIImage(named: "profile_avatar"))
@@ -185,10 +182,6 @@ class GroupDetailsViewController: UIViewController {
                     self.goToEditGroup()
                 }))
                 
-                alert.addAction(UIAlertAction(title: "tribe.add-member".localized, style: .default, handler:{ (UIAlertAction) in
-                    self.goToAddMember()
-                }))
-                
                 alert.addAction(UIAlertAction(title: "delete.tribe".localized, style: .destructive, handler:{ (UIAlertAction) in
                     self.exitAndDeleteGroup()
                 }))
@@ -229,11 +222,6 @@ class GroupDetailsViewController: UIViewController {
         }
     }
     
-    func goToAddMember() {
-        let viewController = AddTribeMemberViewController.instantiate(with: chat, delegate: self)
-        self.present(viewController, animated: true, completion: nil)
-    }
-    
     func goToNotificationsLevel() {
         let notificationsVC = NotificationsLevelViewController.instantiate(chatId: chat.id, delegate: nil)
         self.present(notificationsVC, animated: true, completion: nil)
@@ -262,18 +250,18 @@ class GroupDetailsViewController: UIViewController {
         let fixedImage = image.fixedOrientation()
         loading = true
         
-        API.sharedInstance.uploadImage(chatId: id, image: fixedImage, progressCallback: { progress in
-            print("Progress: \(progress)")
-        }, callback: { (success, fileUrl) in
-            self.loading = false
-            
-            if let fileUrl = fileUrl, success {
-                MediaLoader.storeImageInCache(img: image, url: fileUrl, message: nil)
-                self.imageUploaded(photoUrl: fileUrl)
-            } else {
-                self.imageUploaded(photoUrl: nil)
-            }
-        })
+//        API.sharedInstance.uploadImage(chatId: id, image: fixedImage, progressCallback: { progress in
+//            print("Progress: \(progress)")
+//        }, callback: { (success, fileUrl) in
+//            self.loading = false
+//            
+//            if let fileUrl = fileUrl, success {
+//                MediaLoader.storeImageInCache(img: image, url: fileUrl, message: nil)
+//                self.imageUploaded(photoUrl: fileUrl)
+//            } else {
+//                self.imageUploaded(photoUrl: nil)
+//            }
+//        })
     }
     
     func imageUploaded(photoUrl: String?) {
@@ -337,12 +325,6 @@ extension GroupDetailsViewController : UIImagePickerControllerDelegate, UINaviga
     }
 }
 
-extension GroupDetailsViewController : AddTribeMemberDelegate {
-    func shouldReloadMembers() {
-        tableDataSource.reloadContacts(chat: chat)
-    }
-}
-
 extension GroupDetailsViewController : AddFriendRowButtonDelegate {
     func didTouchAddFriend() {
         let groupContactVC = GroupContactsViewController.instantiate(delegate: self, chat: chat)
@@ -352,12 +334,7 @@ extension GroupDetailsViewController : AddFriendRowButtonDelegate {
 
 extension GroupDetailsViewController : NewContactVCDelegate {
     func shouldReloadChat(chat: Chat) {
-        let chatListViewModel = ChatListViewModel()
-        
-        chatListViewModel.loadFriends { _ in
-            self.chat = chat
-            self.loadData()
-        }
+        ///Check what to do here
     }
 }
 
@@ -379,11 +356,8 @@ extension GroupDetailsViewController : TribeMemberInfoDelegate {
             AlertHelper.showAlert(title: "generic.error.title".localized, message: "alias.cannot.empty".localized)
             return
         }
-        let params: [String: AnyObject] = ["my_alias" : alias as AnyObject, "my_photo_url": (photoUrl ?? "") as AnyObject]
         
-        API.sharedInstance.updateChat(chatId: chat.id, params: params, callback: {
-            self.chat.myAlias = alias
-            self.chat.myPhotoUrl = photoUrl ?? self.chat.myPhotoUrl
-        }, errorCallback: {})
+        self.chat.myAlias = alias
+        self.chat.myPhotoUrl = photoUrl ?? self.chat.myPhotoUrl
     }
 }

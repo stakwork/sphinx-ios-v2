@@ -247,8 +247,6 @@ class CreateInvoiceViewController: CommonPaymentViewController {
             with: qrCodeDetailViewModel
         )
         
-        SphinxSocketManager.sharedInstance.setDelegate(delegate: viewController)
-        
         self.navigationController?.pushViewController(viewController, animated: true)
     }
     
@@ -315,14 +313,14 @@ class CreateInvoiceViewController: CommonPaymentViewController {
             return
         }
         
-        let parameters = TransactionMessage.getPaymentParamsFor(
-            payment: paymentsViewModel.payment,
-            contact: contact,
-            chat: chat
-        )
+        guard let amount = paymentsViewModel.payment.amount else {
+            return
+        }
         
         SphinxOnionManager.sharedInstance.sendDirectPaymentMessage(
-            params: parameters,
+            amount: amount,
+            muid: paymentsViewModel.payment.muid,
+            content: paymentsViewModel.payment.message,
             chat: chat,
             completion: { success, _ in
                 if (success) {
@@ -343,21 +341,26 @@ class CreateInvoiceViewController: CommonPaymentViewController {
             return
         }
         
-        let parameters = TransactionMessage.getPaymentParamsFor(payment: paymentsViewModel.payment, contact: contact, chat: chat)
-        print(parameters)
         if let paymentAmount = paymentsViewModel.payment.amount,
-           let invoice = SphinxOnionManager.sharedInstance.createInvoice(amountMsat: paymentAmount * 1000, description: paymentsViewModel.payment.memo ?? "") {
+           let invoice = SphinxOnionManager.sharedInstance.createInvoice(
+                amountMsat: paymentAmount * 1000,
+                description: paymentsViewModel.payment.memo ?? ""
+           ) {
             if presentationContext == .InChat,
                let contact = contact,
-               let chat = chat{
-                SphinxOnionManager.sharedInstance.sendInvoiceMessage(contact: contact, chat: chat, invoiceString: invoice)
+               let chat = chat {
+                
+                SphinxOnionManager.sharedInstance.sendInvoiceMessage(
+                    contact: contact,
+                    chat: chat,
+                    invoiceString: invoice
+                )
+                
                 self.dismissView()
-            }
-            else{
+            } else {
                 self.presentInvoiceDetailsVC(invoiceString: invoice)
             }
-        }
-        else{
+        } else {
             delegate?.didFailCreatingInvoice?()
         }
     }

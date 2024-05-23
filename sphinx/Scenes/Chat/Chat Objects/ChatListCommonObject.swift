@@ -30,7 +30,7 @@ public protocol ChatListCommonObject: class {
     func getImage() -> UIImage?
     func setImage(image: UIImage) 
     
-    func hasEncryptionKey() -> Bool
+    func isEncrypted() -> Bool
     func subscribedToContact() -> Bool
     func isMuted() -> Bool
     func isSeen(ownerId: Int) -> Bool

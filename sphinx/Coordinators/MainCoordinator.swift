@@ -88,8 +88,6 @@ final class MainCoordinator: NSObject {
         let mainViewController = DashboardRootViewController.instantiate(leftMenuDelegate: leftViewController)
         let navigationController = UINavigationController(rootViewController: mainViewController)
         
-        UserData.sharedInstance.saveNewNodeOnKeychain()
-        
         runBackgroundProcesses()
 
         drawerController = KYDrawerController(drawerDirection: .left, drawerWidth: 270.0)

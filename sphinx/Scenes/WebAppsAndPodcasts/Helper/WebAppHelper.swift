@@ -81,7 +81,7 @@ extension WebAppHelper : WKScriptMessageHandler {
     }
     
     func setTypeApplicationAndPassword(params: inout [String: AnyObject], dict: [String: AnyObject]) {
-        let password = EncryptionManager.randomString(length: 16)
+        let password = SymmetricEncryptionManager.randomString(length: 16)
         saveValue(password as AnyObject, for: "password")
 
         params["type"] = dict["type"] as AnyObject

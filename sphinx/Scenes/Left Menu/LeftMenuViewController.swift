@@ -203,9 +203,8 @@ class LeftMenuViewController: UIViewController {
     }
     
     @IBAction func logoutButtonTouched() {
-        closeLeftMenu()
-        ContactsService.sharedInstance.reset()
-        GroupsPinManager.sharedInstance.logout()
+//        closeLeftMenu()
+//        ContactsService.sharedInstance.reset()
     }
     
     

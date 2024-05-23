@@ -60,9 +60,9 @@ class PinCodeViewController: UIViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         
-        DelayPerformedHelper.performAfterDelay(seconds: 0.5, completion: {
-           self.biometricAction()
-        })
+//        DelayPerformedHelper.performAfterDelay(seconds: 0.5, completion: {
+//           self.biometricAction()
+//        })
     }
     
     func configureButtons() {
@@ -130,34 +130,31 @@ class PinCodeViewController: UIViewController {
         }  else if let storedPin = UserData.sharedInstance.getStoredPin() {// if migrating from stored pin act accordingly
             if(storedPin == pin){
                 guard let unencryptedMnemonic = UserData.sharedInstance.getStoredUnencryptedMnemonic(),
-                      SphinxOnionManager.sharedInstance.isMnemonic(code: unencryptedMnemonic) else{
+                      SphinxOnionManager.sharedInstance.isMnemonic(code: unencryptedMnemonic) else {
                     loading = false
                     AlertHelper.showAlert(title: "Data Corruption Error", message: "There was an issue migrating your account. Please try again with restore from your written mnemonic.")
                     pinArray = []
                     reloadDots()
                     return
                 }
-                SphinxOnionManager.sharedInstance.appSessionPin = pin //store correct pin in non-volatile memory
-                UserData.sharedInstance.clearStoredPin() // wipe the pin from keychain
-                UserData.sharedInstance.save(walletMnemonic: unencryptedMnemonic)// save new mnemonic in refactored method that automatically encrypts with the pin
+                SphinxOnionManager.sharedInstance.appSessionPin = pin
+                UserData.sharedInstance.clearStoredPin()
+                UserData.sharedInstance.save(walletMnemonic: unencryptedMnemonic)
                 DelayPerformedHelper.performAfterDelay(seconds: 0.5, completion: {
                     self.finalizePinEntry(pin: pin)
                 })
-            }
-            else{
+            } else {
                 showInvalidPinError()
             }
-        }
-        else {
+        } else {
             finalizePinEntry(pin: pin)
         }
     }
     
-    func finalizePinEntry(pin:String){
+    func finalizePinEntry(pin: String) {
         let valid = GroupsPinManager.sharedInstance.isValidPin(pin)
         if valid {
             UserDefaults.Keys.lastPinDate.set(Date())
-            NotificationCenter.default.post(name: .userSuccessfullyEnteredPin, object: nil)
             
             WindowsManager.sharedInstance.removeCoveringWindow()
             
@@ -177,23 +174,24 @@ class PinCodeViewController: UIViewController {
     }
     
     func shouldUseBiometricAuthentication() -> Bool {
-        let isNodeSet = UserData.sharedInstance.getAppPin() != nil
-        
-        return authenticationHelper.canUseBiometricAuthentication() && isNodeSet && doneCompletion == nil
+//        let isNodeSet = UserData.sharedInstance.getAppPin() != nil
+//        
+//        return authenticationHelper.canUseBiometricAuthentication() && isNodeSet && doneCompletion == nil
+        return false
     }
     
     func biometricAction() {
-        if !shouldUseBiometricAuthentication() || didStartTyping || GroupsPinManager.sharedInstance.shouldAvoidFaceID {
-            return
-        }
-        
-        authenticationHelper.authenticationAction() { success in
-            if success {
-                if let pin =  UserData.sharedInstance.getAppPin() {
-                    self.setPinArray(pin: pin)
-                    self.doneButtonTouched()
-                }
-            }
-        }
+//        if !shouldUseBiometricAuthentication() || didStartTyping || GroupsPinManager.sharedInstance.shouldAvoidFaceID {
+//            return
+//        }
+//        
+//        authenticationHelper.authenticationAction() { success in
+//            if success {
+//                if let pin =  UserData.sharedInstance.getAppPin() {
+//                    self.setPinArray(pin: pin)
+//                    self.doneButtonTouched()
+//                }
+//            }
+//        }
     }
 }

@@ -289,22 +289,22 @@ extension GroupMembersDataSource : GroupMemberCellDelegate {
     }
     
     func respondToRequest(message: TransactionMessage, action: String, completion: @escaping (Chat, TransactionMessage) -> ()) {
-        messageBubbleHelper.showLoadingWheel()
-        
-        API.sharedInstance.requestAction(messageId: message.id, contactId: message.senderId, action: action, callback: { json in
-            if let chat = Chat.insertChat(
-                chat: json["chat"]
-            ), let message = TransactionMessage.insertMessage(
-                m: json["message"],
-                existingMessage: TransactionMessage.getMessageWith(id: json["id"].intValue)
-            ).0 {
-                completion(chat, message)
-                return
-            }
-            self.showErrorAlert()
-        }, errorCallback: {
-            self.showErrorAlert()
-        })
+//        messageBubbleHelper.showLoadingWheel()
+//        
+//        API.sharedInstance.requestAction(messageId: message.id, contactId: message.senderId, action: action, callback: { json in
+//            if let chat = Chat.insertChat(
+//                chat: json["chat"]
+//            ), let message = TransactionMessage.insertMessage(
+//                m: json["message"],
+//                existingMessage: TransactionMessage.getMessageWith(id: json["id"].intValue)
+//            ).0 {
+//                completion(chat, message)
+//                return
+//            }
+//            self.showErrorAlert()
+//        }, errorCallback: {
+//            self.showErrorAlert()
+//        })
     }
     
     func showErrorAlert() {

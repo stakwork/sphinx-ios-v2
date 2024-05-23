@@ -191,8 +191,6 @@ internal enum StoryboardScene {
         internal static let confirmAddFriendViewController = SceneType<ConfirmAddFriendViewController>(storyboard: Invite.self, identifier: "ConfirmAddFriendViewController")
         
         internal static let shareInviteCodeViewController = SceneType<ShareInviteCodeViewController>(storyboard: Invite.self, identifier: "ShareInviteCodeViewController")
-        
-        internal static let keychainRestoreViewController = SceneType<KeychainRestoreViewController>(storyboard: Invite.self, identifier: "KeychainRestoreViewController")
     }
     
     internal enum BadgeManagement : StoryboardType{
@@ -272,8 +270,6 @@ internal enum StoryboardScene {
     internal enum Groups: StoryboardType {
         internal static let storyboardName = "Groups"
         
-        internal static let groupNameViewController = SceneType<GroupNameViewController>(storyboard: Groups.self, identifier: "GroupNameViewController")
-        
         internal static let groupContactsViewController = SceneType<GroupContactsViewController>(storyboard: Groups.self, identifier: "GroupContactsViewController")
         
         internal static let groupDetailsViewController = SceneType<GroupDetailsViewController>(storyboard: Groups.self, identifier: "GroupDetailsViewController")
@@ -283,8 +279,6 @@ internal enum StoryboardScene {
         internal static let newPublicGroupViewController = SceneType<NewPublicGroupViewController>(storyboard: Groups.self, identifier: "NewPublicGroupViewController")
         
         internal static let groupTagsViewController = SceneType<GroupTagsViewController>(storyboard: Groups.self, identifier: "GroupTagsViewController")
-        
-        internal static let addTribeMemberViewController = SceneType<AddTribeMemberViewController>(storyboard: Groups.self, identifier: "AddTribeMemberViewController")
     }
     
     internal enum Stakwork: StoryboardType {

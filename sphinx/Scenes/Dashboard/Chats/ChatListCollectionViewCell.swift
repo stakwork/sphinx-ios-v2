@@ -137,7 +137,7 @@ extension ChatListCollectionViewCell {
             
             nameLabel.text = chatListObject.getName()
             muteImageView.isHidden = (chatListObject.getChat()?.isMuted() ?? false) == false
-            lockSign.isHidden = chatListObject.hasEncryptionKey() == false
+            lockSign.isHidden = chatListObject.isEncrypted() == false
         }
         
         renderLastMessage(for: chatListObject)

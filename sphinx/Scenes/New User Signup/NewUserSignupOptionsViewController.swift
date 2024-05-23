@@ -107,13 +107,8 @@ extension NewUserSignupOptionsViewController {
         button.addShadow(location: .bottom, opacity: 0.2, radius: 2.0)
         
         button.accessibilityIdentifier = string
-    }
-    
-    
+    }   
 }
-
-
-
 
 
 // MARK: - ConnectionCodeSignupHandling

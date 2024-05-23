@@ -10,28 +10,28 @@ import UIKit
 
 extension NewContactViewController {
     func updateProfile() {
-        guard let contact = contact else {
-            return
-        }
-        
-        let routeHint = routeHintTextField.text ?? ""
-        
-        if !routeHint.isEmpty && !routeHint.isRouteHint && !routeHint.isV2RouteHint {
-            showErrorAlert(message: "invalid.route.hint".localized)
-        } else if let nickname = nickNameTextField.text, contact.id > 0 && nickname != "", nickname != contact.nickname {
-            UserContactsHelper.updateContact(contact: contact, nickname: nickname, routeHint: routeHintTextField.text, callback: { success in
-                self.loading = false
-
-                if success {
-                    self.delegate?.shouldReloadContacts?(reload: true, dashboardTabIndex: -1)
-                    self.backButtonTouched()
-                } else {
-                    self.showErrorAlert(message: "generic.error.message".localized)
-                }
-            })
-        } else {
-            backButtonTouched()
-        }
+//        guard let contact = contact else {
+//            return
+//        }
+//        
+//        let routeHint = routeHintTextField.text ?? ""
+//        
+//        if !routeHint.isEmpty && !routeHint.isV2RouteHint {
+//            showErrorAlert(message: "invalid.route.hint".localized)
+//        } else if let nickname = nickNameTextField.text, contact.id > 0 && nickname != "", nickname != contact.nickname {
+//            UserContactsHelper.updateContact(contact: contact, nickname: nickname, routeHint: routeHintTextField.text, callback: { success in
+//                self.loading = false
+//
+//                if success {
+//                    self.delegate?.shouldReloadContacts?(reload: true, dashboardTabIndex: -1)
+//                    self.backButtonTouched()
+//                } else {
+//                    self.showErrorAlert(message: "generic.error.message".localized)
+//                }
+//            })
+//        } else {
+//            backButtonTouched()
+//        }
     }
     
     func createV2Contact(){
@@ -46,8 +46,7 @@ extension NewContactViewController {
         } else if nickname.isEmpty || pubkey.isEmpty {
             showErrorAlert(message: "nickname.address.required".localized)
         } else {
-            let pin = groupPinContainer.getPin()
-            UserContactsHelper().createV2Contact(nickname: nickname, pubKey: pubkey, routeHint: routeHint,pin: pin, callback: { (success, _) in
+            UserContactsHelper.createV2Contact(nickname: nickname, pubKey: pubkey, routeHint: routeHint, callback: { (success, _) in
                 self.loading = false
                 
                 if success {

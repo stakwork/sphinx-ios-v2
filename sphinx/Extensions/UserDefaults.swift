@@ -11,8 +11,6 @@ import Foundation
 extension UserDefaults {
     public enum Keys {
         public static let lastSeenHistoryDate = DefaultKey<Date>("lastSeenHistoryDate")
-        public static let lastSeenMessagesDate = DefaultKey<Date>("lastSeenMessagesDate")
-        public static let lastSeenContactsDate = DefaultKey<Date>("lastSeenContactsDate")
         public static let hideBalances = DefaultKey<Bool>("hideBalances")
         public static let channelBalance = DefaultKey<Int>("channelBalance")
         public static let remoteBalance = DefaultKey<Int>("remoteBalance")

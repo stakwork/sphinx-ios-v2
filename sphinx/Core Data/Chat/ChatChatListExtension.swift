@@ -59,10 +59,6 @@ extension Chat: ChatListCommonObject {
         return true
     }
     
-    public func hasEncryptionKey() -> Bool {
-        return true
-    }
-    
     public func subscribedToContact() -> Bool {
         return false
     }

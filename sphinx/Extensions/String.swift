@@ -106,19 +106,6 @@ extension String {
         return fixedInvoice
     }
     
-    var fixedRestoreCode : String {
-        get {
-            let codeWithoutSpaces = self.replacingOccurrences(of: "\\n", with: "")
-                                        .replacingOccurrences(of: "\\r", with: "")
-                                        .replacingOccurrences(of: "\\s", with: "")
-                                        .replacingOccurrences(of: " ", with: "")
-            
-            let fixedCode = codeWithoutSpaces.filter("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=".contains)
-            
-            return fixedCode
-        }
-    }
-    
     func removeProtocol() -> String {
         return self.replacingOccurrences(of: "http://", with: "").replacingOccurrences(of: "https://", with: "")
     }
@@ -127,64 +114,8 @@ extension String {
         return self.removingPercentEncoding
     }
     
-    var isRelayQRCode : Bool {
-        get {
-            return self.base64Decoded?.starts(with: "ip::") ?? false
-        }
-    }
-    
-    var isSwarmConnectCode : Bool {
-        get {
-            return self.localizedStandardContains("connect::")
-        }
-    }
-    
-    var isSwarmClaimCode : Bool {
-        get {
-            return self.localizedStandardContains("claim::")
-        }
-    }
-    
-    var isSwarmGlyphAction : Bool {//if they're signing up with their own signing device
-        get {
-            return self.localizedStandardContains("glyph")
-        }
-    }
-    
     var isMessagesFetchResponse : Bool {
         return self.contains("res/batch")
-    }
-    
-    func getIPAndPassword() -> (String?, String?) {
-        if let decodedString = self.base64Decoded, decodedString.starts(with: "ip::") {
-            let stringWithoutPrefix = decodedString.replacingOccurrences(of: "ip::", with: "")
-            let items = stringWithoutPrefix.components(separatedBy: "::")
-            
-            if items.count == 2 {
-                return (items[0], items[1])
-            }
-        }
-        return (nil, nil)
-    }
-    
-    var isRestoreKeysString : Bool {
-        get {
-            return self.base64Decoded?.starts(with: "keys::") ?? false
-        }
-    }
-    
-    var isRestoreKeysStringLength : Bool {
-        get {
-            return self.length > 3000
-        }
-    }    
-    
-    func getRestoreKeys() -> String? {
-        if let decodedString = self.base64Decoded, decodedString.starts(with: "keys::") {
-            let stringWithoutPrefix = decodedString.replacingOccurrences(of: "keys::", with: "")
-            return stringWithoutPrefix
-        }
-        return nil
     }
     
     func trim() -> String {
@@ -496,16 +427,9 @@ extension String {
         return (false, nil)
    }
     
-    var isV2InviteCode : Bool{
-        get {
-            return self.localizedStandardContains("action=i&d")
-        }
-    }
-    
     var isInviteCode : Bool {
         get {
-            let regex = try? NSRegularExpression(pattern: "^[A-F0-9a-f]{40}$")
-            return ((regex?.matches(in: self, range: NSRange(self.startIndex..., in: self)) ?? []).count > 0) || isV2InviteCode
+            return self.starts(with: "sphinx.chat://?action=i&d")
         }
     }
     

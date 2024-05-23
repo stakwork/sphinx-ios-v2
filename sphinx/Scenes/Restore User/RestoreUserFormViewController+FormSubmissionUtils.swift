@@ -21,14 +21,10 @@ extension RestoreUserFormViewController {
 
         guard validateCode(code) else { return }
         
-        if(SphinxOnionManager.sharedInstance.isMnemonic(code: code)){
+        if SphinxOnionManager.sharedInstance.isMnemonic(code: code) {
             goMnemonicRoute()
             return
         }
-
-        guard let encryptedKeys = encryptedKeysFromCode(code) else { return }
-        
-        presentPINVC(using: encryptedKeys)
     }
     
     
@@ -36,42 +32,19 @@ extension RestoreUserFormViewController {
         if isCodeValid(code) {
             return true
         } else {
-            handleInvalidCodeSubmission(code)
-            
             return false
         }
     }
     
-    
-    func connectTorIfNeededBeforeProceeding() -> Bool {
-        if onionConnector.usingTor() && !onionConnector.isReady() {
-            onionConnector.startTor(delegate: self)
-            return true
-        }
-        return false
-    }
-    
-    
-    func encryptedKeysFromCode(_ code: String) -> String? {
-        code.getRestoreKeys() ??
-        code.fixedRestoreCode.getRestoreKeys()
-    }
-    
     func isCodeValid(_ code: String) -> Bool {
-       return (code.isRestoreKeysString ||
-        code.fixedRestoreCode.isRestoreKeysString ||
-        SphinxOnionManager.sharedInstance.isMnemonic(code: code))
+       return SphinxOnionManager.sharedInstance.isMnemonic(code: code)
     }
     
-    func goMnemonicRoute(){
-        if let code = codeTextField.text,
-           code.isEmpty == false,
-           SphinxOnionManager.sharedInstance.isMnemonic(code: code){
-            UserData.sharedInstance.save(walletMnemonic: code)
-            if let mnemonic = UserData.sharedInstance.getMnemonic(),
-               SphinxOnionManager.sharedInstance.createMyAccount(mnemonic: mnemonic){
+    func goMnemonicRoute() {
+        if let mnemonic = UserData.sharedInstance.getMnemonic() {
+            if SphinxOnionManager.sharedInstance.createMyAccount(mnemonic: mnemonic) {
                 setupWatchdogTimer()
-                listenForSelfContactRegistration()//get callbacks ready for sign up
+                listenForSelfContactRegistration()
                 presentConnectingLoadingScreenVC()
             }
         }
@@ -89,28 +62,6 @@ extension RestoreUserFormViewController {
         
         presentConnectingLoadingScreenVC()
     }
-
-
-    func connectRestoredUser(
-        encryptedKeys: String,
-        pin: String
-    ) {
-        guard
-            let keys = SymmetricEncryptionManager
-                .sharedInstance
-                .decryptRestoreKeys(
-                    encryptedKeys: encryptedKeys.fixedRestoreCode,
-                    pin: pin
-                ),
-            EncryptionManager.sharedInstance.insertKeys(privateKey: keys[0], publicKey: keys[1])
-        else {
-            errorRestoring(message: "invalid.pin".localized)
-            return
-        }
-
-        userData.save(ip: keys[2], token: keys[3], pin: pin)
-    }
-    
     
     func presentConnectingLoadingScreenVC() {
         let restoreExistingConnectingVC = RestoreUserConnectingViewController.instantiate()
@@ -123,10 +74,6 @@ extension RestoreUserFormViewController {
     
     
     func goToWelcomeCompleteScene() {
-        if connectTorIfNeededBeforeProceeding() {
-            return
-        }
-        
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
             guard let self = self else { return }
             
@@ -144,47 +91,6 @@ extension RestoreUserFormViewController {
         navigationController?.popViewController(animated: true)
         
         newMessageBubbleHelper.showGenericMessageView(text: message)
-    }
-    
-    
-    func handleInvalidCodeSubmission(_ code: String) {
-        var errorMessage: String
-        
-        if code.isRelayQRCode {
-            errorMessage = "restore.invalid-code.relay-qr-code".localized
-        } else if code.isPubKey {
-            errorMessage = "invalid.code.pubkey".localized
-        } else if code.isLNDInvoice {
-            errorMessage = "invalid.code.invoice".localized
-        } else {
-            errorMessage = "invalid.code".localized
-        }
-        
-        newMessageBubbleHelper.genericMessageY = (
-            UIApplication.shared.keyWindow?.safeAreaInsets.top ?? 60
-        ) + 60
-        
-        newMessageBubbleHelper.showGenericMessageView(
-            text: errorMessage,
-            delay: 6,
-            textColor: UIColor.white,
-            backColor: UIColor.Sphinx.BadgeRed,
-            backAlpha: 1.0
-        )
-    }
-}
-
-
-
-extension RestoreUserFormViewController: SphinxOnionConnectorDelegate {
-    func onionConnecting() {}
-    
-    func onionConnectionFinished() {
-        goToWelcomeCompleteScene()
-    }
-    
-    func onionConnectionFailed() {
-        errorRestoring(message: "tor.connection.failed".localized)
     }
 }
 
@@ -206,10 +112,6 @@ extension RestoreUserFormViewController : NSFetchedResultsControllerDelegate{
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
             guard let self = self else { return }
 
-            let inviteWelcomeVC = InviteWelcomeViewController.instantiate(
-                inviter: inviter
-            )
-            
             SignupHelper.step = SignupHelper.SignupStep.InviterContactCreated.rawValue
             
             let setPinVC = SetPinCodeViewController.instantiate()

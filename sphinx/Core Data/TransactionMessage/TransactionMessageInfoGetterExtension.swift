@@ -998,22 +998,6 @@ extension TransactionMessage {
         return nil
     }
     
-    func shouldAvoidShowingBubble() -> Bool {
-        let groupsPinManager = GroupsPinManager.sharedInstance
-        let isStandardPIN = groupsPinManager.isStandardPIN
-        let isPrivateConversation = !(chat?.isGroup() ?? false)
-        let messageSender = getMessageSender()
-        
-        if isPrivateConversation {
-            return (isStandardPIN && !(messageSender?.pin ?? "").isEmpty) ||
-                   (!isStandardPIN && (messageSender?.pin ?? "").isEmpty) ||
-                   messageSender?.isBlocked() == true
-        } else {
-            return (isStandardPIN && !(chat?.pin ?? "").isEmpty) ||
-                   (!isStandardPIN && (chat?.pin ?? "").isEmpty)
-        }
-    }
-    
     //Grouping Logic
     func shouldAvoidGrouping() -> Bool {
         return pending() || failed() || isDeleted() || isInvoice() || isPayment() || isGroupActionMessage() || isFlagged()

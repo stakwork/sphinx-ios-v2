@@ -9,6 +9,7 @@ import UIKit
 import CoreData
 
 class RestoreUserFormViewController: UIViewController {
+    
     @IBOutlet weak var titleLabel: UILabel!
     @IBOutlet weak var backButton: UIButton!
     @IBOutlet weak var codeTextField: UITextField!
@@ -87,7 +88,7 @@ extension RestoreUserFormViewController {
     
     
     func setupKeychainButtonContainer() {
-        keychainRestoreButtonContainer.alpha = userData.isRestoreAvailable() ? 1.0 : 0.0
+        keychainRestoreButtonContainer.alpha = 0.0
     }
     
     
@@ -112,12 +113,6 @@ extension RestoreUserFormViewController {
         submitButton.addShadow(location: .bottom, opacity: 0.5, radius: 2.0)
         
         submitButtonArrow.textColor = UIColor.white
-    }
-    
-    
-    func save(ip: String, and password: String) {
-        userData.save(ip: ip)
-        userData.save(password: password)
     }
 }
 

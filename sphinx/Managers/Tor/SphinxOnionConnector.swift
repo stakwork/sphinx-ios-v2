@@ -28,7 +28,7 @@ class SphinxOnionConnector : NSObject {
     var torSession : Alamofire.Session?
 
     func usingTor() -> Bool {
-        return UserData.sharedInstance.getNodeIP().contains(".onion")
+        return false
     }
 
     func isReady() -> Bool {

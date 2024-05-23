@@ -28,5 +28,4 @@ extension Notification.Name {
     static let newOnionMessageWasReceived = Notification.Name("newOnionMessageWasReceived")
     static let newTribeMemberListRetrieved = Notification.Name("newTribeMemberListRetrieved")
     static let invoiceIPaidSettled = Notification.Name("invoiceIPaidSettled")
-    static let userSuccessfullyEnteredPin = Notification.Name("userSuccessfullyEnteredPin")
 }

@@ -164,7 +164,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             return
         }
         
-        presentPINIfNeeded(presentationContext: .enterForeground)
+        presentPINIfNeeded()
         
         feedsManager.restoreContentFeedStatusInBackground()
         podcastPlayerController.finishAndSaveContentConsumed()
@@ -181,7 +181,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             return
         }
         
-        SphinxSocketManager.sharedInstance.connectWebsocket(forceConnect: true)
         handlePushAndFetchData()
     }
 
@@ -264,16 +263,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         if isUserLogged {
             syncDeviceId()
-            getRelayKeys()
             feedsManager.restoreContentFeedStatusInBackground()
         }
 
         takeUserToInitialVC(isUserLogged: SignupHelper.isLogged())
-        presentPINIfNeeded(presentationContext: .launch)
+        presentPINIfNeeded()
     }
 
-    func presentPINIfNeeded(presentationContext:GroupsPinManager.PinPresentationContext) {
-        if GroupsPinManager.sharedInstance.shouldAskForPin(presentationContext: presentationContext) {
+    func presentPINIfNeeded() {
+        if GroupsPinManager.sharedInstance.shouldAskForPin() {
             let pinVC = PinCodeViewController.instantiate()
             pinVC.loggingCompletion = {
                 if let currentVC = self.getCurrentVC() {
@@ -300,13 +298,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         } else {
             window?.setDarkStyle()
             mainCoordinator.presentSignUpScreen()
-        }
-    }
-    
-    func getRelayKeys() {
-        if UserData.sharedInstance.isUserLogged() {
-            UserData.sharedInstance.getAndSaveTransportKey(forceGet: true)
-            UserData.sharedInstance.getOrCreateHMACKey(forceGet: true)
         }
     }
     
@@ -546,14 +537,14 @@ extension AppDelegate : PKPushRegistryDelegate{
            let pushBody = pushMessage.body as? VoIPPushMessageBody {
            
             if #available(iOS 14.0, *) {
-                let (result, link) = EncryptionManager.sharedInstance.decryptMessage(message: pushBody.linkURL)
-                pushBody.linkURL = link
-                
-                let manager = JitsiIncomingCallManager.sharedInstance
-                manager.currentJitsiURL = (result == true) ? link : pushBody.linkURL
-                manager.hasVideo = pushBody.isVideoCall()
-                
-                self.handleIncomingCall(callerName: pushBody.callerName)
+//                let (result, link) = EncryptionManager.sharedInstance.decryptMessage(message: pushBody.linkURL)
+//                pushBody.linkURL = link
+//                
+//                let manager = JitsiIncomingCallManager.sharedInstance
+//                manager.currentJitsiURL = (result == true) ? link : pushBody.linkURL
+//                manager.hasVideo = pushBody.isVideoCall()
+//                
+//                self.handleIncomingCall(callerName: pushBody.callerName)
             }
             completion()
         } else {

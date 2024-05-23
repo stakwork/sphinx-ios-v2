@@ -23,14 +23,6 @@ extension NewUserSignupFormViewController {
         
         present(viewController, animated: true)
     }
-    
-    @IBAction func connectToTestServer(){
-        print("connecting to test server")
-        let som = SphinxOnionManager.sharedInstance
-        som.vc = self
-        som.shouldPostUpdates = true
-        //som.chooseImportOrGenerateSeed()
-    }
 }
     
 
@@ -46,83 +38,59 @@ extension NewUserSignupFormViewController {
 
         view.endEditing(true)
         
-        if(code.isV2InviteCode){
-            SphinxOnionManager.sharedInstance.vc = self
-            SphinxOnionManager.sharedInstance.chooseImportOrGenerateSeed(completion: {success in
-                if(success),
-                  let code = self.codeTextField.text{
+        if (code.isInviteCode) {
+            som.vc = self
+            som.chooseImportOrGenerateSeed(completion: { [weak self] success in
+                guard let self = self else {
+                    return
+                }
+                
+                if (success), let code = self.codeTextField.text {
                     self.handleInviteCodeV2SignUp(code: code)
+                } else {
+                    AlertHelper.showAlert(
+                        title: "Error redeeming invite",
+                        message: "Please try again or ask for another invite."
+                    )
                 }
-                else{
-                    AlertHelper.showAlert(title: "Error redeeming invite", message: "Please try again or ask for another invite.")
-                }
-                SphinxOnionManager.sharedInstance.vc = nil
+                self.som.vc = nil
             })
-        }
-        else{
+        } else {
             startSignup(with: code)
         }
     }
     
-    func handleInviteCodeV2SignUp(code:String){
-        if let mnemonic = UserData.sharedInstance.getMnemonic(enteredPin: SphinxOnionManager.sharedInstance.defaultInitialSignupPin),
-           SphinxOnionManager.sharedInstance.createMyAccount(mnemonic: mnemonic){
-            SphinxOnionManager.sharedInstance.redeemInvite(inviteCode: code, mnemonic: mnemonic)
+    func handleInviteCodeV2SignUp(code: String) {
+        guard let mnemonic = UserData.sharedInstance.getMnemonic() else {
+            return
+        }
+        
+        if som.createMyAccount(mnemonic: mnemonic) {
+            som.redeemInvite(inviteCode: code, mnemonic: mnemonic)
             setupWatchdogTimer()
             listenForSelfContactRegistration()//get callbacks ready for sign up
-            self.presentConnectingLoadingScreenVC()
+            presentConnectingLoadingScreenVC()
         }
     }
     
     
     func startSignup(with code: String) {
-        if code.isRelayQRCode {
-            let (ip, password) = code.getIPAndPassword()
-            
-            if let ip = ip, let password = password {
-                signupWithRelayQRCode(ip: ip, password: password)
-            }
-        } else if code.isInviteCode {
+        if code.isInviteCode {
             signup(withConnectionCode: code)
-        }
-        else if code.isSwarmConnectCode{
-            signUp(withSwarmConnectCode: code)
-        }
-        else if code.isSwarmClaimCode{
-            signUp(withSwarmClaimCode: code)
-        }
-        else if code.isSwarmGlyphAction{
-            signUp(withSwarmMqttCode: code)
-        }
-        else {
-            preconditionFailure("Attempted to start sign up without a valid code.")
         }
     }
     
     
     func isCodeValid(_ code: String) -> Bool {
-        return code.isRelayQRCode || code.isInviteCode || code.isSwarmClaimCode || code.isSwarmConnectCode || code.isSwarmGlyphAction
+        return code.isInviteCode
     }
-    //sphinx.chat://?action=invite&d=EMxQifHIEKUzDUkq3TrkIbvIoFMxaKClqy_Fd5YVUNQCJKxcE6wCunsStg4GYXEZUuNxl23z5d6QJHd3q51wgzkCrczX9XTRfWJ1QbRH9HSTkW544zwVg7qZNmB7NcqZw5IHWiAACF0ABDM0LjIyOS41Mi4yMDA=
     
     func validateCode(_ code: String) -> Bool {
         if isCodeValid(code) {
             return true
         } else {
-            var errorMessage: String
-            
-            if code.isRestoreKeysString {
-                errorMessage = "signup.invalid-code.restore-key".localized
-            } else if code.isPubKey {
-                errorMessage = "invalid.code.pubkey".localized
-            } else if code.isLNDInvoice {
-                errorMessage = "invalid.code.invoice".localized
-            } else {
-                errorMessage = "invalid.code".localized
-            }
-            
             newMessageBubbleHelper.showGenericMessageView(
-                text: errorMessage,
+                text: "invalid.code".localized,
                 delay: 6,
                 textColor: UIColor.white,
                 backColor: UIColor.Sphinx.BadgeRed,
@@ -132,17 +100,6 @@ extension NewUserSignupFormViewController {
             return false
         }
     }
-    
-    
-    func signupWithRelayQRCode(ip: String, password: String) {
-        presentConnectingLoadingScreenVC()
-        
-        let invite = SignupHelper.getSupportContact(includePubKey: false)
-        SignupHelper.saveInviterInfo(invite: invite)
-        
-        connectToNode(ip: ip, password: password)
-    }
-    
     
     func handleSignupConnectionError(message: String) {
         // Pop the "Connecting" VC

@@ -130,7 +130,7 @@ class CrypterManager : NSObject {
             if let clientId: String = UserDefaults.Keys.clientID.get() {
                 return clientId
             }
-            self.clientID = "CocoaMQTT-" + EncryptionManager.randomString(length: 20)
+            self.clientID = "CocoaMQTT-" + SymmetricEncryptionManager.randomString(length: 20)
             return self.clientID
         }
         set {

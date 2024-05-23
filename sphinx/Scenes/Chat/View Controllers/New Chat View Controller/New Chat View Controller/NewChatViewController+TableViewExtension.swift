@@ -73,7 +73,7 @@ extension NewChatViewController {
     }
 }
 
-extension NewChatViewController : NewChatTableDataSourceDelegate, SocketManagerDelegate {
+extension NewChatViewController : NewChatTableDataSourceDelegate {
     func shouldDismissKeyboard() {
         self.bottomView.messageFieldView.shouldDismissKeyboard()
     }

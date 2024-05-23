@@ -127,8 +127,6 @@ class NewChatViewController: NewKeyboardHandlerViewController {
             chatTableDataSource?.saveSnapshotCurrentState()
             chatTableDataSource?.stopListeningToResultsController()
 
-            SphinxSocketManager.sharedInstance.setDelegate(delegate: nil)
-
             stopPlayingClip()
         }
         
@@ -234,8 +232,6 @@ class NewChatViewController: NewKeyboardHandlerViewController {
             messageFieldDelegate: self,
             searchDelegate: self
         )
-        
-        SphinxSocketManager.sharedInstance.setDelegate(delegate: self)
     }
     
     private func loadReplyableMeesage() {

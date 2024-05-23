@@ -373,14 +373,6 @@ public class Chat: NSManagedObject {
         }
     }
     
-    func getGroupEncrypted(text: String) -> String {
-        if let groupKey = groupKey {
-            let encryptedM = EncryptionManager.sharedInstance.encryptMessage(message: text, groupKey: groupKey)
-            return encryptedM.1
-        }
-        return text
-    }
-    
     func getReceivedUnseenMessages(
         context: NSManagedObjectContext? = nil
     ) -> [TransactionMessage] {
@@ -753,18 +745,8 @@ public class Chat: NSManagedObject {
         return type == Chat.ChatType.conversation.rawValue
     }
     
-    func isEncrypted() -> Bool {
-        if isPrivateGroup() {
-            return true
-        } else if isPublicGroup() {
-            if let _ = groupKey {
-                return true
-            }
-            return false
-        } else if let contact = getContact() {
-            return contact.hasEncryptionKey()
-        }
-        return false
+    public func isEncrypted() -> Bool {
+        return true
     }
     
     func isMyPublicGroup(

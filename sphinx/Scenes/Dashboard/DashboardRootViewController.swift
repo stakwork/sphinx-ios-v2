@@ -51,7 +51,6 @@ class DashboardRootViewController: RootViewController {
     
     internal var managedObjectContext: NSManagedObjectContext!
     internal let onionConnector = SphinxOnionConnector.sharedInstance
-    internal let socketManager = SphinxSocketManager.sharedInstance
     internal let actionsManager = ActionsManager.sharedInstance
     internal let contactsService = ContactsService.sharedInstance
     internal let refreshControl = UIRefreshControl()
@@ -105,7 +104,6 @@ class DashboardRootViewController: RootViewController {
             )
             
             resetSearchField()
-            loadDataOnTabChange(to: activeTab)
             feedViewMode = .rootList
             
             if (activeTab == .tribes) {
@@ -234,10 +232,6 @@ extension DashboardRootViewController {
         addAccessibilityIdentifiers()
     }
     
-    override func viewDidDisappear(_ animated: Bool) {
-        NotificationCenter.default.removeObserver(self, name: .userSuccessfullyEnteredPin, object: nil)
-    }
-    
     func addAccessibilityIdentifiers(){
         bottomBar.accessibilityIdentifier = "bottomBar"
         bottomBarContainer.accessibilityIdentifier = "bottomBarContainer"
@@ -325,18 +319,12 @@ extension DashboardRootViewController {
         
         handleDeepLinksAndPush()
         
-        if didFinishInitialLoading {
-            loadDataOnTabChange(to: activeTab)
-        }
-        
         setupAddTribeButton()
     }
     
     func refreshUnreadStatus(){
         som.getReads()
         som.getMuteLevels()
-        
-//        self.loadContactsAndSyncMessages()
     }
     
     func connectToServer() {
@@ -349,7 +337,7 @@ extension DashboardRootViewController {
             
             self.som.connectToServer(
                 connectingCallback: {
-//                    self.listViewController?.headerLoading = true
+                    self.shouldShowHeaderLoadingWheel = true
                 },
                 contactRestoreCallback: self.contactRestoreCallback(percentage:),
                 messageRestoreCallback: self.messageRestoreCallback(percentage:),
@@ -365,6 +353,7 @@ extension DashboardRootViewController {
     func hideRestoreViewCallback(){
         self.restoreProgressView.hideViewAnimated()
         self.isLoading = false
+        self.shouldShowHeaderLoadingWheel = false
         
         self.refreshUnreadStatus()
     }
@@ -519,7 +508,7 @@ extension DashboardRootViewController {
                 object: nil,
                 queue: .main
             ) { [weak self] (_notification: Notification) in
-                self?.loadContactsAndSyncMessages()
+                ///Refresh with SphinxOnionManager refresh
             }
     }
     
@@ -537,77 +526,6 @@ extension DashboardRootViewController {
             delegate: self
         ) {
             isLoading = false
-        }
-    }
-    
-    
-    internal func loadContactsAndSyncMessages(
-        shouldShowHeaderLoadingWheel: Bool = false
-    ) {
-        self.shouldShowHeaderLoadingWheel = shouldShowHeaderLoadingWheel
-        
-        isLoading = true
-        headerView.updateBalance()
-        
-        var contactsProgressShare : Float = 0.01
-        
-        chatsListViewModel.loadFriends(
-            progressCompletion: { restoring in
-                if restoring {
-                    
-                    contactsProgressShare += 0.01
-                    
-                    DispatchQueue.main.async {
-                        self.restoreProgressView.showRestoreProgressView(
-                            with: Int(contactsProgressShare * 100),
-                            label: "restoring-contacts".localized,
-                            buttonEnabled: false
-                        )
-                    }
-                }
-            }
-        ) { [weak self] restoring in
-            guard let self = self else { return }
-            
-            if restoring {
-                
-                DispatchQueue.main.async {
-                    self.restoreProgressView.showRestoreProgressView(
-                        with: Int(contactsProgressShare * 100),
-                        label: "restoring-contacts".localized,
-                        buttonEnabled: false
-                    )
-                }
-                
-                self.chatsListViewModel.askForNotificationPermissions()
-                self.contactsService.forceUpdate()
-            } else {
-                self.contactsService.configureFetchResultsController()
-            }
-            
-            var contentProgressShare : Float = 0.0
-            
-            self.syncContentFeedStatus(
-                restoring: restoring,
-                progressCallback:  { contentProgress in
-                    contentProgressShare = 0.1
-                    
-                    if (contentProgress >= 0 && restoring) {
-                        let contentProgress = Int(contentProgressShare * Float(contentProgress))
-                        
-                        DispatchQueue.main.async {
-                            self.restoreProgressView.showRestoreProgressView(
-                                with: contentProgress + Int(contactsProgressShare * 100),
-                                label: "restoring-content".localized,
-                                buttonEnabled: false
-                            )
-                        }
-                    }
-                },
-                completionCallback: {
-                    
-                }
-            )
         }
     }
     
@@ -649,19 +567,6 @@ extension DashboardRootViewController {
             contactsService.chatListObjects
         )
     }
-    
-    
-    internal func loadDataOnTabChange(to activeTab: DashboardTab) {
-        switch activeTab {
-        case .feed:
-            finishLoading()
-        case .friends:
-            loadContactsAndSyncMessages()
-        case .tribes:
-            loadContactsAndSyncMessages()
-        }
-    }
-    
     
     internal func finishLoading() {
         newBubbleHelper.hideLoadingWheel()

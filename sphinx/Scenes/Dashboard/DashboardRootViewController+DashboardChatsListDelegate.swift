@@ -17,7 +17,7 @@ extension DashboardRootViewController: DashboardChatsListDelegate {
         _ viewController: UIViewController,
         using refreshControl: UIRefreshControl
     ) {
-        loadContactsAndSyncMessages()
+        ///Replace with SphinxOnionManager refresh
         refreshControl.endRefreshing()
     }
     

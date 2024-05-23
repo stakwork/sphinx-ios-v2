@@ -41,7 +41,6 @@ class NewContactViewController: KeyboardEventsViewController {
     @IBOutlet weak var contactImageView: UIImageView!
     @IBOutlet weak var contactInitials: UILabel!
     @IBOutlet weak var nameFieldRightConstraint: NSLayoutConstraint!
-    @IBOutlet weak var groupPinContainer: GroupPinView!
     
     var contact : UserContact? = nil
     var pubkey : String? = nil
@@ -101,8 +100,6 @@ class NewContactViewController: KeyboardEventsViewController {
         contactInitials.layer.cornerRadius = contactInitials.frame.height / 2
         contactInitials.clipsToBounds = true
         
-        groupPinContainer.configureWith()
-        
         qrCodeImageView.image = UIImage(named: "scannerIcon")
         
         configureTextField()
@@ -119,8 +116,6 @@ class NewContactViewController: KeyboardEventsViewController {
         backButton.isHidden = false
         contactImageView.isHidden = false
         contactInitials.isHidden = false
-        
-        groupPinContainer.configureWith(contact: contact)
         
         nickNameTextField.text = contact.nickname ?? ""
         addressTextField.text = contact.publicKey ?? ""
@@ -241,8 +236,7 @@ class NewContactViewController: KeyboardEventsViewController {
         
         if let _ = contact {
             updateProfile()
-        }
-        else if routeHintTextField.text?.isV2RouteHint ?? false{
+        } else if routeHintTextField.text?.isV2RouteHint ?? false {
             createV2Contact()
         }
     }

@@ -52,10 +52,6 @@ class NewMessageBubbleHelper {
         backColor: UIColor = UIColor.Sphinx.Text,
         backAlpha: CGFloat = 0.7
     ) {
-        if GroupsPinManager.sharedInstance.shouldAskForPin(presentationContext: .enterForeground) {
-            return
-        }
-        
         let messageLabel = getGenericMessageLabel(text: text, textColor: textColor)
         let view = getGenericMessageBubbleView(label: messageLabel, backColor: backColor, backAlpha: backAlpha)
         view.addSubview(messageLabel)
@@ -75,10 +71,6 @@ class NewMessageBubbleHelper {
         backColor: UIColor = UIColor.Sphinx.Text,
         backAlpha: CGFloat = 0.8
     ) {
-        if GroupsPinManager.sharedInstance.shouldAskForPin(presentationContext: .enterForeground) {
-            return
-        }
-        
         var label: UILabel? = nil
         
         if let text = text {

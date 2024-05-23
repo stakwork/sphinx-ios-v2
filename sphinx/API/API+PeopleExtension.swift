@@ -20,50 +20,6 @@ extension API {
     typealias GetPersonProfileCallback = ((Bool, JSON?) -> ())
     typealias GetTribeMemberProfileCallback = ((Bool, TribeMemberStruct?) -> ())
     
-    public func verifyExternal(callback: @escaping VerifyExternalCallback) {
-        guard let request = getURLRequest(route: "/verify_external", method: "POST") else {
-            callback(false, nil)
-            return
-        }
-        
-        sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool, let response = json["response"] as? NSDictionary, success {
-                        callback(true, response)
-                    }
-                }
-            case .failure(_):
-                callback(false, nil)
-            }
-        }
-    }
-    
-    public func signBase64(b64: String, callback: @escaping SignVerifyCallback) {
-        guard let request = getURLRequest(route: "/signer/\(b64)", method: "GET") else {
-            callback(nil)
-            return
-        }
-        
-        sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool, let response = json["response"] as? NSDictionary, success {
-                        if let sig = response["sig"] as? String {
-                            callback(sig)
-                            return
-                        }
-                    }
-                }
-                callback(nil)
-            case .failure(_):
-                callback(nil)
-            }
-        }
-    }
-    
     public func authorizeExternal(host: String,
                                   challenge: String,
                                   token: String,
@@ -142,76 +98,76 @@ extension API {
     public func savePeopleProfile(params: [String: AnyObject],
                                   callback: @escaping PeopleTorRequestCallback) {
         
-        guard let request = getURLRequest(route: "/profile", params: params as NSDictionary, method: "POST") else {
-            callback(false)
-            return
-        }
-        
-        sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool,
-                       let _ = json["response"] as? NSDictionary, success {
-                        callback(true)
-                        return
-                    }
-                }
-                callback(false)
-            case .failure(_):
-                callback(false)
-            }
-        }
+//        guard let request = getURLRequest(route: "/profile", params: params as NSDictionary, method: "POST") else {
+//            callback(false)
+//            return
+//        }
+//        
+//        sphinxRequest(request) { response in
+//            switch response.result {
+//            case .success(let data):
+//                if let json = data as? NSDictionary {
+//                    if let success = json["success"] as? Bool,
+//                       let _ = json["response"] as? NSDictionary, success {
+//                        callback(true)
+//                        return
+//                    }
+//                }
+//                callback(false)
+//            case .failure(_):
+//                callback(false)
+//            }
+//        }
     }
     
     public func deletePeopleProfile(params: [String: AnyObject],
                                     callback: @escaping PeopleTorRequestCallback) {
         
-        guard let request = getURLRequest(route: "/profile", params: params as NSDictionary, method: "DELETE") else {
-            callback(false)
-            return
-        }
-        
-        sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool,
-                       let _ = json["response"] as? NSDictionary, success {
-                        callback(true)
-                        return
-                    }
-                }
-                callback(false)
-            case .failure(_):
-                callback(false)
-            }
-        }
+//        guard let request = getURLRequest(route: "/profile", params: params as NSDictionary, method: "DELETE") else {
+//            callback(false)
+//            return
+//        }
+//        
+//        sphinxRequest(request) { response in
+//            switch response.result {
+//            case .success(let data):
+//                if let json = data as? NSDictionary {
+//                    if let success = json["success"] as? Bool,
+//                       let _ = json["response"] as? NSDictionary, success {
+//                        callback(true)
+//                        return
+//                    }
+//                }
+//                callback(false)
+//            case .failure(_):
+//                callback(false)
+//            }
+//        }
     }
     
     public func redeemBadgeTokens(params: [String: AnyObject],
                                   callback: @escaping PeopleTorRequestCallback) {
         
-        guard let request = getURLRequest(route: "/claim_on_liquid", params: params as NSDictionary, method: "POST") else {
-            callback(false)
-            return
-        }
-        
-        sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool,
-                       let _ = json["response"] as? NSDictionary, success {
-                        callback(true)
-                        return
-                    }
-                }
-                callback(false)
-            case .failure(_):
-                callback(false)
-            }
-        }
+//        guard let request = getURLRequest(route: "/claim_on_liquid", params: params as NSDictionary, method: "POST") else {
+//            callback(false)
+//            return
+//        }
+//        
+//        sphinxRequest(request) { response in
+//            switch response.result {
+//            case .success(let data):
+//                if let json = data as? NSDictionary {
+//                    if let success = json["success"] as? Bool,
+//                       let _ = json["response"] as? NSDictionary, success {
+//                        callback(true)
+//                        return
+//                    }
+//                }
+//                callback(false)
+//            case .failure(_):
+//                callback(false)
+//            }
+//        }
     }
     
     public func getTribeMemberInfo(

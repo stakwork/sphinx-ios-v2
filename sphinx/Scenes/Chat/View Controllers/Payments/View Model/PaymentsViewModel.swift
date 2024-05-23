@@ -63,28 +63,7 @@ class PaymentsViewModel : NSObject {
             return true
         }
         
-        guard let contact = contact else {
-            return memo.count < 50
-        }
-        
-        if memo.count > 50 {
-            return false
-        }
-        
-        let encryptionManager = EncryptionManager.sharedInstance
-        let encryptedOwnMessage = encryptionManager.encryptMessageForOwner(message: memo)
-        let (contactIsEncrypted, encryptedContactMessage) = encryptionManager.encryptMessage(message: memo, for: contact)
-        
-        if contactIsEncrypted && !encryptedContactMessage.isValidLengthMemo() {
-            return memo.isValidLengthMemo()
-        }
-        
-        if contactIsEncrypted {
-            payment.encryptedMemo = encryptedOwnMessage
-            payment.remoteEncryptedMemo = encryptedContactMessage
-        }
-        
-        return true
+        return memo.isValidLengthMemo()
     }
     
     func validatePayment(

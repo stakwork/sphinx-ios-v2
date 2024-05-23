@@ -144,28 +144,31 @@ class FeedBoostHelper : NSObject {
         amount: Int,
         completion: @escaping ((TransactionMessage?, Bool) -> ())
     ) {
-        if let chat = chat {
-            let boostType = TransactionMessage.TransactionMessageType.boost.rawValue
-            
-            let provisionalMessage = TransactionMessage.createProvisionalMessage(
-                messageContent: message,
-                type: boostType,
-                date: Date(),
-                chat: chat
-            )
-            
-            let messageType = TransactionMessage.TransactionMessageType.boost
-            
-            guard let params = TransactionMessage.getMessageParams(
-                contact: nil,
-                chat: chat,
-                type: messageType,
-                text: message
-            ) else {
-                completion(provisionalMessage, false)
-                return
-            }
-            //TODO: @Jim reimplement content boosts
+        //TODO: @Jim reimplement content boosts
+        
+//        if let chat = chat {
+//            let boostType = TransactionMessage.TransactionMessageType.boost.rawValue
+//            
+//            let provisionalMessage = TransactionMessage.createProvisionalMessage(
+//                messageContent: message,
+//                type: boostType,
+//                date: Date(),
+//                chat: chat
+//            )
+//            
+//            let messageType = TransactionMessage.TransactionMessageType.boost
+//            
+//            guard let params = TransactionMessage.getMessageParams(
+//                contact: nil,
+//                chat: chat,
+//                type: messageType,
+//                text: message
+//            ) else {
+//                completion(provisionalMessage, false)
+//                return
+//            }
+//            
+//
 //            API.sharedInstance.sendMessage(params: params, callback: { m in
 //                if let message = TransactionMessage.insertMessage(
 //                    m: m,
@@ -183,7 +186,7 @@ class FeedBoostHelper : NSObject {
 //                    completion(provisionalMessage, false)
 //                 }
 //            })
-        }
+//        }
     }
     
     func trackBoostAction(

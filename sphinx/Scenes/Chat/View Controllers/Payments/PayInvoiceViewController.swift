@@ -154,8 +154,8 @@ class PayInvoiceViewController: UIViewController {
                 m: payment,
                 existingMessage: TransactionMessage.getMessageWith(id: payment["id"].intValue)
             ).0 {
-//                message.setPaymentInvoiceAsPaid()
-//                shouldDismiss(paymentCreated: true)
+                message.setPaymentInvoiceAsPaid()
+                shouldDismiss(paymentCreated: true)
             }
         } else {
             showErrorAlert()
