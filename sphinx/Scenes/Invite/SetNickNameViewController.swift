@@ -15,7 +15,6 @@ class SetNickNameViewController: SetDataViewController {
     @IBOutlet weak var textFieldContainer: UIView!
     @IBOutlet weak var nickNameField: UITextField!
     @IBOutlet weak var loadingWheel: UIActivityIndicatorView!
-    var isV2 : Bool = false
     var isRestoreFlow : Bool = false
     
     static func instantiate() -> SetNickNameViewController {
@@ -68,7 +67,6 @@ class SetNickNameViewController: SetDataViewController {
     
     func goToProfilePicture() {
         let profilePictureVC = SetProfileImageViewController.instantiate(nickname: nickNameField.text ?? nil)
-        profilePictureVC.isV2 = self.isV2
         profilePictureVC.isRestoreFlow = self.isRestoreFlow
         self.navigationController?.pushViewController(profilePictureVC, animated: true)
     }

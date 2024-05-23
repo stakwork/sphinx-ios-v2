@@ -277,9 +277,6 @@ extension ConnectionCodeSignupHandling {
             let inviteWelcomeVC = InviteWelcomeViewController.instantiate(
                 inviter: inviter
             )
-            if let vc = self as? NewUserSignupFormViewController{
-                inviteWelcomeVC.isV2 = vc.isV2
-            }
             self.navigationController?.pushViewController(inviteWelcomeVC, animated: true)
         }
     }

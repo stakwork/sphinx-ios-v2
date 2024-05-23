@@ -170,59 +170,59 @@ extension NewUserSignupFormViewController: QRCodeScannerDelegate {
 
 extension NewUserSignupFormViewController : NSFetchedResultsControllerDelegate{
     
-    
     private func listenForSelfContactRegistration() {
-            let managedContext = CoreDataManager.sharedManager.persistentContainer.viewContext
+        let managedContext = CoreDataManager.sharedManager.persistentContainer.viewContext
 
-            let fetchRequest: NSFetchRequest<UserContact> = UserContact.fetchRequest()
-            // Assuming 'isOwner' and 'routeHint' are attributes of your UserContact entity
-            fetchRequest.predicate = NSPredicate(format: "isOwner == true AND routeHint != nil")
-            fetchRequest.sortDescriptors = [NSSortDescriptor(key: "index", ascending: true)]
-            
-            selfContactFetchListener = NSFetchedResultsController(fetchRequest: fetchRequest,
-                                                                  managedObjectContext: managedContext,
-                                                                  sectionNameKeyPath: nil,
-                                                                  cacheName: nil)
-            selfContactFetchListener?.delegate = self
+        let fetchRequest: NSFetchRequest<UserContact> = UserContact.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "isOwner == true AND routeHint != nil")
+        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "index", ascending: true)]
+        
+        selfContactFetchListener = NSFetchedResultsController(
+            fetchRequest: fetchRequest,
+            managedObjectContext: managedContext,
+            sectionNameKeyPath: nil,
+            cacheName: nil
+        )
+        
+        selfContactFetchListener?.delegate = self
 
-            do {
-                try selfContactFetchListener?.performFetch()
-                // Check if we already have the desired data
-                if let _ = selfContactFetchListener?.fetchedObjects?.first {
-                    watchdogTimer?.invalidate()
-                    watchdogTimer = nil
-                    finalizeSignup()
-                    self.selfContactFetchListener = nil
-                }
-            } catch let error as NSError {
-                watchdogTimer?.invalidate()
-                self.selfContactFetchListener = nil
-                print("Could not fetch. \(error), \(error.userInfo)")
-            }
+        do {
+            try selfContactFetchListener?.performFetch()
+        } catch _ as NSError {
+            watchdogTimer?.invalidate()
+            selfContactFetchListener = nil
         }
+    }
     
-    func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
-            // Called when the content of the fetchedResultsController changes.
-            if let _ = controller.fetchedObjects?.first {
-                finalizeSignup()
-                self.selfContactFetchListener = nil
+    func controller(
+        _ controller: NSFetchedResultsController<NSFetchRequestResult>,
+        didChangeContentWith snapshot: NSDiffableDataSourceSnapshotReference
+    ) {
+        if let resultController = controller as? NSFetchedResultsController<NSManagedObject>,
+           let firstSection = resultController.sections?.first {
+            
+            if let _ = firstSection.objects?.first {
+                selfContactFetchListener = nil
+                
                 watchdogTimer?.invalidate()
                 watchdogTimer = nil
+                
+                finalizeSignup()
             }
         }
+    }
     
     private func setupWatchdogTimer() {
-            watchdogTimer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: false) { [weak self] _ in
-                guard let self = self else { return }
-                
-                // Check if the fetch result is still nil
-                if self.selfContactFetchListener?.fetchedObjects?.first == nil {
-                    // Perform the fallback action
-                    DispatchQueue.main.async {
-                        self.navigationController?.popViewController(animated: true)
-                        AlertHelper.showAlert(title: "Error", message: "Unable to connect to Sphinx V2 Test Server")
-                    }
+        watchdogTimer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: false) { [weak self] _ in
+            guard let self = self else { return }
+            
+            if self.selfContactFetchListener?.fetchedObjects?.first == nil {
+                DispatchQueue.main.async {
+                    self.navigationController?.popViewController(animated: true)
                 }
+            } else {
+                self.finalizeSignup()
             }
         }
+    }
 }

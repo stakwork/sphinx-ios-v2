@@ -31,7 +31,6 @@ class SetPinCodeViewController: UIViewController {
     let kOldPinTitle = "enter.old.pin".localized
     let kNewPinTitle = "enter.new.pin".localized
     
-    var isV2 : Bool = false
     var isRestoreFlow:Bool = false // user is restoring rather than creating an account
     
     public enum SetPinMode: Int {
@@ -210,15 +209,12 @@ class SetPinCodeViewController: UIViewController {
             
             SignupHelper.step = SignupHelper.SignupStep.PINSet.rawValue
             
-            if(isRestoreFlow){
+            if (isRestoreFlow) {
                 let setNickNameVC = SetNickNameViewController.instantiate()
-                setNickNameVC.isV2 = self.isV2
                 setNickNameVC.isRestoreFlow = true
                 self.navigationController?.pushViewController(setNickNameVC, animated: true)
-            }
-            else{
+            } else {
                 let newUserGreetingVC = NewUserGreetingViewController.instantiate()
-                newUserGreetingVC.isV2 = self.isV2
                 self.navigationController?.pushViewController(newUserGreetingVC, animated: true)
             }
         }
