@@ -42,6 +42,7 @@ extension ConnectionCodeSignupHandling {
                 vc.isV2 = true
             }
             som.isV2InitialSetup = true
+            som.isV2Restore = false
             proceedToNewUserWelcome()
         } else {
             self.navigationController?.popViewController(animated: true)
@@ -69,7 +70,7 @@ extension ConnectionCodeSignupHandling {
             return
         }
         
-        SignupHelper.step = SignupHelper.SignupStep.IPAndTokenSet.rawValue
+        SignupHelper.step = SignupHelper.SignupStep.OwnerCreated.rawValue
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
             guard let self = self else { return }

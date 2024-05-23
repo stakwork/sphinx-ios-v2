@@ -72,7 +72,6 @@ extension RestoreUserFormViewController {
         )
     }
     
-    
     func goToWelcomeCompleteScene() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
             guard let self = self else { return }
@@ -85,7 +84,6 @@ extension RestoreUserFormViewController {
             )
         }
     }
-    
     
     func errorRestoring(message: String) {
         navigationController?.popViewController(animated: true)
@@ -107,7 +105,7 @@ extension RestoreUserFormViewController : NSFetchedResultsControllerDelegate{
             return
         }
         
-        SignupHelper.step = SignupHelper.SignupStep.IPAndTokenSet.rawValue
+        SignupHelper.step = SignupHelper.SignupStep.OwnerCreated.rawValue
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
             guard let self = self else { return }
@@ -125,10 +123,11 @@ extension RestoreUserFormViewController : NSFetchedResultsControllerDelegate{
 
         if let _ = UserContact.getOwner() {
             som.isV2InitialSetup = true
+            som.isV2Restore = true
             
-            self.proceedToNewUserWelcome()
+            proceedToNewUserWelcome()
         } else {
-            self.navigationController?.popViewController(animated: true)
+            navigationController?.popViewController(animated: true)
             AlertHelper.showAlert(title: "Error", message: "Unable to connect to Sphinx V2 Test Server")
         }
     }

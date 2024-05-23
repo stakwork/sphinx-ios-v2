@@ -19,22 +19,25 @@ final class MainCoordinator: NSObject {
     }
     
     func presentSignUpScreen() {
-        switch(SignupHelper.step) {
-        case SignupHelper.SignupStep.Start.rawValue:
-            presentInitialWelcomeViewController()
-        case SignupHelper.SignupStep.IPAndTokenSet.rawValue:
-            presentInviteWelcomeViewController()
-        case SignupHelper.SignupStep.InviterContactCreated.rawValue:
-            presentSetPinViewController()
-        case SignupHelper.SignupStep.PINSet.rawValue:
-            presentNewUserGreetingViewController()
-        case SignupHelper.SignupStep.PersonalInfoSet.rawValue:
-            presentSphinxReadyViewController()
-        case SignupHelper.SignupStep.SignupComplete.rawValue:
-            presentInitialDrawer()
-        default:
-            presentInitialWelcomeViewController()
-        }
+//        switch(SignupHelper.step) {
+//        case SignupHelper.SignupStep.Start.rawValue:
+//            presentInitialWelcomeViewController()
+//        case SignupHelper.SignupStep.OwnerCreated.rawValue:
+//            presentInviteWelcomeViewController()
+//        case SignupHelper.SignupStep.InviterContactCreated.rawValue:
+//            presentSetPinViewController()
+//        case SignupHelper.SignupStep.PINSet.rawValue:
+//            presentNewUserGreetingViewController()
+//        case SignupHelper.SignupStep.PersonalInfoSet.rawValue:
+//            presentSphinxReadyViewController()
+//        case SignupHelper.SignupStep.SignupComplete.rawValue:
+//            presentInitialDrawer()
+//        default:
+//            presentInitialWelcomeViewController()
+//        }
+        
+        UserData.sharedInstance.clearData()
+        presentInitialWelcomeViewController()
     }
     
     func presentInitialWelcomeViewController() {

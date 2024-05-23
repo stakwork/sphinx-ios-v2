@@ -263,6 +263,7 @@ class SphinxOnionManager : NSObject {
                 
                 if (som.isV2InitialSetup) {
                     som.isV2InitialSetup = false
+                    som.isV2Restore = false
                     som.doInitialInviteSetup()
                 }
                  

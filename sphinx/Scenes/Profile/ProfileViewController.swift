@@ -75,6 +75,7 @@ class ProfileViewController: NewKeyboardHandlerViewController {
     var notificationSoundHelper = NotificationSoundHelper()
     let newMessageBubbleHelper = NewMessageBubbleHelper()
     var walletBalanceService = WalletBalanceService()
+    let som = SphinxOnionManager.sharedInstance
     
     public enum ProfileFields: Int {
         case Name
@@ -359,11 +360,14 @@ class ProfileViewController: NewKeyboardHandlerViewController {
         setPinVC.doneCompletion = { pin in
             setPinVC.dismiss(animated: true, completion: {
                 if let mnemonic = UserData.sharedInstance.getMnemonic() {
-                    SphinxOnionManager.sharedInstance.vc = self
-                    SphinxOnionManager.sharedInstance.showMnemonicToUser(mnemonic: mnemonic, callback: {})
-                    SphinxOnionManager.sharedInstance.vc = nil
+                    self.som.vc = self
+                    self.som.showMnemonicToUser(mnemonic: mnemonic, callback: {})
+                    self.som.vc = nil
                 } else {
-                    AlertHelper.showAlert(title: "generic.error.title".localized, message: "generic.error.message".localized)
+                    AlertHelper.showAlert(
+                        title: "generic.error.title".localized,
+                        message: "generic.error.message".localized
+                    )
                 }
             })
         }
