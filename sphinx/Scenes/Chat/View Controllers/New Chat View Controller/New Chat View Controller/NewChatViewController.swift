@@ -59,6 +59,8 @@ class NewChatViewController: NewKeyboardHandlerViewController {
     var viewMode = ViewMode.Standard
     var macros = [MentionOrMacroItem]()
     
+    var scrolledAtBottom = false
+    
     override var preferredScreenEdgesDeferringSystemGestures: UIRectEdge {
         get {
             return [.bottom, .right]

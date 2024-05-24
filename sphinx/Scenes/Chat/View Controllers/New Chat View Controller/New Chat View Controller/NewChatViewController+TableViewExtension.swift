@@ -96,6 +96,12 @@ extension NewChatViewController : NewChatTableDataSourceDelegate {
             return
         }
         
+        if scrolledAtBottom {
+            return
+        }
+        
+        scrolledAtBottom = true
+        
         DelayPerformedHelper.performAfterDelay(seconds: 0.5, completion: {
             self.chat?.setChatMessagesAsSeen()
         })
