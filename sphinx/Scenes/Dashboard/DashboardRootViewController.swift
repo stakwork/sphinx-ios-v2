@@ -356,16 +356,19 @@ extension DashboardRootViewController {
     }
     
     func hideRestoreViewCallback(){
-        self.restoreProgressView.hideViewAnimated()
-        self.isLoading = false
-        self.shouldShowHeaderLoadingWheel = false
+        restoreProgressView.hideViewAnimated()
+        isLoading = false
+        shouldShowHeaderLoadingWheel = false
         
-        self.refreshUnreadStatus()
+        refreshUnreadStatus()
+        
+        chatsListViewModel.askForNotificationPermissions()
     }
     
     func contactRestoreCallback(percentage: Int){
         DispatchQueue.main.async {
-            let value = min(percentage,100)
+            let value = min(percentage, 100)
+            
             self.restoreProgressView.showRestoreProgressView(
                 with: value,
                 label: "restoring-contacts".localized,
@@ -376,9 +379,9 @@ extension DashboardRootViewController {
     }
     
     func messageRestoreCallback(percentage: Int){
-        let value = min(percentage,100)
-        
         DispatchQueue.main.async {
+            let value = min(percentage, 100)
+            
             self.restoreProgressView.showRestoreProgressView(
                 with: value,
                 label: "restoring-messages".localized,
