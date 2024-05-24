@@ -248,7 +248,11 @@ class SphinxOnionManager : NSObject {
             contactRestoreCallback?(2)
         }
         
-        DelayPerformedHelper.performAfterDelay(seconds: 1.0, completion: {
+        DelayPerformedHelper.performAfterDelay(seconds: 1.0, completion: { [weak self] in
+            guard let self = self else {
+                return
+            }
+            
             let success = self.connectToBroker(seed: seed, xpub: my_xpub)
             
             if (success == false) {
@@ -257,19 +261,26 @@ class SphinxOnionManager : NSObject {
                 return
             }
             
-            self.mqtt.didConnectAck = {_, _ in
+            self.mqtt.didConnectAck = { [weak self] _, _ in
+                guard let self = self else {
+                    return
+                }
+                
                 self.subscribeAndPublishMyTopics(pubkey: myPubkey, idx: 0)
                 
                 if (self.isV2InitialSetup) {
                     self.isV2InitialSetup = false
-                    self.isV2Restore = false
                     self.doInitialInviteSetup()
                 }
                  
                 self.syncContactsAndMessages(
                     contactRestoreCallback: self.isV2Restore ? contactRestoreCallback : { _ in },
                     messageRestoreCallback: self.isV2Restore ? messageRestoreCallback : { _ in },
-                    hideRestoreViewCallback: hideRestoreViewCallback
+                    hideRestoreViewCallback: {
+                        self.isV2Restore = false
+                        
+                        hideRestoreViewCallback?()
+                    }
                 )
             }
             
