@@ -149,7 +149,7 @@ class DashboardRootViewController: RootViewController {
     var isLoading = false {
         didSet {
             LoadingWheelHelper.toggleLoadingWheel(
-                loading: (isLoading && didFinishInitialLoading == false) || onionConnector.isConnecting(),
+                loading: (isLoading && didFinishInitialLoading == false),
                 loadingWheel: headerView.loadingWheel,
                 loadingWheelColor: UIColor.white,
                 views: [

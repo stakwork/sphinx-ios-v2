@@ -27,7 +27,6 @@ extension SphinxOnionManager {
     func fetchOrCreateChatWithTribe(
         ownerPubkey: String,
         host: String?,
-        existingTribes: [Chat],
         completion: @escaping (Chat?,Bool) -> ()
     ) {
         if (chatsFetchParams?.restoredTribesPubKeys ?? []).contains(ownerPubkey) {
@@ -38,7 +37,7 @@ extension SphinxOnionManager {
         
         chatsFetchParams?.restoredTribesPubKeys.append(ownerPubkey)
         
-        if let chat = existingTribes.filter({ $0.ownerPubkey == ownerPubkey}).first {
+        if let chat = Chat.getTribeChatWithOwnerPubkey(ownerPubkey: ownerPubkey) {
             ///Tribe restore found, no need to restore
             completion(chat, false)
         } else if let host = host {
@@ -457,12 +456,6 @@ extension SphinxOnionManager {
             return
         }
         
-        var existingTribes: [Chat] = []
-        
-        if filteredMsgs.count > 1 {
-            existingTribes = Chat.getAllTribes()
-        }
-        
         for message in filteredMsgs {
             
             if let fromMe = message.fromMe, fromMe == true {
@@ -492,10 +485,7 @@ extension SphinxOnionManager {
                 }
                 
                 if isGroupAction(type: type) {
-                    processIncomingGroupJoinMsg(
-                        message: message,
-                        existingTribes: existingTribes
-                    )
+                    processIncomingGroupJoinMsg(message: message)
                 }
                 
                 if isInvoice(type: type) {
@@ -649,8 +639,7 @@ extension SphinxOnionManager {
     }
     
     func processIncomingGroupJoinMsg(
-        message: Msg,
-        existingTribes: [Chat]
+        message: Msg
     ) {
         guard let type = message.type,
               let sender = message.sender,
@@ -666,7 +655,6 @@ extension SphinxOnionManager {
         fetchOrCreateChatWithTribe(
             ownerPubkey: tribePubKey,
             host: csr.host,
-            existingTribes: existingTribes,
             completion: { chat, didCreateTribe  in
                 if let chat = chat {
                     let groupActionMessage = TransactionMessage(context: self.managedContext)
