@@ -552,6 +552,7 @@
 "invite.in.progress.message" = "%@がサインオン中。";
 "invite.pmt.in.progress.title" = "支払い進行中";
 "invite.pmt.in.progress.message" = "あなたの支払いが処理中です。";
+"contact.pending" = "承認待ち";
 
 //PODCAST
 "episodes" = "エピソード";

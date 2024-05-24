@@ -555,6 +555,7 @@
 "invite.in.progress.message" = "%@ 正在登录。";
 "invite.pmt.in.progress.title" = "付款进行中";
 "invite.pmt.in.progress.message" = "您的付款正在处理中。";
+"contact.pending" = "等待批准";
 
 
 //PODCAST

@@ -537,6 +537,7 @@
 "invite.in.progress.message" = "Nagsa-sign on si %@.";
 "invite.pmt.in.progress.title" = "Kasalukuyang isinasagawa ang pagbabayad";
 "invite.pmt.in.progress.message" = "Pinoproseso ang iyong bayad.";
+"contact.pending" = "Naghihintay ng pag-apruba";
 
 //PODCAST
 "episodes" = "mga episode";

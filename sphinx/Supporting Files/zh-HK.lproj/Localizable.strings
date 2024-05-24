@@ -553,6 +553,7 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 "invite.in.progress.message" = "%@正在註冊。";
 "invite.pmt.in.progress.title" = "支付進行中";
 "invite.pmt.in.progress.message" = "您的支付正在處理中。";
+"contact.pending" = "等待批准";
 
 //播客
 "episodes" = "集";

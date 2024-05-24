@@ -555,6 +555,7 @@
 "invite.in.progress.message" = "%@ is signing on.";
 "invite.pmt.in.progress.title" = "Payment in progress";
 "invite.pmt.in.progress.message" = "Your payment is being processed.";
+"contact.pending" = "Waiting for approval";
 
 //PODCAST
 "episodes" = "episodes";

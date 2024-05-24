@@ -194,7 +194,7 @@ extension ChatListCollectionViewCell {
         
         contactImageView.sd_cancelCurrentImageLoad()
         
-        if chatListObject.isPending() {
+        if let _ = chatListObject.getInvite(), chatListObject.isPending() {
             
             contactImageView.tintColor = UIColor.Sphinx.TextMessages
             contactImageView.tintColorDidChange()
@@ -269,6 +269,18 @@ extension ChatListCollectionViewCell {
             messageLabel.font = Constants.kNewMessagePreviewFont
             messageLabel.textColor = .Sphinx.TextMessages
             
+        } else if chatListObject.isPending() {
+            inviteIcon.isHidden = false
+            inviteIcon.text = "sync"
+            failedMessageIcon.isHidden = true
+            
+            messageLabel.superview?.isHidden = false
+            dateLabel.isHidden = true
+            
+            messageLabel.font = Constants.kMessagePreviewFont
+            messageLabel.textColor = .Sphinx.SecondaryText
+            
+            messageLabel.text = "contact.pending".localized
         } else {
             
             inviteIcon.isHidden = true
