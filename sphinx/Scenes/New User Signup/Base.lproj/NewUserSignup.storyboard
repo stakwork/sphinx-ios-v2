@@ -36,7 +36,7 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="NEW USER" textAlignment="center" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="m0C-Kj-OMc">
-                                <rect key="frame" x="124" y="254" width="166.5" height="37"/>
+                                <rect key="frame" x="129" y="256" width="156.5" height="35"/>
                                 <fontDescription key="fontDescription" name="Montserrat-Regular" family="Montserrat" pointSize="30"/>
                                 <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <nil key="highlightedColor"/>
@@ -243,7 +243,7 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="NEW USER" textAlignment="center" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="sxp-4g-tGX">
-                                <rect key="frame" x="124" y="201" width="166.5" height="37"/>
+                                <rect key="frame" x="124" y="254" width="166.5" height="37"/>
                                 <fontDescription key="fontDescription" name="Montserrat-Regular" family="Montserrat" pointSize="30"/>
                                 <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <nil key="highlightedColor"/>
@@ -265,7 +265,7 @@
                                 </connections>
                             </button>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="P8m-Lu-MG0" userLabel="Form Container">
-                                <rect key="frame" x="30" y="318" width="354" height="260"/>
+                                <rect key="frame" x="30" y="371" width="354" height="154"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Awg-RS-jhR" userLabel="Code Input Container">
                                         <rect key="frame" x="0.0" y="0.0" width="354" height="62"/>
@@ -349,7 +349,7 @@
                                     <constraint firstAttribute="trailing" secondItem="Awg-RS-jhR" secondAttribute="trailing" id="40j-5V-HSc"/>
                                     <constraint firstAttribute="trailing" secondItem="bEH-EM-lm0" secondAttribute="trailing" id="9Xd-Q7-ich"/>
                                     <constraint firstItem="Awg-RS-jhR" firstAttribute="top" secondItem="P8m-Lu-MG0" secondAttribute="top" id="Gjg-2i-F9F"/>
-                                    <constraint firstAttribute="height" constant="260" id="KJz-Vg-lLi"/>
+                                    <constraint firstAttribute="height" constant="154" id="KJz-Vg-lLi"/>
                                     <constraint firstItem="bEH-EM-lm0" firstAttribute="top" secondItem="Awg-RS-jhR" secondAttribute="bottom" constant="30" id="R6D-Aj-xvp"/>
                                     <constraint firstItem="bEH-EM-lm0" firstAttribute="leading" secondItem="P8m-Lu-MG0" secondAttribute="leading" id="dxv-d2-paK"/>
                                 </constraints>
@@ -444,7 +444,7 @@ Lightning Network!</string>
                                         </connections>
                                     </button>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="tcI-kF-ZRP">
-                                        <rect key="frame" x="313" y="20.5" width="21" height="21"/>
+                                        <rect key="frame" x="309.5" y="19" width="24.5" height="24.5"/>
                                         <fontDescription key="fontDescription" name="MaterialIcons-Regular" family="Material Icons" pointSize="21"/>
                                         <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                         <nil key="highlightedColor"/>

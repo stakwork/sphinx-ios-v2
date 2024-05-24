@@ -17,7 +17,6 @@ class NewUserSignupFormViewController: UIViewController, ConnectionCodeSignupHan
     @IBOutlet weak var codeTextField: UITextField!
     @IBOutlet weak var codeTextFieldContainer: UIView!
     @IBOutlet weak var submitButton: UIButton!
-    @IBOutlet weak var connectToServerButton: UIButton!
     @IBOutlet weak var submitButtonContainer: UIView!
     @IBOutlet weak var submitButtonArrow: UILabel!
     @IBOutlet weak var importSeedContainer: UIView!
@@ -65,7 +64,6 @@ class NewUserSignupFormViewController: UIViewController, ConnectionCodeSignupHan
     }
     
     func addAccessibilityIdentifiers(){
-        connectToServerButton.accessibilityIdentifier = connectToServerButton.titleLabel?.text
         submitButton.accessibilityIdentifier = "submit"
     }
 }
@@ -77,12 +75,6 @@ extension NewUserSignupFormViewController {
         submitButton.layer.cornerRadius = submitButton.frame.size.height / 2
         submitButton.clipsToBounds = true
         submitButton.setTitle("signup.submit".localized, for: .normal)
-        
-        connectToServerButton.layer.cornerRadius = submitButton.layer.cornerRadius
-        connectToServerButton.clipsToBounds = true
-        connectToServerButton.isEnabled = true
-        connectToServerButton.isUserInteractionEnabled = true
-        connectToServerButton.superview?.bringSubviewToFront(connectToServerButton)
         
         disableSubmitButton()
     }
