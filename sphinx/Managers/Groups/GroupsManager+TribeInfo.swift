@@ -115,14 +115,13 @@ extension GroupsManager {
     func fetchTribeInfo(
         host: String,
         uuid: String,
-        useSSL: Bool,
+        useSSL: Bool = false,
         completion: @escaping CreateGroupCallback,
         errorCallback: @escaping EmptyCallback
     ){
         API.sharedInstance.getTribeInfo(
             host: host,
             uuid: uuid,
-            useSSL: useSSL,
             callback: { groupInfo in
                 completion(groupInfo)
             }, errorCallback: {

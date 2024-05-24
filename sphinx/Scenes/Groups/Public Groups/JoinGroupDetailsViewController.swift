@@ -132,7 +132,7 @@ class JoinGroupDetailsViewController: KeyboardEventsViewController {
             groupsManager.fetchTribeInfo(
                 host: tribeInfo.host,
                 uuid: tribeInfo.uuid,
-                useSSL: !isV2Tribe,
+                useSSL: false,
                 completion: { groupInfo in
                     self.completeDataAndShow(groupInfo: groupInfo)
                 },

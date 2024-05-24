@@ -17,14 +17,19 @@ extension API {
         limit : Int = 20,
         searchTerm:String? = nil,
         page : Int = 0,
-        tags : [String] = []
+        tags : [String] = [],
+        useSSL: Bool = false
     ) {
         var url = API.getUrl(route: "\(API.kTribesServer)/tribes?limit=\(limit)&sortBy=member_count&page=\(page)")
-        if tags.isEmpty == false {
+        url = useSSL ? (url) : (url.replacingOccurrences(of: "https", with: "http"))
+        
+        if !tags.isEmpty {
             url.append("&tags=")
+            
             for tag in tags {
                 url.append("\(tag),")
             }
+            
             url.remove(at: url.index(url.endIndex, offsetBy: -1))
         }
         
@@ -48,7 +53,7 @@ extension API {
     func getTribeInfo(
         host: String,
         uuid: String,
-        useSSL:Bool=true,
+        useSSL: Bool = false,
         callback: @escaping CreateGroupCallback,
         errorCallback: @escaping EmptyCallback
     ) {
