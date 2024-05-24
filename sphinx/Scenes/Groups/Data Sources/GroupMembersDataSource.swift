@@ -22,6 +22,8 @@ class GroupMembersDataSource: GroupAllContactsDataSource {
     
     let kAddMemberCellHeight: CGFloat = 100.0
     
+    let som = SphinxOnionManager.sharedInstance
+    
     init(tableView: UITableView, title: String) {
         super.init(tableView: tableView, delegate: nil, title: title)
         self.tableView = tableView
@@ -34,8 +36,6 @@ class GroupMembersDataSource: GroupAllContactsDataSource {
         
         if chat.isMyPublicGroup() {
             loadTribeContacts()
-        } else {
-            loadGroupContacts()
         }
     }
     
@@ -49,80 +49,38 @@ class GroupMembersDataSource: GroupAllContactsDataSource {
         // Schedule the watchdog timer to run after 5 seconds.
         DispatchQueue.main.asyncAfter(deadline: .now() + 5, execute: watchdogTimer)
         
-        SphinxOnionManager.sharedInstance.getTribeMembers(tribeChat: self.chat, completion: { [weak self] tribeMembers in
+        som.getTribeMembers(tribeChat: self.chat, completion: { [weak self] tribeMembers in
             guard let weakSelf = self else { return }
             
             // Cancel the watchdog timer as the completion block executed successfully.
             watchdogTimer.cancel()
             
             if let tribeMemberArray = tribeMembers["confirmedMembers"] as? [TribeMembersRRObject],
-               let selfContact = UserContact.getOwner(),
-            let pendingMembersArray = tribeMembers["pendingMembers"] as? [TribeMembersRRObject] {
-                var contactsMap = tribeMemberArray.map({
+               let pendingMembersArray = tribeMembers["pendingMembers"] as? [TribeMembersRRObject]
+            {
+                let contactsMap = tribeMemberArray.map({
                     var contact = JSON($0.toJSON())
                     contact["pending"] = false
                     return contact
-                })
+                }).sorted { $0["alias"].stringValue < $1["alias"].stringValue }
                 
-                var pendingContactsMap = pendingMembersArray.map({
+                let pendingContactsMap = pendingMembersArray.map({
                     var contact = JSON($0.toJSON())
                     contact["pending"] = true
                     return contact
-                })
+                }).sorted { $0["alias"].stringValue < $1["alias"].stringValue }
                 
-                let (contacts, pendingContacts) = weakSelf.getGroupContactsFrom(contacts: contactsMap + pendingContactsMap)
-                weakSelf.groupContacts = contacts
-                weakSelf.groupPendingContacts = pendingContacts
+                weakSelf.groupContacts = weakSelf.getGroupContactsFrom(contacts: contactsMap)
+                weakSelf.groupPendingContacts = weakSelf.getGroupContactsFrom(contacts: pendingContactsMap)
                 
                 weakSelf.tableView.reloadData()
                 weakSelf.messageBubbleHelper.hideLoadingWheel()
             }
-            print(tribeMembers)
         })
     }
     
-    func loadGroupContacts() {
-        let contacts = chat.getContacts().sorted { $0.nickname ?? "name.unknown".localized < $1.nickname ?? "name.unknown".localized }
-        let pendingContacts = chat.getPendingContacts().sorted { $0.nickname ?? "name.unknown".localized < $1.nickname ?? "name.unknown".localized }
-
-        self.groupContacts = getGroupContactsFrom(contacts: contacts)
-        self.groupPendingContacts = getGroupContactsFrom(contacts: pendingContacts)
-        
-        self.tableView.reloadData()
-        self.messageBubbleHelper.hideLoadingWheel()
-    }
-    
-    func getGroupContactsFrom(contacts: [UserContact]) -> [GroupContact] {
+    func getGroupContactsFrom(contacts: [JSON]) -> [GroupContact] {
         var groupContacts = [GroupContact]()
-        
-        var lastLetter = ""
-        
-        for contact in  contacts {
-            let nickName = contact.getName()
-            
-            if let initial = nickName.first {
-                let initialString = String(initial)
-            
-                var groupContact = GroupContact()
-                groupContact.id = contact.id
-                groupContact.nickname = nickName
-                groupContact.avatarUrl = contact.avatarUrl
-                groupContact.isOwner = contact.isOwner
-                groupContact.selected = false
-                groupContact.firstOnLetter = (initialString != lastLetter)
-                
-                lastLetter = initialString
-                
-                groupContacts.append(groupContact)
-            }
-        }
-        
-        return groupContacts
-    }
-    
-    func getGroupContactsFrom(contacts: [JSON]) -> ([GroupContact], [GroupContact]) {
-        var groupContacts = [GroupContact]()
-        var groupPendingContacts = [GroupContact]()
         
         var lastLetter = ""
         
@@ -132,7 +90,6 @@ class GroupMembersDataSource: GroupAllContactsDataSource {
             let avatarUrl = contact["photo_url"].stringValue
             let pubkey = contact["pubkey"].stringValue
             let isOwner = pubkey == (UserContact.getOwner()?.publicKey ?? "-1")
-            let pending = contact["pending"].boolValue
             
             if let initial = nickname.first {
                 let initialString = String(initial)
@@ -148,15 +105,11 @@ class GroupMembersDataSource: GroupAllContactsDataSource {
                 
                 lastLetter = initialString
                 
-                if pending {
-                    groupPendingContacts.append(groupContact)
-                } else {
-                    groupContacts.append(groupContact)
-                }
+                groupContacts.append(groupContact)
             }
         }
         
-        return (groupContacts, groupPendingContacts)
+        return groupContacts
     }
 }
 
@@ -260,14 +213,15 @@ extension GroupMembersDataSource {
 extension GroupMembersDataSource : GroupMemberCellDelegate {
     func didKickContact(contact: GroupAllContactsDataSource.GroupContact, cell: UITableViewCell) {
         if let chat = chat,
-           let pubkey = contact.pubkey{
+           let pubkey = contact.pubkey
+        {
             messageBubbleHelper.showLoadingWheel()
             
-            SphinxOnionManager.sharedInstance.kickTribeMember(pubkey:pubkey, chat: chat)
-            self.reloadContacts(chat: chat)
-        }
-        else{
-            self.showErrorAlert()
+            som.kickTribeMember(pubkey:pubkey, chat: chat)
+            
+            reloadContacts(chat: chat)
+        } else {
+            showErrorAlert()
         }
     }
     
@@ -289,22 +243,7 @@ extension GroupMembersDataSource : GroupMemberCellDelegate {
     }
     
     func respondToRequest(message: TransactionMessage, action: String, completion: @escaping (Chat, TransactionMessage) -> ()) {
-//        messageBubbleHelper.showLoadingWheel()
-//        
-//        API.sharedInstance.requestAction(messageId: message.id, contactId: message.senderId, action: action, callback: { json in
-//            if let chat = Chat.insertChat(
-//                chat: json["chat"]
-//            ), let message = TransactionMessage.insertMessage(
-//                m: json["message"],
-//                existingMessage: TransactionMessage.getMessageWith(id: json["id"].intValue)
-//            ).0 {
-//                completion(chat, message)
-//                return
-//            }
-//            self.showErrorAlert()
-//        }, errorCallback: {
-//            self.showErrorAlert()
-//        })
+        ///Implement approve/reject from pending members list
     }
     
     func showErrorAlert() {
