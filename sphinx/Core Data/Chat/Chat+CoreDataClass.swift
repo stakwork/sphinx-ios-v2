@@ -230,15 +230,6 @@ public class Chat: NSManagedObject {
     public static func getAllExcluding(ids: [Int]) -> [Chat] {
         let predicate = NSPredicate(format: "NOT (id IN %@)", ids)
         
-//        var predicate: NSPredicate! = nil
-//        
-//        if GroupsPinManager.sharedInstance.isStandardPIN {
-//            predicate = NSPredicate(format: "NOT (id IN %@) AND pin = nil", ids)
-//        } else {
-//            let currentPin = GroupsPinManager.sharedInstance.currentPin
-//            predicate = NSPredicate(format: "NOT (id IN %@) AND pin = %@", ids, currentPin)
-//        }
-        
         let chats: [Chat] = CoreDataManager.sharedManager.getObjectsOfTypeWith(predicate: predicate, sortDescriptors: [], entityName: "Chat")
         return chats
     }
@@ -246,26 +237,46 @@ public class Chat: NSManagedObject {
     static func getAllTribes() -> [Chat] {
         let predicate = NSPredicate(format: "type == %d", Chat.ChatType.publicGroup.rawValue)
         
-//        var predicate: NSPredicate! = nil
-//        
-//        if GroupsPinManager.sharedInstance.isStandardPIN {
-//            predicate = NSPredicate(format: "type == %d AND pin = nil", Chat.ChatType.publicGroup.rawValue)
-//        } else {
-//            let currentPin = GroupsPinManager.sharedInstance.currentPin
-//            predicate = NSPredicate(format: "type == %d AND pin = %@", Chat.ChatType.publicGroup.rawValue, currentPin)
-//        }
-        
         let sortDescriptors = [NSSortDescriptor(key: "name", ascending: true)]
         let chats:[Chat] = CoreDataManager.sharedManager.getObjectsOfTypeWith(predicate: predicate, sortDescriptors: sortDescriptors, entityName: "Chat")
         return chats
     }
     
-    static func getTribeChatWithOwnerPubkey(ownerPubkey:String) -> Chat? {
-        let predicate = NSPredicate(format: "type == %d AND ownerPubkey == %@", Chat.ChatType.publicGroup.rawValue, ownerPubkey)
+    static func getTribeChatWithOwnerPubkey(ownerPubkey: String) -> Chat? {
+        let predicate = NSPredicate(
+            format: "type == %d AND ownerPubkey == %@",
+            Chat.ChatType.publicGroup.rawValue,
+            ownerPubkey
+        )
         
         let sortDescriptors = [NSSortDescriptor(key: "name", ascending: true)]
-        let chat : Chat? = CoreDataManager.sharedManager.getObjectsOfTypeWith(predicate: predicate, sortDescriptors: sortDescriptors, entityName: "Chat").first
+        
+        let chat : Chat? = CoreDataManager.sharedManager.getObjectsOfTypeWith(
+            predicate: predicate,
+            sortDescriptors: sortDescriptors,
+            entityName: "Chat",
+            fetchLimit: 1
+        ).first
+        
         return chat
+    }
+    
+    static func getChatTribesFor(ownerPubkeys: [String]) -> [Chat] {
+        let predicate = NSPredicate(
+            format: "type == %d AND ownerPubkey IN %@",
+            Chat.ChatType.publicGroup.rawValue,
+            ownerPubkeys
+        )
+        
+        let sortDescriptors = [NSSortDescriptor(key: "name", ascending: true)]
+        
+        let chats : [Chat] = CoreDataManager.sharedManager.getObjectsOfTypeWith(
+            predicate: predicate,
+            sortDescriptors: sortDescriptors,
+            entityName: "Chat"
+        )
+        
+        return chats
     }
     
     static func lookupAndCreateTribeChat(ownerPubkey:String) -> Chat? {
@@ -628,7 +639,6 @@ public class Chat: NSManagedObject {
             API.sharedInstance.getTribeInfo(
                 host: host,
                 uuid: uuid,
-                useSSL: false, //TODO: change this
                 callback: { chatJson in
                     self.tribeInfo = GroupsManager.sharedInstance.getTribesInfoFrom(json: chatJson)
                     self.updateChatFromTribesInfo()
