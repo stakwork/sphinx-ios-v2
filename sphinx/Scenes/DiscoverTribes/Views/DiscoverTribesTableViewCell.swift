@@ -19,9 +19,9 @@ class DiscoverTribesTableViewCell: UITableViewCell {
     @IBOutlet weak var titleLabel: UILabel!
     @IBOutlet weak var descriptionLabel: UILabel!
     @IBOutlet weak var joinButton: UIButton!
-    var cellURL : URL? = nil
-    var delegate : DiscoverTribesCellDelegate? = nil
     
+    var tribeData: DiscoverTribeData? = nil
+    var delegate : DiscoverTribesCellDelegate? = nil
     
     static let reuseID = "DiscoverTribesTableViewCell"
     
@@ -71,17 +71,10 @@ class DiscoverTribesTableViewCell: UITableViewCell {
         tribeData: DiscoverTribeData,
         wasJoined: Bool
     ){
+        self.tribeData = tribeData
+        
         joinButton.layer.cornerRadius = 15.0
-        
-        let host = tribeData.host ?? API.kTestV2TribesServer
-        
-        if let uuid = tribeData.uuid {
-            joinButton.isEnabled = true
-            cellURL = URL(string: "sphinx.chat://?action=tribe&uuid=\(uuid)&host=\(host)")
-            joinButton.addTarget(self, action: #selector(handleJoinTap), for: .touchUpInside)
-        } else {
-            joinButton.isEnabled = false
-        }
+        joinButton.isEnabled = tribeData.pubkey != nil
         
         if wasJoined {
             joinButton.backgroundColor = UIColor.Sphinx.ReceivedMsgBG
@@ -94,9 +87,14 @@ class DiscoverTribesTableViewCell: UITableViewCell {
         }
     }
     
-    @objc func handleJoinTap() {
-        if let valid_url = cellURL{
-            self.delegate?.handleJoin(url: valid_url)
+    @IBAction func joinButtonTapped(_ sender: Any) {
+        if let tribeData = tribeData, let pubkey = tribeData.pubkey {
+            let host = tribeData.host ?? API.kTestV2TribesServer
+            
+            guard let joinLinkUrl = URL(string: "sphinx.chat://?action=tribeV2&pubkey=\(pubkey)&host=\(host)") else {
+                return
+            }
+            self.delegate?.handleJoin(url: joinLinkUrl)
         }
     }
     

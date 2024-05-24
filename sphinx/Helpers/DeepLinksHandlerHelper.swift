@@ -118,7 +118,7 @@ class DeepLinksHandlerHelper {
                     UserDefaults.Keys.invoiceQuery.set(query)
                     shouldSetVC = true
                     break
-                case "tribe", "tribeV2" :
+                case "tribeV2" :
                     UserDefaults.Keys.tribeQuery.set(query)
                     shouldSetVC = true
                     break

@@ -39,10 +39,6 @@ class JoinGroupDetailsViewController: KeyboardEventsViewController {
     var qrString: String! = nil
     var tribeInfo : GroupsManager.TribeInfo? = nil
     
-    var isV2Tribe : Bool {
-        return qrString.contains("action=tribeV2") && qrString.contains("pubkey=")
-    }
-    
     var loading = false {
         didSet {
             LoadingWheelHelper.toggleLoadingWheel(loading: loading, loadingWheel: loadingWheel, loadingWheelColor: UIColor.white, view: view)
@@ -119,13 +115,8 @@ class JoinGroupDetailsViewController: KeyboardEventsViewController {
     func loadGroupDetails() {
         loadingGroup = true
         
-         if(isV2Tribe),
-           let pubkey = groupsManager.getV2Pubkey(qrString: qrString),
-           let host = groupsManager.getV2Host(qrString: qrString){
-             tribeInfo = GroupsManager.TribeInfo(ownerPubkey:pubkey, host: host,uuid: pubkey)
-        }
-        else{
-            tribeInfo = groupsManager.getGroupInfo(query: qrString)
+        if let pubkey = groupsManager.getV2Pubkey(qrString: qrString), let host = groupsManager.getV2Host(qrString: qrString) {
+            tribeInfo = GroupsManager.TribeInfo(ownerPubkey:pubkey, host: host,uuid: pubkey)
         }
         
         if let tribeInfo = tribeInfo {
@@ -197,12 +188,13 @@ class JoinGroupDetailsViewController: KeyboardEventsViewController {
     }
     
     func joinTribe(name: String?, imageUrl: String?) {
-        if isV2Tribe,
-           let tribeInfo = tribeInfo{
-            groupsManager.finalizeTribeJoin(tribeInfo: tribeInfo, qrString: qrString)
-            self.closeButtonTouched()
-        }
-        else{
+        if let tribeInfo = tribeInfo {
+            groupsManager.finalizeTribeJoin(
+                tribeInfo: tribeInfo,
+                qrString: qrString
+            )
+            closeButtonTouched()
+        } else {
             loading = false
             AlertHelper.showAlert(title: "generic.error.title".localized, message: "alias.cannot.empty".localized)
         }
