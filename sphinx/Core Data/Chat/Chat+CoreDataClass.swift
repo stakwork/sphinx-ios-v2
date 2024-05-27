@@ -439,11 +439,13 @@ public class Chat: NSManagedObject {
         
         do {
             let messages = try managedContext.fetch(fetchRequest)
-            for message in messages {
+            for (index, message) in messages.enumerated() {
                 if message.id <= lastReadId {
+                    if index == 0 {
+                        message.chat?.seen = true
+                    }
                     message.seen = true
                 } else {
-                    message.seen = false
                     message.chat?.seen = false
                 }
             }

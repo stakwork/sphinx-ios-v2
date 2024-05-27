@@ -142,4 +142,13 @@ extension Chat: ChatListCommonObject {
     public func getInviteStatus() -> Int? {
         return UserInvite.Status.Complete.rawValue
     }
+    
+    public func getUnseenMessagesCount(
+        ownerId: Int
+    ) -> Int {
+        if self.isSeen(ownerId: ownerId) == true {
+            return 0
+        }
+        return self.getChat()?.getReceivedUnseenMessagesCount() ?? 0
+    }
 }

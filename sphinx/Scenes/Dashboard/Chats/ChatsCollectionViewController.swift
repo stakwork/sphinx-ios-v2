@@ -59,6 +59,7 @@ extension ChatsCollectionViewController {
         var objectId: String
         var messageId: Int?
         var messageSeen: Bool
+        var unseenCount: Int
         var contactStatus: Int?
         var inviteStatus: Int?
         var muted: Bool
@@ -67,6 +68,7 @@ extension ChatsCollectionViewController {
             objectId: String,
             messageId: Int?,
             messageSeen: Bool,
+            unseenCount: Int,
             contactStatus: Int?,
             inviteStatus: Int?,
             muted: Bool
@@ -75,6 +77,7 @@ extension ChatsCollectionViewController {
             self.objectId = objectId
             self.messageId = messageId
             self.messageSeen = messageSeen
+            self.unseenCount = unseenCount
             self.contactStatus = contactStatus
             self.inviteStatus = inviteStatus
             self.muted = muted
@@ -85,6 +88,7 @@ extension ChatsCollectionViewController {
                 lhs.objectId == rhs.objectId &&
                 lhs.messageId == rhs.messageId &&
                 lhs.messageSeen == rhs.messageSeen &&
+                lhs.unseenCount == rhs.unseenCount &&
                 lhs.contactStatus == rhs.contactStatus &&
                 lhs.inviteStatus == rhs.inviteStatus &&
                 lhs.muted == rhs.muted
@@ -330,17 +334,16 @@ extension ChatsCollectionViewController {
 
         snapshot.appendSections(CollectionViewSection.allCases)
 
-        let items = chatListObjects.filter({$0.getContact()?.isOwner != true}).map {
-            
+        let items = chatListObjects.filter({ $0.getContact()?.isOwner != true }).map {
             DataSourceItem(
                 objectId: $0.getObjectId(),
                 messageId: $0.lastMessage?.id,
                 messageSeen: $0.isSeen(ownerId: owner.id),
+                unseenCount: $0.getUnseenMessagesCount(ownerId: owner.id),
                 contactStatus: $0.getContactStatus(),
                 inviteStatus: $0.getInviteStatus(),
                 muted: $0.isMuted()
             )
-            
         }
 
         snapshot.appendItems(items, toSection: .all)

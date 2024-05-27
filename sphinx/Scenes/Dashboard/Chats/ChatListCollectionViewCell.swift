@@ -282,7 +282,6 @@ extension ChatListCollectionViewCell {
             
             messageLabel.text = "contact.pending".localized
         } else {
-            
             inviteIcon.isHidden = true
             failedMessageIcon.isHidden = true
             
