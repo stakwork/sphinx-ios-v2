@@ -212,16 +212,23 @@ class SphinxOnionManager : NSObject {
         hideRestoreViewCallback: (()->())? = nil
     ) {
         guard let mqtt = self.mqtt, mqtt.connState == .disconnected else {
-            self.syncContactsAndMessages(
-                contactRestoreCallback: { _ in },
-                messageRestoreCallback: { _ in },
-                hideRestoreViewCallback: hideRestoreViewCallback
-            )
+            self.syncNewMessages()
             return
         }
         connectToServer(
             connectingCallback: connectingCallback,
             hideRestoreViewCallback: hideRestoreViewCallback
+        )
+    }
+    
+    func syncNewMessages() {
+        let maxIndex = TransactionMessage.getMaxIndex()
+        
+        startAllMsgBlockFetch(
+            startIndex: maxIndex ?? 0,
+            itemsPerPage: SphinxOnionManager.kMessageBatchSize,
+            stopIndex: 0,
+            reverse: false
         )
     }
 
@@ -263,20 +270,28 @@ class SphinxOnionManager : NSObject {
             
             self.subscribeAndPublishMyTopics(pubkey: myPubkey, idx: 0)
             
-            if (self.isV2InitialSetup) {
+            if self.isV2InitialSetup {
                 self.isV2InitialSetup = false
                 self.doInitialInviteSetup()
             }
              
-            self.syncContactsAndMessages(
-                contactRestoreCallback: self.isV2Restore ? contactRestoreCallback : { _ in },
-                messageRestoreCallback: self.isV2Restore ? messageRestoreCallback : { _ in },
-                hideRestoreViewCallback: {
-                    self.isV2Restore = false
-                    
+            if self.isV2Restore {
+                self.syncContactsAndMessages(
+                    contactRestoreCallback: contactRestoreCallback,
+                    messageRestoreCallback: messageRestoreCallback,
+                    hideRestoreViewCallback: {
+                        self.isV2Restore = false
+                        
+                        hideRestoreViewCallback?()
+                    }
+                )
+            } else {
+                self.hideRestoreCallback = {
                     hideRestoreViewCallback?()
                 }
-            )
+
+                self.syncNewMessages()
+            }
         }
         
         self.mqtt.didDisconnect = { _, _ in
