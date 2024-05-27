@@ -335,20 +335,14 @@ extension DashboardRootViewController {
         
         som.fetchMyAccountFromState()
         
-        DelayPerformedHelper.performAfterDelay(seconds: 0.5, completion: { [weak self] in
-            guard let self = self else {
-                return
-            }
-            
-            self.som.connectToServer(
-                connectingCallback: {
-                    self.shouldShowHeaderLoadingWheel = true
-                },
-                contactRestoreCallback: self.contactRestoreCallback(percentage:),
-                messageRestoreCallback: self.messageRestoreCallback(percentage:),
-                hideRestoreViewCallback: self.hideRestoreViewCallback
-            )
-        })
+        som.connectToServer(
+            connectingCallback: {
+                self.shouldShowHeaderLoadingWheel = true
+            },
+            contactRestoreCallback: self.contactRestoreCallback(percentage:),
+            messageRestoreCallback: self.messageRestoreCallback(percentage:),
+            hideRestoreViewCallback: self.hideRestoreViewCallback
+        )
     }
     
     func reconnectToServer() {
@@ -374,7 +368,6 @@ extension DashboardRootViewController {
                 label: "restoring-contacts".localized,
                 buttonEnabled: false
             )
-            if value >= 100 {self.restoreProgressView.hideViewAnimated()}
         }
     }
     
@@ -387,7 +380,6 @@ extension DashboardRootViewController {
                 label: "restoring-messages".localized,
                 buttonEnabled: true
             )
-            if value >= 100 {self.restoreProgressView.hideViewAnimated()}
         }
     }
 }

@@ -494,9 +494,9 @@ extension SphinxOnionManager {
             }
             
             processIndexUpdate(message: message)
-            
-            managedContext.saveContext()
         }
+        
+        managedContext.saveContext()
     }
     
     func updateIsPaidAllMessages() {

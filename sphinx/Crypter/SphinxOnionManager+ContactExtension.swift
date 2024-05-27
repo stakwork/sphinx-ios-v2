@@ -123,10 +123,10 @@ extension SphinxOnionManager {//contacts related
                 if newContactRequest.getChat() == nil {
                     createChat(for: newContactRequest)
                 }
-                
-                managedContext.saveContext()
             }
         }
+        
+        managedContext.saveContext()
         
     }
     
