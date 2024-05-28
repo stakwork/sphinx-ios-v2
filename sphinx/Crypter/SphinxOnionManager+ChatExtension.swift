@@ -574,7 +574,8 @@ extension SphinxOnionManager {
             message: genericIncomingMessage,
             date: date,
             csr: csr,
-            type: Int(type)
+            type: Int(type),
+            fromMe: message.fromMe ?? false
         )
     }
     
@@ -603,7 +604,8 @@ extension SphinxOnionManager {
             date: date,
             csr: csr,
             amount: Int(msats/1000),
-            type: Int(type)
+            type: Int(type),
+            fromMe: message.fromMe ?? false
         )
     }
     
@@ -628,7 +630,8 @@ extension SphinxOnionManager {
                     message: genericIncomingMessage,
                     date: date,
                     csr: csr,
-                    type: Int(type)
+                    type: Int(type),
+                    fromMe: message.fromMe ?? false
                 ) else {
                     return
                 }
@@ -724,7 +727,8 @@ extension SphinxOnionManager {
                     date: date,
                     csr: csr,
                     amount: amount,
-                    type: Int(type)
+                    type: Int(type),
+                    fromMe: message.fromMe ?? false
                 ) else {
                     return
                 }
