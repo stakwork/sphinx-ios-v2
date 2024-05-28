@@ -319,25 +319,16 @@ class SphinxOnionManager : NSObject {
                 return
             }
             
-            let subtopic = try sphinx.getSubscriptionTopic(
-                seed: seed,
-                uniqueTime: getTimeWithEntropy(),
-                state: loadOnionStateAsData()
-            )
-            
             mqtt.didReceiveMessage = { mqtt, receivedMessage, id in
                 self.isConnected = true
                 self.processMqttMessages(message: receivedMessage)
             }
             
-            self.mqtt.subscribe([
-                (subtopic, CocoaMQTTQoS.qos1)
-            ])
-            
             let ret3 = try sphinx.initialSetup(
                 seed: seed,
                 uniqueTime: getTimeWithEntropy(),
-                state: loadOnionStateAsData()
+                state: loadOnionStateAsData(),
+                device: UUID().uuidString
             )
             
             let _ = handleRunReturn(rr: ret3)
