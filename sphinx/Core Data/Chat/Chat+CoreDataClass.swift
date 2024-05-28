@@ -393,8 +393,9 @@ public class Chat: NSManagedObject {
         let userId = UserData.sharedInstance.getUserId()
         
         let predicate = NSPredicate(
-            format: "senderId != %d AND chat == %@ AND seen == %@",
+            format: "(senderId != %d || type == %d) AND chat == %@ AND seen == %@",
             userId,
+            TransactionMessage.TransactionMessageType.groupJoin.rawValue,
             self,
             NSNumber(booleanLiteral: false)
         )
@@ -505,8 +506,10 @@ public class Chat: NSManagedObject {
     func calculateUnseenMessagesCount() {
         let userId = UserData.sharedInstance.getUserId()
         let predicate = NSPredicate(
-            format: "senderId != %d AND chat == %@ AND seen == %@ AND chat.seen == %@",
-            userId, self,
+            format: "(senderId != %d || type == %d) AND chat == %@ AND seen == %@ AND chat.seen == %@",
+            userId,
+            TransactionMessage.TransactionMessageType.groupJoin.rawValue,
+            self,
             NSNumber(booleanLiteral: false),
             NSNumber(booleanLiteral: false)
         )
@@ -516,9 +519,10 @@ public class Chat: NSManagedObject {
     func calculateUnseenMentionsCount() {
         let userId = UserData.sharedInstance.getUserId()
         let predicate = NSPredicate(
-            format: "senderId != %d AND chat == %@ AND seen == %@ AND push == %@ AND chat.seen == %@",
+            format: "(senderId != %d || type == %d) AND chat == %@ AND seen == %@ AND push == %@ AND chat.seen == %@",
             userId,
             self,
+            TransactionMessage.TransactionMessageType.groupJoin.rawValue,
             NSNumber(booleanLiteral: false),
             NSNumber(booleanLiteral: true),
             NSNumber(booleanLiteral: false)
