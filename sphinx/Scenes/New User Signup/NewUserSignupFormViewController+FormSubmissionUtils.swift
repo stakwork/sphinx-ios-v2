@@ -46,7 +46,7 @@ extension NewUserSignupFormViewController {
                 }
                 
                 if (success), let code = self.codeTextField.text {
-                    self.handleInviteCodeV2SignUp(code: code)
+                    self.handleInviteCode(code: code)
                 } else {
                     AlertHelper.showAlert(
                         title: "Error redeeming invite",
@@ -60,13 +60,14 @@ extension NewUserSignupFormViewController {
         }
     }
     
-    func handleInviteCodeV2SignUp(code: String) {
+    func handleInviteCode(code: String) {
         guard let mnemonic = UserData.sharedInstance.getMnemonic() else {
             return
         }
         
+        som.redeemInvite(inviteCode: code, mnemonic: mnemonic)
+        
         if som.createMyAccount(mnemonic: mnemonic) {
-            som.redeemInvite(inviteCode: code, mnemonic: mnemonic)
             setupWatchdogTimer()
             listenForSelfContactRegistration()//get callbacks ready for sign up
             presentConnectingLoadingScreenVC()

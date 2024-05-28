@@ -205,7 +205,7 @@ extension NewUserSignupFormViewController : ImportSeedViewDelegate{
             UserData.sharedInstance.save(walletMnemonic: importSeedView.textView.text)
             
             if let code = codeTextField.text, validateCode(code) {
-                handleInviteCodeV2SignUp(code: code)
+                handleInviteCode(code: code)
             }
         } else {
             let success = CrypterManager.sharedInstance.performWalletFinalization(

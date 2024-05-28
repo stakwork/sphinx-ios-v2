@@ -39,7 +39,7 @@ class InitialWelcomeViewController: UIViewController {
     
     
     @IBAction func newUserButtonTapped(_ sender: UIButton) {
-        let nextVC = NewUserSignupOptionsViewController.instantiate()
+        let nextVC = NewUserSignupDescriptionViewController.instantiate()
         
         navigationController?
             .pushViewController(nextVC, animated: true)
