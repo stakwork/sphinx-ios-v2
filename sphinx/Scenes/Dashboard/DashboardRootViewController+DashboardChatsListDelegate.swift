@@ -17,7 +17,7 @@ extension DashboardRootViewController: DashboardChatsListDelegate {
         _ viewController: UIViewController,
         using refreshControl: UIRefreshControl
     ) {
-        ///Replace with SphinxOnionManager refresh
+        SphinxOnionManager.sharedInstance.connectToServer()
         refreshControl.endRefreshing()
     }
     
