@@ -97,7 +97,7 @@ class sphinxOnionAccountCreateUnitTests: XCTestCase {
 //            return
 //      }
 //        sphinxOnionManager.shouldPostUpdates = true
-//        NotificationCenter.default.addObserver(self, selector: #selector(handleServerNotification), name: .onMQTTConnectionStatusChanged, object: nil)
+//        NotificationCenter.default.addObserver(self, selector: #selector(handleServerNotification), name: .onConnectionStatusChanged, object: nil)
 //        
 //        let success = sphinxOnionManager.connectToBroker(seed: seed, xpub: xpub)
 //        XCTAssert(success == true, "Failed to connect to test broker :/")

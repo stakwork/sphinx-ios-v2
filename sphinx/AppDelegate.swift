@@ -169,6 +169,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         feedsManager.restoreContentFeedStatusInBackground()
         podcastPlayerController.finishAndSaveContentConsumed()
         
+        NotificationCenter.default.post(name: .onConnectionStatusChanged, object: nil)
         som.reconnectToServer()
     }
     
