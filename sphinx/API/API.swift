@@ -257,12 +257,7 @@ class API {
             }
 
             self.connectionStatus = .NoNetwork
-            self.postConnectionStatusChange()
         }
-    }
-
-    func postConnectionStatusChange() {
-        NotificationCenter.default.post(name: .onConnectionStatusChanged, object: nil)
     }
     
     func postMQTTStatusChange(){

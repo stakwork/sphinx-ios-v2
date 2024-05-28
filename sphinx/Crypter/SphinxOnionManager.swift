@@ -298,7 +298,9 @@ class SphinxOnionManager : NSObject {
         }
         
         self.mqtt.didDisconnect = { _, _ in
+            self.isConnected = false
             self.mqttDisconnectCallback?()
+            self.mqtt = nil
         }
     }
     
@@ -390,6 +392,12 @@ class SphinxOnionManager : NSObject {
             mqtt.didReceiveMessage = { mqtt, receivedMessage, id in
                 self.isConnected = true
                 self.processMqttMessages(message: receivedMessage)
+            }
+            
+            mqtt.didDisconnect = { _, _ in
+                self.isConnected = false
+                self.mqttDisconnectCallback?()
+                self.mqtt = nil
             }
             
             //subscribe to relevant topics
