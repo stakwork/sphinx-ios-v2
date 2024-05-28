@@ -10,7 +10,7 @@ import Foundation
 
 extension SphinxOnionManager{//invites related
     
-    func messageIdIsFromHashed(msgId:Int)->Bool{
+    func messageIdIsFromHashed(msgId: Int) -> Bool {
         return msgId < 0
     }
     
