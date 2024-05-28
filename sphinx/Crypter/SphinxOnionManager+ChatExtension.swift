@@ -320,7 +320,7 @@ extension SphinxOnionManager {
                 message?.createdAt = date
                 message?.updatedAt = date
                 message?.uuid = sentUUID
-                message?.id = uniqueIntHashFromString(stringInput: UUID().uuidString)
+                message?.id = provisionalMessage?.id ?? uniqueIntHashFromString(stringInput: UUID().uuidString)
                 message?.setAsLastMessage()
                 message?.managedObjectContext?.saveContext()
                 
