@@ -66,9 +66,11 @@ extension NewChatViewModel {
             replyUUID: replyingTo?.uuid
         )
         
-        validMessage?.makeProvisional(chat: self.chat)
-        updateSnapshotWith(message: validMessage)
+        let message = validMessage?.makeProvisional(chat: self.chat)
+        updateSnapshotWith(message: message)
         completion(validMessage != nil)
+        
+        resetReply()
     }
     
     
