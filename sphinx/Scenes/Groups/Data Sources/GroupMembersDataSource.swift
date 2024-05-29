@@ -36,6 +36,8 @@ class GroupMembersDataSource: GroupAllContactsDataSource {
         
         if chat.isMyPublicGroup() {
             loadTribeContacts()
+        } else {
+            messageBubbleHelper.hideLoadingWheel()
         }
     }
     
@@ -217,7 +219,7 @@ extension GroupMembersDataSource : GroupMemberCellDelegate {
         {
             messageBubbleHelper.showLoadingWheel()
             
-            som.kickTribeMember(pubkey:pubkey, chat: chat)
+            som.kickTribeMember(pubkey: pubkey, chat: chat)
             
             reloadContacts(chat: chat)
         } else {
