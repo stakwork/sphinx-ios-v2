@@ -136,7 +136,6 @@ extension SphinxOnionManager {
         shouldSendAsKeysend: Bool = false,
         msgType: UInt8 = 0,
         muid: String? = nil,
-        recipPubkey: String? = nil,
         mediaKey: String? = nil,
         mediaType: String? = nil,
         threadUUID: String?,
@@ -151,7 +150,7 @@ extension SphinxOnionManager {
         
         guard let selfContact = UserContact.getOwner(),
               let nickname = selfContact.nickname ?? chat.name,
-              let recipPubkey = recipPubkey ?? (recipContact?.publicKey ?? chat.ownerPubkey)
+              let recipPubkey = recipContact?.publicKey ?? chat.ownerPubkey
         else {
             return nil
         }
@@ -927,8 +926,7 @@ extension SphinxOnionManager {
         
         guard let muid = file["muid"] as? String,
             let chat = chat,
-            let mk = attachmentObject.mediaKey,
-            let destinationPubkey = getDestinationPubkey(for: chat) else
+            let mk = attachmentObject.mediaKey else
         {
             return nil
         }
@@ -951,7 +949,6 @@ extension SphinxOnionManager {
             provisionalMessage: provisionalMessage,
             msgType: UInt8(type),
             muid: muid,
-            recipPubkey: destinationPubkey,
             mediaKey: mk,
             mediaType: mediaType,
             threadUUID:threadUUID,
@@ -1035,7 +1032,6 @@ extension SphinxOnionManager {
             return
         }
         let contact = chat.getContact()
-        let pubkey = getDestinationPubkey(for: chat)
         
         let _ = sendMessage(
             to: contact,
@@ -1043,7 +1039,6 @@ extension SphinxOnionManager {
             chat: chat,
             provisionalMessage: nil,
             msgType: UInt8(TransactionMessage.TransactionMessageType.delete.rawValue),
-            recipPubkey: pubkey,
             threadUUID: nil,
             replyUUID: message.uuid
         )

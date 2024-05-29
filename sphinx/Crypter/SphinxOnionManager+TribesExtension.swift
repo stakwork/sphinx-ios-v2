@@ -167,16 +167,12 @@ extension SphinxOnionManager {
     }
     
     func kickTribeMember(pubkey:String, chat:Chat){
-        guard let tribeServerPubkey = getTribePubkey() else{
-            return
-        }
         let _ = sendMessage(
             to: nil,
             content: "",
             chat: chat,
             provisionalMessage: nil,
             msgType: UInt8(TransactionMessage.TransactionMessageType.groupKick.rawValue),
-            recipPubkey: tribeServerPubkey,
             threadUUID: nil,
             replyUUID: nil,
             tribeKickMember: pubkey
@@ -188,10 +184,6 @@ extension SphinxOnionManager {
         chat: Chat,
         type: TransactionMessage.TransactionMessageType
     ){
-        guard let tribeServerPubkey = getTribePubkey() else{
-            return
-        }
-        
         if (type.rawValue == TransactionMessage.TransactionMessageType.memberApprove.rawValue ||
             type.rawValue == TransactionMessage.TransactionMessageType.memberReject.rawValue) == false {
             return
@@ -203,23 +195,18 @@ extension SphinxOnionManager {
             chat: chat,
             provisionalMessage: nil,
             msgType: UInt8(type.rawValue),
-            recipPubkey: tribeServerPubkey,
             threadUUID: nil,
             replyUUID: requestUuid
         )
     }
     
     func deleteTribe(tribeChat: Chat) {
-        guard let tribeServerPubkey = getTribePubkey() else{
-            return
-        }
         let _ = sendMessage(
             to: nil,
             content: "",
             chat: tribeChat,
             provisionalMessage: nil,
             msgType: UInt8(TransactionMessage.TransactionMessageType.groupDelete.rawValue),
-            recipPubkey: tribeServerPubkey,
             threadUUID: nil,
             replyUUID: nil
         )
