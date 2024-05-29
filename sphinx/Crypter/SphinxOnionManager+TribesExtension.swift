@@ -76,6 +76,8 @@ extension SphinxOnionManager {
                 isPrivate: isPrivate
             )
             
+            removeDeletedTribePubKey(tribeOwnerPubKey: tribePubkey)
+            
             DelayPerformedHelper.performAfterDelay(seconds: 1.0, completion: {
                 let _ = self.handleRunReturn(rr: rr)
             })
@@ -142,6 +144,10 @@ extension SphinxOnionManager {
             threadUUID: nil,
             replyUUID: nil
         )
+        
+        if let ownerPubKey = tribeChat.ownerPubkey {
+            addDeletedTribePubKey(tribeOwnerPubKey: ownerPubKey)
+        }
     }
     
     func getTribeMembers(
@@ -238,4 +244,26 @@ extension SphinxOnionManager {
         let chatJSON = JSON(chatDict)
         return chatJSON
     }
+    
+    func addDeletedTribePubKey(
+        tribeOwnerPubKey: String
+    ) {
+        var existingDeletedTribePubKeys = deletedTribesPubKeys
+        if !existingDeletedTribePubKeys.contains(tribeOwnerPubKey) {
+            existingDeletedTribePubKeys.append(tribeOwnerPubKey)
+        }
+        deletedTribesPubKeys = existingDeletedTribePubKeys
+    }
+    
+    func removeDeletedTribePubKey(
+        tribeOwnerPubKey: String
+    ) {
+        var existingDeletedTribePubKeys = deletedTribesPubKeys
+        
+        if existingDeletedTribePubKeys.contains(tribeOwnerPubKey) {
+            existingDeletedTribePubKeys = existingDeletedTribePubKeys.filter({ $0 != tribeOwnerPubKey })
+            deletedTribesPubKeys = existingDeletedTribePubKeys
+        }
+    }
+
 }

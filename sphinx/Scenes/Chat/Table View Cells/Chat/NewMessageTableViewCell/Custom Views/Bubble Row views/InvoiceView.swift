@@ -95,7 +95,7 @@ class InvoiceView: UIView {
         memoLabel.font = invoice.font
         unitLabel.textColor = bubble.direction.isIncoming() ? UIColor.Sphinx.WashedOutReceivedText : UIColor.Sphinx.WashedOutSentText
         
-        if let memo = invoice.memo {
+        if let memo = invoice.memo, memo.isNotEmpty {
             memoContainerView.isHidden = false
             memoLabel.text = memo
         } else {

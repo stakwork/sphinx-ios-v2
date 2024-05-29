@@ -788,6 +788,16 @@ struct MessageTableCellState {
         return NoBubbleMessageLayoutState.GroupKickRemovedOrDeclined(message: messageString)
     }()
     
+    lazy var groupKickSent: NoBubbleMessageLayoutState.GroupKickSent? = {
+        
+        guard let message = message, let ownerPubKey = owner.publicKey,
+                message.isGroupKickMessage() && message.chat?.isTribeICreated == true else {
+            return nil
+        }
+        
+        return NoBubbleMessageLayoutState.GroupKickSent()
+    }()
+    
     lazy var groupMemberRequest: NoBubbleMessageLayoutState.GroupMemberRequest? = {
         
         guard let message = message, let ownerPubKey = owner.publicKey,

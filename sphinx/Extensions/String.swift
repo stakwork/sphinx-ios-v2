@@ -115,7 +115,7 @@ extension String {
     }
     
     var isMessagesFetchResponse : Bool {
-        return self.contains("res/batch")
+        return self.contains("/batch")
     }
     
     func trim() -> String {
@@ -883,5 +883,14 @@ extension String {
     
     func isNotEmptyField(with placeHolder: String) -> Bool {
         return !isEmpty && self != placeHolder
+    }
+    
+    func parseContactInfoString() -> (String, String, String)? {
+        let components = self.split(separator: "_").map({ String($0) })
+        return (components.count >= 3) ? (components[0], components[1], components[2]) : nil
+    }
+    
+    func toMessageInnerContent() -> MessageInnerContent? {
+        return MessageInnerContent(JSONString: self)
     }
 }

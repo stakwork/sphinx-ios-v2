@@ -379,7 +379,7 @@ extension SphinxOnionManager {
             return firstIndex < secondIndex
         }?.index ?? "0"
         
-        if let minRestoredIndexInt = Int(minRestoreIndex), minRestoredIndexInt < params.stopIndex {
+        if let minRestoredIndexInt = Int(minRestoreIndex), minRestoredIndexInt - 1 < params.stopIndex {
             finishRestoration()
             return
         }
@@ -395,7 +395,7 @@ extension SphinxOnionManager {
             }
             
             ///Restore finished
-            if msgs.count < SphinxOnionManager.kMessageBatchSize {
+            if msgs.count <= 0 {
                 finishRestoration()
                 return
             }
@@ -439,7 +439,7 @@ extension SphinxOnionManager {
             return
         }
         
-        if msgs.count < SphinxOnionManager.kMessageBatchSize {
+        if msgs.count <= 0 {
             finishRestoration()
             return
         }
@@ -481,9 +481,12 @@ extension SphinxOnionManager {
                 ///If is tribe message, then continue
                 continue
             }
+            
+            let routeHint: String? = message.message?.toMessageInnerContent()?.getRouteHint()
                 
             let contact = UserContact.getContactWithDisregardStatus(pubkey: recipientPubkey) ?? createNewContact(
                 pubkey: recipientPubkey,
+                routeHint: routeHint,
                 code: csr.code,
                 date: message.date
             )
@@ -492,6 +495,9 @@ extension SphinxOnionManager {
                 continue
             }
             
+            if let routeHint = routeHint {
+                contact.routeHint = routeHint
+            }
             contact.nickname = (csr.alias?.isEmpty == true) ? contact.nickname : csr.alias
             contact.avatarUrl = (csr.photoUrl?.isEmpty == true) ? contact.avatarUrl : csr.photoUrl
             

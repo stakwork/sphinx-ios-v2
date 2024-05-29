@@ -946,28 +946,38 @@ extension NewChatTableDataSource {
     
     func deleteGroup() {
         messageBubbleHelper.showLoadingWheel()
-        guard let chat = chat else{
+        
+        guard let chat = chat else {
             return
         }
+        
         SphinxOnionManager.sharedInstance.exitTribe(tribeChat: chat)
-        DelayPerformedHelper.performAfterDelay(seconds: 1.5, completion: {
-            CoreDataManager.sharedManager.deleteChatObjectsFor(chat)
-            if let vc = self.delegate as? NewChatViewController{
-                vc.navigationController?.popViewController(animated: true)
-                self.messageBubbleHelper.hideLoadingWheel()
-            }
-        })
+        
+        CoreDataManager.sharedManager.deleteChatObjectsFor(chat)
+        
+        if let vc = self.delegate as? NewChatViewController {
+            vc.navigationController?.popViewController(animated: true)
+            self.messageBubbleHelper.hideLoadingWheel()
+        }
     }
     
     func shouldApproveMember(message: TransactionMessage) {
         messageBubbleHelper.showLoadingWheel()
+        
         guard let uuid = message.uuid,
-        let chat = chat else{
+        let chat = chat else
+        {
             messageBubbleHelper.hideLoadingWheel()
             AlertHelper.showAlert(title: "Error", message: "There was an error with corrupted data from this request (invalid uuid)")
             return
         }
-        SphinxOnionManager.sharedInstance.approveOrRejectTribeJoinRequest(requestUuid: uuid, chat: chat, type: TransactionMessage.TransactionMessageType.memberApprove)
+        
+        SphinxOnionManager.sharedInstance.approveOrRejectTribeJoinRequest(
+            requestUuid: uuid, 
+            chat: chat,
+            type: TransactionMessage.TransactionMessageType.memberApprove
+        )
+        
         messageBubbleHelper.hideLoadingWheel()
     }
     
@@ -975,12 +985,19 @@ extension NewChatTableDataSource {
         messageBubbleHelper.showLoadingWheel()
         
         guard let uuid = message.uuid,
-        let chat = chat else{
+        let chat = chat else
+        {
             messageBubbleHelper.hideLoadingWheel()
             AlertHelper.showAlert(title: "Error", message: "There was an error with corrupted data from this request (invalid uuid)")
             return
         }
-        SphinxOnionManager.sharedInstance.approveOrRejectTribeJoinRequest(requestUuid: uuid, chat: chat, type: TransactionMessage.TransactionMessageType.memberReject)
+        
+        SphinxOnionManager.sharedInstance.approveOrRejectTribeJoinRequest(
+            requestUuid: uuid,
+            chat: chat,
+            type: TransactionMessage.TransactionMessageType.memberReject
+        )
+        
         messageBubbleHelper.hideLoadingWheel()
     }
     

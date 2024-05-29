@@ -85,6 +85,7 @@ extension UserDefaults {
         public static let tribesServerURL = DefaultKey<String>("tribesServerURL")
         public static let lastV2MessageIndex = DefaultKey<Int>("lastV2MessageIndex")
         public static let removedTribeOwnerPubkeys = DefaultKey<[String]>("removedTribeOwnerPubkey")
+        public static let deletedTribesPubKeys = DefaultKey<[String]>("deletedTribesPubKeys")
     }
     
     class func resetUserDefaults() {

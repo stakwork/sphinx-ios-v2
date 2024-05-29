@@ -528,6 +528,10 @@ struct NoBubbleMessageLayoutState {
         }
     }
     
+    struct GroupKickSent {
+        init() {}
+    }
+    
     struct GroupMemberRequest {
         var status: MemberRequestStatus
         var isActiveMember: Bool

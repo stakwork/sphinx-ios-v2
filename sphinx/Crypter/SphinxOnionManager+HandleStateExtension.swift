@@ -247,7 +247,7 @@ extension SphinxOnionManager {
         messages: [Msg]
     ) {
         ///Restore callbacks
-        if messages.count > 0 || topic?.isMessagesFetchResponse == true {
+        if topic?.isMessagesFetchResponse == true {
             if let firstSCIDMsgsCallback = firstSCIDMsgsCallback {
                 firstSCIDMsgsCallback(messages)
             } else if let onMessageRestoredCallback = onMessageRestoredCallback {
