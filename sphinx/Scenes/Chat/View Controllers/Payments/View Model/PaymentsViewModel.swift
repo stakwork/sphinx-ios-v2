@@ -58,7 +58,6 @@ class PaymentsViewModel : NSObject {
     func validateMemo(
         contact: UserContact?
     ) -> Bool {
-        
         guard let memo = payment.memo else {
             return true
         }

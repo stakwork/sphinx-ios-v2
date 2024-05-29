@@ -33,6 +33,32 @@ extension TransactionMessage {
         return message
     }
     
+    static func getAllPayment() -> [TransactionMessage] {
+        let predicate = NSPredicate(format: "type == %d", TransactionMessage.TransactionMessageType.payment.rawValue)
+        let sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]
+        
+        let messages: [TransactionMessage] = CoreDataManager.sharedManager.getObjectsOfTypeWith(
+            predicate: predicate,
+            sortDescriptors: sortDescriptors,
+            entityName: "TransactionMessage"
+        )
+        
+        return messages
+    }
+    
+    static func getAllInvoices() -> [TransactionMessage] {
+        let predicate = NSPredicate(format: "type == %d", TransactionMessage.TransactionMessageType.invoice.rawValue)
+        let sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]
+        
+        let messages: [TransactionMessage] = CoreDataManager.sharedManager.getObjectsOfTypeWith(
+            predicate: predicate,
+            sortDescriptors: sortDescriptors,
+            entityName: "TransactionMessage"
+        )
+        
+        return messages
+    }
+    
     static func getMessageWith(uuid: String) -> TransactionMessage? {
         let predicate = NSPredicate(format: "uuid == %@", uuid)
         let sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]

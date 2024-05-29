@@ -505,12 +505,9 @@ extension SphinxOnionManager {
     }
     
     func updateIsPaidAllMessages() {
-        let msgs = TransactionMessage.getAll().filter({$0.type == TransactionMessage.TransactionMessageType.payment.rawValue})
-        for msg in msgs{
-            if let ph = msg.paymentHash,
-               let _ = TransactionMessage.getInvoiceWith(paymentHash: ph){
-                msg.setPaymentInvoiceAsPaid()
-            }
+        let msgs = TransactionMessage.getAllPayment()
+        for msg in msgs {
+            msg.setPaymentInvoiceAsPaid()
         }
     }
     
@@ -547,6 +544,24 @@ extension SphinxOnionManager {
             }
             
             localMsg.uuid = uuid
+            
+            if let invoice = genericIncomingMessage.invoice {
+                
+                let prd = PaymentRequestDecoder()
+                prd.decodePaymentRequest(paymentRequest: invoice)
+                
+                if let expiry = prd.getExpirationDate(),
+                   let paymentHash = try? sphinx.paymentHashFromInvoice(bolt11: invoice)
+                {
+                    
+                    localMsg.messageContent = prd.getMemo()
+                    localMsg.paymentHash = paymentHash
+                    localMsg.expirationDate = expiry
+                    localMsg.invoice = genericIncomingMessage.invoice
+                    localMsg.status = TransactionMessage.TransactionMessageStatus.pending.rawValue
+                }
+            }
+
            
             if let genericMessageMsat = genericIncomingMessage.amount {
                 localMsg.amount = NSDecimalNumber(value:  genericMessageMsat/1000)
@@ -731,7 +746,6 @@ extension SphinxOnionManager {
                 let amount = prd.getAmount(),
                 let paymentHash = try? paymentHashFromInvoice(bolt11: invoice)
             {
-                
                 guard let newMessage = processGenericIncomingMessage(
                     message: genericIncomingMessage,
                     date: date,
@@ -743,6 +757,7 @@ extension SphinxOnionManager {
                     return
                 }
                 
+                newMessage.messageContent = prd.getMemo()
                 newMessage.paymentHash = paymentHash
                 newMessage.expirationDate = expiry
                 newMessage.invoice = genericIncomingMessage.invoice
@@ -760,6 +775,7 @@ extension SphinxOnionManager {
         amount: Int = 0,
         delaySave: Bool = false,
         type: Int? = nil,
+        status: Int? = nil,
         fromMe: Bool = false
     ) -> TransactionMessage? {
         
@@ -770,6 +786,10 @@ extension SphinxOnionManager {
             let pubkey = message.senderPubkey,
             let uuid = message.uuid else
         {
+            return nil
+        }
+        
+        if let paymentHash = message.paymentHash, let _ = TransactionMessage.getInvoiceWith(paymentHash: paymentHash) {
             return nil
         }
         
@@ -831,7 +851,7 @@ extension SphinxOnionManager {
             newMessage.date = date
         }
         
-        newMessage.status = TransactionMessage.TransactionMessageStatus.confirmed.rawValue
+        newMessage.status = status ?? TransactionMessage.TransactionMessageStatus.confirmed.rawValue
         newMessage.type = type ?? TransactionMessage.TransactionMessageType.message.rawValue
         newMessage.encrypted = true
         newMessage.senderId = senderId

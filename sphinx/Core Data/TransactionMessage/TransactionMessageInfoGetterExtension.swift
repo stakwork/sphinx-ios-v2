@@ -490,11 +490,12 @@ extension TransactionMessage {
         return amountString
     }
     
-    func getInvoicePaidAmountString() -> String {
+    func getInvoicePaidAmountString(
+        amount: Int? = nil
+    ) -> String {
         let invoice = TransactionMessage.getInvoiceWith(paymentHash: self.paymentHash ?? "")
-        return invoice?.getAmountString() ?? "0"
+        return invoice?.getAmountString() ?? "\(amount ?? 0)"
     }
-    
 
     func getActionsMenuOptions(
         isThreadRow: Bool = false,
@@ -805,7 +806,7 @@ extension TransactionMessage {
         case TransactionMessage.TransactionMessageType.invoice.rawValue:
             return  "\("invoice".localized) \(directionString): \(amountString) sats"
         case TransactionMessage.TransactionMessageType.payment.rawValue:
-            let invoiceAmount = getInvoicePaidAmountString()
+            let invoiceAmount = getInvoicePaidAmountString(amount: amount.intValue)
             return  "\("payment".localized) \(directionString): \(invoiceAmount) sats"
         case TransactionMessage.TransactionMessageType.directPayment.rawValue:
             let isTribe = self.chat?.isPublicGroup() ?? false
