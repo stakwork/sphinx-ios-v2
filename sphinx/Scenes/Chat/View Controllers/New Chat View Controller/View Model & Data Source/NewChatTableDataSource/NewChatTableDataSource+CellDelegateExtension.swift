@@ -1022,14 +1022,17 @@ extension NewChatTableDataSource {
                 if mutableTableCellState.bubble?.grouping == .Empty {
                     return
                 }
+                
+                if let messageId = tableCellState.1.message?.id {
+                    delegate?.didLongPressOn(
+                        cell: cell,
+                        with: messageId,
+                        bubbleViewRect: bubbleViewRect,
+                        isThreadRow: messageIsThread(cell: cell, with: messageId)
+                    )
+                }
             }
         }
-        delegate?.didLongPressOn(
-            cell: cell,
-            with: messageId,
-            bubbleViewRect: bubbleViewRect,
-            isThreadRow: messageIsThread(cell: cell, with: messageId)
-        )
     }
     
     func messageIsThread(
