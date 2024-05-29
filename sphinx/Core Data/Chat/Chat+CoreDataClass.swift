@@ -521,8 +521,8 @@ public class Chat: NSManagedObject {
         let predicate = NSPredicate(
             format: "(senderId != %d || type == %d) AND chat == %@ AND seen == %@ AND push == %@ AND chat.seen == %@",
             userId,
-            self,
             TransactionMessage.TransactionMessageType.groupJoin.rawValue,
+            self,
             NSNumber(booleanLiteral: false),
             NSNumber(booleanLiteral: true),
             NSNumber(booleanLiteral: false)
