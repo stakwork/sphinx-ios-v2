@@ -17,7 +17,6 @@ extension SphinxOnionManager {
     func handleRunReturn(
         rr: RunReturn,
         topic: String? = nil,
-        inviteCode: String? = nil,
         completion: (([String:AnyObject]) ->())? = nil,
         isSendingMessage: Bool = false
     ) -> String? {
@@ -28,9 +27,6 @@ extension SphinxOnionManager {
         
         ///Update state mape
         updateStateMap(stateMap: rr.stateMp)
-        
-        ///Handling invite redeemed
-        handleInviteRedeemed(rr: rr, inviteCode: inviteCode)
         
         ///Handling new tribe crated
         handleTribeCreation(newTribe: rr.newTribe)
@@ -104,35 +100,6 @@ extension SphinxOnionManager {
             if let createTribeCallback = createTribeCallback {
                 createTribeCallback(newTribe)
             }
-        }
-    }
-    
-    func handleInviteRedeemed(
-        rr: RunReturn,
-        inviteCode: String? = nil
-    ) {
-        if let lsp = rr.lspHost {
-            self.server_IP = lsp
-        }
-        
-        if let initialTribe = rr.initialTribe, let (host, _) = extractHostAndTribeIdentifier(from: initialTribe) {
-            API.kTribesServer = host
-        }
-        
-        if let inviteCode = inviteCode {
-            self.stashedInviteCode = inviteCode
-        }
-        
-        if let contactInfo = rr.inviterContactInfo {
-            self.stashedContactInfo = contactInfo
-        }
-        
-        if let initialTribe = rr.initialTribe {
-            self.stashedInitialTribe = initialTribe
-        }
-        
-        if let inviterAlias = rr.inviterAlias {
-            self.stashedInviterAlias = inviterAlias
         }
     }
     

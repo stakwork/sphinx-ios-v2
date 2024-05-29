@@ -39,12 +39,14 @@ extension RestoreUserFormViewController {
     }
     
     func continueRestore() {
-        if let mnemonic = UserData.sharedInstance.getMnemonic() {
-            if SphinxOnionManager.sharedInstance.createMyAccount(mnemonic: mnemonic) {
-                setupWatchdogTimer()
-                listenForSelfContactRegistration()
-                presentConnectingLoadingScreenVC()
-            }
+        guard let mnemonic = UserData.sharedInstance.getMnemonic() else {
+            return
+        }
+        
+        if SphinxOnionManager.sharedInstance.createMyAccount(mnemonic: mnemonic) {
+            setupWatchdogTimer()
+            listenForSelfContactRegistration()
+            presentConnectingLoadingScreenVC()
         }
     }
     

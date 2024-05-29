@@ -346,7 +346,9 @@ extension DashboardRootViewController {
     }
     
     func reconnectToServer() {
-        som.reconnectToServer()
+        som.reconnectToServer(
+            hideRestoreViewCallback: self.hideRestoreViewCallback
+        )
     }
     
     func hideRestoreViewCallback(){

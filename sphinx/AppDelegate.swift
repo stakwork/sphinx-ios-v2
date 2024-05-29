@@ -170,7 +170,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         podcastPlayerController.finishAndSaveContentConsumed()
         
         NotificationCenter.default.post(name: .onConnectionStatusChanged, object: nil)
-        som.reconnectToServer()
+        getDashboardVC()?.reconnectToServer()
     }
     
     func applicationDidBecomeActive(
@@ -333,7 +333,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func handleAppRefresh(task: BGTask) {
         scheduleAppRefresh()
         
-        som.reconnectToServer()
+        getDashboardVC()?.reconnectToServer()
     }
     
     func scheduleAppRefresh() {
@@ -378,6 +378,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         let rootVC = window?.rootViewController
 
         if let rootVController = rootVC as? RootViewController, let currentVC = rootVController.getLastCenterViewController() {
+            return currentVC
+        }
+        return nil
+    }
+    
+    func getDashboardVC() -> DashboardRootViewController? {
+        let rootVC = window?.rootViewController
+
+        if let rootVController = rootVC as? RootViewController, let currentVC = rootVController.getDashboardViewController() {
             return currentVC
         }
         return nil

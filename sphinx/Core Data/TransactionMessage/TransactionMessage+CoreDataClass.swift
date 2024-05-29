@@ -305,6 +305,17 @@ public class TransactionMessage: NSManagedObject {
         return message
     }
     
+    static func getMessageInstanceWith(
+        id: Int?,
+        context: NSManagedObjectContext
+    ) -> TransactionMessage {
+        if let id = id, let existingMessage = TransactionMessage.getMessageWith(id: id) {
+            return existingMessage
+        } else {
+            return TransactionMessage(context: context)
+        }
+    }
+    
     static func createProvisionalMessage(
         messageContent: String,
         type: Int,

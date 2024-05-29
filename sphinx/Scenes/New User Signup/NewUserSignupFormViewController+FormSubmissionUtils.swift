@@ -48,10 +48,7 @@ extension NewUserSignupFormViewController {
                 if (success), let code = self.codeTextField.text {
                     self.handleInviteCode(code: code)
                 } else {
-                    AlertHelper.showAlert(
-                        title: "Error redeeming invite",
-                        message: "Please try again or ask for another invite."
-                    )
+                    self.showInviteError()
                 }
                 self.som.vc = nil
             })
@@ -62,16 +59,30 @@ extension NewUserSignupFormViewController {
     
     func handleInviteCode(code: String) {
         guard let mnemonic = UserData.sharedInstance.getMnemonic() else {
+            showInviteError()
             return
         }
         
-        som.redeemInvite(inviteCode: code, mnemonic: mnemonic)
+        guard let inviteCode = som.redeemInvite(inviteCode: code) else {
+            showInviteError()
+            return
+        }
         
-        if som.createMyAccount(mnemonic: mnemonic) {
+        if som.createMyAccount(
+            mnemonic: mnemonic,
+            inviteCode: inviteCode
+        ) {
             setupWatchdogTimer()
             listenForSelfContactRegistration()//get callbacks ready for sign up
             presentConnectingLoadingScreenVC()
         }
+    }
+    
+    func showInviteError() {
+        AlertHelper.showAlert(
+            title: "Error redeeming invite",
+            message: "Please try again or ask for another invite."
+        )
     }
     
     

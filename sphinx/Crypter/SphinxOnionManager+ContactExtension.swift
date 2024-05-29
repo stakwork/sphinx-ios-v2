@@ -46,12 +46,6 @@ extension SphinxOnionManager {//contacts related
                 nickname: nickname
             )
             
-            var hexCode : String? = nil
-            
-            if let inviteCode = inviteCode {
-                hexCode = try codeFromInvite(inviteQr: inviteCode)
-            }
-            
             let rr = try addContact(
                 seed: seed,
                 uniqueTime: getTimeWithEntropy(),
@@ -61,7 +55,7 @@ extension SphinxOnionManager {//contacts related
                 myAlias: (selfContact.nickname ?? nickname) ?? "",
                 myImg: selfContact.avatarUrl ?? "",
                 amtMsat: 1000,
-                inviteCode: hexCode,
+                inviteCode: inviteCode,
                 theirAlias: nickname
             )
             
@@ -69,7 +63,9 @@ extension SphinxOnionManager {//contacts related
             
             print("INITIATED KEY EXCHANGE WITH RR:\(rr)")
             
-        } catch {}
+        } catch let error {
+            print("Error \(error)")
+        }
     }
     
     //MARK: Processes key exchange messages (friend requests) between contacts
@@ -162,7 +158,7 @@ extension SphinxOnionManager {//contacts related
         status: Int? = nil,
         date: Date? = nil
     ) -> UserContact {
-        let contact = UserContact.getContactWithInvitCode(inviteCode: code ?? "") ?? UserContact(context: managedContext)
+        let contact = UserContact.getContactWithInviteCode(inviteCode: code ?? "") ?? UserContact(context: managedContext)
         contact.id = uniqueIntHashFromString(stringInput: UUID().uuidString)
         contact.publicKey = pubkey//
         contact.isOwner = false//
