@@ -17,11 +17,11 @@ extension API {
         limit : Int = 20,
         searchTerm:String? = nil,
         page : Int = 0,
-        tags : [String] = [],
-        useSSL: Bool = false
+        tags : [String] = []
     ) {
-        var url = API.getUrl(route: "\(API.kTribesServer)/tribes?limit=\(limit)&sortBy=member_count&page=\(page)")
-        url = useSSL ? (url) : (url.replacingOccurrences(of: "https", with: "http"))
+        let host = SphinxOnionManager.sharedInstance.tribesServerIP
+        let hostProtocol = UserDefaults.Keys.isProductionEnv.get(defaultValue: false) ? "https" : "http"
+        var url = API.getUrl(route: "\(hostProtocol)://\(host)/tribes?limit=\(limit)&sortBy=member_count&page=\(page)")
         
         if !tags.isEmpty {
             url.append("&tags=")
@@ -53,12 +53,11 @@ extension API {
     func getTribeInfo(
         host: String,
         uuid: String,
-        useSSL: Bool = false,
         callback: @escaping CreateGroupCallback,
         errorCallback: @escaping EmptyCallback
     ) {
-        var url = API.getUrl(route: "https://\(host)/tribes/\(uuid)")
-        url = useSSL ? (url) : (url.replacingOccurrences(of: "https", with: "http"))
+        let hostProtocol = UserDefaults.Keys.isProductionEnv.get(defaultValue: false) ? "https" : "http"
+        let url = API.getUrl(route: "\(hostProtocol)://\(host)/tribes/\(uuid)")
         let tribeRequest : URLRequest? = createRequest(url, bodyParams: nil, method: "GET")
         
         guard let request = tribeRequest else {

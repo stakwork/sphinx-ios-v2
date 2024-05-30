@@ -21,10 +21,35 @@ extension RestoreUserFormViewController {
 
         guard validateCode(code) else { return }
         
+        view.endEditing(true)
+        
+        askForEnvironmentWith(code: code)
+    }
+    
+    func askForEnvironmentWith(code: String) {
+        AlertHelper.showOptionsPopup(
+            title: "Network",
+            message: "Please select the network to use",
+            options: ["Bitcoin","Regtest"],
+            callbacks: [
+                {
+                    UserDefaults.Keys.isProductionEnv.set(true)
+                    self.continueWith(code: code)
+                },
+                {
+                    UserDefaults.Keys.isProductionEnv.set(false)
+                    self.continueWith(code: code)
+                }
+            ],
+            sourceView: self.view,
+            vc: self
+        )
+    }
+    
+    func continueWith(code: String) {
         UserData.sharedInstance.save(walletMnemonic: code)
         continueRestore()
     }
-    
     
     func validateCode(_ code: String) -> Bool {
         if isCodeValid(code) {

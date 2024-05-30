@@ -380,7 +380,7 @@ public class Chat: NSManagedObject {
         unseenMentionsCount = 0
         
         if let highestIndex = TransactionMessage.getMaxIndexFor(chat: self),
-           SphinxOnionManager.sharedInstance.messageIdIsFromHashed(msgId: highestIndex) == false 
+           SphinxOnionManager.sharedInstance.messageIdIsFromHashed(msgId: highestIndex) == false
         {
             SphinxOnionManager.sharedInstance.setReadLevel(index: UInt64(highestIndex), chat: self, recipContact: self.getContact())
         }
@@ -642,12 +642,9 @@ public class Chat: NSManagedObject {
     
     
     func updateTribeInfo(completion: @escaping () -> ()) {
-        
-        let host = API.kTestV2TribesServer.replacingOccurrences(of: "http://", with: "") //TODO: update if we need to handle v1 and v2
-        if let uuid = ownerPubkey,
-            host.isEmpty == false,
-            isPublicGroup()
-        {
+        if let uuid = ownerPubkey, isPublicGroup() {
+            let host = SphinxOnionManager.sharedInstance.tribesServerIP
+            
             API.sharedInstance.getTribeInfo(
                 host: host,
                 uuid: uuid,
@@ -788,7 +785,7 @@ public class Chat: NSManagedObject {
     
     func getJoinChatLink() -> String? {
         if let pubkey = self.ownerPubkey {
-            return "sphinx.chat://?action=tribeV2&pubkey=\(pubkey)&host=\(API.kTribesServer)"
+            return "sphinx.chat://?action=tribeV2&pubkey=\(pubkey)&host=\(SphinxOnionManager.sharedInstance.tribesServerIP)"
         }
         return nil
     }
