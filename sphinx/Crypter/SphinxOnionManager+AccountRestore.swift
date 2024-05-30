@@ -617,6 +617,11 @@ extension SphinxOnionManager {
         resetFromRestore()
     }
     
+    func attempFinishResotoration() {
+        messageFetchParams = nil
+        chatsFetchParams = nil
+    }
+    
     func finishRestoration() {
         onMessageRestoredCallback = nil
         firstSCIDMsgsCallback = nil

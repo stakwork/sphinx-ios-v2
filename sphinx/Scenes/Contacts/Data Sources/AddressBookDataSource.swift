@@ -148,19 +148,19 @@ extension AddressBookDataSource : ContactCellDelegate {
     }
     
     func deleteContactAndRow(contact: UserContact, cell: UITableViewCell) {
-        let contactsCount = contacts.count
-        
-        deleteObjects(contact: contact)
-        contacts = UserContact.getAll().filter { !$0.isOwner && !$0.shouldBeExcluded() }
-        processContacts(searchTerm: self.searchTerm)
-        
-        if contacts.count == contactsCount - 1 {
-            deleteCell(cell: cell)
-            return
-        }
-        
-        delegate?.shouldToggleInteraction(enable: true)
-        delegate?.shouldShowAlert(title: "generic.error.title".localized, text: "generic.error.message".localized)
+//        let contactsCount = contacts.count
+//        
+//        deleteObjects(contact: contact)
+//        contacts = UserContact.getAll().filter { !$0.isOwner && !$0.shouldBeExcluded() }
+//        processContacts(searchTerm: self.searchTerm)
+//        
+//        if contacts.count == contactsCount - 1 {
+//            deleteCell(cell: cell)
+//            return
+//        }
+//        
+//        delegate?.shouldToggleInteraction(enable: true)
+//        delegate?.shouldShowAlert(title: "generic.error.title".localized, text: "generic.error.message".localized)
     }
     
     func deleteObjects(contact: UserContact) {
