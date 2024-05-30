@@ -79,8 +79,6 @@ class PaymentsViewModel : NSObject {
         return true
     }
     
-    
-    
     func createLocalMessages(message: JSON?) -> (TransactionMessage?, Bool) {
         if let message = message {
             if let messageObject = TransactionMessage.insertMessage(
