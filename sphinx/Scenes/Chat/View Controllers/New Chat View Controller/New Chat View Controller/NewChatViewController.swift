@@ -120,6 +120,8 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         
         fetchTribeData()
         loadReplyableMeesage()
+        
+        print("Chat:\(String(describing: self.chat)), hasRemovalIndicators:\(Chat.hasRemovalIndicators(chat: chat!))")
     }
     
     override func viewDidDisappear(_ animated: Bool) {

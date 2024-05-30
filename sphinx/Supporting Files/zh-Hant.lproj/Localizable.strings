@@ -144,6 +144,7 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 "new.public.group" = "新部落";
 "edit.public.group" = "編輯部落";
 "tribe.kick" = "管理員已將\n您從此部落中移除";
+"tribe.kick.as.admin" = "You've removed %@ from \nthis tribe";
 "tribe.deleted" = "管理員已刪除\n此部落";
 "member.request" = "%@想要\n加入部落";
 "member.request.rejected" = "管理員\n拒絕了您的請求";
