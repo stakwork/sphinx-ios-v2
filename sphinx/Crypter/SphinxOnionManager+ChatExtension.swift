@@ -823,7 +823,7 @@ extension SphinxOnionManager {
                 contact.avatarUrl = message.photoUrl
                 contactDidChange = true
             }
-            contactDidChange ? (contact.managedObjectContext?.saveContext()) :()
+            contactDidChange ? (contact.managedObjectContext?.saveContext()) : ()
             
         } else if let tribeChat = Chat.getTribeChatWithOwnerPubkey(ownerPubkey: pubkey) {
             chat = tribeChat

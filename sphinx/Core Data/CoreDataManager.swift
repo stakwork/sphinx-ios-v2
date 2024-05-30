@@ -102,7 +102,7 @@ class CoreDataManager {
         contact.deleteColor()
         deleteObject(object: contact)
         
-        if let publicKey = contact.publicKey{
+        if let publicKey = contact.publicKey {
             SphinxOnionManager.sharedInstance.deleteContactFromState(pubkey: publicKey)
         }
         
