@@ -373,9 +373,6 @@ class SphinxOnionManager : NSObject {
             let ret = try sphinx.setNetwork(network: network)
             let _ = handleRunReturn(rr: ret)
             
-            let ret2 = try sphinx.setBlockheight(blockheight: 0)
-            let _ = handleRunReturn(rr: ret2)
-            
             guard let seed = getAccountSeed() else{
                 return
             }
