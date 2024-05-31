@@ -309,7 +309,16 @@ class CreateInvoiceViewController: CommonPaymentViewController {
     }
     
     private func sendDirectPayment() {
-        guard let chat = chat else {
+        var paymentChat: Chat?=nil
+        if let chat = chat{
+            paymentChat = chat
+        }
+        else if let pubkey = paymentsViewModel.payment.destinationKey,
+                let chat = UserContact.getContactWith(pubkey: pubkey)?.getChat(){
+            paymentChat = chat
+        }
+        
+        guard let paymentChat = paymentChat else {
             return
         }
         
@@ -321,7 +330,7 @@ class CreateInvoiceViewController: CommonPaymentViewController {
             amount: amount,
             muid: paymentsViewModel.payment.muid,
             content: paymentsViewModel.payment.message,
-            chat: chat,
+            chat: paymentChat,
             completion: { success, _ in
                 if (success) {
                     self.shouldDismissView()
