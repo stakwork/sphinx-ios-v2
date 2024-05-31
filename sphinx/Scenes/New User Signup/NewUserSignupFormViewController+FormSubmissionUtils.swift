@@ -38,27 +38,7 @@ extension NewUserSignupFormViewController {
 
         view.endEditing(true)
         
-        askForEnvironmentWith(code: code)
-    }
-    
-    func askForEnvironmentWith(code: String) {
-        AlertHelper.showOptionsPopup(
-            title: "Network",
-            message: "Please select the network to use",
-            options: ["Bitcoin","Regtest"],
-            callbacks: [
-                {
-                    UserDefaults.Keys.isProductionEnv.set(true)
-                    self.continueWith(code: code)
-                },
-                {
-                    UserDefaults.Keys.isProductionEnv.set(false)
-                    self.continueWith(code: code)
-                }
-            ],
-            sourceView: self.view,
-            vc: self
-        )
+        continueWith(code: code)
     }
     
     func continueWith(code: String) {
@@ -85,10 +65,14 @@ extension NewUserSignupFormViewController {
             return
         }
         
-        guard let inviteCode = som.redeemInvite(inviteCode: code) else {
+        let (inviteCode, isSSL) = som.redeemInvite(inviteCode: code)
+        
+        guard let inviteCode = inviteCode else {
             showInviteError()
             return
         }
+        
+        UserDefaults.Keys.isProductionEnv.set(isSSL)
         
         if som.createMyAccount(
             mnemonic: mnemonic,
