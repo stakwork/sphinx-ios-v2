@@ -309,6 +309,9 @@ class CreateInvoiceViewController: CommonPaymentViewController {
     }
     
     private func sendDirectPayment() {
+        SphinxOnionManager.sharedInstance.keysend()
+        return
+        
         var paymentChat: Chat?=nil
         if let chat = chat{
             paymentChat = chat
@@ -325,8 +328,8 @@ class CreateInvoiceViewController: CommonPaymentViewController {
         if let paymentChat = paymentChat{//do direct payment chat
             finalizeContactDirectPayment(amount: amount, paymentChat: paymentChat)
         }
-        else if let blah = chat {
-            
+        else {
+            SphinxOnionManager.sharedInstance.keysend()
         }
         
         
