@@ -508,7 +508,7 @@ extension SphinxOnionManager {
             }
             
             if contact.getChat() == nil && isConfirmed {
-                createChat(for: contact)
+                let _ = createChat(for: contact)
             }
         }
     }

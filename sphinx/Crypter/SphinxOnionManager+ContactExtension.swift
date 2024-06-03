@@ -105,7 +105,7 @@ extension SphinxOnionManager {//contacts related
                     
                     ///Create chat for contact and save
                     if contact.getChat() == nil {
-                        createChat(for: contact)
+                        let _ = createChat(for: contact)
                     }
                     
                     continue
@@ -123,7 +123,7 @@ extension SphinxOnionManager {//contacts related
                 
                 ///Create chat for contact and save
                 if newContactRequest.getChat() == nil {
-                    createChat(for: newContactRequest)
+                    let _ = createChat(for: newContactRequest)
                 }
             }
         }
@@ -200,11 +200,11 @@ extension SphinxOnionManager {//contacts related
         }
     }
     
-    func createChat(for contact: UserContact) {
+    func createChat(for contact: UserContact) -> Chat? {
         let contactID = NSNumber(value: contact.id)
         
         if let _ = Chat.getAll().filter({$0.contactIds.contains(contactID)}).first{
-            return //don't make duplicates
+            return nil //don't make duplicates
         }
         
         let selfContactId =  0
@@ -222,6 +222,8 @@ extension SphinxOnionManager {//contacts related
         chat.name = contact.nickname
         chat.photoUrl = contact.avatarUrl
         chat.createdAt = Date()
+        
+        return chat
     }
     //MARK: END CoreData Helpers
 }
