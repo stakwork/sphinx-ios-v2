@@ -44,14 +44,12 @@ extension SphinxOnionManager{//invites related
     
     func redeemInvite(
         inviteCode: String
-    ) -> (String?, Bool) {
+    ) -> String? {
         do {
-            var isSSL = false
             let parsedInvite = try parseInvite(inviteQr: inviteCode)
             
             if let lsp = parsedInvite.lspHost {
-                UserDefaults.Keys.serverIP.set(lsp)
-                isSSL = self.saveIPAndPortFrom(lspHost: lsp)
+                self.saveIPAndPortFrom(lspHost: lsp)
             }
             
             self.stashedInviteCode = parsedInvite.code
@@ -71,10 +69,10 @@ extension SphinxOnionManager{//invites related
             if let inviterAlias = parsedInvite.inviterAlias {
                 self.stashedInviterAlias = inviterAlias
             }
-            return (parsedInvite.code, isSSL)
+            return parsedInvite.code
         } catch let error {
             print("Parse invite error \(error)")
-            return (nil, false)
+            return nil
         }
     }
     
@@ -130,28 +128,39 @@ extension SphinxOnionManager{//invites related
         managedContext.saveContext()
     }
     
-    func saveIPAndPortFrom(lspHost: String) -> Bool {
+    func saveConfigFrom(
+        lspHost: String,
+        tribeServerHost: String,
+        defaultTribePubkey: String
+    ) {
+        saveIPAndPortFrom(lspHost: lspHost)
+        
+        UserDefaults.Keys.tribesServerIP.set(tribeServerHost)
+        UserDefaults.Keys.defaultTribePublicKey.set(defaultTribePubkey)
+    }
+    
+    func saveIPAndPortFrom(lspHost: String) {
         if let components = URLComponents(string: lspHost), let host = components.host {
             if let port = components.port {
                 UserDefaults.Keys.serverPORT.set(port)
                 UserDefaults.Keys.serverIP.set(host.replacingOccurrences(of: ":\(port)", with: ""))
-                return port == kProdServerPort
+                UserDefaults.Keys.isProductionEnv.set(port == kProdServerPort)
             } else {
                 UserDefaults.Keys.serverIP.set(host)
-                return false
+                UserDefaults.Keys.isProductionEnv.set(false)
             }
         } else if let components = URLComponents(string: "https://\(lspHost)"), let host = components.host {
             if let port = components.port {
                 UserDefaults.Keys.serverPORT.set(port)
                 UserDefaults.Keys.serverIP.set(host.replacingOccurrences(of: ":\(port)", with: ""))
-                return port == kProdServerPort
+                UserDefaults.Keys.isProductionEnv.set(port == kProdServerPort)
             } else {
                 UserDefaults.Keys.serverIP.set(host)
-                return false
+                UserDefaults.Keys.isProductionEnv.set(false)
             }
         } else {
             UserDefaults.Keys.serverIP.set(lspHost)
-            return false
+            UserDefaults.Keys.isProductionEnv.set(false)
         }
     }
 }

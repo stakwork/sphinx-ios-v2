@@ -65,14 +65,12 @@ extension NewUserSignupFormViewController {
             return
         }
         
-        let (inviteCode, isSSL) = som.redeemInvite(inviteCode: code)
+        let inviteCode = som.redeemInvite(inviteCode: code)
         
         guard let inviteCode = inviteCode else {
             showInviteError()
             return
         }
-        
-        UserDefaults.Keys.isProductionEnv.set(isSSL)
         
         if som.createMyAccount(
             mnemonic: mnemonic,
