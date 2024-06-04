@@ -160,7 +160,9 @@ extension NewChatViewController : NewChatTableDataSourceDelegate {
     }
     
     func didTapOnTribeWith(joinLink: String) {
-        if let uuid = GroupsManager.sharedInstance.getGroupInfo(query: joinLink)?.uuid, let chat = Chat.getChatWith(uuid: uuid) {
+        if let ownerPubkey = GroupsManager.sharedInstance.getGroupInfo(query: joinLink)?.ownerPubkey,
+           let chat = Chat.getTribeChatWithOwnerPubkey(ownerPubkey: ownerPubkey)
+        {
             goToChatWith(contactId: nil, chatId: chat.id)
         } else {
             let joinTribeVC = JoinGroupDetailsViewController.instantiate(qrString: joinLink)

@@ -627,8 +627,6 @@ extension SphinxOnionManager {
         }
     }
     
-    
-    
     func resetFromRestore() {
         setLastMessagesOnChats()
         processDeletedRestoredMessages()
