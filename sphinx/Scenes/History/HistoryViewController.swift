@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import ObjectMapper
 
 class HistoryViewController: UIViewController {
     
@@ -25,7 +26,7 @@ class HistoryViewController: UIViewController {
     
     var page = 1
     var didReachLimit = false
-    let itemsPerPage = 50
+    let itemsPerPage : UInt32 = 50
     
     static func instantiate() -> HistoryViewController {
         let viewController = StoryboardScene.History.historyViewController.instantiate()
@@ -61,7 +62,33 @@ class HistoryViewController: UIViewController {
         self.setNoResultsLabel(count: 0)
         self.checkResultsLimit(count: 0)
         
-        let history = SphinxOnionManager.sharedInstance.getTransactionHistory()
+        SphinxOnionManager.sharedInstance.getTransactionHistory(
+            handlePaymentHistoryCompletion: handlePaymentHistoryCompletion(jsonString:),
+            itemsPerPage: itemsPerPage,
+            sinceTimestamp: UInt64(Date().timeIntervalSince1970)
+        )
+        
+    }
+    
+    func handlePaymentHistoryCompletion(
+        jsonString:String?
+    ){
+        //1. Pull history with messages from local DB
+        var history = [PaymentTransaction]()
+
+        let messages = TransactionMessage.fetchTransactionMessagesForHistory()
+        
+        for message in messages{
+            history.append(PaymentTransaction(fromTransactionMessage: message))
+        }
+        
+        //2. Collect and process remote transactions not accounted for with messages
+        if let jsonString = jsonString,
+           let results = Mapper<PaymentTransactionFromServer>().mapArray(JSONString: jsonString){
+            let localHistoryIndices = messages.map { $0.id }
+            let unAccountedResults = results.filter({localHistoryIndices.contains($0.msg_idx ?? -21) == false})
+            print(unAccountedResults)
+        }
         
         self.setNoResultsLabel(count: history.count)
         self.checkResultsLimit(count: history.count)

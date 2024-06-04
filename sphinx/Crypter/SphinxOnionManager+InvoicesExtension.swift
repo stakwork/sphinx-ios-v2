@@ -101,17 +101,17 @@ extension SphinxOnionManager {
         )
     }
     
-    func getTransactionHistory() -> [PaymentTransaction] {
-        var history = [PaymentTransaction]()
-
-        let messages = TransactionMessage.fetchTransactionMessagesForHistory()
-        
-        for message in messages{
-            history.append(PaymentTransaction(fromTransactionMessage: message))
-        }
-        
-        return history
+    func getTransactionHistory(
+        handlePaymentHistoryCompletion: @escaping ((String?) -> ()),
+        itemsPerPage:UInt32,
+        sinceTimestamp:UInt64
+    ) {
+        let rr = try! fetchPayments(seed: getAccountSeed()!, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), since: sinceTimestamp, limit: itemsPerPage, scid: nil, remoteOnly: false, minMsat: 0, reverse: true)
+        SphinxOnionManager.sharedInstance.paymentHistoryCallback = handlePaymentHistoryCompletion
+        let _ = handleRunReturn(rr: rr)                
     }
+    
+    
     
     func keysend(){
         guard let seed = getAccountSeed() else{

@@ -8,6 +8,7 @@
 
 import Foundation
 import SwiftyJSON
+import ObjectMapper
 
 class PaymentTransaction {
     
@@ -157,5 +158,27 @@ class PaymentTransaction {
         } else {
             print("Users: Unable to determine users involved.")
         }
+    }
+}
+
+
+class PaymentTransactionFromServer: Mappable {
+    var scid: Int64?
+    var amt_msat: Int?
+    var rhash: String?
+    var ts: Int64?
+    var remote: Bool?
+    var msg_idx: Int?
+    
+    required init?(map: Map) {
+    }
+    
+    func mapping(map: Map) {
+        scid     <- map["scid"]
+        amt_msat <- map["amt_msat"]
+        rhash    <- map["rhash"]
+        ts       <- map["ts"]
+        remote   <- map["remote"]
+        msg_idx  <- map["msg_idx"]
     }
 }

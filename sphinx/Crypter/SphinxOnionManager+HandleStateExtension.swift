@@ -80,6 +80,9 @@ extension SphinxOnionManager {
         ///Handling restore callbacks
         handleRestoreCallbacks(topic: topic, messages: rr.msgs)
         
+        ///Handling Payment History
+        handlePaymentHistory(rr: rr)
+        
         ///Handling topics subscription
         handleTopicsToSubscribe(topics: rr.subscriptionTopics)
         
@@ -92,6 +95,13 @@ extension SphinxOnionManager {
     func updateStateMap(stateMap: Data?) {
         if let stateMap = stateMap {
             let _ = storeOnionState(inc: stateMap.bytes)
+        }
+    }
+    
+    func handlePaymentHistory(rr:RunReturn){
+        if let payments = rr.payments,
+            let paymentHistoryCallback = paymentHistoryCallback{
+            paymentHistoryCallback(payments)
         }
     }
     

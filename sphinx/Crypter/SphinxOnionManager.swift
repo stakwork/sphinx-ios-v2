@@ -73,6 +73,7 @@ class SphinxOnionManager : NSObject {
     var contactRestoreCallback : RestoreProgressCallback? = nil
     var hideRestoreCallback: (() -> ())? = nil
     var tribeMembersCallback : (([String: AnyObject]) -> ())? = nil
+    var paymentHistoryCallback : ((String?) -> ())? = nil
     var inviteCreationCallback : ((String?) -> ())? = nil
     var mqttDisconnectCallback : (() -> ())? = nil
     
