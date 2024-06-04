@@ -149,21 +149,7 @@ class API {
         }
     }
     
-    public static let kPodcastIndexURL = "https://api.podcastindex.org"
-    
-    public static let kTestV2TribesServer = "34.229.52.200:8801"
-    
-    public static var kTribesServer : String {
-        get {
-            if let tribesServerUrl = UserDefaults.Keys.tribesServerURL.get(defaultValue: ""), tribesServerUrl != "" {
-                return tribesServerUrl
-            }
-            return kTestV2TribesServer
-        }
-        set {
-            UserDefaults.Keys.tribesServerURL.set(newValue)
-        }
-    }
+    public static let kPodcastIndexURL = "https://api.podcastindex.org"    
     
 
     class func getUrl(route: String) -> String {
