@@ -309,9 +309,6 @@ class CreateInvoiceViewController: CommonPaymentViewController {
     }
     
     private func sendDirectPayment() {
-        SphinxOnionManager.sharedInstance.keysend()
-        return
-        
         var paymentChat: Chat?=nil
         if let chat = chat{
             paymentChat = chat
@@ -328,9 +325,14 @@ class CreateInvoiceViewController: CommonPaymentViewController {
         if let paymentChat = paymentChat{//do direct payment chat
             finalizeContactDirectPayment(amount: amount, paymentChat: paymentChat)
         }
-        else {
-            SphinxOnionManager.sharedInstance.keysend()
+        else{
+            AlertHelper.showAlert(title: "generic.error.title".localized, message: "generic.error.message".localized, completion: {
+                self.shouldDismissView()
+            })
         }
+//        else {
+//            SphinxOnionManager.sharedInstance.keysend()
+//        }
         
         
     }
