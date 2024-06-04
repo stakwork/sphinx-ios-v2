@@ -120,6 +120,7 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         
         fetchTribeData()
         loadReplyableMeesage()
+        
     }
     
     override func viewDidDisappear(_ animated: Bool) {

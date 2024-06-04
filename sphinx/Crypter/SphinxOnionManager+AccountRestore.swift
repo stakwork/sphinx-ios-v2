@@ -613,7 +613,21 @@ extension SphinxOnionManager {
         
         endWatchdogTime()
         resetFromRestore()
+        purgeObsoleteChats()
     }
+    
+    func purgeObsoleteChats(){
+        for chat in Chat.getAll(){
+            let shouldBlacklist = Chat.hasRemovalIndicators(chat: chat)//shouldAddToRemovedTribesList(chat: chat)
+            //print("Chat:\(chat.name) shouldBlacklist:\(shouldBlacklist)")
+            if shouldBlacklist{
+                self.addDeletedTribePubKey(tribeOwnerPubKey: defaultTribePubkey)
+                CoreDataManager.sharedManager.deleteChatObjectsFor(chat)
+            }
+        }
+    }
+    
+    
     
     func resetFromRestore() {
         setLastMessagesOnChats()
