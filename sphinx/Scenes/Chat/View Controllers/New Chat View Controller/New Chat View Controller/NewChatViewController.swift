@@ -128,6 +128,7 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         if self.isMovingFromParent {
             chatTableDataSource?.saveSnapshotCurrentState()
             chatTableDataSource?.stopListeningToResultsController()
+            chat?.setChatMessagesAsSeen()
 
             stopPlayingClip()
         }

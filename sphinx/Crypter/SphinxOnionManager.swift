@@ -76,7 +76,7 @@ class SphinxOnionManager : NSObject {
     var hideRestoreCallback: (() -> ())? = nil
     var tribeMembersCallback : (([String: AnyObject]) -> ())? = nil
     var inviteCreationCallback : ((String?) -> ())? = nil
-    var mqttDisconnectCallback : (() -> ())? = nil
+    var mqttDisconnectCallback : ((Double) -> ())? = nil
     
     ///Session Pin to decrypt mnemonic and seed
     var appSessionPin : String? = nil
@@ -260,11 +260,13 @@ class SphinxOnionManager : NSObject {
     }
     
     func disconnectMqtt(
-        callback: (() -> ())? = nil
+        callback: ((Double) -> ())? = nil
     ) {
-        if let mqtt = self.mqtt {
+        if let mqtt = self.mqtt, mqtt.connState == .connected {
             mqttDisconnectCallback = callback
             mqtt.disconnect()
+        } else {
+            callback?(0.0)
         }
     }
     
@@ -275,6 +277,7 @@ class SphinxOnionManager : NSObject {
         if let mqtt = self.mqtt, mqtt.connState == .connected {
             ///If onMessageRestoredCallback is not nil, then process is already running
             if onMessageRestoredCallback == nil {
+                self.hideRestoreCallback = hideRestoreViewCallback
                 self.getBlockHeight()
                 self.syncNewMessages()
                 return
@@ -331,61 +334,64 @@ class SphinxOnionManager : NSObject {
             return
         }
         
-        self.disconnectMqtt()
-        
-        if isV2Restore {
-            contactRestoreCallback?(2)
-        }
-
-        let success = connectToBroker(seed: seed, xpub: my_xpub)
-        
-        if (success == false) {
-            AlertHelper.showAlert(title: "Error", message: "Could not connect to MQTT Broker.")
-            hideRestoreViewCallback?()
-            return
-        }
-        
-        self.mqtt.didConnectAck = { [weak self] _, _ in
-            guard let self = self else {
-                return
-            }
-            
-            self.subscribeAndPublishMyTopics(pubkey: myPubkey, idx: 0)
-            
-            if self.isV2InitialSetup {
-                self.isV2InitialSetup = false
-                self.doInitialInviteSetup()
-            }
-            
-            self.getBlockHeight()
-             
-            if self.isV2Restore {
-                self.syncContactsAndMessages(
-                    contactRestoreCallback: contactRestoreCallback,
-                    messageRestoreCallback: messageRestoreCallback,
-                    hideRestoreViewCallback: {
-                        self.isV2Restore = false
-                        
-                        hideRestoreViewCallback?()
-                    }
-                )
-            } else {
-                self.hideRestoreCallback = {
-                    hideRestoreViewCallback?()
+        self.disconnectMqtt() { delay in
+            DelayPerformedHelper.performAfterDelay(seconds: delay, completion: { [weak self] in
+                guard let self = self else {
+                    return
+                }
+                
+                if self.isV2Restore {
+                    contactRestoreCallback?(2)
                 }
 
-                self.syncNewMessages()
-            }
-        }
-        
-        self.mqtt.didReceiveTrust = { _, _, completionHandler in
-            completionHandler(true)
-        }
-        
-        self.mqtt.didDisconnect = { _, _ in
-            self.isConnected = false
-            self.mqttDisconnectCallback?()
-            self.mqtt = nil
+                let success = self.connectToBroker(seed: seed, xpub: my_xpub)
+                
+                if (success == false) {
+                    AlertHelper.showAlert(title: "Error", message: "Could not connect to MQTT Broker.")
+                    hideRestoreViewCallback?()
+                    return
+                }
+                
+                self.mqtt.didConnectAck = { [weak self] _, _ in
+                    guard let self = self else {
+                        return
+                    }
+                    
+                    self.subscribeAndPublishMyTopics(pubkey: myPubkey, idx: 0)
+                    
+                    if self.isV2InitialSetup {
+                        self.isV2InitialSetup = false
+                        self.doInitialInviteSetup()
+                    }
+                    
+                    self.getBlockHeight()
+                     
+                    if self.isV2Restore {
+                        self.syncContactsAndMessages(
+                            contactRestoreCallback: contactRestoreCallback,
+                            messageRestoreCallback: messageRestoreCallback,
+                            hideRestoreViewCallback: {
+                                self.isV2Restore = false
+                                
+                                hideRestoreViewCallback?()
+                            }
+                        )
+                    } else {
+                        self.hideRestoreCallback = hideRestoreViewCallback
+                        self.syncNewMessages()
+                    }
+                }
+                
+                self.mqtt.didReceiveTrust = { _, _, completionHandler in
+                    completionHandler(true)
+                }
+                
+                self.mqtt.didDisconnect = { _, _ in
+                    self.isConnected = false
+                    self.mqttDisconnectCallback?(0.5)
+                    self.mqtt = nil
+                }
+            })
         }
     }
     
@@ -474,7 +480,7 @@ class SphinxOnionManager : NSObject {
             
             mqtt.didDisconnect = { _, _ in
                 self.isConnected = false
-                self.mqttDisconnectCallback?()
+                self.mqttDisconnectCallback?(0.5)
                 self.mqtt = nil
             }
             

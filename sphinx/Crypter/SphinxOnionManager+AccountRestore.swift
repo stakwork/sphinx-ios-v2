@@ -364,15 +364,6 @@ extension SphinxOnionManager {
             return
         }
         
-        let restoredMessages = msgs.filter({
-            let allowedTypes = [
-                UInt8(TransactionMessage.TransactionMessageType.unknown.rawValue),
-                UInt8(TransactionMessage.TransactionMessageType.contactKey.rawValue),
-                UInt8(TransactionMessage.TransactionMessageType.contactKeyConfirmation.rawValue)
-            ]
-            return !allowedTypes.contains($0.type ?? 0)
-        })
-        
         let minRestoreIndex = msgs.min {
             let firstIndex = Int($0.index ?? "0") ?? -1
             let secondIndex = Int($1.index ?? "0") ?? -1
@@ -418,15 +409,6 @@ extension SphinxOnionManager {
             finishRestoration()
             return
         }
-        
-        let restoredMessages = msgs.filter({
-            let allowedTypes = [
-                UInt8(TransactionMessage.TransactionMessageType.unknown.rawValue),
-                UInt8(TransactionMessage.TransactionMessageType.contactKey.rawValue),
-                UInt8(TransactionMessage.TransactionMessageType.contactKeyConfirmation.rawValue)
-            ]
-            return !allowedTypes.contains($0.type ?? 0)
-        })
         
         let maxRestoreIndex = msgs.min {
             let firstIndex = Int($0.index ?? "0") ?? -1
