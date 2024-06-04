@@ -617,11 +617,11 @@ extension SphinxOnionManager {
     }
     
     func purgeObsoleteChats(){
-        for chat in Chat.getAll(){
-            let shouldBlacklist = Chat.hasRemovalIndicators(chat: chat)//shouldAddToRemovedTribesList(chat: chat)
-            //print("Chat:\(chat.name) shouldBlacklist:\(shouldBlacklist)")
-            if shouldBlacklist{
-                self.addDeletedTribePubKey(tribeOwnerPubKey: defaultTribePubkey)
+        for chat in Chat.getAll() {
+            if Chat.hasRemovalIndicators(chat: chat) {
+                if let ownerPubKey = chat.ownerPubkey {
+                    addDeletedTribePubKey(tribeOwnerPubKey: ownerPubKey)
+                }
                 CoreDataManager.sharedManager.deleteChatObjectsFor(chat)
             }
         }
