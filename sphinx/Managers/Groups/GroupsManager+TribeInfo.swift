@@ -189,7 +189,7 @@ extension GroupsManager {
                 return
             },
             errorCallback: {
-                AlertHelper.showAlert(title: "Error Restoring tribe", message: "")
+//                AlertHelper.showAlert(title: "Error Restoring tribe", message: "")
         })
         
         completion(nil)
