@@ -35,6 +35,17 @@ extension SphinxOnionManager {
             return
         }
         
+        if (messageFetchParams?.restoredTribesPubKeys ?? []).contains(ownerPubkey) {
+            DelayPerformedHelper.performAfterDelay(seconds: 1.0, completion: {
+                if let chat = Chat.getTribeChatWithOwnerPubkey(ownerPubkey: ownerPubkey) {
+                    completion(chat, false)
+                } else {
+                    completion(nil, false)
+                }
+            })
+            return
+        }
+        
         if deletedTribesPubKeys.contains(ownerPubkey) {
             ///Tribe deleted
             completion(nil, false)
@@ -42,6 +53,7 @@ extension SphinxOnionManager {
         }
         
         chatsFetchParams?.restoredTribesPubKeys.append(ownerPubkey)
+        messageFetchParams?.restoredTribesPubKeys.append(ownerPubkey)
         
         if let chat = Chat.getTribeChatWithOwnerPubkey(ownerPubkey: ownerPubkey) {
             ///Tribe restore found, no need to restore
