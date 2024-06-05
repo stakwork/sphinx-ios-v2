@@ -100,6 +100,7 @@ extension SphinxOnionManager {
     
     func handlePaymentHistory(rr:RunReturn){
         if let payments = rr.payments,
+           payments != "[]",
             let paymentHistoryCallback = paymentHistoryCallback{
             paymentHistoryCallback(payments)
         }
@@ -277,6 +278,7 @@ extension SphinxOnionManager {
             } else if (sentStatus.status == kFailedStatus) {
                 cachedMessage.status = TransactionMessage.TransactionMessageStatus.failed.rawValue
             }
+            cachedMessage.paymentHash == nil ? (cachedMessage.paymentHash = sentStatus.paymentHash) : ()
         }
     }
     

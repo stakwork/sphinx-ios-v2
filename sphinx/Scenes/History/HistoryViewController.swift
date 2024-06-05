@@ -63,7 +63,7 @@ class HistoryViewController: UIViewController {
         self.checkResultsLimit(count: 0)
         
         SphinxOnionManager.sharedInstance.getTransactionHistory(
-            handlePaymentHistoryCompletion: handlePaymentHistoryCompletion(jsonString:),
+            handlePaymentHistoryCompletion: handlePaymentHistoryCompletion,
             itemsPerPage: itemsPerPage,
             sinceTimestamp: UInt64(Date().timeIntervalSince1970)
         )
@@ -86,9 +86,25 @@ class HistoryViewController: UIViewController {
         if let jsonString = jsonString,
            let results = Mapper<PaymentTransactionFromServer>().mapArray(JSONString: jsonString){
             let localHistoryIndices = messages.map { $0.id }
-            let unAccountedResults = results.filter({localHistoryIndices.contains($0.msg_idx ?? -21) == false})
-            print(unAccountedResults)
+            let localHistoryPaymentHashes = messages.compactMap { $0.paymentHash } // Ensure no nil values
+            let unAccountedResults = results.filter { result in
+                let msgIdxUnaccounted = !localHistoryIndices.contains(result.msg_idx ?? -21)
+                let rhashUnaccounted = !localHistoryPaymentHashes.contains(result.rhash ?? "")
+                
+                if !msgIdxUnaccounted && !rhashUnaccounted {
+                    print("Filtered out result with rhash: \(result.rhash ?? "nil")")
+                }
+                
+                return msgIdxUnaccounted && rhashUnaccounted
+            }
+            
+            for result in unAccountedResults {
+                let newHistory = PaymentTransaction(fromFetchedParams: result)
+                history.append(newHistory)
+            }
         }
+        
+        history = history.sorted { $0.getDate() > $1.getDate()}
         
         self.setNoResultsLabel(count: history.count)
         self.checkResultsLimit(count: history.count)

@@ -106,7 +106,7 @@ extension SphinxOnionManager {
         itemsPerPage:UInt32,
         sinceTimestamp:UInt64
     ) {
-        let rr = try! fetchPayments(seed: getAccountSeed()!, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), since: sinceTimestamp, limit: itemsPerPage, scid: nil, remoteOnly: false, minMsat: 0, reverse: true)
+        let rr = try! fetchPayments(seed: getAccountSeed()!, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), since: sinceTimestamp * 1000, limit: itemsPerPage, scid: nil, remoteOnly: false, minMsat: 0, reverse: true)
         SphinxOnionManager.sharedInstance.paymentHistoryCallback = handlePaymentHistoryCompletion
         let _ = handleRunReturn(rr: rr)                
     }
