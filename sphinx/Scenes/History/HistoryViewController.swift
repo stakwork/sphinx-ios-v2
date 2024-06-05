@@ -70,32 +70,50 @@ class HistoryViewController: UIViewController {
         
     }
     
-    func handlePaymentHistoryCompletion(
-        jsonString:String?
-    ){
-        //1. Pull history with messages from local DB
+    func handlePaymentHistoryCompletion(jsonString: String?) {
+        // 1. Pull history with messages from local DB
         var history = [PaymentTransaction]()
-
+        
         let messages = TransactionMessage.fetchTransactionMessagesForHistory()
         
-        for message in messages{
+        for message in messages {
             history.append(PaymentTransaction(fromTransactionMessage: message))
         }
         
-        //2. Collect and process remote transactions not accounted for with messages
+        // 2. Collect and process remote transactions not accounted for with messages
         if let jsonString = jsonString,
-           let results = Mapper<PaymentTransactionFromServer>().mapArray(JSONString: jsonString){
+           let results = Mapper<PaymentTransactionFromServer>().mapArray(JSONString: jsonString) {
             let localHistoryIndices = messages.map { $0.id }
             let localHistoryPaymentHashes = messages.compactMap { $0.paymentHash } // Ensure no nil values
+            
             let unAccountedResults = results.filter { result in
                 let msgIdxUnaccounted = !localHistoryIndices.contains(result.msg_idx ?? -21)
                 let rhashUnaccounted = !localHistoryPaymentHashes.contains(result.rhash ?? "")
+                
+                // Check for amount and timestamp condition
+                let amountThreshold = 5000 // msats
+                let timestampThreshold: TimeInterval = 10 // seconds
+                
+                let similarTransactionExists = messages.contains { message in
+                    guard let messageAmountSats = message.amount?.intValue,
+                          let messageTimestamp = message.date?.timeIntervalSince1970 else {
+                        return false
+                    }
+                    
+                    let messageAmountMsats = messageAmountSats * 1000
+                    let resultAmountMsats = result.amt_msat ?? 0
+                    let resultTimestamp = TimeInterval(result.ts ?? 0) / 1000
+                    
+                    return resultAmountMsats > amountThreshold &&
+                           resultAmountMsats == messageAmountMsats &&
+                           abs(resultTimestamp - messageTimestamp) <= timestampThreshold
+                }
                 
                 if !msgIdxUnaccounted && !rhashUnaccounted {
                     print("Filtered out result with rhash: \(result.rhash ?? "nil")")
                 }
                 
-                return msgIdxUnaccounted && rhashUnaccounted
+                return (msgIdxUnaccounted || rhashUnaccounted) && !similarTransactionExists
             }
             
             for result in unAccountedResults {
@@ -104,13 +122,15 @@ class HistoryViewController: UIViewController {
             }
         }
         
-        history = history.sorted { $0.getDate() > $1.getDate()}
+        history = history.sorted { $0.getDate() > $1.getDate() }
         
         self.setNoResultsLabel(count: history.count)
         self.checkResultsLimit(count: history.count)
         self.historyDataSource.loadTransactions(transactions: history)
         self.loading = false
     }
+
+
     
     func setNoResultsLabel(count: Int) {
         noResultsLabel.alpha = count > 0 ? 0.0 : 1.0
