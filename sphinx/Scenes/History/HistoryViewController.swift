@@ -152,11 +152,18 @@ extension HistoryViewController : HistoryDataSourceDelegate {
             return
         }
         
-        page = page + 1
-//        
-//        API.sharedInstance.getTransactionsList(page: page, itemsPerPage: itemsPerPage, callback: { transactions in
-//            self.checkResultsLimit(count: transactions.count)
-//            self.historyDataSource.addMoreTransactions(transactions: transactions)
-//        }, errorCallback: { })
+        guard let oldestTransaction = historyDataSource.transactions.last else {
+            return
+        }
+        
+        let oldestTimestamp = UInt64(oldestTransaction.getDate().timeIntervalSince1970)
+        
+        loading = true
+        
+        SphinxOnionManager.sharedInstance.getTransactionHistory(
+            handlePaymentHistoryCompletion: handlePaymentHistoryCompletion,
+            itemsPerPage: itemsPerPage,
+            sinceTimestamp: oldestTimestamp
+        )
     }
 }
