@@ -38,6 +38,7 @@ class JoinGroupDetailsViewController: KeyboardEventsViewController {
     let groupsManager = GroupsManager.sharedInstance
     var qrString: String! = nil
     var tribeInfo : GroupsManager.TribeInfo? = nil
+    var onJoinAction : (() -> ())? = nil
     
     var loading = false {
         didSet {
@@ -166,6 +167,7 @@ class JoinGroupDetailsViewController: KeyboardEventsViewController {
     }
     
     @IBAction func closeButtonTouched() {
+        onJoinAction?()
         self.dismiss(animated: true)
     }
     
