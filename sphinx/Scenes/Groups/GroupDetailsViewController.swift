@@ -234,16 +234,28 @@ class GroupDetailsViewController: UIViewController {
         let confirmDeleteLabel = (isMyPublicGroup ? "confirm.delete.tribe" : (isPublicGroup ? "confirm.exit.delete.tribe" : "confirm.exit.delete.group")).localized
         
         AlertHelper.showTwoOptionsAlert(title: deleteLabel, message: confirmDeleteLabel, confirm: {
-            self.loading = true
-            (isMyPublicGroup) ? (SphinxOnionManager.sharedInstance.deleteTribe(tribeChat: self.chat)): (SphinxOnionManager.sharedInstance.exitTribe(tribeChat: self.chat))
-            DispatchQueue.main.async{
-                CoreDataManager.sharedManager.deleteChatObjectsFor(self.chat)
+            DispatchQueue.main.async {
+                self.loading = true
             }
-            DelayPerformedHelper.performAfterDelay(seconds: 1.5, completion: {
-                self.navigationController?.popToRootViewController(animated: true)
-            })
+            
+            let completion: () -> Void = {
+                DispatchQueue.main.async {
+                    DelayPerformedHelper.performAfterDelay(seconds: 0.5) {
+                        self.navigationController?.popToRootViewController(animated: true)
+                        CoreDataManager.sharedManager.deleteChatObjectsFor(self.chat)
+                    }
+                }
+            }
+            
+            if isMyPublicGroup {
+                SphinxOnionManager.sharedInstance.deleteTribe(tribeChat: self.chat)
+            } else {
+                SphinxOnionManager.sharedInstance.exitTribe(tribeChat: self.chat)
+            }
+            completion()
         })
     }
+
     
     func uploadImage(image: UIImage) {
         let id = chat.id
