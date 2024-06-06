@@ -668,9 +668,29 @@ extension SphinxOnionManager {
         messageFetchParams = nil
         chatsFetchParams = nil
         
+        finalizeAliasAndPhotos()
         endWatchdogTime()
         resetFromRestore()
         purgeObsoleteChats()
+    }
+    
+    func finalizeAliasAndPhotos(){
+        for key in restoredAliasTracker.keys{
+            let data = restoredAliasTracker[key]
+            let contactRecord = UserContact.getContactWithDisregardStatus(pubkey: key)
+            var didUpdateContact : Bool = false
+            if let nickname = restoredAliasTracker[key]?.0{
+                contactRecord?.nickname = nickname
+                didUpdateContact = true
+            }
+            if let photoUrl = restoredAliasTracker[key]?.1{
+                contactRecord?.avatarUrl = photoUrl
+                didUpdateContact = true
+            }
+            (didUpdateContact) ? (contactRecord?.managedObjectContext?.saveContext()) : ()
+        }
+        
+        restoredAliasTracker = [String:(String?,String?,Int)]()//reset values
     }
     
     func purgeObsoleteChats(){

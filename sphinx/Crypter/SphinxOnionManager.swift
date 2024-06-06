@@ -53,7 +53,8 @@ class SphinxOnionManager : NSObject {
     }
     
     var isV2InitialSetup: Bool = false
-    var isV2Restore: Bool = false
+    var restoredAliasTracker = [String:(String?,String?,Int)]() //[pubkey:(alias,photoUrl,messageDate)]
+    var isV2Restore: Bool = false 
     var shouldPostUpdates : Bool = false
     let tribeMinEscrowSats = 3
     

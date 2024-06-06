@@ -821,6 +821,22 @@ extension SphinxOnionManager {
             }
             contactDidChange ? (contact.managedObjectContext?.saveContext()) : ()
             
+            if(contactDidChange && self.isV2Restore){
+                let hasEntry = restoredAliasTracker.keys.filter({pubkey == $0}).first != nil
+                if(hasEntry == false){
+                    let url = message.photoUrl == nil ? (contact.avatarUrl) : (message.photoUrl)
+                    let nickname = message.photoUrl == nil ? (contact.nickname) : (message.alias)
+                    let date = message.timestamp ?? 0
+                    restoredAliasTracker[pubkey] = (nickname,url,date)
+                }
+                else if(restoredAliasTracker[pubkey]?.2 ?? 0 < message.timestamp ?? 0){
+                    let url = message.photoUrl == nil ? (contact.avatarUrl) : (message.photoUrl)
+                    let nickname = message.photoUrl == nil ? (contact.nickname) : (message.alias)
+                    let date = message.timestamp ?? 0
+                    restoredAliasTracker[pubkey] = (nickname,url,date)
+                }
+            }
+            
         } else if let tribeChat = Chat.getTribeChatWithOwnerPubkey(ownerPubkey: pubkey) {
             chat = tribeChat
             senderId = tribeChat.id
