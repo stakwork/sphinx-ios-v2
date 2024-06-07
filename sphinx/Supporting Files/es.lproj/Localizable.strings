@@ -143,6 +143,7 @@
 "new.public.group" = "NUEVA TRIBU";
 "edit.public.group" = "EDITAR TRIBU";
 "tribe.kick" = "El administrador te ha \neliminado de esta tribu";
+"tribe.kick.as.admin" = "Has eliminado %@ de \nesta tribu";
 "tribe.deleted" = "El administrador\nha eliminado esta tribu";
 "member.request" = "%@ desea\nunirse a la tribu";
 "member.request.rejected" = "El administrador\nha denegado tu solicitud";

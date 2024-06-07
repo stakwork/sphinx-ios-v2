@@ -171,6 +171,7 @@ extension NewPublicGroupViewController {
     }
     
     func editGroup(id: Int, params: [String: AnyObject]) {
+        showErrorAlert()
         //TODO: @Jim implement when we have bindings
 //        API.sharedInstance.editGroup(id: id, params: params, callback: { chatJson in
 //            if let chat = Chat.insertChat(chat: chatJson) {

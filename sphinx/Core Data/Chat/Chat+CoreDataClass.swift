@@ -380,7 +380,7 @@ public class Chat: NSManagedObject {
         unseenMentionsCount = 0
         
         if let highestIndex = TransactionMessage.getMaxIndexFor(chat: self),
-           SphinxOnionManager.sharedInstance.messageIdIsFromHashed(msgId: highestIndex) == false 
+           SphinxOnionManager.sharedInstance.messageIdIsFromHashed(msgId: highestIndex) == false
         {
             SphinxOnionManager.sharedInstance.setReadLevel(index: UInt64(highestIndex), chat: self, recipContact: self.getContact())
         }
@@ -458,6 +458,79 @@ public class Chat: NSManagedObject {
         } catch let error as NSError {
             print("Error updating messages read status: \(error), \(error.userInfo)")
         }
+    }
+    
+    static func hasRemovalIndicators(chat: Chat) -> Bool {
+        let managedContext = CoreDataManager.sharedManager.persistentContainer.viewContext
+
+        let groupDeleteType = TransactionMessage.TransactionMessageType.groupDelete.rawValue
+        let groupLeaveType = TransactionMessage.TransactionMessageType.groupLeave.rawValue
+        let groupJoinType = TransactionMessage.TransactionMessageType.groupJoin.rawValue
+        let memberRejectType = TransactionMessage.TransactionMessageType.memberReject.rawValue
+        let memberKickType = TransactionMessage.TransactionMessageType.groupKick.rawValue
+
+        // First, check for any groupDelete messages
+        let deletePredicate = NSPredicate(format: "chat == %@ AND type == %d", chat, groupDeleteType)
+        let deleteFetchRequest: NSFetchRequest<TransactionMessage> = TransactionMessage.fetchRequest()
+        deleteFetchRequest.predicate = deletePredicate
+        deleteFetchRequest.fetchLimit = 1
+
+        do {
+            let deleteMessages = try managedContext.fetch(deleteFetchRequest)
+            if !deleteMessages.isEmpty {
+                return true
+            }
+        } catch {
+            print("Failed to fetch delete messages: \(error)")
+            return false
+        }
+
+        // Construct predicates for leave, reject, and kick events
+        let leavePredicate = NSPredicate(format: "chat == %@ AND type == %d AND senderId == %d", chat, groupLeaveType, 0)
+        
+        let rejectPredicate: NSPredicate? = chat.isTribeICreated ? nil : NSPredicate(format: "chat == %@ AND type == %d", chat, memberRejectType)
+        
+        let kickPredicate: NSPredicate? = chat.isTribeICreated ? nil : NSPredicate(format: "chat == %@ AND type == %d", chat, memberKickType)
+        
+        var eventPredicates = [leavePredicate]
+        if let rejectPredicate = rejectPredicate {
+            eventPredicates.append(rejectPredicate)
+        }
+        if let kickPredicate = kickPredicate {
+            eventPredicates.append(kickPredicate)
+        }
+
+        let combinedPredicate = NSCompoundPredicate(orPredicateWithSubpredicates: eventPredicates)
+        let leaveFetchRequest: NSFetchRequest<TransactionMessage> = TransactionMessage.fetchRequest()
+        leaveFetchRequest.predicate = combinedPredicate
+        leaveFetchRequest.sortDescriptors = [NSSortDescriptor(key: "date", ascending: false)]
+        leaveFetchRequest.fetchLimit = 1
+
+        do {
+            let leaveMessages = try managedContext.fetch(leaveFetchRequest)
+            if let leaveMessage = leaveMessages.first, let leaveMessageDate = leaveMessage.date {
+                // Check for newer groupJoin messages
+                let joinPredicate = NSPredicate(format: "chat == %@ AND type == %d AND date > %@", chat, groupJoinType, leaveMessageDate as NSDate)
+                let joinFetchRequest: NSFetchRequest<TransactionMessage> = TransactionMessage.fetchRequest()
+                joinFetchRequest.predicate = joinPredicate
+                joinFetchRequest.fetchLimit = 1
+
+                do {
+                    let joinMessages = try managedContext.fetch(joinFetchRequest)
+                    if joinMessages.isEmpty {
+                        return true
+                    }
+                } catch {
+                    print("Failed to fetch join messages: \(error)")
+                    return false
+                }
+            }
+        } catch {
+            print("Failed to fetch leave messages: \(error)")
+            return false
+        }
+
+        return false
     }
     
     static func calculateUnseenMessagesCount(
@@ -642,12 +715,9 @@ public class Chat: NSManagedObject {
     
     
     func updateTribeInfo(completion: @escaping () -> ()) {
-        
-        let host = API.kTestV2TribesServer.replacingOccurrences(of: "http://", with: "") //TODO: update if we need to handle v1 and v2
-        if let uuid = ownerPubkey,
-            host.isEmpty == false,
-            isPublicGroup()
-        {
+        if let uuid = ownerPubkey, isPublicGroup() {
+            let host = SphinxOnionManager.sharedInstance.tribesServerIP
+            
             API.sharedInstance.getTribeInfo(
                 host: host,
                 uuid: uuid,
@@ -788,7 +858,7 @@ public class Chat: NSManagedObject {
     
     func getJoinChatLink() -> String? {
         if let pubkey = self.ownerPubkey {
-            return "sphinx.chat://?action=tribeV2&pubkey=\(pubkey)&host=\(API.kTribesServer)"
+            return "sphinx.chat://?action=tribeV2&pubkey=\(pubkey)&host=\(SphinxOnionManager.sharedInstance.tribesServerIP)"
         }
         return nil
     }

@@ -120,6 +120,7 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         
         fetchTribeData()
         loadReplyableMeesage()
+        
     }
     
     override func viewDidDisappear(_ animated: Bool) {
@@ -128,6 +129,7 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         if self.isMovingFromParent {
             chatTableDataSource?.saveSnapshotCurrentState()
             chatTableDataSource?.stopListeningToResultsController()
+            chat?.setChatMessagesAsSeen()
 
             stopPlayingClip()
         }

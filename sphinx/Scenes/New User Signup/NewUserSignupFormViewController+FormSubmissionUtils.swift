@@ -38,6 +38,10 @@ extension NewUserSignupFormViewController {
 
         view.endEditing(true)
         
+        continueWith(code: code)
+    }
+    
+    func continueWith(code: String) {
         if (code.isInviteCode) {
             som.vc = self
             som.chooseImportOrGenerateSeed(completion: { [weak self] success in
@@ -52,8 +56,6 @@ extension NewUserSignupFormViewController {
                 }
                 self.som.vc = nil
             })
-        } else {
-            startSignup(with: code)
         }
     }
     
@@ -63,7 +65,9 @@ extension NewUserSignupFormViewController {
             return
         }
         
-        guard let inviteCode = som.redeemInvite(inviteCode: code) else {
+        let inviteCode = som.redeemInvite(inviteCode: code)
+        
+        guard let inviteCode = inviteCode else {
             showInviteError()
             return
         }
@@ -84,14 +88,6 @@ extension NewUserSignupFormViewController {
             message: "Please try again or ask for another invite."
         )
     }
-    
-    
-    func startSignup(with code: String) {
-        if code.isInviteCode {
-            signup(withConnectionCode: code)
-        }
-    }
-    
     
     func isCodeValid(_ code: String) -> Bool {
         return code.isInviteCode
