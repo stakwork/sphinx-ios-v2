@@ -841,9 +841,7 @@ public class Chat: NSManagedObject {
         return true
     }
     
-    func isMyPublicGroup(
-        ownerPubKey: String? = nil
-    ) -> Bool {
+    func isMyPublicGroup() -> Bool {
         return isPublicGroup() && isTribeICreated == true
     }
     
