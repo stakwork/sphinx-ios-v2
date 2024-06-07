@@ -308,6 +308,11 @@ extension SphinxOnionManager {
                     message?.amount = NSDecimalNumber(value: amount)
                 }
                 
+                if chat.isPublicGroup(), let owner = UserContact.getOwner() {
+                    message?.senderAlias = owner.nickname
+                    message?.senderPic = owner.avatarUrl
+                }
+                
                 if msgType == TransactionMessage.TransactionMessageType.purchase.rawValue || msgType == TransactionMessage.TransactionMessageType.attachment.rawValue {
                     message?.mediaKey = mediaKey
                     message?.mediaToken = mediaToken
@@ -796,7 +801,7 @@ extension SphinxOnionManager {
         
         var chat : Chat? = nil
         var senderId: Int? = nil
-        var receiverId:Int? = nil
+        var receiverId: Int? = nil
         
         var isTribe = false
         
