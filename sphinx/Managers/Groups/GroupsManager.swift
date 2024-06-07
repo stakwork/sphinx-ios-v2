@@ -212,6 +212,7 @@ class GroupsManager {
                         break
                     case "pubkey":
                         tribeInfo.ownerPubkey = value
+                        tribeInfo.uuid = value
                         break
                     default:
                         break

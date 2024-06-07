@@ -746,7 +746,7 @@ struct MessageTableCellState {
         guard let message = message, 
                 let ownerPubKey = owner.publicKey,
                 message.isGroupLeaveOrJoinMessage() ||
-                (message.isApprovedRequest() && !chat.isMyPublicGroup(ownerPubKey: ownerPubKey)) else {
+                (message.isApprovedRequest() && !chat.isMyPublicGroup()) else {
             
             return nil
         }
@@ -760,7 +760,7 @@ struct MessageTableCellState {
         } else if message.isGroupLeaveMessage() {
             messageString = message.getGroupLeaveMessageText(senderAlias: senderInfo.1)
         } else if message.isApprovedRequest() {
-            messageString = "member.request.approved".localized
+            messageString = message.getGroupJoinMessageText(senderAlias: senderInfo.1)
         }
         
         return NoBubbleMessageLayoutState.GroupMemberNotification(message: messageString)
@@ -771,7 +771,7 @@ struct MessageTableCellState {
         guard let message = message, let ownerPubKey = owner.publicKey,
                 message.isGroupKickMessage() && (message.chat?.isTribeICreated != true) ||
                 message.isGroupDeletedMessage() ||
-                (message.isDeclinedRequest() && !chat.isMyPublicGroup(ownerPubKey: ownerPubKey)) else {
+                (message.isDeclinedRequest() && !chat.isMyPublicGroup()) else {
             
             return nil
         }
@@ -800,8 +800,7 @@ struct MessageTableCellState {
     
     lazy var groupMemberRequest: NoBubbleMessageLayoutState.GroupMemberRequest? = {
         
-        guard let message = message, let ownerPubKey = owner.publicKey,
-                chat.isMyPublicGroup(ownerPubKey: ownerPubKey),
+        guard let message = message, chat.isMyPublicGroup(),
                 message.isMemberRequest() || message.isApprovedRequest() || message.isDeclinedRequest() else {
             return nil
         }

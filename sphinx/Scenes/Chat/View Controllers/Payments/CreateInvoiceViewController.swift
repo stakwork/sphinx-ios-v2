@@ -309,12 +309,11 @@ class CreateInvoiceViewController: CommonPaymentViewController {
     }
     
     private func sendDirectPayment() {
-        var paymentChat: Chat?=nil
-        if let chat = chat{
+        var paymentChat: Chat? = nil
+        
+        if let chat = chat {
             paymentChat = chat
-        }
-        else if let pubkey = paymentsViewModel.payment.destinationKey,
-                let chat = UserContact.getContactWith(pubkey: pubkey)?.getChat(){
+        } else if let pubkey = paymentsViewModel.payment.destinationKey, let chat = UserContact.getContactWith(pubkey: pubkey)?.getChat() {
             paymentChat = chat
         }
         
@@ -322,19 +321,25 @@ class CreateInvoiceViewController: CommonPaymentViewController {
             return
         }
         
-        if let paymentChat = paymentChat{//do direct payment chat
-            finalizeContactDirectPayment(amount: amount, paymentChat: paymentChat)
+        if let paymentChat = paymentChat { //do direct payment chat
+            finalizeContactDirectPayment(
+                amount: amount,
+                paymentChat: paymentChat
+            )
+//        } else if let pubkey = paymentsViewModel.payment.destinationKey, let amt = paymentsViewModel.payment.amount {
+//            SphinxOnionManager.sharedInstance.keysend(
+//                pubkey: pubkey,
+//                amt: amt
+//            )
+        } else {
+            AlertHelper.showAlert(
+                title: "generic.error.title".localized,
+                message: "generic.error.message".localized,
+                completion: {
+                    self.shouldDismissView()
+                }
+            )
         }
-        else{
-            AlertHelper.showAlert(title: "generic.error.title".localized, message: "generic.error.message".localized, completion: {
-                self.shouldDismissView()
-            })
-        }
-//        else {
-//            SphinxOnionManager.sharedInstance.keysend()
-//        }
-        
-        
     }
     
     func finalizeContactDirectPayment(amount:Int, paymentChat:Chat){

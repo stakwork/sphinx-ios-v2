@@ -66,6 +66,8 @@ class SphinxOnionManager : NSObject {
         }
     }
     
+    var settledRRObjects: [RunReturn] = []
+    
     var msgTotalCounts : MsgTotalCounts? = nil
     
     typealias RestoreProgressCallback = (Int) -> Void
@@ -75,33 +77,85 @@ class SphinxOnionManager : NSObject {
     var tribeMembersCallback : (([String: AnyObject]) -> ())? = nil
     var paymentHistoryCallback : ((String?) -> ())? = nil
     var inviteCreationCallback : ((String?) -> ())? = nil
-    var mqttDisconnectCallback : (() -> ())? = nil
+    var mqttDisconnectCallback : ((Double) -> ())? = nil
     
     ///Session Pin to decrypt mnemonic and seed
     var appSessionPin : String? = nil
     var defaultInitialSignupPin : String = "111111"
     
-    public static let kContactsBatchSize = 250
+    public static let kContactsBatchSize = 100
     public static let kMessageBatchSize = 100
 
-    //MARK: Hardcoded Values!
-    var server_IP = "34.229.52.200"
-    let server_PORT = 1883
-    let defaultTribePubkey = "02792ee5b9162f9a00686aaa5d5274e91fd42a141113007797b5c1872d43f78e07"
-    
-    let network = "regtest"
-    
     let kCompleteStatus = "COMPLETE"
     let kFailedStatus = "FAILED"
     
     let newMessageBubbleHelper = NewMessageBubbleHelper()
     let managedContext = CoreDataManager.sharedManager.persistentContainer.viewContext
     
-    ///Callbacks
+    //MARK: Hardcoded Values!
+    var serverIP: String {
+        get {
+            if let storedServerIP: String = UserDefaults.Keys.serverIP.get() {
+                return storedServerIP
+            }
+            return kTestServerIP
+        }
+    }
+    
+    var serverPORT: UInt16 {
+        get {
+            if let storedServerPORT: Int = UserDefaults.Keys.serverPORT.get() {
+                return UInt16(storedServerPORT)
+            }
+            return kTestServerPort
+        }
+    }
+    
+    var tribesServerIP: String {
+        get {
+            if let storedTribesServer: String = UserDefaults.Keys.tribesServerIP.get() {
+                return storedTribesServer
+            }
+            return kTestV2TribesServer
+        }
+    }
+    
+    var defaultTribePubkey: String? {
+        get {
+            if let defaultTribePublicKey: String = UserDefaults.Keys.defaultTribePublicKey.get() {
+                return defaultTribePublicKey
+            }
+            return kTestDefaultTribe
+        }
+    }
+    
+    var network: String {
+        get {
+            return UserDefaults.Keys.isProductionEnv.get(defaultValue: false) ? "bitcoin" : "regtest"
+        }
+    }
+    
+    let kTestServerIP = "34.229.52.200"
+    let kTestServerPort: UInt16 = 1883
+    let kProdServerPort: UInt16 = 8883
+    let kTestV2TribesServer = "34.229.52.200:8801"
+    let kTestDefaultTribe = "0213ddd7df0077abe11d6ec9753679eeef9f444447b70f2980e44445b3f7959ad1"
+    
+    //MARK: Callback
     ///Restore
     var totalMsgsCountCallback: (() -> ())? = nil
     var firstSCIDMsgsCallback: (([Msg]) -> ())? = nil
     var onMessageRestoredCallback: (([Msg]) -> ())? = nil
+    
+    var maxMessageIndex: Int? {
+        get {
+            if let maxMessageIndex: Int = UserDefaults.Keys.maxMessageIndex.get() {
+                return maxMessageIndex
+            }
+            return TransactionMessage.getMaxIndex()
+        }
+    }
+    
     ///Create tribe
     var createTribeCallback: ((String) -> ())? = nil
     
@@ -193,12 +247,21 @@ class SphinxOnionManager : NSObject {
             
             mqtt = CocoaMQTT(
                 clientID: xpub,
-                host: server_IP,
-                port: UInt16(server_PORT)
+                host: serverIP,
+                port: serverPORT
             )
             
             mqtt.username = now
             mqtt.password = sig
+            
+            if UserDefaults.Keys.isProductionEnv.get(defaultValue: false) {
+                mqtt.enableSSL = true
+                mqtt.allowUntrustCACertificate = true
+                
+                mqtt.sslSettings = [
+                    "kCFStreamSSLPeerName": "\(serverIP)" as NSObject
+                ] as [String: NSObject]
+            }
             
             let success = mqtt.connect()
             print("mqtt.connect success:\(success)")
@@ -209,12 +272,18 @@ class SphinxOnionManager : NSObject {
     }
     
     func disconnectMqtt(
-        callback: (() -> ())? = nil
+        callback: ((Double) -> ())? = nil
     ) {
-        if let mqtt = self.mqtt {
+        if let mqtt = self.mqtt, mqtt.connState == .connected {
             mqttDisconnectCallback = callback
             mqtt.disconnect()
+        } else {
+            callback?(0.0)
         }
+    }
+    
+    func isFetchingContent() -> Bool {
+        return onMessageRestoredCallback != nil || firstSCIDMsgsCallback != nil || totalMsgsCountCallback == nil
     }
     
     func reconnectToServer(
@@ -222,11 +291,13 @@ class SphinxOnionManager : NSObject {
         hideRestoreViewCallback: (()->())? = nil
     ) {
         if let mqtt = self.mqtt, mqtt.connState == .connected {
-            ///If onMessageRestoredCallback is not nil, then process is already running
-            if onMessageRestoredCallback == nil {
+            ///If already fetching content, then process is already running
+            if !isFetchingContent() {
+                self.hideRestoreCallback = hideRestoreViewCallback
+                self.getBlockHeight()
                 self.syncNewMessages()
-                return
             }
+            return
         }
         connectToServer(
             connectingCallback: connectingCallback,
@@ -234,8 +305,25 @@ class SphinxOnionManager : NSObject {
         )
     }
     
+    func getBlockHeight() {
+        guard let seed = getAccountSeed() else{
+            return
+        }
+        do {
+            let rr = try sphinx.getBlockheight(
+                seed: seed,
+                uniqueTime: getTimeWithEntropy(),
+                state: loadOnionStateAsData()
+            )
+            
+            let _ = handleRunReturn(rr: rr)
+        } catch {
+            print("Error getting block height")
+        }
+    }
+    
     func syncNewMessages() {
-        let maxIndex = TransactionMessage.getMaxIndex()
+        let maxIndex = maxMessageIndex
         
         startAllMsgBlockFetch(
             startIndex: (maxIndex != nil) ? maxIndex! + 1 : 0,
@@ -262,55 +350,64 @@ class SphinxOnionManager : NSObject {
             return
         }
         
-        self.disconnectMqtt()
-        
-        if isV2Restore {
-            contactRestoreCallback?(2)
-        }
-
-        let success = connectToBroker(seed: seed, xpub: my_xpub)
-        
-        if (success == false) {
-            AlertHelper.showAlert(title: "Error", message: "Could not connect to MQTT Broker.")
-            hideRestoreViewCallback?()
-            return
-        }
-        
-        self.mqtt.didConnectAck = { [weak self] _, _ in
-            guard let self = self else {
-                return
-            }
-            
-            self.subscribeAndPublishMyTopics(pubkey: myPubkey, idx: 0)
-            
-            if self.isV2InitialSetup {
-                self.isV2InitialSetup = false
-                self.doInitialInviteSetup()
-            }
-             
-            if self.isV2Restore {
-                self.syncContactsAndMessages(
-                    contactRestoreCallback: contactRestoreCallback,
-                    messageRestoreCallback: messageRestoreCallback,
-                    hideRestoreViewCallback: {
-                        self.isV2Restore = false
-                        
-                        hideRestoreViewCallback?()
-                    }
-                )
-            } else {
-                self.hideRestoreCallback = {
-                    hideRestoreViewCallback?()
+        self.disconnectMqtt() { delay in
+            DelayPerformedHelper.performAfterDelay(seconds: delay, completion: { [weak self] in
+                guard let self = self else {
+                    return
+                }
+                
+                if self.isV2Restore {
+                    contactRestoreCallback?(2)
                 }
 
-                self.syncNewMessages()
-            }
-        }
-        
-        self.mqtt.didDisconnect = { _, _ in
-            self.isConnected = false
-            self.mqttDisconnectCallback?()
-            self.mqtt = nil
+                let success = self.connectToBroker(seed: seed, xpub: my_xpub)
+                
+                if (success == false) {
+                    AlertHelper.showAlert(title: "Error", message: "Could not connect to MQTT Broker.")
+                    hideRestoreViewCallback?()
+                    return
+                }
+                
+                self.mqtt.didConnectAck = { [weak self] _, _ in
+                    guard let self = self else {
+                        return
+                    }
+                    
+                    self.subscribeAndPublishMyTopics(pubkey: myPubkey, idx: 0)
+                    
+                    if self.isV2InitialSetup {
+                        self.isV2InitialSetup = false
+                        self.doInitialInviteSetup()
+                    }
+                    
+                    self.getBlockHeight()
+                     
+                    if self.isV2Restore {
+                        self.syncContactsAndMessages(
+                            contactRestoreCallback: contactRestoreCallback,
+                            messageRestoreCallback: messageRestoreCallback,
+                            hideRestoreViewCallback: {
+                                self.isV2Restore = false
+                                
+                                hideRestoreViewCallback?()
+                            }
+                        )
+                    } else {
+                        self.hideRestoreCallback = hideRestoreViewCallback
+                        self.syncNewMessages()
+                    }
+                }
+                
+                self.mqtt.didReceiveTrust = { _, _, completionHandler in
+                    completionHandler(true)
+                }
+                
+                self.mqtt.didDisconnect = { _, _ in
+                    self.isConnected = false
+                    self.mqttDisconnectCallback?(0.5)
+                    self.mqtt = nil
+                }
+            })
         }
     }
     
@@ -322,9 +419,6 @@ class SphinxOnionManager : NSObject {
         do {
             let ret = try sphinx.setNetwork(network: network)
             let _ = handleRunReturn(rr: ret)
-            
-            let ret2 = try sphinx.setBlockheight(blockheight: 0)
-            let _ = handleRunReturn(rr: ret2)
             
             guard let seed = getAccountSeed() else{
                 return
@@ -402,8 +496,12 @@ class SphinxOnionManager : NSObject {
             
             mqtt.didDisconnect = { _, _ in
                 self.isConnected = false
-                self.mqttDisconnectCallback?()
+                self.mqttDisconnectCallback?(0.5)
                 self.mqtt = nil
+            }
+            
+            mqtt.didReceiveTrust = { _, _, completionHandler in
+                completionHandler(true)
             }
             
             //subscribe to relevant topics

@@ -31,10 +31,10 @@ extension SphinxOnionManager{//invites related
                 seed: seed,
                 uniqueTime: getTimeWithEntropy(),
                 state: loadOnionStateAsData(),
-                host: self.server_IP,
+                host: "\(serverIP):\(serverPORT)",
                 amtMsat: UInt64(amountMsat),
                 myAlias: nickname,
-                tribeHost: "\(server_IP):8801",
+                tribeHost: tribesServerIP,
                 tribePubkey: defaultTribePubkey
             )
             
@@ -49,11 +49,7 @@ extension SphinxOnionManager{//invites related
             let parsedInvite = try parseInvite(inviteQr: inviteCode)
             
             if let lsp = parsedInvite.lspHost {
-                self.server_IP = lsp
-            }
-            
-            if let initialTribe = parsedInvite.initialTribe, let (host, _) = extractHostAndTribeIdentifier(from: initialTribe) {
-                API.kTribesServer = host
+                self.saveIPAndPortFrom(lspHost: lsp)
             }
             
             self.stashedInviteCode = parsedInvite.code
@@ -64,6 +60,10 @@ extension SphinxOnionManager{//invites related
             
             if let initialTribe = parsedInvite.initialTribe {
                 self.stashedInitialTribe = initialTribe
+                
+                if let (host, _) = extractHostAndTribeIdentifier(from: initialTribe) {
+                    UserDefaults.Keys.tribesServerIP.set(host)
+                }
             }
             
             if let inviterAlias = parsedInvite.inviterAlias {
@@ -128,4 +128,39 @@ extension SphinxOnionManager{//invites related
         managedContext.saveContext()
     }
     
+    func saveConfigFrom(
+        lspHost: String,
+        tribeServerHost: String,
+        defaultTribePubkey: String
+    ) {
+        saveIPAndPortFrom(lspHost: lspHost)
+        
+        UserDefaults.Keys.tribesServerIP.set(tribeServerHost)
+        UserDefaults.Keys.defaultTribePublicKey.set(defaultTribePubkey)
+    }
+    
+    func saveIPAndPortFrom(lspHost: String) {
+        if let components = URLComponents(string: lspHost), let host = components.host {
+            if let port = components.port {
+                UserDefaults.Keys.serverPORT.set(port)
+                UserDefaults.Keys.serverIP.set(host.replacingOccurrences(of: ":\(port)", with: ""))
+                UserDefaults.Keys.isProductionEnv.set(port == kProdServerPort)
+            } else {
+                UserDefaults.Keys.serverIP.set(host)
+                UserDefaults.Keys.isProductionEnv.set(false)
+            }
+        } else if let components = URLComponents(string: "https://\(lspHost)"), let host = components.host {
+            if let port = components.port {
+                UserDefaults.Keys.serverPORT.set(port)
+                UserDefaults.Keys.serverIP.set(host.replacingOccurrences(of: ":\(port)", with: ""))
+                UserDefaults.Keys.isProductionEnv.set(port == kProdServerPort)
+            } else {
+                UserDefaults.Keys.serverIP.set(host)
+                UserDefaults.Keys.isProductionEnv.set(false)
+            }
+        } else {
+            UserDefaults.Keys.serverIP.set(lspHost)
+            UserDefaults.Keys.isProductionEnv.set(false)
+        }
+    }
 }

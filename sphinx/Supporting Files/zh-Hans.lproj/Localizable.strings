@@ -138,11 +138,13 @@
 "just.left.group" = "%@ 刚刚离开了群组";
 "just.left.tribe" = "%@ 刚刚离开了部落";
 "has.joined.group" = "%@ 已加入群组";
+"you.joined.tribe" = "You have joined the tribe";
 "has.joined.tribe" = "%@ 已加入部落";
 "added.to.group" = "%@ 已被添加到群组";
 "new.public.group" = "新部落";
 "edit.public.group" = "编辑部落";
 "tribe.kick" = "管理员已将您从此部落中移除";
+"tribe.kick.as.admin" = "You've removed %@ from \nthis tribe";
 "tribe.deleted" = "管理员已删除此部落";
 "member.request" = "%@ 请求加入部落";
 "member.request.rejected" = "管理员拒绝了您的请求";

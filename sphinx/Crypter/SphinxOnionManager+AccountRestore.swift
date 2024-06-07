@@ -50,6 +50,7 @@ class MessageFetchParams {
     var restoredItems: Int
     var stopIndex: Int
     var direction: FetchDirection
+    var restoredTribesPubKeys: [String] = []
 
     enum FetchDirection {
         case forward, backward
@@ -67,6 +68,7 @@ class MessageFetchParams {
         self.restoredItems = restoredItems
         self.stopIndex = stopIndex
         self.direction = direction
+        self.restoredTribesPubKeys = []
     }
     
     var debugDescription: String {
@@ -223,7 +225,7 @@ extension SphinxOnionManager {
            msgTotalCounts.totalMessageAvailableCount ?? 0 > 0 {
             
             let startIndex = (msgTotalCounts.totalMessageMaxIndex ?? 0)
-            let lastMessageIndex = TransactionMessage.getMaxIndex() ?? 0
+            let lastMessageIndex = 0
             
             let safeSpread = max(0, startIndex - lastMessageIndex)
             let firstBatchSize = min(SphinxOnionManager.kMessageBatchSize, safeSpread) //either do max batch size or less if less is needed
@@ -327,7 +329,7 @@ extension SphinxOnionManager {
                 contactRestoreCallback(pctInt)
             }
             
-            if msgs.count < SphinxOnionManager.kContactsBatchSize {
+            if msgs.count <= 0 {
                 doNextRestorePhase()
                 return
             }
@@ -338,7 +340,7 @@ extension SphinxOnionManager {
             {
                 if maxRestoredIndexInt < scidMaxIndex {
                     ///Didn't restore max index yet. Proceed to next page
-                    restoreFirstScidMessages(startIndex: maxRestoredIndexInt)
+                    restoreFirstScidMessages(startIndex: maxRestoredIndexInt + 1)
                     return
                 }
             }
@@ -363,15 +365,6 @@ extension SphinxOnionManager {
             finishRestoration()
             return
         }
-        
-        let restoredMessages = msgs.filter({
-            let allowedTypes = [
-                UInt8(TransactionMessage.TransactionMessageType.unknown.rawValue),
-                UInt8(TransactionMessage.TransactionMessageType.contactKey.rawValue),
-                UInt8(TransactionMessage.TransactionMessageType.contactKeyConfirmation.rawValue)
-            ]
-            return !allowedTypes.contains($0.type ?? 0)
-        })
         
         let minRestoreIndex = msgs.min {
             let firstIndex = Int($0.index ?? "0") ?? -1
@@ -418,15 +411,6 @@ extension SphinxOnionManager {
             finishRestoration()
             return
         }
-        
-        let restoredMessages = msgs.filter({
-            let allowedTypes = [
-                UInt8(TransactionMessage.TransactionMessageType.unknown.rawValue),
-                UInt8(TransactionMessage.TransactionMessageType.contactKey.rawValue),
-                UInt8(TransactionMessage.TransactionMessageType.contactKeyConfirmation.rawValue)
-            ]
-            return !allowedTypes.contains($0.type ?? 0)
-        })
         
         let maxRestoreIndex = msgs.min {
             let firstIndex = Int($0.index ?? "0") ?? -1
@@ -508,84 +492,140 @@ extension SphinxOnionManager {
             }
             
             if contact.getChat() == nil && isConfirmed {
-                createChat(for: contact)
+                let _ = createChat(for: contact, with: message.date)
             }
         }
     }
     
-    func restoreTribesFrom(messages: [Msg]) {
+    func restoreTribesFrom(
+        messages: [Msg],
+        completion: @escaping () -> ()
+    ) {
         if messages.isEmpty {
+            completion()
             return
         }
-        
+
         let allowedTypes = [
-            UInt8(TransactionMessage.TransactionMessageType.groupJoin.rawValue)
+            UInt8(TransactionMessage.TransactionMessageType.groupJoin.rawValue),
+            UInt8(TransactionMessage.TransactionMessageType.memberApprove.rawValue)
         ]
         
         let filteredMsgs = messages.filter({ $0.type != nil && allowedTypes.contains($0.type!) })
         
-        for message in filteredMsgs {
-            ///Check for message information
-            guard let uuid = message.uuid,
-                  let index = message.index,
-                  let timestamp = message.timestamp,
-                  let type = message.type,
-                  let date = timestampToDate(timestamp: timestamp) else
-            {
-                continue
-            }
+        if filteredMsgs.isEmpty {
+            completion()
+            return
+        }
+        
+        let total = filteredMsgs.count
+        var index = 0
+        
+        for (i, message) in filteredMsgs.enumerated() {
             
             ///Check for sender information
             guard let sender = message.sender,
                   let csr =  ContactServerResponse(JSONString: sender),
                   let tribePubkey = csr.pubkey else
             {
+                if index == total - 1 {
+                    completion()
+                } else {
+                    index = index + 1
+                }
                 continue
             }
             
-            fetchOrCreateChatWithTribe(
-                ownerPubkey: tribePubkey,
-                host: csr.host,
-                completion: { [weak self] chat, didCreateTribe in
-                    guard let self = self else {
-                        return
-                    }
-                    
-                    if let chat = chat {
-                        let groupActionMessage = TransactionMessage.getMessageInstanceWith(
-                            id: Int(index),
-                            context: managedContext
-                        )
-                        groupActionMessage.uuid = uuid
-                        groupActionMessage.id = Int(index) ?? self.uniqueIntHashFromString(stringInput: UUID().uuidString)
-                        groupActionMessage.chat = chat
-                        groupActionMessage.type = Int(type)
-                        
-                        let innerContentDate = message.getInnerContentDate()
-                        groupActionMessage.createdAt = innerContentDate ?? date
-                        groupActionMessage.date = innerContentDate ?? date
-                        groupActionMessage.updatedAt = innerContentDate ?? date
-                        
-                        groupActionMessage.setAsLastMessage()
-                        groupActionMessage.senderAlias = csr.alias
-                        groupActionMessage.senderPic = csr.photoUrl
-                        groupActionMessage.senderId = message.fromMe == true ? UserData.sharedInstance.getUserId() : chat.id
-                        groupActionMessage.status = TransactionMessage.TransactionMessageStatus.confirmed.rawValue
-                        
-                        chat.seen = false
-                        
-                        if (didCreateTribe && csr.role != nil) {
-                            chat.isTribeICreated = csr.role == 0
-                        }
-                        if (type == TransactionMessage.TransactionMessageType.memberApprove.rawValue) {
-                            chat.status = Chat.ChatStatus.approved.rawValue
-                        }
-                        if (type == TransactionMessage.TransactionMessageType.memberReject.rawValue) {
-                            chat.status = Chat.ChatStatus.rejected.rawValue
-                        }
-                    }
+            if let chat = Chat.getTribeChatWithOwnerPubkey(ownerPubkey: tribePubkey) {
+                restoreGroupJoinMsg(
+                    message: message,
+                    chat: chat,
+                    didCreateTribe: false
+                )
+                if index == total - 1 {
+                    completion()
+                } else {
+                    index = index + 1
                 }
-            )
+            } else {
+                fetchOrCreateChatWithTribe(
+                    ownerPubkey: tribePubkey,
+                    host: csr.host,
+                    index: i,
+                    completion: { [weak self] chat, didCreateTribe, ind in
+                        guard let self = self else {
+                            return
+                        }
+                        if let chat = chat {
+                            self.restoreGroupJoinMsg(
+                                message: message,
+                                chat: chat,
+                                didCreateTribe: didCreateTribe
+                            )
+                        }
+                        
+                        if index == total - 1 {
+                            completion()
+                        } else {
+                            index = index + 1
+                        }
+                    }
+                )
+            }
+        }
+    }
+    
+    func restoreGroupJoinMsg(
+        message: Msg,
+        chat: Chat,
+        didCreateTribe: Bool
+    ) {
+        guard let uuid = message.uuid,
+              let index = message.index,
+              let timestamp = message.timestamp,
+              let type = message.type,
+              let date = timestampToDate(timestamp: timestamp) else
+        {
+            return
+        }
+        
+        ///Check for sender information
+        guard let sender = message.sender,
+              let csr =  ContactServerResponse(JSONString: sender) else
+        {
+            return
+        }
+        
+        let groupActionMessage = TransactionMessage.getMessageInstanceWith(
+            id: Int(index),
+            context: managedContext
+        )
+        groupActionMessage.uuid = uuid
+        groupActionMessage.id = Int(index) ?? -self.uniqueIntHashFromString(stringInput: UUID().uuidString)
+        groupActionMessage.chat = chat
+        groupActionMessage.type = Int(type)
+        
+        let innerContentDate = message.getInnerContentDate()
+        groupActionMessage.createdAt = innerContentDate ?? date
+        groupActionMessage.date = innerContentDate ?? date
+        groupActionMessage.updatedAt = innerContentDate ?? date
+        
+        groupActionMessage.setAsLastMessage()
+        groupActionMessage.senderAlias = csr.alias
+        groupActionMessage.senderPic = csr.photoUrl
+        groupActionMessage.senderId = message.fromMe == true ? UserData.sharedInstance.getUserId() : chat.id
+        groupActionMessage.status = TransactionMessage.TransactionMessageStatus.confirmed.rawValue
+        
+        chat.seen = false
+        
+        if (didCreateTribe && csr.role != nil) {
+            chat.isTribeICreated = csr.role == 0 && message.fromMe == true
+        }
+        if (type == TransactionMessage.TransactionMessageType.memberApprove.rawValue) {
+            chat.status = Chat.ChatStatus.approved.rawValue
+        }
+        if (type == TransactionMessage.TransactionMessageType.memberReject.rawValue) {
+            chat.status = Chat.ChatStatus.rejected.rawValue
         }
     }
 
@@ -631,6 +671,22 @@ extension SphinxOnionManager {
         
         endWatchdogTime()
         resetFromRestore()
+        purgeObsoleteChats()
+        
+        if let maxMessageIndex = TransactionMessage.getMaxIndex() {
+            UserDefaults.Keys.maxMessageIndex.set(maxMessageIndex)
+        }
+    }
+    
+    func purgeObsoleteChats(){
+        for chat in Chat.getAll() {
+            if Chat.hasRemovalIndicators(chat: chat) {
+                if let ownerPubKey = chat.ownerPubkey {
+                    addDeletedTribePubKey(tribeOwnerPubKey: ownerPubKey)
+                }
+                CoreDataManager.sharedManager.deleteChatObjectsFor(chat)
+            }
+        }
     }
     
     func resetFromRestore() {

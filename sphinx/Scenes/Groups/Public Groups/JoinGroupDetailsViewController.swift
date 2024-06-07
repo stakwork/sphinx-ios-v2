@@ -193,7 +193,9 @@ class JoinGroupDetailsViewController: KeyboardEventsViewController {
                 tribeInfo: tribeInfo,
                 qrString: qrString
             )
-            closeButtonTouched()
+            AlertHelper.showAlert(title: "generic.success.title".localized, message: "you.joined.tribe".localized) {
+                self.closeButtonTouched()
+            }
         } else {
             loading = false
             AlertHelper.showAlert(title: "generic.error.title".localized, message: "alias.cannot.empty".localized)

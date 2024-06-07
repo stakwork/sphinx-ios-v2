@@ -873,7 +873,7 @@ extension TransactionMessage {
         case TransactionMessageType.groupLeave.rawValue:
             message = getGroupLeaveMessageText(owner: owner, contact: contact)
         case TransactionMessageType.groupKick.rawValue:
-            message = "tribe.kick".localized
+            message = (self.chat?.isTribeICreated ?? false) ? String(format: "tribe.kick.as.admin".localized, getMessageSenderNickname(owner: owner, contact: contact)) : "tribe.kick".localized
         case TransactionMessageType.groupDelete.rawValue:
             message = "tribe.deleted".localized
         case TransactionMessageType.memberRequest.rawValue:
@@ -892,7 +892,7 @@ extension TransactionMessage {
         owner: UserContact,
         contact: UserContact?
     ) -> String {
-        if self.chat?.isMyPublicGroup(ownerPubKey: owner.publicKey) ?? false {
+        if self.chat?.isMyPublicGroup() ?? false {
             return String(format: "admin.request.rejected".localized, getMessageSenderNickname(owner: owner, contact: contact))
         } else {
             return "member.request.rejected".localized
@@ -903,7 +903,7 @@ extension TransactionMessage {
         owner: UserContact,
         contact: UserContact?
     ) -> String {
-        if self.chat?.isMyPublicGroup(ownerPubKey: owner.publicKey) ?? false {
+        if self.chat?.isMyPublicGroup() ?? false {
             return String(format: "admin.request.approved".localized, getMessageSenderNickname(owner: owner, contact: contact))
         } else {
             return "member.request.approved".localized

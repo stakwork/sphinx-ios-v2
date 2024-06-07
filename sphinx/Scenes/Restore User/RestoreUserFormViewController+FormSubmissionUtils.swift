@@ -21,10 +21,46 @@ extension RestoreUserFormViewController {
 
         guard validateCode(code) else { return }
         
+        view.endEditing(true)
+        
+        askForEnvironmentWith(code: code)
+    }
+    
+    func askForEnvironmentWith(code: String) {
+        AlertHelper.showOptionsPopup(
+            title: "Network",
+            message: "Please select the network to use",
+            options: ["Bitcoin","Regtest"],
+            callbacks: [
+                {
+                    UserDefaults.Keys.isProductionEnv.set(true)
+                    self.getConfigData(code: code)
+                },
+                {
+                    UserDefaults.Keys.isProductionEnv.set(false)
+                    self.continueWith(code: code)
+                }
+            ],
+            sourceView: self.view,
+            vc: self
+        )
+    }
+    
+    func getConfigData(code: String) {
+        API.sharedInstance.getServerConfig() { success in
+            if success {
+                self.continueWith(code: code)
+            } else {
+                self.navigationController?.popViewController(animated: true)
+                AlertHelper.showAlert(title: "Error", message: "Unable to get config from Sphinx V2 Server")
+            }
+        }
+    }
+    
+    func continueWith(code: String) {
         UserData.sharedInstance.save(walletMnemonic: code)
         continueRestore()
     }
-    
     
     func validateCode(_ code: String) -> Bool {
         if isCodeValid(code) {
@@ -128,7 +164,7 @@ extension RestoreUserFormViewController : NSFetchedResultsControllerDelegate{
             proceedToNewUserWelcome()
         } else {
             navigationController?.popViewController(animated: true)
-            AlertHelper.showAlert(title: "Error", message: "Unable to connect to Sphinx V2 Test Server")
+            AlertHelper.showAlert(title: "Error", message: "Unable to connect to Sphinx V2 Server")
         }
     }
     

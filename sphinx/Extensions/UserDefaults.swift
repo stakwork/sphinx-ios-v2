@@ -82,10 +82,14 @@ extension UserDefaults {
         public static let onionState = DefaultKey<String>("onionState")
         public static let sequence = DefaultKey<String>("sequence")
         
-        public static let tribesServerURL = DefaultKey<String>("tribesServerURL")
-        public static let lastV2MessageIndex = DefaultKey<Int>("lastV2MessageIndex")
-        public static let removedTribeOwnerPubkeys = DefaultKey<[String]>("removedTribeOwnerPubkey")
         public static let deletedTribesPubKeys = DefaultKey<[String]>("deletedTribesPubKeys")
+        public static let maxMessageIndex = DefaultKey<Int>("maxMessageIndex")
+        
+        public static let isProductionEnv = DefaultKey<Bool>("isProductionEnv")
+        public static let serverIP = DefaultKey<String>("serverIP")
+        public static let serverPORT = DefaultKey<Int>("serverPORT")
+        public static let tribesServerIP = DefaultKey<String>("tribesServerIP")
+        public static let defaultTribePublicKey = DefaultKey<String>("defaultTribePublicKey")
     }
     
     class func resetUserDefaults() {

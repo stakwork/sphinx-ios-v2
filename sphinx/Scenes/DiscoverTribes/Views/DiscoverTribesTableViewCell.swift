@@ -89,7 +89,7 @@ class DiscoverTribesTableViewCell: UITableViewCell {
     
     @IBAction func joinButtonTapped(_ sender: Any) {
         if let tribeData = tribeData, let pubkey = tribeData.pubkey {
-            let host = tribeData.host ?? API.kTestV2TribesServer
+            let host = tribeData.host ?? SphinxOnionManager.sharedInstance.tribesServerIP
             
             guard let joinLinkUrl = URL(string: "sphinx.chat://?action=tribeV2&pubkey=\(pubkey)&host=\(host)") else {
                 return

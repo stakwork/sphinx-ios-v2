@@ -21,7 +21,8 @@ extension API {
     ) {
         
         let route = (type == FeedType.Podcast) ? "search_podcasts" : "search_youtube"
-        let urlPath = "\(API.kTestV2TribesServer)/\(route)"
+        let hostProtocol = UserDefaults.Keys.isProductionEnv.get(defaultValue: false) ? "https" : "http"
+        let urlPath = "\(hostProtocol)://\(SphinxOnionManager.sharedInstance.tribesServerIP)/\(route)"
         
         var urlComponents = URLComponents(string: urlPath)!
         urlComponents.queryItems = [
