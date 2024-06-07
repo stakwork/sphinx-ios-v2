@@ -683,14 +683,14 @@ extension SphinxOnionManager {
                 contactRecord?.nickname = nickname
                 didUpdateContact = true
             }
-            if let photoUrl = restoredAliasTracker[key]?.1{
+            if let photoUrl = restoredAliasTracker[key]?.2{
                 contactRecord?.avatarUrl = photoUrl
                 didUpdateContact = true
             }
             (didUpdateContact) ? (contactRecord?.managedObjectContext?.saveContext()) : ()
         }
         
-        restoredAliasTracker = [String:(String?,String?,Int)]()//reset values
+        restoredAliasTracker = [String:(String?,Int,String?,Int)]()//reset values
     }
     
     func purgeObsoleteChats(){

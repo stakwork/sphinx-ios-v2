@@ -800,7 +800,6 @@ extension SphinxOnionManager {
         var isTribe = false
         
         if let contact = UserContact.getContactWithDisregardStatus(pubkey: pubkey) {
-            
             if let oneOnOneChat = contact.getChat() {
                 chat = oneOnOneChat
             } else {
@@ -821,22 +820,10 @@ extension SphinxOnionManager {
             }
             contactDidChange ? (contact.managedObjectContext?.saveContext()) : ()
             
+            //update alias/contact info tracker for restore process
             if(contactDidChange && self.isV2Restore){
-                let hasEntry = restoredAliasTracker.keys.filter({pubkey == $0}).first != nil
-                if(hasEntry == false){
-                    let url = message.photoUrl == nil ? (contact.avatarUrl) : (message.photoUrl)
-                    let nickname = message.photoUrl == nil ? (contact.nickname) : (message.alias)
-                    let date = message.timestamp ?? 0
-                    restoredAliasTracker[pubkey] = (nickname,url,date)
-                }
-                else if(restoredAliasTracker[pubkey]?.2 ?? 0 < message.timestamp ?? 0){
-                    let url = message.photoUrl == nil ? (contact.avatarUrl) : (message.photoUrl)
-                    let nickname = message.photoUrl == nil ? (contact.nickname) : (message.alias)
-                    let date = message.timestamp ?? 0
-                    restoredAliasTracker[pubkey] = (nickname,url,date)
-                }
+                processRestoreContactUpdate(contact:contact,message:message,pubkey:pubkey)
             }
-            
         } else if let tribeChat = Chat.getTribeChatWithOwnerPubkey(ownerPubkey: pubkey) {
             chat = tribeChat
             senderId = tribeChat.id
@@ -911,6 +898,41 @@ extension SphinxOnionManager {
         newMessage.setAsLastMessage()
         
         return newMessage
+    }
+    
+    func processRestoreContactUpdate(contact:UserContact,message:GenericIncomingMessage,pubkey:String){
+        let hasEntry = restoredAliasTracker.keys.filter({pubkey == $0}).first != nil
+        if(hasEntry == false){//first entry for contact
+            var entryPhotoUrl = contact.avatarUrl
+            var entryNickname = contact.nickname
+            if let photoUrl = message.photoUrl{
+                entryPhotoUrl = photoUrl
+            }
+            if let alias = message.alias{
+                entryNickname = alias
+            }
+            let date = message.timestamp ?? 0
+            restoredAliasTracker[pubkey] = (entryNickname,date,entryPhotoUrl,date)
+        }
+        else{//revising original entry
+            var entryPhotoUrl = restoredAliasTracker[pubkey]?.2 ?? contact.avatarUrl
+            var photoTimestamp = restoredAliasTracker[pubkey]?.3 ?? 0
+            var entryNickname = restoredAliasTracker[pubkey]?.0 ?? contact.nickname
+            var nicknameTimestamp = restoredAliasTracker[pubkey]?.1 ?? 0
+            let messageTimestamp = message.timestamp ?? 0
+            
+            if let photoUrl = message.photoUrl,//photoUrl updated by message
+                messageTimestamp > photoTimestamp{//message is more recent than last timestamp
+                entryPhotoUrl = photoUrl
+                photoTimestamp = messageTimestamp
+            }
+            if let alias = message.alias, //alias updated by message
+                messageTimestamp > nicknameTimestamp{//message is more recent than last timestamp
+                entryNickname = alias
+                nicknameTimestamp = messageTimestamp
+            }
+            restoredAliasTracker[pubkey] = (entryNickname,nicknameTimestamp,entryPhotoUrl,photoTimestamp)
+        }
     }
     
     func processIndexUpdate(message: Msg) {
