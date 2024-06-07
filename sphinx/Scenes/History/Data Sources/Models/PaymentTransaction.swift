@@ -123,8 +123,10 @@ class PaymentTransaction {
             chat.isGroup() == true,
            let message = TransactionMessage.getMessageWith(uuid: self.originalMessageUUID ?? ""){
             if(self.isIncoming() == false),
-              let alias = chat.groupChatUserAlias(id: message.receiverId){
-                return alias
+              let replyUUID = message.replyUUID,
+              let replyMessage = TransactionMessage.getMessageWith(uuid: replyUUID),
+              let originalAlias = replyMessage.senderAlias{
+                return originalAlias
             }
             return message.senderAlias
         }

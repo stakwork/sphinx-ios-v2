@@ -309,19 +309,45 @@ class CreateInvoiceViewController: CommonPaymentViewController {
     }
     
     private func sendDirectPayment() {
-        guard let chat = chat else {
-            return
+        var paymentChat: Chat? = nil
+        
+        if let chat = chat {
+            paymentChat = chat
+        } else if let pubkey = paymentsViewModel.payment.destinationKey, let chat = UserContact.getContactWith(pubkey: pubkey)?.getChat() {
+            paymentChat = chat
         }
         
         guard let amount = paymentsViewModel.payment.amount else {
             return
         }
         
+        if let paymentChat = paymentChat { //do direct payment chat
+            finalizeContactDirectPayment(
+                amount: amount,
+                paymentChat: paymentChat
+            )
+//        } else if let pubkey = paymentsViewModel.payment.destinationKey, let amt = paymentsViewModel.payment.amount {
+//            SphinxOnionManager.sharedInstance.keysend(
+//                pubkey: pubkey,
+//                amt: amt
+//            )
+        } else {
+            AlertHelper.showAlert(
+                title: "generic.error.title".localized,
+                message: "generic.error.message".localized,
+                completion: {
+                    self.shouldDismissView()
+                }
+            )
+        }
+    }
+    
+    func finalizeContactDirectPayment(amount:Int, paymentChat:Chat){
         SphinxOnionManager.sharedInstance.sendDirectPaymentMessage(
             amount: amount,
             muid: paymentsViewModel.payment.muid,
             content: paymentsViewModel.payment.message,
-            chat: chat,
+            chat: paymentChat,
             completion: { success, _ in
                 if (success) {
                     self.shouldDismissView()
