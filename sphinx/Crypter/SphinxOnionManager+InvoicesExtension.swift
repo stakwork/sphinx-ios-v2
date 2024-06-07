@@ -113,17 +113,29 @@ extension SphinxOnionManager {
         return history
     }
     
-    func keysend(){
-        guard let seed = getAccountSeed() else{
-            return
-        }
-        do {
-            //02d3e18a29f372c4fb34c5ecf56f2bc5da962eeb9503f5345d273569a21623fe07_02adccd7f574d17d627541b447f47493916e78e33c1583ba9936607b35ca99c392_529771090643058694
-            let rr = try! sphinx.keysend(seed: seed, uniqueTime: getTimeWithEntropy(), to: "02d3e18a29f372c4fb34c5ecf56f2bc5da962eeb9503f5345d273569a21623fe07", state: loadOnionStateAsData(), amtMsat: 21000, data: nil)
-            let _ = handleRunReturn(rr: rr)
-        } catch {
-            return
-        }
+    func keysend(
+        pubkey: String,
+        amt: Int
+    ) {
+        ///Should be fixed and tested
+        
+        
+//        guard let seed = getAccountSeed() else{
+//            return
+//        }
+//        do {
+//            let rr = try sphinx.keysend(
+//                seed: seed,
+//                uniqueTime: getTimeWithEntropy(),
+//                to: pubkey,
+//                state: loadOnionStateAsData(),
+//                amtMsat: UInt64(amt * 1000), ///Check if sats or msats
+//                data: nil
+//            )
+//            let _ = handleRunReturn(rr: rr)
+//        } catch {
+//            return
+//        }
     }
 
 }
