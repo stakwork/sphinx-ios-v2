@@ -139,6 +139,7 @@
 "just.left.group" = "%@ just left the group";
 "just.left.tribe" = "%@ just left the tribe";
 "has.joined.group" = "%@ has joined the group";
+"you.joined.tribe" = "You have joined the tribe";
 "has.joined.tribe" = "%@ has joined the tribe";
 "added.to.group" = "%@ has been added to group";
 "new.public.group" = "NEW TRIBE";
