@@ -166,13 +166,8 @@ extension NewChatViewController : NewChatTableDataSourceDelegate {
             goToChatWith(contactId: nil, chatId: chat.id)
         } else {
             let joinTribeVC = JoinGroupDetailsViewController.instantiate(qrString: joinLink)
-            joinTribeVC.onJoinAction = handleInlineTribeJoin
             present(joinTribeVC, animated: true)
         }
-    }
-    
-    func handleInlineTribeJoin(){
-        AlertHelper.showAlert(title: "badges.success".localized, message: "you.joined.tribe".localized)
     }
     
     func goToChatWith(

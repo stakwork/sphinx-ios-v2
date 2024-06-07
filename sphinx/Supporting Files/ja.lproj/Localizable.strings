@@ -137,7 +137,7 @@
 "edit.tribe.upper" = "トライブを編集";
 "just.left.group" = "%@ がグループを離れました";
 "just.left.tribe" = "%@ がトライブを離れました";
-"you.joined.tribe" = "You have just joined the tribe";
+"you.joined.tribe" = "You have joined the tribe";
 "has.joined.group" = "%@ がグループに参加しました";
 "has.joined.tribe" = "%@ がトライブに参加しました";
 "added.to.group" = "%@ がグループに追加されました";
