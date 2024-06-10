@@ -79,6 +79,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         registerForVoIP()
         
         setInitialVC()
+        
+        NetworkMonitor.shared
 
         return true
     }

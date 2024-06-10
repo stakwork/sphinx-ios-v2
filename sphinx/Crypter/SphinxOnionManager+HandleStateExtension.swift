@@ -284,6 +284,9 @@ extension SphinxOnionManager {
         {
             if (sentStatus.status == kCompleteStatus) {
                  cachedMessage.status = TransactionMessage.TransactionMessageStatus.received.rawValue
+                if let uuid = cachedMessage.uuid{
+                    receivedOmuuid(uuid)
+                }
             } else if (sentStatus.status == kFailedStatus) {
                 cachedMessage.status = TransactionMessage.TransactionMessageStatus.failed.rawValue
             }

@@ -233,6 +233,8 @@ extension DashboardRootViewController {
         addAccessibilityIdentifiers()
         
         connectToServer()
+        
+        setupObservers()
     }
     
     func addAccessibilityIdentifiers(){
@@ -351,6 +353,24 @@ extension DashboardRootViewController {
             hideRestoreViewCallback: self.hideRestoreViewCallback
         )
     }
+    
+    private func setupObservers() {
+        NotificationCenter.default.addObserver(self, selector: #selector(didConnectToInternet), name: .connectedToInternet, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(didDisconnectFromInternet), name: .disconnectedFromInternet, object: nil)
+    }
+
+    @objc private func didConnectToInternet() {
+        self.connectToServer()
+    }
+
+    @objc private func didDisconnectFromInternet() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: {
+            AlertHelper.showAlert(title: "socket.disconnected".localized, message: "")
+        })
+        
+        // Handle disconnection logic here
+    }
+
     
     func hideRestoreViewCallback(){
         restoreProgressView.hideViewAnimated()
