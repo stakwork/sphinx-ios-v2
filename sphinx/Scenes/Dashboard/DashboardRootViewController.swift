@@ -334,6 +334,7 @@ extension DashboardRootViewController {
         }
         
         som.fetchMyAccountFromState()
+        som.deleteOwnerFromState()
         
         som.connectToServer(
             connectingCallback: {

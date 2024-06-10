@@ -253,7 +253,7 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
         })
         enforceDelay(delay: 8.0)
         
-        sphinxOnionManager.sendMessage(to: contact, content: content, chat: chat, amount: 0, shouldSendAsKeysend: false, msgType: 0, muid: nil, recipPubkey: nil, mediaKey: nil, mediaType: nil, threadUUID: nil, replyUUID: replyUuid)
+            sphinxOnionManager.sendMessage(to: contact, content: content, chat: chat, provisionalMessage: nil, amount: 0, shouldSendAsKeysend: false, msgType: 0, muid: nil, mediaKey: nil, mediaType: nil, threadUUID: nil, replyUUID: replyUuid)
         
         enforceDelay( delay: 14.0)
         

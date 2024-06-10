@@ -112,5 +112,30 @@ extension SphinxOnionManager {
         
         return history
     }
+    
+    func keysend(
+        pubkey: String,
+        amt: Int
+    ) {
+        ///Should be fixed and tested
+        
+        
+//        guard let seed = getAccountSeed() else{
+//            return
+//        }
+//        do {
+//            let rr = try sphinx.keysend(
+//                seed: seed,
+//                uniqueTime: getTimeWithEntropy(),
+//                to: pubkey,
+//                state: loadOnionStateAsData(),
+//                amtMsat: UInt64(amt * 1000), ///Check if sats or msats
+//                data: nil
+//            )
+//            let _ = handleRunReturn(rr: rr)
+//        } catch {
+//            return
+//        }
+    }
 
 }
