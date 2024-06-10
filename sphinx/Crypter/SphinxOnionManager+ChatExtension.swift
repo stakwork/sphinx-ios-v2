@@ -806,7 +806,6 @@ extension SphinxOnionManager {
         var isTribe = false
         
         if let contact = UserContact.getContactWithDisregardStatus(pubkey: pubkey) {
-            
             if let oneOnOneChat = contact.getChat() {
                 chat = oneOnOneChat
             } else {
@@ -816,17 +815,12 @@ extension SphinxOnionManager {
             senderId = (fromMe == true) ? (UserData.sharedInstance.getUserId()) : contact.id
             receiverId = (fromMe == true) ? contact.id : (UserData.sharedInstance.getUserId())
             
-            var contactDidChange = false
-            
-            if (contact.nickname != message.alias && message.alias != nil) {
-                contact.nickname = message.alias
-                contactDidChange = true
-            }
-            if (contact.avatarUrl != message.photoUrl) {
-                contact.avatarUrl = message.photoUrl
-                contactDidChange = true
-            }
-            contactDidChange ? (contact.managedObjectContext?.saveContext()) : ()
+            updateContactInfoFromMessage(
+                contact: contact,
+                alias: message.alias,
+                photoUrl: message.photoUrl,
+                pubkey: pubkey
+            )
             
         } else if let tribeChat = Chat.getTribeChatWithOwnerPubkey(ownerPubkey: pubkey) {
             chat = tribeChat
@@ -910,6 +904,33 @@ extension SphinxOnionManager {
         newMessage.setAsLastMessage()
         
         return newMessage
+    }
+    
+    func updateContactInfoFromMessage(
+            contact: UserContact,
+            alias: String?,
+            photoUrl: String?,
+            pubkey: String
+    ) {
+        if !restoredContactInfoTracker.contains(pubkey) || !isV2Restore {
+            
+            var contactDidChange = false
+            
+            if (contact.nickname != alias && alias != nil) {
+                contact.nickname = alias
+                contactDidChange = true
+            }
+            
+            if (contact.avatarUrl != photoUrl) {
+                contact.avatarUrl = photoUrl
+                contactDidChange = true
+            }
+            
+            if contactDidChange {
+                contact.managedObjectContext?.saveContext()
+                restoredContactInfoTracker.append(pubkey)
+            }
+        }
     }
     
     func processIndexUpdate(message: Msg) {
