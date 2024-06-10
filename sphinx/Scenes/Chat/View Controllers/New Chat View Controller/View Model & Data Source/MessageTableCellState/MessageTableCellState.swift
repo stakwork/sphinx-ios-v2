@@ -904,7 +904,7 @@ extension MessageTableCellState {
         if chat.isPublicGroup() {
             senderInfo = (
                 ChatHelper.getSenderColorFor(message: message),
-                message.senderAlias ?? "Unknow",
+                message.senderAlias ?? "Unknown",
                 message.senderPic
             )
         } else if let contact = contact {
@@ -915,7 +915,7 @@ extension MessageTableCellState {
             }
             senderInfo = (
                 finalContact.getColor(),
-                finalContact.nickname ?? "Unknow",
+                finalContact.nickname ?? "Unknown",
                 finalContact.avatarUrl
             )
         }

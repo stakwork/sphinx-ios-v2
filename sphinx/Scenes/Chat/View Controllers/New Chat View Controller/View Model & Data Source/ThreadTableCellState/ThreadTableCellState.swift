@@ -149,13 +149,13 @@ extension ThreadTableCellState {
         if isSent {
             senderInfo = (
                 owner.getColor(),
-                owner.nickname ?? "Unknow",
+                owner.nickname ?? "Unknown",
                 owner.avatarUrl
             )
         } else {
             senderInfo = (
                 ChatHelper.getSenderColorFor(message: message),
-                message.senderAlias ?? "Unknow",
+                message.senderAlias ?? "Unknown",
                 message.senderPic
             )
         }
