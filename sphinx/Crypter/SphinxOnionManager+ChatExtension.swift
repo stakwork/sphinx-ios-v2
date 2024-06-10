@@ -810,22 +810,13 @@ extension SphinxOnionManager {
             senderId = (fromMe == true) ? (UserData.sharedInstance.getUserId()) : contact.id
             receiverId = (fromMe == true) ? contact.id : (UserData.sharedInstance.getUserId())
             
-            var contactDidChange = false
+            updateContactInfoFromMessage(
+                contact: contact,
+                alias: message.alias,
+                photoUrl: message.photoUrl,
+                pubkey: pubkey
+            )
             
-            if (contact.nickname != message.alias && message.alias != nil) {
-                contact.nickname = message.alias
-                contactDidChange = true
-            }
-            if (contact.avatarUrl != message.photoUrl) {
-                contact.avatarUrl = message.photoUrl
-                contactDidChange = true
-            }
-            contactDidChange ? (contact.managedObjectContext?.saveContext()) : ()
-            
-            //update alias/contact info tracker for restore process
-            if(contactDidChange && self.isV2Restore){
-                processRestoreContactUpdate(contact:contact,message:message,pubkey:pubkey)
-            }
         } else if let tribeChat = Chat.getTribeChatWithOwnerPubkey(ownerPubkey: pubkey) {
             chat = tribeChat
             senderId = tribeChat.id
@@ -910,38 +901,30 @@ extension SphinxOnionManager {
         return newMessage
     }
     
-    func processRestoreContactUpdate(contact:UserContact,message:GenericIncomingMessage,pubkey:String){
-        let hasEntry = restoredAliasTracker.keys.filter({pubkey == $0}).first != nil
-        if(hasEntry == false){//first entry for contact
-            var entryPhotoUrl = contact.avatarUrl
-            var entryNickname = contact.nickname
-            if let photoUrl = message.photoUrl{
-                entryPhotoUrl = photoUrl
-            }
-            if let alias = message.alias{
-                entryNickname = alias
-            }
-            let date = message.timestamp ?? 0
-            restoredAliasTracker[pubkey] = (entryNickname,date,entryPhotoUrl,date)
-        }
-        else{//revising original entry
-            var entryPhotoUrl = restoredAliasTracker[pubkey]?.2 ?? contact.avatarUrl
-            var photoTimestamp = restoredAliasTracker[pubkey]?.3 ?? 0
-            var entryNickname = restoredAliasTracker[pubkey]?.0 ?? contact.nickname
-            var nicknameTimestamp = restoredAliasTracker[pubkey]?.1 ?? 0
-            let messageTimestamp = message.timestamp ?? 0
+    func updateContactInfoFromMessage(
+            contact: UserContact,
+            alias: String?,
+            photoUrl: String?,
+            pubkey: String
+    ) {
+        if !restoredContactInfoTracker.contains(pubkey) || !isV2Restore {
             
-            if let photoUrl = message.photoUrl,//photoUrl updated by message
-                messageTimestamp > photoTimestamp{//message is more recent than last timestamp
-                entryPhotoUrl = photoUrl
-                photoTimestamp = messageTimestamp
+            var contactDidChange = false
+            
+            if (contact.nickname != alias && alias != nil) {
+                contact.nickname = alias
+                contactDidChange = true
             }
-            if let alias = message.alias, //alias updated by message
-                messageTimestamp > nicknameTimestamp{//message is more recent than last timestamp
-                entryNickname = alias
-                nicknameTimestamp = messageTimestamp
+            
+            if (contact.avatarUrl != photoUrl) {
+                contact.avatarUrl = photoUrl
+                contactDidChange = true
             }
-            restoredAliasTracker[pubkey] = (entryNickname,nicknameTimestamp,entryPhotoUrl,photoTimestamp)
+            
+            if contactDidChange {
+                contact.managedObjectContext?.saveContext()
+                restoredContactInfoTracker.append(pubkey)
+            }
         }
     }
     

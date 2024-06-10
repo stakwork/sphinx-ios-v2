@@ -53,10 +53,11 @@ class SphinxOnionManager : NSObject {
     }
     
     var isV2InitialSetup: Bool = false
-    var restoredAliasTracker = [String:(String?,Int,String?,Int)]() //[pubkey:(alias,aliasTimestamp,photoUrl,photoTimestamp)]
     var isV2Restore: Bool = false
     var shouldPostUpdates : Bool = false
     let tribeMinEscrowSats = 3
+    
+    var restoredContactInfoTracker = [String]()
     
     var vc: UIViewController! = nil
     var mqtt: CocoaMQTT! = nil

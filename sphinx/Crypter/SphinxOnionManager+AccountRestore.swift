@@ -471,6 +471,8 @@ extension SphinxOnionManager {
             let contact = UserContact.getContactWithDisregardStatus(pubkey: recipientPubkey) ?? createNewContact(
                 pubkey: recipientPubkey,
                 routeHint: routeHint,
+                nickname: csr.alias,
+                photoUrl: csr.photoUrl,
                 code: csr.code,
                 date: message.date
             )
@@ -482,8 +484,6 @@ extension SphinxOnionManager {
             if let routeHint = routeHint {
                 contact.routeHint = routeHint
             }
-            contact.nickname = (csr.alias?.isEmpty == true) ? contact.nickname : csr.alias
-            contact.avatarUrl = (csr.photoUrl?.isEmpty == true) ? contact.avatarUrl : csr.photoUrl
             
             let isConfirmed = csr.confirmed == true
             
@@ -669,7 +669,8 @@ extension SphinxOnionManager {
         messageFetchParams = nil
         chatsFetchParams = nil
         
-        finalizeAliasAndPhotos()
+        restoredContactInfoTracker = []
+        
         endWatchdogTime()
         resetFromRestore()
         purgeObsoleteChats()
@@ -677,25 +678,6 @@ extension SphinxOnionManager {
         if let maxMessageIndex = TransactionMessage.getMaxIndex() {
             UserDefaults.Keys.maxMessageIndex.set(maxMessageIndex)
         }
-    }
-    
-    func finalizeAliasAndPhotos(){
-        for key in restoredAliasTracker.keys{
-            let data = restoredAliasTracker[key]
-            let contactRecord = UserContact.getContactWithDisregardStatus(pubkey: key)
-            var didUpdateContact : Bool = false
-            if let nickname = restoredAliasTracker[key]?.0{
-                contactRecord?.nickname = nickname
-                didUpdateContact = true
-            }
-            if let photoUrl = restoredAliasTracker[key]?.2{
-                contactRecord?.avatarUrl = photoUrl
-                didUpdateContact = true
-            }
-            (didUpdateContact) ? (contactRecord?.managedObjectContext?.saveContext()) : ()
-        }
-        
-        restoredAliasTracker = [String:(String?,Int,String?,Int)]()//reset values
     }
     
     func purgeObsoleteChats(){
