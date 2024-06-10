@@ -39,6 +39,7 @@ struct ContactServerResponse: Mappable {
     var person: String?
     var code: String?
     var role: Int?
+    var routeHint:String?
     var fullContactInfo: String?
     var recipientAlias: String?
     var confirmed: Bool?
@@ -48,6 +49,7 @@ struct ContactServerResponse: Mappable {
     mutating func mapping(map: Map) {
         pubkey          <- map["pubkey"]
         alias           <- map["alias"]
+        routeHint       <- map["route_hint"]
         photoUrl        <- map["photo_url"]
         person          <- map["person"]
         code            <- map["code"]
