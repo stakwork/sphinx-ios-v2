@@ -908,10 +908,15 @@ extension MessageTableCellState {
                 message.senderPic
             )
         } else if let contact = contact {
+            var finalContact = contact
+            if message.isOutgoing(),
+               let owner = UserContact.getOwner(){
+                finalContact = owner
+            }
             senderInfo = (
-                contact.getColor(),
-                contact.nickname ?? "Unknow",
-                contact.avatarUrl
+                finalContact.getColor(),
+                finalContact.nickname ?? "Unknow",
+                finalContact.avatarUrl
             )
         }
         
