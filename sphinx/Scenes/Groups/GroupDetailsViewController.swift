@@ -261,19 +261,6 @@ class GroupDetailsViewController: UIViewController {
         let id = chat.id
         let fixedImage = image.fixedOrientation()
         loading = true
-        
-//        API.sharedInstance.uploadImage(chatId: id, image: fixedImage, progressCallback: { progress in
-//            print("Progress: \(progress)")
-//        }, callback: { (success, fileUrl) in
-//            self.loading = false
-//            
-//            if let fileUrl = fileUrl, success {
-//                MediaLoader.storeImageInCache(img: image, url: fileUrl, message: nil)
-//                self.imageUploaded(photoUrl: fileUrl)
-//            } else {
-//                self.imageUploaded(photoUrl: nil)
-//            }
-//        })
     }
     
     func imageUploaded(photoUrl: String?) {
@@ -288,8 +275,7 @@ class GroupDetailsViewController: UIViewController {
     
     func groupDeleted() {
         navigationController?.popToRootViewController(animated: true)
-//        let mainCoordinator = MainCoordinator(rootViewController: rootViewController)
-//        mainCoordinator.presentInitialDrawer()
+
     }
     
     @IBAction func groupPictureButtonTouched() {
@@ -346,7 +332,10 @@ extension GroupDetailsViewController : AddFriendRowButtonDelegate {
 
 extension GroupDetailsViewController : NewContactVCDelegate {
     func shouldReloadChat(chat: Chat) {
-        ///Check what to do here
+        self.chat = chat
+        self.tableDataSource.chat = chat
+        configureTableView()
+        setGroupInfo()
     }
 }
 
