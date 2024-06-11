@@ -209,6 +209,30 @@ extension SphinxOnionManager {
         )
     }
     
+    func updateTribe(params: [String: AnyObject], pubkey:String,id:Int) -> JSON?{
+        var finalParams = params
+        finalParams["pubkey"] = pubkey as AnyObject
+        finalParams["id"] = id as AnyObject
+        
+        guard let seed = getAccountSeed(),
+            let tribeServerPubkey = getTribePubkey(),
+              let tribeData = try? JSONSerialization.data(withJSONObject: finalParams),
+              let tribeJSONString = String(data: tribeData, encoding: .utf8) else{
+            return nil
+        }
+        do{
+            let rr = try! sphinx.updateTribe(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), tribeServerPubkey: tribeServerPubkey, tribeJson: tribeJSONString)
+             handleRunReturn(rr: rr)
+            let tribeJSON = try JSON(data: tribeData)
+            return tribeJSON
+        }
+        catch{
+            return nil
+        }
+        
+        return nil
+    }
+    
     func deleteTribe(tribeChat: Chat) {
         let _ = sendMessage(
             to: nil,

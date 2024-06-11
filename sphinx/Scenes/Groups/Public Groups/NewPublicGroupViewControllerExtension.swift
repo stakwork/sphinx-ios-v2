@@ -171,18 +171,21 @@ extension NewPublicGroupViewController {
     }
     
     func editGroup(id: Int, params: [String: AnyObject]) {
-        showErrorAlert()
-        //TODO: @Jim implement when we have bindings
-//        API.sharedInstance.editGroup(id: id, params: params, callback: { chatJson in
-//            if let chat = Chat.insertChat(chat: chatJson) {
-//                chat.tribeInfo = self.groupsManager.newGroupInfo
-//                self.shouldDismissView(chat: chat)
-//            } else {
-//                self.showErrorAlert()
-//            }
-//        }, errorCallback: {
-//            self.showErrorAlert()
-//        })
+        guard let chat = Chat.getChatWith(id: id),
+              let pubkey = chat.ownerPubkey else{
+            showErrorAlert()
+            return
+        }
+        
+        if let chatJson = SphinxOnionManager.sharedInstance.updateTribe(params: params, pubkey: pubkey,id: id),
+           let chat = Chat.insertChat(chat: chatJson) {
+            chat.tribeInfo = self.groupsManager.newGroupInfo
+            self.shouldDismissView(chat: chat)
+        } else {
+            self.showErrorAlert()
+        }
+        
+        loading = false
     }
     
     func shouldDismissView(chat: Chat? = nil) {
