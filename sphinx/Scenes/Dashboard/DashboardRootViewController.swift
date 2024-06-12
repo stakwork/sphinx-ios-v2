@@ -617,6 +617,7 @@ extension DashboardRootViewController {
         navigationController?.pushViewController(chatVC, animated: shouldAnimate)
     }
     
+    
     private func handleInvite(for contact: UserContact?) -> Bool {        
         if let invite = contact?.invite, (contact?.isPending() ?? false) {
             
