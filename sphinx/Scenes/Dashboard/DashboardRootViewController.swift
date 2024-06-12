@@ -321,6 +321,8 @@ extension DashboardRootViewController {
         handleDeepLinksAndPush()
         
         setupAddTribeButton()
+        
+        SphinxOnionManager.sharedInstance.scanAndUpdateMyTribes()
     }
     
     func refreshUnreadStatus(){

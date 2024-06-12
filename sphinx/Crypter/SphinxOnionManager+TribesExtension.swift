@@ -209,6 +209,26 @@ extension SphinxOnionManager {
         )
     }
     
+    func scanAndUpdateMyTribes(){
+        for chat in Chat.getAllTribes(){
+            if let uuid = chat.ownerPubkey{
+                let host = SphinxOnionManager.sharedInstance.tribesServerIP
+                API.sharedInstance.getTribeInfo(
+                    host: host,
+                    uuid: uuid,
+                    callback: {chatJSON in
+                        let tribeInfo = GroupsManager.sharedInstance.getTribesInfoFrom(json: chatJSON)
+                        print(tribeInfo)
+                        chat.tribeInfo = tribeInfo
+                        chat.updateChatFromTribesInfo()
+                    },
+                    errorCallback: {
+                        
+                    })
+            }
+        }
+    }
+    
     func updateTribe(params: [String: AnyObject], pubkey: String, id: Int) {
         var finalParams = params
         finalParams["pubkey"] = pubkey as AnyObject
