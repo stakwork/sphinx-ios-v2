@@ -38,6 +38,7 @@ public protocol ChatListCommonObject: class {
     func getChat() -> Chat?
     func getContact() -> UserContact?
     func getInvite() -> UserInvite?
+    func isInvite() -> Bool
     func getUnseenMessagesCount(ownerId: Int) -> Int
     
     var lastMessage : TransactionMessage? { get set }
