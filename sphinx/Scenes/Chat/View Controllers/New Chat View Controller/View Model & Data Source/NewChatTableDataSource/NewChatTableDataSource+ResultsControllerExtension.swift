@@ -767,14 +767,14 @@ extension NewChatTableDataSource : NSFetchedResultsControllerDelegate {
     }
     
     func updateMessagesStatusesFrom(messages: [TransactionMessage]) {
-        if !messageTableCellStateArray.isEmpty && !loadingMoreItems {
-            ///Just do it the first time messages are loaded
-            return
-        }
-
-        if messages.isEmpty {
-            return
-        }
+//        if !messageTableCellStateArray.isEmpty && !loadingMoreItems {
+//            ///Just do it the first time messages are loaded
+//            return
+//        }
+//
+//        if messages.isEmpty {
+//            return
+//        }
 
         let confirmedMessages = messages.filter({
             return $0.senderId == UserData.sharedInstance.getUserId() &&
@@ -782,9 +782,9 @@ extension NewChatTableDataSource : NSFetchedResultsControllerDelegate {
         })
         let tags = confirmedMessages.compactMap({ $0.tag })
 
-        if tags.isEmpty {
-            return
-        }
+//        if tags.isEmpty {
+//            return
+//        }
 
         SphinxOnionManager.sharedInstance.getMessagesStatusFor(tags: tags)
     }

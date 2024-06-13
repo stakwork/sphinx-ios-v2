@@ -1222,7 +1222,7 @@ extension SphinxOnionManager {
         }
         
         do {
-            let rr = try Sphinx.getTags(
+            let rr = try sphinx.getTags(
                 seed: seed,
                 uniqueTime: getTimeWithEntropy(),
                 state: loadOnionStateAsData(),
