@@ -119,6 +119,9 @@ class NewChatTableDataSource : NSObject {
     var loadingMoreItems = false
     var scrolledAtBottom = false
     
+    ///Messages statuses restore
+    var lastMessageTagRestored = ""
+    
     ///WebView Loading
     let webViewSemaphore = DispatchSemaphore(value: 1)
     var webViewLoadingCompletion: ((CGFloat?) -> ())? = nil
