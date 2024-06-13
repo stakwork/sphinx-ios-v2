@@ -227,3 +227,23 @@ extension String {
         return self
     }
 }
+
+
+extension String {
+    func byteSize() -> Int {
+        let length = self.lengthOfBytes(using: .utf8) + 360//add offset
+        return length
+    }
+}
+
+func isMessageWithinByteLimit(message: String, replyUUID: String? = nil, threadUUID: String? = nil, byteLimit: Int = 869) -> Bool {
+    var totalMessage = message
+    if let replyUUID = replyUUID {
+        totalMessage += replyUUID + "--------"//add padding to account for additional payload introduced by replyUUID
+    }
+    if let threadUUID = threadUUID {
+        totalMessage += threadUUID + "-----------"
+    }
+    
+    return totalMessage.byteSize() <= byteLimit
+}
