@@ -881,6 +881,7 @@ extension SphinxOnionManager {
         newMessage.mediaType = message.mediaType
         newMessage.mediaToken = message.mediaToken
         newMessage.paymentHash = message.paymentHash
+        newMessage.tag = message.tag
         
         if (type == TransactionMessage.TransactionMessageType.boost.rawValue && isTribe == true), let msgAmount = message.amount {
             newMessage.amount = NSDecimalNumber(value: msgAmount/1000)
@@ -1209,6 +1210,25 @@ extension SphinxOnionManager {
                 seed: seed,
                 uniqueTime: getTimeWithEntropy(),
                 state: loadOnionStateAsData()
+            )
+            let _ = handleRunReturn(rr: rr)
+        } catch {
+            print("Error getting read level")
+        }
+    }
+    
+    func getMessagesStatusFor(tags: [String]) {
+        guard let seed = getAccountSeed() else{
+            return
+        }
+        
+        do {
+            let rr = try sphinx.getTags(
+                seed: seed,
+                uniqueTime: getTimeWithEntropy(),
+                state: loadOnionStateAsData(),
+                tags: tags,
+                pubkey: nil
             )
             let _ = handleRunReturn(rr: rr)
         } catch {
