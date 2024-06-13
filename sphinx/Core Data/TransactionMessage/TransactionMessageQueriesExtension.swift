@@ -156,9 +156,13 @@ extension TransactionMessage {
         let fetchRequest: NSFetchRequest<TransactionMessage> = TransactionMessage.fetchRequest()
         
         fetchRequest.predicate = NSPredicate(
-            format: "chat == %@ AND type != %d",
+            format: "chat == %@ AND NOT (type IN %@)",
             chat,
-            TransactionMessageType.delete.rawValue
+            [
+                TransactionMessageType.delete.rawValue,
+                TransactionMessageType.contactKey.rawValue,
+                TransactionMessageType.contactKeyConfirmation.rawValue
+            ]
         )
         
         fetchRequest.sortDescriptors = [NSSortDescriptor(key: "date", ascending: false)]

@@ -181,6 +181,8 @@
 "address-boox.contact-block.alert-message" = "Sigurado ka bang gusto mong i-block ang kontak na ito?";
 "address-boox.contact-unblock.alert-title" = "I-unblock ang Kontak";
 "address-boox.contact-unblock.alert-message" = "Sigurado ka bang gusto mong i-unblock ang Kontak na ito?";
+"address-book.can-not-delete-contact-title" = "Hindi matanggal ang contact";
+"address-book.can-not-delete-contact-message" = "Hindi matatanggal ang mga kumpirmadong contact";
 
 //WELCOME
 "welcome.initial.title" = "Maligayang Pagdating";
@@ -374,6 +376,7 @@
 "media.terms.expired" = "Nag-expire ang mga termino ng media";
 "message.failed" = "Nabigo ang Mensahe";
 "invite.name" = "Paanyaya: %@";
+"add.name" = "Idagdag: %@";
 "welcome.to.sphinx" = "Maligayang pagdating sa Sphinx!";
 "loading.more.messages" = "Naglo-load ng higit pang mga mensahe...";
 "message.placeholder" = "Mensahe...";

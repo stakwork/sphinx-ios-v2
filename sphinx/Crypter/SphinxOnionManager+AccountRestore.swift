@@ -300,6 +300,26 @@ extension SphinxOnionManager {
             print(error)
         }
     }
+    
+    func fetchOkKeyMessages() {
+        guard let seed = getAccountSeed() else {
+            return
+        }
+        
+        do {
+            let rr = try fetchMsgsBatchOkkey(
+                seed: seed,
+                uniqueTime: getTimeWithEntropy(),
+                state: loadOnionStateAsData(),
+                lastMsgIdx: UInt64(0),
+                limit: UInt32(250),
+                reverse: false
+            )
+            let _ = handleRunReturn(rr: rr)
+        } catch let error {
+            print(error)
+        }
+    }
 }
 
 extension SphinxOnionManager {
@@ -494,6 +514,8 @@ extension SphinxOnionManager {
             if contact.getChat() == nil && isConfirmed {
                 let _ = createChat(for: contact, with: message.date)
             }
+            
+            createKeyExchangeMsgFrom(msg: message)
         }
     }
     
