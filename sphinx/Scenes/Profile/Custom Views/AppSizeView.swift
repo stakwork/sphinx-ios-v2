@@ -15,7 +15,7 @@ class AppSizeView: CommonTabsView {
     }
     
     override func setSelected() {
-        let size = UserDefaults.Keys.messagesSize.get(defaultValue: MessagesSize.Big.rawValue)
+        let size = UserDefaults.Keys.messagesSize.get(defaultValue: MessagesSize.Medium.rawValue)
         toggleAll(selectedTag: size)
     }
     
