@@ -177,7 +177,11 @@ class ConfirmAddFriendViewController: UIViewController {
         
         let nickname = nickNameField.text ?? "unknown"
         
-        som.createContactForInvite(code: inviteCode, nickname: nickname)
+        som.createContactForInvite(
+            code: inviteCode,
+            nickname: nickname
+        )
+        
         ClipboardHelper.copyToClipboard(text: inviteCode)
         
         som.inviteCreationCallback = nil

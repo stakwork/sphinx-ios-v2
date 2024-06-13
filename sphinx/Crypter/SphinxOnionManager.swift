@@ -68,7 +68,7 @@ class SphinxOnionManager : NSObject {
         }
     }
     
-    var settledRRObjects: [RunReturn] = []
+    var delayedRRObjects: [RunReturn] = []
     
     var msgTotalCounts : MsgTotalCounts? = nil
     
@@ -284,7 +284,7 @@ class SphinxOnionManager : NSObject {
     }
     
     func isFetchingContent() -> Bool {
-        return onMessageRestoredCallback != nil || firstSCIDMsgsCallback != nil || totalMsgsCountCallback == nil
+        return onMessageRestoredCallback != nil || firstSCIDMsgsCallback != nil || totalMsgsCountCallback != nil
     }
     
     func reconnectToServer(
