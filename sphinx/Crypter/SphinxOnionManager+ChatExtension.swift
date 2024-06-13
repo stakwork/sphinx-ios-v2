@@ -975,7 +975,7 @@ extension SphinxOnionManager {
             
             var contactDidChange = false
             
-            if (contact.nickname != alias && alias != nil) {
+            if (contact.nickname != alias && alias != nil && alias?.isEmpty == false) {
                 contact.nickname = alias
                 contactDidChange = true
             }

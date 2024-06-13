@@ -239,7 +239,7 @@ extension SphinxOnionManager {
             if let data = settledStatus.data(using: .utf8) {
                 do {
                     if let dictionary = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any?] {
-                        if let htlcId = dictionary["htlc_id"] as? String, let settleStatus = dictionary["status"] as? String, settleStatus == kCompleteStatus {
+                        if let htlcId = dictionary["htlc_id"] as? String, let settleStatus = dictionary["status"] as? String, settleStatus == SphinxOnionManager.kCompleteStatus {
                             if let RRObject = delayedRRObjects.filter({
                                 return $0.msgs.filter({ $0.index == htlcId }).first != nil
                             }).first {
