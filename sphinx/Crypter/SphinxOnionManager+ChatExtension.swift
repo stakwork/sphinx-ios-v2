@@ -881,6 +881,7 @@ extension SphinxOnionManager {
         newMessage.mediaType = message.mediaType
         newMessage.mediaToken = message.mediaToken
         newMessage.paymentHash = message.paymentHash
+        newMessage.tag = message.tag
         
         if (type == TransactionMessage.TransactionMessageType.boost.rawValue && isTribe == true), let msgAmount = message.amount {
             newMessage.amount = NSDecimalNumber(value: msgAmount/1000)

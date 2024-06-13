@@ -131,6 +131,7 @@ struct GenericIncomingMessage: Mappable {
     var alias: String? = nil
     var fullContactInfo: String? = nil
     var photoUrl: String? = nil
+    var tag: String? = nil
 
     init?(map: Map) {}
     
@@ -188,6 +189,7 @@ struct GenericIncomingMessage: Mappable {
         
         self.uuid = msg.uuid
         self.index = msg.index
+        self.tag = msg.tag
     }
 
     mutating func mapping(map: Map) {

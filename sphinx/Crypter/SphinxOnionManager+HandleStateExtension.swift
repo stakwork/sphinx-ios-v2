@@ -68,6 +68,9 @@ extension SphinxOnionManager {
             ///Handling mute levels
             self.handleMuteLevels(rr: rr)
             
+            ///Handling messages statused
+            self.handleMessagesStatus(tags: rr.tags)
+            
             ///Handling restore callbacks
             self.handleRestoreCallbacks(topic: topic, messages: rr.msgs)
         }
