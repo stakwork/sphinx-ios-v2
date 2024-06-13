@@ -1215,6 +1215,25 @@ extension SphinxOnionManager {
             print("Error getting read level")
         }
     }
+    
+    func getMessagesStatusFor(tags: [String]) {
+        guard let seed = getAccountSeed() else{
+            return
+        }
+        
+        do {
+            let rr = try Sphinx.getTags(
+                seed: seed,
+                uniqueTime: getTimeWithEntropy(),
+                state: loadOnionStateAsData(),
+                tags: tags,
+                pubkey: nil
+            )
+            let _ = handleRunReturn(rr: rr)
+        } catch {
+            print("Error getting read level")
+        }
+    }
 
 }
 
