@@ -35,7 +35,7 @@ extension SphinxOnionManager {//contacts related
             let indexes = okKeyMessages.compactMap({ UInt64($0.id) })
             
             do {
-                let rr = try Sphinx.deleteMsgs(
+                let rr = try sphinx.deleteMsgs(
                     seed: seed,
                     uniqueTime: getTimeWithEntropy(),
                     state: loadOnionStateAsData(),
@@ -51,7 +51,7 @@ extension SphinxOnionManager {//contacts related
         
         if let publicKey = contact?.publicKey ?? chat?.ownerPubkey {
             do {
-                let rr = try Sphinx.deleteMsgs(
+                let rr = try sphinx.deleteMsgs(
                     seed: seed,
                     uniqueTime: getTimeWithEntropy(),
                     state: loadOnionStateAsData(),
