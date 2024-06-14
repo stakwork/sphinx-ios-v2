@@ -95,6 +95,9 @@ extension SphinxOnionManager {
         ///Handling state to delete
         handleStateToDelete(stateToDelete: rr.stateToDelete)
         
+        ///Handling Payment History
+        handlePaymentsHistory(payments: rr.payments)
+
         ///Handling topics subscription
         handleTopicsToSubscribe(topics: rr.subscriptionTopics)
         
@@ -132,6 +135,14 @@ extension SphinxOnionManager {
     func updateStateMap(stateMap: Data?) {
         if let stateMap = stateMap {
             let _ = storeOnionState(inc: stateMap.bytes)
+        }
+    }
+    
+    func handlePaymentsHistory(payments: String?) {
+        if let payments = payments, payments != "[]" {
+            if let paymentsHistoryCallback = paymentsHistoryCallback {
+                paymentsHistoryCallback(payments, nil)
+            }
         }
     }
     
@@ -348,6 +359,7 @@ extension SphinxOnionManager {
             } else if (sentStatus.status == SphinxOnionManager.kFailedStatus) {
                 cachedMessage.status = TransactionMessage.TransactionMessageStatus.failed.rawValue
             }
+            cachedMessage.paymentHash == nil ? (cachedMessage.paymentHash = sentStatus.paymentHash) : ()
         }
     }
     
