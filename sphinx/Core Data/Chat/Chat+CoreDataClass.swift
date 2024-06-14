@@ -837,12 +837,6 @@ public class Chat: NSManagedObject {
     }
     
     func updateChatFromTribesInfo() {
-        if isMyPublicGroup() {
-            pinnedMessageUUID = tribeInfo?.pin ?? nil
-            saveChat()
-            return
-        }
-        
         escrowAmount = NSDecimalNumber(integerLiteral: tribeInfo?.amountToStake ?? (escrowAmount?.intValue ?? 0))
         pricePerMessage = NSDecimalNumber(integerLiteral: tribeInfo?.pricePerMessage ?? (pricePerMessage?.intValue ?? 0))
         pinnedMessageUUID = tribeInfo?.pin ?? nil
@@ -859,7 +853,6 @@ public class Chat: NSManagedObject {
     }
     
     func syncAfterUpdate() {
-        syncTribeWithServer()
         checkForDeletedTribe()
     } 
     
@@ -897,15 +890,6 @@ public class Chat: NSManagedObject {
     
     func isMyPublicGroup() -> Bool {
         return isPublicGroup() && isTribeICreated == true
-    }
-    
-    
-    func syncTribeWithServer() {
-        DispatchQueue.global().async {
-            let params: [String: AnyObject] = ["name" : self.name as AnyObject, "img": self.photoUrl as AnyObject]
-            //TODO: @Jim implement when edit group binding available
-//            API.sharedInstance.editGroup(id: self.id, params: params, callback: { _ in }, errorCallback: {})
-        }
     }
     
     func getJoinChatLink() -> String? {

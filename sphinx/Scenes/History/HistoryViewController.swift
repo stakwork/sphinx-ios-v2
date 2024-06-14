@@ -140,8 +140,6 @@ class HistoryViewController: UIViewController {
         historyDataSource.loadTransactions(transactions: history)
         loading = false
     }
-
-
     
     func setNoResultsLabel(count: Int) {
         noResultsLabel.alpha = count > 0 ? 0.0 : 1.0
