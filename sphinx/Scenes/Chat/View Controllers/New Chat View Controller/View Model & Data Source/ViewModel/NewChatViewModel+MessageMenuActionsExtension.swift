@@ -30,13 +30,13 @@ extension NewChatViewModel {
             return
         }
         
-//        SphinxOnionManager.sharedInstance.sendMessage(
-//            to: message.chat?.getContact(),
-//            content: message.messageContent ?? "",
-//            chat: chat,
-//            threadUUID: message.threadUUID,
-//            replyUUID: message.replyUUID
-//        )
+        SphinxOnionManager.sharedInstance.sendMessage(
+            to: message.chat?.getContact(),
+            content: message.messageContent ?? "",
+            chat: chat, provisionalMessage: message,
+            threadUUID: message.threadUUID,
+            replyUUID: message.replyUUID
+        )
     }
 }
 

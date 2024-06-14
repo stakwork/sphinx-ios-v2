@@ -28,4 +28,6 @@ extension Notification.Name {
     static let newOnionMessageWasReceived = Notification.Name("newOnionMessageWasReceived")
     static let newTribeMemberListRetrieved = Notification.Name("newTribeMemberListRetrieved")
     static let invoiceIPaidSettled = Notification.Name("invoiceIPaidSettled")
+    static let connectedToInternet = Notification.Name("connectedToInternet")
+    static let disconnectedFromInternet = Notification.Name("disconnectedFromInternet")
 }

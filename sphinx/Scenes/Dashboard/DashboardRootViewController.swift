@@ -126,7 +126,7 @@ class DashboardRootViewController: RootViewController {
             LoadingWheelHelper.toggleLoadingWheel(
                 loading: shouldShowHeaderLoadingWheel,
                 loadingWheel: headerView.loadingWheel,
-                loadingWheelColor: UIColor.white,
+                loadingWheelColor: UIColor.Sphinx.Text,
                 views: [
                     searchBarContainer,
                     mainContentContainerView,
@@ -215,24 +215,13 @@ extension DashboardRootViewController {
         
         activeTab = .friends
         
-        //@Tom I could not figure out how to get searchBarContainer to enable touches. This is a hack that I discovered (going to "feed" seems to remedy the issue). Need more time to anlayze this and go past this temporary hack
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.01, execute: {
-            self.activeTab = .feed
-            self.activeTab = .friends
-        })
-        
-        
         loadLastPlayedPod()
-        
-        NotificationCenter.default.removeObserver(self, name: .onContactsAndChatsChanged, object: nil)
-        NotificationCenter.default.removeObserver(self, name: .onSizeConfigurationChanged, object: nil)
-        
-        NotificationCenter.default.addObserver(self, selector: #selector(dataDidChange), name: .onContactsAndChatsChanged, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(sizeDidChange), name: .onSizeConfigurationChanged, object: nil)
         
         addAccessibilityIdentifiers()
         
         connectToServer()
+        
+        setupObservers()
     }
     
     func addAccessibilityIdentifiers(){
@@ -321,8 +310,6 @@ extension DashboardRootViewController {
         handleDeepLinksAndPush()
         
         setupAddTribeButton()
-        
-        SphinxOnionManager.sharedInstance.scanAndUpdateMyTribes()
     }
     
     func refreshUnreadStatus(){
@@ -353,6 +340,31 @@ extension DashboardRootViewController {
             hideRestoreViewCallback: self.hideRestoreViewCallback
         )
     }
+    
+    private func setupObservers() {
+        NotificationCenter.default.removeObserver(self, name: .onContactsAndChatsChanged, object: nil)
+        NotificationCenter.default.removeObserver(self, name: .onSizeConfigurationChanged, object: nil)
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(dataDidChange), name: .onContactsAndChatsChanged, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(sizeDidChange), name: .onSizeConfigurationChanged, object: nil)
+        
+        NotificationCenter.default.removeObserver(self, name: .connectedToInternet, object: nil)
+        NotificationCenter.default.removeObserver(self, name: .disconnectedFromInternet, object: nil)
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(didConnectToInternet), name: .connectedToInternet, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(didDisconnectFromInternet), name: .disconnectedFromInternet, object: nil)
+    }
+
+    @objc private func didConnectToInternet() {
+        self.connectToServer()
+    }
+
+    @objc private func didDisconnectFromInternet() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: {
+            AlertHelper.showAlert(title: "socket.disconnected".localized, message: "")
+        })
+    }
+
     
     func hideRestoreViewCallback(){
         restoreProgressView.hideViewAnimated()

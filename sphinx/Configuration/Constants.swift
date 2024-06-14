@@ -67,7 +67,7 @@ class Constants {
     
     
     public static func setSize() {
-        let size = UserDefaults.Keys.messagesSize.get(defaultValue: MessagesSize.Big.rawValue)
+        let size = UserDefaults.Keys.messagesSize.get(defaultValue: MessagesSize.Medium.rawValue)
         let isIpad = UIDevice.current.isIpad
         
         switch(size) {
