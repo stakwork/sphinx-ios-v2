@@ -211,7 +211,7 @@ extension NewPublicGroupViewController {
             // chat.escrowMillis = escrowMillis
         }
         if let unlisted = params["unlisted"] as? Int {
-            chat.unlisted = unlisted == 0
+            chat.unlisted = unlisted == 1
         }
         if let appUrl = params["app_url"] as? String {
             chat.tribeInfo?.appUrl = appUrl
