@@ -247,11 +247,13 @@ class GroupDetailsViewController: UIViewController {
                 }
             }
             
+            let som = SphinxOnionManager.sharedInstance
             if isMyPublicGroup {
-                SphinxOnionManager.sharedInstance.deleteTribe(tribeChat: self.chat)
+                som.deleteTribe(tribeChat: self.chat)
             } else {
-                SphinxOnionManager.sharedInstance.exitTribe(tribeChat: self.chat)
+                som.exitTribe(tribeChat: self.chat)
             }
+            som.deleteContactMsgsFor(chat: self.chat)
             completion()
         })
     }
