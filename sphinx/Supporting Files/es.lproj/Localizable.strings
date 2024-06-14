@@ -194,6 +194,8 @@
 "address-boox.contact-block.alert-message" = "¿Estás seguro que deseas bloquear este contacto?";
 "address-boox.contact-unblock.alert-title" = "Desbloquear Contacto";
 "address-boox.contact-unblock.alert-message" = "¿Estás seguro que deseas desbloquear este contacto?";
+"address-book.can-not-delete-contact-title" = "No se puede eliminar el contacto";
+"address-book.can-not-delete-contact-message" = "Los contactos confirmados no se pueden eliminar";
 
 //WELCOME
 "welcome.initial.title" = "Bienvenido";
@@ -393,6 +395,7 @@
 "media.terms.expired" = "Archivo caducado";
 "message.failed" = "Mensaje fallido";
 "invite.name" = "Invitación: %@";
+"add.name" = "Agregar: %@";
 "welcome.to.sphinx" = "Bienvenido a Sphinx!";
 "loading.more.messages" = "Cargando más mensajes...";
 "message.placeholder" = "Mensaje...";

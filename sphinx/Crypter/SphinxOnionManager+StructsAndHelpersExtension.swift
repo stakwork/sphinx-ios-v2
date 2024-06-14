@@ -131,6 +131,7 @@ struct GenericIncomingMessage: Mappable {
     var alias: String? = nil
     var fullContactInfo: String? = nil
     var photoUrl: String? = nil
+    var tag: String? = nil
 
     init?(map: Map) {}
     
@@ -188,6 +189,7 @@ struct GenericIncomingMessage: Mappable {
         
         self.uuid = msg.uuid
         self.index = msg.index
+        self.tag = msg.tag
     }
 
     mutating func mapping(map: Map) {
@@ -309,5 +311,28 @@ extension SphinxOnionManager {
             return true
         }
         return false
+    }
+}
+
+
+struct MessageStatusMap: Mappable {
+    var ts: Int?
+    var status: String?
+    var tag: String?
+
+    init?(map: Map) {}
+
+    mutating func mapping(map: Map) {
+        ts          <- map["ts"]
+        status      <- map["status"]
+        tag         <- map["tag"]
+    }
+
+    func isReceived() -> Bool {
+        return self.status == SphinxOnionManager.kCompleteStatus
+    }
+
+    func isFailed() -> Bool {
+        return self.status == SphinxOnionManager.kFailedStatus
     }
 }
