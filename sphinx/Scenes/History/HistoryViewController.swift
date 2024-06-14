@@ -56,21 +56,32 @@ class HistoryViewController: UIViewController {
         historyTableView.delegate = historyDataSource
         historyTableView.dataSource = historyDataSource
         
-        //loading = true
-        loading = false
+        loading = true
+        checkResultsLimit(count: 0)
         
-        self.setNoResultsLabel(count: 0)
-        self.checkResultsLimit(count: 0)
-        
-        SphinxOnionManager.sharedInstance.getTransactionHistory(
-            handlePaymentHistoryCompletion: handlePaymentHistoryCompletion,
+        SphinxOnionManager.sharedInstance.getTransactionsHistory(
+            paymentsHistoryCallback: handlePaymentHistoryCompletion,
             itemsPerPage: itemsPerPage,
             sinceTimestamp: UInt64(Date().timeIntervalSince1970)
         )
         
     }
     
-    func handlePaymentHistoryCompletion(jsonString: String?) {
+    func handlePaymentHistoryCompletion(
+        jsonString: String?,
+        error: String?
+    ) {
+        if let _ = error {
+            setNoResultsLabel(count: 0)
+            loading = false
+            
+            AlertHelper.showAlert(
+                title: "generic.error.title".localized,
+                message: "error.loading.transactions".localized
+            )
+            return
+        }
+        
         // 1. Pull history with messages from local DB
         var history = [PaymentTransaction]()
         
@@ -124,10 +135,10 @@ class HistoryViewController: UIViewController {
         
         history = history.sorted { $0.getDate() > $1.getDate() }
         
-        self.setNoResultsLabel(count: history.count)
-        self.checkResultsLimit(count: history.count)
-        self.historyDataSource.loadTransactions(transactions: history)
-        self.loading = false
+        setNoResultsLabel(count: history.count)
+        checkResultsLimit(count: history.count)
+        historyDataSource.loadTransactions(transactions: history)
+        loading = false
     }
 
 
@@ -160,8 +171,8 @@ extension HistoryViewController : HistoryDataSourceDelegate {
         
         loading = true
         
-        SphinxOnionManager.sharedInstance.getTransactionHistory(
-            handlePaymentHistoryCompletion: handlePaymentHistoryCompletion,
+        SphinxOnionManager.sharedInstance.getTransactionsHistory(
+            paymentsHistoryCallback: handlePaymentHistoryCompletion,
             itemsPerPage: itemsPerPage,
             sinceTimestamp: oldestTimestamp
         )

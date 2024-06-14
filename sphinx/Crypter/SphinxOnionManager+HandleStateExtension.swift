@@ -95,11 +95,8 @@ extension SphinxOnionManager {
         ///Handling state to delete
         handleStateToDelete(stateToDelete: rr.stateToDelete)
         
-        ///Handling restore callbacks
-        handleRestoreCallbacks(topic: topic, messages: rr.msgs)
-        
         ///Handling Payment History
-        handlePaymentHistory(rr: rr)
+        handlePaymentsHistory(payments: rr.payments)
 
         ///Handling topics subscription
         handleTopicsToSubscribe(topics: rr.subscriptionTopics)
@@ -141,11 +138,11 @@ extension SphinxOnionManager {
         }
     }
     
-    func handlePaymentHistory(rr:RunReturn){
-        if let payments = rr.payments,
-           payments != "[]",
-            let paymentHistoryCallback = paymentHistoryCallback{
-            paymentHistoryCallback(payments)
+    func handlePaymentsHistory(payments: String?) {
+        if let payments = payments, payments != "[]" {
+            if let paymentsHistoryCallback = paymentsHistoryCallback {
+                paymentsHistoryCallback(payments, nil)
+            }
         }
     }
     

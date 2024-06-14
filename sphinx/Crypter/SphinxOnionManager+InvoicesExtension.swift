@@ -101,18 +101,34 @@ extension SphinxOnionManager {
         )
     }
     
-    func getTransactionHistory(
-        handlePaymentHistoryCompletion: @escaping ((String?) -> ()),
-        itemsPerPage:UInt32,
-        sinceTimestamp:UInt64
+    func getTransactionsHistory(
+        paymentsHistoryCallback: @escaping ((String?, String?) -> ()),
+        itemsPerPage: UInt32,
+        sinceTimestamp: UInt64
     ) {
-        let rr = try! fetchPayments(seed: getAccountSeed()!, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), since: sinceTimestamp * 1000, limit: itemsPerPage, scid: nil, remoteOnly: false, minMsat: 0, reverse: true)
-        SphinxOnionManager.sharedInstance.paymentHistoryCallback = handlePaymentHistoryCompletion
-        let _ = handleRunReturn(rr: rr)                
+        do {
+            let rr = try fetchPayments(
+                seed: getAccountSeed()!,
+                uniqueTime: getTimeWithEntropy(),
+                state: loadOnionStateAsData(),
+                since: sinceTimestamp * 1000,
+                limit: itemsPerPage,
+                scid: nil,
+                remoteOnly: false,
+                minMsat: 0,
+                reverse: true
+            )
+            
+            self.paymentsHistoryCallback = paymentsHistoryCallback
+            
+            let _ = handleRunReturn(rr: rr)
+        } catch let error {
+            paymentsHistoryCallback(
+                nil,
+                "Error fetching transactions history: \(error.localizedDescription)"
+            )
+        }
     }
-    
-    
-    
 
     func keysend(
         pubkey: String,
