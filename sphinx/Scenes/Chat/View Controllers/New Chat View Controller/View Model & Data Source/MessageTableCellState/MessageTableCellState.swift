@@ -901,22 +901,25 @@ extension MessageTableCellState {
             nil
         )
         
+        let isSent = message.isOutgoing(ownerId: owner.id)
+        
         if chat.isPublicGroup() {
             senderInfo = (
                 ChatHelper.getSenderColorFor(message: message),
-                message.senderAlias ?? "Unknown",
+                message.senderAlias ?? "Unknow",
                 message.senderPic
             )
-        } else if let contact = contact {
-            var finalContact = contact
-            if message.isOutgoing(),
-               let owner = UserContact.getOwner(){
-                finalContact = owner
-            }
+        } else if isSent {
             senderInfo = (
-                finalContact.getColor(),
-                finalContact.nickname ?? "Unknown",
-                finalContact.avatarUrl
+                owner.getColor(),
+                owner.nickname ?? "Unknow",
+                owner.avatarUrl
+            )
+        } else if let contact = contact {
+            senderInfo = (
+                contact.getColor(),
+                contact.nickname ?? "Unknow",
+                contact.avatarUrl
             )
         }
         
