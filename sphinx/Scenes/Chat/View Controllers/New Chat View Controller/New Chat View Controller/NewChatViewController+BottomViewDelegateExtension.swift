@@ -72,7 +72,7 @@ extension NewChatViewController : ChatMessageTextFieldViewDelegate {
     }
     
     func getThreadUUID() -> String? {
-        return self.threadUUID ?? self.chatViewModel.replyingTo?.replyUUID //anticipate if it *will* be a thread
+        return self.threadUUID ?? self.chatViewModel.replyingTo?.replyUUID
     }
     
     func shouldStartGiphy(){

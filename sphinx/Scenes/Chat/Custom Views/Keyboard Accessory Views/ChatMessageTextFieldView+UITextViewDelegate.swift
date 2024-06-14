@@ -42,10 +42,16 @@ extension ChatMessageTextFieldView : UITextViewDelegate {
     
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
         let currentString = textView.text! as NSString
-        let currentChangedString = currentString.replacingCharacters(in: range, with: text)        
-        let effectiveThreadUUID = (delegate?.getThreadUUID?())
-        let effectiveReplyUUID = (delegate?.getReplyUUID?())
-        return isMessageWithinByteLimit(message: currentChangedString,replyUUID: effectiveReplyUUID,threadUUID: effectiveThreadUUID)
+        let currentChangedString = currentString.replacingCharacters(in: range, with: text)
+        
+        let effectiveThreadUUID = delegate?.getThreadUUID?()
+        let effectiveReplyUUID = delegate?.getReplyUUID?()
+        
+        return isMessageWithinByteLimit(
+            message: currentChangedString,
+            replyUUID: effectiveReplyUUID,
+            threadUUID: effectiveThreadUUID
+        )
     }
     
     func textViewDidChange(_ textView: UITextView) {
@@ -71,6 +77,25 @@ extension ChatMessageTextFieldView : UITextViewDelegate {
         audioButtonContainer.isHidden = forceSendButtonVisible
         
         attachmentButtonContainer.isHidden = (mode == .Attachment)
+    }
+    
+    func isMessageWithinByteLimit(
+        message: String,
+        replyUUID: String? = nil,
+        threadUUID: String? = nil,
+        byteLimit: Int = 869
+    ) -> Bool {
+        var totalMessage = message
+        
+        if let replyUUID = replyUUID {
+            totalMessage += replyUUID + "--------" //add padding to account for additional payload introduced by replyUUID
+        }
+        
+        if let threadUUID = threadUUID {
+            totalMessage += threadUUID + "-----------" //add padding to account for additional payload introduced by threadUUID
+        }
+        
+        return totalMessage.byteSize() <= byteLimit
     }
 }
 
