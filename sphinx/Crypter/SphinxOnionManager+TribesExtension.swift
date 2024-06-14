@@ -209,43 +209,34 @@ extension SphinxOnionManager {
         )
     }
     
-    func scanAndUpdateMyTribes(){
-        for chat in Chat.getAllTribes(){
-            if let uuid = chat.ownerPubkey{
-                let host = SphinxOnionManager.sharedInstance.tribesServerIP
-                API.sharedInstance.getTribeInfo(
-                    host: host,
-                    uuid: uuid,
-                    callback: {chatJSON in
-                        let tribeInfo = GroupsManager.sharedInstance.getTribesInfoFrom(json: chatJSON)
-                        print(tribeInfo)
-                        chat.tribeInfo = tribeInfo
-                        chat.updateChatFromTribesInfo()
-                    },
-                    errorCallback: {
-                        
-                    })
-            }
-        }
-    }
-    
-    func updateTribe(params: [String: AnyObject], pubkey: String, id: Int) {
+    func updateTribe(
+        params: [String: AnyObject],
+        pubkey: String,
+        id: Int
+    ) {
         var finalParams = params
         finalParams["pubkey"] = pubkey as AnyObject
 
         guard let seed = getAccountSeed(),
               let tribeServerPubkey = getTribePubkey(),
               let tribeData = try? JSONSerialization.data(withJSONObject: finalParams),
-              let tribeJSONString = String(data: tribeData, encoding: .utf8) else {
+              let tribeJSONString = String(data: tribeData, encoding: .utf8) else 
+        {
             return
         }
 
         do {
-            let rr = try sphinx.updateTribe(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), tribeServerPubkey: tribeServerPubkey, tribeJson: tribeJSONString)
+            let rr = try sphinx.updateTribe(
+                seed: seed,
+                uniqueTime: getTimeWithEntropy(),
+                state: loadOnionStateAsData(),
+                tribeServerPubkey: tribeServerPubkey,
+                tribeJson: tribeJSONString
+            )
+            
             let _ = handleRunReturn(rr: rr)
-            return
         } catch {
-            return
+            print("Error updating tribe")
         }
     }
 

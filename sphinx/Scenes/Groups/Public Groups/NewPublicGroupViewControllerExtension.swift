@@ -170,21 +170,35 @@ extension NewPublicGroupViewController {
         showErrorAlert()
     }
     
-    func editGroup(id: Int, params: [String: AnyObject]) {
+    func editGroup(
+        id: Int,
+        params: [String: AnyObject]
+    ) {    
         guard let chat = Chat.getChatWith(id: id),
-              let pubkey = chat.ownerPubkey else {
+              let pubkey = chat.ownerPubkey else 
+        {
             showErrorAlert()
             return
         }
 
-        SphinxOnionManager.sharedInstance.updateTribe(params: params, pubkey: pubkey, id: id)
-        updateChat(chat: chat, withParams: params)
-        DelayPerformedHelper.performAfterDelay(seconds: 0.5, completion: {//give db time to update before re-rendering
-            self.shouldDismissView(chat: chat)
-        })
+        SphinxOnionManager.sharedInstance.updateTribe(
+            params: params,
+            pubkey: pubkey,
+            id: id
+        )
         
+        updateChat(
+            chat: chat,
+            withParams: params
+        )
         
-        loading = false
+        DelayPerformedHelper.performAfterDelay(
+            seconds: 0.5,
+            completion: {
+                self.loading = false
+                self.shouldDismissView(chat: chat)
+            }
+        )
     }
 
     func updateChat(chat: Chat, withParams params: [String: AnyObject]) {
