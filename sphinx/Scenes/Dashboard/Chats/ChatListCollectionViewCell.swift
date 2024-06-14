@@ -121,7 +121,7 @@ extension ChatListCollectionViewCell {
         if chatListObject.isPending() {
             
             let inviteString = String(
-                format: "invite.name".localized,
+                format: chatListObject.isInvite() ? "invite.name".localized : "add.name".localized,
                 chatListObject.getName()
             )
             nameLabel.text = inviteString

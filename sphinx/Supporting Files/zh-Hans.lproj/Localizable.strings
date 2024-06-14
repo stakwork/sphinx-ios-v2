@@ -195,6 +195,8 @@
 "address-boox.contact-block.alert-message" = "您确定要阻止此联系人吗？";
 "address-boox.contact-unblock.alert-title" = "解除阻止联系人";
 "address-boox.contact-unblock.alert-message" = "您确定要解除阻止此联系人吗？";
+"address-book.can-not-delete-contact-title" = "无法删除联系人";
+"address-book.can-not-delete-contact-message" = "已确认的联系人无法删除";
 
 // WELCOME
 "welcome.initial.title" = "欢迎";
@@ -391,6 +393,7 @@
 "media.terms.expired" = "媒体条款已过期";
 "message.failed" = "消息发送失败";
 "invite.name" = "邀请：%@";
+"add.name" = "添加: %@";
 "welcome.to.sphinx" = "欢迎来到Sphinx！";
 "loading.more.messages" = "正在加载更多消息...";
 "message.placeholder" = "消息...";

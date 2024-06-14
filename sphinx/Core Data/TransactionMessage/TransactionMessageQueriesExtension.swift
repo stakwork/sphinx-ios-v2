@@ -156,9 +156,13 @@ extension TransactionMessage {
         let fetchRequest: NSFetchRequest<TransactionMessage> = TransactionMessage.fetchRequest()
         
         fetchRequest.predicate = NSPredicate(
-            format: "chat == %@ AND type != %d",
+            format: "chat == %@ AND NOT (type IN %@)",
             chat,
-            TransactionMessageType.delete.rawValue
+            [
+                TransactionMessageType.delete.rawValue,
+                TransactionMessageType.contactKey.rawValue,
+                TransactionMessageType.contactKeyConfirmation.rawValue
+            ]
         )
         
         fetchRequest.sortDescriptors = [NSSortDescriptor(key: "date", ascending: false)]
@@ -535,6 +539,19 @@ extension TransactionMessage {
             print("Error fetching transaction messages for history: \(error)")
             return []
         }
+    }
+    
+    static func getMessagesWith(tags: [String]) -> [TransactionMessage] {
+        let predicate = NSPredicate(format: "tag IN %@", tags)
+        let sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]
+
+        let messages: [TransactionMessage] = CoreDataManager.sharedManager.getObjectsOfTypeWith(
+            predicate: predicate,
+            sortDescriptors: sortDescriptors,
+            entityName: "TransactionMessage"
+        )
+
+        return messages
     }
 
 }

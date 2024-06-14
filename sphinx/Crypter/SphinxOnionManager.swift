@@ -37,6 +37,7 @@ class SphinxOnionManager : NSObject {
     var stashedInviterAlias:String? = nil
     
     var watchdogTimer:Timer? = nil
+    var sendTimeoutTimers: [String: Timer] = [:]
     
     var nextMessageBlockWasReceived = false
     
@@ -68,7 +69,7 @@ class SphinxOnionManager : NSObject {
         }
     }
     
-    var settledRRObjects: [RunReturn] = []
+    var delayedRRObjects: [RunReturn] = []
     
     var msgTotalCounts : MsgTotalCounts? = nil
     
@@ -77,6 +78,7 @@ class SphinxOnionManager : NSObject {
     var contactRestoreCallback : RestoreProgressCallback? = nil
     var hideRestoreCallback: (() -> ())? = nil
     var tribeMembersCallback : (([String: AnyObject]) -> ())? = nil
+    var paymentsHistoryCallback : ((String?, String?) -> ())? = nil
     var inviteCreationCallback : ((String?) -> ())? = nil
     var mqttDisconnectCallback : ((Double) -> ())? = nil
     
@@ -87,8 +89,8 @@ class SphinxOnionManager : NSObject {
     public static let kContactsBatchSize = 100
     public static let kMessageBatchSize = 100
 
-    let kCompleteStatus = "COMPLETE"
-    let kFailedStatus = "FAILED"
+    public static let kCompleteStatus = "COMPLETE"
+    public static let kFailedStatus = "FAILED"
     
     let newMessageBubbleHelper = NewMessageBubbleHelper()
     let managedContext = CoreDataManager.sharedManager.persistentContainer.viewContext
@@ -284,7 +286,7 @@ class SphinxOnionManager : NSObject {
     }
     
     func isFetchingContent() -> Bool {
-        return onMessageRestoredCallback != nil || firstSCIDMsgsCallback != nil || totalMsgsCountCallback == nil
+        return onMessageRestoredCallback != nil || firstSCIDMsgsCallback != nil || totalMsgsCountCallback != nil
     }
     
     func reconnectToServer(

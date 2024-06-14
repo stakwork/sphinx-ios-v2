@@ -67,6 +67,14 @@ extension NewChatViewController : ChatMessageTextFieldViewDelegate {
         chatViewModel.shouldCancelRecording()
     }
     
+    func getReplyUUID() -> String? {
+        return self.chatViewModel.replyingTo?.uuid
+    }
+    
+    func getThreadUUID() -> String? {
+        return self.threadUUID ?? self.chatViewModel.replyingTo?.replyUUID
+    }
+    
     func shouldStartGiphy(){
         let vc = getChatAttachmentVC(text: nil)
         self.present(vc,animated:false)
