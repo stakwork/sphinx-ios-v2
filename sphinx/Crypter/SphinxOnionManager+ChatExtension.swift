@@ -308,6 +308,11 @@ extension SphinxOnionManager {
                     message?.amount = NSDecimalNumber(value: amount)
                 }
                 
+                if chat.isPublicGroup(), let owner = UserContact.getOwner() {
+                    message?.senderAlias = owner.nickname
+                    message?.senderPic = owner.avatarUrl
+                }
+                
                 if msgType == TransactionMessage.TransactionMessageType.purchase.rawValue || msgType == TransactionMessage.TransactionMessageType.attachment.rawValue {
                     message?.mediaKey = mediaKey
                     message?.mediaToken = mediaToken
@@ -796,12 +801,11 @@ extension SphinxOnionManager {
         
         var chat : Chat? = nil
         var senderId: Int? = nil
-        var receiverId:Int? = nil
+        var receiverId: Int? = nil
         
         var isTribe = false
         
         if let contact = UserContact.getContactWithDisregardStatus(pubkey: pubkey) {
-            
             if let oneOnOneChat = contact.getChat() {
                 chat = oneOnOneChat
             } else {
@@ -811,17 +815,12 @@ extension SphinxOnionManager {
             senderId = (fromMe == true) ? (UserData.sharedInstance.getUserId()) : contact.id
             receiverId = (fromMe == true) ? contact.id : (UserData.sharedInstance.getUserId())
             
-            var contactDidChange = false
-            
-            if (contact.nickname != message.alias && message.alias != nil) {
-                contact.nickname = message.alias
-                contactDidChange = true
-            }
-            if (contact.avatarUrl != message.photoUrl) {
-                contact.avatarUrl = message.photoUrl
-                contactDidChange = true
-            }
-            contactDidChange ? (contact.managedObjectContext?.saveContext()) : ()
+            updateContactInfoFromMessage(
+                contact: contact,
+                alias: message.alias,
+                photoUrl: message.photoUrl,
+                pubkey: pubkey
+            )
             
         } else if let tribeChat = Chat.getTribeChatWithOwnerPubkey(ownerPubkey: pubkey) {
             chat = tribeChat
@@ -882,6 +881,7 @@ extension SphinxOnionManager {
         newMessage.mediaType = message.mediaType
         newMessage.mediaToken = message.mediaToken
         newMessage.paymentHash = message.paymentHash
+        newMessage.tag = message.tag
         
         if (type == TransactionMessage.TransactionMessageType.boost.rawValue && isTribe == true), let msgAmount = message.amount {
             newMessage.amount = NSDecimalNumber(value: msgAmount/1000)
@@ -905,6 +905,91 @@ extension SphinxOnionManager {
         newMessage.setAsLastMessage()
         
         return newMessage
+    }
+    
+    func createKeyExchangeMsgFrom(
+        msg: Msg
+    ) {
+        guard let sender = msg.sender, let csr = ContactServerResponse(JSONString: sender), let pubKey = csr.pubkey else {
+            return
+        }
+        
+        guard let contact = UserContact.getContactWithDisregardStatus(pubkey: pubKey) else {
+            return
+        }
+        
+        guard let index = msg.index, let intIndex = Int(index), let msgType = msg.type else {
+            return
+        }
+        
+        let allowedTypes = [
+            UInt8(TransactionMessage.TransactionMessageType.contactKey.rawValue),
+            UInt8(TransactionMessage.TransactionMessageType.contactKeyConfirmation.rawValue)
+        ]
+        
+        if !allowedTypes.contains(msgType) {
+            return
+        }
+        
+        if let _ = TransactionMessage.getMessageWith(id: intIndex) {
+            return
+        }
+        
+        let newMessage = TransactionMessage(context: managedContext)
+        
+        newMessage.id = intIndex
+        newMessage.uuid = msg.uuid
+        
+        if let timestamp = msg.timestamp,
+           let dateFromMessage = timestampToDate(timestamp: UInt64(timestamp))
+        {
+            newMessage.createdAt = dateFromMessage
+            newMessage.updatedAt = dateFromMessage
+            newMessage.date = dateFromMessage
+        } else {
+            let date = Date()
+            newMessage.createdAt = date
+            newMessage.updatedAt = date
+            newMessage.date = date
+        }
+        
+        newMessage.status = TransactionMessage.TransactionMessageStatus.confirmed.rawValue
+        newMessage.type = Int(msgType)
+        newMessage.encrypted = true
+        newMessage.senderId = contact.id
+        newMessage.push = false
+        newMessage.chat = contact.getChat()
+        newMessage.chat?.seen = false
+        newMessage.messageContent = msg.message
+        
+        managedContext.saveContext()
+    }
+    
+    func updateContactInfoFromMessage(
+            contact: UserContact,
+            alias: String?,
+            photoUrl: String?,
+            pubkey: String
+    ) {
+        if !restoredContactInfoTracker.contains(pubkey) || !isV2Restore {
+            
+            var contactDidChange = false
+            
+            if (contact.nickname != alias && alias != nil && alias?.isEmpty == false) {
+                contact.nickname = alias
+                contactDidChange = true
+            }
+            
+            if (contact.avatarUrl != photoUrl) {
+                contact.avatarUrl = photoUrl
+                contactDidChange = true
+            }
+            
+            if contactDidChange {
+                contact.managedObjectContext?.saveContext()
+                restoredContactInfoTracker.append(pubkey)
+            }
+        }
     }
     
     func processIndexUpdate(message: Msg) {
@@ -1183,6 +1268,25 @@ extension SphinxOnionManager {
                 seed: seed,
                 uniqueTime: getTimeWithEntropy(),
                 state: loadOnionStateAsData()
+            )
+            let _ = handleRunReturn(rr: rr)
+        } catch {
+            print("Error getting read level")
+        }
+    }
+    
+    func getMessagesStatusFor(tags: [String]) {
+        guard let seed = getAccountSeed() else{
+            return
+        }
+        
+        do {
+            let rr = try sphinx.getTags(
+                seed: seed,
+                uniqueTime: getTimeWithEntropy(),
+                state: loadOnionStateAsData(),
+                tags: tags,
+                pubkey: nil
             )
             let _ = handleRunReturn(rr: rr)
         } catch {

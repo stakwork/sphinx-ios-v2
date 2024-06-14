@@ -21,6 +21,65 @@ extension SphinxOnionManager {//contacts related
         return (components.count >= 3) ? (components[0],components[1],components[2]) : nil
     }
     
+    func deleteContactMsgsFor(
+        contact: UserContact
+    ) -> Bool {
+        guard let seed = getAccountSeed() else {
+            return false
+        }
+        
+        if let chat = contact.getChat(), contact.isConfirmed() {
+            let okKeyMessages = chat.getOkKeyMessages()
+            
+            let contactKeyMsgs = okKeyMessages.filter({
+                let contactKeyTypes = [
+                    TransactionMessage.TransactionMessageType.contactKey.rawValue,
+                    TransactionMessage.TransactionMessageType.contactKeyConfirmation.rawValue,
+                ]
+                
+                return contactKeyTypes.contains($0.type)
+            })
+            
+            if contactKeyMsgs.isEmpty {
+                return false
+            }
+            
+            let indexes = okKeyMessages.compactMap({ UInt64($0.id) })
+            
+            do {
+                let rr = try sphinx.deleteMsgs(
+                    seed: seed,
+                    uniqueTime: getTimeWithEntropy(),
+                    state: loadOnionStateAsData(),
+                    pubkey: nil,
+                    msgIdxs: indexes
+                )
+                
+                let _ = handleRunReturn(rr: rr)
+            } catch {
+                return false
+            }
+        }
+        
+        if let publicKey = contact.publicKey {
+            do {
+                let rr = try sphinx.deleteMsgs(
+                    seed: seed,
+                    uniqueTime: getTimeWithEntropy(),
+                    state: loadOnionStateAsData(),
+                    pubkey: publicKey,
+                    msgIdxs: nil
+                )
+                
+                let _ = handleRunReturn(rr: rr)
+            } catch {
+                return false
+            }
+        }
+        
+        return true
+    }
+    
     func makeFriendRequest(
         contactInfo: String,
         nickname: String? = nil,
@@ -54,7 +113,7 @@ extension SphinxOnionManager {//contacts related
                 routeHint: "\(recipLspPubkey)_\(scid)",
                 myAlias: (selfContact.nickname ?? nickname) ?? "",
                 myImg: selfContact.avatarUrl ?? "",
-                amtMsat: 1000,
+                amtMsat: 5000,
                 inviteCode: inviteCode,
                 theirAlias: nickname
             )
@@ -66,6 +125,40 @@ extension SphinxOnionManager {//contacts related
         } catch let error {
             print("Error \(error)")
         }
+    }
+    
+    func retryAddingContact(
+        contact: UserContact
+    ){
+        guard let pubkey = contact.publicKey, let routeHint = contact.routeHint else {
+            return
+        }
+        
+        guard let seed = getAccountSeed(),
+              let selfContact = UserContact.getOwner() else
+        {
+            return
+        }
+        
+        do {
+            let rr = try addContact(
+                seed: seed,
+                uniqueTime: getTimeWithEntropy(),
+                state: loadOnionStateAsData(),
+                toPubkey: pubkey,
+                routeHint: routeHint,
+                myAlias: selfContact.nickname ?? "",
+                myImg: selfContact.avatarUrl ?? "",
+                amtMsat: 5000,
+                inviteCode: nil,
+                theirAlias: contact.nickname
+            )
+            
+            let _ = handleRunReturn(rr: rr)
+            
+            print("INITIATED KEY EXCHANGE WITH RR:\(rr)")
+            
+        } catch {}
     }
     
     //MARK: Processes key exchange messages (friend requests) between contacts
@@ -96,12 +189,17 @@ extension SphinxOnionManager {//contacts related
                         continue
                     }
                     
-                    if let routeHint = routeHint {
+                    if let routeHint = csr.routeHint {
                         contact.routeHint = routeHint
                     }
                     contact.status = UserContact.Status.Confirmed.rawValue
-                    contact.nickname = (csr.alias?.isEmpty == true) ? contact.nickname : csr.alias
-                    contact.avatarUrl = (csr.photoUrl?.isEmpty == true) ? contact.avatarUrl : csr.photoUrl
+                    
+                    updateContactInfoFromMessage(
+                        contact: contact,
+                        alias: csr.alias,
+                        photoUrl: csr.photoUrl,
+                        pubkey: senderPubkey
+                    )
                     
                     ///Create chat for contact and save
                     if contact.getChat() == nil {
@@ -125,6 +223,8 @@ extension SphinxOnionManager {//contacts related
                 if newContactRequest.getChat() == nil {
                     let _ = createChat(for: newContactRequest, with: msg.date)
                 }
+                
+                createKeyExchangeMsgFrom(msg: msg)
             }
         }
         
@@ -204,8 +304,12 @@ extension SphinxOnionManager {//contacts related
     ) -> Chat? {
         let contactID = NSNumber(value: contact.id)
         
-        if let _ = Chat.getAll().filter({$0.contactIds.contains(contactID)}).first{
+        if let _ = Chat.getAll().filter({ $0.contactIds.contains(contactID) }).first {
             return nil //don't make duplicates
+        }
+        
+        if contact.isOwner {
+            return nil
         }
         
         let selfContactId =  0
