@@ -19,6 +19,8 @@ import UIKit
     @objc optional func shouldStartRecording()
     @objc optional func shouldStopAndSendAudio()
     @objc optional func shouldCancelRecording()
+    @objc optional func getThreadUUID() -> String?
+    @objc optional func getReplyUUID() -> String?
 }
 
 enum MessagesFieldMode: Int {
@@ -49,7 +51,6 @@ class ChatMessageTextFieldView: UIView {
     @IBOutlet weak var recordingBlueCircle: UIView!
     @IBOutlet weak var animatedMicLabelView: IntermitentAlphaAnimatedView!
     
-    let kCharacterLimit = 1000
     let kFieldPlaceHolder = "message.placeholder".localized
     let kThreadFieldPlaceHolder = "message.placeholder".localized
     let kAttchmentFieldPlaceHolder = ChatAttachmentViewController.kFieldPlaceHolder

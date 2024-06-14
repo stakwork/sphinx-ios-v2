@@ -335,7 +335,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func handleAppRefresh(task: BGTask) {
         scheduleAppRefresh()
         
-        getDashboardVC()?.reconnectToServer()
+        som.reconnectToServer()
     }
     
     func scheduleAppRefresh() {
@@ -435,7 +435,9 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         didReceiveRemoteNotification userInfo: [AnyHashable : Any],
         fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
     ) {
-        completionHandler(.noData)
+        som.reconnectToServer(hideRestoreViewCallback: {
+            completionHandler(.newData)
+        })
     }
 
     func userNotificationCenter(

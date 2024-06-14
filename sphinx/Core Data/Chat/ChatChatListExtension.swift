@@ -135,6 +135,10 @@ extension Chat: ChatListCommonObject {
         return nil
     }
     
+    public func isInvite() -> Bool {
+        return false
+    }
+    
     public func getContactStatus() -> Int? {
         return UserContact.Status.Confirmed.rawValue
     }

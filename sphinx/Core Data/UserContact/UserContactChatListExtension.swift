@@ -82,6 +82,10 @@ extension UserContact : ChatListCommonObject {
         return self.invite
     }
     
+    public func isInvite() -> Bool {
+        return self.invite != nil || self.sentInviteCode != nil
+    }
+    
     public func getContactStatus() -> Int? {
         return status
     }
