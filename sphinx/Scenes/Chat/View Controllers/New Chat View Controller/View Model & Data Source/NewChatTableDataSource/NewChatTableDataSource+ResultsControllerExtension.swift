@@ -752,7 +752,7 @@ extension NewChatTableDataSource : NSFetchedResultsControllerDelegate {
                     if !(self.delegate?.isOnStandardMode() ?? true) {
                         return
                     }
-                    
+                    self.updateMessagesStatusesFrom(messages: self.messagesArray)
                     self.processMessages(messages: self.messagesArray)
                     self.configureBoostAndPurchaseResultsController()
                 }
@@ -764,6 +764,34 @@ extension NewChatTableDataSource : NSFetchedResultsControllerDelegate {
                 self.processMessages(messages: self.messagesArray)
             }
         }
+    }
+    
+    func updateMessagesStatusesFrom(messages: [TransactionMessage]) {
+        if messages.isEmpty {
+            return
+        }
+
+        let confirmedMessages = messages.filter({
+            return $0.senderId == UserData.sharedInstance.getUserId() &&
+                   $0.status == TransactionMessage.TransactionMessageStatus.confirmed.rawValue
+        })
+        let tags = confirmedMessages.compactMap({ $0.tag })
+
+        if tags.isEmpty {
+            return
+        }
+
+        if !messageTableCellStateArray.isEmpty {
+            if !loadingMoreItems {
+                if lastMessageTagRestored == tags.last ?? "" {
+                    return
+                }
+            }
+        }
+
+        lastMessageTagRestored = tags.last ?? ""
+
+        SphinxOnionManager.sharedInstance.getMessagesStatusFor(tags: tags)
     }
 }
 

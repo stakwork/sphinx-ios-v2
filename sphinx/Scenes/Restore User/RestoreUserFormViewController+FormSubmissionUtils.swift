@@ -41,7 +41,7 @@ extension RestoreUserFormViewController {
                     self.continueWith(code: code)
                 }
             ],
-            sourceView: self.view,
+            sourceView: self.codeTextField,
             vc: self
         )
     }

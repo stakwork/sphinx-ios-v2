@@ -133,7 +133,6 @@ extension AddressBookDataSource : ContactCellDelegate {
         }
         
         delegate?.shouldToggleInteraction(enable: false)
-        self.deleteObjects(contact: contact)
         self.deleteContactAndRow(contact: contact, cell: cell)
     }
     
@@ -148,19 +147,28 @@ extension AddressBookDataSource : ContactCellDelegate {
     }
     
     func deleteContactAndRow(contact: UserContact, cell: UITableViewCell) {
-//        let contactsCount = contacts.count
-//        
-//        deleteObjects(contact: contact)
-//        contacts = UserContact.getAll().filter { !$0.isOwner && !$0.shouldBeExcluded() }
-//        processContacts(searchTerm: self.searchTerm)
-//        
-//        if contacts.count == contactsCount - 1 {
-//            deleteCell(cell: cell)
-//            return
-//        }
-//        
-//        delegate?.shouldToggleInteraction(enable: true)
-//        delegate?.shouldShowAlert(title: "generic.error.title".localized, text: "generic.error.message".localized)
+        let som = SphinxOnionManager.sharedInstance
+        
+        if let publicKey = contact.publicKey, publicKey.isNotEmpty {
+            if som.deleteContactMsgsFor(contact: contact) {
+                som.deleteContactFromState(pubkey: publicKey)
+                
+                let contactsCount = contacts.count
+                
+                deleteObjects(contact: contact)
+                contacts = UserContact.getAll().filter { !$0.isOwner && !$0.shouldBeExcluded() }
+                processContacts(searchTerm: self.searchTerm)
+                
+                if contacts.count == contactsCount - 1 {
+                    deleteCell(cell: cell)
+                }
+                
+                return
+            }
+        }
+        
+        delegate?.shouldToggleInteraction(enable: true)
+        delegate?.shouldShowAlert(title: "generic.error.title".localized, text: "generic.error.message".localized)
     }
     
     func deleteObjects(contact: UserContact) {

@@ -300,6 +300,26 @@ extension SphinxOnionManager {
             print(error)
         }
     }
+    
+    func fetchOkKeyMessages() {
+        guard let seed = getAccountSeed() else {
+            return
+        }
+        
+        do {
+            let rr = try fetchMsgsBatchOkkey(
+                seed: seed,
+                uniqueTime: getTimeWithEntropy(),
+                state: loadOnionStateAsData(),
+                lastMsgIdx: UInt64(0),
+                limit: UInt32(250),
+                reverse: false
+            )
+            let _ = handleRunReturn(rr: rr)
+        } catch let error {
+            print(error)
+        }
+    }
 }
 
 extension SphinxOnionManager {
@@ -466,11 +486,13 @@ extension SphinxOnionManager {
                 continue
             }
             
-            let routeHint: String? = message.message?.toMessageInnerContent()?.getRouteHint()
+            let routeHint: String? = csr.routeHint
                 
             let contact = UserContact.getContactWithDisregardStatus(pubkey: recipientPubkey) ?? createNewContact(
                 pubkey: recipientPubkey,
                 routeHint: routeHint,
+                nickname: csr.alias,
+                photoUrl: csr.photoUrl,
                 code: csr.code,
                 date: message.date
             )
@@ -482,8 +504,6 @@ extension SphinxOnionManager {
             if let routeHint = routeHint {
                 contact.routeHint = routeHint
             }
-            contact.nickname = (csr.alias?.isEmpty == true) ? contact.nickname : csr.alias
-            contact.avatarUrl = (csr.photoUrl?.isEmpty == true) ? contact.avatarUrl : csr.photoUrl
             
             let isConfirmed = csr.confirmed == true
             
@@ -494,15 +514,20 @@ extension SphinxOnionManager {
             if contact.getChat() == nil && isConfirmed {
                 let _ = createChat(for: contact, with: message.date)
             }
+            
+            createKeyExchangeMsgFrom(msg: message)
         }
     }
     
     func restoreTribesFrom(
-        messages: [Msg],
-        completion: @escaping () -> ()
+        rr: RunReturn,
+        topic: String?,
+        completion: @escaping (RunReturn, String?) -> ()
     ) {
+        let messages = rr.msgs
+        
         if messages.isEmpty {
-            completion()
+            completion(rr, topic)
             return
         }
 
@@ -514,7 +539,7 @@ extension SphinxOnionManager {
         let filteredMsgs = messages.filter({ $0.type != nil && allowedTypes.contains($0.type!) })
         
         if filteredMsgs.isEmpty {
-            completion()
+            completion(rr, topic)
             return
         }
         
@@ -529,7 +554,7 @@ extension SphinxOnionManager {
                   let tribePubkey = csr.pubkey else
             {
                 if index == total - 1 {
-                    completion()
+                    completion(rr, topic)
                 } else {
                     index = index + 1
                 }
@@ -543,7 +568,7 @@ extension SphinxOnionManager {
                     didCreateTribe: false
                 )
                 if index == total - 1 {
-                    completion()
+                    completion(rr, topic)
                 } else {
                     index = index + 1
                 }
@@ -565,7 +590,7 @@ extension SphinxOnionManager {
                         }
                         
                         if index == total - 1 {
-                            completion()
+                            completion(rr, topic)
                         } else {
                             index = index + 1
                         }
@@ -668,6 +693,8 @@ extension SphinxOnionManager {
         
         messageFetchParams = nil
         chatsFetchParams = nil
+        
+        restoredContactInfoTracker = []
         
         endWatchdogTime()
         resetFromRestore()
