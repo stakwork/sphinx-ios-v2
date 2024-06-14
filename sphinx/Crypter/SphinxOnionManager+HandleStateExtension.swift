@@ -142,6 +142,8 @@ extension SphinxOnionManager {
         if let payments = payments, payments != "[]" {
             if let paymentsHistoryCallback = paymentsHistoryCallback {
                 paymentsHistoryCallback(payments, nil)
+                
+                self.paymentsHistoryCallback
             }
         }
     }

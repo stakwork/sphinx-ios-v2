@@ -71,30 +71,20 @@ class PaymentTransaction {
     init(fromFetchedParams fetchedParams: PaymentTransactionFromServer) {
         // Initialize properties using values from `PaymentTransactionFromServer`
         self.type = nil
-        self.amount = (fetchedParams.amt_msat ?? 0)/1000
-        if let ts = fetchedParams.ts{
+        self.amount = (fetchedParams.amt_msat ?? 0) / 1000
+        
+        if let ts = fetchedParams.ts {
             self.date = Date(timeIntervalSince1970: TimeInterval(ts) / 1000)
-        }
-        else{
+        } else {
             self.date = Date()
         }
-        self.paymentHash = fetchedParams.rhash
+        
         let isIncoming = fetchedParams.msg_idx != nil //only incoming payments have an index
+        
+        self.paymentHash = fetchedParams.rhash
         self.senderId = (isIncoming) ? -1 : 0
         self.receiverId = (isIncoming) ? 0 : -1
         self.paymentRequest = "unknown"
-        
-        
-//        self.type = transactionMessage.type
-//        self.amount = transactionMessage.amount?.intValue
-//        self.date = transactionMessage.date ?? Date()
-//        self.senderId = transactionMessage.senderId
-//        self.receiverId = transactionMessage.receiverId
-//        self.chatId = transactionMessage.chat?.id
-//        self.originalMessageUUID = transactionMessage.uuid
-//        self.paymentRequest = transactionMessage.invoice
-//        self.paymentHash = transactionMessage.paymentHash
-//        self.errorMessage = transactionMessage.errorMessage
     }
     
     func getDirection() -> TransactionDirection {
