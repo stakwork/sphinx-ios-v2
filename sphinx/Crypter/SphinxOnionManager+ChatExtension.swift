@@ -239,6 +239,10 @@ extension SphinxOnionManager {
                 assignReceiverId(localMsg: sentMessage)
             }
             
+            if let sentMessageUUID = sentMessage?.uuid {
+                startSendTimeoutTimer(for: sentMessageUUID)
+            }
+            
             return sentMessage
         } catch let error {
             print("error sending msg \(error.localizedDescription)")
@@ -536,7 +540,6 @@ extension SphinxOnionManager {
            let originalMessage = TransactionMessage.getMessageWith(uuid: omuuid)
         {
             originalMessage.uuid = newUUID
-            
             if (originalMessage.status == (TransactionMessage.TransactionMessageStatus.deleted.rawValue)){
                 originalMessage.status = TransactionMessage.TransactionMessageStatus.deleted.rawValue
             }
@@ -1273,6 +1276,31 @@ extension SphinxOnionManager {
         } catch {
             print("Error getting read level")
         }
+    }
+    
+    func startSendTimeoutTimer(for messageUUID: String) {
+        sendTimeoutTimers[messageUUID]?.invalidate() // Invalidate any existing timer for this UUID
+
+        let timer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: false) { [weak self] timer in
+            self?.handleSendTimeout(for: messageUUID)
+        }
+        
+        sendTimeoutTimers[messageUUID] = timer
+    }
+
+    func handleSendTimeout(for messageUUID: String) {
+        guard let message = TransactionMessage.getMessageWith(uuid: messageUUID) else { return }
+        
+        message.status = TransactionMessage.TransactionMessageStatus.failed.rawValue
+        message.managedObjectContext?.saveContext()
+        
+        sendTimeoutTimers[messageUUID] = nil // Remove the timer reference
+    }
+    
+    // Call this method when you receive Ongoing Message UUID
+    func receivedOMuuid(_ omuuid: String) {
+        sendTimeoutTimers[omuuid]?.invalidate()
+        sendTimeoutTimers[omuuid] = nil
     }
     
     func getMessagesStatusFor(tags: [String]) {

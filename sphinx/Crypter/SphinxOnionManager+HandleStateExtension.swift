@@ -355,7 +355,13 @@ extension SphinxOnionManager {
            let cachedMessage = TransactionMessage.getMessageWith(tag: tag)
         {
             if (sentStatus.status == SphinxOnionManager.kCompleteStatus) {
-                 cachedMessage.status = TransactionMessage.TransactionMessageStatus.received.rawValue
+                
+                cachedMessage.status = TransactionMessage.TransactionMessageStatus.received.rawValue
+                
+                if let uuid = cachedMessage.uuid {
+                    receivedOMuuid(uuid)
+                }
+                
             } else if (sentStatus.status == SphinxOnionManager.kFailedStatus) {
                 cachedMessage.status = TransactionMessage.TransactionMessageStatus.failed.rawValue
             }
