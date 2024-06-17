@@ -94,6 +94,7 @@ extension SphinxOnionManager {
         content: String,
         type: UInt8,
         muid: String? = nil,
+        purchaseItemAmount:Int?=nil,
         recipPubkey: String? = nil,
         mediaKey: String? = nil,
         mediaType: String? = "file",
@@ -115,8 +116,12 @@ extension SphinxOnionManager {
             msg["mediaKey"] = mediaKey
             msg["mediaType"] = mediaType
             
-            if type == UInt8(TransactionMessage.TransactionMessageType.purchase.rawValue) {
+            //adjustments for paid messages
+            if type == UInt8(TransactionMessage.TransactionMessageType.purchase.rawValue),
+            let amt = purchaseItemAmount{
                 msg["content"] = ""
+                let mediaTokenPrice = "amt=\(amt)&ttl=undefined".base64Encoded ?? ""
+                msg["mediaToken"] = "x.x.x.x.\(mediaTokenPrice)"
                 msg.removeValue(forKey: "mediaKey")//withhold key for purchases
             }
             break
@@ -150,6 +155,7 @@ extension SphinxOnionManager {
         chat: Chat,
         provisionalMessage: TransactionMessage?,
         amount:Int = 0,
+        purchaseAmount:Int?=nil,
         shouldSendAsKeysend: Bool = false,
         msgType: UInt8 = 0,
         muid: String? = nil,
@@ -160,7 +166,7 @@ extension SphinxOnionManager {
         invoiceString: String? = nil,
         tribeKickMember: String? = nil
     ) -> TransactionMessage? {
-        
+        var finalType = (UInt8(TransactionMessage.TransactionMessageType.purchase.rawValue) != 0) ? UInt8(TransactionMessage.TransactionMessageType.attachment.rawValue) : msgType
         guard let seed = getAccountSeed() else {
             return nil
         }
@@ -176,6 +182,7 @@ extension SphinxOnionManager {
             content: content,
             type: msgType,
             muid: muid,
+            purchaseItemAmount:purchaseAmount,
             recipPubkey: recipPubkey,
             mediaKey: mediaKey,
             mediaType: mediaType,
@@ -205,7 +212,7 @@ extension SphinxOnionManager {
                 seed: seed,
                 uniqueTime: getTimeWithEntropy(),
                 to: recipPubkey,
-                msgType: msgType,
+                msgType: finalType,
                 msgJson: contentJSONString,
                 state: loadOnionStateAsData(),
                 myAlias: nickname,
@@ -1097,15 +1104,15 @@ extension SphinxOnionManager {
             recipContact = contact
         }
         
-//        let type = (attachmentObject.paidMessage != nil) ? (TransactionMessage.TransactionMessageType.purchase.rawValue) : (TransactionMessage.TransactionMessageType.attachment.rawValue)
-        
-        let type = TransactionMessage.TransactionMessageType.attachment.rawValue
+        let type = (attachmentObject.paidMessage != nil) ? (TransactionMessage.TransactionMessageType.purchase.rawValue) : (TransactionMessage.TransactionMessageType.attachment.rawValue)
+        let purchaseAmt = attachmentObject.price
         
         if let sentMessage = sendMessage(
             to: recipContact,
             content: attachmentObject.text ?? "",
             chat: chat,
             provisionalMessage: provisionalMessage,
+            purchaseAmount: purchaseAmt,
             msgType: UInt8(type),
             muid: muid,
             mediaKey: mk,
