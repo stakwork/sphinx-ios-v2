@@ -80,9 +80,6 @@ public class TransactionMessage: NSManagedObject {
     }
     
     static let typesToExcludeFromChat = [
-        TransactionMessageType.purchase.rawValue,
-        TransactionMessageType.purchaseAccept.rawValue,
-        TransactionMessageType.purchaseDeny.rawValue,
         TransactionMessageType.repayment.rawValue,
         TransactionMessageType.contactKey.rawValue,
         TransactionMessageType.contactKeyConfirmation.rawValue

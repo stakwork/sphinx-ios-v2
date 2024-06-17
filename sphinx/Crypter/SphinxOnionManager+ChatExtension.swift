@@ -1097,7 +1097,9 @@ extension SphinxOnionManager {
             recipContact = contact
         }
         
-        let type = (attachmentObject.paidMessage != nil) ? (TransactionMessage.TransactionMessageType.purchase.rawValue) : (TransactionMessage.TransactionMessageType.attachment.rawValue)
+//        let type = (attachmentObject.paidMessage != nil) ? (TransactionMessage.TransactionMessageType.purchase.rawValue) : (TransactionMessage.TransactionMessageType.attachment.rawValue)
+        
+        let type = TransactionMessage.TransactionMessageType.attachment.rawValue
         
         if let sentMessage = sendMessage(
             to: recipContact,
