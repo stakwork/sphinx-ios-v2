@@ -66,7 +66,6 @@ extension SphinxOnionManager {
             completion(nil, false, index)
         }
     }
-
     
     func loadMediaToken(
         recipPubkey: String?,
@@ -106,7 +105,7 @@ extension SphinxOnionManager {
         
         var msg: [String: Any] = ["content": content]
         var mt: String? = nil
-
+        
         switch TransactionMessage.TransactionMessageType(rawValue: Int(type)) {
         case .message, .boost, .delete, .call, .groupLeave, .memberReject, .memberApprove,.groupDelete:
             break
@@ -118,6 +117,7 @@ extension SphinxOnionManager {
             
             if type == UInt8(TransactionMessage.TransactionMessageType.purchase.rawValue) {
                 msg["content"] = ""
+                msg.removeValue(forKey: "mediaKey")//withhold key for purchases
             }
             break
         case .invoice, .payment:
@@ -136,7 +136,7 @@ extension SphinxOnionManager {
         
         replyUUID != nil ? (msg["replyUuid"] = replyUUID) : ()
         threadUUID != nil ? (msg["threadUuid"] = threadUUID) : ()
-            
+        
         guard let contentData = try? JSONSerialization.data(withJSONObject: msg), let contentJSONString = String(data: contentData, encoding: .utf8) else {
             return nil
         }
@@ -171,7 +171,7 @@ extension SphinxOnionManager {
         else {
             return nil
         }
-
+        
         guard let (contentJSONString, mediaToken) = formatMsg(
             content: content,
             type: msgType,
@@ -436,8 +436,8 @@ extension SphinxOnionManager {
         if let contact = localMsg.chat?.getContact(){
             receiverId = contact.id
         } else if localMsg.type == 29,
-            let replyUUID = localMsg.replyUUID,
-            let replyMsg = TransactionMessage.getMessageWith(uuid: replyUUID)
+                  let replyUUID = localMsg.replyUUID,
+                  let replyMsg = TransactionMessage.getMessageWith(uuid: replyUUID)
         {
             receiverId = replyMsg.senderId
         }
@@ -516,6 +516,10 @@ extension SphinxOnionManager {
                 if isInvoice(type: type) {
                     processIncomingInvoice(message: message)
                 }
+                
+                if isPaidMessageRelated(type: type){
+                    processIncomingPaidMessageEvent(message: message)
+                }
             }
             
             processIndexUpdate(message: message)
@@ -579,8 +583,8 @@ extension SphinxOnionManager {
                     localMsg.status = TransactionMessage.TransactionMessageStatus.pending.rawValue
                 }
             }
-
-           
+            
+            
             if let genericMessageMsat = genericIncomingMessage.amount {
                 localMsg.amount = NSDecimalNumber(value:  genericMessageMsat/1000)
                 localMsg.amountMsat = NSDecimalNumber(value: Int(truncating: (genericMessageMsat) as NSNumber))
@@ -715,6 +719,33 @@ extension SphinxOnionManager {
                     }
                 }
             )
+        }
+    }
+    
+    func processIncomingPaidMessageEvent(
+        message: Msg
+    ){
+        guard let type = message.type,
+              let sender = message.sender,
+              let index = message.index,
+              let uuid = message.uuid,
+              let date = message.date,
+              let csr = ContactServerResponse(JSONString: sender) else
+        {
+            return
+        }
+        
+        var genericIncomingMessage = GenericIncomingMessage(msg: message)
+        
+        guard let newMessage = processGenericIncomingMessage(
+            message: genericIncomingMessage,
+            date: date,
+            csr: csr,
+            amount: 1,
+            type: Int(type),
+            fromMe: message.fromMe ?? false
+        ) else {
+            return
         }
     }
     

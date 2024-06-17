@@ -297,6 +297,16 @@ extension SphinxOnionManager {
         return intType == TransactionMessage.TransactionMessageType.delete.rawValue
     }
     
+    func isPaidMessageRelated(
+        type:UInt8
+    )-> Bool{
+        let intType = Int(type)
+        return (intType == TransactionMessage.TransactionMessageType.purchase.rawValue ||
+                intType == TransactionMessage.TransactionMessageType.purchaseAccept.rawValue ||
+                intType == TransactionMessage.TransactionMessageType.purchaseDeny.rawValue
+                )
+    }
+    
     func isInvoice(
         type: UInt8
     ) -> Bool {
