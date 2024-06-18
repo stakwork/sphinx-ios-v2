@@ -348,7 +348,6 @@ class SphinxOnionManager : NSObject {
               let myPubkey = getAccountOnlyKeysendPubkey(seed: seed),
               let my_xpub = getAccountXpub(seed: seed) else
         {
-            AlertHelper.showAlert(title: "Error", message: "Could not get Account seed and xPubKey")
             hideRestoreViewCallback?()
             return
         }

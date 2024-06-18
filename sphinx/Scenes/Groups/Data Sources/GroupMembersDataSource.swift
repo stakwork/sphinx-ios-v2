@@ -33,12 +33,7 @@ class GroupMembersDataSource: GroupAllContactsDataSource {
         self.chat = chat
         
         messageBubbleHelper.showLoadingWheel()
-        
-        if chat.isMyPublicGroup() {
-            loadTribeContacts()
-        } else {
-            messageBubbleHelper.hideLoadingWheel()
-        }
+        loadTribeContacts()
     }
     
     func loadTribeContacts() {
@@ -49,7 +44,7 @@ class GroupMembersDataSource: GroupAllContactsDataSource {
         }
         
         // Schedule the watchdog timer to run after 5 seconds.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5, execute: watchdogTimer)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5, execute: watchdogTimer)
         
         som.getTribeMembers(tribeChat: self.chat, completion: { [weak self] tribeMembers in
             guard let weakSelf = self else { return }
@@ -60,6 +55,9 @@ class GroupMembersDataSource: GroupAllContactsDataSource {
             if let tribeMemberArray = tribeMembers["confirmedMembers"] as? [TribeMembersRRObject],
                let pendingMembersArray = tribeMembers["pendingMembers"] as? [TribeMembersRRObject]
             {
+                self?.chat.isTribeICreated = true
+                self?.chat.managedObjectContext?.saveContext()
+                
                 let contactsMap = tribeMemberArray.map({
                     var contact = JSON($0.toJSON())
                     contact["pending"] = false
