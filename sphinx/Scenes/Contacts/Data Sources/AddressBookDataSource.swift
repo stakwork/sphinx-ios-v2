@@ -150,7 +150,7 @@ extension AddressBookDataSource : ContactCellDelegate {
         let som = SphinxOnionManager.sharedInstance
         
         if let publicKey = contact.publicKey, publicKey.isNotEmpty {
-            if som.deleteContactMsgsFor(contact: contact) {
+            if som.deleteContactOrChatMsgsFor(contact: contact) {
                 som.deleteContactFromState(pubkey: publicKey)
                 
                 let contactsCount = contacts.count

@@ -228,6 +228,10 @@ class GroupDetailsViewController: UIViewController {
     }
     
     func exitAndDeleteGroup() {
+        guard let chat = self.chat else {
+            return
+        }
+        
         let isPublicGroup = chat.isPublicGroup()
         let isMyPublicGroup = chat.isMyPublicGroup()
         let deleteLabel = (isPublicGroup ? "delete.tribe" : "delete.group").localized
@@ -238,23 +242,21 @@ class GroupDetailsViewController: UIViewController {
                 self.loading = true
             }
             
-            let completion: () -> Void = {
-                DispatchQueue.main.async {
-                    DelayPerformedHelper.performAfterDelay(seconds: 0.5) {
-                        self.navigationController?.popToRootViewController(animated: true)
-                        CoreDataManager.sharedManager.deleteChatObjectsFor(self.chat)
-                    }
+            let som = SphinxOnionManager.sharedInstance
+            
+            if isMyPublicGroup {
+                som.deleteTribe(tribeChat: chat)
+            } else {
+                som.exitTribe(tribeChat: chat)
+            }
+            let _ = som.deleteContactOrChatMsgsFor(chat: chat)
+            
+            DispatchQueue.main.async {
+                DelayPerformedHelper.performAfterDelay(seconds: 0.5) {
+                    self.navigationController?.popToRootViewController(animated: true)
+                    CoreDataManager.sharedManager.deleteChatObjectsFor(chat)
                 }
             }
-            
-            let som = SphinxOnionManager.sharedInstance
-            if isMyPublicGroup {
-                som.deleteTribe(tribeChat: self.chat)
-            } else {
-                som.exitTribe(tribeChat: self.chat)
-            }
-            som.deleteContactMsgsFor(chat: self.chat)
-            completion()
         })
     }
 
