@@ -56,12 +56,14 @@ extension NewChatTableDataSource {
     
     func updateSnapshot() {
         let snapshot = makeSnapshotForCurrentState()
-
+        
         DispatchQueue.main.async {
             CoreDataManager.sharedManager.saveContext()
             
             self.saveSnapshotCurrentState()
-            self.dataSource.apply(snapshot, animatingDifferences: false)
+            self.dataSourceQueue.sync {
+                self.dataSource.apply(snapshot, animatingDifferences: false)
+            }
             self.restoreScrollLastPosition()
             self.loadingMoreItems = false
         }

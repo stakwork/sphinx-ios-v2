@@ -365,17 +365,19 @@ extension DashboardRootViewController {
 //        })
     }
     
-    func hideRestoreViewCallback(){
-        restoreProgressView.hideViewAnimated()
-        isLoading = false
-        shouldShowHeaderLoadingWheel = false
-        
-        refreshUnreadStatus()
-        
-        chatsListViewModel.askForNotificationPermissions()
+    func hideRestoreViewCallback() {
+        DispatchQueue.main.async {
+            self.restoreProgressView.hideViewAnimated()
+            self.isLoading = false
+            self.shouldShowHeaderLoadingWheel = false
+            
+            self.refreshUnreadStatus()
+            
+            self.chatsListViewModel.askForNotificationPermissions()
+        }
     }
     
-    func contactRestoreCallback(percentage: Int){
+    func contactRestoreCallback(percentage: Int) {
         DispatchQueue.main.async {
             let value = min(percentage, 100)
             
@@ -387,7 +389,7 @@ extension DashboardRootViewController {
         }
     }
     
-    func messageRestoreCallback(percentage: Int){
+    func messageRestoreCallback(percentage: Int) {
         DispatchQueue.main.async {
             let value = min(percentage, 100)
             
