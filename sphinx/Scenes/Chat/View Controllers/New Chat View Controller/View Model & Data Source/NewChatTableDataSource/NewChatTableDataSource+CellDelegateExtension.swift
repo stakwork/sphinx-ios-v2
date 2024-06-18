@@ -409,7 +409,7 @@ extension NewChatTableDataSource : NewMessageTableViewCellDelegate {
                     if let height = height {
                         self.botsWebViewData[messageId] = MessageTableCellState.BotWebViewData(height: height)
                         
-                        DispatchQueue.main.async {
+                        self.dataSourceQueue.sync {
                             var snapshot = self.dataSource.snapshot()
                             snapshot.reloadItems([tableCellState.1])
                             self.dataSource.apply(snapshot, animatingDifferences: true)
@@ -527,7 +527,7 @@ extension NewChatTableDataSource {
             if rowIndex < 0 {
                 self.delegate?.shouldReloadThreadHeaderView()
             } else {
-                DispatchQueue.main.async {
+                dataSourceQueue.sync {
                     var snapshot = self.dataSource.snapshot()
                     snapshot.reloadItems([tableCellState.1])
                     self.dataSource.apply(snapshot, animatingDifferences: true)
@@ -555,7 +555,7 @@ extension NewChatTableDataSource {
                     (UIScreen.main.bounds.width - (MessageTableCellState.kRowLeftMargin + MessageTableCellState.kRowRightMargin)) * (MessageTableCellState.kBubbleWidthPercentage)
             )
 
-            DispatchQueue.main.async {
+            dataSourceQueue.sync {
                 var snapshot = self.dataSource.snapshot()
                 snapshot.reloadItems([tableCellState.1])
                 self.dataSource.apply(snapshot, animatingDifferences: true)
@@ -574,7 +574,7 @@ extension NewChatTableDataSource {
         ) {
             uploadingProgress[messageId] = updatedUploadProgressData
             
-            DispatchQueue.main.async {
+            dataSourceQueue.sync {
                 var snapshot = self.dataSource.snapshot()
                 snapshot.reloadItems([tableCellState.1])
                 self.dataSource.apply(snapshot, animatingDifferences: true)
@@ -594,7 +594,7 @@ extension NewChatTableDataSource {
         {
             preloaderHelper.linksData[linkWeb.link] = linkData
 
-            DispatchQueue.main.async {
+            dataSourceQueue.sync {
                 var snapshot = self.dataSource.snapshot()
                 snapshot.reloadItems([tableCellState.1])
                 self.dataSource.apply(snapshot, animatingDifferences: true)

@@ -31,7 +31,7 @@ extension ThreadTableDataSource : ThreadHeaderTableViewCellDelegate {
             return
         }
         
-        DispatchQueue.main.async {
+        dataSourceQueue.sync {
             var snapshot = self.dataSource.snapshot()
             snapshot.reloadItems([tableCellState])
             self.dataSource.apply(snapshot, animatingDifferences: false)
