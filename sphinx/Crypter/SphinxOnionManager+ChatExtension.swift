@@ -69,21 +69,34 @@ extension SphinxOnionManager {
     
     func loadMediaToken(
         recipPubkey: String?,
-        muid: String?
+        muid: String?,
+        price:Int?=nil
     ) -> String? {
         guard let seed = getAccountSeed(), let recipPubkey = recipPubkey, let muid = muid, let expiry = Calendar.current.date(byAdding: .year, value: 1, to: Date()) else {
             return nil
         }
         do {
-            let mt = try makeMediaToken(
+            let hostname = "memes.sphinx.chat"
+            let mt = (price == nil) ? try makeMediaToken(
                 seed: seed,
                 uniqueTime: getTimeWithEntropy(),
                 state: loadOnionStateAsData(),
-                host: "memes.sphinx.chat",
+                host: hostname,
                 muid: muid,
                 to: recipPubkey,
                 expiry: UInt32(expiry.timeIntervalSince1970)
+            ) :
+            try makeMediaTokenWithPrice(
+                seed: seed,
+                uniqueTime: getTimeWithEntropy(),
+                state: loadOnionStateAsData(),
+                host: hostname,
+                muid: muid,
+                to: recipPubkey,
+                expiry: UInt32(expiry.timeIntervalSince1970),
+                price: UInt64((price!))
             )
+            
             return mt
         } catch {
             return nil
@@ -111,17 +124,16 @@ extension SphinxOnionManager {
         case .message, .boost, .delete, .call, .groupLeave, .memberReject, .memberApprove,.groupDelete:
             break
         case .attachment, .directPayment, .purchase:
-            mt = loadMediaToken(recipPubkey: recipPubkey, muid: muid)
-            msg["mediaToken"] = mt
+            
             msg["mediaKey"] = mediaKey
             msg["mediaType"] = mediaType
             
+            mt = loadMediaToken(recipPubkey: recipPubkey, muid: muid, price: purchaseItemAmount)
+            msg["mediaToken"] = mt
+            
             //adjustments for paid messages
-            if type == UInt8(TransactionMessage.TransactionMessageType.purchase.rawValue),
-            let amt = purchaseItemAmount{
+            if type == UInt8(TransactionMessage.TransactionMessageType.purchase.rawValue){
                 msg["content"] = ""
-                let mediaTokenPrice = "amt=\(amt)&ttl=undefined".base64Encoded ?? ""
-                msg["mediaToken"] = "x.x.x.x.\(mediaTokenPrice)"
                 msg.removeValue(forKey: "mediaKey")//withhold key for purchases
             }
             break
@@ -166,7 +178,7 @@ extension SphinxOnionManager {
         invoiceString: String? = nil,
         tribeKickMember: String? = nil
     ) -> TransactionMessage? {
-        var finalType = (UInt8(TransactionMessage.TransactionMessageType.purchase.rawValue) != 0) ? UInt8(TransactionMessage.TransactionMessageType.attachment.rawValue) : msgType
+        var finalType = (UInt8(TransactionMessage.TransactionMessageType.purchase.rawValue) != 0) ? UInt8(TransactionMessage.TransactionMessageType.attachment.rawValue) : msgType //override type purchase to attachment
         guard let seed = getAccountSeed() else {
             return nil
         }
@@ -1076,6 +1088,16 @@ extension SphinxOnionManager {
         } catch {
             return nil
         }
+    }
+    
+    func payAttachment(
+        message:TransactionMessage,
+        price:Int
+    ){
+//        guard let chat = message.chat else{
+//            return
+//        }
+//        sendMessage(to: message.chat?.getContact(), content: "", chat: chat, provisionalMessage: nil, threadUUID: nil, replyUUID: message.chat)
     }
     
 
