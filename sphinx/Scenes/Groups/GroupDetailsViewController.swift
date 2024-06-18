@@ -262,9 +262,9 @@ class GroupDetailsViewController: UIViewController {
 
     
     func uploadImage(image: UIImage) {
-        let id = chat.id
-        let fixedImage = image.fixedOrientation()
-        loading = true
+//        let id = chat.id
+//        let fixedImage = image.fixedOrientation()
+//        loading = true
     }
     
     func imageUploaded(photoUrl: String?) {
