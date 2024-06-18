@@ -118,6 +118,7 @@ class GroupDetailsViewController: UIViewController {
             let photoUrl = chat.myPhotoUrl ?? owner.getPhotoUrl()
             
             tribeMemberInfoContainerHeight.constant = 160
+            tribeMemberInfoView.layoutIfNeeded()
             
             tribeMemberInfoView.configureWith(
                 vc: self,
