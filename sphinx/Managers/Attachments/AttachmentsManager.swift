@@ -232,7 +232,6 @@ class AttachmentsManager {
         guard let price = message.getAttachmentPrice() else {
             return
         }
-        //TODO: @Jim implement paid messages
         SphinxOnionManager.sharedInstance.payAttachment(message: message, price: price)
     }
     

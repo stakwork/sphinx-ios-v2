@@ -132,7 +132,7 @@ extension SphinxOnionManager {
             msg["mediaToken"] = mt
             
             //adjustments for paid messages
-            if type == UInt8(TransactionMessage.TransactionMessageType.purchase.rawValue){
+            if let _ = purchaseItemAmount{
                 msg["content"] = ""
                 msg.removeValue(forKey: "mediaKey")//withhold key for purchases
             }
@@ -146,6 +146,8 @@ extension SphinxOnionManager {
             } else {
                 return nil
             }
+            break
+        case .purchaseAccept:
             break
         default:
             return nil
@@ -178,7 +180,7 @@ extension SphinxOnionManager {
         invoiceString: String? = nil,
         tribeKickMember: String? = nil
     ) -> TransactionMessage? {
-        var finalType = (UInt8(TransactionMessage.TransactionMessageType.purchase.rawValue) != 0) ? UInt8(TransactionMessage.TransactionMessageType.attachment.rawValue) : msgType //override type purchase to attachment
+        
         guard let seed = getAccountSeed() else {
             return nil
         }
@@ -224,7 +226,7 @@ extension SphinxOnionManager {
                 seed: seed,
                 uniqueTime: getTimeWithEntropy(),
                 to: recipPubkey,
-                msgType: finalType,
+                msgType: msgType,
                 msgJson: contentJSONString,
                 state: loadOnionStateAsData(),
                 myAlias: nickname,
@@ -766,6 +768,20 @@ extension SphinxOnionManager {
         ) else {
             return
         }
+        
+        if(newMessage.type == TransactionMessage.TransactionMessageType.purchaseAccept.rawValue),
+          let replyUUID = newMessage.replyUUID,
+          let purchaseRequestMessage = TransactionMessage.getMessageWith(uuid: replyUUID),
+          let purchaseMinAmount = purchaseRequestMessage.getAttachmentPrice(){
+            if(purchaseMinAmount <= Int(newMessage.amount ?? 0)){
+                print("you paid enough!")
+                
+            }
+            else{
+                print("you did not pay enough!")
+            }
+            print(newMessage)
+        }
     }
     
     func processIncomingInvoice(
@@ -1094,10 +1110,21 @@ extension SphinxOnionManager {
         message:TransactionMessage,
         price:Int
     ){
-//        guard let chat = message.chat else{
-//            return
-//        }
-//        sendMessage(to: message.chat?.getContact(), content: "", chat: chat, provisionalMessage: nil, threadUUID: nil, replyUUID: message.chat)
+        guard let chat = message.chat else{
+            return
+        }
+        let kRoutingOffset = 3 // 3 sats
+        let finalAmt = price + kRoutingOffset
+        sendMessage(
+            to: message.chat?.getContact(),
+            content: "",
+            chat: chat,
+            provisionalMessage: nil,
+            amount: finalAmt,
+            msgType: UInt8(TransactionMessage.TransactionMessageType.purchaseAccept.rawValue),
+            threadUUID: nil,
+            replyUUID: message.uuid
+        )
     }
     
 
@@ -1126,8 +1153,8 @@ extension SphinxOnionManager {
             recipContact = contact
         }
         
-        let type = (attachmentObject.price > 0) ? (TransactionMessage.TransactionMessageType.purchase.rawValue) : (TransactionMessage.TransactionMessageType.attachment.rawValue)
-        let purchaseAmt = attachmentObject.price
+        let type = (TransactionMessage.TransactionMessageType.attachment.rawValue)
+        let purchaseAmt = (attachmentObject.price > 0) ? (attachmentObject.price) : nil
         
         if let sentMessage = sendMessage(
             to: recipContact,
