@@ -91,6 +91,7 @@ class SphinxOnionManager : NSObject {
 
     public static let kCompleteStatus = "COMPLETE"
     public static let kFailedStatus = "FAILED"
+    public static let kRoutingOffset = 3
     
     let newMessageBubbleHelper = NewMessageBubbleHelper()
     let managedContext = CoreDataManager.sharedManager.persistentContainer.viewContext
