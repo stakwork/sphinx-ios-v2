@@ -137,6 +137,7 @@ extension SphinxOnionManager {
                 mt = loadMediaToken(recipPubkey: recipPubkey, muid: muid, price: purchaseItemAmount)
             }
             msg["mediaToken"] = mt
+            msg["muid"] = muid
             
             //adjustments for paid messages
             if let _ = purchaseItemAmount{
@@ -158,6 +159,7 @@ extension SphinxOnionManager {
             if let paidAttachmentMediaToken = paidAttachmentMediaToken{
                 mt = paidAttachmentMediaToken
                 msg["mediaToken"] = mt
+                msg["muid"] = muid
             }
             else{
                 return nil
@@ -778,7 +780,7 @@ extension SphinxOnionManager {
             message: genericIncomingMessage,
             date: date,
             csr: csr,
-            amount: 1,//((genericIncomingMessage.amount ?? 0) / 1000),
+            amount: ((genericIncomingMessage.amount ?? 0) / 1000),
             type: Int(type),
             fromMe: message.fromMe ?? false
         ) else {
@@ -1167,6 +1169,7 @@ extension SphinxOnionManager {
             provisionalMessage: nil,
             amount: finalAmt,
             msgType: UInt8(TransactionMessage.TransactionMessageType.purchase.rawValue),
+            muid: message.muid,
             threadUUID: nil,
             replyUUID: nil,
             paidAttachmentMediaToken: message.mediaToken
