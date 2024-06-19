@@ -808,31 +808,39 @@ extension SphinxOnionManager {
             senderId = (fromMe == true) ? (UserData.sharedInstance.getUserId()) : contact.id
             receiverId = (fromMe == true) ? contact.id : (UserData.sharedInstance.getUserId())
             
-            updateContactInfoFromMessage(
-                contact: contact,
-                alias: message.alias,
-                photoUrl: message.photoUrl,
-                pubkey: pubkey
-            )
+            if fromMe {
+                if let owner = UserContact.getOwner(), let pubKey = owner.publicKey {
+                    updateContactInfoFromMessage(
+                        contact: owner,
+                        alias: message.alias,
+                        photoUrl: message.photoUrl,
+                        pubkey: pubKey
+                    )
+                }
+            } else {
+                updateContactInfoFromMessage(
+                    contact: contact,
+                    alias: message.alias,
+                    photoUrl: message.photoUrl,
+                    pubkey: pubkey
+                )
+            }
             
         } else if let tribeChat = Chat.getTribeChatWithOwnerPubkey(ownerPubkey: pubkey) {
             chat = tribeChat
             senderId = tribeChat.id
-            if fromMe == false,
-               let replyUuid = message.replyUuid,
-               let localReplyMsgRecord = TransactionMessage.getMessageWith(uuid: replyUuid){
+            isTribe = true
+            
+            if fromMe == false, let replyUuid = message.replyUuid, let localReplyMsgRecord = TransactionMessage.getMessageWith(uuid: replyUuid) {
                 receiverId = localReplyMsgRecord.senderId
-            }
-            else{
+            } else {
                 receiverId = tribeChat.id
             }
-            isTribe = true
         }
         
         guard let chat = chat,
               let senderId = senderId,
-              let receiverId = receiverId
-        else
+              let receiverId = receiverId else
         {
             return nil
         }
@@ -973,7 +981,7 @@ extension SphinxOnionManager {
                 contactDidChange = true
             }
             
-            if (contact.avatarUrl != photoUrl && photoUrl != nil && photoUrl?.isEmpty == false) {
+            if (contact.avatarUrl != photoUrl) {
                 contact.avatarUrl = photoUrl
                 contactDidChange = true
             }
