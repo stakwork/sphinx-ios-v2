@@ -926,6 +926,7 @@ extension SphinxOnionManager {
         }
         
         let allowedTypes = [
+            UInt8(TransactionMessage.TransactionMessageType.unknown.rawValue),
             UInt8(TransactionMessage.TransactionMessageType.contactKey.rawValue),
             UInt8(TransactionMessage.TransactionMessageType.contactKeyConfirmation.rawValue)
         ]
