@@ -115,7 +115,8 @@ extension SphinxOnionManager {
         replyUUID: String?,
         invoiceString: String?,
         tribeKickMember: String? = nil,
-        paidAttachmentMediaToken:String? = nil
+        paidAttachmentMediaToken:String? = nil,
+        isTribe:Bool
     ) -> (String?, String?)? {
         
         var msg: [String: Any] = ["content": content]
@@ -141,8 +142,8 @@ extension SphinxOnionManager {
             
             //adjustments for paid messages
             if let _ = purchaseItemAmount{
-                msg["content"] = ""
-                msg.removeValue(forKey: "mediaKey")//withhold key for purchases
+                msg.removeValue(forKey: "content")
+                (isTribe) ? () : (msg.removeValue(forKey: "mediaKey"))//withhold key for purchases
             }
             break
         case .invoice, .payment:
@@ -208,7 +209,7 @@ extension SphinxOnionManager {
         else {
             return nil
         }
-        
+        let isTribe = recipContact == nil
         guard let (contentJSONString, mediaToken) = formatMsg(
             content: content,
             type: msgType,
@@ -221,7 +222,8 @@ extension SphinxOnionManager {
             replyUUID: replyUUID,
             invoiceString: invoiceString,
             tribeKickMember: tribeKickMember,
-            paidAttachmentMediaToken: paidAttachmentMediaToken
+            paidAttachmentMediaToken: paidAttachmentMediaToken,
+            isTribe: isTribe
         ) else {
             return nil
         }
@@ -234,7 +236,7 @@ extension SphinxOnionManager {
         
         do {
             
-            let isTribe = recipContact == nil
+            
             let escrowAmountSats = max(Int(truncating: chat.escrowAmount ?? 3), tribeMinEscrowSats)
             let amtMsat = (isTribe && amount == 0) ? UInt64(((Int(truncating: (chat.pricePerMessage ?? 0)) + escrowAmountSats) * 1000)) : UInt64((amount * 1000))
             
