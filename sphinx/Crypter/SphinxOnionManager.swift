@@ -36,7 +36,8 @@ class SphinxOnionManager : NSObject {
     var stashedInviteCode:String? = nil
     var stashedInviterAlias:String? = nil
     
-    var watchdogTimer:Timer? = nil
+    var watchdogTimer: Timer? = nil
+    var reconnectionTimer: Timer? = nil
     var sendTimeoutTimers: [String: Timer] = [:]
     
     var nextMessageBlockWasReceived = false
@@ -80,7 +81,6 @@ class SphinxOnionManager : NSObject {
     var tribeMembersCallback : (([String: AnyObject]) -> ())? = nil
     var paymentsHistoryCallback : ((String?, String?) -> ())? = nil
     var inviteCreationCallback : ((String?) -> ())? = nil
-    var mqttDisconnectCallback : ((Double) -> ())? = nil
     
     ///Session Pin to decrypt mnemonic and seed
     var appSessionPin : String? = nil
@@ -278,7 +278,6 @@ class SphinxOnionManager : NSObject {
         callback: ((Double) -> ())? = nil
     ) {
         if let mqtt = self.mqtt, mqtt.connState == .connected {
-            mqttDisconnectCallback = callback
             mqtt.disconnect()
         } else {
             callback?(0.0)
@@ -293,7 +292,7 @@ class SphinxOnionManager : NSObject {
         connectingCallback: (() -> ())? = nil,
         hideRestoreViewCallback: (()->())? = nil
     ) {
-        if let mqtt = self.mqtt, mqtt.connState == .connected {
+        if let mqtt = self.mqtt, mqtt.connState == .connected && isConnected {
             ///If already fetching content, then process is already running
             if !isFetchingContent() {
                 self.hideRestoreCallback = hideRestoreViewCallback
@@ -342,6 +341,11 @@ class SphinxOnionManager : NSObject {
         messageRestoreCallback: RestoreProgressCallback? = nil,
         hideRestoreViewCallback: (()->())? = nil
     ){
+        if (UIApplication.shared.delegate as? AppDelegate)?.isActive == false {
+            hideRestoreViewCallback?()
+            return
+        }
+        
         connectingCallback?()
         
         guard let seed = getAccountSeed(),
@@ -353,6 +357,7 @@ class SphinxOnionManager : NSObject {
         }
         
         self.disconnectMqtt() { delay in
+            
             DelayPerformedHelper.performAfterDelay(seconds: delay, completion: { [weak self] in
                 guard let self = self else {
                     return
@@ -361,7 +366,7 @@ class SphinxOnionManager : NSObject {
                 if self.isV2Restore {
                     contactRestoreCallback?(2)
                 }
-
+                
                 let success = self.connectToBroker(seed: seed, xpub: my_xpub)
                 
                 if (success == false) {
@@ -374,6 +379,9 @@ class SphinxOnionManager : NSObject {
                     guard let self = self else {
                         return
                     }
+                    
+                    self.endReconnectionTimer()
+                    self.isConnected = true
                     
                     self.subscribeAndPublishMyTopics(pubkey: myPubkey, idx: 0)
                     
@@ -406,11 +414,36 @@ class SphinxOnionManager : NSObject {
                 
                 self.mqtt.didDisconnect = { _, _ in
                     self.isConnected = false
-                    self.mqttDisconnectCallback?(0.5)
                     self.mqtt = nil
+                    self.startReconnectionTimer()
                 }
+                
+                self.startReconnectionTimer(delay: 1.0)
             })
         }
+    }
+    
+    func endReconnectionTimer() {
+        reconnectionTimer?.invalidate()
+        reconnectionTimer = nil
+    }
+    
+    func startReconnectionTimer(
+        delay: Double = 0.5
+    ) {
+        reconnectionTimer?.invalidate()
+        
+        reconnectionTimer = Timer.scheduledTimer(
+            timeInterval: delay,
+            target: self,
+            selector: #selector(ReconnectionTimerFired),
+            userInfo: nil,
+            repeats: false
+        )
+    }
+    
+    @objc func ReconnectionTimerFired() {
+        connectToServer()
     }
     
     func subscribeAndPublishMyTopics(
@@ -503,8 +536,8 @@ class SphinxOnionManager : NSObject {
             
             mqtt.didDisconnect = { _, _ in
                 self.isConnected = false
-                self.mqttDisconnectCallback?(0.5)
                 self.mqtt = nil
+                self.startReconnectionTimer()
             }
             
             mqtt.didReceiveTrust = { _, _, completionHandler in
@@ -513,6 +546,7 @@ class SphinxOnionManager : NSObject {
             
             //subscribe to relevant topics
             mqtt.didConnectAck = { _, _ in
+                self.isConnected = true
                 //self.showSuccessWithMessage("MQTT connected")
                 print("SphinxOnionManager: MQTT Connected")
                 print("mqtt.didConnectAck")

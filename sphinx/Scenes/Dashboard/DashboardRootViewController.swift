@@ -356,7 +356,7 @@ extension DashboardRootViewController {
     }
 
     @objc private func didConnectToInternet() {
-        self.connectToServer()
+        self.reconnectToServer()
     }
 
     @objc private func didDisconnectFromInternet() {
