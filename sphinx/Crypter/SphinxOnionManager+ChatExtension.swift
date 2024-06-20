@@ -386,6 +386,7 @@ extension SphinxOnionManager {
                 message?.uuid = sentUUID
                 message?.id = provisionalMessage?.id ?? uniqueIntHashFromString(stringInput: UUID().uuidString)
                 message?.setAsLastMessage()
+                message?.muid = TransactionMessage.getMUIDFrom(mediaToken: mediaToken)
                 message?.managedObjectContext?.saveContext()
                 
                 return message
@@ -787,12 +788,13 @@ extension SphinxOnionManager {
             return
         }
         
-        if(newMessage.type == TransactionMessage.TransactionMessageType.purchase.rawValue),
+        if(newMessage.type == TransactionMessage.TransactionMessageType.purchase.rawValue),//process purchase attempt
           let mediaToken = newMessage.mediaToken,
-          let encryptedAttachmentMessage = TransactionMessage.getAttachmentMessage(mediaToken: mediaToken),
+          let muid = TransactionMessage.getMUIDFrom(mediaToken: mediaToken),
+          let encryptedAttachmentMessage = TransactionMessage.getMessageWith(muid: muid),
           let purchaseMinAmount = encryptedAttachmentMessage.getAttachmentPrice(),
-            let chat = newMessage.chat,
-            let mediaKey = encryptedAttachmentMessage.mediaKey{
+          let chat = newMessage.chat,
+          let mediaKey = encryptedAttachmentMessage.mediaKey{
             if(purchaseMinAmount <= Int(newMessage.amount ?? 0)){ //purchase of media received with sufficient amount
                 sendMessage(
                     to: chat.getContact(),
@@ -820,13 +822,16 @@ extension SphinxOnionManager {
                     paidAttachmentMediaToken: mediaToken
                 )
             }
-            print(newMessage)
+            newMessage.muid = muid
+            newMessage.managedObjectContext?.saveContext()
         }
         else if (newMessage.type == TransactionMessage.TransactionMessageType.purchaseAccept.rawValue),
                 let mediaToken = newMessage.mediaToken,
-                let receivedEncryptedMessage = TransactionMessage.getAttachmentMessage(mediaToken: mediaToken),
+                let muid = TransactionMessage.getMUIDFrom(mediaToken: mediaToken),
+                let receivedEncryptedMessage = TransactionMessage.getMessageWith(muid: muid),
                 let mediaKey = newMessage.mediaKey{
             receivedEncryptedMessage.mediaKey = mediaKey
+            receivedEncryptedMessage.muid = muid
             receivedEncryptedMessage.managedObjectContext?.saveContext() //update message key so it can render :)
         }
     }
