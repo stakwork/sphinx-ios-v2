@@ -172,7 +172,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         feedsManager.restoreContentFeedStatusInBackground()
         podcastPlayerController.finishAndSaveContentConsumed()
         
-        som.reconnectToServer()
+        getDashboardVC()?.reconnectToServer()
     }
     
     func applicationDidBecomeActive(

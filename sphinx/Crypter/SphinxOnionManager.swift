@@ -356,6 +356,10 @@ class SphinxOnionManager : NSObject {
             return
         }
         
+        self.hideRestoreCallback = hideRestoreViewCallback
+        self.contactRestoreCallback = contactRestoreCallback
+        self.messageRestoreCallback = messageRestoreCallback
+        
         self.disconnectMqtt() { delay in
             
             DelayPerformedHelper.performAfterDelay(seconds: delay, completion: { [weak self] in
@@ -393,17 +397,17 @@ class SphinxOnionManager : NSObject {
                     self.getBlockHeight()
                      
                     if self.isV2Restore {
-                        self.syncContactsAndMessages(
-                            contactRestoreCallback: contactRestoreCallback,
-                            messageRestoreCallback: messageRestoreCallback,
-                            hideRestoreViewCallback: {
-                                self.isV2Restore = false
-                                
-                                hideRestoreViewCallback?()
-                            }
-                        )
+                        self.hideRestoreCallback = {
+                            self.isV2Restore = false
+                            
+                            hideRestoreViewCallback?()
+                        }
+                        
+                        self.syncContactsAndMessages()
                     } else {
-                        self.hideRestoreCallback = hideRestoreViewCallback
+                        self.contactRestoreCallback = nil
+                        self.messageRestoreCallback = nil
+                        
                         self.syncNewMessages()
                     }
                 }
@@ -418,7 +422,7 @@ class SphinxOnionManager : NSObject {
                     self.startReconnectionTimer()
                 }
                 
-                self.startReconnectionTimer(delay: 1.0)
+                self.startReconnectionTimer(delay: 2.0)
             })
         }
     }
@@ -436,14 +440,18 @@ class SphinxOnionManager : NSObject {
         reconnectionTimer = Timer.scheduledTimer(
             timeInterval: delay,
             target: self,
-            selector: #selector(ReconnectionTimerFired),
+            selector: #selector(reconnectionTimerFired),
             userInfo: nil,
             repeats: false
         )
     }
     
-    @objc func ReconnectionTimerFired() {
-        connectToServer()
+    @objc func reconnectionTimerFired() {
+        connectToServer(
+            contactRestoreCallback: self.contactRestoreCallback,
+            messageRestoreCallback: self.messageRestoreCallback,
+            hideRestoreViewCallback: self.hideRestoreCallback
+        )
     }
     
     func subscribeAndPublishMyTopics(
