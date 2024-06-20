@@ -116,15 +116,7 @@ extension SphinxOnionManager {
         return error == nil
     }
     
-    func syncContactsAndMessages(
-        contactRestoreCallback: RestoreProgressCallback?,
-        messageRestoreCallback: RestoreProgressCallback?,
-        hideRestoreViewCallback: (()->())?
-    ){
-        self.contactRestoreCallback = contactRestoreCallback
-        self.messageRestoreCallback = messageRestoreCallback
-        self.hideRestoreCallback = hideRestoreViewCallback
-        
+    func syncContactsAndMessages() {
         setupSyncWith(callback: processMessageCountReceived)
     }
     

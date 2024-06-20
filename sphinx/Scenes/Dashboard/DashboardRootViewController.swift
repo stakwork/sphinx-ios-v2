@@ -353,10 +353,12 @@ extension DashboardRootViewController {
         
         NotificationCenter.default.addObserver(self, selector: #selector(didConnectToInternet), name: .connectedToInternet, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(didDisconnectFromInternet), name: .disconnectedFromInternet, object: nil)
+        
+        contactsService.forceUpdate()
     }
 
     @objc private func didConnectToInternet() {
-        self.connectToServer()
+        self.reconnectToServer()
     }
 
     @objc private func didDisconnectFromInternet() {
