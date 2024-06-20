@@ -266,7 +266,7 @@ extension SphinxOnionManager {
                 content: content,
                 amount: amount,
                 mediaKey: mediaKey,
-                mediaToken: mediaToken,
+                mediaToken: mediaToken ?? paidAttachmentMediaToken,
                 mediaType: mediaType,
                 replyUUID: replyUUID,
                 threadUUID: threadUUID,
@@ -791,10 +791,11 @@ extension SphinxOnionManager {
         if(newMessage.type == TransactionMessage.TransactionMessageType.purchase.rawValue),//process purchase attempt
           let mediaToken = newMessage.mediaToken,
           let muid = TransactionMessage.getMUIDFrom(mediaToken: mediaToken),
-          let encryptedAttachmentMessage = TransactionMessage.getMessageWith(muid: muid),
+          let encryptedAttachmentMessage = TransactionMessage.getMessageWith(muid: muid,managedContext: self.managedContext),
           let purchaseMinAmount = encryptedAttachmentMessage.getAttachmentPrice(),
           let chat = newMessage.chat,
           let mediaKey = encryptedAttachmentMessage.mediaKey{
+            var sentMessage : TransactionMessage? = nil
             if(purchaseMinAmount <= Int(newMessage.amount ?? 0)){ //purchase of media received with sufficient amount
                 sendMessage(
                     to: chat.getContact(),
@@ -823,16 +824,15 @@ extension SphinxOnionManager {
                 )
             }
             newMessage.muid = muid
-            newMessage.managedObjectContext?.saveContext()
         }
         else if (newMessage.type == TransactionMessage.TransactionMessageType.purchaseAccept.rawValue),
                 let mediaToken = newMessage.mediaToken,
                 let muid = TransactionMessage.getMUIDFrom(mediaToken: mediaToken),
-                let receivedEncryptedMessage = TransactionMessage.getMessageWith(muid: muid),
+                let receivedEncryptedMessage = TransactionMessage.getAll().filter({$0.type == 6 && $0.mediaToken == mediaToken}).first,
                 let mediaKey = newMessage.mediaKey{
             receivedEncryptedMessage.mediaKey = mediaKey
             receivedEncryptedMessage.muid = muid
-            receivedEncryptedMessage.managedObjectContext?.saveContext() //update message key so it can render :)
+            newMessage.muid = muid
         }
     }
     
@@ -1024,6 +1024,11 @@ extension SphinxOnionManager {
         }
                 
         newMessage.setAsLastMessage()
+        
+//        if let mt = newMessage.mediaToken,
+//           let muid = TransactionMessage.getMUIDFrom(mediaToken: mt){
+//            newMessage.muid = muid
+//        }
         
         return newMessage
     }

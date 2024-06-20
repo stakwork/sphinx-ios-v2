@@ -72,14 +72,15 @@ extension TransactionMessage {
         return message
     }
     
-    static func getMessageWith(muid: String) -> TransactionMessage? {
+    static func getMessageWith(muid: String, managedContext:NSManagedObjectContext?=nil) -> TransactionMessage? {
         let predicate = NSPredicate(format: "muid == %@", muid)
         let sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]
         
         let message: TransactionMessage? = CoreDataManager.sharedManager.getObjectOfTypeWith(
             predicate: predicate,
             sortDescriptors: sortDescriptors,
-            entityName: "TransactionMessage"
+            entityName: "TransactionMessage",
+            managedContext: managedContext
         )
         
         return message
