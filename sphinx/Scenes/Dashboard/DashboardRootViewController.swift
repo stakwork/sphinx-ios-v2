@@ -398,7 +398,7 @@ extension DashboardRootViewController {
             self.restoreProgressView.showRestoreProgressView(
                 with: value,
                 label: "restoring-messages".localized,
-                buttonEnabled: true
+                buttonEnabled: false
             )
         }
     }
