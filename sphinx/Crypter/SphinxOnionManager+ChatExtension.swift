@@ -201,7 +201,7 @@ extension SphinxOnionManager {
         }
         
         guard let selfContact = UserContact.getOwner(),
-              let nickname = selfContact.nickname ?? chat.name,
+              let nickname = (chat.myAlias?.isNotEmpty == true ? chat.myAlias : selfContact.nickname),
               let recipPubkey = recipContact?.publicKey ?? chat.ownerPubkey
         else {
             return nil
@@ -229,7 +229,7 @@ extension SphinxOnionManager {
             return nil
         }
         
-        let myImg = selfContact.avatarUrl ?? ""
+        let myImg = (chat.myPhotoUrl?.isNotEmpty == true ? (chat.myPhotoUrl ?? "") : (selfContact.avatarUrl ?? ""))
         
         do {
             
@@ -905,16 +905,6 @@ extension SphinxOnionManager {
             return nil
         }
         
-        if let paymentHash = message.paymentHash {
-            if let _ = TransactionMessage.getInvoiceWith(paymentHash: paymentHash), type == TransactionMessage.TransactionMessageType.invoice.rawValue {
-                return nil
-            }
-            
-            if let _ = TransactionMessage.getInvoicePaymentWith(paymentHash: paymentHash), type == TransactionMessage.TransactionMessageType.payment.rawValue {
-                return nil
-            }
-        }
-        
         if let _ = TransactionMessage.getMessageWith(id: index) {
             return nil
         }
@@ -935,31 +925,39 @@ extension SphinxOnionManager {
             senderId = (fromMe == true) ? (UserData.sharedInstance.getUserId()) : contact.id
             receiverId = (fromMe == true) ? contact.id : (UserData.sharedInstance.getUserId())
             
-            updateContactInfoFromMessage(
-                contact: contact,
-                alias: message.alias,
-                photoUrl: message.photoUrl,
-                pubkey: pubkey
-            )
+            if fromMe {
+                if let owner = UserContact.getOwner(), let pubKey = owner.publicKey {
+                    updateContactInfoFromMessage(
+                        contact: owner,
+                        alias: message.alias,
+                        photoUrl: message.photoUrl,
+                        pubkey: pubKey
+                    )
+                }
+            } else {
+                updateContactInfoFromMessage(
+                    contact: contact,
+                    alias: message.alias,
+                    photoUrl: message.photoUrl,
+                    pubkey: pubkey
+                )
+            }
             
         } else if let tribeChat = Chat.getTribeChatWithOwnerPubkey(ownerPubkey: pubkey) {
             chat = tribeChat
             senderId = tribeChat.id
-            if fromMe == false,
-               let replyUuid = message.replyUuid,
-               let localReplyMsgRecord = TransactionMessage.getMessageWith(uuid: replyUuid){
+            isTribe = true
+            
+            if fromMe == false, let replyUuid = message.replyUuid, let localReplyMsgRecord = TransactionMessage.getMessageWith(uuid: replyUuid) {
                 receiverId = localReplyMsgRecord.senderId
-            }
-            else{
+            } else {
                 receiverId = tribeChat.id
             }
-            isTribe = true
         }
         
         guard let chat = chat,
               let senderId = senderId,
-              let receiverId = receiverId
-        else
+              let receiverId = receiverId else
         {
             return nil
         }
@@ -1004,7 +1002,7 @@ extension SphinxOnionManager {
         newMessage.tag = message.tag
         
         if (type == TransactionMessage.TransactionMessageType.boost.rawValue && isTribe == true), let msgAmount = message.amount {
-            newMessage.amount = NSDecimalNumber(value: msgAmount/1000)
+            newMessage.amount = NSDecimalNumber(value: msgAmount / 1000)
             newMessage.amountMsat = NSDecimalNumber(value: msgAmount)
         } else {
             newMessage.amount = NSDecimalNumber(value: amount)
@@ -1043,6 +1041,7 @@ extension SphinxOnionManager {
         }
         
         let allowedTypes = [
+            UInt8(TransactionMessage.TransactionMessageType.unknown.rawValue),
             UInt8(TransactionMessage.TransactionMessageType.contactKey.rawValue),
             UInt8(TransactionMessage.TransactionMessageType.contactKeyConfirmation.rawValue)
         ]
@@ -1091,11 +1090,12 @@ extension SphinxOnionManager {
             photoUrl: String?,
             pubkey: String
     ) {
+        ///Proceed if it's not restore process or it's restore but it's first time updating this contact from most recent message
         if !restoredContactInfoTracker.contains(pubkey) || !isV2Restore {
             
             var contactDidChange = false
             
-            if (contact.nickname != alias && alias != nil && alias?.isEmpty == false) {
+            if (alias != nil && alias?.isEmpty == false && contact.nickname != alias) {
                 contact.nickname = alias
                 contactDidChange = true
             }
@@ -1107,6 +1107,10 @@ extension SphinxOnionManager {
             
             if contactDidChange {
                 contact.managedObjectContext?.saveContext()
+            }
+            
+            ///If contact was updated with a non empty alias (from a non corrupted record), then add pubkey to prevent future updates during restore
+            if alias != nil && alias?.isEmpty == false && isV2Restore {
                 restoredContactInfoTracker.append(pubkey)
             }
         }

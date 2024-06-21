@@ -37,7 +37,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     
     let som = SphinxOnionManager.sharedInstance
     
-    var activatedFromBackground = false
+    var isActive = false
 
     //Lifecycle events
     func application(
@@ -61,7 +61,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
         
-        activatedFromBackground = false
+        isActive = true
         
         if #available(iOS 15.0, *) {
             UITableView.appearance().sectionHeaderTopPadding = CGFloat(0)
@@ -80,7 +80,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         setInitialVC()
         
-        NetworkMonitor.shared
+        NetworkMonitor.shared.startMonitoring()
 
         return true
     }
@@ -142,6 +142,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func applicationDidEnterBackground(
         _ application: UIApplication
     ) {
+        isActive = false
         saveCurrentStyle()
         setBadge(application: application)
         
@@ -159,7 +160,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func applicationWillEnterForeground(
         _ application: UIApplication
     ) {
-        activatedFromBackground = true
+        isActive = true
         notificationUserInfo = nil
 
         if !UserData.sharedInstance.isUserLogged() {
@@ -171,13 +172,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         feedsManager.restoreContentFeedStatusInBackground()
         podcastPlayerController.finishAndSaveContentConsumed()
         
-        NotificationCenter.default.post(name: .onConnectionStatusChanged, object: nil)
         getDashboardVC()?.reconnectToServer()
     }
     
     func applicationDidBecomeActive(
         _ application: UIApplication
     ) {
+        isActive = true
         reloadAppIfStyleChanged()
         
         if !UserData.sharedInstance.isUserLogged() {

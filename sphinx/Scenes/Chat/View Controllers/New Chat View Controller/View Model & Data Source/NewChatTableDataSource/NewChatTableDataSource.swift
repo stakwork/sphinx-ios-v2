@@ -126,6 +126,9 @@ class NewChatTableDataSource : NSObject {
     let webViewSemaphore = DispatchSemaphore(value: 1)
     var webViewLoadingCompletion: ((CGFloat?) -> ())? = nil
     
+    ///Data source updates queue
+    let dataSourceQueue = DispatchQueue(label: "sphinx.chat.v2.datasourceQueue")
+    
     init(
         chat: Chat?,
         contact: UserContact?,

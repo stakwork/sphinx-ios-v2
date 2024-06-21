@@ -21,7 +21,7 @@ extension SphinxOnionManager {//contacts related
         return (components.count >= 3) ? (components[0],components[1],components[2]) : nil
     }
     
-    func deleteContactMsgsFor(
+    func deleteContactOrChatMsgsFor(
         contact: UserContact? = nil,
         chat: Chat? = nil
     ) -> Bool {

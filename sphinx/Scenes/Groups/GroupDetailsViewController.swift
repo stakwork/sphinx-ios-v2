@@ -118,6 +118,7 @@ class GroupDetailsViewController: UIViewController {
             let photoUrl = chat.myPhotoUrl ?? owner.getPhotoUrl()
             
             tribeMemberInfoContainerHeight.constant = 160
+            tribeMemberInfoView.layoutIfNeeded()
             
             tribeMemberInfoView.configureWith(
                 vc: self,
@@ -228,6 +229,10 @@ class GroupDetailsViewController: UIViewController {
     }
     
     func exitAndDeleteGroup() {
+        guard let chat = self.chat else {
+            return
+        }
+        
         let isPublicGroup = chat.isPublicGroup()
         let isMyPublicGroup = chat.isMyPublicGroup()
         let deleteLabel = (isPublicGroup ? "delete.tribe" : "delete.group").localized
@@ -238,29 +243,29 @@ class GroupDetailsViewController: UIViewController {
                 self.loading = true
             }
             
-            let completion: () -> Void = {
-                DispatchQueue.main.async {
-                    DelayPerformedHelper.performAfterDelay(seconds: 0.5) {
-                        self.navigationController?.popToRootViewController(animated: true)
-                        CoreDataManager.sharedManager.deleteChatObjectsFor(self.chat)
-                    }
-                }
-            }
+            let som = SphinxOnionManager.sharedInstance
             
             if isMyPublicGroup {
-                SphinxOnionManager.sharedInstance.deleteTribe(tribeChat: self.chat)
+                som.deleteTribe(tribeChat: chat)
             } else {
-                SphinxOnionManager.sharedInstance.exitTribe(tribeChat: self.chat)
+                som.exitTribe(tribeChat: chat)
             }
-            completion()
+            let _ = som.deleteContactOrChatMsgsFor(chat: chat)
+            
+            DispatchQueue.main.async {
+                DelayPerformedHelper.performAfterDelay(seconds: 0.5) {
+                    self.navigationController?.popToRootViewController(animated: true)
+                    CoreDataManager.sharedManager.deleteChatObjectsFor(chat)
+                }
+            }
         })
     }
 
     
     func uploadImage(image: UIImage) {
-        let id = chat.id
-        let fixedImage = image.fixedOrientation()
-        loading = true
+//        let id = chat.id
+//        let fixedImage = image.fixedOrientation()
+//        loading = true
     }
     
     func imageUploaded(photoUrl: String?) {

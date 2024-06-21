@@ -18,11 +18,9 @@ class NetworkMonitor {
     var isConnected: Bool = false
     var connectionType: NWInterface.InterfaceType?
 
-    private init() {
-        startMonitoring()
-    }
+    private init() {}
 
-    private func startMonitoring() {
+    func startMonitoring() {
         monitor.pathUpdateHandler = { path in
             self.isConnected = path.status == .satisfied
             self.connectionType = self.getConnectionType(path)
