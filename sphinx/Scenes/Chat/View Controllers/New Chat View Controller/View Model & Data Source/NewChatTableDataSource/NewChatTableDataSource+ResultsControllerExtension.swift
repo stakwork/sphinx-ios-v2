@@ -73,13 +73,9 @@ extension NewChatTableDataSource {
     ) -> UITableViewCell {
         var cell: ChatTableViewCellProtocol? = nil
         var mutableDataSourceItem = dataSourceItem
-        let noBubbleCellTypes = [
-            TransactionMessage.TransactionMessageType.purchase.rawValue
-        ]
         
-        if let _ = mutableDataSourceItem.bubble{
-            if mutableDataSourceItem.isTextOnlyMessage,
-               !noBubbleCellTypes.contains(mutableDataSourceItem.message?.type ?? 0){
+        if let _ = mutableDataSourceItem.bubble {
+            if mutableDataSourceItem.isTextOnlyMessage {
                 cell = tableView.dequeueReusableCell(
                     withIdentifier: "NewOnlyTextMessageTableViewCell",
                     for: indexPath
