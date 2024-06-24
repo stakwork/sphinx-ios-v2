@@ -342,11 +342,6 @@ class SphinxOnionManager : NSObject {
         messageRestoreCallback: RestoreProgressCallback? = nil,
         hideRestoreViewCallback: (()->())? = nil
     ){
-        if (UIApplication.shared.delegate as? AppDelegate)?.isActive == false {
-            hideRestoreViewCallback?()
-            return
-        }
-        
         connectingCallback?()
         
         guard let seed = getAccountSeed(),
@@ -436,6 +431,10 @@ class SphinxOnionManager : NSObject {
     func startReconnectionTimer(
         delay: Double = 0.5
     ) {
+        if (UIApplication.shared.delegate as? AppDelegate)?.isActive == false {
+            return
+        }
+        
         reconnectionTimer?.invalidate()
         
         reconnectionTimer = Timer.scheduledTimer(
@@ -448,6 +447,10 @@ class SphinxOnionManager : NSObject {
     }
     
     @objc func reconnectionTimerFired() {
+        if (UIApplication.shared.delegate as? AppDelegate)?.isActive == false {
+            return
+        }
+        
         connectToServer(
             contactRestoreCallback: self.contactRestoreCallback,
             messageRestoreCallback: self.messageRestoreCallback,
