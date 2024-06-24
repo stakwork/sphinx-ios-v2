@@ -50,13 +50,11 @@ extension NewChatTableDataSource {
             messageTableCellStateArray,
             toSection: .messages
         )
-
         return snapshot
     }
     
     func updateSnapshot() {
         let snapshot = makeSnapshotForCurrentState()
-        
         DispatchQueue.main.async {
             CoreDataManager.sharedManager.saveContext()
             

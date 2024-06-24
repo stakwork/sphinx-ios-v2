@@ -66,25 +66,41 @@ extension SphinxOnionManager {
             completion(nil, false, index)
         }
     }
-
     
     func loadMediaToken(
         recipPubkey: String?,
-        muid: String?
+        muid: String?,
+        price:Int? = nil
     ) -> String? {
         guard let seed = getAccountSeed(), let recipPubkey = recipPubkey, let muid = muid, let expiry = Calendar.current.date(byAdding: .year, value: 1, to: Date()) else {
             return nil
         }
         do {
-            let mt = try makeMediaToken(
-                seed: seed,
-                uniqueTime: getTimeWithEntropy(),
-                state: loadOnionStateAsData(),
-                host: "memes.sphinx.chat",
-                muid: muid,
-                to: recipPubkey,
-                expiry: UInt32(expiry.timeIntervalSince1970)
-            )
+            let hostname = "memes.sphinx.chat"
+            var mt: String
+            
+            if (price == nil) {
+                mt = try makeMediaToken(
+                    seed: seed,
+                    uniqueTime: getTimeWithEntropy(),
+                    state: loadOnionStateAsData(),
+                    host: hostname,
+                    muid: muid,
+                    to: recipPubkey,
+                    expiry: UInt32(expiry.timeIntervalSince1970)
+                )
+            } else {
+                mt = try makeMediaTokenWithPrice(
+                    seed: seed,
+                    uniqueTime: getTimeWithEntropy(),
+                    state: loadOnionStateAsData(),
+                    host: hostname,
+                    muid: muid,
+                    to: recipPubkey,
+                    expiry: UInt32(expiry.timeIntervalSince1970),
+                    price: UInt64((price!))
+                )
+            }
             return mt
         } catch {
             return nil
@@ -95,29 +111,50 @@ extension SphinxOnionManager {
         content: String,
         type: UInt8,
         muid: String? = nil,
+        purchaseItemAmount: Int? = nil,
         recipPubkey: String? = nil,
         mediaKey: String? = nil,
         mediaType: String? = "file",
         threadUUID: String?,
         replyUUID: String?,
         invoiceString: String?,
-        tribeKickMember: String? = nil
+        tribeKickMember: String? = nil,
+        paidAttachmentMediaToken: String? = nil,
+        isTribe: Bool
     ) -> (String?, String?)? {
         
         var msg: [String: Any] = ["content": content]
         var mt: String? = nil
-
+        
         switch TransactionMessage.TransactionMessageType(rawValue: Int(type)) {
         case .message, .boost, .delete, .call, .groupLeave, .memberReject, .memberApprove,.groupDelete:
             break
-        case .attachment, .directPayment, .purchase:
-            mt = loadMediaToken(recipPubkey: recipPubkey, muid: muid)
-            msg["mediaToken"] = mt
+        case .attachment, .directPayment, .purchaseAccept, .purchaseDeny:
+            
             msg["mediaKey"] = mediaKey
             msg["mediaType"] = mediaType
             
-            if type == UInt8(TransactionMessage.TransactionMessageType.purchase.rawValue) {
-                msg["content"] = ""
+            if Int(type) == TransactionMessage.TransactionMessageType.purchaseAccept.rawValue ||
+               Int(type) == TransactionMessage.TransactionMessageType.purchaseDeny.rawValue
+            {
+                ///reference mediaToken made by sender of encrypted message we are paying for
+                mt = paidAttachmentMediaToken
+            } else {
+                ///create a media token corresponding to attachment (paid or unpaid)
+                mt = loadMediaToken(recipPubkey: recipPubkey, muid: muid, price: purchaseItemAmount)
+            }
+            msg["mediaToken"] = mt
+            
+            if let _ = purchaseItemAmount {
+                ///Remove content if it's a paid text message
+                if mediaType == "sphinx/text" {
+                    msg.removeValue(forKey: "content")
+                }
+                
+                ///Remove mediaKey if it's a conversation, otherwise send it since tribe admin will custodial it
+                if !isTribe {
+                    msg.removeValue(forKey: "mediaKey")
+                }
             }
             break
         case .invoice, .payment:
@@ -130,13 +167,21 @@ extension SphinxOnionManager {
                 return nil
             }
             break
+        case .purchase:
+            if let paidAttachmentMediaToken = paidAttachmentMediaToken {
+                mt = paidAttachmentMediaToken
+                msg["mediaToken"] = mt
+            } else {
+                return nil
+            }
+            break
         default:
             return nil
         }
         
         replyUUID != nil ? (msg["replyUuid"] = replyUUID) : ()
         threadUUID != nil ? (msg["threadUuid"] = threadUUID) : ()
-            
+        
         guard let contentData = try? JSONSerialization.data(withJSONObject: msg), let contentJSONString = String(data: contentData, encoding: .utf8) else {
             return nil
         }
@@ -150,6 +195,7 @@ extension SphinxOnionManager {
         chat: Chat,
         provisionalMessage: TransactionMessage?,
         amount:Int = 0,
+        purchaseAmount: Int? = nil,
         shouldSendAsKeysend: Bool = false,
         msgType: UInt8 = 0,
         muid: String? = nil,
@@ -158,7 +204,8 @@ extension SphinxOnionManager {
         threadUUID: String?,
         replyUUID: String?,
         invoiceString: String? = nil,
-        tribeKickMember: String? = nil
+        tribeKickMember: String? = nil,
+        paidAttachmentMediaToken: String? = nil
     ) -> TransactionMessage? {
         
         guard let seed = getAccountSeed() else {
@@ -171,18 +218,23 @@ extension SphinxOnionManager {
         else {
             return nil
         }
-
+        
+        let isTribe = recipContact == nil
+        
         guard let (contentJSONString, mediaToken) = formatMsg(
             content: content,
             type: msgType,
             muid: muid,
+            purchaseItemAmount: purchaseAmount,
             recipPubkey: recipPubkey,
             mediaKey: mediaKey,
             mediaType: mediaType,
             threadUUID: threadUUID,
             replyUUID: replyUUID,
             invoiceString: invoiceString,
-            tribeKickMember: tribeKickMember
+            tribeKickMember: tribeKickMember,
+            paidAttachmentMediaToken: paidAttachmentMediaToken,
+            isTribe: isTribe
         ) else {
             return nil
         }
@@ -195,7 +247,7 @@ extension SphinxOnionManager {
         
         do {
             
-            let isTribe = recipContact == nil
+            
             let escrowAmountSats = max(Int(truncating: chat.escrowAmount ?? 3), tribeMinEscrowSats)
             let amtMsat = (isTribe && amount == 0) ? UInt64(((Int(truncating: (chat.pricePerMessage ?? 0)) + escrowAmountSats) * 1000)) : UInt64((amount * 1000))
             
@@ -227,7 +279,7 @@ extension SphinxOnionManager {
                 content: content,
                 amount: amount,
                 mediaKey: mediaKey,
-                mediaToken: mediaToken,
+                mediaToken: mediaToken ?? paidAttachmentMediaToken,
                 mediaType: mediaType,
                 replyUUID: replyUUID,
                 threadUUID: threadUUID,
@@ -347,6 +399,7 @@ extension SphinxOnionManager {
                 message?.uuid = sentUUID
                 message?.id = provisionalMessage?.id ?? uniqueIntHashFromString(stringInput: UUID().uuidString)
                 message?.setAsLastMessage()
+                message?.muid = TransactionMessage.getMUIDFrom(mediaToken: mediaToken)
                 message?.managedObjectContext?.saveContext()
                 
                 return message
@@ -433,9 +486,9 @@ extension SphinxOnionManager {
     func assignReceiverId(localMsg: TransactionMessage) {
         var receiverId :Int = -1
         
-        if let contact = localMsg.chat?.getContact(){
+        if let contact = localMsg.chat?.getContact() {
             receiverId = contact.id
-        } else if localMsg.type == 29,
+        } else if localMsg.type == TransactionMessage.TransactionMessageType.boost.rawValue,
             let replyUUID = localMsg.replyUUID,
             let replyMsg = TransactionMessage.getMessageWith(uuid: replyUUID)
         {
@@ -516,6 +569,10 @@ extension SphinxOnionManager {
                 if isInvoice(type: type) {
                     processIncomingInvoice(message: message)
                 }
+                
+                if isPaidMessageRelated(type: type) {
+                    processIncomingPaidMessageEvent(message: message)
+                }
             }
             
             processIndexUpdate(message: message)
@@ -579,8 +636,8 @@ extension SphinxOnionManager {
                     localMsg.status = TransactionMessage.TransactionMessageStatus.pending.rawValue
                 }
             }
-
-           
+            
+            
             if let genericMessageMsat = genericIncomingMessage.amount {
                 localMsg.amount = NSDecimalNumber(value:  genericMessageMsat/1000)
                 localMsg.amountMsat = NSDecimalNumber(value: Int(truncating: (genericMessageMsat) as NSNumber))
@@ -715,6 +772,81 @@ extension SphinxOnionManager {
                     }
                 }
             )
+        }
+    }
+    
+    func processIncomingPaidMessageEvent(message: Msg) {
+        guard let type = message.type,
+              let sender = message.sender,
+              let _ = message.index,
+              let _ = message.uuid,
+              let date = message.date,
+              let csr = ContactServerResponse(JSONString: sender) else
+        {
+            return
+        }
+        
+        var genericIncomingMessage = GenericIncomingMessage(msg: message)
+        
+        guard let newMessage = processGenericIncomingMessage(
+            message: genericIncomingMessage,
+            date: date,
+            csr: csr,
+            amount: ((genericIncomingMessage.amount ?? 0) / 1000),
+            type: Int(type),
+            fromMe: message.fromMe ?? false
+        ) else {
+            return
+        }
+        
+        ///process purchase attempt
+        if newMessage.type == TransactionMessage.TransactionMessageType.purchase.rawValue,
+          let mediaToken = newMessage.mediaToken,
+          let muid = TransactionMessage.getMUIDFrom(mediaToken: mediaToken),
+          let encryptedAttachmentMessage = TransactionMessage.getMessageWith(muid: muid ,managedContext: self.managedContext),
+          let purchaseMinAmount = encryptedAttachmentMessage.getAttachmentPrice(),
+          let chat = newMessage.chat,
+          let mediaKey = encryptedAttachmentMessage.mediaKey
+        {
+            if purchaseMinAmount <= Int(truncating: newMessage.amount ?? 0) { 
+                ///purchase of media received with sufficient amount
+                let _ = sendMessage(
+                    to: chat.getContact(),
+                    content: "",
+                    chat: chat,
+                    provisionalMessage: nil,
+                    msgType: UInt8(TransactionMessage.TransactionMessageType.purchaseAccept.rawValue),
+                    mediaKey: mediaKey,
+                    threadUUID: nil,
+                    replyUUID: nil,
+                    paidAttachmentMediaToken: mediaToken
+                )
+            } else {
+                ///purchase of media received but amount insufficient
+                let refundAmount = max(newMessage.amount as! Int - SphinxOnionManager.kRoutingOffset, 0)
+                
+                let _ = sendMessage(
+                    to: chat.getContact(),
+                    content: "",
+                    chat: chat,
+                    provisionalMessage: nil,
+                    amount: refundAmount,
+                    msgType: UInt8(TransactionMessage.TransactionMessageType.purchaseDeny.rawValue),
+                    threadUUID: nil,
+                    replyUUID: nil,
+                    paidAttachmentMediaToken: mediaToken
+                )
+            }
+            newMessage.muid = muid
+        } else if newMessage.type == TransactionMessage.TransactionMessageType.purchaseAccept.rawValue,
+                let mediaToken = newMessage.mediaToken,
+                let muid = TransactionMessage.getMUIDFrom(mediaToken: mediaToken),
+                let receivedEncryptedMessage = TransactionMessage.getAll().filter({$0.type == 6 && $0.mediaToken == mediaToken}).first,
+                let mediaKey = newMessage.mediaKey
+        {
+            receivedEncryptedMessage.mediaKey = mediaKey
+            receivedEncryptedMessage.muid = muid
+            newMessage.muid = muid
         }
     }
     
@@ -1044,6 +1176,30 @@ extension SphinxOnionManager {
         }
     }
     
+    func payAttachment(
+        message: TransactionMessage,
+        price: Int
+    ){
+        guard let chat = message.chat else{
+            return
+        }
+         
+        let finalAmt = price + SphinxOnionManager.kRoutingOffset
+        
+        let _ = sendMessage(
+            to: message.chat?.getContact(),
+            content: "",
+            chat: chat,
+            provisionalMessage: nil,
+            amount: finalAmt,
+            msgType: UInt8(TransactionMessage.TransactionMessageType.purchase.rawValue),
+            muid: message.muid,
+            threadUUID: nil,
+            replyUUID: message.uuid,
+            paidAttachmentMediaToken: message.mediaToken
+        )
+    }
+    
 
     func sendAttachment(
         file: NSDictionary,
@@ -1070,20 +1226,22 @@ extension SphinxOnionManager {
             recipContact = contact
         }
         
-        let type = (attachmentObject.paidMessage != nil) ? (TransactionMessage.TransactionMessageType.purchase.rawValue) : (TransactionMessage.TransactionMessageType.attachment.rawValue)
+        let type = (TransactionMessage.TransactionMessageType.attachment.rawValue)
+        let purchaseAmt = (attachmentObject.price > 0) ? (attachmentObject.price) : nil
         
         if let sentMessage = sendMessage(
             to: recipContact,
             content: attachmentObject.text ?? "",
             chat: chat,
             provisionalMessage: provisionalMessage,
+            purchaseAmount: purchaseAmt,
             msgType: UInt8(type),
             muid: muid,
             mediaKey: mk,
             mediaType: mediaType,
             threadUUID:threadUUID,
             replyUUID: replyingMessage?.uuid
-        ){
+        ) {
             if (type == TransactionMessage.TransactionMessageType.attachment.rawValue) {
                 AttachmentsManager.sharedInstance.cacheImageAndMediaData(message: sentMessage, attachmentObject: attachmentObject)
             } else if (type == TransactionMessage.TransactionMessageType.purchase.rawValue) {
