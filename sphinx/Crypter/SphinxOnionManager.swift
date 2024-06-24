@@ -430,6 +430,10 @@ class SphinxOnionManager : NSObject {
     func startReconnectionTimer(
         delay: Double = 0.5
     ) {
+        if (UIApplication.shared.delegate as? AppDelegate)?.isActive == false {
+            return
+        }
+        
         reconnectionTimer?.invalidate()
         
         reconnectionTimer = Timer.scheduledTimer(
@@ -443,7 +447,6 @@ class SphinxOnionManager : NSObject {
     
     @objc func reconnectionTimerFired() {
         if (UIApplication.shared.delegate as? AppDelegate)?.isActive == false {
-            hideRestoreCallback?()
             return
         }
         
