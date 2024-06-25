@@ -89,6 +89,35 @@ extension API {
         }
     }
     
+    func fetchRoutingInfo(
+        callback: @escaping UpdateRoutingInfoCallback
+    ) {
+        let url = "\(SphinxOnionManager.sharedInstance.routerUrl)/api/node"
+        let request : URLRequest? = createRequest(url, bodyParams: nil, method: "GET")
+        
+        guard let request = request else {
+            callback(nil)
+            return
+        }
+        
+        //NEEDS TO BE CHANGED
+        sphinxRequest(request) { response in
+            switch response.result {
+            case .success(let data):
+                if let data = data as? NSDictionary {
+                    let json = JSON(data)
+                    let resultString = json.rawString()
+                    callback(resultString)
+                }
+                else{
+                    callback(nil)
+                }
+            case .failure(_):
+                callback(nil)
+            }
+        }
+    }
+    
     func getServerConfig(
         callback: @escaping SuccessCallback
     ) {
@@ -107,12 +136,14 @@ extension API {
                 if let dictionary = data as? NSDictionary {
                     if let tribe = dictionary["tribe"] as? String,
                        let tribe_host = dictionary["tribe_host"] as? String,
-                       let default_lsp = dictionary["default_lsp"] as? String
+                       let default_lsp = dictionary["default_lsp"] as? String,
+                       let router_url = dictionary["router"] as? String
                     {
                         SphinxOnionManager.sharedInstance.saveConfigFrom(
                             lspHost: default_lsp,
                             tribeServerHost: tribe_host,
-                            defaultTribePubkey: tribe
+                            defaultTribePubkey: tribe,
+                            router_url: router_url
                         )
                         
                         callback(true)
