@@ -78,7 +78,24 @@ extension NewUserSignupFormViewController {
         ) {
             setupWatchdogTimer()
             listenForSelfContactRegistration()//get callbacks ready for sign up
-            presentConnectingLoadingScreenVC()
+            
+            if(UserDefaults.Keys.isProductionEnv.get(defaultValue: false)){
+                fetchServerConfig()
+            }
+            else{
+                presentConnectingLoadingScreenVC()
+            }
+        }
+    }
+    
+    func fetchServerConfig(){
+        API.sharedInstance.getServerConfig() { success in
+            if success {
+                presentConnectingLoadingScreenVC()
+            } else {
+                self.navigationController?.popViewController(animated: true)
+                AlertHelper.showAlert(title: "Error", message: "Unable to get config from Sphinx V2 Server")
+            }
         }
     }
     
