@@ -153,7 +153,7 @@ class SphinxOnionManager : NSObject {
     let kProdServerPort: UInt16 = 8883
     let kTestV2TribesServer = "34.229.52.200:8801"
     let kTestDefaultTribe = "0213ddd7df0077abe11d6ec9753679eeef9f444447b70f2980e44445b3f7959ad1"
-    let kTestRouterUrl = "https://mixer.router1.sphinx.chat"
+    let kTestRouterUrl = "mixer.router1.sphinx.chat"
     
     //MARK: Callback
     ///Restore
