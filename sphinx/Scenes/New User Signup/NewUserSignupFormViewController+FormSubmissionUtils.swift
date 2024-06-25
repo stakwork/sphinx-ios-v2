@@ -91,7 +91,7 @@ extension NewUserSignupFormViewController {
     func fetchServerConfig(){
         API.sharedInstance.getServerConfig() { success in
             if success {
-                presentConnectingLoadingScreenVC()
+                self.presentConnectingLoadingScreenVC()
             } else {
                 self.navigationController?.popViewController(animated: true)
                 AlertHelper.showAlert(title: "Error", message: "Unable to get config from Sphinx V2 Server")

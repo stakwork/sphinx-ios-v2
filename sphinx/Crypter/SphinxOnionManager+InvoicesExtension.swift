@@ -14,7 +14,6 @@ extension SphinxOnionManager {
     func updateRoutingInfo(){
         API.sharedInstance.fetchRoutingInfo(callback: { result in
             guard let result = result else{
-                //throw alert?
                 return
             }
             do{
