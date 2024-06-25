@@ -92,7 +92,8 @@ extension API {
     func fetchRoutingInfo(
         callback: @escaping UpdateRoutingInfoCallback
     ) {
-        let url = "\(SphinxOnionManager.sharedInstance.routerUrl)/api/node"
+        let hostProtocol = UserDefaults.Keys.isProductionEnv.get(defaultValue: false) ? "https" : "http"
+        let url = "\(hostProtocol)://\(SphinxOnionManager.sharedInstance.routerUrl)/api/node"
         let request : URLRequest? = createRequest(url, bodyParams: nil, method: "GET")
         
         guard let request = request else {

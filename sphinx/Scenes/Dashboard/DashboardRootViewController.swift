@@ -222,6 +222,8 @@ extension DashboardRootViewController {
         connectToServer()
         
         setupObservers()
+        
+        SphinxOnionManager.sharedInstance.updateRoutingInfo() //update routing when app starts
     }
     
     func addAccessibilityIdentifiers(){
