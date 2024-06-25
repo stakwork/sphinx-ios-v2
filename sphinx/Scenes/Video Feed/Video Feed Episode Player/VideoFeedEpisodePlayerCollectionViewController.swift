@@ -535,8 +535,11 @@ extension VideoFeedEpisodePlayerCollectionViewController:ItemDescriptionViewCont
         var snapshot = dataSource.snapshot()
         if let _ = videoFeedEpisodes.firstIndex(of: video) {
             let itemIdentifier = DataSourceItem.videoFeedEpisode(video)
-            snapshot.reloadItems([itemIdentifier])
-            dataSource.apply(snapshot, animatingDifferences: true)
+            
+            if snapshot.itemIdentifiers.contains(itemIdentifier) {
+                snapshot.reloadItems([itemIdentifier])
+                dataSource.apply(snapshot, animatingDifferences: true)
+            }
         }
     }
     
