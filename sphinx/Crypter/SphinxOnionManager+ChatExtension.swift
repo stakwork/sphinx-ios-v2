@@ -70,7 +70,7 @@ extension SphinxOnionManager {
     func loadMediaToken(
         recipPubkey: String?,
         muid: String?,
-        price:Int? = nil
+        price: Int? = nil
     ) -> String? {
         guard let seed = getAccountSeed(), let recipPubkey = recipPubkey, let muid = muid, let expiry = Calendar.current.date(byAdding: .year, value: 1, to: Date()) else {
             return nil
@@ -132,6 +132,7 @@ extension SphinxOnionManager {
         case .attachment, .directPayment, .purchaseAccept, .purchaseDeny:
             
             msg["mediaKey"] = mediaKey
+            msg["mediaKeyForSelf"] = mediaKey
             msg["mediaType"] = mediaType
             
             if Int(type) == TransactionMessage.TransactionMessageType.purchaseAccept.rawValue ||
@@ -194,7 +195,7 @@ extension SphinxOnionManager {
         content: String,
         chat: Chat,
         provisionalMessage: TransactionMessage?,
-        amount:Int = 0,
+        amount: Int = 0,
         purchaseAmount: Int? = nil,
         shouldSendAsKeysend: Bool = false,
         msgType: UInt8 = 0,
@@ -803,12 +804,16 @@ extension SphinxOnionManager {
         if newMessage.type == TransactionMessage.TransactionMessageType.purchase.rawValue,
           let mediaToken = newMessage.mediaToken,
           let muid = TransactionMessage.getMUIDFrom(mediaToken: mediaToken),
-          let encryptedAttachmentMessage = TransactionMessage.getMessageWith(muid: muid ,managedContext: self.managedContext),
+          let encryptedAttachmentMessage = TransactionMessage.getAttachmentMessageWith(muid: muid, managedContext: self.managedContext),
           let purchaseMinAmount = encryptedAttachmentMessage.getAttachmentPrice(),
           let chat = newMessage.chat,
           let mediaKey = encryptedAttachmentMessage.mediaKey
         {
-            if purchaseMinAmount <= Int(truncating: newMessage.amount ?? 0) { 
+            if chat.isPublicGroup() {
+                return
+            }
+            
+            if purchaseMinAmount <= Int(truncating: newMessage.amount ?? 0) {
                 ///purchase of media received with sufficient amount
                 let _ = sendMessage(
                     to: chat.getContact(),
@@ -837,15 +842,6 @@ extension SphinxOnionManager {
                     paidAttachmentMediaToken: mediaToken
                 )
             }
-            newMessage.muid = muid
-        } else if newMessage.type == TransactionMessage.TransactionMessageType.purchaseAccept.rawValue,
-                let mediaToken = newMessage.mediaToken,
-                let muid = TransactionMessage.getMUIDFrom(mediaToken: mediaToken),
-                let receivedEncryptedMessage = TransactionMessage.getAll().filter({$0.type == 6 && $0.mediaToken == mediaToken}).first,
-                let mediaKey = newMessage.mediaKey
-        {
-            receivedEncryptedMessage.mediaKey = mediaKey
-            receivedEncryptedMessage.muid = muid
             newMessage.muid = muid
         }
     }
@@ -1013,6 +1009,7 @@ extension SphinxOnionManager {
         newMessage.mediaKey = message.mediaKey
         newMessage.mediaType = message.mediaType
         newMessage.mediaToken = message.mediaToken
+        newMessage.muid = TransactionMessage.getMUIDFrom(mediaToken: message.mediaToken)
         newMessage.paymentHash = message.paymentHash
         newMessage.tag = message.tag
         
