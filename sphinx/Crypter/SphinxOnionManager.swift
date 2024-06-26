@@ -450,6 +450,10 @@ class SphinxOnionManager : NSObject {
             return
         }
         
+        if !NetworkMonitor.shared.isConnected {
+            return
+        }
+        
         connectToServer(
             contactRestoreCallback: self.contactRestoreCallback,
             messageRestoreCallback: self.messageRestoreCallback,
