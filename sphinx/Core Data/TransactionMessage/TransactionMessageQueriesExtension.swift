@@ -72,8 +72,12 @@ extension TransactionMessage {
         return message
     }
     
-    static func getMessageWith(muid: String, managedContext:NSManagedObjectContext?=nil) -> TransactionMessage? {
-        let predicate = NSPredicate(format: "muid == %@", muid)
+    static func getAttachmentMessageWith(muid: String, managedContext:NSManagedObjectContext?=nil) -> TransactionMessage? {
+        let predicate = NSPredicate(
+            format: "type == %d AND muid == %@",
+            TransactionMessage.TransactionMessageType.attachment.rawValue,
+            muid
+        )
         let sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]
         
         let message: TransactionMessage? = CoreDataManager.sharedManager.getObjectOfTypeWith(
@@ -102,7 +106,10 @@ extension TransactionMessage {
     static func getMessageDeletionRequests() -> [TransactionMessage] {
         let context = CoreDataManager.sharedManager.persistentContainer.viewContext
         let fetchRequest: NSFetchRequest<TransactionMessage> = TransactionMessage.fetchRequest()
-        fetchRequest.predicate = NSPredicate(format: "type == %d", 17) // Replace '17' with the actual type if it differs.
+        fetchRequest.predicate = NSPredicate(
+            format: "type == %d",
+            TransactionMessage.TransactionMessageType.delete.rawValue
+        )
         fetchRequest.sortDescriptors = [NSSortDescriptor(key: "id", ascending: true)] // Sorting by 'id', adjust as needed.
 
         do {
