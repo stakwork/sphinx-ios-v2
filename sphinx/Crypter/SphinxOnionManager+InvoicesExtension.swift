@@ -7,18 +7,24 @@
 
 
 import Foundation
+import SwiftyJSON
 
 extension SphinxOnionManager {
     ///invoices related
     
-    func updateRoutingInfo(){
-        API.sharedInstance.fetchRoutingInfo(callback: { result in
-            guard let result = result else{
+    func updateGeneralRoutingInfo(){
+        API.sharedInstance.fetchRoutingInfo(callback: { resultString, resultJSON in
+            guard let resultString = resultString,
+            let resultJSON = resultJSON else{
                 return
             }
             do{
-                let rr = try sphinx.addNode(node: result)
+                let rr = try sphinx.addNode(node: resultString)
                 self.handleRunReturn(rr: rr)
+                
+                if let routerPubkey = resultJSON["pubkey"].string {
+                    UserDefaults.Keys.routerPubkey.set(routerPubkey)
+                }
             }
             catch(let error){
                 print(error)
@@ -26,6 +32,37 @@ extension SphinxOnionManager {
             }
         })
     }
+    
+    func prepareRoutingInfoForPayment(
+            amtMsat: Int,
+            pubkey: String,
+            completion: @escaping (Bool) -> ()
+        ) {
+            if let routerPubkey = self.routerPubkey{
+                API.sharedInstance.fetchSpecificPaymentRoutingInfo(
+                    amtMsat: amtMsat,
+                    pubkey: pubkey,
+                    callback: { results in
+                        if let results = results{
+                            do{
+                                try concatRoute(
+                                    state: self.loadOnionStateAsData(),
+                                    endHops: results,
+                                    routerPubkey: routerPubkey,
+                                    amtMsat: UInt64(amtMsat)
+                                )
+                                completion(true)
+                            }
+                            catch{
+                                completion(false)
+                            }
+                        }
+                        else{
+                            completion(false)
+                        }
+                })
+            }
+        }
     
     func createInvoice(
         amountMsat: Int,

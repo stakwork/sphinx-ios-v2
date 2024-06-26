@@ -91,6 +91,7 @@ extension UserDefaults {
         public static let tribesServerIP = DefaultKey<String>("tribesServerIP")
         public static let defaultTribePublicKey = DefaultKey<String>("defaultTribePublicKey")
         public static let routerUrl = DefaultKey<String>("routerUrl")
+        public static let routerPubkey = DefaultKey<String>("routerPubkey")
     }
     
     class func resetUserDefaults() {

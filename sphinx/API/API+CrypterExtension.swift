@@ -89,11 +89,13 @@ extension API {
         }
     }
     
-    func fetchRoutingInfo(
-        callback: @escaping UpdateRoutingInfoCallback
+    func fetchSpecificPaymentRoutingInfo(
+        amtMsat:Int,
+        pubkey:String,
+        callback: @escaping UpdatePaymentSpecificRoutingInfoCallback
     ) {
         let hostProtocol = UserDefaults.Keys.isProductionEnv.get(defaultValue: false) ? "https" : "http"
-        let url = "\(hostProtocol)://\(SphinxOnionManager.sharedInstance.routerUrl)/api/node"
+        let url = "\(hostProtocol)://\(SphinxOnionManager.sharedInstance.routerUrl)/api/route?pubkey=\(pubkey)&msat=\(amtMsat)"
         let request : URLRequest? = createRequest(url, bodyParams: nil, method: "GET")
         
         guard let request = request else {
@@ -105,7 +107,7 @@ extension API {
         sphinxRequest(request) { response in
             switch response.result {
             case .success(let data):
-                if let data = data as? NSDictionary {
+                if let _ = data as? [NSDictionary]{
                     let json = JSON(data)
                     let resultString = json.rawString()
                     callback(resultString)
@@ -115,6 +117,36 @@ extension API {
                 }
             case .failure(_):
                 callback(nil)
+            }
+        }
+    }
+    
+    func fetchRoutingInfo(
+        callback: @escaping UpdateRoutingInfoCallback
+    ) {
+        let hostProtocol = UserDefaults.Keys.isProductionEnv.get(defaultValue: false) ? "https" : "http"
+        let url = "\(hostProtocol)://\(SphinxOnionManager.sharedInstance.routerUrl)/api/node"
+        let request : URLRequest? = createRequest(url, bodyParams: nil, method: "GET")
+        
+        guard let request = request else {
+            callback(nil,nil)
+            return
+        }
+        
+        //NEEDS TO BE CHANGED
+        sphinxRequest(request) { response in
+            switch response.result {
+            case .success(let data):
+                if let data = data as? NSDictionary {
+                    let json = JSON(data)
+                    let resultString = json.rawString()
+                    callback(resultString,json)
+                }
+                else{
+                    callback(nil,nil)
+                }
+            case .failure(_):
+                callback(nil,nil)
             }
         }
     }
