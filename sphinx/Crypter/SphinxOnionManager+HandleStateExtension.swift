@@ -143,7 +143,7 @@ extension SphinxOnionManager {
             if let paymentsHistoryCallback = paymentsHistoryCallback {
                 paymentsHistoryCallback(payments, nil)
                 
-                self.paymentsHistoryCallback
+                self.paymentsHistoryCallback = nil
             }
         }
     }

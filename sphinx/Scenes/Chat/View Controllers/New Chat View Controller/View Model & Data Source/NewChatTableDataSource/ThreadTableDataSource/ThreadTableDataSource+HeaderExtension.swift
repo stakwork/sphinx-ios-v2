@@ -33,8 +33,11 @@ extension ThreadTableDataSource : ThreadHeaderTableViewCellDelegate {
         
         dataSourceQueue.sync {
             var snapshot = self.dataSource.snapshot()
-            snapshot.reloadItems([tableCellState])
-            self.dataSource.apply(snapshot, animatingDifferences: false)
+            
+            if snapshot.itemIdentifiers.contains(tableCellState) {
+                snapshot.reloadItems([tableCellState])
+                self.dataSource.apply(snapshot, animatingDifferences: false)
+            }
         }
     }
 }

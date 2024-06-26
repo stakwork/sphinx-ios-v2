@@ -79,8 +79,11 @@ extension NewChatTableDataSource : AudioPlayerHelperDelegate {
                 
                 dataSourceQueue.sync {
                     var snapshot = self.dataSource.snapshot()
-                    snapshot.reloadItems([tableCellState.1])
-                    self.dataSource.apply(snapshot, animatingDifferences: false)
+                    
+                    if snapshot.itemIdentifiers.contains(tableCellState.1) {
+                        snapshot.reloadItems([tableCellState.1])
+                        self.dataSource.apply(snapshot, animatingDifferences: false)
+                    }
                 }
             }
         }
@@ -200,8 +203,11 @@ extension NewChatTableDataSource : PlayerDelegate {
 
                 dataSourceQueue.sync {
                     var snapshot = self.dataSource.snapshot()
-                    snapshot.reloadItems([tableCellState.1])
-                    self.dataSource.apply(snapshot, animatingDifferences: false)
+                    
+                    if snapshot.itemIdentifiers.contains(tableCellState.1) {
+                        snapshot.reloadItems([tableCellState.1])
+                        self.dataSource.apply(snapshot, animatingDifferences: false)
+                    }
                 }
             }
         }
