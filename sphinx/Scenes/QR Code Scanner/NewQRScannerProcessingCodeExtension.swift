@@ -78,6 +78,8 @@ extension NewQRScannerViewController {
     }
     
     func handleContactOrSend(string:String){
+        let needsRouting = SphinxOnionManager.sharedInstance.contactRequiresManualRouting(contactString: string)
+        print(needsRouting)
         if string.isExistingContactPubkey().0 {
             self.dismiss(animated: true, completion: {
                 self.presentPubkeySendVC(pubkey: string)

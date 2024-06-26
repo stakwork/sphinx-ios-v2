@@ -318,6 +318,49 @@ extension SphinxOnionManager {//contacts related
         
         return chat
     }
+    
+    func contactRequiresManualRouting(contactString:String) -> Bool{
+        if let contact = contactString.isExistingContactPubkey().1,
+           let pubkey = contact.publicKey,
+           let (_,theirLsp,scid) = getLSPData(for: pubkey),
+           let myLSP = UserContact.getOwner()?.routeHint?.split(separator: "_")[0]{
+            return theirLsp != myLSP
+        }
+        
+        return true //requires routing if we cant figure this out
+    }
+    
+    func getLSPData(for contactPubkey:String)->(String,String,UInt64)?{
+        do{
+            if let relevantContact = getListContactRecord(for: contactPubkey),
+                let pubkey = relevantContact.pubkey,
+                let lsp = relevantContact.lsp,
+                let scid = relevantContact.scid{
+                return (pubkey,lsp,scid)
+            }
+        }
+        catch{
+            //error
+        }
+        
+        return nil
+    }
+    
+    func getListContactRecord(for contactPubkey:String) -> ListContactRecord?{
+        do{
+            let contactsBlob = try listContacts(state: loadOnionStateAsData())
+            if let listContactResults = Mapper<ListContactRecord>().mapArray(JSONString: contactsBlob),
+               let match = listContactResults.first(where: {$0.pubkey == contactPubkey}){
+                return match
+            }
+        }
+        catch{
+            //error
+        }
+        
+        return nil
+    }
+    
     //MARK: END CoreData Helpers
 }
 
