@@ -787,7 +787,7 @@ extension SphinxOnionManager {
             return
         }
         
-        var genericIncomingMessage = GenericIncomingMessage(msg: message)
+        let genericIncomingMessage = GenericIncomingMessage(msg: message)
         
         guard let newMessage = processGenericIncomingMessage(
             message: genericIncomingMessage,
