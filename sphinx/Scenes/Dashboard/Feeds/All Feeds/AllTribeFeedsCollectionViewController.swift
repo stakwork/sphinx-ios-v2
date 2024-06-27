@@ -220,6 +220,8 @@ extension AllTribeFeedsCollectionViewController {
                 _ in
             })
         })
+        
+        
     }
     
     func addTableBottomInset(for collectionView: UICollectionView) {

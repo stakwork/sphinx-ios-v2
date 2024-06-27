@@ -188,6 +188,33 @@ extension DashboardRootViewController {
         }
     }
     
+    func presentBitTorrentPlayer(
+        //for videoEpisode: Video
+    ) {
+        //
+        let videoEpisode = Video("abc123")
+        //videoEpisode.videoFeed = "Jimmy's Pirate Emporium"
+        videoEpisode.itemURL = URL(string: "http://guava.whatbox.ca:30433/Furiosa A Mad Max Saga (2024) [1080p] [WEBRip] [5.1] [YTS.MX]/Furiosa.A.Mad.Max.Saga.2024.1080p.WEBRip.x264.AAC5.1-[YTS.MX].mp4")
+        videoEpisode.mediaURL = URL(string: "http://guava.whatbox.ca:30433/Furiosa A Mad Max Saga (2024) [1080p] [WEBRip] [5.1] [YTS.MX]/Furiosa.A.Mad.Max.Saga.2024.1080p.WEBRip.x264.AAC5.1-[YTS.MX].mp4")
+        videoEpisode.title = "Mad Max: Fury Road"
+        videoEpisode.videoDescription = ""
+        videoEpisode.thumbnailURL = URL(string:"https://m.media-amazon.com/images/I/81J6CaUe+GL.jpg")
+        
+        let viewController = VideoFeedEpisodePlayerContainerViewController
+            .instantiate(
+                videoPlayerEpisode: videoEpisode,
+                dismissButtonStyle: ModalDismissButtonStyle.backArrow,
+                delegate: self,
+                boostDelegate: self
+            )
+
+        let navController = UINavigationController()
+        navController.viewControllers = [viewController]
+        navController.modalPresentationStyle = .automatic
+        navController.isNavigationBarHidden = true
+        navigationController?.present(navController, animated: true)
+    }
+    
     
     private func presentVideoPlayer(
         for videoEpisode: Video
