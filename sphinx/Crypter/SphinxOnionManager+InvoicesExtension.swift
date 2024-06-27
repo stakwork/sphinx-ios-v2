@@ -90,7 +90,13 @@ extension SphinxOnionManager {
         }
     }
     
-    func payInvoice(invoice: String) {
+    func payInvoice(invoice: String,overPayAmountMsat:UInt64?=nil) {
+        //TODO:
+        //1. get pubkey from invoice
+        
+        //2. Check if it needs manual routing and do so if necessary
+        
+        //3. Perform payment
         guard let seed = getAccountSeed() else{
             return
         }
@@ -100,7 +106,7 @@ extension SphinxOnionManager {
                 uniqueTime: getTimeWithEntropy(),
                 state: loadOnionStateAsData(),
                 bolt11: invoice,
-                overpayMsat: nil
+                overpayMsat: overPayAmountMsat
             )
             let _ = handleRunReturn(rr: rr)
         } catch {

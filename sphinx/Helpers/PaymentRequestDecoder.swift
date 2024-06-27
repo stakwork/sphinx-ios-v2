@@ -20,7 +20,7 @@ public class PaymentRequestDecoder {
     private let bech32CharValues = "qpzry9x8gf2tvdw0s3jn54khce6mua7l"
     
     func isZeroAmountInvoice(invoice:String)->Bool{
-        return invoice.starts(with: "lnbc1pj7t")
+        return invoice.starts(with: "lnbc1pn")
     }
     
     func isPaymentRequest() -> Bool {

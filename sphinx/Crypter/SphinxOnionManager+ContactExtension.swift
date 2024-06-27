@@ -324,10 +324,10 @@ extension SphinxOnionManager {//contacts related
            let pubkey = contact.publicKey,
            let (_,theirLsp,scid) = getLSPData(for: pubkey),
            let myLSP = UserContact.getOwner()?.routeHint?.split(separator: "_")[0]{
-            return theirLsp != myLSP
+            return theirLsp != myLSP //require routing if we're not on the same LSP
         }
         
-        return true //requires routing if we cant figure this out
+        return true //requires routing if we don't have the data saved in our state
     }
     
     func getLSPData(for contactPubkey:String)->(String,String,UInt64)?{

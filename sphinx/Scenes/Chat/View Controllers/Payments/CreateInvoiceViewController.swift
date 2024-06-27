@@ -41,6 +41,7 @@ class CreateInvoiceViewController: CommonPaymentViewController {
     let kCharacterLimit = 200
     let kMaximumAmount = 9999999
     var preloadedPubkey : String? = nil
+    var preloadedZeroAmountInvoice:String?=nil
     
     var textColor: UIColor = UIColor.Sphinx.Text {
         didSet {
@@ -62,6 +63,7 @@ class CreateInvoiceViewController: CommonPaymentViewController {
         delegate: PaymentInvoiceDelegate? = nil,
         paymentMode: PaymentsViewModel.PaymentMode = PaymentsViewModel.PaymentMode.receive,
         preloadedPubkey: String? = nil,
+        preloadedZeroAmountInvoice:String? = nil,
         presentationContext: CreateInvoiceVCPresentationContext = .Default
     ) -> CreateInvoiceViewController {
         
@@ -72,6 +74,7 @@ class CreateInvoiceViewController: CommonPaymentViewController {
         viewController.chat = chat
         viewController.delegate = delegate
         viewController.preloadedPubkey = preloadedPubkey
+        viewController.preloadedZeroAmountInvoice = preloadedZeroAmountInvoice
         
         if let messageUUID = messageUUID {
             viewController.message = TransactionMessage.getMessageWith(uuid: messageUUID)
@@ -225,7 +228,12 @@ class CreateInvoiceViewController: CommonPaymentViewController {
         
         switch mode {
         case .send:
-            shouldSendDirectPayment()
+            if let preloadedZeroAmountInvoice = preloadedZeroAmountInvoice{
+                shouldPayZeroAmountInvoice(invoice: preloadedZeroAmountInvoice)
+            }
+            else{
+                shouldSendDirectPayment()
+            }
         case .sendOnchain:
             processOnchainPayment()
         default:
@@ -267,6 +275,27 @@ class CreateInvoiceViewController: CommonPaymentViewController {
         )
         viewController.delegate = self
         self.present(viewController, animated: true)
+    }
+    
+    private func shouldPayZeroAmountInvoice() {
+        if let _ = self.contact {
+            goToPaymentTemplate()
+        } else if let _ = message {
+            sendTribePayment()
+        } else if let _ = paymentsViewModel.payment.destinationKey {
+            sendDirectPayment()
+        } else {
+            goToScanner()
+        }
+    }
+    
+    private func shouldPayZeroAmountInvoice(invoice:String){
+        guard let amount = paymentsViewModel.payment.amount,
+            amount > 0 else {
+            AlertHelper.showAlert(title: "Invalid Amount", message: "generic.message.message".localized)
+            return
+        }
+        SphinxOnionManager.sharedInstance.payInvoice(invoice: invoice, overPayAmountMsat: UInt64(1000 * amount))
     }
     
     private func shouldSendDirectPayment() {

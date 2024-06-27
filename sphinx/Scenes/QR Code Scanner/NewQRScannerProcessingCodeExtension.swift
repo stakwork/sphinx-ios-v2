@@ -48,7 +48,7 @@ extension NewQRScannerViewController {
         print("isZeroAmountInvoice:\(prDecoder.isZeroAmountInvoice(invoice: string))")
         if(prDecoder.isZeroAmountInvoice(invoice: string)){
             DispatchQueue.main.async {
-                self.completeAndShowPRDetails()
+                self.presentSendZeroAmountInvoiceVC(invoice: string)
             }
             return true
         }
@@ -78,8 +78,6 @@ extension NewQRScannerViewController {
     }
     
     func handleContactOrSend(string:String){
-        let needsRouting = SphinxOnionManager.sharedInstance.contactRequiresManualRouting(contactString: string)
-        print(needsRouting)
         if string.isExistingContactPubkey().0 {
             self.dismiss(animated: true, completion: {
                 self.presentPubkeySendVC(pubkey: string)
@@ -132,6 +130,15 @@ extension NewQRScannerViewController {
             delegate.sendSatsButtonTouched(pubkey: pubkey)
         }
     }
+    
+    func presentSendZeroAmountInvoiceVC(invoice:String?=nil){
+        if let delegate = self.delegate as? DashboardRootViewController{
+            self.dismiss(animated: true, completion: {
+                delegate.sendSatsButtonTouched(zeroAmtInvoice: invoice)
+            })
+        }
+    }
+    
     //TODO: @Jim reimplement or remove
 //    func goToSubscriptionDetailsView(subscription: SubscriptionManager.SubscriptionQR) {
 //        let subscriptionDetailsVC = SubscriptionDetailsViewController.instantiate(

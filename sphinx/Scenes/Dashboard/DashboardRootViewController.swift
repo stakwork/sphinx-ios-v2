@@ -473,11 +473,12 @@ extension DashboardRootViewController {
     }
     
     
-    func sendSatsButtonTouched(pubkey:String?=nil) {
+    func sendSatsButtonTouched(pubkey:String?=nil,zeroAmtInvoice:String?=nil) {
         let viewController = CreateInvoiceViewController.instantiate(
             delegate: self,
             paymentMode: PaymentsViewModel.PaymentMode.send,
-            preloadedPubkey: pubkey
+            preloadedPubkey: pubkey,
+            preloadedZeroAmountInvoice: zeroAmtInvoice
         )
         
         presentNavigationControllerWith(vc: viewController)
