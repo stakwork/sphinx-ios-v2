@@ -78,6 +78,10 @@ typealias FeedSearchCompletionHandler = (
     Result<[FeedSearchResult], API.RequestError>
 ) -> ()
 
+typealias BTSearchCompletionHandler = (
+    Result<[BTMedia], API.RequestError>
+) -> ()
+
 typealias GetHasAdminCompletionHandler = (
     Result<Bool, API.RequestError>
 ) -> ()
