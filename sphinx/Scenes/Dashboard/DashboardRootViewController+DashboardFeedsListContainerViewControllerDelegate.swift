@@ -189,7 +189,7 @@ extension DashboardRootViewController {
     }
     
     func presentBitTorrentPlayer(
-        //for videoEpisode: Video
+        for feedResult: FeedSearchResult
     ) {
         //
         let videoEpisode = Video("abc123")

@@ -70,21 +70,11 @@ extension API {
     
     public func searchBTFeed(
             matching queryString: String,
-            then completionHandler: @escaping BTSearchCompletionHandler
+            then completionHandler: @escaping FeedSearchCompletionHandler
         ) {
             
             let hostProtocol = UserDefaults.Keys.isProductionEnv.get(defaultValue: false) ? "https" : "http"
             let urlString = "http://guava.whatbox.ca:30433/?json&q=\(queryString)" // temporary hard code
-
-//            var urlComponents = URLComponents(string: urlPath)!
-//            urlComponents.queryItems = [
-//                URLQueryItem(name: "q", value: queryString)
-//            ]
-
-//            guard let urlString = urlComponents.url?.absoluteString else {
-//                completionHandler(.failure(.failedToCreateRequestURL))
-//                return
-//            }
 
             guard let request = createRequest(
                 urlString,
@@ -100,13 +90,17 @@ extension API {
             podcastSearchRequest = AF.request(request).responseJSON { response in
                 switch response.result {
                 case .success(let data):
-                    var mediaArray = [BTMedia]()
+                    var mediaArray = [FeedSearchResult]()//[BTMedia]()
                     if let resultDict = data as? NSDictionary,
                        let pathsArray = resultDict["paths"] as? [[String: Any]] {
                         
                         for pathDict in pathsArray {
                             if let media = BTMedia(JSON: pathDict) {
-                                mediaArray.append(media)
+                                //mediaArray.append(media)
+                                let result = media.convertBTMediaToFeedSearchResult()
+                                if result.feedURLPath.isNotEmpty{
+                                    mediaArray.append(result)
+                                }
                             }
                         }
                     }
@@ -173,6 +167,23 @@ class BTMedia: Mappable {
         pathType   <- map["path_type"]
         name       <- map["name"]
         mtime      <- (map["mtime"], transformToInt64)
+    }
+    
+    func convertBTMediaToFeedSearchResult() -> FeedSearchResult {
+        let btMedia = self
+        let feedId = btMedia.name ?? "Unknown"
+        let title = btMedia.name ?? "No Title"
+        let feedDescription = "Type: \(btMedia.pathType ?? "Unknown"), Size: \(btMedia.size ?? 0)"
+        let imageUrl = "https://png.pngtree.com/png-clipart/20210309/original/pngtree-movie-clip-art-movie-film-field-clapper-board-png-image_5862049.jpg" // Placeholder image URL
+        var feedURLPath = ""
+        if let fileName = btMedia.name,
+           fileName.contains(".mp4"){
+            feedURLPath = String(describing: "http://guava.whatbox.ca:30433/\(fileName)")
+        }
+        
+        let feedType = FeedType.Podcast // Default feed type
+        
+        return FeedSearchResult(feedId, title, feedDescription, imageUrl, feedURLPath, feedType)
     }
     
     // Custom transform to handle Int64 and null values
