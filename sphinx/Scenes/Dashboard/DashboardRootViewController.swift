@@ -490,9 +490,9 @@ extension DashboardRootViewController {
     ) -> UIViewController {
         switch activeTab {
         case .feed:
-            DispatchQueue.main.asyncAfter(deadline: .now() + 5.0, execute: {
-                self.presentBitTorrentPlayer()
-            })
+//            DispatchQueue.main.asyncAfter(deadline: .now() + 5.0, execute: {
+//                self.presentBitTorrentPlayer()
+//            })
             return feedsContainerViewController
         case .friends:
             return contactChatsContainerViewController
