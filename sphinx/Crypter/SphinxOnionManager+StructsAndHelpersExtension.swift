@@ -373,3 +373,22 @@ class ListContactRecord: Mappable {
         highestMsgIdx <- map["highest_msg_idx"]
     }
 }
+
+
+struct ParseInvoiceResult: Mappable {
+    var value: Int?
+    var paymentHash: String?
+    var pubkey: String?
+    var description: String?
+    var expiry: Int?
+    
+    init?(map: Map) {}
+
+    mutating func mapping(map: Map) {
+        value          <- map["value"]
+        paymentHash    <- map["payment_hash"]
+        pubkey         <- map["pubkey"]
+        description    <- map["description"]
+        expiry         <- map["expiry"]
+    }
+}

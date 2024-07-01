@@ -45,12 +45,13 @@ extension SphinxOnionManager {
                     callback: { results in
                         if let results = results{
                             do{
-                                try concatRoute(
+                               let rr =  try concatRoute(
                                     state: self.loadOnionStateAsData(),
                                     endHops: results,
                                     routerPubkey: routerPubkey,
                                     amtMsat: UInt64(amtMsat)
                                 )
+                                let _ = self.handleRunReturn(rr: rr)
                                 completion(true)
                             }
                             catch{
@@ -91,12 +92,40 @@ extension SphinxOnionManager {
     }
     
     func payInvoice(invoice: String,overPayAmountMsat:UInt64?=nil) {
-        //TODO:
         //1. get pubkey from invoice
+        var rawInvoiceResult = ""
+        do {
+            rawInvoiceResult = try parseInvoice(invoiceJson: invoice)
+        }
+        catch{
+            return
+        }
         
-        //2. Check if it needs manual routing and do so if necessary
+        guard let invoiceDict = ParseInvoiceResult(JSONString: rawInvoiceResult),
+              let pubkey = invoiceDict.pubkey,
+            let amount = invoiceDict.value else{
+            return // no pubkey so we can't route!
+        }
+        if(contactRequiresManualRouting(contactString: pubkey)){
+            prepareRoutingInfoForPayment(amtMsat: Int(overPayAmountMsat ?? UInt64(amount)), pubkey: pubkey, completion: { success in
+                if(success){
+                    self.finalizePayInvoice(invoice: invoice, overPayAmountMsat: overPayAmountMsat)
+                }
+                else{
+                    //error getting route info
+                    AlertHelper.showAlert(title: "Routing Error", message: "Could not find a route to the target. Please try again.")
+                }
+            })
+        }
+        else{
+            //3. Perform payment
+            finalizePayInvoice(invoice: invoice, overPayAmountMsat: overPayAmountMsat)
+        }
         
-        //3. Perform payment
+    }
+    
+    func finalizePayInvoice(invoice: String,overPayAmountMsat:UInt64?=nil) {
+        
         guard let seed = getAccountSeed() else{
             return
         }
@@ -115,6 +144,39 @@ extension SphinxOnionManager {
     }
     
     func payInvoiceMessage(message: TransactionMessage) {
+        var rawInvoiceResult = ""
+        do {
+            rawInvoiceResult = try parseInvoice(invoiceJson: message.invoice ?? "")
+        }
+        catch{
+            return
+        }
+        guard message.type == TransactionMessage.TransactionMessageType.invoice.rawValue,
+              let owner = UserContact.getOwner(),
+              let nickname = owner.nickname,
+              let invoiceDict = ParseInvoiceResult(JSONString: rawInvoiceResult),
+              let pubkey = invoiceDict.pubkey,
+              let amount = invoiceDict.value else
+        {
+            return
+        }
+        if(contactRequiresManualRouting(contactString: pubkey)){
+            prepareRoutingInfoForPayment(amtMsat: Int(UInt64(amount)), pubkey: pubkey, completion: { success in
+                if(success){
+                    self.finalizePayInvoiceMessage(message: message)
+                }
+                else{
+                    //error getting route info
+                    AlertHelper.showAlert(title: "Routing Error", message: "Could not find a route to the target. Please try again.")
+                }
+            })
+        }
+        else{
+            self.finalizePayInvoiceMessage(message: message)
+        }
+    }
+    
+    func finalizePayInvoiceMessage(message:TransactionMessage){
         guard message.type == TransactionMessage.TransactionMessageType.invoice.rawValue,
               let invoice = message.invoice,
               let seed = getAccountSeed(),
@@ -139,7 +201,6 @@ extension SphinxOnionManager {
             return
         }
     }
-    
     
     func sendInvoiceMessage(
         contact: UserContact,
