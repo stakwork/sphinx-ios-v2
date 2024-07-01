@@ -1289,7 +1289,39 @@ extension SphinxOnionManager {
         chat: Chat,
         completion: @escaping (Bool, TransactionMessage?) -> ()
     ){
-        guard let contact = chat.getContact() else {
+        guard let contact = chat.getContact(),
+        let pubkey = contact.publicKey else {
+            return
+        }
+        
+        if(contactRequiresManualRouting(contactString: pubkey)){
+            prepareRoutingInfoForPayment(amtMsat: amount * 1000, pubkey: pubkey, completion: { [self] success in
+                if(success){
+                    finalizeDirectPayment(amount: amount, muid: muid, content: content, chat: chat, completion: { success, message in
+                        completion(success,message)
+                    })
+                }
+                else{
+                    completion(false,nil)
+                }
+            })
+        }
+        else{
+            finalizeDirectPayment(amount: amount, muid: muid, content: content, chat: chat, completion: { success, message in
+                completion(success,message)
+            })
+        }
+    }
+    
+    func finalizeDirectPayment(
+        amount: Int,
+        muid: String?,
+        content: String?,
+        chat: Chat,
+        completion: @escaping (Bool, TransactionMessage?) -> ()
+    ){
+        guard let contact = chat.getContact(),
+        let pubkey = contact.publicKey else {
             return
         }
         
