@@ -1257,13 +1257,46 @@ extension SphinxOnionManager {
     //MARK: Payments related
     func sendBoostReply(
         params: [String: AnyObject],
-        chat:Chat
-    ) -> TransactionMessage? {
+        chat: Chat,
+        completion: @escaping (TransactionMessage?) -> Void
+    ) {
         let contact = chat.getContact()
-        
+
         guard let replyUUID = params["reply_uuid"] as? String,
-        let text = params["text"] as? String,
-        let amount = params["amount"] as? Int else{
+              let contact = contact,
+              let text = params["text"] as? String,
+              let pubkey = contact.publicKey,
+              let amount = params["amount"] as? Int else {
+            completion(nil)
+            return
+        }
+
+        if contactRequiresManualRouting(contactString: pubkey) {
+            prepareRoutingInfoForPayment(amtMsat: amount * 1000, pubkey: pubkey) { success in
+                if success {
+                    let message = self.finalizeSendBoostReply(params: params, chat: chat)
+                    completion(message)
+                } else {
+                    AlertHelper.showAlert(title: "Routing Error", message: "There was an error routing please try again.")
+                    completion(nil)
+                }
+            }
+        } else {
+            let message = finalizeSendBoostReply(params: params, chat: chat)
+            completion(message)
+        }
+    }
+    
+    func finalizeSendBoostReply(
+        params: [String: AnyObject],
+        chat:Chat
+    )-> TransactionMessage?{
+        let contact = chat.getContact()
+        guard let replyUUID = params["reply_uuid"] as? String,
+            let contact = contact,
+            let text = params["text"] as? String,
+            let pubkey = contact.publicKey,
+            let amount = params["amount"] as? Int else{
             return nil
         }
         if let sentMessage = self.sendMessage(
@@ -1279,6 +1312,7 @@ extension SphinxOnionManager {
             print(sentMessage)
             return sentMessage
         }
+        
         return nil
     }
     
