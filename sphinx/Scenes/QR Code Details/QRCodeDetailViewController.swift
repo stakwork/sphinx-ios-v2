@@ -18,6 +18,12 @@ final class QRCodeDetailViewController: UIViewController {
     @IBOutlet private weak var copyButton: UIButton!
     @IBOutlet weak var paidLabelContainer: UIView!
     
+    var paymentHash:String? {
+        if let invoice = viewModel.qrCodeString,
+           let rawInvoiceDetails = parseInvoice(invoiceJson: invoice),
+           let parsedInvoiceDetails = 
+    }
+    
     public weak var delegate: PaymentInvoiceDelegate?
     public weak var presentedVCDelegate: PresentedViewControllerDelegate?
     
@@ -72,6 +78,18 @@ final class QRCodeDetailViewController: UIViewController {
         if let amount = viewModel.amount, amount > 0 {
             amountLabelContainer.isHidden = false
             amountLabel.text = "\(amount) sats"
+        }
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(), name: .invoiceISentSettled, object: nil)
+    }
+    
+    override func viewDidDisappear(_ animated: Bool) {
+        NotificationCenter.default.removeObserver(self, name: .invoiceISentSettled, object: nil)
+    }
+    
+    @objc func handlePaidInvoiceNotification(n: Notification) {
+        if let paymentHash = n.userInfo?["paymentHash"] as? String{
+            
         }
     }
     
