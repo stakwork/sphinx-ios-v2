@@ -348,3 +348,47 @@ struct MessageStatusMap: Mappable {
         return self.status == SphinxOnionManager.kFailedStatus
     }
 }
+
+
+class ListContactRecord: Mappable {
+    var version: Int?
+    var myIdx: UInt64?
+    var pubkey: String?
+    var lsp: String?
+    var scid: UInt64?
+    var contactKey: String?
+    var highestMsgIdx: Int?
+
+    required init?(map: Map) {
+        // Initialize the object
+    }
+
+    func mapping(map: Map) {
+        version <- map["version"]
+        myIdx <- map["my_idx"]
+        pubkey <- map["pubkey"]
+        lsp <- map["lsp"]
+        scid <- map["scid"]
+        contactKey <- map["contact_key"]
+        highestMsgIdx <- map["highest_msg_idx"]
+    }
+}
+
+
+struct ParseInvoiceResult: Mappable {
+    var value: Int?
+    var paymentHash: String?
+    var pubkey: String?
+    var description: String?
+    var expiry: Int?
+    
+    init?(map: Map) {}
+
+    mutating func mapping(map: Map) {
+        value          <- map["value"]
+        paymentHash    <- map["payment_hash"]
+        pubkey         <- map["pubkey"]
+        description    <- map["description"]
+        expiry         <- map["expiry"]
+    }
+}

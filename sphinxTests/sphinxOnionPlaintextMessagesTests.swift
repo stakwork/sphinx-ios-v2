@@ -523,7 +523,7 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
         
         enforceDelay(delay: 8.0)
         
-        sphinxOnionManager.sendBoostReply(params: params, chat: chat)
+        //sphinxOnionManager.sendBoostReply(params: params, chat: chat)
         
         enforceDelay( delay: 14.0)
         

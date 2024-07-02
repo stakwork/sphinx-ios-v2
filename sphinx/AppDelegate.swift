@@ -186,6 +186,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         }
         
         handlePushAndFetchData()
+        
+        SphinxOnionManager.sharedInstance.updateGeneralRoutingInfo()
     }
 
     func handlePushAndFetchData() {
