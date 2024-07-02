@@ -207,9 +207,9 @@
 //RESTORE EXISTING USER
 "restore.keychain" = "Restaurar desde keychain";
 "restore.description.continue" = "Continuar";
-"restore.description.label" = "Copiá tus claves desde\nla app de escritorio y pegalas aquí.";
-"restore.copy.keys" = "Copiá tus claves";
-"restore.form.paste.keys.placeholder" = "Pegá tus claves...";
+"restore.description.label" = "Copia tus palabras claves desde la\naplicación móvil y pegales aquí.";
+"restore.copy.keys" = "Copia tus palabras claves";
+"restore.form.paste.keys.placeholder" = "Pega aquí tus palabras claves...";
 "submit" = "Enviar";
 "restore.invalid-code.relay-qr-code" = "Parece que estas utilizando un código de conexión de Sphinx Relay. Para restaurar una cuenta existente, debes ingresar un código de restauración.";
 "resume-restoring" = "Resumiendo Restauración...";
@@ -279,9 +279,9 @@
 //PROFILE
 "address.copied.clipboard" = "Dirección copiada al portapapeles";
 "route.hint.copied.clipboard" = "Pista de Ruta copiada al portapapeles";
-"pin.keys.encryption" = "Ingresa tu PIN para encriptar las claves. ¡Recuérdalo! Lo necesitarás para restaurar tu cuenta en otro dispositivo.";
-"export.keys" = "Exportar Claves";
-"keys.will.copy.clipboard" = "Tus claves se copiarán al portapapeles. Guarda las claves y recuerda tu PIN antes de borrar la aplicación o toda la información se perderá.";
+"pin.keys.encryption" = "Ingresa tu PIN para acceder a tus palabras claves.";
+"export.keys" = "Exportar Palabras Claves";
+"keys.will.copy.clipboard" = "Tus palabras claves se copiarán al portapapeles. Guarda las claves de forma segura o toda la información se perderá.";
 "keys.copied.clipboard" = "Claves copiadas al portapapeles";
 "server.url.updated" = "La URL del servidor ha sido actualizada con éxito";
 "hour" = "hora";
@@ -341,7 +341,7 @@
 "pin.doesnt.match" = "El PIN no concuerda";
 "enter.old.pin" = "INGRESA TU PIN ACTUAL";
 "enter.new.pin" = "INGRESA NUEVO PIN";
-"pin.changed" = "Tu PIN ha sido actualizado. Por favor exporta tus claves nuevamente usando el nuevo PIN.";
+"pin.changed" = "Tu PIN ha sido actualizado.";
 "contact.pin.error" = "No puedes usar tu PIN principal como PIN de grupo";
 "set.privacy.pin" = "Establecer PIN Privado";
 "change.privacy.pin" = "Cambiar PIN Privado";

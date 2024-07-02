@@ -24,7 +24,7 @@
 
 "aS3-Fj-p1j.text" = "さらにデバイスを同期する"; // Sara ni debbaisu o dōki suru
 
-"sX0-os-LQi.normalTitle" = "キーをバックアップする"; // Kī o bakkuappu suru
+"sX0-os-LQi.normalTitle" = "シードフレーズをバックアップする"; // Kī o bakkuappu suru
 
 /* Class = "UILabel"; text = "Address"; ObjectID = "faG-bF-oVt"; */
 "faG-bF-oVt.text" = "アドレス"; // Adoressu
