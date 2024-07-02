@@ -32,25 +32,13 @@ class GroupMembersDataSource: GroupAllContactsDataSource {
     func reloadContacts(chat: Chat) {
         self.chat = chat
         
-        messageBubbleHelper.showLoadingWheel()
         loadTribeContacts()
     }
     
     func loadTribeContacts() {
-        // Create a watchdog timer as a DispatchWorkItem.
-        let watchdogTimer = DispatchWorkItem { [weak self] in
-            self?.messageBubbleHelper.hideLoadingWheel()
-            self?.messageBubbleHelper.showGenericMessageView(text: "Error loading tribe members")
-        }
-        
-        // Schedule the watchdog timer to run after 5 seconds.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5, execute: watchdogTimer)
         
         som.getTribeMembers(tribeChat: self.chat, completion: { [weak self] tribeMembers in
             guard let weakSelf = self else { return }
-            
-            // Cancel the watchdog timer as the completion block executed successfully.
-            watchdogTimer.cancel()
             
             if let tribeMemberArray = tribeMembers["confirmedMembers"] as? [TribeMembersRRObject],
                let pendingMembersArray = tribeMembers["pendingMembers"] as? [TribeMembersRRObject]
@@ -74,7 +62,6 @@ class GroupMembersDataSource: GroupAllContactsDataSource {
                 weakSelf.groupPendingContacts = weakSelf.getGroupContactsFrom(contacts: pendingContactsMap)
                 
                 weakSelf.tableView.reloadData()
-                weakSelf.messageBubbleHelper.hideLoadingWheel()
             }
         })
     }

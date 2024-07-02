@@ -31,7 +31,7 @@ extension NewChatViewModel {
             return
         }
         
-        SphinxOnionManager.sharedInstance.sendMessage(
+        let _ = SphinxOnionManager.sharedInstance.sendMessage(
             to: message.chat?.getContact(),
             content: message.messageContent ?? "",
             chat: chat, provisionalMessage: message,

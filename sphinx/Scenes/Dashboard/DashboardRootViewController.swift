@@ -372,9 +372,7 @@ extension DashboardRootViewController {
     }
 
     @objc private func didDisconnectFromInternet() {
-//        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: {
-//            AlertHelper.showAlert(title: "socket.disconnected".localized, message: "")
-//        })
+        SphinxOnionManager.sharedInstance.isConnected = false
     }
     
     func hideRestoreViewCallback() {

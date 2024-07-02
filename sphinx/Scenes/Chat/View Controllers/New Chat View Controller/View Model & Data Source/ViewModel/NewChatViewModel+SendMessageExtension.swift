@@ -39,6 +39,10 @@ extension NewChatViewModel {
     ) {
         var messageText = text
         
+        if messageText.isEmpty {
+            return
+        }
+        
         if let podcastComment = podcastComment {
             messageText = podcastComment.getJsonString(withComment: text) ?? text
         }

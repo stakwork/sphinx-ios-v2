@@ -44,9 +44,7 @@ extension SphinxOnionManager {//contacts related
                 )
                 
                 let _ = handleRunReturn(rr: rr)
-            } catch {
-                return false
-            }
+            } catch {}
         }
         
         if let publicKey = contact?.publicKey ?? chat?.ownerPubkey {
@@ -60,9 +58,7 @@ extension SphinxOnionManager {//contacts related
                 )
                 
                 let _ = handleRunReturn(rr: rr)
-            } catch {
-                return false
-            }
+            } catch {}
         }
         
         return true

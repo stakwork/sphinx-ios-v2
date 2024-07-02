@@ -338,6 +338,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func handleAppRefresh(task: BGTask) {
         scheduleAppRefresh()
         
+        if !UserData.sharedInstance.isUserLogged() {
+            return
+        }
+        
         som.reconnectToServer()
     }
     
@@ -438,6 +442,11 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         didReceiveRemoteNotification userInfo: [AnyHashable : Any],
         fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
     ) {
+        if !UserData.sharedInstance.isUserLogged() {
+            completionHandler(.noData)
+            return
+        }
+        
         som.reconnectToServer(hideRestoreViewCallback: {
             completionHandler(.newData)
         })
