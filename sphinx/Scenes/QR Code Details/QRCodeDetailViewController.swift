@@ -18,10 +18,13 @@ final class QRCodeDetailViewController: UIViewController {
     @IBOutlet private weak var copyButton: UIButton!
     @IBOutlet weak var paidLabelContainer: UIView!
     
-    var paymentHash:String? {
-        if let invoice = viewModel.qrCodeString,
-           let rawInvoiceDetails = parseInvoice(invoiceJson: invoice),
-           let parsedInvoiceDetails = 
+    var currentInvoicePaymentHash:String? {
+        if let invoice = viewModel?.qrCodeString,
+           let parsedInvoiceDetails = SphinxOnionManager.sharedInstance.getInvoiceDetails(invoice: invoice),
+            let paymentHash = parsedInvoiceDetails.paymentHash{
+            return paymentHash
+        }
+        return nil
     }
     
     public weak var delegate: PaymentInvoiceDelegate?
@@ -80,7 +83,7 @@ final class QRCodeDetailViewController: UIViewController {
             amountLabel.text = "\(amount) sats"
         }
         
-        NotificationCenter.default.addObserver(self, selector: #selector(), name: .invoiceISentSettled, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(handlePaidInvoiceNotification), name: .invoiceISentSettled, object: nil)
     }
     
     override func viewDidDisappear(_ animated: Bool) {
@@ -88,8 +91,10 @@ final class QRCodeDetailViewController: UIViewController {
     }
     
     @objc func handlePaidInvoiceNotification(n: Notification) {
-        if let paymentHash = n.userInfo?["paymentHash"] as? String{
-            
+        if let receivedPaymentHash = n.userInfo?["paymentHash"] as? String,
+        let currentInvoicePaymentHash = currentInvoicePaymentHash,
+        currentInvoicePaymentHash == receivedPaymentHash{
+            togglePaidContainer(invoice: viewModel?.qrCodeString ?? "")//force toggle if the payment hashes match
         }
     }
     

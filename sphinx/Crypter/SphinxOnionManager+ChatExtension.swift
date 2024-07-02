@@ -530,8 +530,9 @@ extension SphinxOnionManager {
         let filteredMsgs = rr.msgs.filter({ $0.type != nil && !notAllowedTypes.contains($0.type!) })
         
         if let settleTopic = rr.settleTopic,
-           let settlePayload = rr.settlePayload, //detect that we received a payment
-           let paymentHashes = rr.msgs.compactMap({$0.paymentHash}){
+           let settlePayload = rr.settlePayload //detect that we received a payment
+           {
+            let paymentHashes = rr.msgs.compactMap({$0.paymentHash})
             for paymentHash in paymentHashes{
                 NotificationCenter.default.post(name: .invoiceISentSettled, object: nil, userInfo: ["paymentHash": paymentHash])
             }

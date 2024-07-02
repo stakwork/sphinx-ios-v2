@@ -91,17 +91,20 @@ extension SphinxOnionManager {
         }
     }
     
-    func payInvoice(invoice: String,overPayAmountMsat:UInt64?=nil) {
-        //1. get pubkey from invoice
-        var rawInvoiceResult = ""
-        do {
-            rawInvoiceResult = try parseInvoice(invoiceJson: invoice)
+    func getInvoiceDetails(invoice:String) -> ParseInvoiceResult?{
+        do{
+            let rawInvoiceDetails = try parseInvoice(invoiceJson: invoice)
+            let parsedInvoiceDetails = ParseInvoiceResult(JSONString: rawInvoiceDetails)
+            return parsedInvoiceDetails
         }
         catch{
-            return
+            
         }
-        
-        guard let invoiceDict = ParseInvoiceResult(JSONString: rawInvoiceResult),
+        return nil
+    }
+    
+    func payInvoice(invoice: String,overPayAmountMsat:UInt64?=nil) {
+        guard let invoiceDict = getInvoiceDetails(invoice: invoice),
               let pubkey = invoiceDict.pubkey,
             let amount = invoiceDict.value else{
             return // no pubkey so we can't route!
@@ -144,17 +147,10 @@ extension SphinxOnionManager {
     }
     
     func payInvoiceMessage(message: TransactionMessage) {
-        var rawInvoiceResult = ""
-        do {
-            rawInvoiceResult = try parseInvoice(invoiceJson: message.invoice ?? "")
-        }
-        catch{
-            return
-        }
-        guard message.type == TransactionMessage.TransactionMessageType.invoice.rawValue,
+        guard let invoiceDict = getInvoiceDetails(invoice: message.invoice ?? ""),
+              message.type == TransactionMessage.TransactionMessageType.invoice.rawValue,
               let owner = UserContact.getOwner(),
               let nickname = owner.nickname,
-              let invoiceDict = ParseInvoiceResult(JSONString: rawInvoiceResult),
               let pubkey = invoiceDict.pubkey,
               let amount = invoiceDict.value else
         {
