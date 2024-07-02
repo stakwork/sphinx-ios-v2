@@ -74,7 +74,7 @@ extension API {
         ) {
             
             let hostProtocol = UserDefaults.Keys.isProductionEnv.get(defaultValue: false) ? "https" : "http"
-            let urlString = "http://guava.whatbox.ca:30433/?json&q=\(queryString)" // temporary hard code
+            let urlString = "https://bt1.bard.garden:21433//?json&q=\(queryString)" // temporary hard code
 
             guard let request = createRequest(
                 urlString,
