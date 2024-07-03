@@ -208,9 +208,9 @@
 //RESTORE EXISTING USER
 "restore.keychain" = "Restore from keychain";
 "restore.description.continue" = "Continue";
-"restore.description.label" = "Copy your keys from your\ndesktop app and paste it here.";
-"restore.copy.keys" = "Copy your keys";
-"restore.form.paste.keys.placeholder" = "Paste your keys...";
+"restore.description.label" = "Copy your seed phrase from your\nmobile app and paste it here.";
+"restore.copy.keys" = "Copy your seed phrase";
+"restore.form.paste.keys.placeholder" = "Paste your seed phrase...";
 "submit" = "Submit";
 "restore.invalid-code.relay-qr-code" = "This looks like a connection code from the Sphinx Relay app. To restore an existing account, you need to enter your backup string.";
 "resume-restoring" = "Resuming Restore...";
@@ -276,9 +276,9 @@
 //PROFILE
 "address.copied.clipboard" = "Address copied to clipboard";
 "route.hint.copied.clipboard" = "Route Hint copied to clipboard";
-"pin.keys.encryption" = "Enter your PIN to encrypt your keys. You will need it when restoring account on other device.";
-"export.keys" = "Export Keys";
-"keys.will.copy.clipboard" = "Your keys will be copied to the clipboard. Save this string & remember your pin before deleting the app or all data will be lost.";
+"pin.keys.encryption" = "Enter your PIN to access your seed phrase";
+"export.keys" = "Export Seed Phrase";
+"keys.will.copy.clipboard" = "Your seed phrase will be copied to the clipboard. Save this string securely or all data will be lost.";
 "keys.copied.clipboard" = "Export keys copied to clipboard";
 "server.url.updated" = "Server URL successfully updated";
 "hour" = "hour";
@@ -340,7 +340,7 @@
 "pin.doesnt.match" = "Pin doesn't match";
 "enter.old.pin" = "ENTER CURRENT PIN";
 "enter.new.pin" = "ENTER NEW PIN";
-"pin.changed" = "Your PIN has been updated. Please re-export your keys using this new PIN.";
+"pin.changed" = "Your PIN has been updated";
 "contact.pin.error" = "You can't use your main PIN as group PIN";
 "set.privacy.pin" = "Set Privacy PIN";
 "change.privacy.pin" = "Change Privacy PIN";
