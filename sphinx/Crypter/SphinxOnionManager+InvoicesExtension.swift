@@ -40,6 +40,11 @@ extension SphinxOnionManager {
                 amtMsat: amtMsat,
                 callback: { results in
                     if let results = results {
+                        if JSON(results).arrayValue.isEmpty == true {
+                            completion(true)
+                            return
+                        }
+                        
                         do {
                            let rr =  try concatRoute(
                                 state: self.loadOnionStateAsData(),
@@ -49,7 +54,7 @@ extension SphinxOnionManager {
                             )
                             let _ = self.handleRunReturn(rr: rr)
                             completion(true)
-                        } catch {
+                        } catch let error {
                             completion(false)
                         }
                     } else {
@@ -239,35 +244,6 @@ extension SphinxOnionManager {
             invoiceString: invoiceString
         )
     }
-    
-    func getTransactionsHistory(
-        paymentsHistoryCallback: @escaping ((String?, String?) -> ()),
-        itemsPerPage: UInt32,
-        sinceTimestamp: UInt64
-    ) {
-        do {
-            let rr = try fetchPayments(
-                seed: getAccountSeed()!,
-                uniqueTime: getTimeWithEntropy(),
-                state: loadOnionStateAsData(),
-                since: sinceTimestamp * 1000,
-                limit: itemsPerPage,
-                scid: nil,
-                remoteOnly: false,
-                minMsat: 0,
-                reverse: true
-            )
-            
-            self.paymentsHistoryCallback = paymentsHistoryCallback
-            
-            let _ = handleRunReturn(rr: rr)
-        } catch let error {
-            paymentsHistoryCallback(
-                nil,
-                "Error fetching transactions history: \(error.localizedDescription)"
-            )
-        }
-    }
 
     func keysend(
         pubkey: String,
@@ -307,13 +283,42 @@ extension SphinxOnionManager {
                 uniqueTime: getTimeWithEntropy(),
                 to: pubkey,
                 state: loadOnionStateAsData(),
-                amtMsat: UInt64(amt * 1000),
+                amtMsat: UInt64(amt),
                 data: nil
             )
             let _ = handleRunReturn(rr: rr)
             return true
-        } catch {
+        } catch let error {
             return false
+        }
+    }
+    
+    func getTransactionsHistory(
+        paymentsHistoryCallback: @escaping ((String?, String?) -> ()),
+        itemsPerPage: UInt32,
+        sinceTimestamp: UInt64
+    ) {
+        do {
+            let rr = try fetchPayments(
+                seed: getAccountSeed()!,
+                uniqueTime: getTimeWithEntropy(),
+                state: loadOnionStateAsData(),
+                since: sinceTimestamp * 1000,
+                limit: itemsPerPage,
+                scid: nil,
+                remoteOnly: false,
+                minMsat: 0,
+                reverse: true
+            )
+            
+            self.paymentsHistoryCallback = paymentsHistoryCallback
+            
+            let _ = handleRunReturn(rr: rr)
+        } catch let error {
+            paymentsHistoryCallback(
+                nil,
+                "Error fetching transactions history: \(error.localizedDescription)"
+            )
         }
     }
 

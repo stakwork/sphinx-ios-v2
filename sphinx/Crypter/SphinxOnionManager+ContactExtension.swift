@@ -323,11 +323,11 @@ extension SphinxOnionManager {//contacts related
             return true
         }
         
-        guard let myLSPPubkey = UserContact.getOwner()?.routeHint?.split(separator: "_")[0] else {
+        guard let myLSPPubkey = UserContact.getOwner()?.routeHint?.split(separator: "_").first else {
             return true
         }
         
-        guard let contactLSPPubkey = contact.routeHint?.split(separator: "_")[0] else {
+        guard let contactLSPPubkey = contact.routeHint?.split(separator: "_").first else {
             return true
         }
         
