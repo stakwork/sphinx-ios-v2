@@ -19,9 +19,10 @@ extension NewChatViewModel {
             return
         }
         
-        let _ = SphinxOnionManager.sharedInstance.sendBoostReply(
+        SphinxOnionManager.sharedInstance.sendBoostReply(
             params: params,
-            chat: chat
+            chat: chat,
+            completion: { _ in}
         )
     }
     
