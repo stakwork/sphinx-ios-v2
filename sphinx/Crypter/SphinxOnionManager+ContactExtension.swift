@@ -315,49 +315,25 @@ extension SphinxOnionManager {//contacts related
         return chat
     }
     
-    func contactRequiresManualRouting(contactString:String) -> Bool{
-        if let contact = contactString.isExistingContactPubkey().1,
-           let pubkey = contact.publicKey,
-           let (_,theirLsp,scid) = getLSPData(for: pubkey),
-           let myLSP = UserContact.getOwner()?.routeHint?.split(separator: "_")[0]{
-            return theirLsp != myLSP //require routing if we're not on the same LSP
+    func requiresManualRouting(
+        publicKey: String
+    ) -> Bool {
+        guard let contact = publicKey.isExistingContactPubkey().1 else {
+            ///requires routing if it's not a contact in our db
+            return true
         }
         
-        return true //requires routing if we don't have the data saved in our state
-    }
-    
-    func getLSPData(for contactPubkey:String)->(String,String,UInt64)?{
-        do{
-            if let relevantContact = getListContactRecord(for: contactPubkey),
-                let pubkey = relevantContact.pubkey,
-                let lsp = relevantContact.lsp,
-                let scid = relevantContact.scid{
-                return (pubkey,lsp,scid)
-            }
-        }
-        catch{
-            //error
+        guard let myLSPPubkey = UserContact.getOwner()?.routeHint?.split(separator: "_")[0] else {
+            return true
         }
         
-        return nil
-    }
-    
-    func getListContactRecord(for contactPubkey:String) -> ListContactRecord?{
-        do{
-            let contactsBlob = try listContacts(state: loadOnionStateAsData())
-            if let listContactResults = Mapper<ListContactRecord>().mapArray(JSONString: contactsBlob),
-               let match = listContactResults.first(where: {$0.pubkey == contactPubkey}){
-                return match
-            }
-        }
-        catch{
-            //error
+        guard let contactLSPPubkey = contact.routeHint?.split(separator: "_")[0] else {
+            return true
         }
         
-        return nil
+        ///require routing if we're not on the same LSP
+        return myLSPPubkey != contactLSPPubkey
     }
-    
-    //MARK: END CoreData Helpers
 }
 
 

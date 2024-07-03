@@ -311,13 +311,13 @@ extension DashboardRootViewController {
         
         setupAddTribeButton()
         
-        //debug only test
-        SphinxOnionManager.sharedInstance.prepareRoutingInfoForPayment(
-            amtMsat: 50000,
-            pubkey: "02f1a8c87607f415c8f22c00593002775941dea48869ce23096af27b0cfdcc0b69",//"02909f5257f53cff3a04d070b23d89536e73d5cebbddf610100c7bce25c88f1542",
-            completion: { success in
-            print(success)
-        })
+//        //debug only test
+//        SphinxOnionManager.sharedInstance.prepareRoutingInfoForPayment(
+//            amtMsat: 50000,
+//            pubkey: "02f1a8c87607f415c8f22c00593002775941dea48869ce23096af27b0cfdcc0b69",//"02909f5257f53cff3a04d070b23d89536e73d5cebbddf610100c7bce25c88f1542",
+//            completion: { success in
+//            print(success)
+//        })
     }
     
     func refreshUnreadStatus(){
