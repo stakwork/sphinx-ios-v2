@@ -77,18 +77,17 @@ extension NewUserSignupFormViewController {
             inviteCode: inviteCode
         ) {
             setupWatchdogTimer()
-            listenForSelfContactRegistration()//get callbacks ready for sign up
-            
-            if(UserDefaults.Keys.isProductionEnv.get(defaultValue: false)){
-                fetchServerConfig()
-            }
-            else{
-                presentConnectingLoadingScreenVC()
-            }
+            listenForSelfContactRegistration()
+            getConfigData()
         }
     }
     
-    func fetchServerConfig(){
+    func getConfigData(){
+        if UserDefaults.Keys.isProductionEnv.get(defaultValue: false) == false {
+            presentConnectingLoadingScreenVC()
+            return
+        }
+        
         API.sharedInstance.getServerConfig() { success in
             if success {
                 self.presentConnectingLoadingScreenVC()

@@ -101,7 +101,6 @@ extension API {
             return
         }
         
-        //NEEDS TO BE CHANGED
         sphinxRequest(request) { response in
             switch response.result {
             case .success(let data):
@@ -137,14 +136,13 @@ extension API {
                 if let dictionary = data as? NSDictionary {
                     if let tribe = dictionary["tribe"] as? String,
                        let tribe_host = dictionary["tribe_host"] as? String,
-                       let default_lsp = dictionary["default_lsp"] as? String,
-                       let router_url = dictionary["router"] as? String
+                       let default_lsp = dictionary["default_lsp"] as? String
                     {
                         SphinxOnionManager.sharedInstance.saveConfigFrom(
                             lspHost: default_lsp,
                             tribeServerHost: tribe_host,
                             defaultTribePubkey: tribe,
-                            router_url: router_url
+                            routerUrl: dictionary["router"] as? String
                         )
                         
                         callback(true)
