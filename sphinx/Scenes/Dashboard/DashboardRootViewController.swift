@@ -364,9 +364,7 @@ extension DashboardRootViewController {
     }
 
     @objc private func didDisconnectFromInternet() {
-//        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: {
-//            AlertHelper.showAlert(title: "socket.disconnected".localized, message: "")
-//        })
+        SphinxOnionManager.sharedInstance.isConnected = false
     }
     
     func hideRestoreViewCallback() {
@@ -494,6 +492,9 @@ extension DashboardRootViewController {
     ) -> UIViewController {
         switch activeTab {
         case .feed:
+//            DispatchQueue.main.asyncAfter(deadline: .now() + 5.0, execute: {
+//                self.presentBitTorrentPlayer()
+//            })
             return feedsContainerViewController
         case .friends:
             return contactChatsContainerViewController

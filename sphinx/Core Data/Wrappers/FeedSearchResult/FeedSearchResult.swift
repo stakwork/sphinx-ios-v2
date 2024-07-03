@@ -35,6 +35,15 @@ public class FeedSearchResult: NSObject {
         self.feedType = feedType
     }
     
+    func printAll() {
+        print("Feed ID: \(feedId)")
+        print("Title: \(title)")
+        print("Description: \(feedDescription ?? "No Description")")
+        print("Image URL: \(imageUrl ?? "No Image URL")")
+        print("Feed URL Path: \(feedURLPath)")
+        print("Feed Type: \(feedType)")
+    }
+    
     public static func convertFrom(
         contentFeed: ContentFeed
     ) -> FeedSearchResult {

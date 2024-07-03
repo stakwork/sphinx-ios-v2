@@ -70,7 +70,7 @@ extension SphinxOnionManager {
     func loadMediaToken(
         recipPubkey: String?,
         muid: String?,
-        price:Int? = nil
+        price: Int? = nil
     ) -> String? {
         guard let seed = getAccountSeed(), let recipPubkey = recipPubkey, let muid = muid, let expiry = Calendar.current.date(byAdding: .year, value: 1, to: Date()) else {
             return nil
@@ -132,6 +132,7 @@ extension SphinxOnionManager {
         case .attachment, .directPayment, .purchaseAccept, .purchaseDeny:
             
             msg["mediaKey"] = mediaKey
+            msg["mediaKeyForSelf"] = mediaKey
             msg["mediaType"] = mediaType
             
             if Int(type) == TransactionMessage.TransactionMessageType.purchaseAccept.rawValue ||
@@ -194,7 +195,7 @@ extension SphinxOnionManager {
         content: String,
         chat: Chat,
         provisionalMessage: TransactionMessage?,
-        amount:Int = 0,
+        amount: Int = 0,
         purchaseAmount: Int? = nil,
         shouldSendAsKeysend: Bool = false,
         msgType: UInt8 = 0,
@@ -246,8 +247,6 @@ extension SphinxOnionManager {
         let myImg = (chat.myPhotoUrl?.isNotEmpty == true ? (chat.myPhotoUrl ?? "") : (selfContact.avatarUrl ?? ""))
         
         do {
-            
-            
             let escrowAmountSats = max(Int(truncating: chat.escrowAmount ?? 3), tribeMinEscrowSats)
             let amtMsat = (isTribe && amount == 0) ? UInt64(((Int(truncating: (chat.pricePerMessage ?? 0)) + escrowAmountSats) * 1000)) : UInt64((amount * 1000))
             
@@ -786,7 +785,7 @@ extension SphinxOnionManager {
             return
         }
         
-        var genericIncomingMessage = GenericIncomingMessage(msg: message)
+        let genericIncomingMessage = GenericIncomingMessage(msg: message)
         
         guard let newMessage = processGenericIncomingMessage(
             message: genericIncomingMessage,
@@ -803,12 +802,16 @@ extension SphinxOnionManager {
         if newMessage.type == TransactionMessage.TransactionMessageType.purchase.rawValue,
           let mediaToken = newMessage.mediaToken,
           let muid = TransactionMessage.getMUIDFrom(mediaToken: mediaToken),
-          let encryptedAttachmentMessage = TransactionMessage.getMessageWith(muid: muid ,managedContext: self.managedContext),
+          let encryptedAttachmentMessage = TransactionMessage.getAttachmentMessageWith(muid: muid, managedContext: self.managedContext),
           let purchaseMinAmount = encryptedAttachmentMessage.getAttachmentPrice(),
           let chat = newMessage.chat,
           let mediaKey = encryptedAttachmentMessage.mediaKey
         {
-            if purchaseMinAmount <= Int(truncating: newMessage.amount ?? 0) { 
+            if chat.isPublicGroup() {
+                return
+            }
+            
+            if Int(truncating: newMessage.amount ?? 0) + SphinxOnionManager.kRoutingOffset >= purchaseMinAmount {
                 ///purchase of media received with sufficient amount
                 let _ = sendMessage(
                     to: chat.getContact(),
@@ -823,29 +826,18 @@ extension SphinxOnionManager {
                 )
             } else {
                 ///purchase of media received but amount insufficient
-                let refundAmount = max(newMessage.amount as! Int - SphinxOnionManager.kRoutingOffset, 0)
-                
                 let _ = sendMessage(
                     to: chat.getContact(),
                     content: "",
                     chat: chat,
                     provisionalMessage: nil,
-                    amount: refundAmount,
+                    amount: (newMessage.amount as? Int) ?? 0,
                     msgType: UInt8(TransactionMessage.TransactionMessageType.purchaseDeny.rawValue),
                     threadUUID: nil,
                     replyUUID: nil,
                     paidAttachmentMediaToken: mediaToken
                 )
             }
-            newMessage.muid = muid
-        } else if newMessage.type == TransactionMessage.TransactionMessageType.purchaseAccept.rawValue,
-                let mediaToken = newMessage.mediaToken,
-                let muid = TransactionMessage.getMUIDFrom(mediaToken: mediaToken),
-                let receivedEncryptedMessage = TransactionMessage.getAll().filter({$0.type == 6 && $0.mediaToken == mediaToken}).first,
-                let mediaKey = newMessage.mediaKey
-        {
-            receivedEncryptedMessage.mediaKey = mediaKey
-            receivedEncryptedMessage.muid = muid
             newMessage.muid = muid
         }
     }
@@ -946,7 +938,8 @@ extension SphinxOnionManager {
                         contact: owner,
                         alias: message.alias,
                         photoUrl: message.photoUrl,
-                        pubkey: pubKey
+                        pubkey: pubKey,
+                        isOwner: true
                     )
                 }
             } else {
@@ -1013,6 +1006,7 @@ extension SphinxOnionManager {
         newMessage.mediaKey = message.mediaKey
         newMessage.mediaType = message.mediaType
         newMessage.mediaToken = message.mediaToken
+        newMessage.muid = TransactionMessage.getMUIDFrom(mediaToken: message.mediaToken)
         newMessage.paymentHash = message.paymentHash
         newMessage.tag = message.tag
         
@@ -1100,32 +1094,54 @@ extension SphinxOnionManager {
     }
     
     func updateContactInfoFromMessage(
-            contact: UserContact,
-            alias: String?,
-            photoUrl: String?,
-            pubkey: String
+        contact: UserContact,
+        alias: String?,
+        photoUrl: String?,
+        pubkey: String,
+        isOwner: Bool = false
     ) {
-        ///Proceed if it's not restore process or it's restore but it's first time updating this contact from most recent message
-        if !restoredContactInfoTracker.contains(pubkey) || !isV2Restore {
+        ///Avoid updating it again since it was already updated from most recent messahe
+        if restoredContactInfoTracker.contains(pubkey) && isV2Restore {
+            return
+        }
+        
+        var contactDidChange = false
+        
+        if isOwner && isV2Restore {
+            ///Just update Owner during restore if  nickname or photo Url was not set during restore and last message has a valid one
+            if (
+                (contact.nickname == nil || contact.nickname?.isEmpty == true) &&
+                alias != nil &&
+                alias?.isEmpty == false
+            ) {
+                contact.nickname = alias
+                contactDidChange = true
+            }
             
-            var contactDidChange = false
-            
+            if (
+                (contact.avatarUrl == nil || contact.avatarUrl?.isEmpty == true) &&
+                photoUrl != nil &&
+                photoUrl?.isEmpty == false
+            ) {
+                contact.avatarUrl = photoUrl
+                contactDidChange = true
+            }
+        } else {
             if (alias != nil && alias?.isEmpty == false && contact.nickname != alias) {
                 contact.nickname = alias
                 contactDidChange = true
             }
             
-            if (contact.avatarUrl != photoUrl) {
+            if (photoUrl != nil && photoUrl?.isEmpty == false && contact.avatarUrl != photoUrl) {
                 contact.avatarUrl = photoUrl
                 contactDidChange = true
             }
+        }
+        
+        if contactDidChange {
+            contact.managedObjectContext?.saveContext()
             
-            if contactDidChange {
-                contact.managedObjectContext?.saveContext()
-            }
-            
-            ///If contact was updated with a non empty alias (from a non corrupted record), then add pubkey to prevent future updates during restore
-            if alias != nil && alias?.isEmpty == false && isV2Restore {
+            if isV2Restore {
                 restoredContactInfoTracker.append(pubkey)
             }
         }
@@ -1184,14 +1200,12 @@ extension SphinxOnionManager {
             return
         }
          
-        let finalAmt = price + SphinxOnionManager.kRoutingOffset
-        
         let _ = sendMessage(
             to: message.chat?.getContact(),
             content: "",
             chat: chat,
             provisionalMessage: nil,
-            amount: finalAmt,
+            amount: price,
             msgType: UInt8(TransactionMessage.TransactionMessageType.purchase.rawValue),
             muid: message.muid,
             threadUUID: nil,

@@ -411,8 +411,11 @@ extension NewChatTableDataSource : NewMessageTableViewCellDelegate {
                         
                         self.dataSourceQueue.sync {
                             var snapshot = self.dataSource.snapshot()
-                            snapshot.reloadItems([tableCellState.1])
-                            self.dataSource.apply(snapshot, animatingDifferences: true)
+                            
+                            if snapshot.itemIdentifiers.contains(tableCellState.1) {
+                                snapshot.reloadItems([tableCellState.1])
+                                self.dataSource.apply(snapshot, animatingDifferences: true)
+                            }
                         }
                     }
                     
@@ -529,8 +532,11 @@ extension NewChatTableDataSource {
             } else {
                 dataSourceQueue.sync {
                     var snapshot = self.dataSource.snapshot()
-                    snapshot.reloadItems([tableCellState.1])
-                    self.dataSource.apply(snapshot, animatingDifferences: true)
+                    
+                    if snapshot.itemIdentifiers.contains(tableCellState.1) {
+                        snapshot.reloadItems([tableCellState.1])
+                        self.dataSource.apply(snapshot, animatingDifferences: true)
+                    }
                 }
             }
         }
@@ -557,8 +563,11 @@ extension NewChatTableDataSource {
 
             dataSourceQueue.sync {
                 var snapshot = self.dataSource.snapshot()
-                snapshot.reloadItems([tableCellState.1])
-                self.dataSource.apply(snapshot, animatingDifferences: true)
+                
+                if snapshot.itemIdentifiers.contains(tableCellState.1) {
+                    snapshot.reloadItems([tableCellState.1])
+                    self.dataSource.apply(snapshot, animatingDifferences: true)
+                }
             }
         }
     }
@@ -576,8 +585,11 @@ extension NewChatTableDataSource {
             
             dataSourceQueue.sync {
                 var snapshot = self.dataSource.snapshot()
-                snapshot.reloadItems([tableCellState.1])
-                self.dataSource.apply(snapshot, animatingDifferences: true)
+                
+                if snapshot.itemIdentifiers.contains(tableCellState.1) {
+                    snapshot.reloadItems([tableCellState.1])
+                    self.dataSource.apply(snapshot, animatingDifferences: true)
+                }
             }
         }
     }
@@ -596,8 +608,11 @@ extension NewChatTableDataSource {
 
             dataSourceQueue.sync {
                 var snapshot = self.dataSource.snapshot()
-                snapshot.reloadItems([tableCellState.1])
-                self.dataSource.apply(snapshot, animatingDifferences: true)
+                
+                if snapshot.itemIdentifiers.contains(tableCellState.1) {
+                    snapshot.reloadItems([tableCellState.1])
+                    self.dataSource.apply(snapshot, animatingDifferences: true)
+                }
             }
         }
     }

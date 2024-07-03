@@ -380,7 +380,6 @@ class SphinxOnionManager : NSObject {
                 let success = self.connectToBroker(seed: seed, xpub: my_xpub)
                 
                 if (success == false) {
-                    AlertHelper.showAlert(title: "Error", message: "Could not connect to MQTT Broker.")
                     hideRestoreViewCallback?()
                     return
                 }
@@ -458,6 +457,10 @@ class SphinxOnionManager : NSObject {
     
     @objc func reconnectionTimerFired() {
         if (UIApplication.shared.delegate as? AppDelegate)?.isActive == false {
+            return
+        }
+        
+        if !NetworkMonitor.shared.isConnected {
             return
         }
         

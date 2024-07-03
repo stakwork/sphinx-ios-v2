@@ -208,9 +208,9 @@
 // RESTORE EXISTING USER
 "restore.keychain" = "从钥匙串恢复";
 "restore.description.continue" = "继续";
-"restore.description.label" = "从您的桌面应用复制您的密钥并粘贴到这里。";
-"restore.copy.keys" = "复制您的密钥";
-"restore.form.paste.keys.placeholder" = "粘贴您的密钥...";
+"restore.description.label" = "从您的移动应用程序复制您的种子短语并将其粘贴到这里。";
+"restore.copy.keys" = "复制您的种子短语";
+"restore.form.paste.keys.placeholder" = "粘贴你的种子短语...";
 "submit" = "提交";
 "restore.invalid-code.relay-qr-code" = "这看起来像是Sphinx Relay应用的连接代码。要恢复现有帐户，您需要输入您的备份字符串。";
 "resume-restoring" = "恢复恢复...";
@@ -277,9 +277,9 @@
 //PROFILE
 "address.copied.clipboard" = "地址已复制到剪贴板";
 "route.hint.copied.clipboard" = "路由提示已复制到剪贴板";
-"pin.keys.encryption" = "输入您的PIN码以加密您的密钥。恢复账户到其他设备时将需要它。";
-"export.keys" = "导出密钥";
-"keys.will.copy.clipboard" = "您的密钥将被复制到剪贴板。删除应用前请保存此字符串并记住您的PIN码，否则所有数据都将丢失。";
+"pin.keys.encryption" = "输入你的 PIN 码以访问你的种子短语";
+"export.keys" = "导出种子短语";
+"keys.will.copy.clipboard" = "您的种子短语将被复制到剪贴板。请安全保存此字符串，否则所有数据将丢失。";
 "keys.copied.clipboard" = "导出的密钥已复制到剪贴板";
 "server.url.updated" = "服务器URL已成功更新";
 "hour" = "小时";
@@ -340,7 +340,7 @@
 "pin.doesnt.match" = "PIN码不匹配";
 "enter.old.pin" = "输入当前PIN码";
 "enter.new.pin" = "输入新PIN码";
-"pin.changed" = "您的PIN码已更新。请使用这个新PIN码重新导出您的密钥。";
+"pin.changed" = "您的 PIN 码已更新";
 "contact.pin.error" = "您不能使用您的主PIN码作为群组PIN码";
 "set.privacy.pin" = "设置隐私PIN码";
 "change.privacy.pin" = "更改隐私PIN码";

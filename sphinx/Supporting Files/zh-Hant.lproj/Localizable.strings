@@ -208,9 +208,9 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 //恢復現有用戶
 "restore.keychain" = "從鑰匙串恢復";
 "restore.description.continue" = "繼續";
-"restore.description.label" = "從您的\n桌面應用程序複製您的鑰匙並粘貼在這裡。";
-"restore.copy.keys" = "複製您的鑰匙";
-"restore.form.paste.keys.placeholder" = "粘貼您的鑰匙...";
+"restore.description.label" = "從您的行動應用程式複製您的助記詞並將其貼到此處。";
+"restore.copy.keys" = "複製您的助記詞";
+"restore.form.paste.keys.placeholder" = "貼上您的助記詞...";
 "submit" = "提交";
 "restore.invalid-code.relay-qr-code" = "這看起來像是來自Sphinx Relay應用程序的連接代碼。要恢復現有帳戶，您需要輸入您的備份字符串。";
 "resume-restoring" = "恢復恢復...";
@@ -276,9 +276,9 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 //個人資料
 "address.copied.clipboard" = "地址已復制到剪貼板";
 "route.hint.copied.clipboard" = "路由提示已復制到剪貼板";
-"pin.keys.encryption" = "輸入您的PIN以加密您的鑰匙。在其他設備上恢復帳戶時，您將需要它。";
-"export.keys" = "導出鑰匙";
-"keys.will.copy.clipboard" = "您的鑰匙將被復制到剪貼板。在刪除應用程序或丟失所有數據之前，保存此字符串並記住您的pin。";
+"pin.keys.encryption" = "輸入您的 PIN 碼以存取您的助記詞";
+"export.keys" = "匯出種子短語";
+"keys.will.copy.clipboard" = "您的助記詞將複製到剪貼簿。安全地保存此字串，否則所有資料都將遺失。";
 "keys.copied.clipboard" = "導出鑰匙已復制到剪貼板";
 "server.url.updated" = "服務器URL成功更新";
 "hour" = "小時";
@@ -340,7 +340,7 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 "pin.doesnt.match" = "Pin不匹配";
 "enter.old.pin" = "輸入當前PIN";
 "enter.new.pin" = "輸入新PIN";
-"pin.changed" = "您的PIN已更新。請使用此新PIN重新導出您的鑰匙。";
+"pin.changed" = "您的 PIN 碼已更新";
 "contact.pin.error" = "您不能使用您的主PIN作為群組PIN";
 "set.privacy.pin" = "設置隱私PIN";
 "change.privacy.pin" = "更改隱私PIN";
