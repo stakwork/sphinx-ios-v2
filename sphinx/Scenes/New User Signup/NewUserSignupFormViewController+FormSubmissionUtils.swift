@@ -82,7 +82,7 @@ extension NewUserSignupFormViewController {
         }
     }
     
-    func getConfigData(){
+    func getConfigData() {
         if UserDefaults.Keys.isProductionEnv.get(defaultValue: false) == false {
             presentConnectingLoadingScreenVC()
             return
