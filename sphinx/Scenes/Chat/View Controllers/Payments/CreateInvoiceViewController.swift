@@ -289,13 +289,16 @@ class CreateInvoiceViewController: CommonPaymentViewController {
         }
     }
     
-    private func shouldPayZeroAmountInvoice(invoice:String){
+    private func shouldPayZeroAmountInvoice(invoice: String) {
         guard let amount = paymentsViewModel.payment.amount,
             amount > 0 else {
             AlertHelper.showAlert(title: "Invalid Amount", message: "generic.message.message".localized)
             return
         }
-        SphinxOnionManager.sharedInstance.payInvoice(invoice: invoice, overPayAmountMsat: UInt64(1000 * amount))
+        SphinxOnionManager.sharedInstance.payInvoice(
+            invoice: invoice,
+            overPayAmountMsat: UInt64(1000 * amount)
+        )
     }
     
     private func shouldSendDirectPayment() {
@@ -350,28 +353,41 @@ class CreateInvoiceViewController: CommonPaymentViewController {
             return
         }
         
-        if let paymentChat = paymentChat { //do direct payment chat
+        if let paymentChat = paymentChat {
             finalizeContactDirectPayment(
                 amount: amount,
                 paymentChat: paymentChat
             )
-//        } else if let pubkey = paymentsViewModel.payment.destinationKey, let amt = paymentsViewModel.payment.amount {
-//            SphinxOnionManager.sharedInstance.keysend(
-//                pubkey: pubkey,
-//                amt: amt
-//            )
-        } else {
-            AlertHelper.showAlert(
-                title: "generic.error.title".localized,
-                message: "generic.error.message".localized,
-                completion: {
+        } else if let pubkey = paymentsViewModel.payment.destinationKey, let amt = paymentsViewModel.payment.amount {
+            SphinxOnionManager.sharedInstance.keysend(
+                pubkey: pubkey,
+                amt: amt
+            ) { success in
+                if success {
                     self.shouldDismissView()
+                } else {
+                    self.showErrorAlertAndDismiss()
                 }
-            )
+            }
+        } else {
+            showErrorAlertAndDismiss()
         }
     }
     
-    func finalizeContactDirectPayment(amount:Int, paymentChat:Chat){
+    func showErrorAlertAndDismiss() {
+        AlertHelper.showAlert(
+            title: "generic.error.title".localized,
+            message: "generic.error.message".localized,
+            completion: {
+                self.shouldDismissView()
+            }
+        )
+    }
+    
+    func finalizeContactDirectPayment(
+        amount: Int,
+        paymentChat: Chat
+    ) {
         SphinxOnionManager.sharedInstance.sendDirectPaymentMessage(
             amount: amount,
             muid: paymentsViewModel.payment.muid,
@@ -381,9 +397,7 @@ class CreateInvoiceViewController: CommonPaymentViewController {
                 if (success) {
                     self.shouldDismissView()
                 } else {
-                    AlertHelper.showAlert(title: "generic.error.title".localized, message: "generic.error.message".localized, completion: {
-                        self.shouldDismissView()
-                    })
+                    self.showErrorAlertAndDismiss()
                 }
             }
         )
@@ -392,7 +406,7 @@ class CreateInvoiceViewController: CommonPaymentViewController {
     private func createPaymentRequest() {
         if !paymentsViewModel.validateMemo(contact: contact) {
             loading = false
-            AlertHelper.showAlert(title: "generic.error.title".localized, message: "memo.too.large".localized)
+            showErrorAlertAndDismiss()
             return
         }
         
@@ -465,8 +479,6 @@ extension CreateInvoiceViewController : QRCodeScannerDelegate {
             return
         }
 
-        AlertHelper.showAlert(title: "generic.error.title".localized, message: "invalid.btc.address".localized, completion: {
-            self.shouldDismissView()
-        })
+        showErrorAlertAndDismiss()
     }
 }

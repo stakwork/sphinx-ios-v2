@@ -77,13 +77,12 @@ extension NewQRScannerViewController {
         return false
     }
     
-    func handleContactOrSend(string:String){
+    func handleContactOrSend(string: String) {
         if string.isExistingContactPubkey().0 {
             self.dismiss(animated: true, completion: {
                 self.presentPubkeySendVC(pubkey: string)
             })
-        }
-        else{
+        } else {
             let alert = CustomAlertController(title: "pub.key.options".localized, message: "select.option".localized, preferredStyle: .actionSheet)
             
             alert.addAction(UIAlertAction(title: "pub.key.options-add.contact".localized, style: .default, handler:{ (UIAlertAction) in

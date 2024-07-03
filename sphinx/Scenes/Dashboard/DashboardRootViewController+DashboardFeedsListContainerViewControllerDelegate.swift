@@ -188,6 +188,33 @@ extension DashboardRootViewController {
         }
     }
     
+    func presentBitTorrentPlayer(
+        for feedResult: FeedSearchResult
+    ) {
+        //
+        let videoEpisode = Video("abc123")
+        //videoEpisode.videoFeed = "Jimmy's Pirate Emporium"
+        videoEpisode.itemURL = URL(string: feedResult.feedURLPath)
+        videoEpisode.mediaURL = URL(string: feedResult.feedURLPath)
+        videoEpisode.title = feedResult.title
+        videoEpisode.videoDescription = feedResult.feedDescription
+        videoEpisode.thumbnailURL = URL(string: feedResult.imageUrl ?? "")
+        
+        let viewController = VideoFeedEpisodePlayerContainerViewController
+            .instantiate(
+                videoPlayerEpisode: videoEpisode,
+                dismissButtonStyle: ModalDismissButtonStyle.backArrow,
+                delegate: self,
+                boostDelegate: self
+            )
+
+        let navController = UINavigationController()
+        navController.viewControllers = [viewController]
+        navController.modalPresentationStyle = .automatic
+        navController.isNavigationBarHidden = true
+        navigationController?.present(navController, animated: true)
+    }
+    
     
     private func presentVideoPlayer(
         for videoEpisode: Video

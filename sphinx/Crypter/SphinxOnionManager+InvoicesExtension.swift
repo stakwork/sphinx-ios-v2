@@ -10,61 +10,80 @@ import Foundation
 import SwiftyJSON
 
 extension SphinxOnionManager {
-    ///invoices related
-    
-    func updateGeneralRoutingInfo(){
-        API.sharedInstance.fetchRoutingInfo(callback: { resultString, resultJSON in
-            guard let resultString = resultString,
-            let resultJSON = resultJSON else{
-                return
-            }
-            do{
-                let rr = try sphinx.addNode(node: resultString)
-                self.handleRunReturn(rr: rr)
-                
-                if let routerPubkey = resultJSON["pubkey"].string {
-                    UserDefaults.Keys.routerPubkey.set(routerPubkey)
+    ///Routing
+    func updateRoutingInfo() {
+        API.sharedInstance.fetchRoutingInfo(
+            callback: { result, pubkey in
+                guard let result = result else {
+                    return
                 }
+                do {
+                    let rr = try sphinx.addNode(node: result)
+                    let _ = self.handleRunReturn(rr: rr)
+                    
+                    if let pubkey = pubkey {
+                        UserDefaults.Keys.routerPubkey.set(pubkey)
+                    }
+                } catch {}
             }
-            catch(let error){
-                print(error)
-                //could not update router info. Throw alert?
-            }
-        })
+        )
     }
     
-    func prepareRoutingInfoForPayment(
-            amtMsat: Int,
-            pubkey: String,
-            completion: @escaping (Bool) -> ()
-        ) {
-            if let routerPubkey = self.routerPubkey{
-                API.sharedInstance.fetchSpecificPaymentRoutingInfo(
-                    amtMsat: amtMsat,
-                    pubkey: pubkey,
-                    callback: { results in
-                        if let results = results{
-                            do{
-                               let rr =  try concatRoute(
-                                    state: self.loadOnionStateAsData(),
-                                    endHops: results,
-                                    routerPubkey: routerPubkey,
-                                    amtMsat: UInt64(amtMsat)
-                                )
-                                let _ = self.handleRunReturn(rr: rr)
-                                completion(true)
-                            }
-                            catch{
-                                completion(false)
-                            }
+    func fetchRoutingInfoFor(
+        pubkey: String,
+        amtMsat: Int,
+        completion: @escaping (Bool) -> ()
+    ) {
+        if let routerPubkey = self.routerPubkey {
+            API.sharedInstance.fetchRoutingInfoFor(
+                pubkey: pubkey,
+                amtMsat: amtMsat,
+                callback: { results in
+                    if let results = results {
+                        if JSON(results).arrayValue.isEmpty == true {
+                            completion(true)
+                            return
                         }
-                        else{
+                        
+                        do {
+                           let rr =  try concatRoute(
+                                state: self.loadOnionStateAsData(),
+                                endHops: results,
+                                routerPubkey: routerPubkey,
+                                amtMsat: UInt64(amtMsat)
+                            )
+                            let _ = self.handleRunReturn(rr: rr)
+                            completion(true)
+                        } catch {
                             completion(false)
                         }
-                })
-            }
+                    } else {
+                        completion(false)
+                    }
+                }
+            )
         }
+    }
     
+    func checkAndFetchRouteTo(
+        publicKey: String,
+        amtMsat: Int,
+        callback: @escaping (Bool) -> ()
+    ) {
+        if requiresManualRouting(publicKey: publicKey) {
+            fetchRoutingInfoFor(
+                pubkey: publicKey,
+                amtMsat: amtMsat,
+                completion: { success in
+                    callback(success)
+                }
+            )
+        } else {
+            callback(true)
+        }
+    }
+    
+    ///invoices related
     func createInvoice(
         amountMsat: Int,
         description: String? = nil
@@ -91,44 +110,51 @@ extension SphinxOnionManager {
         }
     }
     
-    func getInvoiceDetails(invoice:String) -> ParseInvoiceResult?{
-        do{
+    func getInvoiceDetails(invoice: String) -> ParseInvoiceResult? {
+        do {
             let rawInvoiceDetails = try parseInvoice(invoiceJson: invoice)
             let parsedInvoiceDetails = ParseInvoiceResult(JSONString: rawInvoiceDetails)
             return parsedInvoiceDetails
+        } catch {
+            return nil
         }
-        catch{
-            
-        }
-        return nil
     }
-    
-    func payInvoice(invoice: String,overPayAmountMsat:UInt64?=nil) {
+            
+    func payInvoice(
+        invoice: String,
+        overPayAmountMsat: UInt64? = nil
+    ) {
         guard let invoiceDict = getInvoiceDetails(invoice: invoice),
               let pubkey = invoiceDict.pubkey,
-            let amount = invoiceDict.value else{
-            return // no pubkey so we can't route!
-        }
-        if(contactRequiresManualRouting(contactString: pubkey)){
-            prepareRoutingInfoForPayment(amtMsat: Int(overPayAmountMsat ?? UInt64(amount)), pubkey: pubkey, completion: { success in
-                if(success){
-                    self.finalizePayInvoice(invoice: invoice, overPayAmountMsat: overPayAmountMsat)
-                }
-                else{
-                    //error getting route info
-                    AlertHelper.showAlert(title: "Routing Error", message: "Could not find a route to the target. Please try again.")
-                }
-            })
-        }
-        else{
-            //3. Perform payment
-            finalizePayInvoice(invoice: invoice, overPayAmountMsat: overPayAmountMsat)
+              let amount = invoiceDict.value else 
+        {
+            ///no pubkey so we can't route!
+            return
         }
         
+        checkAndFetchRouteTo(
+            publicKey: pubkey,
+            amtMsat: Int(overPayAmountMsat ?? UInt64(amount))
+        ) { success in
+            if success {
+                self.finalizePayInvoice(
+                    invoice: invoice,
+                    amount: overPayAmountMsat ?? UInt64(amount)
+                )
+            } else {
+                ///error getting route info
+                AlertHelper.showAlert(
+                    title: "Routing Error",
+                    message: "Could not find a route to the target. Please try again."
+                )
+            }
+        }
     }
     
-    func finalizePayInvoice(invoice: String,overPayAmountMsat:UInt64?=nil) {
-        
+    func finalizePayInvoice(
+        invoice: String,
+        amount: UInt64
+    ) {
         guard let seed = getAccountSeed() else{
             return
         }
@@ -138,7 +164,7 @@ extension SphinxOnionManager {
                 uniqueTime: getTimeWithEntropy(),
                 state: loadOnionStateAsData(),
                 bolt11: invoice,
-                overpayMsat: overPayAmountMsat
+                overpayMsat: amount
             )
             let _ = handleRunReturn(rr: rr)
         } catch {
@@ -148,31 +174,30 @@ extension SphinxOnionManager {
     
     func payInvoiceMessage(message: TransactionMessage) {
         guard let invoiceDict = getInvoiceDetails(invoice: message.invoice ?? ""),
-              message.type == TransactionMessage.TransactionMessageType.invoice.rawValue,
               let owner = UserContact.getOwner(),
-              let nickname = owner.nickname,
+              let _ = owner.nickname,
               let pubkey = invoiceDict.pubkey,
               let amount = invoiceDict.value else
         {
             return
         }
-        if(contactRequiresManualRouting(contactString: pubkey)){
-            prepareRoutingInfoForPayment(amtMsat: Int(UInt64(amount)), pubkey: pubkey, completion: { success in
-                if(success){
-                    self.finalizePayInvoiceMessage(message: message)
-                }
-                else{
-                    //error getting route info
-                    AlertHelper.showAlert(title: "Routing Error", message: "Could not find a route to the target. Please try again.")
-                }
-            })
-        }
-        else{
-            self.finalizePayInvoiceMessage(message: message)
+        
+        checkAndFetchRouteTo(publicKey: pubkey, amtMsat: Int(UInt64(amount))) { success in
+            if success {
+                self.finalizePayInvoiceMessage(message: message)
+            } else {
+                ///error getting route info
+                AlertHelper.showAlert(
+                    title: "Routing Error",
+                    message: "Could not find a route to the target. Please try again."
+                )
+            }
         }
     }
     
-    func finalizePayInvoiceMessage(message:TransactionMessage){
+    func finalizePayInvoiceMessage(
+        message: TransactionMessage
+    ) {
         guard message.type == TransactionMessage.TransactionMessageType.invoice.rawValue,
               let invoice = message.invoice,
               let seed = getAccountSeed(),
@@ -215,6 +240,54 @@ extension SphinxOnionManager {
             invoiceString: invoiceString
         )
     }
+
+    func keysend(
+        pubkey: String,
+        amt: Int,
+        completion: @escaping (Bool) -> ()
+    ) {
+        checkAndFetchRouteTo(
+            publicKey: pubkey,
+            amtMsat: amt * 1000
+        ) { success in
+            if success {
+                if self.finalizeKeysend(
+                    pubkey: pubkey,
+                    amt: amt * 1000
+                ) {
+                    completion(true)
+                } else {
+                    completion(false)
+                }
+            } else {
+                completion(false)
+            }
+        }
+        
+    }
+    
+    func finalizeKeysend(
+        pubkey: String,
+        amt: Int
+    ) -> Bool {
+        guard let seed = getAccountSeed() else{
+            return false
+        }
+        do {
+            let rr = try sphinx.keysend(
+                seed: seed,
+                uniqueTime: getTimeWithEntropy(),
+                to: pubkey,
+                state: loadOnionStateAsData(),
+                amtMsat: UInt64(amt),
+                data: nil
+            )
+            let _ = handleRunReturn(rr: rr)
+            return true
+        } catch {
+            return false
+        }
+    }
     
     func getTransactionsHistory(
         paymentsHistoryCallback: @escaping ((String?, String?) -> ()),
@@ -243,31 +316,6 @@ extension SphinxOnionManager {
                 "Error fetching transactions history: \(error.localizedDescription)"
             )
         }
-    }
-
-    func keysend(
-        pubkey: String,
-        amt: Int
-    ) {
-        ///Should be fixed and tested
-        
-        
-//        guard let seed = getAccountSeed() else{
-//            return
-//        }
-//        do {
-//            let rr = try sphinx.keysend(
-//                seed: seed,
-//                uniqueTime: getTimeWithEntropy(),
-//                to: pubkey,
-//                state: loadOnionStateAsData(),
-//                amtMsat: UInt64(amt * 1000), ///Check if sats or msats
-//                data: nil
-//            )
-//            let _ = handleRunReturn(rr: rr)
-//        } catch {
-//            return
-//        }
     }
 
 }

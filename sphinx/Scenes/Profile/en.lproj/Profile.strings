@@ -24,7 +24,7 @@
 
 "aS3-Fj-p1j.text" = "Sync more devices";
 
-"sX0-os-LQi.normalTitle" = "Backup your key";
+"sX0-os-LQi.normalTitle" = "Backup your seed phrase";
 
 /* Class = "UILabel"; text = "Address"; ObjectID = "faG-bF-oVt"; */
 "faG-bF-oVt.text" = "Address";
