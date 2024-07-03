@@ -58,6 +58,9 @@ extension SphinxOnionManager {
             ///Handling generic msgs restore
             self.processGenericMessages(rr: rr)
             
+            ///Handling invoice paid
+            self.processInvoicePaid(rr: rr)
+            
             ///Handling messages statused
             self.handleMessagesStatus(tags: rr.tags)
             
