@@ -170,6 +170,7 @@
 		473596932A70031000489606 /* ThreadsListDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 473596922A70031000489606 /* ThreadsListDataSource.swift */; };
 		473596962A7005E500489606 /* ThreadTableCellState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 473596952A7005E500489606 /* ThreadTableCellState.swift */; };
 		473596982A70070400489606 /* ThreadLayoutState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 473596972A70070400489606 /* ThreadLayoutState.swift */; };
+		473615F52C35920C00EE3334 /* API+V2Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 473615F42C35920C00EE3334 /* API+V2Extension.swift */; };
 		473633E625558EFE007405F2 /* PodcastSatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 473633E525558EFE007405F2 /* PodcastSatsView.swift */; };
 		473633E825558F0B007405F2 /* PodcastSatsView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 473633E725558F0B007405F2 /* PodcastSatsView.xib */; };
 		473633EA25559945007405F2 /* LogarithmicSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 473633E925559945007405F2 /* LogarithmicSlider.swift */; };
@@ -1243,6 +1244,7 @@
 		473596922A70031000489606 /* ThreadsListDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadsListDataSource.swift; sourceTree = "<group>"; };
 		473596952A7005E500489606 /* ThreadTableCellState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadTableCellState.swift; sourceTree = "<group>"; };
 		473596972A70070400489606 /* ThreadLayoutState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadLayoutState.swift; sourceTree = "<group>"; };
+		473615F42C35920C00EE3334 /* API+V2Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+V2Extension.swift"; sourceTree = "<group>"; };
 		473633E525558EFE007405F2 /* PodcastSatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastSatsView.swift; sourceTree = "<group>"; };
 		473633E725558F0B007405F2 /* PodcastSatsView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = PodcastSatsView.xib; sourceTree = "<group>"; };
 		473633E925559945007405F2 /* LogarithmicSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogarithmicSlider.swift; sourceTree = "<group>"; };
@@ -3073,6 +3075,7 @@
 				47BF7D4A25A8A59100593489 /* API+VersionsExtension.swift */,
 				47F6CA0D287C6524005EBCB6 /* API+CrypterExtension.swift */,
 				474CCFA9291562180037E1D4 /* API+ActionsExtension.swift */,
+				473615F42C35920C00EE3334 /* API+V2Extension.swift */,
 			);
 			path = API;
 			sourceTree = "<group>";
@@ -5341,6 +5344,7 @@
 				47FA44152374B6EA005D8C63 /* SubscriptionTimeIntervalView.swift in Sources */,
 				47ACBC22265E9D0800D2FE47 /* PersonModalView.swift in Sources */,
 				47FA18CC2434C66C00469C8F /* TransactionMessageMediaExtension.swift in Sources */,
+				473615F52C35920C00EE3334 /* API+V2Extension.swift in Sources */,
 				475BDD32232ACBB900C5BBD6 /* UIFont.swift in Sources */,
 				CEBF0D07297603B0006C1F21 /* TribeTagSelectionCollectionViewCell.swift in Sources */,
 				477BCF3B2A0144C00080ED65 /* CircularDotView.swift in Sources */,
