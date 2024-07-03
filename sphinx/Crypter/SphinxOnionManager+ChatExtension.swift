@@ -509,6 +509,19 @@ extension SphinxOnionManager {
         return isTribe
     }
     
+    func processInvoicePaid(rr: RunReturn) {
+        if let _ = rr.settleTopic, let _ = rr.settlePayload {
+            let paymentHashes = rr.msgs.compactMap({ $0.paymentHash })
+            for paymentHash in paymentHashes {
+                NotificationCenter.default.post(
+                    name: .sentInvoiceSettled,
+                    object: nil,
+                    userInfo: ["paymentHash": paymentHash]
+                )
+            }
+        }
+    }
+    
     //MARK: processes updates from general purpose messages like plaintext and attachments
     func processGenericMessages(rr: RunReturn) {
         if rr.msgs.isEmpty {
@@ -529,15 +542,7 @@ extension SphinxOnionManager {
         
         let filteredMsgs = rr.msgs.filter({ $0.type != nil && !notAllowedTypes.contains($0.type!) })
         
-        if let settleTopic = rr.settleTopic,
-           let settlePayload = rr.settlePayload //detect that we received a payment
-           {
-            let paymentHashes = rr.msgs.compactMap({$0.paymentHash})
-            for paymentHash in paymentHashes{
-                NotificationCenter.default.post(name: .invoiceISentSettled, object: nil, userInfo: ["paymentHash": paymentHash])
-            }
-        }
-        else if filteredMsgs.isEmpty {
+        if filteredMsgs.isEmpty {
             return
         }
         

@@ -18,10 +18,11 @@ final class QRCodeDetailViewController: UIViewController {
     @IBOutlet private weak var copyButton: UIButton!
     @IBOutlet weak var paidLabelContainer: UIView!
     
-    var currentInvoicePaymentHash:String? {
+    var currentInvoicePaymentHash: String? {
         if let invoice = viewModel?.qrCodeString,
            let parsedInvoiceDetails = SphinxOnionManager.sharedInstance.getInvoiceDetails(invoice: invoice),
-            let paymentHash = parsedInvoiceDetails.paymentHash{
+           let paymentHash = parsedInvoiceDetails.paymentHash
+        {
             return paymentHash
         }
         return nil
@@ -83,27 +84,41 @@ final class QRCodeDetailViewController: UIViewController {
             amountLabel.text = "\(amount) sats"
         }
         
-        NotificationCenter.default.addObserver(self, selector: #selector(handlePaidInvoiceNotification), name: .invoiceISentSettled, object: nil)
+        NotificationCenter.default.removeObserver(
+            self,
+            name: .sentInvoiceSettled,
+            object: nil
+        )
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handlePaidInvoiceNotification),
+            name: .sentInvoiceSettled,
+            object: nil
+        )
     }
     
     override func viewDidDisappear(_ animated: Bool) {
-        NotificationCenter.default.removeObserver(self, name: .invoiceISentSettled, object: nil)
+        NotificationCenter.default.removeObserver(
+            self,
+            name: .sentInvoiceSettled,
+            object: nil
+        )
     }
     
     @objc func handlePaidInvoiceNotification(n: Notification) {
         if let receivedPaymentHash = n.userInfo?["paymentHash"] as? String,
-        let currentInvoicePaymentHash = currentInvoicePaymentHash,
-        currentInvoicePaymentHash == receivedPaymentHash{
-            togglePaidContainer(invoice: viewModel?.qrCodeString ?? "")//force toggle if the payment hashes match
+           let currentInvoicePaymentHash = currentInvoicePaymentHash,
+           currentInvoicePaymentHash == receivedPaymentHash
+        {
+            togglePaidContainer()
         }
     }
     
-    func togglePaidContainer(invoice: String) {
-        if let qrCodeString = viewModel?.qrCodeString, qrCodeString == invoice {
-            UIView.animate(withDuration: 0.3, animations: {
-                self.paidLabelContainer.alpha = 1.0
-            })
-        }
+    func togglePaidContainer() {
+        UIView.animate(withDuration: 0.3, animations: {
+            self.paidLabelContainer.alpha = 1.0
+        })
     }
     
     @IBAction func copyQrCodeTapped() {
