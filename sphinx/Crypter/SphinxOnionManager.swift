@@ -677,5 +677,50 @@ extension SphinxOnionManager {//Sign Up UI Related:
             }
         )
     }
+    
+    func processPeopleAuthChallenge(urlString:String)->(String,String,[String:Any])?{
+        guard let seed = getAccountSeed(),
+              let owner = UserContact.getOwner(),
+              let pubkey = owner.publicKey,
+              let routeHint = owner.routeHint,
+              let alias = owner.nickname,
+              let photoUrl = owner.avatarUrl else{
+            return nil
+        }
+        let string = "sphinx.chat://?action=auth&host=people.sphinx.chat&challenge=cq1vviitu2rr8nt93fig&ts=1719926730"
+        
+        if var components = URLComponents(string: string) {
+            // Initialize an empty dictionary to hold the query parameters
+            var queryParams: [String: String] = [:]
+            
+            // Iterate over the query items and populate the dictionary
+            components.queryItems?.forEach { queryItem in
+                queryParams[queryItem.name] = queryItem.value
+            }
+            
+            if let challenge = queryParams["challenge"] as? String{
+                do{
+                    let idx : UInt64 = 0
+                    let token = try signedTimestamp(seed: seed, idx: idx, time: getTimeWithEntropy(), network: self.network)
+                    let sig = try signBase64(seed: seed, idx: idx, time: getTimeWithEntropy(), network: self.network, msg: challenge)
+                    let result : [String:Any] = [
+                          "pubkey": "owner.publicKey",
+                          "alias": alias,
+                          "photo_url": photoUrl,
+                          "route_hint": routeHint,
+                          "contact_key": "owner.contactKey",
+                          "price_to_meet": "req.owner.priceToMeet",
+                          "jwt": "jot"
+                    ]
+                    
+                    return (token,sig,result)
+                }
+                catch{
+                    
+                }
+            }
+        }
+        return nil
+    }
 }
 
