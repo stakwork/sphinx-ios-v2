@@ -938,7 +938,7 @@ extension SphinxOnionManager {
                         contact: owner,
                         alias: message.alias,
                         photoUrl: message.photoUrl,
-                        pubkey: pubKey
+                        pubkey: pubKey,
                         isOwner: true
                     )
                 }
