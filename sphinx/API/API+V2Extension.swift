@@ -83,7 +83,7 @@ extension API {
     func fetchRoutingInfoFor(
         pubkey: String,
         amtMsat: Int,
-        callback: @escaping UpdatePaymentSpecificRoutingInfoCallback
+        callback: @escaping FetchRoutingInfoCallback
     ) {
         let hostProtocol = UserDefaults.Keys.isProductionEnv.get(defaultValue: false) ? "https" : "http"
         let url = "\(hostProtocol)://\(SphinxOnionManager.sharedInstance.routerUrl)/api/route?pubkey=\(pubkey)&msat=\(amtMsat)"
