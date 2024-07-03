@@ -687,18 +687,18 @@ extension SphinxOnionManager {//Sign Up UI Related:
         )
     }
     
-    func processPeopleAuthChallenge(urlString:String)->(String,String,[String:Any])?{
+    func processPeopleAuthChallenge(urlString: String) -> (String, String, String, [String: AnyObject])? {
         guard let seed = getAccountSeed(),
               let owner = UserContact.getOwner(),
               let pubkey = owner.publicKey,
               let routeHint = owner.routeHint,
-              let alias = owner.nickname,
-              let photoUrl = owner.avatarUrl else{
+              let alias = owner.nickname else {
             return nil
         }
-        let string = "sphinx.chat://?action=auth&host=people.sphinx.chat&challenge=cq1vviitu2rr8nt93fig&ts=1719926730"
         
-        if var components = URLComponents(string: string) {
+        let photoUrl = owner.avatarUrl ?? ""
+        
+        if var components = URLComponents(string: urlString) {
             // Initialize an empty dictionary to hold the query parameters
             var queryParams: [String: String] = [:]
             
@@ -707,29 +707,32 @@ extension SphinxOnionManager {//Sign Up UI Related:
                 queryParams[queryItem.name] = queryItem.value
             }
             
-            if let challenge = queryParams["challenge"] as? String{
-                do{
-                    let idx : UInt64 = 0
-                    let token = try signedTimestamp(seed: seed, idx: idx, time: getTimeWithEntropy(), network: self.network)
+            if let challenge = queryParams["challenge"],
+               let host = queryParams["host"],
+               let ts = queryParams["ts"] {
+                do {
+                    let idx: UInt64 = 0
+                    let token = try signedTimestamp(seed: seed, idx: idx, time: ts, network: self.network)
                     let sig = try signBase64(seed: seed, idx: idx, time: getTimeWithEntropy(), network: self.network, msg: challenge)
-                    let result : [String:Any] = [
-                          "pubkey": "owner.publicKey",
-                          "alias": alias,
-                          "photo_url": photoUrl,
-                          "route_hint": routeHint,
-                          "contact_key": "owner.contactKey",
-                          "price_to_meet": "req.owner.priceToMeet",
-                          "jwt": "jot"
+                    
+                    let params: [String: AnyObject] = [
+                        "pubkey": pubkey as AnyObject,
+                        "alias": alias as AnyObject,
+                        "photo_url": photoUrl as AnyObject,
+                        "route_hint": routeHint as AnyObject,
+                        "price_to_meet": 1 as AnyObject,
+                        "jwt": token as AnyObject,
+                        "verification_signature": sig as AnyObject
                     ]
                     
-                    return (token,sig,result)
-                }
-                catch{
-                    
+                    return (host, challenge, token, params)
+                } catch {
+                    // Handle the error appropriately
                 }
             }
         }
         return nil
     }
+
 }
 
