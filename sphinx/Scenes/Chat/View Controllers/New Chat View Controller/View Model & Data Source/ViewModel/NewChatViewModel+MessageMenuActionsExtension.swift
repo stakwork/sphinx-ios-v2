@@ -14,8 +14,7 @@ extension NewChatViewModel {
             contact: contact,
             chat: chat,
             replyingMessage: message
-        ),
-        let chat = chat else {
+        ), let chat = chat else {
             return
         }
         

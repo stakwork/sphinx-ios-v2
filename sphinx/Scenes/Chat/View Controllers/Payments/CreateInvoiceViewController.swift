@@ -353,7 +353,7 @@ class CreateInvoiceViewController: CommonPaymentViewController {
             return
         }
         
-        if let paymentChat = paymentChat { //do direct payment chat
+        if let paymentChat = paymentChat {
             finalizeContactDirectPayment(
                 amount: amount,
                 paymentChat: paymentChat

@@ -60,6 +60,24 @@ extension SphinxOnionManager {
         }
     }
     
+    func checkAndFetchRouteTo(
+        publicKey: String,
+        amtMsat: Int,
+        callback: @escaping (Bool) -> ()
+    ) {
+        if requiresManualRouting(publicKey: publicKey) {
+            fetchRoutingInfoFor(
+                pubkey: publicKey,
+                amtMsat: amtMsat,
+                completion: { success in
+                    callback(success)
+                }
+            )
+        } else {
+            callback(true)
+        }
+    }
+    
     ///invoices related
     func createInvoice(
         amountMsat: Int,
@@ -114,7 +132,7 @@ extension SphinxOnionManager {
             if success {
                 self.finalizePayInvoice(
                     invoice: invoice,
-                    overPayAmountMsat: overPayAmountMsat
+                    amount: overPayAmountMsat ?? UInt64(amount)
                 )
             } else {
                 ///error getting route info
@@ -128,7 +146,7 @@ extension SphinxOnionManager {
     
     func finalizePayInvoice(
         invoice: String,
-        overPayAmountMsat: UInt64? = nil
+        amount: UInt64
     ) {
         guard let seed = getAccountSeed() else{
             return
@@ -139,7 +157,7 @@ extension SphinxOnionManager {
                 uniqueTime: getTimeWithEntropy(),
                 state: loadOnionStateAsData(),
                 bolt11: invoice,
-                overpayMsat: overPayAmountMsat
+                overpayMsat: amount
             )
             let _ = handleRunReturn(rr: rr)
         } catch {
@@ -173,24 +191,6 @@ extension SphinxOnionManager {
                     message: "Could not find a route to the target. Please try again."
                 )
             }
-        }
-    }
-    
-    func checkAndFetchRouteTo(
-        publicKey: String,
-        amtMsat: Int,
-        callback: @escaping (Bool) -> ()
-    ) {
-        if requiresManualRouting(publicKey: publicKey) {
-            fetchRoutingInfoFor(
-                pubkey: publicKey,
-                amtMsat: amtMsat,
-                completion: { success in
-                    callback(success)
-                }
-            )
-        } else {
-            callback(true)
         }
     }
     

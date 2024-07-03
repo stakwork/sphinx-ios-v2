@@ -1278,7 +1278,8 @@ extension SphinxOnionManager {
               let contact = chat.getContact(),
               let _ = params["text"] as? String,
               let pubkey = contact.publicKey,
-              let amount = params["amount"] as? Int else {
+              let amount = params["amount"] as? Int else 
+        {
             completion(nil)
             return
         }
