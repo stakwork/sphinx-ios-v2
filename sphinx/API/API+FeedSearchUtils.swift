@@ -10,10 +10,10 @@ import Foundation
 import Alamofire
 import CryptoKit
 import SwiftyJSON
+import ObjectMapper
 
 
 extension API {
-    //@Tom I won't touch this extension because I think it needs to be reimplemented
     public func searchForFeeds(
         with type: FeedType,
         matching queryString: String,
@@ -22,7 +22,7 @@ extension API {
         
         let route = (type == FeedType.Podcast) ? "search_podcasts" : "search_youtube"
         let hostProtocol = UserDefaults.Keys.isProductionEnv.get(defaultValue: false) ? "https" : "http"
-        let urlPath = "\(hostProtocol)://\(SphinxOnionManager.sharedInstance.tribesServerIP)/\(route)"
+        let urlPath = "https://tribes.sphinx.chat/search_podcasts"//"\(hostProtocol)://\(SphinxOnionManager.sharedInstance.tribesServerIP)/\(route)" //temporary hard code
         
         var urlComponents = URLComponents(string: urlPath)!
         urlComponents.queryItems = [
@@ -68,6 +68,49 @@ extension API {
         }
     }
     
+    public func searchBTFeed(
+            matching queryString: String,
+            then completionHandler: @escaping FeedSearchCompletionHandler
+        ) {
+            
+            let hostProtocol = UserDefaults.Keys.isProductionEnv.get(defaultValue: false) ? "https" : "http"
+            let urlString = "https://bt1.bard.garden:21433//?json&q=\(queryString)" // temporary hard code
+
+            guard let request = createRequest(
+                urlString,
+                bodyParams: nil,
+                method: "GET"
+            ) else {
+                completionHandler(.failure(.failedToCreateRequest(urlPath: urlString)))
+                return
+            }
+
+            podcastSearchRequest?.cancel()
+            
+            podcastSearchRequest = AF.request(request).responseJSON { response in
+                switch response.result {
+                case .success(let data):
+                    var mediaArray = [FeedSearchResult]()//[BTMedia]()
+                    if let resultDict = data as? NSDictionary,
+                       let pathsArray = resultDict["paths"] as? [[String: Any]] {
+                        
+                        for pathDict in pathsArray {
+                            if let media = BTMedia(JSON: pathDict) {
+                                //mediaArray.append(media)
+                                let result = media.convertBTMediaToFeedSearchResult()
+                                if result.feedURLPath.isNotEmpty{
+                                    mediaArray.append(result)
+                                }
+                            }
+                        }
+                    }
+                    completionHandler(.success(mediaArray))
+                case .failure(let error):
+                    completionHandler(.failure(.networkError(error)))
+                }
+            }
+        }
+    
     //@Tom need to decide whether we want this or want to reimplement on V2
 //    public func getFeedRecommendations(
 //        callback: @escaping RecommendationsCallback,
@@ -105,4 +148,88 @@ extension API {
 //            }
 //        }
 //    }
+}
+
+
+// BTMedia Model
+class BTMedia: Mappable {
+    var size: Int64?
+    var pathType: String?
+    var name: String?
+    var mtime: Int64?
+    
+    required init?(map: Map) {
+        // Initialize if needed
+    }
+    
+    func mapping(map: Map) {
+        size       <- (map["size"], transformToInt64)
+        pathType   <- map["path_type"]
+        name       <- map["name"]
+        mtime      <- (map["mtime"], transformToInt64)
+    }
+    
+    func convertBTMediaToFeedSearchResult() -> FeedSearchResult {
+        let btMedia = self
+        let feedId = btMedia.name ?? "Unknown"
+        let title = btMedia.name ?? "No Title"
+        let feedDescription = "Type: \(btMedia.pathType ?? "Unknown"), Size: \(btMedia.size ?? 0)"
+        let imageUrl = "https://png.pngtree.com/png-clipart/20210309/original/pngtree-movie-clip-art-movie-film-field-clapper-board-png-image_5862049.jpg" // Placeholder image URL
+        var feedURLPath = ""
+        if let fileName = btMedia.name,
+           fileName.contains(".mp4"){
+            feedURLPath = String(describing: "http://guava.whatbox.ca:30433/\(fileName)")
+        }
+        
+        let feedType = FeedType.Podcast // Default feed type
+        
+        return FeedSearchResult(feedId, title, feedDescription, imageUrl, feedURLPath, feedType)
+    }
+    
+    // Custom transform to handle Int64 and null values
+    let transformToInt64 = TransformOf<Int64, Any>(fromJSON: { (value: Any?) -> Int64? in
+        if let intValue = value as? Int64 {
+            return intValue
+        } else if let intValue = value as? Int {
+            return Int64(intValue)
+        } else if let stringValue = value as? String, let intValue = Int64(stringValue) {
+            return intValue
+        } else {
+            return nil
+        }
+    }, toJSON: { (value: Int64?) -> Any? in
+        if let value = value {
+            return value
+        }
+        return nil
+    })
+    
+    // Computed property to get the file extension
+    var fileExtension: String? {
+        return (name as NSString?)?.pathExtension
+    }
+}
+
+// BTMediaResponse Model
+class BTMediaResponse: Mappable {
+    var paths: [BTMedia]?
+    
+    required init?(map: Map) {
+        // Initialize if needed
+    }
+    
+    func mapping(map: Map) {
+        paths <- map["paths"]
+    }
+}
+
+// Function to parse JSON
+func parsePaths(json: Any) -> [BTMedia]? {
+    if let resultDict = json as? [String: Any], let pathsArray = resultDict["paths"] {
+        guard let jsonString = (pathsArray as AnyObject).description else { return nil }
+        if let pathsResponse = BTMediaResponse(JSONString: jsonString) {
+            return pathsResponse.paths
+        }
+    }
+    return nil
 }
