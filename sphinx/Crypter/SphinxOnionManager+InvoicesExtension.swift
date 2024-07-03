@@ -10,61 +10,57 @@ import Foundation
 import SwiftyJSON
 
 extension SphinxOnionManager {
-    ///invoices related
-    
-    func updateGeneralRoutingInfo(){
-        API.sharedInstance.fetchRoutingInfo(callback: { resultString, resultJSON in
-            guard let resultString = resultString,
-            let resultJSON = resultJSON else{
-                return
-            }
-            do{
-                let rr = try sphinx.addNode(node: resultString)
-                self.handleRunReturn(rr: rr)
-                
-                if let routerPubkey = resultJSON["pubkey"].string {
-                    UserDefaults.Keys.routerPubkey.set(routerPubkey)
+    ///Routing
+    func updateRoutingInfo() {
+        API.sharedInstance.fetchRoutingInfo(
+            callback: { result, pubkey in
+                guard let result = result else {
+                    return
                 }
+                do {
+                    let rr = try sphinx.addNode(node: result)
+                    let _ = self.handleRunReturn(rr: rr)
+                    
+                    if let pubkey = pubkey {
+                        UserDefaults.Keys.routerPubkey.set(pubkey)
+                    }
+                } catch {}
             }
-            catch(let error){
-                print(error)
-                //could not update router info. Throw alert?
-            }
-        })
+        )
     }
     
     func prepareRoutingInfoForPayment(
-            amtMsat: Int,
-            pubkey: String,
-            completion: @escaping (Bool) -> ()
-        ) {
-            if let routerPubkey = self.routerPubkey{
-                API.sharedInstance.fetchSpecificPaymentRoutingInfo(
-                    amtMsat: amtMsat,
-                    pubkey: pubkey,
-                    callback: { results in
-                        if let results = results{
-                            do{
-                               let rr =  try concatRoute(
-                                    state: self.loadOnionStateAsData(),
-                                    endHops: results,
-                                    routerPubkey: routerPubkey,
-                                    amtMsat: UInt64(amtMsat)
-                                )
-                                let _ = self.handleRunReturn(rr: rr)
-                                completion(true)
-                            }
-                            catch{
-                                completion(false)
-                            }
-                        }
-                        else{
+        amtMsat: Int,
+        pubkey: String,
+        completion: @escaping (Bool) -> ()
+    ) {
+        if let routerPubkey = self.routerPubkey {
+            API.sharedInstance.fetchSpecificPaymentRoutingInfo(
+                amtMsat: amtMsat,
+                pubkey: pubkey,
+                callback: { results in
+                    if let results = results {
+                        do {
+                           let rr =  try concatRoute(
+                                state: self.loadOnionStateAsData(),
+                                endHops: results,
+                                routerPubkey: routerPubkey,
+                                amtMsat: UInt64(amtMsat)
+                            )
+                            let _ = self.handleRunReturn(rr: rr)
+                            completion(true)
+                        } catch {
                             completion(false)
                         }
-                })
-            }
+                    } else {
+                        completion(false)
+                    }
+                }
+            )
         }
+    }
     
+    ///invoices related
     func createInvoice(
         amountMsat: Int,
         description: String? = nil

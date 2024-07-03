@@ -34,7 +34,7 @@ typealias UploadProgressCallback = ((Int) -> ())
 typealias UploadCallback = ((Bool, String?) -> ())
 typealias SuccessCallback = ((Bool) -> ())
 typealias UpdatePaymentSpecificRoutingInfoCallback = ((String?) -> ())
-typealias UpdateRoutingInfoCallback = ((String?,JSON?) -> ())
+typealias UpdateRoutingInfoCallback = ((String?, String?) -> ())
 typealias CreateSubscriptionCallback = ((JSON) -> ())
 typealias GetSubscriptionsCallback = (([JSON]) -> ())
 typealias MuteChatCallback = ((JSON) -> ())
@@ -78,6 +78,10 @@ typealias MediaInfoCallback = ((Int, String?, Int?) -> ())
 
 typealias FeedSearchCompletionHandler = (
     Result<[FeedSearchResult], API.RequestError>
+) -> ()
+
+typealias BTSearchCompletionHandler = (
+    Result<[BTMedia], API.RequestError>
 ) -> ()
 
 typealias GetHasAdminCompletionHandler = (
