@@ -1153,10 +1153,10 @@ extension SphinxOnionManager {
         
         if contactDidChange {
             contact.managedObjectContext?.saveContext()
-            
-            if isV2Restore {
-                restoredContactInfoTracker.append(pubkey)
-            }
+        }
+        
+        if isV2Restore {
+            restoredContactInfoTracker.append(pubkey)
         }
     }
     
