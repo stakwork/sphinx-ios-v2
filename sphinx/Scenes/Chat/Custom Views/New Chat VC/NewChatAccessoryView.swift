@@ -130,6 +130,8 @@ extension NewChatAccessoryView {
                 and: delegate
             )
         }
+        
+        messageFieldView.textView.becomeFirstResponder()
     }
     
     func resetReplyView() {
