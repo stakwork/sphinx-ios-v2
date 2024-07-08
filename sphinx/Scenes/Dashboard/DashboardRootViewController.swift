@@ -310,14 +310,6 @@ extension DashboardRootViewController {
         handleDeepLinksAndPush()
         
         setupAddTribeButton()
-        
-        if let authParams = SphinxOnionManager.sharedInstance.processPeopleAuthChallenge(urlString: "sphinx.chat://?action=auth&host=people.sphinx.chat&challenge=cq1vviitu2rr8nt93fig&ts=1719926730"){
-            //return (host, challenge, token, sig, params)
-            API.sharedInstance.authorizeExternal(host: authParams.0, challenge: authParams.1, token: authParams.2, params: authParams.3, callback: { result in
-                print(result)
-            })
-        }
-//        SphinxOnionManager.sharedInstance.processPeopleAuthChallenge(urlString: "sphinx.chat://?action=auth&host=people.sphinx.chat&challenge=cq1vviitu2rr8nt93fig&ts=1719926730")
     }
     
     func refreshUnreadStatus(){
