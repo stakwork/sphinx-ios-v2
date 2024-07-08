@@ -509,6 +509,19 @@ extension SphinxOnionManager {
         return isTribe
     }
     
+    func processInvoicePaid(rr: RunReturn) {
+        if let _ = rr.settleTopic, let _ = rr.settlePayload {
+            let paymentHashes = rr.msgs.compactMap({ $0.paymentHash })
+            for paymentHash in paymentHashes {
+                NotificationCenter.default.post(
+                    name: .sentInvoiceSettled,
+                    object: nil,
+                    userInfo: ["paymentHash": paymentHash]
+                )
+            }
+        }
+    }
+    
     //MARK: processes updates from general purpose messages like plaintext and attachments
     func processGenericMessages(rr: RunReturn) {
         if rr.msgs.isEmpty {
@@ -664,7 +677,7 @@ extension SphinxOnionManager {
         genericIncomingMessage.uuid = uuid
         genericIncomingMessage.index = index
         
-        let msg = processGenericIncomingMessage(
+        let _ = processGenericIncomingMessage(
             message: genericIncomingMessage,
             date: date,
             csr: csr,
@@ -693,7 +706,7 @@ extension SphinxOnionManager {
         genericIncomingMessage.uuid = uuid
         genericIncomingMessage.index = index
         
-        let paymentMsg = processGenericIncomingMessage(
+        let _ = processGenericIncomingMessage(
             message: genericIncomingMessage,
             date: date,
             csr: csr,
@@ -1140,10 +1153,10 @@ extension SphinxOnionManager {
         
         if contactDidChange {
             contact.managedObjectContext?.saveContext()
-            
-            if isV2Restore {
-                restoredContactInfoTracker.append(pubkey)
-            }
+        }
+        
+        if isV2Restore {
+            restoredContactInfoTracker.append(pubkey)
         }
     }
     
@@ -1274,45 +1287,47 @@ extension SphinxOnionManager {
         chat: Chat,
         completion: @escaping (TransactionMessage?) -> Void
     ) {
-        let contact = chat.getContact()
-
-        guard let replyUUID = params["reply_uuid"] as? String,
-              let contact = contact,
-              let text = params["text"] as? String,
+        guard let _ = params["reply_uuid"] as? String,
+              let contact = chat.getContact(),
+              let _ = params["text"] as? String,
               let pubkey = contact.publicKey,
-              let amount = params["amount"] as? Int else {
+              let amount = params["amount"] as? Int else 
+        {
             completion(nil)
             return
         }
-
-        if contactRequiresManualRouting(contactString: pubkey) {
-            prepareRoutingInfoForPayment(amtMsat: amount * 1000, pubkey: pubkey) { success in
-                if success {
-                    let message = self.finalizeSendBoostReply(params: params, chat: chat)
-                    completion(message)
-                } else {
-                    AlertHelper.showAlert(title: "Routing Error", message: "There was an error routing please try again.")
-                    completion(nil)
-                }
+        
+        checkAndFetchRouteTo(
+            publicKey: pubkey,
+            amtMsat: amount * 1000
+        ) { success in
+            if success {
+                let message = self.finalizeSendBoostReply(
+                    params: params,
+                    chat: chat
+                )
+                completion(message)
+            } else {
+                AlertHelper.showAlert(
+                    title: "Routing Error",
+                    message: "There was an error routing please try again."
+                )
+                completion(nil)
             }
-        } else {
-            let message = finalizeSendBoostReply(params: params, chat: chat)
-            completion(message)
         }
     }
     
     func finalizeSendBoostReply(
         params: [String: AnyObject],
         chat:Chat
-    )-> TransactionMessage?{
-        let contact = chat.getContact()
+    ) -> TransactionMessage? {
         guard let replyUUID = params["reply_uuid"] as? String,
-            let contact = contact,
+            let contact = chat.getContact(),
             let text = params["text"] as? String,
-            let pubkey = contact.publicKey,
             let amount = params["amount"] as? Int else{
             return nil
         }
+        
         if let sentMessage = self.sendMessage(
             to: contact,
             content: text,
@@ -1322,11 +1337,9 @@ extension SphinxOnionManager {
             msgType: UInt8(TransactionMessage.TransactionMessageType.boost.rawValue),
             threadUUID: nil,
             replyUUID: replyUUID
-        ){
-            print(sentMessage)
+        ) {
             return sentMessage
         }
-        
         return nil
     }
     
@@ -1338,26 +1351,28 @@ extension SphinxOnionManager {
         completion: @escaping (Bool, TransactionMessage?) -> ()
     ){
         guard let contact = chat.getContact(),
-        let pubkey = contact.publicKey else {
+              let pubkey = contact.publicKey else 
+        {
             return
         }
         
-        if(contactRequiresManualRouting(contactString: pubkey)){
-            prepareRoutingInfoForPayment(amtMsat: amount * 1000, pubkey: pubkey, completion: { [self] success in
-                if(success){
-                    finalizeDirectPayment(amount: amount, muid: muid, content: content, chat: chat, completion: { success, message in
+        checkAndFetchRouteTo(
+            publicKey: pubkey,
+            amtMsat: amount * 1000
+        ) { success in
+            if(success){
+                self.finalizeDirectPayment(
+                    amount: amount,
+                    muid: muid,
+                    content: content,
+                    chat: chat,
+                    completion: { success, message in
                         completion(success,message)
-                    })
-                }
-                else{
-                    completion(false,nil)
-                }
-            })
-        }
-        else{
-            finalizeDirectPayment(amount: amount, muid: muid, content: content, chat: chat, completion: { success, message in
-                completion(success,message)
-            })
+                    }
+                )
+            } else {
+                completion(false,nil)
+            }
         }
     }
     
@@ -1368,8 +1383,7 @@ extension SphinxOnionManager {
         chat: Chat,
         completion: @escaping (Bool, TransactionMessage?) -> ()
     ){
-        guard let contact = chat.getContact(),
-        let pubkey = contact.publicKey else {
+        guard let contact = chat.getContact() else {
             return
         }
         

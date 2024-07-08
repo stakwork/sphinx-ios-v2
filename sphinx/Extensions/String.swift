@@ -391,9 +391,11 @@ extension String {
     func isExistingContactPubkey() -> (Bool, UserContact?) {
         if let pubkey = self.stringFirstPubKey?.0 {
             let (pk, _) = pubkey.pubkeyComponents
-            if let contact = UserContact.getContactWith(pubkey: pk), !contact.fromGroup {
+            
+            if let contact = UserContact.getContactWith(pubkey: pk) {
                return (true, contact)
             }
+            
             if let owner = UserContact.getOwner(), owner.publicKey == pk {
                 return (true, owner)
             }
