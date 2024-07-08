@@ -19,8 +19,7 @@ import UIKit
     @objc optional func shouldStartRecording()
     @objc optional func shouldStopAndSendAudio()
     @objc optional func shouldCancelRecording()
-    @objc optional func getThreadUUID() -> String?
-    @objc optional func getReplyUUID() -> String?
+    @objc optional func isMessageLengthValid(text: String, sendingAttachment: Bool) -> Bool
 }
 
 enum MessagesFieldMode: Int {
@@ -119,6 +118,7 @@ class ChatMessageTextFieldView: UIView {
                     title: "generic.error.title".localized,
                     message: "generic.message.error".localized
                 )
+                self.textView.text = text
             }
             self.sendButton.isUserInteractionEnabled = true
         })

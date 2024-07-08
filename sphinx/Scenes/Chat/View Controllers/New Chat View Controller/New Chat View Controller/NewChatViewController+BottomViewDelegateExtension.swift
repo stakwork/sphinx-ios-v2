@@ -67,12 +67,16 @@ extension NewChatViewController : ChatMessageTextFieldViewDelegate {
         chatViewModel.shouldCancelRecording()
     }
     
-    func getReplyUUID() -> String? {
-        return self.chatViewModel.replyingTo?.uuid
-    }
-    
-    func getThreadUUID() -> String? {
-        return self.threadUUID ?? self.chatViewModel.replyingTo?.replyUUID
+    func isMessageLengthValid(
+        text: String,
+        sendingAttachment: Bool
+    ) -> Bool {
+        return SphinxOnionManager.sharedInstance.isMessageLengthValid(
+            text: text,
+            sendingAttachment: sendingAttachment,
+            threadUUID: self.chatViewModel.replyingTo?.uuid,
+            replyUUID: self.threadUUID ?? self.chatViewModel.replyingTo?.replyUUID
+        )
     }
     
     func shouldStartGiphy(){
