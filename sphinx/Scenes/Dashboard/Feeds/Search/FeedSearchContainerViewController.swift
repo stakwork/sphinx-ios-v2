@@ -200,9 +200,11 @@ extension FeedSearchContainerViewController {
     
     @objc func fetchRemoteResults(timer: Timer) {
         if let userInfo = timer.userInfo as? [String: Any] {
-            if let searchQuery = userInfo["search_query"] as? String, let type = userInfo["feed_type"] as? FeedType {
+            if let searchQuery = userInfo["search_query"] as? String, 
+                let type = userInfo["feed_type"] as? FeedType {
                 API.sharedInstance.searchBTFeed(
-                    matching: searchQuery
+                    matching: searchQuery,
+                    type: type
                 ) { [weak self] result in
                     guard let self = self else { return }
                     
