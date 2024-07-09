@@ -48,7 +48,7 @@ extension NewQRScannerViewController {
         print("isZeroAmountInvoice:\(prDecoder.isZeroAmountInvoice(invoice: string))")
         if(prDecoder.isZeroAmountInvoice(invoice: string)){
             DispatchQueue.main.async {
-                self.completeAndShowPRDetails()
+                self.presentSendZeroAmountInvoiceVC(invoice: string)
             }
             return true
         }
@@ -77,13 +77,12 @@ extension NewQRScannerViewController {
         return false
     }
     
-    func handleContactOrSend(string:String){
+    func handleContactOrSend(string: String) {
         if string.isExistingContactPubkey().0 {
             self.dismiss(animated: true, completion: {
                 self.presentPubkeySendVC(pubkey: string)
             })
-        }
-        else{
+        } else {
             let alert = CustomAlertController(title: "pub.key.options".localized, message: "select.option".localized, preferredStyle: .actionSheet)
             
             alert.addAction(UIAlertAction(title: "pub.key.options-add.contact".localized, style: .default, handler:{ (UIAlertAction) in
@@ -130,6 +129,15 @@ extension NewQRScannerViewController {
             delegate.sendSatsButtonTouched(pubkey: pubkey)
         }
     }
+    
+    func presentSendZeroAmountInvoiceVC(invoice:String?=nil){
+        if let delegate = self.delegate as? DashboardRootViewController{
+            self.dismiss(animated: true, completion: {
+                delegate.sendSatsButtonTouched(zeroAmtInvoice: invoice)
+            })
+        }
+    }
+    
     //TODO: @Jim reimplement or remove
 //    func goToSubscriptionDetailsView(subscription: SubscriptionManager.SubscriptionQR) {
 //        let subscriptionDetailsVC = SubscriptionDetailsViewController.instantiate(

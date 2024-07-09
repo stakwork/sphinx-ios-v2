@@ -14,14 +14,14 @@ extension NewChatViewModel {
             contact: contact,
             chat: chat,
             replyingMessage: message
-        ),
-        let chat = chat else {
+        ), let chat = chat else {
             return
         }
         
-        let _ = SphinxOnionManager.sharedInstance.sendBoostReply(
+        SphinxOnionManager.sharedInstance.sendBoostReply(
             params: params,
-            chat: chat
+            chat: chat,
+            completion: { _ in}
         )
     }
     

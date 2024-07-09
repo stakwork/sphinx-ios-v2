@@ -206,9 +206,9 @@
 //RESTORE EXISTING USER
 "restore.keychain" = "キーチェーンから復元";
 "restore.description.continue" = "続ける";
-"restore.description.label" = "デスクトップアプリからキーをコピーし、ここに貼り付けてください。";
-"restore.copy.keys" = "キーをコピー";
-"restore.form.paste.keys.placeholder" = "キーを貼り付ける...";
+"restore.description.label" = "モバイル アプリからシード フレーズをコピーしてここに貼り付けます。";
+"restore.copy.keys" = "モバイル アプリからシー";
+"restore.form.paste.keys.placeholder" = "シードフレーズを貼り付けます...";
 "submit" = "送信";
 "restore.invalid-code.relay-qr-code" = "これはSphinx Relayアプリからの接続コードのようです。既存のアカウントを復元するには、バックアップ文字列を入力する必要があります。";
 "resume-restoring" = "復元を再開します...";
@@ -275,9 +275,9 @@
 //PROFILE
 "address.copied.clipboard" = "アドレスをクリップボードにコピーしました";
 "route.hint.copied.clipboard" = "ルートヒントをクリップボードにコピーしました";
-"pin.keys.encryption" = "あなたのPINを入力して鍵を暗号化してください。他のデバイスでアカウントを復元する際に必要になります。";
-"export.keys" = "鍵をエクスポート";
-"keys.will.copy.clipboard" = "あなたの鍵はクリップボードにコピーされます。この文字列を保存し、アプリを削除する前にPINを覚えておいてください。さもないと、すべてのデータが失われます。";
+"pin.keys.encryption" = "PINを入力してシードフレーズにアクセスしてください";
+"export.keys" = "シードフレーズをエクスポート";
+"keys.will.copy.clipboard" = "シードフレーズがクリップボードにコピーされます。この文字列を安全に保存しないと、すべてのデータが失われます。";
 "keys.copied.clipboard" = "エクスポート鍵をクリップボードにコピーしました";
 "server.url.updated" = "サーバーURLが正常に更新されました";
 "hour" = "時間";
@@ -339,7 +339,7 @@
 "pin.doesnt.match" = "PINが一致しません";
 "enter.old.pin" = "現在のPINを入力";
 "enter.new.pin" = "新しいPINを入力";
-"pin.changed" = "PINが更新されました。新しいPINを使用して鍵を再エクスポートしてください。";
+"pin.changed" = "PINが更新されました";
 "contact.pin.error" = "メインのPINをグループPINとして使用することはできません";
 "set.privacy.pin" = "プライバシーPINを設定";
 "change.privacy.pin" = "プライバシーPINを変更";

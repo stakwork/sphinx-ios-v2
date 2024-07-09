@@ -127,6 +127,24 @@ class SphinxOnionManager : NSObject {
         }
     }
     
+    var routerUrl: String {
+        get {
+            if let routerUrl: String = UserDefaults.Keys.routerUrl.get() {
+                return routerUrl
+            }
+            return kTestRouterUrl
+        }
+    }
+    
+    var routerPubkey: String? {
+        get {
+            if let routerPubkey: String = UserDefaults.Keys.routerPubkey.get() {
+                return routerPubkey
+            }
+            return nil
+        }
+    }
+    
     var defaultTribePubkey: String? {
         get {
             if let defaultTribePublicKey: String = UserDefaults.Keys.defaultTribePublicKey.get() {
@@ -142,11 +160,12 @@ class SphinxOnionManager : NSObject {
         }
     }
     
-    let kTestServerIP = "34.229.52.200"
+    let kTestServerIP = "75.101.247.127"
     let kTestServerPort: UInt16 = 1883
     let kProdServerPort: UInt16 = 8883
-    let kTestV2TribesServer = "34.229.52.200:8801"
+    let kTestV2TribesServer = "75.101.247.127:8801"
     let kTestDefaultTribe = "0213ddd7df0077abe11d6ec9753679eeef9f444447b70f2980e44445b3f7959ad1"
+    let kTestRouterUrl = "mixer.router1.sphinx.chat"
     
     //MARK: Callback
     ///Restore
