@@ -312,7 +312,9 @@ extension DashboardRootViewController {
         setupAddTribeButton()
         
         SphinxOnionManager.sharedInstance.authorizeBT()
-
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5.0, execute: {
+            SphinxOnionManager.sharedInstance.searchAllTorrents(keyword: "pineapple express")
+        })
     }
     
     func refreshUnreadStatus(){

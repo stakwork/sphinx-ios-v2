@@ -98,6 +98,7 @@ class SphinxOnionManager : NSObject {
     
     let kHostedTorrentBaseURL = "https://files.bt2.bard.garden:21433"
     let kAllTorrentLookupBaseURL = "https://tome.bt2.bard.garden:21433"
+    var btAuthDict : NSDictionary? = nil
     
     //MARK: Hardcoded Values!
     var serverIP: String {

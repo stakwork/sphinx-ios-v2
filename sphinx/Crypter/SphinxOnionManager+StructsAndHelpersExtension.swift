@@ -392,3 +392,36 @@ struct ParseInvoiceResult: Mappable {
         expiry         <- map["expiry"]
     }
 }
+
+
+class BTFeedSearchDataMapper: Mappable {
+    var leechers: Int?
+    var name: String?
+    var seeders: Int?
+    var magnet_link: String?
+    var size_bytes: Int?
+
+    // Required initializer
+    required convenience init(map: Map) {
+        self.init()
+    }
+
+    // Static method to get the object from a JSON string
+    static func getFromString(_ string: String) -> BTFeedSearchDataMapper? {
+        return BTFeedSearchDataMapper(JSONString: string)
+    }
+
+    // Mapping function
+    func mapping(map: Map) {
+        leechers   <- map["leechers"]
+        name       <- map["name"]
+        seeders <- map["seeders"]
+        magnet_link <- map["magnet_link"]
+        size_bytes <- map["size_bytes"]
+    }
+
+    // Function to get a JSON string representation of the object
+    func getJSONString() -> String? {
+        return self.toJSONString()
+    }
+}

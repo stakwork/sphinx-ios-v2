@@ -15,16 +15,42 @@ extension SphinxOnionManager {
             return
         }
         do{
-            let timestamp = try signMs(seed: seed, idx: 0, time: getTimeWithEntropy(), network: self.network)
+            let timestamp = try signedTimestamp(seed: seed, idx: 0, time: getTimeWithEntropy(), network: self.network)
             API.sharedInstance.authorizeBTGateway(
                 url: url,
                 signedTimestamp: timestamp,
-                callback: { success in
-                    print(success)
+                callback: { resultDict in
+                    if let resultDict = resultDict{
+                        self.btAuthDict = resultDict
+                    }
                 })
         }
         catch{
             print("failed authorizeBT")
+        }
+    }
+    
+    func unpackAuthString(dict:NSDictionary) -> [String:String]?{
+        if let token = dict["token"] as? String,
+           let tokenType = dict["token_type"] as? String{
+            return [
+                "Authorization":"\(tokenType) \(token)"
+            ]
+        }
+        return nil
+    }
+    
+    func searchAllTorrents(keyword:String){
+        if let authDict = btAuthDict,
+           let authString = unpackAuthString(dict: authDict){
+            API.sharedInstance.searchBTGatewayForFeeds(
+                url: "\(kAllTorrentLookupBaseURL)/search",
+                authorizeDict: authString,
+                keyword: keyword,
+                callback:{ result in
+                    print(result)
+                }
+            )
         }
     }
     

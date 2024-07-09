@@ -19,27 +19,65 @@ extension API {
     typealias PeopleTorRequestCallback = ((Bool) -> ())
     typealias GetPersonProfileCallback = ((Bool, JSON?) -> ())
     typealias GetTribeMemberProfileCallback = ((Bool, TribeMemberStruct?) -> ())
+    typealias SearchBTGatewayCallback = (([BTFeedSearchDataMapper]) -> ())
     
     public func authorizeBTGateway(
         url: String,
         signedTimestamp:String,
-        callback: @escaping SuccessCallback
+        callback: @escaping AuthorizeBTCallback
     ){
         var params = [String: AnyObject]()
         params["signed_timestamp"] = signedTimestamp as? AnyObject
         guard let request = createRequest(url, bodyParams: params as NSDictionary, method: "POST") else {
-            callback(false)
+            callback(nil)
             return
         }
         
         AF.request(request).responseJSON { (response) in
             switch response.result {
             case .success(let data):
-                if let _ = data as? NSDictionary {
-                    callback(true)
+                if let dict = data as? NSDictionary {
+                    callback(dict)
                 }
             case .failure(_):
-                callback(false)
+                callback(nil)
+            }
+        }
+    }
+    
+    public func searchBTGatewayForFeeds(
+        url:String,
+        authorizeDict:[String:String],
+        keyword:String,
+        callback: @escaping SearchBTGatewayCallback
+    ){
+        var params = [String: AnyObject]()
+        params["keyword"] = keyword as? AnyObject
+        guard let request = createRequest(
+            url,
+            bodyParams: params as NSDictionary,
+            headers: authorizeDict,
+            method: "POST"
+        ) else {
+            callback([BTFeedSearchDataMapper]())
+            return
+        }
+        
+        AF.request(request).responseJSON { (response) in
+            switch response.result {
+            case .success(let value):
+                guard let jsonArray = value as? [[String: Any]] else {
+                    callback([BTFeedSearchDataMapper]())
+                    return
+                }
+                
+                let feeds = jsonArray.compactMap { dict -> BTFeedSearchDataMapper? in
+                    return BTFeedSearchDataMapper(JSON: dict)
+                }
+                
+                callback(feeds)
+            case .failure(_):
+                callback([BTFeedSearchDataMapper]())
             }
         }
     }
