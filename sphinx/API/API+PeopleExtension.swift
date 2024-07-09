@@ -20,6 +20,30 @@ extension API {
     typealias GetPersonProfileCallback = ((Bool, JSON?) -> ())
     typealias GetTribeMemberProfileCallback = ((Bool, TribeMemberStruct?) -> ())
     
+    public func authorizeBTGateway(
+        url: String,
+        signedTimestamp:String,
+        callback: @escaping SuccessCallback
+    ){
+        var params = [String: AnyObject]()
+        params["signed_timestamp"] = signedTimestamp as? AnyObject
+        guard let request = createRequest(url, bodyParams: params as NSDictionary, method: "POST") else {
+            callback(false)
+            return
+        }
+        
+        AF.request(request).responseJSON { (response) in
+            switch response.result {
+            case .success(let data):
+                if let _ = data as? NSDictionary {
+                    callback(true)
+                }
+            case .failure(_):
+                callback(false)
+            }
+        }
+    }
+    
     public func authorizeExternal(host: String,
                                   challenge: String,
                                   token: String,
