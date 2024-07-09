@@ -217,11 +217,20 @@ extension DashboardRootViewController {
         }
         else if feedResult.feedType == .Podcast{
             let fakeFeed = PodcastFeed("xyz456", false)
+            fakeFeed.title = "BitTorrent Feed"
             let episode = PodcastEpisode("abc123")
             episode.title = feedResult.title
             episode.urlPath = feedResult.feedURLPath
             fakeFeed.currentEpisodeId = "abc123"
             fakeFeed.episodes = [episode]
+            
+            podcastSmallPlayer.configureForBitTorrent(
+                itemID: "abc123",
+                feed: fakeFeed,
+                delegate: self,
+                andKey: PodcastDelegateKeys.DashboardSmallPlayerBar.rawValue
+            )
+            
             presentPodcastPlayerFor(fakeFeed, queuedEpisode: episode, fromDownloadedSection: false)
         }
         
