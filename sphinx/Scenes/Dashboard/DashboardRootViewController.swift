@@ -312,6 +312,7 @@ extension DashboardRootViewController {
         setupAddTribeButton()
         
         SphinxOnionManager.sharedInstance.authorizeBT()
+
     }
     
     func refreshUnreadStatus(){
