@@ -658,6 +658,7 @@
 		CE49E13229ACEFAA006D3CCE /* VoIPPushMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE49E13129ACEFAA006D3CCE /* VoIPPushMessage.swift */; };
 		CE4A85932B5F051600813B59 /* SphinxOnionManager+TribesExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE4A85922B5F051600813B59 /* SphinxOnionManager+TribesExtension.swift */; };
 		CE4B53FD2AFC389C00708A0C /* SphinxOnionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE4B53FC2AFC389C00708A0C /* SphinxOnionManager.swift */; };
+		CE50CB9F2C3DBB45009E71FB /* SphinxOnionManager+BTClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE50CB9E2C3DBB45009E71FB /* SphinxOnionManager+BTClient.swift */; };
 		CE51F350298870BF00ABBACB /* MemberBadgeDetailVM.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE51F34F298870BF00ABBACB /* MemberBadgeDetailVM.swift */; };
 		CE51F3562988743E00ABBACB /* MemberDetailTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE51F3542988743E00ABBACB /* MemberDetailTableViewCell.swift */; };
 		CE51F3572988743E00ABBACB /* MemberBadgeDetailTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = CE51F3552988743E00ABBACB /* MemberBadgeDetailTableViewCell.xib */; };
@@ -1840,6 +1841,7 @@
 		CE49E13129ACEFAA006D3CCE /* VoIPPushMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoIPPushMessage.swift; sourceTree = "<group>"; };
 		CE4A85922B5F051600813B59 /* SphinxOnionManager+TribesExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SphinxOnionManager+TribesExtension.swift"; sourceTree = "<group>"; };
 		CE4B53FC2AFC389C00708A0C /* SphinxOnionManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SphinxOnionManager.swift; sourceTree = "<group>"; };
+		CE50CB9E2C3DBB45009E71FB /* SphinxOnionManager+BTClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SphinxOnionManager+BTClient.swift"; sourceTree = "<group>"; };
 		CE51F34F298870BF00ABBACB /* MemberBadgeDetailVM.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberBadgeDetailVM.swift; sourceTree = "<group>"; };
 		CE51F3542988743E00ABBACB /* MemberDetailTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberDetailTableViewCell.swift; sourceTree = "<group>"; };
 		CE51F3552988743E00ABBACB /* MemberBadgeDetailTableViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = MemberBadgeDetailTableViewCell.xib; sourceTree = "<group>"; };
@@ -4120,6 +4122,7 @@
 				475CD5AB287E1198003FF171 /* CrypterManager.swift */,
 				CECE9C2A2AA7779E0039B843 /* WordsList.swift */,
 				4741EBEA2BFF726300EFF49E /* SphinxOnionManager+ReadMuteExtension.swift */,
+				CE50CB9E2C3DBB45009E71FB /* SphinxOnionManager+BTClient.swift */,
 			);
 			path = Crypter;
 			sourceTree = "<group>";
@@ -5147,6 +5150,7 @@
 				CECE9C2B2AA7779E0039B843 /* WordsList.swift in Sources */,
 				47F2289E23672A5E001429A4 /* ImagePickerManager.swift in Sources */,
 				CEE49BF32A1BBC70009E0EC4 /* MediaStorageTypeSummaryTableViewCell.swift in Sources */,
+				CE50CB9F2C3DBB45009E71FB /* SphinxOnionManager+BTClient.swift in Sources */,
 				4701462B2A3FC0A900A00DF8 /* NewChatTableDataSource+AttachmentsExtension.swift in Sources */,
 				CE9A185A2A1D736700F176DE /* ProfileManageStorageSourceDetailsVC.swift in Sources */,
 				F32A696526CFEF600004B8B3 /* PodcastFeed+Properties.swift in Sources */,
