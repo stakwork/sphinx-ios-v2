@@ -54,7 +54,10 @@ extension SphinxOnionManager {
         }
     }
     
-    func getMagnetDetails(data:BTFeedSearchDataMapper){
+    func getMagnetDetails(
+        data:BTFeedSearchDataMapper,
+        callback: @escaping (MagnetDetailsResponse?) -> ()
+    ){
         guard let magnet = data.magnet_link,
               let authDict = btAuthDict,
               let authString = unpackAuthString(dict: authDict) else{
@@ -64,10 +67,27 @@ extension SphinxOnionManager {
             url: "\(kAllTorrentLookupBaseURL)/magnet_details",
             authorizeDict: authString,
             magnetLink: magnet,
-            callback: { success in
-                print(success)
+            callback: { response in
+                print(response)
+                callback(response)
             }
         )
+    }
+    
+    func downloadTorrentViaMagnet(magnetLink:String,magnetDetails:MagnetDetailsResponse){
+        guard let initialPeers = magnetDetails.seenPeers,
+        let authDict = btAuthDict,
+        let authString = unpackAuthString(dict: authDict) else{
+            return
+        }
+        API.sharedInstance.requestTorrentDownload(
+            url: "\(kAllTorrentLookupBaseURL)/add_magnet",
+            authorizeDict: authString,
+            magnetLink: magnetLink,
+            initialPeers: initialPeers,
+            callback: { success in
+                print(success)
+            })
     }
     
     
