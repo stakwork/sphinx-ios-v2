@@ -313,7 +313,27 @@ extension DashboardRootViewController {
         
         SphinxOnionManager.sharedInstance.authorizeBT()
         DispatchQueue.main.asyncAfter(deadline: .now() + 5.0, execute: {
-            SphinxOnionManager.sharedInstance.searchAllTorrents(keyword: "pineapple express")
+            SphinxOnionManager.sharedInstance.searchAllTorrents(keyword: "pineapple express",callback:{results in
+                if let result = results.filter({$0.magnet_link == "magnet:?xt=urn:btih:F4E2F1339AE98D9AA49E7FE2E5660D5A2E801FED"}).first{
+                    SphinxOnionManager.sharedInstance.getMagnetDetails(data: result)
+                }
+                
+            })
+            
+//            let url = "https://tome.bt2.bard.garden:21433/magnet_details"
+//            let headers = [
+//                "Authorization": "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIwMmMxMDk0NmRlMjM4OGM5ODI1ZjZhMWVjZmJkOTNkOThjZjY5OTM5NjJmZDc3NzUxNTZkZmVmMWJkNjc4MzU0ZDUiLCJleHAiOjE3MjEyMzA0Mzh9.WQAo3YB0z81JGSR9-1FjM7rxAUqtfJ0CpL_A1VFbmCQ",
+//                "Content-Type": "application/json"
+//            ]
+//            let magnetLink = "magnet:?xt=urn:btih:F4E2F1339AE98D9AA49E7FE2E5660D5A2E801FED"
+//
+//            API.sharedInstance.getTorrentDetails(url: url, authorizeDict: headers, magnetLink: magnetLink) { success in
+//                if success {
+//                    print("Request succeeded")
+//                } else {
+//                    print("Request failed")
+//                }
+//            }
         })
     }
     

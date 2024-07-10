@@ -82,6 +82,40 @@ extension API {
         }
     }
     
+    public func getMagnetDetails(
+            url:String,
+            authorizeDict:[String:String],
+            magnetLink:String,
+            callback: @escaping ((MagnetDetailsResponse?) -> ())
+        ){
+            var params = [String: AnyObject]()
+            params["magnet"] = magnetLink as? AnyObject
+            guard let request = createRequest(
+                url,
+                bodyParams: params as NSDictionary,
+                headers: authorizeDict,
+                method: "POST"
+            ) else {
+                callback(nil)
+                return
+            }
+            
+            AF.request(request).responseJSON { (response) in
+                switch response.result {
+                case .success(let value):
+                    if let json = value as? [String: Any],
+                       let torrentDetails = MagnetDetailsResponse(JSON: json) {
+                        callback(torrentDetails)
+                    } else {
+                        callback(nil)
+                    }
+                case .failure(let error):
+                    print("Request failed with error: \(error)")
+                    callback(nil)
+                }
+            }
+        }
+    
     public func authorizeExternal(host: String,
                                   challenge: String,
                                   token: String,

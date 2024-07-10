@@ -425,3 +425,50 @@ class BTFeedSearchDataMapper: Mappable {
         return self.toJSONString()
     }
 }
+
+//Magnet details related
+class MagnetFile: Mappable {
+    var name: String?
+    var components: [String]?
+    var length: Int?
+    var included: Bool?
+
+    required init?(map: Map) { }
+
+    func mapping(map: Map) {
+        name        <- map["name"]
+        components  <- map["components"]
+        length      <- map["length"]
+        included    <- map["included"]
+    }
+}
+
+class MagnetDetails: Mappable {
+    var infoHash: String?
+    var name: String?
+    var files: [MagnetFile]?
+
+    required init?(map: Map) { }
+
+    func mapping(map: Map) {
+        infoHash    <- map["info_hash"]
+        name        <- map["name"]
+        files       <- map["files"]
+    }
+}
+
+class MagnetDetailsResponse: Mappable {
+    var id: String?
+    var details: MagnetDetails?
+    var outputFolder: String?
+    var seenPeers: [String]?
+
+    required init?(map: Map) { }
+
+    func mapping(map: Map) {
+        id          <- map["id"]
+        details     <- map["details"]
+        outputFolder <- map["output_folder"]
+        seenPeers   <- map["seen_peers"]
+    }
+}
