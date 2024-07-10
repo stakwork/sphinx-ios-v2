@@ -70,7 +70,8 @@ class SphinxOnionManager : NSObject {
         }
     }
     
-    var delayedRRObjects: [RunReturn] = []
+    var delayedRRObjects: [Int: RunReturn] = [:]
+    var delayedRRTimers: [Int: Timer] = [:]
     
     var msgTotalCounts : MsgTotalCounts? = nil
     
