@@ -13,6 +13,7 @@ import UIKit
 class BitTorrentSearchTableViewDataSource : NSObject, UITableViewDataSource, UITableViewDelegate {
     var btSearchResults = [BTFeedSearchDataMapper]()
     var linkedTableView : UITableView? = nil
+    var getMagnetDetailsCallback: ((MagnetDetailsResponse?) -> Void)?
     
     override init() {
         super.init()
@@ -49,7 +50,16 @@ class BitTorrentSearchTableViewDataSource : NSObject, UITableViewDataSource, UIT
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        print("didSelectRowAt")
+        let result = btSearchResults[indexPath.row]
+        if let magnetLink = result.magnet_link{
+            SphinxOnionManager.sharedInstance.getMagnetDetails(
+                data: result,
+                callback: {detailsResponse in
+                    if let responseCallback = self.getMagnetDetailsCallback{
+                        responseCallback(detailsResponse)
+                    }
+                })
+        }
     }
     
 }

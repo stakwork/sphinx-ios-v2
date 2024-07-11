@@ -38,6 +38,16 @@ class BitTorrentSearchViewController : UIViewController{
         bitTorrentSearchTableView.delegate = bitTorrentSearchTableViewDataSource
         bitTorrentSearchTableViewDataSource?.linkedTableView = bitTorrentSearchTableView
         bitTorrentSearchTableViewDataSource?.searchBitTorrent()
+        bitTorrentSearchTableViewDataSource?.getMagnetDetailsCallback = showMagnetDetails(details:)
+    }
+    
+    func showMagnetDetails(details:MagnetDetailsResponse?){
+        guard let magnetDetails = details else{
+            AlertHelper.showAlert(title: "Unable to get magnet details", message: "")
+            return
+        }
+        //TODO: invoke modal UI
+        print(magnetDetails)
     }
     
 }
