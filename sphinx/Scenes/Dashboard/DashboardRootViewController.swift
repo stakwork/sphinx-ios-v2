@@ -311,11 +311,11 @@ extension DashboardRootViewController {
         
         setupAddTribeButton()
         
-        SphinxOnionManager.sharedInstance.authorizeBT()
+        SphinxOnionManager.sharedInstance.authorizeBT(callback: {_ in})
         DispatchQueue.main.asyncAfter(deadline: .now() + 5.0, execute: {
-            SphinxOnionManager.sharedInstance.searchAllTorrents(keyword: "pineapple express",callback:{results in
+            SphinxOnionManager.sharedInstance.searchAllTorrents(keyword: "red hot chili peppers",callback:{results in
                 print(results)
-                if let result = results.filter({$0.magnet_link == "magnet:?xt=urn:btih:F5C4CF1EA3BC490A720277AC3D9E0D9D9A6BBD64"}).first{
+                if let result = results.first{
                     SphinxOnionManager.sharedInstance.getMagnetDetails(data: result, callback: { magnetDetails in
                         SphinxOnionManager.sharedInstance.downloadTorrentViaMagnet(magnetLink: result.magnet_link!, magnetDetails: magnetDetails!)
                     })

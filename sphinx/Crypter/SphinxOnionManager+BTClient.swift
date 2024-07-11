@@ -9,7 +9,7 @@
 import Foundation
 extension SphinxOnionManager {
     
-    func authorizeBT(){
+    func authorizeBT(callback: @escaping (Bool) -> ()){
         let url = self.kAllTorrentLookupBaseURL + "/authorize"
         guard let seed = getAccountSeed() else{
             return
@@ -22,6 +22,10 @@ extension SphinxOnionManager {
                 callback: { resultDict in
                     if let resultDict = resultDict{
                         self.btAuthDict = resultDict
+                        callback(true)
+                    }
+                    else{
+                        callback(false)
                     }
                 })
         }

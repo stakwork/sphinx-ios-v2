@@ -114,7 +114,7 @@ class API {
     var uploadRequest: UploadRequest?
 
     let messageBubbleHelper = NewMessageBubbleHelper()
-    let btBaseUrl = "https://bt1.bard.garden:21433"
+    let btBaseUrl = "https://files.bt2.bard.garden:21433"
 
     enum CancellableRequestType {
         case contacts
