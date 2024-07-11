@@ -211,6 +211,10 @@ extension AllTribeFeedsCollectionViewController {
         
         fetchItems()
         loadRecommendations()
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0, execute: {
+            self.presentBitTorrentSearchViewController()
+        })
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -705,6 +709,14 @@ extension AllTribeFeedsCollectionViewController {
                 dataSource.apply(snapshot, animatingDifferences: false, completion: nil)
             }
         }
+    }
+    
+    func presentBitTorrentSearchViewController() {
+        let bitTorrentSearchVC = BitTorrentSearchViewController.instantiate()
+        addChild(bitTorrentSearchVC)
+        bitTorrentSearchVC.view.frame = view.bounds
+        view.addSubview(bitTorrentSearchVC.view)
+        bitTorrentSearchVC.didMove(toParent: self)
     }
 }
 
