@@ -38,17 +38,23 @@
                         <color key="textColor" name="Text"/>
                         <nil key="highlightedColor"/>
                     </label>
+                    <activityIndicatorView hidden="YES" opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" style="gray" translatesAutoresizingMaskIntoConstraints="NO" id="Kob-rh-7la">
+                        <rect key="frame" x="150" y="12" width="20" height="20"/>
+                    </activityIndicatorView>
                 </subviews>
                 <constraints>
+                    <constraint firstItem="Kob-rh-7la" firstAttribute="centerX" secondItem="H2p-sc-9uM" secondAttribute="centerX" id="1aJ-sv-VMs"/>
                     <constraint firstItem="qfy-JY-Zwm" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leading" constant="35" id="GaI-PF-RfS"/>
                     <constraint firstItem="9er-5R-6FQ" firstAttribute="centerY" secondItem="qfy-JY-Zwm" secondAttribute="centerY" id="eb2-p8-fPc"/>
                     <constraint firstItem="9er-5R-6FQ" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" constant="13" id="ewq-jK-S6z"/>
                     <constraint firstItem="qfy-JY-Zwm" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" constant="13" id="huo-kY-sez"/>
+                    <constraint firstItem="Kob-rh-7la" firstAttribute="centerY" secondItem="H2p-sc-9uM" secondAttribute="centerY" id="kv9-Gw-UUe"/>
                     <constraint firstAttribute="trailing" secondItem="9er-5R-6FQ" secondAttribute="trailing" constant="26" id="nOM-pJ-E8o"/>
                 </constraints>
             </tableViewCellContentView>
             <viewLayoutGuide key="safeArea" id="njF-e1-oar"/>
             <connections>
+                <outlet property="loadingWheel" destination="Kob-rh-7la" id="WIs-ZK-8yf"/>
                 <outlet property="seederCountLabel" destination="9er-5R-6FQ" id="xwC-7b-NoA"/>
                 <outlet property="torrentNameLabel" destination="qfy-JY-Zwm" id="bPS-vb-qFY"/>
             </connections>
