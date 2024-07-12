@@ -78,7 +78,11 @@ extension SphinxOnionManager {
         )
     }
     
-    func downloadTorrentViaMagnet(magnetLink:String,magnetDetails:MagnetDetailsResponse){
+    func downloadTorrentViaMagnet(
+        magnetLink:String,
+        magnetDetails:MagnetDetailsResponse,
+        completion: @escaping (Bool) -> ()
+    ){
         guard let initialPeers = magnetDetails.seenPeers,
         let authDict = btAuthDict,
         let authString = unpackAuthString(dict: authDict) else{
@@ -90,7 +94,7 @@ extension SphinxOnionManager {
             magnetLink: magnetLink,
             initialPeers: initialPeers,
             callback: { success in
-                print(success)
+                completion(success)
             })
     }
     

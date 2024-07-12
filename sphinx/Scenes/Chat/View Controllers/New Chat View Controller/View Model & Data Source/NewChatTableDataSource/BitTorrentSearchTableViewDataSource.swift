@@ -13,7 +13,7 @@ import UIKit
 class BitTorrentSearchTableViewDataSource : NSObject, UITableViewDataSource, UITableViewDelegate {
     var btSearchResults = [BTFeedSearchDataMapper]()
     var linkedTableView : UITableView? = nil
-    var getMagnetDetailsCallback: ((MagnetDetailsResponse?) -> Void)?
+    var getMagnetDetailsCallback: ((String, MagnetDetailsResponse?) -> Void)?
     
     override init() {
         super.init()
@@ -23,7 +23,7 @@ class BitTorrentSearchTableViewDataSource : NSObject, UITableViewDataSource, UIT
         SphinxOnionManager.sharedInstance.authorizeBT(callback: {success in
             if(success){
                 SphinxOnionManager.sharedInstance.searchAllTorrents(
-                keyword: "hibiscus town",
+                keyword: "the matrix",
                 callback: { [self] results in
                     self.btSearchResults = results
                     linkedTableView?.reloadData()
@@ -34,7 +34,6 @@ class BitTorrentSearchTableViewDataSource : NSObject, UITableViewDataSource, UIT
     
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        
         return btSearchResults.count
     }
     
@@ -51,15 +50,19 @@ class BitTorrentSearchTableViewDataSource : NSObject, UITableViewDataSource, UIT
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let result = btSearchResults[indexPath.row]
-        if let magnetLink = result.magnet_link{
+        if let magnetLink = result.magnet_link {
             SphinxOnionManager.sharedInstance.getMagnetDetails(
                 data: result,
-                callback: {detailsResponse in
-                    if let responseCallback = self.getMagnetDetailsCallback{
-                        responseCallback(detailsResponse)
+                callback: { detailsResponse in
+                    if let responseCallback = self.getMagnetDetailsCallback {
+                        responseCallback(magnetLink, detailsResponse)
                     }
                 })
         }
+    }
+    
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 80.0
     }
     
 }

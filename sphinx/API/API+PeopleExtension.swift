@@ -121,7 +121,7 @@ extension API {
         authorizeDict: [String: String],
         magnetLink: String,
         initialPeers: [String],
-        callback: @escaping ((Bool?) -> ())
+        callback: @escaping ((Bool) -> ())
     ) {
         var params = [String: AnyObject]()
         var options = [String: AnyObject]()
@@ -138,7 +138,7 @@ extension API {
             headers: authorizeDict,
             method: "POST"
         ) else {
-            callback(nil)
+            callback(false)
             return
         }
 
@@ -152,7 +152,7 @@ extension API {
                     let responseString = String(data: data, encoding: .utf8)
                     print("Response data: \(responseString ?? "nil")")
                 }
-                callback(nil)
+                callback(false)
             }
         }
     }
