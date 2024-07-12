@@ -55,7 +55,7 @@ class BitTorrentSearchViewController: UIViewController {
         bitTorrentSearchTableView.dataSource = bitTorrentSearchTableViewDataSource
         bitTorrentSearchTableView.delegate = bitTorrentSearchTableViewDataSource
         bitTorrentSearchTableViewDataSource?.linkedTableView = bitTorrentSearchTableView
-        bitTorrentSearchTableViewDataSource?.searchBitTorrent()
+        bitTorrentSearchTableViewDataSource?.searchBitTorrent(keyword: "hercules")
         bitTorrentSearchTableViewDataSource?.getMagnetDetailsCallback = { [weak self] magnetLink, details in
             self?.showMagnetDetails(magnetLink: magnetLink, details: details)
         }

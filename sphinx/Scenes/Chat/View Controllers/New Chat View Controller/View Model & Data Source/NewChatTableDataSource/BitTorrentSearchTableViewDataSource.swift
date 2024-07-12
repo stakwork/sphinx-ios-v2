@@ -17,11 +17,11 @@ class BitTorrentSearchTableViewDataSource: NSObject, UITableViewDataSource, UITa
         super.init()
     }
 
-    func searchBitTorrent() {
+    func searchBitTorrent(keyword:String) {
         SphinxOnionManager.sharedInstance.authorizeBT(callback: { success in
             if(success) {
                 SphinxOnionManager.sharedInstance.searchAllTorrents(
-                    keyword: "the matrix",
+                    keyword: keyword,
                     callback: { [self] results in
                         self.btSearchResults = results
                         linkedTableView?.reloadData()
@@ -53,7 +53,6 @@ class BitTorrentSearchTableViewDataSource: NSObject, UITableViewDataSource, UITa
             }
             let result = btSearchResults[indexPath.row]
             cell.configure(withTitle: result.name ?? "", seeders: result.seeders ?? 0)
-            cell.isLoading = true
             return cell
         case .magnetDetails:
             let cell = tableView.dequeueReusableCell(withIdentifier: "BTFileTableViewCell", for: indexPath)
@@ -69,6 +68,10 @@ class BitTorrentSearchTableViewDataSource: NSObject, UITableViewDataSource, UITa
         switch dataSourceType {
         case .searchResults:
             let result = btSearchResults[indexPath.row]
+            guard let cell = tableView.dequeueReusableCell(withIdentifier: "BTSearchResultTableViewCell", for: indexPath) as? BTSearchResultTableViewCell else {
+                fatalError("Unexpected cell type")
+            }
+            cell.isLoading = true
             if let magnetLink = result.magnet_link {
                 SphinxOnionManager.sharedInstance.getMagnetDetails(
                     data: result,
