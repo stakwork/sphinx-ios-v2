@@ -81,6 +81,12 @@ extension SphinxOnionManager {
             
             ///Handling async tag
             handleAsyncTag(asyncTag: rr.asyncpayTag)
+            
+            ///Handling pings
+            handlePing(ping: rr.ping)
+            
+            ///Handling ping done
+            handlePingDone(msgs: rr.msgs)
 
             ///Handling mute levels
             handleMuteLevels(rr: rr)
@@ -305,6 +311,37 @@ extension SphinxOnionManager {
             }
         }
     }
+    
+    func handlePing(ping: String?) {
+        if let ping = ping {
+            if let (paymentHash, timestamp) = ping.pingComponents {
+                pingsMap[paymentHash] = timestamp
+            }
+        }
+    }
+    
+    func handlePingDone(msgs: [Msg]) {
+        guard let seed = getAccountSeed() else{
+            return
+        }
+        
+        for paymentHash in msgs.filter({ $0.paymentHash != nil && $0.paymentHash?.isEmpty == false }).compactMap({ $0.paymentHash! }) {
+            if let timestamp = pingsMap[paymentHash], let intTimestamp = UInt64(timestamp) {
+                do {
+                    let rr = try sphinx.pingDone(
+                        seed: seed,
+                        uniqueTime: getTimeWithEntropy(),
+                        state: loadOnionStateAsData(),
+                        pingTs: intTimestamp
+                    )
+                    let _ = handleRunReturn(rr: rr)
+                } catch {
+                    print("Error calling ping done")
+                }
+            }
+        }
+    }
+
     
     func startDelayedRRTimeoutTimer(
         for key: Int

@@ -72,6 +72,8 @@ class SphinxOnionManager : NSObject {
     
     var delayedRRObjects: [Int: RunReturn] = [:]
     var delayedRRTimers: [Int: Timer] = [:]
+    var pingsMap: [String: String] = [:]
+    var readyForPing = false
     
     var msgTotalCounts : MsgTotalCounts? = nil
     
@@ -597,7 +599,10 @@ class SphinxOnionManager : NSObject {
     }
     
     func processMqttMessages(message: CocoaMQTTMessage) {
-        guard let seed = getAccountSeed() else{
+        guard let seed = getAccountSeed() else {
+            return
+        }
+        if !readyForPing && message.topic.contains("ping") {
             return
         }
         do {
