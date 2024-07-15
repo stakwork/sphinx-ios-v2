@@ -46,7 +46,6 @@ class DashboardRootViewController: RootViewController {
         }
     }
     
-    
     internal weak var leftMenuDelegate: LeftMenuDelegate?
     
     internal var managedObjectContext: NSManagedObjectContext!

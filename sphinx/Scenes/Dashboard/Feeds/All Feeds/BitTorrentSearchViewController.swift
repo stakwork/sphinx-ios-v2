@@ -59,6 +59,7 @@ class BitTorrentSearchViewController: UIViewController {
         bitTorrentSearchTableView.dataSource = bitTorrentSearchTableViewDataSource
         bitTorrentSearchTableView.delegate = bitTorrentSearchTableViewDataSource
         bitTorrentSearchTableViewDataSource?.linkedTableView = bitTorrentSearchTableView
+
         bitTorrentSearchTableViewDataSource?.getMagnetDetailsCallback = { [weak self] magnetLink, details in
             self?.showMagnetDetails(magnetLink: magnetLink, details: details)
         }
@@ -125,6 +126,6 @@ class BitTorrentSearchViewController: UIViewController {
     
     func clearResults() {
         bitTorrentSearchTableViewDataSource?.btSearchResults = []
-        bitTorrentSearchTableView.reloadData()
+        bitTorrentSearchTableView?.reloadData()
     }
 }

@@ -26,6 +26,7 @@ class FeedSearchContainerViewController: UIViewController {
     
     var feedType: FeedType? = nil
     var searchTimer: Timer? = nil
+    var didPressEnter : Bool = false
     
     internal let newMessageBubbleHelper = NewMessageBubbleHelper()
     internal let feedsManager = FeedsManager.sharedInstance
@@ -156,8 +157,10 @@ extension FeedSearchContainerViewController {
         for searchQuery: String,
         and type: FeedType?
     ) {
-        if type == nil {
+        let shouldServiceTorrentSearch = type == nil //&& didPressEnter
+        if  shouldServiceTorrentSearch{
             // "All" tab is selected, show BitTorrent search
+            didPressEnter = false
             presentBitTorrentSearchView()
             performBitTorrentSearch(searchQuery: searchQuery)
         } else {

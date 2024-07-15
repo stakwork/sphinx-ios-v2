@@ -167,17 +167,25 @@ class BTMedia: Mappable {
         mtime      <- (map["mtime"], transformToInt64)
     }
     
-    func convertBTMediaToFeedSearchResult(type:FeedType) -> FeedSearchResult {
+    func convertBTMediaToFeedSearchResult(type: FeedType) -> FeedSearchResult {
         let btMedia = self
         let feedId = btMedia.name ?? "Unknown"
         let title = btMedia.name ?? "No Title"
         let feedDescription = "Type: \(btMedia.pathType ?? "Unknown"), Size: \(btMedia.size ?? 0)"
-        let imageUrl = (type == .Podcast) ? "https://png.pngtree.com/png-vector/20211018/ourmid/pngtree-simple-podcast-logo-design-png-image_3991612.png" : "https://png.pngtree.com/png-clipart/20210309/original/pngtree-movie-clip-art-movie-film-field-clapper-board-png-image_5862049.jpg" // Placeholder image URL
+        let imageUrl = (type == .Podcast)
+            ? "https://png.pngtree.com/png-vector/20211018/ourmid/pngtree-simple-podcast-logo-design-png-image_3991612.png"
+            : "https://png.pngtree.com/png-clipart/20210309/original/pngtree-movie-clip-art-movie-film-field-clapper-board-png-image_5862049.jpg" // Placeholder image URL
         var feedURLPath = ""
-        let extensionString = (type == .Podcast) ? (".mp3") : (".mp4")
-        if let fileName = btMedia.name,
-           fileName.lowercased().contains(extensionString){
-            feedURLPath = String(describing: "\(API.sharedInstance.btBaseUrl)/\(fileName)")
+        
+        if let fileName = btMedia.name?.lowercased() {
+            let videoExtensions = [".m4v", ".avi", ".mp4", ".mov"]
+            let audioExtensions = [".mp3", ".m4a", ".aac", ".wav", ".ogg", ".flac", ".wma", ".aiff", ".opus"]
+            
+            if type == .Podcast && audioExtensions.contains(where: fileName.hasSuffix) {
+                feedURLPath = "\(API.sharedInstance.btBaseUrl)/\(btMedia.name!)"
+            } else if type == .Video && videoExtensions.contains(where: fileName.hasSuffix) {
+                feedURLPath = "\(API.sharedInstance.btBaseUrl)/\(btMedia.name!)"
+            }
         }
         
         return FeedSearchResult(feedId, title, feedDescription, imageUrl, feedURLPath, type)
