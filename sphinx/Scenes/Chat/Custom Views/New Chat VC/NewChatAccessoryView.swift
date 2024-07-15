@@ -124,14 +124,14 @@ extension NewChatAccessoryView {
                 with: message,
                 delegate: delegate
             )
+            messageFieldView.textView.becomeFirstResponder()
         } else if let podcastComment = podcastComment {
             messageReplyView.configureForKeyboard(
                 with: podcastComment,
                 and: delegate
             )
+            messageFieldView.textView.becomeFirstResponder()
         }
-        
-        messageFieldView.textView.becomeFirstResponder()
     }
     
     func resetReplyView() {
