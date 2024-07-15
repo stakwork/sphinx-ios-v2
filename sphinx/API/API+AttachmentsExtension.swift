@@ -11,7 +11,10 @@ import Alamofire
 import SwiftyJSON
 
 extension API {
-    public func askAuthentication(host:String,callback: @escaping AskAuthenticationCallback) {
+    public func askAuthentication(
+        host: String,
+        callback: @escaping AskAuthenticationCallback
+    ) {
         let url = "https://\(host)/ask"
         
         guard let request = createRequest(url, bodyParams: nil, method: "GET") else {

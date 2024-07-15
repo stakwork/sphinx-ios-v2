@@ -13,7 +13,11 @@ extension NewChatViewController : ChatMessageTextFieldViewDelegate {
         ChatTrackingHandler.shared.saveOngoingMessage(with: text, chatId: chat?.id)
     }
     
-    func shouldSendMessage(text: String, type: Int, completion: @escaping (Bool) -> ()) {
+    func shouldSendMessage(
+        text: String,
+        type: Int,
+        completion: @escaping (Bool, String?) -> ()
+    ) {
         bottomView.resetReplyView()
         
         ChatTrackingHandler.shared.deleteReplyableMessage(with: chat?.id)
@@ -22,12 +26,12 @@ extension NewChatViewController : ChatMessageTextFieldViewDelegate {
             text: text,
             type: type,
             provisionalMessage: nil,
-            completion: { success in    
+            completion: { (success, errorMsg) in
                 if success {
                     self.scrollToBottomAfterSend()
                 }
                 
-                completion(success)
+                completion(success, errorMsg)
             }
         )
     }

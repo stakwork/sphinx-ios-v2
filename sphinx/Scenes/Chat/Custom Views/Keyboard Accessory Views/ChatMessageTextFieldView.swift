@@ -11,7 +11,7 @@ import UIKit
 @objc protocol ChatMessageTextFieldViewDelegate {
     func didDetectPossibleMention(mentionText: String)
     func didDetectPossibleMacro(macro:String)
-    func shouldSendMessage(text: String, type: Int, completion: @escaping (Bool) -> ())
+    func shouldSendMessage(text: String, type: Int, completion: @escaping (Bool, String?) -> ())
     
     @objc optional func didChangeText(text: String)
     @objc optional func didTapSendBlueButton()
@@ -112,11 +112,11 @@ class ChatMessageTextFieldView: UIView {
         
         clearMessage()
         
-        delegate?.shouldSendMessage(text: text, type: messageType, completion: { success in
+        delegate?.shouldSendMessage(text: text, type: messageType, completion: { (success, errorMsg) in
             if !success {
                 AlertHelper.showAlert(
                     title: "generic.error.title".localized,
-                    message: "generic.message.error".localized
+                    message: errorMsg ?? "generic.message.error".localized
                 )
                 self.textView.text = text
             }
