@@ -688,6 +688,7 @@ extension SphinxOnionManager {
         
         restoredContactInfoTracker = []
         
+        requestPings()
         endWatchdogTime()
         resetFromRestore()
         purgeObsoleteChats()
@@ -695,6 +696,23 @@ extension SphinxOnionManager {
         
         if let maxMessageIndex = TransactionMessage.getMaxIndex() {
             UserDefaults.Keys.maxMessageIndex.set(maxMessageIndex)
+        }
+    }
+    
+    func requestPings() {
+        guard let seed = getAccountSeed() else{
+            return
+        }
+        readyForPing = true
+        do {
+            let rr = try sphinx.fetchPings(
+                seed: seed,
+                uniqueTime: getTimeWithEntropy(),
+                state: loadOnionStateAsData()
+            )
+            let _ = handleRunReturn(rr: rr)
+        } catch {
+            print("Error fetching pings")
         }
     }
     
