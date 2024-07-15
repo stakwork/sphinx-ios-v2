@@ -46,10 +46,6 @@ class BitTorrentSearchViewController: UIViewController {
             .instantiate()
         return viewController
     }
-    
-    func updateSearchTerm(keyword:String){
-        bitTorrentSearchTableViewDataSource?.searchBitTorrent(keyword: keyword)
-    }
 
     func configureTableView() {
         bitTorrentSearchTableViewDataSource = BitTorrentSearchTableViewDataSource()
@@ -116,11 +112,11 @@ class BitTorrentSearchViewController: UIViewController {
                 if (success) {
                     NewMessageBubbleHelper().showGenericMessageView(text: "Torrent download started! Check back in a bit to consume your content")
                     self.bitTorrentDetailsModalView.isHidden = true
-//                    self.clearResults()
+                    self.clearResults()
                 } else {
                     NewMessageBubbleHelper().showGenericMessageView(text: "There is an issue downloading the torrent. Please try again")
                     self.bitTorrentDetailsModalView.isHidden = true
-//                    self.clearResults()
+                    self.clearResults()
                 }
             }
         )
@@ -128,6 +124,20 @@ class BitTorrentSearchViewController: UIViewController {
     
     func clearResults() {
         bitTorrentSearchTableViewDataSource?.btSearchResults = []
+        configureTableView()
         bitTorrentSearchTableView?.reloadData()
+    }
+    
+    func resetForNewSearch() {
+        clearResults()
+        bitTorrentDetailsModalView.isHidden = true
+        selectedMagnetLink = nil
+        selectedMagnetDetails = nil
+        isLoadingTorrent = false
+    }
+
+    func updateSearchTerm(keyword: String) {
+        resetForNewSearch()
+        bitTorrentSearchTableViewDataSource?.searchBitTorrent(keyword: keyword)
     }
 }
