@@ -46,6 +46,10 @@ class BitTorrentSearchViewController: UIViewController {
             .instantiate()
         return viewController
     }
+    
+    func updateSearchTerm(keyword:String){
+        bitTorrentSearchTableViewDataSource?.searchBitTorrent(keyword: keyword)
+    }
 
     func configureTableView() {
         bitTorrentSearchTableViewDataSource = BitTorrentSearchTableViewDataSource()
@@ -118,5 +122,10 @@ class BitTorrentSearchViewController: UIViewController {
                 }
             }
         )
+    }
+    
+    func clearResults() {
+        bitTorrentSearchTableViewDataSource?.btSearchResults = []
+        bitTorrentSearchTableView.reloadData()
     }
 }

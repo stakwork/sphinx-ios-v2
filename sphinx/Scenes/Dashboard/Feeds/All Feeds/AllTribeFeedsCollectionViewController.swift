@@ -211,10 +211,6 @@ extension AllTribeFeedsCollectionViewController {
         
         fetchItems()
         loadRecommendations()
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: {
-            self.presentBitTorrentSearchViewController()
-        })
     }
     
     override func viewWillAppear(_ animated: Bool) {
