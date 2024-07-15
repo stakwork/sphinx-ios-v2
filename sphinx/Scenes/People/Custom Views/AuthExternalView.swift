@@ -51,8 +51,8 @@ class AuthExternalView: CommonModalView {
         verifyExternal()
     }
     
-    func verifyExternal(){
-        if let query = self.query{
+    func verifyExternal() {
+        if let query = self.query {
             SphinxOnionManager.sharedInstance.processPeopleAuthChallenge(
                 urlString: query,
                 completion: { authParams in
@@ -64,10 +64,15 @@ class AuthExternalView: CommonModalView {
                     }
                     self.authorizationDone(success: authParams != nil, host: self.authInfo?.host ?? "")
             })
-        }
-        else{
-            AlertHelper.showAlert(title: "Error", message: "Could not parse auth request")
-            self.authorizationDone(success: false, host: self.authInfo?.host ?? "")
+        } else {
+            AlertHelper.showAlert(
+                title: "Error",
+                message: "Could not parse auth request"
+            )
+            authorizationDone(
+                success: false,
+                host: self.authInfo?.host ?? ""
+            )
         }
     }
     
