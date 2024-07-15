@@ -209,7 +209,7 @@ extension NewPodcastPlayerViewController : PodcastEpisodesDSDelegate {
     }
 }
 
-extension NewPodcastPlayerViewController : PodcastPlayerViewDelegate {
+ extension NewPodcastPlayerViewController : PodcastPlayerViewDelegate {
     
     func didTapSubscriptionToggleButton() {
         podcast.isSubscribedToFromSearch.toggle()

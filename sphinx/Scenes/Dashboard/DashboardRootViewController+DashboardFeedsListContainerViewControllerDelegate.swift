@@ -192,27 +192,48 @@ extension DashboardRootViewController {
         for feedResult: FeedSearchResult
     ) {
         //
-        let videoEpisode = Video("abc123")
-        //videoEpisode.videoFeed = "Jimmy's Pirate Emporium"
-        videoEpisode.itemURL = URL(string: feedResult.feedURLPath)
-        videoEpisode.mediaURL = URL(string: feedResult.feedURLPath)
-        videoEpisode.title = feedResult.title
-        videoEpisode.videoDescription = feedResult.feedDescription
-        videoEpisode.thumbnailURL = URL(string: feedResult.imageUrl ?? "")
-        
-        let viewController = VideoFeedEpisodePlayerContainerViewController
-            .instantiate(
-                videoPlayerEpisode: videoEpisode,
-                dismissButtonStyle: ModalDismissButtonStyle.backArrow,
-                delegate: self,
-                boostDelegate: self
-            )
+        if(feedResult.feedType == .Video){
+            let videoEpisode = Video("abc123")
+            //videoEpisode.videoFeed = "Jimmy's Pirate Emporium"
+            videoEpisode.itemURL = URL(string: feedResult.feedURLPath)
+            videoEpisode.mediaURL = URL(string: feedResult.feedURLPath)
+            videoEpisode.title = feedResult.title
+            videoEpisode.videoDescription = feedResult.feedDescription
+            videoEpisode.thumbnailURL = URL(string: feedResult.imageUrl ?? "")
+            
+            let viewController = VideoFeedEpisodePlayerContainerViewController
+                .instantiate(
+                    videoPlayerEpisode: videoEpisode,
+                    dismissButtonStyle: ModalDismissButtonStyle.backArrow,
+                    delegate: self,
+                    boostDelegate: self
+                )
 
-        let navController = UINavigationController()
-        navController.viewControllers = [viewController]
-        navController.modalPresentationStyle = .automatic
-        navController.isNavigationBarHidden = true
-        navigationController?.present(navController, animated: true)
+            let navController = UINavigationController()
+            navController.viewControllers = [viewController]
+            navController.modalPresentationStyle = .automatic
+            navController.isNavigationBarHidden = true
+            navigationController?.present(navController, animated: true)
+        }
+        else if feedResult.feedType == .Podcast{
+            let fakeFeed = PodcastFeed("xyz456", false)
+            fakeFeed.title = "BitTorrent Feed"
+            let episode = PodcastEpisode("abc123")
+            episode.title = feedResult.title
+            episode.urlPath = feedResult.feedURLPath
+            fakeFeed.currentEpisodeId = "abc123"
+            fakeFeed.episodes = [episode]
+            
+            podcastSmallPlayer.configureForBitTorrent(
+                itemID: "abc123",
+                feed: fakeFeed,
+                delegate: self,
+                andKey: PodcastDelegateKeys.DashboardSmallPlayerBar.rawValue
+            )
+            
+            presentPodcastPlayerFor(fakeFeed, queuedEpisode: episode, fromDownloadedSection: false)
+        }
+        
     }
     
     

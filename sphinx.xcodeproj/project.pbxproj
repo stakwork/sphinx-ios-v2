@@ -659,6 +659,7 @@
 		CE49E13229ACEFAA006D3CCE /* VoIPPushMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE49E13129ACEFAA006D3CCE /* VoIPPushMessage.swift */; };
 		CE4A85932B5F051600813B59 /* SphinxOnionManager+TribesExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE4A85922B5F051600813B59 /* SphinxOnionManager+TribesExtension.swift */; };
 		CE4B53FD2AFC389C00708A0C /* SphinxOnionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE4B53FC2AFC389C00708A0C /* SphinxOnionManager.swift */; };
+		CE50CB9F2C3DBB45009E71FB /* SphinxOnionManager+BTClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE50CB9E2C3DBB45009E71FB /* SphinxOnionManager+BTClient.swift */; };
 		CE51F350298870BF00ABBACB /* MemberBadgeDetailVM.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE51F34F298870BF00ABBACB /* MemberBadgeDetailVM.swift */; };
 		CE51F3562988743E00ABBACB /* MemberDetailTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE51F3542988743E00ABBACB /* MemberDetailTableViewCell.swift */; };
 		CE51F3572988743E00ABBACB /* MemberBadgeDetailTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = CE51F3552988743E00ABBACB /* MemberBadgeDetailTableViewCell.xib */; };
@@ -721,6 +722,10 @@
 		CEEFD6082A66FD2D00FD7E73 /* ThreadListTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEEFD6062A66FD2D00FD7E73 /* ThreadListTableViewCell.swift */; };
 		CEEFD6092A66FD2D00FD7E73 /* ThreadListTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = CEEFD6072A66FD2D00FD7E73 /* ThreadListTableViewCell.xib */; };
 		CEEFD60B2A6891E100FD7E73 /* ThreadHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEEFD60A2A6891E100FD7E73 /* ThreadHeaderView.swift */; };
+		CEF3414A2C40235B007FC173 /* BitTorrentSearchViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF341492C40235B007FC173 /* BitTorrentSearchViewController.swift */; };
+		CEF3414C2C40358B007FC173 /* BitTorrentSearchTableViewDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF3414B2C40358B007FC173 /* BitTorrentSearchTableViewDataSource.swift */; };
+		CEF341522C407FD8007FC173 /* BTSearchResultTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF341502C407FD8007FC173 /* BTSearchResultTableViewCell.swift */; };
+		CEF341532C407FD8007FC173 /* BTSearchResultTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = CEF341512C407FD8007FC173 /* BTSearchResultTableViewCell.xib */; };
 		CEF821D62963B68600CBB28F /* DiscoverTribesWebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF821D52963B68600CBB28F /* DiscoverTribesWebViewController.swift */; };
 		CEF88DCA29B64E5100DC1C40 /* UnifiedEpisodeView.xib in Resources */ = {isa = PBXBuildFile; fileRef = CEF88DC929B64E5000DC1C40 /* UnifiedEpisodeView.xib */; };
 		CEF88DCC29B64F4F00DC1C40 /* UnifiedEpisodeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF88DCB29B64F4F00DC1C40 /* UnifiedEpisodeView.swift */; };
@@ -1842,6 +1847,7 @@
 		CE49E13129ACEFAA006D3CCE /* VoIPPushMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoIPPushMessage.swift; sourceTree = "<group>"; };
 		CE4A85922B5F051600813B59 /* SphinxOnionManager+TribesExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SphinxOnionManager+TribesExtension.swift"; sourceTree = "<group>"; };
 		CE4B53FC2AFC389C00708A0C /* SphinxOnionManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SphinxOnionManager.swift; sourceTree = "<group>"; };
+		CE50CB9E2C3DBB45009E71FB /* SphinxOnionManager+BTClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SphinxOnionManager+BTClient.swift"; sourceTree = "<group>"; };
 		CE51F34F298870BF00ABBACB /* MemberBadgeDetailVM.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberBadgeDetailVM.swift; sourceTree = "<group>"; };
 		CE51F3542988743E00ABBACB /* MemberDetailTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberDetailTableViewCell.swift; sourceTree = "<group>"; };
 		CE51F3552988743E00ABBACB /* MemberBadgeDetailTableViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = MemberBadgeDetailTableViewCell.xib; sourceTree = "<group>"; };
@@ -1952,6 +1958,10 @@
 		CEEFD6062A66FD2D00FD7E73 /* ThreadListTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadListTableViewCell.swift; sourceTree = "<group>"; };
 		CEEFD6072A66FD2D00FD7E73 /* ThreadListTableViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ThreadListTableViewCell.xib; sourceTree = "<group>"; };
 		CEEFD60A2A6891E100FD7E73 /* ThreadHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadHeaderView.swift; sourceTree = "<group>"; };
+		CEF341492C40235B007FC173 /* BitTorrentSearchViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BitTorrentSearchViewController.swift; sourceTree = "<group>"; };
+		CEF3414B2C40358B007FC173 /* BitTorrentSearchTableViewDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BitTorrentSearchTableViewDataSource.swift; sourceTree = "<group>"; };
+		CEF341502C407FD8007FC173 /* BTSearchResultTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BTSearchResultTableViewCell.swift; sourceTree = "<group>"; };
+		CEF341512C407FD8007FC173 /* BTSearchResultTableViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = BTSearchResultTableViewCell.xib; sourceTree = "<group>"; };
 		CEF821D52963B68600CBB28F /* DiscoverTribesWebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverTribesWebViewController.swift; sourceTree = "<group>"; };
 		CEF88DC929B64E5000DC1C40 /* UnifiedEpisodeView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = UnifiedEpisodeView.xib; sourceTree = "<group>"; };
 		CEF88DCB29B64F4F00DC1C40 /* UnifiedEpisodeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedEpisodeView.swift; sourceTree = "<group>"; };
@@ -3874,6 +3884,7 @@
 				47CEA4532A449D6D00E936CB /* NewChatTableDataSource+AudioExtension.swift */,
 				474934132A4C66AD0048C560 /* NewChatTableDataSource+SearchMessagesExtension.swift */,
 				475C56692A7BEBBF00E6F9A9 /* ThreadTableDataSource */,
+				CEF3414B2C40358B007FC173 /* BitTorrentSearchTableViewDataSource.swift */,
 			);
 			path = NewChatTableDataSource;
 			sourceTree = "<group>";
@@ -4123,6 +4134,7 @@
 				475CD5AB287E1198003FF171 /* CrypterManager.swift */,
 				CECE9C2A2AA7779E0039B843 /* WordsList.swift */,
 				4741EBEA2BFF726300EFF49E /* SphinxOnionManager+ReadMuteExtension.swift */,
+				CE50CB9E2C3DBB45009E71FB /* SphinxOnionManager+BTClient.swift */,
 			);
 			path = Crypter;
 			sourceTree = "<group>";
@@ -4304,6 +4316,15 @@
 				CEBF0D042975C367006C1F21 /* DiscoverTribesTagSelectionVM.swift */,
 			);
 			path = Models;
+			sourceTree = "<group>";
+		};
+		CEF3414D2C407DCE007FC173 /* BitTorrent */ = {
+			isa = PBXGroup;
+			children = (
+				CEF341502C407FD8007FC173 /* BTSearchResultTableViewCell.swift */,
+				CEF341512C407FD8007FC173 /* BTSearchResultTableViewCell.xib */,
+			);
+			path = BitTorrent;
 			sourceTree = "<group>";
 		};
 		CEF821D42963B67000CBB28F /* DiscoverTribes */ = {
@@ -4612,6 +4633,7 @@
 			children = (
 				CE67845F2968B0E000342905 /* FeedsManager.swift */,
 				F3D52184272A939900918267 /* AllTribeFeedsCollectionViewController.swift */,
+				CEF341492C40235B007FC173 /* BitTorrentSearchViewController.swift */,
 			);
 			path = "All Feeds";
 			sourceTree = "<group>";
@@ -4619,6 +4641,7 @@
 		F3D86DBA26B106C000EB9711 /* Feed Content */ = {
 			isa = PBXGroup;
 			children = (
+				CEF3414D2C407DCE007FC173 /* BitTorrent */,
 				472161AD293913180088B87B /* Recommendations */,
 				F3D86DC326B157F600EB9711 /* DashboardFeedCollectionViewSectionHeader.swift */,
 				F3D86DC126B157D400EB9711 /* DashboardFeedCollectionViewSectionHeader.xib */,
@@ -4929,6 +4952,7 @@
 				4797E7CF24B8F4DC00D13270 /* AppAppearenceView.xib in Resources */,
 				CE3D8CAD29B1124E00EDB637 /* FeedItemDetailHeaderCell.xib in Resources */,
 				4797E76724B8E12E00D13270 /* Localizable.strings in Resources */,
+				CEF341532C407FD8007FC173 /* BTSearchResultTableViewCell.xib in Resources */,
 				472161D5293A681D0088B87B /* RecommendationDetailsView.xib in Resources */,
 				47A79D402444EEFF005CD72F /* MessageOptionView.xib in Resources */,
 				F3CE638126AFF93F006E37A0 /* FeedFilterChipCollectionViewCell.xib in Resources */,
@@ -5150,6 +5174,7 @@
 				CECE9C2B2AA7779E0039B843 /* WordsList.swift in Sources */,
 				47F2289E23672A5E001429A4 /* ImagePickerManager.swift in Sources */,
 				CEE49BF32A1BBC70009E0EC4 /* MediaStorageTypeSummaryTableViewCell.swift in Sources */,
+				CE50CB9F2C3DBB45009E71FB /* SphinxOnionManager+BTClient.swift in Sources */,
 				4701462B2A3FC0A900A00DF8 /* NewChatTableDataSource+AttachmentsExtension.swift in Sources */,
 				CE9A185A2A1D736700F176DE /* ProfileManageStorageSourceDetailsVC.swift in Sources */,
 				F32A696526CFEF600004B8B3 /* PodcastFeed+Properties.swift in Sources */,
@@ -5250,6 +5275,7 @@
 				470DB25423FAE43400D29FA5 /* SphinxCache.swift in Sources */,
 				47393E682461F6F600E6F93E /* KeychainManager.swift in Sources */,
 				47BF7D4B25A8A59100593489 /* API+VersionsExtension.swift in Sources */,
+				CEF3414A2C40235B007FC173 /* BitTorrentSearchViewController.swift in Sources */,
 				475E41612382E28800928931 /* UIButton.swift in Sources */,
 				47308E0124FEE6E600FFAC6F /* SocketExtensions.swift in Sources */,
 				CE2743B82A2931BF007A0FDC /* MediaDeletionConfirmationView.swift in Sources */,
@@ -5637,6 +5663,7 @@
 				473596962A7005E500489606 /* ThreadTableCellState.swift in Sources */,
 				474C7A5528D3A7A2007A3E17 /* sphinxrs.swift in Sources */,
 				F38744E3271FDA9200E28C84 /* VideoFeed+DisplayUtils.swift in Sources */,
+				CEF3414C2C40358B007FC173 /* BitTorrentSearchTableViewDataSource.swift in Sources */,
 				472092BD2A2536F800468796 /* NewChatViewController+PodcastExtension.swift in Sources */,
 				F360123326E96B31009B8DC0 /* API+FeedSearchUtils.swift in Sources */,
 				47468FD5233162D40072124A /* AlertHelper.swift in Sources */,
@@ -5653,6 +5680,7 @@
 				47A79D3E2444EEF3005CD72F /* MessageOptionView.swift in Sources */,
 				478BD8B62829B67300C733FD /* TribeMemberPopupViewController.swift in Sources */,
 				47FA18BE242534CD00469C8F /* UIViewController.swift in Sources */,
+				CEF341522C407FD8007FC173 /* BTSearchResultTableViewCell.swift in Sources */,
 				471161DD29156401008EAFF2 /* ContentFeedItem+FetchUtils.swift in Sources */,
 				470F5CAB243E7D27007E054F /* Notification.Name.swift in Sources */,
 				47308E0924FEE6E600FFAC6F /* SocketEngineWebsocket.swift in Sources */,

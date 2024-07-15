@@ -26,6 +26,7 @@ class FeedSearchContainerViewController: UIViewController {
     
     var feedType: FeedType? = nil
     var searchTimer: Timer? = nil
+    var didPressEnter : Bool = false
     
     internal let newMessageBubbleHelper = NewMessageBubbleHelper()
     internal let feedsManager = FeedsManager.sharedInstance
@@ -50,6 +51,10 @@ class FeedSearchContainerViewController: UIViewController {
         FeedSearchEmptyStateViewController.instantiate()
     }()
     
+    internal lazy var bitTorrentSearchViewController: BitTorrentSearchViewController = {
+        let vc = BitTorrentSearchViewController.instantiate()
+        return vc
+    }()
     
     private var isShowingStartingEmptyStateVC: Bool = true
 }
@@ -109,17 +114,19 @@ extension FeedSearchContainerViewController {
     ) {
         if searchQuery.isEmpty {
             presentInitialStateView()
+        } else if type == nil && !didPressEnter {
+            // Show loading or waiting state for BitTorrent search
+            presentBitTorrentSearchView()
         } else {
-            presentResultsListView()
-            
             fetchResults(for: searchQuery, and: type)
+            didPressEnter = false  // Reset the flag after use
         }
     }
     
     
-    func presentResultsListView() {
+    private func presentResultsListView() {
         isShowingStartingEmptyStateVC = false
-        
+        removeChildVC(child: bitTorrentSearchViewController)
         removeChildVC(child: emptyStateViewController)
         
         addChildVC(
@@ -133,6 +140,9 @@ extension FeedSearchContainerViewController {
         isShowingStartingEmptyStateVC = true
         
         removeChildVC(child: searchResultsViewController)
+        removeChildVC(child: bitTorrentSearchViewController)
+        
+        bitTorrentSearchViewController.clearResults()  // Clear BitTorrent search results
         
         emptyStateViewController.feedType = feedType
         
@@ -151,58 +161,69 @@ extension FeedSearchContainerViewController {
         for searchQuery: String,
         and type: FeedType?
     ) {
-        
-        var newFetchRequest: NSFetchRequest<ContentFeed> = ContentFeed.FetchRequests.matching(searchQuery: searchQuery)
-        
-        if let type = type {
+        let shouldServiceTorrentSearch = type == nil //&& didPressEnter
+        if  shouldServiceTorrentSearch{
+            // "All" tab is selected, show BitTorrent search
+            didPressEnter = false
+            presentBitTorrentSearchView()
+            performBitTorrentSearch(searchQuery: searchQuery)
+        } else {
+            // Existing logic for other feed types
+            presentResultsListView()  // Make sure to show the regular search results view
+            
+            var newFetchRequest: NSFetchRequest<ContentFeed> = ContentFeed.FetchRequests.matching(searchQuery: searchQuery)
+            
             switch(type) {
-            case FeedType.Podcast:
-                newFetchRequest = PodcastFeed
-                    .FetchRequests
-                    .matching(searchQuery: searchQuery)
-            case FeedType.Video:
-                newFetchRequest = VideoFeed
-                    .FetchRequests
-                    .matching(searchQuery: searchQuery)
+            case .Podcast:
+                newFetchRequest = PodcastFeed.FetchRequests.matching(searchQuery: searchQuery)
+            case .Video:
+                newFetchRequest = VideoFeed.FetchRequests.matching(searchQuery: searchQuery)
             default:
                 break
             }
-        }
-        
-        fetchedResultsController.fetchRequest.sortDescriptors = newFetchRequest.sortDescriptors
-        fetchedResultsController.fetchRequest.predicate = newFetchRequest.predicate
-        
-        do {
-            try fetchedResultsController.performFetch()
-        } catch {
-            AlertHelper.showAlert(
-                title: "Data Loading Error",
-                message: "\(error)"
-            )
-        }
-        
-        ActionsManager.sharedInstance.trackFeedSearch(searchTerm: searchQuery.lowerClean)
-        
-        if let type = type {
             
-            searchResultsViewController.updateWithNew(
-                searchResults: []
-            )
+            fetchedResultsController.fetchRequest.sortDescriptors = newFetchRequest.sortDescriptors
+            fetchedResultsController.fetchRequest.predicate = newFetchRequest.predicate
+            
+            do {
+                try fetchedResultsController.performFetch()
+            } catch {
+                AlertHelper.showAlert(
+                    title: "Data Loading Error",
+                    message: "\(error)"
+                )
+            }
+            
+            searchResultsViewController.updateWithNew(searchResults: [])
             
             searchTimer?.invalidate()
             searchTimer = Timer.scheduledTimer(timeInterval: 0.5, target: self, selector: #selector(fetchRemoteResults(timer:)), userInfo: ["search_query": searchQuery, "feed_type" : type], repeats: false)
-        } else {
-            self.searchResultsViewController.updateWithNew(
-                searchResults: []
-            )
         }
+        
+        ActionsManager.sharedInstance.trackFeedSearch(searchTerm: searchQuery.lowerClean)
+    }
+    
+    private func presentBitTorrentSearchView() {
+        removeChildVC(child: searchResultsViewController)
+        removeChildVC(child: emptyStateViewController)
+        
+        addChildVC(
+            child: bitTorrentSearchViewController,
+            container: contentView
+        )
+    }
+
+    private func performBitTorrentSearch(searchQuery: String) {
+        bitTorrentSearchViewController.bitTorrentSearchTableViewDataSource?.searchBitTorrent(keyword: searchQuery)
     }
     
     @objc func fetchRemoteResults(timer: Timer) {
         if let userInfo = timer.userInfo as? [String: Any] {
-            if let searchQuery = userInfo["search_query"] as? String, let type = userInfo["feed_type"] as? FeedType {
+            if let searchQuery = userInfo["search_query"] as? String, 
+                let type = userInfo["feed_type"] as? FeedType {
                 API.sharedInstance.searchBTFeed(
-                    matching: searchQuery
+                    matching: searchQuery,
+                    type: type
                 ) { [weak self] result in
                     guard let self = self else { return }
                     

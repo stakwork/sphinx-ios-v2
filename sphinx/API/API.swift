@@ -37,6 +37,7 @@ typealias FetchRoutingInfoCallback = ((String?) -> ())
 typealias UpdateRoutingInfoCallback = ((String?, String?) -> ())
 typealias CreateSubscriptionCallback = ((JSON) -> ())
 typealias GetSubscriptionsCallback = (([JSON]) -> ())
+typealias AuthorizeBTCallback = ((NSDictionary?) -> ())
 typealias MuteChatCallback = ((JSON) -> ())
 typealias NotificationLevelCallback = ((JSON) -> ())
 typealias GetAllTribesCallback = (([NSDictionary]) -> ())
@@ -113,6 +114,7 @@ class API {
     var uploadRequest: UploadRequest?
 
     let messageBubbleHelper = NewMessageBubbleHelper()
+    let btBaseUrl = "https://files.bt2.bard.garden:21433"
 
     enum CancellableRequestType {
         case contacts

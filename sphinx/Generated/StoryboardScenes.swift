@@ -82,6 +82,11 @@ internal enum StoryboardScene {
             identifier: "AllTribeFeedsCollectionViewController"
         )
         
+        internal static let bitTorrentSearchViewController = SceneType<BitTorrentSearchViewController>(
+            storyboard: Dashboard.self,
+            identifier: "BitTorrentSearchViewController"
+        )
+        
         
         internal static let FeedSearchContainerViewController = SceneType<FeedSearchContainerViewController>(
             storyboard: Dashboard.self,

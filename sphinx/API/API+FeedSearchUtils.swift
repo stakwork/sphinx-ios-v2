@@ -70,11 +70,10 @@ extension API {
     
     public func searchBTFeed(
             matching queryString: String,
+            type: FeedType,
             then completionHandler: @escaping FeedSearchCompletionHandler
         ) {
-            
-            let hostProtocol = UserDefaults.Keys.isProductionEnv.get(defaultValue: false) ? "https" : "http"
-            let urlString = "https://bt1.bard.garden:21433//?json&q=\(queryString)" // temporary hard code
+            let urlString = "\(btBaseUrl)//?json&q=\(queryString)" // temporary hard code
 
             guard let request = createRequest(
                 urlString,
@@ -96,8 +95,7 @@ extension API {
                         
                         for pathDict in pathsArray {
                             if let media = BTMedia(JSON: pathDict) {
-                                //mediaArray.append(media)
-                                let result = media.convertBTMediaToFeedSearchResult()
+                                let result = media.convertBTMediaToFeedSearchResult(type: type)
                                 if result.feedURLPath.isNotEmpty{
                                     mediaArray.append(result)
                                 }
@@ -169,21 +167,28 @@ class BTMedia: Mappable {
         mtime      <- (map["mtime"], transformToInt64)
     }
     
-    func convertBTMediaToFeedSearchResult() -> FeedSearchResult {
+    func convertBTMediaToFeedSearchResult(type: FeedType) -> FeedSearchResult {
         let btMedia = self
         let feedId = btMedia.name ?? "Unknown"
         let title = btMedia.name ?? "No Title"
         let feedDescription = "Type: \(btMedia.pathType ?? "Unknown"), Size: \(btMedia.size ?? 0)"
-        let imageUrl = "https://png.pngtree.com/png-clipart/20210309/original/pngtree-movie-clip-art-movie-film-field-clapper-board-png-image_5862049.jpg" // Placeholder image URL
+        let imageUrl = (type == .Podcast)
+            ? "https://png.pngtree.com/png-vector/20211018/ourmid/pngtree-simple-podcast-logo-design-png-image_3991612.png"
+            : "https://png.pngtree.com/png-clipart/20210309/original/pngtree-movie-clip-art-movie-film-field-clapper-board-png-image_5862049.jpg" // Placeholder image URL
         var feedURLPath = ""
-        if let fileName = btMedia.name,
-           fileName.contains(".mp4"){
-            feedURLPath = String(describing: "http://guava.whatbox.ca:30433/\(fileName)")
+        
+        if let fileName = btMedia.name?.lowercased() {
+            let videoExtensions = [".m4v", ".avi", ".mp4", ".mov"]
+            let audioExtensions = [".mp3", ".m4a", ".aac", ".wav", ".ogg", ".flac", ".wma", ".aiff", ".opus"]
+            
+            if type == .Podcast && audioExtensions.contains(where: fileName.hasSuffix) {
+                feedURLPath = "\(API.sharedInstance.btBaseUrl)/\(btMedia.name!)"
+            } else if type == .Video && videoExtensions.contains(where: fileName.hasSuffix) {
+                feedURLPath = "\(API.sharedInstance.btBaseUrl)/\(btMedia.name!)"
+            }
         }
         
-        let feedType = FeedType.Podcast // Default feed type
-        
-        return FeedSearchResult(feedId, title, feedDescription, imageUrl, feedURLPath, feedType)
+        return FeedSearchResult(feedId, title, feedDescription, imageUrl, feedURLPath, type)
     }
     
     // Custom transform to handle Int64 and null values
