@@ -13,7 +13,7 @@ extension NewChatViewModel {
         text: String,
         type: Int,
         data: Data,
-        completion: @escaping (Bool) -> ()
+        completion: @escaping (Bool, String?) -> ()
     ) {
         chatDataSource?.setMediaDataForMessageWith(
             messageId: SphinxOnionManager.sharedInstance.uniqueIntHashFromString(stringInput: UUID().uuidString),
@@ -35,7 +35,7 @@ extension NewChatViewModel {
         text: String,
         type: Int,
         provisionalMessage: TransactionMessage?,
-        completion: @escaping (Bool) -> ()
+        completion: @escaping (Bool, String?) -> ()
     ) {
         var messageText = text
         
@@ -50,17 +50,17 @@ extension NewChatViewModel {
         let (_, wrongAmount) = isWrongBotCommandAmount(text: messageText)
         
         if wrongAmount {
-            completion(false)
+            completion(false, "Wrong Amount")
             return
         }
         guard let chat = chat else{
-            completion(false)
+            completion(false, "Chat not found")
             return
         }
         
         let tuuid = threadUUID ?? replyingTo?.threadUUID ?? replyingTo?.uuid
         
-        let validMessage = SphinxOnionManager.sharedInstance.sendMessage(
+        let (validMessage, errorMsg) = SphinxOnionManager.sharedInstance.sendMessage(
             to: contact,
             content: text,
             chat: chat,
@@ -72,7 +72,8 @@ extension NewChatViewModel {
         
         let message = validMessage?.makeProvisional(chat: self.chat)
         updateSnapshotWith(message: message)
-        completion(validMessage != nil)
+        
+        completion(validMessage != nil, errorMsg)
         
         resetReply()
     }
@@ -190,7 +191,7 @@ extension NewChatViewModel {
             text: messageText,
             type: type,
             provisionalMessage: nil,
-            completion: { _ in }
+            completion: { _, _ in }
         )
     }
 }

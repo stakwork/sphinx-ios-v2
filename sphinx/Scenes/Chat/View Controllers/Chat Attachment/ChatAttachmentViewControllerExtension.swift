@@ -60,7 +60,7 @@ extension ChatAttachmentViewController: ChatMessageTextFieldViewDelegate {
         updatePreview(message: text, price: price)
     }
     
-    func shouldSendMessage(text: String, type: Int, completion: @escaping (Bool) -> ()) {
+    func shouldSendMessage(text: String, type: Int, completion: @escaping (Bool, String?) -> ()) {
         shouldSend(message: text, completion: completion)
     }
     
@@ -70,13 +70,13 @@ extension ChatAttachmentViewController: ChatMessageTextFieldViewDelegate {
     
     func shouldSend(
         message: String? = nil,
-        completion: ((Bool) -> ())? = nil
+        completion: ((Bool, String?) -> ())? = nil
     ) {
         if let giphy = selectedGiphy,
             let messageString = giphyHelper.getMessageStringFrom(media: giphy.0, text: message) {
             delegate?.shouldSendGiphy(message: messageString, data: giphy.1)
             dismissView()
-            completion?(true)
+            completion?(true, nil)
             
             return
         }
