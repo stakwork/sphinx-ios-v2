@@ -71,6 +71,7 @@ class BitTorrentSearchTableViewDataSource: NSObject, UITableViewDataSource, UITa
             guard let cell = tableView.dequeueReusableCell(withIdentifier: "BTSearchResultTableViewCell", for: indexPath) as? BTSearchResultTableViewCell else {
                 fatalError("Unexpected cell type")
             }
+            cell.resetContent()
             cell.isLoading = true
             if let magnetLink = result.magnet_link {
                 SphinxOnionManager.sharedInstance.getMagnetDetails(

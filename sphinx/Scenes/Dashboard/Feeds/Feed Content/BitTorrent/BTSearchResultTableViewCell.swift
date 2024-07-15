@@ -43,4 +43,15 @@ class BTSearchResultTableViewCell: UITableViewCell {
         seederCountLabel.text = "\(seeders) seeders"
     }
     
+    func resetContent() {
+        torrentNameLabel.text = nil
+        seederCountLabel.text = nil
+        // Reset any other properties that might show old data
+        isLoading = false
+    }
+    
+    override func prepareForReuse() {
+            super.prepareForReuse()
+        resetContent()
+    }
 }

@@ -114,8 +114,12 @@ extension FeedSearchContainerViewController {
     ) {
         if searchQuery.isEmpty {
             presentInitialStateView()
+        } else if type == nil && !didPressEnter {
+            // Show loading or waiting state for BitTorrent search
+            presentBitTorrentSearchView()
         } else {
             fetchResults(for: searchQuery, and: type)
+            didPressEnter = false  // Reset the flag after use
         }
     }
     

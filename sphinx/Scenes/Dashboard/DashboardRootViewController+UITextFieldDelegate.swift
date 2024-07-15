@@ -37,6 +37,15 @@ extension DashboardRootViewController: UITextFieldDelegate {
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         view.endEditing(true)
         feedSearchResultsContainerViewController.didPressEnter = true
+        
+        // Trigger the search again with the current text
+        if case .feed = activeTab, let searchText = textField.text {
+            feedSearchResultsContainerViewController.updateSearchQuery(
+                with: searchText,
+                and: getSearchFeedType()
+            )
+        }
+        
         return true
     }
     
