@@ -178,7 +178,7 @@ class BTMedia: Mappable {
         var feedURLPath = ""
         
         if let fileName = btMedia.name?.lowercased() {
-            let videoExtensions = [".m4v", ".avi", ".mp4", ".mov"]
+            let videoExtensions = [".m4v", ".avi", ".mp4", ".mov",".mkv"]
             let audioExtensions = [".mp3", ".m4a", ".aac", ".wav", ".ogg", ".flac", ".wma", ".aiff", ".opus"]
             
             if type == .Podcast && audioExtensions.contains(where: fileName.hasSuffix) {
