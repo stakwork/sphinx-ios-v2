@@ -216,22 +216,49 @@ extension DashboardRootViewController {
             navigationController?.present(navController, animated: true)
         }
         else if feedResult.feedType == .Podcast{
-            let fakeFeed = PodcastFeed("xyz456", false)
-            fakeFeed.title = "BitTorrent Feed"
-            let episode = PodcastEpisode("abc123")
-            episode.title = feedResult.title
-            episode.urlPath = feedResult.feedURLPath
-            fakeFeed.currentEpisodeId = "abc123"
-            fakeFeed.episodes = [episode]
-            
-            podcastSmallPlayer.configureForBitTorrent(
-                itemID: "abc123",
-                feed: fakeFeed,
-                delegate: self,
-                andKey: PodcastDelegateKeys.DashboardSmallPlayerBar.rawValue
+            API.sharedInstance.searchBroadFeedforAudioFiles(
+                feedOrAlbumString: feedResult.feedURLPath,
+                completionHandler: { result in
+                    switch result {
+                    case .success(let tracks):
+                        var episodes = [PodcastEpisode]()
+                        for track in tracks {
+                            let urlString = "\(API.sharedInstance.btBaseUrl)/\(feedResult.feedURLPath)/\(track.feedURLPath)"
+                            
+                            guard let encodedURLString = urlString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+                                  let url = URL(string: encodedURLString) else {
+                                continue
+                            }
+                            let newEpisode = PodcastEpisode(track.title)
+                            newEpisode.urlPath = encodedURLString
+                            newEpisode.title = track.title
+                            episodes.append(newEpisode)
+                        }
+                        
+                        let fakeFeed = PodcastFeed("xyz456", false)
+                        fakeFeed.title = "BitTorrent Feed"
+                        
+                        if let firstEpisode = episodes.first {
+                            fakeFeed.currentEpisodeId = firstEpisode.itemID
+                            fakeFeed.episodes = episodes
+                            
+                            self.podcastSmallPlayer.configureForBitTorrent(
+                                itemID: firstEpisode.itemID,
+                                feed: fakeFeed,
+                                delegate: self,
+                                andKey: PodcastDelegateKeys.DashboardSmallPlayerBar.rawValue
+                            )
+                            
+                            self.presentPodcastPlayerFor(fakeFeed, queuedEpisode: firstEpisode, fromDownloadedSection: false)
+                        } else {
+                            print("No episodes found")
+                        }
+                        
+                    case .failure(let error):
+                        print("Error fetching tracks: \(error)")
+                    }
+                }
             )
-            
-            presentPodcastPlayerFor(fakeFeed, queuedEpisode: episode, fromDownloadedSection: false)
         }
         
     }
