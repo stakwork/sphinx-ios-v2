@@ -66,7 +66,7 @@ class DashboardFeedsContainerViewController: UIViewController {
     
     var contentFilterOptions: [ContentFilterOption] = []
     
-    var activeFilterOption: ContentFilterOption = .allContent {
+    var activeFilterOption: ContentFilterOption = .browse {
         didSet {
             DispatchQueue.main.async { [weak self] in
                 self?.handleFilterChipChange(
@@ -243,6 +243,10 @@ extension DashboardFeedsContainerViewController {
         switch activeFilterOption.id {
         case ContentFilterOption.allContent.id:
             return allTribeFeedsCollectionViewController
+        case ContentFilterOption.browse.id:
+            return allTribeFeedsCollectionViewController
+        case ContentFilterOption.discover.id:
+            return allTribeFeedsCollectionViewController
         case ContentFilterOption.listen.id:
             return podcastFeedCollectionViewController
         case ContentFilterOption.watch.id:
@@ -304,7 +308,7 @@ extension DashboardFeedsContainerViewController {
     
     
     private func configureFeedContentCollectionView() {
-        activeFilterOption = .allContent
+        activeFilterOption = .discover//.allContent
     }
     
     
