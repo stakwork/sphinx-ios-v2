@@ -12,6 +12,7 @@ class BitTorrentSearchViewController: UIViewController {
     @IBOutlet weak var bitTorrentAddButtonActivityView: UIActivityIndicatorView!
     @IBOutlet weak var bitTorrentCancelButtonContainerView: UIView!
     @IBOutlet weak var bitTorrentCancelButton: UIButton!
+    @IBOutlet weak var loadingSearch: UIActivityIndicatorView!
     
     var bitTorrentSearchTableViewDataSource: BitTorrentSearchTableViewDataSource? = nil
     var selectedMagnetLink: String?
@@ -37,6 +38,7 @@ class BitTorrentSearchViewController: UIViewController {
         bitTorrentDetailsModalView.isHidden = true
         configureTableView()
         isLoadingTorrent = false
+        //loadingSearch.isHidden = true
     }
 
     static func instantiate() -> BitTorrentSearchViewController {
@@ -123,6 +125,7 @@ class BitTorrentSearchViewController: UIViewController {
     }
     
     func clearResults() {
+        loadingSearch.isHidden = true
         bitTorrentSearchTableViewDataSource?.btSearchResults = []
         configureTableView()
         bitTorrentSearchTableView?.reloadData()
@@ -137,6 +140,7 @@ class BitTorrentSearchViewController: UIViewController {
     }
 
     func updateSearchTerm(keyword: String) {
+        loadingSearch.isHidden = false
         resetForNewSearch()
         bitTorrentSearchTableViewDataSource?.searchBitTorrent(keyword: keyword)
     }

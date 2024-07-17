@@ -306,7 +306,7 @@ extension DashboardFeedsContainerViewController {
     
     
     private func configureFeedContentCollectionView() {
-        activeFilterOption = .discover//.allContent
+        activeFilterOption = .browse//.allContent
     }
     
     

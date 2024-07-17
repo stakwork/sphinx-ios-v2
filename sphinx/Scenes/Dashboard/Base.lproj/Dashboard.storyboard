@@ -413,16 +413,21 @@
         <scene sceneID="74d-KO-lhq">
             <objects>
                 <viewController storyboardIdentifier="BitTorrentSearchViewController" id="wcZ-6V-fZU" customClass="BitTorrentSearchViewController" customModule="sphinx" customModuleProvider="target" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="W6o-9v-QdP">
+                    <view key="view" contentMode="scaleToFill" ambiguous="YES" id="W6o-9v-QdP">
                         <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="jJQ-wj-DeT">
-                                <rect key="frame" x="0.0" y="48" width="414" height="814"/>
+                                <rect key="frame" x="0.0" y="48" width="414" height="799"/>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                             </tableView>
+                            <activityIndicatorView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" animating="YES" style="whiteLarge" id="TtZ-LE-6U9">
+                                <rect key="frame" x="189" y="429" width="37" height="37"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <color key="color" red="0.3803921569" green="0.54117647059999996" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                            </activityIndicatorView>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Nvd-NP-kfO">
-                                <rect key="frame" x="8" y="98" width="398" height="714"/>
+                                <rect key="frame" x="8" y="98" width="398" height="699"/>
                                 <subviews>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Torrent Title" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="jpS-6s-XJw">
                                         <rect key="frame" x="40" y="8" width="318" height="26.5"/>
@@ -431,14 +436,14 @@
                                         <nil key="highlightedColor"/>
                                     </label>
                                     <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="MfT-Sy-TPp">
-                                        <rect key="frame" x="40" y="57.5" width="318" height="481.5"/>
+                                        <rect key="frame" x="40" y="57.5" width="318" height="466.5"/>
                                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                     </tableView>
                                     <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="GRS-Oa-WRV">
-                                        <rect key="frame" x="128" y="564" width="142" height="50"/>
+                                        <rect key="frame" x="128" y="549" width="142" height="50"/>
                                         <subviews>
                                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="uyZ-og-tlm">
-                                                <rect key="frame" x="5" y="10.5" width="40" height="29.5"/>
+                                                <rect key="frame" x="5" y="12.5" width="40" height="25"/>
                                                 <constraints>
                                                     <constraint firstAttribute="width" constant="40" id="X05-fZ-Qw2"/>
                                                 </constraints>
@@ -476,7 +481,7 @@
                                         </constraints>
                                     </view>
                                     <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="GEl-jf-gdO">
-                                        <rect key="frame" x="128" y="636" width="142" height="50"/>
+                                        <rect key="frame" x="128" y="621" width="142" height="50"/>
                                         <subviews>
                                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="7Ff-1G-LVZ">
                                                 <rect key="frame" x="5" y="25" width="40" height="0.0"/>
@@ -533,6 +538,7 @@
                         <viewLayoutGuide key="safeArea" id="9sd-4v-zhd"/>
                         <color key="backgroundColor" systemColor="systemIndigoColor"/>
                         <constraints>
+                            <constraint firstItem="TtZ-LE-6U9" firstAttribute="centerY" secondItem="jJQ-wj-DeT" secondAttribute="centerY" id="6I6-uj-82z"/>
                             <constraint firstItem="Nvd-NP-kfO" firstAttribute="centerY" secondItem="jJQ-wj-DeT" secondAttribute="centerY" id="9LV-Ci-j4Q"/>
                             <constraint firstItem="jJQ-wj-DeT" firstAttribute="centerX" secondItem="9sd-4v-zhd" secondAttribute="centerX" id="Vrq-hU-UB5"/>
                             <constraint firstItem="Nvd-NP-kfO" firstAttribute="leading" secondItem="9sd-4v-zhd" secondAttribute="leading" constant="8" id="cpl-wm-vKM"/>
@@ -553,6 +559,7 @@
                         <outlet property="bitTorrentFilesTableView" destination="MfT-Sy-TPp" id="WQT-39-bzI"/>
                         <outlet property="bitTorrentModalTitle" destination="jpS-6s-XJw" id="9lr-Kj-krr"/>
                         <outlet property="bitTorrentSearchTableView" destination="jJQ-wj-DeT" id="cyq-SO-L0T"/>
+                        <outlet property="loadingSearch" destination="TtZ-LE-6U9" id="8fG-1E-cJz"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="q1c-1t-Sg5" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>

@@ -309,12 +309,6 @@ extension DashboardRootViewController {
         handleDeepLinksAndPush()
         
         setupAddTribeButton()
-        
-        API.sharedInstance.searchBroadFeedforAudioFiles(
-            feedOrAlbumString:"Intervals - 2020 - Circadian",
-            completionHandler: { results in
-            print(results)
-        })
     }
     
     func refreshUnreadStatus(){
