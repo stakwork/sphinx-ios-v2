@@ -68,12 +68,52 @@ extension API {
         }
     }
     
+    func searchBroadFeedforAudioFiles( //searches a specific directory path for underlying files (i.e. Joe Rogan -> #911 with Duncan Trussell.mp3, RHCP Californication -> Californication.mp3
+        feedOrAlbumString:String,
+        completionHandler: @escaping FeedSearchCompletionHandler
+    ) {
+        let urlString = "\(btBaseUrl)/\(feedOrAlbumString)/?json"
+        
+        guard let encodedURLString = urlString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let url = URL(string: encodedURLString) else {
+            completionHandler(.failure(.failedToCreateRequest(urlPath: urlString)))
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        
+        podcastSearchRequest?.cancel()
+        
+        podcastSearchRequest = AF.request(request).responseJSON { response in
+            switch response.result {
+            case .success(let data):
+                var mediaArray = [FeedSearchResult]()
+                if let resultDict = data as? NSDictionary,
+                   let pathsArray = resultDict["paths"] as? [[String: Any]] {
+                    
+                    for pathDict in pathsArray {
+                        if let media = BTMedia(JSON: pathDict) {
+                            let result = media.convertBTMediaToFeedSearchResult(type: .Track)
+                            if result.feedURLPath.isNotEmpty {
+                                mediaArray.append(result)
+                            }
+                        }
+                    }
+                }
+                completionHandler(.success(mediaArray))
+            case .failure(let error):
+                completionHandler(.failure(.networkError(error)))
+            }
+        }
+    }
+    
     public func searchBTFeed(
             matching queryString: String,
             type: FeedType,
             then completionHandler: @escaping FeedSearchCompletionHandler
         ) {
-            let urlString = "\(btBaseUrl)//?json&q=\(queryString)" // temporary hard code
+            let urlString = "\(btBaseUrl)/?json&q=\(queryString)" // temporary hard code
 
             guard let request = createRequest(
                 urlString,
@@ -178,11 +218,14 @@ class BTMedia: Mappable {
         var feedURLPath = ""
         
         if let fileName = btMedia.name?.lowercased() {
-            let videoExtensions = [".m4v", ".avi", ".mp4", ".mov"]
+            let videoExtensions = [".m4v", ".avi", ".mp4", ".mov",".mkv"]
             let audioExtensions = [".mp3", ".m4a", ".aac", ".wav", ".ogg", ".flac", ".wma", ".aiff", ".opus"]
             
-            if type == .Podcast && audioExtensions.contains(where: fileName.hasSuffix) {
-                feedURLPath = "\(API.sharedInstance.btBaseUrl)/\(btMedia.name!)"
+            if type == .Podcast && btMedia.pathType == "Dir"{
+                feedURLPath = "\(btMedia.name!)"
+            }
+            else if type == .Track && audioExtensions.contains(where: fileName.hasSuffix) {
+                feedURLPath = "\(btMedia.name!)"
             } else if type == .Video && videoExtensions.contains(where: fileName.hasSuffix) {
                 feedURLPath = "\(API.sharedInstance.btBaseUrl)/\(btMedia.name!)"
             }

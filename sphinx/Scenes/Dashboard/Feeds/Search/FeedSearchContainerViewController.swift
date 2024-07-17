@@ -109,18 +109,51 @@ extension FeedSearchContainerViewController {
 extension FeedSearchContainerViewController {
     
     func updateSearchQuery(
-        with searchQuery: String,
-        and type: FeedType?
-    ) {
-        if searchQuery.isEmpty {
-            presentInitialStateView()
-        } else if type == nil && !didPressEnter {
-            // Show loading or waiting state for BitTorrent search
-            presentBitTorrentSearchView()
-        } else {
-            fetchResults(for: searchQuery, and: type)
-            didPressEnter = false  // Reset the flag after use
+            with searchQuery: String,
+            and type: FeedType?
+        ) {
+            if searchQuery.isEmpty {
+                presentInitialStateView()
+            } else if type == nil {
+                presentBitTorrentSearchView()
+                if didPressEnter {
+                    performBitTorrentSearch(searchQuery: searchQuery)
+                    didPressEnter = false
+                }
+            } else {
+                presentResultsListView()
+                fetchResults(for: searchQuery, and: type)
+            }
         }
+
+    func presentInitialStateView() {
+        isShowingStartingEmptyStateVC = true
+        
+        removeChildVC(child: searchResultsViewController)
+        removeChildVC(child: bitTorrentSearchViewController)
+        
+        emptyStateViewController.feedType = feedType
+        
+        addChildVC(
+            child: emptyStateViewController,
+            container: contentView
+        )
+    }
+
+    private func presentBitTorrentSearchView() {
+        removeChildVC(child: searchResultsViewController)
+        removeChildVC(child: emptyStateViewController)
+        
+        if bitTorrentSearchViewController.view.superview == nil {
+            addChildVC(
+                child: bitTorrentSearchViewController,
+                container: contentView
+            )
+        }
+    }
+
+    private func performBitTorrentSearch(searchQuery: String) {
+        bitTorrentSearchViewController.updateSearchTerm(keyword: searchQuery)
     }
     
     
@@ -135,22 +168,6 @@ extension FeedSearchContainerViewController {
         )
     }
     
-    
-    func presentInitialStateView() {
-        isShowingStartingEmptyStateVC = true
-        
-        removeChildVC(child: searchResultsViewController)
-        removeChildVC(child: bitTorrentSearchViewController)
-        
-        bitTorrentSearchViewController.clearResults()  // Clear BitTorrent search results
-        
-        emptyStateViewController.feedType = feedType
-        
-        addChildVC(
-            child: emptyStateViewController,
-            container: contentView
-        )
-    }
 }
 
 
@@ -201,20 +218,6 @@ extension FeedSearchContainerViewController {
         }
         
         ActionsManager.sharedInstance.trackFeedSearch(searchTerm: searchQuery.lowerClean)
-    }
-    
-    private func presentBitTorrentSearchView() {
-        removeChildVC(child: searchResultsViewController)
-        removeChildVC(child: emptyStateViewController)
-        
-        addChildVC(
-            child: bitTorrentSearchViewController,
-            container: contentView
-        )
-    }
-
-    private func performBitTorrentSearch(searchQuery: String) {
-        bitTorrentSearchViewController.bitTorrentSearchTableViewDataSource?.searchBitTorrent(keyword: searchQuery)
     }
     
     @objc func fetchRemoteResults(timer: Timer) {

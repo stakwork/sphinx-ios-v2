@@ -7,6 +7,8 @@
 import Foundation
 
 public enum FeedType: Int16 {
+    case Album
+    case Track
     case Podcast
     case Video
     case Newsletter

@@ -310,18 +310,6 @@ extension DashboardRootViewController {
         
         setupAddTribeButton()
         
-//        SphinxOnionManager.sharedInstance.authorizeBT(callback: {_ in})
-//        DispatchQueue.main.asyncAfter(deadline: .now() + 5.0, execute: {
-//            SphinxOnionManager.sharedInstance.searchAllTorrents(keyword: "red hot chili peppers",callback:{results in
-//                print(results)
-//                if let result = results.first{
-//                    SphinxOnionManager.sharedInstance.getMagnetDetails(data: result, callback: { magnetDetails in
-//                        SphinxOnionManager.sharedInstance.downloadTorrentViaMagnet(magnetLink: result.magnet_link!, magnetDetails: magnetDetails!)
-//                    })
-//                }
-//                
-//            })
-//        })
     }
     
     func refreshUnreadStatus(){
@@ -503,9 +491,6 @@ extension DashboardRootViewController {
     ) -> UIViewController {
         switch activeTab {
         case .feed:
-//            DispatchQueue.main.asyncAfter(deadline: .now() + 5.0, execute: {
-//                self.presentBitTorrentPlayer()
-//            })
             return feedsContainerViewController
         case .friends:
             return contactChatsContainerViewController

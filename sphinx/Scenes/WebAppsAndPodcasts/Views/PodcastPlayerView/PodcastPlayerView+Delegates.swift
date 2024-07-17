@@ -14,6 +14,7 @@ extension PodcastPlayerView : PlayerDelegate {
             return
         }
         
+        self.podcast.currentEpisodeId = podcastData.episodeId
         configureControls(playing: true)
         showInfo()
         audioLoading = true
