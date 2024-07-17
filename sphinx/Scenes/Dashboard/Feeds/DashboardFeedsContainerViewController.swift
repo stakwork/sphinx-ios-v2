@@ -241,10 +241,8 @@ extension DashboardFeedsContainerViewController {
         for filterChip: ContentFilterOption
     ) -> UIViewController {
         switch activeFilterOption.id {
-        case ContentFilterOption.allContent.id:
-            return allTribeFeedsCollectionViewController
         case ContentFilterOption.browse.id:
-            return allTribeFeedsCollectionViewController
+            return videoFeedCollectionViewController
         case ContentFilterOption.discover.id:
             return allTribeFeedsCollectionViewController
         case ContentFilterOption.listen.id:
@@ -276,7 +274,7 @@ extension DashboardFeedsContainerViewController {
             container: feedContentCollectionViewContainer
         )
         
-        if activeFilterOption.id == ContentFilterOption.allContent.id {
+        if activeFilterOption.id == ContentFilterOption.discover.id {
             actionsManager.saveFeedSearches()
             synActionsAndRefreshRecommendations()
         }
