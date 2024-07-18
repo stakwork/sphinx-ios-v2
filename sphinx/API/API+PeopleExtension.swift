@@ -121,13 +121,13 @@ extension API {
         authorizeDict: [String: String],
         magnetLink: String,
         initialPeers: [String],
-        paymenHash:String,
+        paymenHash:String?,
         callback: @escaping ((Bool,String?) -> ())
     ) {
         var params = [String: AnyObject]()
         var options = [String: AnyObject]()
         if let paymentHash = paymenHash{
-            params["payment_request"] = paymenHash as AnyObject
+            params["payment_hash"] = paymenHash as AnyObject
         }
         params["magnet"] = magnetLink as AnyObject
         options["peers"] = initialPeers as AnyObject
@@ -149,7 +149,7 @@ extension API {
         AF.request(request).responseJSON { (response) in
             switch response.result {
             case .success(let value):
-                callback(true)
+                callback(true, nil)
             case .failure(let error):
                 print("Request failed with error: \(error)")
                 if let data = response.data {
@@ -165,8 +165,9 @@ extension API {
                         callback(false,nil)
                     }
                 }
-                
-                callback(false,nil)
+                else{
+                    callback(false,nil)
+                }
             }
         }
     }

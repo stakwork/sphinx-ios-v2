@@ -92,10 +92,19 @@ extension SphinxOnionManager {
             url: "\(kAllTorrentLookupBaseURL)/add_magnet",
             authorizeDict: authString,
             magnetLink: magnetLink,
-            initialPeers: initialPeers,
-            callback: { success,paymentHash in
-                if let paymentHash = paymentHash{
-                    handlePaymentAndRetry(paymentHash: paymentHash, callback: completion)
+            initialPeers: initialPeers, 
+            paymenHash: nil,
+            callback: { success,bolt11 in
+                if let bolt11 = bolt11,
+                   let paymentHash = try? paymentHashFromInvoice(bolt11: bolt11){
+                    self.handlePaymentAndRetry(
+                        authString:authString,
+                        magnetLink:magnetLink,
+                        magnetDetails:magnetDetails,
+                        initialPeers: initialPeers,
+                        paymentHash: paymentHash,
+                        callback: completion
+                    )
                 }
                 else{
                     completion(success)
@@ -103,27 +112,50 @@ extension SphinxOnionManager {
             })
     }
     
-    func handlePaymentAndRetry(paymentHash:String,callback: (Bool)->()){
-        let paymentObserver = NotificationCenter.default.addObserver(forName: .invoiceIPaidSettled, object: nil, queue: .main) { notification in
-                if let receiveHash = dictionary["payment_hash"] as? String,
-                receiveHash == paymentHash{
-                    NotificationCenter.default.removeObserver(paymentObserver)
-                    API.sharedInstance.requestTorrentDownload(
-                        url: "\(kAllTorrentLookupBaseURL)/add_magnet",
-                        authorizeDict: authString,
-                        magnetLink: magnetLink,
-                        initialPeers: initialPeers,
-                        callback: { success,paymentHash in
-                            callback(success)
-                    })
+    func handlePaymentAndRetry(
+        authString: [String: String],
+        magnetLink: String,
+        magnetDetails: MagnetDetailsResponse,
+        initialPeers: [String],
+        paymentHash: String,
+        callback: @escaping (Bool) -> Void
+    ) {
+        var paymentObserver: NSObjectProtocol?
+        var finishedFlag = false
+        paymentObserver = NotificationCenter.default.addObserver(
+            forName: .invoiceIPaidSettled,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self = self else { return }
+            if let userInfo = notification.userInfo,
+               let receivedHash = userInfo["payment_hash"] as? String,
+               receivedHash == paymentHash {
+                if let observer = paymentObserver {
+                    NotificationCenter.default.removeObserver(observer)
                 }
-           }
+                API.sharedInstance.requestTorrentDownload(
+                    url: "\(self.kAllTorrentLookupBaseURL)/add_magnet",
+                    authorizeDict: authString,
+                    magnetLink: magnetLink,
+                    initialPeers: initialPeers,
+                    paymenHash: paymentHash,
+                    callback: { success, _ in
+                        finishedFlag = true
+                        callback(success)
+                    }
+                )
+            }
+        }
 
-           let timeoutObserver = NotificationCenter.default.addObserver(forName: .paymentTimeout, object: nil, queue: .main) { _ in
-               NotificationCenter.default.removeObserver(timeoutObserver)
-               NotificationCenter.default.removeObserver(paymentObserver)
-               callback(false)
-           }
+        // Set a 15-second timeout
+        DispatchQueue.main.asyncAfter(deadline: .now() + 15) { [weak self] in
+            guard let self = self else { return }
+            if let observer = paymentObserver {
+                NotificationCenter.default.removeObserver(observer)
+                if(finishedFlag == false){callback(false)}
+            }
+        }
     }
     
 }
