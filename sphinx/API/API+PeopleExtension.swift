@@ -121,10 +121,14 @@ extension API {
         authorizeDict: [String: String],
         magnetLink: String,
         initialPeers: [String],
-        callback: @escaping ((Bool) -> ())
+        paymenHash:String,
+        callback: @escaping ((Bool,String?) -> ())
     ) {
         var params = [String: AnyObject]()
         var options = [String: AnyObject]()
+        if let paymentHash = paymenHash{
+            params["payment_request"] = paymenHash as AnyObject
+        }
         params["magnet"] = magnetLink as AnyObject
         options["peers"] = initialPeers as AnyObject
         options["overwrite"] = true as AnyObject
@@ -138,7 +142,7 @@ extension API {
             headers: authorizeDict,
             method: "POST"
         ) else {
-            callback(false)
+            callback(false,nil)
             return
         }
 
@@ -149,12 +153,26 @@ extension API {
             case .failure(let error):
                 print("Request failed with error: \(error)")
                 if let data = response.data {
-                    let responseString = String(data: data, encoding: .utf8)
-                    print("Response data: \(responseString ?? "nil")")
+                    if let status = response.response?.statusCode,
+                       let bolt11 = String(data: data, encoding: .utf8),
+                       status == 402{
+                        print("Response data: \(bolt11 ?? "nil")")
+                        print("paying L402")
+                        SphinxOnionManager.sharedInstance.payInvoice(invoice: bolt11)
+                        callback(true,bolt11)
+                    }
+                    else{
+                        callback(false,nil)
+                    }
                 }
-                callback(false)
+                
+                callback(false,nil)
             }
         }
+    }
+    
+    func handleContentPaymentCallback(){
+        
     }
     
     public func authorizeExternal(host: String,

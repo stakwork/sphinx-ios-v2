@@ -93,10 +93,37 @@ extension SphinxOnionManager {
             authorizeDict: authString,
             magnetLink: magnetLink,
             initialPeers: initialPeers,
-            callback: { success in
-                completion(success)
+            callback: { success,paymentHash in
+                if let paymentHash = paymentHash{
+                    handlePaymentAndRetry(paymentHash: paymentHash, callback: completion)
+                }
+                else{
+                    completion(success)
+                }
             })
     }
     
+    func handlePaymentAndRetry(paymentHash:String,callback: (Bool)->()){
+        let paymentObserver = NotificationCenter.default.addObserver(forName: .invoiceIPaidSettled, object: nil, queue: .main) { notification in
+                if let receiveHash = dictionary["payment_hash"] as? String,
+                receiveHash == paymentHash{
+                    NotificationCenter.default.removeObserver(paymentObserver)
+                    API.sharedInstance.requestTorrentDownload(
+                        url: "\(kAllTorrentLookupBaseURL)/add_magnet",
+                        authorizeDict: authString,
+                        magnetLink: magnetLink,
+                        initialPeers: initialPeers,
+                        callback: { success,paymentHash in
+                            callback(success)
+                    })
+                }
+           }
+
+           let timeoutObserver = NotificationCenter.default.addObserver(forName: .paymentTimeout, object: nil, queue: .main) { _ in
+               NotificationCenter.default.removeObserver(timeoutObserver)
+               NotificationCenter.default.removeObserver(paymentObserver)
+               callback(false)
+           }
+    }
     
 }
