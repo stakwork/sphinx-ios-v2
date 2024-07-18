@@ -53,9 +53,10 @@ extension DashboardRootViewController: UITextFieldDelegate {
         switch(feedsContainerViewController.activeFilterOption.id) {
         case DashboardFeedsContainerViewController.ContentFilterOption.listen.id:
             return FeedType.Podcast
-        case DashboardFeedsContainerViewController.ContentFilterOption.watch.id,
-             DashboardFeedsContainerViewController.ContentFilterOption.browse.id:
+        case DashboardFeedsContainerViewController.ContentFilterOption.watch.id:
             return FeedType.Video
+        case DashboardFeedsContainerViewController.ContentFilterOption.browse.id:
+            return FeedType.BrowseTorrent
         case DashboardFeedsContainerViewController.ContentFilterOption.discover.id:
             return FeedType.SearchTorrent
         default:

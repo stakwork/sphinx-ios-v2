@@ -191,8 +191,9 @@ extension DashboardRootViewController {
     func presentBitTorrentPlayer(
         for feedResult: FeedSearchResult
     ) {
-        //
-        if(feedResult.feedType == .Video){
+
+        let isBrowseVideo = feedResult.feedType == .BrowseTorrent && feedResult.imageUrl == "https://png.pngtree.com/png-clipart/20210309/original/pngtree-movie-clip-art-movie-film-field-clapper-board-png-image_5862049.jpg"
+        if(feedResult.feedType == .Video || isBrowseVideo){
             let videoEpisode = Video("abc123")
             //videoEpisode.videoFeed = "Jimmy's Pirate Emporium"
             videoEpisode.itemURL = URL(string: feedResult.feedURLPath)
