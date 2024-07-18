@@ -110,9 +110,6 @@ class ConfirmAddFriendViewController: UIViewController {
     
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        
-        // Invalidate the timer when the view disappears
-        inviteRequestWatchdogTimer?.invalidate()
     }
     
     func processRequestedInviteAck(code: String?){
