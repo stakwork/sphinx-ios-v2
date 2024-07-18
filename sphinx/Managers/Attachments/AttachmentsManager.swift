@@ -13,7 +13,7 @@ import AVFoundation
 @objc protocol AttachmentsManagerDelegate: class {
     @objc optional func didUpdateUploadProgressFor(messageId: Int, progress: Int)
     @objc optional func didUpdateUploadProgress(progress: Int)
-    @objc optional func didFailSendingMessage(provisionalMessage: TransactionMessage?)
+    @objc optional func didFailSendingMessage(provisionalMessage: TransactionMessage?, errorMessage: String)
     @objc optional func didSuccessSendingAttachment(message: TransactionMessage, image: UIImage?, provisionalMessageId: Int)
     @objc optional func didSuccessUploadingImage(url: String)
     @objc optional func shouldReplaceMediaDataFor(provisionalMessageId: Int, and messageId: Int)
@@ -58,14 +58,26 @@ class AttachmentsManager {
         self.delegate = delegate
     }
     
-    func runAuthentication() {
-        self.authenticate(completion: {_ in }, errorCompletion: {})
+    func runAuthentication(
+        forceAuthenticate: Bool = false
+    ) {
+        self.authenticate(
+            forceAuthenticate: forceAuthenticate,
+            completion: {_ in },
+            errorCompletion: {}
+        )
     }
     
     func authenticate(
+        forceAuthenticate: Bool = false,
         completion: @escaping (String) -> (),
         errorCompletion: @escaping () -> ()
     ) {
+        if let token: String = UserDefaults.Keys.attachmentsToken.get(), !forceAuthenticate {
+            completion(token)
+            return
+        }
+        
         guard let pubkey = UserContact.getOwner()?.publicKey else {
             errorCompletion()
             return
@@ -127,7 +139,7 @@ class AttachmentsManager {
                 self.uploadImage(attachmentObject: attachmentObject, route: route)
             }, errorCompletion: {
                 UserDefaults.Keys.attachmentsToken.removeValue()
-                self.uploadFailed()
+                self.uploadFailed(errorMessage: "Could not authenticate with Memes server")
             })
             return
         }
@@ -162,7 +174,7 @@ class AttachmentsManager {
                 )
             }, errorCompletion: {
                 UserDefaults.Keys.attachmentsToken.removeValue()
-                self.uploadFailed()
+                self.uploadFailed(errorMessage: "Could not authenticate with Memes server")
             })
             return
         }
@@ -170,15 +182,18 @@ class AttachmentsManager {
         
         if let _ = attachmentObject.data {
             uploadEncryptedData(attachmentObject: attachmentObject, token: token) { fileJSON, AttachmentObject in
-                self.sendAttachment(
+                let (msg, errorMessage) = self.sendAttachment(
                     file: fileJSON,
                     chat: chat,
                     attachmentObject: attachmentObject,
                     provisionalMessage: provisionalMessage,
                     replyingMessage: replyingMessage,
                     threadUUID: threadUUID
-                    
                 )
+                
+                if let errorMessage = errorMessage, msg == nil {
+                    self.uploadFailed(errorMessage: errorMessage)
+                }
             }
         }
     }
@@ -204,7 +219,7 @@ class AttachmentsManager {
 
                 completion(fileJSON, attachmentObject)
             } else {
-                self.uploadFailed()
+                self.uploadFailed(errorMessage: "Failed to upload data to Memes server")
             }
         })
     }
@@ -216,8 +231,8 @@ class AttachmentsManager {
         provisionalMessage: TransactionMessage? = nil,
         replyingMessage: TransactionMessage? = nil,
         threadUUID: String? = nil
-    ) {
-        let _ = SphinxOnionManager.sharedInstance.sendAttachment(
+    ) -> (TransactionMessage?, String?) {
+        return SphinxOnionManager.sharedInstance.sendAttachment(
             file: file,
             attachmentObject: attachmentObject,
             chat: chat,
@@ -288,9 +303,9 @@ class AttachmentsManager {
         }
     }
     
-    func uploadFailed() {
+    func uploadFailed(errorMessage: String) {
         uploading = false
-        delegate?.didFailSendingMessage?(provisionalMessage: provisionalMessage)
+        delegate?.didFailSendingMessage?(provisionalMessage: provisionalMessage, errorMessage: errorMessage)
     }
     
     func uploadSucceed(message: TransactionMessage) {

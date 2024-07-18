@@ -12,10 +12,6 @@ final class ChatListViewModel {
     
     init() {}
     
-    func authenticateWithMemesServer() {
-        AttachmentsManager.sharedInstance.runAuthentication()
-    }
-    
     func askForNotificationPermissions() {
         let appDelegate = UIApplication.shared.delegate as! AppDelegate
         appDelegate.registerForPushNotifications()
