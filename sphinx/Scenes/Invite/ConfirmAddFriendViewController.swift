@@ -33,7 +33,6 @@ class ConfirmAddFriendViewController: UIViewController {
     let kTextViewExistingUserPlaceHolder = "Join me on Sphinx!"
     let kPlaceHolderColor = UIColor.Sphinx.PlaceholderText
     let kTextViewColor = UIColor.Sphinx.Text
-    var inviteRequestWatchdogTimer: Timer?
     
     let som = SphinxOnionManager.sharedInstance
     
@@ -143,22 +142,19 @@ class ConfirmAddFriendViewController: UIViewController {
         
         loading = true
         
-        inviteRequestWatchdogTimer = Timer.scheduledTimer(
-            timeInterval: 10,
-            target: self,
-            selector: #selector(watchdogTimerFired),
-            userInfo: nil,
-            repeats: false
-        )
-        
         som.inviteCreationCallback = handleInviteCodeAck
-        som.requestInviteCode(amountMsat: amountSats * 1000)
+        let (success, errorMsg) = som.requestInviteCode(amountMsat: amountSats * 1000)
+        
+        if !success {
+            inviteFailed(error: errorMsg)
+        }
     }
     
-    @objc func watchdogTimerFired() {
-        AlertHelper.showAlert(title: "Timeout", message: "The operation has timed out. Please try again.")
-        
-        inviteRequestWatchdogTimer?.invalidate()
+    func inviteFailed(error: String?) {
+        AlertHelper.showAlert(
+            title: "Invite Error",
+            message: (error != nil) ? "Error: \(error!)" : "There was an error creating the invite"
+        )
         
         som.inviteCreationCallback = nil
         

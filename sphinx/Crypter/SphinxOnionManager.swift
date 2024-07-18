@@ -122,15 +122,6 @@ class SphinxOnionManager : NSObject {
         }
     }
     
-    var tribesServerIP: String {
-        get {
-            if let storedTribesServer: String = UserDefaults.Keys.tribesServerIP.get() {
-                return storedTribesServer
-            }
-            return kTestV2TribesServer
-        }
-    }
-    
     var routerUrl: String {
         get {
             if let routerUrl: String = UserDefaults.Keys.routerUrl.get() {
@@ -149,9 +140,21 @@ class SphinxOnionManager : NSObject {
         }
     }
     
+    var tribesServerIP: String {
+        get {
+            if let storedTribesServer: String = UserDefaults.Keys.tribesServerIP.get() {
+                return storedTribesServer
+            }
+            return kTestV2TribesServer
+        }
+    }
+    
     var defaultTribePubkey: String? {
         get {
             if let defaultTribePublicKey: String = UserDefaults.Keys.defaultTribePublicKey.get() {
+                if defaultTribePublicKey.isEmpty {
+                    return nil
+                }
                 return defaultTribePublicKey
             }
             return kTestDefaultTribe
