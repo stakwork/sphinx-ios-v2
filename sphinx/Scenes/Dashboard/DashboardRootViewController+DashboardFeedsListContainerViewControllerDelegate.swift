@@ -191,9 +191,7 @@ extension DashboardRootViewController {
     func presentBitTorrentPlayer(
         for feedResult: FeedSearchResult
     ) {
-
-        let isBrowseVideo = feedResult.feedType == .BrowseTorrent && feedResult.imageUrl == "https://png.pngtree.com/png-clipart/20210309/original/pngtree-movie-clip-art-movie-film-field-clapper-board-png-image_5862049.jpg"
-        if(feedResult.feedType == .Video || isBrowseVideo){
+        if(feedResult.feedType == .Video){
             let videoEpisode = Video("abc123")
             //videoEpisode.videoFeed = "Jimmy's Pirate Emporium"
             videoEpisode.itemURL = URL(string: feedResult.feedURLPath)
@@ -217,8 +215,9 @@ extension DashboardRootViewController {
             navigationController?.present(navController, animated: true)
         }
         else if feedResult.feedType == .Podcast{
+            let finalURLPath = feedResult.feedURLPath.replacingOccurrences(of: "https://files.bt2.bard.garden:21433/", with: "")
             API.sharedInstance.searchBroadFeedforAudioFiles(
-                feedOrAlbumString: feedResult.feedURLPath,
+                feedOrAlbumString: finalURLPath,
                 completionHandler: { result in
                     switch result {
                     case .success(let tracks):

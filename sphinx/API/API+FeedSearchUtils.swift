@@ -212,15 +212,15 @@ class BTMedia: Mappable {
         let feedId = btMedia.name ?? "Unknown"
         let title = btMedia.name ?? "No Title"
         let feedDescription = "Type: \(btMedia.pathType ?? "Unknown"), Size: \(btMedia.size ?? 0)"
-        let imageUrl = type == .Podcast
+        var imageUrl = type == .Podcast
             ? "https://png.pngtree.com/png-vector/20211018/ourmid/pngtree-simple-podcast-logo-design-png-image_3991612.png"
             : "https://png.pngtree.com/png-clipart/20210309/original/pngtree-movie-clip-art-movie-film-field-clapper-board-png-image_5862049.jpg"
         var feedURLPath = ""
+        var finalType = type
         
         if let fileName = btMedia.name?.lowercased() {
             let videoExtensions = [".m4v", ".avi", ".mp4", ".mov", ".mkv"]
             let audioExtensions = [".mp3", ".m4a", ".aac", ".wav", ".ogg", ".flac", ".wma", ".aiff", ".opus"]
-            
             switch type {
             case .Podcast where btMedia.pathType == "Dir":
                 feedURLPath = "\(btMedia.name!)"
@@ -228,14 +228,18 @@ class BTMedia: Mappable {
                 feedURLPath = "\(btMedia.name!)"
             case .Video where videoExtensions.contains(where: fileName.hasSuffix):
                 feedURLPath = "\(API.sharedInstance.btBaseUrl)/\(btMedia.name!)"
-            case .BrowseTorrent where audioExtensions.contains(where: fileName.hasSuffix) || videoExtensions.contains(where: fileName.hasSuffix):
-                feedURLPath = "\(API.sharedInstance.btBaseUrl)/\(btMedia.name!)"
+            case .BrowseTorrent where btMedia.pathType == "Dir" || videoExtensions.contains(where: fileName.hasSuffix):
+                let isVideo = (videoExtensions.contains(where: fileName.hasSuffix))
+                finalType = isVideo ? .Video : .Podcast
+                imageUrl = (isVideo == false) ? "https://png.pngtree.com/png-vector/20211018/ourmid/pngtree-simple-podcast-logo-design-png-image_3991612.png"
+                : "https://png.pngtree.com/png-clipart/20210309/original/pngtree-movie-clip-art-movie-film-field-clapper-board-png-image_5862049.jpg"
+                feedURLPath = isVideo ? "\(API.sharedInstance.btBaseUrl)/\(btMedia.name!)" : "\(btMedia.name!)"
             default:
                 break
             }
         }
         
-        return FeedSearchResult(feedId, title, feedDescription, imageUrl, feedURLPath, type)
+        return FeedSearchResult(feedId, title, feedDescription, imageUrl, feedURLPath, finalType)
     }
 
     private func isAudioFile() -> Bool {
