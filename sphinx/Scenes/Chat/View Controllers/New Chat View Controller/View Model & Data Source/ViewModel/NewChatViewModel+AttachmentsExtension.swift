@@ -43,7 +43,7 @@ extension NewChatViewModel: AttachmentsManagerDelegate {
                 provisionalMessage: message
             )
 
-            chatDataSource?.setProgressForProvisional(messageId: message.id, progress: 0)
+            chatDataSource?.setProgressForProvisional(messageId: message.id, progress: 0)            
 
             attachmentsManager.uploadAndSendAttachment(
                 attachmentObject: attachmentObject,
@@ -65,12 +65,13 @@ extension NewChatViewModel: AttachmentsManagerDelegate {
     }
     
     func didFailSendingMessage(
-        provisionalMessage: TransactionMessage?
+        provisionalMessage: TransactionMessage?,
+        errorMessage: String
     ) {
         if let provisionalMessage = provisionalMessage {
             CoreDataManager.sharedManager.deleteObject(object: provisionalMessage)
             
-            AlertHelper.showAlert(title: "generic.error.title".localized, message: "generic.error.message".localized)
+            AlertHelper.showAlert(title: "generic.error.title".localized, message: errorMessage)
         }
     }
     
