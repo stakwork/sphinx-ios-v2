@@ -311,7 +311,6 @@ extension DashboardRootViewController {
         handleDeepLinksAndPush()
         
         setupAddTribeButton()
-        
     }
     
     func refreshUnreadStatus(){

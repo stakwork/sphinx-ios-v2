@@ -15,6 +15,10 @@ class GeneralVideoFeedEpisodePlayerViewController: UIViewController, VideoFeedEp
     @IBOutlet private weak var episodeSubtitleCircularDivider: UIView!
     @IBOutlet private weak var episodePublishDateLabel: UILabel!
     
+    private var contentReadyTimer: Timer?
+    private var contentReadyAttempts = 0
+    private let maxContentReadyAttempts = 100
+    
     
     private lazy var avPlayerViewController = makeAVPlayerViewController()
     private lazy var loadingViewController = LoadingViewController()
@@ -75,6 +79,9 @@ extension GeneralVideoFeedEpisodePlayerViewController {
     
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(true)
+        
+        contentReadyTimer?.invalidate()
+        contentReadyTimer = nil
         
         avPlayerViewController.player?.pause()
         avPlayerViewController.player = nil
@@ -191,6 +198,49 @@ extension GeneralVideoFeedEpisodePlayerViewController {
             avPlayerViewController.player = avPlayer
         } else {
             avPlayer!.replaceCurrentItem(with: avPlayerItem!)
+        }
+        startContentReadyTimer()
+    }
+    
+    private func startContentReadyTimer() {
+        contentReadyAttempts = 0
+        contentReadyTimer?.invalidate()
+        contentReadyTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+            self?.checkIfContentIsReady()
+        }
+    }
+    
+    private func checkIfContentIsReady() {
+        guard let currentItem = avPlayer.currentItem else { return }
+        
+        contentReadyAttempts += 1
+        let duration = currentItem.duration
+        
+        if duration != .invalid && duration.seconds > 0 {
+            startPlayingVideo()
+        } else if contentReadyAttempts >= maxContentReadyAttempts {
+            handleContentReadyTimeout()
+        }
+    }
+    
+    private func startPlayingVideo() {
+        contentReadyTimer?.invalidate()
+        contentReadyTimer = nil
+        
+        DispatchQueue.main.async { [weak self] in
+            self?.avPlayer.play()
+            self?.removePlayerLoadingView()
+        }
+    }
+    
+    private func handleContentReadyTimeout() {
+        contentReadyTimer?.invalidate()
+        contentReadyTimer = nil
+        
+        DispatchQueue.main.async { [weak self] in
+            self?.removePlayerLoadingView()
+            self?.addPlayerErrorView()
+            // You might want to show an error message to the user here
         }
     }
 }

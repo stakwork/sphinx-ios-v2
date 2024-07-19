@@ -62,6 +62,8 @@
 "dashboard.tabs.tribes" = "Tribes";
 "dashboard.feeds.filters.all" = "All";
 "dashboard.feeds.filters.listen" = "Listen";
+"dashboard.feeds.filters.discover" = "Discover New";
+"dashboard.feeds.filters.browse" = "Browse Instance";
 "dashboard.feeds.filters.watch" = "Watch";
 "dashboard.feeds.filters.read" = "Read";
 "dashboard.feeds.filters.play" = "Play";
@@ -618,7 +620,7 @@
 "feed.search-podcast-source" = "on the Podcast Index";
 "feed.search-video-quantity" = "thousands of videos";
 "feed.search-video-source" = "on Youtube";
-"feed.search-other-source" = "your subscribed feeds";
+"feed.search-other-source" = "bittorrent feeds";
 
 //TIME
 "time.in-the-future" = "in the future";

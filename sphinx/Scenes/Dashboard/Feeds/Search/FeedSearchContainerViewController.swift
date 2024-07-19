@@ -109,22 +109,36 @@ extension FeedSearchContainerViewController {
 extension FeedSearchContainerViewController {
     
     func updateSearchQuery(
-            with searchQuery: String,
-            and type: FeedType?
-        ) {
-            if searchQuery.isEmpty {
-                presentInitialStateView()
-            } else if type == nil {
+        with searchQuery: String,
+        and type: FeedType?
+    ) {
+        if searchQuery.isEmpty {
+            presentInitialStateView()
+        } else {
+            switch type {
+            case .Video, .BrowseTorrent, .Podcast:
+                fetchVideoOrPodcastResults(for: searchQuery,type: type)
+            case .SearchTorrent:
+                // Handle the case when type is nil (if needed)
                 presentBitTorrentSearchView()
                 if didPressEnter {
                     performBitTorrentSearch(searchQuery: searchQuery)
                     didPressEnter = false
                 }
-            } else {
+                break
+            default:
+                // Handle other cases
                 presentResultsListView()
                 fetchResults(for: searchQuery, and: type)
+                break
             }
         }
+    }
+    
+    private func fetchVideoOrPodcastResults(for searchQuery: String,type:FeedType?) {
+        presentResultsListView()
+        fetchResults(for: searchQuery, and: type)
+    }
 
     func presentInitialStateView() {
         isShowingStartingEmptyStateVC = true

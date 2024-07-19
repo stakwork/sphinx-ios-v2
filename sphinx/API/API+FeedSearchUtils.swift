@@ -109,45 +109,45 @@ extension API {
     }
     
     public func searchBTFeed(
-            matching queryString: String,
-            type: FeedType,
-            then completionHandler: @escaping FeedSearchCompletionHandler
-        ) {
-            let urlString = "\(btBaseUrl)/?json&q=\(queryString)" // temporary hard code
+        matching queryString: String,
+        type: FeedType,
+        then completionHandler: @escaping FeedSearchCompletionHandler
+    ) {
+        let urlString = "\(btBaseUrl)/?json&q=\(queryString)"
 
-            guard let request = createRequest(
-                urlString,
-                bodyParams: nil,
-                method: "GET"
-            ) else {
-                completionHandler(.failure(.failedToCreateRequest(urlPath: urlString)))
-                return
-            }
+        guard let request = createRequest(
+            urlString,
+            bodyParams: nil,
+            method: "GET"
+        ) else {
+            completionHandler(.failure(.failedToCreateRequest(urlPath: urlString)))
+            return
+        }
 
-            podcastSearchRequest?.cancel()
-            
-            podcastSearchRequest = AF.request(request).responseJSON { response in
-                switch response.result {
-                case .success(let data):
-                    var mediaArray = [FeedSearchResult]()//[BTMedia]()
-                    if let resultDict = data as? NSDictionary,
-                       let pathsArray = resultDict["paths"] as? [[String: Any]] {
-                        
-                        for pathDict in pathsArray {
-                            if let media = BTMedia(JSON: pathDict) {
-                                let result = media.convertBTMediaToFeedSearchResult(type: type)
-                                if result.feedURLPath.isNotEmpty{
-                                    mediaArray.append(result)
-                                }
+        podcastSearchRequest?.cancel()
+        
+        podcastSearchRequest = AF.request(request).responseJSON { response in
+            switch response.result {
+            case .success(let data):
+                var mediaArray = [FeedSearchResult]()
+                if let resultDict = data as? NSDictionary,
+                   let pathsArray = resultDict["paths"] as? [[String: Any]] {
+                    
+                    for pathDict in pathsArray {
+                        if let media = BTMedia(JSON: pathDict) {
+                            let result = media.convertBTMediaToFeedSearchResult(type: type)
+                            if result.feedURLPath.isNotEmpty {
+                                mediaArray.append(result)
                             }
                         }
                     }
-                    completionHandler(.success(mediaArray))
-                case .failure(let error):
-                    completionHandler(.failure(.networkError(error)))
                 }
+                completionHandler(.success(mediaArray))
+            case .failure(let error):
+                completionHandler(.failure(.networkError(error)))
             }
         }
+    }
     
     //@Tom need to decide whether we want this or want to reimplement on V2
 //    public func getFeedRecommendations(
@@ -212,26 +212,39 @@ class BTMedia: Mappable {
         let feedId = btMedia.name ?? "Unknown"
         let title = btMedia.name ?? "No Title"
         let feedDescription = "Type: \(btMedia.pathType ?? "Unknown"), Size: \(btMedia.size ?? 0)"
-        let imageUrl = (type == .Podcast)
+        var imageUrl = type == .Podcast
             ? "https://png.pngtree.com/png-vector/20211018/ourmid/pngtree-simple-podcast-logo-design-png-image_3991612.png"
-            : "https://png.pngtree.com/png-clipart/20210309/original/pngtree-movie-clip-art-movie-film-field-clapper-board-png-image_5862049.jpg" // Placeholder image URL
+            : "https://png.pngtree.com/png-clipart/20210309/original/pngtree-movie-clip-art-movie-film-field-clapper-board-png-image_5862049.jpg"
         var feedURLPath = ""
+        var finalType = type
         
         if let fileName = btMedia.name?.lowercased() {
-            let videoExtensions = [".m4v", ".avi", ".mp4", ".mov",".mkv"]
+            let videoExtensions = [".m4v", ".avi", ".mp4", ".mov", ".mkv"]
             let audioExtensions = [".mp3", ".m4a", ".aac", ".wav", ".ogg", ".flac", ".wma", ".aiff", ".opus"]
-            
-            if type == .Podcast && btMedia.pathType == "Dir"{
+            switch type {
+            case .Podcast where btMedia.pathType == "Dir":
                 feedURLPath = "\(btMedia.name!)"
-            }
-            else if type == .Track && audioExtensions.contains(where: fileName.hasSuffix) {
+            case .Track where audioExtensions.contains(where: fileName.hasSuffix):
                 feedURLPath = "\(btMedia.name!)"
-            } else if type == .Video && videoExtensions.contains(where: fileName.hasSuffix) {
+            case .Video where videoExtensions.contains(where: fileName.hasSuffix):
                 feedURLPath = "\(API.sharedInstance.btBaseUrl)/\(btMedia.name!)"
+            case .BrowseTorrent where btMedia.pathType == "Dir" || videoExtensions.contains(where: fileName.hasSuffix):
+                let isVideo = (videoExtensions.contains(where: fileName.hasSuffix))
+                finalType = isVideo ? .Video : .Podcast
+                imageUrl = (isVideo == false) ? "https://png.pngtree.com/png-vector/20211018/ourmid/pngtree-simple-podcast-logo-design-png-image_3991612.png"
+                : "https://png.pngtree.com/png-clipart/20210309/original/pngtree-movie-clip-art-movie-film-field-clapper-board-png-image_5862049.jpg"
+                feedURLPath = isVideo ? "\(API.sharedInstance.btBaseUrl)/\(btMedia.name!)" : "\(btMedia.name!)"
+            default:
+                break
             }
         }
         
-        return FeedSearchResult(feedId, title, feedDescription, imageUrl, feedURLPath, type)
+        return FeedSearchResult(feedId, title, feedDescription, imageUrl, feedURLPath, finalType)
+    }
+
+    private func isAudioFile() -> Bool {
+        let audioExtensions = [".mp3", ".m4a", ".aac", ".wav", ".ogg", ".flac", ".wma", ".aiff", ".opus"]
+        return audioExtensions.contains { (self.name ?? "").lowercased().hasSuffix($0) }
     }
     
     // Custom transform to handle Int64 and null values

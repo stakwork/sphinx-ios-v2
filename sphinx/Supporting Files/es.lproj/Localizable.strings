@@ -61,6 +61,8 @@
 "dashboard.tabs.tribes" = "Tribes";
 "dashboard.feeds.filters.all" = "All";
 "dashboard.feeds.filters.listen" = "Listen";
+"dashboard.feeds.filters.discover" = "Discover";
+"dashboard.feeds.filters.browse" = "Browse";
 "dashboard.feeds.filters.watch" = "Watch";
 "dashboard.feeds.filters.read" = "Read";
 "dashboard.feeds.filters.play" = "Play";

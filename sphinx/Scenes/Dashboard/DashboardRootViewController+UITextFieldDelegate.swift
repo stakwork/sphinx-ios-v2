@@ -55,10 +55,13 @@ extension DashboardRootViewController: UITextFieldDelegate {
             return FeedType.Podcast
         case DashboardFeedsContainerViewController.ContentFilterOption.watch.id:
             return FeedType.Video
+        case DashboardFeedsContainerViewController.ContentFilterOption.browse.id:
+            return FeedType.BrowseTorrent
+        case DashboardFeedsContainerViewController.ContentFilterOption.discover.id:
+            return FeedType.SearchTorrent
         default:
-            break
+            return nil
         }
-        return nil
     }
     
     func textFieldShouldClear(_ textField: UITextField) -> Bool {

@@ -66,7 +66,7 @@ class DashboardFeedsContainerViewController: UIViewController {
     
     var contentFilterOptions: [ContentFilterOption] = []
     
-    var activeFilterOption: ContentFilterOption = .allContent {
+    var activeFilterOption: ContentFilterOption = .browse {
         didSet {
             DispatchQueue.main.async { [weak self] in
                 self?.handleFilterChipChange(
@@ -241,7 +241,9 @@ extension DashboardFeedsContainerViewController {
         for filterChip: ContentFilterOption
     ) -> UIViewController {
         switch activeFilterOption.id {
-        case ContentFilterOption.allContent.id:
+        case ContentFilterOption.browse.id:
+            return videoFeedCollectionViewController
+        case ContentFilterOption.discover.id:
             return allTribeFeedsCollectionViewController
         case ContentFilterOption.listen.id:
             return podcastFeedCollectionViewController
@@ -272,7 +274,7 @@ extension DashboardFeedsContainerViewController {
             container: feedContentCollectionViewContainer
         )
         
-        if activeFilterOption.id == ContentFilterOption.allContent.id {
+        if activeFilterOption.id == ContentFilterOption.discover.id {
             actionsManager.saveFeedSearches()
             synActionsAndRefreshRecommendations()
         }
@@ -304,7 +306,7 @@ extension DashboardFeedsContainerViewController {
     
     
     private func configureFeedContentCollectionView() {
-        activeFilterOption = .allContent
+        activeFilterOption = .browse//.allContent
     }
     
     
