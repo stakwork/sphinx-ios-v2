@@ -120,7 +120,6 @@ class PayInvoiceViewController: UIViewController {
         loading = true
         
         SphinxOnionManager.sharedInstance.payInvoiceMessage(message: message)
-
         shouldDismiss(paymentCreated: true)
     }
     
