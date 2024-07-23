@@ -320,13 +320,16 @@ class SphinxOnionManager : NSObject {
     
     func reconnectToServer(
         connectingCallback: (() -> ())? = nil,
-        hideRestoreViewCallback: (()->())? = nil
+        hideRestoreViewCallback: (()->())? = nil,
+        errorCallback: (()->())? = nil
     ) {
         if let mqtt = self.mqtt, mqtt.connState == .connected && isConnected {
             ///If already fetching content, then process is already running
             if !isFetchingContent() {
                 self.hideRestoreCallback = hideRestoreViewCallback
                 self.syncNewMessages()
+            } else {
+                errorCallback?()
             }
             return
         }

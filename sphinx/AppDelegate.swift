@@ -447,6 +447,8 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         
         som.reconnectToServer(hideRestoreViewCallback: {
             completionHandler(.newData)
+        }, errorCallback: {
+            completionHandler(.noData)
         })
     }
 
