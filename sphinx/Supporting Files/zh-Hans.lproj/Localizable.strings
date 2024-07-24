@@ -185,7 +185,7 @@
 "edit.contact.upper" = "编辑联系人";
 "subscribed.upper" = "已订阅";
 "subscribe.upper" = "订阅";
-"nickname.address.required" = "昵称和地址是必需的。";
+"nickname.address.required" = "昵称、地址、路线提示为必填项。";
 "new.contact" = "新联系人";
 "invalid.pubkey" = "无效的公钥";
 "invalid.route.hint" = "无效的路由提示";

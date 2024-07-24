@@ -184,7 +184,7 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 "edit.contact.upper" = "編輯聯繫人";
 "subscribed.upper" = "已訂閱";
 "subscribe.upper" = "訂閱";
-"nickname.address.required" = "昵稱和地址是必需的。";
+"nickname.address.required" = "暱稱、地址和路線提示為必填項。";
 "new.contact" = "新聯繫人";
 "invalid.pubkey" = "無效的公鑰";
 "invalid.route.hint" = "無效的路由提示";

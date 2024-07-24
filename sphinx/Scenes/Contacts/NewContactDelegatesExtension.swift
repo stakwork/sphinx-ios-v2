@@ -43,7 +43,7 @@ extension NewContactViewController {
             showErrorAlert(message: "invalid.pubkey".localized)
         } else if !routeHint.isEmpty && !routeHint.isRouteHint {
             showErrorAlert(message: "invalid.route.hint".localized)
-        } else if nickname.isEmpty || pubkey.isEmpty {
+        } else if nickname.isEmpty || pubkey.isEmpty || routeHint.isEmpty {
             showErrorAlert(message: "nickname.address.required".localized)
         } else {
             UserContactsHelper.createV2Contact(nickname: nickname, pubKey: pubkey, routeHint: routeHint, callback: { (success, _) in
@@ -77,7 +77,9 @@ extension NewContactViewController : UITextFieldDelegate {
             saveEnabled = false
             return
         }
-        saveEnabled = true
+        saveEnabled = nickNameTextField.text?.isNotEmpty == true &&
+                      addressTextField.text?.isNotEmpty == true &&
+                      routeHintTextField.text?.isNotEmpty == true
     }
     
     func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {

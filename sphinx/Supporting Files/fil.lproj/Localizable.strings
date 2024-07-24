@@ -172,7 +172,7 @@
 "edit.contact.upper" = "EDIT CONTACT";
 "subscribed.upper" = "SUBSCRIBED";
 "subscribe.upper" = "SUBSCRIBE";
-"nickname.address.required" = "Kinakailangan ang Palayaw at Address.";
+"nickname.address.required"  = "Kinakailangan ang palayaw, Address at Pahiwatig ng Ruta.";
 "new.contact" = "Bagong kontak";
 "invalid.pubkey" = "Di-wastong pampublikong Susi";
 "address-boox.contact-delete.alert-title" = "Tanggalin ang Kontak";

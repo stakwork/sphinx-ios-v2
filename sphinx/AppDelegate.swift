@@ -193,9 +193,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             return
         }
         if let encryptedChild = getEncryptedIndexFrom(notification: notificationUserInfo),
-           let chat = SphinxOnionManager.sharedInstance.findChatForNotification(child: encryptedChild){
+           let chat = SphinxOnionManager.sharedInstance.findChatForNotification(child: encryptedChild)
+        {
             goTo(chat: chat)
         }
+        
+        self.notificationUserInfo = nil
     }
     
     func applicationWillTerminate(
@@ -278,6 +281,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         if GroupsPinManager.sharedInstance.shouldAskForPin() {
             let pinVC = PinCodeViewController.instantiate()
             pinVC.loggingCompletion = {
+                
+                AttachmentsManager.sharedInstance.runAuthentication(forceAuthenticate: true)
+                
                 if let currentVC = self.getCurrentVC() {
                     let _ = DeepLinksHandlerHelper.joinJitsiCall(vc: currentVC, forceJoin: true)
                     
@@ -447,6 +453,8 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         
         som.reconnectToServer(hideRestoreViewCallback: {
             completionHandler(.newData)
+        }, errorCallback: {
+            completionHandler(.noData)
         })
     }
 
