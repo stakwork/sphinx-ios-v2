@@ -201,8 +201,6 @@ extension DashboardRootViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        AttachmentsManager.sharedInstance.runAuthentication(forceAuthenticate: true)
-        
         navigationController?.isNavigationBarHidden = true
         searchTextField.delegate = self
         
