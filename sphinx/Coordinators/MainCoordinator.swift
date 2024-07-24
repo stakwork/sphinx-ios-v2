@@ -90,8 +90,6 @@ final class MainCoordinator: NSObject {
         let leftViewController = LeftMenuViewController.instantiate()
         let mainViewController = DashboardRootViewController.instantiate(leftMenuDelegate: leftViewController)
         let navigationController = UINavigationController(rootViewController: mainViewController)
-        
-        runBackgroundProcesses()
 
         drawerController = KYDrawerController(drawerDirection: .left, drawerWidth: 270.0)
         drawerController.delegate = leftViewController
@@ -103,14 +101,6 @@ final class MainCoordinator: NSObject {
         drawerController.setDrawerState(.closed, animated: false)
         
         rootViewController.switchToViewController(drawerController)
-    }
-    
-    func runBackgroundProcesses() {
-        DispatchQueue.global().async {
-            CoreDataManager.sharedManager.deleteExpiredInvites()
-            
-            AttachmentsManager.sharedInstance.runAuthentication()
-        }
     }
 }
 
