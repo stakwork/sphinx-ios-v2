@@ -36,6 +36,8 @@ class PinMessageViewController: UIViewController {
     
     var message: TransactionMessage! = nil
     
+    var urlRanges = [NSRange]()
+    
     var mode = ViewMode.PinnedMessageInfo
     
     public enum ViewMode {
@@ -157,8 +159,111 @@ extension PinMessageViewController {
             usernameLabel.textColor = ChatHelper.getSenderColorFor(message: message)
         }
         
-        messageLabel.text = message.bubbleMessageContentString ?? ""
         unpinButtonView.isHidden = message.chat?.isMyPublicGroup() == false
+        
+        if let messageContent = message.bubbleMessageContentString, messageContent.isNotEmpty {
+            configureWith(
+                messageContent: BubbleMessageLayoutState.MessageContent(
+                    text: messageContent.replacingHightlightedChars,
+                    font: UIFont(name: "Roboto-Regular", size: 15.0)!,
+                    highlightedFont: UIFont(name: "Roboto-Regular", size: 15.0)!,
+                    linkMatches: messageContent.stringLinks + messageContent.pubKeyMatches + messageContent.mentionMatches,
+                    highlightedMatches: messageContent.highlightedMatches,
+                    shouldLoadPaidText: false
+                )
+            )
+        } else {
+            messageLabel.text = message.bubbleMessageContentString ?? ""
+        }
+    }
+    
+    func configureWith(
+        messageContent: BubbleMessageLayoutState.MessageContent?
+    ) {
+        urlRanges = []
+        
+        if let messageContent = messageContent {
+            
+            messageLabel.attributedText = nil
+            messageLabel.text = nil
+            
+            if messageContent.linkMatches.isEmpty && messageContent.highlightedMatches.isEmpty {
+                messageLabel.text = messageContent.text
+                messageLabel.font = messageContent.font
+            } else {
+                let messageC = messageContent.text ?? ""
+                
+                let attributedString = NSMutableAttributedString(string: messageC)
+                attributedString.addAttributes([NSAttributedString.Key.font: messageContent.font], range: messageC.nsRange)
+                
+                ///Highlighted text formatting
+                let highlightedNsRanges = messageContent.highlightedMatches.map {
+                    return $0.range
+                }
+                
+                for (index, nsRange) in highlightedNsRanges.enumerated() {
+                    
+                    ///Subtracting the previous matches delimiter characters since they have been removed from the string
+                    let substractionNeeded = index * 2
+                    let adaptedRange = NSRange(location: nsRange.location - substractionNeeded, length: nsRange.length - 2)
+                    
+                    attributedString.addAttributes(
+                        [
+                            NSAttributedString.Key.foregroundColor: UIColor.Sphinx.HighlightedText,
+                            NSAttributedString.Key.backgroundColor: UIColor.Sphinx.HighlightedTextBackground,
+                            NSAttributedString.Key.font: messageContent.highlightedFont
+                        ],
+                        range: adaptedRange
+                    )
+                }
+                
+                ///Links formatting
+                for match in messageContent.linkMatches {
+                    
+                    attributedString.addAttributes(
+                        [
+                            NSAttributedString.Key.foregroundColor: UIColor.Sphinx.PrimaryBlue,
+                            NSAttributedString.Key.underlineStyle: NSUnderlineStyle.single.rawValue,
+                            NSAttributedString.Key.font: messageContent.font
+                        ],
+                        range: match.range
+                    )
+                    
+                    urlRanges.append(match.range)
+                }
+                
+                
+                messageLabel.attributedText = attributedString
+                messageLabel.isUserInteractionEnabled = true
+            }
+        }
+        
+        let tap = UITapGestureRecognizer(target: self, action: #selector(labelTapped(gesture:)))
+        
+        if urlRanges.isEmpty {
+            messageLabel.removeGestureRecognizer(tap)
+        } else {
+            messageLabel.addGestureRecognizer(tap)
+        }
+        
+        urlRanges = ChatHelper.removeDuplicatedContainedFrom(urlRanges: urlRanges)
+    }
+    
+    @objc func labelTapped(gesture: UITapGestureRecognizer) {
+        if let label = gesture.view as? UILabel, let text = label.text {
+            for range in urlRanges {
+                if gesture.didTapAttributedTextInLabel(label, inRange: range) {
+                    var link = (text as NSString).substring(with: range)
+                    
+                    if link.stringLinks.count > 0 {
+                        if !link.contains("http") {
+                            link = "http://\(link)"
+                        }
+                        UIApplication.shared.open(URL(string: link)!, options: [:], completionHandler: nil)
+                    }
+                }
+            }
+        }
     }
 }
 
