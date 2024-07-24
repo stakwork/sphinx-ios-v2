@@ -78,6 +78,11 @@ class AttachmentsManager {
             return
         }
         
+        guard let _ = SphinxOnionManager.sharedInstance.getAccountSeed() else {
+            errorCompletion()
+            return
+        }
+        
         guard let pubkey = UserContact.getOwner()?.publicKey else {
             errorCompletion()
             return

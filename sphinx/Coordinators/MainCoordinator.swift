@@ -87,6 +87,8 @@ final class MainCoordinator: NSObject {
     
     
     func presentInitialDrawer() {
+        AttachmentsManager.sharedInstance.runAuthentication(forceAuthenticate: true)
+        
         let leftViewController = LeftMenuViewController.instantiate()
         let mainViewController = DashboardRootViewController.instantiate(leftMenuDelegate: leftViewController)
         let navigationController = UINavigationController(rootViewController: mainViewController)
