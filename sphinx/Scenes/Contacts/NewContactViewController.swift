@@ -236,7 +236,7 @@ class NewContactViewController: KeyboardEventsViewController {
         
         if let _ = contact {
             updateProfile()
-        } else if routeHintTextField.text?.isRouteHint ?? false {
+        } else {
             createV2Contact()
         }
     }
