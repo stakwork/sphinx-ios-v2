@@ -183,7 +183,7 @@
 "edit.contact.upper" = "連絡先を編集";
 "subscribed.upper" = "定期購入";
 "subscribe.upper" = "定期購入";
-"nickname.address.required" = "ニックネームとアドレスが必要です。";
+"nickname.address.required" = "ニックネーム、住所、ルートヒントは必須です。";
 "new.contact" = "新しい連絡先";
 "invalid.pubkey" = "無効な公開鍵です。";
 "invalid.route.hint" = "無効なルートヒントです。";
