@@ -361,6 +361,7 @@ class CreateInvoiceViewController: CommonPaymentViewController {
         } else if let pubkey = paymentsViewModel.payment.destinationKey, let amt = paymentsViewModel.payment.amount {
             SphinxOnionManager.sharedInstance.keysend(
                 pubkey: pubkey,
+                routeHint: paymentsViewModel.payment.routeHint,
                 amt: amt
             ) { success in
                 if success {
