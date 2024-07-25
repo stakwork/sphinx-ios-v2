@@ -78,19 +78,19 @@ extension NewContactViewController : UITextFieldDelegate {
             return
         }
         saveEnabled = nickNameTextField.text?.isNotEmpty == true &&
-                      addressTextField.text?.isNotEmpty == true &&
-                      routeHintTextField.text?.isNotEmpty == true
+                      addressTextField.text?.isNotEmpty == true && addressTextField.text?.isPubKey == true &&
+                      routeHintTextField.text?.isNotEmpty == true && routeHintTextField.text?.isRouteHint == true
     }
     
     func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
         let currentString = textField.text! as String
         let newString = (currentString as NSString).replacingCharacters(in: range, with: string) as String
+        
         if newString.isVirtualPubKey {
             DelayPerformedHelper.performAfterDelay(seconds: 0.3, completion: {
                 self.completePubkeyComponents(newString)
             })
-        }
-        else if let parsedContact = SphinxOnionManager.sharedInstance.parseContactInfoString(fullContactInfo: newString){
+        } else if let parsedContact = SphinxOnionManager.sharedInstance.parseContactInfoString(fullContactInfo: newString) {
             DelayPerformedHelper.performAfterDelay(seconds: 0.3, completion: {
                 self.addressTextField.text = parsedContact.0
                 self.routeHintTextField.text = parsedContact.1 + "_" + parsedContact.2
@@ -103,7 +103,11 @@ extension NewContactViewController : UITextFieldDelegate {
     func completePubkeyComponents(_ string: String) {
         let (pubkey, routeHint) = string.pubkeyComponents
         addressTextField.text = pubkey
-        routeHintTextField.text = routeHint
+        
+        if routeHint.isNotEmpty {
+            routeHintTextField.text = routeHint
+        }
+        
         routeHintTextField.becomeFirstResponder()
     }
 }
