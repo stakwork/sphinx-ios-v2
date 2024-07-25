@@ -379,6 +379,7 @@ struct ParseInvoiceResult: Mappable {
     var value: Int?
     var paymentHash: String?
     var pubkey: String?
+    var hopHints: [String]?
     var description: String?
     var expiry: Int?
     
@@ -388,6 +389,7 @@ struct ParseInvoiceResult: Mappable {
         value          <- map["value"]
         paymentHash    <- map["payment_hash"]
         pubkey         <- map["pubkey"]
+        hopHints       <- map["hop_hints"]
         description    <- map["description"]
         expiry         <- map["expiry"]
     }
