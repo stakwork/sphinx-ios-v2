@@ -34,40 +34,40 @@ extension SphinxOnionManager {
         amtMsat: Int,
         completion: @escaping (Bool) -> ()
     ) {
-//        if let routerPubkey = self.routerPubkey {
-//            API.sharedInstance.fetchRoutingInfoFor(
-//                pubkey: pubkey,
-//                amtMsat: amtMsat,
-//                callback: { results in
-//                    if let results = results {
-//                        var resultsArray = []
-//                        do {
-//                            resultsArray = try results.toArray()
-//                        } catch {}
-//                            
-//                        if resultsArray.isEmpty {
-//                            completion(true)
-//                            return
-//                        }
-//                        
-//                        do {
-//                           let rr =  try concatRoute(
-//                                state: self.loadOnionStateAsData(),
-//                                endHops: results,
-//                                routerPubkey: routerPubkey,
-//                                amtMsat: UInt64(amtMsat)
-//                            )
-//                            let _ = self.handleRunReturn(rr: rr)
-//                            completion(true)
-//                        } catch {
-//                            completion(false)
-//                        }
-//                    } else {
-//                        completion(false)
-//                    }
-//                }
-//            )
-//        }
+        if let routerPubkey = self.routerPubkey {
+            API.sharedInstance.fetchRoutingInfoFor(
+                pubkey: pubkey,
+                amtMsat: amtMsat,
+                callback: { results in
+                    if let results = results {
+                        var resultsArray = []
+                        do {
+                            resultsArray = try results.toArray()
+                        } catch {}
+                            
+                        if resultsArray.isEmpty {
+                            completion(true)
+                            return
+                        }
+                        
+                        do {
+                           let rr =  try concatRoute(
+                                state: self.loadOnionStateAsData(),
+                                endHops: results,
+                                routerPubkey: routerPubkey,
+                                amtMsat: UInt64(amtMsat)
+                            )
+                            let _ = self.handleRunReturn(rr: rr)
+                            completion(true)
+                        } catch {
+                            completion(false)
+                        }
+                    } else {
+                        completion(false)
+                    }
+                }
+            )
+        }
     }
     
     func checkAndFetchRouteTo(
@@ -75,19 +75,17 @@ extension SphinxOnionManager {
         amtMsat: Int,
         callback: @escaping (Bool) -> ()
     ) {
-        callback(true)
-        return
-//        if requiresManualRouting(publicKey: publicKey) {
-//            fetchRoutingInfoFor(
-//                pubkey: publicKey,
-//                amtMsat: amtMsat,
-//                completion: { success in
-//                    callback(success)
-//                }
-//            )
-//        } else {
-//            callback(true)
-//        }
+        if requiresManualRouting(publicKey: publicKey) {
+            fetchRoutingInfoFor(
+                pubkey: publicKey,
+                amtMsat: amtMsat,
+                completion: { success in
+                    callback(success)
+                }
+            )
+        } else {
+            callback(true)
+        }
     }
     
     ///invoices related
@@ -129,60 +127,57 @@ extension SphinxOnionManager {
             
     func payInvoice(
         invoice: String,
-        overPayAmountMsat: UInt64? = nil
-    ) {
+        overPayAmountMsat: UInt64? = nil,
+        callback: ((Bool, String?) -> ())? = nil
+    ){
         guard let invoiceDict = getInvoiceDetails(invoice: invoice),
               let pubkey = invoiceDict.pubkey,
-              let amount = invoiceDict.value else 
+              let amount = invoiceDict.value else
         {
-            ///no pubkey so we can't route!
+            callback?(false, "Pubkey not found")
             return
         }
         
-        self.finalizePayInvoice(
-            invoice: invoice,
-            overpayAmount: overPayAmountMsat ?? 0
-        )
-        
-        return
-        
-//        checkAndFetchRouteTo(
-//            publicKey: pubkey,
-//            amtMsat: Int(overPayAmountMsat ?? 0)
-//        ) { success in
-//            if success {
-//                self.finalizePayInvoice(
-//                    invoice: invoice,
-//                    overpayAmount: overPayAmountMsat ?? 0
-//                )
-//            } else {
-//                ///error getting route info
-//                AlertHelper.showAlert(
-//                    title: "Routing Error",
-//                    message: "Could not find a route to the target. Please try again."
-//                )
-//            }
-//        }
+        checkAndFetchRouteTo(
+            publicKey: pubkey,
+            amtMsat: Int(overPayAmountMsat ?? UInt64(amount))
+        ) { success in
+            if success {
+                let (success, errorMsg) = self.finalizePayInvoice(
+                    invoice: invoice,
+                    amount: overPayAmountMsat ?? UInt64(amount)
+                )
+                callback?(success, errorMsg)
+            } else {
+                ///error getting route info
+                AlertHelper.showAlert(
+                    title: "Routing Error",
+                    message: "Could not find a route to the target. Please try again."
+                )
+                callback?(false, "Could not find a route to the target. Please try again.")
+            }
+        }
     }
     
     func finalizePayInvoice(
         invoice: String,
-        overpayAmount: UInt64
-    ) {
+        amount: UInt64
+    ) -> (Bool, String?) {
         guard let seed = getAccountSeed() else{
-            return
+            return (false, nil)
         }
         do {
             let rr = try sphinx.payInvoice(
                 seed: seed,
                 uniqueTime: getTimeWithEntropy(),
                 state: loadOnionStateAsData(),
-                bolt11: invoice, 
-                overpayMsat: nil
+                bolt11: invoice,
+                overpayMsat: amount
             )
             let _ = handleRunReturn(rr: rr)
-        } catch {
-            return
+            return (true, nil)
+        } catch let error {
+            return (false, (error as? SphinxError).debugDescription)
         }
     }
     
@@ -329,6 +324,15 @@ extension SphinxOnionManager {
                 nil,
                 "Error fetching transactions history: \(error.localizedDescription)"
             )
+        }
+    }
+    
+    func getIdFromMacaroon(macaroon: String) -> (String?, String?) {
+        do {
+            let identifier = try idFromMacaroon(macaroon: macaroon)
+            return (identifier, nil)
+        } catch let error {
+            return (nil, (error as? SphinxError).debugDescription)
         }
     }
 

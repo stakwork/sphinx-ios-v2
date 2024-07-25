@@ -295,10 +295,20 @@ class CreateInvoiceViewController: CommonPaymentViewController {
             AlertHelper.showAlert(title: "Invalid Amount", message: "generic.message.message".localized)
             return
         }
+        
         SphinxOnionManager.sharedInstance.payInvoice(
             invoice: invoice,
             overPayAmountMsat: UInt64(1000 * amount)
-        )
+        ) { (success, errorMsg) in
+            if success {
+                self.shouldDismissView()
+            } else {
+                AlertHelper.showAlert(
+                    title: "generic.error.title".localized,
+                    message: errorMsg ?? "generic.error.message".localized
+                )
+            }
+        }
     }
     
     private func shouldSendDirectPayment() {

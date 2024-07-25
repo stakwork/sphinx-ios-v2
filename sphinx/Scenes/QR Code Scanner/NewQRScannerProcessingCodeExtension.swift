@@ -196,10 +196,17 @@ extension NewQRScannerViewController {
     private func payInvoice(invoice: String) {
         invoiceLoading = true
         
-        var parameters = [String : AnyObject]()
-        parameters["payment_request"] = invoice as AnyObject?
-
-        SphinxOnionManager.sharedInstance.payInvoice(invoice: invoice)
-        self.dismiss(animated: true, completion: nil)
+        SphinxOnionManager.sharedInstance.payInvoice(invoice: invoice) { (success, errorMsg) in
+            if success {
+                self.dismiss(animated: true, completion: nil)
+            } else {
+                self.invoiceLoading = true
+                
+                AlertHelper.showAlert(
+                    title: "generic.error.title".localized,
+                    message: errorMsg ?? "generic.error.message".localized
+                )
+            }
+        }
     }
 }
