@@ -349,10 +349,6 @@ extension TransactionMessage {
         return fetchRequest
     }
     
-    static func getNewMessagesCountFor(chat: Chat, lastMessageId: Int) -> Int {
-        return CoreDataManager.sharedManager.getObjectsCountOfTypeWith(predicate: NSPredicate(format: "chat == %@ AND id > %d", chat, lastMessageId), entityName: "TransactionMessage")
-    }
-    
     static func getInvoiceWith(paymentHash: String) -> TransactionMessage? {
         let predicate = NSPredicate(format: "type == %d AND paymentHash == %@", TransactionMessageType.invoice.rawValue, paymentHash)
         let sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]

@@ -131,54 +131,58 @@ extension SphinxOnionManager {
             
     func payInvoice(
         invoice: String,
-        overPayAmountMsat: UInt64? = nil
-    ) {
+        overPayAmountMsat: UInt64? = nil,
+        callback: ((Bool, String?) -> ())? = nil
+    ){
         guard let invoiceDict = getInvoiceDetails(invoice: invoice),
               let pubkey = invoiceDict.pubkey,
-              let amount = invoiceDict.value else 
+              let amount = invoiceDict.value else
         {
-            ///no pubkey so we can't route!
+            callback?(false, "Pubkey not found")
             return
         }
         
         checkAndFetchRouteTo(
             publicKey: pubkey,
             routeHint: invoiceDict.hopHints?.last,
-            amtMsat: Int(overPayAmountMsat ?? 0)
+            amtMsat: Int(overPayAmountMsat ?? UInt64(amount))
         ) { success in
             if success {
-                self.finalizePayInvoice(
+                let (success, errorMsg) = self.finalizePayInvoice(
                     invoice: invoice,
-                    overpayAmount: overPayAmountMsat ?? 0
+                    amount: overPayAmountMsat ?? UInt64(amount)
                 )
+                callback?(success, errorMsg)
             } else {
                 ///error getting route info
                 AlertHelper.showAlert(
                     title: "Routing Error",
                     message: "Could not find a route to the target. Please try again."
                 )
+                callback?(false, "Could not find a route to the target. Please try again.")
             }
         }
     }
     
     func finalizePayInvoice(
         invoice: String,
-        overpayAmount: UInt64
-    ) {
+        amount: UInt64
+    ) -> (Bool, String?) {
         guard let seed = getAccountSeed() else{
-            return
+            return (false, "Account seed not found")
         }
         do {
             let rr = try sphinx.payInvoice(
                 seed: seed,
                 uniqueTime: getTimeWithEntropy(),
                 state: loadOnionStateAsData(),
-                bolt11: invoice, 
-                overpayMsat: nil
+                bolt11: invoice,
+                overpayMsat: amount
             )
             let _ = handleRunReturn(rr: rr)
-        } catch {
-            return
+            return (true, nil)
+        } catch let error {
+            return (false, (error as? SphinxError).debugDescription)
         }
     }
     
@@ -333,6 +337,15 @@ extension SphinxOnionManager {
                 nil,
                 "Error fetching transactions history: \(error.localizedDescription)"
             )
+        }
+    }
+    
+    func getIdFromMacaroon(macaroon: String) -> (String?, String?) {
+        do {
+            let identifier = try idFromMacaroon(macaroon: macaroon)
+            return (identifier, nil)
+        } catch let error {
+            return (nil, (error as? SphinxError).debugDescription)
         }
     }
 

@@ -612,11 +612,9 @@ extension SphinxOnionManager {
            let originalMessage = TransactionMessage.getMessageWith(uuid: omuuid)
         {
             originalMessage.uuid = newUUID
-            if (originalMessage.status == (TransactionMessage.TransactionMessageStatus.deleted.rawValue)){
-                originalMessage.status = TransactionMessage.TransactionMessageStatus.deleted.rawValue
-            }
             
             finalizeSentMessage(localMsg: originalMessage, remoteMsg: message)
+            return
         }
         
         if let uuid = message.uuid,

@@ -787,8 +787,6 @@ extension SphinxOnionManager {
             {
                 messageToDelete.status = TransactionMessage.TransactionMessageStatus.deleted.rawValue
             }
-            
-            CoreDataManager.sharedManager.deleteObject(object: deleteRequest)
         }
     }
     
