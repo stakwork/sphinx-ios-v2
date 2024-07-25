@@ -44,7 +44,7 @@ extension NewUserSignupFormViewController {
     func continueWith(code: String) {
         if (code.isInviteCode) {
             som.vc = self
-            som.chooseImportOrGenerateSeed(completion: { [weak self] success in
+            som.showMnemonicToUser(completion: { [weak self] success in
                 guard let self = self else {
                     return
                 }

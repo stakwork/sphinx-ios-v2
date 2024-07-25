@@ -435,6 +435,10 @@ extension TransactionMessage {
         return status == TransactionMessageStatus.deleted.rawValue
     }
     
+    func isDeleteRequest() -> Bool {
+        return type == TransactionMessageType.delete.rawValue
+    }
+    
     func isFlagged() -> Bool {
         if !isFlagActionAllowed {
             return false
@@ -789,7 +793,7 @@ extension TransactionMessage {
         let directionString = incoming ? "received".localized : "sent".localized
         let senderAlias = self.getMessageSenderNickname(minimized: true, owner: owner, contact: contact)
         
-        if isDeleted() {
+        if isDeleted() || isDeleteRequest() {
             return "message.x.deleted".localized
         }
 
