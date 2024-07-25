@@ -631,11 +631,9 @@ class SphinxOnionManager : NSObject {
 }
 
 extension SphinxOnionManager {//Sign Up UI Related:
-    func chooseImportOrGenerateSeed(completion:@escaping (Bool)->()){
-//        let requestEnteredMneumonicCallback: (() -> ()) = {
-//            self.importSeedPhrase()
-//        }
-        
+    func showMnemonicToUser(
+        completion:@escaping (Bool)->()
+    ){
         let generateSeedCallback: (() -> ()) = {
             guard let mneomnic = self.generateMnemonic(), let _ = self.vc as? NewUserSignupFormViewController else {
                 completion(false)
@@ -648,15 +646,6 @@ extension SphinxOnionManager {//Sign Up UI Related:
         }
         
         generateSeedCallback()
-        
-//        AlertHelper.showTwoOptionsAlert(
-//            title: "profile.mnemonic-generate-or-import-title".localized,
-//            message: "profile.mnemonic-generate-or-import-prompt".localized,
-//            confirm: generateSeedCallback,
-//            cancel: requestEnteredMneumonicCallback,
-//            confirmLabel: "profile.mnemonic-generate-prompt".localized,
-//            cancelLabel: "profile.mnemonic-import-prompt".localized
-//        )
     }
     
     func importSeedPhrase(){
