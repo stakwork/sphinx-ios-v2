@@ -423,14 +423,32 @@ extension ChatsCollectionViewController : ChatListCollectionViewCellDelegate, Me
             return
         }
         
-        let desiredState = !chat.seen //store this immutable value and always sync both based on chat status
+        guard let previousMsg = TransactionMessage.getMessagePreviousTo(
+            messageId: lastMessage.id,
+            on: chat
+        ) else {
+            return
+        }
         
-        lastMessage.seen = desiredState
-        chat.seen = desiredState
-        chat.saveChat()
+        let success = SphinxOnionManager.sharedInstance.setReadLevel(
+            index: UInt64(previousMsg.id),
+            chat: chat,
+            recipContact: chat.getContact()
+        )
+        
+        if success {
+            let desiredState = !chat.seen
+            
+            lastMessage.seen = desiredState
+            chat.seen = desiredState
+            chat.saveChat()
+        } else {
+            AlertHelper.showAlert(
+                title: "generic.error.title".localized,
+                message: "generic.error.message".localized
+            )
+        }
     }
-    
-    //Unused methods:
     
     func shouldDeleteMessage(message: TransactionMessage) {}
     

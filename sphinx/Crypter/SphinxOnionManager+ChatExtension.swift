@@ -1507,16 +1507,18 @@ extension SphinxOnionManager {
         index: UInt64,
         chat: Chat,
         recipContact: UserContact?
-    ) {
+    ) -> Bool {
         guard let seed = getAccountSeed() else{
-            return
+            return false
         }
         
         guard let _ = mqtt else {
-            return
+            return false
         }
         
-        guard let recipPubkey = (recipContact?.publicKey ?? chat.ownerPubkey) else { return  }
+        guard let recipPubkey = (recipContact?.publicKey ?? chat.ownerPubkey) else {
+            return false
+        }
         
         do {
             let rr = try sphinx.read(
@@ -1526,10 +1528,11 @@ extension SphinxOnionManager {
                 pubkey: recipPubkey,
                 msgIdx: index
             )
-            
             let _ = handleRunReturn(rr: rr)
+            return true
         } catch {
             print("Error setting read level")
+            return false
         }
     }
     
