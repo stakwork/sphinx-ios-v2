@@ -193,8 +193,10 @@ extension SphinxOnionManager {
         chat: Chat,
         type: TransactionMessage.TransactionMessageType
     ){
-        if (type.rawValue == TransactionMessage.TransactionMessageType.memberApprove.rawValue ||
-            type.rawValue == TransactionMessage.TransactionMessageType.memberReject.rawValue) == false {
+        if (
+            type.rawValue != TransactionMessage.TransactionMessageType.memberApprove.rawValue &&
+            type.rawValue != TransactionMessage.TransactionMessageType.memberReject.rawValue
+        ) {
             return
         }
         

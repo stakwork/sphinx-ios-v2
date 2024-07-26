@@ -336,8 +336,8 @@ extension SphinxOnionManager {
         
         for msg in rr.msgs {
             
-            if msgType == TransactionMessage.TransactionMessageType.delete.rawValue, let replyUUID = replyUUID {
-                guard let messageToDelete = TransactionMessage.getMessageWith(uuid: replyUUID) else {
+            if msgType == TransactionMessage.TransactionMessageType.delete.rawValue {
+                guard let replyUUID = replyUUID, let messageToDelete = TransactionMessage.getMessageWith(uuid: replyUUID) else {
                     return nil
                 }
                 messageToDelete.status = TransactionMessage.TransactionMessageStatus.deleted.rawValue
@@ -347,7 +347,11 @@ extension SphinxOnionManager {
                 return messageToDelete
             }
             
-            if let sentUUID = msg.uuid, msgType != TransactionMessage.TransactionMessageType.delete.rawValue {
+            if msgType == TransactionMessage.TransactionMessageType.memberApprove.rawValue {
+                return nil
+            }
+            
+            if let sentUUID = msg.uuid {
                 
                 let date = Date()
                 
