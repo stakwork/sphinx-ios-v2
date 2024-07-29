@@ -140,6 +140,7 @@
 "you.joined.tribe" = "You have joined the tribe";
 "has.joined.group" = "%@ がグループに参加しました";
 "has.joined.tribe" = "%@ がトライブに参加しました";
+"you.joined.tribe" = "あなたは部族に加わりました";
 "added.to.group" = "%@ がグループに追加されました";
 "new.public.group" = "新しいトライブ";
 "edit.public.group" = "トライブを編集";

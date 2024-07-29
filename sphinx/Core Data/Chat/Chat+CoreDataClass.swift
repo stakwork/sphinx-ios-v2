@@ -804,19 +804,7 @@ public class Chat: NSManagedObject {
             image = nil
         }
         
-        syncAfterUpdate()
-    }
-    
-    func syncAfterUpdate() {
-        checkForDeletedTribe()
-    } 
-    
-    func checkForDeletedTribe() {
-        if let tribeInfo = self.tribeInfo, tribeInfo.deleted {
-            if let lastMessage = self.getAllMessages(limit: 1).last, lastMessage.type != TransactionMessage.TransactionMessageType.groupDelete.rawValue {
-                AlertHelper.showAlert(title: "deleted.tribe.title".localized, message: "deleted.tribe.description".localized)
-            }
-        }
+        saveChat()
     }
     
     func shouldShowPrice() -> Bool {

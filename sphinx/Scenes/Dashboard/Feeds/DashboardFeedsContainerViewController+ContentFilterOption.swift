@@ -17,12 +17,10 @@ extension DashboardFeedsContainerViewController {
             titleForDisplay: "dashboard.feeds.filters.browse".localized,
             displayOrder: 1
         )
-        
         static var discover: Self = .init(
             titleForDisplay: "dashboard.feeds.filters.discover".localized,
             displayOrder: 2
         )
-        
         static var listen: Self = .init(
             titleForDisplay: "dashboard.feeds.filters.listen".localized,
             displayOrder: 3
