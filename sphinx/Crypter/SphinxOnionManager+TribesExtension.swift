@@ -125,8 +125,12 @@ extension SphinxOnionManager {
             uuid: pubkey,
             useSSL: false,
             completion: { groupInfo in
+                if groupInfo["deleted"].boolValue == true {
+                    return
+                }
+                
                 let qrString = "action=tribeV2&pubkey=\(pubkey)&host=\(host)"
-                var tribeInfo = GroupsManager.TribeInfo(ownerPubkey:pubkey, host: host,uuid: pubkey)
+                var tribeInfo = GroupsManager.TribeInfo(ownerPubkey: pubkey, host: host, uuid: pubkey)
                 self.stashedInitialTribe = nil
                 
                 GroupsManager.sharedInstance.update(tribeInfo: &tribeInfo, from: groupInfo)

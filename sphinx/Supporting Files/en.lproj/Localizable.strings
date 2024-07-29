@@ -143,6 +143,7 @@
 "has.joined.group" = "%@ has joined the group";
 "you.joined.tribe" = "You have joined the tribe";
 "has.joined.tribe" = "%@ has joined the tribe";
+"you.joined.tribe" = "You have joined the tribe";
 "added.to.group" = "%@ has been added to group";
 "new.public.group" = "NEW TRIBE";
 "edit.public.group" = "EDIT TRIBE";
