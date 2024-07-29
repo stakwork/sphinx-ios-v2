@@ -59,6 +59,8 @@ extension DashboardRootViewController: UITextFieldDelegate {
             return FeedType.BrowseTorrent
         case DashboardFeedsContainerViewController.ContentFilterOption.discover.id:
             return FeedType.SearchTorrent
+        case DashboardFeedsContainerViewController.ContentFilterOption.read.id:
+            return FeedType.Newsletter
         default:
             return nil
         }

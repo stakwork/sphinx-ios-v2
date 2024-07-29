@@ -260,6 +260,12 @@ extension DashboardRootViewController {
                 }
             )
         }
+        else if feedResult.feedType == .Newsletter{
+            let nli = NewsletterItem("abc123")
+            nli.title = "test 123"
+            nli.itemUrl = URL(string: feedResult.feedURLPath)
+            presentItemWebView(for: nli)
+        }
         
     }
     

@@ -221,6 +221,7 @@ class BTMedia: Mappable {
         if let fileName = btMedia.name?.lowercased() {
             let videoExtensions = [".m4v", ".avi", ".mp4", ".mov", ".mkv"]
             let audioExtensions = [".mp3", ".m4a", ".aac", ".wav", ".ogg", ".flac", ".wma", ".aiff", ".opus"]
+            let readerExtensions = [".epub",".pdf"]
             switch type {
             case .Podcast where btMedia.pathType == "Dir":
                 feedURLPath = "\(btMedia.name!)"
@@ -234,6 +235,10 @@ class BTMedia: Mappable {
                 imageUrl = (isVideo == false) ? "https://png.pngtree.com/png-vector/20211018/ourmid/pngtree-simple-podcast-logo-design-png-image_3991612.png"
                 : "https://png.pngtree.com/png-clipart/20210309/original/pngtree-movie-clip-art-movie-film-field-clapper-board-png-image_5862049.jpg"
                 feedURLPath = isVideo ? "\(API.sharedInstance.btBaseUrl)/\(btMedia.name!)" : "\(btMedia.name!)"
+            case .Newsletter where readerExtensions.contains(where: fileName.hasSuffix):
+                imageUrl = "https://png.pngtree.com/png-vector/20231016/ourmid/pngtree-isolated-book-sticker-png-image_10188106.png"
+                feedURLPath = "\(API.sharedInstance.btBaseUrl)/\(btMedia.name!)"
+                print("Newsletter tab retrieved:\(feedURLPath)")
             default:
                 break
             }
