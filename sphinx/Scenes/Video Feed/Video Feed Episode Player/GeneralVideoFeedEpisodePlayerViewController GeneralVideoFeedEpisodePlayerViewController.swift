@@ -21,9 +21,11 @@ class GeneralVideoFeedEpisodePlayerViewController: UIViewController, VideoFeedEp
     
     private lazy var controlsView: PlayerControlsView = {
         let controls = PlayerControlsView()
+        controls.isUserInteractionEnabled = true
         controls.playPauseButton.addTarget(self, action: #selector(playPauseTapped), for: .touchUpInside)
         controls.rewindButton.addTarget(self, action: #selector(rewindTapped), for: .touchUpInside)
         controls.forwardButton.addTarget(self, action: #selector(forwardTapped), for: .touchUpInside)
+        controls.layer.zPosition = 1
         controls.translatesAutoresizingMaskIntoConstraints = false
         return controls
     }()
@@ -86,12 +88,12 @@ extension GeneralVideoFeedEpisodePlayerViewController {
         episodeViewCountLabel.text = "\(Int.random(in: 100...999)) Views"
         episodePublishDateLabel.text = videoPlayerEpisode.publishDateText
         
-        videoPlayerView.addSubview(controlsView)
+        view.addSubview(controlsView)
         NSLayoutConstraint.activate([
             controlsView.leadingAnchor.constraint(equalTo: videoPlayerView.leadingAnchor),
             controlsView.trailingAnchor.constraint(equalTo: videoPlayerView.trailingAnchor),
-            controlsView.bottomAnchor.constraint(equalTo: videoPlayerView.bottomAnchor),
-            controlsView.heightAnchor.constraint(equalToConstant: 60)
+            controlsView.topAnchor.constraint(equalTo: videoPlayerView.topAnchor),
+            controlsView.bottomAnchor.constraint(equalTo: videoPlayerView.bottomAnchor)
         ])
     }
     
@@ -110,7 +112,7 @@ extension GeneralVideoFeedEpisodePlayerViewController {
         episodeViewCountLabel.text = "\(Int.random(in: 100...999)) Views"
         episodePublishDateLabel.text = videoPlayerEpisode.publishDateText
         
-        videoPlayerView.bringSubviewToFront(controlsView) // Ensure controls are on top
+        view.bringSubviewToFront(controlsView) // Ensure controls are on top
     }
     
     private func addPlayerLoadingView() {
@@ -118,7 +120,7 @@ extension GeneralVideoFeedEpisodePlayerViewController {
             child: loadingViewController,
             container: videoPlayerView
         )
-        videoPlayerView.bringSubviewToFront(controlsView) // Ensure controls are on top
+        view.bringSubviewToFront(controlsView) // Ensure controls are on top
     }
     
     private func removePlayerLoadingView() {
@@ -139,17 +141,17 @@ extension GeneralVideoFeedEpisodePlayerViewController {
         } else {
             vlcPlayer.play()
         }
-        videoPlayerView.bringSubviewToFront(controlsView) // Ensure controls are on top
+        view.bringSubviewToFront(controlsView) // Ensure controls are on top
     }
     
     @objc private func rewindTapped() {
         vlcPlayer.jumpBackward(10)
-        videoPlayerView.bringSubviewToFront(controlsView) // Ensure controls are on top
+        view.bringSubviewToFront(controlsView) // Ensure controls are on top
     }
     
     @objc private func forwardTapped() {
         vlcPlayer.jumpForward(10)
-        videoPlayerView.bringSubviewToFront(controlsView) // Ensure controls are on top
+        view.bringSubviewToFront(controlsView) // Ensure controls are on top
     }
     
     private func startContentReadyTimer() {
@@ -178,7 +180,7 @@ extension GeneralVideoFeedEpisodePlayerViewController {
         
         DispatchQueue.main.async { [weak self] in
             self?.removePlayerLoadingView()
-            self?.videoPlayerView.bringSubviewToFront(self?.controlsView ?? UIView()) // Ensure controls are on top
+            self?.view.bringSubviewToFront(self?.controlsView ?? UIView()) // Ensure controls are on top
         }
     }
     
@@ -226,17 +228,22 @@ class PlayerControlsView: UIView {
     }
     
     private func setupViews() {
+        isUserInteractionEnabled = true
+        
         playPauseButton = UIButton(type: .system)
         playPauseButton.setTitle("Play/Pause", for: .normal)
         playPauseButton.translatesAutoresizingMaskIntoConstraints = false
+        playPauseButton.isUserInteractionEnabled = true
         
         rewindButton = UIButton(type: .system)
         rewindButton.setTitle("<<", for: .normal)
         rewindButton.translatesAutoresizingMaskIntoConstraints = false
+        rewindButton.isUserInteractionEnabled = true
         
         forwardButton = UIButton(type: .system)
         forwardButton.setTitle(">>", for: .normal)
         forwardButton.translatesAutoresizingMaskIntoConstraints = false
+        forwardButton.isUserInteractionEnabled = true
         
         addSubview(playPauseButton)
         addSubview(rewindButton)
