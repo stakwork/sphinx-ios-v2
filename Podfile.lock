@@ -1,9 +1,13 @@
 PODS:
+  - AEXML (4.7.0)
   - Alamofire (5.6.4)
   - CocoaMQTT (2.1.6):
     - CocoaMQTT/Core (= 2.1.6)
   - CocoaMQTT/Core (2.1.6):
     - MqttCocoaAsyncSocket (~> 1.0.8)
+  - EPUBKit (0.3.1):
+    - AEXML
+    - Zip
   - FLAnimatedImage (1.0.16)
   - Giphy (2.1.20):
     - libwebp
@@ -28,6 +32,7 @@ PODS:
   - lottie-ios (3.2.3)
   - MarqueeLabel (4.3.0)
   - MessagePack.swift (4.0.0)
+  - MobileVLCKit (3.6.0)
   - MqttCocoaAsyncSocket (1.0.8)
   - ObjectMapper (4.2.0)
   - PINCache (3.0.3):
@@ -58,10 +63,12 @@ PODS:
   - Tor (405.8.1)
   - UIView-Shimmer (1.0.4)
   - youtube-ios-player-helper (1.0.3)
+  - Zip (2.1.2)
 
 DEPENDENCIES:
   - Alamofire (~> 5.6.4)
   - CocoaMQTT (from `https://github.com/emqx/CocoaMQTT.git`)
+  - EPUBKit
   - Giphy (= 2.1.20)
   - JitsiMeetSDK (~> 8.4.0)
   - KeychainAccess
@@ -69,6 +76,7 @@ DEPENDENCIES:
   - lottie-ios
   - MarqueeLabel
   - MessagePack.swift (~> 4.0)
+  - MobileVLCKit
   - ObjectMapper
   - PINCache
   - ReachabilitySwift
@@ -87,7 +95,9 @@ DEPENDENCIES:
 
 SPEC REPOS:
   trunk:
+    - AEXML
     - Alamofire
+    - EPUBKit
     - FLAnimatedImage
     - Giphy
     - JitsiMeetSDK
@@ -98,6 +108,7 @@ SPEC REPOS:
     - lottie-ios
     - MarqueeLabel
     - MessagePack.swift
+    - MobileVLCKit
     - MqttCocoaAsyncSocket
     - ObjectMapper
     - PINCache
@@ -113,6 +124,7 @@ SPEC REPOS:
     - SwiftyRSA
     - UIView-Shimmer
     - youtube-ios-player-helper
+    - Zip
 
 EXTERNAL SOURCES:
   CocoaMQTT:
@@ -131,8 +143,10 @@ CHECKOUT OPTIONS:
     :git: https://github.com/yahoojapan/SwiftyXMLParser.git
 
 SPEC CHECKSUMS:
+  AEXML: 5ff2a4695529348cda96b8b872cf73212ad050d7
   Alamofire: 4e95d97098eacb88856099c4fc79b526a299e48c
   CocoaMQTT: 1f206228b29318eabdacad0c2e4e88575922c27a
+  EPUBKit: 7ba9a980346d75acda03717fd66d1696fafe6417
   FLAnimatedImage: 8f3e854ebf9680b71f0b6e700939687fc4d82b4b
   Giphy: b6d5087521d251bb8c99cdc0eb07bbdf86d142d5
   JitsiMeetSDK: cb94e522af5cb96b7551dcbb4e8e3592dd215596
@@ -143,6 +157,7 @@ SPEC CHECKSUMS:
   lottie-ios: c058aeafa76daa4cf64d773554bccc8385d0150e
   MarqueeLabel: 02f5ac8fd6877c94564556cb93fa86c70c08baeb
   MessagePack.swift: 417f6b6e27a86ad4f19a0ee47093b3985cd77323
+  MobileVLCKit: 8fe98ae53b7464f32e4bdf527cc7d53053e4d3a5
   MqttCocoaAsyncSocket: 77d3b74f76228dd5a05d1f9526eab101d415b30c
   ObjectMapper: 1eb41f610210777375fa806bf161dc39fb832b81
   PINCache: 7a8fc1a691173d21dbddbf86cd515de6efa55086
@@ -160,7 +175,8 @@ SPEC CHECKSUMS:
   Tor: fad2cec0e7ef5f889fecdaf69e5edd6df0438326
   UIView-Shimmer: ff0a32c73d67c7dbdea3d9e530538b10d18aea56
   youtube-ios-player-helper: 0185c57db23c80d63d6ca11251d110abb8a4ca61
+  Zip: b3fef584b147b6e582b2256a9815c897d60ddc67
 
-PODFILE CHECKSUM: 17e09ed220d203794477246397189181ab7bf98a
+PODFILE CHECKSUM: 6e31a95419d2f3760ea1d1570f58cc2e3e5cf06a
 
-COCOAPODS: 1.11.3
+COCOAPODS: 1.14.3
