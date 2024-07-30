@@ -19,6 +19,15 @@ class GeneralVideoFeedEpisodePlayerViewController: UIViewController, VideoFeedEp
     }()
     private lazy var loadingViewController = LoadingViewController()
     
+    private lazy var controlsView: PlayerControlsView = {
+        let controls = PlayerControlsView()
+        controls.playPauseButton.addTarget(self, action: #selector(playPauseTapped), for: .touchUpInside)
+        controls.rewindButton.addTarget(self, action: #selector(rewindTapped), for: .touchUpInside)
+        controls.forwardButton.addTarget(self, action: #selector(forwardTapped), for: .touchUpInside)
+        controls.translatesAutoresizingMaskIntoConstraints = false
+        return controls
+    }()
+    
     var videoPlayerEpisode: Video! {
         didSet {
             DispatchQueue.main.async { [weak self] in
@@ -76,6 +85,14 @@ extension GeneralVideoFeedEpisodePlayerViewController {
         episodeTitleLabel.text = videoPlayerEpisode.titleForDisplay
         episodeViewCountLabel.text = "\(Int.random(in: 100...999)) Views"
         episodePublishDateLabel.text = videoPlayerEpisode.publishDateText
+        
+        videoPlayerView.addSubview(controlsView)
+        NSLayoutConstraint.activate([
+            controlsView.leadingAnchor.constraint(equalTo: videoPlayerView.leadingAnchor),
+            controlsView.trailingAnchor.constraint(equalTo: videoPlayerView.trailingAnchor),
+            controlsView.bottomAnchor.constraint(equalTo: videoPlayerView.bottomAnchor),
+            controlsView.heightAnchor.constraint(equalToConstant: 60)
+        ])
     }
     
     private func updateVideoPlayer(withNewEpisode video: Video) {
@@ -92,6 +109,8 @@ extension GeneralVideoFeedEpisodePlayerViewController {
         episodeTitleLabel.text = videoPlayerEpisode.titleForDisplay
         episodeViewCountLabel.text = "\(Int.random(in: 100...999)) Views"
         episodePublishDateLabel.text = videoPlayerEpisode.publishDateText
+        
+        videoPlayerView.bringSubviewToFront(controlsView) // Ensure controls are on top
     }
     
     private func addPlayerLoadingView() {
@@ -99,6 +118,7 @@ extension GeneralVideoFeedEpisodePlayerViewController {
             child: loadingViewController,
             container: videoPlayerView
         )
+        videoPlayerView.bringSubviewToFront(controlsView) // Ensure controls are on top
     }
     
     private func removePlayerLoadingView() {
@@ -111,6 +131,25 @@ extension GeneralVideoFeedEpisodePlayerViewController {
     
     private func removePlayerErrorView() {
         // TODO: Implement error view handling
+    }
+    
+    @objc private func playPauseTapped() {
+        if vlcPlayer.isPlaying {
+            vlcPlayer.pause()
+        } else {
+            vlcPlayer.play()
+        }
+        videoPlayerView.bringSubviewToFront(controlsView) // Ensure controls are on top
+    }
+    
+    @objc private func rewindTapped() {
+        vlcPlayer.jumpBackward(10)
+        videoPlayerView.bringSubviewToFront(controlsView) // Ensure controls are on top
+    }
+    
+    @objc private func forwardTapped() {
+        vlcPlayer.jumpForward(10)
+        videoPlayerView.bringSubviewToFront(controlsView) // Ensure controls are on top
     }
     
     private func startContentReadyTimer() {
@@ -126,7 +165,7 @@ extension GeneralVideoFeedEpisodePlayerViewController {
         
         contentReadyAttempts += 1
         
-        if vlcPlayer.time != nil && (vlcPlayer.media != nil) {
+        if vlcPlayer.time != nil && vlcPlayer.media != nil {
             startPlayingVideo()
         } else if contentReadyAttempts >= maxContentReadyAttempts {
             handleContentReadyTimeout()
@@ -139,6 +178,7 @@ extension GeneralVideoFeedEpisodePlayerViewController {
         
         DispatchQueue.main.async { [weak self] in
             self?.removePlayerLoadingView()
+            self?.videoPlayerView.bringSubviewToFront(self?.controlsView ?? UIView()) // Ensure controls are on top
         }
     }
     
@@ -164,5 +204,53 @@ extension GeneralVideoFeedEpisodePlayerViewController: VLCMediaPlayerDelegate {
         } else if vlcPlayer.state == .playing {
             startPlayingVideo()
         }
+    }
+}
+
+
+import UIKit
+
+class PlayerControlsView: UIView {
+    var playPauseButton: UIButton!
+    var rewindButton: UIButton!
+    var forwardButton: UIButton!
+    
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupViews()
+    }
+    
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setupViews()
+    }
+    
+    private func setupViews() {
+        playPauseButton = UIButton(type: .system)
+        playPauseButton.setTitle("Play/Pause", for: .normal)
+        playPauseButton.translatesAutoresizingMaskIntoConstraints = false
+        
+        rewindButton = UIButton(type: .system)
+        rewindButton.setTitle("<<", for: .normal)
+        rewindButton.translatesAutoresizingMaskIntoConstraints = false
+        
+        forwardButton = UIButton(type: .system)
+        forwardButton.setTitle(">>", for: .normal)
+        forwardButton.translatesAutoresizingMaskIntoConstraints = false
+        
+        addSubview(playPauseButton)
+        addSubview(rewindButton)
+        addSubview(forwardButton)
+        
+        NSLayoutConstraint.activate([
+            playPauseButton.centerXAnchor.constraint(equalTo: centerXAnchor),
+            playPauseButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -20),
+            
+            rewindButton.trailingAnchor.constraint(equalTo: playPauseButton.leadingAnchor, constant: -20),
+            rewindButton.centerYAnchor.constraint(equalTo: playPauseButton.centerYAnchor),
+            
+            forwardButton.leadingAnchor.constraint(equalTo: playPauseButton.trailingAnchor, constant: 20),
+            forwardButton.centerYAnchor.constraint(equalTo: playPauseButton.centerYAnchor),
+        ])
     }
 }
