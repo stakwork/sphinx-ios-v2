@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="21507" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="22155" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
     <device id="retina6_1" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="21505"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="22131"/>
         <capability name="Image references" minToolsVersion="12.0"/>
         <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
@@ -11,6 +11,9 @@
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <customFonts key="customFonts">
+        <array key="MaterialIcons-Regular.ttf">
+            <string>MaterialIcons-Regular</string>
+        </array>
         <array key="Roboto-Medium.ttf">
             <string>Roboto-Medium</string>
         </array>
@@ -120,6 +123,99 @@
                                 <rect key="frame" x="0.0" y="0.0" width="414" height="817"/>
                                 <color key="backgroundColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                             </view>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="72J-LY-yQ8">
+                                <rect key="frame" x="0.0" y="0.0" width="414" height="817"/>
+                                <subviews>
+                                    <button opaque="NO" tag="3" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="ChV-N6-wua">
+                                        <rect key="frame" x="132" y="333.5" width="150" height="150"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" secondItem="ChV-N6-wua" secondAttribute="height" multiplier="1:1" id="Tqs-p7-YUa"/>
+                                            <constraint firstAttribute="width" constant="150" id="c53-qn-a5O"/>
+                                            <constraint firstAttribute="width" secondItem="ChV-N6-wua" secondAttribute="height" multiplier="1:1" id="xta-2K-hPg"/>
+                                        </constraints>
+                                        <fontDescription key="fontDescription" name="MaterialIcons-Regular" family="Material Icons" pointSize="72"/>
+                                        <state key="normal" title="play_arrow">
+                                            <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        </state>
+                                    </button>
+                                    <button opaque="NO" tag="3" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="SCl-NQ-GDi">
+                                        <rect key="frame" x="356" y="383.5" width="50" height="50"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="50" id="6Y1-fl-8kM"/>
+                                            <constraint firstAttribute="width" secondItem="SCl-NQ-GDi" secondAttribute="height" multiplier="1:1" id="OGJ-HH-Jn4"/>
+                                            <constraint firstAttribute="width" secondItem="SCl-NQ-GDi" secondAttribute="height" multiplier="1:1" id="bb4-jD-B3w"/>
+                                        </constraints>
+                                        <fontDescription key="fontDescription" name="MaterialIcons-Regular" family="Material Icons" pointSize="40"/>
+                                        <state key="normal" title="chevron_right">
+                                            <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        </state>
+                                    </button>
+                                    <button opaque="NO" userInteractionEnabled="NO" tag="3" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="o8J-Lb-mIB">
+                                        <rect key="frame" x="347" y="383.5" width="50" height="50"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="50" id="C1q-3b-oEU"/>
+                                            <constraint firstAttribute="width" secondItem="o8J-Lb-mIB" secondAttribute="height" multiplier="1:1" id="tKj-1y-pOb"/>
+                                            <constraint firstAttribute="width" secondItem="o8J-Lb-mIB" secondAttribute="height" multiplier="1:1" id="tyM-7M-rR0"/>
+                                        </constraints>
+                                        <fontDescription key="fontDescription" name="MaterialIcons-Regular" family="Material Icons" pointSize="40"/>
+                                        <state key="normal" title="chevron_right">
+                                            <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        </state>
+                                    </button>
+                                    <button opaque="NO" tag="3" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="wVH-GB-Loi">
+                                        <rect key="frame" x="8" y="383.5" width="50" height="50"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" secondItem="wVH-GB-Loi" secondAttribute="height" multiplier="1:1" id="ODv-bD-UWH"/>
+                                            <constraint firstAttribute="width" constant="50" id="ogy-ro-9Jj"/>
+                                            <constraint firstAttribute="width" secondItem="wVH-GB-Loi" secondAttribute="height" multiplier="1:1" id="qye-81-xau"/>
+                                        </constraints>
+                                        <fontDescription key="fontDescription" name="MaterialIcons-Regular" family="Material Icons" pointSize="40"/>
+                                        <state key="normal" title="chevron_left">
+                                            <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        </state>
+                                    </button>
+                                    <button opaque="NO" userInteractionEnabled="NO" tag="3" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="5MO-vJ-J0y">
+                                        <rect key="frame" x="17" y="383.5" width="50" height="50"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="50" id="UeM-Hs-HSe"/>
+                                            <constraint firstAttribute="width" secondItem="5MO-vJ-J0y" secondAttribute="height" multiplier="1:1" id="lxr-ZC-4Z4"/>
+                                            <constraint firstAttribute="width" secondItem="5MO-vJ-J0y" secondAttribute="height" multiplier="1:1" id="vJW-v5-HSp"/>
+                                        </constraints>
+                                        <fontDescription key="fontDescription" name="MaterialIcons-Regular" family="Material Icons" pointSize="40"/>
+                                        <state key="normal" title="chevron_left">
+                                            <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        </state>
+                                    </button>
+                                </subviews>
+                                <constraints>
+                                    <constraint firstItem="wVH-GB-Loi" firstAttribute="width" secondItem="wVH-GB-Loi" secondAttribute="height" multiplier="1:1" id="0hh-LB-3Ky"/>
+                                    <constraint firstItem="ChV-N6-wua" firstAttribute="centerX" secondItem="72J-LY-yQ8" secondAttribute="centerX" id="2hx-fg-KNK"/>
+                                    <constraint firstItem="SCl-NQ-GDi" firstAttribute="width" secondItem="SCl-NQ-GDi" secondAttribute="height" multiplier="1:1" id="3ub-QD-8kF"/>
+                                    <constraint firstItem="SCl-NQ-GDi" firstAttribute="centerY" secondItem="72J-LY-yQ8" secondAttribute="centerY" id="6WN-52-YCM"/>
+                                    <constraint firstItem="SCl-NQ-GDi" firstAttribute="width" secondItem="SCl-NQ-GDi" secondAttribute="height" multiplier="1:1" id="AvE-GC-Iud"/>
+                                    <constraint firstAttribute="trailing" secondItem="SCl-NQ-GDi" secondAttribute="trailing" constant="8" id="BBY-T3-77T"/>
+                                    <constraint firstItem="wVH-GB-Loi" firstAttribute="width" secondItem="wVH-GB-Loi" secondAttribute="height" multiplier="1:1" id="IqK-ot-T2J"/>
+                                    <constraint firstItem="5MO-vJ-J0y" firstAttribute="width" secondItem="5MO-vJ-J0y" secondAttribute="height" multiplier="1:1" id="IyT-gi-boN"/>
+                                    <constraint firstItem="5MO-vJ-J0y" firstAttribute="width" secondItem="5MO-vJ-J0y" secondAttribute="height" multiplier="1:1" id="LWg-mJ-RYv"/>
+                                    <constraint firstItem="wVH-GB-Loi" firstAttribute="width" secondItem="wVH-GB-Loi" secondAttribute="height" multiplier="1:1" id="MJi-Gf-KKN"/>
+                                    <constraint firstItem="wVH-GB-Loi" firstAttribute="leading" secondItem="72J-LY-yQ8" secondAttribute="leading" constant="8" id="NRy-7M-Zef"/>
+                                    <constraint firstItem="wVH-GB-Loi" firstAttribute="width" secondItem="wVH-GB-Loi" secondAttribute="height" multiplier="1:1" id="Rxg-aQ-Thg"/>
+                                    <constraint firstAttribute="trailing" secondItem="o8J-Lb-mIB" secondAttribute="trailing" constant="17" id="Wmd-Df-Fqj"/>
+                                    <constraint firstItem="wVH-GB-Loi" firstAttribute="centerY" secondItem="72J-LY-yQ8" secondAttribute="centerY" id="XpW-nd-j33"/>
+                                    <constraint firstItem="5MO-vJ-J0y" firstAttribute="width" secondItem="5MO-vJ-J0y" secondAttribute="height" multiplier="1:1" id="beN-7Y-xkn"/>
+                                    <constraint firstItem="o8J-Lb-mIB" firstAttribute="width" secondItem="o8J-Lb-mIB" secondAttribute="height" multiplier="1:1" id="dqk-vE-THU"/>
+                                    <constraint firstItem="o8J-Lb-mIB" firstAttribute="width" secondItem="o8J-Lb-mIB" secondAttribute="height" multiplier="1:1" id="duw-KB-eHV"/>
+                                    <constraint firstItem="wVH-GB-Loi" firstAttribute="centerY" secondItem="5MO-vJ-J0y" secondAttribute="centerY" id="fxg-ry-htA"/>
+                                    <constraint firstItem="SCl-NQ-GDi" firstAttribute="centerY" secondItem="o8J-Lb-mIB" secondAttribute="centerY" id="ger-s2-2Fp"/>
+                                    <constraint firstItem="5MO-vJ-J0y" firstAttribute="leading" secondItem="72J-LY-yQ8" secondAttribute="leading" constant="17" id="iAE-f7-Wzi"/>
+                                    <constraint firstItem="5MO-vJ-J0y" firstAttribute="width" secondItem="5MO-vJ-J0y" secondAttribute="height" multiplier="1:1" id="kcr-2V-xgB"/>
+                                    <constraint firstItem="o8J-Lb-mIB" firstAttribute="width" secondItem="o8J-Lb-mIB" secondAttribute="height" multiplier="1:1" id="oe9-Gg-ahG"/>
+                                    <constraint firstItem="ChV-N6-wua" firstAttribute="centerY" secondItem="72J-LY-yQ8" secondAttribute="centerY" id="rqA-Zy-BJr"/>
+                                    <constraint firstItem="o8J-Lb-mIB" firstAttribute="width" secondItem="o8J-Lb-mIB" secondAttribute="height" multiplier="1:1" id="tpu-f3-BzC"/>
+                                    <constraint firstItem="5MO-vJ-J0y" firstAttribute="width" secondItem="5MO-vJ-J0y" secondAttribute="height" multiplier="1:1" id="ulM-d0-k7B"/>
+                                    <constraint firstItem="5MO-vJ-J0y" firstAttribute="width" secondItem="5MO-vJ-J0y" secondAttribute="height" multiplier="1:1" id="vUm-yz-Z5U"/>
+                                </constraints>
+                            </view>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="Zg2-JG-fiP"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
@@ -127,23 +223,33 @@
                             <constraint firstItem="Zg2-JG-fiP" firstAttribute="trailing" secondItem="XKa-14-GaI" secondAttribute="trailing" id="0lN-tm-eJ1"/>
                             <constraint firstAttribute="bottom" secondItem="VQJ-aV-rUs" secondAttribute="bottom" id="5eA-cA-7Xn"/>
                             <constraint firstItem="XKa-14-GaI" firstAttribute="top" secondItem="GqX-ol-ZAL" secondAttribute="top" id="97k-rK-sDw"/>
+                            <constraint firstItem="72J-LY-yQ8" firstAttribute="centerX" secondItem="XKa-14-GaI" secondAttribute="centerX" id="D73-RN-sIR"/>
+                            <constraint firstItem="72J-LY-yQ8" firstAttribute="trailing" secondItem="XKa-14-GaI" secondAttribute="trailing" id="ER0-hh-TwH"/>
                             <constraint firstItem="VQJ-aV-rUs" firstAttribute="leading" secondItem="Zg2-JG-fiP" secondAttribute="leading" id="GtM-Oe-b8I"/>
+                            <constraint firstItem="72J-LY-yQ8" firstAttribute="bottom" secondItem="XKa-14-GaI" secondAttribute="bottom" id="O1e-3Z-gqx"/>
+                            <constraint firstItem="72J-LY-yQ8" firstAttribute="top" secondItem="XKa-14-GaI" secondAttribute="top" id="Oi7-Sw-IEj"/>
+                            <constraint firstItem="72J-LY-yQ8" firstAttribute="centerY" secondItem="XKa-14-GaI" secondAttribute="centerY" id="VAl-jB-BSV"/>
                             <constraint firstItem="VQJ-aV-rUs" firstAttribute="trailing" secondItem="Zg2-JG-fiP" secondAttribute="trailing" id="X3n-Hu-JAL"/>
                             <constraint firstItem="VQJ-aV-rUs" firstAttribute="top" secondItem="XKa-14-GaI" secondAttribute="bottom" id="pdh-fa-uas"/>
                             <constraint firstItem="XKa-14-GaI" firstAttribute="leading" secondItem="GqX-ol-ZAL" secondAttribute="leading" id="vEe-dB-Asr"/>
+                            <constraint firstItem="72J-LY-yQ8" firstAttribute="leading" secondItem="XKa-14-GaI" secondAttribute="leading" id="xtT-Es-5nZ"/>
                         </constraints>
                     </view>
                     <connections>
+                        <outlet property="controlsView" destination="72J-LY-yQ8" id="I9V-Bl-H05"/>
                         <outlet property="episodePublishDateLabel" destination="avg-qO-Uhk" id="02Y-xd-z5t"/>
                         <outlet property="episodeSubtitleCircularDivider" destination="I27-eF-jdd" id="9n7-e2-Bgk"/>
                         <outlet property="episodeTitleLabel" destination="SEe-le-USD" id="6V3-VH-wck"/>
                         <outlet property="episodeViewCountLabel" destination="9q7-gh-pKz" id="DDK-te-4pw"/>
+                        <outlet property="playerControlsViewForwardButton" destination="SCl-NQ-GDi" id="gwD-TN-TqP"/>
+                        <outlet property="playerControlsViewReverseButton" destination="wVH-GB-Loi" id="Lpc-fb-WbU"/>
+                        <outlet property="playerControlsViewTogglePlayButton" destination="ChV-N6-wua" id="4rw-cX-GdI"/>
                         <outlet property="videoPlayerView" destination="XKa-14-GaI" id="2HS-V7-HAR"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="VZP-Ec-e8z" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-1833" y="-68"/>
+            <point key="canvasLocation" x="-1833.3333333333335" y="-68.303571428571431"/>
         </scene>
         <!--You Tube Video Feed Episode Player View Controller-->
         <scene sceneID="HGa-Uy-YQF">
@@ -154,11 +260,11 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="4XN-jb-3A8" customClass="YTPlayerView">
-                                <rect key="frame" x="0.0" y="48" width="414" height="764"/>
+                                <rect key="frame" x="0.0" y="48" width="414" height="769"/>
                                 <color key="backgroundColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                             </view>
                             <button hidden="YES" opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="SSC-f1-dNg" userLabel="Dismiss Button">
-                                <rect key="frame" x="20" y="58" width="50" height="41"/>
+                                <rect key="frame" x="20" y="58" width="50" height="46"/>
                                 <constraints>
                                     <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="50" id="0ES-gz-zdx"/>
                                     <constraint firstAttribute="height" constant="50" id="0qu-Vz-FAi"/>
@@ -175,7 +281,7 @@
                                 </connections>
                             </button>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Zfq-pw-lha" userLabel="Episode Description Section">
-                                <rect key="frame" x="0.0" y="812" width="414" height="79"/>
+                                <rect key="frame" x="0.0" y="817" width="414" height="79"/>
                                 <subviews>
                                     <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" translatesAutoresizingMaskIntoConstraints="NO" id="9Td-tb-X2c" userLabel="Episode Description Container">
                                         <rect key="frame" x="16" y="16" width="382" height="35.5"/>
@@ -311,7 +417,7 @@
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>
         <systemColor name="systemOrangeColor">
-            <color red="1" green="0.58431372549019611" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+            <color red="1" green="0.58431372550000005" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
     </resources>
 </document>

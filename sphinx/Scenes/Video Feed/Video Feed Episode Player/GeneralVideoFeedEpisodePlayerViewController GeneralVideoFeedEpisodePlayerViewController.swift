@@ -8,9 +8,17 @@ class GeneralVideoFeedEpisodePlayerViewController: UIViewController, VideoFeedEp
     @IBOutlet private weak var episodeSubtitleCircularDivider: UIView!
     @IBOutlet private weak var episodePublishDateLabel: UILabel!
     
+    @IBOutlet private weak var playerControlsViewTogglePlayButton: UIButton!
+    @IBOutlet private weak var controlsView: UIView!
+    
+    @IBOutlet weak var playerControlsViewForwardButton: UIButton!
+    @IBOutlet weak var playerControlsViewReverseButton: UIButton!
+    
     private var contentReadyTimer: Timer?
     private var contentReadyAttempts = 0
     private let maxContentReadyAttempts = 100
+    private var controlsHideTimer: Timer?
+    private let controlsHideTimeout: TimeInterval = 3.0
     
     private lazy var vlcPlayer: VLCMediaPlayer = {
         let player = VLCMediaPlayer()
@@ -18,17 +26,6 @@ class GeneralVideoFeedEpisodePlayerViewController: UIViewController, VideoFeedEp
         return player
     }()
     private lazy var loadingViewController = LoadingViewController()
-    
-    private lazy var controlsView: PlayerControlsView = {
-        let controls = PlayerControlsView()
-        controls.isUserInteractionEnabled = true
-        controls.playPauseButton.addTarget(self, action: #selector(playPauseTapped), for: .touchUpInside)
-        controls.rewindButton.addTarget(self, action: #selector(rewindTapped), for: .touchUpInside)
-        controls.forwardButton.addTarget(self, action: #selector(forwardTapped), for: .touchUpInside)
-        controls.layer.zPosition = 1
-        controls.translatesAutoresizingMaskIntoConstraints = false
-        return controls
-    }()
     
     var videoPlayerEpisode: Video! {
         didSet {
@@ -38,11 +35,6 @@ class GeneralVideoFeedEpisodePlayerViewController: UIViewController, VideoFeedEp
             }
         }
     }
-}
-
-
-// MARK: -  Static Methods
-extension GeneralVideoFeedEpisodePlayerViewController {
     
     static func instantiate(
         videoPlayerEpisode: Video
@@ -56,15 +48,12 @@ extension GeneralVideoFeedEpisodePlayerViewController {
         
         return viewController
     }
-}
-
-
-// MARK: -  Lifecycle
-extension GeneralVideoFeedEpisodePlayerViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
         setupViews()
+        setupPlayerControls()
+        startControlsHideTimer()
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -72,14 +61,24 @@ extension GeneralVideoFeedEpisodePlayerViewController {
         
         contentReadyTimer?.invalidate()
         contentReadyTimer = nil
+        controlsHideTimer?.invalidate()
+        controlsHideTimer = nil
         
         vlcPlayer.stop()
     }
-}
-
-
-// MARK: -  Private Helpers
-extension GeneralVideoFeedEpisodePlayerViewController {
+    
+    func setupPlayerControls() {
+        self.playerControlsViewTogglePlayButton.setTitle("pause", for: .normal)
+        self.playerControlsViewTogglePlayButton.addTarget(self, action: #selector(self.playPauseTapped), for: .touchUpInside)
+        self.playerControlsViewForwardButton.addTarget(self, action: #selector(self.forwardTapped), for: .touchUpInside)
+        self.playerControlsViewReverseButton.addTarget(self, action: #selector(self.rewindTapped), for: .touchUpInside)
+        self.playerControlsViewTogglePlayButton.layer.zPosition = 1000
+        self.playerControlsViewTogglePlayButton.isUserInteractionEnabled = true
+        self.view.bringSubviewToFront(self.playerControlsViewTogglePlayButton)
+        self.view.bringSubviewToFront(self.playerControlsViewForwardButton)
+        self.view.bringSubviewToFront(self.playerControlsViewReverseButton)
+        self.controlsView.layer.zPosition = 1
+    }
     
     private func setupViews() {
         episodeSubtitleCircularDivider.makeCircular()
@@ -89,12 +88,6 @@ extension GeneralVideoFeedEpisodePlayerViewController {
         episodePublishDateLabel.text = videoPlayerEpisode.publishDateText
         
         view.addSubview(controlsView)
-        NSLayoutConstraint.activate([
-            controlsView.leadingAnchor.constraint(equalTo: videoPlayerView.leadingAnchor),
-            controlsView.trailingAnchor.constraint(equalTo: videoPlayerView.trailingAnchor),
-            controlsView.topAnchor.constraint(equalTo: videoPlayerView.topAnchor),
-            controlsView.bottomAnchor.constraint(equalTo: videoPlayerView.bottomAnchor)
-        ])
     }
     
     private func updateVideoPlayer(withNewEpisode video: Video) {
@@ -136,22 +129,31 @@ extension GeneralVideoFeedEpisodePlayerViewController {
     }
     
     @objc private func playPauseTapped() {
+        var titleLabel: String? = nil
         if vlcPlayer.isPlaying {
             vlcPlayer.pause()
+            titleLabel = "play_arrow"
         } else {
             vlcPlayer.play()
+            titleLabel = "pause"
         }
         view.bringSubviewToFront(controlsView) // Ensure controls are on top
+        if let titleLabel = titleLabel {
+            playerControlsViewTogglePlayButton.setTitle(titleLabel, for: .normal)
+        }
+        resetControlsHideTimer()
     }
     
     @objc private func rewindTapped() {
         vlcPlayer.jumpBackward(10)
         view.bringSubviewToFront(controlsView) // Ensure controls are on top
+        resetControlsHideTimer()
     }
     
     @objc private func forwardTapped() {
         vlcPlayer.jumpForward(10)
         view.bringSubviewToFront(controlsView) // Ensure controls are on top
+        resetControlsHideTimer()
     }
     
     private func startContentReadyTimer() {
@@ -194,6 +196,43 @@ extension GeneralVideoFeedEpisodePlayerViewController {
             // You might want to show an error message to the user here
         }
     }
+    
+    private func startControlsHideTimer() {
+        controlsHideTimer?.invalidate()
+        controlsHideTimer = Timer.scheduledTimer(timeInterval: controlsHideTimeout, target: self, selector: #selector(hideControls), userInfo: nil, repeats: false)
+    }
+    
+    private func resetControlsHideTimer() {
+        controlsView.alpha = 1.0
+        playerControlsViewTogglePlayButton.alpha = 1.0
+        playerControlsViewForwardButton.alpha = 1.0
+        playerControlsViewReverseButton.alpha = 1.0
+        startControlsHideTimer()
+    }
+    
+    @objc private func hideControls() {
+        UIView.animate(withDuration: 0.5) {
+            self.controlsView.alpha = 0.05
+            self.playerControlsViewTogglePlayButton.alpha = 0.05
+            self.playerControlsViewForwardButton.alpha = 0.05
+            self.playerControlsViewReverseButton.alpha = 0.05
+        }
+    }
+    
+    private func setupTapGesture() {
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(showControls))
+        view.addGestureRecognizer(tapGesture)
+    }
+    
+    @objc private func showControls() {
+        UIView.animate(withDuration: 0.5) {
+            self.controlsView.alpha = 1.0
+            self.playerControlsViewTogglePlayButton.alpha = 1.0
+            self.playerControlsViewForwardButton.alpha = 1.0
+            self.playerControlsViewReverseButton.alpha = 1.0
+        }
+        resetControlsHideTimer()
+    }
 }
 
 
@@ -209,55 +248,3 @@ extension GeneralVideoFeedEpisodePlayerViewController: VLCMediaPlayerDelegate {
     }
 }
 
-
-import UIKit
-
-class PlayerControlsView: UIView {
-    var playPauseButton: UIButton!
-    var rewindButton: UIButton!
-    var forwardButton: UIButton!
-    
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        setupViews()
-    }
-    
-    required init?(coder: NSCoder) {
-        super.init(coder: coder)
-        setupViews()
-    }
-    
-    private func setupViews() {
-        isUserInteractionEnabled = true
-        
-        playPauseButton = UIButton(type: .system)
-        playPauseButton.setTitle("Play/Pause", for: .normal)
-        playPauseButton.translatesAutoresizingMaskIntoConstraints = false
-        playPauseButton.isUserInteractionEnabled = true
-        
-        rewindButton = UIButton(type: .system)
-        rewindButton.setTitle("<<", for: .normal)
-        rewindButton.translatesAutoresizingMaskIntoConstraints = false
-        rewindButton.isUserInteractionEnabled = true
-        
-        forwardButton = UIButton(type: .system)
-        forwardButton.setTitle(">>", for: .normal)
-        forwardButton.translatesAutoresizingMaskIntoConstraints = false
-        forwardButton.isUserInteractionEnabled = true
-        
-        addSubview(playPauseButton)
-        addSubview(rewindButton)
-        addSubview(forwardButton)
-        
-        NSLayoutConstraint.activate([
-            playPauseButton.centerXAnchor.constraint(equalTo: centerXAnchor),
-            playPauseButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -20),
-            
-            rewindButton.trailingAnchor.constraint(equalTo: playPauseButton.leadingAnchor, constant: -20),
-            rewindButton.centerYAnchor.constraint(equalTo: playPauseButton.centerYAnchor),
-            
-            forwardButton.leadingAnchor.constraint(equalTo: playPauseButton.trailingAnchor, constant: 20),
-            forwardButton.centerYAnchor.constraint(equalTo: playPauseButton.centerYAnchor),
-        ])
-    }
-}
