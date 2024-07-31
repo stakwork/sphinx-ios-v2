@@ -1206,7 +1206,7 @@ extension SphinxOnionManager {
         }
         do {
             if challenge.isBase64Encoded {
-                let resultBase64 = try Sphinx.signBase64(
+                let resultBase64 = try sphinx.signBase64(
                     seed: seed,
                     idx: 0,
                     time: getTimeWithEntropy(),
@@ -1217,7 +1217,7 @@ extension SphinxOnionManager {
             }
             
             if let challengeData = challenge.nonBase64Data {
-                let resultHex = try Sphinx.signBytes(
+                let resultHex = try sphinx.signBytes(
                     seed: seed,
                     idx: 0,
                     time: getTimeWithEntropy(),
