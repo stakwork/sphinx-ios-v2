@@ -221,7 +221,7 @@ class BTMedia: Mappable {
         if let fileName = btMedia.name?.lowercased() {
             let videoExtensions = [".m4v", ".avi", ".mp4", ".mov", ".mkv"]
             let audioExtensions = [".mp3", ".m4a", ".aac", ".wav", ".ogg", ".flac", ".wma", ".aiff", ".opus"]
-            let readerExtensions = [".epub",".pdf"]
+            let readerExtensions = [".pdf"]
             switch type {
             case .Podcast where btMedia.pathType == "Dir":
                 feedURLPath = "\(btMedia.name!)"
