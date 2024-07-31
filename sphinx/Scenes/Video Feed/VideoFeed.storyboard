@@ -186,13 +186,21 @@
                                             <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                         </state>
                                     </button>
+                                    <slider opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="0.5" minValue="0.0" maxValue="1" translatesAutoresizingMaskIntoConstraints="NO" id="UCF-CB-43S">
+                                        <rect key="frame" x="10" y="780" width="394" height="30"/>
+                                        <constraints>
+                                            <constraint firstAttribute="height" constant="29" id="de1-0S-i9e"/>
+                                        </constraints>
+                                    </slider>
                                 </subviews>
                                 <constraints>
+                                    <constraint firstAttribute="bottom" secondItem="UCF-CB-43S" secondAttribute="bottom" constant="8" id="0Qy-aX-t7O"/>
                                     <constraint firstItem="wVH-GB-Loi" firstAttribute="width" secondItem="wVH-GB-Loi" secondAttribute="height" multiplier="1:1" id="0hh-LB-3Ky"/>
                                     <constraint firstItem="ChV-N6-wua" firstAttribute="centerX" secondItem="72J-LY-yQ8" secondAttribute="centerX" id="2hx-fg-KNK"/>
                                     <constraint firstItem="SCl-NQ-GDi" firstAttribute="width" secondItem="SCl-NQ-GDi" secondAttribute="height" multiplier="1:1" id="3ub-QD-8kF"/>
                                     <constraint firstItem="SCl-NQ-GDi" firstAttribute="centerY" secondItem="72J-LY-yQ8" secondAttribute="centerY" id="6WN-52-YCM"/>
                                     <constraint firstItem="SCl-NQ-GDi" firstAttribute="width" secondItem="SCl-NQ-GDi" secondAttribute="height" multiplier="1:1" id="AvE-GC-Iud"/>
+                                    <constraint firstItem="UCF-CB-43S" firstAttribute="leading" secondItem="72J-LY-yQ8" secondAttribute="leading" constant="12" id="B3m-cQ-r6L"/>
                                     <constraint firstAttribute="trailing" secondItem="SCl-NQ-GDi" secondAttribute="trailing" constant="8" id="BBY-T3-77T"/>
                                     <constraint firstItem="wVH-GB-Loi" firstAttribute="width" secondItem="wVH-GB-Loi" secondAttribute="height" multiplier="1:1" id="IqK-ot-T2J"/>
                                     <constraint firstItem="5MO-vJ-J0y" firstAttribute="width" secondItem="5MO-vJ-J0y" secondAttribute="height" multiplier="1:1" id="IyT-gi-boN"/>
@@ -200,6 +208,7 @@
                                     <constraint firstItem="wVH-GB-Loi" firstAttribute="width" secondItem="wVH-GB-Loi" secondAttribute="height" multiplier="1:1" id="MJi-Gf-KKN"/>
                                     <constraint firstItem="wVH-GB-Loi" firstAttribute="leading" secondItem="72J-LY-yQ8" secondAttribute="leading" constant="8" id="NRy-7M-Zef"/>
                                     <constraint firstItem="wVH-GB-Loi" firstAttribute="width" secondItem="wVH-GB-Loi" secondAttribute="height" multiplier="1:1" id="Rxg-aQ-Thg"/>
+                                    <constraint firstItem="UCF-CB-43S" firstAttribute="centerX" secondItem="72J-LY-yQ8" secondAttribute="centerX" id="Txd-Gz-zwr"/>
                                     <constraint firstAttribute="trailing" secondItem="o8J-Lb-mIB" secondAttribute="trailing" constant="17" id="Wmd-Df-Fqj"/>
                                     <constraint firstItem="wVH-GB-Loi" firstAttribute="centerY" secondItem="72J-LY-yQ8" secondAttribute="centerY" id="XpW-nd-j33"/>
                                     <constraint firstItem="5MO-vJ-J0y" firstAttribute="width" secondItem="5MO-vJ-J0y" secondAttribute="height" multiplier="1:1" id="beN-7Y-xkn"/>
@@ -244,6 +253,7 @@
                         <outlet property="playerControlsViewForwardButton" destination="SCl-NQ-GDi" id="gwD-TN-TqP"/>
                         <outlet property="playerControlsViewReverseButton" destination="wVH-GB-Loi" id="Lpc-fb-WbU"/>
                         <outlet property="playerControlsViewTogglePlayButton" destination="ChV-N6-wua" id="4rw-cX-GdI"/>
+                        <outlet property="progressSlider" destination="UCF-CB-43S" id="g9u-hm-xbg"/>
                         <outlet property="videoPlayerView" destination="XKa-14-GaI" id="2HS-V7-HAR"/>
                     </connections>
                 </viewController>

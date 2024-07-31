@@ -13,6 +13,7 @@ class GeneralVideoFeedEpisodePlayerViewController: UIViewController, VideoFeedEp
     
     @IBOutlet weak var playerControlsViewForwardButton: UIButton!
     @IBOutlet weak var playerControlsViewReverseButton: UIButton!
+    @IBOutlet weak var progressSlider: UISlider!
     
     private var contentReadyTimer: Timer?
     private var contentReadyAttempts = 0
