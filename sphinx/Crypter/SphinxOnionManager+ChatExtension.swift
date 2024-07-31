@@ -553,13 +553,16 @@ extension SphinxOnionManager {
             return
         }
         
+        let owner = UserContact.getOwner()
+        
         for message in filteredMsgs {
             
             if let fromMe = message.fromMe, fromMe == true {
                 
                 ///New sent message
                 processSentMessage(
-                    message: message
+                    message: message,
+                    owner: owner
                 )
                 
             } else if let uuid = message.uuid, TransactionMessage.getMessageWith(uuid: uuid) == nil {
@@ -570,7 +573,10 @@ extension SphinxOnionManager {
                 }
                 
                 if isMessageCallOrAttachment(type: type) {
-                    processIncomingMessagesAndAttachments(message: message)
+                    processIncomingMessagesAndAttachments(
+                        message: message,
+                        owner: owner
+                    )
                 }
                 
                 if isBoostOrPayment(type: type) {
@@ -590,7 +596,10 @@ extension SphinxOnionManager {
                 }
                 
                 if isPaidMessageRelated(type: type) {
-                    processIncomingPaidMessageEvent(message: message)
+                    processIncomingPaidMessageEvent(
+                        message: message,
+                        owner: owner
+                    )
                 }
             }
             
@@ -608,7 +617,8 @@ extension SphinxOnionManager {
     }
     
     func processSentMessage(
-        message: Msg
+        message: Msg,
+        owner: UserContact? = nil
     ) {
         let genericIncomingMessage = GenericIncomingMessage(msg: message)
         
@@ -630,7 +640,8 @@ extension SphinxOnionManager {
                 date: Date(),
                 delaySave: true,
                 type: Int(type),
-                fromMe: true
+                fromMe: true,
+                owner: owner
             ) else {
                 return
             }
@@ -665,7 +676,8 @@ extension SphinxOnionManager {
     }
     
     func processIncomingMessagesAndAttachments(
-        message: Msg
+        message: Msg,
+        owner: UserContact? = nil
     ) {
         guard let index = message.index,
               let uuid = message.uuid,
@@ -687,7 +699,8 @@ extension SphinxOnionManager {
             date: date,
             csr: csr,
             type: Int(type),
-            fromMe: message.fromMe ?? false
+            fromMe: message.fromMe ?? false,
+            owner: owner
         )
     }
     
@@ -792,7 +805,10 @@ extension SphinxOnionManager {
         }
     }
     
-    func processIncomingPaidMessageEvent(message: Msg) {
+    func processIncomingPaidMessageEvent(
+        message: Msg,
+        owner: UserContact? = nil
+    ) {
         guard let type = message.type,
               let sender = message.sender,
               let _ = message.index,
@@ -811,7 +827,8 @@ extension SphinxOnionManager {
             csr: csr,
             amount: ((genericIncomingMessage.amount ?? 0) / 1000),
             type: Int(type),
-            fromMe: message.fromMe ?? false
+            fromMe: message.fromMe ?? false,
+            owner: owner
         ) else {
             return
         }
@@ -917,7 +934,8 @@ extension SphinxOnionManager {
         delaySave: Bool = false,
         type: Int? = nil,
         status: Int? = nil,
-        fromMe: Bool = false
+        fromMe: Bool = false,
+        owner: UserContact? = nil
     ) -> TransactionMessage? {
         
         let content = (type == TransactionMessage.TransactionMessageType.boost.rawValue) ? ("") : (message.content)
@@ -951,7 +969,7 @@ extension SphinxOnionManager {
             receiverId = (fromMe == true) ? contact.id : (UserData.sharedInstance.getUserId())
             
             if fromMe {
-                if let owner = UserContact.getOwner(), let pubKey = owner.publicKey {
+                if let owner = owner ?? UserContact.getOwner(), let pubKey = owner.publicKey {
                     updateContactInfoFromMessage(
                         contact: owner,
                         alias: message.alias,
@@ -1013,7 +1031,6 @@ extension SphinxOnionManager {
         newMessage.encrypted = true
         newMessage.senderId = senderId
         newMessage.receiverId = receiverId
-        newMessage.push = false
         newMessage.chat = chat
         newMessage.chat?.seen = false
         newMessage.messageContent = content
@@ -1027,6 +1044,12 @@ extension SphinxOnionManager {
         newMessage.muid = TransactionMessage.getMUIDFrom(mediaToken: message.mediaToken)
         newMessage.paymentHash = message.paymentHash
         newMessage.tag = message.tag
+        
+        if let myAlias = chat.myAlias ?? owner?.nickname, chat.isPublicGroup() {
+            newMessage.push = content?.contains(myAlias) == true
+        } else {
+            newMessage.push = false
+        }
         
         if (type == TransactionMessage.TransactionMessageType.boost.rawValue && isTribe == true), let msgAmount = message.amount {
             newMessage.amount = NSDecimalNumber(value: msgAmount / 1000)
@@ -1182,29 +1205,33 @@ extension SphinxOnionManager {
             return nil
         }
         do {
-            guard let challengeData = Data(base64Encoded: challenge) else {
-                return nil
+            if challenge.isBase64Encoded {
+                let resultBase64 = try Sphinx.signBase64(
+                    seed: seed,
+                    idx: 0,
+                    time: getTimeWithEntropy(),
+                    network: network,
+                    msg: challenge
+                )
+                return resultBase64
             }
             
-            let resultHex = try signBytes(
-                seed: seed,
-                idx: 0,
-                time: getTimeWithEntropy(),
-                network: network,
-                msg: challengeData
-            )
-            
-            // Convert the hex string to binary data
-            if let resultData = Data(hexString: resultHex) {
-                let base64URLString = resultData.base64EncodedString(options: .init(rawValue: 0))
-                    .replacingOccurrences(of: "/", with: "_")
-                    .replacingOccurrences(of: "+", with: "-")
+            if let challengeData = challenge.nonBase64Data {
+                let resultHex = try Sphinx.signBytes(
+                    seed: seed,
+                    idx: 0,
+                    time: getTimeWithEntropy(),
+                    network: network,
+                    msg: challengeData
+                )
                 
-                return base64URLString
-            } else {
-                // Handle the case where hex to data conversion failed
-                return nil
+                let resultBase64 = Data(hexString: resultHex)?
+                    .base64EncodedString().urlSNotafe
+                
+                return resultBase64
             }
+            
+            return nil
         } catch {
             return nil
         }
@@ -1330,7 +1357,7 @@ extension SphinxOnionManager {
             } else {
                 AlertHelper.showAlert(
                     title: "Routing Error",
-                    message: "There was an error routing please try again."
+                    message: "There was a routing error. Please try again."
                 )
                 completion(nil)
             }

@@ -761,12 +761,6 @@ extension TransactionMessage {
                 return nil
             }
             
-            if let messageC = messageContent {
-                if messageC.isEncryptedString() {
-                    return "encryption.error".localized
-                }
-            }
-            
             return self.messageContent
         }
     }
