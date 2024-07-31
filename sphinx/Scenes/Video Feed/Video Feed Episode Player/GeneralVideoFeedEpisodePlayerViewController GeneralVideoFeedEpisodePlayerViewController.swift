@@ -13,7 +13,10 @@ class GeneralVideoFeedEpisodePlayerViewController: UIViewController, VideoFeedEp
     @IBOutlet private weak var playerControlsViewForwardButton: UIButton!
     @IBOutlet private weak var playerControlsViewReverseButton: UIButton!
     @IBOutlet private weak var progressSlider: UISlider!
+    @IBOutlet private weak var fullScreenButton: UIButton!
     
+    private var isFullScreen: Bool = false
+    private var originalConstraints: [NSLayoutConstraint] = []
     private var contentReadyTimer: Timer?
     private var contentReadyAttempts = 0
     private let maxContentReadyAttempts = 100
@@ -77,11 +80,15 @@ class GeneralVideoFeedEpisodePlayerViewController: UIViewController, VideoFeedEp
         self.playerControlsViewForwardButton.addTarget(self, action: #selector(self.forwardTapped), for: .touchUpInside)
         self.playerControlsViewReverseButton.addTarget(self, action: #selector(self.rewindTapped), for: .touchUpInside)
         self.progressSlider.addTarget(self, action: #selector(self.sliderValueChanged(_:)), for: .valueChanged)
+        self.fullScreenButton.addTarget(self, action: #selector(self.toggleFullScreen), for: .touchUpInside)
+        
         self.playerControlsViewTogglePlayButton.layer.zPosition = 1000
         self.playerControlsViewTogglePlayButton.isUserInteractionEnabled = true
+        self.fullScreenButton.isUserInteractionEnabled = true
         self.view.bringSubviewToFront(self.playerControlsViewTogglePlayButton)
         self.view.bringSubviewToFront(self.playerControlsViewForwardButton)
         self.view.bringSubviewToFront(self.playerControlsViewReverseButton)
+        self.view.bringSubviewToFront(self.fullScreenButton)
         self.controlsView.layer.zPosition = 1
     }
     
@@ -162,9 +169,40 @@ class GeneralVideoFeedEpisodePlayerViewController: UIViewController, VideoFeedEp
     }
     
     @objc private func sliderValueChanged(_ sender: UISlider) {
-        let targetTime = Int32(sender.value * Float(vlcPlayer.media?.length.intValue ?? 0) / 1000)
+        let targetTime = Int32(sender.value * Float(vlcPlayer.media?.length.intValue ?? 0))
         vlcPlayer.time = VLCTime(int: targetTime)
         resetControlsHideTimer()
+    }
+    
+    @objc private func toggleFullScreen() {
+        isFullScreen.toggle()
+        
+        if isFullScreen {
+            enterFullScreen()
+        } else {
+            exitFullScreen()
+        }
+    }
+    
+    private func enterFullScreen() {
+        guard let window = UIApplication.shared.windows.first else { return }
+        originalConstraints = videoPlayerView.constraints
+        
+        UIView.animate(withDuration: 0.3) {
+            self.videoPlayerView.removeConstraints(self.originalConstraints)
+            self.videoPlayerView.translatesAutoresizingMaskIntoConstraints = true
+            self.videoPlayerView.frame = window.frame
+            self.videoPlayerView.layoutIfNeeded()
+        }
+    }
+    
+    private func exitFullScreen() {
+        UIView.animate(withDuration: 0.3) {
+            self.videoPlayerView.removeConstraints(self.videoPlayerView.constraints)
+            self.videoPlayerView.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate(self.originalConstraints)
+            self.videoPlayerView.layoutIfNeeded()
+        }
     }
     
     private func startContentReadyTimer() {
@@ -219,12 +257,18 @@ class GeneralVideoFeedEpisodePlayerViewController: UIViewController, VideoFeedEp
         playerControlsViewForwardButton.alpha = 1.0
         playerControlsViewReverseButton.alpha = 1.0
         progressSlider.alpha = 1.0
+        fullScreenButton.alpha = 1.0
         startControlsHideTimer()
     }
     
     @objc private func hideControls() {
         UIView.animate(withDuration: 0.5) {
             self.controlsView.alpha = 0.05
+            self.playerControlsViewTogglePlayButton.alpha = 0.05
+            self.playerControlsViewForwardButton.alpha = 0.05
+            self.playerControlsViewReverseButton.alpha = 0.05
+            self.progressSlider.alpha = 0.05
+            self.fullScreenButton.alpha = 0.05
         }
     }
     
@@ -240,6 +284,7 @@ class GeneralVideoFeedEpisodePlayerViewController: UIViewController, VideoFeedEp
             self.playerControlsViewForwardButton.alpha = 1.0
             self.playerControlsViewReverseButton.alpha = 1.0
             self.progressSlider.alpha = 1.0
+            self.fullScreenButton.alpha = 1.0
         }
         resetControlsHideTimer()
     }
