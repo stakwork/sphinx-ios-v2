@@ -10,16 +10,16 @@ class GeneralVideoFeedEpisodePlayerViewController: UIViewController, VideoFeedEp
     
     @IBOutlet private weak var playerControlsViewTogglePlayButton: UIButton!
     @IBOutlet private weak var controlsView: UIView!
-    
-    @IBOutlet weak var playerControlsViewForwardButton: UIButton!
-    @IBOutlet weak var playerControlsViewReverseButton: UIButton!
-    @IBOutlet weak var progressSlider: UISlider!
+    @IBOutlet private weak var playerControlsViewForwardButton: UIButton!
+    @IBOutlet private weak var playerControlsViewReverseButton: UIButton!
+    @IBOutlet private weak var progressSlider: UISlider!
     
     private var contentReadyTimer: Timer?
     private var contentReadyAttempts = 0
     private let maxContentReadyAttempts = 100
     private var controlsHideTimer: Timer?
     private let controlsHideTimeout: TimeInterval = 3.0
+    private var updateSliderTimer: Timer?
     
     private lazy var vlcPlayer: VLCMediaPlayer = {
         let player = VLCMediaPlayer()
@@ -55,6 +55,7 @@ class GeneralVideoFeedEpisodePlayerViewController: UIViewController, VideoFeedEp
         setupViews()
         setupPlayerControls()
         startControlsHideTimer()
+        startUpdateSliderTimer()
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -64,6 +65,8 @@ class GeneralVideoFeedEpisodePlayerViewController: UIViewController, VideoFeedEp
         contentReadyTimer = nil
         controlsHideTimer?.invalidate()
         controlsHideTimer = nil
+        updateSliderTimer?.invalidate()
+        updateSliderTimer = nil
         
         vlcPlayer.stop()
     }
@@ -73,6 +76,7 @@ class GeneralVideoFeedEpisodePlayerViewController: UIViewController, VideoFeedEp
         self.playerControlsViewTogglePlayButton.addTarget(self, action: #selector(self.playPauseTapped), for: .touchUpInside)
         self.playerControlsViewForwardButton.addTarget(self, action: #selector(self.forwardTapped), for: .touchUpInside)
         self.playerControlsViewReverseButton.addTarget(self, action: #selector(self.rewindTapped), for: .touchUpInside)
+        self.progressSlider.addTarget(self, action: #selector(self.sliderValueChanged(_:)), for: .valueChanged)
         self.playerControlsViewTogglePlayButton.layer.zPosition = 1000
         self.playerControlsViewTogglePlayButton.isUserInteractionEnabled = true
         self.view.bringSubviewToFront(self.playerControlsViewTogglePlayButton)
@@ -157,6 +161,12 @@ class GeneralVideoFeedEpisodePlayerViewController: UIViewController, VideoFeedEp
         resetControlsHideTimer()
     }
     
+    @objc private func sliderValueChanged(_ sender: UISlider) {
+        let targetTime = Int32(sender.value * Float(vlcPlayer.media?.length.intValue ?? 0) / 1000)
+        vlcPlayer.time = VLCTime(int: targetTime)
+        resetControlsHideTimer()
+    }
+    
     private func startContentReadyTimer() {
         contentReadyAttempts = 0
         contentReadyTimer?.invalidate()
@@ -208,15 +218,13 @@ class GeneralVideoFeedEpisodePlayerViewController: UIViewController, VideoFeedEp
         playerControlsViewTogglePlayButton.alpha = 1.0
         playerControlsViewForwardButton.alpha = 1.0
         playerControlsViewReverseButton.alpha = 1.0
+        progressSlider.alpha = 1.0
         startControlsHideTimer()
     }
     
     @objc private func hideControls() {
         UIView.animate(withDuration: 0.5) {
             self.controlsView.alpha = 0.05
-            self.playerControlsViewTogglePlayButton.alpha = 0.05
-            self.playerControlsViewForwardButton.alpha = 0.05
-            self.playerControlsViewReverseButton.alpha = 0.05
         }
     }
     
@@ -231,11 +239,21 @@ class GeneralVideoFeedEpisodePlayerViewController: UIViewController, VideoFeedEp
             self.playerControlsViewTogglePlayButton.alpha = 1.0
             self.playerControlsViewForwardButton.alpha = 1.0
             self.playerControlsViewReverseButton.alpha = 1.0
+            self.progressSlider.alpha = 1.0
         }
         resetControlsHideTimer()
     }
+    
+    private func startUpdateSliderTimer() {
+        updateSliderTimer = Timer.scheduledTimer(timeInterval: 0.5, target: self, selector: #selector(updateSlider), userInfo: nil, repeats: true)
+    }
+    
+    @objc private func updateSlider() {
+        guard let mediaLength = vlcPlayer.media?.length.intValue, mediaLength > 0 else { return }
+        let currentTime = vlcPlayer.time.intValue
+        progressSlider.value = Float(currentTime) / Float(mediaLength)
+    }
 }
-
 
 // MARK: -  VLCMediaPlayerDelegate
 extension GeneralVideoFeedEpisodePlayerViewController: VLCMediaPlayerDelegate {
@@ -248,4 +266,3 @@ extension GeneralVideoFeedEpisodePlayerViewController: VLCMediaPlayerDelegate {
         }
     }
 }
-
