@@ -93,7 +93,6 @@ extension ProfileViewController : UITextFieldDelegate {
             let updatedName = nameTextField.text ?? nickname
             let updatedPrivatePhoto = !sharePhotoSwitch.isOn
             
-            
             profile.avatarUrl = photoUrl ?? profile.avatarUrl
             
             self.configureProfile()

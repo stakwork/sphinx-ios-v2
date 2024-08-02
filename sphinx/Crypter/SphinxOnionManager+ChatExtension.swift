@@ -938,7 +938,7 @@ extension SphinxOnionManager {
         owner: UserContact? = nil
     ) -> TransactionMessage? {
         
-        let content = (type == TransactionMessage.TransactionMessageType.boost.rawValue) ? ("") : (message.content)
+        let content = message.content
         
         guard let indexString = message.index,
             let index = Int(indexString),
@@ -1364,12 +1364,33 @@ extension SphinxOnionManager {
         }
     }
     
+    func sendFeedBoost(
+        params: [String: AnyObject],
+        chat: Chat,
+        completion: @escaping (TransactionMessage?) -> ()
+    ) {
+        let pubkey = chat.getContact()?.publicKey ?? chat.ownerPubkey
+        
+        guard let _ = params["text"] as? String,
+              let _ = pubkey,
+              let _ = params["amount"] as? Int else
+        {
+            completion(nil)
+            return
+        }
+        
+        let message = self.finalizeSendBoostReply(
+            params: params,
+            chat: chat
+        )
+        completion(message)
+    }
+    
     func finalizeSendBoostReply(
         params: [String: AnyObject],
         chat:Chat
     ) -> TransactionMessage? {
-        guard let replyUUID = params["reply_uuid"] as? String,
-            let text = params["text"] as? String,
+        guard let text = params["text"] as? String,
             let amount = params["amount"] as? Int else{
             return nil
         }
@@ -1382,8 +1403,8 @@ extension SphinxOnionManager {
             amount: amount,
             msgType: UInt8(TransactionMessage.TransactionMessageType.boost.rawValue),
             threadUUID: nil,
-            replyUUID: replyUUID
-        ) 
+            replyUUID: params["reply_uuid"] as? String
+        )
         
         return sentMessage
     }

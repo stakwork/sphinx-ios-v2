@@ -108,7 +108,7 @@
 /* Class = "UILabel"; text = "New Group Chat"; ObjectID = "uMU-CU-DoL"; */
 "uMU-CU-DoL.text" = "新群組聊天"; // Xīn qúnzǔ liáotiān
 
-"IjR-gq-j9u.text" = "在 tribes.sphinx.chat 上列出？"; // Zài tribes.sphinx.chat shàng lièchū?
+"IjR-gq-j9u.text" = "在 tribes.v2.sphinx.chat 上列出？"; // Zài tribes.sphinx.chat shàng lièchū?
 
 "9fz-nc-HRb.text" = "批准每個成員資格要求？"; // Pīzhǔn měi gè chéngyuán zīgé yāoqiú?
 

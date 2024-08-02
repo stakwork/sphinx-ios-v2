@@ -149,7 +149,7 @@ extension NewsletterItemDetailViewController: CustomBoostViewDelegate {
             
             feedBoostHelper.sendBoostMessage(
                 message: boostMessage,
-                itemId: itemID,
+                episodeId: itemID,
                 amount: amount,
                 completion: { (message, success) in
                     self.boostDelegate?.didSendBoostMessage(success: success, message: message)

@@ -263,6 +263,7 @@ extension SphinxOnionManager {
         pubkey: String,
         routeHint: String? = nil,
         amt: Int,
+        data: Data? = nil,
         completion: @escaping (Bool) -> ()
     ) {
         checkAndFetchRouteTo(
@@ -274,7 +275,8 @@ extension SphinxOnionManager {
                 if self.finalizeKeysend(
                     pubkey: pubkey,
                     routeHint: routeHint,
-                    amt: amt * 1000
+                    amt: amt * 1000,
+                    data: data
                 ) {
                     completion(true)
                 } else {
@@ -289,7 +291,8 @@ extension SphinxOnionManager {
     func finalizeKeysend(
         pubkey: String,
         routeHint: String? = nil,
-        amt: Int
+        amt: Int,
+        data: Data? = nil
     ) -> Bool {
         guard let seed = getAccountSeed() else{
             return false
@@ -301,7 +304,7 @@ extension SphinxOnionManager {
                 to: pubkey,
                 state: loadOnionStateAsData(),
                 amtMsat: UInt64(amt),
-                data: nil,
+                data: data,
                 routeHint: routeHint
             )
             let _ = handleRunReturn(rr: rr)
