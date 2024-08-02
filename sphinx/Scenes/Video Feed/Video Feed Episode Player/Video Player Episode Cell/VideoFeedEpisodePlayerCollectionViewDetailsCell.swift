@@ -154,7 +154,7 @@ extension VideoFeedEpisodePlayerCollectionViewDetailsCell : CustomBoostViewDeleg
             
             feedBoostHelper.sendBoostMessage(
                 message: boostMessage,
-                itemId: videoEpisode.videoID,
+                episodeId: videoEpisode.videoID,
                 amount: amount,
                 completion: { (message, success) in
                     self.boostDelegate?.didSendBoostMessage(success: success, message: message)

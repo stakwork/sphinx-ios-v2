@@ -35,7 +35,7 @@ extension API {
     
     
     func getPodcastInfo(podcastId: Int, callback: @escaping PodcastInfoCallback, errorCallback: @escaping EmptyCallback) {
-        let url = API.getUrl(route: "https://tribes.sphinx.chat/podcast?id=\(podcastId)")
+        let url = "https://tribes.sphinx.chat/podcast?id=\(podcastId)"
         let tribeRequest : URLRequest? = createRequest(url, bodyParams: nil, method: "GET")
         
         guard let request = tribeRequest else {
@@ -56,28 +56,6 @@ extension API {
                 errorCallback()
             }
         }
-    }
-    
-    func streamSats(params: [String: AnyObject], callback: @escaping EmptyCallback, errorCallback:@escaping EmptyCallback) {
-//        guard let request = getURLRequest(route: "/stream", params: params as NSDictionary?, method: "POST") else {
-//            errorCallback()
-//            return
-//        }
-        //TODO: @Jim reimplement on v2 with keysend
-//        sphinxRequest(request) { response in
-//            switch response.result {
-//            case .success(let data):
-//                if let json = data as? NSDictionary {
-//                    if let success = json["success"] as? Bool, success {
-//                        callback()
-//                        return
-//                    }
-//                }
-//                errorCallback()
-//            case .failure(_):
-//                errorCallback()
-//            }
-//        }
     }
     
     func getAllContentFeedStatuses(

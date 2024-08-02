@@ -129,7 +129,7 @@ extension PodcastPlayerView: CustomBoostViewDelegate {
                 
                 feedBoostHelper.sendBoostMessage(
                     message: boostMessage,
-                    itemId: episode.itemID,
+                    episodeId: episode.itemID,
                     amount: amount,
                     completion: { (message, success) in
                         self.boostDelegate?.didSendBoostMessage(success: success, message: message)

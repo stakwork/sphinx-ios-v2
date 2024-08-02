@@ -463,15 +463,9 @@ public class UserContact: NSManagedObject {
     }
     
     public static func updateTipAmount(amount: Int) {
-        let parameters : [String: AnyObject] = ["tip_amount" : amount as AnyObject]
-        let id = UserData.sharedInstance.getUserId()
-
-        //@Tom not exactly sure the purpose of this code but happy to reimplement
-//        if let owner = UserContact.getOwner() {
-//            API.sharedInstance.updateUser(id: id, params: parameters, callback: { success in
-//                owner.tipAmount = amount
-//            }, errorCallback: { })
-//        }
+        if let owner = UserContact.getOwner() {
+            owner.tipAmount = amount
+        }
     }
 }
 
