@@ -1,12 +1,5 @@
-// GeneralVideoFeedEpisodePlayerViewController.swift
-//
-// Created by CypherPoet.
-// ✌️
-//
-
 import UIKit
-import AVKit
-
+import MobileVLCKit
 
 class GeneralVideoFeedEpisodePlayerViewController: UIViewController, VideoFeedEpisodePlayerViewController {
     @IBOutlet private weak var videoPlayerView: UIView!
@@ -15,42 +8,37 @@ class GeneralVideoFeedEpisodePlayerViewController: UIViewController, VideoFeedEp
     @IBOutlet private weak var episodeSubtitleCircularDivider: UIView!
     @IBOutlet private weak var episodePublishDateLabel: UILabel!
     
+    @IBOutlet private weak var playerControlsViewTogglePlayButton: UIButton!
+    @IBOutlet private weak var controlsView: UIView!
+    @IBOutlet private weak var playerControlsViewForwardButton: UIButton!
+    @IBOutlet private weak var playerControlsViewReverseButton: UIButton!
+    @IBOutlet private weak var progressSlider: UISlider!
+    @IBOutlet private weak var fullScreenButton: UIButton!
+    
+    private var isFullScreen: Bool = false
+    private var originalConstraints: [NSLayoutConstraint] = []
     private var contentReadyTimer: Timer?
     private var contentReadyAttempts = 0
     private let maxContentReadyAttempts = 100
+    private var controlsHideTimer: Timer?
+    private let controlsHideTimeout: TimeInterval = 3.0
+    private var updateSliderTimer: Timer?
     
-    
-    private lazy var avPlayerViewController = makeAVPlayerViewController()
+    private lazy var vlcPlayer: VLCMediaPlayer = {
+        let player = VLCMediaPlayer()
+        player.delegate = self
+        return player
+    }()
     private lazy var loadingViewController = LoadingViewController()
-    
-    private var avPlayerAsset: AVAsset!
-    private var avPlayerItem: AVPlayerItem!
-    private var avPlayer: AVPlayer!
-    
-    
-    private let requiredAssetKeys = [
-        "playable",
-        "hasProtectedContent"
-    ]
-    
-    // Key-value observing context
-    private var playerItemContext = 0
-    
     
     var videoPlayerEpisode: Video! {
         didSet {
             DispatchQueue.main.async { [weak self] in
                 guard let self = self else { return }
-                
                 self.updateVideoPlayer(withNewEpisode: self.videoPlayerEpisode)
             }
         }
     }
-}
-
-
-// MARK: -  Static Methods
-extension GeneralVideoFeedEpisodePlayerViewController {
     
     static func instantiate(
         videoPlayerEpisode: Video
@@ -64,43 +52,45 @@ extension GeneralVideoFeedEpisodePlayerViewController {
         
         return viewController
     }
-}
-
-
-// MARK: -  Lifecycle
-extension GeneralVideoFeedEpisodePlayerViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
         setupViews()
+        setupPlayerControls()
+        startControlsHideTimer()
+        startUpdateSliderTimer()
     }
     
-    
     override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(true)
+        super.viewWillDisappear(animated)
         
         contentReadyTimer?.invalidate()
         contentReadyTimer = nil
+        controlsHideTimer?.invalidate()
+        controlsHideTimer = nil
+        updateSliderTimer?.invalidate()
+        updateSliderTimer = nil
         
-        avPlayerViewController.player?.pause()
-        avPlayerViewController.player = nil
+        vlcPlayer.stop()
     }
-}
-
-
-// MARK: - Computeds
-extension GeneralVideoFeedEpisodePlayerViewController {
-}
-
-
-// MARK: -  Action Handling
-extension GeneralVideoFeedEpisodePlayerViewController {
-}
-
-
-// MARK: -  Private Helpers
-extension GeneralVideoFeedEpisodePlayerViewController {
+    
+    func setupPlayerControls() {
+        self.playerControlsViewTogglePlayButton.setTitle("pause", for: .normal)
+        self.playerControlsViewTogglePlayButton.addTarget(self, action: #selector(self.playPauseTapped), for: .touchUpInside)
+        self.playerControlsViewForwardButton.addTarget(self, action: #selector(self.forwardTapped), for: .touchUpInside)
+        self.playerControlsViewReverseButton.addTarget(self, action: #selector(self.rewindTapped), for: .touchUpInside)
+        self.progressSlider.addTarget(self, action: #selector(self.sliderValueChanged(_:)), for: .valueChanged)
+        self.fullScreenButton.addTarget(self, action: #selector(self.toggleFullScreen), for: .touchUpInside)
+        
+        self.playerControlsViewTogglePlayButton.layer.zPosition = 1000
+        self.playerControlsViewTogglePlayButton.isUserInteractionEnabled = true
+        self.fullScreenButton.isUserInteractionEnabled = true
+        self.view.bringSubviewToFront(self.playerControlsViewTogglePlayButton)
+        self.view.bringSubviewToFront(self.playerControlsViewForwardButton)
+        self.view.bringSubviewToFront(self.playerControlsViewReverseButton)
+        self.view.bringSubviewToFront(self.fullScreenButton)
+        self.controlsView.layer.zPosition = 1
+    }
     
     private func setupViews() {
         episodeSubtitleCircularDivider.makeCircular()
@@ -108,98 +98,111 @@ extension GeneralVideoFeedEpisodePlayerViewController {
         episodeTitleLabel.text = videoPlayerEpisode.titleForDisplay
         episodeViewCountLabel.text = "\(Int.random(in: 100...999)) Views"
         episodePublishDateLabel.text = videoPlayerEpisode.publishDateText
-    }
-    
-    
-    private func makeAVPlayerViewController() -> AVPlayerViewController {
-        let playerViewController = AVPlayerViewController()
         
-        playerViewController.delegate = self
-        playerViewController.showsPlaybackControls = true
-        playerViewController.entersFullScreenWhenPlaybackBegins = false
-        playerViewController.exitsFullScreenWhenPlaybackEnds = true
+        view.addSubview(controlsView)
+    }
+    
+    private func updateVideoPlayer(withNewEpisode video: Video) {
+        guard let mediaURL = video.mediaURL else { return }
         
-        return playerViewController
+        vlcPlayer.stop()
+        addPlayerLoadingView()
+        
+        let media = VLCMedia(url: mediaURL)
+        vlcPlayer.media = media
+        vlcPlayer.drawable = videoPlayerView
+        vlcPlayer.play()
+        
+        episodeTitleLabel.text = videoPlayerEpisode.titleForDisplay
+        episodeViewCountLabel.text = "\(Int.random(in: 100...999)) Views"
+        episodePublishDateLabel.text = videoPlayerEpisode.publishDateText
+        
+        view.bringSubviewToFront(controlsView) // Ensure controls are on top
     }
-    
-    
-    func addAVPlayerViewController() {
-        addChildVC(
-            child: avPlayerViewController,
-            container: videoPlayerView
-        )
-    }
-    
-    private func removeAVPlayerViewController() {
-        removeChildVC(child: avPlayerViewController)
-    }
-
-    
-    
-    private func addPlayerErrorView() {
-        // 📝 TODO:  Design / define how errors here should be presented to users
-//        addChildVC(
-//            child: playerErrorViewController,
-//            container: videoPlayerView
-//        )
-    }
-    
-    private func removePlayerErrorView() {
-        // 📝 TODO:  Design / define how errors here should be presented to users
-//        removeChildVC(child: playerErrorViewController)
-    }
-    
     
     private func addPlayerLoadingView() {
         addChildVC(
             child: loadingViewController,
             container: videoPlayerView
         )
+        view.bringSubviewToFront(controlsView) // Ensure controls are on top
     }
-
     
     private func removePlayerLoadingView() {
         removeChildVC(child: loadingViewController)
     }
     
-    
-    
-    private func updateVideoPlayer(withNewEpisode video: Video) {
-        guard let mediaURL = video.mediaURL else { return }
-        
-        removeAVPlayerViewController()
-        removePlayerErrorView()
-        addPlayerLoadingView()
-
-        setupPlayerAsset(usingURL: mediaURL)
-
-        episodeTitleLabel.text = videoPlayerEpisode.titleForDisplay
-        episodeViewCountLabel.text = "\(Int.random(in: 100...999)) Views"
-        episodePublishDateLabel.text = videoPlayerEpisode.publishDateText
+    private func addPlayerErrorView() {
+        // TODO: Implement error view handling
     }
     
+    private func removePlayerErrorView() {
+        // TODO: Implement error view handling
+    }
     
-    private func setupPlayerAsset(usingURL mediaURL: URL) {
-        avPlayerAsset = AVAsset(url: mediaURL)
-        avPlayerItem = AVPlayerItem(asset: avPlayerAsset)
-        
-        
-        // Register as an observer of the player item's status property
-        avPlayerItem.addObserver(
-            self,
-            forKeyPath: #keyPath(AVPlayerItem.status),
-            options: [.old, .new],
-            context: &playerItemContext
-        )
-        
-        
-        if avPlayer == nil {
-            avPlayer = AVPlayer(playerItem: avPlayerItem)
-            avPlayerViewController.player = avPlayer
+    @objc private func playPauseTapped() {
+        var titleLabel: String? = nil
+        if vlcPlayer.isPlaying {
+            vlcPlayer.pause()
+            titleLabel = "play_arrow"
         } else {
-            avPlayer!.replaceCurrentItem(with: avPlayerItem!)
+            vlcPlayer.play()
+            titleLabel = "pause"
         }
-        startContentReadyTimer()
+        view.bringSubviewToFront(controlsView) // Ensure controls are on top
+        if let titleLabel = titleLabel {
+            playerControlsViewTogglePlayButton.setTitle(titleLabel, for: .normal)
+        }
+        resetControlsHideTimer()
+    }
+    
+    @objc private func rewindTapped() {
+        vlcPlayer.jumpBackward(10)
+        view.bringSubviewToFront(controlsView) // Ensure controls are on top
+        resetControlsHideTimer()
+    }
+    
+    @objc private func forwardTapped() {
+        vlcPlayer.jumpForward(10)
+        view.bringSubviewToFront(controlsView) // Ensure controls are on top
+        resetControlsHideTimer()
+    }
+    
+    @objc private func sliderValueChanged(_ sender: UISlider) {
+        let targetTime = Int32(sender.value * Float(vlcPlayer.media?.length.intValue ?? 0))
+        vlcPlayer.time = VLCTime(int: targetTime)
+        resetControlsHideTimer()
+    }
+    
+    @objc private func toggleFullScreen() {
+        isFullScreen.toggle()
+        
+        if isFullScreen {
+            enterFullScreen()
+        } else {
+            exitFullScreen()
+        }
+    }
+    
+    private func enterFullScreen() {
+        guard let window = UIApplication.shared.windows.first else { return }
+        originalConstraints = videoPlayerView.constraints
+        
+        UIView.animate(withDuration: 0.3) {
+            self.videoPlayerView.removeConstraints(self.originalConstraints)
+            self.videoPlayerView.translatesAutoresizingMaskIntoConstraints = true
+            self.videoPlayerView.frame = window.frame
+            self.videoPlayerView.layoutIfNeeded()
+        }
+    }
+    
+    private func exitFullScreen() {
+        UIView.animate(withDuration: 0.3) {
+            self.videoPlayerView.removeConstraints(self.videoPlayerView.constraints)
+            self.videoPlayerView.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate(self.originalConstraints)
+            self.videoPlayerView.layoutIfNeeded()
+        }
     }
     
     private func startContentReadyTimer() {
@@ -211,12 +214,11 @@ extension GeneralVideoFeedEpisodePlayerViewController {
     }
     
     private func checkIfContentIsReady() {
-        guard let currentItem = avPlayer.currentItem else { return }
+        guard vlcPlayer.isPlaying else { return }
         
         contentReadyAttempts += 1
-        let duration = currentItem.duration
         
-        if duration != .invalid && duration.seconds > 0 {
+        if vlcPlayer.time != nil && vlcPlayer.media != nil {
             startPlayingVideo()
         } else if contentReadyAttempts >= maxContentReadyAttempts {
             handleContentReadyTimeout()
@@ -228,8 +230,8 @@ extension GeneralVideoFeedEpisodePlayerViewController {
         contentReadyTimer = nil
         
         DispatchQueue.main.async { [weak self] in
-            self?.avPlayer.play()
             self?.removePlayerLoadingView()
+            self?.view.bringSubviewToFront(self?.controlsView ?? UIView()) // Ensure controls are on top
         }
     }
     
@@ -243,73 +245,69 @@ extension GeneralVideoFeedEpisodePlayerViewController {
             // You might want to show an error message to the user here
         }
     }
-}
-
-
-// MARK: -  AVPlayerItem status observation
-extension GeneralVideoFeedEpisodePlayerViewController {
     
-    override func observeValue(
-        forKeyPath keyPath: String?,
-        of object: Any?,
-        change: [NSKeyValueChangeKey : Any]?,
-        context: UnsafeMutableRawPointer?
-    ) {
-        // Only handle observations for the playerItemContext
-        guard context == &playerItemContext else {
-            super.observeValue(
-                forKeyPath: keyPath,
-                of: object,
-                change: change,
-                context: context
-            )
-            
-            return
+    private func startControlsHideTimer() {
+        controlsHideTimer?.invalidate()
+        controlsHideTimer = Timer.scheduledTimer(timeInterval: controlsHideTimeout, target: self, selector: #selector(hideControls), userInfo: nil, repeats: false)
+    }
+    
+    private func resetControlsHideTimer() {
+        controlsView.alpha = 1.0
+        playerControlsViewTogglePlayButton.alpha = 1.0
+        playerControlsViewForwardButton.alpha = 1.0
+        playerControlsViewReverseButton.alpha = 1.0
+        progressSlider.alpha = 1.0
+        fullScreenButton.alpha = 1.0
+        startControlsHideTimer()
+    }
+    
+    @objc private func hideControls() {
+        UIView.animate(withDuration: 0.5) {
+            self.controlsView.alpha = 0.05
+            self.playerControlsViewTogglePlayButton.alpha = 0.05
+            self.playerControlsViewForwardButton.alpha = 0.05
+            self.playerControlsViewReverseButton.alpha = 0.05
+            self.progressSlider.alpha = 0.05
+            self.fullScreenButton.alpha = 0.05
         }
-        
-        
-        if keyPath == #keyPath(AVPlayerItem.status) {
-            let status: AVPlayerItem.Status
-            
-            if let statusNumber = change?[.newKey] as? NSNumber {
-                status = AVPlayerItem.Status(rawValue: statusNumber.intValue)!
-            } else {
-                status = .unknown
-            }
-            
-            // Switch over status value
-            switch status {
-            case .readyToPlay:
-                // Player item is ready to play.
-                removePlayerLoadingView()
-                removePlayerErrorView()
-                
-                addAVPlayerViewController()
-            case .failed:
-                // Player item failed. See error.
-                removeAVPlayerViewController()
-                removePlayerLoadingView()
-                
-                addPlayerErrorView()
-            case .unknown:
-                // Player item is not yet ready.
-                removeAVPlayerViewController()
-                removePlayerErrorView()
-                
-                addPlayerLoadingView()
-            }
+    }
+    
+    private func setupTapGesture() {
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(showControls))
+        view.addGestureRecognizer(tapGesture)
+    }
+    
+    @objc private func showControls() {
+        UIView.animate(withDuration: 0.5) {
+            self.controlsView.alpha = 1.0
+            self.playerControlsViewTogglePlayButton.alpha = 1.0
+            self.playerControlsViewForwardButton.alpha = 1.0
+            self.playerControlsViewReverseButton.alpha = 1.0
+            self.progressSlider.alpha = 1.0
+            self.fullScreenButton.alpha = 1.0
         }
+        resetControlsHideTimer()
+    }
+    
+    private func startUpdateSliderTimer() {
+        updateSliderTimer = Timer.scheduledTimer(timeInterval: 0.5, target: self, selector: #selector(updateSlider), userInfo: nil, repeats: true)
+    }
+    
+    @objc private func updateSlider() {
+        guard let mediaLength = vlcPlayer.media?.length.intValue, mediaLength > 0 else { return }
+        let currentTime = vlcPlayer.time.intValue
+        progressSlider.value = Float(currentTime) / Float(mediaLength)
     }
 }
 
-
-// MARK: -  AVPlayerViewControllerDelegate
-extension GeneralVideoFeedEpisodePlayerViewController: AVPlayerViewControllerDelegate {
+// MARK: -  VLCMediaPlayerDelegate
+extension GeneralVideoFeedEpisodePlayerViewController: VLCMediaPlayerDelegate {
     
-    func playerViewController(
-        _ playerViewController: AVPlayerViewController,
-        willBeginFullScreenPresentationWithAnimationCoordinator coordinator: UIViewControllerTransitionCoordinator
-    ) {
-        playerViewController.player = avPlayer
+    func mediaPlayerStateChanged(_ aNotification: Notification) {
+        if vlcPlayer.state == .error {
+            handleContentReadyTimeout()
+        } else if vlcPlayer.state == .playing {
+            startPlayingVideo()
+        }
     }
 }

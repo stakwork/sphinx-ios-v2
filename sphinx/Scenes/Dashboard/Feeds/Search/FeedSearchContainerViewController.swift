@@ -116,8 +116,8 @@ extension FeedSearchContainerViewController {
             presentInitialStateView()
         } else {
             switch type {
-            case .Video, .BrowseTorrent, .Podcast:
-                fetchVideoOrPodcastResults(for: searchQuery,type: type)
+            case .Video, .BrowseTorrent, .Podcast, .Newsletter:
+                fetchFeedTypeSpecificContent(for: searchQuery,type: type)
             case .SearchTorrent:
                 // Handle the case when type is nil (if needed)
                 presentBitTorrentSearchView()
@@ -135,7 +135,7 @@ extension FeedSearchContainerViewController {
         }
     }
     
-    private func fetchVideoOrPodcastResults(for searchQuery: String,type:FeedType?) {
+    private func fetchFeedTypeSpecificContent(for searchQuery: String,type:FeedType?) {
         presentResultsListView()
         fetchResults(for: searchQuery, and: type)
     }

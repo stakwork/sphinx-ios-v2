@@ -221,6 +221,16 @@ extension DashboardRootViewController {
         connectToServer()
         
         setupObservers()
+        
+        
+    }
+    
+    func launchEpubReader(){
+        let epubViewController = EPUBViewController()
+        addChild(epubViewController)
+        epubViewController.view.frame = view.bounds
+        view.addSubview(epubViewController.view)
+        epubViewController.didMove(toParent: self)
     }
     
     func addAccessibilityIdentifiers(){
@@ -309,6 +319,10 @@ extension DashboardRootViewController {
         handleDeepLinksAndPush()
         
         setupAddTribeButton()
+        
+//        DispatchQueue.main.asyncAfter(deadline: .now() + 5.0, execute: {
+//            self.launchEpubReader()
+//        })
     }
     
     func refreshUnreadStatus(){
