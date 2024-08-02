@@ -1226,7 +1226,7 @@ extension SphinxOnionManager {
                 )
                 
                 let resultBase64 = Data(hexString: resultHex)?
-                    .base64EncodedString().urlSNotafe
+                    .base64EncodedString().urlSafe
                 
                 return resultBase64
             }
