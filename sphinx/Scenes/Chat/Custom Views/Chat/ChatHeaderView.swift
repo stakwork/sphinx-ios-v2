@@ -184,13 +184,13 @@ class ChatHeaderView: UIView {
     }
     
     func updateSatsEarned() {
-        if let feedID = chat?.contentFeed?.feedID {
-            let isMyTribe = (chat?.isMyPublicGroup() ?? false)
-            let label = isMyTribe ? "earned.sats".localized : "contributed.sats".localized
-            let sats = PodcastPaymentsHelper.getSatsEarnedFor(feedID)
-            contributedSatsLabel.text = String(format: label, sats)
-            contributionsContainer.isHidden = false
-        }
+//        if let feedID = chat?.contentFeed?.feedID {
+//            let isMyTribe = (chat?.isMyPublicGroup() ?? false)
+//            let label = isMyTribe ? "earned.sats".localized : "contributed.sats".localized
+//            let sats = PodcastPaymentsHelper.getSatsEarnedFor(feedID)
+//            contributedSatsLabel.text = String(format: label, sats)
+//            contributionsContainer.isHidden = false
+//        }
     }
     
     func configureWebAppButton() {
