@@ -71,6 +71,11 @@ class DashboardRootViewController: RootViewController {
         )
     }()
     
+    func setupFeedsContainer(){
+        //Auto populate
+        self.presentFeedSearchView()
+        feedSearchResultsContainerViewController.populatePreSearch()
+    }
     
     internal lazy var feedSearchResultsContainerViewController = {
         FeedSearchContainerViewController.instantiate(
@@ -109,6 +114,10 @@ class DashboardRootViewController: RootViewController {
                 addTribeTrailing.constant = 16
             } else {
                 addTribeTrailing.constant = -120
+            }
+            
+            if(activeTab == .feed){
+                setupFeedsContainer()
             }
             
             UIView.animate(withDuration: 0.10) {
@@ -223,8 +232,6 @@ extension DashboardRootViewController {
         connectToServer()
         
         setupObservers()
-        
-        
     }
     
     func launchEpubReader(){

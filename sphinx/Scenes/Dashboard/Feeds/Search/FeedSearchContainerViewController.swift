@@ -57,6 +57,12 @@ class FeedSearchContainerViewController: UIViewController {
     }()
     
     private var isShowingStartingEmptyStateVC: Bool = true
+    
+    func populatePreSearch(){
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: {
+            self.fetchResults(for: "", and: .BrowseTorrent)
+        })
+    }
 }
 
 

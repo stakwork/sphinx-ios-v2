@@ -95,7 +95,7 @@ extension API {
                     for pathDict in pathsArray {
                         if let media = BTMedia(JSON: pathDict) {
                             let result = media.convertBTMediaToFeedSearchResult(type: .Track)
-                            if result.feedURLPath.isNotEmpty {
+                            if let result = result, result.feedURLPath.isNotEmpty {
                                 mediaArray.append(result)
                             }
                         }
@@ -136,7 +136,7 @@ extension API {
                     for pathDict in pathsArray {
                         if let media = BTMedia(JSON: pathDict) {
                             let result = media.convertBTMediaToFeedSearchResult(type: type)
-                            if result.feedURLPath.isNotEmpty {
+                            if let result = result, result.feedURLPath.isNotEmpty {
                                 mediaArray.append(result)
                             }
                         }
@@ -207,7 +207,7 @@ class BTMedia: Mappable {
         mtime      <- (map["mtime"], transformToInt64)
     }
     
-    func convertBTMediaToFeedSearchResult(type: FeedType) -> FeedSearchResult {
+    func convertBTMediaToFeedSearchResult(type: FeedType) -> FeedSearchResult? {
         let btMedia = self
         let feedId = btMedia.name ?? "Unknown"
         let title = btMedia.name ?? "No Title"
@@ -230,6 +230,10 @@ class BTMedia: Mappable {
             case .Video where videoExtensions.contains(where: fileName.hasSuffix):
                 feedURLPath = "\(API.sharedInstance.btBaseUrl)/\(btMedia.name!)"
             case .BrowseTorrent where btMedia.pathType == "Dir" || videoExtensions.contains(where: fileName.hasSuffix):
+                if btMedia.pathType == "Dir" &&
+                    fileName.contains("mp3") == false{
+                    return nil //filter out folders that aren't music albums
+                }
                 let isVideo = (videoExtensions.contains(where: fileName.hasSuffix))
                 finalType = isVideo ? .Video : .Podcast
                 imageUrl = (isVideo == false) ? "https://png.pngtree.com/png-vector/20211018/ourmid/pngtree-simple-podcast-logo-design-png-image_3991612.png"
