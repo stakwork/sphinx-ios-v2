@@ -132,7 +132,7 @@ class PodcastPaymentsHelper {
                 DelayPerformedHelper.performAfterDelay(seconds: 0.5 * Double(index), completion: {
                     SphinxOnionManager.sharedInstance.keysend(
                         pubkey: pubkey,
-                        amt: Int(amount),
+                        amt: amount,
                         data: data,
                         completion: { _ in }
                     )

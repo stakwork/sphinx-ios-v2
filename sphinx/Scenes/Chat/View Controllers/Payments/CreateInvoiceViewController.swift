@@ -372,7 +372,7 @@ class CreateInvoiceViewController: CommonPaymentViewController {
             SphinxOnionManager.sharedInstance.keysend(
                 pubkey: pubkey,
                 routeHint: paymentsViewModel.payment.routeHint,
-                amt: amt
+                amt: Double(amt)
             ) { success in
                 if success {
                     self.shouldDismissView()
