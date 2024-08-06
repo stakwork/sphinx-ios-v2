@@ -224,6 +224,10 @@ class BTMedia: Mappable {
             let readerExtensions = [".pdf"]
             switch type {
             case .Podcast where btMedia.pathType == "Dir":
+                if btMedia.pathType == "Dir" &&
+                    fileName.contains("mp3") == false{
+                    return nil //filter out folders that aren't music albums
+                }
                 feedURLPath = "\(btMedia.name!)"
             case .Track where audioExtensions.contains(where: fileName.hasSuffix):
                 feedURLPath = "\(btMedia.name!)"

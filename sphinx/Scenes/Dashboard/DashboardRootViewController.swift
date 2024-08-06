@@ -79,7 +79,7 @@ class DashboardRootViewController: RootViewController {
         if(isFirstFeedsLoad == false){
             isFirstFeedsLoad = true
             self.presentFeedSearchView()
-            feedSearchResultsContainerViewController.populatePreSearch()
+            feedSearchResultsContainerViewController.prePopulateSearch()
         }
     }
     
