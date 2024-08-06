@@ -15,6 +15,8 @@ protocol FeedSearchResultsViewControllerDelegate: AnyObject {
         _ viewController: UIViewController,
         didSelectFeedSearchResult feedId: String
     )
+    
+    func didChangeFilterChipVisibility(isVisible:Bool)
 }
 
 
@@ -107,6 +109,8 @@ extension FeedSearchContainerViewController {
         super.didMove(toParent: parent)
         
         configureStartingEmptyStateView()
+        
+        resultsDelegate?.didChangeFilterChipVisibility(isVisible: true)
     }
 }
 
@@ -158,6 +162,8 @@ extension FeedSearchContainerViewController {
             child: emptyStateViewController,
             container: contentView
         )
+        
+        resultsDelegate?.didChangeFilterChipVisibility(isVisible: true)
     }
 
     private func presentBitTorrentSearchView() {
