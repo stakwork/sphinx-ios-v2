@@ -321,6 +321,7 @@ extension NewChatViewController {
             let messageOptionsVC = MessageOptionsViewController.instantiate(
                 message: message,
                 chat: nil,
+                contact: nil,
                 purchaseAcceptMessage: message.getPurchaseAcceptItem(),
                 delegate: self, isThreadRow: self.isThread
             )

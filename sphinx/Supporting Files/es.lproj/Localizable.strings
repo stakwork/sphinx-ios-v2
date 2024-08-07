@@ -426,6 +426,10 @@
 "copy.text" = "Copiar Texto";
 "mark.as.read" = "Marcar como leído";
 "mark.as.unread" = "Marcar como no leído";
+"delete.contact" = "Eliminar contacto";
+"delete.invite" = "Cancelar Invitación";
+"delete.contact.warning" = "¿Estás seguro de que quieres eliminar este contacto?";
+"delete.invite.warning" = "¿Estás seguro de que quieres eliminar esta invitación?";
 "copy.link" = "Copiar Enlace";
 "copy.pub.key" = "Copiar Clave";
 "copy.call.link" = "Copiar Enlace";

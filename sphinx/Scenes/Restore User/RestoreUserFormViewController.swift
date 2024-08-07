@@ -21,6 +21,11 @@ class RestoreUserFormViewController: UIViewController {
     @IBOutlet weak var keychainRestoreButtonContainer: UIView!
     @IBOutlet weak var keychainRestoreLabel: UILabel!
     
+    var loading = false {
+        didSet {
+            LoadingWheelHelper.toggleLoadingWheel(loading: loading, loadingWheel: loadingWheel, loadingWheelColor: UIColor.white, view: submitButton)
+        }
+    }
     
     let userData = UserData.sharedInstance
     let onionConnector = SphinxOnionConnector.sharedInstance

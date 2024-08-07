@@ -405,6 +405,10 @@
 "loading.paid.message" = "Naglo-load ng mensahe...";
 "mark.as.read" = "Markahan bilang nabasa";
 "mark.as.unread" = "Markahan bilang hindi nabasa";
+"delete.contact" = "Tanggalin ang Kontakto";
+"delete.invite" = "Tanggalin ang Imbitasyon";
+"delete.contact.warning" = "Sigurado ka bang nais mong tanggalin ang kontakto na ito?";
+"delete.invite.warning" = "Sigurado ka bang gusto mong tanggalin ang imbitasyong ito?";
 "copy.text" = "Kopyahin ang Text";
 "copy.link" = "Kopyahin ang Link";
 "copy.pub.key" = "Kopyahin ang Pampublikong susi";

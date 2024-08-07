@@ -301,7 +301,6 @@ extension ChatsCollectionViewController {
                 cell.owner = self.owner
                 cell.chatListObject = self.chatListObjects[indexPath.row]
                 cell.delegate = self
-                cell.indexPath = indexPath
 
                 return cell
             }
@@ -386,34 +385,33 @@ extension ChatsCollectionViewController {
 
 extension ChatsCollectionViewController : ChatListCollectionViewCellDelegate, MessageOptionsVCDelegate{
     func didLongPressOnCell(
+        cell: ChatListCollectionViewCell,
         chatListObject: ChatListCommonObject,
-        owner: UserContact,
-        indexPath: IndexPath
+        owner: UserContact
     ) {
-        if let chat = chatListObject.getChat(),
-           let lastMessage = chat.lastMessage,
-           let _ = collectionView.cellForItem(at: indexPath) {
+        if let indexPath = collectionView.indexPath(for: cell) {
             
-            if lastMessage.isOutgoing(ownerId: owner.id){
-                return
-            }
-                
-            if let rowRectAndPath = ChatHelper.getChatRowRectAndPath(
-                collectionView: collectionView,
-                indexPath: indexPath,
-                yOffset: chatsListDelegate?.shouldGetChatsContainerYOffset() ?? 0
-            ) {
-                let messageOptionsVC = MessageOptionsViewController.instantiate(
-                    message: nil,
-                    chat: chat,
-                    purchaseAcceptMessage: nil,
-                    delegate: self,
-                    isThreadRow: false
-                )
-                
-                messageOptionsVC.setBubblePath(bubblePath: rowRectAndPath)
-                messageOptionsVC.modalPresentationStyle = .overCurrentContext
-                navigationController?.present(messageOptionsVC, animated: false)
+            if chatListObject.lastMessage?.isOutgoing(ownerId: owner.id) == true || ///last message is outgoing, should show mark as read/unread
+                chatListObject.isConversation() ///it's a contact, should show delete contact
+            {
+                if let rowRectAndPath = ChatHelper.getChatRowRectAndPath(
+                    collectionView: collectionView,
+                    indexPath: indexPath,
+                    yOffset: chatsListDelegate?.shouldGetChatsContainerYOffset() ?? 0
+                ) {
+                    let messageOptionsVC = MessageOptionsViewController.instantiate(
+                        message: nil,
+                        chat: chatListObject.getChat(),
+                        contact: chatListObject.getContact(),
+                        purchaseAcceptMessage: nil,
+                        delegate: self,
+                        isThreadRow: false
+                    )
+                    
+                    messageOptionsVC.setBubblePath(bubblePath: rowRectAndPath)
+                    messageOptionsVC.modalPresentationStyle = .overCurrentContext
+                    navigationController?.present(messageOptionsVC, animated: false)
+                }
             }
         }
     }
@@ -448,6 +446,42 @@ extension ChatsCollectionViewController : ChatListCollectionViewCellDelegate, Me
                 message: "generic.error.message".localized
             )
         }
+    }
+    
+    func shouldDeleteContact(contact: UserContact) {
+        let confirmDeletionCallback: (() -> ()) = {
+            self.deleteContact(contact: contact)
+        }
+        
+        let isInvite = contact.isInvite()
+        
+        AlertHelper.showTwoOptionsAlert(
+            title: "warning".localized,
+            message: (isInvite ? "delete.invite.warning" : "delete.contact.warning").localized,
+            confirm: confirmDeletionCallback
+        )
+    }
+    
+    func deleteContact(contact: UserContact) {
+        let som = SphinxOnionManager.sharedInstance
+        
+        if let inviteCode = contact.invite?.inviteString, contact.isInvite() {
+            if !som.cancelInvite(inviteCode: inviteCode) {
+                AlertHelper.showAlert(
+                    title: "generic.error.title".localized,
+                    message: "generic.error.message".localized
+                )
+                return
+            }
+        }
+        
+        if let publicKey = contact.publicKey, publicKey.isNotEmpty {
+            if som.deleteContactOrChatMsgsFor(contact: contact) {
+                som.deleteContactFromState(pubkey: publicKey)
+            }
+        }
+                
+        CoreDataManager.sharedManager.deleteContactObjectsFor(contact)
     }
     
     func shouldDeleteMessage(message: TransactionMessage) {}

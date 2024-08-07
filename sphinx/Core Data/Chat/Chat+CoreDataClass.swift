@@ -728,7 +728,7 @@ public class Chat: NSManagedObject {
             let host = SphinxOnionManager.sharedInstance.tribesServerIP
             
             API.sharedInstance.getTribeInfo(
-                host: host,
+                host: self.host ?? host,
                 uuid: uuid,
                 callback: { chatJson in
                     self.tribeInfo = GroupsManager.sharedInstance.getTribesInfoFrom(json: chatJson)
@@ -884,14 +884,29 @@ public class Chat: NSManagedObject {
     func getActionsMenuOptions() -> [TransactionMessage.ActionsMenuOption] {
         let isRead = lastMessage?.seen ?? false
         
-        let options = [
-            TransactionMessage.ActionsMenuOption.init(
-                tag: TransactionMessage.MessageActionsItem.ToggleReadUnread,
-                materialIconName: isRead ? "" : "",
-                iconImage: nil,
-                label: isRead ? "mark.as.unread".localized : "mark.as.read".localized
+        var options: [TransactionMessage.ActionsMenuOption] = []
+        
+        if lastMessage?.isOutgoing() == false {
+            options.append(
+                TransactionMessage.ActionsMenuOption.init(
+                    tag: TransactionMessage.MessageActionsItem.ToggleReadUnread,
+                    materialIconName: isRead ? "" : "",
+                    iconImage: nil,
+                    label: isRead ? "mark.as.unread".localized : "mark.as.read".localized
+                )
             )
-        ]
+        }
+        
+        if isConversation() {
+            options.append(
+                TransactionMessage.ActionsMenuOption.init(
+                    tag: TransactionMessage.MessageActionsItem.Delete,
+                    materialIconName: "delete",
+                    iconImage: nil,
+                    label: "delete.contact".localized
+                )
+            )
+        }
         
         return options
     }

@@ -422,6 +422,10 @@
 "copy.text" = "复制文本";
 "mark.as.read" = "标记为已读";
 "mark.as.unread" = "标记为未读";
+"delete.contact" = "删除联系人";
+"delete.invite" = "删除邀请";
+"delete.contact.warning" = "您确定要删除此联系人吗？";
+"delete.invite.warning" = "您确定要删除此邀请吗？";
 "copy.link" = "复制链接";
 "copy.pub.key" = "复制公钥";
 "copy.call.link" = "复制通话链接";

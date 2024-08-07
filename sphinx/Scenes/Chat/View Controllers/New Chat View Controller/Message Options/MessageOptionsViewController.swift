@@ -18,6 +18,7 @@ import UIKit
     func shouldTogglePinState(message: TransactionMessage, pin: Bool)
     func shouldReloadChat()
     func shouldToggleReadUnread(chat: Chat)
+    func shouldDeleteContact(contact: UserContact)
 }
 
 class MessageOptionsViewController: UIViewController {
@@ -29,6 +30,7 @@ class MessageOptionsViewController: UIViewController {
     
     var message: TransactionMessage? = nil
     var chat: Chat? = nil
+    var contact: UserContact? = nil
     
     var purchaseAcceptMessage: TransactionMessage? = nil
     
@@ -37,6 +39,7 @@ class MessageOptionsViewController: UIViewController {
     static func instantiate(
         message: TransactionMessage?,
         chat: Chat?,
+        contact: UserContact?,
         purchaseAcceptMessage: TransactionMessage?,
         delegate: MessageOptionsVCDelegate?,
         isThreadRow: Bool
@@ -45,6 +48,7 @@ class MessageOptionsViewController: UIViewController {
         let viewController = StoryboardScene.Chat.messageOptionsViewController.instantiate()
         viewController.message = message
         viewController.chat = chat
+        viewController.contact = contact
         viewController.purchaseAcceptMessage = purchaseAcceptMessage
         viewController.delegate = delegate
         viewController.isThreadRow = isThreadRow
@@ -161,6 +165,7 @@ class MessageOptionsViewController: UIViewController {
         let menuView = MessageOptionsView(
             message: message,
             chat: chat,
+            contact: contact,
             leftTopCorner: leftTopCorner,
             rightBottomCorner: rightBottomCorner,
             isThreadRow: isThreadRow,
@@ -262,6 +267,10 @@ extension MessageOptionsViewController : MessageOptionsDelegate {
     //Unused Methods
     func shouldToggleReadUnread(chat: Chat) {
         delegate?.shouldToggleReadUnread(chat: chat)
+    }
+    
+    func shouldDeleteContact(contact: UserContact) {
+        delegate?.shouldDeleteContact(contact: contact)
     }
     
 }
