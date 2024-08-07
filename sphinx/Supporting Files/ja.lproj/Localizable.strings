@@ -420,6 +420,10 @@
 "copy.text" = "テキストをコピー";
 "mark.as.read" = "既読にする";
 "mark.as.unread" = "未読にする";
+"delete.contact" = "連絡先を削除";
+"delete.invite" = "招待を削除";
+"delete.contact.warning" = "この連絡先を削除してもよろしいですか？";
+"delete.invite.warning" = "この招待を削除してもよろしいですか?";
 "copy.link" = "リンクをコピー";
 "copy.pub.key" = "公開鍵をコピー";
 "copy.call.link" = "通話リンクをコピー";

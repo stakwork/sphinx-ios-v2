@@ -421,6 +421,10 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 "copy.text" = "複製文本";
 "mark.as.read" = "標記為已讀";
 "mark.as.unread" = "標記為未讀";
+"delete.contact" = "刪除聯絡人";
+"delete.invite" = "刪除邀請";
+"delete.contact.warning" = "您確定要刪除這個聯絡人嗎？";
+"delete.invite.warning" = "您確定要刪除此邀請嗎？";
 "copy.link" = "複製鏈接";
 "copy.pub.key" = "複製公鑰";
 "copy.call.link" = "複製通話鏈接";

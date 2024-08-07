@@ -19,6 +19,7 @@ import UIKit
     func shouldFlagMessage()
     func shouldTogglePinState(pin: Bool)
     func shouldToggleReadUnread(chat: Chat)
+    func shouldDeleteContact(contact: UserContact)
 }
 
 class MessageOptionsView : UIView {
@@ -32,6 +33,7 @@ class MessageOptionsView : UIView {
     
     var message: TransactionMessage? = nil
     var chat: Chat? = nil
+    var contact: UserContact? = nil
     
     public enum VerticalPosition: Int {
         case Top
@@ -51,6 +53,7 @@ class MessageOptionsView : UIView {
     init(
         message: TransactionMessage?,
         chat: Chat?,
+        contact: UserContact?,
         leftTopCorner: CGPoint,
         rightBottomCorner: CGPoint,
         isThreadRow: Bool,
@@ -61,15 +64,16 @@ class MessageOptionsView : UIView {
         self.delegate = delegate
         self.message = message
         self.chat = chat
-        
-        if message == nil && chat == nil {
-            return
-        }
+        self.contact = contact
         
         let incoming = message?.isIncoming() ?? true
         let coordinates = getCoordinates(leftTopCorner: leftTopCorner, rightBottomCorner: rightBottomCorner)
         let messageOptions = getActionsMenuOptions(isThreadRow: isThreadRow)
         let optionsCount = messageOptions.count
+        
+        if optionsCount == 0 {
+            return
+        }
 
         let (menuRect, verticalPosition, horizontalPosition) = getMenuRectAndPosition(
             coordinates: coordinates,
@@ -127,14 +131,22 @@ class MessageOptionsView : UIView {
         isThreadRow: Bool
     ) -> [TransactionMessage.ActionsMenuOption] {
         
-        if let chat = chat {
-            return chat.getActionsMenuOptions()
+        if let message = message {
+            return message.getActionsMenuOptions(isThreadRow: isThreadRow)
         }
         
-        guard let message = message else {
-            return []
+        if let chat = chat {
+            return chat.getActionsMenuOptions()
+        } else {
+            return [
+                TransactionMessage.ActionsMenuOption.init(
+                    tag: TransactionMessage.MessageActionsItem.Delete,
+                    materialIconName: "delete",
+                    iconImage: nil,
+                    label: "delete.invite".localized
+                )
+            ]
         }
-        return message.getActionsMenuOptions(isThreadRow: isThreadRow)
     }
     
     func addMenuOptions(options: [TransactionMessage.ActionsMenuOption]) {
@@ -252,13 +264,12 @@ extension MessageOptionsView : MessageOptionViewDelegate {
     private func handleActionWith(_ tag: Int) {
         let option = TransactionMessage.MessageActionsItem(rawValue: tag)
         
-        if let chat = chat {
-            switch(option) {
-            case .ToggleReadUnread:
-                delegate?.shouldToggleReadUnread(chat: chat)
-            default:
-                break
-            }
+        if let chat = chat, option == .ToggleReadUnread {
+            delegate?.shouldToggleReadUnread(chat: chat)
+        }
+        
+        if let contact = contact, option == .Delete {
+            delegate?.shouldDeleteContact(contact: contact)
         }
         
         guard let message = message else {

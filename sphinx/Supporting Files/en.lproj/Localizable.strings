@@ -425,6 +425,10 @@
 "copy.text" = "Copy Text";
 "mark.as.read" = "Mark as Read";
 "mark.as.unread" = "Mark as Unread";
+"delete.contact" = "Delete Contact";
+"delete.invite" = "Cancel Invite";
+"delete.contact.warning" = "Are you sure you want to delete this contact?";
+"delete.invite.warning" = "Are you sure you want to delete this invite?";
 "copy.link" = "Copy Link";
 "copy.pub.key" = "Copy Public Key";
 "copy.call.link" = "Copy Call Link";

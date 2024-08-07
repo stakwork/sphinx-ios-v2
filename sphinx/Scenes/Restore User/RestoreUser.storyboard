@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="20037" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="22155" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
     <device id="retina6_1" orientation="portrait" appearance="dark"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="20020"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="22131"/>
         <capability name="Image references" minToolsVersion="12.0"/>
         <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
@@ -107,7 +107,7 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="kyJ-OL-ajs">
-                                <rect key="frame" x="0.0" y="44" width="50" height="50"/>
+                                <rect key="frame" x="0.0" y="48" width="50" height="50"/>
                                 <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="50" id="eV2-ie-XyV"/>
@@ -123,13 +123,13 @@
                                 </connections>
                             </button>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="CONNECT" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="3SZ-Qm-n32">
-                                <rect key="frame" x="136.5" y="318" width="141" height="36"/>
+                                <rect key="frame" x="136.5" y="312" width="141" height="36"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="30"/>
                                 <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="fDG-gL-ISu" userLabel="Form Container">
-                                <rect key="frame" x="30" y="382" width="354" height="132"/>
+                                <rect key="frame" x="30" y="376" width="354" height="144"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="VGD-h9-ePJ">
                                         <rect key="frame" x="0.0" y="0.0" width="354" height="62"/>
@@ -199,7 +199,7 @@
                                     <constraint firstItem="5KL-xE-zzC" firstAttribute="leading" secondItem="fDG-gL-ISu" secondAttribute="leading" id="DOR-Ea-OUZ"/>
                                     <constraint firstAttribute="trailing" secondItem="5KL-xE-zzC" secondAttribute="trailing" id="ZbS-iP-SLy"/>
                                     <constraint firstAttribute="trailing" secondItem="VGD-h9-ePJ" secondAttribute="trailing" id="caK-NZ-00O"/>
-                                    <constraint firstAttribute="height" constant="132" id="nio-TJ-TAA"/>
+                                    <constraint firstAttribute="height" constant="144" id="nio-TJ-TAA"/>
                                     <constraint firstItem="VGD-h9-ePJ" firstAttribute="top" secondItem="fDG-gL-ISu" secondAttribute="top" id="tiF-Ch-76f"/>
                                 </constraints>
                             </view>
@@ -245,12 +245,22 @@
                                     <constraint firstItem="jrf-33-PtF" firstAttribute="top" secondItem="ud9-s1-gND" secondAttribute="top" id="rHe-nt-jkt"/>
                                 </constraints>
                             </view>
+                            <view hidden="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Fo7-3P-9a8" customClass="UIActivityIndicatorView">
+                                <rect key="frame" x="182" y="540" width="50" height="50"/>
+                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="50" id="Eld-bH-bpW"/>
+                                    <constraint firstAttribute="width" constant="50" id="FQw-NT-0of"/>
+                                </constraints>
+                            </view>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="0qf-AI-cJJ"/>
                         <color key="backgroundColor" name="OnboardingBG"/>
                         <constraints>
+                            <constraint firstItem="Fo7-3P-9a8" firstAttribute="top" secondItem="fDG-gL-ISu" secondAttribute="bottom" constant="20" id="1CI-PX-7bd"/>
                             <constraint firstItem="fDG-gL-ISu" firstAttribute="centerX" secondItem="Wxr-Ep-Fyf" secondAttribute="centerX" id="8bh-BP-pYK"/>
                             <constraint firstItem="kyJ-OL-ajs" firstAttribute="top" secondItem="0qf-AI-cJJ" secondAttribute="top" id="8he-M9-MsM"/>
+                            <constraint firstItem="Fo7-3P-9a8" firstAttribute="centerX" secondItem="0qf-AI-cJJ" secondAttribute="centerX" id="A4X-JN-YLl"/>
                             <constraint firstItem="fDG-gL-ISu" firstAttribute="centerY" secondItem="Wxr-Ep-Fyf" secondAttribute="centerY" id="Pp2-Lw-e70"/>
                             <constraint firstItem="3SZ-Qm-n32" firstAttribute="centerX" secondItem="Wxr-Ep-Fyf" secondAttribute="centerX" id="bUx-uk-N3L"/>
                             <constraint firstItem="ud9-s1-gND" firstAttribute="centerX" secondItem="0qf-AI-cJJ" secondAttribute="centerX" id="eaI-xi-Fp7"/>
@@ -267,6 +277,7 @@
                         <outlet property="codeTextFieldContainer" destination="VGD-h9-ePJ" id="Ldn-SS-rIr"/>
                         <outlet property="keychainRestoreButtonContainer" destination="ud9-s1-gND" id="fw6-bg-U96"/>
                         <outlet property="keychainRestoreLabel" destination="gEt-df-nc9" id="khS-Rq-Fnu"/>
+                        <outlet property="loadingWheel" destination="Fo7-3P-9a8" id="kJT-UY-xat"/>
                         <outlet property="submitButton" destination="YxI-0V-WDa" id="fEk-6P-xhC"/>
                         <outlet property="submitButtonArrow" destination="rLK-0A-RFT" id="LBU-8s-tbO"/>
                         <outlet property="submitButtonContainer" destination="5KL-xE-zzC" id="Jyg-ia-5uh"/>
@@ -286,7 +297,7 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="7l4-ZX-NBu" userLabel="Content Container">
-                                <rect key="frame" x="104.5" y="359.5" width="205" height="177"/>
+                                <rect key="frame" x="104.5" y="360" width="205" height="176"/>
                                 <subviews>
                                     <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="0Td-da-UZ9">
                                         <rect key="frame" x="0.0" y="0.0" width="205" height="127"/>
@@ -297,7 +308,7 @@
                                         <imageReference key="image" image="connecting.gif"/>
                                     </imageView>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="CONNECTING..." textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="SSi-Bs-4jk">
-                                        <rect key="frame" x="0.0" y="155" width="205" height="22"/>
+                                        <rect key="frame" x="0.0" y="155" width="205" height="21"/>
                                         <fontDescription key="fontDescription" name="Montserrat-Regular" family="Montserrat" pointSize="18"/>
                                         <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                         <nil key="highlightedColor"/>

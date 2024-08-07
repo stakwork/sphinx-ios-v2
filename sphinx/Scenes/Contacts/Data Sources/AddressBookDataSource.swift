@@ -149,26 +149,31 @@ extension AddressBookDataSource : ContactCellDelegate {
     func deleteContactAndRow(contact: UserContact, cell: UITableViewCell) {
         let som = SphinxOnionManager.sharedInstance
         
-        if let publicKey = contact.publicKey, publicKey.isNotEmpty {
-            if som.deleteContactOrChatMsgsFor(contact: contact) {
-                som.deleteContactFromState(pubkey: publicKey)
-                
-                let contactsCount = contacts.count
-                
-                deleteObjects(contact: contact)
-                contacts = UserContact.getAll().filter { !$0.isOwner && !$0.shouldBeExcluded() }
-                processContacts(searchTerm: self.searchTerm)
-                
-                if contacts.count == contactsCount - 1 {
-                    deleteCell(cell: cell)
-                }
-                
+        if let inviteCode = contact.invite?.inviteString, contact.isInvite() {
+            if !som.cancelInvite(inviteCode: inviteCode) {
+                AlertHelper.showAlert(
+                    title: "generic.error.title".localized,
+                    message: "generic.error.message".localized
+                )
                 return
             }
         }
         
-        delegate?.shouldToggleInteraction(enable: true)
-        delegate?.shouldShowAlert(title: "generic.error.title".localized, text: "generic.error.message".localized)
+        if let publicKey = contact.publicKey, publicKey.isNotEmpty {
+            if som.deleteContactOrChatMsgsFor(contact: contact) {
+                som.deleteContactFromState(pubkey: publicKey)
+            }
+        }
+                
+        let contactsCount = contacts.count
+        
+        deleteObjects(contact: contact)
+        contacts = UserContact.getAll().filter { !$0.isOwner && !$0.shouldBeExcluded() }
+        processContacts(searchTerm: self.searchTerm)
+        
+        if contacts.count == contactsCount - 1 {
+            deleteCell(cell: cell)
+        }        
     }
     
     func deleteObjects(contact: UserContact) {

@@ -47,10 +47,13 @@ extension RestoreUserFormViewController {
     }
     
     func getConfigData(code: String) {
+        loading = true
+        
         API.sharedInstance.getServerConfig() { success in
             if success {
                 self.continueWith(code: code)
             } else {
+                self.loading = false
                 self.navigationController?.popViewController(animated: true)
                 AlertHelper.showAlert(title: "Error", message: "Unable to get config from Sphinx V2 Server")
             }
