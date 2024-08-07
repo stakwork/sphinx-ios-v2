@@ -261,11 +261,18 @@ extension DashboardRootViewController {
     }
     
     func launchEpubReader(){
-        let epubViewController = EPUBViewController()
-        addChild(epubViewController)
-        epubViewController.view.frame = view.bounds
-        view.addSubview(epubViewController.view)
-        epubViewController.didMove(toParent: self)
+        let manager = EpubConverterManager()
+
+        Task {
+            do {
+                let epubUrl = "https://files.bt2.bard.garden:21433/The%20Mom%20Test_%20How%20to%20Talk%20to%20Customers%20by%20Rob%20Fitzpatrick%20EPUB/The%20Mom%20Test_%20How%20to%20Talk%20to%20Customers%20by%20Rob%20Fitzpatrick.epub"
+                let savedPdfUrl = try await manager.convertEpub(url: epubUrl)
+                print("PDF saved at: \(savedPdfUrl.path)")
+                // Use the savedPdfUrl as needed (e.g., display the PDF, share it, etc.)
+            } catch {
+                print("Conversion failed: \(error)")
+            }
+        }
     }
     
     func addAccessibilityIdentifiers(){
