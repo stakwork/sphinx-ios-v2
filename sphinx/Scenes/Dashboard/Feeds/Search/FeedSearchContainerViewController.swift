@@ -15,6 +15,8 @@ protocol FeedSearchResultsViewControllerDelegate: AnyObject {
         _ viewController: UIViewController,
         didSelectFeedSearchResult feedId: String
     )
+    
+    func didChangeFilterChipVisibility(isVisible:Bool)
 }
 
 
@@ -27,6 +29,7 @@ class FeedSearchContainerViewController: UIViewController {
     var feedType: FeedType? = nil
     var searchTimer: Timer? = nil
     var didPressEnter : Bool = false
+    var prePopulateDebounce : Bool = false
     
     internal let newMessageBubbleHelper = NewMessageBubbleHelper()
     internal let feedsManager = FeedsManager.sharedInstance
@@ -57,6 +60,16 @@ class FeedSearchContainerViewController: UIViewController {
     }()
     
     private var isShowingStartingEmptyStateVC: Bool = true
+    
+    func prePopulateSearch(){
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: {
+            if(self.feedType != .SearchTorrent && self.prePopulateDebounce == false){
+                self.fetchResults(for: "", and: self.feedType ?? .BrowseTorrent)
+                self.prePopulateDebounce = true
+                DelayPerformedHelper.performAfterDelay(seconds: 2.0, completion: {self.prePopulateDebounce = false})
+            }
+        })
+    }
 }
 
 
@@ -101,6 +114,8 @@ extension FeedSearchContainerViewController {
         super.didMove(toParent: parent)
         
         configureStartingEmptyStateView()
+        
+        resultsDelegate?.didChangeFilterChipVisibility(isVisible: true)
     }
 }
 
@@ -152,6 +167,8 @@ extension FeedSearchContainerViewController {
             child: emptyStateViewController,
             container: contentView
         )
+        
+        resultsDelegate?.didChangeFilterChipVisibility(isVisible: true)
     }
 
     private func presentBitTorrentSearchView() {

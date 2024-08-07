@@ -157,6 +157,11 @@ extension DashboardRootViewController: DashboardFeedsListContainerViewController
     ) {
         presentRecommendationsPlayerVC(for: recommendations, and: recommendationId)
     }
+    
+    func filterChipDidChange(){
+        self.presentFeedSearchView()
+        feedSearchResultsContainerViewController.prePopulateSearch()
+    }
 }
 
 

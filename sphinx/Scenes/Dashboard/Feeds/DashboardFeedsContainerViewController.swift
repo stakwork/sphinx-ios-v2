@@ -49,6 +49,8 @@ protocol DashboardFeedsListContainerViewControllerDelegate: AnyObject {
     func viewControllerContentScrolled(
         scrollView: UIScrollView
     )
+    
+    func filterChipDidChange()
 }
 
 
@@ -73,6 +75,7 @@ class DashboardFeedsContainerViewController: UIViewController {
                     from: oldValue,
                     to: self!.activeFilterOption
                 )
+                self?.feedsListContainerDelegate?.filterChipDidChange()
             }
         }
     }

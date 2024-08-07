@@ -24,7 +24,10 @@ class DashboardRootViewController: RootViewController {
     @IBOutlet weak var restoreProgressView: RestoreProgressView!
     @IBOutlet weak var addTribeTrailing: NSLayoutConstraint!
     @IBOutlet weak var addTribeButton: UIButton!
+    @IBOutlet weak var addTribeIconLabel: UILabel!
+    
     @IBOutlet weak var bottomBarBottomConstraint: NSLayoutConstraint!
+    var isFirstFeedsLoad : Bool = false
     
     let buttonTitles : [String] = [
         "dashboard.tabs.feed".localized,
@@ -71,6 +74,14 @@ class DashboardRootViewController: RootViewController {
         )
     }()
     
+    func setupFeedsContainer(){
+        //Auto populate
+        if(isFirstFeedsLoad == false){
+            isFirstFeedsLoad = true
+            self.presentFeedSearchView()
+            feedSearchResultsContainerViewController.prePopulateSearch()
+        }
+    }
     
     internal lazy var feedSearchResultsContainerViewController = {
         FeedSearchContainerViewController.instantiate(
@@ -105,10 +116,10 @@ class DashboardRootViewController: RootViewController {
             resetSearchField()
             feedViewMode = .rootList
             
-            if (activeTab == .tribes) {
-                addTribeTrailing.constant = 16
-            } else {
-                addTribeTrailing.constant = -120
+            configureAddTribeBehavior(oldTab: oldValue)
+            
+            if(activeTab == .feed){
+                self.setupFeedsContainer()
             }
             
             UIView.animate(withDuration: 0.10) {
@@ -133,6 +144,30 @@ class DashboardRootViewController: RootViewController {
                 ]
             )
         }
+    }
+    
+    func configureAddTribeBehavior(oldTab:DashboardTab,visibilityOverride:Bool?=nil){
+        if let visibilityOverride = visibilityOverride{
+            addTribeTrailing.constant = (visibilityOverride) ? 16 : -120
+        }
+        else if (activeTab == .tribes || (activeTab == .feed && oldTab != .feed)) {
+            addTribeTrailing.constant = 16
+        } else {
+            addTribeTrailing.constant = -120
+        }
+        let title = (activeTab == .feed) ? ("Show Feeds") : ("Add Tribe")
+        let icon = (activeTab == .feed) ? ("keyboard_arrow_down") : ("add")
+        addTribeButton.setTitle(title, for: .normal)
+        addTribeIconLabel.text = icon
+    }
+    
+    func handleShowOptionsTap(){
+        activeTab = .feed
+        feedSearchResultsContainerViewController.presentInitialStateView()
+        UIView.animate(withDuration: 0.25, animations: {
+            self.addTribeTrailing.constant = -120
+        })
+        
     }
     
     func forceShowLoadingWheel() {
@@ -221,8 +256,6 @@ extension DashboardRootViewController {
         connectToServer()
         
         setupObservers()
-        
-        
     }
     
     func launchEpubReader(){
@@ -258,8 +291,13 @@ extension DashboardRootViewController {
     }
     
     @IBAction func didTapAddTribeButton() {
-        let discoverVC = DiscoverTribesWebViewController.instantiate()
-        navigationController?.pushViewController(discoverVC, animated: true)
+        if activeTab == .tribes{
+            let discoverVC = DiscoverTribesWebViewController.instantiate()
+            navigationController?.pushViewController(discoverVC, animated: true)
+        }
+        else if activeTab == .feed{
+            handleShowOptionsTap()
+        }
     }
     
     func setupPlayerBar() {

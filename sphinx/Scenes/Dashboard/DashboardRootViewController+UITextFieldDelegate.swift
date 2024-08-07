@@ -121,7 +121,7 @@ extension DashboardRootViewController: UITextFieldDelegate {
 
 extension DashboardRootViewController {
 
-    private func presentFeedSearchView() {
+    func presentFeedSearchView() {
         feedViewMode = .searching
         
         feedsContainerViewController.removeFromParent()
