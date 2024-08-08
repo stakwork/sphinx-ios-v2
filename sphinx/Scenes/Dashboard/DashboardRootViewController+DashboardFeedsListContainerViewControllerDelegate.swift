@@ -270,12 +270,26 @@ extension DashboardRootViewController {
                 handleNewsletterFeedResult(url: feedResult.feedURLPath)
             }
             else if(feedResult.feedURLPath.lowercased().contains("epub")){
+                addLoadingView()
                 convertAndRenderEpub(directoryPath: feedResult.feedURLPath, completion: { pdfUrl in
                     if let pdfUrl = pdfUrl{ self.handleNewsletterFeedResult(url: pdfUrl)}
+                    self.removeLoadingView()
                 })
             }
         }
         
+    }
+    
+    func addLoadingView(){
+        addChildVC(
+            child: loadingViewController,
+            container: self.view
+        )
+        self.view.bringSubviewToFront(loadingViewController.view)
+    }
+    
+    func removeLoadingView(){
+        self.removeChildVC(child: self.loadingViewController)
     }
     
     func convertAndRenderEpub(directoryPath:String, completion: @escaping (String?) -> ()){
@@ -300,7 +314,7 @@ extension DashboardRootViewController {
     func handleNewsletterFeedResult(url:String){
         let nli = NewsletterItem("abc123")
         nli.title = "test 123"
-        nli.itemUrl = URL(string: url)
+        nli.itemUrl = URL(string: url.replacingOccurrences(of: "http://", with: "https://"))
         presentItemWebView(for: nli)
     }
     

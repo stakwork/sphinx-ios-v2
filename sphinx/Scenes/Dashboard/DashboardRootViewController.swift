@@ -28,6 +28,8 @@ class DashboardRootViewController: RootViewController {
     
     @IBOutlet weak var bottomBarBottomConstraint: NSLayoutConstraint!
     var isFirstFeedsLoad : Bool = false
+    lazy var loadingViewController = LoadingViewController(backgroundColor: UIColor.Sphinx.SecondaryTextInverted.withAlphaComponent(0.5))
+
     
     let buttonTitles : [String] = [
         "dashboard.tabs.feed".localized,

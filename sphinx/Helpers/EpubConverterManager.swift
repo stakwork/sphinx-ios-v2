@@ -11,7 +11,8 @@ import Alamofire
 import ObjectMapper
 
 class EpubConverterManager {
-    private let baseURL = "https://epub-converter-proto-ludy4.ondigitalocean.app"
+//    private let baseURL = "https://epub-converter-proto-ludy4.ondigitalocean.app" 
+    private let baseURL = "https://epub-to-pdf.sphinx.chat"
     
     func convertEpub(url: String) async throws -> URL {
         let convertedPdfUrl = try await initiateConversion(epubUrl: url)
