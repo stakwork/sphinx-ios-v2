@@ -121,17 +121,15 @@ extension NewChatViewController : ChatHeaderViewDelegate, ThreadHeaderViewDelega
                 )
             )
             
-            if isMyPublicGroup {
-                alert.addAction(
-                    UIAlertAction(
-                        title: "share.group".localized,
-                        style: .default,
-                        handler: { (UIAlertAction) in
-                            self.goToShare()
-                        }
-                    )
+            alert.addAction(
+                UIAlertAction(
+                    title: "share.group".localized,
+                    style: .default,
+                    handler: { (UIAlertAction) in
+                        self.goToShare()
+                    }
                 )
-            }
+            )
         }
 
         alert.addAction(UIAlertAction(title: "cancel".localized, style: .cancel ))

@@ -174,11 +174,10 @@ class GroupDetailsViewController: UIViewController {
             alert.addAction(UIAlertAction(title: "notifications.level".localized, style: .default, handler:{ (UIAlertAction) in
                 self.goToNotificationsLevel()
             }))
+            alert.addAction(UIAlertAction(title: "share.group".localized, style: .default, handler:{ (UIAlertAction) in
+                self.goToShare()
+            }))
             if isMyPublicGroup {
-                alert.addAction(UIAlertAction(title: "share.group".localized, style: .default, handler:{ (UIAlertAction) in
-                    self.goToShare()
-                }))
-                
                 alert.addAction(UIAlertAction(title: "edit.tribe".localized, style: .default, handler:{ (UIAlertAction) in
                     self.goToEditGroup()
                 }))
