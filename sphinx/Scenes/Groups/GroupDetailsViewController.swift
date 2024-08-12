@@ -236,6 +236,7 @@ class GroupDetailsViewController: UIViewController {
             )
             return
         }
+        
         guard let chat = self.chat else {
             return
         }
@@ -255,7 +256,7 @@ class GroupDetailsViewController: UIViewController {
             if isMyPublicGroup {
                 som.deleteTribe(tribeChat: chat)
             } else {
-                som.exitTribe(
+                let success = som.exitTribe(
                     tribeChat: chat,
                     errorCallback: { error in
                         AlertHelper.showAlert(
@@ -264,6 +265,10 @@ class GroupDetailsViewController: UIViewController {
                         )
                     }
                 )
+                
+                if !success {
+                    return
+                }
             }
             let _ = som.deleteContactOrChatMsgsFor(chat: chat)
             

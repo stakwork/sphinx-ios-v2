@@ -137,12 +137,7 @@ extension NewPublicGroupViewController {
     }
     
     func editOrCreateGroup() {
-        uploadingPhoto = false
-        loading = true
-        
         if !NetworkMonitor.shared.checkConnectionSync() {
-            uploadingPhoto = false
-            
             AlertHelper.showAlert(
                 title: "generic.error.title".localized,
                 message: SphinxOnionManagerError.SOMNetworkError.localizedDescription
@@ -150,13 +145,16 @@ extension NewPublicGroupViewController {
             return
         }
         
+        uploadingPhoto = false
+        loading = true
+        
         let params = groupsManager.getNewGroupParams()
         
-        if isEditing() {
-            editGroup(id: chat!.id, params: params)
-            return
+        if let chat = chat {
+            editGroup(id: chat.id, params: params)
+        } else {
+            createGroup(params: params)
         }
-        createGroup(params: params)
     }
     
     func createGroup(params: [String: AnyObject]) {
@@ -165,7 +163,7 @@ extension NewPublicGroupViewController {
             return
         }
         
-        SphinxOnionManager.sharedInstance.createTribe(params: params, callback: handleNewTribeNotification, errorCallback: { error in
+        let _ = SphinxOnionManager.sharedInstance.createTribe(params: params, callback: handleNewTribeNotification, errorCallback: { error in
             AlertHelper.showAlert(
                 title: "generic.error.title".localized,
                 message: error?.localizedDescription ?? ""

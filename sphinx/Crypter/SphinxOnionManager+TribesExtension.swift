@@ -12,21 +12,6 @@ import CocoaMQTT
 import ObjectMapper
 import SwiftyJSON
 
-enum SphinxOnionManagerError: Error {
-    case SOMNetworkError
-    case SOMTimeoutError
-    
-    var localizedDescription: String {
-        switch self {
-        case .SOMNetworkError:
-            return "error.network".localized
-        case .SOMTimeoutError:
-            return "Timeout Error"
-        }
-    }
-}
-
-
 ///tribes related1
 extension SphinxOnionManager {
     
@@ -39,21 +24,21 @@ extension SphinxOnionManager {
         params: [String: Any],
         callback: @escaping (String) -> (),
         errorCallback: @escaping (SphinxOnionManagerError?) -> ()
-    ) {
+    ) -> Bool {
         if !NetworkMonitor.shared.checkConnectionSync() {
             errorCallback(SphinxOnionManagerError.SOMNetworkError)
-            return
+            return false
         }
         guard let seed = getAccountSeed(),
               let tribeServerPubkey = getTribePubkey() else
         {
-            return
+            return false
         }
         
         guard let tribeData = try? JSONSerialization.data(withJSONObject: params),
               let tribeJSONString = String(data: tribeData, encoding: .utf8) else
         {
-            return
+            return false
         }
         
         self.createTribeCallback = callback
@@ -67,9 +52,11 @@ extension SphinxOnionManager {
                 tribeJson: tribeJSONString
             )
             let _ = handleRunReturn(rr: rr)
+            return true
         } catch {
             self.createTribeCallback = nil
             print("Error creating tribe")
+            return false
         }
     }
     
@@ -80,16 +67,17 @@ extension SphinxOnionManager {
         alias: String? = nil,
         isPrivate: Bool = false,
         errorCallback: (SphinxOnionManagerError) -> ()
-    ){
+    ) -> Bool {
         if !NetworkMonitor.shared.checkConnectionSync() {
             errorCallback(SphinxOnionManagerError.SOMNetworkError)
-            return
+            return false
         }
+        
         guard let seed = getAccountSeed() else{
-            return
+            return false
         }
+        
         do {
-            
             let rr = try sphinx.joinTribe(
                 seed: seed,
                 uniqueTime: getTimeWithEntropy(),
@@ -106,8 +94,10 @@ extension SphinxOnionManager {
             DelayPerformedHelper.performAfterDelay(seconds: 1.0, completion: {
                 let _ = self.handleRunReturn(rr: rr)
             })
-            
-        } catch {}
+            return true
+        } catch {
+            return false
+        }
     }
     
     func extractHostAndTribeIdentifier(from urlString: String) -> (String, String)? {
@@ -169,12 +159,13 @@ extension SphinxOnionManager {
     func exitTribe(
         tribeChat: Chat,
         errorCallback: (SphinxOnionManagerError) -> ()
-    ) {
+    ) -> Bool {
         if !NetworkMonitor.shared.checkConnectionSync() {
             errorCallback(SphinxOnionManagerError.SOMNetworkError)
-            return
+            return false
         }
-        let _ = self.sendMessage(
+        
+        if let _ = self.sendMessage(
             to: nil,
             content: "",
             chat: tribeChat,
@@ -182,11 +173,15 @@ extension SphinxOnionManager {
             msgType: UInt8(TransactionMessage.TransactionMessageType.groupLeave.rawValue),
             threadUUID: nil,
             replyUUID: nil
-        )
-        
-        if let ownerPubKey = tribeChat.ownerPubkey {
-            addDeletedTribePubKey(tribeOwnerPubKey: ownerPubKey)
+        ).0 {
+            if let ownerPubKey = tribeChat.ownerPubkey {
+                addDeletedTribePubKey(tribeOwnerPubKey: ownerPubKey)
+            }
+            
+            return true
         }
+        
+        return false
     }
     
     func getTribeMembers(

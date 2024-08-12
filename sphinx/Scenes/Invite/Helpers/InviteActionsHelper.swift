@@ -53,13 +53,18 @@ class InviteActionsHelper {
         
         guard let _ = parameters["name"] as? String,
             let _ = parameters["description"] as? String else{
-            //Send Alert?
-            //self.showErrorAlert()
+            AlertHelper.showAlert(
+                title: "generic.error.title".localized,
+                message: "generic.error.message".localized
+            )
             return
         }
         
-        SphinxOnionManager.sharedInstance.createTribe(params: parameters, callback: handleNewTribeNotification,errorCallback: { error in
-            AlertHelper.showAlert(title: error?.localizedDescription ?? "", message: "")
+        let _ = SphinxOnionManager.sharedInstance.createTribe(params: parameters, callback: handleNewTribeNotification,errorCallback: { error in
+            AlertHelper.showAlert(
+                title: "generic.error.title".localized,
+                message: error?.localizedDescription ?? ""
+            )
         })
     }
     
@@ -101,19 +106,22 @@ class InviteActionsHelper {
         {
             let isPrivate = tribeInfo.privateTribe
             
-            SphinxOnionManager.sharedInstance.joinTribe(
+            if SphinxOnionManager.sharedInstance.joinTribe(
                 tribePubkey: pubkey,
                 routeHint: routeHint,
                 alias: UserContact.getOwner()?.nickname,
                 isPrivate: isPrivate, 
                 errorCallback: { error in
-                    AlertHelper.showAlert(title: error.localizedDescription ?? "", message: "")
+                    AlertHelper.showAlert(
+                        title: "generic.error.title".localized,
+                        message: error.localizedDescription
+                    )
                 }
-            )
-            
-            chat.status = (isPrivate) ? Chat.ChatStatus.pending.rawValue : Chat.ChatStatus.approved.rawValue
-            chat.type = Chat.ChatType.publicGroup.rawValue
-            chat.managedObjectContext?.saveContext()
+            ) {
+                chat.status = (isPrivate) ? Chat.ChatStatus.pending.rawValue : Chat.ChatStatus.approved.rawValue
+                chat.type = Chat.ChatType.publicGroup.rawValue
+                chat.managedObjectContext?.saveContext()
+            }
         }
     }
 }
