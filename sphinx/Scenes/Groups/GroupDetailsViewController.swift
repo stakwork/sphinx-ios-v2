@@ -252,11 +252,12 @@ class GroupDetailsViewController: UIViewController {
             }
             
             let som = SphinxOnionManager.sharedInstance
+            var success = false
             
             if isMyPublicGroup {
-                som.deleteTribe(tribeChat: chat)
+                success = som.deleteTribe(tribeChat: chat)
             } else {
-                let success = som.exitTribe(
+                success = som.exitTribe(
                     tribeChat: chat,
                     errorCallback: { error in
                         AlertHelper.showAlert(
@@ -265,11 +266,12 @@ class GroupDetailsViewController: UIViewController {
                         )
                     }
                 )
-                
-                if !success {
-                    return
-                }
             }
+            
+            if !success {
+                return
+            }
+            
             let _ = som.deleteContactOrChatMsgsFor(chat: chat)
             
             DispatchQueue.main.async {

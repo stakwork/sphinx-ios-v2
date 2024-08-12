@@ -275,8 +275,8 @@ extension SphinxOnionManager {
     }
 
     
-    func deleteTribe(tribeChat: Chat) {
-        let _ = sendMessage(
+    func deleteTribe(tribeChat: Chat) -> Bool {
+        if let _ = sendMessage(
             to: nil,
             content: "",
             chat: tribeChat,
@@ -284,7 +284,10 @@ extension SphinxOnionManager {
             msgType: UInt8(TransactionMessage.TransactionMessageType.groupDelete.rawValue),
             threadUUID: nil,
             replyUUID: nil
-        )
+        ).0 {
+            return true
+        }
+        return false
     }
     
     func mapChatJSON(
