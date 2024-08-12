@@ -155,7 +155,9 @@ extension NewPublicGroupViewController {
             return
         }
         
-        SphinxOnionManager.sharedInstance.createTribe(params: params, callback: handleNewTribeNotification)
+        SphinxOnionManager.sharedInstance.createTribe(params: params, callback: handleNewTribeNotification,errorCallback: { error in
+            AlertHelper.showAlert(title: error?.localizedDescription ?? "", message: "")
+        })
     }
     
     func handleNewTribeNotification(tribeJSONString: String) {

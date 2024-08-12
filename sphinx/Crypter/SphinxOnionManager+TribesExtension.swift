@@ -12,6 +12,21 @@ import CocoaMQTT
 import ObjectMapper
 import SwiftyJSON
 
+enum SphinxOnionManagerError: Error {
+    case SOMNetworkError()
+    case SOMTimeoutError()
+    
+    var localizedDescription: String {
+        switch self {
+        case .SOMNetworkError(let description):
+            return "error.network".localized
+        case .SOMTimeoutError(let description):
+            return "Timeout Error"
+        }
+    }
+}
+
+
 ///tribes related1
 extension SphinxOnionManager {
     
@@ -22,8 +37,13 @@ extension SphinxOnionManager {
     
     func createTribe(
         params: [String: Any],
-        callback: @escaping (String) -> ()
+        callback: @escaping (String) -> (),
+        errorCallback: @escaping (SphinxOnionManagerError?) -> ()
     ) {
+        if NetworkMonitor.shared.checkConnectionSync() == false{
+            errorCallback(SphinxOnionManagerError.SOMNetworkError())
+            return
+        }
         guard let seed = getAccountSeed(),
               let tribeServerPubkey = getTribePubkey() else
         {
@@ -58,8 +78,13 @@ extension SphinxOnionManager {
         routeHint: String,
         joinAmountMsats: Int = 1000,
         alias: String? = nil,
-        isPrivate: Bool = false
+        isPrivate: Bool = false,
+        errorCallback: (SphinxOnionManagerError)->()
     ){
+        if NetworkMonitor.shared.checkConnectionSync() == false{
+            errorCallback(SphinxOnionManagerError.SOMNetworkError())
+            return
+        }
         guard let seed = getAccountSeed() else{
             return
         }
@@ -141,7 +166,14 @@ extension SphinxOnionManager {
         )
     }
     
-    func exitTribe(tribeChat: Chat) {
+    func exitTribe(
+        tribeChat: Chat,
+        errorCallback: (SphinxOnionManagerError)->()
+    ) {
+        if NetworkMonitor.shared.checkConnectionSync() == false{
+            errorCallback(SphinxOnionManagerError.SOMNetworkError())
+            return
+        }
         let _ = self.sendMessage(
             to: nil,
             content: "",

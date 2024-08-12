@@ -145,7 +145,10 @@ extension GroupsManager {
                 tribePubkey: pubkey,
                 routeHint: routeHint,
                 alias: UserContact.getOwner()?.nickname,
-                isPrivate: isPrivate
+                isPrivate: isPrivate,
+                errorCallback: { error in
+                    AlertHelper.showAlert(title: error.localizedDescription , message: "")
+                }
             )
             
             chat.status = (isPrivate) ? Chat.ChatStatus.pending.rawValue : Chat.ChatStatus.approved.rawValue

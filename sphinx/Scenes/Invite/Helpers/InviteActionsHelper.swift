@@ -58,7 +58,9 @@ class InviteActionsHelper {
             return
         }
         
-        SphinxOnionManager.sharedInstance.createTribe(params: parameters, callback: handleNewTribeNotification)
+        SphinxOnionManager.sharedInstance.createTribe(params: parameters, callback: handleNewTribeNotification,errorCallback: { error in
+            AlertHelper.showAlert(title: error?.localizedDescription ?? "", message: "")
+        })
     }
     
     func handleNewTribeNotification(tribeJSONString: String) {
@@ -103,7 +105,10 @@ class InviteActionsHelper {
                 tribePubkey: pubkey,
                 routeHint: routeHint,
                 alias: UserContact.getOwner()?.nickname,
-                isPrivate: isPrivate
+                isPrivate: isPrivate, 
+                errorCallback: { error in
+                    AlertHelper.showAlert(title: error.localizedDescription ?? "", message: "")
+                }
             )
             
             chat.status = (isPrivate) ? Chat.ChatStatus.pending.rawValue : Chat.ChatStatus.approved.rawValue
