@@ -468,6 +468,21 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         }
         completionHandler()
     }
+    
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                willPresent notification: UNNotification,
+                                withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        let userInfo = notification.request.content.userInfo
+        
+        // Handle the processed notification
+        if let processedData = userInfo["processedData"] as? String {
+            print("Received processed data: \(processedData)")
+            // Perform any additional actions with the processed data
+        }
+        
+        // Decide how to present the notification
+        completionHandler([.alert, .badge, .sound])
+    }
 
     func application(
         _ application: UIApplication,
