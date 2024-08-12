@@ -967,7 +967,21 @@ extension NewChatTableDataSource {
         }
         
         let som = SphinxOnionManager.sharedInstance
-        som.exitTribe(tribeChat: chat)
+        let success = som.exitTribe(
+            tribeChat: chat,
+            errorCallback: { error in
+                AlertHelper.showAlert(
+                    title: "generic.error.title".localized,
+                    message: error.localizedDescription
+                )
+                self.messageBubbleHelper.hideLoadingWheel()
+            }
+        )
+        
+        if !success {
+            return
+        }
+        
         let _ = som.deleteContactOrChatMsgsFor(chat: chat)
         
         CoreDataManager.sharedManager.deleteChatObjectsFor(chat)

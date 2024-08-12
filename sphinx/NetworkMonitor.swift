@@ -1,53 +1,76 @@
-//
-//  NetworkMonitor.swift
-//  sphinx
-//
-//  Created by James Carucci on 6/10/24.
-//  Copyright © 2024 sphinx. All rights reserved.
-//
 import Foundation
 import Network
-import UIKit
-
 
 class NetworkMonitor {
     static let shared = NetworkMonitor()
-    private let monitor = NWPathMonitor()
-    private let queue = DispatchQueue.global(qos: .background)
-
-    var isConnected: Bool = false
+    private var nwMonitor: NWPathMonitor?
+    private var isNwMonitoring = false
+    
+    private(set) var isConnected: Bool = false
     var connectionType: NWInterface.InterfaceType?
-
+    var firstRun : Bool = true
+    
     private init() {}
 
+    // This method should be called first to start monitoring the network connection.
     func startMonitoring() {
-        monitor.pathUpdateHandler = { path in
-            self.isConnected = path.status == .satisfied
-            self.connectionType = self.getConnectionType(path)
-
-            if self.isConnected  == false{
-                NotificationCenter.default.post(name: .connectedToInternet, object: nil)
-            } else {
-                NotificationCenter.default.post(name: .disconnectedFromInternet, object: nil)
-            }
+        if isNwMonitoring { return }
+        
+        nwMonitor = NWPathMonitor()
+        
+        // Network changes have to be monitored on the background as the changes are to be continuously monitored
+        let queue = DispatchQueue(label: "NWMonitor")
+        nwMonitor?.start(queue: queue)
+        nwMonitor?.pathUpdateHandler = { [weak self] path in
+            guard let self = self else { return }
+            self.updateConnectionStatus(path: path)
         }
-        monitor.start(queue: queue)
+        isNwMonitoring = true
     }
 
-    private func getConnectionType(_ path: NWPath) -> NWInterface.InterfaceType? {
+    // Call this method to stop the monitoring.
+    func stopMonitoring() {
+        if isNwMonitoring, let monitor = nwMonitor {
+            monitor.cancel()
+            self.nwMonitor = nil
+            isNwMonitoring = false
+        }
+    }
+
+    // Use SCNetworkReachability to determine the actual network state
+    private func updateConnectionStatus(path: NWPath) {
+        if(firstRun){//compensate for iOS quirks!
+            isConnected = path.status == .satisfied
+            firstRun = false
+        }
+        else{
+            isConnected = path.status != .satisfied
+        }
+        
+        
+        // Determine the connection type
         if path.usesInterfaceType(.wifi) {
-            return .wifi
+            connectionType = .wifi
         } else if path.usesInterfaceType(.cellular) {
-            return .cellular
+            connectionType = .cellular
         } else if path.usesInterfaceType(.wiredEthernet) {
-            return .wiredEthernet
+            connectionType = .wiredEthernet
         } else {
-            return nil
+            connectionType = nil // Connection type is unknown
+        }
+
+        print("Network status changed - isConnected: \(isConnected), Connection Type: \(String(describing: connectionType))")
+
+        // Example Notification Logic
+        if isConnected {
+            NotificationCenter.default.post(name: .connectedToInternet, object: nil)
+        } else {
+            NotificationCenter.default.post(name: .disconnectedFromInternet, object: nil)
         }
     }
 
-    deinit {
-        monitor.cancel()
+    func checkConnectionSync() -> Bool {
+        guard let monitor = nwMonitor else { return false }
+        return isConnected
     }
 }
-
