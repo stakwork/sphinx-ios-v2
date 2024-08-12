@@ -1,45 +1,68 @@
-//
-//  NetworkMonitor.swift
-//  sphinx
-//
-//  Created by James Carucci on 6/10/24.
-//  Copyright © 2024 sphinx. All rights reserved.
-//
-import Foundation
-import Network
-import UIKit
-
-
 import Foundation
 import Network
 
 class NetworkMonitor {
     static let shared = NetworkMonitor()
-    private let monitor = NWPathMonitor()
-    private let queue = DispatchQueue.global(qos: .background)
-
+    private var nwMonitor: NWPathMonitor?
+    private var isNwMonitoring = false
+    
     private(set) var isConnected: Bool = false
     var connectionType: NWInterface.InterfaceType?
+    var firstRun : Bool = true
+    
+    private init() {}
 
-    private init() {
-        startMonitoring()
-    }
-
+    // This method should be called first to start monitoring the network connection.
     func startMonitoring() {
-        monitor.pathUpdateHandler = { [weak self] path in
+        if isNwMonitoring { return }
+        
+        nwMonitor = NWPathMonitor()
+        
+        // Network changes have to be monitored on the background as the changes are to be continuously monitored
+        let queue = DispatchQueue(label: "NWMonitor")
+        nwMonitor?.start(queue: queue)
+        nwMonitor?.pathUpdateHandler = { [weak self] path in
             guard let self = self else { return }
             self.updateConnectionStatus(path: path)
         }
-        monitor.start(queue: queue)
+        isNwMonitoring = true
     }
 
+    // Call this method to stop the monitoring.
+    func stopMonitoring() {
+        if isNwMonitoring, let monitor = nwMonitor {
+            monitor.cancel()
+            self.nwMonitor = nil
+            isNwMonitoring = false
+        }
+    }
+
+    // Use SCNetworkReachability to determine the actual network state
     private func updateConnectionStatus(path: NWPath) {
-        // Directly check the path status
-        self.isConnected = path.status != .satisfied
-        print("Direct Path Check - isConnected: \(self.isConnected), Path Status: \(path.status)")
+        if(firstRun){//compensate for iOS quirks!
+            isConnected = path.status == .satisfied
+            firstRun = false
+        }
+        else{
+            isConnected = path.status != .satisfied
+        }
         
-        // Example Notification Logic (Corrected to reflect status)
-        if self.isConnected {
+        
+        // Determine the connection type
+        if path.usesInterfaceType(.wifi) {
+            connectionType = .wifi
+        } else if path.usesInterfaceType(.cellular) {
+            connectionType = .cellular
+        } else if path.usesInterfaceType(.wiredEthernet) {
+            connectionType = .wiredEthernet
+        } else {
+            connectionType = nil // Connection type is unknown
+        }
+
+        print("Network status changed - isConnected: \(isConnected), Connection Type: \(String(describing: connectionType))")
+
+        // Example Notification Logic
+        if isConnected {
             NotificationCenter.default.post(name: .connectedToInternet, object: nil)
         } else {
             NotificationCenter.default.post(name: .disconnectedFromInternet, object: nil)
@@ -47,13 +70,7 @@ class NetworkMonitor {
     }
 
     func checkConnectionSync() -> Bool {
-        // Fetch the current path and evaluate
-        let path = monitor.currentPath
-        updateConnectionStatus(path: path)
+        guard let monitor = nwMonitor else { return false }
         return isConnected
-    }
-
-    deinit {
-        monitor.cancel()
     }
 }

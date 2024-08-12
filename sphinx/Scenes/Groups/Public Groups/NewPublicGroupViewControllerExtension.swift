@@ -140,6 +140,12 @@ extension NewPublicGroupViewController {
         uploadingPhoto = false
         loading = true
         
+        if(NetworkMonitor.shared.checkConnectionSync() == false){
+            uploadingPhoto = false
+            AlertHelper.showAlert(title: "\(SphinxOnionManagerError.SOMNetworkError().localizedDescription)", message: "")
+            return
+        }
+        
         let params = groupsManager.getNewGroupParams()
         
         if isEditing() {

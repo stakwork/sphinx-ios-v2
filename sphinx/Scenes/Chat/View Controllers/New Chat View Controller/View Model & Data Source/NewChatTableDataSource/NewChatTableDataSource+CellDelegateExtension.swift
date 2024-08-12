@@ -960,8 +960,11 @@ extension NewChatTableDataSource {
     }
     
     func deleteGroup() {
+        if NetworkMonitor.shared.checkConnectionSync() == false{
+            AlertHelper.showAlert(title: "\(SphinxOnionManagerError.SOMNetworkError().localizedDescription)", message: "")
+            return
+        }
         messageBubbleHelper.showLoadingWheel()
-        
         guard let chat = chat else {
             return
         }
