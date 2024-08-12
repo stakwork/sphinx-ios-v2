@@ -13,14 +13,14 @@ import ObjectMapper
 import SwiftyJSON
 
 enum SphinxOnionManagerError: Error {
-    case SOMNetworkError()
-    case SOMTimeoutError()
+    case SOMNetworkError
+    case SOMTimeoutError
     
     var localizedDescription: String {
         switch self {
-        case .SOMNetworkError(let description):
+        case .SOMNetworkError:
             return "error.network".localized
-        case .SOMTimeoutError(let description):
+        case .SOMTimeoutError:
             return "Timeout Error"
         }
     }
@@ -40,8 +40,8 @@ extension SphinxOnionManager {
         callback: @escaping (String) -> (),
         errorCallback: @escaping (SphinxOnionManagerError?) -> ()
     ) {
-        if NetworkMonitor.shared.checkConnectionSync() == false{
-            errorCallback(SphinxOnionManagerError.SOMNetworkError())
+        if !NetworkMonitor.shared.checkConnectionSync() {
+            errorCallback(SphinxOnionManagerError.SOMNetworkError)
             return
         }
         guard let seed = getAccountSeed(),
@@ -79,10 +79,10 @@ extension SphinxOnionManager {
         joinAmountMsats: Int = 1000,
         alias: String? = nil,
         isPrivate: Bool = false,
-        errorCallback: (SphinxOnionManagerError)->()
+        errorCallback: (SphinxOnionManagerError) -> ()
     ){
-        if NetworkMonitor.shared.checkConnectionSync() == false{
-            errorCallback(SphinxOnionManagerError.SOMNetworkError())
+        if !NetworkMonitor.shared.checkConnectionSync() {
+            errorCallback(SphinxOnionManagerError.SOMNetworkError)
             return
         }
         guard let seed = getAccountSeed() else{
@@ -168,10 +168,10 @@ extension SphinxOnionManager {
     
     func exitTribe(
         tribeChat: Chat,
-        errorCallback: (SphinxOnionManagerError)->()
+        errorCallback: (SphinxOnionManagerError) -> ()
     ) {
-        if NetworkMonitor.shared.checkConnectionSync() == false{
-            errorCallback(SphinxOnionManagerError.SOMNetworkError())
+        if !NetworkMonitor.shared.checkConnectionSync() {
+            errorCallback(SphinxOnionManagerError.SOMNetworkError)
             return
         }
         let _ = self.sendMessage(

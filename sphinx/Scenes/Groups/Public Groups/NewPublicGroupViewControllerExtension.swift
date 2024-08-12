@@ -140,9 +140,13 @@ extension NewPublicGroupViewController {
         uploadingPhoto = false
         loading = true
         
-        if(NetworkMonitor.shared.checkConnectionSync() == false){
+        if !NetworkMonitor.shared.checkConnectionSync() {
             uploadingPhoto = false
-            AlertHelper.showAlert(title: "\(SphinxOnionManagerError.SOMNetworkError().localizedDescription)", message: "")
+            
+            AlertHelper.showAlert(
+                title: "generic.error.title".localized,
+                message: SphinxOnionManagerError.SOMNetworkError.localizedDescription
+            )
             return
         }
         
@@ -161,8 +165,11 @@ extension NewPublicGroupViewController {
             return
         }
         
-        SphinxOnionManager.sharedInstance.createTribe(params: params, callback: handleNewTribeNotification,errorCallback: { error in
-            AlertHelper.showAlert(title: error?.localizedDescription ?? "", message: "")
+        SphinxOnionManager.sharedInstance.createTribe(params: params, callback: handleNewTribeNotification, errorCallback: { error in
+            AlertHelper.showAlert(
+                title: "generic.error.title".localized,
+                message: error?.localizedDescription ?? ""
+            )
         })
     }
     

@@ -147,7 +147,11 @@ extension GroupsManager {
                 alias: UserContact.getOwner()?.nickname,
                 isPrivate: isPrivate,
                 errorCallback: { error in
-                    AlertHelper.showAlert(title: error.localizedDescription , message: "")
+                    AlertHelper.showAlert(
+                        title: "generic.error.title".localized,
+                        message: error.localizedDescription
+                        
+                    )
                 }
             )
             

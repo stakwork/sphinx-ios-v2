@@ -960,20 +960,29 @@ extension NewChatTableDataSource {
     }
     
     func deleteGroup() {
-        if NetworkMonitor.shared.checkConnectionSync() == false{
-            AlertHelper.showAlert(title: "\(SphinxOnionManagerError.SOMNetworkError().localizedDescription)", message: "")
+        if !NetworkMonitor.shared.checkConnectionSync() {
+            AlertHelper.showAlert(
+                title: "generic.error.title".localized,
+                message: SphinxOnionManagerError.SOMNetworkError.localizedDescription
+            )
             return
         }
+        
         messageBubbleHelper.showLoadingWheel()
         guard let chat = chat else {
             return
         }
         
         let som = SphinxOnionManager.sharedInstance
-        som.exitTribe(tribeChat: chat, 
-                      errorCallback: { error in
-            AlertHelper.showAlert(title: error.localizedDescription, message: "")
-        })
+        som.exitTribe(
+            tribeChat: chat,
+            errorCallback: { error in
+                AlertHelper.showAlert(
+                    title: "generic.error.title".localized,
+                    message: error.localizedDescription
+                )
+            }
+        )
         let _ = som.deleteContactOrChatMsgsFor(chat: chat)
         
         CoreDataManager.sharedManager.deleteChatObjectsFor(chat)

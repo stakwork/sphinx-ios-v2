@@ -229,8 +229,11 @@ class GroupDetailsViewController: UIViewController {
     }
     
     func exitAndDeleteGroup() {
-        if NetworkMonitor.shared.checkConnectionSync() == false{
-            AlertHelper.showAlert(title: "\(SphinxOnionManagerError.SOMNetworkError().localizedDescription)", message: "")
+        if !NetworkMonitor.shared.checkConnectionSync() {
+            AlertHelper.showAlert(
+                title: "generic.error.title".localized,
+                message: SphinxOnionManagerError.SOMNetworkError.localizedDescription
+            )
             return
         }
         guard let chat = self.chat else {
@@ -252,10 +255,15 @@ class GroupDetailsViewController: UIViewController {
             if isMyPublicGroup {
                 som.deleteTribe(tribeChat: chat)
             } else {
-                som.exitTribe(tribeChat: chat, 
-                              errorCallback: { error in
-                    AlertHelper.showAlert(title: error.localizedDescription, message: "")
-                })
+                som.exitTribe(
+                    tribeChat: chat,
+                    errorCallback: { error in
+                        AlertHelper.showAlert(
+                            title: "generic.error.title".localized,
+                            message: error.localizedDescription
+                        )
+                    }
+                )
             }
             let _ = som.deleteContactOrChatMsgsFor(chat: chat)
             
