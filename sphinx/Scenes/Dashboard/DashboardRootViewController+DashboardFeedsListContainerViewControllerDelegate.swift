@@ -266,12 +266,56 @@ extension DashboardRootViewController {
             )
         }
         else if feedResult.feedType == .Newsletter{
-            let nli = NewsletterItem("abc123")
-            nli.title = "test 123"
-            nli.itemUrl = URL(string: feedResult.feedURLPath)
-            presentItemWebView(for: nli)
+            if(feedResult.feedURLPath.contains(".pdf")){
+                handleNewsletterFeedResult(url: feedResult.feedURLPath)
+            }
+            else if(feedResult.feedURLPath.lowercased().contains("epub")){
+                addLoadingView()
+                convertAndRenderEpub(directoryPath: feedResult.feedURLPath, completion: { pdfUrl in
+                    if let pdfUrl = pdfUrl{ self.handleNewsletterFeedResult(url: pdfUrl)}
+                    self.removeLoadingView()
+                })
+            }
         }
         
+    }
+    
+    func addLoadingView(){
+        addChildVC(
+            child: loadingViewController,
+            container: self.view
+        )
+        self.view.bringSubviewToFront(loadingViewController.view)
+    }
+    
+    func removeLoadingView(){
+        self.removeChildVC(child: self.loadingViewController)
+    }
+    
+    func convertAndRenderEpub(directoryPath:String, completion: @escaping (String?) -> ()){
+        let manager = EpubConverterManager()
+        Task {
+            do {
+                guard let epubUrl = try await manager.findEpubInDirectory(directoryPath: directoryPath) else{
+                    completion(nil)
+                    return
+                }
+                let savedPdfUrl = try await manager.convertEpub(url: epubUrl.absoluteString)
+                print("PDF saved at: \(savedPdfUrl.absoluteString)")
+                completion(savedPdfUrl.absoluteString)
+                // Use the savedPdfUrl as needed (e.g., display the PDF, share it, etc.)
+            } catch {
+                print("Conversion failed: \(error)")
+                completion(nil)
+            }
+        }
+    }
+    
+    func handleNewsletterFeedResult(url:String){
+        let nli = NewsletterItem("abc123")
+        nli.title = "test 123"
+        nli.itemUrl = URL(string: url.replacingOccurrences(of: "http://", with: "https://"))
+        presentItemWebView(for: nli)
     }
     
     
