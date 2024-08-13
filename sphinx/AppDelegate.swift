@@ -80,6 +80,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         setInitialVC()
         
+        simulateLocalNotification()
+        
         NetworkMonitor.shared.startMonitoring()
 
         return true
@@ -606,7 +608,25 @@ extension AppDelegate : PKPushRegistryDelegate{
     func pushRegistry(_ registry: PKPushRegistry, didInvalidatePushTokenFor type: PKPushType) {
         print("invalidated token")
     }
-}
+    
+    func simulateLocalNotification() {
+        let content = UNMutableNotificationContent()
+        content.title = "Test Notification"
+        content.body = "This is a test notification"
+        content.userInfo = ["custom_data": ["child": "testEncryptedData123"]]
+        content.sound = .default
+        
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 5, repeats: false)
+        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
+        
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error {
+                print("Error scheduling notification: \(error)")
+            } else {
+                print("Test notification scheduled")
+            }
+        }
+    }}
 
 
 

@@ -9,6 +9,9 @@ class NotificationService: UNNotificationServiceExtension {
         self.contentHandler = contentHandler
         bestAttemptContent = (request.content.mutableCopy() as? UNMutableNotificationContent)
         
+        print("NotificationService: Received notification")
+        print("Notification content: \(request.content)")
+        
         if let bestAttemptContent = bestAttemptContent {
             // Perform your computations here
             if let encryptedChild = getEncryptedIndexFrom(notification: bestAttemptContent.userInfo) {
