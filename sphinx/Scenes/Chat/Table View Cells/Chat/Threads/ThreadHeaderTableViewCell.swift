@@ -183,16 +183,16 @@ class ThreadHeaderTableViewCell: UITableViewCell {
     ) {
         urlRanges = []
         
-        let font = UIFont(name: "Roboto-Regular", size: 17.0)!
-        
-        if threadOriginalMessage.linkMatches.isEmpty && threadOriginalMessage.highlightedMatches.isEmpty {
+        if threadOriginalMessage.hasNoMarkdown {
             messageLabel.attributedText = nil
             messageLabel.text = threadOriginalMessage.text
-            messageLabel.font = font
+            messageLabel.font = UIFont.getThreadHeaderFont()
         } else {
             let messageContent = threadOriginalMessage.text
             let attributedString = NSMutableAttributedString(string: messageContent)
-            attributedString.addAttributes([NSAttributedString.Key.font: font], range: messageContent.nsRange)
+            attributedString.addAttributes(
+                [NSAttributedString.Key.font: UIFont.getThreadHeaderFont()], range: messageContent.nsRange
+            )
             
             ///Highlighted text formatting
             let highlightedNsRanges = threadOriginalMessage.highlightedMatches.map {
@@ -203,13 +203,38 @@ class ThreadHeaderTableViewCell: UITableViewCell {
                 
                 ///Subtracting the previous matches delimiter characters since they have been removed from the string
                 let substractionNeeded = index * 2
-                let adaptedRange = NSRange(location: nsRange.location - substractionNeeded, length: nsRange.length - 2)
+                let adaptedRange = NSRange(
+                    location: nsRange.location - substractionNeeded,
+                    length: min(nsRange.length - 2, threadOriginalMessage.text.count)
+                )
                 
                 attributedString.addAttributes(
                     [
                         NSAttributedString.Key.foregroundColor: UIColor.Sphinx.HighlightedText,
                         NSAttributedString.Key.backgroundColor: UIColor.Sphinx.HighlightedTextBackground,
-                        NSAttributedString.Key.font: threadOriginalMessage.highlightedFont
+                        NSAttributedString.Key.font: UIFont.getThreadHeaderHightlightedFont()
+                    ],
+                    range: adaptedRange
+                )
+            }
+            
+            ///Bold text formatting
+            let boldNsRanges = threadOriginalMessage.boldMatches.map {
+                return $0.range
+            }
+            
+            for (index, nsRange) in boldNsRanges.enumerated() {
+                ///Subtracting the previous matches delimiter characters since they have been removed from the string
+                ///Subtracting the ** characters from the length since removing the chars caused the range to be 4 less chars
+                let substractionNeeded = index * 4
+                let adaptedRange = NSRange(
+                    location: nsRange.location - substractionNeeded,
+                    length: min(nsRange.length - 4, threadOriginalMessage.text.count)
+                )
+                
+                attributedString.addAttributes(
+                    [
+                        NSAttributedString.Key.font: UIFont.getThreadHeaderBoldFont()
                     ],
                     range: adaptedRange
                 )
@@ -222,7 +247,7 @@ class ThreadHeaderTableViewCell: UITableViewCell {
                     [
                         NSAttributedString.Key.foregroundColor: UIColor.Sphinx.PrimaryBlue,
                         NSAttributedString.Key.underlineStyle: NSUnderlineStyle.single.rawValue,
-                        NSAttributedString.Key.font: font
+                        NSAttributedString.Key.font: UIFont.getThreadHeaderFont()
                     ],
                     range: match.range
                 )

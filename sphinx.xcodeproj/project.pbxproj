@@ -40,6 +40,7 @@
 		4707089424AE45D400A98DCA /* UserContactChatListExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4707089324AE45D400A98DCA /* UserContactChatListExtension.swift */; };
 		4707089624AE466D00A98DCA /* ChatChatListExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4707089524AE466D00A98DCA /* ChatChatListExtension.swift */; };
 		470708A424B3669200A98DCA /* MetaDataCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 470708A324B3669200A98DCA /* MetaDataCache.swift */; };
+		4709B1472C6BBA750077AA61 /* Roboto-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 4709B1462C6BBA750077AA61 /* Roboto-Black.ttf */; };
 		470DB25423FAE43400D29FA5 /* SphinxCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 470DB25323FAE43400D29FA5 /* SphinxCache.swift */; };
 		470F4C37257A949A00288A9B /* TribeLinkPreviewView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 470F4C39257A949A00288A9B /* TribeLinkPreviewView.xib */; };
 		470F4C3E257A984800288A9B /* ContactLinkPreviewView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 470F4C40257A984800288A9B /* ContactLinkPreviewView.xib */; };
@@ -1091,6 +1092,7 @@
 		4707089524AE466D00A98DCA /* ChatChatListExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatChatListExtension.swift; sourceTree = "<group>"; };
 		470708A324B3669200A98DCA /* MetaDataCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetaDataCache.swift; sourceTree = "<group>"; };
 		47096CA426EA4BD10065DC54 /* sphinx 29.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 29.xcdatamodel"; sourceTree = "<group>"; };
+		4709B1462C6BBA750077AA61 /* Roboto-Black.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Roboto-Black.ttf"; sourceTree = "<group>"; };
 		470DB25323FAE43400D29FA5 /* SphinxCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SphinxCache.swift; sourceTree = "<group>"; };
 		470F4C38257A949A00288A9B /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/TribeLinkPreviewView.xib; sourceTree = "<group>"; };
 		470F4C3B257A94A000288A9B /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/TribeLinkPreviewView.strings; sourceTree = "<group>"; };
@@ -3125,6 +3127,7 @@
 		475BDD36232ACF9700C5BBD6 /* Fonts */ = {
 			isa = PBXGroup;
 			children = (
+				4709B1462C6BBA750077AA61 /* Roboto-Black.ttf */,
 				475BDD3F232ACFA300C5BBD6 /* MaterialIcons-Regular.ttf */,
 				475BDD39232ACFA200C5BBD6 /* Montserrat-Black.otf */,
 				475BDD3C232ACFA200C5BBD6 /* Montserrat-Bold.otf */,
@@ -4972,6 +4975,7 @@
 				4797E7F924B8F9C300D13270 /* SubscriptionTimeIntervalView.xib in Resources */,
 				4797E7CF24B8F4DC00D13270 /* AppAppearenceView.xib in Resources */,
 				CE3D8CAD29B1124E00EDB637 /* FeedItemDetailHeaderCell.xib in Resources */,
+				4709B1472C6BBA750077AA61 /* Roboto-Black.ttf in Resources */,
 				4797E76724B8E12E00D13270 /* Localizable.strings in Resources */,
 				CEF341532C407FD8007FC173 /* BTSearchResultTableViewCell.xib in Resources */,
 				472161D5293A681D0088B87B /* RecommendationDetailsView.xib in Resources */,
