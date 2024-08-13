@@ -572,7 +572,7 @@ extension SphinxOnionManager {
                     continue
                 }
                 
-                if isMessageCallOrAttachment(type: type) {
+                if isMessageWithText(type: type) {
                     processIncomingMessagesAndAttachments(
                         message: message,
                         owner: owner

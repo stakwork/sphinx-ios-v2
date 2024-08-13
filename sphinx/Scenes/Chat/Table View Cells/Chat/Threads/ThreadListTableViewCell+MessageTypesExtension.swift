@@ -135,14 +135,16 @@ extension ThreadListTableViewCell {
         originalMessageTextLabel.attributedText = nil
         originalMessageTextLabel.text = nil
         
-        if threadOriginalMessage.linkMatches.isEmpty && threadOriginalMessage.highlightedMatches.isEmpty {
+        if threadOriginalMessage.hasNoMarkdown {
             originalMessageTextLabel.text = threadOriginalMessage.text
-            originalMessageTextLabel.font = Constants.kThreadHeaderFont
+            originalMessageTextLabel.font = UIFont.getThreadListFont()
         } else {
             let messageC = threadOriginalMessage.text
             
             let attributedString = NSMutableAttributedString(string: messageC)
-            attributedString.addAttributes([NSAttributedString.Key.font: Constants.kThreadHeaderFont], range: messageC.nsRange)
+            attributedString.addAttributes(
+                [NSAttributedString.Key.font: UIFont.getThreadListFont()], range: messageC.nsRange
+            )
 
             ///Highlighted text formatting
             let highlightedNsRanges = threadOriginalMessage.highlightedMatches.map {
@@ -160,6 +162,25 @@ extension ThreadListTableViewCell {
                         NSAttributedString.Key.foregroundColor: UIColor.Sphinx.HighlightedText,
                         NSAttributedString.Key.backgroundColor: UIColor.Sphinx.HighlightedTextBackground,
                         NSAttributedString.Key.font: UIFont.getThreadListHightlightedFont()
+                    ],
+                    range: adaptedRange
+                )
+            }
+            
+            ///Bold text formatting
+            let boldNsRanges = threadOriginalMessage.boldMatches.map {
+                return $0.range
+            }
+            
+            for (index, nsRange) in boldNsRanges.enumerated() {
+                ///Subtracting the previous matches delimiter characters since they have been removed from the string
+                ///Subtracting the ** characters from the length since removing the chars caused the range to be 4 less chars
+                let substractionNeeded = index * 4
+                let adaptedRange = NSRange(location: nsRange.location - substractionNeeded, length: nsRange.length - 4)
+                
+                attributedString.addAttributes(
+                    [
+                        NSAttributedString.Key.font: UIFont.getThreadListBoldFont()
                     ],
                     range: adaptedRange
                 )

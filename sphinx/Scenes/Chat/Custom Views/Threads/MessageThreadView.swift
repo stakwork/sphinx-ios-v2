@@ -127,7 +127,7 @@ class MessageThreadView: UIView {
         
         ///Content configuration
         originalMessageLabel.text = threadMessages.originalMessage.text
-        originalMessageLabel.font = threadMessages.originalMessage.font
+        originalMessageLabel.font = UIFont.getMessageFont()
         originalMessageContainer.isHidden = threadMessages.originalMessage.text == nil || threadMessages.originalMessage.text?.isEmpty == true
         
         let firstReplySenderInfo = threadMessages.firstReplySenderIndo

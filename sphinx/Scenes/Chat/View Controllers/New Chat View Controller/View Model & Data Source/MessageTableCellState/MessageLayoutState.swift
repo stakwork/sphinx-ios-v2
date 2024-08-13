@@ -99,7 +99,6 @@ struct BubbleMessageLayoutState {
     
     struct ThreadMessage {
         var text: String?
-        var font: UIFont?
         var senderPic: String?
         var senderAlias: String?
         var senderColor: UIColor?
@@ -107,14 +106,12 @@ struct BubbleMessageLayoutState {
         
         init(
             text: String?,
-            font: UIFont?,
             senderPic: String?,
             senderAlias: String?,
             senderColor: UIColor?,
             sendDate: Date?
         ) {
             self.text = text
-            self.font = font
             self.senderPic = senderPic
             self.senderAlias = senderAlias
             self.senderColor = senderColor
@@ -178,26 +175,27 @@ struct BubbleMessageLayoutState {
     
     struct MessageContent {
         var text: String?
-        var font: UIFont
-        var highlightedFont: UIFont
         var linkMatches: [NSTextCheckingResult]
         var highlightedMatches: [NSTextCheckingResult]
+        var boldMatches: [NSTextCheckingResult]
         var shouldLoadPaidText: Bool
         
         init(
             text: String?,
-            font: UIFont,
-            highlightedFont: UIFont,
             linkMatches: [NSTextCheckingResult],
             highlightedMatches: [NSTextCheckingResult],
+            boldMatches: [NSTextCheckingResult],
             shouldLoadPaidText: Bool
         ) {
             self.text = text
-            self.font = font
-            self.highlightedFont = highlightedFont
             self.linkMatches = linkMatches
             self.highlightedMatches = highlightedMatches
+            self.boldMatches = boldMatches
             self.shouldLoadPaidText = shouldLoadPaidText
+        }
+        
+        var hasNoMarkdown: Bool {
+            return linkMatches.isEmpty && boldMatches.isEmpty && highlightedMatches.isEmpty
         }
     }
     
@@ -457,7 +455,6 @@ struct BubbleMessageLayoutState {
         var date: Date
         var amount: Int
         var memo: String?
-        var font: UIFont
         var isPaid: Bool
         var isExpired: Bool
         var bubbleWidth: CGFloat
@@ -466,7 +463,6 @@ struct BubbleMessageLayoutState {
             date: Date,
             amount: Int,
             memo: String?,
-            font: UIFont,
             isPaid: Bool,
             isExpired: Bool,
             bubbleWidth: CGFloat
@@ -474,7 +470,6 @@ struct BubbleMessageLayoutState {
             self.date = date
             self.amount = amount
             self.memo = memo
-            self.font = font
             self.isPaid = isPaid
             self.isExpired = isExpired
             self.bubbleWidth = bubbleWidth
@@ -577,10 +572,9 @@ struct NoBubbleMessageLayoutState {
     
     struct ThreadOriginalMessage {
         var text: String
-        var font: UIFont
-        var highlightedFont: UIFont
         var linkMatches: [NSTextCheckingResult]
         var highlightedMatches: [NSTextCheckingResult]
+        var boldMatches: [NSTextCheckingResult]
         var senderPic: String?
         var senderAlias: String
         var senderColor: UIColor
@@ -588,24 +582,26 @@ struct NoBubbleMessageLayoutState {
         
         init(
             text: String,
-            font: UIFont,
-            highlightedFont: UIFont,
             linkMatches: [NSTextCheckingResult],
             highlightedMatches: [NSTextCheckingResult],
+            boldMatches: [NSTextCheckingResult],
             senderPic: String?,
             senderAlias: String,
             senderColor: UIColor,
             timestamp: String
         ) {
             self.text = text
-            self.font = font
-            self.highlightedFont = highlightedFont
             self.linkMatches = linkMatches
             self.highlightedMatches = highlightedMatches
+            self.boldMatches = boldMatches
             self.senderPic = senderPic
             self.senderAlias = senderAlias
             self.senderColor = senderColor
             self.timestamp = timestamp
+        }
+        
+        var hasNoMarkdown: Bool {
+            return linkMatches.isEmpty && boldMatches.isEmpty && highlightedMatches.isEmpty
         }
     }
 }
