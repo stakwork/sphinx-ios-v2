@@ -182,7 +182,7 @@ extension String {
     }
     
     var stringLinks: [NSTextCheckingResult] {
-        let textWithoutMarkdown = self.formattingMarkdownText
+        let textWithoutMarkdown = self.removingMarkdownDelimiters
         let types: NSTextCheckingResult.CheckingType = .link
         let detector = try? NSDataDetector(types: types.rawValue)
         
@@ -196,7 +196,7 @@ extension String {
     }
     
     var pubKeyMatches: [NSTextCheckingResult] {
-        let textWithoutMarkdown = self.formattingMarkdownText
+        let textWithoutMarkdown = self.removingMarkdownDelimiters
         let pubkeyRegex = try? NSRegularExpression(pattern: "\\b[A-F0-9a-f]{66}\\b")
         let virtualPubkeyRegex = try? NSRegularExpression(pattern: "\\b[A-F0-9a-f]{66}_[A-F0-9a-f]{66}_[0-9]+\\b")
         
@@ -214,7 +214,7 @@ extension String {
     }
     
     var mentionMatches: [NSTextCheckingResult] {
-        let textWithoutMarkdown = self.formattingMarkdownText
+        let textWithoutMarkdown = self.removingMarkdownDelimiters
         let mentionRegex = try? NSRegularExpression(pattern: "\\B@[^\\s]+")
         
         return mentionRegex?.matches(
@@ -235,8 +235,8 @@ extension String {
         return highlightedRegex?.matches(in: markdownText, range: NSRange(markdownText.startIndex..., in: markdownText)) ?? []
     }
     
-    var formattingMarkdownText: String {
-        return self.replacingHightlightedChars.replacingBoldDelimeterChars.replacingHyphensWithBullets
+    var removingMarkdownDelimiters: String {
+        return self.replacingHightlightedChars.replacingBoldDelimeterChars.replacingHyphensWithBullets.trim()
     }
     
     var replacingHightlightedChars: String {
