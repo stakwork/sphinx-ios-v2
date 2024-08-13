@@ -137,7 +137,7 @@ extension NewPublicGroupViewController {
     }
     
     func editOrCreateGroup() {
-        if !NetworkMonitor.shared.checkConnectionSync() {
+        if !NetworkMonitor.shared.isNetworkConnected() {
             AlertHelper.showAlert(
                 title: "generic.error.title".localized,
                 message: SphinxOnionManagerError.SOMNetworkError.localizedDescription
