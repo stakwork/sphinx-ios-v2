@@ -90,6 +90,26 @@ extension NewMessageTableViewCell {
                     urlRanges.append(match.range)
                 }
                 
+                ///Markdown Links formatting
+                for (textCheckingResult, _, link, _) in messageContent.linkMarkdownMatches {
+                    
+                    let nsRange = textCheckingResult.range
+                    
+                    if let url = URL(string: link) {
+                        attributedString.addAttributes(
+                            [
+                                NSAttributedString.Key.link: url,
+                                NSAttributedString.Key.foregroundColor: UIColor.Sphinx.PrimaryBlue,
+                                NSAttributedString.Key.underlineStyle: NSUnderlineStyle.single.rawValue,
+                                NSAttributedString.Key.font: UIFont.getMessageFont()
+                            ],
+                            range: nsRange
+                        )
+                    }
+                    
+                    urlRanges.append(nsRange)
+                }
+                
                 ///Search term formatting
                 let term = searchingTerm ?? ""
                 let searchingTermRange = (messageC.lowercased() as NSString).range(of: term.lowercased())

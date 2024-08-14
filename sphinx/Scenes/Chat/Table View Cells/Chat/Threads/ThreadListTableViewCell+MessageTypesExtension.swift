@@ -199,10 +199,61 @@ extension ThreadListTableViewCell {
                     ],
                     range: match.range
                 )
+                
+                urlRanges.append(match.range)
             }
             
+            ///Markdown Links formatting
+            for (textCheckingResult, _, link, _) in threadOriginalMessage.linkMarkdownMatches {
+                
+                let nsRange = textCheckingResult.range
+                
+                if let url = URL(string: link) {
+                    attributedString.addAttributes(
+                        [
+                            NSAttributedString.Key.link: url,
+                            NSAttributedString.Key.foregroundColor: UIColor.Sphinx.PrimaryBlue,
+                            NSAttributedString.Key.underlineStyle: NSUnderlineStyle.single.rawValue,
+                            NSAttributedString.Key.font: UIFont.getThreadListFont()
+                        ],
+                        range: nsRange
+                    )
+                }
+                
+                urlRanges.append(nsRange)
+            }
             
             originalMessageTextLabel.attributedText = attributedString
+        }
+        
+        let tap = UITapGestureRecognizer(target: self, action: #selector(labelTapped(gesture:)))
+        
+        if urlRanges.isEmpty {
+            originalMessageTextLabel.removeGestureRecognizer(tap)
+        } else {
+            originalMessageTextLabel.addGestureRecognizer(tap)
+        }
+        
+        urlRanges = ChatHelper.removeDuplicatedContainedFrom(urlRanges: urlRanges)
+    }
+    
+    @objc func labelTapped(
+        gesture: UITapGestureRecognizer
+    ) {
+        if let label = gesture.view as? UILabel, let attributedText = label.attributedText {
+            for range in urlRanges {
+                if gesture.didTapAttributedTextInLabel(
+                    label,
+                    inRange: range
+                ) {
+                    if let link = (attributedText.attribute(.link, at: range.location, effectiveRange: nil) as? URL)?.absoluteString {
+                        UIApplication.shared.open(URL(string: link)!, options: [:], completionHandler: nil)
+                    } else {
+                        let link = (attributedText.string as NSString).substring(with: range)
+                        UIApplication.shared.open(URL(string: link)!, options: [:], completionHandler: nil)
+                    }
+                }
+            }
         }
     }
     

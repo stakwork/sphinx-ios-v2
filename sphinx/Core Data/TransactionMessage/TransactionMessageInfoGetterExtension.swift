@@ -674,7 +674,7 @@ extension TransactionMessage {
     var isCopyLinkActionAllowed: Bool {
         get {
             if let messageContent = bubbleMessageContentString {
-                return messageContent.stringLinks.count > 0
+                return messageContent.stringLinks.count > 0 || messageContent.linkMarkdownMatches.count > 0
             }
             return false
         }
@@ -761,7 +761,7 @@ extension TransactionMessage {
                 return nil
             }
             
-            return self.messageContent?.trim()
+            return self.messageContent
         }
     }
     

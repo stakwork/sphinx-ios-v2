@@ -59,6 +59,8 @@ class ThreadListTableViewCell: UITableViewCell {
     @IBOutlet weak var repliesCountLabel: UILabel!
     @IBOutlet weak var lastReplyDateLabel: UILabel!
     
+    var urlRanges = [NSRange]()
+    
     override func awakeFromNib() {
         super.awakeFromNib()
         

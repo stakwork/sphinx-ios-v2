@@ -16,7 +16,6 @@ extension UITapGestureRecognizer {
         let textContainer = NSTextContainer(size: CGSize.zero)
         
         let mutableAttribString = NSMutableAttributedString(attributedString: attributedString)
-        mutableAttribString.addAttributes([NSAttributedString.Key.font: label.font], range: NSRange(location: 0, length: attributedString.length))
         let textStorage = NSTextStorage(attributedString: mutableAttribString)
 
         layoutManager.addTextContainer(textContainer)
