@@ -122,6 +122,50 @@ extension String {
         return self.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
     }
     
+    func markdownTrim() -> String {
+        if self.isEmpty {
+            return self
+        }
+        
+        var trimmedString = self
+        let zeroWidthSpace = "\u{200B}"
+
+        ///Replace new line with empty space if it starts with highlight char and new line
+        if self.starts(with: "\(zeroWidthSpace)\n") {
+            trimmedString = trimmedString.replacingOccurrences(
+                of: "\(zeroWidthSpace)\n",
+                with: "\(zeroWidthSpace)\(zeroWidthSpace)",
+                range: Range(NSRange(location: 0, length: 2), in: trimmedString)
+            )
+        }
+        ///Replace new line with empty space if it starts with bold chars and new line
+        if self.starts(with: "\(zeroWidthSpace)\(zeroWidthSpace)\n") {
+            trimmedString = trimmedString.replacingOccurrences(
+                of: "\(zeroWidthSpace)\(zeroWidthSpace)\n",
+                with: "\(zeroWidthSpace)\(zeroWidthSpace)\(zeroWidthSpace)",
+                range: Range(NSRange(location: 0, length: 3), in: trimmedString)
+            )
+        }
+        ///Replace new line with empty space if it ends with new line and highlight char
+        if self.hasSuffix("\n\(zeroWidthSpace)") {
+            trimmedString = trimmedString.replacingOccurrences(
+                of: "\n\(zeroWidthSpace)",
+                with: "\(zeroWidthSpace)\(zeroWidthSpace)",
+                range: Range(NSRange(location: self.length - 2, length: 2), in: trimmedString)
+            )
+        }
+        ///Replace new line with empty space if it ends with new line and bold chars
+        if self.hasSuffix("\n\(zeroWidthSpace)\(zeroWidthSpace)") {
+            trimmedString = trimmedString.replacingOccurrences(
+                of: "\n\(zeroWidthSpace)\(zeroWidthSpace)",
+                with: "\(zeroWidthSpace)\(zeroWidthSpace)\(zeroWidthSpace)",
+                range: Range(NSRange(location: self.length - 3, length: 3), in: trimmedString)
+            )
+        }
+        return trimmedString
+    }
+
+    
     func isEncryptedString() -> Bool {
         if let _ = Data(base64Encoded: self), self.hasSuffix("=") {
             return true
@@ -224,19 +268,17 @@ extension String {
     }
     
     var highlightedMatches: [NSTextCheckingResult] {
-        let markdownText = self.replacingBoldDelimeterChars.replacingHyphensWithBullets
         let highlightedRegex = try? NSRegularExpression(pattern: "`(.*?)`", options: .dotMatchesLineSeparators)
-        return highlightedRegex?.matches(in: markdownText, range: NSRange(markdownText.startIndex..., in: markdownText)) ?? []
+        return highlightedRegex?.matches(in: self, range: NSRange(self.startIndex..., in: self)) ?? []
     }
     
     var boldMatches: [NSTextCheckingResult] {
-        let markdownText = self.replacingHightlightedChars.replacingHyphensWithBullets
         let highlightedRegex = try? NSRegularExpression(pattern: "\\*\\*(.*?)\\*\\*", options: .dotMatchesLineSeparators)
-        return highlightedRegex?.matches(in: markdownText, range: NSRange(markdownText.startIndex..., in: markdownText)) ?? []
+        return highlightedRegex?.matches(in: self, range: NSRange(self.startIndex..., in: self)) ?? []
     }
     
     var removingMarkdownDelimiters: String {
-        return self.replacingHightlightedChars.replacingBoldDelimeterChars.replacingHyphensWithBullets.trim()
+        return self.replacingHightlightedChars.replacingBoldDelimeterChars.replacingHyphensWithBullets.markdownTrim()
     }
     
     var replacingHightlightedChars: String {
@@ -245,18 +287,16 @@ extension String {
         }
         
         var adaptedString = self
-        let highlightedRegex = try? NSRegularExpression(pattern: "`(.*?)`", options: .dotMatchesLineSeparators)
-        let matches =  highlightedRegex?.matches(in: self, range: NSRange(self.startIndex..., in: self)) ?? []
         
-        for (index, match) in matches.enumerated() {
+        for match in highlightedMatches {
             
             ///Subtracting the previous matches delimiter characters since they have been removed from the string
-            let substractionNeeded = index * 2
-            let adaptedRange = NSRange(location: match.range.location - substractionNeeded, length: match.range.length)
+            let adaptedRange = NSRange(location: match.range.location, length: match.range.length)
+            let zeroWidthSpace = "\u{200B}"
             
             adaptedString = adaptedString.replacingOccurrences(
                 of: "`",
-                with: "",
+                with: zeroWidthSpace,
                 range: Range(adaptedRange, in: adaptedString)
             )
         }
@@ -270,18 +310,16 @@ extension String {
         }
         
         var adaptedString = self
-        let highlightedRegex = try? NSRegularExpression(pattern: "\\*\\*(.*?)\\*\\*", options: .dotMatchesLineSeparators)
-        let matches =  highlightedRegex?.matches(in: self, range: NSRange(self.startIndex..., in: self)) ?? []
         
-        for (index, match) in matches.enumerated() {
+        for match in boldMatches {
             
             ///Subtracting the previous matches delimiter characters since they have been removed from the string
-            let substractionNeeded = index * 4
-            let adaptedRange = NSRange(location: match.range.location - substractionNeeded, length: match.range.length)
+            let adaptedRange = NSRange(location: match.range.location, length: match.range.length)
+            let zeroWidthSpace = "\u{200B}"
             
             adaptedString = adaptedString.replacingOccurrences(
-                of: "**",
-                with: "",
+                of: "*",
+                with: zeroWidthSpace,
                 range: Range(adaptedRange, in: adaptedString)
             )
         }

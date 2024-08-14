@@ -199,13 +199,11 @@ class ThreadHeaderTableViewCell: UITableViewCell {
                 return $0.range
             }
             
-            for (index, nsRange) in highlightedNsRanges.enumerated() {
+            for nsRange in highlightedNsRanges {
                 
-                ///Subtracting the previous matches delimiter characters since they have been removed from the string
-                let substractionNeeded = index * 2
                 let adaptedRange = NSRange(
-                    location: nsRange.location - substractionNeeded,
-                    length: min(nsRange.length - 2, threadOriginalMessage.text.count)
+                    location: nsRange.location,
+                    length: nsRange.length
                 )
                 
                 attributedString.addAttributes(
@@ -223,13 +221,11 @@ class ThreadHeaderTableViewCell: UITableViewCell {
                 return $0.range
             }
             
-            for (index, nsRange) in boldNsRanges.enumerated() {
-                ///Subtracting the previous matches delimiter characters since they have been removed from the string
-                ///Subtracting the ** characters from the length since removing the chars caused the range to be 4 less chars
-                let substractionNeeded = index * 4
+            for nsRange in boldNsRanges {
+                
                 let adaptedRange = NSRange(
-                    location: nsRange.location - substractionNeeded,
-                    length: min(nsRange.length - 4, threadOriginalMessage.text.count)
+                    location: nsRange.location,
+                    length: nsRange.length
                 )
                 
                 attributedString.addAttributes(
