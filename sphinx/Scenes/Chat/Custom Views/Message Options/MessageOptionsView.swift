@@ -280,7 +280,17 @@ extension MessageOptionsView : MessageOptionViewDelegate {
         case .Copy:
             ClipboardHelper.copyToClipboard(text: message.bubbleMessageContentString ?? "", message: "text.copied.clipboard".localized)
         case .CopyLink:
-            ClipboardHelper.copyToClipboard(text: message.bubbleMessageContentString?.stringFirstLink ?? "", message: "link.copied.clipboard".localized)
+            if let link = message.messageContent?.removingMarkdownDelimiters.stringFirstLink {
+                ClipboardHelper.copyToClipboard(
+                    text: link,
+                    message: "link.copied.clipboard".localized
+                )
+            } else if let link = message.messageContent?.linkMarkdownMatches.first?.2 {
+                ClipboardHelper.copyToClipboard(
+                    text: link,
+                    message: "link.copied.clipboard".localized
+                )
+            }
         case .CopyPubKey:
             ClipboardHelper.copyToClipboard(text: message.bubbleMessageContentString?.stringFirstPubKey?.0 ?? "", message: "pub.key.copied.clipboard".localized)
         case .CopyCallLink:

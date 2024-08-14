@@ -48,6 +48,8 @@ class ThreadHeaderView : UIView {
     
     var viewToShow: UIView! = nil
     
+    var urlRanges = [NSRange]()
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
         setup()
@@ -138,13 +140,11 @@ class ThreadHeaderView : UIView {
                 return $0.range
             }
             
-            for (index, nsRange) in highlightedNsRanges.enumerated() {
+            for nsRange in highlightedNsRanges {
                 
-                ///Subtracting the previous matches delimiter characters since they have been removed from the string
-                let substractionNeeded = index * 2
                 let adaptedRange = NSRange(
-                    location: nsRange.location - substractionNeeded,
-                    length: min(nsRange.length - 2, threadOriginalMessage.text.count)
+                    location: nsRange.location,
+                    length: nsRange.length
                 )
                 
                 attributedString.addAttributes(
@@ -162,13 +162,11 @@ class ThreadHeaderView : UIView {
                 return $0.range
             }
             
-            for (index, nsRange) in boldNsRanges.enumerated() {
-                ///Subtracting the previous matches delimiter characters since they have been removed from the string
-                ///Subtracting the ** characters from the length since removing the chars caused the range to be 4 less chars
-                let substractionNeeded = index * 4
+            for nsRange in boldNsRanges {
+                
                 let adaptedRange = NSRange(
-                    location: nsRange.location - substractionNeeded,
-                    length: min(nsRange.length - 4, threadOriginalMessage.text.count)
+                    location: nsRange.location,
+                    length: nsRange.length
                 )
                 
                 attributedString.addAttributes(
@@ -190,10 +188,66 @@ class ThreadHeaderView : UIView {
                     ],
                     range: match.range
                 )
+                
+                urlRanges.append(match.range)
+            }
+            
+            ///Markdown Links formatting
+            for (textCheckingResult, _, link, _) in threadOriginalMessage.linkMarkdownMatches {
+                
+                let nsRange = textCheckingResult.range
+                
+                if let url = URL(string: link) {
+                    attributedString.addAttributes(
+                        [
+                            NSAttributedString.Key.link: url,
+                            NSAttributedString.Key.foregroundColor: UIColor.Sphinx.PrimaryBlue,
+                            NSAttributedString.Key.underlineStyle: NSUnderlineStyle.single.rawValue,
+                            NSAttributedString.Key.font: UIFont.getThreadHeaderFont()
+                        ],
+                        range: nsRange
+                    )
+                }
+                
+                urlRanges.append(nsRange)
             }
             
             messageAndMediaLabel.attributedText = attributedString
             messageLabel.attributedText = attributedString
+            messageAndMediaLabel.isUserInteractionEnabled = true
+            messageLabel.isUserInteractionEnabled = true
+        }
+        
+        let tap = UITapGestureRecognizer(target: self, action: #selector(labelTapped(gesture:)))
+        
+        if urlRanges.isEmpty {
+            messageAndMediaLabel.removeGestureRecognizer(tap)
+            messageLabel.removeGestureRecognizer(tap)
+        } else {
+            messageAndMediaLabel.addGestureRecognizer(tap)
+            messageLabel.addGestureRecognizer(tap)
+        }
+        
+        urlRanges = ChatHelper.removeDuplicatedContainedFrom(urlRanges: urlRanges)
+    }
+    
+    @objc func labelTapped(
+        gesture: UITapGestureRecognizer
+    ) {
+        if let label = gesture.view as? UILabel, let attributedText = label.attributedText {
+            for range in urlRanges {
+                if gesture.didTapAttributedTextInLabel(
+                    label,
+                    inRange: range
+                ) {
+                    if let link = (attributedText.attribute(.link, at: range.location, effectiveRange: nil) as? URL)?.absoluteString {
+                        UIApplication.shared.open(URL(string: link)!, options: [:], completionHandler: nil)
+                    } else {
+                        let link = (attributedText.string as NSString).substring(with: range)
+                        UIApplication.shared.open(URL(string: link)!, options: [:], completionHandler: nil)
+                    }
+                }
+            }
         }
     }
     

@@ -168,6 +168,7 @@ extension PinMessageViewController {
                     linkMatches: messageContent.stringLinks + messageContent.pubKeyMatches + messageContent.mentionMatches,
                     highlightedMatches: messageContent.highlightedMatches,
                     boldMatches: messageContent.boldMatches,
+                    linkMarkdownMatches: messageContent.linkMarkdownMatches,
                     shouldLoadPaidText: false
                 )
             )
@@ -206,13 +207,11 @@ extension PinMessageViewController {
                     return $0.range
                 }
                 
-                for (index, nsRange) in highlightedNsRanges.enumerated() {
+                for nsRange in highlightedNsRanges {
                     
-                    ///Subtracting the previous matches delimiter characters since they have been removed from the string
-                    let substractionNeeded = index * 2
                     let adaptedRange = NSRange(
-                        location: nsRange.location - substractionNeeded,
-                        length: min(nsRange.length - 2, (messageContent.text ?? "").count)
+                        location: nsRange.location,
+                        length: nsRange.length
                     )
                     
                     attributedString.addAttributes(
@@ -230,13 +229,11 @@ extension PinMessageViewController {
                     return $0.range
                 }
                 
-                for (index, nsRange) in boldNsRanges.enumerated() {
-                    ///Subtracting the previous matches delimiter characters since they have been removed from the string
-                    ///Subtracting the ** characters from the length since removing the chars caused the range to be 4 less chars
-                    let substractionNeeded = index * 4
+                for nsRange in boldNsRanges {
+                    
                     let adaptedRange = NSRange(
-                        location: nsRange.location - substractionNeeded,
-                        length: min(nsRange.length - 4, (messageContent.text ?? "").count)
+                        location: nsRange.location,
+                        length: nsRange.length
                     )
                     
                     attributedString.addAttributes(
@@ -262,6 +259,25 @@ extension PinMessageViewController {
                     urlRanges.append(match.range)
                 }
                 
+                ///Markdown Links formatting
+                for (textCheckingResult, _, link, _) in messageContent.linkMarkdownMatches {
+                    
+                    let nsRange = textCheckingResult.range
+                    
+                    if let url = URL(string: link) {
+                        attributedString.addAttributes(
+                            [
+                                NSAttributedString.Key.link: url,
+                                NSAttributedString.Key.foregroundColor: UIColor.Sphinx.PrimaryBlue,
+                                NSAttributedString.Key.underlineStyle: NSUnderlineStyle.single.rawValue,
+                                NSAttributedString.Key.font: font
+                            ],
+                            range: nsRange
+                        )
+                    }
+                    
+                    urlRanges.append(nsRange)
+                }
                 
                 messageLabel.attributedText = attributedString
                 messageLabel.isUserInteractionEnabled = true
@@ -279,16 +295,19 @@ extension PinMessageViewController {
         urlRanges = ChatHelper.removeDuplicatedContainedFrom(urlRanges: urlRanges)
     }
     
-    @objc func labelTapped(gesture: UITapGestureRecognizer) {
-        if let label = gesture.view as? UILabel, let text = label.text {
+    @objc func labelTapped(
+        gesture: UITapGestureRecognizer
+    ) {
+        if let label = gesture.view as? UILabel, let attributedText = label.attributedText {
             for range in urlRanges {
-                if gesture.didTapAttributedTextInLabel(label, inRange: range) {
-                    var link = (text as NSString).substring(with: range)
-                    
-                    if link.stringLinks.count > 0 {
-                        if !link.contains("http") {
-                            link = "http://\(link)"
-                        }
+                if gesture.didTapAttributedTextInLabel(
+                    label,
+                    inRange: range
+                ) {
+                    if let link = (attributedText.attribute(.link, at: range.location, effectiveRange: nil) as? URL)?.absoluteString {
+                        UIApplication.shared.open(URL(string: link)!, options: [:], completionHandler: nil)
+                    } else {
+                        let link = (attributedText.string as NSString).substring(with: range)
                         UIApplication.shared.open(URL(string: link)!, options: [:], completionHandler: nil)
                     }
                 }

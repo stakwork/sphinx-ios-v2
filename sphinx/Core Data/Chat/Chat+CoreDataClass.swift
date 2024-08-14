@@ -728,7 +728,7 @@ public class Chat: NSManagedObject {
             let host = SphinxOnionManager.sharedInstance.tribesServerIP
             
             API.sharedInstance.getTribeInfo(
-                host: self.host ?? host,
+                host: host,
                 uuid: uuid,
                 callback: { chatJson in
                     self.tribeInfo = GroupsManager.sharedInstance.getTribesInfoFrom(json: chatJson)

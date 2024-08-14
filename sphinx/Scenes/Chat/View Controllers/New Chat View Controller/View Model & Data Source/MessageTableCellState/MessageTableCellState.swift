@@ -260,6 +260,7 @@ struct MessageTableCellState {
                 linkMatches: messageContent.stringLinks + messageContent.pubKeyMatches + messageContent.mentionMatches,
                 highlightedMatches: messageContent.highlightedMatches,
                 boldMatches: messageContent.boldMatches,
+                linkMarkdownMatches: messageContent.linkMarkdownMatches,
                 shouldLoadPaidText: false
             )
         } else if message.isPaidMessage() {
@@ -268,6 +269,7 @@ struct MessageTableCellState {
                 linkMatches: [],
                 highlightedMatches: [],
                 boldMatches: [],
+                linkMarkdownMatches: [],
                 shouldLoadPaidText: message.messageContent == nil && (paidContent?.isPurchaseAccepted() == true || bubble?.direction.isOutgoing() == true)
             )
         }
@@ -838,6 +840,7 @@ struct MessageTableCellState {
             linkMatches: messageContent.stringLinks + messageContent.pubKeyMatches + messageContent.mentionMatches,
             highlightedMatches: messageContent.highlightedMatches,
             boldMatches: messageContent.boldMatches,
+            linkMarkdownMatches: messageContent.linkMarkdownMatches,
             senderPic: senderInfo.2,
             senderAlias: senderInfo.1,
             senderColor: senderInfo.0,
@@ -876,7 +879,6 @@ struct MessageTableCellState {
                 (self.contactLink == nil) &&
                 (self.tribeLink == nil) &&
                 (self.messageMedia == nil) &&
-                (self.webLink == nil) &&
                 (self.botHTMLContent == nil) &&
                 (self.paidContent == nil) &&
                 (self.podcastComment == nil) &&
