@@ -38,6 +38,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     let som = SphinxOnionManager.sharedInstance
     
     var isActive = false
+    
+    public enum BuildType: Int {
+        case Sideload
+        case Testflight
+        case AppStore
+    }
 
     //Lifecycle events
     func application(
@@ -588,16 +594,16 @@ extension AppDelegate : PKPushRegistryDelegate{
            let contents = aps["alert"] as? String,
            let pushMessage = VoIPPushMessage.voipMessage(jsonString: contents),
            let pushBody = pushMessage.body as? VoIPPushMessageBody {
-           
+            
             if #available(iOS 14.0, *) {
-//                let (result, link) = EncryptionManager.sharedInstance.decryptMessage(message: pushBody.linkURL)
-//                pushBody.linkURL = link
-//                
-//                let manager = JitsiIncomingCallManager.sharedInstance
-//                manager.currentJitsiURL = (result == true) ? link : pushBody.linkURL
-//                manager.hasVideo = pushBody.isVideoCall()
-//                
-//                self.handleIncomingCall(callerName: pushBody.callerName)
+                //                let (result, link) = EncryptionManager.sharedInstance.decryptMessage(message: pushBody.linkURL)
+                //                pushBody.linkURL = link
+                //                
+                //                let manager = JitsiIncomingCallManager.sharedInstance
+                //                manager.currentJitsiURL = (result == true) ? link : pushBody.linkURL
+                //                manager.hasVideo = pushBody.isVideoCall()
+                //                
+                //                self.handleIncomingCall(callerName: pushBody.callerName)
             }
             completion()
         } else {
@@ -609,24 +615,55 @@ extension AppDelegate : PKPushRegistryDelegate{
         print("invalidated token")
     }
     
+    func isSideloadedBuild()->Bool{
+        return getBuildType() == .Sideload
+    }
+    
+    func getBuildType()->BuildType{
+        if let appStoreReceiptURL = Bundle.main.appStoreReceiptURL {
+            if appStoreReceiptURL.lastPathComponent == "sandboxReceipt" {
+                // This is a TestFlight build
+                return .Testflight
+            } else if appStoreReceiptURL.path.contains("CoreServices") {
+                // This is an App Store build
+                return .AppStore
+            } else {
+                // This is a sideloaded build
+                return .Sideload
+            }
+        } else {
+            // No receipt means sideloaded (in most cases)
+            return .Sideload
+        }
+    }
+    
     func simulateLocalNotification() {
         let content = UNMutableNotificationContent()
         content.title = "Test Notification"
         content.body = "This is a test notification"
-        content.userInfo = ["custom_data": ["child": "testEncryptedData123"]]
-        content.sound = .default
+        content.sound = UNNotificationSound.default
+        
+        // Adding the mutable-content key
+        content.userInfo = [
+            "encryptedMessage": "testEncryptedData123",
+            "aps": ["mutable-content": 1]  // Adding the mutable-content key here
+        ]
         
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 5, repeats: false)
         let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
         
         UNUserNotificationCenter.current().add(request) { error in
             if let error = error {
-                print("Error scheduling notification: \(error)")
-            } else {
-                print("Test notification scheduled")
+                print("Error adding notification: \(error)")
             }
         }
-    }}
+        
+//        DispatchQueue.main.asyncAfter(deadline: .now() + 60.0, execute: {
+//            self.simulateLocalNotification()
+//        })
+    }
 
-
+    
+    
+}
 

@@ -4,6 +4,13 @@ class NotificationService: UNNotificationServiceExtension {
     
     var contentHandler: ((UNNotificationContent) -> Void)?
     var bestAttemptContent: UNMutableNotificationContent?
+    
+    override init() {
+        super.init()
+        // Add a simple log to confirm initialization
+        print("NotificationService initialized!")
+
+    }
 
     override func didReceive(_ request: UNNotificationRequest, withContentHandler contentHandler: @escaping (UNNotificationContent) -> Void) {
         self.contentHandler = contentHandler
@@ -14,15 +21,18 @@ class NotificationService: UNNotificationServiceExtension {
         
         if let bestAttemptContent = bestAttemptContent {
             // Perform your computations here
-            if let encryptedChild = getEncryptedIndexFrom(notification: bestAttemptContent.userInfo) {
-                // Decrypt or process the encryptedChild
-                let processedData = processEncryptedChild(encryptedChild)
-                
-                // Modify the notification content
-                bestAttemptContent.title = "CHANCELLOR ON BRINK"
-                bestAttemptContent.body = "You have a new message"
-                bestAttemptContent.userInfo["processedData"] = processedData
-            }
+            bestAttemptContent.title = "The Times 03/Jan/2009 [Modified]"
+            bestAttemptContent.body = "CHANCELLOR ON BRINK  [Modified]"
+            bestAttemptContent.userInfo["processedData"] = "abc123"
+//            if let encryptedChild = getEncryptedIndexFrom(notification: bestAttemptContent.userInfo) {
+//                // Decrypt or process the encryptedChild
+//                let processedData = processEncryptedChild(encryptedChild)
+//                
+//                // Modify the notification content
+//                bestAttemptContent.title = "CHANCELLOR ON BRINK [Modified]"
+//                bestAttemptContent.body = "You have a new message"
+//                bestAttemptContent.userInfo["processedData"] = processedData
+//            }
             
             contentHandler(bestAttemptContent)
         }

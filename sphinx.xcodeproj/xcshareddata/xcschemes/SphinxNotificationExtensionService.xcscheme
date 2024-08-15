@@ -2,7 +2,7 @@
 <Scheme
    LastUpgradeVersion = "1500"
    wasCreatedForAppExtension = "YES"
-   version = "2.0">
+   version = "2.2">
    <BuildAction
       parallelizeBuildables = "YES"
       buildImplicitDependencies = "YES">
@@ -35,6 +35,15 @@
                ReferencedContainer = "container:sphinx.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <AutocreatedTestPlanReference>
+            </AutocreatedTestPlanReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -57,9 +66,9 @@
       allowLocationSimulation = "YES"
       launchAutomaticallySubstyle = "2">
       <RemoteRunnable
-         runnableDebuggingMode = "1"
+         runnableDebuggingMode = "0"
          BundleIdentifier = "com.gl.sphinx.v2"
-         RemotePath = "/Users/jamescarucci/Library/Developer/CoreSimulator/Devices/476AA5F3-46F9-4069-ACD1-9C4386044682/data/Containers/Bundle/Application/5871BCAA-2EFD-4105-83ED-0A22C6176B07/sphinx.app">
+         RemotePath = "/var/containers/Bundle/Application/714980FF-B7B1-4ADB-90DF-BB69697BCFFD/sphinx.app">
       </RemoteRunnable>
       <MacroExpansion>
          <BuildableReference
