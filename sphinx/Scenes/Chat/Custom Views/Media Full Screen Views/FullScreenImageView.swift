@@ -152,6 +152,9 @@ class FullScreenImageView: UIView {
                     self.loading = false
                 })
             }
+        } else if let url = message.messageContent?.linkMarkdownMatches.first?.2, let cachedImage = MediaLoader.getImageFromCachedUrl(url: url) {
+            self.imageScrollView.display(image: cachedImage)
+            self.loading = false
         }
     }
     

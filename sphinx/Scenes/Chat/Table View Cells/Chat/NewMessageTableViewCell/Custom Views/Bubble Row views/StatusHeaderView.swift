@@ -75,7 +75,8 @@ class StatusHeaderView: UIView {
         
         receivedSenderLabel.textColor = statusHeader.color
         
-        sentLightningIcon.isHidden = !statusHeader.showBoltIcon
+        sentLightningIcon.isHidden = !statusHeader.showBoltIcon && !statusHeader.showBoltGreyIcon
+        sentLightningIcon.textColor = statusHeader.showBoltGreyIcon ? UIColor.Sphinx.SecondaryText : UIColor.Sphinx.PrimaryGreen
         
         sentLockIcon.isHidden = !statusHeader.showLockIcon
         receivedLockIcon.isHidden = !statusHeader.showLockIcon

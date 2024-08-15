@@ -310,6 +310,8 @@ extension PinMessageViewController {
                         let link = (attributedText.string as NSString).substring(with: range)
                         UIApplication.shared.open(URL(string: link)!, options: [:], completionHandler: nil)
                     }
+                } else {
+                    self.navigateToMessageButtonTouched()
                 }
             }
         }
