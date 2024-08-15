@@ -59,6 +59,7 @@ extension NewChatViewController : ChatHeaderViewDelegate, ThreadHeaderViewDelega
         chatTableDataSource?.shouldLoadGiphyDataFor(messageId: messageId, and: rowIndex)
     }
     
+    
     func didTapMuteButton() {
         guard let chat = chat else {
             return
