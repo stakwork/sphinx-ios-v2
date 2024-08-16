@@ -209,6 +209,7 @@ extension FeedSearchContainerViewController {
         for searchQuery: String,
         and type: FeedType?
     ) {
+        searchResultsViewController.updateWithNew(searchResults: [])
         let shouldServiceTorrentSearch = type == nil //&& didPressEnter
         if  shouldServiceTorrentSearch{
             // "All" tab is selected, show BitTorrent search
