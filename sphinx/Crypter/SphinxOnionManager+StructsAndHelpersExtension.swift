@@ -283,13 +283,14 @@ extension SphinxOnionManager {
                 intType == TransactionMessage.TransactionMessageType.payment.rawValue
     }
     
-    func isMessageCallOrAttachment(
+    func isMessageWithText(
         type: UInt8
     ) -> Bool {
         let intType = Int(type)
         return intType == TransactionMessage.TransactionMessageType.message.rawValue ||
                 intType == TransactionMessage.TransactionMessageType.call.rawValue ||
-                intType == TransactionMessage.TransactionMessageType.attachment.rawValue
+                intType == TransactionMessage.TransactionMessageType.attachment.rawValue ||
+                intType == TransactionMessage.TransactionMessageType.botResponse.rawValue
     }
     
     func isDelete(
@@ -482,7 +483,7 @@ enum SphinxOnionManagerError: Error {
     var localizedDescription: String {
         switch self {
         case .SOMNetworkError:
-            return "error.network".localized
+            return "Network Error"
         case .SOMTimeoutError:
             return "Timeout Error"
         }

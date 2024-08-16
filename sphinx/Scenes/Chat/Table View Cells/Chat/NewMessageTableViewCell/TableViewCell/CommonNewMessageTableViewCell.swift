@@ -27,14 +27,18 @@ class CommonNewMessageTableViewCell : SwipableReplyCell {
     @objc func labelTapped(
         gesture: UITapGestureRecognizer
     ) {
-        if let label = gesture.view as? UILabel, let text = label.text {
+        if let label = gesture.view as? UILabel, let attributedText = label.attributedText {
             for range in urlRanges {
                 if gesture.didTapAttributedTextInLabel(
                     label,
                     inRange: range
                 ) {
-                    let link = (text as NSString).substring(with: range)
-                    delegate?.didTapOnLink(link)
+                    if let link = (attributedText.attribute(.link, at: range.location, effectiveRange: nil) as? URL)?.absoluteString {
+                        delegate?.didTapOnLink(link)
+                    } else {
+                        let link = (attributedText.string as NSString).substring(with: range)
+                        delegate?.didTapOnLink(link)
+                    }
                 }
             }
         }

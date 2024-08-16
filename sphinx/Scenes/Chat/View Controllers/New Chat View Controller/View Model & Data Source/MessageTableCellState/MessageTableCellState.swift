@@ -206,6 +206,7 @@ struct MessageTableCellState {
             showSent: isSent,
             showSendingIcon: isSent && message.pending() && message.isProvisional(),
             showBoltIcon: message.isConfirmedAsReceived(),
+            showBoltGreyIcon: !message.isConfirmedAsReceived() && message.isDirectPayment(),
             showFailedContainer: isSent && message.failed(),
             errorMessage: message.errorMessage ?? "message.failed".localized,
             showLockIcon: true,
@@ -240,7 +241,7 @@ struct MessageTableCellState {
             messageId: replyingMessage.id,
             color: senderInfo.0,
             alias: senderInfo.1,
-            message: replyingMessage.bubbleMessageContentString,
+            message: replyingMessage.bubbleMessageContentString?.removingMarkdownDelimiters,
             mediaType: mediaType
         )
     }()
@@ -256,20 +257,20 @@ struct MessageTableCellState {
         
         if let messageContent = message.bubbleMessageContentString, messageContent.isNotEmpty {
             return BubbleMessageLayoutState.MessageContent(
-                text: messageContent.replacingHightlightedChars,
-                font: UIFont.getMessageFont(),
-                highlightedFont: UIFont.getHighlightedMessageFont(),
+                text: messageContent.removingMarkdownDelimiters,
                 linkMatches: messageContent.stringLinks + messageContent.pubKeyMatches + messageContent.mentionMatches,
                 highlightedMatches: messageContent.highlightedMatches,
+                boldMatches: messageContent.boldMatches,
+                linkMarkdownMatches: messageContent.linkMarkdownMatches,
                 shouldLoadPaidText: false
             )
         } else if message.isPaidMessage() {
             return BubbleMessageLayoutState.MessageContent(
                 text: paidMessageContent,
-                font: UIFont.getEncryptionErrorFont(),
-                highlightedFont: UIFont.getHighlightedMessageFont(),
                 linkMatches: [],
                 highlightedMatches: [],
+                boldMatches: [],
+                linkMarkdownMatches: [],
                 shouldLoadPaidText: message.messageContent == nil && (paidContent?.isPurchaseAccepted() == true || bubble?.direction.isOutgoing() == true)
             )
         }
@@ -324,7 +325,13 @@ struct MessageTableCellState {
     }()
     
     lazy var messageMedia: BubbleMessageLayoutState.MessageMedia? = {
-        guard let message = messageToShow, message.isMediaAttachment() || message.isDirectPayment() || message.isGiphy() else {
+        guard let message = messageToShow else {
+            return nil
+        }
+       
+        let hasMarkdownLinks = (message.messageContent?.linkMarkdownMatches.count ?? 0) > 0
+        
+        guard message.isMediaAttachment() || message.isDirectPayment() || message.isGiphy() || (message.isBotResponse() && hasMarkdownLinks) else {
             return nil
         }
         
@@ -342,6 +349,7 @@ struct MessageTableCellState {
             isGif: message.isGif(),
             isPdf: message.isPDF(),
             isGiphy: message.isGiphy(),
+            isImageLink: hasMarkdownLinks,
             isPaid: message.isPaidAttachment(),
             isPaymentTemplate: message.isDirectPayment()
         )
@@ -362,6 +370,7 @@ struct MessageTableCellState {
             isGif: message.isGif(),
             isPdf: message.isPDF(),
             isGiphy: message.isGiphy(),
+            isImageLink: false,
             isPaid: message.isPaidAttachment(),
             isPaymentTemplate: message.isDirectPayment()
         )
@@ -400,6 +409,8 @@ struct MessageTableCellState {
             urlAndKey = (message.getTemplateURL(), nil)
         } else if message.isGiphy() {
             urlAndKey = (message.getGiphyUrl(), nil)
+        } else if let imageLink = message.messageContent?.linkMarkdownMatches.first?.2, let url = URL(string: imageLink){
+            urlAndKey = (url, nil)
         }
         
         return urlAndKey
@@ -484,8 +495,7 @@ struct MessageTableCellState {
         
         let originalMessageSenderInfo: (UIColor, String, String?) = getSenderInfo(message: message)
         let originalThreadMessage = BubbleMessageLayoutState.ThreadMessage(
-            text: message.bubbleMessageContentString?.replacingHightlightedChars,
-            font: UIFont.getMessageFont(),
+            text: message.bubbleMessageContentString?.removingMarkdownDelimiters,
             senderPic: originalMessageSenderInfo.2,
             senderAlias: originalMessageSenderInfo.1,
             senderColor: originalMessageSenderInfo.0,
@@ -687,7 +697,6 @@ struct MessageTableCellState {
             date: date,
             amount: amount,
             memo: message.messageContent,
-            font: UIFont.getMessageFont(),
             isPaid: message.isPaid(),
             isExpired: message.isExpired(),
             bubbleWidth: bubbleWidth
@@ -838,11 +847,11 @@ struct MessageTableCellState {
         let messageContent = message.bubbleMessageContentString ?? ""
         
         return NoBubbleMessageLayoutState.ThreadOriginalMessage(
-            text: messageContent.replacingHightlightedChars,
-            font: UIFont.getThreadHeaderFont(),
-            highlightedFont: UIFont.getThreadHeaderHightlightedFont(),
+            text: messageContent.removingMarkdownDelimiters,
             linkMatches: messageContent.stringLinks + messageContent.pubKeyMatches + messageContent.mentionMatches,
             highlightedMatches: messageContent.highlightedMatches,
+            boldMatches: messageContent.boldMatches,
+            linkMarkdownMatches: messageContent.linkMarkdownMatches,
             senderPic: senderInfo.2,
             senderAlias: senderInfo.1,
             senderColor: senderInfo.0,
@@ -881,7 +890,6 @@ struct MessageTableCellState {
                 (self.contactLink == nil) &&
                 (self.tribeLink == nil) &&
                 (self.messageMedia == nil) &&
-                (self.webLink == nil) &&
                 (self.botHTMLContent == nil) &&
                 (self.paidContent == nil) &&
                 (self.podcastComment == nil) &&

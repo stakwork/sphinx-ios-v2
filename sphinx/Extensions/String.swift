@@ -122,6 +122,50 @@ extension String {
         return self.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
     }
     
+    func markdownTrim() -> String {
+        if self.isEmpty {
+            return self
+        }
+        
+        var trimmedString = self
+        let zeroWidthSpace = "\u{200B}"
+
+        ///Replace new line with empty space if it starts with highlight char and new line
+        if self.starts(with: "\(zeroWidthSpace)\n") {
+            trimmedString = trimmedString.replacingOccurrences(
+                of: "\(zeroWidthSpace)\n",
+                with: "\(zeroWidthSpace)\(zeroWidthSpace)",
+                range: Range(NSRange(location: 0, length: 2), in: trimmedString)
+            )
+        }
+        ///Replace new line with empty space if it starts with bold chars and new line
+        if self.starts(with: "\(zeroWidthSpace)\(zeroWidthSpace)\n") {
+            trimmedString = trimmedString.replacingOccurrences(
+                of: "\(zeroWidthSpace)\(zeroWidthSpace)\n",
+                with: "\(zeroWidthSpace)\(zeroWidthSpace)\(zeroWidthSpace)",
+                range: Range(NSRange(location: 0, length: 3), in: trimmedString)
+            )
+        }
+        ///Replace new line with empty space if it ends with new line and highlight char
+        if self.hasSuffix("\n\(zeroWidthSpace)") {
+            trimmedString = trimmedString.replacingOccurrences(
+                of: "\n\(zeroWidthSpace)",
+                with: "\(zeroWidthSpace)\(zeroWidthSpace)",
+                range: Range(NSRange(location: self.length - 2, length: 2), in: trimmedString)
+            )
+        }
+        ///Replace new line with empty space if it ends with new line and bold chars
+        if self.hasSuffix("\n\(zeroWidthSpace)\(zeroWidthSpace)") {
+            trimmedString = trimmedString.replacingOccurrences(
+                of: "\n\(zeroWidthSpace)\(zeroWidthSpace)",
+                with: "\(zeroWidthSpace)\(zeroWidthSpace)\(zeroWidthSpace)",
+                range: Range(NSRange(location: self.length - 3, length: 3), in: trimmedString)
+            )
+        }
+        return trimmedString
+    }
+
+    
     func isEncryptedString() -> Bool {
         if let _ = Data(base64Encoded: self), self.hasSuffix("=") {
             return true
@@ -182,50 +226,138 @@ extension String {
     }
     
     var stringLinks: [NSTextCheckingResult] {
-        let textWithoutHightlights = self.replacingHightlightedChars
+        let textWithoutMarkdown = self.removingMarkdownDelimiters
         let types: NSTextCheckingResult.CheckingType = .link
         let detector = try? NSDataDetector(types: types.rawValue)
         
         let matches = detector!.matches(
-            in: textWithoutHightlights,
+            in: textWithoutMarkdown,
             options: [],
-            range: NSMakeRange(0, textWithoutHightlights.utf16.count)
+            range: NSMakeRange(0, textWithoutMarkdown.utf16.count)
         )
         
         return matches
     }
     
     var pubKeyMatches: [NSTextCheckingResult] {
-        let textWithoutHightlights = self.replacingHightlightedChars
+        let textWithoutMarkdown = self.removingMarkdownDelimiters
         let pubkeyRegex = try? NSRegularExpression(pattern: "\\b[A-F0-9a-f]{66}\\b")
         let virtualPubkeyRegex = try? NSRegularExpression(pattern: "\\b[A-F0-9a-f]{66}_[A-F0-9a-f]{66}_[0-9]+\\b")
         
         let virtualPubkeyResults = virtualPubkeyRegex?.matches(
-            in: textWithoutHightlights,
-            range: NSRange(textWithoutHightlights.startIndex..., in: textWithoutHightlights)
+            in: textWithoutMarkdown,
+            range: NSRange(textWithoutMarkdown.startIndex..., in: textWithoutMarkdown)
         ) ?? []
         
         let pubkeyResults = pubkeyRegex?.matches(
-            in: textWithoutHightlights,
-            range: NSRange(textWithoutHightlights.startIndex..., in: textWithoutHightlights)
+            in: textWithoutMarkdown,
+            range: NSRange(textWithoutMarkdown.startIndex..., in: textWithoutMarkdown)
         ) ?? []
         
         return virtualPubkeyResults + pubkeyResults
     }
     
     var mentionMatches: [NSTextCheckingResult] {
-        let textWithoutHightlights = self.replacingHightlightedChars
+        let textWithoutMarkdown = self.removingMarkdownDelimiters
         let mentionRegex = try? NSRegularExpression(pattern: "\\B@[^\\s]+")
         
         return mentionRegex?.matches(
-            in: textWithoutHightlights,
-            range: NSRange(textWithoutHightlights.startIndex..., in: textWithoutHightlights)
+            in: textWithoutMarkdown,
+            range: NSRange(textWithoutMarkdown.startIndex..., in: textWithoutMarkdown)
         ) ?? []
     }
     
     var highlightedMatches: [NSTextCheckingResult] {
+        if !self.contains("`") {
+            return []
+        }
         let highlightedRegex = try? NSRegularExpression(pattern: "`(.*?)`", options: .dotMatchesLineSeparators)
         return highlightedRegex?.matches(in: self, range: NSRange(self.startIndex..., in: self)) ?? []
+    }
+    
+    var boldMatches: [NSTextCheckingResult] {
+        if !self.contains("**") {
+            return []
+        }
+        let highlightedRegex = try? NSRegularExpression(pattern: "\\*\\*(.*?)\\*\\*", options: .dotMatchesLineSeparators)
+        return highlightedRegex?.matches(in: self, range: NSRange(self.startIndex..., in: self)) ?? []
+    }
+    
+    var linkMarkdownMatches: [(NSTextCheckingResult, String, String, Bool)] {
+        if !self.contains("[") && self.contains("(") {
+            return []
+        }
+        
+        var results: [(NSTextCheckingResult, String, String, Bool)] = []
+        
+        let linkMarkdownPattern = #"!\[([^\]]+)\]\((http[s]?:\/\/[^\s\)]+)\)"#
+        let linkMarkdownRegex = try? NSRegularExpression(pattern: linkMarkdownPattern)
+        let matches = linkMarkdownRegex?.matches(in: self, range: NSRange(self.startIndex..., in: self)) ?? []
+        
+        for match in matches {
+            if let result = getMatchAndStringsFrom(match: match, hasExclamationMark: true) {
+                results.append(result)
+            }
+        }
+        
+        let linkMarkdownPattern2 = #"\[([^\]]+)\]\((http[s]?:\/\/[^\s\)]+)\)"#
+        let linkMarkdownRegex2 = try? NSRegularExpression(pattern: linkMarkdownPattern2)
+        let matches2 = linkMarkdownRegex2?.matches(in: self, range: NSRange(self.startIndex..., in: self)) ?? []
+        
+        for match in matches2 {
+            if let result = getMatchAndStringsFrom(match: match, hasExclamationMark: false) {
+                results.append(result)
+            }
+        }
+        
+        return results
+    }
+    
+    func getMatchAndStringsFrom(
+        match: NSTextCheckingResult,
+        hasExclamationMark: Bool
+    ) -> (NSTextCheckingResult, String, String, Bool)? {
+        if let imageRange = Range(match.range(at: 1), in: self),
+           let linkRange = Range(match.range(at: 2), in: self) {
+            let imageText = String(self[imageRange])
+            let linkText = String(self[linkRange])
+            return (match, "\(imageText)", "\(linkText)", hasExclamationMark)
+        }
+        return nil
+    }
+    
+    var removingMarkdownDelimiters: String {
+        return self.trim().replacingHightlightedChars.replacingBoldDelimeterChars.replacingHyphensWithBullets.replacingMarkdownLinks.markdownTrim()
+    }
+    
+    var replacingMarkdownLinks: String {
+        if !self.contains("[") && self.contains("(") {
+            return self
+        }
+        
+        var adaptedString = self
+        
+        for (match, text, link, hasExclamationMark)  in linkMarkdownMatches {
+
+            let adaptedRange = NSRange(location: match.range.location, length: match.range.length)
+            let zeroWidthSpace = "\u{200B}"
+            
+            let prefixString = (hasExclamationMark) ? "\(zeroWidthSpace)\(zeroWidthSpace)" : "\(zeroWidthSpace)"
+            let afterLinkChartsCount = 3 + link.count
+            
+            var suffixString = ""
+            for _ in 0..<afterLinkChartsCount {
+                suffixString += zeroWidthSpace
+            }
+            
+            adaptedString = adaptedString.replacingOccurrences(
+                of: hasExclamationMark ? "![\(text)](\(link))" : "[\(text)](\(link))",
+                with: "\(prefixString)\(text)\(suffixString)",
+                range: Range(adaptedRange, in: adaptedString)
+            )
+        }
+        
+        return adaptedString
     }
     
     var replacingHightlightedChars: String {
@@ -234,23 +366,48 @@ extension String {
         }
         
         var adaptedString = self
-        let highlightedRegex = try? NSRegularExpression(pattern: "`(.*?)`", options: .dotMatchesLineSeparators)
-        let matches =  highlightedRegex?.matches(in: self, range: NSRange(self.startIndex..., in: self)) ?? []
         
-        for (index, match) in matches.enumerated() {
+        for match in highlightedMatches {
             
             ///Subtracting the previous matches delimiter characters since they have been removed from the string
-            let substractionNeeded = index * 2
-            let adaptedRange = NSRange(location: match.range.location - substractionNeeded, length: match.range.length)
+            let adaptedRange = NSRange(location: match.range.location, length: match.range.length)
+            let zeroWidthSpace = "\u{200B}"
             
             adaptedString = adaptedString.replacingOccurrences(
                 of: "`",
-                with: "",
+                with: zeroWidthSpace,
                 range: Range(adaptedRange, in: adaptedString)
             )
         }
         
         return adaptedString
+    }
+    
+    var replacingBoldDelimeterChars: String {
+        if !self.contains("**") {
+            return self
+        }
+        
+        var adaptedString = self
+        
+        for match in boldMatches {
+            
+            ///Subtracting the previous matches delimiter characters since they have been removed from the string
+            let adaptedRange = NSRange(location: match.range.location, length: match.range.length)
+            let zeroWidthSpace = "\u{200B}"
+            
+            adaptedString = adaptedString.replacingOccurrences(
+                of: "*",
+                with: zeroWidthSpace,
+                range: Range(adaptedRange, in: adaptedString)
+            )
+        }
+        
+        return adaptedString
+    }
+    
+    var replacingHyphensWithBullets: String {
+        return self.replacingOccurrences(of: "\n-", with: "\n•")
     }
     
     var stringFirstWebLink : (String, NSRange)? {

@@ -40,6 +40,10 @@ public extension UIFont {
     static func getMessageFont() -> UIFont {
         return Constants.kMessageFont
     }
+    
+    static func getMessageBoldFont() -> UIFont {
+        return Constants.kMessageBoldFont
+    }
 
     static func getHighlightedMessageFont() -> UIFont {
         return Constants.kMessageHighlightedFont
@@ -53,8 +57,16 @@ public extension UIFont {
         return Constants.kThreadHeaderHighlightedFont
     }
     
+    static func getThreadHeaderBoldFont() -> UIFont {
+        return Constants.kThreadHeaderBoldFont
+    }
+    
     static func getThreadListFont() -> UIFont {
         return Constants.kThreadListFont
+    }
+    
+    static func getThreadListBoldFont() -> UIFont {
+        return Constants.kThreadListBoldFont
     }
     
     static func getThreadListHightlightedFont() -> UIFont {

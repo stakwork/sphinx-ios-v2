@@ -164,11 +164,11 @@ extension PinMessageViewController {
         if let messageContent = message.bubbleMessageContentString, messageContent.isNotEmpty {
             configureWith(
                 messageContent: BubbleMessageLayoutState.MessageContent(
-                    text: messageContent.replacingHightlightedChars,
-                    font: UIFont(name: "Roboto-Regular", size: 15.0)!,
-                    highlightedFont: UIFont(name: "Roboto-Regular", size: 15.0)!,
+                    text: messageContent.removingMarkdownDelimiters,
                     linkMatches: messageContent.stringLinks + messageContent.pubKeyMatches + messageContent.mentionMatches,
                     highlightedMatches: messageContent.highlightedMatches,
+                    boldMatches: messageContent.boldMatches,
+                    linkMarkdownMatches: messageContent.linkMarkdownMatches,
                     shouldLoadPaidText: false
                 )
             )
@@ -184,34 +184,61 @@ extension PinMessageViewController {
         
         if let messageContent = messageContent {
             
+            let font = UIFont(name: "Roboto-Regular", size: 15.0)!
+            let highlightedFont = UIFont(name: "Roboto-Regular", size: 15.0)!
+            let boldFont = UIFont(name: "Roboto-Black", size: 15.0)!
+            
             messageLabel.attributedText = nil
             messageLabel.text = nil
             
-            if messageContent.linkMatches.isEmpty && messageContent.highlightedMatches.isEmpty {
+            if messageContent.hasNoMarkdown {
                 messageLabel.text = messageContent.text
-                messageLabel.font = messageContent.font
+                messageLabel.font = font
             } else {
                 let messageC = messageContent.text ?? ""
                 
                 let attributedString = NSMutableAttributedString(string: messageC)
-                attributedString.addAttributes([NSAttributedString.Key.font: messageContent.font], range: messageC.nsRange)
+                attributedString.addAttributes(
+                    [NSAttributedString.Key.font: font], range: messageC.nsRange
+                )
                 
                 ///Highlighted text formatting
                 let highlightedNsRanges = messageContent.highlightedMatches.map {
                     return $0.range
                 }
                 
-                for (index, nsRange) in highlightedNsRanges.enumerated() {
+                for nsRange in highlightedNsRanges {
                     
-                    ///Subtracting the previous matches delimiter characters since they have been removed from the string
-                    let substractionNeeded = index * 2
-                    let adaptedRange = NSRange(location: nsRange.location - substractionNeeded, length: nsRange.length - 2)
+                    let adaptedRange = NSRange(
+                        location: nsRange.location,
+                        length: nsRange.length
+                    )
                     
                     attributedString.addAttributes(
                         [
                             NSAttributedString.Key.foregroundColor: UIColor.Sphinx.HighlightedText,
                             NSAttributedString.Key.backgroundColor: UIColor.Sphinx.HighlightedTextBackground,
-                            NSAttributedString.Key.font: messageContent.highlightedFont
+                            NSAttributedString.Key.font: highlightedFont
+                        ],
+                        range: adaptedRange
+                    )
+                }
+                
+                ///Bold text formatting
+                let boldNsRanges = messageContent.boldMatches.map {
+                    return $0.range
+                }
+                
+                for nsRange in boldNsRanges {
+                    
+                    let adaptedRange = NSRange(
+                        location: nsRange.location,
+                        length: nsRange.length
+                    )
+                    
+                    attributedString.addAttributes(
+                        [
+                            NSAttributedString.Key.font: boldFont
                         ],
                         range: adaptedRange
                     )
@@ -224,7 +251,7 @@ extension PinMessageViewController {
                         [
                             NSAttributedString.Key.foregroundColor: UIColor.Sphinx.PrimaryBlue,
                             NSAttributedString.Key.underlineStyle: NSUnderlineStyle.single.rawValue,
-                            NSAttributedString.Key.font: messageContent.font
+                            NSAttributedString.Key.font: font
                         ],
                         range: match.range
                     )
@@ -232,6 +259,25 @@ extension PinMessageViewController {
                     urlRanges.append(match.range)
                 }
                 
+                ///Markdown Links formatting
+                for (textCheckingResult, _, link, _) in messageContent.linkMarkdownMatches {
+                    
+                    let nsRange = textCheckingResult.range
+                    
+                    if let url = URL(string: link) {
+                        attributedString.addAttributes(
+                            [
+                                NSAttributedString.Key.link: url,
+                                NSAttributedString.Key.foregroundColor: UIColor.Sphinx.PrimaryBlue,
+                                NSAttributedString.Key.underlineStyle: NSUnderlineStyle.single.rawValue,
+                                NSAttributedString.Key.font: font
+                            ],
+                            range: nsRange
+                        )
+                    }
+                    
+                    urlRanges.append(nsRange)
+                }
                 
                 messageLabel.attributedText = attributedString
                 messageLabel.isUserInteractionEnabled = true
@@ -249,18 +295,23 @@ extension PinMessageViewController {
         urlRanges = ChatHelper.removeDuplicatedContainedFrom(urlRanges: urlRanges)
     }
     
-    @objc func labelTapped(gesture: UITapGestureRecognizer) {
-        if let label = gesture.view as? UILabel, let text = label.text {
+    @objc func labelTapped(
+        gesture: UITapGestureRecognizer
+    ) {
+        if let label = gesture.view as? UILabel, let attributedText = label.attributedText {
             for range in urlRanges {
-                if gesture.didTapAttributedTextInLabel(label, inRange: range) {
-                    var link = (text as NSString).substring(with: range)
-                    
-                    if link.stringLinks.count > 0 {
-                        if !link.contains("http") {
-                            link = "http://\(link)"
-                        }
+                if gesture.didTapAttributedTextInLabel(
+                    label,
+                    inRange: range
+                ) {
+                    if let link = (attributedText.attribute(.link, at: range.location, effectiveRange: nil) as? URL)?.absoluteString {
+                        UIApplication.shared.open(URL(string: link)!, options: [:], completionHandler: nil)
+                    } else {
+                        let link = (attributedText.string as NSString).substring(with: range)
                         UIApplication.shared.open(URL(string: link)!, options: [:], completionHandler: nil)
                     }
+                } else {
+                    self.navigateToMessageButtonTouched()
                 }
             }
         }

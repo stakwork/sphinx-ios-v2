@@ -36,9 +36,11 @@ struct ThreadTableCellState {
         let messageContent = originalMessage.bubbleMessageContentString ?? ""
         
         let orignalMessageThred = ThreadLayoutState.ThreadOriginalMessage(
-            text: messageContent.replacingHightlightedChars,
+            text: messageContent.removingMarkdownDelimiters,
             linkMatches: messageContent.stringLinks + messageContent.pubKeyMatches + messageContent.mentionMatches,
             highlightedMatches: messageContent.highlightedMatches,
+            boldMatches: messageContent.boldMatches,
+            linkMarkdownMatches: messageContent.linkMarkdownMatches,
             timestamp: timestamp,
             senderInfo: getSenderInfo(message: originalMessage)
         )
@@ -86,6 +88,7 @@ struct ThreadTableCellState {
             isGif: message.isGif(),
             isPdf: message.isPDF(),
             isGiphy: message.isGiphy(),
+            isImageLink: false,
             isPaid: false,
             isPaymentTemplate: false
         )

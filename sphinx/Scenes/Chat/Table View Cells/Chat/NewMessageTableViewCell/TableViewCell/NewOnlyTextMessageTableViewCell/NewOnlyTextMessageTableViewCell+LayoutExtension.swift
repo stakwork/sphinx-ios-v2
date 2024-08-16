@@ -29,31 +29,56 @@ extension NewOnlyTextMessageTableViewCell {
             messageLabel.attributedText = nil
             messageLabel.text = nil
             
-            if messageContent.linkMatches.isEmpty && messageContent.highlightedMatches.isEmpty && searchingTerm == nil {
+            if messageContent.hasNoMarkdown && searchingTerm == nil {
                 messageLabel.text = messageContent.text
-                messageLabel.font = messageContent.font
+                messageLabel.font = UIFont.getMessageFont()
             } else {
                 let messageC = messageContent.text ?? ""
                 
                 let attributedString = NSMutableAttributedString(string: messageC)
-                attributedString.addAttributes([NSAttributedString.Key.font: messageContent.font], range: messageC.nsRange)
+                attributedString.addAttributes(
+                    [
+                        NSAttributedString.Key.font: UIFont.getMessageFont()
+                    ], range: messageC.nsRange
+                )
                 
                 ///Highlighted text formatting
                 let highlightedNsRanges = messageContent.highlightedMatches.map {
                     return $0.range
                 }
                 
-                for (index, nsRange) in highlightedNsRanges.enumerated() {
+                for nsRange in highlightedNsRanges {
                     
-                    ///Subtracting the previous matches delimiter characters since they have been removed from the string
-                    let substractionNeeded = index * 2
-                    let adaptedRange = NSRange(location: nsRange.location - substractionNeeded, length: nsRange.length - 2)
+                    let adaptedRange = NSRange(
+                        location: nsRange.location,
+                        length: nsRange.length
+                    )
                     
                     attributedString.addAttributes(
                         [
                             NSAttributedString.Key.foregroundColor: UIColor.Sphinx.HighlightedText,
                             NSAttributedString.Key.backgroundColor: UIColor.Sphinx.HighlightedTextBackground,
-                            NSAttributedString.Key.font: messageContent.highlightedFont
+                            NSAttributedString.Key.font: UIFont.getHighlightedMessageFont()
+                        ],
+                        range: adaptedRange
+                    )
+                }
+                
+                ///Bold text formatting
+                let boldNsRanges = messageContent.boldMatches.map {
+                    return $0.range
+                }
+                
+                for nsRange in boldNsRanges {
+                    
+                    let adaptedRange = NSRange(
+                        location: nsRange.location,
+                        length: nsRange.length
+                    )
+                    
+                    attributedString.addAttributes(
+                        [
+                            NSAttributedString.Key.font: UIFont.getMessageBoldFont()
                         ],
                         range: adaptedRange
                     )
@@ -66,12 +91,32 @@ extension NewOnlyTextMessageTableViewCell {
                         [
                             NSAttributedString.Key.foregroundColor: UIColor.Sphinx.PrimaryBlue,
                             NSAttributedString.Key.underlineStyle: NSUnderlineStyle.single.rawValue,
-                            NSAttributedString.Key.font: messageContent.font
+                            NSAttributedString.Key.font: UIFont.getMessageFont()
                         ],
                         range: match.range
                     )
                     
                     urlRanges.append(match.range)
+                }
+                
+                ///Markdown Links formatting
+                for (textCheckingResult, _, link, _) in messageContent.linkMarkdownMatches {
+                    
+                    let nsRange = textCheckingResult.range
+                    
+                    if let url = URL(string: link) {
+                        attributedString.addAttributes(
+                            [
+                                NSAttributedString.Key.link: url,
+                                NSAttributedString.Key.foregroundColor: UIColor.Sphinx.PrimaryBlue,
+                                NSAttributedString.Key.underlineStyle: NSUnderlineStyle.single.rawValue,
+                                NSAttributedString.Key.font: UIFont.getMessageFont()
+                            ],
+                            range: nsRange
+                        )
+                    }
+                    
+                    urlRanges.append(nsRange)
                 }
                 
                 ///Search term formatting
