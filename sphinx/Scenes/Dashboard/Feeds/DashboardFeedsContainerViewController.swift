@@ -243,22 +243,25 @@ extension DashboardFeedsContainerViewController {
     private func mainContentViewController(
         for filterChip: ContentFilterOption
     ) -> UIViewController {
-        switch activeFilterOption.id {
-        case ContentFilterOption.browse.id:
-            return videoFeedCollectionViewController
-        case ContentFilterOption.discover.id:
-            return allTribeFeedsCollectionViewController
-        case ContentFilterOption.listen.id:
-            return podcastFeedCollectionViewController
-        case ContentFilterOption.watch.id:
-            return videoFeedCollectionViewController
-        case ContentFilterOption.read.id:
-            return newsletterFeedCollectionViewController
-        case ContentFilterOption.play.id:
-            return playFeedCollectionViewController
-        default:
-            preconditionFailure()
-        }
+        //TODO: Do merge with legacy
+        //MARK: temporarily disable 
+        return videoFeedCollectionViewController
+//        switch activeFilterOption.id {
+//        case ContentFilterOption.browse.id:
+//            return videoFeedCollectionViewController
+//        case ContentFilterOption.discover.id:
+//            return allTribeFeedsCollectionViewController
+//        case ContentFilterOption.listen.id:
+//            return podcastFeedCollectionViewController
+//        case ContentFilterOption.watch.id:
+//            return videoFeedCollectionViewController
+//        case ContentFilterOption.read.id:
+//            return newsletterFeedCollectionViewController
+//        case ContentFilterOption.play.id:
+//            return playFeedCollectionViewController
+//        default:
+//            preconditionFailure()
+//        }
     }
     
     private func handleFilterChipChange(

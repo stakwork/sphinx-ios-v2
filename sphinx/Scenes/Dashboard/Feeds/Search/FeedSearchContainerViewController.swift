@@ -62,11 +62,13 @@ class FeedSearchContainerViewController: UIViewController {
     private var isShowingStartingEmptyStateVC: Bool = true
     
     func prePopulateSearch(){
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: {
+        self.emptyStateViewController.view.isHidden = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: {
             if(self.feedType != .SearchTorrent && self.prePopulateDebounce == false){
                 self.fetchResults(for: "", and: self.feedType ?? .BrowseTorrent)
                 self.prePopulateDebounce = true
-                DelayPerformedHelper.performAfterDelay(seconds: 2.0, completion: {self.prePopulateDebounce = false})
+                DelayPerformedHelper.performAfterDelay(seconds: 0.01, completion: {self.prePopulateDebounce = false})
+                self.emptyStateViewController.view.isHidden = false
             }
         })
     }
