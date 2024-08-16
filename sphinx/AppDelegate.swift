@@ -74,7 +74,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         }
         
         try? AVAudioSession.sharedInstance().setCategory(.playback)
-        
+                
         setAppConfiguration()
         registerAppRefresh()
         configureGiphy()
@@ -498,6 +498,11 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
     ) {
         let tokenParts = deviceToken.map { data in String(format: "%02.2hhx", data) }
         let token = tokenParts.joined()
+        
+        //added for special build to help debug!
+        AlertHelper.showAlert(title: "Registered Device token:", message: token, completion: {
+            ClipboardHelper.copyToClipboard(text: token)
+        })
         UserContact.updateDeviceId(deviceId: token)
     }
 
