@@ -692,6 +692,7 @@
 		CE842DEF298D61CF00620AD3 /* BadgeAdminListHeaderCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = CE842DED298D61CF00620AD3 /* BadgeAdminListHeaderCell.xib */; };
 		CE842DF12992D0F400620AD3 /* BadgeTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE842DF02992D0F400620AD3 /* BadgeTemplate.swift */; };
 		CE8797382C6E7CC800E2B422 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE677B732C6A88220050CFFC /* NotificationService.swift */; };
+		CE87973A2C6FFE8300E2B422 /* PushNotificationProcessManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8797392C6FFE8300E2B422 /* PushNotificationProcessManager.swift */; };
 		CE887EFA2B1E5C7B00DBA670 /* SphinxOnionManager+ContactExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE887EF92B1E5C7B00DBA670 /* SphinxOnionManager+ContactExtension.swift */; };
 		CE91E59A29885175008BA6EA /* MemberBadgeDetailVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE91E59929885175008BA6EA /* MemberBadgeDetailVC.swift */; };
 		CE94A50D2A4B2BF6001EDF7E /* MentionOrMacroItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE94A50C2A4B2BF6001EDF7E /* MentionOrMacroItem.swift */; };
@@ -1914,6 +1915,7 @@
 		CE842DEC298D61CF00620AD3 /* BadgeAdminListHeaderCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BadgeAdminListHeaderCell.swift; sourceTree = "<group>"; };
 		CE842DED298D61CF00620AD3 /* BadgeAdminListHeaderCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = BadgeAdminListHeaderCell.xib; sourceTree = "<group>"; };
 		CE842DF02992D0F400620AD3 /* BadgeTemplate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BadgeTemplate.swift; sourceTree = "<group>"; };
+		CE8797392C6FFE8300E2B422 /* PushNotificationProcessManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationProcessManager.swift; sourceTree = "<group>"; };
 		CE887EF92B1E5C7B00DBA670 /* SphinxOnionManager+ContactExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SphinxOnionManager+ContactExtension.swift"; sourceTree = "<group>"; };
 		CE91E59929885175008BA6EA /* MemberBadgeDetailVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberBadgeDetailVC.swift; sourceTree = "<group>"; };
 		CE94A50C2A4B2BF6001EDF7E /* MentionOrMacroItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MentionOrMacroItem.swift; sourceTree = "<group>"; };
@@ -3466,6 +3468,7 @@
 				47E61581237DC7F400630FD1 /* sphinx.entitlements */,
 				4779F170232AA0F300D35E81 /* Info.plist */,
 				4779F161232AA0F200D35E81 /* AppDelegate.swift */,
+				CE8797392C6FFE8300E2B422 /* PushNotificationProcessManager.swift */,
 				CEA6BC1F2C1794AD00494071 /* NetworkMonitor.swift */,
 				4779F16B232AA0F300D35E81 /* Assets.xcassets */,
 				475BDD22232AC71000C5BBD6 /* Colors.xcassets */,
@@ -4789,8 +4792,6 @@
 				CE677B772C6A88220050CFFC /* PBXTargetDependency */,
 			);
 			name = sphinx;
-			packageProductDependencies = (
-			);
 			productName = sphinx;
 			productReference = 4779F15E232AA0F200D35E81 /* sphinx.app */;
 			productType = "com.apple.product-type.application";
@@ -4889,8 +4890,6 @@
 				"zh-Hant",
 			);
 			mainGroup = 4779F155232AA0F200D35E81;
-			packageReferences = (
-			);
 			productRefGroup = 4779F15F232AA0F200D35E81 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -5688,6 +5687,7 @@
 				472092C52A268A1500468796 /* ChatAttachmentViewController+AnimatinsExtension.swift in Sources */,
 				473596932A70031000489606 /* ThreadsListDataSource.swift in Sources */,
 				47357A112729A13600A49EEE /* NewsletterFeed+DisplayUtils.swift in Sources */,
+				CE87973A2C6FFE8300E2B422 /* PushNotificationProcessManager.swift in Sources */,
 				4705D3992799AAB5009C0729 /* CustomBoostView.swift in Sources */,
 				F39767C826C5A85F00DDFC0A /* LeftMenuDelegate.swift in Sources */,
 				479A03E92583A7180093DB30 /* LocalNetworkPermissionService.swift in Sources */,

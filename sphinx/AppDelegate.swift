@@ -85,9 +85,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         registerForVoIP()
         
         setInitialVC()
-        
-        simulateLocalNotification()
-        
+                
         NetworkMonitor.shared.startMonitoring()
 
         return true
@@ -200,8 +198,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         guard let notificationUserInfo = notificationUserInfo else {
             return
         }
-        if let encryptedChild = getEncryptedIndexFrom(notification: notificationUserInfo),
-           let chat = SphinxOnionManager.sharedInstance.findChatForNotification(child: encryptedChild)
+        if let chat = PushNotificationProcessManager.shared.mapNotificationToChat(notificationUserInfo: notificationUserInfo)
         {
             goTo(chat: chat)
         }
@@ -539,21 +536,6 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         return nil
     }
     
-    func getEncryptedIndexFrom(
-        notification: [String: AnyObject]?
-    ) -> String? {
-        if
-            let notification = notification,
-            let aps = notification["aps"] as? [String: AnyObject],
-            let customData = aps["custom_data"] as? [String: AnyObject]
-        {
-            if let chatId = customData["child"] as? String {
-                return chatId
-            }
-        }
-        return nil
-    }
-    
     func goTo(chat: Chat) {
         if let rootVC = getRootViewController() {
             if let centerVC = rootVC.getLastCenterViewController() {
@@ -641,34 +623,6 @@ extension AppDelegate : PKPushRegistryDelegate{
             return .Sideload
         }
     }
-    
-    func simulateLocalNotification() {
-        let content = UNMutableNotificationContent()
-        content.title = "Test Notification"
-        content.body = "This is a test notification"
-        content.sound = UNNotificationSound.default
-        
-        // Adding the mutable-content key
-        content.userInfo = [
-            "encryptedMessage": "testEncryptedData123",
-            "aps": ["mutable-content": 1]  // Adding the mutable-content key here
-        ]
-        
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 5, repeats: false)
-        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
-        
-        UNUserNotificationCenter.current().add(request) { error in
-            if let error = error {
-                print("Error adding notification: \(error)")
-            }
-        }
-        
-//        DispatchQueue.main.asyncAfter(deadline: .now() + 60.0, execute: {
-//            self.simulateLocalNotification()
-//        })
-    }
-
-    
     
 }
 

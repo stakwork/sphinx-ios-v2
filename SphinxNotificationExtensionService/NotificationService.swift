@@ -1,4 +1,5 @@
 import UserNotifications
+import UIKit
 
 class NotificationService: UNNotificationServiceExtension {
     
@@ -18,6 +19,8 @@ class NotificationService: UNNotificationServiceExtension {
         
         print("NotificationService: Received notification")
         print("Notification content: \(request.content)")
+        
+//        PushNotificationProcessManager.shared.sharedFunctionality()
         
         if let bestAttemptContent = bestAttemptContent {
             // Perform your computations here
