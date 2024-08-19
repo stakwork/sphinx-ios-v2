@@ -44,17 +44,29 @@ class NotificationService: UNNotificationServiceExtension {
                 coreDataManager.saveContext()
                 
                 // Start monitoring for the processing result using file coordination
-                observeFileChanges()
             }
         }
     }
     
-    func observeFileChanges() {
-        guard let appGroupURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.gl.sphinx.v2")  else { return }
+    func createAndMonitorFile() {
+        guard let appGroupURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.gl.sphinx.v2") else { return }
         let fileURL = appGroupURL.appendingPathComponent("notification_trigger.txt")
         
+        // Ensure the file exists before monitoring
+        if !FileManager.default.fileExists(atPath: fileURL.path) {
+            FileManager.default.createFile(atPath: fileURL.path, contents: nil, attributes: nil)
+        }
+        
+        // Start monitoring the file
+        observeFileChanges(at: fileURL)
+    }
+    
+    func observeFileChanges(at fileURL: URL) {
         // Monitor the file for changes
-        let source = DispatchSource.makeFileSystemObjectSource(fileDescriptor: open(fileURL.path, O_EVTONLY), eventMask: .write, queue: DispatchQueue.global())
+        let fileDescriptor = open(fileURL.path, O_EVTONLY)
+        guard fileDescriptor != -1 else { return }
+        
+        let source = DispatchSource.makeFileSystemObjectSource(fileDescriptor: fileDescriptor, eventMask: .write, queue: DispatchQueue.global())
         
         source.setEventHandler {
             // File has changed, fetch the updated data

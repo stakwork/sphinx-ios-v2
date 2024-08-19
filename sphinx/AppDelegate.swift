@@ -686,7 +686,7 @@ extension AppDelegate : PKPushRegistryDelegate{
     }
     
     func notifyExtension() {
-        guard let appGroupURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.yourcompany.yourapp") else { return }
+        guard let appGroupURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.gl.sphinx.v2") else { return }
         let fileURL = appGroupURL.appendingPathComponent("notification_trigger.txt")
         
         fileCoordinator.coordinate(writingItemAt: fileURL, options: .forReplacing, error: nil) { (url) in
