@@ -50,7 +50,7 @@ class NotificationService: UNNotificationServiceExtension {
     }
     
     func observeFileChanges() {
-        guard let appGroupURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.yourcompany.yourapp") else { return }
+        guard let appGroupURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.gl.sphinx.v2")  else { return }
         let fileURL = appGroupURL.appendingPathComponent("notification_trigger.txt")
         
         // Monitor the file for changes
