@@ -16,11 +16,15 @@ import BackgroundTasks
 import AVFAudio
 import SDWebImageSVGCoder
 import PushKit
+import CoreData
+
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
     
     var window: UIWindow?
+    let sharedPushNotificationContainerManager = SharedPushNotificationContainerManager.shared
+    let fileCoordinator = NSFileCoordinator()
 
     var style : UIUserInterfaceStyle? = nil
     var notificationUserInfo : [String: AnyObject]? = nil
@@ -85,6 +89,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         registerForVoIP()
         
         setInitialVC()
+        setupSharedNotifExtension()
                 
         NetworkMonitor.shared.startMonitoring()
 
@@ -198,12 +203,38 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         guard let notificationUserInfo = notificationUserInfo else {
             return
         }
-        if let chat = PushNotificationProcessManager.shared.mapNotificationToChat(notificationUserInfo: notificationUserInfo)
+        if let chat = self.mapNotificationToChat(notificationUserInfo: notificationUserInfo)
         {
             goTo(chat: chat)
         }
         
         self.notificationUserInfo = nil
+    }
+    
+    func mapNotificationToChat(notificationUserInfo : [String: AnyObject])->Chat? {
+        // Your shared logic here
+        if let encryptedChild = getEncryptedIndexFrom(notification: notificationUserInfo),
+           let chat = SphinxOnionManager.sharedInstance.findChatForNotification(child: encryptedChild)
+        {
+            return chat
+        }
+        
+        return nil
+    }
+    
+    func getEncryptedIndexFrom(
+        notification: [String: AnyObject]?
+    ) -> String? {
+        if
+            let notification = notification,
+            let aps = notification["aps"] as? [String: AnyObject],
+            let customData = aps["custom_data"] as? [String: AnyObject]
+        {
+            if let chatId = customData["child"] as? String {
+                return chatId
+            }
+        }
+        return nil
     }
     
     func applicationWillTerminate(
@@ -215,6 +246,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
         podcastPlayerController.finishAndSaveContentConsumed()
         CoreDataManager.sharedManager.saveContext()
+        
+        tearDownSharedNotifExtension()
     }
     
     ///On app launch
@@ -267,6 +300,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
            let relay : String = UserDefaults.Keys.phoneSignerRelay.get(){
             let _ = CrypterManager.sharedInstance.performWalletFinalization(network: network, host: host, relay: relay)
         }
+    }
+    
+    func setupSharedNotifExtension(){
+        NotificationCenter.default.addObserver(self, selector: #selector(coreDataDidChange(_:)), name: .NSManagedObjectContextDidSave, object: sharedPushNotificationContainerManager.context)
+    }
+    
+    func tearDownSharedNotifExtension(){
+        NotificationCenter.default.removeObserver(self, name: .NSManagedObjectContextDidSave, object: sharedPushNotificationContainerManager.context)
     }
     
     //Initial VC
@@ -621,6 +662,35 @@ extension AppDelegate : PKPushRegistryDelegate{
         } else {
             // No receipt means sideloaded (in most cases)
             return .Sideload
+        }
+    }
+    
+    @objc func coreDataDidChange(_ notification: Notification) {
+        guard let userInfo = notification.userInfo else { return }
+        let inserts = userInfo[NSInsertedObjectsKey] as? Set<NSManagedObject> ?? []
+
+        for insert in inserts {
+            if let notificationData = insert as? NotificationData {
+                // Perform your processing here
+                print("New notification data received: \(notificationData.title ?? "No Title")")
+                
+                // After processing, you can update the CoreData entry with the result
+                notificationData.title = "Processed: \(notificationData.title ?? "")"
+                notificationData.body = "Processed: \(notificationData.body ?? "")"
+                
+                sharedPushNotificationContainerManager.saveContext()
+                
+                notifyExtension()
+            }
+        }
+    }
+    
+    func notifyExtension() {
+        guard let appGroupURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.yourcompany.yourapp") else { return }
+        let fileURL = appGroupURL.appendingPathComponent("notification_trigger.txt")
+        
+        fileCoordinator.coordinate(writingItemAt: fileURL, options: .forReplacing, error: nil) { (url) in
+            try? "trigger".write(to: url, atomically: true, encoding: .utf8)
         }
     }
     

@@ -674,6 +674,11 @@
 		CE677B742C6A88220050CFFC /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE677B732C6A88220050CFFC /* NotificationService.swift */; };
 		CE677B782C6A88220050CFFC /* SphinxNotificationExtensionService.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CE677B712C6A88220050CFFC /* SphinxNotificationExtensionService.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		CE6784602968B0E000342905 /* FeedsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE67845F2968B0E000342905 /* FeedsManager.swift */; };
+		CE67901F2C73E05100BC2D38 /* sphinx.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 47F35D4A2373156A0042A58F /* sphinx.xcdatamodeld */; };
+		CE6790212C73E85400BC2D38 /* NotificationData.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE6790202C73E85400BC2D38 /* NotificationData.swift */; };
+		CE6790222C73E85400BC2D38 /* NotificationData.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE6790202C73E85400BC2D38 /* NotificationData.swift */; };
+		CE6790242C73E86A00BC2D38 /* NotificationData+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE6790232C73E86A00BC2D38 /* NotificationData+CoreDataProperties.swift */; };
+		CE6790252C73E86A00BC2D38 /* NotificationData+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE6790232C73E86A00BC2D38 /* NotificationData+CoreDataProperties.swift */; };
 		CE6C83FC29B918BD00E9FE7C /* TopMostVCsHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE6C83FB29B918BD00E9FE7C /* TopMostVCsHelper.swift */; };
 		CE792FAB2AFED7AF007FD4FE /* Server+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE792FAA2AFED7AF007FD4FE /* Server+CoreDataClass.swift */; };
 		CE792FAD2AFED7B9007FD4FE /* Server+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE792FAC2AFED7B9007FD4FE /* Server+CoreDataProperties.swift */; };
@@ -692,7 +697,7 @@
 		CE842DEF298D61CF00620AD3 /* BadgeAdminListHeaderCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = CE842DED298D61CF00620AD3 /* BadgeAdminListHeaderCell.xib */; };
 		CE842DF12992D0F400620AD3 /* BadgeTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE842DF02992D0F400620AD3 /* BadgeTemplate.swift */; };
 		CE8797382C6E7CC800E2B422 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE677B732C6A88220050CFFC /* NotificationService.swift */; };
-		CE87973A2C6FFE8300E2B422 /* PushNotificationProcessManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8797392C6FFE8300E2B422 /* PushNotificationProcessManager.swift */; };
+		CE87973A2C6FFE8300E2B422 /* SharedPushNotificationContainerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8797392C6FFE8300E2B422 /* SharedPushNotificationContainerManager.swift */; };
 		CE887EFA2B1E5C7B00DBA670 /* SphinxOnionManager+ContactExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE887EF92B1E5C7B00DBA670 /* SphinxOnionManager+ContactExtension.swift */; };
 		CE91E59A29885175008BA6EA /* MemberBadgeDetailVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE91E59929885175008BA6EA /* MemberBadgeDetailVC.swift */; };
 		CE94A50D2A4B2BF6001EDF7E /* MentionOrMacroItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE94A50C2A4B2BF6001EDF7E /* MentionOrMacroItem.swift */; };
@@ -702,6 +707,7 @@
 		CE9A18582A1D6AC900F176DE /* MediaStorageSourceTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = CE9A18562A1D6AC900F176DE /* MediaStorageSourceTableViewCell.xib */; };
 		CE9A185A2A1D736700F176DE /* ProfileManageStorageSourceDetailsVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE9A18592A1D736700F176DE /* ProfileManageStorageSourceDetailsVC.swift */; };
 		CE9A185C2A1D7AF900F176DE /* ProfileManageStorageSourceDetailsVM.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE9A185B2A1D7AF900F176DE /* ProfileManageStorageSourceDetailsVM.swift */; };
+		CE9D766D2C73D1EB008CEEA0 /* SharedPushNotificationContainerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8797392C6FFE8300E2B422 /* SharedPushNotificationContainerManager.swift */; };
 		CEA2ED152A12D6D000DAC671 /* StorageSummaryView.xib in Resources */ = {isa = PBXBuildFile; fileRef = CEA2ED142A12D6D000DAC671 /* StorageSummaryView.xib */; };
 		CEA2ED172A12D6F700DAC671 /* StorageSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEA2ED162A12D6F700DAC671 /* StorageSummaryView.swift */; };
 		CEA6BC202C1794AD00494071 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEA6BC1F2C1794AD00494071 /* NetworkMonitor.swift */; };
@@ -1895,6 +1901,8 @@
 		CE677B752C6A88220050CFFC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		CE677B7E2C6A911D0050CFFC /* SphinxNotificationExtensionService.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SphinxNotificationExtensionService.entitlements; sourceTree = "<group>"; };
 		CE67845F2968B0E000342905 /* FeedsManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FeedsManager.swift; sourceTree = "<group>"; };
+		CE6790202C73E85400BC2D38 /* NotificationData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationData.swift; sourceTree = "<group>"; };
+		CE6790232C73E86A00BC2D38 /* NotificationData+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NotificationData+CoreDataProperties.swift"; sourceTree = "<group>"; };
 		CE6C83FB29B918BD00E9FE7C /* TopMostVCsHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopMostVCsHelper.swift; sourceTree = "<group>"; };
 		CE7840162B922F4D002038AE /* sphinx 48.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 48.xcdatamodel"; sourceTree = "<group>"; };
 		CE792FAA2AFED7AF007FD4FE /* Server+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Server+CoreDataClass.swift"; sourceTree = "<group>"; };
@@ -1915,7 +1923,7 @@
 		CE842DEC298D61CF00620AD3 /* BadgeAdminListHeaderCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BadgeAdminListHeaderCell.swift; sourceTree = "<group>"; };
 		CE842DED298D61CF00620AD3 /* BadgeAdminListHeaderCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = BadgeAdminListHeaderCell.xib; sourceTree = "<group>"; };
 		CE842DF02992D0F400620AD3 /* BadgeTemplate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BadgeTemplate.swift; sourceTree = "<group>"; };
-		CE8797392C6FFE8300E2B422 /* PushNotificationProcessManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationProcessManager.swift; sourceTree = "<group>"; };
+		CE8797392C6FFE8300E2B422 /* SharedPushNotificationContainerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedPushNotificationContainerManager.swift; sourceTree = "<group>"; };
 		CE887EF92B1E5C7B00DBA670 /* SphinxOnionManager+ContactExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SphinxOnionManager+ContactExtension.swift"; sourceTree = "<group>"; };
 		CE91E59929885175008BA6EA /* MemberBadgeDetailVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberBadgeDetailVC.swift; sourceTree = "<group>"; };
 		CE94A50C2A4B2BF6001EDF7E /* MentionOrMacroItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MentionOrMacroItem.swift; sourceTree = "<group>"; };
@@ -1967,6 +1975,7 @@
 		CE9A18562A1D6AC900F176DE /* MediaStorageSourceTableViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = MediaStorageSourceTableViewCell.xib; sourceTree = "<group>"; };
 		CE9A18592A1D736700F176DE /* ProfileManageStorageSourceDetailsVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileManageStorageSourceDetailsVC.swift; sourceTree = "<group>"; };
 		CE9A185B2A1D7AF900F176DE /* ProfileManageStorageSourceDetailsVM.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileManageStorageSourceDetailsVM.swift; sourceTree = "<group>"; };
+		CE9D766E2C73D569008CEEA0 /* sphinx 51.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 51.xcdatamodel"; sourceTree = "<group>"; };
 		CEA2ED142A12D6D000DAC671 /* StorageSummaryView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = StorageSummaryView.xib; sourceTree = "<group>"; };
 		CEA2ED162A12D6F700DAC671 /* StorageSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageSummaryView.swift; sourceTree = "<group>"; };
 		CEA6BC1F2C1794AD00494071 /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
@@ -3468,7 +3477,9 @@
 				47E61581237DC7F400630FD1 /* sphinx.entitlements */,
 				4779F170232AA0F300D35E81 /* Info.plist */,
 				4779F161232AA0F200D35E81 /* AppDelegate.swift */,
-				CE8797392C6FFE8300E2B422 /* PushNotificationProcessManager.swift */,
+				CE8797392C6FFE8300E2B422 /* SharedPushNotificationContainerManager.swift */,
+				CE6790202C73E85400BC2D38 /* NotificationData.swift */,
+				CE6790232C73E86A00BC2D38 /* NotificationData+CoreDataProperties.swift */,
 				CEA6BC1F2C1794AD00494071 /* NetworkMonitor.swift */,
 				4779F16B232AA0F300D35E81 /* Assets.xcassets */,
 				475BDD22232AC71000C5BBD6 /* Colors.xcassets */,
@@ -5361,6 +5372,7 @@
 				47E6A4AC2A2E237400A9509E /* PodcastBoostView.swift in Sources */,
 				4787F88724746A5400CCE8B9 /* AlignedCollectionViewFlowLayout.swift in Sources */,
 				473BC88D25F287340070E519 /* PodcastNewEpisodeViewController.swift in Sources */,
+				CE6790242C73E86A00BC2D38 /* NotificationData+CoreDataProperties.swift in Sources */,
 				F32A696726CFEF600004B8B3 /* PodcastModel+Properties.swift in Sources */,
 				CEF88DCC29B64F4F00DC1C40 /* UnifiedEpisodeView.swift in Sources */,
 				47FA18C224253BDD00469C8F /* InvoiceManager.swift in Sources */,
@@ -5649,6 +5661,7 @@
 				F352073926F228A7004B2518 /* CodingUserInfoKey.swift in Sources */,
 				47904C2224BF54DA00710E7A /* NotificationSoundHelper.swift in Sources */,
 				CE842DEE298D61CF00620AD3 /* BadgeAdminListHeaderCell.swift in Sources */,
+				CE6790212C73E85400BC2D38 /* NotificationData.swift in Sources */,
 				473258AC241BD700006E6602 /* CommonPaymentViewController.swift in Sources */,
 				475BDD2C232ACA0700C5BBD6 /* String.swift in Sources */,
 				47F7273825791D8600A794B9 /* ContactLinkPreviewView.swift in Sources */,
@@ -5687,7 +5700,7 @@
 				472092C52A268A1500468796 /* ChatAttachmentViewController+AnimatinsExtension.swift in Sources */,
 				473596932A70031000489606 /* ThreadsListDataSource.swift in Sources */,
 				47357A112729A13600A49EEE /* NewsletterFeed+DisplayUtils.swift in Sources */,
-				CE87973A2C6FFE8300E2B422 /* PushNotificationProcessManager.swift in Sources */,
+				CE87973A2C6FFE8300E2B422 /* SharedPushNotificationContainerManager.swift in Sources */,
 				4705D3992799AAB5009C0729 /* CustomBoostView.swift in Sources */,
 				F39767C826C5A85F00DDFC0A /* LeftMenuDelegate.swift in Sources */,
 				479A03E92583A7180093DB30 /* LocalNetworkPermissionService.swift in Sources */,
@@ -5844,6 +5857,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				CE677B742C6A88220050CFFC /* NotificationService.swift in Sources */,
+				CE9D766D2C73D1EB008CEEA0 /* SharedPushNotificationContainerManager.swift in Sources */,
+				CE6790222C73E85400BC2D38 /* NotificationData.swift in Sources */,
+				CE6790252C73E86A00BC2D38 /* NotificationData+CoreDataProperties.swift in Sources */,
+				CE67901F2C73E05100BC2D38 /* sphinx.xcdatamodeld in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -7081,6 +7098,7 @@
 		47F35D4A2373156A0042A58F /* sphinx.xcdatamodeld */ = {
 			isa = XCVersionGroup;
 			children = (
+				CE9D766E2C73D569008CEEA0 /* sphinx 51.xcdatamodel */,
 				472A4E1B2C4EB5C400B10934 /* sphinx 50.xcdatamodel */,
 				CEEF6E0D2BD2ECE300953752 /* sphinx 49.xcdatamodel */,
 				CE7840162B922F4D002038AE /* sphinx 48.xcdatamodel */,
@@ -7132,7 +7150,7 @@
 				475E4162238588A200928931 /* sphinx 2.xcdatamodel */,
 				47F35D4B2373156A0042A58F /* sphinx.xcdatamodel */,
 			);
-			currentVersion = 472A4E1B2C4EB5C400B10934 /* sphinx 50.xcdatamodel */;
+			currentVersion = CE9D766E2C73D569008CEEA0 /* sphinx 51.xcdatamodel */;
 			path = sphinx.xcdatamodeld;
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;

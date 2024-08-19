@@ -1,64 +1,96 @@
 import UserNotifications
-import UIKit
+import CoreData
 
 class NotificationService: UNNotificationServiceExtension {
     
     var contentHandler: ((UNNotificationContent) -> Void)?
     var bestAttemptContent: UNMutableNotificationContent?
+    let coreDataManager = SharedPushNotificationContainerManager.shared
     
-    override init() {
-        super.init()
-        // Add a simple log to confirm initialization
-        print("NotificationService initialized!")
+    var persistentContainer: NSPersistentContainer?
 
-    }
+        override init() {
+            super.init()
+            initializeCoreDataStack()
+        }
 
+        func initializeCoreDataStack() {
+            let container = NSPersistentContainer(name: "NotificationData") // Use your actual Core Data model name
+            container.loadPersistentStores { storeDescription, error in
+                if let error = error {
+                    fatalError("Unresolved error \(error)")
+                }
+            }
+            self.persistentContainer = container
+        }
+    
     override func didReceive(_ request: UNNotificationRequest, withContentHandler contentHandler: @escaping (UNNotificationContent) -> Void) {
         self.contentHandler = contentHandler
         bestAttemptContent = (request.content.mutableCopy() as? UNMutableNotificationContent)
         
         print("NotificationService: Received notification")
-        print("Notification content: \(request.content)")
         
-//        PushNotificationProcessManager.shared.sharedFunctionality()
-        
-        if let bestAttemptContent = bestAttemptContent {
-            // Perform your computations here
-            bestAttemptContent.title = "The Times 03/Jan/2009 [Modified]"
-            bestAttemptContent.body = "CHANCELLOR ON BRINK  [Modified]"
-            bestAttemptContent.userInfo["processedData"] = "abc123"
-//            if let encryptedChild = getEncryptedIndexFrom(notification: bestAttemptContent.userInfo) {
-//                // Decrypt or process the encryptedChild
-//                let processedData = processEncryptedChild(encryptedChild)
-//                
-//                // Modify the notification content
-//                bestAttemptContent.title = "CHANCELLOR ON BRINK [Modified]"
-//                bestAttemptContent.body = "You have a new message"
-//                bestAttemptContent.userInfo["processedData"] = processedData
-//            }
+        if let bestAttemptContent = bestAttemptContent,
+           let _ = bestAttemptContent.userInfo as? [String: AnyObject] {
             
-            contentHandler(bestAttemptContent)
+            // Save the notification data to CoreData
+            let context = coreDataManager.context
+            if let notificationData = NSEntityDescription.insertNewObject(forEntityName: "NotificationData", into: context) as? NotificationData{
+                notificationData.title = bestAttemptContent.title
+                notificationData.body = bestAttemptContent.body
+                notificationData.timestamp = Date()
+                //notificationData.userInfo = userInfo
+                
+                coreDataManager.saveContext()
+                
+                // Start monitoring for the processing result using file coordination
+                observeFileChanges()
+            }
         }
+    }
+    
+    func observeFileChanges() {
+        guard let appGroupURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.yourcompany.yourapp") else { return }
+        let fileURL = appGroupURL.appendingPathComponent("notification_trigger.txt")
+        
+        // Monitor the file for changes
+        let source = DispatchSource.makeFileSystemObjectSource(fileDescriptor: open(fileURL.path, O_EVTONLY), eventMask: .write, queue: DispatchQueue.global())
+        
+        source.setEventHandler {
+            // File has changed, fetch the updated data
+            self.checkForProcessingResult()
+        }
+        
+        source.resume()
+    }
+    
+    func checkForProcessingResult() {
+        let context = coreDataManager.context
+        let fetchRequest: NSFetchRequest<NotificationData> = NotificationData.fetchRequest()
+        
+        // Use appropriate predicate to fetch the correct data
+        do{
+            if let result = try context.fetch(fetchRequest).last {
+                // Modify the notification with the processed data
+               
+                bestAttemptContent?.title = result.title ?? ""
+                bestAttemptContent?.body = result.body ?? ""
+
+                // Call the content handler with the modified content
+                if let bestAttemptContent = bestAttemptContent {
+                    contentHandler?(bestAttemptContent)
+                }
+            }
+        }
+        catch{
+            print("")
+        }
+        
     }
     
     override func serviceExtensionTimeWillExpire() {
         if let contentHandler = contentHandler, let bestAttemptContent = bestAttemptContent {
             contentHandler(bestAttemptContent)
         }
-    }
-    
-    private func getEncryptedIndexFrom(notification: [AnyHashable: Any]) -> String? {
-        if let aps = notification["aps"] as? [String: Any],
-           let customData = aps["custom_data"] as? [String: Any],
-           let child = customData["child"] as? String {
-            return child
-        }
-        return nil
-    }
-    
-    private func processEncryptedChild(_ encryptedChild: String) -> String {
-        // Implement your decryption or processing logic here
-        // This is just a placeholder implementation
-        return "Processed: \(encryptedChild)"
     }
 }
