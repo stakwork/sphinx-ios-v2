@@ -30,9 +30,18 @@ class HistoryDataSource : NSObject {
     }
     
     func loadTransactions(transactions: [PaymentTransaction]) {
+        if self.transactions.count > 0 {
+            addMoreTransactions(transactions: transactions)
+            return
+        }
+        
         self.shouldShowLoadingWheel = (transactions.count > 0 && transactions.count % 50 == 0)
         self.transactions = transactions
         self.tableView.reloadData()
+        
+        DelayPerformedHelper.performAfterDelay(seconds: 0.5) {
+            self.insertingRows = false
+        }
     }
     
     func addMoreTransactions(transactions: [PaymentTransaction]) {
