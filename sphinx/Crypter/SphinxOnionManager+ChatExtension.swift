@@ -400,6 +400,10 @@ extension SphinxOnionManager {
                     message?.expirationDate = expiry
                 }
                 
+                if let paymentHash = rr.msgs.first?.paymentHash {
+                    message?.paymentHash = paymentHash
+                }
+                
                 message?.createdAt = date
                 message?.updatedAt = date
                 message?.uuid = sentUUID
@@ -447,6 +451,7 @@ extension SphinxOnionManager {
             paymentMessage?.updatedAt = date
             paymentMessage?.uuid = sentUUID
             paymentMessage?.tag = paymentMsg.tag
+            paymentMessage?.paymentHash = paymentMsg.paymentHash
             paymentMessage?.setAsLastMessage()
             paymentMessage?.managedObjectContext?.saveContext()
             
