@@ -187,7 +187,7 @@ struct GenericIncomingMessage: Mappable {
             let prd = PaymentRequestDecoder()
             prd.decodePaymentRequest(paymentRequest: invoice)
             
-            if let paymentHash = try? Sphinx.paymentHashFromInvoice(bolt11: invoice) {
+            if let paymentHash = try? sphinx.paymentHashFromInvoice(bolt11: invoice) {
                 self.paymentHash = paymentHash
             }
             
