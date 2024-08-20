@@ -332,9 +332,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 print("New notification data found: \(notificationData.title ?? "")")
                 
                 // Update the timestamp to trigger the other file
-                notificationData.title = "WE ON BRINK SONNN"
+                if let nd = notificationData.userInfo as? [String:AnyObject],
+                   let chat = mapNotificationToChat(notificationUserInfo: nd){
+                    let chatName = chat.getName()
+                    notificationData.title = "New message from \(chatName)"
+                    notificationData.body = "" //TODO: Do we want to display this or bad opsec?
+                }
+                else{
+                    notificationData.title = "You have a new Sphinx message"
+                }
                 notificationData.timestamp = Date()
-                
                 sharedPushNotificationContainerManager.saveContext()
             }
         } catch let error {
