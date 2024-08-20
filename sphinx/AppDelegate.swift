@@ -584,9 +584,9 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         let token = tokenParts.joined()
         
         //added for special build to help debug!
-        AlertHelper.showAlert(title: "Registered Device token:", message: token, completion: {
-            ClipboardHelper.copyToClipboard(text: token)
-        })
+//        AlertHelper.showAlert(title: "Registered Device token:", message: token, completion: {
+//            ClipboardHelper.copyToClipboard(text: token)
+//        })
         UserContact.updateDeviceId(deviceId: token)
     }
 
