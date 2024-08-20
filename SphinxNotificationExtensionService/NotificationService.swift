@@ -6,13 +6,13 @@ class NotificationService: UNNotificationServiceExtension {
     var contentHandler: ((UNNotificationContent) -> Void)?
     var bestAttemptContent: UNMutableNotificationContent?
     let sharedPushNotificationContainerManager = SharedPushNotificationContainerManager.shared
-    
-    var timer: Timer?
     var startTime: Date?
+    let maxRetries:Int = 30
+    var retriesCount:Int=0
     
     override init() {
         super.init()
-        sharedPushNotificationContainerManager.printAllNotificationData()
+//        sharedPushNotificationContainerManager.printAllNotificationData()
     }
     
     override func didReceive(_ request: UNNotificationRequest, withContentHandler contentHandler: @escaping (UNNotificationContent) -> Void) {
@@ -38,7 +38,7 @@ class NotificationService: UNNotificationServiceExtension {
                 
                 // Start a timer to periodically check for any new data added after this point
                 startTime = Date()
-                timer = Timer.scheduledTimer(timeInterval: 0.1, target: self, selector: #selector(checkForNewNotifications), userInfo: nil, repeats: true)
+                retriesCount = 0
                 
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: {
                     self.checkForNewNotifications()
@@ -46,11 +46,6 @@ class NotificationService: UNNotificationServiceExtension {
             }
         }
     }
-    
-//    func startTimer() {
-//        startTime = Date()
-//        timer = Timer.scheduledTimer(timeInterval: 1.0, target: self, selector: #selector(checkForNewNotifications), userInfo: nil, repeats: true)
-//    }
     
     @objc func checkForNewNotifications() {
         print("checkForNewNotifications")
@@ -77,8 +72,15 @@ class NotificationService: UNNotificationServiceExtension {
                 }
                 
                 // Invalidate the timer since we found the data we were looking for
-                timer?.invalidate()
-                timer = nil
+                retriesCount = maxRetries
+            }
+            else if retriesCount < maxRetries{ //recursively call until we time out or hit 0
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: {
+                    self.checkForNewNotifications()
+                })
+            }
+            else{
+                retriesCount = maxRetries
             }
         } catch let error {
             print("Error fetching new notifications: \(error)")
@@ -87,8 +89,7 @@ class NotificationService: UNNotificationServiceExtension {
     
     override func serviceExtensionTimeWillExpire() {
         // Invalidate the timer if the extension is about to expire
-        timer?.invalidate()
-        
+        retriesCount = maxRetries
         if let contentHandler = contentHandler, let bestAttemptContent = bestAttemptContent {
             contentHandler(bestAttemptContent)
         }

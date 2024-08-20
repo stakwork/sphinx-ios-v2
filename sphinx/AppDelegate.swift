@@ -332,7 +332,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 print("New notification data found: \(notificationData.title ?? "")")
                 
                 // Update the timestamp to trigger the other file
-                notificationData.title = "CHANCELLOR ON BRINK1234 HELLO FROM APPDELEGATE"
+                notificationData.title = "WE ON BRINK SONNN"
                 notificationData.timestamp = Date()
                 
                 sharedPushNotificationContainerManager.saveContext()
