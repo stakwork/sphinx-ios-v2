@@ -69,6 +69,21 @@ class SharedPushNotificationContainerManager {
             print("Failed to fetch NotificationData: \(error)")
         }
     }
+    
+    func printAllNotificationData() {
+        let context = persistentContainer.viewContext
+        let fetchRequest: NSFetchRequest<NotificationData> = NotificationData.fetchRequest()
+        
+        do {
+            let results = try context.fetch(fetchRequest)
+            print("Fetched \(results.count) NotificationData entries:")
+            for notificationData in results {
+                print("Title: \(notificationData.title ?? "No Title"), Body: \(notificationData.body ?? "No Body"), Timestamp: \(notificationData.timestamp ?? Date()), UserInfo: \(notificationData.userInfo?.description ?? "nil")")
+            }
+        } catch let error {
+            print("Error fetching NotificationData: \(error)")
+        }
+    }
 }
 
 

@@ -308,6 +308,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         print("Setting up shared notification extension")
         _ = sharedPushNotificationContainerManager.context
         startMonitoringCoreDataChanges()
+        
+        print("-----------")
+        sharedPushNotificationContainerManager.printAllNotificationData()
+        print("~~~~~~~~~~")
     }
     
     func startMonitoringCoreDataChanges() {
@@ -328,7 +332,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 print("New notification data found: \(notificationData.title ?? "")")
                 
                 // Update the timestamp to trigger the other file
-                notificationData.title = "CHANCELLOR ON BRINK1234"
+                notificationData.title = "CHANCELLOR ON BRINK1234 HELLO FROM APPDELEGATE"
                 notificationData.timestamp = Date()
                 
                 sharedPushNotificationContainerManager.saveContext()

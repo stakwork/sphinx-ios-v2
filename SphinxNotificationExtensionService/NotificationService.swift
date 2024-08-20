@@ -12,6 +12,7 @@ class NotificationService: UNNotificationServiceExtension {
     
     override init() {
         super.init()
+        sharedPushNotificationContainerManager.printAllNotificationData()
     }
     
     override func didReceive(_ request: UNNotificationRequest, withContentHandler contentHandler: @escaping (UNNotificationContent) -> Void) {
@@ -28,7 +29,7 @@ class NotificationService: UNNotificationServiceExtension {
             print("Setting up insertNewObject in NotificationService")
             if let notificationData = NSEntityDescription.insertNewObject(forEntityName: "NotificationData", into: context) as? NotificationData {
                 print("Done setting up insertNewObject in NotificationService")
-                notificationData.title = bestAttemptContent.title
+                notificationData.title = "HELLO FROM NOTIFICATIONSERVICE"//bestAttemptContent.title
                 notificationData.body = bestAttemptContent.body
                 notificationData.timestamp = Date()
                 notificationData.userInfo = userInfo
@@ -36,19 +37,27 @@ class NotificationService: UNNotificationServiceExtension {
                 sharedPushNotificationContainerManager.saveContext()
                 
                 // Start a timer to periodically check for any new data added after this point
-                startTimer()
+                startTime = Date()
+                timer = Timer.scheduledTimer(timeInterval: 0.1, target: self, selector: #selector(checkForNewNotifications), userInfo: nil, repeats: true)
+                
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: {
+                    self.checkForNewNotifications()
+                })
             }
         }
     }
     
-    func startTimer() {
-        startTime = Date()
-        timer = Timer.scheduledTimer(timeInterval: 1.0, target: self, selector: #selector(checkForNewNotifications), userInfo: nil, repeats: true)
-    }
+//    func startTimer() {
+//        startTime = Date()
+//        timer = Timer.scheduledTimer(timeInterval: 1.0, target: self, selector: #selector(checkForNewNotifications), userInfo: nil, repeats: true)
+//    }
     
     @objc func checkForNewNotifications() {
+        print("checkForNewNotifications")
         guard let startTime = startTime else { return }
-        
+        print("\n\n\nfetching all db items:")
+        sharedPushNotificationContainerManager.fetchAndPrintAllNotificationData()
+        print("---------")
         let context = sharedPushNotificationContainerManager.context
         let fetchRequest: NSFetchRequest<NotificationData> = NotificationData.fetchRequest()
         fetchRequest.predicate = NSPredicate(format: "timestamp > %@", startTime as NSDate)
