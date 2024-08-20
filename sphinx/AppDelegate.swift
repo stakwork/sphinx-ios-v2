@@ -40,6 +40,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     let chatListViewModel = ChatListViewModel()
     
     let som = SphinxOnionManager.sharedInstance
+    var timer: Timer?
+    var startTime: Date?
     
     var isActive = false
     
@@ -303,11 +305,44 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
     
     func setupSharedNotifExtension(){
-        NotificationCenter.default.addObserver(self, selector: #selector(coreDataDidChange(_:)), name: .NSManagedObjectContextDidSave, object: sharedPushNotificationContainerManager.context)
+        print("Setting up shared notification extension")
+        _ = sharedPushNotificationContainerManager.context
+        startMonitoringCoreDataChanges()
     }
     
-    func tearDownSharedNotifExtension(){
+    func startMonitoringCoreDataChanges() {
+        startTime = Date()
+        timer = Timer.scheduledTimer(timeInterval: 1.0, target: self, selector: #selector(checkForNewNotifications), userInfo: nil, repeats: true)
+    }
+    
+    @objc func checkForNewNotifications() {
+        guard let startTime = startTime else { return }
+        
+        let context = sharedPushNotificationContainerManager.context
+        let fetchRequest: NSFetchRequest<NotificationData> = NotificationData.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "timestamp > %@", startTime as NSDate)
+        
+        do {
+            let results = try context.fetch(fetchRequest)
+            for notificationData in results {
+                print("New notification data found: \(notificationData.title ?? "")")
+                
+                // Update the timestamp to trigger the other file
+                notificationData.title = "CHANCELLOR ON BRINK1234"
+                notificationData.timestamp = Date()
+                
+                sharedPushNotificationContainerManager.saveContext()
+            }
+        } catch let error {
+            print("Error fetching new notifications: \(error)")
+        }
+    }
+    
+    func tearDownSharedNotifExtension() {
+        print("Tearing down shared notification extension")
         NotificationCenter.default.removeObserver(self, name: .NSManagedObjectContextDidSave, object: sharedPushNotificationContainerManager.context)
+        timer?.invalidate()
+        timer = nil
     }
     
     //Initial VC
@@ -666,7 +701,11 @@ extension AppDelegate : PKPushRegistryDelegate{
     }
     
     @objc func coreDataDidChange(_ notification: Notification) {
-        guard let userInfo = notification.userInfo else { return }
+        print("CoreData did change")
+        guard let userInfo = notification.userInfo else {
+            print("No userInfo found in notification")
+            return
+        }
         let inserts = userInfo[NSInsertedObjectsKey] as? Set<NSManagedObject> ?? []
 
         for insert in inserts {
@@ -686,7 +725,10 @@ extension AppDelegate : PKPushRegistryDelegate{
     }
     
     func notifyExtension() {
-        guard let appGroupURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.gl.sphinx.v2") else { return }
+        guard let appGroupURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.gl.sphinx.v2") else {
+            print("App Group URL not found")
+            return
+        }
         let fileURL = appGroupURL.appendingPathComponent("notification_trigger.txt")
         
         fileCoordinator.coordinate(writingItemAt: fileURL, options: .forReplacing, error: nil) { (url) in

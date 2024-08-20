@@ -3194,6 +3194,7 @@
 		475BDD4F232AE1C400C5BBD6 /* Core Data */ = {
 			isa = PBXGroup;
 			children = (
+				CE6790262C74E42100BC2D38 /* NotificationData */,
 				472A4E1C2C4EB66C00B10934 /* LSat */,
 				CE80EF652A0D8131007ED3A3 /* CachedMedia */,
 				474CCFAC291562CE0037E1D4 /* Actions */,
@@ -3478,8 +3479,6 @@
 				4779F170232AA0F300D35E81 /* Info.plist */,
 				4779F161232AA0F200D35E81 /* AppDelegate.swift */,
 				CE8797392C6FFE8300E2B422 /* SharedPushNotificationContainerManager.swift */,
-				CE6790202C73E85400BC2D38 /* NotificationData.swift */,
-				CE6790232C73E86A00BC2D38 /* NotificationData+CoreDataProperties.swift */,
 				CEA6BC1F2C1794AD00494071 /* NetworkMonitor.swift */,
 				4779F16B232AA0F300D35E81 /* Assets.xcassets */,
 				475BDD22232AC71000C5BBD6 /* Colors.xcassets */,
@@ -4335,6 +4334,15 @@
 				CE677B752C6A88220050CFFC /* Info.plist */,
 			);
 			path = SphinxNotificationExtensionService;
+			sourceTree = "<group>";
+		};
+		CE6790262C74E42100BC2D38 /* NotificationData */ = {
+			isa = PBXGroup;
+			children = (
+				CE6790202C73E85400BC2D38 /* NotificationData.swift */,
+				CE6790232C73E86A00BC2D38 /* NotificationData+CoreDataProperties.swift */,
+			);
+			path = NotificationData;
 			sourceTree = "<group>";
 		};
 		CE80EF652A0D8131007ED3A3 /* CachedMedia */ = {

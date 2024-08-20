@@ -129,7 +129,7 @@
         <attribute name="body" optional="YES" attributeType="String"/>
         <attribute name="timestamp" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="title" optional="YES" attributeType="String"/>
-        <attribute name="userInfo" optional="YES" attributeType="Transformable"/>
+        <attribute name="userInfo" optional="YES" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromDataTransformerName"/>
     </entity>
     <entity name="Server" representedClassName="Server" syncable="YES">
         <attribute name="ip" optional="YES" attributeType="String"/>

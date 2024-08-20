@@ -15,6 +15,7 @@ class SharedPushNotificationContainerManager {
     static let shared = SharedPushNotificationContainerManager()
 
     lazy var persistentContainer: NSPersistentContainer = {
+        print("Initializing persistent container")
         let container = NSPersistentContainer(name: "sphinx")
         
         // Use the App Group's container for the shared store
@@ -22,15 +23,20 @@ class SharedPushNotificationContainerManager {
             let storeURL = appGroupURL.appendingPathComponent("NotificationData.sqlite")
             let description = NSPersistentStoreDescription(url: storeURL)
             container.persistentStoreDescriptions = [description]
+        } else {
+            fatalError("Failed to find app group URL")
         }
         
         container.loadPersistentStores(completionHandler: { (storeDescription, error) in
             if let error = error as NSError? {
                 fatalError("Unresolved error \(error), \(error.userInfo)")
+            } else {
+                print("Persistent store loaded successfully")
             }
         })
         return container
     }()
+
     
     var context: NSManagedObjectContext {
         return persistentContainer.viewContext
@@ -41,10 +47,26 @@ class SharedPushNotificationContainerManager {
         if context.hasChanges {
             do {
                 try context.save()
+                print("Successfully saved context!")
+                fetchAndPrintAllNotificationData()
             } catch {
                 let nserror = error as NSError
                 fatalError("Unresolved error \(nserror), \(nserror.userInfo)")
             }
+        }
+    }
+    
+    func fetchAndPrintAllNotificationData() {
+        let fetchRequest: NSFetchRequest<NotificationData> = NotificationData.fetchRequest()
+        
+        do {
+            let results = try context.fetch(fetchRequest)
+            print("Fetched \(results.count) NotificationData entries:")
+            for data in results {
+                print("Title: \(data.title ?? "No Title"), Body: \(data.body ?? "No Body"), Timestamp: \(data.timestamp ?? Date()), UserInfo: \(String(describing: data.userInfo))")
+            }
+        } catch {
+            print("Failed to fetch NotificationData: \(error)")
         }
     }
 }
