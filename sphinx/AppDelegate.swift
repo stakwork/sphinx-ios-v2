@@ -255,8 +255,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
     
     func connectMQTT() {
-        if let phoneSignerSetup: Bool = UserDefaults.Keys.setupPhoneSigner.get(),
-            phoneSignerSetup,
+        if let phoneSignerSetup: Bool = UserDefaults.Keys.setupPhoneSigner.get(), phoneSignerSetup,
            let network : String = UserDefaults.Keys.phoneSignerNetwork.get(),
            let host : String = UserDefaults.Keys.phoneSignerHost.get(),
            let relay : String = UserDefaults.Keys.phoneSignerRelay.get(){
@@ -276,12 +275,25 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         takeUserToInitialVC(isUserLogged: SignupHelper.isLogged())
         presentPINIfNeeded()
     }
+    
+    func updateDefaultTribe() {
+        if UserDefaults.Keys.isProductionEnv.get(defaultValue: false) == false {
+            return
+        }
+        
+        if !UserData.sharedInstance.isUserLogged() {
+            return
+        }
+        
+        API.sharedInstance.updateDefaultTribe()
+    }
 
     func presentPINIfNeeded() {
         if GroupsPinManager.sharedInstance.shouldAskForPin() {
             let pinVC = PinCodeViewController.instantiate()
             pinVC.loggingCompletion = {
                 
+                self.updateDefaultTribe()
                 AttachmentsManager.sharedInstance.runAuthentication(forceAuthenticate: true)
                 
                 if let currentVC = self.getCurrentVC() {
