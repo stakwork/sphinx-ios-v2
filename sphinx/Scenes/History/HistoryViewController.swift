@@ -82,35 +82,36 @@ class HistoryViewController: UIViewController {
             return
         }
         
-        // 1. Pull history with messages from local DB
         var history = [PaymentTransaction]()
         
+        // 1. Pull history with messages from local DB
         let messages = TransactionMessage.fetchTransactionMessagesForHistory()
         
-        for message in messages {
-            history.append(PaymentTransaction(fromTransactionMessage: message))
-        }
-        
-        // 2. Collect and process remote transactions not accounted for with messages
+
         if let jsonString = jsonString,
            let results = Mapper<PaymentTransactionFromServer>().mapArray(JSONString: jsonString) {
-            let localHistoryIndices = messages.map { $0.id }
-            let localHistoryPaymentHashes = messages.compactMap { $0.paymentHash } // Ensure no nil values
             
-            let unAccountedResults = results.filter { result in
-                let msgIdxUnaccounted = !localHistoryIndices.contains(result.msg_idx ?? -21)
-                let rhashUnaccounted = !localHistoryPaymentHashes.contains(result.rhash ?? "")
+            for result in results {
+                if let localHistoryMessage = messages.filter({ $0.id == result.msg_idx ?? -1 }).first {
+                    let paymentTransaction = PaymentTransaction(fromTransactionMessage: localHistoryMessage, ts: result.ts)
+                    history.append(paymentTransaction)
+                    continue
+                }
                 
-                // Check for amount and timestamp condition
+                if let localHistoryMessage = messages.filter({ $0.paymentHash == result.rhash ?? "" }).first {
+                    let paymentTransaction = PaymentTransaction(fromTransactionMessage: localHistoryMessage, ts: result.ts)
+                    history.append(paymentTransaction)
+                    continue
+                }
+                
                 let amountThreshold = 5000 // msats
                 let timestampThreshold: TimeInterval = 10 // seconds
                 
-                let similarTransactionExists = messages.contains { message in
-                    guard let messageAmountSats = message.amount?.intValue,
-                          let messageTimestamp = message.date?.timeIntervalSince1970 else {
+                if let localHistoryMessage = messages.filter({
+                    guard let messageAmountSats = $0.amount?.intValue,
+                          let messageTimestamp = $0.date?.timeIntervalSince1970 else {
                         return false
                     }
-                    
                     let messageAmountMsats = messageAmountSats * 1000
                     let resultAmountMsats = result.amt_msat ?? 0
                     let resultTimestamp = TimeInterval(result.ts ?? 0) / 1000
@@ -118,16 +119,12 @@ class HistoryViewController: UIViewController {
                     return resultAmountMsats > amountThreshold &&
                            resultAmountMsats == messageAmountMsats &&
                            abs(resultTimestamp - messageTimestamp) <= timestampThreshold
+                }).first {
+                    let paymentTransaction = PaymentTransaction(fromTransactionMessage: localHistoryMessage, ts: result.ts)
+                    history.append(paymentTransaction)
+                    continue
                 }
                 
-                if !msgIdxUnaccounted && !rhashUnaccounted {
-                    print("Filtered out result with rhash: \(result.rhash ?? "nil")")
-                }
-                
-                return (msgIdxUnaccounted || rhashUnaccounted) && !similarTransactionExists
-            }
-            
-            for result in unAccountedResults {
                 let newHistory = PaymentTransaction(fromFetchedParams: result)
                 history.append(newHistory)
             }
@@ -166,8 +163,6 @@ extension HistoryViewController : HistoryDataSourceDelegate {
         }
         
         let oldestTimestamp = UInt64(oldestTransaction.getDate().timeIntervalSince1970)
-        
-        loading = true
         
         SphinxOnionManager.sharedInstance.getTransactionsHistory(
             paymentsHistoryCallback: handlePaymentHistoryCompletion,

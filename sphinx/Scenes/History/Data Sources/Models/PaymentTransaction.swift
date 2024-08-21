@@ -54,11 +54,13 @@ class PaymentTransaction {
         self.errorMessage = errorMessage
     }
     
-    init(fromTransactionMessage transactionMessage: TransactionMessage) {
+    init(
+        fromTransactionMessage transactionMessage: TransactionMessage,
+        ts: Int64? = nil
+    ) {
         // Initialize properties using values from `TransactionMessage`
         self.type = transactionMessage.type
         self.amount = transactionMessage.amount?.intValue
-        self.date = transactionMessage.date ?? Date()
         self.senderId = transactionMessage.senderId
         self.receiverId = transactionMessage.receiverId
         self.chatId = transactionMessage.chat?.id
@@ -66,6 +68,12 @@ class PaymentTransaction {
         self.paymentRequest = transactionMessage.invoice
         self.paymentHash = transactionMessage.paymentHash
         self.errorMessage = transactionMessage.errorMessage
+        
+        if let ts = ts {
+            self.date = Date(timeIntervalSince1970: TimeInterval(ts) / 1000)
+        } else {
+            self.date = transactionMessage.date ?? Date()
+        }
     }
     
     init(fromFetchedParams fetchedParams: PaymentTransactionFromServer) {
@@ -110,42 +118,39 @@ class PaymentTransaction {
     }
     
     func getUsers() -> String? {
-        var users = ""
         var chat : Chat? = nil
-        if let chatId = self.chatId,
-              var foundChat = Chat.getChatWith(id: chatId){
+        
+        if let chatId = self.chatId, let foundChat = Chat.getChatWith(id: chatId) {
             chat = foundChat
         }
-        guard let owner = ContactsService.sharedInstance.owner else {
+        
+        guard let _ = ContactsService.sharedInstance.owner else {
             return nil
         }
         
         if let senderId = senderId, let sender = UserContact.getContactWith(id: senderId), isIncoming() {
             if let nickname = sender.nickname, !nickname.isEmpty {
                 return nickname
-            }
-            else{
+            } else {
                 return "unknown sender"
             }
         } else if let receivedId = receiverId, let receiver = UserContact.getContactWith(id: receivedId), !isIncoming() {
-            guard let chat = chat else{
+            guard let chat = chat else {
                 return "-"
             }
-            if chat.isGroup() == false, let nickname = receiver.nickname, !nickname.isEmpty {
+            if !chat.isGroup(), let nickname = receiver.nickname, !nickname.isEmpty {
                 return nickname
-            }
-            else{
+            } else {
                 return "-"
             }
         } 
         
-        if let chat = chat,
-            chat.isGroup() == true,
-           let message = TransactionMessage.getMessageWith(uuid: self.originalMessageUUID ?? ""){
-            if(self.isIncoming() == false),
+        if let chat = chat, chat.isGroup(), let message = TransactionMessage.getMessageWith(uuid: self.originalMessageUUID ?? "") {
+            if !self.isIncoming(),
               let replyUUID = message.replyUUID,
               let replyMessage = TransactionMessage.getMessageWith(uuid: replyUUID),
-              let originalAlias = replyMessage.senderAlias{
+              let originalAlias = replyMessage.senderAlias
+            {
                 return originalAlias
             }
             return message.senderAlias
