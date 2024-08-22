@@ -29,7 +29,7 @@ class DashboardRootViewController: RootViewController {
     @IBOutlet weak var bottomBarBottomConstraint: NSLayoutConstraint!
     var isFirstFeedsLoad : Bool = false
     lazy var loadingViewController = LoadingViewController(backgroundColor: UIColor.Sphinx.SecondaryTextInverted.withAlphaComponent(0.5))
-
+    
     
     let buttonTitles : [String] = [
         "dashboard.tabs.feed".localized,
@@ -64,7 +64,8 @@ class DashboardRootViewController: RootViewController {
     internal let podcastPlayerController = PodcastPlayerController.sharedInstance
     
     let som = SphinxOnionManager.sharedInstance
-
+    var feedSource:FeedSource = .RSS
+    
     internal lazy var chatsListViewModel: ChatListViewModel = {
         ChatListViewModel()
     }()
@@ -79,11 +80,11 @@ class DashboardRootViewController: RootViewController {
     func setupFeedsContainer(){
         //Auto populate
         //MARK: @BTRefactor TODO come back to this
-//        if(isFirstFeedsLoad == false){
-//            isFirstFeedsLoad = true
-//            self.presentFeedSearchView()
-//            feedSearchResultsContainerViewController.prePopulateSearch()
-//        }
+        //        if(isFirstFeedsLoad == false){
+        //            isFirstFeedsLoad = true
+        //            self.presentFeedSearchView()
+        //            feedSearchResultsContainerViewController.prePopulateSearch()
+        //        }
     }
     
     internal lazy var feedSearchResultsContainerViewController = {
@@ -179,15 +180,23 @@ class DashboardRootViewController: RootViewController {
         searchBarContainer.isUserInteractionEnabled = true
         addTribeButton.setTitle(title, for: .normal)
         addTribeIconLabel.text = icon
+        
+        if(feedSource == .RSS){
+            showChipFilterOptions()
+        }
     }
     
-    func handleShowOptionsTap(){
+    func showChipFilterOptions(){
         activeTab = .feed
         feedSearchResultsContainerViewController.presentInitialStateView()
         UIView.animate(withDuration: 0.25, animations: {
             self.addTribeTrailing.constant = -120
         })
-        
+    }
+    
+    func toggleFeedSourceType(){
+        (feedSource == .RSS) ? (feedSource = .BitTorrent) : (feedSource = .RSS)
+        configureAddTribeBehavior(oldTab: .feed)
     }
     
     func forceShowLoadingWheel() {
@@ -323,7 +332,7 @@ extension DashboardRootViewController {
             navigationController?.pushViewController(discoverVC, animated: true)
         }
         else if activeTab == .feed{
-            handleShowOptionsTap()
+            toggleFeedSourceType()
         }
     }
     
