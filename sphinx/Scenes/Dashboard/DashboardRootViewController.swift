@@ -120,7 +120,7 @@ class DashboardRootViewController: RootViewController {
             resetSearchField()
             feedViewMode = .rootList
             
-            configureAddTribeBehavior(oldTab: oldValue)
+            configureAddTribeBehavior(oldTab: oldValue,oldFeedSource: feedSource)
             
             if(activeTab == .feed){
                 self.setupFeedsContainer()
@@ -157,31 +157,33 @@ class DashboardRootViewController: RootViewController {
     }
     
     func getFeedModeButtonText()->String{
-        if feedMode == .BitTorrent{
+        if feedSource == .BitTorrent{
             return "RSS"
         }
-        else if feedMode == .RSS{
+        else if feedSource == .RSS{
             return "BitTorrent"
         }
         return "RSS"
     }
     
-    func configureAddTribeBehavior(oldTab:DashboardTab,visibilityOverride:Bool?=nil){
+    func configureAddTribeBehavior(oldTab:DashboardTab,visibilityOverride:Bool?=nil,oldFeedSource:FeedSource){
         if let visibilityOverride = visibilityOverride{
-            addTribeTrailing.constant = (visibilityOverride) ? 16 : -120
+            let newConstant = (visibilityOverride) ? 16 : -120
+            addTribeTrailing.constant = CGFloat(newConstant)
         }
         else if (activeTab == .tribes || (activeTab == .feed && oldTab != .feed)) {
             addTribeTrailing.constant = 16
-        } else {
-            addTribeTrailing.constant = -120
         }
+//        else {
+//            addTribeTrailing.constant = -120
+//        }
         let title = (activeTab == .feed) ? getFeedModeButtonText() : ("Add Tribe")
-        let icon = (activeTab == .feed) ? ("") : ("add")
+        let icon = (activeTab == .feed) ? ("switch_access_shortcut") : ("add")
         searchBarContainer.isUserInteractionEnabled = true
         addTribeButton.setTitle(title, for: .normal)
         addTribeIconLabel.text = icon
         
-        if(feedSource == .RSS){
+        if(oldFeedSource != feedSource){
             showChipFilterOptions()
         }
     }
@@ -189,14 +191,12 @@ class DashboardRootViewController: RootViewController {
     func showChipFilterOptions(){
         activeTab = .feed
         feedSearchResultsContainerViewController.presentInitialStateView()
-        UIView.animate(withDuration: 0.25, animations: {
-            self.addTribeTrailing.constant = -120
-        })
     }
     
     func toggleFeedSourceType(){
-        (feedSource == .RSS) ? (feedSource = .BitTorrent) : (feedSource = .RSS)
-        configureAddTribeBehavior(oldTab: .feed)
+        let oldFeedSource = feedSource
+        (oldFeedSource == .RSS) ? (feedSource = .BitTorrent) : (feedSource = .RSS)
+        configureAddTribeBehavior(oldTab: .feed,visibilityOverride: true, oldFeedSource: oldFeedSource)
     }
     
     func forceShowLoadingWheel() {

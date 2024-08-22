@@ -244,6 +244,8 @@ extension DashboardFeedsContainerViewController {
         for filterChip: ContentFilterOption
     ) -> UIViewController {
         switch activeFilterOption.id {
+        case ContentFilterOption.allContent.id:
+            return allTribeFeedsCollectionViewController
         case ContentFilterOption.browse.id:
             return videoFeedCollectionViewController
         case ContentFilterOption.discover.id:
@@ -309,7 +311,7 @@ extension DashboardFeedsContainerViewController {
     
     
     private func configureFeedContentCollectionView() {
-        activeFilterOption = .browse//.allContent
+        activeFilterOption = .allContent
     }
     
     

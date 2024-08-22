@@ -22,7 +22,7 @@ extension API {
         
         let route = (type == FeedType.Podcast) ? "search_podcasts" : "search_youtube"
         let hostProtocol = UserDefaults.Keys.isProductionEnv.get(defaultValue: false) ? "https" : "http"
-        let urlPath = "https://tribes.sphinx.chat/search_podcasts"
+        let urlPath = "https://tribes.sphinx.chat/\(route)"
         
         var urlComponents = URLComponents(string: urlPath)!
         urlComponents.queryItems = [

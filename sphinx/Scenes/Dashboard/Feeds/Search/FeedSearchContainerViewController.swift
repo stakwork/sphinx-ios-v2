@@ -16,7 +16,7 @@ protocol FeedSearchResultsViewControllerDelegate: AnyObject {
         didSelectFeedSearchResult feedId: String
     )
     
-    func didChangeFilterChipVisibility(isVisible:Bool)
+    func didChangeFilterChipVisibility(isVisible:Bool?)
 }
 
 
@@ -168,7 +168,7 @@ extension FeedSearchContainerViewController {
             container: contentView
         )
         
-        resultsDelegate?.didChangeFilterChipVisibility(isVisible: true)
+        resultsDelegate?.didChangeFilterChipVisibility(isVisible: nil)
     }
 
     private func presentBitTorrentSearchView() {
@@ -209,7 +209,6 @@ extension FeedSearchContainerViewController {
         for searchQuery: String,
         and type: FeedType?
     ) {
-        searchResultsViewController.updateWithNew(searchResults: [])
         let shouldServiceTorrentSearch = type == nil //&& didPressEnter
         if  shouldServiceTorrentSearch{
             // "All" tab is selected, show BitTorrent search

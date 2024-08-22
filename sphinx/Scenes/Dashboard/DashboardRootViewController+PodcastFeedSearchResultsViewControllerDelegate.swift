@@ -3,7 +3,7 @@ import CoreData
 
 
 extension DashboardRootViewController: FeedSearchResultsViewControllerDelegate {
-    func didChangeFilterChipVisibility(isVisible:Bool){
-        configureAddTribeBehavior(oldTab: .feed, visibilityOverride: isVisible)
+    func didChangeFilterChipVisibility(isVisible:Bool?){
+        configureAddTribeBehavior(oldTab: .feed, visibilityOverride: isVisible,oldFeedSource: feedSource)
     }
 }
