@@ -28,24 +28,25 @@ extension SphinxOnionManager : NSFetchedResultsControllerDelegate {
                 let nd = lastNotification.userInfo as? [String:AnyObject],
                 let chat = self.mapNotificationToChat(notificationUserInfo: nd)
             {
-                let chatName = chat.getName()
-                if chat.isPublicGroup() {
-                    lastNotification.body = "You have new messages in \(chatName)"
+                let chatName = chat.0.getName()
+                
+                if chat.0.isPublicGroup() {
+                    lastNotification.body = "You have new messages in \(chatName) - \(chat.1)"
                 } else {
-                    lastNotification.body = "You have new messages from \(chatName)"
+                    lastNotification.body = "You have new messages from \(chatName) - \(chat.1)"
                 }
             } else {
-                lastNotification.body = "You have new messages"
+                lastNotification.body = "You have new messages."
             }
             context.saveContext()
         }
     }
     
-    func mapNotificationToChat(notificationUserInfo : [String: AnyObject]) -> Chat? {
+    func mapNotificationToChat(notificationUserInfo : [String: AnyObject]) -> (Chat, String)? {
         if let encryptedChild = getEncryptedIndexFrom(notification: notificationUserInfo),
            let chat = findChatForNotification(child: encryptedChild)
         {
-            return chat
+            return (chat, encryptedChild)
         }
         
         return nil

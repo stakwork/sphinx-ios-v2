@@ -7006,7 +7006,7 @@
 				INFOPLIST_FILE = SphinxNotificationExtensionService/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = SphinxNotificationExtensionService;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2024 sphinx. All rights reserved.";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -7039,7 +7039,7 @@
 				INFOPLIST_FILE = SphinxNotificationExtensionService/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = SphinxNotificationExtensionService;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2024 sphinx. All rights reserved.";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

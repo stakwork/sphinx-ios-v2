@@ -23,7 +23,7 @@ class NotificationService: UNNotificationServiceExtension {
         
         bestAttemptContent = (request.content.mutableCopy() as? UNMutableNotificationContent)
         bestAttemptContent?.title = "Sphinx"
-        bestAttemptContent?.body = "You have new messages"
+        bestAttemptContent?.body = "You have new messages!"
         
         if let bestAttemptContent = bestAttemptContent, let userInfo = bestAttemptContent.userInfo as? [String: AnyObject] {
             
@@ -81,7 +81,7 @@ class NotificationService: UNNotificationServiceExtension {
             context: context
         ) {
             bestAttemptContent?.title = processedNotification.title ?? "Sphinx"
-            bestAttemptContent?.body = processedNotification.body ?? "You have new messages"
+            bestAttemptContent?.body = processedNotification.body ?? ""
 
             // Call the content handler with the modified content
             if let bestAttemptContent = bestAttemptContent {
