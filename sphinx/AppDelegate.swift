@@ -204,7 +204,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         guard let notificationUserInfo = notificationUserInfo else {
             return
         }
-        if let chat = SphinxOnionManager.sharedInstance.mapNotificationToChat(notificationUserInfo: notificationUserInfo) {
+        if let chat = SphinxOnionManager.sharedInstance.mapNotificationToChat(notificationUserInfo: notificationUserInfo)?.0 {
             goTo(chat: chat)
         }
         
