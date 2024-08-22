@@ -256,22 +256,45 @@ extension FeedSearchContainerViewController {
         if let userInfo = timer.userInfo as? [String: Any] {
             if let searchQuery = userInfo["search_query"] as? String, 
                 let type = userInfo["feed_type"] as? FeedType {
-                API.sharedInstance.searchBTFeed(
-                    matching: searchQuery,
-                    type: type
-                ) { [weak self] result in
-                    guard let self = self else { return }
-                    
-                    DispatchQueue.main.async {
-                        switch result {
-                        case .success(let results):
-                            
-                            self.searchResultsViewController.updateWithNew(
-                                searchResults: results
-                            )
-                            
-                        case .failure(_):
-                            break
+                if(true){
+                    API.sharedInstance.searchForFeeds(
+                        with: type,
+                        matching: searchQuery
+                    ) { [weak self] result in
+                        guard let self = self else { return }
+                        
+                        DispatchQueue.main.async {
+                            switch result {
+                            case .success(let results):
+                                
+                                self.searchResultsViewController.updateWithNew(
+                                    searchResults: results
+                                )
+                                
+                            case .failure(_):
+                                break
+                            }
+                        }
+                    }
+                }
+                else{
+                    API.sharedInstance.searchBTFeed(
+                        matching: searchQuery,
+                        type: type
+                    ) { [weak self] result in
+                        guard let self = self else { return }
+                        
+                        DispatchQueue.main.async {
+                            switch result {
+                            case .success(let results):
+                                
+                                self.searchResultsViewController.updateWithNew(
+                                    searchResults: results
+                                )
+                                
+                            case .failure(_):
+                                break
+                            }
                         }
                     }
                 }
@@ -300,54 +323,56 @@ extension FeedSearchContainerViewController {
     private func handleSearchResultCellSelection(
         _ searchResult: FeedSearchResult
     ) {
-        if let vc = self.resultsDelegate as? DashboardRootViewController{
+        //@BTRefactor: come back to conditionally run this
+        if let vc = self.resultsDelegate as? DashboardRootViewController,
+           true == false{
             vc.presentBitTorrentPlayer(for: searchResult)
         }
         
-//        let existingFeedsFetchRequest: NSFetchRequest<ContentFeed> = ContentFeed
-//            .FetchRequests
-//            .matching(feedID: searchResult.feedId)
-//
-//        var fetchRequestResult: [ContentFeed] = []
-//
-//        managedObjectContext.performAndWait {
-//            fetchRequestResult = try! managedObjectContext.fetch(existingFeedsFetchRequest)
-//        }
-//
-//        if let existingFeed = fetchRequestResult.first {
-//            resultsDelegate?.viewController(
-//                self,
-//                didSelectFeedSearchResult: existingFeed.feedID
-//            )
-//        } else {
-//            self.newMessageBubbleHelper.showLoadingWheel()
-//
-//            ContentFeed.fetchContentFeed(
-//                at: searchResult.feedURLPath,
-//                chat: nil,
-//                searchResultDescription: searchResult.feedDescription,
-//                searchResultImageUrl: searchResult.imageUrl,
-//                persistingIn: managedObjectContext,
-//                then: { result in
-//
-//                    if case .success(_) = result {
-//                        self.managedObjectContext.saveContext()
-//
-//                        self.feedsManager.loadCurrentEpisodeDurationFor(feedId: searchResult.feedId, completion: {
-//                            self.newMessageBubbleHelper.hideLoadingWheel()
-//
-//                            self.resultsDelegate?.viewController(
-//                                self,
-//                                didSelectFeedSearchResult: searchResult.feedId
-//                            )
-//                        })
-//                    } else {
-//                        self.newMessageBubbleHelper.hideLoadingWheel()
-//
-//                        AlertHelper.showAlert(title: "generic.error.title".localized, message: "generic.error.message".localized)
-//                    }
-//            })
-//        }
+        let existingFeedsFetchRequest: NSFetchRequest<ContentFeed> = ContentFeed
+            .FetchRequests
+            .matching(feedID: searchResult.feedId)
+
+        var fetchRequestResult: [ContentFeed] = []
+
+        managedObjectContext.performAndWait {
+            fetchRequestResult = try! managedObjectContext.fetch(existingFeedsFetchRequest)
+        }
+
+        if let existingFeed = fetchRequestResult.first {
+            resultsDelegate?.viewController(
+                self,
+                didSelectFeedSearchResult: existingFeed.feedID
+            )
+        } else {
+            self.newMessageBubbleHelper.showLoadingWheel()
+
+            ContentFeed.fetchContentFeed(
+                at: searchResult.feedURLPath,
+                chat: nil,
+                searchResultDescription: searchResult.feedDescription,
+                searchResultImageUrl: searchResult.imageUrl,
+                persistingIn: managedObjectContext,
+                then: { result in
+
+                    if case .success(_) = result {
+                        self.managedObjectContext.saveContext()
+
+                        self.feedsManager.loadCurrentEpisodeDurationFor(feedId: searchResult.feedId, completion: {
+                            self.newMessageBubbleHelper.hideLoadingWheel()
+
+                            self.resultsDelegate?.viewController(
+                                self,
+                                didSelectFeedSearchResult: searchResult.feedId
+                            )
+                        })
+                    } else {
+                        self.newMessageBubbleHelper.hideLoadingWheel()
+
+                        AlertHelper.showAlert(title: "generic.error.title".localized, message: "generic.error.message".localized)
+                    }
+            })
+        }
     }
 }
 

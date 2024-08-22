@@ -626,7 +626,8 @@
 "feed.search-podcast-source" = "en el Podcast Index";
 "feed.search-video-quantity" = "miles de videos";
 "feed.search-video-source" = "en Youtube";
-"feed.search-other-source" = "en tus feeds";
+"feed.search-other-source-rss" = "en tus feeds";
+
 
 //TIME
 "time.in-the-future" = "en el futuro";

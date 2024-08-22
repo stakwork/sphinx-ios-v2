@@ -599,7 +599,7 @@
 "feed.search-podcast-source" = "sa Podcast Index";
 "feed.search-video-quantity" = "libu-libong mga video";
 "feed.search-video-source" = "sa Youtube";
-"feed.search-other-source" = "ang iyong mga naka-subscribe na feed";
+"feed.search-other-source-rss" = "ang iyong mga naka-subscribe na feed";
 
 //TIME
 "time.in-the-future" = "sa hinaharap";

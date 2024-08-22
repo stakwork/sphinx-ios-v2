@@ -625,7 +625,7 @@
 "feed.search-podcast-source" = "在播客索引上";
 "feed.search-video-quantity" = "数千个视频";
 "feed.search-video-source" = "在Youtube上";
-"feed.search-other-source" = "您订阅的feeds";
+"feed.search-other-source-rss" = "您订阅的feeds";
 
 //TIME
 "time.in-the-future" = "将来";

@@ -16,6 +16,7 @@ class FeedSearchEmptyStateViewController: UIViewController {
     @IBOutlet weak var searchPlaceholder3: UILabel!
     
     var feedType: FeedType? = nil
+    var feedSource:FeedSource = .RSS
 }
     
 
@@ -63,7 +64,14 @@ extension FeedSearchEmptyStateViewController {
         default:
             searchPlaceholderImage.isHidden = true
             
-            searchPlaceholder2.text = "feed.search-other-source".localized
+            //@BTRefactor: make this conditional based on rss vs bt
+            if(feedSource == .BitTorrent){
+                searchPlaceholder2.text = "feed.search-other-source-bittorrent".localized
+            }
+            else if(feedSource == .RSS){
+                searchPlaceholder2.text = "feed.search-other-source-rss".localized
+            }
+            
             searchPlaceholder3.text = ""
             break
         }

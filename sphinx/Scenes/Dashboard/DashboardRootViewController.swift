@@ -78,7 +78,7 @@ class DashboardRootViewController: RootViewController {
     
     func setupFeedsContainer(){
         //Auto populate
-        //MARK: revamp TODO come back to this
+        //MARK: @BTRefactor TODO come back to this
 //        if(isFirstFeedsLoad == false){
 //            isFirstFeedsLoad = true
 //            self.presentFeedSearchView()
@@ -176,6 +176,7 @@ class DashboardRootViewController: RootViewController {
         }
         let title = (activeTab == .feed) ? getFeedModeButtonText() : ("Add Tribe")
         let icon = (activeTab == .feed) ? ("") : ("add")
+        searchBarContainer.isUserInteractionEnabled = true
         addTribeButton.setTitle(title, for: .normal)
         addTribeIconLabel.text = icon
     }

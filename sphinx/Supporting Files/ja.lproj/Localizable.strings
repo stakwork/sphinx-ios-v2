@@ -620,7 +620,7 @@
 "feed.search-podcast-source" = "ポッドキャストインデックスで";
 "feed.search-video-quantity" = "数千のビデオ";
 "feed.search-video-source" = "Youtubeで";
-"feed.search-other-source" = "購読しているフィードで";
+"feed.search-other-source-rss" = "購読しているフィードで";
 
 //TIME
 "time.in-the-future" = "将来に";

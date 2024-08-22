@@ -621,7 +621,7 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 "feed.search-podcast-source" = "在播客索引上";
 "feed.search-video-quantity" = "成千上萬的視頻";
 "feed.search-video-source" = "在Youtube上";
-"feed.search-other-source" = "您訂閱的飼料";
+"feed.search-other-source-rss" = "您訂閱的飼料";
 
 //時間
 "time.in-the-future" = "將來";

@@ -625,7 +625,8 @@
 "feed.search-podcast-source" = "on the Podcast Index";
 "feed.search-video-quantity" = "thousands of videos";
 "feed.search-video-source" = "on Youtube";
-"feed.search-other-source" = "bittorrent feeds";
+"feed.search-other-source-rss" = "your feeds";
+"feed.search-other-source-bittorrent" = "bittorrent feeds";
 
 //TIME
 "time.in-the-future" = "in the future";
