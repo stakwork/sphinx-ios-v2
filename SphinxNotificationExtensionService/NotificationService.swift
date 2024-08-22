@@ -27,28 +27,22 @@ class NotificationService: UNNotificationServiceExtension {
         
         if let bestAttemptContent = bestAttemptContent, let userInfo = bestAttemptContent.userInfo as? [String: AnyObject] {
             
-            let context = SharedPushNotificationContainerManager.shared.persistentContainer.newBackgroundContext()
+            let context = SharedPushNotificationContainerManager.shared.viewContext
                     
-            context.perform {
-                let date = Date()
-                self.timestamp = date
+            let date = Date()
+            self.timestamp = date
+            
+            let notificationData = NotificationData(context: context)
+            notificationData.timestamp = date
+            notificationData.userInfo = userInfo
+            notificationData.title = nil
+            notificationData.body = nil
                 
-                let notificationData = NotificationData(context: context)
-                notificationData.timestamp = date
-                notificationData.userInfo = userInfo
-                notificationData.title = nil
-                notificationData.body = nil
-                
-                do {
-                    try context.save()
-                } catch {
-                    print("Failed to save context in extension: \(error)")
-                }
+            do {
+                try context.save()
+            } catch {
+                print("Failed to save context in extension: \(error)")
             }
-                
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: {
-                self.serviceExtensionTimeWillExpire()
-            })
         }
     }
     
