@@ -78,11 +78,12 @@ class DashboardRootViewController: RootViewController {
     
     func setupFeedsContainer(){
         //Auto populate
-        if(isFirstFeedsLoad == false){
-            isFirstFeedsLoad = true
-            self.presentFeedSearchView()
-            feedSearchResultsContainerViewController.prePopulateSearch()
-        }
+        //MARK: revamp TODO come back to this
+//        if(isFirstFeedsLoad == false){
+//            isFirstFeedsLoad = true
+//            self.presentFeedSearchView()
+//            feedSearchResultsContainerViewController.prePopulateSearch()
+//        }
     }
     
     internal lazy var feedSearchResultsContainerViewController = {

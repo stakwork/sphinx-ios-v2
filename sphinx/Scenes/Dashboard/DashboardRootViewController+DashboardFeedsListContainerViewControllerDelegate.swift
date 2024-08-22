@@ -160,7 +160,8 @@ extension DashboardRootViewController: DashboardFeedsListContainerViewController
     
     func filterChipDidChange(){
         self.presentFeedSearchView()
-        feedSearchResultsContainerViewController.prePopulateSearch()
+        //MARK: revamp TODO - come back to this
+//        feedSearchResultsContainerViewController.prePopulateSearch()
     }
 }
 
