@@ -23,8 +23,6 @@ import CoreData
 class AppDelegate: UIResponder, UIApplicationDelegate {
     
     var window: UIWindow?
-    let sharedPushNotificationContainerManager = SharedPushNotificationContainerManager.shared
-    let fileCoordinator = NSFileCoordinator()
 
     var style : UIUserInterfaceStyle? = nil
     var notificationUserInfo : [String: AnyObject]? = nil
@@ -91,7 +89,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         registerForVoIP()
         
         setInitialVC()
-        setupSharedNotifExtension()
+//        setupSharedNotifExtension()
                 
         NetworkMonitor.shared.startMonitoring()
 
@@ -110,17 +108,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(
         _ application: UIApplication,
         continue userActivity: NSUserActivity,
-        restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {
-            guard userActivity.activityType == NSUserActivityTypeBrowsingWeb,
-                    let url = userActivity.webpageURL,
-                    let _ = URLComponents(url: url, resolvingAgainstBaseURL: true) else
-            {
-                return false
-            }
-            
-            handleUrl(url)
-             
-            return true
+        restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void
+    ) -> Bool {
+        guard userActivity.activityType == NSUserActivityTypeBrowsingWeb,
+                let url = userActivity.webpageURL,
+                let _ = URLComponents(url: url, resolvingAgainstBaseURL: true) else
+        {
+            return false
+        }
+        
+        handleUrl(url)
+         
+        return true
     }
     
     func handleUrl(_ url: URL) {
@@ -205,38 +204,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         guard let notificationUserInfo = notificationUserInfo else {
             return
         }
-        if let chat = self.mapNotificationToChat(notificationUserInfo: notificationUserInfo)
-        {
+        if let chat = SphinxOnionManager.sharedInstance.mapNotificationToChat(notificationUserInfo: notificationUserInfo) {
             goTo(chat: chat)
         }
         
         self.notificationUserInfo = nil
-    }
-    
-    func mapNotificationToChat(notificationUserInfo : [String: AnyObject])->Chat? {
-        // Your shared logic here
-        if let encryptedChild = getEncryptedIndexFrom(notification: notificationUserInfo),
-           let chat = SphinxOnionManager.sharedInstance.findChatForNotification(child: encryptedChild)
-        {
-            return chat
-        }
-        
-        return nil
-    }
-    
-    func getEncryptedIndexFrom(
-        notification: [String: AnyObject]?
-    ) -> String? {
-        if
-            let notification = notification,
-            let aps = notification["aps"] as? [String: AnyObject],
-            let customData = aps["custom_data"] as? [String: AnyObject]
-        {
-            if let chatId = customData["child"] as? String {
-                return chatId
-            }
-        }
-        return nil
     }
     
     func applicationWillTerminate(
@@ -248,8 +220,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
         podcastPlayerController.finishAndSaveContentConsumed()
         CoreDataManager.sharedManager.saveContext()
-        
-        tearDownSharedNotifExtension()
     }
     
     ///On app launch
@@ -302,58 +272,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
            let relay : String = UserDefaults.Keys.phoneSignerRelay.get(){
             let _ = CrypterManager.sharedInstance.performWalletFinalization(network: network, host: host, relay: relay)
         }
-    }
-    
-    func setupSharedNotifExtension(){
-        print("Setting up shared notification extension")
-        _ = sharedPushNotificationContainerManager.context
-        startMonitoringCoreDataChanges()
-        
-        print("-----------")
-        sharedPushNotificationContainerManager.printAllNotificationData()
-        print("~~~~~~~~~~")
-    }
-    
-    func startMonitoringCoreDataChanges() {
-        startTime = Date()
-        timer = Timer.scheduledTimer(timeInterval: 1.0, target: self, selector: #selector(checkForNewNotifications), userInfo: nil, repeats: true)
-    }
-    
-    @objc func checkForNewNotifications() {
-        guard let startTime = startTime else { return }
-        
-        let context = sharedPushNotificationContainerManager.context
-        let fetchRequest: NSFetchRequest<NotificationData> = NotificationData.fetchRequest()
-        fetchRequest.predicate = NSPredicate(format: "timestamp > %@", startTime as NSDate)
-        
-        do {
-            let results = try context.fetch(fetchRequest)
-            for notificationData in results {
-                print("New notification data found: \(notificationData.title ?? "")")
-                
-                // Update the timestamp to trigger the other file
-                if let nd = notificationData.userInfo as? [String:AnyObject],
-                   let chat = mapNotificationToChat(notificationUserInfo: nd){
-                    let chatName = chat.getName()
-                    notificationData.title = "New message from \(chatName)"
-                    notificationData.body = "" //TODO: Do we want to display this or bad opsec?
-                }
-                else{
-                    notificationData.title = "You have a new Sphinx message"
-                }
-                notificationData.timestamp = Date()
-                sharedPushNotificationContainerManager.saveContext()
-            }
-        } catch let error {
-            print("Error fetching new notifications: \(error)")
-        }
-    }
-    
-    func tearDownSharedNotifExtension() {
-        print("Tearing down shared notification extension")
-        NotificationCenter.default.removeObserver(self, name: .NSManagedObjectContextDidSave, object: sharedPushNotificationContainerManager.context)
-        timer?.invalidate()
-        timer = nil
     }
     
     //Initial VC
@@ -513,25 +431,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 }
 
 extension AppDelegate: UNUserNotificationCenterDelegate {
-    
-//    private func modifyNotificationText(with chatName: String?, completion: @escaping () -> Void) {
-//        guard let name = chatName else { return }
-//        let newText = "New message from \(name)"
-//
-//        // Example of showing a modified local notification
-//        let content = UNMutableNotificationContent()
-//        content.title = "Sphinx Chat"
-//        content.body = newText
-//        content.sound = .default
-//
-//        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
-//        UNUserNotificationCenter.current().add(request) { error in
-//            if let error = error {
-//                print("Error showing local notification: \(error)")
-//            }
-//            completion()
-//        }
-//    }
 
     func application(
         _ application: UIApplication,
@@ -560,21 +459,6 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         }
         completionHandler()
     }
-    
-    func userNotificationCenter(_ center: UNUserNotificationCenter,
-                                willPresent notification: UNNotification,
-                                withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
-        let userInfo = notification.request.content.userInfo
-        
-        // Handle the processed notification
-        if let processedData = userInfo["processedData"] as? String {
-            print("Received processed data: \(processedData)")
-            // Perform any additional actions with the processed data
-        }
-        
-        // Decide how to present the notification
-        completionHandler([.alert, .badge, .sound])
-    }
 
     func application(
         _ application: UIApplication,
@@ -583,10 +467,6 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         let tokenParts = deviceToken.map { data in String(format: "%02.2hhx", data) }
         let token = tokenParts.joined()
         
-        //added for special build to help debug!
-//        AlertHelper.showAlert(title: "Registered Device token:", message: token, completion: {
-//            ClipboardHelper.copyToClipboard(text: token)
-//        })
         UserContact.updateDeviceId(deviceId: token)
     }
 
@@ -663,89 +543,32 @@ extension AppDelegate : PKPushRegistryDelegate{
     }
     
     func pushRegistry(_ registry: PKPushRegistry, didReceiveIncomingPushWith payload: PKPushPayload, for type: PKPushType, completion: @escaping () -> Void) {
-        if let dict = payload.dictionaryPayload as? [String:Any],
-           let aps = dict["aps"] as? [String:Any],
-           let contents = aps["alert"] as? String,
-           let pushMessage = VoIPPushMessage.voipMessage(jsonString: contents),
-           let pushBody = pushMessage.body as? VoIPPushMessageBody {
-            
-            if #available(iOS 14.0, *) {
-                //                let (result, link) = EncryptionManager.sharedInstance.decryptMessage(message: pushBody.linkURL)
-                //                pushBody.linkURL = link
-                //                
-                //                let manager = JitsiIncomingCallManager.sharedInstance
-                //                manager.currentJitsiURL = (result == true) ? link : pushBody.linkURL
-                //                manager.hasVideo = pushBody.isVideoCall()
-                //                
-                //                self.handleIncomingCall(callerName: pushBody.callerName)
-            }
-            completion()
-        } else {
-            completion()
-        }
+//        if let dict = payload.dictionaryPayload as? [String:Any],
+//           let aps = dict["aps"] as? [String:Any],
+//           let contents = aps["alert"] as? String,
+//           let pushMessage = VoIPPushMessage.voipMessage(jsonString: contents),
+//           let pushBody = pushMessage.body as? VoIPPushMessageBody {
+//            
+//            if #available(iOS 14.0, *) {
+//                //                let (result, link) = EncryptionManager.sharedInstance.decryptMessage(message: pushBody.linkURL)
+//                //                pushBody.linkURL = link
+//                //                
+//                //                let manager = JitsiIncomingCallManager.sharedInstance
+//                //                manager.currentJitsiURL = (result == true) ? link : pushBody.linkURL
+//                //                manager.hasVideo = pushBody.isVideoCall()
+//                //                
+//                //                self.handleIncomingCall(callerName: pushBody.callerName)
+//            }
+//            completion()
+//        } else {
+//            completion()
+//        }
+        
+        completion()
     }
     
     func pushRegistry(_ registry: PKPushRegistry, didInvalidatePushTokenFor type: PKPushType) {
         print("invalidated token")
     }
-    
-    func isSideloadedBuild()->Bool{
-        return getBuildType() == .Sideload
-    }
-    
-    func getBuildType()->BuildType{
-        if let appStoreReceiptURL = Bundle.main.appStoreReceiptURL {
-            if appStoreReceiptURL.lastPathComponent == "sandboxReceipt" {
-                // This is a TestFlight build
-                return .Testflight
-            } else if appStoreReceiptURL.path.contains("CoreServices") {
-                // This is an App Store build
-                return .AppStore
-            } else {
-                // This is a sideloaded build
-                return .Sideload
-            }
-        } else {
-            // No receipt means sideloaded (in most cases)
-            return .Sideload
-        }
-    }
-    
-    @objc func coreDataDidChange(_ notification: Notification) {
-        print("CoreData did change")
-        guard let userInfo = notification.userInfo else {
-            print("No userInfo found in notification")
-            return
-        }
-        let inserts = userInfo[NSInsertedObjectsKey] as? Set<NSManagedObject> ?? []
-
-        for insert in inserts {
-            if let notificationData = insert as? NotificationData {
-                // Perform your processing here
-                print("New notification data received: \(notificationData.title ?? "No Title")")
-                
-                // After processing, you can update the CoreData entry with the result
-                notificationData.title = "Processed: \(notificationData.title ?? "")"
-                notificationData.body = "Processed: \(notificationData.body ?? "")"
-                
-                sharedPushNotificationContainerManager.saveContext()
-                
-                notifyExtension()
-            }
-        }
-    }
-    
-    func notifyExtension() {
-        guard let appGroupURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.gl.sphinx.v2") else {
-            print("App Group URL not found")
-            return
-        }
-        let fileURL = appGroupURL.appendingPathComponent("notification_trigger.txt")
-        
-        fileCoordinator.coordinate(writingItemAt: fileURL, options: .forReplacing, error: nil) { (url) in
-            try? "trigger".write(to: url, atomically: true, encoding: .utf8)
-        }
-    }
-    
 }
 

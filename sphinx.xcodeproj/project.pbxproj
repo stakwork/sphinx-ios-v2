@@ -41,6 +41,7 @@
 		4707089624AE466D00A98DCA /* ChatChatListExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4707089524AE466D00A98DCA /* ChatChatListExtension.swift */; };
 		470708A424B3669200A98DCA /* MetaDataCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 470708A324B3669200A98DCA /* MetaDataCache.swift */; };
 		4709B1472C6BBA750077AA61 /* Roboto-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 4709B1462C6BBA750077AA61 /* Roboto-Black.ttf */; };
+		4709B14D2C76715D0077AA61 /* SphinxOnionManager+NotificationDataExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4709B14C2C76715D0077AA61 /* SphinxOnionManager+NotificationDataExtension.swift */; };
 		470DB25423FAE43400D29FA5 /* SphinxCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 470DB25323FAE43400D29FA5 /* SphinxCache.swift */; };
 		470F4C37257A949A00288A9B /* TribeLinkPreviewView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 470F4C39257A949A00288A9B /* TribeLinkPreviewView.xib */; };
 		470F4C3E257A984800288A9B /* ContactLinkPreviewView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 470F4C40257A984800288A9B /* ContactLinkPreviewView.xib */; };
@@ -1124,6 +1125,7 @@
 		470708A324B3669200A98DCA /* MetaDataCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetaDataCache.swift; sourceTree = "<group>"; };
 		47096CA426EA4BD10065DC54 /* sphinx 29.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 29.xcdatamodel"; sourceTree = "<group>"; };
 		4709B1462C6BBA750077AA61 /* Roboto-Black.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Roboto-Black.ttf"; sourceTree = "<group>"; };
+		4709B14C2C76715D0077AA61 /* SphinxOnionManager+NotificationDataExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SphinxOnionManager+NotificationDataExtension.swift"; sourceTree = "<group>"; };
 		470DB25323FAE43400D29FA5 /* SphinxCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SphinxCache.swift; sourceTree = "<group>"; };
 		470F4C38257A949A00288A9B /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/TribeLinkPreviewView.xib; sourceTree = "<group>"; };
 		470F4C3B257A94A000288A9B /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/TribeLinkPreviewView.strings; sourceTree = "<group>"; };
@@ -4201,6 +4203,7 @@
 				CE887EF92B1E5C7B00DBA670 /* SphinxOnionManager+ContactExtension.swift */,
 				CEAAE28A2B31F119009B283B /* SphinxOnionManager+HandleStateExtension.swift */,
 				4741EBE82BFF6DCB00EFF49E /* SphinxOnionManager+StructsAndHelpersExtension.swift */,
+				4709B14C2C76715D0077AA61 /* SphinxOnionManager+NotificationDataExtension.swift */,
 				474C7A5328D3A7A1007A3E17 /* Sphinxrs-Bridging-Header.h */,
 				474C7A5228D3A7A1007A3E17 /* sphinxrs.swift */,
 				474C7A5428D3A7A1007A3E17 /* sphinxrsFFI.h */,
@@ -5500,6 +5503,7 @@
 				475BDD32232ACBB900C5BBD6 /* UIFont.swift in Sources */,
 				CEBF0D07297603B0006C1F21 /* TribeTagSelectionCollectionViewCell.swift in Sources */,
 				477BCF3B2A0144C00080ED65 /* CircularDotView.swift in Sources */,
+				4709B14D2C76715D0077AA61 /* SphinxOnionManager+NotificationDataExtension.swift in Sources */,
 				478B05C4297832FC00A1B254 /* PodcastPlayerController+Payments.swift in Sources */,
 				47651C3523DB4A4F00CBC605 /* TouchUpGestureRecognizer.swift in Sources */,
 				473F7BA6268B7F970063D0E0 /* OnionManager.swift in Sources */,

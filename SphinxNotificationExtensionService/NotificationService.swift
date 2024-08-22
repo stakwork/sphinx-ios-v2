@@ -1,97 +1,115 @@
 import UserNotifications
 import CoreData
+import UIKit
 
 class NotificationService: UNNotificationServiceExtension {
     
     var contentHandler: ((UNNotificationContent) -> Void)?
     var bestAttemptContent: UNMutableNotificationContent?
-    let sharedPushNotificationContainerManager = SharedPushNotificationContainerManager.shared
-    var startTime: Date?
-    let maxRetries:Int = 30
-    var retriesCount:Int=0
+    var notificationsResultsController: NSFetchedResultsController<NotificationData>!
+    var timestamp: Date? = nil
     
     override init() {
         super.init()
-//        sharedPushNotificationContainerManager.printAllNotificationData()
+        
+        observeRemoteChanges()
     }
     
-    override func didReceive(_ request: UNNotificationRequest, withContentHandler contentHandler: @escaping (UNNotificationContent) -> Void) {
+    override func didReceive(
+        _ request: UNNotificationRequest,
+        withContentHandler contentHandler: @escaping (UNNotificationContent) -> Void
+    ) {
         self.contentHandler = contentHandler
+        
         bestAttemptContent = (request.content.mutableCopy() as? UNMutableNotificationContent)
+        bestAttemptContent?.title = "Sphinx"
+        bestAttemptContent?.body = "You have new messages"
         
-        print("NotificationService: Received notification")
-        
-        if let bestAttemptContent = bestAttemptContent,
-           let userInfo = bestAttemptContent.userInfo as? [String: AnyObject] {
+        if let bestAttemptContent = bestAttemptContent, let userInfo = bestAttemptContent.userInfo as? [String: AnyObject] {
             
-            // Save the notification data to CoreData
-            let context = sharedPushNotificationContainerManager.context
-            print("Setting up insertNewObject in NotificationService")
-            if let notificationData = NSEntityDescription.insertNewObject(forEntityName: "NotificationData", into: context) as? NotificationData {
-                print("Done setting up insertNewObject in NotificationService")
-                notificationData.title = "HELLO FROM NOTIFICATIONSERVICE"//bestAttemptContent.title
-                notificationData.body = bestAttemptContent.body
-                notificationData.timestamp = Date()
+            let context = SharedPushNotificationContainerManager.shared.persistentContainer.newBackgroundContext()
+                    
+            context.perform {
+                let date = Date()
+                self.timestamp = date
+                
+                let notificationData = NotificationData(context: context)
+                notificationData.timestamp = date
                 notificationData.userInfo = userInfo
+                notificationData.title = nil
+                notificationData.body = nil
                 
-                sharedPushNotificationContainerManager.saveContext()
-                
-                // Start a timer to periodically check for any new data added after this point
-                startTime = Date()
-                retriesCount = 0
-                
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: {
-                    self.checkForNewNotifications()
-                })
-            }
-        }
-    }
-    
-    @objc func checkForNewNotifications() {
-        print("checkForNewNotifications")
-        guard let startTime = startTime else { return }
-        print("\n\n\nfetching all db items:")
-        sharedPushNotificationContainerManager.fetchAndPrintAllNotificationData()
-        print("---------")
-        let context = sharedPushNotificationContainerManager.context
-        let fetchRequest: NSFetchRequest<NotificationData> = NotificationData.fetchRequest()
-        fetchRequest.predicate = NSPredicate(format: "timestamp > %@", startTime as NSDate)
-        
-        do {
-            let results = try context.fetch(fetchRequest)
-            if let latestNotification = results.last {
-                print("New notification found: \(latestNotification.title ?? "")")
-                
-                // Update the notification content with the latest data
-                bestAttemptContent?.title = latestNotification.title ?? ""
-                bestAttemptContent?.body = latestNotification.body ?? ""
-                
-                // Call the content handler with the modified content
-                if let bestAttemptContent = bestAttemptContent {
-                    contentHandler?(bestAttemptContent)
+                do {
+                    try context.save()
+                } catch {
+                    print("Failed to save context in extension: \(error)")
                 }
+            }
                 
-                // Invalidate the timer since we found the data we were looking for
-                retriesCount = maxRetries
-            }
-            else if retriesCount < maxRetries{ //recursively call until we time out or hit 0
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: {
-                    self.checkForNewNotifications()
-                })
-            }
-            else{
-                retriesCount = maxRetries
-            }
-        } catch let error {
-            print("Error fetching new notifications: \(error)")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: {
+                self.serviceExtensionTimeWillExpire()
+            })
         }
     }
     
     override func serviceExtensionTimeWillExpire() {
-        // Invalidate the timer if the extension is about to expire
-        retriesCount = maxRetries
         if let contentHandler = contentHandler, let bestAttemptContent = bestAttemptContent {
             contentHandler(bestAttemptContent)
+            
+            self.resetAfterSend()
+        }
+    }
+    
+    func observeRemoteChanges() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(storeRemoteChange(notification:)),
+            name: .NSPersistentStoreRemoteChange,
+            object: SharedPushNotificationContainerManager.shared.persistentContainer.persistentStoreCoordinator
+        )
+    }
+    
+    @objc func storeRemoteChange(notification: Notification) {
+        guard let timestamp = self.timestamp else {
+            return
+        }
+        
+        let context = SharedPushNotificationContainerManager.shared.viewContext
+        
+        if let processedNotification = NotificationData.getLastProcessedNotificationWith(
+            timestamp: timestamp,
+            context: context
+        ) {
+            bestAttemptContent?.title = processedNotification.title ?? "Sphinx"
+            bestAttemptContent?.body = processedNotification.body ?? "You have new messages"
+
+            // Call the content handler with the modified content
+            if let bestAttemptContent = bestAttemptContent {
+                contentHandler?(bestAttemptContent)
+            }
+            
+            resetAfterSend()
+        }
+    }
+    
+    func resetAfterSend() {
+        self.bestAttemptContent = nil
+        self.contentHandler = nil
+        self.deleteAllNotifications()
+    }
+    
+    func deleteAllNotifications() {
+        let context = SharedPushNotificationContainerManager.shared.viewContext
+        let notifications = NotificationData.getAll(context: context)
+        for notification in notifications {
+            context.performAndWait {
+                context.delete(notification)
+            }
+        }
+        do {
+            try context.save()
+        } catch {
+            print("Failed to delete notifications")
         }
     }
 }
