@@ -130,6 +130,12 @@ class DashboardRootViewController: RootViewController {
         }
     }
     
+    internal var feedMode : FeedMode = .RSS {
+        didSet{
+            //TODO
+        }
+    }
+    
     var didFinishInitialLoading = false
     let feedsManager = FeedsManager.sharedInstance
     
@@ -148,6 +154,16 @@ class DashboardRootViewController: RootViewController {
         }
     }
     
+    func getFeedModeButtonText()->String{
+        if feedMode == .BitTorrent{
+            return "RSS"
+        }
+        else if feedMode == .RSS{
+            return "BitTorrent"
+        }
+        return "RSS"
+    }
+    
     func configureAddTribeBehavior(oldTab:DashboardTab,visibilityOverride:Bool?=nil){
         if let visibilityOverride = visibilityOverride{
             addTribeTrailing.constant = (visibilityOverride) ? 16 : -120
@@ -157,8 +173,8 @@ class DashboardRootViewController: RootViewController {
         } else {
             addTribeTrailing.constant = -120
         }
-        let title = (activeTab == .feed) ? ("Show Feeds") : ("Add Tribe")
-        let icon = (activeTab == .feed) ? ("keyboard_arrow_down") : ("add")
+        let title = (activeTab == .feed) ? getFeedModeButtonText() : ("Add Tribe")
+        let icon = (activeTab == .feed) ? ("") : ("add")
         addTribeButton.setTitle(title, for: .normal)
         addTribeIconLabel.text = icon
     }
@@ -736,6 +752,11 @@ extension DashboardRootViewController {
         case feed
         case friends
         case tribes
+    }
+    
+    enum FeedMode: Int, Hashable{
+        case BitTorrent
+        case RSS
     }
 }
 
