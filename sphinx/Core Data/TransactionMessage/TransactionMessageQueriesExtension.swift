@@ -420,13 +420,12 @@ extension TransactionMessage {
             NSNumber(booleanLiteral: true)
         )
 
-        let messages:[TransactionMessage] = CoreDataManager.sharedManager.getObjectsOfTypeWith(
+        let messagesCount: Int = CoreDataManager.sharedManager.getObjectsCountOfTypeWith(
             predicate: predicate,
-            sortDescriptors: [],
             entityName: "TransactionMessage"
         )
 
-        return messages.count
+        return messagesCount
     }
     
     static func getPaymentsFor(feedId: String) -> [TransactionMessage] {
