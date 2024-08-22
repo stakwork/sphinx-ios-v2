@@ -41,6 +41,7 @@
 		4707089624AE466D00A98DCA /* ChatChatListExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4707089524AE466D00A98DCA /* ChatChatListExtension.swift */; };
 		470708A424B3669200A98DCA /* MetaDataCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 470708A324B3669200A98DCA /* MetaDataCache.swift */; };
 		4709B1472C6BBA750077AA61 /* Roboto-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 4709B1462C6BBA750077AA61 /* Roboto-Black.ttf */; };
+		4709B14D2C76715D0077AA61 /* SphinxOnionManager+NotificationDataExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4709B14C2C76715D0077AA61 /* SphinxOnionManager+NotificationDataExtension.swift */; };
 		470DB25423FAE43400D29FA5 /* SphinxCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 470DB25323FAE43400D29FA5 /* SphinxCache.swift */; };
 		470F4C37257A949A00288A9B /* TribeLinkPreviewView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 470F4C39257A949A00288A9B /* TribeLinkPreviewView.xib */; };
 		470F4C3E257A984800288A9B /* ContactLinkPreviewView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 470F4C40257A984800288A9B /* ContactLinkPreviewView.xib */; };
@@ -671,7 +672,14 @@
 		CE51F35B2989B19800ABBACB /* BadgeDetailCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = CE51F3592989B19800ABBACB /* BadgeDetailCell.xib */; };
 		CE655AE22B1F88B90063518D /* SphinxOnionManager+ChatExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE655AE12B1F88B90063518D /* SphinxOnionManager+ChatExtension.swift */; };
 		CE677B6C2C63D1F30050CFFC /* EpubConverterManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE677B6B2C63D1F30050CFFC /* EpubConverterManager.swift */; };
+		CE677B742C6A88220050CFFC /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE677B732C6A88220050CFFC /* NotificationService.swift */; };
+		CE677B782C6A88220050CFFC /* SphinxNotificationExtensionService.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CE677B712C6A88220050CFFC /* SphinxNotificationExtensionService.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		CE6784602968B0E000342905 /* FeedsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE67845F2968B0E000342905 /* FeedsManager.swift */; };
+		CE67901F2C73E05100BC2D38 /* sphinx.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 47F35D4A2373156A0042A58F /* sphinx.xcdatamodeld */; };
+		CE6790212C73E85400BC2D38 /* NotificationData.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE6790202C73E85400BC2D38 /* NotificationData.swift */; };
+		CE6790222C73E85400BC2D38 /* NotificationData.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE6790202C73E85400BC2D38 /* NotificationData.swift */; };
+		CE6790242C73E86A00BC2D38 /* NotificationData+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE6790232C73E86A00BC2D38 /* NotificationData+CoreDataProperties.swift */; };
+		CE6790252C73E86A00BC2D38 /* NotificationData+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE6790232C73E86A00BC2D38 /* NotificationData+CoreDataProperties.swift */; };
 		CE6C83FC29B918BD00E9FE7C /* TopMostVCsHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE6C83FB29B918BD00E9FE7C /* TopMostVCsHelper.swift */; };
 		CE792FAB2AFED7AF007FD4FE /* Server+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE792FAA2AFED7AF007FD4FE /* Server+CoreDataClass.swift */; };
 		CE792FAD2AFED7B9007FD4FE /* Server+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE792FAC2AFED7B9007FD4FE /* Server+CoreDataProperties.swift */; };
@@ -689,6 +697,8 @@
 		CE842DEE298D61CF00620AD3 /* BadgeAdminListHeaderCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE842DEC298D61CF00620AD3 /* BadgeAdminListHeaderCell.swift */; };
 		CE842DEF298D61CF00620AD3 /* BadgeAdminListHeaderCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = CE842DED298D61CF00620AD3 /* BadgeAdminListHeaderCell.xib */; };
 		CE842DF12992D0F400620AD3 /* BadgeTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE842DF02992D0F400620AD3 /* BadgeTemplate.swift */; };
+		CE8797382C6E7CC800E2B422 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE677B732C6A88220050CFFC /* NotificationService.swift */; };
+		CE87973A2C6FFE8300E2B422 /* SharedPushNotificationContainerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8797392C6FFE8300E2B422 /* SharedPushNotificationContainerManager.swift */; };
 		CE887EFA2B1E5C7B00DBA670 /* SphinxOnionManager+ContactExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE887EF92B1E5C7B00DBA670 /* SphinxOnionManager+ContactExtension.swift */; };
 		CE91E59A29885175008BA6EA /* MemberBadgeDetailVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE91E59929885175008BA6EA /* MemberBadgeDetailVC.swift */; };
 		CE94A50D2A4B2BF6001EDF7E /* MentionOrMacroItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE94A50C2A4B2BF6001EDF7E /* MentionOrMacroItem.swift */; };
@@ -698,6 +708,7 @@
 		CE9A18582A1D6AC900F176DE /* MediaStorageSourceTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = CE9A18562A1D6AC900F176DE /* MediaStorageSourceTableViewCell.xib */; };
 		CE9A185A2A1D736700F176DE /* ProfileManageStorageSourceDetailsVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE9A18592A1D736700F176DE /* ProfileManageStorageSourceDetailsVC.swift */; };
 		CE9A185C2A1D7AF900F176DE /* ProfileManageStorageSourceDetailsVM.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE9A185B2A1D7AF900F176DE /* ProfileManageStorageSourceDetailsVM.swift */; };
+		CE9D766D2C73D1EB008CEEA0 /* SharedPushNotificationContainerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8797392C6FFE8300E2B422 /* SharedPushNotificationContainerManager.swift */; };
 		CEA2ED152A12D6D000DAC671 /* StorageSummaryView.xib in Resources */ = {isa = PBXBuildFile; fileRef = CEA2ED142A12D6D000DAC671 /* StorageSummaryView.xib */; };
 		CEA2ED172A12D6F700DAC671 /* StorageSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEA2ED162A12D6F700DAC671 /* StorageSummaryView.swift */; };
 		CEA6BC202C1794AD00494071 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEA6BC1F2C1794AD00494071 /* NetworkMonitor.swift */; };
@@ -867,7 +878,28 @@
 			remoteGlobalIDString = 4779F15D232AA0F200D35E81;
 			remoteInfo = sphinx;
 		};
+		CE677B762C6A88220050CFFC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4779F156232AA0F200D35E81 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CE677B702C6A88220050CFFC;
+			remoteInfo = SphinxNotificationExtensionService;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		CE677B792C6A88220050CFFC /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				CE677B782C6A88220050CFFC /* SphinxNotificationExtensionService.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		334B3B522B8268CD0003EA63 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
@@ -1093,6 +1125,7 @@
 		470708A324B3669200A98DCA /* MetaDataCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetaDataCache.swift; sourceTree = "<group>"; };
 		47096CA426EA4BD10065DC54 /* sphinx 29.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 29.xcdatamodel"; sourceTree = "<group>"; };
 		4709B1462C6BBA750077AA61 /* Roboto-Black.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Roboto-Black.ttf"; sourceTree = "<group>"; };
+		4709B14C2C76715D0077AA61 /* SphinxOnionManager+NotificationDataExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SphinxOnionManager+NotificationDataExtension.swift"; sourceTree = "<group>"; };
 		470DB25323FAE43400D29FA5 /* SphinxCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SphinxCache.swift; sourceTree = "<group>"; };
 		470F4C38257A949A00288A9B /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/TribeLinkPreviewView.xib; sourceTree = "<group>"; };
 		470F4C3B257A94A000288A9B /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/TribeLinkPreviewView.strings; sourceTree = "<group>"; };
@@ -1865,7 +1898,13 @@
 		CE51F3592989B19800ABBACB /* BadgeDetailCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = BadgeDetailCell.xib; sourceTree = "<group>"; };
 		CE655AE12B1F88B90063518D /* SphinxOnionManager+ChatExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "SphinxOnionManager+ChatExtension.swift"; sourceTree = "<group>"; };
 		CE677B6B2C63D1F30050CFFC /* EpubConverterManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EpubConverterManager.swift; sourceTree = "<group>"; };
+		CE677B712C6A88220050CFFC /* SphinxNotificationExtensionService.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SphinxNotificationExtensionService.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		CE677B732C6A88220050CFFC /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
+		CE677B752C6A88220050CFFC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		CE677B7E2C6A911D0050CFFC /* SphinxNotificationExtensionService.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SphinxNotificationExtensionService.entitlements; sourceTree = "<group>"; };
 		CE67845F2968B0E000342905 /* FeedsManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FeedsManager.swift; sourceTree = "<group>"; };
+		CE6790202C73E85400BC2D38 /* NotificationData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationData.swift; sourceTree = "<group>"; };
+		CE6790232C73E86A00BC2D38 /* NotificationData+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NotificationData+CoreDataProperties.swift"; sourceTree = "<group>"; };
 		CE6C83FB29B918BD00E9FE7C /* TopMostVCsHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopMostVCsHelper.swift; sourceTree = "<group>"; };
 		CE7840162B922F4D002038AE /* sphinx 48.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 48.xcdatamodel"; sourceTree = "<group>"; };
 		CE792FAA2AFED7AF007FD4FE /* Server+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Server+CoreDataClass.swift"; sourceTree = "<group>"; };
@@ -1886,6 +1925,7 @@
 		CE842DEC298D61CF00620AD3 /* BadgeAdminListHeaderCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BadgeAdminListHeaderCell.swift; sourceTree = "<group>"; };
 		CE842DED298D61CF00620AD3 /* BadgeAdminListHeaderCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = BadgeAdminListHeaderCell.xib; sourceTree = "<group>"; };
 		CE842DF02992D0F400620AD3 /* BadgeTemplate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BadgeTemplate.swift; sourceTree = "<group>"; };
+		CE8797392C6FFE8300E2B422 /* SharedPushNotificationContainerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedPushNotificationContainerManager.swift; sourceTree = "<group>"; };
 		CE887EF92B1E5C7B00DBA670 /* SphinxOnionManager+ContactExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SphinxOnionManager+ContactExtension.swift"; sourceTree = "<group>"; };
 		CE91E59929885175008BA6EA /* MemberBadgeDetailVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberBadgeDetailVC.swift; sourceTree = "<group>"; };
 		CE94A50C2A4B2BF6001EDF7E /* MentionOrMacroItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MentionOrMacroItem.swift; sourceTree = "<group>"; };
@@ -1937,6 +1977,7 @@
 		CE9A18562A1D6AC900F176DE /* MediaStorageSourceTableViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = MediaStorageSourceTableViewCell.xib; sourceTree = "<group>"; };
 		CE9A18592A1D736700F176DE /* ProfileManageStorageSourceDetailsVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileManageStorageSourceDetailsVC.swift; sourceTree = "<group>"; };
 		CE9A185B2A1D7AF900F176DE /* ProfileManageStorageSourceDetailsVM.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileManageStorageSourceDetailsVM.swift; sourceTree = "<group>"; };
+		CE9D766E2C73D569008CEEA0 /* sphinx 51.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 51.xcdatamodel"; sourceTree = "<group>"; };
 		CEA2ED142A12D6D000DAC671 /* StorageSummaryView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = StorageSummaryView.xib; sourceTree = "<group>"; };
 		CEA2ED162A12D6F700DAC671 /* StorageSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageSummaryView.swift; sourceTree = "<group>"; };
 		CEA6BC1F2C1794AD00494071 /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
@@ -2123,6 +2164,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		4779F17D232AA0F300D35E81 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CE677B6E2C6A88220050CFFC /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -3148,6 +3196,7 @@
 		475BDD4F232AE1C400C5BBD6 /* Core Data */ = {
 			isa = PBXGroup;
 			children = (
+				CE6790262C74E42100BC2D38 /* NotificationData */,
 				472A4E1C2C4EB66C00B10934 /* LSat */,
 				CE80EF652A0D8131007ED3A3 /* CachedMedia */,
 				474CCFAC291562CE0037E1D4 /* Actions */,
@@ -3407,6 +3456,7 @@
 				4779F160232AA0F200D35E81 /* sphinx */,
 				4779F178232AA0F300D35E81 /* sphinxTests */,
 				4779F183232AA0F300D35E81 /* sphinxUITests */,
+				CE677B722C6A88220050CFFC /* SphinxNotificationExtensionService */,
 				4779F15F232AA0F200D35E81 /* Products */,
 				29CA57C9FD66D9C3750CE036 /* Frameworks */,
 				3ACE5CA0290E9247A1816D92 /* Pods */,
@@ -3419,6 +3469,7 @@
 				4779F15E232AA0F200D35E81 /* sphinx.app */,
 				4779F175232AA0F300D35E81 /* sphinxTests.xctest */,
 				4779F180232AA0F300D35E81 /* sphinxUITests.xctest */,
+				CE677B712C6A88220050CFFC /* SphinxNotificationExtensionService.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -3429,6 +3480,7 @@
 				47E61581237DC7F400630FD1 /* sphinx.entitlements */,
 				4779F170232AA0F300D35E81 /* Info.plist */,
 				4779F161232AA0F200D35E81 /* AppDelegate.swift */,
+				CE8797392C6FFE8300E2B422 /* SharedPushNotificationContainerManager.swift */,
 				CEA6BC1F2C1794AD00494071 /* NetworkMonitor.swift */,
 				4779F16B232AA0F300D35E81 /* Assets.xcassets */,
 				475BDD22232AC71000C5BBD6 /* Colors.xcassets */,
@@ -4151,6 +4203,7 @@
 				CE887EF92B1E5C7B00DBA670 /* SphinxOnionManager+ContactExtension.swift */,
 				CEAAE28A2B31F119009B283B /* SphinxOnionManager+HandleStateExtension.swift */,
 				4741EBE82BFF6DCB00EFF49E /* SphinxOnionManager+StructsAndHelpersExtension.swift */,
+				4709B14C2C76715D0077AA61 /* SphinxOnionManager+NotificationDataExtension.swift */,
 				474C7A5328D3A7A1007A3E17 /* Sphinxrs-Bridging-Header.h */,
 				474C7A5228D3A7A1007A3E17 /* sphinxrs.swift */,
 				474C7A5428D3A7A1007A3E17 /* sphinxrsFFI.h */,
@@ -4274,6 +4327,25 @@
 				CE842DEA298C680400620AD3 /* BadgeMemberKnownBadgesVM.swift */,
 			);
 			path = Models;
+			sourceTree = "<group>";
+		};
+		CE677B722C6A88220050CFFC /* SphinxNotificationExtensionService */ = {
+			isa = PBXGroup;
+			children = (
+				CE677B7E2C6A911D0050CFFC /* SphinxNotificationExtensionService.entitlements */,
+				CE677B732C6A88220050CFFC /* NotificationService.swift */,
+				CE677B752C6A88220050CFFC /* Info.plist */,
+			);
+			path = SphinxNotificationExtensionService;
+			sourceTree = "<group>";
+		};
+		CE6790262C74E42100BC2D38 /* NotificationData */ = {
+			isa = PBXGroup;
+			children = (
+				CE6790202C73E85400BC2D38 /* NotificationData.swift */,
+				CE6790232C73E86A00BC2D38 /* NotificationData+CoreDataProperties.swift */,
+			);
+			path = NotificationData;
 			sourceTree = "<group>";
 		};
 		CE80EF652A0D8131007ED3A3 /* CachedMedia */ = {
@@ -4734,14 +4806,14 @@
 				4779F15B232AA0F200D35E81 /* Frameworks */,
 				4779F15C232AA0F200D35E81 /* Resources */,
 				5EF20FB23EDF8BAF61C119AC /* [CP] Embed Pods Frameworks */,
+				CE677B792C6A88220050CFFC /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				CE677B772C6A88220050CFFC /* PBXTargetDependency */,
 			);
 			name = sphinx;
-			packageProductDependencies = (
-			);
 			productName = sphinx;
 			productReference = 4779F15E232AA0F200D35E81 /* sphinx.app */;
 			productType = "com.apple.product-type.application";
@@ -4782,13 +4854,30 @@
 			productReference = 4779F180232AA0F300D35E81 /* sphinxUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		CE677B702C6A88220050CFFC /* SphinxNotificationExtensionService */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CE677B7C2C6A88220050CFFC /* Build configuration list for PBXNativeTarget "SphinxNotificationExtensionService" */;
+			buildPhases = (
+				CE677B6D2C6A88220050CFFC /* Sources */,
+				CE677B6E2C6A88220050CFFC /* Frameworks */,
+				CE677B6F2C6A88220050CFFC /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SphinxNotificationExtensionService;
+			productName = SphinxNotificationExtensionService;
+			productReference = CE677B712C6A88220050CFFC /* SphinxNotificationExtensionService.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
 		4779F156232AA0F200D35E81 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastSwiftUpdateCheck = 1020;
+				LastSwiftUpdateCheck = 1500;
 				LastUpgradeCheck = 1220;
 				ORGANIZATIONNAME = sphinx;
 				TargetAttributes = {
@@ -4802,6 +4891,9 @@
 					4779F17F232AA0F300D35E81 = {
 						CreatedOnToolsVersion = 10.2.1;
 						TestTargetID = 4779F15D232AA0F200D35E81;
+					};
+					CE677B702C6A88220050CFFC = {
+						CreatedOnToolsVersion = 15.0.1;
 					};
 				};
 			};
@@ -4820,8 +4912,6 @@
 				"zh-Hant",
 			);
 			mainGroup = 4779F155232AA0F200D35E81;
-			packageReferences = (
-			);
 			productRefGroup = 4779F15F232AA0F200D35E81 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -4829,6 +4919,7 @@
 				4779F15D232AA0F200D35E81 /* sphinx */,
 				4779F174232AA0F300D35E81 /* sphinxTests */,
 				4779F17F232AA0F300D35E81 /* sphinxUITests */,
+				CE677B702C6A88220050CFFC /* SphinxNotificationExtensionService */,
 			);
 		};
 /* End PBXProject section */
@@ -5066,6 +5157,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		CE677B6F2C6A88220050CFFC /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
@@ -5187,6 +5285,7 @@
 				476EB47823C51C9E009745E2 /* UICollectionView.swift in Sources */,
 				475BDCA1232AC1CF00C5BBD6 /* ChatListViewModel.swift in Sources */,
 				4712BB4723D898DD00DDCC3B /* SoundsPlayer.swift in Sources */,
+				CE8797382C6E7CC800E2B422 /* NotificationService.swift in Sources */,
 				474FE33323F5A22A00C06FC8 /* AVViewController.swift in Sources */,
 				47904C1B24BF3C7A00710E7A /* NotificationSoundViewController.swift in Sources */,
 				470146162A3B962E00A00DF8 /* NewChatViewController+MessageMenuDelegate.swift in Sources */,
@@ -5284,6 +5383,7 @@
 				47E6A4AC2A2E237400A9509E /* PodcastBoostView.swift in Sources */,
 				4787F88724746A5400CCE8B9 /* AlignedCollectionViewFlowLayout.swift in Sources */,
 				473BC88D25F287340070E519 /* PodcastNewEpisodeViewController.swift in Sources */,
+				CE6790242C73E86A00BC2D38 /* NotificationData+CoreDataProperties.swift in Sources */,
 				F32A696726CFEF600004B8B3 /* PodcastModel+Properties.swift in Sources */,
 				CEF88DCC29B64F4F00DC1C40 /* UnifiedEpisodeView.swift in Sources */,
 				47FA18C224253BDD00469C8F /* InvoiceManager.swift in Sources */,
@@ -5403,6 +5503,7 @@
 				475BDD32232ACBB900C5BBD6 /* UIFont.swift in Sources */,
 				CEBF0D07297603B0006C1F21 /* TribeTagSelectionCollectionViewCell.swift in Sources */,
 				477BCF3B2A0144C00080ED65 /* CircularDotView.swift in Sources */,
+				4709B14D2C76715D0077AA61 /* SphinxOnionManager+NotificationDataExtension.swift in Sources */,
 				478B05C4297832FC00A1B254 /* PodcastPlayerController+Payments.swift in Sources */,
 				47651C3523DB4A4F00CBC605 /* TouchUpGestureRecognizer.swift in Sources */,
 				473F7BA6268B7F970063D0E0 /* OnionManager.swift in Sources */,
@@ -5572,6 +5673,7 @@
 				F352073926F228A7004B2518 /* CodingUserInfoKey.swift in Sources */,
 				47904C2224BF54DA00710E7A /* NotificationSoundHelper.swift in Sources */,
 				CE842DEE298D61CF00620AD3 /* BadgeAdminListHeaderCell.swift in Sources */,
+				CE6790212C73E85400BC2D38 /* NotificationData.swift in Sources */,
 				473258AC241BD700006E6602 /* CommonPaymentViewController.swift in Sources */,
 				475BDD2C232ACA0700C5BBD6 /* String.swift in Sources */,
 				47F7273825791D8600A794B9 /* ContactLinkPreviewView.swift in Sources */,
@@ -5610,6 +5712,7 @@
 				472092C52A268A1500468796 /* ChatAttachmentViewController+AnimatinsExtension.swift in Sources */,
 				473596932A70031000489606 /* ThreadsListDataSource.swift in Sources */,
 				47357A112729A13600A49EEE /* NewsletterFeed+DisplayUtils.swift in Sources */,
+				CE87973A2C6FFE8300E2B422 /* SharedPushNotificationContainerManager.swift in Sources */,
 				4705D3992799AAB5009C0729 /* CustomBoostView.swift in Sources */,
 				F39767C826C5A85F00DDFC0A /* LeftMenuDelegate.swift in Sources */,
 				479A03E92583A7180093DB30 /* LocalNetworkPermissionService.swift in Sources */,
@@ -5761,6 +5864,18 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		CE677B6D2C6A88220050CFFC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CE677B742C6A88220050CFFC /* NotificationService.swift in Sources */,
+				CE9D766D2C73D1EB008CEEA0 /* SharedPushNotificationContainerManager.swift in Sources */,
+				CE6790222C73E85400BC2D38 /* NotificationData.swift in Sources */,
+				CE6790252C73E86A00BC2D38 /* NotificationData+CoreDataProperties.swift in Sources */,
+				CE67901F2C73E05100BC2D38 /* sphinx.xcdatamodeld in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -5773,6 +5888,11 @@
 			isa = PBXTargetDependency;
 			target = 4779F15D232AA0F200D35E81 /* sphinx */;
 			targetProxy = 4779F181232AA0F300D35E81 /* PBXContainerItemProxy */;
+		};
+		CE677B772C6A88220050CFFC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CE677B702C6A88220050CFFC /* SphinxNotificationExtensionService */;
+			targetProxy = CE677B762C6A88220050CFFC /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -6610,6 +6730,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = FED99A42AA0C9CE8FD759E82 /* Pods-sphinx.debug.xcconfig */;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sphinx/sphinx.entitlements;
 				CODE_SIGN_STYLE = Automatic;
@@ -6700,6 +6821,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = FDF1E0A8EFE1D98BD5A99505 /* Pods-sphinx.release.xcconfig */;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sphinx/sphinx.entitlements;
 				CODE_SIGN_STYLE = Automatic;
@@ -6868,6 +6990,72 @@
 			};
 			name = Release;
 		};
+		CE677B7A2C6A88220050CFFC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CODE_SIGN_ENTITLEMENTS = SphinxNotificationExtensionService/SphinxNotificationExtensionService.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 8297M44YTW;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = SphinxNotificationExtensionService/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = SphinxNotificationExtensionService;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2024 sphinx. All rights reserved.";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gl.sphinx.v2.SphinxNotificationExtensionService;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		CE677B7B2C6A88220050CFFC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CODE_SIGN_ENTITLEMENTS = SphinxNotificationExtensionService/SphinxNotificationExtensionService.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 8297M44YTW;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = SphinxNotificationExtensionService/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = SphinxNotificationExtensionService;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2024 sphinx. All rights reserved.";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gl.sphinx.v2.SphinxNotificationExtensionService;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -6907,12 +7095,22 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		CE677B7C2C6A88220050CFFC /* Build configuration list for PBXNativeTarget "SphinxNotificationExtensionService" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CE677B7A2C6A88220050CFFC /* Debug */,
+				CE677B7B2C6A88220050CFFC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCVersionGroup section */
 		47F35D4A2373156A0042A58F /* sphinx.xcdatamodeld */ = {
 			isa = XCVersionGroup;
 			children = (
+				CE9D766E2C73D569008CEEA0 /* sphinx 51.xcdatamodel */,
 				472A4E1B2C4EB5C400B10934 /* sphinx 50.xcdatamodel */,
 				CEEF6E0D2BD2ECE300953752 /* sphinx 49.xcdatamodel */,
 				CE7840162B922F4D002038AE /* sphinx 48.xcdatamodel */,
@@ -6964,7 +7162,7 @@
 				475E4162238588A200928931 /* sphinx 2.xcdatamodel */,
 				47F35D4B2373156A0042A58F /* sphinx.xcdatamodel */,
 			);
-			currentVersion = 472A4E1B2C4EB5C400B10934 /* sphinx 50.xcdatamodel */;
+			currentVersion = CE9D766E2C73D569008CEEA0 /* sphinx 51.xcdatamodel */;
 			path = sphinx.xcdatamodeld;
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;
