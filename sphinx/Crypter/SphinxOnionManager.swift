@@ -105,6 +105,9 @@ class SphinxOnionManager : NSObject {
     let kAllTorrentLookupBaseURL = "https://tome.bt2.bard.garden:21433"
     var btAuthDict : NSDictionary? = nil
     
+    let kSharedGroupName = "group.com.gl.sphinx.v2"
+    let kPushTokenKey = "pushToken"
+    
     //MARK: Hardcoded Values!
     var serverIP: String {
         get {
@@ -163,6 +166,15 @@ class SphinxOnionManager : NSObject {
         }
     }
     
+    var pushToken: String {
+        get {
+            if let pushToken: String = UserDefaults(suiteName: kSharedGroupName)?.string(forKey: kPushTokenKey) {
+                return pushToken
+            }
+            return Nonce(length: 32).hexString
+        }
+    }
+    
     var network: String {
         get {
             return UserDefaults.Keys.isProductionEnv.get(defaultValue: false) ? "bitcoin" : "regtest"
@@ -189,12 +201,6 @@ class SphinxOnionManager : NSObject {
             }
             return TransactionMessage.getMaxIndex()
         }
-    }
-    
-    override init() {
-        super.init()
-        
-        observeRemoteChanges()
     }
     
     ///Create tribe
@@ -534,8 +540,61 @@ class SphinxOnionManager : NSObject {
             )
 
             let listContactsResponse = try sphinx.listContacts(state: loadOnionStateAsData())
-            print("MY LIST CONTACTS RESPONSE \(listContactsResponse)")
+            saveContactsToSharedUserDefaults(contacts: listContactsResponse)
         } catch {}
+    }
+    
+    func saveContactsToSharedUserDefaults(contacts: String) {
+        var newDictionary: [String: String] = [:]
+        
+        if let contactsJsonArray : [[String: Any]] = getContactsJsonArray(contacts: contacts) {
+            for contact in contactsJsonArray {
+                let contactJson = JSON(contact)
+                let index = contactJson["my_idx"].stringValue
+                let publicKey = contactJson["pubkey"].stringValue
+                
+                if index.isNotEmpty && publicKey.isNotEmpty {
+                    newDictionary[index] = publicKey
+                }
+            }
+        }
+        
+        let pubkeys: [String] = Array(newDictionary.values)
+        let contacts = UserContact.getContactsWith(pubkeys: pubkeys).compactMap({ ($0.publicKey, $0.nickname) })
+        let tribes = Chat.getChatTribesFor(ownerPubkeys: pubkeys).compactMap({ ($0.ownerPubkey, $0.name) })
+        
+        let sharedUserDefaults = UserDefaults(suiteName: kSharedGroupName)
+        
+        for (key, value) in newDictionary {
+            if let contact = contacts.filter({ $0.0 == value }).first {
+                sharedUserDefaults?.set(contact.1, forKey: "contact-\(key)")
+                continue
+            }
+            
+            if let tribe = tribes.filter({ $0.0 == value }).first {
+                sharedUserDefaults?.set(tribe.1, forKey: "tribe-\(key)")
+                continue
+            }
+        }
+        
+        sharedUserDefaults?.synchronize()
+    }
+    
+    func getContactsJsonArray(contacts: String) -> [[String: Any]]? {
+        if let jsonData = contacts.data(using: .utf8) {
+            do {
+                // Parse the JSON data into a dictionary
+                if let jsonDict = try JSONSerialization.jsonObject(
+                    with: jsonData,
+                    options: []
+                ) as? [[String: Any]] {
+                    return jsonDict
+                }
+            } catch {
+                return nil
+            }
+        }
+        return nil
     }
     
     func deleteOwnerFromState() {
@@ -751,7 +810,7 @@ extension SphinxOnionManager {//Sign Up UI Related:
             }
         }
 
-        if var components = URLComponents(string: urlString) {
+        if let components = URLComponents(string: urlString) {
             var queryParams: [String: String] = [:]
 
             components.queryItems?.forEach { queryItem in
@@ -803,6 +862,31 @@ extension SphinxOnionManager {//Sign Up UI Related:
         } else {
             completion(nil)
         }
+    }
+    
+    func mapNotificationToChat(notificationUserInfo : [String: AnyObject]) -> (Chat, String)? {
+        if let encryptedChild = getEncryptedIndexFrom(notification: notificationUserInfo),
+           let chat = findChatForNotification(child: encryptedChild)
+        {
+            return (chat, encryptedChild)
+        }
+        
+        return nil
+    }
+    
+    func getEncryptedIndexFrom(
+        notification: [String: AnyObject]?
+    ) -> String? {
+        if
+            let notification = notification,
+            let aps = notification["aps"] as? [String: AnyObject],
+            let customData = aps["custom_data"] as? [String: AnyObject]
+        {
+            if let chatId = customData["child"] as? String {
+                return chatId
+            }
+        }
+        return nil
     }
 }
 

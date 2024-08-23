@@ -92,6 +92,8 @@ extension UserDefaults {
         public static let defaultTribePublicKey = DefaultKey<String>("defaultTribePublicKey")
         public static let routerUrl = DefaultKey<String>("routerUrl")
         public static let routerPubkey = DefaultKey<String>("routerPubkey")
+        
+        public static let pushToken = DefaultKey<String>("pushToken")
     }
     
     class func resetUserDefaults() {

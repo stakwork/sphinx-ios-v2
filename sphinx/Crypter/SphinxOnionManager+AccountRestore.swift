@@ -807,7 +807,8 @@ extension SphinxOnionManager {
                 seed: seed,
                 uniqueTime: getTimeWithEntropy(),
                 state: loadOnionStateAsData(),
-                pushToken: id
+                pushToken: id,
+                pushKey: kPushTokenKey
             )
             
             let _ = handleRunReturn(rr: rr)
