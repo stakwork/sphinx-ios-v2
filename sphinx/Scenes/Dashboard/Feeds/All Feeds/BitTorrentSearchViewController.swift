@@ -139,9 +139,14 @@ class BitTorrentSearchViewController: UIViewController {
         isLoadingTorrent = false
     }
 
-    func updateSearchTerm(keyword: String) {
+    func updateSearchTerm(keyword: String,feedSource:FeedSource) {
         loadingSearch.isHidden = false
         resetForNewSearch()
-        bitTorrentSearchTableViewDataSource?.searchBitTorrent(keyword: keyword)
+        if(feedSource == .BitTorrent){
+            bitTorrentSearchTableViewDataSource?.searchBitTorrent(keyword: keyword)
+        }
+        else{
+            //@BTRefactor: need to search RSS feeds
+        }
     }
 }

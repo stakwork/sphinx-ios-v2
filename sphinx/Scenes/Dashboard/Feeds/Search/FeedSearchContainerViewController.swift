@@ -17,6 +17,7 @@ protocol FeedSearchResultsViewControllerDelegate: AnyObject {
     )
     
     func didChangeFilterChipVisibility(isVisible:Bool?)
+    func getFeedSource()->FeedSource
 }
 
 
@@ -42,7 +43,6 @@ class FeedSearchContainerViewController: UIViewController {
     
     
     internal lazy var searchResultsViewController: FeedSearchResultsCollectionViewController = {
-        FeedSearchResultsCollectionViewController
             .instantiate(
                 onSubscribedFeedCellSelected: handleFeedCellSelection,
                 onFeedSearchResultCellSelected: handleSearchResultCellSelection
@@ -61,10 +61,10 @@ class FeedSearchContainerViewController: UIViewController {
     
     private var isShowingStartingEmptyStateVC: Bool = true
     
-    func prePopulateSearch(){
+    func prePopulateSearch(feedSource:FeedSource){
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: {
             if(self.feedType != .SearchTorrent && self.prePopulateDebounce == false){
-                self.fetchResults(for: "", and: self.feedType ?? .BrowseTorrent)
+                self.fetchResults(for: "", and: self.feedType ?? .BrowseTorrent, feedSource: feedSource)
                 self.prePopulateDebounce = true
                 DelayPerformedHelper.performAfterDelay(seconds: 2.0, completion: {self.prePopulateDebounce = false})
             }
@@ -125,34 +125,35 @@ extension FeedSearchContainerViewController {
     
     func updateSearchQuery(
         with searchQuery: String,
-        and type: FeedType?
+        and type: FeedType?,
+        feedSource: FeedSource
     ) {
         if searchQuery.isEmpty {
             presentInitialStateView()
         } else {
             switch type {
             case .Video, .BrowseTorrent, .Podcast, .Newsletter:
-                fetchFeedTypeSpecificContent(for: searchQuery,type: type)
+                fetchFeedTypeSpecificContent(for: searchQuery,type: type, feedSource: feedSource)
             case .SearchTorrent:
                 // Handle the case when type is nil (if needed)
                 presentBitTorrentSearchView()
                 if didPressEnter {
-                    performBitTorrentSearch(searchQuery: searchQuery)
+                    performBitTorrentSearch(searchQuery: searchQuery, feedSource: feedSource)
                     didPressEnter = false
                 }
                 break
             default:
                 // Handle other cases
                 presentResultsListView()
-                fetchResults(for: searchQuery, and: type)
+                fetchResults(for: searchQuery, and: type,feedSource:feedSource)
                 break
             }
         }
     }
     
-    private func fetchFeedTypeSpecificContent(for searchQuery: String,type:FeedType?) {
+    private func fetchFeedTypeSpecificContent(for searchQuery: String,type:FeedType?,feedSource:FeedSource) {
         presentResultsListView()
-        fetchResults(for: searchQuery, and: type)
+        fetchResults(for: searchQuery, and: type, feedSource: feedSource)
     }
 
     func presentInitialStateView() {
@@ -183,8 +184,8 @@ extension FeedSearchContainerViewController {
         }
     }
 
-    private func performBitTorrentSearch(searchQuery: String) {
-        bitTorrentSearchViewController.updateSearchTerm(keyword: searchQuery)
+    private func performBitTorrentSearch(searchQuery: String,feedSource:FeedSource) {
+        bitTorrentSearchViewController.updateSearchTerm(keyword: searchQuery,feedSource:feedSource)
     }
     
     
@@ -207,14 +208,15 @@ extension FeedSearchContainerViewController {
     
     private func fetchResults(
         for searchQuery: String,
-        and type: FeedType?
+        and type: FeedType?,
+        feedSource:FeedSource
     ) {
         let shouldServiceTorrentSearch = type == nil //&& didPressEnter
         if  shouldServiceTorrentSearch{
             // "All" tab is selected, show BitTorrent search
             didPressEnter = false
             presentBitTorrentSearchView()
-            performBitTorrentSearch(searchQuery: searchQuery)
+            performBitTorrentSearch(searchQuery: searchQuery,feedSource:feedSource)
         } else {
             // Existing logic for other feed types
             presentResultsListView()  // Make sure to show the regular search results view
@@ -245,7 +247,7 @@ extension FeedSearchContainerViewController {
             searchResultsViewController.updateWithNew(searchResults: [])
             
             searchTimer?.invalidate()
-            searchTimer = Timer.scheduledTimer(timeInterval: 0.5, target: self, selector: #selector(fetchRemoteResults(timer:)), userInfo: ["search_query": searchQuery, "feed_type" : type], repeats: false)
+            searchTimer = Timer.scheduledTimer(timeInterval: 0.5, target: self, selector: #selector(fetchRemoteResults(timer:)), userInfo: ["search_query": searchQuery, "feed_type" : type, "feed_source": feedSource], repeats: false)
         }
         
         ActionsManager.sharedInstance.trackFeedSearch(searchTerm: searchQuery.lowerClean)
@@ -254,8 +256,9 @@ extension FeedSearchContainerViewController {
     @objc func fetchRemoteResults(timer: Timer) {
         if let userInfo = timer.userInfo as? [String: Any] {
             if let searchQuery = userInfo["search_query"] as? String, 
-                let type = userInfo["feed_type"] as? FeedType {
-                if(true){
+                let type = userInfo["feed_type"] as? FeedType,
+                let feedSource = userInfo["feed_source"] as? FeedSource{
+                if(feedSource == .RSS){
                     API.sharedInstance.searchForFeeds(
                         with: type,
                         matching: searchQuery
@@ -276,7 +279,7 @@ extension FeedSearchContainerViewController {
                         }
                     }
                 }
-                else{
+                else if (feedSource == .BitTorrent){
                     API.sharedInstance.searchBTFeed(
                         matching: searchQuery,
                         type: type
@@ -322,56 +325,60 @@ extension FeedSearchContainerViewController {
     private func handleSearchResultCellSelection(
         _ searchResult: FeedSearchResult
     ) {
-        //@BTRefactor: come back to conditionally run this
-        if let vc = self.resultsDelegate as? DashboardRootViewController,
-           true == false{
+        guard let feedSource = resultsDelegate?.getFeedSource() else{
+            return
+        }
+        if(feedSource == .RSS){
+            let existingFeedsFetchRequest: NSFetchRequest<ContentFeed> = ContentFeed
+                .FetchRequests
+                .matching(feedID: searchResult.feedId)
+
+            var fetchRequestResult: [ContentFeed] = []
+
+            managedObjectContext.performAndWait {
+                fetchRequestResult = try! managedObjectContext.fetch(existingFeedsFetchRequest)
+            }
+
+            if let existingFeed = fetchRequestResult.first {
+                resultsDelegate?.viewController(
+                    self,
+                    didSelectFeedSearchResult: existingFeed.feedID
+                )
+            } else {
+                self.newMessageBubbleHelper.showLoadingWheel()
+
+                ContentFeed.fetchContentFeed(
+                    at: searchResult.feedURLPath,
+                    chat: nil,
+                    searchResultDescription: searchResult.feedDescription,
+                    searchResultImageUrl: searchResult.imageUrl,
+                    persistingIn: managedObjectContext,
+                    then: { result in
+
+                        if case .success(_) = result {
+                            self.managedObjectContext.saveContext()
+
+                            self.feedsManager.loadCurrentEpisodeDurationFor(feedId: searchResult.feedId, completion: {
+                                self.newMessageBubbleHelper.hideLoadingWheel()
+
+                                self.resultsDelegate?.viewController(
+                                    self,
+                                    didSelectFeedSearchResult: searchResult.feedId
+                                )
+                            })
+                        } else {
+                            self.newMessageBubbleHelper.hideLoadingWheel()
+
+                            AlertHelper.showAlert(title: "generic.error.title".localized, message: "generic.error.message".localized)
+                        }
+                })
+            }
+        }
+        else if feedSource == .BitTorrent,
+                let vc = self.resultsDelegate as? DashboardRootViewController{
             vc.presentBitTorrentPlayer(for: searchResult)
         }
         
-        let existingFeedsFetchRequest: NSFetchRequest<ContentFeed> = ContentFeed
-            .FetchRequests
-            .matching(feedID: searchResult.feedId)
-
-        var fetchRequestResult: [ContentFeed] = []
-
-        managedObjectContext.performAndWait {
-            fetchRequestResult = try! managedObjectContext.fetch(existingFeedsFetchRequest)
-        }
-
-        if let existingFeed = fetchRequestResult.first {
-            resultsDelegate?.viewController(
-                self,
-                didSelectFeedSearchResult: existingFeed.feedID
-            )
-        } else {
-            self.newMessageBubbleHelper.showLoadingWheel()
-
-            ContentFeed.fetchContentFeed(
-                at: searchResult.feedURLPath,
-                chat: nil,
-                searchResultDescription: searchResult.feedDescription,
-                searchResultImageUrl: searchResult.imageUrl,
-                persistingIn: managedObjectContext,
-                then: { result in
-
-                    if case .success(_) = result {
-                        self.managedObjectContext.saveContext()
-
-                        self.feedsManager.loadCurrentEpisodeDurationFor(feedId: searchResult.feedId, completion: {
-                            self.newMessageBubbleHelper.hideLoadingWheel()
-
-                            self.resultsDelegate?.viewController(
-                                self,
-                                didSelectFeedSearchResult: searchResult.feedId
-                            )
-                        })
-                    } else {
-                        self.newMessageBubbleHelper.hideLoadingWheel()
-
-                        AlertHelper.showAlert(title: "generic.error.title".localized, message: "generic.error.message".localized)
-                    }
-            })
-        }
     }
 }
 

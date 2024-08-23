@@ -190,7 +190,7 @@ class DashboardRootViewController: RootViewController {
     
     func showChipFilterOptions(){
         activeTab = .feed
-        feedSearchResultsContainerViewController.presentInitialStateView()
+        //feedSearchResultsContainerViewController.presentInitialStateView()
     }
     
     func toggleFeedSourceType(){
