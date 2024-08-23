@@ -50,9 +50,9 @@ extension FeedSearchEmptyStateViewController {
         case .Podcast:
             searchPlaceholderImage.isHidden = false
             searchPlaceholderImage.image = UIImage(named: "podcastIndexLogo")
-            
-            searchPlaceholder2.text = "feed.search-podcast-quantity".localized
-            searchPlaceholder3.text = "feed.search-podcast-source".localized
+            let isTorrentSource = (feedSource == .BitTorrent)
+            searchPlaceholder2.text = (isTorrentSource) ? "feed.search-tracks-quantity".localized : "feed.search-podcast-quantity".localized
+            searchPlaceholder3.text = (isTorrentSource) ? "feed.search-torrent-source".localized : "feed.search-podcast-source".localized
             break
         case .Video:
             searchPlaceholderImage.isHidden = false

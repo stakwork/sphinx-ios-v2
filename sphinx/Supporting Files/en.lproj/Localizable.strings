@@ -621,6 +621,8 @@
 "feed.no-play-found" = "No \"Play\" Results Found";
 
 "feed.search-over" = "Search over";
+"feed.search-tracks-quantity" = "millions of tracks";
+"feed.search-torrent-source" = "on BitTorrent";
 "feed.search-podcast-quantity" = "4 000 000 podcasts";
 "feed.search-podcast-source" = "on the Podcast Index";
 "feed.search-video-quantity" = "thousands of videos";

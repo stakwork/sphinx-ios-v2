@@ -595,6 +595,8 @@
 "feed.no-read-found" = "Walang \"Basahin\" Natagpuan ang mga Resulta";
 "feed.no-play-found" = "Walang \"I-play\" Natagpuan ang mga Resulta";
 "feed.search-over" = "Search over";
+"feed.search-tracks-quantity" = "millions of tracks";
+"feed.search-torrent-source" = "on BitTorrent";
 "feed.search-podcast-quantity" = "4 000 000 podcasts";
 "feed.search-podcast-source" = "sa Podcast Index";
 "feed.search-video-quantity" = "libu-libong mga video";

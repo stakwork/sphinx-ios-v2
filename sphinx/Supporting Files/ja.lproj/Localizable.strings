@@ -616,6 +616,8 @@
 "feed.no-play-found" = "「プレイ」の結果が見つかりません";
 
 "feed.search-over" = "検索終了";
+"feed.search-tracks-quantity" = "millions of tracks";
+"feed.search-torrent-source" = "on BitTorrent";
 "feed.search-podcast-quantity" = "4,000,000のポッドキャスト";
 "feed.search-podcast-source" = "ポッドキャストインデックスで";
 "feed.search-video-quantity" = "数千のビデオ";

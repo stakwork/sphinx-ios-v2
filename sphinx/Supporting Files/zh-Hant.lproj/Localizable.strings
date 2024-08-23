@@ -617,6 +617,8 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 "feed.no-play-found" = "未找到“播放”結果";
 
 "feed.search-over" = "在超過";
+"feed.search-tracks-quantity" = "millions of tracks";
+"feed.search-torrent-source" = "on BitTorrent";
 "feed.search-podcast-quantity" = "4 000 000播客";
 "feed.search-podcast-source" = "在播客索引上";
 "feed.search-video-quantity" = "成千上萬的視頻";

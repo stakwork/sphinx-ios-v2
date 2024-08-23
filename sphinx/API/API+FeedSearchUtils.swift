@@ -245,7 +245,7 @@ class BTMedia: Mappable {
                 imageUrl = (isVideo == false) ? "https://png.pngtree.com/png-vector/20211018/ourmid/pngtree-simple-podcast-logo-design-png-image_3991612.png"
                 : "https://png.pngtree.com/png-clipart/20210309/original/pngtree-movie-clip-art-movie-film-field-clapper-board-png-image_5862049.jpg"
                 feedURLPath = isVideo ? "\(API.sharedInstance.btBaseUrl)/\(btMedia.name!)" : "\(btMedia.name!)"
-            case .Newsletter where (readerExtensions.contains(where: fileName.hasSuffix) || eBookKeywords.contains { fileName.contains($0) }):
+            case .Newsletter where ((readerExtensions.contains(where: fileName.hasSuffix) || eBookKeywords.contains { fileName.contains($0) }) && btMedia.size ?? 0 == 0):
                 imageUrl = "https://png.pngtree.com/png-vector/20231016/ourmid/pngtree-isolated-book-sticker-png-image_10188106.png"
                 feedURLPath = "\(API.sharedInstance.btBaseUrl)/\(btMedia.name!)"
                 print("Newsletter tab retrieved:\(feedURLPath)")
