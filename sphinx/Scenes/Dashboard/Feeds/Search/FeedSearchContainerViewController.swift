@@ -221,27 +221,30 @@ extension FeedSearchContainerViewController {
             // Existing logic for other feed types
             presentResultsListView()  // Make sure to show the regular search results view
             
-            var newFetchRequest: NSFetchRequest<ContentFeed> = ContentFeed.FetchRequests.matching(searchQuery: searchQuery)
-            
-            switch(type) {
-            case .Podcast:
-                newFetchRequest = PodcastFeed.FetchRequests.matching(searchQuery: searchQuery)
-            case .Video:
-                newFetchRequest = VideoFeed.FetchRequests.matching(searchQuery: searchQuery)
-            default:
-                break
-            }
-            
-            fetchedResultsController.fetchRequest.sortDescriptors = newFetchRequest.sortDescriptors
-            fetchedResultsController.fetchRequest.predicate = newFetchRequest.predicate
-            
-            do {
-                try fetchedResultsController.performFetch()
-            } catch {
-                AlertHelper.showAlert(
-                    title: "Data Loading Error",
-                    message: "\(error)"
-                )
+            let shouldDoLocalSearch = feedSource == .RSS
+            if(shouldDoLocalSearch){
+                var newFetchRequest: NSFetchRequest<ContentFeed> = ContentFeed.FetchRequests.matching(searchQuery: searchQuery)
+                
+                switch(type) {
+                case .Podcast:
+                    newFetchRequest = PodcastFeed.FetchRequests.matching(searchQuery: searchQuery)
+                case .Video:
+                    newFetchRequest = VideoFeed.FetchRequests.matching(searchQuery: searchQuery)
+                default:
+                    break
+                }
+                
+                fetchedResultsController.fetchRequest.sortDescriptors = newFetchRequest.sortDescriptors
+                fetchedResultsController.fetchRequest.predicate = newFetchRequest.predicate
+                
+                do {
+                    try fetchedResultsController.performFetch()
+                } catch {
+                    AlertHelper.showAlert(
+                        title: "Data Loading Error",
+                        message: "\(error)"
+                    )
+                }
             }
             
             searchResultsViewController.updateWithNew(searchResults: [])
@@ -307,6 +310,7 @@ extension FeedSearchContainerViewController {
     
     private func configureStartingEmptyStateView() {
         emptyStateViewController.feedType = feedType
+        emptyStateViewController.feedSource = self.resultsDelegate?.getFeedSource() ?? .RSS
         
         addChildVC(
             child: emptyStateViewController,

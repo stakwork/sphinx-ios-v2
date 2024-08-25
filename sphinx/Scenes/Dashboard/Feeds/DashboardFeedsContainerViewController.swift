@@ -51,6 +51,7 @@ protocol DashboardFeedsListContainerViewControllerDelegate: AnyObject {
     )
     
     func filterChipDidChange()
+    func getFeedSource()->FeedSource
 }
 
 
@@ -68,7 +69,7 @@ class DashboardFeedsContainerViewController: UIViewController {
     
     var contentFilterOptions: [ContentFilterOption] = []
     
-    var activeFilterOption: ContentFilterOption = .browse {
+    var activeFilterOption: ContentFilterOption = .allContent {
         didSet {
             DispatchQueue.main.async { [weak self] in
                 self?.handleFilterChipChange(
@@ -243,6 +244,7 @@ extension DashboardFeedsContainerViewController {
     private func mainContentViewController(
         for filterChip: ContentFilterOption
     ) -> UIViewController {
+        let feedSource = feedsListContainerDelegate?.getFeedSource() ?? .RSS
         switch activeFilterOption.id {
         case ContentFilterOption.allContent.id:
             return allTribeFeedsCollectionViewController
