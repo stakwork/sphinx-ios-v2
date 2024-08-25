@@ -197,6 +197,7 @@ class DashboardRootViewController: RootViewController {
         let oldFeedSource = feedSource
         (oldFeedSource == .RSS) ? (feedSource = .BitTorrent) : (feedSource = .RSS)
         configureAddTribeBehavior(oldTab: .feed,visibilityOverride: true, oldFeedSource: oldFeedSource)
+        filterChipDidChange()//treat it as a chip filter
     }
     
     func forceShowLoadingWheel() {

@@ -62,6 +62,7 @@ class FeedSearchContainerViewController: UIViewController {
     private var isShowingStartingEmptyStateVC: Bool = true
     
     func prePopulateSearch(feedSource:FeedSource){
+        searchResultsViewController.updateWithNew(searchResults: [])
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: {
             if(self.feedType != .SearchTorrent && self.prePopulateDebounce == false){
                 self.fetchResults(for: "", and: self.feedType ?? .BrowseTorrent, feedSource: feedSource)
