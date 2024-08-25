@@ -124,6 +124,7 @@ class DashboardRootViewController: RootViewController {
             
             if(activeTab == .feed){
                 self.setupFeedsContainer()
+                if(feedSource == .BitTorrent){feedsContainerViewController.showEmptyStateViewController()}
             }
             
             UIView.animate(withDuration: 0.10) {

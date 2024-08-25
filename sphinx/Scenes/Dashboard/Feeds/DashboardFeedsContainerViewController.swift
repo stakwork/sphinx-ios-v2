@@ -317,7 +317,7 @@ extension DashboardFeedsContainerViewController {
     }
     
     
-    private func showEmptyStateViewController() {
+    func showEmptyStateViewController() {
         emptyStateViewController.contentFilterOption = activeFilterOption
         
         addChildVC(
