@@ -108,7 +108,26 @@ extension API {
         }
     }
     
-    public func searchBTFeed(
+    
+    func searchAllTorrentsForContent(
+        keyword:String,
+        completionHandler: @escaping ([FeedSearchResult]) -> ()
+    ) {
+        SphinxOnionManager.sharedInstance.authorizeBT(callback: { success in
+            if(success) {
+                SphinxOnionManager.sharedInstance.searchAllTorrents(
+                    keyword: keyword,
+                    callback: { [self] results in
+                        var feedSearchResults = [FeedSearchResult]()
+                        feedSearchResults = results.compactMap({$0.convertToFeedResult()})
+                        completionHandler(feedSearchResults)
+                    }
+                )
+            }
+        })
+    }
+    
+    public func searchManagedBTInstance(
         matching queryString: String,
         type: FeedType,
         then completionHandler: @escaping FeedSearchCompletionHandler

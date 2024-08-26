@@ -289,7 +289,7 @@ extension FeedSearchContainerViewController {
                     }
                 }
                 else if (feedSource == .BitTorrent){
-                    API.sharedInstance.searchBTFeed(
+                    API.sharedInstance.searchManagedBTInstance(
                         matching: searchQuery,
                         type: type
                     ) { [weak self] result in
@@ -307,6 +307,16 @@ extension FeedSearchContainerViewController {
                                 break
                             }
                         }
+                    }
+                    if(searchQuery != ""){
+                        API.sharedInstance.searchAllTorrentsForContent(
+                            keyword: searchQuery,
+                            completionHandler: {[weak self] results in
+                                guard let self = self else { return }
+                                DispatchQueue.main.async {
+                                    self.searchResultsViewController.updateWithNew(searchResults: results)
+                                }
+                            })
                     }
                 }
             }
