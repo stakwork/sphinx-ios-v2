@@ -106,7 +106,7 @@ class SphinxOnionManager : NSObject {
     var btAuthDict : NSDictionary? = nil
     
     let kSharedGroupName = "group.com.gl.sphinx.v2"
-    let kPushTokenKey = "pushToken"
+    let kChildIndexesStorageKey = "childIndexesStorageKey"
     
     //MARK: Hardcoded Values!
     var serverIP: String {
@@ -166,12 +166,22 @@ class SphinxOnionManager : NSObject {
         }
     }
     
-    var pushToken: String {
+    var pushKey: String? {
         get {
-            if let pushToken: String = UserDefaults(suiteName: kSharedGroupName)?.string(forKey: kPushTokenKey) {
-                return pushToken
+            if let value = KeychainManager.sharedInstance.getValueFor(
+                composedKey: KeychainManager.KeychainKeys.pushKey.rawValue
+            ), !value.isEmpty
+            {
+                return value
             }
-            return Nonce(length: 32).hexString
+            let newValue = Nonce(length: 32).hexString
+            if KeychainManager.sharedInstance.save(
+                value: newValue,
+                forComposedKey: KeychainManager.KeychainKeys.pushKey.rawValue
+            ) {
+                return newValue
+            }
+            return nil
         }
     }
     
@@ -563,21 +573,40 @@ class SphinxOnionManager : NSObject {
         let contacts = UserContact.getContactsWith(pubkeys: pubkeys).compactMap({ ($0.publicKey, $0.nickname) })
         let tribes = Chat.getChatTribesFor(ownerPubkeys: pubkeys).compactMap({ ($0.ownerPubkey, $0.name) })
         
-        let sharedUserDefaults = UserDefaults(suiteName: kSharedGroupName)
+        var childNameDictionary: [String: String] = [:]
         
         for (key, value) in newDictionary {
             if let contact = contacts.filter({ $0.0 == value }).first {
-                sharedUserDefaults?.set(contact.1, forKey: "contact-\(key)")
+                childNameDictionary["contact-\(key)"] = contact.1
                 continue
             }
             
             if let tribe = tribes.filter({ $0.0 == value }).first {
-                sharedUserDefaults?.set(tribe.1, forKey: "tribe-\(key)")
+                childNameDictionary["tribe-\(key)"] = tribe.1
                 continue
             }
         }
         
-        sharedUserDefaults?.synchronize()
+        if let jsonString = convertToJsonString(dictionary: childNameDictionary), let pushKey = pushKey {
+            if let encrypted = SymmetricEncryptionManager.sharedInstance.encryptString(text: jsonString, key: pushKey) {
+                let sharedUserDefaults = UserDefaults(suiteName: kSharedGroupName)
+                sharedUserDefaults?.setValue(encrypted, forKey: kChildIndexesStorageKey)
+                sharedUserDefaults?.synchronize()
+            }
+        }
+    }
+    
+    func convertToJsonString(dictionary: [String: String]) -> String? {
+        let jsonData  = try? JSONSerialization.data(
+            withJSONObject: dictionary,
+            options: JSONSerialization.WritingOptions(rawValue: 0)
+        )
+        
+        if let jsonData = jsonData {
+            return String(data: jsonData, encoding: .utf8)
+        }
+        
+        return nil
     }
     
     func getContactsJsonArray(contacts: String) -> [[String: Any]]? {

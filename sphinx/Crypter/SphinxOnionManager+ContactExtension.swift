@@ -269,10 +269,14 @@ extension SphinxOnionManager {//contacts related
         var childIndex: UInt64? = nil
         var pubkey: String? = nil
         
+        guard let pushKey = pushKey else {
+            return nil
+        }
+        
         do {
             childIndex = try decryptChildIndex(
                 encryptedChild: child,
-                pushKey: pushToken
+                pushKey: pushKey
             )
         } catch {
             return nil

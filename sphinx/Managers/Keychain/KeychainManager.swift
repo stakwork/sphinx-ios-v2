@@ -23,7 +23,8 @@ class KeychainManager {
     enum KeychainKeys : String {
         case pin = "app_pin"
         case walletMnemonic = "wallet_mnemonic"
-        case balance_msats = "balance_msats"
+        case balanceMsats = "balance_msats"
+        case pushKey = "push_key"
     }
     
     let keychain = Keychain(service: "sphinx-app", accessGroup: KeychainManager.kKeychainGroup).synchronizable(true)

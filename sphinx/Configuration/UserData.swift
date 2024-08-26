@@ -147,13 +147,13 @@ class UserData {
     func save(balance: UInt64) {
         let _ = keychainManager.save(
             value: String(balance),
-            forComposedKey: KeychainManager.KeychainKeys.balance_msats.rawValue
+            forComposedKey: KeychainManager.KeychainKeys.balanceMsats.rawValue
         )
     }
     
     func getBalanceSats() -> Int? {
         if let value = keychainManager.getValueFor(
-            composedKey: KeychainManager.KeychainKeys.balance_msats.rawValue
+            composedKey: KeychainManager.KeychainKeys.balanceMsats.rawValue
         ), !value.isEmpty, let intValue = Int(value)
         {
             return intValue / 1000

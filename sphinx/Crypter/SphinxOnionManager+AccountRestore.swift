@@ -802,13 +802,17 @@ extension SphinxOnionManager {
             return
         }
         
+        guard let pushKey = self.pushKey else {
+            return
+        }
+        
         do {
             let rr = try setPushToken(
                 seed: seed,
                 uniqueTime: getTimeWithEntropy(),
                 state: loadOnionStateAsData(),
                 pushToken: id,
-                pushKey: kPushTokenKey
+                pushKey: pushKey
             )
             
             let _ = handleRunReturn(rr: rr)
