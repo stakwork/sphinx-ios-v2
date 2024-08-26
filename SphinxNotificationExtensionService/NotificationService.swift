@@ -70,7 +70,8 @@ class NotificationService: UNNotificationServiceExtension {
     ) -> String? {
         if
             let notification = notification,
-            let customData = notification["custom_data"] as? [String: AnyObject]
+            let aps = notification["aps"] as? [String: AnyObject],
+            let customData = aps["custom_data"] as? [String: AnyObject]
         {
             if let chatId = customData["child"] as? String {
                 return chatId
