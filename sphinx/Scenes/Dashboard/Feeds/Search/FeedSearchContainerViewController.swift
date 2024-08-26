@@ -35,6 +35,8 @@ class FeedSearchContainerViewController: UIViewController {
     internal let newMessageBubbleHelper = NewMessageBubbleHelper()
     internal let feedsManager = FeedsManager.sharedInstance
     
+    var feedSource : FeedSource = .RSS
+    
     lazy var fetchedResultsController: NSFetchedResultsController = Self
         .makeFetchedResultsController(
             using: managedObjectContext,
@@ -44,6 +46,7 @@ class FeedSearchContainerViewController: UIViewController {
     
     internal lazy var searchResultsViewController: FeedSearchResultsCollectionViewController = {
             .instantiate(
+                feedSource: self.feedSource, 
                 onSubscribedFeedCellSelected: handleFeedCellSelection,
                 onFeedSearchResultCellSelected: handleSearchResultCellSelection
             )
@@ -80,13 +83,15 @@ extension FeedSearchContainerViewController {
     
     static func instantiate(
         managedObjectContext: NSManagedObjectContext = CoreDataManager.sharedManager.persistentContainer.viewContext,
-        resultsDelegate: FeedSearchResultsViewControllerDelegate
+        resultsDelegate: FeedSearchResultsViewControllerDelegate,
+        feedSource:FeedSource
     ) -> FeedSearchContainerViewController {
         let viewController = StoryboardScene
             .Dashboard
             .FeedSearchContainerViewController
             .instantiate()
         
+        viewController.feedSource = feedSource
         viewController.managedObjectContext = managedObjectContext
         viewController.resultsDelegate = resultsDelegate
         viewController.fetchedResultsController.delegate = viewController
@@ -274,7 +279,7 @@ extension FeedSearchContainerViewController {
                             case .success(let results):
                                 
                                 self.searchResultsViewController.updateWithNew(
-                                    searchResults: results
+                                    subscribedFeeds: results
                                 )
                                 
                             case .failure(_):

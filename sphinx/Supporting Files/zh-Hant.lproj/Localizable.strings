@@ -68,6 +68,8 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 "dashboard.feeds.section-headings.following" = "正在關注";
 "dashboard.feeds.section-headings.directory" = "目錄";
 "dashboard.feeds.content.empty-state-message" = "未找到播客";
+"dashboard.feeds.section-headings.play.for.free" = "Play for Free";
+"dashboard.feeds.section-headings.download.to.play" = "Download to Play";
 
 
 // 儀表板飼料搜索

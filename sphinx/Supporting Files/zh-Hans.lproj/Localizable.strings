@@ -67,6 +67,8 @@
 "dashboard.feeds.section-headings.following" = "关注";
 "dashboard.feeds.section-headings.directory" = "目录";
 "dashboard.feeds.content.empty-state-message" = "未发现播客";
+"dashboard.feeds.section-headings.play.for.free" = "Play for Free";
+"dashboard.feeds.section-headings.download.to.play" = "Download to Play";
 
 
 // DASHBOARD FEED SEARCH

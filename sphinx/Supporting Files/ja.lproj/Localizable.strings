@@ -66,6 +66,8 @@
 "dashboard.feeds.filters.play" = "遊ぶ";
 "dashboard.feeds.section-headings.following" = "フォロー中";
 "dashboard.feeds.section-headings.directory" = "ディレクトリ";
+"dashboard.feeds.section-headings.play.for.free" = "Play for Free";
+"dashboard.feeds.section-headings.download.to.play" = "Download to Play";
 "dashboard.feeds.content.empty-state-message" = "Podcastが見つかりません";
 
 

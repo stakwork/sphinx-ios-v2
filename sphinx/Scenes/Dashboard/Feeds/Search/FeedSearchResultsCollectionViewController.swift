@@ -14,6 +14,7 @@ class FeedSearchResultsCollectionViewController: UICollectionViewController {
     var feedSearchResults: [FeedSearchResult]!
     
     var interSectionSpacing: CGFloat = 0.0
+    var feedSource : FeedSource = .RSS
 
     var onSubscribedFeedCellSelected: ((FeedSearchResult) -> Void)!
     var onFeedSearchResultCellSelected: ((FeedSearchResult) -> Void)!
@@ -37,6 +38,7 @@ extension FeedSearchResultsCollectionViewController {
     static func instantiate(
         subscribedFeeds: [FeedSearchResult] = [],
         feedSearchResults: [FeedSearchResult] = [],
+        feedSource: FeedSource,
         interSectionSpacing: CGFloat = 0.0,
         onSubscribedFeedCellSelected: ((FeedSearchResult) -> Void)!,
         onFeedSearchResultCellSelected: ((FeedSearchResult) -> Void)!
@@ -46,6 +48,7 @@ extension FeedSearchResultsCollectionViewController {
             .FeedSearchResultsCollectionViewController
             .instantiate()
 
+        viewController.feedSource = feedSource
         viewController.subscribedFeeds = subscribedFeeds
         viewController.feedSearchResults = feedSearchResults
         viewController.interSectionSpacing = interSectionSpacing
@@ -64,12 +67,12 @@ extension FeedSearchResultsCollectionViewController {
         case subscribedFeedsResults
         case feedSearchResults
         
-        var titleForDisplay: String {
+        func titleForDisplay(feedSource: FeedSource) -> String {
             switch self {
             case .subscribedFeedsResults:
-                return "dashboard.feeds.section-headings.following".localized
+                return (feedSource == .RSS) ? "dashboard.feeds.section-headings.following".localized : "dashboard.feeds.section-headings.play.for.free".localized
             case .feedSearchResults:
-                return "dashboard.feeds.section-headings.directory".localized
+                return (feedSource == .RSS) ? "dashboard.feeds.section-headings.download.to.play".localized : ""
             }
         }
     }
@@ -268,7 +271,7 @@ extension FeedSearchResultsCollectionViewController {
                 
                 let section = self.getSectionFor(indexPath)
 
-                headerView.render(withTitle: section.titleForDisplay)
+                headerView.render(withTitle: section.titleForDisplay(feedSource: self.feedSource))
 
                 return headerView
             default:

@@ -57,6 +57,8 @@
 "dashboard.feeds.filters.play" = "Maglaro";
 "dashboard.feeds.section-headings.following" = "Mga Sumusunod";
 "dashboard.feeds.section-headings.directory" = "Direktoryo";
+"dashboard.feeds.section-headings.play.for.free" = "Play for Free";
+"dashboard.feeds.section-headings.download.to.play" = "Download to Play";
 "dashboard.feeds.content.empty-state-message" = "Walang Podcasts na Natagpuan";
 
 // DASHBOARD FEED SEARCH
