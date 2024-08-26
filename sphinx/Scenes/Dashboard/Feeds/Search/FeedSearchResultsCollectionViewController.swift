@@ -8,13 +8,17 @@ import UIKit
 import CoreData
 
 
+protocol FeedSearchResultsCollectionViewControllerDelegate : class {
+    func getFeedSource()->FeedSource
+}
+
 class FeedSearchResultsCollectionViewController: UICollectionViewController {
     
     var subscribedFeeds: [FeedSearchResult]!
     var feedSearchResults: [FeedSearchResult]!
     
     var interSectionSpacing: CGFloat = 0.0
-    var feedSource : FeedSource = .RSS
+    var delegate : FeedSearchResultsCollectionViewControllerDelegate? = nil
 
     var onSubscribedFeedCellSelected: ((FeedSearchResult) -> Void)!
     var onFeedSearchResultCellSelected: ((FeedSearchResult) -> Void)!
@@ -38,17 +42,17 @@ extension FeedSearchResultsCollectionViewController {
     static func instantiate(
         subscribedFeeds: [FeedSearchResult] = [],
         feedSearchResults: [FeedSearchResult] = [],
-        feedSource: FeedSource,
         interSectionSpacing: CGFloat = 0.0,
         onSubscribedFeedCellSelected: ((FeedSearchResult) -> Void)!,
-        onFeedSearchResultCellSelected: ((FeedSearchResult) -> Void)!
+        onFeedSearchResultCellSelected: ((FeedSearchResult) -> Void)!,
+        delegate: FeedSearchResultsCollectionViewControllerDelegate
     ) -> FeedSearchResultsCollectionViewController {
         let viewController = StoryboardScene
             .Dashboard
             .FeedSearchResultsCollectionViewController
             .instantiate()
 
-        viewController.feedSource = feedSource
+        viewController.delegate = delegate
         viewController.subscribedFeeds = subscribedFeeds
         viewController.feedSearchResults = feedSearchResults
         viewController.interSectionSpacing = interSectionSpacing
@@ -72,7 +76,7 @@ extension FeedSearchResultsCollectionViewController {
             case .subscribedFeedsResults:
                 return (feedSource == .RSS) ? "dashboard.feeds.section-headings.following".localized : "dashboard.feeds.section-headings.play.for.free".localized
             case .feedSearchResults:
-                return (feedSource == .RSS) ? "dashboard.feeds.section-headings.download.to.play".localized : ""
+                return (feedSource == .RSS) ? "dashboard.feeds.section-headings.directory".localized : "dashboard.feeds.section-headings.download.to.play".localized
             }
         }
     }
@@ -193,6 +197,11 @@ extension FeedSearchResultsCollectionViewController {
         collectionView.showsVerticalScrollIndicator = false
         collectionView.delegate = self
     }
+    
+    func clearResults(){
+        self.feedSearchResults = []
+        self.subscribedFeeds = []
+    }
 }
 
 
@@ -271,7 +280,8 @@ extension FeedSearchResultsCollectionViewController {
                 
                 let section = self.getSectionFor(indexPath)
 
-                headerView.render(withTitle: section.titleForDisplay(feedSource: self.feedSource))
+                let feedSource : FeedSource = self.delegate?.getFeedSource() ?? .RSS
+                headerView.render(withTitle: section.titleForDisplay(feedSource: feedSource))
 
                 return headerView
             default:

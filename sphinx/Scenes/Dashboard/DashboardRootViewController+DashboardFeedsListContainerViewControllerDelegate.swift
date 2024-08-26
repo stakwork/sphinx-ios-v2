@@ -160,6 +160,7 @@ extension DashboardRootViewController: DashboardFeedsListContainerViewController
     
     func filterChipDidChange(){
         if(feedSource == .BitTorrent){
+            feedSearchResultsContainerViewController.clearResults()
             self.presentFeedSearchView()
             feedSearchResultsContainerViewController.prePopulateSearch(feedSource: feedSource)
         }

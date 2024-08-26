@@ -21,7 +21,7 @@ protocol FeedSearchResultsViewControllerDelegate: AnyObject {
 }
 
 
-class FeedSearchContainerViewController: UIViewController {
+class FeedSearchContainerViewController: UIViewController, FeedSearchResultsCollectionViewControllerDelegate {
     @IBOutlet weak var contentView: UIView!
     
     private var managedObjectContext: NSManagedObjectContext!
@@ -34,8 +34,10 @@ class FeedSearchContainerViewController: UIViewController {
     
     internal let newMessageBubbleHelper = NewMessageBubbleHelper()
     internal let feedsManager = FeedsManager.sharedInstance
-    
-    var feedSource : FeedSource = .RSS
+        
+    func getFeedSource()->FeedSource{
+        return self.resultsDelegate?.getFeedSource() ?? .RSS
+    }
     
     lazy var fetchedResultsController: NSFetchedResultsController = Self
         .makeFetchedResultsController(
@@ -46,9 +48,9 @@ class FeedSearchContainerViewController: UIViewController {
     
     internal lazy var searchResultsViewController: FeedSearchResultsCollectionViewController = {
             .instantiate(
-                feedSource: self.feedSource, 
                 onSubscribedFeedCellSelected: handleFeedCellSelection,
-                onFeedSearchResultCellSelected: handleSearchResultCellSelection
+                onFeedSearchResultCellSelected: handleSearchResultCellSelection,
+                delegate: self
             )
     }()
     
@@ -68,7 +70,7 @@ class FeedSearchContainerViewController: UIViewController {
         searchResultsViewController.updateWithNew(searchResults: [])
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: {
             if(self.feedType != .SearchTorrent && self.prePopulateDebounce == false){
-                self.fetchResults(for: "", and: self.feedType ?? .BrowseTorrent, feedSource: feedSource)
+                self.fetchResults(for: "", and: self.feedType ?? .BrowseTorrent, feedSource: self.getFeedSource())
                 self.prePopulateDebounce = true
                 DelayPerformedHelper.performAfterDelay(seconds: 2.0, completion: {self.prePopulateDebounce = false})
             }
@@ -83,15 +85,13 @@ extension FeedSearchContainerViewController {
     
     static func instantiate(
         managedObjectContext: NSManagedObjectContext = CoreDataManager.sharedManager.persistentContainer.viewContext,
-        resultsDelegate: FeedSearchResultsViewControllerDelegate,
-        feedSource:FeedSource
+        resultsDelegate: FeedSearchResultsViewControllerDelegate
     ) -> FeedSearchContainerViewController {
         let viewController = StoryboardScene
             .Dashboard
             .FeedSearchContainerViewController
             .instantiate()
         
-        viewController.feedSource = feedSource
         viewController.managedObjectContext = managedObjectContext
         viewController.resultsDelegate = resultsDelegate
         viewController.fetchedResultsController.delegate = viewController
@@ -279,7 +279,7 @@ extension FeedSearchContainerViewController {
                             case .success(let results):
                                 
                                 self.searchResultsViewController.updateWithNew(
-                                    subscribedFeeds: results
+                                    searchResults: results
                                 )
                                 
                             case .failure(_):
@@ -300,7 +300,7 @@ extension FeedSearchContainerViewController {
                             case .success(let results):
                                 
                                 self.searchResultsViewController.updateWithNew(
-                                    searchResults: results
+                                    subscribedFeeds: results
                                 )
                                 
                             case .failure(_):
@@ -389,6 +389,10 @@ extension FeedSearchContainerViewController {
             vc.presentBitTorrentPlayer(for: searchResult)
         }
         
+    }
+    
+    func clearResults(){
+        searchResultsViewController.clearResults()
     }
 }
 
