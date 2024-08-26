@@ -16,6 +16,8 @@ import BackgroundTasks
 import AVFAudio
 import SDWebImageSVGCoder
 import PushKit
+import CoreData
+
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -36,8 +38,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     let chatListViewModel = ChatListViewModel()
     
     let som = SphinxOnionManager.sharedInstance
+    var timer: Timer?
+    var startTime: Date?
     
     var isActive = false
+    
+    public enum BuildType: Int {
+        case Sideload
+        case Testflight
+        case AppStore
+    }
 
     //Lifecycle events
     func application(
@@ -68,7 +78,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         }
         
         try? AVAudioSession.sharedInstance().setCategory(.playback)
-        
+                
         setAppConfiguration()
         registerAppRefresh()
         configureGiphy()
@@ -79,7 +89,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         registerForVoIP()
         
         setInitialVC()
-        
+//        setupSharedNotifExtension()
+                
         NetworkMonitor.shared.startMonitoring()
 
         return true
@@ -97,17 +108,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(
         _ application: UIApplication,
         continue userActivity: NSUserActivity,
-        restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {
-            guard userActivity.activityType == NSUserActivityTypeBrowsingWeb,
-                    let url = userActivity.webpageURL,
-                    let _ = URLComponents(url: url, resolvingAgainstBaseURL: true) else
-            {
-                return false
-            }
-            
-            handleUrl(url)
-             
-            return true
+        restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void
+    ) -> Bool {
+        guard userActivity.activityType == NSUserActivityTypeBrowsingWeb,
+                let url = userActivity.webpageURL,
+                let _ = URLComponents(url: url, resolvingAgainstBaseURL: true) else
+        {
+            return false
+        }
+        
+        handleUrl(url)
+         
+        return true
     }
     
     func handleUrl(_ url: URL) {
@@ -192,9 +204,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         guard let notificationUserInfo = notificationUserInfo else {
             return
         }
-        if let encryptedChild = getEncryptedIndexFrom(notification: notificationUserInfo),
-           let chat = SphinxOnionManager.sharedInstance.findChatForNotification(child: encryptedChild)
-        {
+        if let chat = SphinxOnionManager.sharedInstance.mapNotificationToChat(notificationUserInfo: notificationUserInfo) {
             goTo(chat: chat)
         }
         
@@ -255,8 +265,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
     
     func connectMQTT() {
-        if let phoneSignerSetup: Bool = UserDefaults.Keys.setupPhoneSigner.get(),
-            phoneSignerSetup,
+        if let phoneSignerSetup: Bool = UserDefaults.Keys.setupPhoneSigner.get(), phoneSignerSetup,
            let network : String = UserDefaults.Keys.phoneSignerNetwork.get(),
            let host : String = UserDefaults.Keys.phoneSignerHost.get(),
            let relay : String = UserDefaults.Keys.phoneSignerRelay.get(){
@@ -276,12 +285,25 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         takeUserToInitialVC(isUserLogged: SignupHelper.isLogged())
         presentPINIfNeeded()
     }
+    
+    func updateDefaultTribe() {
+        if UserDefaults.Keys.isProductionEnv.get(defaultValue: false) == false {
+            return
+        }
+        
+        if !UserData.sharedInstance.isUserLogged() {
+            return
+        }
+        
+        API.sharedInstance.updateDefaultTribe()
+    }
 
     func presentPINIfNeeded() {
         if GroupsPinManager.sharedInstance.shouldAskForPin() {
             let pinVC = PinCodeViewController.instantiate()
             pinVC.loggingCompletion = {
                 
+                self.updateDefaultTribe()
                 AttachmentsManager.sharedInstance.runAuthentication(forceAuthenticate: true)
                 
                 if let currentVC = self.getCurrentVC() {
@@ -421,25 +443,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 }
 
 extension AppDelegate: UNUserNotificationCenterDelegate {
-    
-//    private func modifyNotificationText(with chatName: String?, completion: @escaping () -> Void) {
-//        guard let name = chatName else { return }
-//        let newText = "New message from \(name)"
-//
-//        // Example of showing a modified local notification
-//        let content = UNMutableNotificationContent()
-//        content.title = "Sphinx Chat"
-//        content.body = newText
-//        content.sound = .default
-//
-//        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
-//        UNUserNotificationCenter.current().add(request) { error in
-//            if let error = error {
-//                print("Error showing local notification: \(error)")
-//            }
-//            completion()
-//        }
-//    }
 
     func application(
         _ application: UIApplication,
@@ -475,6 +478,7 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
     ) {
         let tokenParts = deviceToken.map { data in String(format: "%02.2hhx", data) }
         let token = tokenParts.joined()
+        
         UserContact.updateDeviceId(deviceId: token)
     }
 
@@ -505,21 +509,6 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
             let customData = aps["custom_data"] as? [String: AnyObject]
         {
             if let chatId = customData["chat_id"] as? Int {
-                return chatId
-            }
-        }
-        return nil
-    }
-    
-    func getEncryptedIndexFrom(
-        notification: [String: AnyObject]?
-    ) -> String? {
-        if
-            let notification = notification,
-            let aps = notification["aps"] as? [String: AnyObject],
-            let customData = aps["custom_data"] as? [String: AnyObject]
-        {
-            if let chatId = customData["child"] as? String {
                 return chatId
             }
         }
@@ -566,32 +555,32 @@ extension AppDelegate : PKPushRegistryDelegate{
     }
     
     func pushRegistry(_ registry: PKPushRegistry, didReceiveIncomingPushWith payload: PKPushPayload, for type: PKPushType, completion: @escaping () -> Void) {
-        if let dict = payload.dictionaryPayload as? [String:Any],
-           let aps = dict["aps"] as? [String:Any],
-           let contents = aps["alert"] as? String,
-           let pushMessage = VoIPPushMessage.voipMessage(jsonString: contents),
-           let pushBody = pushMessage.body as? VoIPPushMessageBody {
-           
-            if #available(iOS 14.0, *) {
-//                let (result, link) = EncryptionManager.sharedInstance.decryptMessage(message: pushBody.linkURL)
-//                pushBody.linkURL = link
-//                
-//                let manager = JitsiIncomingCallManager.sharedInstance
-//                manager.currentJitsiURL = (result == true) ? link : pushBody.linkURL
-//                manager.hasVideo = pushBody.isVideoCall()
-//                
-//                self.handleIncomingCall(callerName: pushBody.callerName)
-            }
-            completion()
-        } else {
-            completion()
-        }
+//        if let dict = payload.dictionaryPayload as? [String:Any],
+//           let aps = dict["aps"] as? [String:Any],
+//           let contents = aps["alert"] as? String,
+//           let pushMessage = VoIPPushMessage.voipMessage(jsonString: contents),
+//           let pushBody = pushMessage.body as? VoIPPushMessageBody {
+//            
+//            if #available(iOS 14.0, *) {
+//                //                let (result, link) = EncryptionManager.sharedInstance.decryptMessage(message: pushBody.linkURL)
+//                //                pushBody.linkURL = link
+//                //                
+//                //                let manager = JitsiIncomingCallManager.sharedInstance
+//                //                manager.currentJitsiURL = (result == true) ? link : pushBody.linkURL
+//                //                manager.hasVideo = pushBody.isVideoCall()
+//                //                
+//                //                self.handleIncomingCall(callerName: pushBody.callerName)
+//            }
+//            completion()
+//        } else {
+//            completion()
+//        }
+        
+        completion()
     }
     
     func pushRegistry(_ registry: PKPushRegistry, didInvalidatePushTokenFor type: PKPushType) {
         print("invalidated token")
     }
 }
-
-
 

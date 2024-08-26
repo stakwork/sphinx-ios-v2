@@ -29,8 +29,6 @@ class DashboardRootViewController: RootViewController {
     @IBOutlet weak var bottomBarBottomConstraint: NSLayoutConstraint!
     var isFirstFeedsLoad : Bool = false
     lazy var loadingViewController = LoadingViewController(backgroundColor: UIColor.Sphinx.SecondaryTextInverted.withAlphaComponent(0.5))
-    
-    
     let buttonTitles : [String] = [
         "dashboard.tabs.feed".localized,
         "dashboard.tabs.friends".localized,
@@ -485,7 +483,7 @@ extension DashboardRootViewController {
             self.restoreProgressView.showRestoreProgressView(
                 with: value,
                 label: "restoring-messages".localized,
-                buttonEnabled: false
+                buttonEnabled: true
             )
         }
     }
