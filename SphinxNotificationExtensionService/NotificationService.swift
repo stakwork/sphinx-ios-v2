@@ -1,18 +1,35 @@
 import UserNotifications
 import CoreData
 import UIKit
+import KeychainAccess
+import RNCryptor
 
 class NotificationService: UNNotificationServiceExtension {
     
     var contentHandler: ((UNNotificationContent) -> Void)?
     var bestAttemptContent: UNMutableNotificationContent?
-    var notificationsResultsController: NSFetchedResultsController<NotificationData>!
-    var timestamp: Date? = nil
+    
+    let kSharedGroupName = "group.com.gl.sphinx.v2"
+    let kPushKey = "push_key"
+    let kChildIndexesStorageKey = "childIndexesStorageKey"
+    public static let kKeychainGroup = "8297M44YTW.sphinxV2SharedItems"
+    
+    var pushKey: String? {
+        get {
+            if let value = getKeychainValueFor(
+                composedKey: kPushKey
+            ), !value.isEmpty
+            {
+                return value
+            }
+            return nil
+        }
+    }
+    
+    let keychain = Keychain(service: "sphinx-app", accessGroup: NotificationService.kKeychainGroup).synchronizable(true)
     
     override init() {
         super.init()
-        
-        observeRemoteChanges()
     }
     
     override func didReceive(
@@ -25,31 +42,129 @@ class NotificationService: UNNotificationServiceExtension {
         bestAttemptContent?.title = "Sphinx"
         bestAttemptContent?.body = "You have new messages"
         
-        if let bestAttemptContent = bestAttemptContent, let userInfo = bestAttemptContent.userInfo as? [String: AnyObject] {
+        var decryptedChildIndex: UInt64? = nil
+        
+        if
+            let pushKey = pushKey,
+            let userInfo = bestAttemptContent?.userInfo as? [String:AnyObject],
+            let child = getEncryptedIndexFrom(notification: userInfo)
+        {
+            do {
+                decryptedChildIndex = try decryptChildIndex(
+                    encryptedChild: child,
+                    pushKey: pushKey
+                )
+            } catch {
+                print("error decrypting child index")
+            }
+        }
+        
+        if let decryptedChildIndex = decryptedChildIndex {
+            let shareableUserDefaults = UserDefaults(suiteName: kSharedGroupName)
+            guard let encryptedString = shareableUserDefaults?.string(forKey: kChildIndexesStorageKey) else {
+                showPush()
+                return
+            }
             
-            let context = SharedPushNotificationContainerManager.shared.persistentContainer.newBackgroundContext()
-                    
-            context.perform {
-                let date = Date()
-                self.timestamp = date
-                
-                let notificationData = NotificationData(context: context)
-                notificationData.timestamp = date
-                notificationData.userInfo = userInfo
-                notificationData.title = nil
-                notificationData.body = nil
-                
-                do {
-                    try context.save()
-                } catch {
-                    print("Failed to save context in extension: \(error)")
+            guard let pushKey = pushKey, let decrypted = decryptString(text: encryptedString, key: pushKey) else {
+                showPush()
+                return
+            }
+            
+            if let contactsArray = getContactsJsonDic(contacts: decrypted) {
+                if let contactName = contactsArray["contact-\(decryptedChildIndex)"] {
+                    bestAttemptContent?.body = "You have new messages from \(contactName)"
+                } else if let tribeName = contactsArray["tribe-\(decryptedChildIndex)"] {
+                    bestAttemptContent?.body = "You have new messages in \(tribeName)"
                 }
             }
-                
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: {
-                self.serviceExtensionTimeWillExpire()
-            })
         }
+        
+        showPush()
+    }
+    
+    func showPush() {
+        if let bestAttemptContent = bestAttemptContent, let contentHandler = contentHandler {
+            contentHandler(bestAttemptContent)
+            self.resetAfterSend()
+        }
+    }
+    
+    func getContactsJsonDic(contacts: String) -> [String: String]? {
+        if let jsonData = contacts.data(using: .utf8) {
+            do {
+                // Parse the JSON data into a dictionary
+                if let jsonDict = try JSONSerialization.jsonObject(
+                    with: jsonData,
+                    options: []
+                ) as? [String: String] {
+                    return jsonDict
+                }
+            } catch {
+                return nil
+            }
+        }
+        return nil
+    }
+    
+    func getKeychainValueFor(composedKey: String) -> String? {
+        do {
+            let value = try keychain.get(composedKey)
+            return value
+        } catch let error {
+            print(error.localizedDescription)
+            return nil
+        }
+    }
+    
+    func saveKeychain(value: String, forComposedKey key: String) -> Bool {
+        do {
+            try keychain.set(value, key: key)
+            return true
+        } catch let error {
+            print(error.localizedDescription)
+            return false
+        }
+    }
+    
+    func encryptString(text: String, key: String) -> String? {
+        if let data = text.data(using: .utf8) {
+            let encryptedData = RNCryptor.encrypt(data: data, withPassword: key)
+            return encryptedData.base64EncodedString()
+        }
+        return nil
+    }
+    
+    func decryptString(text: String, key: String) -> String? {
+        var decryptedData : Data? = nil
+        
+        if let data = Data(base64Encoded: text) {
+            do {
+                decryptedData = try RNCryptor.decrypt(data: data, withPassword: key)
+            } catch {
+                print(error)
+            }
+            
+            if let decryptedData = decryptedData {
+                return String(decoding: decryptedData, as: UTF8.self)
+            }
+        }
+        return nil
+    }
+    
+    func getEncryptedIndexFrom(
+        notification: [String: AnyObject]?
+    ) -> String? {
+        if
+            let notification = notification,
+            let aps = notification["aps"] as? [String: AnyObject],
+            let customData = aps["custom_data"] as? [String: AnyObject]
+        {
+            if let chatId = customData["child"] as? String {
+                return chatId
+            }
+        }
+        return nil
     }
     
     override func serviceExtensionTimeWillExpire() {
@@ -60,56 +175,8 @@ class NotificationService: UNNotificationServiceExtension {
         }
     }
     
-    func observeRemoteChanges() {
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(storeRemoteChange(notification:)),
-            name: .NSPersistentStoreRemoteChange,
-            object: SharedPushNotificationContainerManager.shared.persistentContainer.persistentStoreCoordinator
-        )
-    }
-    
-    @objc func storeRemoteChange(notification: Notification) {
-        guard let timestamp = self.timestamp else {
-            return
-        }
-        
-        let context = SharedPushNotificationContainerManager.shared.viewContext
-        
-        if let processedNotification = NotificationData.getLastProcessedNotificationWith(
-            timestamp: timestamp,
-            context: context
-        ) {
-            bestAttemptContent?.title = processedNotification.title ?? "Sphinx"
-            bestAttemptContent?.body = processedNotification.body ?? "You have new messages"
-
-            // Call the content handler with the modified content
-            if let bestAttemptContent = bestAttemptContent {
-                contentHandler?(bestAttemptContent)
-            }
-            
-            resetAfterSend()
-        }
-    }
-    
     func resetAfterSend() {
         self.bestAttemptContent = nil
         self.contentHandler = nil
-        self.deleteAllNotifications()
-    }
-    
-    func deleteAllNotifications() {
-        let context = SharedPushNotificationContainerManager.shared.viewContext
-        let notifications = NotificationData.getAll(context: context)
-        for notification in notifications {
-            context.performAndWait {
-                context.delete(notification)
-            }
-        }
-        do {
-            try context.save()
-        } catch {
-            print("Failed to delete notifications")
-        }
     }
 }

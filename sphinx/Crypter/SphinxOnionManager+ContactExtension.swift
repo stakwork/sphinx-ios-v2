@@ -266,20 +266,41 @@ extension SphinxOnionManager {//contacts related
     }
     
     func findChatForNotification(child: String) -> Chat? {
-        guard let seed = getAccountSeed() else {
+        var childIndex: UInt64? = nil
+        var pubkey: String? = nil
+        
+        guard let pushKey = pushKey else {
             return nil
         }
+        
         do {
-            let pubkey = try contactPubkeyByEncryptedChild(
-                seed: seed,
-                state: loadOnionStateAsData(),
-                child: child
+            childIndex = try decryptChildIndex(
+                encryptedChild: child,
+                pushKey: pushKey
             )
-            let chat = Chat.getTribeChatWithOwnerPubkey(ownerPubkey: pubkey) ?? UserContact.getContactWithDisregardStatus(pubkey: pubkey)?.getChat()
-            return chat
         } catch {
             return nil
         }
+        
+        guard let childIndex = childIndex else {
+            return nil
+        }
+        
+        do {
+            pubkey = try contactPubkeyByChildIndex(
+                state: loadOnionStateAsData(),
+                childIdx: childIndex
+            )
+        } catch {
+            return nil
+        }
+        
+        guard let pubkey = pubkey else {
+            return nil
+        }
+        
+        let chat = Chat.getTribeChatWithOwnerPubkey(ownerPubkey: pubkey) ?? UserContact.getContactWithDisregardStatus(pubkey: pubkey)?.getChat()
+        return chat
     }
     
     func createChat(

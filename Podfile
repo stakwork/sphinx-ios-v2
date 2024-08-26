@@ -49,3 +49,8 @@ target 'sphinx' do
     pod 'EPUBKit'
     pod 'MobileVLCKit'
 end
+
+target 'SphinxNotificationExtensionService' do
+    pod 'RNCryptor', '~> 5.0'
+    pod 'KeychainAccess'
+end
