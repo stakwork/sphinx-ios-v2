@@ -89,13 +89,10 @@ class TorrentMagnetDetailsView: UIView {
         magnetLink:String,
         detailsResponse:MagnetDetailsResponse
     ){
-        nameLabel.text = "Name: \(detailsResponse.details?.name ?? "Unknown")"
-        seederCountLabel.text = "# of Seeders: \(detailsResponse.seenPeers?.count ?? 0)"
-        magnetLinkLabel.text = "Link: \(magnetLink)"
-        
-        
-        self.costToHostLabel.text = "Cost to Add:\(0) sats"
-        
+        nameLabel.attributedText = createAttributedString(boldPart: "Name:", regularPart: detailsResponse.details?.name ?? "Unknown")
+        seederCountLabel.attributedText = createAttributedString(boldPart: "Seeders Count:", regularPart: "\(detailsResponse.seenPeers?.count ?? 0)")
+        magnetLinkLabel.attributedText = createAttributedString(boldPart: "Link:", regularPart: magnetLink)
+        costToHostLabel.attributedText = createAttributedString(boldPart: "Cost:", regularPart: "0 sats")
                 
 //        getCostOfInvoice(
 //            magnetLink: magnetLink,
@@ -121,6 +118,22 @@ class TorrentMagnetDetailsView: UIView {
             completion: { intValue in
                 completion(intValue)
             })
+    }
+    
+    private func createAttributedString(boldPart: String, regularPart: String) -> NSAttributedString {
+        let boldAttributes: [NSAttributedString.Key: Any] = [
+            .font: UIFont.boldSystemFont(ofSize: 16),
+            .foregroundColor: UIColor.label
+        ]
+        let regularAttributes: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 16),
+            .foregroundColor: UIColor.label
+        ]
+        
+        let attributedString = NSMutableAttributedString(string: boldPart, attributes: boldAttributes)
+        attributedString.append(NSAttributedString(string: " \(regularPart)", attributes: regularAttributes))
+        
+        return attributedString
     }
     
     func showOrHideLabels(shouldHide:Bool){
