@@ -59,10 +59,10 @@ extension SphinxOnionManager {
     }
     
     func getMagnetDetails(
-        data:BTFeedSearchDataMapper,
+        magnet_link:String?,
         callback: @escaping (MagnetDetailsResponse?) -> ()
     ){
-        guard let magnet = data.magnet_link,
+        guard let magnet = magnet_link,
               let authDict = btAuthDict,
               let authString = unpackAuthString(dict: authDict) else{
             return
@@ -76,6 +76,47 @@ extension SphinxOnionManager {
                 callback(response)
             }
         )
+    }
+    
+    func getTorrentBolt11Cost(
+        magnetLink:String,
+        magnetDetails:MagnetDetailsResponse,
+        completion: @escaping (Int?)->()
+    ){
+        getTorrentBolt11Invoice(magnetLink: magnetLink, magnetDetails: magnetDetails, completion: {success, bolt11 in
+            if(bolt11 == nil && success == true){
+                completion(0)//no cost imposed in this scenario
+                return
+            }
+            let prd = PaymentRequestDecoder()
+            guard let stringAmount = prd.decodeAmount(str: bolt11 ?? ""),
+                  let intAmount = Int(stringAmount) else{
+              completion(nil)
+                return
+          }
+            completion(intAmount)
+        })
+    }
+    
+    func getTorrentBolt11Invoice(
+        magnetLink:String,
+        magnetDetails:MagnetDetailsResponse,
+        completion: @escaping (Bool,String?)->()
+    ){
+        guard let initialPeers = magnetDetails.seenPeers,
+            let authDict = btAuthDict,
+            let authString = unpackAuthString(dict: authDict) else{
+                return
+        }
+        API.sharedInstance.requestTorrentDownload(
+            url: "\(kAllTorrentLookupBaseURL)/add_magnet",
+            authorizeDict: authString,
+            magnetLink: magnetLink,
+            initialPeers: initialPeers,
+            paymenHash: nil,
+            callback: { success, bolt11 in
+                completion(success,bolt11)
+            })
     }
     
     func downloadTorrentViaMagnet(

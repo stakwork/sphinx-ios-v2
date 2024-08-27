@@ -440,7 +440,7 @@ class BTFeedSearchDataMapper: Mappable {
         let title = self.name ?? "No Title"
         let feedDescription = "Size: \(self.size_bytes ?? 0)"
         let imageUrl = ""
-        let feedURLPath = ""//@BTRefactor: replace this with some scheme to get underlying magnet link or something
+        let feedURLPath = magnet_link ?? "error"//@BTRefactor: replace this with some scheme to get underlying magnet link or something
         let finalType = FeedType.Video
         
         return FeedSearchResult(feedId, title, feedDescription, imageUrl, feedURLPath, finalType)

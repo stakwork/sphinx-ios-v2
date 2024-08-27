@@ -60,6 +60,8 @@
 "dashboard.feeds.section-headings.play.for.free" = "Play for Free";
 "dashboard.feeds.section-headings.download.to.play" = "Download to Play";
 "dashboard.feeds.content.empty-state-message" = "Walang Podcasts na Natagpuan";
+"dashboard.feeds.content.download.torrent.started.title" = "Torrent download started";
+"dashboard.feeds.content.download.torrent.started.message" = "Check back in a bit to consume your content";
 
 // DASHBOARD FEED SEARCH
 "dashboard.feeds.search.error-alert-title" = "May naganap na pagkakamali habang naghahanap ng mga Feed ng Podcast";

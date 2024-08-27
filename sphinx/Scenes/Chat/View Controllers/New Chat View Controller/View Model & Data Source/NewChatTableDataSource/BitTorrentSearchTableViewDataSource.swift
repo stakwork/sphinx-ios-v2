@@ -75,7 +75,7 @@ class BitTorrentSearchTableViewDataSource: NSObject, UITableViewDataSource, UITa
             cell.isLoading = true
             if let magnetLink = result.magnet_link {
                 SphinxOnionManager.sharedInstance.getMagnetDetails(
-                    data: result,
+                    magnet_link: result.magnet_link,
                     callback: { detailsResponse in
                         if let responseCallback = self.getMagnetDetailsCallback {
                             responseCallback(magnetLink, detailsResponse)
