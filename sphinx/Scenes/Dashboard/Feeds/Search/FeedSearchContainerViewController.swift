@@ -26,7 +26,6 @@ class FeedSearchContainerViewController: UIViewController, FeedSearchResultsColl
     
     private var managedObjectContext: NSManagedObjectContext!
     private weak var resultsDelegate: FeedSearchResultsViewControllerDelegate?
-    private var torrentMagnetDetailsView: TorrentMagnetDetailsView!
     
     var feedType: FeedType? = nil
     var searchTimer: Timer? = nil
@@ -406,7 +405,7 @@ extension FeedSearchContainerViewController {
         else if feedSource == .BitTorrent,
                 let vc = self.resultsDelegate as? DashboardRootViewController,
                 searchResult.feedURLPath.contains("magnet:"){
-            fetchMagnetDetails(magnet_link: searchResult.feedURLPath)
+            vc.fetchMagnetDetails(magnet_link: searchResult.feedURLPath)
         }
         else{
             AlertHelper.showAlert(title: "generic.error.title".localized, message: "generic.error.message".localized)
@@ -449,81 +448,5 @@ extension FeedSearchContainerViewController: NSFetchedResultsControllerDelegate 
                 subscribedFeeds: subscribedFeeds
             )
         }
-    }
-}
-
-//MARK: Torrents related stuff
-extension FeedSearchContainerViewController: TorrentMagnetDetailsViewDelegate{
-    
-    func handleAddMagnetError(){
-        AlertHelper.showAlert(title: "generic.error.title".localized, message: "generic.error.message".localized)
-        torrentMagnetDetailsView.removeFromSuperview()
-    }
-    
-    func handleAddMagnetSuccess(){
-        AlertHelper.showAlert(title: "dashboard.feeds.content.download.torrent.started.title".localized, message: "dashboard.feeds.content.download.torrent.started.message".localized)
-        removeMagnetDetailsView()
-    }
-    
-    func didTapAddMagnet(){
-        guard let stashedMagnetLink = stashedMagnetLink,
-              let stashedDetailsResponse = stashedDetailsResponse else{
-            handleAddMagnetError()
-            return
-        }
-        SphinxOnionManager.sharedInstance.downloadTorrentViaMagnet(
-            magnetLink: stashedMagnetLink,
-            magnetDetails: stashedDetailsResponse,
-            completion: { success in
-                success ? self.handleAddMagnetSuccess() : self.handleAddMagnetError()
-            })
-    }
-    
-    func didTapCancelMagnet(){
-        removeMagnetDetailsView()
-    }
-    
-    func removeMagnetDetailsView(){
-        stashedMagnetLink = nil
-        stashedDetailsResponse = nil
-        torrentMagnetDetailsView.removeFromSuperview()
-    }
-    
-    private func setupTorrentMagnetDetailsView() {
-        // Initialize the custom view
-        torrentMagnetDetailsView = TorrentMagnetDetailsView()
-        torrentMagnetDetailsView.delegate = self
-        
-        // Add it to the view hierarchy
-        view.addSubview(torrentMagnetDetailsView)
-        
-        // Disable autoresizing mask translation for use with Auto Layout
-        torrentMagnetDetailsView.translatesAutoresizingMaskIntoConstraints = false
-        
-        // Set up constraints
-        NSLayoutConstraint.activate([
-            torrentMagnetDetailsView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
-            torrentMagnetDetailsView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            torrentMagnetDetailsView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            torrentMagnetDetailsView.heightAnchor.constraint(equalToConstant: 350) // Adjust height as needed
-        ])
-        
-        torrentMagnetDetailsView.showOrHideLabels(shouldHide: true)
-    }
-    
-    func fetchMagnetDetails(magnet_link:String?){
-        setupTorrentMagnetDetailsView()
-        torrentMagnetDetailsView.isLoading = true
-        guard let magnet_link = magnet_link else {return}
-        SphinxOnionManager.sharedInstance.getMagnetDetails(
-            magnet_link: magnet_link,
-            callback: { detailsResponse in
-                guard let detailsResponse = detailsResponse else {return}
-                self.stashedMagnetLink = magnet_link
-                self.stashedDetailsResponse = detailsResponse
-                self.torrentMagnetDetailsView.isLoading = false
-                self.torrentMagnetDetailsView.populateLabels(magnetLink: magnet_link, detailsResponse: detailsResponse)
-            }
-        )
     }
 }

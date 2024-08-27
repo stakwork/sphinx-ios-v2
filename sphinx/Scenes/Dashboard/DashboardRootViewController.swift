@@ -64,6 +64,12 @@ class DashboardRootViewController: RootViewController {
     let som = SphinxOnionManager.sharedInstance
     var feedSource:FeedSource = .RSS
     
+    //MARK: Torrents related
+    var stashedMagnetLink :String? = nil
+    var stashedDetailsResponse : MagnetDetailsResponse? = nil
+    var torrentMagnetDetailsView: TorrentMagnetDetailsView!
+    //END Torrents Related
+    
     internal lazy var chatsListViewModel: ChatListViewModel = {
         ChatListViewModel()
     }()

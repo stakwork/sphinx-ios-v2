@@ -63,13 +63,7 @@ class TorrentMagnetDetailsView: UIView {
         addSubview(view)
         contentView = view
         
-        contentView.frame = self.bounds
-        contentView.autoresizingMask = [.flexibleHeight, .flexibleWidth]
-        contentView.layer.cornerRadius = 15
-        
-        addMagnetButton.layer.cornerRadius = addMagnetButton.frame.height / 2
-        addMagnetButton.layer.borderColor = UIColor.Sphinx.PlaceholderText.cgColor
-        addMagnetButton.layer.borderWidth = 1
+        styleView()
         
         // Additional setup code
     }
@@ -80,7 +74,15 @@ class TorrentMagnetDetailsView: UIView {
     }
     
     func styleView(){
-        addMagnetButton.layer.cornerRadius = addMagnetButton.frame.height/2.0
+        contentView.frame = self.bounds
+        contentView.autoresizingMask = [.flexibleHeight, .flexibleWidth]
+        contentView.layer.cornerRadius = 15
+        
+        addMagnetButton.layer.cornerRadius = addMagnetButton.frame.height / 2
+        addMagnetButton.layer.borderColor = UIColor.Sphinx.PlaceholderText.cgColor
+        addMagnetButton.layer.borderWidth = 1
+        
+        magnetDetailsLabel.font = UIFont(name: "Roboto-Bold", size: 24.0)
     }
     
     func populateLabels(
