@@ -410,163 +410,6 @@
             </objects>
             <point key="canvasLocation" x="-3994" y="2761"/>
         </scene>
-        <!--Bit Torrent Search View Controller-->
-        <scene sceneID="74d-KO-lhq">
-            <objects>
-                <viewController storyboardIdentifier="BitTorrentSearchViewController" id="wcZ-6V-fZU" customClass="BitTorrentSearchViewController" customModule="sphinx" customModuleProvider="target" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" ambiguous="YES" id="W6o-9v-QdP">
-                        <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <subviews>
-                            <tableView clipsSubviews="YES" contentMode="scaleToFill" ambiguous="YES" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="jJQ-wj-DeT">
-                                <rect key="frame" x="0.0" y="48" width="414" height="799"/>
-                                <color key="backgroundColor" systemColor="systemBackgroundColor"/>
-                            </tableView>
-                            <activityIndicatorView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" animating="YES" style="whiteLarge" id="TtZ-LE-6U9">
-                                <rect key="frame" x="189" y="429" width="37" height="37"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                <color key="color" red="0.3803921569" green="0.54117647059999996" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                            </activityIndicatorView>
-                            <view contentMode="scaleToFill" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Nvd-NP-kfO">
-                                <rect key="frame" x="8" y="98" width="398" height="699"/>
-                                <subviews>
-                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Torrent Title" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="jpS-6s-XJw">
-                                        <rect key="frame" x="40" y="8" width="318" height="26.5"/>
-                                        <fontDescription key="fontDescription" type="system" pointSize="22"/>
-                                        <nil key="textColor"/>
-                                        <nil key="highlightedColor"/>
-                                    </label>
-                                    <tableView clipsSubviews="YES" contentMode="scaleToFill" ambiguous="YES" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="MfT-Sy-TPp">
-                                        <rect key="frame" x="40" y="57.5" width="318" height="466.5"/>
-                                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
-                                    </tableView>
-                                    <view contentMode="scaleToFill" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="GRS-Oa-WRV">
-                                        <rect key="frame" x="128" y="549" width="142" height="50"/>
-                                        <subviews>
-                                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="uyZ-og-tlm">
-                                                <rect key="frame" x="5" y="12.5" width="40" height="25"/>
-                                                <constraints>
-                                                    <constraint firstAttribute="width" constant="40" id="X05-fZ-Qw2"/>
-                                                </constraints>
-                                                <fontDescription key="fontDescription" name="MaterialIcons-Regular" family="Material Icons" pointSize="25"/>
-                                                <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                                <nil key="highlightedColor"/>
-                                            </label>
-                                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Add Torrent" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="YuW-5l-Rs1">
-                                                <rect key="frame" x="45" y="16" width="79" height="18"/>
-                                                <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="15"/>
-                                                <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                                <nil key="highlightedColor"/>
-                                            </label>
-                                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="s3W-ZI-Uij">
-                                                <rect key="frame" x="0.0" y="0.0" width="142" height="50"/>
-                                            </button>
-                                            <activityIndicatorView hidden="YES" opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" style="whiteLarge" translatesAutoresizingMaskIntoConstraints="NO" id="RSK-uA-q4h">
-                                                <rect key="frame" x="52.5" y="6.5" width="37" height="37"/>
-                                            </activityIndicatorView>
-                                        </subviews>
-                                        <color key="backgroundColor" name="PrimaryBlue"/>
-                                        <constraints>
-                                            <constraint firstItem="s3W-ZI-Uij" firstAttribute="top" secondItem="GRS-Oa-WRV" secondAttribute="top" id="0bM-kB-8JH"/>
-                                            <constraint firstItem="uyZ-og-tlm" firstAttribute="centerY" secondItem="GRS-Oa-WRV" secondAttribute="centerY" id="2cZ-V5-w49"/>
-                                            <constraint firstAttribute="trailing" secondItem="YuW-5l-Rs1" secondAttribute="trailing" constant="18" id="BtL-ZF-qgW"/>
-                                            <constraint firstItem="uyZ-og-tlm" firstAttribute="leading" secondItem="GRS-Oa-WRV" secondAttribute="leading" constant="5" id="ClT-tn-Psr"/>
-                                            <constraint firstAttribute="height" constant="50" id="N1R-TP-CNR"/>
-                                            <constraint firstItem="YuW-5l-Rs1" firstAttribute="centerY" secondItem="GRS-Oa-WRV" secondAttribute="centerY" id="Nqo-ma-f6m"/>
-                                            <constraint firstItem="RSK-uA-q4h" firstAttribute="centerX" secondItem="GRS-Oa-WRV" secondAttribute="centerX" id="cZi-ss-LNa"/>
-                                            <constraint firstItem="RSK-uA-q4h" firstAttribute="centerY" secondItem="GRS-Oa-WRV" secondAttribute="centerY" id="dMP-lK-suv"/>
-                                            <constraint firstItem="YuW-5l-Rs1" firstAttribute="leading" secondItem="uyZ-og-tlm" secondAttribute="trailing" id="iY7-zG-123"/>
-                                            <constraint firstAttribute="trailing" secondItem="s3W-ZI-Uij" secondAttribute="trailing" id="nNr-Kv-PhO"/>
-                                            <constraint firstItem="s3W-ZI-Uij" firstAttribute="leading" secondItem="GRS-Oa-WRV" secondAttribute="leading" id="u58-SV-pYc"/>
-                                            <constraint firstAttribute="bottom" secondItem="s3W-ZI-Uij" secondAttribute="bottom" id="uWv-zL-wWa"/>
-                                        </constraints>
-                                    </view>
-                                    <view contentMode="scaleToFill" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="GEl-jf-gdO">
-                                        <rect key="frame" x="128" y="621" width="142" height="50"/>
-                                        <subviews>
-                                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="7Ff-1G-LVZ">
-                                                <rect key="frame" x="5" y="25" width="40" height="0.0"/>
-                                                <constraints>
-                                                    <constraint firstAttribute="width" constant="40" id="oBZ-3E-9JK"/>
-                                                </constraints>
-                                                <fontDescription key="fontDescription" name="MaterialIcons-Regular" family="Material Icons" pointSize="25"/>
-                                                <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                                <nil key="highlightedColor"/>
-                                            </label>
-                                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Cancel" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="1z9-DO-IuZ">
-                                                <rect key="frame" x="45" y="16" width="79" height="18"/>
-                                                <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="15"/>
-                                                <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                                <nil key="highlightedColor"/>
-                                            </label>
-                                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="6SX-8C-LcR">
-                                                <rect key="frame" x="0.0" y="0.0" width="142" height="50"/>
-                                            </button>
-                                        </subviews>
-                                        <color key="backgroundColor" name="MainBottomIcons"/>
-                                        <constraints>
-                                            <constraint firstAttribute="trailing" secondItem="1z9-DO-IuZ" secondAttribute="trailing" constant="18" id="5pW-Ca-Pwn"/>
-                                            <constraint firstAttribute="trailing" secondItem="6SX-8C-LcR" secondAttribute="trailing" id="B78-ZU-GEV"/>
-                                            <constraint firstAttribute="bottom" secondItem="6SX-8C-LcR" secondAttribute="bottom" id="F3E-ws-SYi"/>
-                                            <constraint firstItem="7Ff-1G-LVZ" firstAttribute="centerY" secondItem="GEl-jf-gdO" secondAttribute="centerY" id="Xmr-wl-fiB"/>
-                                            <constraint firstItem="7Ff-1G-LVZ" firstAttribute="leading" secondItem="GEl-jf-gdO" secondAttribute="leading" constant="5" id="bjh-FG-Zz4"/>
-                                            <constraint firstItem="6SX-8C-LcR" firstAttribute="leading" secondItem="GEl-jf-gdO" secondAttribute="leading" id="cNy-Gt-N0c"/>
-                                            <constraint firstAttribute="height" constant="50" id="eHY-9S-whS"/>
-                                            <constraint firstItem="6SX-8C-LcR" firstAttribute="top" secondItem="GEl-jf-gdO" secondAttribute="top" id="hMT-xr-06L"/>
-                                            <constraint firstItem="1z9-DO-IuZ" firstAttribute="centerY" secondItem="GEl-jf-gdO" secondAttribute="centerY" id="hki-60-CgA"/>
-                                            <constraint firstItem="1z9-DO-IuZ" firstAttribute="leading" secondItem="7Ff-1G-LVZ" secondAttribute="trailing" id="sB8-at-17W"/>
-                                        </constraints>
-                                    </view>
-                                </subviews>
-                                <color key="backgroundColor" name="ListBG"/>
-                                <constraints>
-                                    <constraint firstAttribute="bottom" secondItem="GRS-Oa-WRV" secondAttribute="bottom" constant="100" id="BNd-eh-OMA"/>
-                                    <constraint firstItem="jpS-6s-XJw" firstAttribute="width" secondItem="Nvd-NP-kfO" secondAttribute="width" multiplier="0.8" id="CCB-LV-bCM"/>
-                                    <constraint firstItem="GEl-jf-gdO" firstAttribute="centerX" secondItem="Nvd-NP-kfO" secondAttribute="centerX" id="G4q-Yx-VQ5"/>
-                                    <constraint firstItem="GRS-Oa-WRV" firstAttribute="top" secondItem="MfT-Sy-TPp" secondAttribute="bottom" constant="25" id="Hwt-7n-KdI"/>
-                                    <constraint firstItem="MfT-Sy-TPp" firstAttribute="leading" secondItem="Nvd-NP-kfO" secondAttribute="leading" constant="40" id="KmB-6Q-EiY"/>
-                                    <constraint firstItem="GEl-jf-gdO" firstAttribute="top" secondItem="GRS-Oa-WRV" secondAttribute="bottom" constant="22" id="OVn-fh-zar"/>
-                                    <constraint firstItem="GEl-jf-gdO" firstAttribute="leading" secondItem="GRS-Oa-WRV" secondAttribute="leading" id="OYI-8G-asR"/>
-                                    <constraint firstItem="MfT-Sy-TPp" firstAttribute="top" secondItem="jpS-6s-XJw" secondAttribute="bottom" constant="23" id="Ufu-Co-XHg"/>
-                                    <constraint firstItem="jpS-6s-XJw" firstAttribute="centerX" secondItem="Nvd-NP-kfO" secondAttribute="centerX" id="b0j-Kp-KtG"/>
-                                    <constraint firstItem="MfT-Sy-TPp" firstAttribute="centerX" secondItem="Nvd-NP-kfO" secondAttribute="centerX" id="dGt-24-pOz"/>
-                                    <constraint firstItem="GRS-Oa-WRV" firstAttribute="centerX" secondItem="Nvd-NP-kfO" secondAttribute="centerX" id="m0R-vk-PDM"/>
-                                    <constraint firstItem="GEl-jf-gdO" firstAttribute="trailing" secondItem="GRS-Oa-WRV" secondAttribute="trailing" id="nev-rQ-YUS"/>
-                                    <constraint firstItem="jpS-6s-XJw" firstAttribute="top" secondItem="Nvd-NP-kfO" secondAttribute="top" constant="8" id="pRb-6u-eSQ"/>
-                                </constraints>
-                            </view>
-                        </subviews>
-                        <viewLayoutGuide key="safeArea" id="9sd-4v-zhd"/>
-                        <color key="backgroundColor" systemColor="systemIndigoColor"/>
-                        <constraints>
-                            <constraint firstItem="TtZ-LE-6U9" firstAttribute="centerY" secondItem="jJQ-wj-DeT" secondAttribute="centerY" id="6I6-uj-82z"/>
-                            <constraint firstItem="Nvd-NP-kfO" firstAttribute="centerY" secondItem="jJQ-wj-DeT" secondAttribute="centerY" id="9LV-Ci-j4Q"/>
-                            <constraint firstItem="jJQ-wj-DeT" firstAttribute="centerX" secondItem="9sd-4v-zhd" secondAttribute="centerX" id="Vrq-hU-UB5"/>
-                            <constraint firstItem="Nvd-NP-kfO" firstAttribute="leading" secondItem="9sd-4v-zhd" secondAttribute="leading" constant="8" id="cpl-wm-vKM"/>
-                            <constraint firstItem="Nvd-NP-kfO" firstAttribute="top" secondItem="9sd-4v-zhd" secondAttribute="top" constant="50" id="dus-Ye-DvF"/>
-                            <constraint firstItem="Nvd-NP-kfO" firstAttribute="centerX" secondItem="jJQ-wj-DeT" secondAttribute="centerX" id="l9G-yP-WZI"/>
-                            <constraint firstItem="jJQ-wj-DeT" firstAttribute="top" secondItem="9sd-4v-zhd" secondAttribute="top" id="pEv-Uy-KL9"/>
-                            <constraint firstItem="jJQ-wj-DeT" firstAttribute="centerY" secondItem="9sd-4v-zhd" secondAttribute="centerY" id="qBn-me-ieJ"/>
-                            <constraint firstItem="jJQ-wj-DeT" firstAttribute="leading" secondItem="9sd-4v-zhd" secondAttribute="leading" id="ul1-f9-za6"/>
-                        </constraints>
-                    </view>
-                    <connections>
-                        <outlet property="bitTorrentAddButtonActivityView" destination="RSK-uA-q4h" id="Bqg-g0-bzw"/>
-                        <outlet property="bitTorrentAddTorrentButton" destination="s3W-ZI-Uij" id="MVY-8u-Z8B"/>
-                        <outlet property="bitTorrentAddTorrentButtonContainerView" destination="GRS-Oa-WRV" id="Og7-s2-Mo3"/>
-                        <outlet property="bitTorrentCancelButton" destination="6SX-8C-LcR" id="6jc-tf-IC4"/>
-                        <outlet property="bitTorrentCancelButtonContainerView" destination="GEl-jf-gdO" id="yno-8k-qOm"/>
-                        <outlet property="bitTorrentDetailsModalView" destination="Nvd-NP-kfO" id="n3c-1l-JWd"/>
-                        <outlet property="bitTorrentFilesTableView" destination="MfT-Sy-TPp" id="WQT-39-bzI"/>
-                        <outlet property="bitTorrentModalTitle" destination="jpS-6s-XJw" id="9lr-Kj-krr"/>
-                        <outlet property="bitTorrentSearchTableView" destination="jJQ-wj-DeT" id="cyq-SO-L0T"/>
-                        <outlet property="loadingSearch" destination="TtZ-LE-6U9" id="8fG-1E-cJz"/>
-                    </connections>
-                </viewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="q1c-1t-Sg5" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="-6236" y="3533"/>
-        </scene>
         <!--Feed Filter Chips Collection View Controller-->
         <scene sceneID="tKT-jp-7IA">
             <objects>
@@ -887,9 +730,6 @@
         <namedColor name="PlaceholderText">
             <color red="0.69019607843137254" green="0.71764705882352942" blue="0.73725490196078436" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>
-        <namedColor name="PrimaryBlue">
-            <color red="0.38039215686274508" green="0.54117647058823526" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-        </namedColor>
         <namedColor name="ReceivedMsgBG">
             <color red="0.94901960784313721" green="0.95294117647058818" blue="0.96078431372549022" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>
@@ -898,9 +738,6 @@
         </namedColor>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-        </systemColor>
-        <systemColor name="systemIndigoColor">
-            <color red="0.34509803919999998" green="0.33725490200000002" blue="0.83921568629999999" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
     </resources>
 </document>

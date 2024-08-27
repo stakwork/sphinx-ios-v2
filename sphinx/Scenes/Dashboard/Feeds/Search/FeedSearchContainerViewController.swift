@@ -61,10 +61,6 @@ class FeedSearchContainerViewController: UIViewController, FeedSearchResultsColl
         FeedSearchEmptyStateViewController.instantiate()
     }()
     
-    internal lazy var bitTorrentSearchViewController: BitTorrentSearchViewController = {
-        let vc = BitTorrentSearchViewController.instantiate()
-        return vc
-    }()
     
     private var isShowingStartingEmptyStateVC: Bool = true
     
@@ -139,16 +135,8 @@ extension FeedSearchContainerViewController {
             presentInitialStateView()
         } else {
             switch type {
-            case .Video, .BrowseTorrent, .Podcast, .Newsletter:
+            case .Video, .BrowseTorrent, .Podcast, .Newsletter, .SearchTorrent:
                 fetchFeedTypeSpecificContent(for: searchQuery,type: type, feedSource: feedSource)
-            case .SearchTorrent:
-                // Handle the case when type is nil (if needed)
-                presentBitTorrentSearchView()
-                if didPressEnter {
-                    performBitTorrentSearch(searchQuery: searchQuery, feedSource: feedSource)
-                    didPressEnter = false
-                }
-                break
             default:
                 // Handle other cases
                 presentResultsListView()
@@ -167,8 +155,6 @@ extension FeedSearchContainerViewController {
         isShowingStartingEmptyStateVC = true
         
         removeChildVC(child: searchResultsViewController)
-        removeChildVC(child: bitTorrentSearchViewController)
-        
         emptyStateViewController.feedType = feedType
         
         addChildVC(
@@ -178,27 +164,10 @@ extension FeedSearchContainerViewController {
         
         resultsDelegate?.didChangeFilterChipVisibility(isVisible: nil)
     }
-
-    private func presentBitTorrentSearchView() {
-        removeChildVC(child: searchResultsViewController)
-        removeChildVC(child: emptyStateViewController)
-        
-        if bitTorrentSearchViewController.view.superview == nil {
-            addChildVC(
-                child: bitTorrentSearchViewController,
-                container: contentView
-            )
-        }
-    }
-
-    private func performBitTorrentSearch(searchQuery: String,feedSource:FeedSource) {
-        bitTorrentSearchViewController.updateSearchTerm(keyword: searchQuery,feedSource:feedSource)
-    }
     
     
     private func presentResultsListView() {
         isShowingStartingEmptyStateVC = false
-        removeChildVC(child: bitTorrentSearchViewController)
         removeChildVC(child: emptyStateViewController)
         
         addChildVC(
@@ -218,47 +187,39 @@ extension FeedSearchContainerViewController {
         and type: FeedType?,
         feedSource:FeedSource
     ) {
-        let shouldServiceTorrentSearch = type == nil //&& didPressEnter
-        if  shouldServiceTorrentSearch{
-            // "All" tab is selected, show BitTorrent search
-            didPressEnter = false
-            presentBitTorrentSearchView()
-            performBitTorrentSearch(searchQuery: searchQuery,feedSource:feedSource)
-        } else {
             // Existing logic for other feed types
-            presentResultsListView()  // Make sure to show the regular search results view
+        presentResultsListView()  // Make sure to show the regular search results view
+        
+        let shouldDoLocalSearch = feedSource == .RSS
+        if(shouldDoLocalSearch){
+            var newFetchRequest: NSFetchRequest<ContentFeed> = ContentFeed.FetchRequests.matching(searchQuery: searchQuery)
             
-            let shouldDoLocalSearch = feedSource == .RSS
-            if(shouldDoLocalSearch){
-                var newFetchRequest: NSFetchRequest<ContentFeed> = ContentFeed.FetchRequests.matching(searchQuery: searchQuery)
-                
-                switch(type) {
-                case .Podcast:
-                    newFetchRequest = PodcastFeed.FetchRequests.matching(searchQuery: searchQuery)
-                case .Video:
-                    newFetchRequest = VideoFeed.FetchRequests.matching(searchQuery: searchQuery)
-                default:
-                    break
-                }
-                
-                fetchedResultsController.fetchRequest.sortDescriptors = newFetchRequest.sortDescriptors
-                fetchedResultsController.fetchRequest.predicate = newFetchRequest.predicate
-                
-                do {
-                    try fetchedResultsController.performFetch()
-                } catch {
-                    AlertHelper.showAlert(
-                        title: "Data Loading Error",
-                        message: "\(error)"
-                    )
-                }
+            switch(type) {
+            case .Podcast:
+                newFetchRequest = PodcastFeed.FetchRequests.matching(searchQuery: searchQuery)
+            case .Video:
+                newFetchRequest = VideoFeed.FetchRequests.matching(searchQuery: searchQuery)
+            default:
+                break
             }
             
-            searchResultsViewController.updateWithNew(searchResults: [])
+            fetchedResultsController.fetchRequest.sortDescriptors = newFetchRequest.sortDescriptors
+            fetchedResultsController.fetchRequest.predicate = newFetchRequest.predicate
             
-            searchTimer?.invalidate()
-            searchTimer = Timer.scheduledTimer(timeInterval: 0.5, target: self, selector: #selector(fetchRemoteResults(timer:)), userInfo: ["search_query": searchQuery, "feed_type" : type, "feed_source": feedSource], repeats: false)
+            do {
+                try fetchedResultsController.performFetch()
+            } catch {
+                AlertHelper.showAlert(
+                    title: "Data Loading Error",
+                    message: "\(error)"
+                )
+            }
         }
+        
+        searchResultsViewController.updateWithNew(searchResults: [])
+        let finalType :FeedType = type ?? .Video
+        searchTimer?.invalidate()
+        searchTimer = Timer.scheduledTimer(timeInterval: 0.5, target: self, selector: #selector(fetchRemoteResults(timer:)), userInfo: ["search_query": searchQuery, "feed_type" : finalType, "feed_source": feedSource], repeats: false)
         
         ActionsManager.sharedInstance.trackFeedSearch(searchTerm: searchQuery.lowerClean)
     }

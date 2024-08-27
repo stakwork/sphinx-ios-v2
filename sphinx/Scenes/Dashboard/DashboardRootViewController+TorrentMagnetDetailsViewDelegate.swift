@@ -13,7 +13,7 @@ extension DashboardRootViewController:TorrentMagnetDetailsViewDelegate{
     
     func handleAddMagnetError(){
         AlertHelper.showAlert(title: "generic.error.title".localized, message: "generic.error.message".localized)
-        torrentMagnetDetailsView.removeFromSuperview()
+        removeMagnetDetailsView()
     }
     
     func handleAddMagnetSuccess(){
@@ -64,7 +64,7 @@ extension DashboardRootViewController:TorrentMagnetDetailsViewDelegate{
             torrentMagnetDetailsView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             torrentMagnetDetailsView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
             torrentMagnetDetailsView.widthAnchor.constraint(equalTo: view.widthAnchor, constant: -40), // 20 points padding on each side
-            torrentMagnetDetailsView.heightAnchor.constraint(equalToConstant: 480) // Adjust height as needed
+            torrentMagnetDetailsView.heightAnchor.constraint(equalToConstant: 420) // Adjust height as needed
         ])
 
         // Ensure the view is on top

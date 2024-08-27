@@ -20,11 +20,11 @@ class TorrentMagnetDetailsView: UIView {
     @IBOutlet weak var magnetDetailsLabel: UILabel!
     @IBOutlet weak var seederCountLabel: UILabel!
     @IBOutlet weak var magnetLinkLabel: UILabel!
-    @IBOutlet weak var fileSizeLabel: UILabel!
     @IBOutlet weak var costToHostLabel: UILabel!
     @IBOutlet weak var nameLabel: UILabel!
     @IBOutlet weak var addMagnetButton: UIButton!
     @IBOutlet weak var cancelButton: UIButton!
+    @IBOutlet weak var magnetImageView: UIImageView!
     
     var delegate: TorrentMagnetDetailsViewDelegate? = nil
     
@@ -83,6 +83,8 @@ class TorrentMagnetDetailsView: UIView {
         addMagnetButton.layer.borderWidth = 1
         
         magnetDetailsLabel.font = UIFont(name: "Roboto-Bold", size: 24.0)
+        
+        magnetImageView.makeCircular()
     }
     
     func populateLabels(
@@ -137,11 +139,10 @@ class TorrentMagnetDetailsView: UIView {
     }
     
     func showOrHideLabels(shouldHide:Bool){
-        let labels = [nameLabel,seederCountLabel,magnetLinkLabel,fileSizeLabel,costToHostLabel]
+        let labels = [nameLabel,seederCountLabel,magnetLinkLabel,costToHostLabel]
         for label in labels.compactMap({$0}){
             label.isHidden = shouldHide
         }
-        fileSizeLabel.isHidden = true //override for now
     }
     
     func showActivityIndicator() {

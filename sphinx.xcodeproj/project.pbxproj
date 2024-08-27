@@ -741,7 +741,6 @@
 		CEEFD6082A66FD2D00FD7E73 /* ThreadListTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEEFD6062A66FD2D00FD7E73 /* ThreadListTableViewCell.swift */; };
 		CEEFD6092A66FD2D00FD7E73 /* ThreadListTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = CEEFD6072A66FD2D00FD7E73 /* ThreadListTableViewCell.xib */; };
 		CEEFD60B2A6891E100FD7E73 /* ThreadHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEEFD60A2A6891E100FD7E73 /* ThreadHeaderView.swift */; };
-		CEF3414A2C40235B007FC173 /* BitTorrentSearchViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF341492C40235B007FC173 /* BitTorrentSearchViewController.swift */; };
 		CEF3414C2C40358B007FC173 /* BitTorrentSearchTableViewDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF3414B2C40358B007FC173 /* BitTorrentSearchTableViewDataSource.swift */; };
 		CEF341522C407FD8007FC173 /* BTSearchResultTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF341502C407FD8007FC173 /* BTSearchResultTableViewCell.swift */; };
 		CEF341532C407FD8007FC173 /* BTSearchResultTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = CEF341512C407FD8007FC173 /* BTSearchResultTableViewCell.xib */; };
@@ -2016,7 +2015,6 @@
 		CEEFD6062A66FD2D00FD7E73 /* ThreadListTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadListTableViewCell.swift; sourceTree = "<group>"; };
 		CEEFD6072A66FD2D00FD7E73 /* ThreadListTableViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ThreadListTableViewCell.xib; sourceTree = "<group>"; };
 		CEEFD60A2A6891E100FD7E73 /* ThreadHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadHeaderView.swift; sourceTree = "<group>"; };
-		CEF341492C40235B007FC173 /* BitTorrentSearchViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BitTorrentSearchViewController.swift; sourceTree = "<group>"; };
 		CEF3414B2C40358B007FC173 /* BitTorrentSearchTableViewDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BitTorrentSearchTableViewDataSource.swift; sourceTree = "<group>"; };
 		CEF341502C407FD8007FC173 /* BTSearchResultTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BTSearchResultTableViewCell.swift; sourceTree = "<group>"; };
 		CEF341512C407FD8007FC173 /* BTSearchResultTableViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = BTSearchResultTableViewCell.xib; sourceTree = "<group>"; };
@@ -4738,7 +4736,6 @@
 			children = (
 				CE67845F2968B0E000342905 /* FeedsManager.swift */,
 				F3D52184272A939900918267 /* AllTribeFeedsCollectionViewController.swift */,
-				CEF341492C40235B007FC173 /* BitTorrentSearchViewController.swift */,
 			);
 			path = "All Feeds";
 			sourceTree = "<group>";
@@ -5415,7 +5412,6 @@
 				470DB25423FAE43400D29FA5 /* SphinxCache.swift in Sources */,
 				47393E682461F6F600E6F93E /* KeychainManager.swift in Sources */,
 				47BF7D4B25A8A59100593489 /* API+VersionsExtension.swift in Sources */,
-				CEF3414A2C40235B007FC173 /* BitTorrentSearchViewController.swift in Sources */,
 				475E41612382E28800928931 /* UIButton.swift in Sources */,
 				47308E0124FEE6E600FFAC6F /* SocketExtensions.swift in Sources */,
 				CE2743B82A2931BF007A0FDC /* MediaDeletionConfirmationView.swift in Sources */,

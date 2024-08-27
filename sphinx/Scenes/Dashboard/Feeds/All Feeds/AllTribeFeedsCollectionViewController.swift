@@ -706,14 +706,6 @@ extension AllTribeFeedsCollectionViewController {
             }
         }
     }
-    
-    func presentBitTorrentSearchViewController() {
-        let bitTorrentSearchVC = BitTorrentSearchViewController.instantiate()
-        addChild(bitTorrentSearchVC)
-        bitTorrentSearchVC.view.frame = view.bounds
-        view.addSubview(bitTorrentSearchVC.view)
-        bitTorrentSearchVC.didMove(toParent: self)
-    }
 }
 
 
