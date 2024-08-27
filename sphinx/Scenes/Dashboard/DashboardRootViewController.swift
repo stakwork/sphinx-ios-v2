@@ -18,6 +18,7 @@ class DashboardRootViewController: RootViewController {
     @IBOutlet weak var podcastSmallPlayer: PodcastSmallPlayer!
     @IBOutlet weak var headerView: ChatListHeader!
     @IBOutlet weak var searchBar: UIView!
+    @IBOutlet weak var searchBarLoadingActivityIndicator: UIActivityIndicatorView!
     @IBOutlet weak var searchTextField: UITextField!
     @IBOutlet weak var searchBarContainer: UIView!
     @IBOutlet weak var mainContentContainerView: UIView!
@@ -185,6 +186,7 @@ class DashboardRootViewController: RootViewController {
         let title = (activeTab == .feed) ? getFeedModeButtonText() : ("Add Tribe")
         let icon = (activeTab == .feed) ? ("switch_access_shortcut") : ("add")
         searchBarContainer.isUserInteractionEnabled = true
+        searchBarLoadingActivityIndicator.isHidden = true
         addTribeButton.setTitle(title, for: .normal)
         addTribeIconLabel.text = icon
         

@@ -165,6 +165,16 @@ extension DashboardRootViewController: DashboardFeedsListContainerViewController
             feedSearchResultsContainerViewController.prePopulateSearch(feedSource: feedSource)
         }
     }
+    
+    func updateIsSearchingTorrents(isSearching:Bool){
+        if(isSearching == true){
+            searchBarLoadingActivityIndicator.isHidden = false
+            searchBarLoadingActivityIndicator.startAnimating()
+        }
+        else{
+            searchBarLoadingActivityIndicator.isHidden = true
+        }
+    }
 }
 
 

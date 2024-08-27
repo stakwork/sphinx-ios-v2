@@ -18,6 +18,7 @@ protocol FeedSearchResultsViewControllerDelegate: AnyObject {
     
     func didChangeFilterChipVisibility(isVisible:Bool?)
     func getFeedSource()->FeedSource
+    func updateIsSearchingTorrents(isSearching:Bool)
 }
 
 
@@ -73,6 +74,7 @@ class FeedSearchContainerViewController: UIViewController, FeedSearchResultsColl
                 DelayPerformedHelper.performAfterDelay(seconds: 2.0, completion: {self.prePopulateDebounce = false})
             }
         })
+        resultsDelegate?.updateIsSearchingTorrents(isSearching: false)
     }
 }
 
@@ -271,15 +273,18 @@ extension FeedSearchContainerViewController {
                         }
                     }
                     if(searchQuery != ""){
+                        resultsDelegate?.updateIsSearchingTorrents(isSearching: true)
                         API.sharedInstance.searchAllTorrentsForContent(
                             keyword: searchQuery,
                             completionHandler: {[weak self] results in
+                                self?.resultsDelegate?.updateIsSearchingTorrents(isSearching: false)
                                 guard let self = self else { return }
                                 DispatchQueue.main.async {
                                     self.searchResultsViewController.updateWithNew(searchResults: results)
                                 }
                             })
                     }
+                    
                 }
             }
         }

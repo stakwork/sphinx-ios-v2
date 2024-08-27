@@ -45,14 +45,17 @@
                                     <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="52N-Az-4on">
                                         <rect key="frame" x="16" y="16" width="383" height="44"/>
                                         <subviews>
+                                            <activityIndicatorView hidden="YES" opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" style="medium" translatesAutoresizingMaskIntoConstraints="NO" id="iZN-UN-MDF">
+                                                <rect key="frame" x="327" y="12" width="20" height="20"/>
+                                            </activityIndicatorView>
                                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Lwz-zX-pkx">
-                                                <rect key="frame" x="16" y="11.5" width="21" height="21"/>
+                                                <rect key="frame" x="16" y="10" width="24.5" height="24.5"/>
                                                 <fontDescription key="fontDescription" name="MaterialIcons-Regular" family="Material Icons" pointSize="21"/>
                                                 <color key="textColor" name="PlaceholderText"/>
                                                 <nil key="highlightedColor"/>
                                             </label>
                                             <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="Search" textAlignment="natural" minimumFontSize="17" clearButtonMode="whileEditing" translatesAutoresizingMaskIntoConstraints="NO" id="ef7-It-4Rs">
-                                                <rect key="frame" x="47" y="0.0" width="320" height="44"/>
+                                                <rect key="frame" x="50.5" y="0.0" width="316.5" height="44"/>
                                                 <color key="textColor" name="Text"/>
                                                 <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="14"/>
                                                 <textInputTraits key="textInputTraits" autocorrectionType="no" returnKeyType="done"/>
@@ -68,7 +71,9 @@
                                             <constraint firstAttribute="bottom" secondItem="ef7-It-4Rs" secondAttribute="bottom" id="0R7-9v-ck3"/>
                                             <constraint firstItem="Lwz-zX-pkx" firstAttribute="leading" secondItem="52N-Az-4on" secondAttribute="leading" constant="16" id="2JJ-Ys-Dew"/>
                                             <constraint firstItem="ef7-It-4Rs" firstAttribute="top" secondItem="52N-Az-4on" secondAttribute="top" id="Bna-jz-7zd"/>
+                                            <constraint firstItem="iZN-UN-MDF" firstAttribute="centerY" secondItem="52N-Az-4on" secondAttribute="centerY" id="Dm4-lt-thE"/>
                                             <constraint firstItem="Lwz-zX-pkx" firstAttribute="centerY" secondItem="52N-Az-4on" secondAttribute="centerY" id="DoB-G7-cEI"/>
+                                            <constraint firstAttribute="trailing" secondItem="iZN-UN-MDF" secondAttribute="trailing" constant="36" id="aJt-3c-ZTP"/>
                                             <constraint firstAttribute="trailing" secondItem="ef7-It-4Rs" secondAttribute="trailing" constant="16" id="bwb-bK-CCX"/>
                                             <constraint firstItem="ef7-It-4Rs" firstAttribute="leading" secondItem="Lwz-zX-pkx" secondAttribute="trailing" constant="10" id="gqE-96-sVN"/>
                                         </constraints>
@@ -261,6 +266,7 @@
                         <outlet property="restoreProgressView" destination="SpQ-1c-t1N" id="AoU-hB-n7m"/>
                         <outlet property="searchBar" destination="52N-Az-4on" id="tUt-tA-AbQ"/>
                         <outlet property="searchBarContainer" destination="Yxo-is-Yxg" id="jGg-w4-PSq"/>
+                        <outlet property="searchBarLoadingActivityIndicator" destination="iZN-UN-MDF" id="Vfs-LB-jlw"/>
                         <outlet property="searchTextField" destination="ef7-It-4Rs" id="JSC-Ke-GdI"/>
                     </connections>
                 </viewController>
