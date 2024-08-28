@@ -66,15 +66,6 @@ extension API {
         AF.request(request).responseJSON { (response) in
             switch response.result {
             case .success(let value):
-//                guard let jsonArray = value as? [[String: Any]] else {
-//                    callback([BTFeedSearchDataMapper]())
-//                    return
-//                }
-//                
-//                let feeds = jsonArray.compactMap { dict -> BTFeedSearchDataMapper? in
-//                    return BTFeedSearchDataMapper(JSON: dict)
-//                }
-                
                 callback(value)
             case .failure(_):
                 callback([BTFeedSearchDataMapper]())
