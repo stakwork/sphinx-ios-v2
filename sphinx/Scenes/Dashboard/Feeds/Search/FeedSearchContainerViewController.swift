@@ -223,7 +223,7 @@ extension FeedSearchContainerViewController {
         }
         
         searchResultsViewController.updateWithNew(searchResults: [])
-        let finalType :FeedType = type ?? .Video
+        let finalType :FeedType = type ?? .SearchTorrent
         searchTimer?.invalidate()
         searchTimer = Timer.scheduledTimer(timeInterval: 0.5, target: self, selector: #selector(fetchRemoteResults(timer:)), userInfo: ["search_query": searchQuery, "feed_type" : finalType, "feed_source": feedSource], repeats: false)
         
@@ -280,6 +280,7 @@ extension FeedSearchContainerViewController {
                         resultsDelegate?.updateIsSearchingTorrents(isSearching: true)
                         API.sharedInstance.searchAllTorrentsForContent(
                             keyword: searchQuery,
+                            type: type,
                             completionHandler: {[weak self] results in
                                 self?.resultsDelegate?.updateIsSearchingTorrents(isSearching: false)
                                 guard let self = self else { return }

@@ -111,6 +111,7 @@ extension API {
     
     func searchAllTorrentsForContent(
         keyword:String,
+        type: FeedType,
         completionHandler: @escaping ([FeedSearchResult]) -> ()
     ) {
         SphinxOnionManager.sharedInstance.authorizeBT(callback: { success in
@@ -118,9 +119,12 @@ extension API {
                 SphinxOnionManager.sharedInstance.searchAllTorrents(
                     keyword: keyword,
                     callback: { [self] results in
-                        var feedSearchResults = [FeedSearchResult]()
-                        feedSearchResults = results.compactMap({$0.convertToFeedResult()})
-                        completionHandler(feedSearchResults)
+                        let dictArray = results as? [NSDictionary]
+                        var feedResults = [FeedSearchResult]()
+                        if let dictArray = dictArray{
+                            feedResults = processAndFilterSearchResults(dictArray:dictArray,type:type)
+                        }
+                        completionHandler(feedResults)
                     }
                 )
             }
@@ -148,24 +152,43 @@ extension API {
         podcastSearchRequest = AF.request(request).responseJSON { response in
             switch response.result {
             case .success(let data):
-                var mediaArray = [FeedSearchResult]()
-                if let resultDict = data as? NSDictionary,
-                   let pathsArray = resultDict["paths"] as? [[String: Any]] {
-                    
-                    for pathDict in pathsArray {
-                        if let media = BTMedia(JSON: pathDict) {
-                            let result = media.convertBTMediaToFeedSearchResult(type: type)
-                            if let result = result, result.feedURLPath.isNotEmpty {
-                                mediaArray.append(result)
-                            }
-                        }
-                    }
+                let dictArray = [data] as? [NSDictionary]
+                var feedResults = [FeedSearchResult]()
+                if let dictArray = dictArray{
+                    feedResults = self.processAndFilterSearchResults(dictArray: dictArray, type: type)
                 }
-                completionHandler(.success(mediaArray))
+                completionHandler(.success(feedResults))
             case .failure(let error):
                 completionHandler(.failure(.networkError(error)))
             }
         }
+    }
+    
+    func processAndFilterSearchResults(dictArray:[NSDictionary], type:FeedType)->[FeedSearchResult]{
+        var mediaArray = [FeedSearchResult]()
+        for resultDict in dictArray{
+            if let pathsArray = resultDict["paths"] as? [[String: Any]] {//managed instance case
+                
+                for pathDict in pathsArray {
+                    if let media = BTMedia(JSON: pathDict) {
+                        let result = media.convertBTMediaToFeedSearchResult(type: type)
+                        if let result = result, result.feedURLPath.isNotEmpty {
+                            mediaArray.append(result)
+                        }
+                    }
+                }
+            }
+            else if let resultDict = resultDict as? [String:Any],//search all case
+                let media = BTMedia(JSON: resultDict),
+                let magnet_link = media.magnet_link{
+                    let result = media.convertBTMediaToFeedSearchResult(type: type)
+                    result?.feedURLPath = magnet_link
+                    if let result = result, result.feedURLPath.isNotEmpty {
+                        mediaArray.append(result)
+                    }
+            }
+        }
+        return mediaArray
     }
     
     //@Tom need to decide whether we want this or want to reimplement on V2
@@ -214,6 +237,7 @@ class BTMedia: Mappable {
     var pathType: String?
     var name: String?
     var mtime: Int64?
+    var magnet_link:String?
     
     required init?(map: Map) {
         // Initialize if needed
@@ -224,6 +248,7 @@ class BTMedia: Mappable {
         pathType   <- map["path_type"]
         name       <- map["name"]
         mtime      <- (map["mtime"], transformToInt64)
+        magnet_link <- map["magnet_link"]
     }
     
     func convertBTMediaToFeedSearchResult(type: FeedType) -> FeedSearchResult? {

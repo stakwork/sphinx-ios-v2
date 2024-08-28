@@ -741,7 +741,6 @@
 		CEEFD6082A66FD2D00FD7E73 /* ThreadListTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEEFD6062A66FD2D00FD7E73 /* ThreadListTableViewCell.swift */; };
 		CEEFD6092A66FD2D00FD7E73 /* ThreadListTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = CEEFD6072A66FD2D00FD7E73 /* ThreadListTableViewCell.xib */; };
 		CEEFD60B2A6891E100FD7E73 /* ThreadHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEEFD60A2A6891E100FD7E73 /* ThreadHeaderView.swift */; };
-		CEF3414C2C40358B007FC173 /* BitTorrentSearchTableViewDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF3414B2C40358B007FC173 /* BitTorrentSearchTableViewDataSource.swift */; };
 		CEF341522C407FD8007FC173 /* BTSearchResultTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF341502C407FD8007FC173 /* BTSearchResultTableViewCell.swift */; };
 		CEF341532C407FD8007FC173 /* BTSearchResultTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = CEF341512C407FD8007FC173 /* BTSearchResultTableViewCell.xib */; };
 		CEF821D62963B68600CBB28F /* DiscoverTribesWebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF821D52963B68600CBB28F /* DiscoverTribesWebViewController.swift */; };
@@ -2015,7 +2014,6 @@
 		CEEFD6062A66FD2D00FD7E73 /* ThreadListTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadListTableViewCell.swift; sourceTree = "<group>"; };
 		CEEFD6072A66FD2D00FD7E73 /* ThreadListTableViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ThreadListTableViewCell.xib; sourceTree = "<group>"; };
 		CEEFD60A2A6891E100FD7E73 /* ThreadHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadHeaderView.swift; sourceTree = "<group>"; };
-		CEF3414B2C40358B007FC173 /* BitTorrentSearchTableViewDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BitTorrentSearchTableViewDataSource.swift; sourceTree = "<group>"; };
 		CEF341502C407FD8007FC173 /* BTSearchResultTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BTSearchResultTableViewCell.swift; sourceTree = "<group>"; };
 		CEF341512C407FD8007FC173 /* BTSearchResultTableViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = BTSearchResultTableViewCell.xib; sourceTree = "<group>"; };
 		CEF821D52963B68600CBB28F /* DiscoverTribesWebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverTribesWebViewController.swift; sourceTree = "<group>"; };
@@ -3964,7 +3962,6 @@
 				47CEA4532A449D6D00E936CB /* NewChatTableDataSource+AudioExtension.swift */,
 				474934132A4C66AD0048C560 /* NewChatTableDataSource+SearchMessagesExtension.swift */,
 				475C56692A7BEBBF00E6F9A9 /* ThreadTableDataSource */,
-				CEF3414B2C40358B007FC173 /* BitTorrentSearchTableViewDataSource.swift */,
 			);
 			path = NewChatTableDataSource;
 			sourceTree = "<group>";
@@ -5803,7 +5800,6 @@
 				473596962A7005E500489606 /* ThreadTableCellState.swift in Sources */,
 				474C7A5528D3A7A2007A3E17 /* sphinxrs.swift in Sources */,
 				F38744E3271FDA9200E28C84 /* VideoFeed+DisplayUtils.swift in Sources */,
-				CEF3414C2C40358B007FC173 /* BitTorrentSearchTableViewDataSource.swift in Sources */,
 				472092BD2A2536F800468796 /* NewChatViewController+PodcastExtension.swift in Sources */,
 				F360123326E96B31009B8DC0 /* API+FeedSearchUtils.swift in Sources */,
 				47468FD5233162D40072124A /* AlertHelper.swift in Sources */,

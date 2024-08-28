@@ -49,7 +49,7 @@ extension API {
         url:String,
         authorizeDict:[String:String],
         keyword:String,
-        callback: @escaping SearchBTGatewayCallback
+        callback: @escaping (Any) -> ()// SearchBTGatewayCallback
     ){
         var params = [String: AnyObject]()
         params["keyword"] = keyword as? AnyObject
@@ -66,16 +66,16 @@ extension API {
         AF.request(request).responseJSON { (response) in
             switch response.result {
             case .success(let value):
-                guard let jsonArray = value as? [[String: Any]] else {
-                    callback([BTFeedSearchDataMapper]())
-                    return
-                }
+//                guard let jsonArray = value as? [[String: Any]] else {
+//                    callback([BTFeedSearchDataMapper]())
+//                    return
+//                }
+//                
+//                let feeds = jsonArray.compactMap { dict -> BTFeedSearchDataMapper? in
+//                    return BTFeedSearchDataMapper(JSON: dict)
+//                }
                 
-                let feeds = jsonArray.compactMap { dict -> BTFeedSearchDataMapper? in
-                    return BTFeedSearchDataMapper(JSON: dict)
-                }
-                
-                callback(feeds)
+                callback(value)
             case .failure(_):
                 callback([BTFeedSearchDataMapper]())
             }
@@ -158,9 +158,7 @@ extension API {
                        status == 402{
                         print("Response data: \(bolt11 ?? "nil")")
                         print("paying L402")
-                        SphinxOnionManager.sharedInstance.payInvoice(invoice: bolt11,callback:{ resultTuple in
-                            let success = resultTuple.0
-                            let errorMsg = resultTuple.1
+                        SphinxOnionManager.sharedInstance.payInvoice(invoice: bolt11,callback:{ success, errorMsg in
                             if(success){
                                 callback(true,bolt11)
                             }

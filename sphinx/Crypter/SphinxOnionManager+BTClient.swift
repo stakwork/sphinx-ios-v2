@@ -44,7 +44,7 @@ extension SphinxOnionManager {
         return nil
     }
     
-    func searchAllTorrents(keyword:String, callback: @escaping (([BTFeedSearchDataMapper])->())){
+    func searchAllTorrents(keyword:String, callback: @escaping ((Any)->())){
         if let authDict = btAuthDict,
            let authString = unpackAuthString(dict: authDict){
             API.sharedInstance.searchBTGatewayForFeeds(
