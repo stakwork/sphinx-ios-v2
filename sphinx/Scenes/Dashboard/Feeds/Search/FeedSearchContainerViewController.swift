@@ -191,7 +191,7 @@ extension FeedSearchContainerViewController {
     ) {
             // Existing logic for other feed types
         presentResultsListView()  // Make sure to show the regular search results view
-        
+        searchResultsViewController.updateWithNew(subscribedFeeds: [])
         let shouldDoLocalSearch = feedSource == .RSS
         if(shouldDoLocalSearch){
             var newFetchRequest: NSFetchRequest<ContentFeed> = ContentFeed.FetchRequests.matching(searchQuery: searchQuery)

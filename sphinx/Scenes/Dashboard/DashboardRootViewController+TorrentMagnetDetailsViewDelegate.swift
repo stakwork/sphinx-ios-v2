@@ -1,5 +1,5 @@
 //
-//  DashboardRootViewController+newdg.swift
+//  DashboardRootViewController+TorrentMagnetDetailsViewDelegate.swift
 //  sphinx
 //
 //  Created by James Carucci on 8/27/24.

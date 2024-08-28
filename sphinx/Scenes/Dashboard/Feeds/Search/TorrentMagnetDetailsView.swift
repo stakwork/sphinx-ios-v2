@@ -94,7 +94,7 @@ class TorrentMagnetDetailsView: UIView {
         nameLabel.attributedText = createAttributedString(boldPart: "Name:", regularPart: detailsResponse.details?.name ?? "Unknown")
         seederCountLabel.attributedText = createAttributedString(boldPart: "Seeders Count:", regularPart: "\(detailsResponse.seenPeers?.count ?? 0)")
         magnetLinkLabel.attributedText = createAttributedString(boldPart: "Link:", regularPart: magnetLink)
-        costToHostLabel.attributedText = createAttributedString(boldPart: "Cost:", regularPart: "\((detailsResponse.priceMsat ?? 0)/1000) sats")
+        costToHostLabel.attributedText = createAttributedString(boldPart: "Cost:", regularPart: "\((detailsResponse.priceCeilToNearestSatoshi())) sats")
     }
     
     private func createAttributedString(boldPart: String, regularPart: String) -> NSAttributedString {

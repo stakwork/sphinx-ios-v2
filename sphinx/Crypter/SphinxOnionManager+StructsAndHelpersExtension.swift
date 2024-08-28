@@ -494,6 +494,11 @@ class MagnetDetailsResponse: Mappable {
         outputFolder <- map["output_folder"]
         seenPeers   <- map["seen_peers"]
     }
+    
+    func priceCeilToNearestSatoshi() -> Int {
+        let satoshis = Double(self.priceMsat ?? 0) / 1000.0
+        return Int(ceil(satoshis))
+    }
 }
 
 enum SphinxOnionManagerError: Error {
