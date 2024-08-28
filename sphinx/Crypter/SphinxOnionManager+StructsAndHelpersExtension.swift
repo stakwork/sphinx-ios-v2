@@ -483,10 +483,12 @@ class MagnetDetailsResponse: Mappable {
     var details: MagnetDetails?
     var outputFolder: String?
     var seenPeers: [String]?
+    var priceMsat:Int?
 
     required init?(map: Map) { }
 
     func mapping(map: Map) {
+        priceMsat   <- map["price_msat"]
         id          <- map["id"]
         details     <- map["details"]
         outputFolder <- map["output_folder"]

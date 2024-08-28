@@ -72,7 +72,6 @@ extension SphinxOnionManager {
             authorizeDict: authString,
             magnetLink: magnet,
             callback: { response in
-                print(response)
                 callback(response)
             }
         )

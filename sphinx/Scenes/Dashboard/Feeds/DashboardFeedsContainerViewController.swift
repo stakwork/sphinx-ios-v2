@@ -244,7 +244,6 @@ extension DashboardFeedsContainerViewController {
     private func mainContentViewController(
         for filterChip: ContentFilterOption
     ) -> UIViewController {
-        let feedSource = feedsListContainerDelegate?.getFeedSource() ?? .RSS
         switch activeFilterOption.id {
         case ContentFilterOption.allContent.id:
             return allTribeFeedsCollectionViewController

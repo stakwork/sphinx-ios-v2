@@ -218,6 +218,10 @@ extension FeedSearchContainerViewController {
             }
         }
         
+        if(type == .Newsletter && feedSource == .RSS){
+            return // no remote feed for this combination
+        }
+        
         searchResultsViewController.updateWithNew(searchResults: [])
         let finalType :FeedType = type ?? .Video
         searchTimer?.invalidate()

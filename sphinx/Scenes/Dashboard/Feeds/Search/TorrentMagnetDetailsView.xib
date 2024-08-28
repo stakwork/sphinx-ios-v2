@@ -52,7 +52,7 @@
                     <nil key="highlightedColor"/>
                 </label>
                 <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Magnet link: " textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="LCE-3s-mPu">
-                    <rect key="frame" x="21" y="325" width="384" height="24"/>
+                    <rect key="frame" x="21" y="321" width="384" height="24"/>
                     <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="20"/>
                     <color key="textColor" name="Text"/>
                     <nil key="highlightedColor"/>
@@ -104,7 +104,7 @@
                     </connections>
                 </button>
                 <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Name:" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="BEt-z5-lXz">
-                    <rect key="frame" x="21" y="261" width="384" height="24"/>
+                    <rect key="frame" x="21" y="265" width="384" height="24"/>
                     <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="20"/>
                     <color key="textColor" name="Text"/>
                     <nil key="highlightedColor"/>
@@ -124,7 +124,7 @@
                 <constraint firstItem="QtK-Pr-zzC" firstAttribute="top" secondItem="vUN-kp-3ea" secondAttribute="top" id="3Rx-7B-x5I"/>
                 <constraint firstItem="dq7-QK-dcN" firstAttribute="centerX" secondItem="vUN-kp-3ea" secondAttribute="centerX" id="5q5-D4-iyq"/>
                 <constraint firstItem="vUN-kp-3ea" firstAttribute="trailing" secondItem="QtK-Pr-zzC" secondAttribute="trailing" id="7Uu-wT-xH4"/>
-                <constraint firstItem="7ck-xi-6Km" firstAttribute="top" secondItem="BEt-z5-lXz" secondAttribute="bottom" constant="8" symbolic="YES" id="DBF-yX-AGX"/>
+                <constraint firstItem="7ck-xi-6Km" firstAttribute="top" secondItem="BEt-z5-lXz" secondAttribute="bottom" constant="4" id="DBF-yX-AGX"/>
                 <constraint firstItem="xSx-iR-3Pz" firstAttribute="leading" secondItem="vUN-kp-3ea" secondAttribute="leading" constant="21" id="EYc-ax-TWP"/>
                 <constraint firstItem="8sq-ze-E2k" firstAttribute="centerX" secondItem="vUN-kp-3ea" secondAttribute="centerX" id="Eh5-uu-odm"/>
                 <constraint firstItem="BEt-z5-lXz" firstAttribute="trailing" secondItem="xSx-iR-3Pz" secondAttribute="trailing" id="GPK-TU-Sez"/>
@@ -139,12 +139,12 @@
                 <constraint firstItem="dq7-QK-dcN" firstAttribute="leading" secondItem="vUN-kp-3ea" secondAttribute="leading" constant="80" id="fIj-oY-Qfb"/>
                 <constraint firstItem="BEt-z5-lXz" firstAttribute="top" relation="greaterThanOrEqual" secondItem="8sq-ze-E2k" secondAttribute="bottom" constant="22" id="hq9-Do-FuJ"/>
                 <constraint firstItem="bIY-rG-jPS" firstAttribute="leading" secondItem="xSx-iR-3Pz" secondAttribute="leading" id="iBH-Vf-c9f"/>
-                <constraint firstItem="LCE-3s-mPu" firstAttribute="top" secondItem="7ck-xi-6Km" secondAttribute="bottom" constant="8" symbolic="YES" id="lbn-D0-JQM"/>
+                <constraint firstItem="LCE-3s-mPu" firstAttribute="top" secondItem="7ck-xi-6Km" secondAttribute="bottom" constant="4" id="lbn-D0-JQM"/>
                 <constraint firstItem="xSx-iR-3Pz" firstAttribute="centerX" secondItem="vUN-kp-3ea" secondAttribute="centerX" id="ntb-dp-ee5"/>
                 <constraint firstItem="LCE-3s-mPu" firstAttribute="trailing" secondItem="xSx-iR-3Pz" secondAttribute="trailing" id="qqN-Cq-7YX"/>
                 <constraint firstItem="bIY-rG-jPS" firstAttribute="top" secondItem="8sq-ze-E2k" secondAttribute="bottom" constant="110" id="rQi-bR-Dzg"/>
                 <constraint firstItem="bIY-rG-jPS" firstAttribute="trailing" secondItem="xSx-iR-3Pz" secondAttribute="trailing" id="xhk-Lk-4dK"/>
-                <constraint firstItem="bIY-rG-jPS" firstAttribute="top" secondItem="LCE-3s-mPu" secondAttribute="bottom" id="zju-Ol-Ygw"/>
+                <constraint firstItem="bIY-rG-jPS" firstAttribute="top" secondItem="LCE-3s-mPu" secondAttribute="bottom" constant="4" id="zju-Ol-Ygw"/>
             </constraints>
             <freeformSimulatedSizeMetrics key="simulatedDestinationMetrics"/>
             <point key="canvasLocation" x="-12.213740458015266" y="-101.05633802816902"/>

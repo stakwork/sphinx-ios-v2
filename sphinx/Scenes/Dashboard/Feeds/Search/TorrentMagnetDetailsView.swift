@@ -94,32 +94,7 @@ class TorrentMagnetDetailsView: UIView {
         nameLabel.attributedText = createAttributedString(boldPart: "Name:", regularPart: detailsResponse.details?.name ?? "Unknown")
         seederCountLabel.attributedText = createAttributedString(boldPart: "Seeders Count:", regularPart: "\(detailsResponse.seenPeers?.count ?? 0)")
         magnetLinkLabel.attributedText = createAttributedString(boldPart: "Link:", regularPart: magnetLink)
-        costToHostLabel.attributedText = createAttributedString(boldPart: "Cost:", regularPart: "0 sats")
-                
-//        getCostOfInvoice(
-//            magnetLink: magnetLink,
-//            detailsResponse: detailsResponse,
-//            completion: { intValue in
-//                if let intValue = intValue{
-//                    self.costToHostLabel.text = "Cost to Add:\(intValue) sats"
-//                }
-//                else{
-//                    //throw alert
-//                }
-//            })
-    }
-    
-    func getCostOfInvoice(
-        magnetLink:String,
-        detailsResponse:MagnetDetailsResponse,
-        completion: @escaping (Int?) -> ()
-    ){
-        SphinxOnionManager.sharedInstance.getTorrentBolt11Cost(
-            magnetLink: magnetLink,
-            magnetDetails: detailsResponse,
-            completion: { intValue in
-                completion(intValue)
-            })
+        costToHostLabel.attributedText = createAttributedString(boldPart: "Cost:", regularPart: "\((detailsResponse.priceMsat ?? 0)/1000) sats")
     }
     
     private func createAttributedString(boldPart: String, regularPart: String) -> NSAttributedString {
