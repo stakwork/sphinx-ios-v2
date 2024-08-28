@@ -158,16 +158,18 @@ extension API {
                        status == 402{
                         print("Response data: \(bolt11 ?? "nil")")
                         print("paying L402")
-                        SphinxOnionManager.sharedInstance.payInvoice(invoice: bolt11,callback:{ success, errorMsg in
-                            if(success){
-                                callback(true,bolt11)
-                            }
-                            else{
-                                AlertHelper.showAlert(title: "payment.failed".localized, message: "Error msg:\(errorMsg ?? "error unknown")")
-                                callback(false,nil)
-                            }
-                            
-                        })
+                        SphinxOnionManager.sharedInstance.payInvoice(invoice: bolt11)
+                        callback(true,bolt11)
+//                        SphinxOnionManager.sharedInstance.payInvoice(invoice: bolt11,callback:{ success, errorMsg in
+//                            if(success){
+//                                callback(true,bolt11)
+//                            }
+//                            else{
+//                                AlertHelper.showAlert(title: "payment.failed".localized, message: "Error msg:\(errorMsg ?? "error unknown")")
+//                                callback(false,nil)
+//                            }
+//                            
+//                        })
                     }
                     else{
                         callback(false,nil)
