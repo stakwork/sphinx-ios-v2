@@ -254,7 +254,16 @@ extension NewPublicGroupViewController : PickerViewDelegate {
         feedContentTypeField.text = selectedValue?.description ?? "-"
         groupsManager.newGroupInfo.feedContentType = selectedValue
         
+        if(value == "Newsletter"){
+            let result = validateNewsletterRssFeed(rawFeedUrl: formFields[8].text ?? "")
+            formFields[8].text = result
+        }
+        
         toggleConfirmButton()
+    }
+    
+    func validateNewsletterRssFeed(rawFeedUrl:String)->String?{
+        return convertToRSSFeed(from: rawFeedUrl)
     }
 }
 
