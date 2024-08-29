@@ -19,6 +19,8 @@ protocol FeedSearchResultsViewControllerDelegate: AnyObject {
     func didChangeFilterChipVisibility(isVisible:Bool?)
     func getFeedSource()->FeedSource
     func updateIsSearchingTorrents(isSearching:Bool)
+    func getPodcastSmallPlayerHeight()->CGFloat
+    func getBottomBarHeight()->CGFloat
 }
 
 
@@ -176,6 +178,22 @@ extension FeedSearchContainerViewController {
             child: searchResultsViewController,
             container: contentView
         )
+        
+        var inset : CGFloat = 0.0
+        if let resultsDelegate = resultsDelegate{
+            let extraPadding : CGFloat = 8.0
+            inset = resultsDelegate.getBottomBarHeight() + resultsDelegate.getPodcastSmallPlayerHeight() + extraPadding
+        }
+        setBottomInset(inset: inset)
+    }
+    
+    func setBottomInset(inset: CGFloat) {
+        searchResultsViewController.collectionView.contentInset.bottom = inset
+        
+        // Use the new API for scroll indicator insets
+        var scrollIndicatorInsets = searchResultsViewController.collectionView.verticalScrollIndicatorInsets
+        scrollIndicatorInsets.bottom = inset
+        searchResultsViewController.collectionView.verticalScrollIndicatorInsets = scrollIndicatorInsets
     }
     
 }

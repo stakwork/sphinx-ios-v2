@@ -10,4 +10,12 @@ extension DashboardRootViewController: FeedSearchResultsViewControllerDelegate {
     func getFeedSource()->FeedSource{
         return self.feedSource
     }
+    
+    func getBottomBarHeight() -> CGFloat{
+        return self.bottomBar.frame.height
+    }
+    
+    func getPodcastSmallPlayerHeight() -> CGFloat{
+        return podcastSmallPlayer.getViewHeight()
+    }
 }
