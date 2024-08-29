@@ -41,7 +41,6 @@
 		4707089624AE466D00A98DCA /* ChatChatListExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4707089524AE466D00A98DCA /* ChatChatListExtension.swift */; };
 		470708A424B3669200A98DCA /* MetaDataCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 470708A324B3669200A98DCA /* MetaDataCache.swift */; };
 		4709B1472C6BBA750077AA61 /* Roboto-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 4709B1462C6BBA750077AA61 /* Roboto-Black.ttf */; };
-		4709B14D2C76715D0077AA61 /* SphinxOnionManager+NotificationDataExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4709B14C2C76715D0077AA61 /* SphinxOnionManager+NotificationDataExtension.swift */; };
 		470DB25423FAE43400D29FA5 /* SphinxCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 470DB25323FAE43400D29FA5 /* SphinxCache.swift */; };
 		470F4C37257A949A00288A9B /* TribeLinkPreviewView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 470F4C39257A949A00288A9B /* TribeLinkPreviewView.xib */; };
 		470F4C3E257A984800288A9B /* ContactLinkPreviewView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 470F4C40257A984800288A9B /* ContactLinkPreviewView.xib */; };
@@ -336,6 +335,10 @@
 		476EB47623C50662009745E2 /* GroupContactTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 476EB47423C50662009745E2 /* GroupContactTableViewCell.xib */; };
 		476EB47823C51C9E009745E2 /* UICollectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 476EB47723C51C9E009745E2 /* UICollectionView.swift */; };
 		47771C72259B8D9300990467 /* GroupsPinManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47771C71259B8D9300990467 /* GroupsPinManager.swift */; };
+		4777E0192C78FC81009F5F05 /* universal-sphinxrs.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 474C7A5028D3A75D007A3E17 /* universal-sphinxrs.a */; };
+		4777E01A2C78FD26009F5F05 /* Sphinxrs-Bridging-Header.h in Sources */ = {isa = PBXBuildFile; fileRef = 474C7A5328D3A7A1007A3E17 /* Sphinxrs-Bridging-Header.h */; };
+		4777E01B2C78FD26009F5F05 /* sphinxrs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474C7A5228D3A7A1007A3E17 /* sphinxrs.swift */; };
+		4777E01C2C78FD26009F5F05 /* sphinxrsFFI.h in Sources */ = {isa = PBXBuildFile; fileRef = 474C7A5428D3A7A1007A3E17 /* sphinxrsFFI.h */; };
 		4779247E2A28D1D200CD3CF1 /* StatusHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4779247D2A28D1D200CD3CF1 /* StatusHeaderView.swift */; };
 		477924802A28D1DC00CD3CF1 /* StatusHeaderView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 4779247F2A28D1DC00CD3CF1 /* StatusHeaderView.xib */; };
 		477924822A28DF6700CD3CF1 /* NewMessageReplyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 477924812A28DF6700CD3CF1 /* NewMessageReplyView.swift */; };
@@ -623,6 +626,7 @@
 		47FB189B23A299000097695B /* SignupHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47FB189A23A299000097695B /* SignupHelper.swift */; };
 		47FDDB1C2562D77200BBF15F /* boost_animation.json in Resources */ = {isa = PBXBuildFile; fileRef = 47FDDB1B2562D77100BBF15F /* boost_animation.json */; };
 		47FE9A3E23C381A20090913F /* UITapGestureRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47FE9A3D23C381A20090913F /* UITapGestureRecognizer.swift */; };
+		9344269DACF491E8A3F8651C /* Pods_SphinxNotificationExtensionService.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3867EC056CA5757264104904 /* Pods_SphinxNotificationExtensionService.framework */; };
 		9386C2892BB25C2200ABDEF3 /* AddTagsButtonCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9386C2882BB25C2200ABDEF3 /* AddTagsButtonCell.xib */; };
 		9386C28B2BB25EDC00ABDEF3 /* AddedTagsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9386C28A2BB25EDC00ABDEF3 /* AddedTagsView.swift */; };
 		9386C28D2BB25F2700ABDEF3 /* AddedTagsView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9386C28C2BB25F2700ABDEF3 /* AddedTagsView.xib */; };
@@ -701,7 +705,6 @@
 		CE842DEF298D61CF00620AD3 /* BadgeAdminListHeaderCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = CE842DED298D61CF00620AD3 /* BadgeAdminListHeaderCell.xib */; };
 		CE842DF12992D0F400620AD3 /* BadgeTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE842DF02992D0F400620AD3 /* BadgeTemplate.swift */; };
 		CE8797382C6E7CC800E2B422 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE677B732C6A88220050CFFC /* NotificationService.swift */; };
-		CE87973A2C6FFE8300E2B422 /* SharedPushNotificationContainerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8797392C6FFE8300E2B422 /* SharedPushNotificationContainerManager.swift */; };
 		CE887EFA2B1E5C7B00DBA670 /* SphinxOnionManager+ContactExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE887EF92B1E5C7B00DBA670 /* SphinxOnionManager+ContactExtension.swift */; };
 		CE91E59A29885175008BA6EA /* MemberBadgeDetailVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE91E59929885175008BA6EA /* MemberBadgeDetailVC.swift */; };
 		CE94A50D2A4B2BF6001EDF7E /* MentionOrMacroItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE94A50C2A4B2BF6001EDF7E /* MentionOrMacroItem.swift */; };
@@ -711,7 +714,6 @@
 		CE9A18582A1D6AC900F176DE /* MediaStorageSourceTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = CE9A18562A1D6AC900F176DE /* MediaStorageSourceTableViewCell.xib */; };
 		CE9A185A2A1D736700F176DE /* ProfileManageStorageSourceDetailsVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE9A18592A1D736700F176DE /* ProfileManageStorageSourceDetailsVC.swift */; };
 		CE9A185C2A1D7AF900F176DE /* ProfileManageStorageSourceDetailsVM.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE9A185B2A1D7AF900F176DE /* ProfileManageStorageSourceDetailsVM.swift */; };
-		CE9D766D2C73D1EB008CEEA0 /* SharedPushNotificationContainerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8797392C6FFE8300E2B422 /* SharedPushNotificationContainerManager.swift */; };
 		CEA2ED152A12D6D000DAC671 /* StorageSummaryView.xib in Resources */ = {isa = PBXBuildFile; fileRef = CEA2ED142A12D6D000DAC671 /* StorageSummaryView.xib */; };
 		CEA2ED172A12D6F700DAC671 /* StorageSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEA2ED162A12D6F700DAC671 /* StorageSummaryView.swift */; };
 		CEA6BC202C1794AD00494071 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEA6BC1F2C1794AD00494071 /* NetworkMonitor.swift */; };
@@ -1091,6 +1093,9 @@
 		334B3C0F2B8268E80003EA63 /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "zh-Hant.lproj/AuthorizeAppView.strings"; sourceTree = "<group>"; };
 		334B3C102B8268E80003EA63 /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "zh-Hant.lproj/Welcome.strings"; sourceTree = "<group>"; };
 		334B3C112B8268E80003EA63 /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "zh-Hant.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		34DCDFF0972A44CB11C780E6 /* Pods-SphinxNotificationExtensionService.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SphinxNotificationExtensionService.debug.xcconfig"; path = "Target Support Files/Pods-SphinxNotificationExtensionService/Pods-SphinxNotificationExtensionService.debug.xcconfig"; sourceTree = "<group>"; };
+		3867EC056CA5757264104904 /* Pods_SphinxNotificationExtensionService.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SphinxNotificationExtensionService.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		418E7C0432271F8419FEF643 /* Pods-SphinxNotificationExtensionService.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SphinxNotificationExtensionService.release.xcconfig"; path = "Target Support Files/Pods-SphinxNotificationExtensionService/Pods-SphinxNotificationExtensionService.release.xcconfig"; sourceTree = "<group>"; };
 		470125BF2373255C0013C57B /* TransactionMessage+CoreDataProperties.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "TransactionMessage+CoreDataProperties.swift"; sourceTree = "<group>"; };
 		470146092A3B3F3700A00DF8 /* MessageNoBubbleTableViewCell+DelegateExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MessageNoBubbleTableViewCell+DelegateExtension.swift"; sourceTree = "<group>"; };
 		4701460B2A3B787300A00DF8 /* CommonNewMessageTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommonNewMessageTableViewCell.swift; sourceTree = "<group>"; };
@@ -1126,7 +1131,6 @@
 		470708A324B3669200A98DCA /* MetaDataCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetaDataCache.swift; sourceTree = "<group>"; };
 		47096CA426EA4BD10065DC54 /* sphinx 29.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 29.xcdatamodel"; sourceTree = "<group>"; };
 		4709B1462C6BBA750077AA61 /* Roboto-Black.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Roboto-Black.ttf"; sourceTree = "<group>"; };
-		4709B14C2C76715D0077AA61 /* SphinxOnionManager+NotificationDataExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SphinxOnionManager+NotificationDataExtension.swift"; sourceTree = "<group>"; };
 		470DB25323FAE43400D29FA5 /* SphinxCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SphinxCache.swift; sourceTree = "<group>"; };
 		470F4C38257A949A00288A9B /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/TribeLinkPreviewView.xib; sourceTree = "<group>"; };
 		470F4C3B257A94A000288A9B /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/TribeLinkPreviewView.strings; sourceTree = "<group>"; };
@@ -1929,7 +1933,6 @@
 		CE842DEC298D61CF00620AD3 /* BadgeAdminListHeaderCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BadgeAdminListHeaderCell.swift; sourceTree = "<group>"; };
 		CE842DED298D61CF00620AD3 /* BadgeAdminListHeaderCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = BadgeAdminListHeaderCell.xib; sourceTree = "<group>"; };
 		CE842DF02992D0F400620AD3 /* BadgeTemplate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BadgeTemplate.swift; sourceTree = "<group>"; };
-		CE8797392C6FFE8300E2B422 /* SharedPushNotificationContainerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedPushNotificationContainerManager.swift; sourceTree = "<group>"; };
 		CE887EF92B1E5C7B00DBA670 /* SphinxOnionManager+ContactExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SphinxOnionManager+ContactExtension.swift"; sourceTree = "<group>"; };
 		CE91E59929885175008BA6EA /* MemberBadgeDetailVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberBadgeDetailVC.swift; sourceTree = "<group>"; };
 		CE94A50C2A4B2BF6001EDF7E /* MentionOrMacroItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MentionOrMacroItem.swift; sourceTree = "<group>"; };
@@ -2176,6 +2179,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4777E0192C78FC81009F5F05 /* universal-sphinxrs.a in Frameworks */,
+				9344269DACF491E8A3F8651C /* Pods_SphinxNotificationExtensionService.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2192,6 +2197,7 @@
 				47D03DF02510EA170077A968 /* PDFKit.framework */,
 				47308E1925013DE100FFAC6F /* Tor.framework */,
 				487E10CEB3D07B0840A84681 /* Pods_sphinx.framework */,
+				3867EC056CA5757264104904 /* Pods_SphinxNotificationExtensionService.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -2201,6 +2207,8 @@
 			children = (
 				FED99A42AA0C9CE8FD759E82 /* Pods-sphinx.debug.xcconfig */,
 				FDF1E0A8EFE1D98BD5A99505 /* Pods-sphinx.release.xcconfig */,
+				34DCDFF0972A44CB11C780E6 /* Pods-SphinxNotificationExtensionService.debug.xcconfig */,
+				418E7C0432271F8419FEF643 /* Pods-SphinxNotificationExtensionService.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -3482,7 +3490,6 @@
 				47E61581237DC7F400630FD1 /* sphinx.entitlements */,
 				4779F170232AA0F300D35E81 /* Info.plist */,
 				4779F161232AA0F200D35E81 /* AppDelegate.swift */,
-				CE8797392C6FFE8300E2B422 /* SharedPushNotificationContainerManager.swift */,
 				CEA6BC1F2C1794AD00494071 /* NetworkMonitor.swift */,
 				4779F16B232AA0F300D35E81 /* Assets.xcassets */,
 				475BDD22232AC71000C5BBD6 /* Colors.xcassets */,
@@ -4204,7 +4211,6 @@
 				CE887EF92B1E5C7B00DBA670 /* SphinxOnionManager+ContactExtension.swift */,
 				CEAAE28A2B31F119009B283B /* SphinxOnionManager+HandleStateExtension.swift */,
 				4741EBE82BFF6DCB00EFF49E /* SphinxOnionManager+StructsAndHelpersExtension.swift */,
-				4709B14C2C76715D0077AA61 /* SphinxOnionManager+NotificationDataExtension.swift */,
 				474C7A5328D3A7A1007A3E17 /* Sphinxrs-Bridging-Header.h */,
 				474C7A5228D3A7A1007A3E17 /* sphinxrs.swift */,
 				474C7A5428D3A7A1007A3E17 /* sphinxrsFFI.h */,
@@ -4861,6 +4867,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = CE677B7C2C6A88220050CFFC /* Build configuration list for PBXNativeTarget "SphinxNotificationExtensionService" */;
 			buildPhases = (
+				462D357649E01E6A02A1CFBE /* [CP] Check Pods Manifest.lock */,
 				CE677B6D2C6A88220050CFFC /* Sources */,
 				CE677B6E2C6A88220050CFFC /* Frameworks */,
 				CE677B6F2C6A88220050CFFC /* Resources */,
@@ -5171,6 +5178,28 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		462D357649E01E6A02A1CFBE /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-SphinxNotificationExtensionService-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
 		5EF20FB23EDF8BAF61C119AC /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -5508,7 +5537,6 @@
 				475BDD32232ACBB900C5BBD6 /* UIFont.swift in Sources */,
 				CEBF0D07297603B0006C1F21 /* TribeTagSelectionCollectionViewCell.swift in Sources */,
 				477BCF3B2A0144C00080ED65 /* CircularDotView.swift in Sources */,
-				4709B14D2C76715D0077AA61 /* SphinxOnionManager+NotificationDataExtension.swift in Sources */,
 				478B05C4297832FC00A1B254 /* PodcastPlayerController+Payments.swift in Sources */,
 				47651C3523DB4A4F00CBC605 /* TouchUpGestureRecognizer.swift in Sources */,
 				473F7BA6268B7F970063D0E0 /* OnionManager.swift in Sources */,
@@ -5717,7 +5745,6 @@
 				472092C52A268A1500468796 /* ChatAttachmentViewController+AnimatinsExtension.swift in Sources */,
 				473596932A70031000489606 /* ThreadsListDataSource.swift in Sources */,
 				47357A112729A13600A49EEE /* NewsletterFeed+DisplayUtils.swift in Sources */,
-				CE87973A2C6FFE8300E2B422 /* SharedPushNotificationContainerManager.swift in Sources */,
 				4705D3992799AAB5009C0729 /* CustomBoostView.swift in Sources */,
 				F39767C826C5A85F00DDFC0A /* LeftMenuDelegate.swift in Sources */,
 				479A03E92583A7180093DB30 /* LocalNetworkPermissionService.swift in Sources */,
@@ -5872,8 +5899,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4777E01A2C78FD26009F5F05 /* Sphinxrs-Bridging-Header.h in Sources */,
+				4777E01B2C78FD26009F5F05 /* sphinxrs.swift in Sources */,
+				4777E01C2C78FD26009F5F05 /* sphinxrsFFI.h in Sources */,
 				CE677B742C6A88220050CFFC /* NotificationService.swift in Sources */,
-				CE9D766D2C73D1EB008CEEA0 /* SharedPushNotificationContainerManager.swift in Sources */,
 				CE6790222C73E85400BC2D38 /* NotificationData.swift in Sources */,
 				CE6790252C73E86A00BC2D38 /* NotificationData+CoreDataProperties.swift in Sources */,
 				CE67901F2C73E05100BC2D38 /* sphinx.xcdatamodeld in Sources */,
@@ -6738,7 +6767,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sphinx/sphinx.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 67;
+				CURRENT_PROJECT_VERSION = 69;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 8297M44YTW;
 				ENABLE_BITCODE = NO;
@@ -6829,7 +6858,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sphinx/sphinx.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 67;
+				CURRENT_PROJECT_VERSION = 69;
 				DEVELOPMENT_TEAM = 8297M44YTW;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
@@ -6996,6 +7025,7 @@
 		};
 		CE677B7A2C6A88220050CFFC /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 34DCDFF0972A44CB11C780E6 /* Pods-SphinxNotificationExtensionService.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
@@ -7010,11 +7040,15 @@
 				INFOPLIST_FILE = SphinxNotificationExtensionService/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = SphinxNotificationExtensionService;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2024 sphinx. All rights reserved.";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MARKETING_VERSION = 1.0;
@@ -7023,6 +7057,7 @@
 				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "$(PROJECT_DIR)/sphinx/Crypter/Sphinxrs-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -7030,6 +7065,7 @@
 		};
 		CE677B7B2C6A88220050CFFC /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 418E7C0432271F8419FEF643 /* Pods-SphinxNotificationExtensionService.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
@@ -7043,11 +7079,15 @@
 				INFOPLIST_FILE = SphinxNotificationExtensionService/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = SphinxNotificationExtensionService;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2024 sphinx. All rights reserved.";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MARKETING_VERSION = 1.0;
@@ -7055,6 +7095,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "$(PROJECT_DIR)/sphinx/Crypter/Sphinxrs-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};

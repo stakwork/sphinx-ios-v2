@@ -672,6 +672,7 @@ extension SphinxOnionManager {
     @objc func watchdogTimerFired() {
         onMessageRestoredCallback = nil
         firstSCIDMsgsCallback = nil
+        totalMsgsCountCallback = nil
         
         messageFetchParams = nil
         chatsFetchParams = nil
@@ -688,6 +689,7 @@ extension SphinxOnionManager {
     func finishRestoration() {
         onMessageRestoredCallback = nil
         firstSCIDMsgsCallback = nil
+        totalMsgsCountCallback = nil
         
         messageFetchParams = nil
         chatsFetchParams = nil
@@ -802,12 +804,17 @@ extension SphinxOnionManager {
             return
         }
         
+        guard let pushKey = self.pushKey else {
+            return
+        }
+        
         do {
             let rr = try setPushToken(
                 seed: seed,
                 uniqueTime: getTimeWithEntropy(),
                 state: loadOnionStateAsData(),
-                pushToken: id
+                pushToken: id,
+                pushKey: pushKey
             )
             
             let _ = handleRunReturn(rr: rr)
