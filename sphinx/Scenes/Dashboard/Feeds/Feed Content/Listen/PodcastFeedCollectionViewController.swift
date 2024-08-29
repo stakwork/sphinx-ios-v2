@@ -318,32 +318,24 @@ extension PodcastFeedCollectionViewController {
     func makeSnapshotForCurrentState() -> DataSourceSnapshot {
         var snapshot = DataSourceSnapshot()
 
-        if (followedPodcastFeeds.isEmpty) {
-            return snapshot
-        }
-        
-        snapshot.appendSections([CollectionViewSection.recentlyReleasePods])
+        // Handle recently released (subscribed) podcasts
+        let recentlyReleasedEpisodes = followedPodcastFeeds
+            .compactMap { $0.episodesArray.first }
+            .map { episode in
+                DataSourceItem.listenNowEpisode(episode, episode.currentTime ?? 0)
+            }
 
-        snapshot.appendItems(
-            self.followedPodcastFeeds
-                .compactMap { $0.episodesArray.first }
-                .map { episode in
-                    DataSourceItem.listenNowEpisode(episode, episode.currentTime ?? 0)
-                },
-            toSection: .recentlyReleasePods
-       )
-        
-        let recentlyPlayedFeed = allPodcastFeeds.filter { $0.dateLastConsumed != nil }.compactMap { contentFeed -> DataSourceItem? in
-            return DataSourceItem.subscribedPodcastFeed(contentFeed)
-        }
-        
-        if !recentlyPlayedFeed.isEmpty {
+        snapshot.appendSections([CollectionViewSection.recentlyReleasePods])
+        snapshot.appendItems(recentlyReleasedEpisodes, toSection: .recentlyReleasePods)
+
+        // Handle recently played podcasts
+        let recentlyPlayedFeeds = allPodcastFeeds
+            .filter { $0.dateLastConsumed != nil }
+            .compactMap { DataSourceItem.subscribedPodcastFeed($0) }
+
+        if !recentlyPlayedFeeds.isEmpty {
             snapshot.appendSections([CollectionViewSection.recentlyPlayedPods])
-            
-            snapshot.appendItems(
-                recentlyPlayedFeed,
-                toSection: .recentlyPlayedPods
-            )
+            snapshot.appendItems(recentlyPlayedFeeds, toSection: .recentlyPlayedPods)
         }
 
         return snapshot
