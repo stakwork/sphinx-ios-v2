@@ -42,7 +42,8 @@ extension DashboardRootViewController: UITextFieldDelegate {
         if case .feed = activeTab, let searchText = textField.text {
             feedSearchResultsContainerViewController.updateSearchQuery(
                 with: searchText,
-                and: getSearchFeedType()
+                and: getSearchFeedType(),
+                feedSource: getFeedSource()
             )
         }
         
@@ -71,7 +72,8 @@ extension DashboardRootViewController: UITextFieldDelegate {
         case .feed:
             feedSearchResultsContainerViewController.updateSearchQuery(
                 with: "",
-                and: getSearchFeedType()
+                and: getSearchFeedType(),
+                feedSource: feedSource
             )
             if (!textField.isEditing) {
                 presentRootFeedsListView()
@@ -106,7 +108,8 @@ extension DashboardRootViewController: UITextFieldDelegate {
             
             feedSearchResultsContainerViewController.updateSearchQuery(
                 with: queryString,
-                and: getSearchFeedType()
+                and: getSearchFeedType(),
+                feedSource: feedSource
             )
         case .friends:
             contactsService.updateContactsSearchQuery(term: queryString)

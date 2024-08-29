@@ -159,8 +159,21 @@ extension DashboardRootViewController: DashboardFeedsListContainerViewController
     }
     
     func filterChipDidChange(){
-        self.presentFeedSearchView()
-        feedSearchResultsContainerViewController.prePopulateSearch()
+        if(feedSource == .BitTorrent){
+            feedSearchResultsContainerViewController.clearResults()
+            self.presentFeedSearchView()
+            feedSearchResultsContainerViewController.prePopulateSearch(feedSource: feedSource)
+        }
+    }
+    
+    func updateIsSearchingTorrents(isSearching:Bool){
+        if(isSearching == true){
+            searchBarLoadingActivityIndicator.isHidden = false
+            searchBarLoadingActivityIndicator.startAnimating()
+        }
+        else{
+            searchBarLoadingActivityIndicator.isHidden = true
+        }
     }
 }
 

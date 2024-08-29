@@ -49,7 +49,7 @@ extension API {
         url:String,
         authorizeDict:[String:String],
         keyword:String,
-        callback: @escaping SearchBTGatewayCallback
+        callback: @escaping (Any) -> ()// SearchBTGatewayCallback
     ){
         var params = [String: AnyObject]()
         params["keyword"] = keyword as? AnyObject
@@ -66,16 +66,7 @@ extension API {
         AF.request(request).responseJSON { (response) in
             switch response.result {
             case .success(let value):
-                guard let jsonArray = value as? [[String: Any]] else {
-                    callback([BTFeedSearchDataMapper]())
-                    return
-                }
-                
-                let feeds = jsonArray.compactMap { dict -> BTFeedSearchDataMapper? in
-                    return BTFeedSearchDataMapper(JSON: dict)
-                }
-                
-                callback(feeds)
+                callback(value)
             case .failure(_):
                 callback([BTFeedSearchDataMapper]())
             }
@@ -158,8 +149,16 @@ extension API {
                        status == 402{
                         print("Response data: \(bolt11 ?? "nil")")
                         print("paying L402")
-                        SphinxOnionManager.sharedInstance.payInvoice(invoice: bolt11)
-                        callback(true,bolt11)
+                        SphinxOnionManager.sharedInstance.payInvoice(invoice: bolt11,callback:{ success, errorMsg in
+                            if(success){
+                                callback(true,bolt11)
+                            }
+                            else{
+                                AlertHelper.showAlert(title: "payment.failed".localized, message: "Error msg:\(errorMsg ?? "error unknown")")
+                                callback(false,nil)
+                            }
+                            
+                        })
                     }
                     else{
                         callback(false,nil)

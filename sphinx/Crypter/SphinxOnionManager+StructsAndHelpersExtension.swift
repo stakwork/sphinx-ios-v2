@@ -434,6 +434,17 @@ class BTFeedSearchDataMapper: Mappable {
     func getJSONString() -> String? {
         return self.toJSONString()
     }
+    
+    func convertToFeedResult()->FeedSearchResult{
+        let feedId = self.name ?? "Unknown"
+        let title = self.name ?? "No Title"
+        let feedDescription = "Size: \(self.size_bytes ?? 0)"
+        let imageUrl = ""
+        let feedURLPath = magnet_link ?? "error"//@BTRefactor: replace this with some scheme to get underlying magnet link or something
+        let finalType = FeedType.Video
+        
+        return FeedSearchResult(feedId, title, feedDescription, imageUrl, feedURLPath, finalType)
+    }
 }
 
 //Magnet details related
@@ -472,14 +483,21 @@ class MagnetDetailsResponse: Mappable {
     var details: MagnetDetails?
     var outputFolder: String?
     var seenPeers: [String]?
+    var priceMsat:Int?
 
     required init?(map: Map) { }
 
     func mapping(map: Map) {
+        priceMsat   <- map["price_msat"]
         id          <- map["id"]
         details     <- map["details"]
         outputFolder <- map["output_folder"]
         seenPeers   <- map["seen_peers"]
+    }
+    
+    func priceCeilToNearestSatoshi() -> Int {
+        let satoshis = Double(self.priceMsat ?? 0) / 1000.0
+        return Int(ceil(satoshis))
     }
 }
 

@@ -59,8 +59,8 @@ extension DashboardFeedsEmptyStateViewController {
 
     private var emptyStateMessageText: String {
         switch contentFilterOption.id {
-//        case ContentFilterOption.allContent.id:
-//            return "feed.no-feed-found".localized
+        case ContentFilterOption.allContent.id:
+            return "feed.no-feed-found".localized
         case ContentFilterOption.listen.id:
             return "feed.no-listen-found".localized
         case ContentFilterOption.watch.id:

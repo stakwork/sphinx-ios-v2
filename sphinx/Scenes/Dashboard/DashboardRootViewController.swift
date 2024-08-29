@@ -18,6 +18,7 @@ class DashboardRootViewController: RootViewController {
     @IBOutlet weak var podcastSmallPlayer: PodcastSmallPlayer!
     @IBOutlet weak var headerView: ChatListHeader!
     @IBOutlet weak var searchBar: UIView!
+    @IBOutlet weak var searchBarLoadingActivityIndicator: UIActivityIndicatorView!
     @IBOutlet weak var searchTextField: UITextField!
     @IBOutlet weak var searchBarContainer: UIView!
     @IBOutlet weak var mainContentContainerView: UIView!
@@ -29,8 +30,6 @@ class DashboardRootViewController: RootViewController {
     @IBOutlet weak var bottomBarBottomConstraint: NSLayoutConstraint!
     var isFirstFeedsLoad : Bool = false
     lazy var loadingViewController = LoadingViewController(backgroundColor: UIColor.Sphinx.SecondaryTextInverted.withAlphaComponent(0.5))
-
- 
     let buttonTitles : [String] = [
         "dashboard.tabs.feed".localized,
         "dashboard.tabs.friends".localized,
@@ -64,7 +63,14 @@ class DashboardRootViewController: RootViewController {
     internal let podcastPlayerController = PodcastPlayerController.sharedInstance
     
     let som = SphinxOnionManager.sharedInstance
-
+    var feedSource:FeedSource = .RSS
+    
+    //MARK: Torrents related
+    var stashedMagnetLink :String? = nil
+    var stashedDetailsResponse : MagnetDetailsResponse? = nil
+    var torrentMagnetDetailsView: TorrentMagnetDetailsView!
+    //END Torrents Related
+    
     internal lazy var chatsListViewModel: ChatListViewModel = {
         ChatListViewModel()
     }()
@@ -78,11 +84,12 @@ class DashboardRootViewController: RootViewController {
     
     func setupFeedsContainer(){
         //Auto populate
-        if(isFirstFeedsLoad == false){
-            isFirstFeedsLoad = true
-            self.presentFeedSearchView()
-            feedSearchResultsContainerViewController.prePopulateSearch()
-        }
+        //MARK: @BTRefactor TODO come back to this
+        //        if(isFirstFeedsLoad == false){
+        //            isFirstFeedsLoad = true
+        //            self.presentFeedSearchView()
+        //            feedSearchResultsContainerViewController.prePopulateSearch()
+        //        }
     }
     
     internal lazy var feedSearchResultsContainerViewController = {
@@ -118,15 +125,22 @@ class DashboardRootViewController: RootViewController {
             resetSearchField()
             feedViewMode = .rootList
             
-            configureAddTribeBehavior(oldTab: oldValue)
+            configureAddTribeBehavior(oldTab: oldValue,oldFeedSource: feedSource)
             
             if(activeTab == .feed){
                 self.setupFeedsContainer()
+                if(feedSource == .BitTorrent){feedsContainerViewController.showEmptyStateViewController()}
             }
             
             UIView.animate(withDuration: 0.10) {
                 self.searchBarContainer.layoutIfNeeded()
             }
+        }
+    }
+    
+    internal var feedMode : FeedMode = .RSS {
+        didSet{
+            //TODO
         }
     }
     
@@ -148,28 +162,49 @@ class DashboardRootViewController: RootViewController {
         }
     }
     
-    func configureAddTribeBehavior(oldTab:DashboardTab,visibilityOverride:Bool?=nil){
+    func getFeedModeButtonText()->String{
+        if feedSource == .BitTorrent{
+            return "RSS"
+        }
+        else if feedSource == .RSS{
+            return "BitTorrent"
+        }
+        return "RSS"
+    }
+    
+    func configureAddTribeBehavior(oldTab:DashboardTab,visibilityOverride:Bool?=nil,oldFeedSource:FeedSource){
         if let visibilityOverride = visibilityOverride{
-            addTribeTrailing.constant = (visibilityOverride) ? 16 : -120
+            let newConstant = (visibilityOverride) ? 16 : -120
+            addTribeTrailing.constant = CGFloat(newConstant)
         }
         else if (activeTab == .tribes || (activeTab == .feed && oldTab != .feed)) {
             addTribeTrailing.constant = 16
-        } else {
-            addTribeTrailing.constant = -120
         }
-        let title = (activeTab == .feed) ? ("Show Feeds") : ("Add Tribe")
-        let icon = (activeTab == .feed) ? ("keyboard_arrow_down") : ("add")
+//        else {
+//            addTribeTrailing.constant = -120
+//        }
+        let title = (activeTab == .feed) ? getFeedModeButtonText() : ("Add Tribe")
+        let icon = (activeTab == .feed) ? ("switch_access_shortcut") : ("add")
+        searchBarContainer.isUserInteractionEnabled = true
+        searchBarLoadingActivityIndicator.isHidden = true
         addTribeButton.setTitle(title, for: .normal)
         addTribeIconLabel.text = icon
+        
+        if(oldFeedSource != feedSource){
+            showChipFilterOptions()
+        }
     }
     
-    func handleShowOptionsTap(){
+    func showChipFilterOptions(){
         activeTab = .feed
-        feedSearchResultsContainerViewController.presentInitialStateView()
-        UIView.animate(withDuration: 0.25, animations: {
-            self.addTribeTrailing.constant = -120
-        })
-        
+        //feedSearchResultsContainerViewController.presentInitialStateView()
+    }
+    
+    func toggleFeedSourceType(){
+        let oldFeedSource = feedSource
+        (oldFeedSource == .RSS) ? (feedSource = .BitTorrent) : (feedSource = .RSS)
+        configureAddTribeBehavior(oldTab: .feed,visibilityOverride: true, oldFeedSource: oldFeedSource)
+        filterChipDidChange()//treat it as a chip filter
     }
     
     func forceShowLoadingWheel() {
@@ -305,7 +340,7 @@ extension DashboardRootViewController {
             navigationController?.pushViewController(discoverVC, animated: true)
         }
         else if activeTab == .feed{
-            handleShowOptionsTap()
+            toggleFeedSourceType()
         }
     }
     
@@ -736,6 +771,11 @@ extension DashboardRootViewController {
         case feed
         case friends
         case tribes
+    }
+    
+    enum FeedMode: Int, Hashable{
+        case BitTorrent
+        case RSS
     }
 }
 

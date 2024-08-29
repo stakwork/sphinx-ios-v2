@@ -51,6 +51,7 @@ protocol DashboardFeedsListContainerViewControllerDelegate: AnyObject {
     )
     
     func filterChipDidChange()
+    func getFeedSource()->FeedSource
 }
 
 
@@ -68,7 +69,7 @@ class DashboardFeedsContainerViewController: UIViewController {
     
     var contentFilterOptions: [ContentFilterOption] = []
     
-    var activeFilterOption: ContentFilterOption = .browse {
+    var activeFilterOption: ContentFilterOption = .allContent {
         didSet {
             DispatchQueue.main.async { [weak self] in
                 self?.handleFilterChipChange(
@@ -244,6 +245,8 @@ extension DashboardFeedsContainerViewController {
         for filterChip: ContentFilterOption
     ) -> UIViewController {
         switch activeFilterOption.id {
+        case ContentFilterOption.allContent.id:
+            return allTribeFeedsCollectionViewController
         case ContentFilterOption.browse.id:
             return videoFeedCollectionViewController
         case ContentFilterOption.discover.id:
@@ -309,11 +312,11 @@ extension DashboardFeedsContainerViewController {
     
     
     private func configureFeedContentCollectionView() {
-        activeFilterOption = .browse//.allContent
+        activeFilterOption = .allContent
     }
     
     
-    private func showEmptyStateViewController() {
+    func showEmptyStateViewController() {
         emptyStateViewController.contentFilterOption = activeFilterOption
         
         addChildVC(

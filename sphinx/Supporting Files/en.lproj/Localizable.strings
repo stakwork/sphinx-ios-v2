@@ -69,7 +69,11 @@
 "dashboard.feeds.filters.play" = "Play";
 "dashboard.feeds.section-headings.following" = "Following";
 "dashboard.feeds.section-headings.directory" = "Directory";
+"dashboard.feeds.section-headings.play.for.free" = "Play for Free";
+"dashboard.feeds.section-headings.download.to.play" = "Download to Play";
 "dashboard.feeds.content.empty-state-message" = "No Podcasts Found";
+"dashboard.feeds.content.download.torrent.started.title" = "Torrent download started";
+"dashboard.feeds.content.download.torrent.started.message" = "Check back in a bit to consume your content";
 
 
 // DASHBOARD FEED SEARCH
@@ -621,11 +625,14 @@
 "feed.no-play-found" = "No \"Play\" Results Found";
 
 "feed.search-over" = "Search over";
+"feed.search-tracks-quantity" = "millions of tracks";
+"feed.search-torrent-source" = "on BitTorrent";
 "feed.search-podcast-quantity" = "4 000 000 podcasts";
 "feed.search-podcast-source" = "on the Podcast Index";
 "feed.search-video-quantity" = "thousands of videos";
 "feed.search-video-source" = "on Youtube";
-"feed.search-other-source" = "bittorrent feeds";
+"feed.search-other-source-rss" = "your feeds";
+"feed.search-other-source-bittorrent" = "bittorrent feeds";
 
 //TIME
 "time.in-the-future" = "in the future";
