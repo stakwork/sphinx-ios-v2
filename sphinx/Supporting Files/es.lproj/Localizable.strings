@@ -68,7 +68,11 @@
 "dashboard.feeds.filters.play" = "Play";
 "dashboard.feeds.section-headings.following" = "Following";
 "dashboard.feeds.section-headings.directory" = "Directory";
+"dashboard.feeds.section-headings.play.for.free" = "Play for Free";
+"dashboard.feeds.section-headings.download.to.play" = "Download to Play";
 "dashboard.feeds.content.empty-state-message" = "No Podcasts Found";
+"dashboard.feeds.content.download.torrent.started.title" = "Torrent download started";
+"dashboard.feeds.content.download.torrent.started.message" = "Check back in a bit to consume your content";
 
 
 // DASHBOARD FEED SEARCH
@@ -622,11 +626,14 @@
 "feed.no-play-found" = "No se encontraron\nresultados para \"Jugar\"";
 
 "feed.search-over" = "Buscá entre";
+"feed.search-tracks-quantity" = "millions of tracks";
+"feed.search-torrent-source" = "on BitTorrent";
 "feed.search-podcast-quantity" = "4 000 000 podcasts";
 "feed.search-podcast-source" = "en el Podcast Index";
 "feed.search-video-quantity" = "miles de videos";
 "feed.search-video-source" = "en Youtube";
-"feed.search-other-source" = "en tus feeds";
+"feed.search-other-source-rss" = "en tus feeds";
+
 
 //TIME
 "time.in-the-future" = "en el futuro";

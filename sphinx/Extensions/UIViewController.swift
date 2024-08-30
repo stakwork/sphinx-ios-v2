@@ -7,6 +7,7 @@
 //
 
 import UIKit
+private var darkeningViewKey: UInt8 = 21
 
 extension UIViewController {
     func presentNavigationControllerWith(vc: UIViewController) {
@@ -41,6 +42,69 @@ extension UIViewController {
             return
         }
         rootVC.setStatusBar()
+    }
+    
+    private var darkeningView: UIView? {
+        get {
+            return objc_getAssociatedObject(self, &darkeningViewKey) as? UIView
+        }
+        set {
+            objc_setAssociatedObject(self, &darkeningViewKey, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        }
+    }
+    
+    func toggleDarkening(darkened: Bool, animated: Bool = true, duration: TimeInterval = 0.3, completion: (() -> Void)? = nil) {
+        if darkened {
+            addDarkeningView(animated: animated, duration: duration, completion: completion)
+        } else {
+            removeDarkeningView(animated: animated, duration: duration, completion: completion)
+        }
+    }
+    
+    private func addDarkeningView(animated: Bool, duration: TimeInterval, completion: (() -> Void)?) {
+        guard darkeningView == nil else { return }
+        
+        let darkView = UIView()
+        darkView.backgroundColor = UIColor(white: 0, alpha: 0.5)
+        darkView.frame = view.bounds
+        darkView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        view.addSubview(darkView)
+        darkeningView = darkView
+        
+        if animated {
+            darkView.alpha = 0
+            UIView.animate(withDuration: duration, animations: {
+                darkView.alpha = 1
+            }, completion: { _ in
+                completion?()
+            })
+        } else {
+            darkView.alpha = 1
+            completion?()
+        }
+    }
+    
+    private func removeDarkeningView(animated: Bool, duration: TimeInterval, completion: (() -> Void)?) {
+        guard let darkView = darkeningView else {
+            completion?()
+            return
+        }
+        
+        let removeView = {
+            darkView.removeFromSuperview()
+            self.darkeningView = nil
+            completion?()
+        }
+        
+        if animated {
+            UIView.animate(withDuration: duration, animations: {
+                darkView.alpha = 0
+            }, completion: { _ in
+                removeView()
+            })
+        } else {
+            removeView()
+        }
     }
 }
 

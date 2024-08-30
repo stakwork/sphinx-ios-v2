@@ -57,7 +57,11 @@
 "dashboard.feeds.filters.play" = "Maglaro";
 "dashboard.feeds.section-headings.following" = "Mga Sumusunod";
 "dashboard.feeds.section-headings.directory" = "Direktoryo";
+"dashboard.feeds.section-headings.play.for.free" = "Play for Free";
+"dashboard.feeds.section-headings.download.to.play" = "Download to Play";
 "dashboard.feeds.content.empty-state-message" = "Walang Podcasts na Natagpuan";
+"dashboard.feeds.content.download.torrent.started.title" = "Torrent download started";
+"dashboard.feeds.content.download.torrent.started.message" = "Check back in a bit to consume your content";
 
 // DASHBOARD FEED SEARCH
 "dashboard.feeds.search.error-alert-title" = "May naganap na pagkakamali habang naghahanap ng mga Feed ng Podcast";
@@ -595,11 +599,13 @@
 "feed.no-read-found" = "Walang \"Basahin\" Natagpuan ang mga Resulta";
 "feed.no-play-found" = "Walang \"I-play\" Natagpuan ang mga Resulta";
 "feed.search-over" = "Search over";
+"feed.search-tracks-quantity" = "millions of tracks";
+"feed.search-torrent-source" = "on BitTorrent";
 "feed.search-podcast-quantity" = "4 000 000 podcasts";
 "feed.search-podcast-source" = "sa Podcast Index";
 "feed.search-video-quantity" = "libu-libong mga video";
 "feed.search-video-source" = "sa Youtube";
-"feed.search-other-source" = "ang iyong mga naka-subscribe na feed";
+"feed.search-other-source-rss" = "ang iyong mga naka-subscribe na feed";
 
 //TIME
 "time.in-the-future" = "sa hinaharap";

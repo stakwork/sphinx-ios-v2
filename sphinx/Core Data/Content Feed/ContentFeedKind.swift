@@ -6,6 +6,11 @@
     
 import Foundation
 
+public enum FeedSource: Int16{
+    case BitTorrent
+    case RSS
+}
+
 public enum FeedType: Int16 {
     case Album
     case Track

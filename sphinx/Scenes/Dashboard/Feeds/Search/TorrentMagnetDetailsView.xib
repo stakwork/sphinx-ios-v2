@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="22155" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+    <device id="retina6_12" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="22131"/>
+        <capability name="Named colors" minToolsVersion="9.0"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <customFonts key="customFonts">
+        <array key="MaterialIcons-Regular.ttf">
+            <string>MaterialIcons-Regular</string>
+        </array>
+        <array key="Roboto-Medium.ttf">
+            <string>Roboto-Medium</string>
+        </array>
+        <array key="Roboto-Regular.ttf">
+            <string>Roboto-Regular</string>
+        </array>
+    </customFonts>
+    <objects>
+        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner" customClass="TorrentMagnetDetailsView" customModule="sphinx" customModuleProvider="target">
+            <connections>
+                <outlet property="activityIndicator" destination="ADf-TC-Vij" id="QZf-G3-2eN"/>
+                <outlet property="addMagnetButton" destination="dq7-QK-dcN" id="gDs-rN-8Q1"/>
+                <outlet property="cancelButton" destination="QtK-Pr-zzC" id="G3b-aq-7pB"/>
+                <outlet property="contentView" destination="iN0-l3-epB" id="mHq-yX-2AP"/>
+                <outlet property="costToHostLabel" destination="bIY-rG-jPS" id="ZJQ-6o-Pjo"/>
+                <outlet property="magnetDetailsLabel" destination="xSx-iR-3Pz" id="in8-af-mjl"/>
+                <outlet property="magnetImageView" destination="8sq-ze-E2k" id="eBz-es-6HK"/>
+                <outlet property="magnetLinkLabel" destination="LCE-3s-mPu" id="j9k-lh-sPZ"/>
+                <outlet property="nameLabel" destination="BEt-z5-lXz" id="SXc-MI-McM"/>
+                <outlet property="seederCountLabel" destination="7ck-xi-6Km" id="dvq-oV-MUl"/>
+            </connections>
+        </placeholder>
+        <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
+        <view contentMode="scaleToFill" id="iN0-l3-epB">
+            <rect key="frame" x="0.0" y="0.0" width="426" height="509"/>
+            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+            <subviews>
+                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Magnet Details" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="xSx-iR-3Pz">
+                    <rect key="frame" x="21" y="77" width="384" height="26"/>
+                    <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="22"/>
+                    <color key="textColor" name="Text"/>
+                    <nil key="highlightedColor"/>
+                </label>
+                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Seeders: ?" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="7ck-xi-6Km">
+                    <rect key="frame" x="21" y="293" width="384" height="24"/>
+                    <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="20"/>
+                    <color key="textColor" name="Text"/>
+                    <nil key="highlightedColor"/>
+                </label>
+                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Magnet link: " textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="LCE-3s-mPu">
+                    <rect key="frame" x="21" y="321" width="384" height="24"/>
+                    <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="20"/>
+                    <color key="textColor" name="Text"/>
+                    <nil key="highlightedColor"/>
+                </label>
+                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Cost to host: XXX (sats)" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="bIY-rG-jPS">
+                    <rect key="frame" x="21" y="349" width="384" height="24"/>
+                    <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="20"/>
+                    <color key="textColor" name="Text"/>
+                    <nil key="highlightedColor"/>
+                </label>
+                <activityIndicatorView hidden="YES" opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" style="whiteLarge" translatesAutoresizingMaskIntoConstraints="NO" id="ADf-TC-Vij">
+                    <rect key="frame" x="194.66666666666666" y="248.66666666666663" width="37" height="37"/>
+                    <color key="backgroundColor" name="BlueTextAccent"/>
+                    <color key="tintColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                </activityIndicatorView>
+                <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="A8K-d6-bW9">
+                    <rect key="frame" x="45" y="294" width="147" height="40"/>
+                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                    <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                    <inset key="imageEdgeInsets" minX="0.0" minY="0.0" maxX="2.2250738585072014e-308" maxY="0.0"/>
+                </button>
+                <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="dq7-QK-dcN">
+                    <rect key="frame" x="80" y="406" width="266" height="48"/>
+                    <color key="backgroundColor" name="PrimaryBlue"/>
+                    <constraints>
+                        <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="171" id="OKK-D0-V8u"/>
+                        <constraint firstAttribute="height" constant="48" id="P8W-U2-W0E"/>
+                    </constraints>
+                    <fontDescription key="fontDescription" name="Roboto-Medium" family="Roboto" pointSize="16"/>
+                    <state key="normal" title="Add Magnet">
+                        <color key="titleColor" name="TextInverted"/>
+                    </state>
+                    <connections>
+                        <action selector="addMagnetTapped:" destination="-1" eventType="touchUpInside" id="eFx-jX-GUw"/>
+                    </connections>
+                </button>
+                <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="QtK-Pr-zzC">
+                    <rect key="frame" x="376" y="59" width="50" height="50"/>
+                    <constraints>
+                        <constraint firstAttribute="height" constant="50" id="Cnc-eM-cC2"/>
+                        <constraint firstAttribute="width" constant="50" id="qE6-zk-uLP"/>
+                    </constraints>
+                    <fontDescription key="fontDescription" name="MaterialIcons-Regular" family="Material Icons" pointSize="20"/>
+                    <state key="normal" title="">
+                        <color key="titleColor" name="PrimaryRed"/>
+                    </state>
+                    <connections>
+                        <action selector="cancelMagnetTaped:" destination="-1" eventType="touchUpInside" id="T13-9C-gfw"/>
+                    </connections>
+                </button>
+                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Name:" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="BEt-z5-lXz">
+                    <rect key="frame" x="21" y="265" width="384" height="24"/>
+                    <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="20"/>
+                    <color key="textColor" name="Text"/>
+                    <nil key="highlightedColor"/>
+                </label>
+                <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="magnet" translatesAutoresizingMaskIntoConstraints="NO" id="8sq-ze-E2k">
+                    <rect key="frame" x="159" y="131" width="108" height="108"/>
+                    <constraints>
+                        <constraint firstAttribute="width" constant="108" id="i7l-pz-4Tx"/>
+                        <constraint firstAttribute="height" constant="108" id="zhU-W6-ULA"/>
+                    </constraints>
+                </imageView>
+            </subviews>
+            <viewLayoutGuide key="safeArea" id="vUN-kp-3ea"/>
+            <color key="backgroundColor" name="HeaderBG"/>
+            <constraints>
+                <constraint firstItem="ADf-TC-Vij" firstAttribute="centerX" secondItem="vUN-kp-3ea" secondAttribute="centerX" id="1i0-rz-qmb"/>
+                <constraint firstItem="QtK-Pr-zzC" firstAttribute="top" secondItem="vUN-kp-3ea" secondAttribute="top" id="3Rx-7B-x5I"/>
+                <constraint firstItem="dq7-QK-dcN" firstAttribute="centerX" secondItem="vUN-kp-3ea" secondAttribute="centerX" id="5q5-D4-iyq"/>
+                <constraint firstItem="vUN-kp-3ea" firstAttribute="trailing" secondItem="QtK-Pr-zzC" secondAttribute="trailing" id="7Uu-wT-xH4"/>
+                <constraint firstItem="7ck-xi-6Km" firstAttribute="top" secondItem="BEt-z5-lXz" secondAttribute="bottom" constant="4" id="DBF-yX-AGX"/>
+                <constraint firstItem="xSx-iR-3Pz" firstAttribute="leading" secondItem="vUN-kp-3ea" secondAttribute="leading" constant="21" id="EYc-ax-TWP"/>
+                <constraint firstItem="8sq-ze-E2k" firstAttribute="centerX" secondItem="vUN-kp-3ea" secondAttribute="centerX" id="Eh5-uu-odm"/>
+                <constraint firstItem="BEt-z5-lXz" firstAttribute="trailing" secondItem="xSx-iR-3Pz" secondAttribute="trailing" id="GPK-TU-Sez"/>
+                <constraint firstItem="7ck-xi-6Km" firstAttribute="leading" secondItem="xSx-iR-3Pz" secondAttribute="leading" id="I0P-Kv-kjv"/>
+                <constraint firstItem="BEt-z5-lXz" firstAttribute="leading" secondItem="xSx-iR-3Pz" secondAttribute="leading" id="L7U-hu-vMd"/>
+                <constraint firstItem="ADf-TC-Vij" firstAttribute="centerY" secondItem="vUN-kp-3ea" secondAttribute="centerY" id="PzY-JC-tZ1"/>
+                <constraint firstItem="7ck-xi-6Km" firstAttribute="trailing" secondItem="xSx-iR-3Pz" secondAttribute="trailing" id="QEy-Qm-FnD"/>
+                <constraint firstItem="LCE-3s-mPu" firstAttribute="leading" secondItem="xSx-iR-3Pz" secondAttribute="leading" id="R8W-mH-Jqf"/>
+                <constraint firstItem="dq7-QK-dcN" firstAttribute="bottom" secondItem="vUN-kp-3ea" secondAttribute="bottom" constant="-21" id="Yjd-0a-6ix"/>
+                <constraint firstItem="xSx-iR-3Pz" firstAttribute="top" secondItem="vUN-kp-3ea" secondAttribute="top" constant="18" id="ahN-7e-ML0"/>
+                <constraint firstItem="8sq-ze-E2k" firstAttribute="top" secondItem="xSx-iR-3Pz" secondAttribute="bottom" constant="28" id="eRp-bh-fCo"/>
+                <constraint firstItem="dq7-QK-dcN" firstAttribute="leading" secondItem="vUN-kp-3ea" secondAttribute="leading" constant="80" id="fIj-oY-Qfb"/>
+                <constraint firstItem="BEt-z5-lXz" firstAttribute="top" relation="greaterThanOrEqual" secondItem="8sq-ze-E2k" secondAttribute="bottom" constant="22" id="hq9-Do-FuJ"/>
+                <constraint firstItem="bIY-rG-jPS" firstAttribute="leading" secondItem="xSx-iR-3Pz" secondAttribute="leading" id="iBH-Vf-c9f"/>
+                <constraint firstItem="LCE-3s-mPu" firstAttribute="top" secondItem="7ck-xi-6Km" secondAttribute="bottom" constant="4" id="lbn-D0-JQM"/>
+                <constraint firstItem="xSx-iR-3Pz" firstAttribute="centerX" secondItem="vUN-kp-3ea" secondAttribute="centerX" id="ntb-dp-ee5"/>
+                <constraint firstItem="LCE-3s-mPu" firstAttribute="trailing" secondItem="xSx-iR-3Pz" secondAttribute="trailing" id="qqN-Cq-7YX"/>
+                <constraint firstItem="bIY-rG-jPS" firstAttribute="top" secondItem="8sq-ze-E2k" secondAttribute="bottom" constant="110" id="rQi-bR-Dzg"/>
+                <constraint firstItem="bIY-rG-jPS" firstAttribute="trailing" secondItem="xSx-iR-3Pz" secondAttribute="trailing" id="xhk-Lk-4dK"/>
+                <constraint firstItem="bIY-rG-jPS" firstAttribute="top" secondItem="LCE-3s-mPu" secondAttribute="bottom" constant="4" id="zju-Ol-Ygw"/>
+            </constraints>
+            <freeformSimulatedSizeMetrics key="simulatedDestinationMetrics"/>
+            <point key="canvasLocation" x="-12.213740458015266" y="-101.05633802816902"/>
+        </view>
+    </objects>
+    <resources>
+        <image name="magnet" width="929" height="929"/>
+        <namedColor name="BlueTextAccent">
+            <color red="0.36470588235294116" green="0.5607843137254902" blue="0.8666666666666667" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+        <namedColor name="HeaderBG">
+            <color red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+        <namedColor name="PrimaryBlue">
+            <color red="0.38039215686274508" green="0.54117647058823526" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+        <namedColor name="PrimaryRed">
+            <color red="0.92941176470588238" green="0.45490196078431372" blue="0.45490196078431372" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+        <namedColor name="Text">
+            <color red="0.23529411764705882" green="0.24705882352941178" blue="0.25490196078431371" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+        <namedColor name="TextInverted">
+            <color red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+    </resources>
+</document>
