@@ -205,6 +205,9 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         botWebViewWidthConstraint.constant = ((UIScreen.main.bounds.width - (MessageTableCellState.kRowLeftMargin + MessageTableCellState.kRowRightMargin)) * MessageTableCellState.kBubbleWidthPercentage) - (MessageTableCellState.kLabelMargin * 2)
         botWebView.layoutIfNeeded()
         
+        if(contact?.isPending() ?? false){
+            setupAsPending()
+        }
     }
     
     func setupData() {
@@ -229,6 +232,10 @@ class NewChatViewController: NewKeyboardHandlerViewController {
             headerView.showThreadHeaderView()
             bottomView.setupForThreads(with: self)
         }
+    }
+    
+    func setupAsPending(){
+        bottomView.isHidden = true
     }
     
     func setDelegates() {
