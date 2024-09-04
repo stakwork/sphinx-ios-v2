@@ -53,7 +53,8 @@
 "error.karma.receipt.validation.failed" = "カルマの受信検証に失敗しました。エラーメッセージ：";
 "error.app-store-purchase-receipt-not-found" = "AppStore購入レシートが見つかりませんでした。";
 "error.app-store-receipt-validation-failed" = "AppStoreレシートの検証に失敗しました。";
-
+"error.rss.sync.failed.title" = "RSS Error";
+"error.rss.sync.failed.message" = "Sync to RSS Feed Failed. Please try again.";
 
 // DASHBOARD
 "dashboard.tabs.feed" = "フィード";

@@ -54,6 +54,8 @@
 "error.karma.receipt.validation.failed" = "Karma Receipt Validation Failed. Error Message:";
 "error.app-store-purchase-receipt-not-found" = "An AppStore purchase receipt could not be found.";
 "error.app-store-receipt-validation-failed" = "An AppStore receipt validation failed.";
+"error.rss.sync.failed.title" = "RSS Error";
+"error.rss.sync.failed.message" = "Sync to RSS Feed Failed. Please try again.";
 
 
 // DASHBOARD

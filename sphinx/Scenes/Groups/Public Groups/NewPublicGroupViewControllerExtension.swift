@@ -255,16 +255,41 @@ extension NewPublicGroupViewController : PickerViewDelegate {
         groupsManager.newGroupInfo.feedContentType = selectedValue
         
         if(value == "Newsletter"){
-//            let result = validateNewsletterRssFeed(rawFeedUrl: formFields[8].text ?? "")
-//            formFields[8].text = result
-//            GroupsManager.sharedInstance.newGroupInfo.feedUrl = result
+            if let rawText = formFields[8].text,
+               let rssFeed = formatAsRssFeedUrl(from: rawText){
+                validateNewsletterRssFeed(
+                    rawFeedUrl: rssFeed,
+                    completion: {success in
+                        if(success == false){
+                            self.handleRssSyncFailure()
+                        }
+                    })
+            }
+            else{
+                handleRssSyncFailure()
+            }
         }
         
         toggleConfirmButton()
     }
     
-    func validateNewsletterRssFeed(rawFeedUrl:String)->String?{
-        return convertToRSSFeed(from: rawFeedUrl)
+    func handleRssSyncFailure(){
+//        self.formFields[8].text = ""
+//        self.groupsManager.newGroupInfo.feedUrl = ""
+//        feedContentTypeField.text = "-"
+//        self.groupsManager.newGroupInfo.feedContentType = nil
+        AlertHelper.showAlert(title: "error.rss.sync.failed.title".localized, message: "error.rss.sync.failed.message".localized)
+    }
+    
+    func validateNewsletterRssFeed(
+        rawFeedUrl:String,
+        completion: @escaping (Bool) -> ()
+    ){
+       validateRSSFeed(
+        from: rawFeedUrl,
+        completion: { result in
+           completion(result)
+       })
     }
 }
 

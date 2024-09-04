@@ -28,7 +28,7 @@ func identifyPlatform(from host: String) -> NewsletterPlatform {
     return .unknown
 }
 
-func convertToRSSFeed(from urlString: String) -> String? {
+func formatAsRssFeedUrl(from urlString: String) -> String? {
     guard let url = URL(string: urlString),
           let host = url.host else {
         return nil
@@ -70,3 +70,28 @@ func convertToRSSFeed(from urlString: String) -> String? {
         }
     }
 }
+
+func validateRSSFeed(
+    from urlString: String,
+    completion: @escaping (Bool) -> ()
+) {
+    let managedContext = CoreDataManager.sharedManager.persistentContainer.viewContext
+    ContentFeed.fetchContentFeed(
+        at: urlString,
+        chat: nil,
+        searchResultDescription: nil,
+        searchResultImageUrl: nil,
+        persistingIn: managedContext,
+        then: {
+            result in
+               if case .success(_) = result {
+                   print(result)
+                   let items = (try? result.get())?.items ?? []
+                   let success = items.count > 0
+                   completion(success)
+               } else {
+                   completion(false)
+               }
+        })
+}
+
