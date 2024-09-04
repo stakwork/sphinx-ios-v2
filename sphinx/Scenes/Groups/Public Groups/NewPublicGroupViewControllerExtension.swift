@@ -274,10 +274,10 @@ extension NewPublicGroupViewController : PickerViewDelegate {
     }
     
     func handleRssSyncFailure(){
-//        self.formFields[8].text = ""
-//        self.groupsManager.newGroupInfo.feedUrl = ""
-//        feedContentTypeField.text = "-"
-//        self.groupsManager.newGroupInfo.feedContentType = nil
+        self.formFields[8].text = ""
+        self.groupsManager.newGroupInfo.feedUrl = ""
+        feedContentTypeField.text = "-"
+        self.groupsManager.newGroupInfo.feedContentType = nil
         AlertHelper.showAlert(title: "error.rss.sync.failed.title".localized, message: "error.rss.sync.failed.message".localized)
     }
     
