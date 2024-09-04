@@ -43,7 +43,7 @@ func formatAsRssFeedUrl(from urlString: String) -> String? {
         
     case .medium:
         if host == "medium.com", let path = url.path.split(separator: "/").first {
-            return "https://medium.com/feed/@\(path)"
+            return "https://medium.com/\(path)/feed/"
         } else {
             return "https://\(host)/feed"
         }

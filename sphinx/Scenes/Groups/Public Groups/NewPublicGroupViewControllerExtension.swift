@@ -263,6 +263,10 @@ extension NewPublicGroupViewController : PickerViewDelegate {
                         if(success == false){
                             self.handleRssSyncFailure()
                         }
+                        else{//set the values to the proven valid scheme
+                            self.groupsManager.newGroupInfo.feedUrl = rssFeed
+                            self.formFields[8].text = rssFeed
+                        }
                     })
             }
             else{
