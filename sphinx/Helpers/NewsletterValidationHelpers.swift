@@ -49,24 +49,24 @@ func formatAsRssFeedUrl(from urlString: String) -> String? {
         }
         
     case .wordpress:
-        return "https://\(host)/feed/"
+        return "https://\(host)/feed"
         
     case .blogspot:
         return "https://\(host)/feeds/posts/default"
         
     case .ghost:
-        return "https://\(host)/rss/"
+        return "https://\(host)/feed"
         
     case .tumblr:
-        return "https://\(host)/rss"
+        return "https://\(host)/feed"
         
     case .unknown:
         // Try to extract the main domain for generic RSS feed
         if components.count >= 2 {
             let domain = components.suffix(2).joined(separator: ".")
-            return "https://\(domain)/rss"
+            return "https://\(domain)/feed"
         } else {
-            return "https://\(host)/rss"
+            return "https://\(host)/feed"
         }
     }
 }
