@@ -39,40 +39,41 @@ func formatAsRssFeedUrl(from urlString: String) -> String? {
     
     switch platform {
     case .substack:
-        return "https://\(host)/feed"
+        return "https://www.\(host)/feed"
         
     case .medium:
         if host == "medium.com", let path = url.path.split(separator: "/").first {
             return "https://medium.com/\(path)/feed/"
         } else {
-            return "https://\(host)/feed"
+            return "https://www.\(host)/feed"
         }
         
     case .wordpress:
-        return "https://\(host)/feed"
+        return "https://www.\(host)/feed"
         
     case .blogspot:
-        return "https://\(host)/feeds/posts/default"
+        return "https://www.\(host)/feeds/posts/default"
         
     case .ghost:
-        return "https://\(host)/feed"
+        return "https://www.\(host)/rss"
         
     case .tumblr:
-        return "https://\(host)/feed"
+        return "https://www.\(host)/feed"
         
     case .unknown:
         // Try to extract the main domain for generic RSS feed
         if components.count >= 2 {
             let domain = components.suffix(2).joined(separator: ".")
-            return "https://\(domain)/feed"
+            return "https://www.\(domain)/feed"
         } else {
-            return "https://\(host)/feed"
+            return "https://www.\(host)/feed"
         }
     }
 }
 
 func validateRSSFeed(
     from urlString: String,
+    triedPermutations: Set<String> = [],
     completion: @escaping (Bool) -> ()
 ) {
     let managedContext = CoreDataManager.sharedManager.persistentContainer.viewContext
@@ -81,17 +82,52 @@ func validateRSSFeed(
         chat: nil,
         searchResultDescription: nil,
         searchResultImageUrl: nil,
-        persistingIn: managedContext,
-        then: {
-            result in
-               if case .success(_) = result {
-                   print(result)
-                   let items = (try? result.get())?.items ?? []
-                   let success = items.count > 0
-                   completion(success)
-               } else {
-                   completion(false)
-               }
-        })
+        persistingIn: managedContext
+    ) { result in
+        if case .success(_) = result {
+            print(result)
+            let items = (try? result.get())?.items ?? []
+            let success = items.count > 0
+            completion(success)
+        }else {
+            let permutations = generatePermutations(for: urlString)
+            let newPermutations = permutations.subtracting(triedPermutations)
+            
+            if let nextUrl = newPermutations.first {
+                let updatedTriedPermutations = triedPermutations.union([urlString])
+                validateRSSFeed(from: nextUrl, triedPermutations: updatedTriedPermutations, completion: completion)
+            } else {
+                completion(false)
+            }
+        }
+    }
 }
 
+func generatePermutations(for urlString: String) -> Set<String> {
+    var permutations = Set<String>()
+    
+    let url = URL(string: urlString)!
+    var components = URLComponents(url: url, resolvingAgainstBaseURL: false)!
+    
+    // Swap /rss and /feed
+    if components.path.hasSuffix("/rss") {
+        components.path = components.path.replacingOccurrences(of: "/rss", with: "/feed")
+    } else if components.path.hasSuffix("/feed") {
+        components.path = components.path.replacingOccurrences(of: "/feed", with: "/rss")
+    } else {
+        components.path += "/rss"
+        permutations.insert(components.url!.absoluteString)
+        components.path = components.path.replacingOccurrences(of: "/rss", with: "/feed")
+    }
+    permutations.insert(components.url!.absoluteString)
+    
+    // Add or remove www.
+    if components.host?.hasPrefix("www.") == true {
+        components.host = components.host?.replacingOccurrences(of: "www.", with: "")
+    } else {
+        components.host = "www." + (components.host ?? "")
+    }
+    permutations.insert(components.url!.absoluteString)
+    
+    return permutations
+}
