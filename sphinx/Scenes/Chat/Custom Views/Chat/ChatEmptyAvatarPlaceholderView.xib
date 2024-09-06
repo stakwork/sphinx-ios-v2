@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="22155" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+    <device id="retina6_12" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="22131"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="System colors in document resources" minToolsVersion="11.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <objects>
+        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner" customClass="ChatEmptyAvatarPlaceholderView" customModule="sphinx" customModuleProvider="target">
+            <connections>
+                <outlet property="avatarImageView" destination="E9I-yf-g3V" id="mx0-0d-9IG"/>
+                <outlet property="contentView" destination="iN0-l3-epB" id="fWO-Pd-vqT"/>
+            </connections>
+        </placeholder>
+        <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
+        <view contentMode="scaleToFill" id="iN0-l3-epB">
+            <rect key="frame" x="0.0" y="0.0" width="266" height="256"/>
+            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+            <subviews>
+                <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="E9I-yf-g3V">
+                    <rect key="frame" x="85" y="59" width="96" height="96"/>
+                    <constraints>
+                        <constraint firstAttribute="width" constant="96" id="hzw-oo-gng"/>
+                        <constraint firstAttribute="width" secondItem="E9I-yf-g3V" secondAttribute="height" multiplier="1:1" id="igs-iC-QMJ"/>
+                    </constraints>
+                </imageView>
+                <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" ambiguous="YES" image="empty-chat-lock-icon" translatesAutoresizingMaskIntoConstraints="NO" id="FUk-F9-0sT">
+                    <rect key="frame" x="163.66666666666666" y="175" width="10" height="20"/>
+                    <constraints>
+                        <constraint firstAttribute="width" constant="10" id="wGa-Vy-75v"/>
+                    </constraints>
+                </imageView>
+            </subviews>
+            <viewLayoutGuide key="safeArea" id="vUN-kp-3ea"/>
+            <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+            <constraints>
+                <constraint firstItem="E9I-yf-g3V" firstAttribute="top" secondItem="vUN-kp-3ea" secondAttribute="top" id="6FR-lj-piV"/>
+                <constraint firstItem="E9I-yf-g3V" firstAttribute="centerX" secondItem="vUN-kp-3ea" secondAttribute="centerX" id="iLM-Yr-frL"/>
+            </constraints>
+            <freeformSimulatedSizeMetrics key="simulatedDestinationMetrics"/>
+            <point key="canvasLocation" x="-178.62595419847327" y="313.38028169014086"/>
+        </view>
+    </objects>
+    <resources>
+        <image name="empty-chat-lock-icon" width="10" height="14"/>
+        <systemColor name="systemBackgroundColor">
+            <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+        </systemColor>
+    </resources>
+</document>

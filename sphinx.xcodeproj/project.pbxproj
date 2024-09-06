@@ -721,6 +721,8 @@
 		CEBF0D032975B20B006C1F21 /* DiscoverTribesTagSelectionVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEBF0D022975B20B006C1F21 /* DiscoverTribesTagSelectionVC.swift */; };
 		CEBF0D052975C367006C1F21 /* DiscoverTribesTagSelectionVM.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEBF0D042975C367006C1F21 /* DiscoverTribesTagSelectionVM.swift */; };
 		CEBF0D07297603B0006C1F21 /* TribeTagSelectionCollectionViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEBF0D06297603B0006C1F21 /* TribeTagSelectionCollectionViewCell.swift */; };
+		CEC829F62C8B556F00B24218 /* ChatEmptyAvatarPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEC829F52C8B556F00B24218 /* ChatEmptyAvatarPlaceholderView.swift */; };
+		CEC829F82C8B558100B24218 /* ChatEmptyAvatarPlaceholderView.xib in Resources */ = {isa = PBXBuildFile; fileRef = CEC829F72C8B558100B24218 /* ChatEmptyAvatarPlaceholderView.xib */; };
 		CECE9C2B2AA7779E0039B843 /* WordsList.swift in Sources */ = {isa = PBXBuildFile; fileRef = CECE9C2A2AA7779E0039B843 /* WordsList.swift */; };
 		CECFBEFE2965C84400BAD935 /* DiscoverTribesTableViewDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = CECFBEFD2965C84400BAD935 /* DiscoverTribesTableViewDataSource.swift */; };
 		CECFBF012965C85B00BAD935 /* DiscoverTribesTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = CECFBEFF2965C85B00BAD935 /* DiscoverTribesTableViewCell.swift */; };
@@ -1993,6 +1995,8 @@
 		CEBF0D022975B20B006C1F21 /* DiscoverTribesTagSelectionVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverTribesTagSelectionVC.swift; sourceTree = "<group>"; };
 		CEBF0D042975C367006C1F21 /* DiscoverTribesTagSelectionVM.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverTribesTagSelectionVM.swift; sourceTree = "<group>"; };
 		CEBF0D06297603B0006C1F21 /* TribeTagSelectionCollectionViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TribeTagSelectionCollectionViewCell.swift; sourceTree = "<group>"; };
+		CEC829F52C8B556F00B24218 /* ChatEmptyAvatarPlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatEmptyAvatarPlaceholderView.swift; sourceTree = "<group>"; };
+		CEC829F72C8B558100B24218 /* ChatEmptyAvatarPlaceholderView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ChatEmptyAvatarPlaceholderView.xib; sourceTree = "<group>"; };
 		CECE3D9C2B6D4678009EE475 /* sphinx 47.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 47.xcdatamodel"; sourceTree = "<group>"; };
 		CECE9C2A2AA7779E0039B843 /* WordsList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordsList.swift; sourceTree = "<group>"; };
 		CECFBEFD2965C84400BAD935 /* DiscoverTribesTableViewDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverTribesTableViewDataSource.swift; sourceTree = "<group>"; };
@@ -2538,6 +2542,8 @@
 				47AF0D2E254AFE4900C98398 /* ChatHeaderView.xib */,
 				477ADCC62A1BE2B1004E74CE /* PinnedMessageView.swift */,
 				477ADCC82A1BE2BB004E74CE /* PinnedMessageView.xib */,
+				CEC829F52C8B556F00B24218 /* ChatEmptyAvatarPlaceholderView.swift */,
+				CEC829F72C8B558100B24218 /* ChatEmptyAvatarPlaceholderView.xib */,
 			);
 			path = Chat;
 			sourceTree = "<group>";
@@ -5111,6 +5117,7 @@
 				F33119A0268E9C1B005082EB /* XcodeStoreKitConfiguration.storekit in Resources */,
 				4754FAA2272B2040006295A5 /* NewsletterItemCollectionViewCell.xib in Resources */,
 				CE2743B62A29318A007A0FDC /* MediaDeletionConfirmationView.xib in Resources */,
+				CEC829F82C8B558100B24218 /* ChatEmptyAvatarPlaceholderView.xib in Resources */,
 				473C315327986EBB007735CD /* RestoreProgressView.xib in Resources */,
 				4789E26224F04752003991BE /* SettingsTabsView.xib in Resources */,
 				473842F52391970B00AA640F /* FullScreenImageView.xib in Resources */,
@@ -5388,6 +5395,7 @@
 				472161DC293A686A0088B87B /* RecommendationsHeaderCollectionReusableView.swift in Sources */,
 				479A39D7244E26FA00A37899 /* AttachmentObject.swift in Sources */,
 				470708A424B3669200A98DCA /* MetaDataCache.swift in Sources */,
+				CEC829F62C8B556F00B24218 /* ChatEmptyAvatarPlaceholderView.swift in Sources */,
 				47FA18D62434E31D00469C8F /* PaidAttachmentView.swift in Sources */,
 				CEF88DD129B66B9200DC1C40 /* RecommendationItemWUnifiedViewCollectionViewCell.swift in Sources */,
 				477924862A28EF6300CD3CF1 /* SentPaidDetails.swift in Sources */,
