@@ -109,7 +109,7 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         configureTableView()
         initializeMacros()
         
-        setupEmptyAvatarPlaceholderView()
+        updateEmptyView()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -264,22 +264,35 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         }
     }
     
-    func setupEmptyAvatarPlaceholderView() {
+    func updateEmptyView(){
+        if chat == nil || self.chat?.lastMessage == nil {
+            self.setupEmptyChatPlaceholder()
+        } else {
+            self.removeEmptyChatPlaceholder()
+        }
+    }
+    
+    func setupEmptyChatPlaceholder() {
+        removeEmptyChatPlaceholder()
+        guard let contact = self.contact else{
+            return
+        }
         let placeholderView = ChatEmptyAvatarPlaceholderView(frame: .zero)
         placeholderView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(placeholderView)
-        
+        placeholderView.configureWith(contact: contact)
+        let headerOffset : CGFloat = 25.0
         NSLayoutConstraint.activate([
             placeholderView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            placeholderView.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 25.0),
+            placeholderView.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: headerOffset),
             placeholderView.widthAnchor.constraint(equalToConstant: self.view.frame.width),
-            placeholderView.heightAnchor.constraint(equalToConstant: 400)
+            placeholderView.heightAnchor.constraint(equalToConstant: self.view.frame.height - headerView.frame.height - headerOffset)
         ])
         
         self.emptyAvatarPlaceholderView = placeholderView
     }
 
-    func showEmptyAvatarPlaceholder() {
+    func removeEmptyChatPlaceholder() {
         emptyAvatarPlaceholderView?.isHidden = false
     }
 

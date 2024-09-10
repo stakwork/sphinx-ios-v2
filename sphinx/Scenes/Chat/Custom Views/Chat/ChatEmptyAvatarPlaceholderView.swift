@@ -15,6 +15,31 @@ class ChatEmptyAvatarPlaceholderView: UIView {
     @IBOutlet weak var avatarIconImageContainerView: UIView!
     @IBOutlet weak var avatarIconImageView: UIImageView!
     @IBOutlet weak var disclaimerLabel: UILabel!
+    @IBOutlet weak var pendingChatDisclaimerTitle: UILabel!
+    @IBOutlet weak var pendingChatDisclaimerSubtitle: UILabel!
+    @IBOutlet weak var dashedOutlinePlaceholderView: UIView!
+    
+    
+    var inviteDate : Date? = nil
+    
+    var isPending : Bool = false {
+        didSet{
+            DispatchQueue.main.async(execute: {
+                let dateText = self.inviteDate?.getStringDate(format: "MMMM d yyyy") ?? ""
+                let fullDateText = dateText == "" ? "Invited you" : "Invited you on \(dateText)"
+                let text = (self.isPending == false) ? "messages.encrypted.disclaimer".localized : fullDateText
+                self.disclaimerLabel.text = text
+                self.pendingChatDisclaimerTitle.isHidden = !self.isPending
+                self.pendingChatDisclaimerSubtitle.isHidden = !self.isPending
+                
+                if(self.isPending){
+                    self.avatarIconImageView.image = #imageLiteral(resourceName: "clock_icon")
+                    self.dashedOutlinePlaceholderView.isHidden = false
+                    self.dashedOutlinePlaceholderView.addDottedCircularBorder(lineWidth: 1.0, dashPattern: [8,4], color: UIColor.Sphinx.PlaceholderText)
+                }
+            })
+        }
+    }
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -32,16 +57,18 @@ class ChatEmptyAvatarPlaceholderView: UIView {
         contentView.frame = bounds
         contentView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         contentView.backgroundColor = UIColor.clear
+        avatarImageView.backgroundColor = UIColor.clear
+        dashedOutlinePlaceholderView.backgroundColor = UIColor.clear
         setupAllViews()
     }
     
     func setupAllViews(){
-        setupAvatarImageView()
+        //setupAvatarImageView()
         setupDisclaimerLabel()
     }
     
-    func setupAvatarImageView(){
-        avatarImageView.sd_setImage(with: URL(string:"https://thispersondoesnotexist.com/"))
+    func setupAvatarImageView(imageUrl:String){
+        avatarImageView.sd_setImage(with: URL(string:imageUrl))
         avatarImageView.makeCircular()
         avatarIconImageView.image = avatarIconImageView.image?.withRenderingMode(.alwaysTemplate)
         
@@ -64,5 +91,49 @@ class ChatEmptyAvatarPlaceholderView: UIView {
         // Force layout update
         self.setNeedsLayout()
         self.layoutIfNeeded()
+    }
+    
+    func configureWith(contact:UserContact){
+        inviteDate = contact.createdAt
+        isPending = contact.isPending()
+        
+        
+        if let avatarImage = contact.avatarUrl,
+           avatarImage != ""
+        {
+            setupAvatarImageView(imageUrl: avatarImage)
+        }
+        else{
+            avatarImageView.image = nil
+            setupAvatarImageView(imageUrl: "https://thispersondoesnotexist.com/")
+            //TODO: @emptyChat: need to set up initials container
+//            showInitialsFor(contact, in: avatarImageView, and: initialsLabelContainer)
+        }
+    }
+    
+    func configureWith(chat:Chat){
+        inviteDate = chat.getContact()?.createdAt
+        isPending = chat.isPending()
+        
+        if let avatarImage = chat.getContact()?.avatarUrl,
+           avatarImage != ""
+        {
+//            setupAvatarImageView(imageUrl: avatarImage)
+        }
+        else{
+            avatarImageView.image = nil
+            //showInitialsFor(chat.getContact(), in: avatarImageView, and: initialsLabelContainer)
+        }
+        
+    }
+    
+    func showInitialsFor(_ contact: UserContact, in label: UILabel) {
+        let senderInitials = contact.nickname?.getInitialsFromName() ?? "name.unknown.initials".localized
+        let senderColor = contact.getColor()
+        
+        label.isHidden = false
+        label.backgroundColor = senderColor
+        label.textColor = UIColor.white
+        label.text = senderInitials
     }
 }

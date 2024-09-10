@@ -202,6 +202,7 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 "contact.not.found" = "Contact not found";
 "address-book.can-not-delete-contact-title" = "無法刪除聯絡人";
 "address-book.can-not-delete-contact-message" = "已確認的聯絡人無法刪除";
+"messages.encrypted.disclaimer" = "Messages and calls are secured with end-to-end encryption";
 
 //歡迎
 "welcome.initial.title" = "歡迎";
