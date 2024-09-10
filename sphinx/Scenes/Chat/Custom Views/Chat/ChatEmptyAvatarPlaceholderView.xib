@@ -4,6 +4,7 @@
     <dependencies>
         <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="22131"/>
+        <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -11,6 +12,8 @@
     <objects>
         <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner" customClass="ChatEmptyAvatarPlaceholderView" customModule="sphinx" customModuleProvider="target">
             <connections>
+                <outlet property="avatarIconImageContainerView" destination="nNn-5u-Ncc" id="Iif-II-lVM"/>
+                <outlet property="avatarIconImageView" destination="FUk-F9-0sT" id="lIA-Lh-NhW"/>
                 <outlet property="avatarImageView" destination="E9I-yf-g3V" id="mx0-0d-9IG"/>
                 <outlet property="contentView" destination="iN0-l3-epB" id="fWO-Pd-vqT"/>
             </connections>
@@ -21,24 +24,39 @@
             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
             <subviews>
                 <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="E9I-yf-g3V">
-                    <rect key="frame" x="85" y="59" width="96" height="96"/>
+                    <rect key="frame" x="58" y="59" width="150" height="150"/>
                     <constraints>
-                        <constraint firstAttribute="width" constant="96" id="hzw-oo-gng"/>
+                        <constraint firstAttribute="width" constant="150" id="hzw-oo-gng"/>
                         <constraint firstAttribute="width" secondItem="E9I-yf-g3V" secondAttribute="height" multiplier="1:1" id="igs-iC-QMJ"/>
                     </constraints>
                 </imageView>
-                <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" ambiguous="YES" image="empty-chat-lock-icon" translatesAutoresizingMaskIntoConstraints="NO" id="FUk-F9-0sT">
-                    <rect key="frame" x="163.66666666666666" y="175" width="10" height="20"/>
+                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="nNn-5u-Ncc">
+                    <rect key="frame" x="173" y="174" width="35" height="35"/>
+                    <subviews>
+                        <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="empty-chat-lock-icon" translatesAutoresizingMaskIntoConstraints="NO" id="FUk-F9-0sT">
+                            <rect key="frame" x="11.666666666666657" y="9" width="12" height="17"/>
+                            <constraints>
+                                <constraint firstAttribute="width" secondItem="FUk-F9-0sT" secondAttribute="height" multiplier="5:7" id="6SR-Tg-VFM"/>
+                                <constraint firstAttribute="width" constant="12" id="wGa-Vy-75v"/>
+                            </constraints>
+                        </imageView>
+                    </subviews>
+                    <color key="backgroundColor" name="BodyInverted"/>
                     <constraints>
-                        <constraint firstAttribute="width" constant="10" id="wGa-Vy-75v"/>
+                        <constraint firstAttribute="width" constant="35" id="cav-dq-Aia"/>
+                        <constraint firstItem="FUk-F9-0sT" firstAttribute="centerX" secondItem="nNn-5u-Ncc" secondAttribute="centerX" id="eRh-rh-gHw"/>
+                        <constraint firstItem="FUk-F9-0sT" firstAttribute="centerY" secondItem="nNn-5u-Ncc" secondAttribute="centerY" id="sBI-wO-5Zz"/>
+                        <constraint firstAttribute="width" secondItem="nNn-5u-Ncc" secondAttribute="height" multiplier="1:1" id="uCl-ct-opS"/>
                     </constraints>
-                </imageView>
+                </view>
             </subviews>
             <viewLayoutGuide key="safeArea" id="vUN-kp-3ea"/>
             <color key="backgroundColor" systemColor="systemBackgroundColor"/>
             <constraints>
+                <constraint firstItem="nNn-5u-Ncc" firstAttribute="trailing" secondItem="E9I-yf-g3V" secondAttribute="trailing" id="16h-9Z-goB"/>
                 <constraint firstItem="E9I-yf-g3V" firstAttribute="top" secondItem="vUN-kp-3ea" secondAttribute="top" id="6FR-lj-piV"/>
                 <constraint firstItem="E9I-yf-g3V" firstAttribute="centerX" secondItem="vUN-kp-3ea" secondAttribute="centerX" id="iLM-Yr-frL"/>
+                <constraint firstItem="nNn-5u-Ncc" firstAttribute="bottom" secondItem="E9I-yf-g3V" secondAttribute="bottom" id="wUk-q3-OXO"/>
             </constraints>
             <freeformSimulatedSizeMetrics key="simulatedDestinationMetrics"/>
             <point key="canvasLocation" x="-178.62595419847327" y="313.38028169014086"/>
@@ -46,6 +64,9 @@
     </objects>
     <resources>
         <image name="empty-chat-lock-icon" width="10" height="14"/>
+        <namedColor name="BodyInverted">
+            <color red="0.082352941176470587" green="0.11764705882352941" blue="0.15294117647058825" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>

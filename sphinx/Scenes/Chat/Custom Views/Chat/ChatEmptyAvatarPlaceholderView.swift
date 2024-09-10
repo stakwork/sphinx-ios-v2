@@ -11,8 +11,9 @@ import UIKit
 class ChatEmptyAvatarPlaceholderView: UIView {
 
     @IBOutlet weak var contentView: UIView!
-    
     @IBOutlet weak var avatarImageView: UIImageView!
+    @IBOutlet weak var avatarIconImageContainerView: UIView!
+    @IBOutlet weak var avatarIconImageView: UIImageView!
     
         
     override init(frame: CGRect) {
@@ -30,8 +31,7 @@ class ChatEmptyAvatarPlaceholderView: UIView {
         addSubview(contentView)
         contentView.frame = bounds
         contentView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        contentView.backgroundColor = .magenta
-        
+        contentView.backgroundColor = UIColor.clear
         setupAllViews()
     }
     
@@ -42,5 +42,12 @@ class ChatEmptyAvatarPlaceholderView: UIView {
     func setupAvatarImageView(){
         avatarImageView.sd_setImage(with: URL(string:"https://thispersondoesnotexist.com/"))
         avatarImageView.makeCircular()
+        avatarIconImageView.image = avatarIconImageView.image?.withRenderingMode(.alwaysTemplate)
+        
+        
+        avatarIconImageContainerView.makeCircular()
+        avatarIconImageView.tintColor = UIColor.Sphinx.Body
+        avatarIconImageContainerView.layer.borderColor = UIColor.Sphinx.Body.cgColor
+        avatarIconImageContainerView.layer.borderWidth = 5.0
     }
 }

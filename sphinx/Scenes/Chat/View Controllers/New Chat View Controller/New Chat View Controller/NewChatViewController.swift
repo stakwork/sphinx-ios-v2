@@ -46,6 +46,8 @@ class NewChatViewController: NewKeyboardHandlerViewController {
     var chatTableDataSource: NewChatTableDataSource? = nil
     var chatMentionAutocompleteDataSource : ChatMentionAutocompleteDataSource? = nil
     let messageBubbleHelper = NewMessageBubbleHelper()
+    var emptyAvatarPlaceholderView: ChatEmptyAvatarPlaceholderView?
+
     
     var webAppVC : WebAppViewController? = nil
     var isAppUrl = false
@@ -106,6 +108,8 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         configureFetchResultsController()
         configureTableView()
         initializeMacros()
+        
+        setupEmptyAvatarPlaceholderView()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -258,5 +262,28 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         } else {
             bottomView.resetReplyView()
         }
+    }
+    
+    func setupEmptyAvatarPlaceholderView() {
+        let placeholderView = ChatEmptyAvatarPlaceholderView(frame: .zero)
+        placeholderView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(placeholderView)
+        
+        NSLayoutConstraint.activate([
+            placeholderView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            placeholderView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            placeholderView.widthAnchor.constraint(equalToConstant: 200),
+            placeholderView.heightAnchor.constraint(equalToConstant: 200)
+        ])
+        
+        self.emptyAvatarPlaceholderView = placeholderView
+    }
+
+    func showEmptyAvatarPlaceholder() {
+        emptyAvatarPlaceholderView?.isHidden = false
+    }
+
+    func hideEmptyAvatarPlaceholder() {
+        emptyAvatarPlaceholderView?.isHidden = true
     }
 }
