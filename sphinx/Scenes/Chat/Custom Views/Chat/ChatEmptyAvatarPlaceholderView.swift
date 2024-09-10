@@ -14,8 +14,8 @@ class ChatEmptyAvatarPlaceholderView: UIView {
     @IBOutlet weak var avatarImageView: UIImageView!
     @IBOutlet weak var avatarIconImageContainerView: UIView!
     @IBOutlet weak var avatarIconImageView: UIImageView!
+    @IBOutlet weak var disclaimerLabel: UILabel!
     
-        
     override init(frame: CGRect) {
         super.init(frame: frame)
         commonInit()
@@ -37,6 +37,7 @@ class ChatEmptyAvatarPlaceholderView: UIView {
     
     func setupAllViews(){
         setupAvatarImageView()
+        setupDisclaimerLabel()
     }
     
     func setupAvatarImageView(){
@@ -48,6 +49,20 @@ class ChatEmptyAvatarPlaceholderView: UIView {
         avatarIconImageContainerView.makeCircular()
         avatarIconImageView.tintColor = UIColor.Sphinx.Body
         avatarIconImageContainerView.layer.borderColor = UIColor.Sphinx.Body.cgColor
-        avatarIconImageContainerView.layer.borderWidth = 5.0
+        avatarIconImageContainerView.layer.borderWidth = 3.5
+        
+    }
+    
+    func setupDisclaimerLabel() {
+        disclaimerLabel.numberOfLines = 0
+        disclaimerLabel.lineBreakMode = .byWordWrapping
+        disclaimerLabel.adjustsFontForContentSizeCategory = true // For Dynamic Type support
+        
+        disclaimerLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        disclaimerLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+                
+        // Force layout update
+        self.setNeedsLayout()
+        self.layoutIfNeeded()
     }
 }

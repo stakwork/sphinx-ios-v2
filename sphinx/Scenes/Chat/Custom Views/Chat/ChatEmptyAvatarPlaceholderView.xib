@@ -9,6 +9,11 @@
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
+    <customFonts key="customFonts">
+        <array key="Roboto-Medium.ttf">
+            <string>Roboto-Medium</string>
+        </array>
+    </customFonts>
     <objects>
         <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner" customClass="ChatEmptyAvatarPlaceholderView" customModule="sphinx" customModuleProvider="target">
             <connections>
@@ -16,22 +21,23 @@
                 <outlet property="avatarIconImageView" destination="FUk-F9-0sT" id="lIA-Lh-NhW"/>
                 <outlet property="avatarImageView" destination="E9I-yf-g3V" id="mx0-0d-9IG"/>
                 <outlet property="contentView" destination="iN0-l3-epB" id="fWO-Pd-vqT"/>
+                <outlet property="disclaimerLabel" destination="Lck-wz-WPh" id="7hL-Gm-7E8"/>
             </connections>
         </placeholder>
         <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
         <view contentMode="scaleToFill" id="iN0-l3-epB">
-            <rect key="frame" x="0.0" y="0.0" width="266" height="256"/>
+            <rect key="frame" x="0.0" y="0.0" width="314" height="438"/>
             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
             <subviews>
                 <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="E9I-yf-g3V">
-                    <rect key="frame" x="58" y="59" width="150" height="150"/>
+                    <rect key="frame" x="82" y="59" width="150" height="150"/>
                     <constraints>
                         <constraint firstAttribute="width" constant="150" id="hzw-oo-gng"/>
                         <constraint firstAttribute="width" secondItem="E9I-yf-g3V" secondAttribute="height" multiplier="1:1" id="igs-iC-QMJ"/>
                     </constraints>
                 </imageView>
                 <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="nNn-5u-Ncc">
-                    <rect key="frame" x="173" y="174" width="35" height="35"/>
+                    <rect key="frame" x="197" y="174" width="35" height="35"/>
                     <subviews>
                         <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="empty-chat-lock-icon" translatesAutoresizingMaskIntoConstraints="NO" id="FUk-F9-0sT">
                             <rect key="frame" x="11.666666666666657" y="9" width="12" height="17"/>
@@ -49,23 +55,38 @@
                         <constraint firstAttribute="width" secondItem="nNn-5u-Ncc" secondAttribute="height" multiplier="1:1" id="uCl-ct-opS"/>
                     </constraints>
                 </view>
+                <label opaque="NO" userInteractionEnabled="NO" contentMode="TopLeft" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Messages and calls are secured with end-to-end encryption" textAlignment="center" lineBreakMode="wordWrap" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Lck-wz-WPh">
+                    <rect key="frame" x="37" y="217" width="240" height="64"/>
+                    <constraints>
+                        <constraint firstAttribute="width" constant="240" id="E2X-JX-Lrh"/>
+                        <constraint firstAttribute="height" constant="64" id="gHs-LF-CpC"/>
+                    </constraints>
+                    <fontDescription key="fontDescription" name="Roboto-Medium" family="Roboto" pointSize="15"/>
+                    <color key="textColor" name="SecondaryText"/>
+                    <nil key="highlightedColor"/>
+                </label>
             </subviews>
             <viewLayoutGuide key="safeArea" id="vUN-kp-3ea"/>
             <color key="backgroundColor" systemColor="systemBackgroundColor"/>
             <constraints>
                 <constraint firstItem="nNn-5u-Ncc" firstAttribute="trailing" secondItem="E9I-yf-g3V" secondAttribute="trailing" id="16h-9Z-goB"/>
+                <constraint firstItem="Lck-wz-WPh" firstAttribute="top" secondItem="E9I-yf-g3V" secondAttribute="bottom" constant="8" id="5Vb-ne-UrN"/>
                 <constraint firstItem="E9I-yf-g3V" firstAttribute="top" secondItem="vUN-kp-3ea" secondAttribute="top" id="6FR-lj-piV"/>
+                <constraint firstItem="Lck-wz-WPh" firstAttribute="centerX" secondItem="E9I-yf-g3V" secondAttribute="centerX" id="Ky4-ac-tLF"/>
                 <constraint firstItem="E9I-yf-g3V" firstAttribute="centerX" secondItem="vUN-kp-3ea" secondAttribute="centerX" id="iLM-Yr-frL"/>
                 <constraint firstItem="nNn-5u-Ncc" firstAttribute="bottom" secondItem="E9I-yf-g3V" secondAttribute="bottom" id="wUk-q3-OXO"/>
             </constraints>
             <freeformSimulatedSizeMetrics key="simulatedDestinationMetrics"/>
-            <point key="canvasLocation" x="-178.62595419847327" y="313.38028169014086"/>
+            <point key="canvasLocation" x="-141.98473282442748" y="377.46478873239437"/>
         </view>
     </objects>
     <resources>
         <image name="empty-chat-lock-icon" width="10" height="14"/>
         <namedColor name="BodyInverted">
             <color red="0.082352941176470587" green="0.11764705882352941" blue="0.15294117647058825" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+        <namedColor name="SecondaryText">
+            <color red="0.55686274509803924" green="0.58823529411764708" blue="0.61176470588235299" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>

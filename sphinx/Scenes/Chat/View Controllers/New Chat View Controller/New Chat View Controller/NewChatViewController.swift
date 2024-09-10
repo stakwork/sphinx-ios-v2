@@ -271,9 +271,9 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         
         NSLayoutConstraint.activate([
             placeholderView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            placeholderView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            placeholderView.widthAnchor.constraint(equalToConstant: 200),
-            placeholderView.heightAnchor.constraint(equalToConstant: 200)
+            placeholderView.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 25.0),
+            placeholderView.widthAnchor.constraint(equalToConstant: self.view.frame.width),
+            placeholderView.heightAnchor.constraint(equalToConstant: 400)
         ])
         
         self.emptyAvatarPlaceholderView = placeholderView
