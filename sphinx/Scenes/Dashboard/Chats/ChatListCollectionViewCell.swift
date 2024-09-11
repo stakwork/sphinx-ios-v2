@@ -27,6 +27,7 @@ class ChatListCollectionViewCell: UICollectionViewCell {
     @IBOutlet weak var unreadMessageBadgeLabel: UILabel!
     @IBOutlet weak var mentionsBadgeContainer: UIView!
     @IBOutlet weak var mentionsBadgeLabel: UILabel!
+    @IBOutlet weak var pendingContactDashedLineView: UIView!
     
     var delegate : ChatListCollectionViewCellDelegate? = nil
     
@@ -274,7 +275,7 @@ extension ChatListCollectionViewCell {
             
         } else if chatListObject.isPending() {
             inviteIcon.isHidden = false
-            inviteIcon.text = "sync"
+            inviteIcon.text = "schedule"
             failedMessageIcon.isHidden = true
             
             messageLabel.superview?.isHidden = false
@@ -284,6 +285,9 @@ extension ChatListCollectionViewCell {
             messageLabel.textColor = .Sphinx.SecondaryText
             
             messageLabel.text = "contact.pending".localized
+            
+            pendingContactDashedLineView.addDottedCircularBorder(lineWidth: 1.0, dashPattern: [8,4], color: UIColor.Sphinx.PlaceholderText)
+            pendingContactDashedLineView.isHidden = false
         } else {
             inviteIcon.isHidden = true
             failedMessageIcon.isHidden = true
