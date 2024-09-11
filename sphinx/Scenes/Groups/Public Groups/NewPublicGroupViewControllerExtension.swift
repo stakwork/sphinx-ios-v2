@@ -81,15 +81,15 @@ extension NewPublicGroupViewController {
                         completeUrlAndLoadImage(textField: field)
                         break
                     case GroupFields.PriceToJoin.rawValue:
-                        let priceToJoin = chatTribeInfo.priceToJoin ?? 0
+                        let priceToJoin = (chatTribeInfo.priceToJoin ?? 0) / 1000
                         field.text = priceToJoin > 0 ? "\(priceToJoin)" : ""
                         break
                     case GroupFields.PricePerMessage.rawValue:
-                        let pricePerMessage = chatTribeInfo.pricePerMessage ?? 0
+                        let pricePerMessage = (chatTribeInfo.pricePerMessage ?? 0) / 1000
                         field.text = pricePerMessage > 0 ? "\(pricePerMessage)" : ""
                         break
                     case GroupFields.AmountToStake.rawValue:
-                        let amountToStake = chatTribeInfo.amountToStake ?? 0
+                        let amountToStake = (chatTribeInfo.amountToStake ?? 0) / 1000
                         field.text = amountToStake > 0 ? "\(amountToStake)" : ""
                         break
                     case GroupFields.TimeToStake.rawValue:

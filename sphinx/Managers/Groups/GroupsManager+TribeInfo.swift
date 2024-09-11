@@ -187,6 +187,7 @@ extension GroupsManager {
                     "price_per_message": groupInfo["price_per_message"],
                     "escrow_amount": max(groupInfo["escrow_amount"].int ?? 3, 3)
                 ]
+                
                 let chatJSON = JSON(chatDict)
                 let resultantChat = Chat.insertChat(chat: chatJSON)
                 resultantChat?.status = (chatDict["private"] as? Bool ?? false) ? Chat.ChatStatus.pending.rawValue : Chat.ChatStatus.approved.rawValue

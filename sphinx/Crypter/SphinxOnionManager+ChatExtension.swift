@@ -247,10 +247,15 @@ extension SphinxOnionManager {
         let myImg = (chat.myPhotoUrl?.isNotEmpty == true ? (chat.myPhotoUrl ?? "") : (selfContact.avatarUrl ?? ""))
         
         do {
-            let escrowAmountSats = max(Int(truncating: chat.escrowAmount ?? 3), tribeMinEscrowSats)
-            let amtMsat = (isTribe && amount == 0) ? UInt64(((Int(truncating: (chat.pricePerMessage ?? 0)) + escrowAmountSats) * 1000)) : UInt64((amount * 1000))
+            var amtMsat = tribeMinSats
             
-            print("sendMessage args seed: \(seed), uniqueTime: \(getTimeWithEntropy()), to: \(recipPubkey), msgType: \(msgType), msgJson: \(contentJSONString), state: \(String(describing: loadOnionStateAsData())), myAlias: \(nickname), myImg: \(String(describing: myImg)), amtMsat: \(UInt64(amtMsat)), isTribe: \(String(describing: recipContact == nil))")
+            if isTribe && amount == 0 {
+                let escrowAmountSats = Int(truncating: chat.escrowAmount ?? 0)
+                let pricePerMessage = Int(truncating: chat.pricePerMessage ?? 0)
+                amtMsat = max((escrowAmountSats + pricePerMessage), tribeMinSats)
+            } else {
+                amtMsat = amount
+            }
             
             let rr = try sphinx.send(
                 seed: seed,
@@ -261,7 +266,7 @@ extension SphinxOnionManager {
                 state: loadOnionStateAsData(),
                 myAlias: nickname,
                 myImg: myImg,
-                amtMsat: amtMsat,
+                amtMsat: UInt64(amtMsat),
                 isTribe: isTribe
             )
             
@@ -367,7 +372,7 @@ extension SphinxOnionManager {
                 message?.tag = tag ?? msg.tag
                 
                 if msgType == TransactionMessage.TransactionMessageType.boost.rawValue {
-                    message?.amount = NSDecimalNumber(value: amount)
+                    message?.amount = NSDecimalNumber(value: amount / 1000)
                 }
                 
                 if chat.isPublicGroup(), let owner = UserContact.getOwner() {
@@ -443,7 +448,7 @@ extension SphinxOnionManager {
             )
             
             paymentMessage?.id = uniqueIntHashFromString(stringInput: UUID().uuidString)
-            paymentMessage?.amount = NSDecimalNumber(value: amount)
+            paymentMessage?.amount = NSDecimalNumber(value: amount / 1000)
             paymentMessage?.mediaKey = mediaKey
             paymentMessage?.mediaToken = mediaToken
             paymentMessage?.mediaType = mediaType
@@ -720,8 +725,6 @@ extension SphinxOnionManager {
             return
         }
         
-        let msats = message.msat ?? 0
-        
         var genericIncomingMessage = GenericIncomingMessage(msg: message)
         genericIncomingMessage.senderPubkey = csr.pubkey
         genericIncomingMessage.uuid = uuid
@@ -731,7 +734,7 @@ extension SphinxOnionManager {
             message: genericIncomingMessage,
             date: date,
             csr: csr,
-            amount: Int(msats/1000),
+            amount: Int(message.msat ?? 0),
             type: Int(type),
             fromMe: message.fromMe ?? false
         )
@@ -828,7 +831,7 @@ extension SphinxOnionManager {
             message: genericIncomingMessage,
             date: date,
             csr: csr,
-            amount: ((genericIncomingMessage.amount ?? 0) / 1000),
+            amount: genericIncomingMessage.amount ?? 0,
             type: Int(type),
             fromMe: message.fromMe ?? false,
             owner: owner
@@ -849,7 +852,7 @@ extension SphinxOnionManager {
                 return
             }
             
-            if Int(truncating: newMessage.amount ?? 0) + SphinxOnionManager.kRoutingOffset >= purchaseMinAmount {
+            if Int(truncating: newMessage.amount ?? 0) + kRoutingOffset >= purchaseMinAmount {
                 ///purchase of media received with sufficient amount
                 let _ = sendMessage(
                     to: chat.getContact(),
@@ -869,7 +872,7 @@ extension SphinxOnionManager {
                     content: "",
                     chat: chat,
                     provisionalMessage: nil,
-                    amount: (newMessage.amount as? Int) ?? 0,
+                    amount: ((newMessage.amount as? Int) ?? 0) * 1000,
                     msgType: UInt8(TransactionMessage.TransactionMessageType.purchaseDeny.rawValue),
                     threadUUID: nil,
                     replyUUID: nil,
@@ -911,7 +914,7 @@ extension SphinxOnionManager {
                     message: genericIncomingMessage,
                     date: date,
                     csr: csr,
-                    amount: amount,
+                    amount: amount * 1000,
                     type: Int(type),
                     fromMe: message.fromMe ?? false
                 ) else {
@@ -959,8 +962,6 @@ extension SphinxOnionManager {
         var senderId: Int? = nil
         var receiverId: Int? = nil
         
-        var isTribe = false
-        
         if let contact = UserContact.getContactWithDisregardStatus(pubkey: pubkey) {
             if let oneOnOneChat = contact.getChat() {
                 chat = oneOnOneChat
@@ -993,7 +994,6 @@ extension SphinxOnionManager {
         } else if let tribeChat = Chat.getTribeChatWithOwnerPubkey(ownerPubkey: pubkey) {
             chat = tribeChat
             senderId = tribeChat.id
-            isTribe = true
             
             if fromMe == false, let replyUuid = message.replyUuid, let localReplyMsgRecord = TransactionMessage.getMessageWith(uuid: replyUuid) {
                 receiverId = localReplyMsgRecord.senderId
@@ -1054,13 +1054,9 @@ extension SphinxOnionManager {
             newMessage.push = false
         }
         
-        if (type == TransactionMessage.TransactionMessageType.boost.rawValue && isTribe == true), let msgAmount = message.amount {
-            newMessage.amount = NSDecimalNumber(value: msgAmount / 1000)
-            newMessage.amountMsat = NSDecimalNumber(value: msgAmount)
-        } else {
-            newMessage.amount = NSDecimalNumber(value: amount)
-            newMessage.amountMsat = NSDecimalNumber(value: amount * 1000)
-        }
+        let msgAmount = message.amount ?? amount
+        newMessage.amount = NSDecimalNumber(value: msgAmount / 1000)
+        newMessage.amountMsat = NSDecimalNumber(value: msgAmount)
         
         if type == TransactionMessage.TransactionMessageType.payment.rawValue,
            let ph = message.paymentHash,
@@ -1253,7 +1249,7 @@ extension SphinxOnionManager {
             content: "",
             chat: chat,
             provisionalMessage: nil,
-            amount: price,
+            amount: price * 1000,
             msgType: UInt8(TransactionMessage.TransactionMessageType.purchase.rawValue),
             muid: message.muid,
             threadUUID: nil,
@@ -1349,7 +1345,7 @@ extension SphinxOnionManager {
         checkAndFetchRouteTo(
             publicKey: pubkey,
             routeHint: routeHint,
-            amtMsat: amount * 1000
+            amtMsat: amount
         ) { success in
             if success {
                 let message = self.finalizeSendBoostReply(
@@ -1428,7 +1424,7 @@ extension SphinxOnionManager {
         checkAndFetchRouteTo(
             publicKey: pubkey,
             routeHint: contact.routeHint,
-            amtMsat: amount * 1000
+            amtMsat: amount
         ) { success in
             if(success){
                 self.finalizeDirectPayment(
