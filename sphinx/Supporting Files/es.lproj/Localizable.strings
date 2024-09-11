@@ -562,6 +562,8 @@
 "invite.ready" = "¡Listo! Toca para compartir. Caduca en 24 horas";
 "invite.signing.on" = "%@ se está registrando";
 "invite.expired" = "Caducado";
+"invite.sent" = "Invite sent";
+"invite.sent.on" = "Invite sent on";
 "invite.signup.complete" = "Registro completo";
 "new.user" = "Nuevo Usuario";
 "existing.user" = "Usuario Existente";

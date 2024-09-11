@@ -556,6 +556,8 @@
 "invite.ready" = "準備完了！共有するためにタップしてください。24時間で期限切れます";
 "invite.signing.on" = "%@がサインオン中";
 "invite.expired" = "期限切れ";
+"invite.sent" = "Invite sent";
+"invite.sent.on" = "Invite sent on";
 "invite.signup.complete" = "サインアップ完了";
 "new.user" = "新規ユーザー";
 "existing.user" = "既存のユーザー";

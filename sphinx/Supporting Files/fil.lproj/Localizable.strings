@@ -540,6 +540,8 @@
 "invite.ready" = "Handa na! I-tap para ibahagi. Mag-e-expire sa loob ng 24 na oras";
 "invite.signing.on" = "Nagsa-sign on si%@";
 "invite.expired" = "Nag-expire na";
+"invite.sent" = "Invite sent";
+"invite.sent.on" = "Invite sent on";
 "invite.signup.complete" = "Kumpleto na ang pag-sign up";
 "new.user" = "Bagong user";
 "existing.user" = "Kasalukuyang user";

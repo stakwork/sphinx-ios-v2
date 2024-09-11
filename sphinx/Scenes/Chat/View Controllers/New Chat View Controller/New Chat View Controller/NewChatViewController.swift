@@ -24,7 +24,8 @@ class NewChatViewController: NewKeyboardHandlerViewController {
     @IBOutlet weak var mentionsAutocompleteTableView: UITableView!
     @IBOutlet weak var webAppContainerView: UIView!
     @IBOutlet weak var chatTableHeaderHeightConstraint: NSLayoutConstraint!
-
+    @IBOutlet weak var shimmeringTableView: ShimmeringTableView!
+    
     var contact: UserContact?
     var chat: Chat?
     var threadUUID: String? = nil
@@ -277,6 +278,7 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         guard let contact = self.contact else{
             return
         }
+        shimmeringTableView.isHidden = true
         let placeholderView = ChatEmptyAvatarPlaceholderView(frame: .zero)
         placeholderView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(placeholderView)
@@ -298,5 +300,6 @@ class NewChatViewController: NewKeyboardHandlerViewController {
 
     func hideEmptyAvatarPlaceholder() {
         emptyAvatarPlaceholderView?.isHidden = true
+        shimmeringTableView.isHidden = false
     }
 }

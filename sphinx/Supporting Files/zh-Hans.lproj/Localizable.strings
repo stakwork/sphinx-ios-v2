@@ -559,6 +559,8 @@
 "invite.ready" = "准备就绪！点击分享。24小时后过期";
 "invite.signing.on" = "%@ 正在登录";
 "invite.expired" = "已过期";
+"invite.sent" = "Invite sent";
+"invite.sent.on" = "Invite sent on";
 "invite.signup.complete" = "注册完成";
 "new.user" = "新用户";
 "existing.user" = "现有用户";

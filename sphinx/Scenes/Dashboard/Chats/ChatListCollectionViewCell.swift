@@ -288,6 +288,7 @@ extension ChatListCollectionViewCell {
             
             pendingContactDashedLineView.addDottedCircularBorder(lineWidth: 1.0, dashPattern: [8,4], color: UIColor.Sphinx.PlaceholderText)
             pendingContactDashedLineView.isHidden = false
+            pendingContactDashedLineView.backgroundColor = UIColor.clear
         } else {
             inviteIcon.isHidden = true
             failedMessageIcon.isHidden = true

@@ -18,6 +18,7 @@ class ChatEmptyAvatarPlaceholderView: UIView {
     @IBOutlet weak var pendingChatDisclaimerTitle: UILabel!
     @IBOutlet weak var pendingChatDisclaimerSubtitle: UILabel!
     @IBOutlet weak var dashedOutlinePlaceholderView: UIView!
+    @IBOutlet weak var initialsLabel: UILabel!
     
     
     var inviteDate : Date? = nil
@@ -26,11 +27,12 @@ class ChatEmptyAvatarPlaceholderView: UIView {
         didSet{
             DispatchQueue.main.async(execute: {
                 let dateText = self.inviteDate?.getStringDate(format: "MMMM d yyyy") ?? ""
-                let fullDateText = dateText == "" ? "Invited you" : "Invited you on \(dateText)"
+                let fullDateText = dateText == "" ? "invite.sent".localized : "\("invite.sent.on".localized) \(dateText)"
                 let text = (self.isPending == false) ? "messages.encrypted.disclaimer".localized : fullDateText
                 self.disclaimerLabel.text = text
                 self.pendingChatDisclaimerTitle.isHidden = !self.isPending
                 self.pendingChatDisclaimerSubtitle.isHidden = !self.isPending
+                self.avatarIconImageView.tintColor = UIColor.Sphinx.Body
                 
                 if(self.isPending){
                     self.avatarIconImageView.image = #imageLiteral(resourceName: "clock_icon")
@@ -63,21 +65,21 @@ class ChatEmptyAvatarPlaceholderView: UIView {
     }
     
     func setupAllViews(){
-        //setupAvatarImageView()
         setupDisclaimerLabel()
+        setupIconImageView()
     }
     
     func setupAvatarImageView(imageUrl:String){
         avatarImageView.sd_setImage(with: URL(string:imageUrl))
         avatarImageView.makeCircular()
         avatarIconImageView.image = avatarIconImageView.image?.withRenderingMode(.alwaysTemplate)
-        
-        
+    }
+    
+    func setupIconImageView(){
         avatarIconImageContainerView.makeCircular()
         avatarIconImageView.tintColor = UIColor.Sphinx.Body
         avatarIconImageContainerView.layer.borderColor = UIColor.Sphinx.Body.cgColor
         avatarIconImageContainerView.layer.borderWidth = 3.5
-        
     }
     
     func setupDisclaimerLabel() {
@@ -105,9 +107,7 @@ class ChatEmptyAvatarPlaceholderView: UIView {
         }
         else{
             avatarImageView.image = nil
-            setupAvatarImageView(imageUrl: "https://thispersondoesnotexist.com/")
-            //TODO: @emptyChat: need to set up initials container
-//            showInitialsFor(contact, in: avatarImageView, and: initialsLabelContainer)
+            showInitialsFor(contact, in: initialsLabel)
         }
     }
     
@@ -118,11 +118,15 @@ class ChatEmptyAvatarPlaceholderView: UIView {
         if let avatarImage = chat.getContact()?.avatarUrl,
            avatarImage != ""
         {
-//            setupAvatarImageView(imageUrl: avatarImage)
+            setupAvatarImageView(imageUrl: avatarImage)
         }
         else{
+            guard let contact = chat.getContact() else{
+                avatarImageView.image = #imageLiteral(resourceName: "profile_avatar")
+                return
+            }
             avatarImageView.image = nil
-            //showInitialsFor(chat.getContact(), in: avatarImageView, and: initialsLabelContainer)
+            showInitialsFor(contact, in: initialsLabel)
         }
         
     }
@@ -131,6 +135,8 @@ class ChatEmptyAvatarPlaceholderView: UIView {
         let senderInitials = contact.nickname?.getInitialsFromName() ?? "name.unknown.initials".localized
         let senderColor = contact.getColor()
         
+        label.makeCircular()
+        label.font = UIFont(name: "Montserrat-Regular", size: 48.0)!
         label.isHidden = false
         label.backgroundColor = senderColor
         label.textColor = UIColor.white

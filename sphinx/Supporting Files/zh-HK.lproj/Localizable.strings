@@ -553,6 +553,8 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 "invite.ready" = "準備好了！點擊分享。24小時後過期";
 "invite.signing.on" = "%@正在註冊";
 "invite.expired" = "已過期";
+"invite.sent" = "Invite sent";
+"invite.sent.on" = "Invite sent on";
 "invite.signup.complete" = "註冊完成";
 "new.user" = "新用戶";
 "existing.user" = "現有用戶";

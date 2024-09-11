@@ -880,6 +880,7 @@
                         <outlet property="headerView" destination="hMb-Ac-dRv" id="ANb-B8-g1N"/>
                         <outlet property="mentionsAutocompleteTableView" destination="vlc-qx-DGF" id="osS-rX-MO5"/>
                         <outlet property="newMsgsIndicatorView" destination="WUJ-0a-zlK" id="DkF-z3-PbA"/>
+                        <outlet property="shimmeringTableView" destination="mmA-5V-kTx" id="9D1-M8-5jY"/>
                         <outlet property="webAppContainerView" destination="2KA-H5-xSv" id="uFC-DY-4Gs"/>
                     </connections>
                 </viewController>
