@@ -28,6 +28,8 @@ class ChatListCollectionViewCell: UICollectionViewCell {
     @IBOutlet weak var mentionsBadgeContainer: UIView!
     @IBOutlet weak var mentionsBadgeLabel: UILabel!
     @IBOutlet weak var pendingContactDashedLineView: UIView!
+    @IBOutlet weak var contactViewContainerWidth: NSLayoutConstraint!
+    @IBOutlet weak var stackViewLeadingSpacing: NSLayoutConstraint!
     
     var delegate : ChatListCollectionViewCellDelegate? = nil
     
@@ -286,6 +288,14 @@ extension ChatListCollectionViewCell {
             
             messageLabel.text = "contact.pending".localized
             
+            
+            contactImageView.undoMakeCircular()
+            contactInitialsLabel.undoMakeCircular()
+            contactViewContainerWidth.constant = 35.0
+            stackViewLeadingSpacing.constant = 21.0
+            layoutIfNeeded()
+            contactImageView.makeCircular()
+            contactInitialsLabel.makeCircular()
             pendingContactDashedLineView.addDottedCircularBorder(lineWidth: 1.0, dashPattern: [8,4], color: UIColor.Sphinx.PlaceholderText)
             pendingContactDashedLineView.isHidden = false
             pendingContactDashedLineView.backgroundColor = UIColor.clear
@@ -354,6 +364,9 @@ extension ChatListCollectionViewCell {
         delegate = nil
         chatListObject = nil
         pendingContactDashedLineView.isHidden = true
+        contactViewContainerWidth.constant = 45.0
+        stackViewLeadingSpacing.constant = 16.0
+        layoutIfNeeded()
     }
 }
 

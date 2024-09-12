@@ -218,6 +218,11 @@ extension UIView {
         ) / 2
     }
     
+    func undoMakeCircular() {
+        clipsToBounds = false
+        layer.cornerRadius = 0
+    }
+    
     func drawReceivedBubbleArrow(
         color: UIColor,
         arrowWidth: CGFloat = 4

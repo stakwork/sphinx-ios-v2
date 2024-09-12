@@ -35,7 +35,7 @@
                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                 <subviews>
                     <view hidden="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="FNf-JY-ZSV">
-                        <rect key="frame" x="11" y="17.5" width="55" height="55"/>
+                        <rect key="frame" x="10" y="16.5" width="57" height="57"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                     </view>
                     <stackView opaque="NO" contentMode="scaleToFill" alignment="center" spacing="16" translatesAutoresizingMaskIntoConstraints="NO" id="w37-mM-iag">
@@ -58,14 +58,14 @@
                                 <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <constraints>
                                     <constraint firstAttribute="bottom" secondItem="NIy-iN-zSg" secondAttribute="bottom" id="1dg-f7-C9A"/>
-                                    <constraint firstAttribute="trailing" secondItem="NIy-iN-zSg" secondAttribute="trailing" id="2Hy-Mv-q4O"/>
                                     <constraint firstAttribute="width" constant="45" id="4Cp-7Q-ldo"/>
-                                    <constraint firstItem="NIy-iN-zSg" firstAttribute="top" secondItem="LHl-yg-hbd" secondAttribute="top" id="G5b-cD-npC"/>
+                                    <constraint firstItem="ATM-o6-rPV" firstAttribute="centerX" secondItem="LHl-yg-hbd" secondAttribute="centerX" id="K6I-SR-5Iz"/>
                                     <constraint firstItem="ATM-o6-rPV" firstAttribute="bottom" secondItem="LHl-yg-hbd" secondAttribute="bottom" id="Qim-vD-sLP"/>
-                                    <constraint firstItem="ATM-o6-rPV" firstAttribute="trailing" secondItem="LHl-yg-hbd" secondAttribute="trailing" id="Yob-yw-VxB"/>
+                                    <constraint firstItem="ATM-o6-rPV" firstAttribute="centerY" secondItem="LHl-yg-hbd" secondAttribute="centerY" id="RIy-sO-Ymm"/>
+                                    <constraint firstItem="NIy-iN-zSg" firstAttribute="centerY" secondItem="LHl-yg-hbd" secondAttribute="centerY" id="TF1-Ux-Pa4"/>
+                                    <constraint firstItem="NIy-iN-zSg" firstAttribute="centerX" secondItem="LHl-yg-hbd" secondAttribute="centerX" id="ZIy-Dm-7S9"/>
                                     <constraint firstItem="NIy-iN-zSg" firstAttribute="leading" secondItem="LHl-yg-hbd" secondAttribute="leading" id="bqK-a8-BaA"/>
                                     <constraint firstAttribute="width" secondItem="LHl-yg-hbd" secondAttribute="height" multiplier="1:1" id="gQX-YO-bRQ"/>
-                                    <constraint firstItem="ATM-o6-rPV" firstAttribute="top" secondItem="LHl-yg-hbd" secondAttribute="top" id="icn-bE-Hub"/>
                                     <constraint firstItem="ATM-o6-rPV" firstAttribute="leading" secondItem="LHl-yg-hbd" secondAttribute="leading" id="tAm-fI-OMh"/>
                                 </constraints>
                             </view>
@@ -217,18 +217,19 @@
             <constraints>
                 <constraint firstAttribute="trailing" secondItem="w37-mM-iag" secondAttribute="trailing" constant="16" id="2wq-ST-7gs"/>
                 <constraint firstItem="w37-mM-iag" firstAttribute="leading" secondItem="gTV-IL-0wX" secondAttribute="leading" constant="16" id="FuY-xP-j8X"/>
-                <constraint firstItem="FNf-JY-ZSV" firstAttribute="leading" secondItem="LHl-yg-hbd" secondAttribute="leading" constant="-5" id="O2N-qx-EFz"/>
-                <constraint firstItem="FNf-JY-ZSV" firstAttribute="top" secondItem="LHl-yg-hbd" secondAttribute="top" constant="-5" id="RFh-mR-QmX"/>
+                <constraint firstItem="FNf-JY-ZSV" firstAttribute="leading" secondItem="LHl-yg-hbd" secondAttribute="leading" constant="-6" id="O2N-qx-EFz"/>
+                <constraint firstItem="FNf-JY-ZSV" firstAttribute="top" secondItem="LHl-yg-hbd" secondAttribute="top" constant="-6" id="RFh-mR-QmX"/>
                 <constraint firstItem="gU9-vv-srT" firstAttribute="leading" secondItem="HO8-vw-gEI" secondAttribute="leading" id="eff-HB-iNa"/>
-                <constraint firstItem="FNf-JY-ZSV" firstAttribute="bottom" secondItem="LHl-yg-hbd" secondAttribute="bottom" constant="5" id="heW-yO-uf6"/>
+                <constraint firstItem="FNf-JY-ZSV" firstAttribute="bottom" secondItem="LHl-yg-hbd" secondAttribute="bottom" constant="6" id="heW-yO-uf6"/>
                 <constraint firstAttribute="trailing" secondItem="gU9-vv-srT" secondAttribute="trailing" id="jj0-fI-mk1"/>
-                <constraint firstItem="FNf-JY-ZSV" firstAttribute="trailing" secondItem="LHl-yg-hbd" secondAttribute="trailing" constant="5" id="lDO-xa-TJ2"/>
+                <constraint firstItem="FNf-JY-ZSV" firstAttribute="trailing" secondItem="LHl-yg-hbd" secondAttribute="trailing" constant="6" id="lDO-xa-TJ2"/>
                 <constraint firstItem="w37-mM-iag" firstAttribute="centerY" secondItem="gTV-IL-0wX" secondAttribute="centerY" id="n3r-oO-Mf9"/>
                 <constraint firstAttribute="bottom" secondItem="gU9-vv-srT" secondAttribute="bottom" id="u4x-Hf-EsI"/>
             </constraints>
             <connections>
                 <outlet property="contactImageView" destination="NIy-iN-zSg" id="8cj-M8-QS1"/>
                 <outlet property="contactInitialsLabel" destination="ATM-o6-rPV" id="B3F-JX-E6A"/>
+                <outlet property="contactViewContainerWidth" destination="4Cp-7Q-ldo" id="XTF-5R-TTB"/>
                 <outlet property="dateLabel" destination="JWD-pI-3ma" id="dPI-Wz-jd4"/>
                 <outlet property="failedMessageIcon" destination="ufb-sY-tbD" id="Cpd-Wz-MPT"/>
                 <outlet property="inviteIcon" destination="buG-sA-UIk" id="ock-YY-y4d"/>
@@ -242,6 +243,7 @@
                 <outlet property="nameLabel" destination="Mpk-9a-r2o" id="JoW-GG-oFP"/>
                 <outlet property="pendingContactDashedLineView" destination="FNf-JY-ZSV" id="CHv-F5-kd0"/>
                 <outlet property="separatorLine" destination="gU9-vv-srT" id="7hf-hj-My6"/>
+                <outlet property="stackViewLeadingSpacing" destination="FuY-xP-j8X" id="Kpw-JK-otK"/>
                 <outlet property="unreadMessageBadgeContainer" destination="pNu-Vj-0BE" id="r6G-Jf-My9"/>
                 <outlet property="unreadMessageBadgeLabel" destination="7CN-YG-eaM" id="GWm-uw-Nzg"/>
             </connections>
