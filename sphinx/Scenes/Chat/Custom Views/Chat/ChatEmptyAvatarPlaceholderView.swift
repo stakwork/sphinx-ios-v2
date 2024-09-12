@@ -15,7 +15,6 @@ class ChatEmptyAvatarPlaceholderView: UIView {
     @IBOutlet weak var avatarIconImageContainerView: UIView!
     @IBOutlet weak var avatarIconImageView: UIImageView!
     @IBOutlet weak var disclaimerLabel: UILabel!
-    @IBOutlet weak var pendingChatDisclaimerTitle: UILabel!
     @IBOutlet weak var pendingChatDisclaimerSubtitle: UILabel!
     @IBOutlet weak var dashedOutlinePlaceholderView: UIView!
     @IBOutlet weak var initialsLabel: UILabel!
@@ -30,7 +29,6 @@ class ChatEmptyAvatarPlaceholderView: UIView {
                 let fullDateText = dateText == "" ? "invite.sent".localized : "\("invite.sent.on".localized) \(dateText)"
                 let text = (self.isPending == false) ? "messages.encrypted.disclaimer".localized : fullDateText
                 self.disclaimerLabel.text = text
-                self.pendingChatDisclaimerTitle.isHidden = !self.isPending
                 self.pendingChatDisclaimerSubtitle.isHidden = !self.isPending
                 self.avatarIconImageView.tintColor = UIColor.Sphinx.Body
                 

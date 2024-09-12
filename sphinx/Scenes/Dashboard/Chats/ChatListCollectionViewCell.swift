@@ -353,6 +353,7 @@ extension ChatListCollectionViewCell {
         super.prepareForReuse()
         delegate = nil
         chatListObject = nil
+        pendingContactDashedLineView.isHidden = true
     }
 }
 

@@ -228,6 +228,8 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         
         bottomView.updateFieldStateFrom(chat)
         showPendingApprovalMessage()
+        
+        updateEmptyView()
     }
     
     func configureThreadHeaderAndBottomView() {
@@ -266,11 +268,13 @@ class NewChatViewController: NewKeyboardHandlerViewController {
     }
     
     func updateEmptyView(){
-        if chat == nil || self.chat?.lastMessage == nil {
-            self.setupEmptyChatPlaceholder()
-        } else {
-            self.removeEmptyChatPlaceholder()
-        }
+        DispatchQueue.main.async(execute: {
+            if self.chat == nil || self.chat?.lastMessage == nil {
+                self.setupEmptyChatPlaceholder()
+            } else {
+                self.removeEmptyChatPlaceholder()
+            }
+        })
     }
     
     func setupEmptyChatPlaceholder() {
@@ -284,18 +288,19 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         view.addSubview(placeholderView)
         placeholderView.configureWith(contact: contact)
         let headerOffset : CGFloat = 25.0
+        let viewHeight : CGFloat = (chat == nil) ? (self.view.frame.height - headerView.frame.height - headerOffset) : 400.0
         NSLayoutConstraint.activate([
             placeholderView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             placeholderView.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: headerOffset),
             placeholderView.widthAnchor.constraint(equalToConstant: self.view.frame.width),
-            placeholderView.heightAnchor.constraint(equalToConstant: self.view.frame.height - headerView.frame.height - headerOffset)
+            placeholderView.heightAnchor.constraint(equalToConstant: viewHeight)
         ])
         
         self.emptyAvatarPlaceholderView = placeholderView
     }
 
     func removeEmptyChatPlaceholder() {
-        emptyAvatarPlaceholderView?.isHidden = false
+        hideEmptyAvatarPlaceholder()
     }
 
     func hideEmptyAvatarPlaceholder() {
