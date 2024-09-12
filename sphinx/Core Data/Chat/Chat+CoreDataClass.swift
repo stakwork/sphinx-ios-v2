@@ -788,7 +788,10 @@ public class Chat: NSManagedObject {
     }
     
     func getTribePrices() -> (Int, Int) {
-        return (self.pricePerMessage?.intValue ?? 0, self.escrowAmount?.intValue ?? 0)
+        return (
+            (self.pricePerMessage?.intValue ?? 0) / 1000,
+            (self.escrowAmount?.intValue ?? 0) / 1000
+        )
     }
     
     func updateChatFromTribesInfo() {

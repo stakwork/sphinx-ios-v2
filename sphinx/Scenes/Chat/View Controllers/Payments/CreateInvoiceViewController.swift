@@ -400,7 +400,7 @@ class CreateInvoiceViewController: CommonPaymentViewController {
         paymentChat: Chat
     ) {
         SphinxOnionManager.sharedInstance.sendDirectPaymentMessage(
-            amount: amount,
+            amount: amount * 1000,
             muid: paymentsViewModel.payment.muid,
             content: paymentsViewModel.payment.message,
             chat: paymentChat,

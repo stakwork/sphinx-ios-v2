@@ -57,7 +57,9 @@ class SphinxOnionManager : NSObject {
     var isV2InitialSetup: Bool = false
     var isV2Restore: Bool = false
     var shouldPostUpdates : Bool = false
-    let tribeMinEscrowSats = 3
+    
+    let tribeMinSats: Int = 3000
+    let kRoutingOffset = 3
     
     var restoredContactInfoTracker = [String]()
     
@@ -94,7 +96,6 @@ class SphinxOnionManager : NSObject {
 
     public static let kCompleteStatus = "COMPLETE"
     public static let kFailedStatus = "FAILED"
-    public static let kRoutingOffset = 3
     
     let newMessageBubbleHelper = NewMessageBubbleHelper()
     let managedContext = CoreDataManager.sharedManager.persistentContainer.viewContext
