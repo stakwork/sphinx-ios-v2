@@ -53,7 +53,8 @@
 "error.karma.receipt.validation.failed" = "Karma 收据验证失败。错误信息：";
 "error.app-store-purchase-receipt-not-found" = "未找到 AppStore 购买收据。";
 "error.app-store-receipt-validation-failed" = "AppStore 收据验证失败。";
-
+"error.rss.sync.failed.title" = "RSS Error";
+"error.rss.sync.failed.message" = "Sync to RSS Feed Failed. Please try again.";
 
 // DASHBOARD
 "dashboard.tabs.feed" = "动态";
