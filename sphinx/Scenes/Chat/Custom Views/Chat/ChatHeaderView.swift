@@ -45,6 +45,7 @@ class ChatHeaderView: UIView {
     @IBOutlet weak var contributionsContainer: UIStackView!
     @IBOutlet weak var optionsButton: UIButton!
     @IBOutlet weak var showThreadsButton: UIButton!
+    @IBOutlet weak var pendingChatDashedOutline: UIView!
     
     var keysLoading = false {
         didSet {
@@ -114,7 +115,12 @@ class ChatHeaderView: UIView {
         
         setVolumeState(muted: chat?.isMuted() ?? false)
         configureImageOrInitials()
-        
+        setupPendingUI()
+    }
+    
+    func setupPendingUI(){
+        pendingChatDashedOutline.addDottedCircularBorder(lineWidth: 1.0, dashPattern: [8,4], color: UIColor.Sphinx.PlaceholderText)
+        pendingChatDashedOutline.isHidden = false
     }
     
     func getHeaderName() -> String {

@@ -33,6 +33,7 @@
                 <outlet property="lockSign" destination="tp6-3C-IrP" id="Cwe-47-jWV"/>
                 <outlet property="nameLabel" destination="6In-3T-Qql" id="ktG-68-lek"/>
                 <outlet property="optionsButton" destination="ahL-K7-tna" id="Xmm-DE-V0F"/>
+                <outlet property="pendingChatDashedOutline" destination="uRG-Ma-Jgw" id="Jun-DW-S1d"/>
                 <outlet property="profileImageView" destination="FzU-vr-ru9" id="VV3-FJ-SPa"/>
                 <outlet property="secondBrainButton" destination="U14-c4-K83" id="ITi-OI-a1g"/>
                 <outlet property="showThreadsButton" destination="6uG-XH-Ptg" id="RkN-o4-DJl"/>
@@ -48,6 +49,9 @@
                 <view contentMode="scaleToFill" insetsLayoutMarginsFromSafeArea="NO" translatesAutoresizingMaskIntoConstraints="NO" id="atH-u3-D4Y">
                     <rect key="frame" x="0.0" y="0.0" width="414" height="65"/>
                     <subviews>
+                        <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="uRG-Ma-Jgw">
+                            <rect key="frame" x="40" y="-5" width="55" height="75"/>
+                        </view>
                         <stackView opaque="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="VFH-3u-eVa">
                             <rect key="frame" x="0.0" y="0.0" width="90" height="65"/>
                             <subviews>
@@ -246,6 +250,7 @@
                     </subviews>
                     <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                     <constraints>
+                        <constraint firstItem="uRG-Ma-Jgw" firstAttribute="trailing" secondItem="pEL-5f-Xhc" secondAttribute="trailing" constant="5" id="0y6-fw-mvO"/>
                         <constraint firstItem="P4M-ui-Sb4" firstAttribute="leading" secondItem="VFH-3u-eVa" secondAttribute="trailing" constant="12" id="1zc-7G-WWc"/>
                         <constraint firstItem="3AZ-Nl-f1j" firstAttribute="leading" secondItem="P4M-ui-Sb4" secondAttribute="leading" id="AGh-gt-1bk"/>
                         <constraint firstItem="Qk6-Jn-NmJ" firstAttribute="top" secondItem="atH-u3-D4Y" secondAttribute="top" id="Atw-Yd-bOJ"/>
@@ -255,10 +260,13 @@
                         <constraint firstAttribute="bottom" secondItem="Qk6-Jn-NmJ" secondAttribute="bottom" id="KAP-gO-FaS"/>
                         <constraint firstItem="VFH-3u-eVa" firstAttribute="top" secondItem="atH-u3-D4Y" secondAttribute="top" id="KJ5-Ga-kUx"/>
                         <constraint firstAttribute="trailing" secondItem="Qk6-Jn-NmJ" secondAttribute="trailing" constant="6" id="MpQ-3Q-CdI"/>
+                        <constraint firstItem="uRG-Ma-Jgw" firstAttribute="top" secondItem="pEL-5f-Xhc" secondAttribute="top" constant="-5" id="TOD-kN-YG6"/>
                         <constraint firstItem="3AZ-Nl-f1j" firstAttribute="trailing" secondItem="P4M-ui-Sb4" secondAttribute="trailing" id="Xjr-iC-hOE"/>
                         <constraint firstItem="P4M-ui-Sb4" firstAttribute="top" secondItem="atH-u3-D4Y" secondAttribute="top" constant="12" id="cFn-27-kf0"/>
                         <constraint firstAttribute="bottom" secondItem="VFH-3u-eVa" secondAttribute="bottom" id="dbY-wj-YWv"/>
+                        <constraint firstItem="uRG-Ma-Jgw" firstAttribute="leading" secondItem="pEL-5f-Xhc" secondAttribute="leading" constant="-5" id="quU-Ga-mGo"/>
                         <constraint firstItem="VFH-3u-eVa" firstAttribute="leading" secondItem="atH-u3-D4Y" secondAttribute="leading" id="sNf-Au-00o"/>
+                        <constraint firstItem="uRG-Ma-Jgw" firstAttribute="bottom" secondItem="pEL-5f-Xhc" secondAttribute="bottom" constant="5" id="yu0-P7-Dq8"/>
                         <constraint firstItem="Qk6-Jn-NmJ" firstAttribute="leading" secondItem="P4M-ui-Sb4" secondAttribute="trailing" id="z7Q-wF-Buw"/>
                     </constraints>
                 </view>
