@@ -766,6 +766,10 @@
                                 <rect key="frame" x="0.0" y="667" width="375" height="0.0"/>
                                 <color key="backgroundColor" name="HeaderBG"/>
                             </view>
+                            <view hidden="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="aBL-LB-hZ2" customClass="ChatEmptyAvatarPlaceholderView" customModule="sphinx" customModuleProvider="target">
+                                <rect key="frame" x="0.0" y="110" width="375" height="557"/>
+                                <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                            </view>
                             <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" translatesAutoresizingMaskIntoConstraints="NO" id="Qjl-UA-qWr">
                                 <rect key="frame" x="0.0" y="20" width="375" height="647"/>
                                 <subviews>
@@ -863,10 +867,14 @@
                             <constraint firstAttribute="top" secondItem="vcO-XX-v5B" secondAttribute="top" id="RCY-aa-Ja5"/>
                             <constraint firstAttribute="trailing" secondItem="JH0-65-MH3" secondAttribute="trailing" id="X6S-6A-dXa"/>
                             <constraint firstItem="JH0-65-MH3" firstAttribute="top" secondItem="Qjl-UA-qWr" secondAttribute="bottom" id="cJ7-Jt-rtp"/>
+                            <constraint firstItem="aBL-LB-hZ2" firstAttribute="top" secondItem="hMb-Ac-dRv" secondAttribute="bottom" constant="25" id="eqJ-qb-v7e"/>
+                            <constraint firstItem="aBL-LB-hZ2" firstAttribute="leading" secondItem="yYW-LQ-4iJ" secondAttribute="leading" id="hV0-lC-Yka"/>
                             <constraint firstItem="nyi-7s-N6q" firstAttribute="centerY" secondItem="IFK-j2-YwY" secondAttribute="centerY" id="iKO-OK-K6T"/>
+                            <constraint firstAttribute="trailing" secondItem="aBL-LB-hZ2" secondAttribute="trailing" id="jVm-VL-BpA"/>
                             <constraint firstItem="Qjl-UA-qWr" firstAttribute="leading" secondItem="IFK-j2-YwY" secondAttribute="leading" id="lrX-b3-WjB"/>
                             <constraint firstItem="Qjl-UA-qWr" firstAttribute="top" secondItem="IFK-j2-YwY" secondAttribute="top" id="n41-qS-QKn"/>
                             <constraint firstItem="Qjl-UA-qWr" firstAttribute="trailing" secondItem="IFK-j2-YwY" secondAttribute="trailing" id="pFP-or-dJh"/>
+                            <constraint firstAttribute="bottom" secondItem="aBL-LB-hZ2" secondAttribute="bottom" id="s3M-vi-zfa"/>
                         </constraints>
                     </view>
                     <connections>
@@ -877,6 +885,7 @@
                         <outlet property="chatTableHeaderHeightConstraint" destination="zqK-vg-2JT" id="eh0-Af-aIE"/>
                         <outlet property="chatTableView" destination="7O1-jH-hsI" id="lkW-uB-74U"/>
                         <outlet property="chatTableViewHeightConstraint" destination="zqK-vg-2JT" id="DVJ-2q-fhW"/>
+                        <outlet property="emptyAvatarPlaceholderView" destination="aBL-LB-hZ2" id="79L-YI-c4n"/>
                         <outlet property="headerView" destination="hMb-Ac-dRv" id="ANb-B8-g1N"/>
                         <outlet property="mentionsAutocompleteTableView" destination="vlc-qx-DGF" id="osS-rX-MO5"/>
                         <outlet property="newMsgsIndicatorView" destination="WUJ-0a-zlK" id="DkF-z3-PbA"/>
@@ -886,7 +895,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="YPF-pg-gtG" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-607" y="896"/>
+            <point key="canvasLocation" x="-607.20000000000005" y="895.50224887556226"/>
         </scene>
         <!--Chat Attachment View Controller-->
         <scene sceneID="C3r-eC-5s5">

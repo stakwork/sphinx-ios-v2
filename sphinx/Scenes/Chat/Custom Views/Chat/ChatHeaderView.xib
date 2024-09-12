@@ -28,7 +28,9 @@
                 <outlet property="contributedSatsLabel" destination="73C-AC-DOG" id="FIU-C8-Tgt"/>
                 <outlet property="contributionsContainer" destination="EHK-om-ehd" id="Euj-ve-X9j"/>
                 <outlet property="imageContainer" destination="pEL-5f-Xhc" id="t32-HF-PRu"/>
+                <outlet property="imageContainerWidth" destination="a1V-4q-OAT" id="vp9-xp-C7M"/>
                 <outlet property="initialsLabel" destination="TRE-AS-kSV" id="uoZ-mY-iWj"/>
+                <outlet property="initialsLabelHeight" destination="ivH-p4-Qpg" id="enT-Di-90l"/>
                 <outlet property="keyLoadingWheel" destination="8t1-dd-q25" id="lOd-Zb-nDx"/>
                 <outlet property="lockSign" destination="tp6-3C-IrP" id="Cwe-47-jWV"/>
                 <outlet property="nameLabel" destination="6In-3T-Qql" id="ktG-68-lek"/>
@@ -82,6 +84,9 @@
                                         <label hidden="YES" opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="TRE-AS-kSV">
                                             <rect key="frame" x="0.0" y="10" width="45" height="45"/>
                                             <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                            <constraints>
+                                                <constraint firstAttribute="height" constant="45" id="ivH-p4-Qpg"/>
+                                            </constraints>
                                             <fontDescription key="fontDescription" name="Montserrat-Regular" family="Montserrat" pointSize="17"/>
                                             <color key="textColor" name="Body"/>
                                             <nil key="highlightedColor"/>

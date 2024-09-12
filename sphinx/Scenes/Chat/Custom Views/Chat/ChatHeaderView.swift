@@ -46,6 +46,9 @@ class ChatHeaderView: UIView {
     @IBOutlet weak var optionsButton: UIButton!
     @IBOutlet weak var showThreadsButton: UIButton!
     @IBOutlet weak var pendingChatDashedOutline: UIView!
+    @IBOutlet weak var initialsLabelHeight: NSLayoutConstraint!
+    @IBOutlet weak var imageContainerWidth: NSLayoutConstraint!
+    
     
     var keysLoading = false {
         didSet {
@@ -119,8 +122,46 @@ class ChatHeaderView: UIView {
     }
     
     func setupPendingUI(){
-        pendingChatDashedOutline.addDottedCircularBorder(lineWidth: 1.0, dashPattern: [8,4], color: UIColor.Sphinx.PlaceholderText)
-        pendingChatDashedOutline.isHidden = false
+        if(chat == nil){
+//            imageContainer.undoMakeCircular()
+//            profileImageView.undoMakeCircular()
+//            initialsLabel.undoMakeCircular()
+//            updateImageContainerWidth(to: 35.0)
+//            profileImageView.makeCircular()
+//            initialsLabel.makeCircular()
+//            imageContainer.makeCircular()
+//            pendingChatDashedOutline.makeCircular()
+            pendingChatDashedOutline.addDottedCircularBorder(lineWidth: 1.0, dashPattern: [8,4], color: UIColor.Sphinx.PlaceholderText)
+            pendingChatDashedOutline.isHidden = false
+        }
+    }
+    
+    func updateImageContainerWidth(to newWidth: CGFloat) {
+        // Ensure we're on the main thread
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, 
+                let constraint = self.imageContainerWidth,
+                  let constraint2 = self.initialsLabelHeight else {
+                print("Warning: imageContainerWidth constraint is nil")
+                return
+            }
+            let constraints = [constraint,constraint2]
+            for constraint in constraints{
+                // Deactivate the current constraint
+                constraint.isActive = false
+                
+                // Update the constant value
+                constraint.constant = newWidth
+                
+                // Reactivate the constraint
+                constraint.isActive = true
+                
+                // Trigger layout update
+                self.setNeedsLayout()
+                self.layoutIfNeeded()
+            }
+            
+        }
     }
     
     func getHeaderName() -> String {

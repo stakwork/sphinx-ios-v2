@@ -25,6 +25,7 @@ class NewChatViewController: NewKeyboardHandlerViewController {
     @IBOutlet weak var webAppContainerView: UIView!
     @IBOutlet weak var chatTableHeaderHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var shimmeringTableView: ShimmeringTableView!
+    @IBOutlet weak var emptyAvatarPlaceholderView: ChatEmptyAvatarPlaceholderView!
     
     var contact: UserContact?
     var chat: Chat?
@@ -47,8 +48,6 @@ class NewChatViewController: NewKeyboardHandlerViewController {
     var chatTableDataSource: NewChatTableDataSource? = nil
     var chatMentionAutocompleteDataSource : ChatMentionAutocompleteDataSource? = nil
     let messageBubbleHelper = NewMessageBubbleHelper()
-    var emptyAvatarPlaceholderView: ChatEmptyAvatarPlaceholderView?
-
     
     var webAppVC : WebAppViewController? = nil
     var isAppUrl = false
@@ -283,20 +282,10 @@ class NewChatViewController: NewKeyboardHandlerViewController {
             return
         }
         shimmeringTableView.isHidden = true
-        let placeholderView = ChatEmptyAvatarPlaceholderView(frame: .zero)
-        placeholderView.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(placeholderView)
-        placeholderView.configureWith(contact: contact)
-        let headerOffset : CGFloat = 25.0
-        let viewHeight : CGFloat = (chat == nil) ? (self.view.frame.height - headerView.frame.height - headerOffset) : 400.0
-        NSLayoutConstraint.activate([
-            placeholderView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            placeholderView.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: headerOffset),
-            placeholderView.widthAnchor.constraint(equalToConstant: self.view.frame.width),
-            placeholderView.heightAnchor.constraint(equalToConstant: viewHeight)
-        ])
-        
-        self.emptyAvatarPlaceholderView = placeholderView
+        emptyAvatarPlaceholderView.configureWith(contact: contact)
+        emptyAvatarPlaceholderView.isHidden = false
+        emptyAvatarPlaceholderView.backgroundColor = UIColor.clear
+        self.view.bringSubviewToFront(emptyAvatarPlaceholderView)
     }
 
     func removeEmptyChatPlaceholder() {
