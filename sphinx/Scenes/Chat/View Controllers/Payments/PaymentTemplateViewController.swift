@@ -179,7 +179,7 @@ class PaymentTemplateViewController: CommonPaymentViewController {
         }
         
         SphinxOnionManager.sharedInstance.sendDirectPaymentMessage(
-            amount: amount,
+            amount: amount * 1000,
             muid: paymentsViewModel.payment.muid,
             content: paymentsViewModel.payment.message,
             chat: validChat

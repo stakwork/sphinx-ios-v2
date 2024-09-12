@@ -81,15 +81,15 @@ extension NewPublicGroupViewController {
                         completeUrlAndLoadImage(textField: field)
                         break
                     case GroupFields.PriceToJoin.rawValue:
-                        let priceToJoin = chatTribeInfo.priceToJoin ?? 0
+                        let priceToJoin = (chatTribeInfo.priceToJoin ?? 0) / 1000
                         field.text = priceToJoin > 0 ? "\(priceToJoin)" : ""
                         break
                     case GroupFields.PricePerMessage.rawValue:
-                        let pricePerMessage = chatTribeInfo.pricePerMessage ?? 0
+                        let pricePerMessage = (chatTribeInfo.pricePerMessage ?? 0) / 1000
                         field.text = pricePerMessage > 0 ? "\(pricePerMessage)" : ""
                         break
                     case GroupFields.AmountToStake.rawValue:
-                        let amountToStake = chatTribeInfo.amountToStake ?? 0
+                        let amountToStake = (chatTribeInfo.amountToStake ?? 0) / 1000
                         field.text = amountToStake > 0 ? "\(amountToStake)" : ""
                         break
                     case GroupFields.TimeToStake.rawValue:
@@ -254,7 +254,46 @@ extension NewPublicGroupViewController : PickerViewDelegate {
         feedContentTypeField.text = selectedValue?.description ?? "-"
         groupsManager.newGroupInfo.feedContentType = selectedValue
         
+        if(value == "Newsletter"){
+            if let rawText = formFields[8].text,
+               let rssFeed = formatAsRssFeedUrl(from: rawText){
+                validateNewsletterRssFeed(
+                    rawFeedUrl: rssFeed,
+                    completion: {success in
+                        if(success == false){
+                            self.handleRssSyncFailure()
+                        }
+                        else{//set the values to the proven valid scheme
+                            self.groupsManager.newGroupInfo.feedUrl = rssFeed
+                            self.formFields[8].text = rssFeed
+                        }
+                    })
+            }
+            else{
+                handleRssSyncFailure()
+            }
+        }
+        
         toggleConfirmButton()
+    }
+    
+    func handleRssSyncFailure(){
+        self.formFields[8].text = ""
+        self.groupsManager.newGroupInfo.feedUrl = ""
+        feedContentTypeField.text = "-"
+        self.groupsManager.newGroupInfo.feedContentType = nil
+        AlertHelper.showAlert(title: "error.rss.sync.failed.title".localized, message: "error.rss.sync.failed.message".localized)
+    }
+    
+    func validateNewsletterRssFeed(
+        rawFeedUrl:String,
+        completion: @escaping (Bool) -> ()
+    ){
+       validateRSSFeed(
+        from: rawFeedUrl,
+        completion: { result in
+           completion(result)
+       })
     }
 }
 

@@ -54,7 +54,8 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 "error.karma.receipt.validation.failed" = "Karma收據驗證失敗。錯誤消息：";
 "error.app-store-purchase-receipt-not-found" = "找不到AppStore購買收據。";
 "error.app-store-receipt-validation-failed" = "AppStore收據驗證失敗。";
-
+"error.rss.sync.failed.title" = "RSS Error";
+"error.rss.sync.failed.message" = "Sync to RSS Feed Failed. Please try again.";
 
 // 儀表板
 "dashboard.tabs.feed" = "Feed";

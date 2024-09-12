@@ -45,6 +45,8 @@
 "error.karma.receipt.validation.failed" = "Nabigo ang Balidasyon ng Resibo ng Karma. Maling mensahe:";
 "error.app-store-purchase-receipt-not-found" = "Hindi mahanap ang isang resibo sa pagbili ng AppStore.";
 "error.app-store-receipt-validation-failed" = "Nabigo ang pagpapatunay ng resibo ng AppStore.";
+"error.rss.sync.failed.title" = "RSS Error";
+"error.rss.sync.failed.message" = "Sync to RSS Feed Failed. Please try again.";
 
 // DASHBOARD
 "dashboard.tabs.feed" = "Feed";
