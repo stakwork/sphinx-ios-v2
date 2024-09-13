@@ -70,11 +70,11 @@
 "dashboard.feeds.filters.play" = "Play";
 "dashboard.feeds.section-headings.following" = "Following";
 "dashboard.feeds.section-headings.directory" = "Directory";
-"dashboard.feeds.section-headings.play.for.free" = "Play for Free";
-"dashboard.feeds.section-headings.download.to.play" = "Download to Play";
-"dashboard.feeds.content.empty-state-message" = "No Podcasts Found";
-"dashboard.feeds.content.download.torrent.started.title" = "Torrent download started";
-"dashboard.feeds.content.download.torrent.started.message" = "Check back in a bit to consume your content";
+"dashboard.feeds.section-headings.play.for.free" = "Jugar gratis";
+"dashboard.feeds.section-headings.download.to.play" = "Descargar para jugar";
+"dashboard.feeds.content.download.torrent.started.title" = "Descarga de torrent iniciada";
+"dashboard.feeds.content.download.torrent.started.message" = "Vuelve en un rato para consumir tu contenido";
+
 
 
 // DASHBOARD FEED SEARCH
@@ -205,7 +205,7 @@
 "address-boox.contact-unblock.alert-message" = "¿Estás seguro que deseas desbloquear este contacto?";
 "address-book.can-not-delete-contact-title" = "No se puede eliminar el contacto";
 "address-book.can-not-delete-contact-message" = "Los contactos confirmados no se pueden eliminar";
-"messages.encrypted.disclaimer" = "Messages and calls are secured with end-to-end encryption";
+"messages.encrypted.disclaimer" = "Los mensajes y llamadas están protegidos con cifrado de extremo a extremo";
 
 //WELCOME
 "welcome.initial.title" = "Bienvenido";

@@ -68,10 +68,11 @@
 "dashboard.feeds.section-headings.following" = "关注";
 "dashboard.feeds.section-headings.directory" = "目录";
 "dashboard.feeds.content.empty-state-message" = "未发现播客";
-"dashboard.feeds.section-headings.play.for.free" = "Play for Free";
-"dashboard.feeds.section-headings.download.to.play" = "Download to Play";
-"dashboard.feeds.content.download.torrent.started.title" = "Torrent download started";
-"dashboard.feeds.content.download.torrent.started.message" = "Check back in a bit to consume your content";
+"dashboard.feeds.section-headings.play.for.free" = "免费播放";
+"dashboard.feeds.section-headings.download.to.play" = "下载后播放";
+"dashboard.feeds.content.download.torrent.started.title" = "种子下载已开始";
+"dashboard.feeds.content.download.torrent.started.message" = "稍后回来以查看您的内容";
+
 
 
 // DASHBOARD FEED SEARCH
@@ -203,7 +204,7 @@
 "address-boox.contact-unblock.alert-message" = "您确定要解除阻止此联系人吗？";
 "address-book.can-not-delete-contact-title" = "无法删除联系人";
 "address-book.can-not-delete-contact-message" = "已确认的联系人无法删除";
-"messages.encrypted.disclaimer" = "Messages and calls are secured with end-to-end encryption";
+"messages.encrypted.disclaimer" = "消息和通话通过端到端加密进行保护";
 
 // WELCOME
 "welcome.initial.title" = "欢迎";

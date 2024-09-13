@@ -67,11 +67,11 @@
 "dashboard.feeds.filters.play" = "遊ぶ";
 "dashboard.feeds.section-headings.following" = "フォロー中";
 "dashboard.feeds.section-headings.directory" = "ディレクトリ";
-"dashboard.feeds.section-headings.play.for.free" = "Play for Free";
-"dashboard.feeds.section-headings.download.to.play" = "Download to Play";
-"dashboard.feeds.content.empty-state-message" = "Podcastが見つかりません";
-"dashboard.feeds.content.download.torrent.started.title" = "Torrent download started";
-"dashboard.feeds.content.download.torrent.started.message" = "Check back in a bit to consume your content";
+"dashboard.feeds.section-headings.play.for.free" = "無料で再生";
+"dashboard.feeds.section-headings.download.to.play" = "ダウンロードして再生";
+"dashboard.feeds.content.download.torrent.started.title" = "トレントダウンロードが開始されました";
+"dashboard.feeds.content.download.torrent.started.message" = "しばらくしてから、コンテンツをお楽しみください";
+
 
 
 // DASHBOARD FEED SEARCH
@@ -201,7 +201,7 @@
 "address-boox.contact-unblock.alert-message" = "この連絡先のブロックを解除しますか？";
 "address-book.can-not-delete-contact-title" = "連絡先を削除できません";
 "address-book.can-not-delete-contact-message" = "確認済みの連絡先は削除できません";
-"messages.encrypted.disclaimer" = "Messages and calls are secured with end-to-end encryption";
+"messages.encrypted.disclaimer" = "メッセージと通話はエンドツーエンドの暗号化で保護されています";
 
 //WELCOME
 "welcome.initial.title" = "ようこそ";

@@ -767,7 +767,7 @@
                                 <color key="backgroundColor" name="HeaderBG"/>
                             </view>
                             <view hidden="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="aBL-LB-hZ2" customClass="ChatEmptyAvatarPlaceholderView" customModule="sphinx" customModuleProvider="target">
-                                <rect key="frame" x="0.0" y="110" width="375" height="557"/>
+                                <rect key="frame" x="0.0" y="110" width="375" height="499"/>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                             </view>
                             <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" translatesAutoresizingMaskIntoConstraints="NO" id="Qjl-UA-qWr">
@@ -860,6 +860,7 @@
                             <constraint firstItem="JH0-65-MH3" firstAttribute="leading" secondItem="yYW-LQ-4iJ" secondAttribute="leading" id="2V7-Yh-Ig5"/>
                             <constraint firstAttribute="trailing" secondItem="vcO-XX-v5B" secondAttribute="trailing" id="43i-wm-NBZ"/>
                             <constraint firstItem="nyi-7s-N6q" firstAttribute="centerX" secondItem="IFK-j2-YwY" secondAttribute="centerX" id="5NC-E9-mwN"/>
+                            <constraint firstItem="adm-hA-lEF" firstAttribute="top" secondItem="aBL-LB-hZ2" secondAttribute="bottom" id="92v-OC-qED"/>
                             <constraint firstItem="vcO-XX-v5B" firstAttribute="leading" secondItem="yYW-LQ-4iJ" secondAttribute="leading" id="BIy-1O-kXz"/>
                             <constraint firstItem="Qjl-UA-qWr" firstAttribute="top" secondItem="vcO-XX-v5B" secondAttribute="bottom" id="BWN-h6-WNj"/>
                             <constraint firstItem="JH0-65-MH3" firstAttribute="bottom" secondItem="yYW-LQ-4iJ" secondAttribute="bottom" id="EyH-a4-Igb"/>
@@ -874,7 +875,6 @@
                             <constraint firstItem="Qjl-UA-qWr" firstAttribute="leading" secondItem="IFK-j2-YwY" secondAttribute="leading" id="lrX-b3-WjB"/>
                             <constraint firstItem="Qjl-UA-qWr" firstAttribute="top" secondItem="IFK-j2-YwY" secondAttribute="top" id="n41-qS-QKn"/>
                             <constraint firstItem="Qjl-UA-qWr" firstAttribute="trailing" secondItem="IFK-j2-YwY" secondAttribute="trailing" id="pFP-or-dJh"/>
-                            <constraint firstAttribute="bottom" secondItem="aBL-LB-hZ2" secondAttribute="bottom" id="s3M-vi-zfa"/>
                         </constraints>
                     </view>
                     <connections>
