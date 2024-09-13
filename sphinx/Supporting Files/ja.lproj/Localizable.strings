@@ -201,6 +201,7 @@
 "address-boox.contact-unblock.alert-message" = "この連絡先のブロックを解除しますか？";
 "address-book.can-not-delete-contact-title" = "連絡先を削除できません";
 "address-book.can-not-delete-contact-message" = "確認済みの連絡先は削除できません";
+"messages.encrypted.disclaimer" = "メッセージと通話はエンドツーエンドの暗号化で保護されます";
 
 //WELCOME
 "welcome.initial.title" = "ようこそ";

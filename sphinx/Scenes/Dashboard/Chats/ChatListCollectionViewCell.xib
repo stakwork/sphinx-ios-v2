@@ -39,8 +39,16 @@
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="LHl-yg-hbd">
                                 <rect key="frame" x="0.0" y="0.0" width="45" height="45"/>
                                 <subviews>
+                                    <view hidden="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="FNf-JY-ZSV">
+                                        <rect key="frame" x="0.0" y="0.0" width="45" height="45"/>
+                                        <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                    </view>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="ZZ" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="ATM-o6-rPV">
                                         <rect key="frame" x="0.0" y="0.0" width="45" height="45"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" secondItem="ATM-o6-rPV" secondAttribute="height" multiplier="1:1" id="I9l-Mu-FKg"/>
+                                            <constraint firstAttribute="width" constant="45" id="WLj-Wc-Ksj"/>
+                                        </constraints>
                                         <fontDescription key="fontDescription" name="Montserrat-Regular" family="Montserrat" pointSize="17"/>
                                         <color key="textColor" name="Body"/>
                                         <nil key="highlightedColor"/>
@@ -52,16 +60,20 @@
                                 </subviews>
                                 <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <constraints>
-                                    <constraint firstAttribute="bottom" secondItem="NIy-iN-zSg" secondAttribute="bottom" id="1dg-f7-C9A"/>
-                                    <constraint firstAttribute="trailing" secondItem="NIy-iN-zSg" secondAttribute="trailing" id="2Hy-Mv-q4O"/>
+                                    <constraint firstItem="NIy-iN-zSg" firstAttribute="bottom" secondItem="ATM-o6-rPV" secondAttribute="bottom" id="1Hd-Q0-EWw"/>
                                     <constraint firstAttribute="width" constant="45" id="4Cp-7Q-ldo"/>
-                                    <constraint firstItem="NIy-iN-zSg" firstAttribute="top" secondItem="LHl-yg-hbd" secondAttribute="top" id="G5b-cD-npC"/>
-                                    <constraint firstItem="ATM-o6-rPV" firstAttribute="bottom" secondItem="LHl-yg-hbd" secondAttribute="bottom" id="Qim-vD-sLP"/>
-                                    <constraint firstItem="ATM-o6-rPV" firstAttribute="trailing" secondItem="LHl-yg-hbd" secondAttribute="trailing" id="Yob-yw-VxB"/>
-                                    <constraint firstItem="NIy-iN-zSg" firstAttribute="leading" secondItem="LHl-yg-hbd" secondAttribute="leading" id="bqK-a8-BaA"/>
+                                    <constraint firstAttribute="bottom" secondItem="FNf-JY-ZSV" secondAttribute="bottom" id="761-zt-BcF"/>
+                                    <constraint firstItem="FNf-JY-ZSV" firstAttribute="leading" secondItem="LHl-yg-hbd" secondAttribute="leading" id="8wa-su-vht"/>
+                                    <constraint firstItem="ATM-o6-rPV" firstAttribute="centerX" secondItem="LHl-yg-hbd" secondAttribute="centerX" id="K6I-SR-5Iz"/>
+                                    <constraint firstAttribute="trailing" secondItem="FNf-JY-ZSV" secondAttribute="trailing" id="Pyt-Bk-MYm"/>
+                                    <constraint firstItem="ATM-o6-rPV" firstAttribute="centerY" secondItem="LHl-yg-hbd" secondAttribute="centerY" id="RIy-sO-Ymm"/>
+                                    <constraint firstItem="NIy-iN-zSg" firstAttribute="top" secondItem="ATM-o6-rPV" secondAttribute="top" id="RTD-nU-8bG"/>
+                                    <constraint firstItem="NIy-iN-zSg" firstAttribute="centerY" secondItem="LHl-yg-hbd" secondAttribute="centerY" id="TF1-Ux-Pa4"/>
+                                    <constraint firstItem="NIy-iN-zSg" firstAttribute="centerX" secondItem="LHl-yg-hbd" secondAttribute="centerX" id="ZIy-Dm-7S9"/>
                                     <constraint firstAttribute="width" secondItem="LHl-yg-hbd" secondAttribute="height" multiplier="1:1" id="gQX-YO-bRQ"/>
-                                    <constraint firstItem="ATM-o6-rPV" firstAttribute="top" secondItem="LHl-yg-hbd" secondAttribute="top" id="icn-bE-Hub"/>
-                                    <constraint firstItem="ATM-o6-rPV" firstAttribute="leading" secondItem="LHl-yg-hbd" secondAttribute="leading" id="tAm-fI-OMh"/>
+                                    <constraint firstItem="NIy-iN-zSg" firstAttribute="leading" secondItem="ATM-o6-rPV" secondAttribute="leading" id="jq5-6j-bKn"/>
+                                    <constraint firstItem="FNf-JY-ZSV" firstAttribute="top" secondItem="LHl-yg-hbd" secondAttribute="top" id="uoW-Un-BDa"/>
+                                    <constraint firstItem="NIy-iN-zSg" firstAttribute="trailing" secondItem="ATM-o6-rPV" secondAttribute="trailing" id="wmt-aa-wwJ"/>
                                 </constraints>
                             </view>
                             <stackView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" horizontalCompressionResistancePriority="749" axis="vertical" distribution="fillProportionally" alignment="top" spacing="6" translatesAutoresizingMaskIntoConstraints="NO" id="HO8-vw-gEI">
@@ -220,6 +232,7 @@
             <connections>
                 <outlet property="contactImageView" destination="NIy-iN-zSg" id="8cj-M8-QS1"/>
                 <outlet property="contactInitialsLabel" destination="ATM-o6-rPV" id="B3F-JX-E6A"/>
+                <outlet property="contactViewContainerWidth" destination="WLj-Wc-Ksj" id="DLl-wA-juL"/>
                 <outlet property="dateLabel" destination="JWD-pI-3ma" id="dPI-Wz-jd4"/>
                 <outlet property="failedMessageIcon" destination="ufb-sY-tbD" id="Cpd-Wz-MPT"/>
                 <outlet property="inviteIcon" destination="buG-sA-UIk" id="ock-YY-y4d"/>
@@ -231,6 +244,7 @@
                 <outlet property="messageLabel" destination="VVb-7i-7EF" id="slX-Wl-zy1"/>
                 <outlet property="muteImageView" destination="jTQ-DK-F5a" id="m1Y-Ya-sBp"/>
                 <outlet property="nameLabel" destination="Mpk-9a-r2o" id="JoW-GG-oFP"/>
+                <outlet property="pendingContactDashedLineView" destination="FNf-JY-ZSV" id="CHv-F5-kd0"/>
                 <outlet property="separatorLine" destination="gU9-vv-srT" id="7hf-hj-My6"/>
                 <outlet property="unreadMessageBadgeContainer" destination="pNu-Vj-0BE" id="r6G-Jf-My9"/>
                 <outlet property="unreadMessageBadgeLabel" destination="7CN-YG-eaM" id="GWm-uw-Nzg"/>

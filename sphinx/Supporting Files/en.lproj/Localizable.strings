@@ -206,6 +206,7 @@
 "address-boox.contact-unblock.alert-message" = "Are you sure you want to unblock this contact?";
 "address-book.can-not-delete-contact-title" = "Can not delete contact";
 "address-book.can-not-delete-contact-message" = "Confirmed contacts can not be deleted";
+"messages.encrypted.disclaimer" = "Messages and calls are secured with end-to-end encryption";
 
 //WELCOME
 "welcome.initial.title" = "Welcome";

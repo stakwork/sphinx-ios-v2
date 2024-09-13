@@ -189,6 +189,7 @@
 "address-boox.contact-unblock.alert-message" = "Sigurado ka bang gusto mong i-unblock ang Kontak na ito?";
 "address-book.can-not-delete-contact-title" = "Hindi matanggal ang contact";
 "address-book.can-not-delete-contact-message" = "Hindi matatanggal ang mga kumpirmadong contact";
+"messages.encrypted.disclaimer" = "Ang mga mensahe at tawag ay sinigurado gamit ang end-to-end na pag-encrypt";
 
 //WELCOME
 "welcome.initial.title" = "Maligayang Pagdating";

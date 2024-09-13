@@ -218,6 +218,11 @@ extension UIView {
         ) / 2
     }
     
+    func undoMakeCircular() {
+        clipsToBounds = false
+        layer.cornerRadius = 0
+    }
+    
     func drawReceivedBubbleArrow(
         color: UIColor,
         arrowWidth: CGFloat = 4
@@ -270,6 +275,41 @@ extension UIView {
         self.layer.addSublayer(messageArrowLayer)
     }
     
+    func removeDottedCircularBorder() {
+        self.layer.sublayers?.forEach {
+            if $0.name == "dotted-border" {
+                $0.removeFromSuperlayer()
+            }
+        }
+    }
+    
+    func addDottedCircularBorder(lineWidth: CGFloat = 2, dashPattern: [NSNumber] = [5, 5], color: UIColor = .gray) {
+        self.removeDottedCircularBorder()
+        
+        let shapeLayer = CAShapeLayer()
+        shapeLayer.name = "dotted-border"
+        
+        // Determine the size of the circle
+        let diameter = min(bounds.width, bounds.height) - lineWidth
+        let circleRect = CGRect(x: (bounds.width - diameter) / 2,
+                                y: (bounds.height - diameter) / 2,
+                                width: diameter,
+                                height: diameter)
+        
+        // Create the circular path
+        let circlePath = UIBezierPath(ovalIn: circleRect)
+        
+        // Configure the shape layer
+        shapeLayer.path = circlePath.cgPath
+        shapeLayer.fillColor = UIColor.clear.cgColor
+        shapeLayer.strokeColor = color.cgColor
+        shapeLayer.lineWidth = lineWidth
+        shapeLayer.lineDashPattern = dashPattern
+        
+        // Add the shape layer to the view's layer
+        self.layer.addSublayer(shapeLayer)
+    }
+    
     func addDashedLineBorder(
         color: UIColor,
         fillColor: UIColor? = nil,
@@ -278,7 +318,14 @@ extension UIView {
         roundedTop: Bool,
         name: String
     ) {
-        let shapeLayer:CAShapeLayer = CAShapeLayer()
+        self.layer.sublayers?.forEach {
+            if $0.name == "dotted-border" {
+                $0.removeFromSuperlayer()
+            }
+        }
+        
+        let shapeLayer: CAShapeLayer = CAShapeLayer()
+        shapeLayer.name = "dotted-border"
         shapeLayer.cornerRadius = 8.0
         
         var rounded: UIRectCorner! = nil

@@ -205,6 +205,7 @@
 "address-boox.contact-unblock.alert-message" = "¿Estás seguro que deseas desbloquear este contacto?";
 "address-book.can-not-delete-contact-title" = "No se puede eliminar el contacto";
 "address-book.can-not-delete-contact-message" = "Los contactos confirmados no se pueden eliminar";
+"messages.encrypted.disclaimer" = "Los mensajes y las llamadas están protegidos con cifrado de extremo a extremo";
 
 //WELCOME
 "welcome.initial.title" = "Bienvenido";

@@ -45,12 +45,9 @@ class ChatHeaderView: UIView {
     @IBOutlet weak var contributionsContainer: UIStackView!
     @IBOutlet weak var optionsButton: UIButton!
     @IBOutlet weak var showThreadsButton: UIButton!
-    
-    var keysLoading = false {
-        didSet {
-            LoadingWheelHelper.toggleLoadingWheel(loading: keysLoading, loadingWheel: keyLoadingWheel, loadingWheelColor: UIColor.Sphinx.Text)
-        }
-    }
+    @IBOutlet weak var pendingChatDashedOutline: UIView!
+    @IBOutlet weak var imageContainerWidth: NSLayoutConstraint!
+    @IBOutlet weak var imageWidthConstraint: NSLayoutConstraint!
     
     var chat: Chat? = nil
     var contact: UserContact? = nil
@@ -78,12 +75,6 @@ class ChatHeaderView: UIView {
         contentView.frame = self.bounds
         contentView.autoresizingMask = [.flexibleHeight, .flexibleWidth]
         
-        profileImageView.layer.cornerRadius = profileImageView.frame.size.height/2
-        profileImageView.clipsToBounds = true
-        
-        initialsLabel.layer.cornerRadius = initialsLabel.frame.size.height/2
-        initialsLabel.clipsToBounds = true
-        
         NotificationCenter.default.addObserver(forName: .onBalanceDidChange, object: nil, queue: OperationQueue.main) { (n: Notification) in
             self.updateSatsEarned()
         }
@@ -106,7 +97,7 @@ class ChatHeaderView: UIView {
         
         let isEncrypted = (contact?.status == UserContact.Status.Confirmed.rawValue) || (chat?.status == Chat.ChatStatus.approved.rawValue)
         lockSign.text = isEncrypted ? "lock" : "lock_open"
-        keysLoading = !isEncrypted
+        lockSign.isHidden = !isEncrypted
         
         configureWebAppButton()
         configureThreadsButton()
@@ -114,7 +105,30 @@ class ChatHeaderView: UIView {
         
         setVolumeState(muted: chat?.isMuted() ?? false)
         configureImageOrInitials()
+        setupPendingUI()
+    }
+    
+    func setupPendingUI() {
+        if chat == nil {
+            imageWidthConstraint.constant = 35
+            imageContainer.layoutIfNeeded()
+            
+            pendingChatDashedOutline.addDottedCircularBorder(
+                lineWidth: 1.0,
+                dashPattern: [2,3],
+                color: UIColor.Sphinx.PlaceholderText
+            )
+            pendingChatDashedOutline.isHidden = false
+        } else {
+            imageWidthConstraint.constant = 45
+            imageContainer.layoutIfNeeded()
+            
+            pendingChatDashedOutline.removeDottedCircularBorder()
+            pendingChatDashedOutline.isHidden = true
+        }
         
+        profileImageView.makeCircular()
+        initialsLabel.makeCircular()
     }
     
     func getHeaderName() -> String {
@@ -216,8 +230,8 @@ class ChatHeaderView: UIView {
     
     func checkRoute() {
         let success = (contact?.status == UserContact.Status.Confirmed.rawValue) || (chat?.status == Chat.ChatStatus.approved.rawValue)
-        self.boltSign.textColor = success ? ChatListHeader.kConnectedColor : ChatListHeader.kNotConnectedColor
-        keysLoading = !success
+        boltSign.isHidden = !success
+        boltSign.textColor = success ? ChatListHeader.kConnectedColor : ChatListHeader.kNotConnectedColor
     }
     
     func toggleWebAppIcon(showChatIcon: Bool) {

@@ -203,6 +203,7 @@
 "address-boox.contact-unblock.alert-message" = "您确定要解除阻止此联系人吗？";
 "address-book.can-not-delete-contact-title" = "无法删除联系人";
 "address-book.can-not-delete-contact-message" = "已确认的联系人无法删除";
+"messages.encrypted.disclaimer" = "信息和通话均采用端到端加密保护";
 
 // WELCOME
 "welcome.initial.title" = "欢迎";
