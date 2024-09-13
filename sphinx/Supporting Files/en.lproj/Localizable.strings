@@ -563,8 +563,6 @@
 "invite.ready" = "Ready! Tap to share. Expires in 24 hrs";
 "invite.signing.on" = "%@ is signing on";
 "invite.expired" = "Expired";
-"invite.sent" = "Invite sent";
-"invite.sent.on" = "Invite sent on";
 "invite.signup.complete" = "Signup complete";
 "new.user" = "New user";
 "existing.user" = "Existing user";

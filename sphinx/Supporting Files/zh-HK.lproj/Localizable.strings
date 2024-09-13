@@ -198,7 +198,7 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 "contact.not.found" = "Contact not found";
 "address-book.can-not-delete-contact-title" = "無法刪除聯絡人";
 "address-book.can-not-delete-contact-message" = "已確認的聯絡人無法刪除";
-"messages.encrypted.disclaimer" = "Messages and calls are secured with end-to-end encryption";
+"messages.encrypted.disclaimer" = "透過端對端加密保護訊息和通話的安全";
 
 //歡迎
 "welcome.initial.title" = "歡迎";
@@ -553,8 +553,6 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 "invite.ready" = "準備好了！點擊分享。24小時後過期";
 "invite.signing.on" = "%@正在註冊";
 "invite.expired" = "已過期";
-"invite.sent" = "Invite sent";
-"invite.sent.on" = "Invite sent on";
 "invite.signup.complete" = "註冊完成";
 "new.user" = "新用戶";
 "existing.user" = "現有用戶";

@@ -15,7 +15,7 @@ class ChatEmptyAvatarPlaceholderView: UIView {
     @IBOutlet weak var avatarImageViewWidthConstraint: NSLayoutConstraint!
     @IBOutlet weak var disclaimerLabel: UILabel!
     @IBOutlet weak var pendingChatDisclaimerSubtitle: UILabel!
-    @IBOutlet weak var dashedOutlinePlaceholderView: UIView!
+    @IBOutlet weak var dashedOutlineView: UIView!
     @IBOutlet weak var clockIconContainerView: UIView!
     @IBOutlet weak var clockIconImageView: UIImageView!
     @IBOutlet weak var lockIconImageView: UIImageView!
@@ -25,50 +25,59 @@ class ChatEmptyAvatarPlaceholderView: UIView {
     var inviteDate : Date? = nil
     
     var isPending : Bool = false {
-        didSet{
-            DispatchQueue.main.async(execute: {
-                let dateText = self.inviteDate?.getStringDate(format: "MMMM d yyyy") ?? ""
-                let fullDateText = dateText == "" ? "invite.sent".localized : "\("invite.sent.on".localized) \(dateText)"
-                let text = (self.isPending == false) ? "messages.encrypted.disclaimer".localized : fullDateText
+        didSet {
+            DispatchQueue.main.async {
+                let dateText = self.inviteDate?.getStringDate(format: "MMMM d, yyyy") ?? ""
+                let fullDateText = dateText == "" ? "Invited" : "Invited on \(dateText)"
+                let text = !self.isPending ? "messages.encrypted.disclaimer".localized : fullDateText
+                
                 self.disclaimerLabel.text = text
                 self.pendingChatDisclaimerSubtitle.isHidden = !self.isPending
                 self.clockIconContainerView.isHidden = !self.isPending
                 self.lockIconImageView.isHidden = self.isPending
                 self.clockIconContainerView.makeCircular()
                 
-                if(self.isPending){
-                    self.dashedOutlinePlaceholderView.isHidden = false
-                    self.dashedOutlinePlaceholderView.addDottedCircularBorder(lineWidth: 1.0, dashPattern: [8,4], color: UIColor.Sphinx.PlaceholderText)
-                    self.avatarImageViewWidthConstraint.constant = 96
-                    self.layoutSubviews()
+                if self.isPending {
+                    self.avatarImageViewWidthConstraint.constant = 86
+                    self.layoutIfNeeded()
+                    
+                    self.dashedOutlineView.addDottedCircularBorder(
+                        lineWidth: 1.0,
+                        dashPattern: [5, 5],
+                        color: UIColor.Sphinx.PlaceholderText
+                    )
+                } else {
+                    self.dashedOutlineView.removeDottedCircularBorder()
                 }
-            })
+            }
         }
     }
     
     override init(frame: CGRect) {
         super.init(frame: frame)
-        commonInit()
+        setup()
     }
     
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
-        commonInit()
+        setup()
     }
     
-    private func commonInit() {
+    private func setup() {
         Bundle.main.loadNibNamed("ChatEmptyAvatarPlaceholderView", owner: self, options: nil)
         addSubview(contentView)
         contentView.frame = bounds
         contentView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        contentView.backgroundColor = UIColor.clear
-        avatarImageView.backgroundColor = UIColor.clear
-        dashedOutlinePlaceholderView.backgroundColor = UIColor.clear
+        
         setupAllViews()
     }
     
-    func setupAllViews(){
+    func setupAllViews() {
         setupDisclaimerLabel()
+        
+        contentView.backgroundColor = UIColor.clear
+        avatarImageView.backgroundColor = UIColor.clear
+        dashedOutlineView.backgroundColor = UIColor.clear
     }
     
     func setupAvatarImageView(imageUrl:String){
@@ -87,60 +96,55 @@ class ChatEmptyAvatarPlaceholderView: UIView {
         disclaimerLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
         disclaimerLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
                 
-        // Force layout update
         self.setNeedsLayout()
         self.layoutIfNeeded()
     }
     
-    func configureWith(contact:UserContact){
+    func configureWith(contact: UserContact) {
         inviteDate = contact.createdAt
         isPending = contact.isPending()
+        
         let name = contact.nickname ?? "name.unknown".localized
         nameLabel.text = name
         
-        if let avatarImage = contact.avatarUrl,
-           avatarImage != ""
-        {
+        if let avatarImage = contact.avatarUrl, avatarImage != "" {
             setupAvatarImageView(imageUrl: avatarImage)
-        }
-        else{
+        } else {
             avatarImageView.image = nil
-            showInitialsFor(contact, in: initialsLabel)
+            showInitialsFor(contact)
         }
     }
     
-    func configureWith(chat:Chat){
+    func configureWith(chat: Chat) {
         inviteDate = chat.getContact()?.createdAt
         isPending = chat.isPending()
         
         let name = chat.getContact()?.nickname ?? "name.unknown".localized
         nameLabel.text = name
         
-        if let avatarImage = chat.getContact()?.avatarUrl,
-           avatarImage != ""
-        {
+        let contact = chat.getContact()
+        
+        if let avatarImage = contact?.avatarUrl, avatarImage != "" {
             setupAvatarImageView(imageUrl: avatarImage)
-        }
-        else{
-            guard let contact = chat.getContact() else{
+        } else {
+            guard let contact = contact else {
                 avatarImageView.image = #imageLiteral(resourceName: "profile_avatar")
                 return
             }
             avatarImageView.image = nil
-            showInitialsFor(contact, in: initialsLabel)
+            showInitialsFor(contact)
         }
-        
     }
     
-    func showInitialsFor(_ contact: UserContact, in label: UILabel) {
+    func showInitialsFor(_ contact: UserContact) {
         let senderInitials = contact.nickname?.getInitialsFromName() ?? "name.unknown.initials".localized
         let senderColor = contact.getColor()
         
-        label.makeCircular()
-        label.font = UIFont(name: "Montserrat-Regular", size: 48.0)!
-        label.isHidden = false
-        label.backgroundColor = senderColor
-        label.textColor = UIColor.white
-        label.text = senderInitials
+        initialsLabel.makeCircular()
+        initialsLabel.font = UIFont(name: "Montserrat-Regular", size: 48.0)!
+        initialsLabel.isHidden = false
+        initialsLabel.backgroundColor = senderColor
+        initialsLabel.textColor = UIColor.white
+        initialsLabel.text = senderInitials
     }
 }

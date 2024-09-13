@@ -69,6 +69,10 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         }
     }
     
+    var shouldShowPendingChat: Bool {
+        return (chat?.isPending() ?? false) || (chat == nil)
+    }
+    
     static func instantiate(
         contactId: Int? = nil,
         chatId: Int? = nil,
@@ -108,8 +112,6 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         configureFetchResultsController()
         configureTableView()
         initializeMacros()
-        
-        updateEmptyView()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -208,10 +210,6 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         
         botWebViewWidthConstraint.constant = ((UIScreen.main.bounds.width - (MessageTableCellState.kRowLeftMargin + MessageTableCellState.kRowRightMargin)) * MessageTableCellState.kBubbleWidthPercentage) - (MessageTableCellState.kLabelMargin * 2)
         botWebView.layoutIfNeeded()
-        
-        if(contact?.isPending() ?? false){
-            setupAsPending()
-        }
     }
     
     func setupData() {
@@ -240,10 +238,6 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         }
     }
     
-    func setupAsPending(){
-        bottomView.isHidden = true
-    }
-    
     func setDelegates() {
         bottomView.setDelegates(
             messageFieldDelegate: self,
@@ -266,34 +260,38 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         }
     }
     
-    func updateEmptyView(){
-        DispatchQueue.main.async(execute: {
-            if self.chat == nil || self.chat?.lastMessage == nil {
-                self.setupEmptyChatPlaceholder()
-            } else {
-                self.removeEmptyChatPlaceholder()
-            }
-        })
-    }
-    
-    func setupEmptyChatPlaceholder() {
-        removeEmptyChatPlaceholder()
-        guard let contact = self.contact else{
+    private func setupEmptyChatPlaceholder() {
+        guard let chat = chat else {
             return
         }
-        shimmeringTableView.isHidden = true
-        emptyAvatarPlaceholderView.configureWith(contact: contact)
-        emptyAvatarPlaceholderView.isHidden = false
-        emptyAvatarPlaceholderView.backgroundColor = UIColor.clear
-        self.view.bringSubviewToFront(emptyAvatarPlaceholderView)
+        
+        DispatchQueue.main.async {
+            self.emptyAvatarPlaceholderView.configureWith(chat: chat)
+            self.emptyAvatarPlaceholderView.isHidden = false
+            self.bottomView.isHidden = false
+        }
     }
 
-    func removeEmptyChatPlaceholder() {
-        hideEmptyAvatarPlaceholder()
+    private func setupPendingChatPlaceholder() {
+        guard let contact = contact else {
+            return
+        }
+        
+        DispatchQueue.main.async {
+            self.emptyAvatarPlaceholderView.configureWith(contact: contact)
+            self.emptyAvatarPlaceholderView.isHidden = false
+            self.bottomView.isHidden = true
+        }
     }
 
-    func hideEmptyAvatarPlaceholder() {
-        emptyAvatarPlaceholderView?.isHidden = true
-        shimmeringTableView.isHidden = false
+    func updateEmptyView() {
+        if shouldShowPendingChat {
+            setupPendingChatPlaceholder()
+        } else if chat?.lastMessage == nil {
+            setupEmptyChatPlaceholder()
+        } else {
+            emptyAvatarPlaceholderView.isHidden = true
+            bottomView.isHidden = false
+        }
     }
 }

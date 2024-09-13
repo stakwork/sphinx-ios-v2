@@ -205,7 +205,7 @@
 "address-boox.contact-unblock.alert-message" = "¿Estás seguro que deseas desbloquear este contacto?";
 "address-book.can-not-delete-contact-title" = "No se puede eliminar el contacto";
 "address-book.can-not-delete-contact-message" = "Los contactos confirmados no se pueden eliminar";
-"messages.encrypted.disclaimer" = "Messages and calls are secured with end-to-end encryption";
+"messages.encrypted.disclaimer" = "Los mensajes y las llamadas están protegidos con cifrado de extremo a extremo";
 
 //WELCOME
 "welcome.initial.title" = "Bienvenido";
@@ -564,8 +564,6 @@
 "invite.ready" = "¡Listo! Toca para compartir. Caduca en 24 horas";
 "invite.signing.on" = "%@ se está registrando";
 "invite.expired" = "Caducado";
-"invite.sent" = "Invite sent";
-"invite.sent.on" = "Invite sent on";
 "invite.signup.complete" = "Registro completo";
 "new.user" = "Nuevo Usuario";
 "existing.user" = "Usuario Existente";

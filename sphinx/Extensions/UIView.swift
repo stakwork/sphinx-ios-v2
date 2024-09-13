@@ -275,10 +275,19 @@ extension UIView {
         self.layer.addSublayer(messageArrowLayer)
     }
     
+    func removeDottedCircularBorder() {
+        self.layer.sublayers?.forEach {
+            if $0.name == "dotted-border" {
+                $0.removeFromSuperlayer()
+            }
+        }
+    }
+    
     func addDottedCircularBorder(lineWidth: CGFloat = 2, dashPattern: [NSNumber] = [5, 5], color: UIColor = .gray) {
-        self.layer.sublayers?.forEach { $0.removeFromSuperlayer() }
+        self.removeDottedCircularBorder()
         
         let shapeLayer = CAShapeLayer()
+        shapeLayer.name = "dotted-border"
         
         // Determine the size of the circle
         let diameter = min(bounds.width, bounds.height) - lineWidth
@@ -309,7 +318,14 @@ extension UIView {
         roundedTop: Bool,
         name: String
     ) {
-        let shapeLayer:CAShapeLayer = CAShapeLayer()
+        self.layer.sublayers?.forEach {
+            if $0.name == "dotted-border" {
+                $0.removeFromSuperlayer()
+            }
+        }
+        
+        let shapeLayer: CAShapeLayer = CAShapeLayer()
+        shapeLayer.name = "dotted-border"
         shapeLayer.cornerRadius = 8.0
         
         var rounded: UIRectCorner! = nil

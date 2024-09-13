@@ -189,7 +189,7 @@
 "address-boox.contact-unblock.alert-message" = "Sigurado ka bang gusto mong i-unblock ang Kontak na ito?";
 "address-book.can-not-delete-contact-title" = "Hindi matanggal ang contact";
 "address-book.can-not-delete-contact-message" = "Hindi matatanggal ang mga kumpirmadong contact";
-"messages.encrypted.disclaimer" = "Messages and calls are secured with end-to-end encryption";
+"messages.encrypted.disclaimer" = "Ang mga mensahe at tawag ay sinigurado gamit ang end-to-end na pag-encrypt";
 
 //WELCOME
 "welcome.initial.title" = "Maligayang Pagdating";
@@ -542,8 +542,6 @@
 "invite.ready" = "Handa na! I-tap para ibahagi. Mag-e-expire sa loob ng 24 na oras";
 "invite.signing.on" = "Nagsa-sign on si%@";
 "invite.expired" = "Nag-expire na";
-"invite.sent" = "Invite sent";
-"invite.sent.on" = "Invite sent on";
 "invite.signup.complete" = "Kumpleto na ang pag-sign up";
 "new.user" = "Bagong user";
 "existing.user" = "Kasalukuyang user";
