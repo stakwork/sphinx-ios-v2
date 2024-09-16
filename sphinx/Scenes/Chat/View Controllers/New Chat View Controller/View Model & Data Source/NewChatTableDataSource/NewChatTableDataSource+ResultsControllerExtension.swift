@@ -59,9 +59,7 @@ extension NewChatTableDataSource {
             CoreDataManager.sharedManager.saveContext()
             
             self.saveSnapshotCurrentState()
-            self.dataSourceQueue.sync {
-                self.dataSource.apply(snapshot, animatingDifferences: false)
-            }
+            self.dataSource.apply(snapshot, animatingDifferences: false)
             self.restoreScrollLastPosition()
             self.loadingMoreItems = false
         }

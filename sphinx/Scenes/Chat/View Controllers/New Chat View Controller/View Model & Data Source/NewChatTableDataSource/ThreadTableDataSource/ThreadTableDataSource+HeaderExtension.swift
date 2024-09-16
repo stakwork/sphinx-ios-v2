@@ -31,12 +31,15 @@ extension ThreadTableDataSource : ThreadHeaderTableViewCellDelegate {
             return
         }
         
-        dataSourceQueue.sync {
+        dataSourceQueue.async {
             var snapshot = self.dataSource.snapshot()
             
             if snapshot.itemIdentifiers.contains(tableCellState) {
                 snapshot.reloadItems([tableCellState])
-                self.dataSource.apply(snapshot, animatingDifferences: false)
+                
+                DispatchQueue.main.async {
+                    self.dataSource.apply(snapshot, animatingDifferences: false)
+                }
             }
         }
     }

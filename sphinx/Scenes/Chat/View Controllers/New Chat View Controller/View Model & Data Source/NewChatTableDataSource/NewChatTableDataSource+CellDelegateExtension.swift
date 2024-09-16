@@ -466,12 +466,15 @@ extension NewChatTableDataSource : NewMessageTableViewCellDelegate {
                     if let height = height {
                         self.botsWebViewData[messageId] = MessageTableCellState.BotWebViewData(height: height)
                         
-                        self.dataSourceQueue.sync {
+                        self.dataSourceQueue.async {
                             var snapshot = self.dataSource.snapshot()
                             
                             if snapshot.itemIdentifiers.contains(tableCellState.1) {
                                 snapshot.reloadItems([tableCellState.1])
-                                self.dataSource.apply(snapshot, animatingDifferences: true)
+                                
+                                DispatchQueue.main.async {
+                                    self.dataSource.apply(snapshot, animatingDifferences: true)
+                                }
                             }
                         }
                     }
@@ -587,12 +590,15 @@ extension NewChatTableDataSource {
             if rowIndex < 0 {
                 self.delegate?.shouldReloadThreadHeaderView()
             } else {
-                dataSourceQueue.sync {
+                dataSourceQueue.async {
                     var snapshot = self.dataSource.snapshot()
                     
                     if snapshot.itemIdentifiers.contains(tableCellState.1) {
                         snapshot.reloadItems([tableCellState.1])
-                        self.dataSource.apply(snapshot, animatingDifferences: true)
+                        
+                        DispatchQueue.main.async {
+                            self.dataSource.apply(snapshot, animatingDifferences: true)
+                        }
                     }
                 }
             }
@@ -618,12 +624,15 @@ extension NewChatTableDataSource {
                     (UIScreen.main.bounds.width - (MessageTableCellState.kRowLeftMargin + MessageTableCellState.kRowRightMargin)) * (MessageTableCellState.kBubbleWidthPercentage)
             )
 
-            dataSourceQueue.sync {
+            dataSourceQueue.async {
                 var snapshot = self.dataSource.snapshot()
                 
                 if snapshot.itemIdentifiers.contains(tableCellState.1) {
                     snapshot.reloadItems([tableCellState.1])
-                    self.dataSource.apply(snapshot, animatingDifferences: true)
+                    
+                    DispatchQueue.main.async {
+                        self.dataSource.apply(snapshot, animatingDifferences: true)
+                    }
                 }
             }
         }
@@ -640,12 +649,15 @@ extension NewChatTableDataSource {
         ) {
             uploadingProgress[messageId] = updatedUploadProgressData
             
-            dataSourceQueue.sync {
+            dataSourceQueue.async {
                 var snapshot = self.dataSource.snapshot()
                 
                 if snapshot.itemIdentifiers.contains(tableCellState.1) {
                     snapshot.reloadItems([tableCellState.1])
-                    self.dataSource.apply(snapshot, animatingDifferences: false)
+                    
+                    DispatchQueue.main.async {
+                        self.dataSource.apply(snapshot, animatingDifferences: false)
+                    }
                 }
             }
         }
@@ -663,12 +675,15 @@ extension NewChatTableDataSource {
         {
             preloaderHelper.linksData[linkWeb.link] = linkData
 
-            dataSourceQueue.sync {
+            dataSourceQueue.async {
                 var snapshot = self.dataSource.snapshot()
                 
                 if snapshot.itemIdentifiers.contains(tableCellState.1) {
                     snapshot.reloadItems([tableCellState.1])
-                    self.dataSource.apply(snapshot, animatingDifferences: true)
+                    
+                    DispatchQueue.main.async {
+                        self.dataSource.apply(snapshot, animatingDifferences: true)
+                    }
                 }
             }
         }
