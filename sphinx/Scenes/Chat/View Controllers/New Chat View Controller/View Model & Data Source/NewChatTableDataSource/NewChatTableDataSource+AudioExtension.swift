@@ -77,12 +77,15 @@ extension NewChatTableDataSource : AudioPlayerHelperDelegate {
                     )
                 )
                 
-                dataSourceQueue.sync {
+                dataSourceQueue.async {
                     var snapshot = self.dataSource.snapshot()
                     
                     if snapshot.itemIdentifiers.contains(tableCellState.1) {
                         snapshot.reloadItems([tableCellState.1])
-                        self.dataSource.apply(snapshot, animatingDifferences: false)
+                        
+                        DispatchQueue.main.async {
+                            self.dataSource.apply(snapshot, animatingDifferences: false)
+                        }
                     }
                 }
             }
@@ -201,12 +204,15 @@ extension NewChatTableDataSource : PlayerDelegate {
                     )
                 )
 
-                dataSourceQueue.sync {
+                dataSourceQueue.async {
                     var snapshot = self.dataSource.snapshot()
                     
                     if snapshot.itemIdentifiers.contains(tableCellState.1) {
                         snapshot.reloadItems([tableCellState.1])
-                        self.dataSource.apply(snapshot, animatingDifferences: false)
+                        
+                        DispatchQueue.main.async {
+                            self.dataSource.apply(snapshot, animatingDifferences: false)
+                        }
                     }
                 }
             }
