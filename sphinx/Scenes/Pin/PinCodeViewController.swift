@@ -130,9 +130,15 @@ class PinCodeViewController: UIViewController {
         }  else if let storedPin = UserData.sharedInstance.getStoredPin() {// if migrating from stored pin act accordingly
             if (storedPin == pin){
                 guard let unencryptedMnemonic = UserData.sharedInstance.getStoredUnencryptedMnemonic(),
-                      SphinxOnionManager.sharedInstance.isMnemonic(code: unencryptedMnemonic) else {
+                      SphinxOnionManager.sharedInstance.isMnemonic(code: unencryptedMnemonic) else 
+                {
                     loading = false
-                    AlertHelper.showAlert(title: "Data Corruption Error", message: "There was an issue migrating your account. Please try again with restore from your written mnemonic.")
+                    
+                    AlertHelper.showAlert(
+                        title: "Data Corruption Error",
+                        message: "There was an issue migrating your account. Please try again with restore from your written mnemonic."
+                    )
+                    
                     pinArray = []
                     reloadDots()
                     return
