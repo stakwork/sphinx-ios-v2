@@ -41,13 +41,17 @@ extension DashboardFeedsEmptyStateViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        emptyStateMessageLabel.text = emptyStateMessageText
+        updateEmptyStateLabel()
     }
 
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         
+        updateEmptyStateLabel()
+    }
+    
+    func updateEmptyStateLabel(){
         emptyStateMessageLabel.text = emptyStateMessageText
     }
 }
