@@ -109,7 +109,7 @@ class ChatListHeader: UIView {
             walletBalanceService.updateBalance(labels: [smallBalanceLabel])
         }
         
-        shouldCheckAppVersions()
+//        shouldCheckAppVersions()
     }
     
     func updateBalance() {

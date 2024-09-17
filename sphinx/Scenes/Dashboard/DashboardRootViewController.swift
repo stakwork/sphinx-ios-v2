@@ -155,7 +155,7 @@ class DashboardRootViewController: RootViewController {
                 loadingWheelColor: UIColor.Sphinx.Text,
                 views: [
                     searchBarContainer,
-                    mainContentContainerView,
+//                    mainContentContainerView,
                     bottomBarContainer,
                 ]
             )
