@@ -10,6 +10,7 @@ import CoreData
 
 protocol FeedSearchResultsCollectionViewControllerDelegate : class {
     func getFeedSource()->FeedSource
+    func showNoResults()
 }
 
 class FeedSearchResultsCollectionViewController: UICollectionViewController {
@@ -343,6 +344,13 @@ extension FeedSearchResultsCollectionViewController {
         if let _ = dataSource {
             updateSnapshot(shouldAnimate: shouldAnimate)
         }
+        
+        if (self.feedSearchResults.count + self.subscribedFeeds.count) == 0{
+            showNoResultsLabel()
+        }
+        else{
+            self.view.superview?.isHidden = false
+        }
     }
     
 
@@ -355,6 +363,17 @@ extension FeedSearchResultsCollectionViewController {
         if let _ = dataSource {
             updateSnapshot(shouldAnimate: shouldAnimate)
         }
+        
+        if (self.feedSearchResults.count + self.subscribedFeeds.count) == 0{
+            showNoResultsLabel()
+        }
+        else{
+            self.view.superview?.isHidden = false
+        }
+    }
+    
+    func showNoResultsLabel(){
+        self.delegate?.showNoResults()
     }
 }
 

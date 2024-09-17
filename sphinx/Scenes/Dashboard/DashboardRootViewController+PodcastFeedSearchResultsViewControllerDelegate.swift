@@ -18,4 +18,10 @@ extension DashboardRootViewController: FeedSearchResultsViewControllerDelegate {
     func getPodcastSmallPlayerHeight() -> CGFloat{
         return podcastSmallPlayer.getViewHeight()
     }
+    
+    func showNoResults() {
+        self.feedSearchResultsContainerViewController.view.isHidden = true
+        self.feedsContainerViewController.showEmptyStateViewController()
+        self.feedsContainerViewController.emptyStateViewController.updateEmptyStateLabel()
+    }
 }
