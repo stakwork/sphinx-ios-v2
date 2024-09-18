@@ -15,6 +15,8 @@ class ChatsCollectionViewController: UICollectionViewController {
     
     private var owner: UserContact!
     
+    let dataSourceQueue = DispatchQueue(label: "sphinx.chat.v2.datasourceQueue")
+    
     private let itemContentInsets = NSDirectionalEdgeInsets(
         top: 0,
         leading: 0,
@@ -330,25 +332,26 @@ extension ChatsCollectionViewController {
         updateOwner()
         
         var snapshot = DataSourceSnapshot()
-
+        
         snapshot.appendSections(CollectionViewSection.allCases)
-
-        let items = chatListObjects.filter({ $0.getContact()?.isOwner != true }).map {
+        
+        let items = self.chatListObjects.filter({ $0.getContact()?.isOwner != true }).map {
             DataSourceItem(
                 objectId: $0.getObjectId(),
                 messageId: $0.lastMessage?.id,
-                messageSeen: $0.isSeen(ownerId: owner.id),
-                unseenCount: $0.getUnseenMessagesCount(ownerId: owner.id),
+                messageSeen: $0.isSeen(ownerId: self.owner.id),
+                unseenCount: $0.getUnseenMessagesCount(ownerId: self.owner.id),
                 contactStatus: $0.getContactStatus(),
                 inviteStatus: $0.getInviteStatus(),
                 muted: $0.isMuted()
             )
         }
-
-        snapshot.appendItems(items, toSection: .all)
         
-        DispatchQueue.main.async {
-            self.dataSource.apply(snapshot, animatingDifferences: true)
+        dataSourceQueue.sync {
+            snapshot.appendItems(items, toSection: .all)
+            DispatchQueue.main.async {
+                self.dataSource.apply(snapshot, animatingDifferences: true)
+            }
         }
     }
     
