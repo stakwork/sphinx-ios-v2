@@ -93,6 +93,7 @@ class PaymentTransaction {
         self.senderId = (isIncoming) ? -1 : 0
         self.receiverId = (isIncoming) ? 0 : -1
         self.paymentRequest = "unknown"
+        self.errorMessage = fetchedParams.error
     }
     
     func getDirection() -> TransactionDirection {
@@ -193,6 +194,7 @@ class PaymentTransactionFromServer: Mappable {
     var ts: Int64?
     var remote: Bool?
     var msg_idx: Int?
+    var error: String?
     
     required init?(map: Map) {
     }
@@ -204,5 +206,6 @@ class PaymentTransactionFromServer: Mappable {
         ts       <- map["ts"]
         remote   <- map["remote"]
         msg_idx  <- map["msg_idx"]
+        error    <- map["error"]
     }
 }

@@ -38,6 +38,7 @@ class NewOnlyTextMessageTableViewCell: CommonNewMessageTableViewCell, ChatTableV
     override func awakeFromNib() {
         super.awakeFromNib()
         
+        hideAllSubviews()
         setupViews()
     }
 
@@ -60,6 +61,11 @@ class NewOnlyTextMessageTableViewCell: CommonNewMessageTableViewCell, ChatTableV
         leftLineContainer.layer.addSublayer(leftLineLayer)
     }
     
+    func hideAllSubviews() {
+        leftLineContainer.isHidden = true
+        rightLineContainer.isHidden = true
+    }
+    
     func configureWith(
         messageCellState: MessageTableCellState,
         mediaData: MessageTableCellState.MediaData?,
@@ -77,6 +83,8 @@ class NewOnlyTextMessageTableViewCell: CommonNewMessageTableViewCell, ChatTableV
         guard let bubble = mutableMessageCellState.bubble else {
             return
         }
+        
+        hideAllSubviews()
         
         self.delegate = delegate
         self.rowIndex = indexPath.row
