@@ -466,12 +466,11 @@ extension NewChatTableDataSource : NewMessageTableViewCellDelegate {
                     if let height = height {
                         self.botsWebViewData[messageId] = MessageTableCellState.BotWebViewData(height: height)
                         
-                        self.dataSourceQueue.async {
-                            var snapshot = self.dataSource.snapshot()
-                            
-                            if snapshot.itemIdentifiers.contains(tableCellState.1) {
+                        var snapshot = self.dataSource.snapshot()
+                        
+                        if snapshot.itemIdentifiers.contains(tableCellState.1) {
+                            self.dataSourceQueue.sync {
                                 snapshot.reloadItems([tableCellState.1])
-                                
                                 DispatchQueue.main.async {
                                     self.dataSource.apply(snapshot, animatingDifferences: true)
                                 }
@@ -590,12 +589,11 @@ extension NewChatTableDataSource {
             if rowIndex < 0 {
                 self.delegate?.shouldReloadThreadHeaderView()
             } else {
-                dataSourceQueue.async {
-                    var snapshot = self.dataSource.snapshot()
-                    
-                    if snapshot.itemIdentifiers.contains(tableCellState.1) {
+                var snapshot = self.dataSource.snapshot()
+                
+                if snapshot.itemIdentifiers.contains(tableCellState.1) {
+                    dataSourceQueue.sync {
                         snapshot.reloadItems([tableCellState.1])
-                        
                         DispatchQueue.main.async {
                             self.dataSource.apply(snapshot, animatingDifferences: true)
                         }
@@ -624,12 +622,11 @@ extension NewChatTableDataSource {
                     (UIScreen.main.bounds.width - (MessageTableCellState.kRowLeftMargin + MessageTableCellState.kRowRightMargin)) * (MessageTableCellState.kBubbleWidthPercentage)
             )
 
-            dataSourceQueue.async {
-                var snapshot = self.dataSource.snapshot()
-                
-                if snapshot.itemIdentifiers.contains(tableCellState.1) {
+            var snapshot = self.dataSource.snapshot()
+            
+            if snapshot.itemIdentifiers.contains(tableCellState.1) {
+                dataSourceQueue.sync {
                     snapshot.reloadItems([tableCellState.1])
-                    
                     DispatchQueue.main.async {
                         self.dataSource.apply(snapshot, animatingDifferences: true)
                     }
@@ -649,12 +646,11 @@ extension NewChatTableDataSource {
         ) {
             uploadingProgress[messageId] = updatedUploadProgressData
             
-            dataSourceQueue.async {
-                var snapshot = self.dataSource.snapshot()
-                
-                if snapshot.itemIdentifiers.contains(tableCellState.1) {
+            var snapshot = self.dataSource.snapshot()
+            
+            if snapshot.itemIdentifiers.contains(tableCellState.1) {
+                dataSourceQueue.sync {
                     snapshot.reloadItems([tableCellState.1])
-                    
                     DispatchQueue.main.async {
                         self.dataSource.apply(snapshot, animatingDifferences: false)
                     }
@@ -675,12 +671,11 @@ extension NewChatTableDataSource {
         {
             preloaderHelper.linksData[linkWeb.link] = linkData
 
-            dataSourceQueue.async {
-                var snapshot = self.dataSource.snapshot()
-                
-                if snapshot.itemIdentifiers.contains(tableCellState.1) {
+            var snapshot = self.dataSource.snapshot()
+            
+            if snapshot.itemIdentifiers.contains(tableCellState.1) {
+                dataSourceQueue.sync {
                     snapshot.reloadItems([tableCellState.1])
-                    
                     DispatchQueue.main.async {
                         self.dataSource.apply(snapshot, animatingDifferences: true)
                     }
