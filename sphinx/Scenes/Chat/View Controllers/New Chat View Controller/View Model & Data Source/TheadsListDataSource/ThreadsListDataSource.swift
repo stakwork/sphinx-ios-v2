@@ -53,7 +53,7 @@ class ThreadsListDataSource : NSObject {
     var threadTableCellStateArray: [ThreadTableCellState] = []
     var mediaCached: [Int: MessageTableCellState.MediaData] = [:]
     
-    let dataSourceQueue = DispatchQueue(label: "sphinx.chat.v2.datasourceQueue")
+    let dataSourceQueue = DispatchQueue(label: "thread.datasourceQueue", attributes: .concurrent)
     
     init(
         chat: Chat?,
