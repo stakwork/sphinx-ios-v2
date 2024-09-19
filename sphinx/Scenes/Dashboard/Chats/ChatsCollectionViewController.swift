@@ -349,9 +349,7 @@ extension ChatsCollectionViewController {
         
         dataSourceQueue.sync {
             snapshot.appendItems(items, toSection: .all)
-            DispatchQueue.main.async {
-                self.dataSource.apply(snapshot, animatingDifferences: true)
-            }
+            self.dataSource.apply(snapshot, animatingDifferences: true)
         }
     }
     
