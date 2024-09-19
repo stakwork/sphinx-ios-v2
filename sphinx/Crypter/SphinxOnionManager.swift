@@ -31,16 +31,14 @@ class SphinxOnionManager : NSObject {
     
     ///Invite
     var pendingInviteLookupByTag : [String:String] = [String:String]()
-    var stashedContactInfo:String? = nil
-    var stashedInitialTribe:String? = nil
-    var stashedInviteCode:String? = nil
-    var stashedInviterAlias:String? = nil
+    var stashedContactInfo: String? = nil
+    var stashedInitialTribe: String? = nil
+    var stashedInviteCode: String? = nil
+    var stashedInviterAlias: String? = nil
     
     var watchdogTimer: Timer? = nil
     var reconnectionTimer: Timer? = nil
     var sendTimeoutTimers: [String: Timer] = [:]
-    
-    var nextMessageBlockWasReceived = false
     
     var chatsFetchParams : ChatsFetchParams? = nil
     var messageFetchParams : MessageFetchParams? = nil
@@ -80,12 +78,12 @@ class SphinxOnionManager : NSObject {
     var msgTotalCounts : MsgTotalCounts? = nil
     
     typealias RestoreProgressCallback = (Int) -> Void
-    var messageRestoreCallback : RestoreProgressCallback? = nil
-    var contactRestoreCallback : RestoreProgressCallback? = nil
+    var messageRestoreCallback: RestoreProgressCallback? = nil
+    var contactRestoreCallback: RestoreProgressCallback? = nil
     var hideRestoreCallback: (() -> ())? = nil
-    var tribeMembersCallback : (([String: AnyObject]) -> ())? = nil
-    var paymentsHistoryCallback : ((String?, String?) -> ())? = nil
-    var inviteCreationCallback : ((String?) -> ())? = nil
+    var tribeMembersCallback: (([String: AnyObject]) -> ())? = nil
+    var paymentsHistoryCallback: ((String?, String?) -> ())? = nil
+    var inviteCreationCallback: ((String?) -> ())? = nil
     
     ///Session Pin to decrypt mnemonic and seed
     var appSessionPin : String? = nil
