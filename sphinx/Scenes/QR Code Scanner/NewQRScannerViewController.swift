@@ -73,6 +73,9 @@ class NewQRScannerViewController: KeyboardEventsViewController {
         }
     }
     
+    var paymentTag: String? = nil
+    var paymentTimer : Timer? = nil
+    
     static func instantiate(currentMode: Mode) -> NewQRScannerViewController {
         let viewController = StoryboardScene.QRCodeScanner.newQrCodeScannerViewController.instantiate()
         viewController.currentMode = currentMode

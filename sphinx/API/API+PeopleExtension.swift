@@ -139,40 +139,29 @@ extension API {
 
         AF.request(request).responseJSON { (response) in
             switch response.result {
-            case .success(let value):
+            case .success(_):
                 callback(true, nil)
-            case .failure(let error):
-                print("Request failed with error: \(error)")
+            case .failure(_):
                 if let data = response.data {
                     if let status = response.response?.statusCode,
-                       let bolt11 = String(data: data, encoding: .utf8),
-                       status == 402{
-                        print("Response data: \(bolt11 ?? "nil")")
-                        print("paying L402")
-                        SphinxOnionManager.sharedInstance.payInvoice(invoice: bolt11,callback:{ success, errorMsg in
-                            if(success){
+                       let bolt11 = String(data: data, encoding: .utf8), status == 402
+                    {
+                        SphinxOnionManager.sharedInstance.payInvoice(invoice: bolt11, callback:{ (success, errorMsg, _) in
+                            if (success) {
                                 callback(true,bolt11)
-                            }
-                            else{
-                                AlertHelper.showAlert(title: "payment.failed".localized, message: "Error msg:\(errorMsg ?? "error unknown")")
+                            } else {
+                                AlertHelper.showAlert(title: "payment.failed".localized, message: "Error msg: \(errorMsg ?? "error unknown")")
                                 callback(false,nil)
                             }
-                            
                         })
-                    }
-                    else{
+                    } else {
                         callback(false,nil)
                     }
-                }
-                else{
+                } else {
                     callback(false,nil)
                 }
             }
         }
-    }
-    
-    func handleContentPaymentCallback(){
-        
     }
     
     public func authorizeExternal(host: String,

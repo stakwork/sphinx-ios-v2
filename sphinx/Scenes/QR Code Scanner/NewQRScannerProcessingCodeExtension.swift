@@ -113,15 +113,6 @@ extension NewQRScannerViewController {
     
     func validateSubscriptionQR(string: String) -> Bool {
         return false
-        //TODO: @Jim reimplement or remove
-//        let subscriptionManager = SubscriptionManager.sharedInstance
-//        subscriptionManager.resetValues()
-//        
-//        let (valid, subscription) = subscriptionManager.setValueFrom(subscriptionString: string)
-//        if valid {
-//            goToSubscriptionDetailsView(subscription: subscription)
-//        }
-//        return valid
     }
     
     func presentPubkeySendVC(pubkey:String?=nil){
@@ -137,15 +128,6 @@ extension NewQRScannerViewController {
             })
         }
     }
-    
-    //TODO: @Jim reimplement or remove
-//    func goToSubscriptionDetailsView(subscription: SubscriptionManager.SubscriptionQR) {
-//        let subscriptionDetailsVC = SubscriptionDetailsViewController.instantiate(
-//            subscriptionQR: subscription,
-//            delegate: delegate
-//        )
-//        self.navigationController?.pushViewController(subscriptionDetailsVC, animated: true)
-//    }
     
     func validateDeepLinks(string: String) -> Bool {
         if let url = URL(string: string), DeepLinksHandlerHelper.storeLinkQueryFrom(url: url) {
@@ -196,17 +178,76 @@ extension NewQRScannerViewController {
     private func payInvoice(invoice: String) {
         invoiceLoading = true
         
-        SphinxOnionManager.sharedInstance.payInvoice(invoice: invoice) { (success, errorMsg) in
+        SphinxOnionManager.sharedInstance.payInvoice(invoice: invoice) { (success, errorMsg, tag) in
             if success {
-                self.dismiss(animated: true, completion: nil)
+                self.paymentTag = tag
+                self.addPaymentObserver()
             } else {
-                self.invoiceLoading = true
-                
-                AlertHelper.showAlert(
-                    title: "generic.error.title".localized,
-                    message: errorMsg ?? "generic.error.message".localized
-                )
+                self.showErrorAlertAndDismiss()
             }
         }
+    }
+    
+    func addPaymentObserver() {
+        NotificationCenter.default.removeObserver(
+            self,
+            name: .onKeysendStatusReceived,
+            object: nil
+        )
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(onKeysendStatusReceived),
+            name: .onKeysendStatusReceived,
+            object: nil
+        )
+        
+        paymentTimer = Timer.scheduledTimer(
+            timeInterval: 5.0,
+            target: self,
+            selector: #selector(self.showErrorAlertAndDismiss),
+            userInfo: nil,
+            repeats: false
+        )
+    }
+    
+    @objc func onKeysendStatusReceived(n: Notification) {
+        if let tag = n.userInfo?["tag"] as? String,
+           let status = n.userInfo?["status"] as? String {
+            
+            if tag == paymentTag {
+                if status == SphinxOnionManager.kCompleteStatus {
+                    resetTimerAndObserver()
+                    dismiss(animated: true)
+                } else {
+                    showErrorAlertAndDismiss()
+                }
+            }
+        }
+    }
+    
+    func resetTimerAndObserver() {
+        paymentTag = nil
+        
+        paymentTimer?.invalidate()
+        paymentTimer = nil
+        
+        NotificationCenter.default.removeObserver(
+            self,
+            name: .onKeysendStatusReceived,
+            object: nil
+        )
+    }
+    
+    @objc func showErrorAlertAndDismiss() {
+        resetTimerAndObserver()
+        
+        AlertHelper.showAlert(
+            title: "generic.error.title".localized,
+            message: "generic.error.message".localized,
+            completion: {
+                self.dismiss(animated: true)
+            }
+        )
     }
 }

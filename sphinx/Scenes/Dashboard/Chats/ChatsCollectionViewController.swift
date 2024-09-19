@@ -15,7 +15,7 @@ class ChatsCollectionViewController: UICollectionViewController {
     
     private var owner: UserContact!
     
-    let dataSourceQueue = DispatchQueue(label: "sphinx.chat.v2.datasourceQueue")
+    let dataSourceQueue = DispatchQueue(label: "chatList.datasourceQueue", attributes: .concurrent)
     
     private let itemContentInsets = NSDirectionalEdgeInsets(
         top: 0,
