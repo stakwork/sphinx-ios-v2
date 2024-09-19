@@ -134,7 +134,7 @@ class PodcastPaymentsHelper {
                         pubkey: pubkey,
                         amt: amount,
                         data: data,
-                        completion: { _ in }
+                        completion: {(_, _) in }
                     )
                 })
             }
