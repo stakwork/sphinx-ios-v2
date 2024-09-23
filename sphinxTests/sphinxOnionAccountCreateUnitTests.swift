@@ -10,6 +10,8 @@ import XCTest
 @testable import sphinx
 
 class sphinxOnionAccountCreateUnitTests: XCTestCase {
+    
+    static let shared = sphinxOnionAccountCreateUnitTests()
     var sphinxOnionManager = SphinxOnionManager.sharedInstance
     let test_mnemonic1 = "artist globe myself huge wing drive bright build agree fork media gentle"
     let test_mnemonic1_expected_seed = "dea65b969cd1b0926889f35699586ff7e19469c64e7a944d0c6b68342158a1a8"

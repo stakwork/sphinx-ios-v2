@@ -1071,6 +1071,11 @@ extension SphinxOnionManager {
                 
         newMessage.setAsLastMessage()
         
+        if(self.isUnitTestMode){
+            NotificationCenter.default.post(name: .newOnionMessageWasReceived, object: newMessage)
+        }
+        
+        
         return newMessage
     }
     

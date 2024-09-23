@@ -28,6 +28,7 @@ class SphinxOnionManager : NSObject {
     }
     
     let walletBalanceService = WalletBalanceService()
+    var isUnitTestMode:Bool = true
     
     ///Invite
     var pendingInviteLookupByTag : [String:String] = [String:String]()
@@ -112,7 +113,10 @@ class SphinxOnionManager : NSObject {
     //MARK: Hardcoded Values!
     var serverIP: String {
         get {
-            if let storedServerIP: String = UserDefaults.Keys.serverIP.get() {
+            if isUnitTestMode{
+                return "127.0.0.1"
+            }
+            else if let storedServerIP: String = UserDefaults.Keys.serverIP.get() {
                 return storedServerIP
             }
             return kTestServerIP
@@ -121,7 +125,10 @@ class SphinxOnionManager : NSObject {
     
     var serverPORT: UInt16 {
         get {
-            if let storedServerPORT: Int = UserDefaults.Keys.serverPORT.get() {
+            if isUnitTestMode{
+                return 1883
+            }
+            else if let storedServerPORT: Int = UserDefaults.Keys.serverPORT.get() {
                 return UInt16(storedServerPORT)
             }
             return kTestServerPort
@@ -537,7 +544,9 @@ class SphinxOnionManager : NSObject {
             self.mqtt.subscribe([
                 (tribeMgmtTopic, CocoaMQTTQoS.qos1)
             ])
-        } catch {}
+        } catch {
+            print("failed to subscribe to my topics")
+        }
     }
     
     func fetchMyAccountFromState() {
@@ -685,6 +694,10 @@ class SphinxOnionManager : NSObject {
             }
         }
         return success
+    }
+    
+    func setupMqttCallbacks(mqtt:CocoaMQTT){
+        
     }
     
     func processMqttMessages(message: CocoaMQTTMessage) {
