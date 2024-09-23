@@ -126,7 +126,6 @@ extension PaidMessagePreviewViewController : UITableViewDataSource, UITableViewD
                 threadOriginalMsgMediaData: nil,
                 tribeData: nil,
                 linkData: nil,
-                botWebViewData: nil,
                 uploadProgressData: nil,
                 delegate: nil,
                 searchingTerm: nil,
