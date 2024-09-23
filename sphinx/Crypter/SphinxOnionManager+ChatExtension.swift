@@ -206,10 +206,11 @@ extension SphinxOnionManager {
         replyUUID: String?,
         invoiceString: String? = nil,
         tribeKickMember: String? = nil,
-        paidAttachmentMediaToken: String? = nil
+        paidAttachmentMediaToken: String? = nil,
+        mnemonic:String?=nil
     ) -> (TransactionMessage?, String?) {
         
-        guard let seed = getAccountSeed() else {
+        guard let seed = getAccountSeed(mnemonic: mnemonic) else {
             return (nil, "Account seed not found")
         }
         
