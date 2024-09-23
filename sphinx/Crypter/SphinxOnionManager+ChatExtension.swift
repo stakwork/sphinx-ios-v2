@@ -1071,8 +1071,9 @@ extension SphinxOnionManager {
                 
         newMessage.setAsLastMessage()
         
-        if(self.isUnitTestMode){
-            NotificationCenter.default.post(name: .newOnionMessageWasReceived, object: newMessage)
+        if (self.isUnitTestMode) {
+            let userInfo = ["message": newMessage]
+            NotificationCenter.default.post(name: .newOnionMessageWasReceived, object: nil, userInfo: userInfo)
         }
         
         

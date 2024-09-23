@@ -508,19 +508,20 @@ class SphinxOnionManager : NSObject {
     func subscribeAndPublishMyTopics(
         pubkey: String,
         idx: Int,
-        inviteCode: String? = nil
+        inviteCode: String? = nil,
+        mnemonic: String? = nil
     ) {
         do {
             let ret = try sphinx.setNetwork(network: network)
             let _ = handleRunReturn(rr: ret)
             
-            guard let seed = getAccountSeed() else{
+            guard let seed = getAccountSeed(mnemonic: mnemonic) else{
                 return
             }
             
             mqtt.didReceiveMessage = { mqtt, receivedMessage, id in
                 self.isConnected = true
-                self.processMqttMessages(message: receivedMessage)
+                self.processMqttMessages(message: receivedMessage,mnemonic: mnemonic)
             }
             
             let ret3 = try sphinx.initialSetup(
@@ -687,7 +688,8 @@ class SphinxOnionManager : NSObject {
                 self.subscribeAndPublishMyTopics(
                     pubkey: pubkey,
                     idx: idx,
-                    inviteCode: inviteCode
+                    inviteCode: inviteCode,
+                    mnemonic: mnemonic
                 )
             }
         }
@@ -698,8 +700,8 @@ class SphinxOnionManager : NSObject {
         
     }
     
-    func processMqttMessages(message: CocoaMQTTMessage) {
-        guard let seed = getAccountSeed() else {
+    func processMqttMessages(message: CocoaMQTTMessage, mnemonic:String? = nil) {
+        guard let seed = getAccountSeed(mnemonic: mnemonic) else {
             return
         }
         if !readyForPing && message.topic.contains("ping") {

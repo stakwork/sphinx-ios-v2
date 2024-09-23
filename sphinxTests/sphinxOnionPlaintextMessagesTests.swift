@@ -76,8 +76,9 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
     var receivedMessage : [String:Any]? = nil
     let test_sender_pubkey = "023be900c195aee419e5f68bf4b7bc156597da7649a9103b1afec949d233e4d1aa"
     let test_contact_info = "023be900c195aee419e5f68bf4b7bc156597da7649a9103b1afec949d233e4d1aa_02adccd7f574d17d627541b447f47493916e78e33c1583ba9936607b35ca99c392_529771090670583808"
-    var test_received_message_content = "Sphinx_is_awesome"
+    var test_received_message_content = "SphinxIsAwesome"
     let self_alias = "satoshi"
+    let myPubkey = "0224ac5c13ac02ba7b12b60e0661711952e371976df3e5de90247777ab9d708339"
     
     //Mnemonic for "sock puppet" account that helps test: post captain sister quit hurt stadium brand leopard air give funny begin
     
@@ -163,10 +164,14 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
 
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.
+        
         UserData.sharedInstance.save(walletMnemonic: test_mnemonic2)
         sphinxOnionManager.isUnitTestMode = true
+        enforceDelay(delay: 2.0)
         let success = sphinxOnionManager.createMyAccount(mnemonic: test_mnemonic2)
         XCTAssert(success == true)
+        
+        enforceDelay(delay: 8.0)
     }
 
     override func tearDownWithError() throws {
@@ -190,6 +195,7 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
             "amount": message.amount ?? 0
         ]
     }
+    
     //MARK: Test Helpers:
     func makeServerSendMessage(customMessage:String?=nil, replyUuid:String?=nil){
         NotificationCenter.default.addObserver(self, selector: #selector(handleNewOnionMessageReceived), name: .newOnionMessageWasReceived, object: nil)
