@@ -63,5 +63,7 @@ extension NewMessageTableViewCell {
         linkPreviewView.isHidden = true
         messageBoostView.isHidden = true
         paidAttachmentView.isHidden = true
+        leftLineContainer.isHidden = true
+        rightLineContainer.isHidden = true
     }
 }

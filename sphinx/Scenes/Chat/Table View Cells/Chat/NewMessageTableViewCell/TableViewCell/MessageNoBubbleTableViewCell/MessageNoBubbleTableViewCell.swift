@@ -37,6 +37,8 @@ class MessageNoBubbleTableViewCell: UITableViewCell, ChatTableViewCellProtocol {
         dateSeparatorView.isHidden = true
         deletedMessageView.isHidden = true
         groupActionsView.isHidden = true
+        leftLineContainer.isHidden = true
+        rightLineContainer.isHidden = true
     }
     
     func setupViews() {

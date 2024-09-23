@@ -41,7 +41,7 @@ class CreateInvoiceViewController: CommonPaymentViewController {
     let kCharacterLimit = 200
     let kMaximumAmount = 9999999
     var preloadedPubkey : String? = nil
-    var preloadedZeroAmountInvoice:String?=nil
+    var preloadedZeroAmountInvoice: String? = nil    
     
     var textColor: UIColor = UIColor.Sphinx.Text {
         didSet {
@@ -177,7 +177,6 @@ class CreateInvoiceViewController: CommonPaymentViewController {
         let amount = Int(input) ?? 0
         
         if amount >= 0 && amount <= kMaximumAmount {
-            let contactsCount = 1
             let walletBalance = WalletBalanceService().balance ?? 0
             let sending = (mode == PaymentsViewModel.PaymentMode.send || mode == PaymentsViewModel.PaymentMode.sendOnchain)
             
@@ -189,9 +188,7 @@ class CreateInvoiceViewController: CommonPaymentViewController {
             let amountString = amount.formattedWithSeparator
             nextButton.isHidden = amount == 0
             amountTextField.text = amount == 0 ? "" : amountString
-            
-            let totalAmountString = amount.formattedWithSeparator
-            groupTotalLabel.text = contactsCount > 1 ? "\("Total") \(totalAmountString)" : ""
+            groupTotalLabel.text = ""
             
             paymentsViewModel.payment.amount = amount
             return true
@@ -228,10 +225,9 @@ class CreateInvoiceViewController: CommonPaymentViewController {
         
         switch mode {
         case .send:
-            if let preloadedZeroAmountInvoice = preloadedZeroAmountInvoice{
+            if let preloadedZeroAmountInvoice = preloadedZeroAmountInvoice {
                 shouldPayZeroAmountInvoice(invoice: preloadedZeroAmountInvoice)
-            }
-            else{
+            } else {
                 shouldSendDirectPayment()
             }
         case .sendOnchain:
@@ -299,9 +295,15 @@ class CreateInvoiceViewController: CommonPaymentViewController {
         SphinxOnionManager.sharedInstance.payInvoice(
             invoice: invoice,
             overPayAmountMsat: UInt64(1000 * amount)
-        ) { (success, errorMsg) in
+        ) { (success, errorMsg, tag) in
             if success {
-                self.shouldDismissView()
+                self.paymentTag = tag
+                
+                if success {
+                    self.addPaymentObserver()
+                } else {
+                    self.showErrorAlertAndDismiss()
+                }
             } else {
                 AlertHelper.showAlert(
                     title: "generic.error.title".localized,
@@ -312,6 +314,8 @@ class CreateInvoiceViewController: CommonPaymentViewController {
     }
     
     private func shouldSendDirectPayment() {
+        paymentTag = nil
+        
         if let _ = self.contact {
             goToPaymentTemplate()
         } else if let _ = message {
@@ -373,9 +377,11 @@ class CreateInvoiceViewController: CommonPaymentViewController {
                 pubkey: pubkey,
                 routeHint: paymentsViewModel.payment.routeHint,
                 amt: Double(amt)
-            ) { success in
+            ) { (success, tag) in
+                self.paymentTag = tag
+                
                 if success {
-                    self.shouldDismissView()
+                    self.addPaymentObserver()
                 } else {
                     self.showErrorAlertAndDismiss()
                 }
@@ -385,7 +391,46 @@ class CreateInvoiceViewController: CommonPaymentViewController {
         }
     }
     
-    func showErrorAlertAndDismiss() {
+    func addPaymentObserver() {
+        NotificationCenter.default.removeObserver(
+            self,
+            name: .onKeysendStatusReceived,
+            object: nil
+        )
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(onKeysendStatusReceived),
+            name: .onKeysendStatusReceived,
+            object: nil
+        )
+        
+        paymentTimer = Timer.scheduledTimer(
+            timeInterval: 5.0,
+            target: self,
+            selector: #selector(self.showErrorAlertAndDismiss),
+            userInfo: nil,
+            repeats: false
+        )
+    }
+    
+    @objc func onKeysendStatusReceived(n: Notification) {
+        if let tag = n.userInfo?["tag"] as? String,
+           let status = n.userInfo?["status"] as? String {
+            
+            if tag == paymentTag {
+                if status == SphinxOnionManager.kCompleteStatus {
+                    shouldDismissView()
+                } else {
+                    showErrorAlertAndDismiss()
+                }
+            }
+        }
+    }
+    
+    @objc func showErrorAlertAndDismiss() {
+        resetTimerAndObserver()
+        
         AlertHelper.showAlert(
             title: "generic.error.title".localized,
             message: "generic.error.message".localized,

@@ -127,7 +127,8 @@ class NewChatTableDataSource : NSObject {
     var webViewLoadingCompletion: ((CGFloat?) -> ())? = nil
     
     ///Data source updates queue
-    let dataSourceQueue = DispatchQueue(label: "sphinx.chat.v2.datasourceQueue")
+    let dataSourceQueue = DispatchQueue(label: "chat.datasourceQueue", attributes: .concurrent)
+    let mediaReloadQueue = DispatchQueue(label: "chat.media.datasourceQueue", attributes: .concurrent)
     
     init(
         chat: Chat?,
