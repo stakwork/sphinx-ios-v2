@@ -1325,7 +1325,8 @@ extension SphinxOnionManager {
     func sendBoostReply(
         params: [String: AnyObject],
         chat: Chat,
-        completion: @escaping (TransactionMessage?) -> ()
+        completion: @escaping (TransactionMessage?) -> (),
+        mnemonic:String?=nil
     ) {
         let pubkey = chat.getContact()?.publicKey ?? chat.ownerPubkey
         let routeHint = chat.getContact()?.routeHint
@@ -1357,7 +1358,8 @@ extension SphinxOnionManager {
             if success {
                 let message = self.finalizeSendBoostReply(
                     params: params,
-                    chat: chat
+                    chat: chat,
+                    mnemonic: mnemonic
                 )
                 completion(message)
             } else {
@@ -1394,7 +1396,8 @@ extension SphinxOnionManager {
     
     func finalizeSendBoostReply(
         params: [String: AnyObject],
-        chat:Chat
+        chat:Chat,
+        mnemonic:String?=nil
     ) -> TransactionMessage? {
         guard let text = params["text"] as? String,
             let amount = params["amount"] as? Int else{
@@ -1409,7 +1412,8 @@ extension SphinxOnionManager {
             amount: amount,
             msgType: UInt8(TransactionMessage.TransactionMessageType.boost.rawValue),
             threadUUID: nil,
-            replyUUID: params["reply_uuid"] as? String
+            replyUUID: params["reply_uuid"] as? String,
+            mnemonic: mnemonic
         )
         
         return sentMessage

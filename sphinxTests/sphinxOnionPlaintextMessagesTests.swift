@@ -511,14 +511,14 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
             return 
         }
         
-        let boost_amount_sats = 100
+        let boost_amount_msats = 100000  // Changed from 1000 to 100000
         let params: [String: AnyObject] = [
-            "text": "" as AnyObject,
-            "reply_uuid": rmUuid as AnyObject,
-            "boost": 1 as AnyObject,
-            "chat_id": chat.id as AnyObject,
             "message_price": 0 as AnyObject,
-            "amount": boost_amount_sats as AnyObject
+            "boost": 1 as AnyObject,
+            "reply_uuid": rmUuid as AnyObject,
+            "chat_id": chat.id as AnyObject,
+            "text": "" as AnyObject,
+            "amount": boost_amount_msats as AnyObject
         ]
         
         var messageResult : JSON? = nil
@@ -528,7 +528,7 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
         
         enforceDelay(delay: 8.0)
         
-        //sphinxOnionManager.sendBoostReply(params: params, chat: chat)
+        sphinxOnionManager.sendBoostReply(params: params, chat: chat, completion: {_ in},mnemonic: test_mnemonic2)
         
         enforceDelay( delay: 14.0)
         
@@ -545,7 +545,7 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
         }
         
         XCTAssert(msgType == "boost")
-        let msatsString = String(boost_amount_sats * 1000)
+        let msatsString = String(boost_amount_msats)
         XCTAssert(msatsString == msats)
         
         print(messageResult)
