@@ -192,7 +192,8 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
             "mediaKey": message.mediaKey ?? "",
             "mediaToken": message.mediaToken ?? "",
             "replyUuid": message.replyUUID ?? "",
-            "amount": message.amount ?? 0
+            "amount": message.amount ?? 0,
+            "type" : message.type
         ]
     }
     
@@ -458,7 +459,7 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
         XCTAssertTrue(receivedMessage?["content"] as? String == test_content_value)
         XCTAssertTrue(receivedMessage?["replyUuid"] as? String == originalUuid)
         print(receivedMessage)
-        
+        receivedMessage = nil
         
         //3. Make server boost initial message: yarn auto boost MYPUBKEY MYMESSSAGEUUID RANDOMSATVALUE
         guard let rand_amount = CrypterManager().generateCryptographicallySecureRandomInt(upperBound: 1000) else{
@@ -466,9 +467,11 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
             return
         }
         
+        sphinxOnionManager.readyForPing = true
         makeServerSendBoost(replyUuid: originalUuid, amount: rand_amount * 1000)
         XCTAssertTrue(receivedMessage?["replyUuid"] as? String == originalUuid)
         XCTAssertTrue(receivedMessage?["amount"] as? Int == (rand_amount))
+        XCTAssertTrue(receivedMessage?["type"] as? Int == TransactionMessage.TransactionMessageType.boost.rawValue)
         print(receivedMessage)
     }
     
