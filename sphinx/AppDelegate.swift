@@ -80,7 +80,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         try? AVAudioSession.sharedInstance().setCategory(.playback)
                 
         setAppConfiguration()
-//        registerAppRefresh()
+        registerAppRefresh()
         configureGiphy()
         configureNotificationCenter()
         configureStoreKit()
@@ -166,7 +166,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         CoreDataManager.sharedManager.saveContext()
         
-//        scheduleAppRefresh()
+        scheduleAppRefresh()
         
         NetworkMonitor.shared.stopMonitoring()
         som.disconnectMqtt()
@@ -235,11 +235,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         saveCurrentStyle()
     }
     
-//    func registerAppRefresh() {
-//        BGTaskScheduler.shared.register(forTaskWithIdentifier: "com.gl.sphinx.refresh", using: nil, launchHandler: { task in
-//            self.handleAppRefresh(task: task)
-//        })
-//    }
+    func registerAppRefresh() {
+        BGTaskScheduler.shared.register(forTaskWithIdentifier: "com.gl.sphinx.refresh", using: nil, launchHandler: { task in
+            self.handleAppRefresh(task: task)
+        })
+    }
     
     func configureSVGRendering(){
         let SVGCoder = SDImageSVGCoder.shared
@@ -366,26 +366,51 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         VideoCallManager.sharedInstance.startVideoCall(link: callLink, audioOnly: audioOnly)
     }
     
-    //Background App refresh
-//    func handleAppRefresh(task: BGTask) {
-//        scheduleAppRefresh()
-//        
-//        if !UserData.sharedInstance.isUserLogged() {
-//            return
-//        }
-//        
-//        som.reconnectToServer()
-//    }
+    func handleAppRefresh(task: BGTask) {
+        scheduleAppRefresh()
+        
+        task.expirationHandler = {
+            task.setTaskCompleted(success: false)
+        }
+        
+        let dispatchGroup = DispatchGroup()
+            
+        var newData = false
+        dispatchGroup.enter()
+        
+        if !UserData.sharedInstance.isUserLogged() {
+            newData = false
+            dispatchGroup.leave()
+            return
+        }
+        
+        som.reconnectToServer(hideRestoreViewCallback: {
+            newData = true
+            dispatchGroup.leave()
+        }, errorCallback: {
+            newData = false
+            dispatchGroup.leave()
+        })
+        
+        // Notify when all tasks are done
+        dispatchGroup.notify(queue: .main) {
+            if newData {
+                task.setTaskCompleted(success: true)
+            } else {
+                task.setTaskCompleted(success: false)
+            }
+        }
+    }
     
-//    func scheduleAppRefresh() {
-//        let request = BGAppRefreshTaskRequest(identifier: "com.gl.sphinx.refresh")
-//        request.earliestBeginDate = Date(timeIntervalSinceNow: 15 * 60)
-//        do {
-//            try BGTaskScheduler.shared.submit(request)
-//        } catch {
-//            print("Could not schedule app refresh \(error)")
-//        }
-//    }
+    func scheduleAppRefresh() {
+        let request = BGAppRefreshTaskRequest(identifier: "com.gl.sphinx.refresh")
+        request.earliestBeginDate = Date(timeIntervalSinceNow: 15 * 60)
+        do {
+            try BGTaskScheduler.shared.submit(request)
+        } catch {
+            print("Could not schedule app refresh \(error)")
+        }
+    }
 
     //App stylre
     func saveCurrentStyle() {
