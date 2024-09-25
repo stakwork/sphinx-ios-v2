@@ -241,6 +241,40 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
         enforceDelay(delay: 10.0)
     }
     
+    func makeServerSendDirectPayment(amount: Int, muid: String? = nil, content: String? = nil) {
+        NotificationCenter.default.addObserver(self, selector: #selector(handleNewOnionMessageReceived), name: .newOnionMessageWasReceived, object: nil)
+        
+        guard let profile = UserContact.getOwner(),
+              let pubkey = profile.publicKey else {
+            XCTFail("Failed to establish self contact")
+            return
+        }
+
+        // Convert amount from sats to msats
+        let amountMsats = amount * 1000
+
+        var additionalParams: [String] = []
+        if let muid = muid {
+            additionalParams.append(muid)
+        }
+        if let content = content {
+            additionalParams.append(content)
+        }
+
+        // Send direct payment command
+        sendRemoteServerMessageRequest(
+            cmd: "send_direct_payment",
+            pubkey: pubkey,
+            theMsg: "",
+            amount: amountMsats,
+            useAmount: true,
+            useMsg: false,
+            additionalParams: additionalParams
+        )
+
+        enforceDelay(delay: 10.0)
+    }
+    
     func sendTestMessage(
         content:String,
         replyUuid:String?=nil
@@ -547,8 +581,19 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
         
     }
     
-    func test_send_receive_direct_payment_3_7(){
+    func test_receive_direct_payment_3_7() {
+        guard let rand_dp_amount = CrypterManager().generateCryptographicallySecureRandomInt(upperBound: 100) else{
+            XCTFail()
+            return
+        }
         
+        sphinxOnionManager.readyForPing = true
+        makeServerSendDirectPayment(amount: rand_dp_amount)
+        
+        XCTAssertTrue(receivedMessage != nil)
+        XCTAssertTrue(receivedMessage?["type"] as? Int == TransactionMessage.TransactionMessageType.directPayment.rawValue)
+        XCTAssertTrue(receivedMessage?["amount"] as? Int == rand_dp_amount)
+        // Add more assertions as needed
     }
     
     func test_send_direct_payment_3_8(){
