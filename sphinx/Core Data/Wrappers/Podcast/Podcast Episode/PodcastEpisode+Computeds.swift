@@ -37,7 +37,7 @@ extension PodcastEpisode {
     func getLocalFileName() -> String? {
         let itemID = itemID
         
-        guard let feedId = feed?.feedID, !feedId.isEmpty, !itemID.isEmpty else {
+        guard let feedId = feedID, !feedId.isEmpty, !itemID.isEmpty else {
             return nil
         }
         
@@ -89,7 +89,9 @@ extension PodcastEpisode {
                 if FileManager.default.fileExists(atPath: path.path) {
                     try? FileManager.default.removeItem(at: path)
                     
-                    self.feed?.updateLastDownloadedEpisodeWith(id: nil)
+                    if let feedID = self.feedID, let feed = ContentFeed.getFeedById(feedId: feedID) {
+                        feed.lastDownloadedEpisodeId = nil
+                    }
                     
                     deleteCompletion()
                 }

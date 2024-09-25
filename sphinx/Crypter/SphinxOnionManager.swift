@@ -36,7 +36,6 @@ class SphinxOnionManager : NSObject {
     var stashedInviteCode: String? = nil
     var stashedInviterAlias: String? = nil
     
-    var watchdogTimer: Timer? = nil
     var reconnectionTimer: Timer? = nil
     var sendTimeoutTimers: [String: Timer] = [:]
     

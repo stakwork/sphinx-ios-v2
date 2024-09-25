@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol MediaStorageSourceTableViewCellDelegate{
+protocol MediaStorageSourceTableViewCellDelegate: class {
     func didTapItemDelete(index:Int)
 }
 
@@ -28,7 +28,7 @@ class MediaStorageSourceTableViewCell: UITableViewCell {
     
     
     var index : Int? = nil
-    var delegate: MediaStorageSourceTableViewCellDelegate? = nil
+    weak var delegate: MediaStorageSourceTableViewCellDelegate? = nil
     
     static let reuseID = "MediaStorageSourceTableViewCell"
 
@@ -144,13 +144,18 @@ class MediaStorageSourceTableViewCell: UITableViewCell {
         mediaSourceSizeLabel.text = (mediaSizeText == "0 MB") ? "<1MB" : mediaSizeText
     }
     
-    func configure(podcastEpisode:PodcastEpisode,item:StorageManagerItem,index:Int,isSelected:Bool){
+    func configure(
+        podcastEpisode: PodcastEpisode,
+        item: StorageManagerItem,
+        index: Int,
+        isSelected: Bool
+    ){
         mediaSourceLabel.text = podcastEpisode.title
         initialsLabel.isHidden = true
-        if let imageURL = URL(string: podcastEpisode.imageToShow ?? podcastEpisode.feed?.imageToShow ?? ""){
+        
+        if let imageURL = URL(string: podcastEpisode.imageToShow ?? "") {
             squareImageView.sd_setImage(with: imageURL)
-        }
-        else{
+        } else {
             squareImageView.image = #imageLiteral(resourceName: "podcastTypeIcon")
         }
         

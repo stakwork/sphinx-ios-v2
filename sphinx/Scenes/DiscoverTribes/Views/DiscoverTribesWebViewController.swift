@@ -10,7 +10,7 @@ import Foundation
 import UIKit
 
 
-protocol DiscoverTribesWVVCDelegate{
+protocol DiscoverTribesWVVCDelegate: class {
     func handleDeeplinkClick()
 }
 
@@ -35,7 +35,7 @@ class DiscoverTribesWebViewController : UIViewController{
     var currentTags : [String] = []
     
     var discoverTribesTableViewDataSource : DiscoverTribeTableViewDataSource? = nil
-    var delegate: DiscoverTribesWVVCDelegate? = nil
+    weak var delegate: DiscoverTribesWVVCDelegate? = nil
     
     static func instantiate() -> DiscoverTribesWebViewController {
         let viewController = StoryboardScene.Welcome.discoverTribesWebViewController.instantiate()

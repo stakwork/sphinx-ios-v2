@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol ItemDescriptionTableViewHeaderCellDelegate{
+protocol ItemDescriptionTableViewHeaderCellDelegate: class {
     func didTogglePausePlay()
     func itemShareTapped(episode:PodcastEpisode)
     func itemShareTapped(video:Video)
@@ -33,8 +33,7 @@ class ItemDescriptionTableViewHeaderCell: UITableViewCell {
     @IBOutlet weak var downloadProgressBar: CircularProgressView!
     
     func isRecommendationVideo() -> Bool {
-        if let episode = episode,
-           episode.isYoutubeVideo && episode.feed?.feedID == "Recommendations-Feed"{
+        if let episode = episode, episode.isYoutubeVideo && episode.isRecommendationsPodcast {
             return true
         }
         return false
@@ -43,7 +42,7 @@ class ItemDescriptionTableViewHeaderCell: UITableViewCell {
     weak var episode:PodcastEpisode?=nil
     weak var video:Video? = nil
     
-    var delegate:ItemDescriptionTableViewHeaderCellDelegate? = nil
+    weak var delegate:ItemDescriptionTableViewHeaderCellDelegate? = nil
     
     override func awakeFromNib() {
         super.awakeFromNib()

@@ -14,7 +14,7 @@ protocol ChatSearchResultsBarDelegate : class {
 
 class ChatSearchResultsBar: UIView {
     
-    var delegate: ChatSearchResultsBarDelegate?
+    weak var delegate: ChatSearchResultsBarDelegate?
     
     @IBOutlet var contentView: UIView!
 

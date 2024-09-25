@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol DiscoverTribesCellDelegate{
+protocol DiscoverTribesCellDelegate: class {
     func handleJoin(url:URL)
 }
 
@@ -21,7 +21,7 @@ class DiscoverTribesTableViewCell: UITableViewCell {
     @IBOutlet weak var joinButton: UIButton!
     
     var tribeData: DiscoverTribeData? = nil
-    var delegate : DiscoverTribesCellDelegate? = nil
+    weak var delegate : DiscoverTribesCellDelegate? = nil
     
     static let reuseID = "DiscoverTribesTableViewCell"
     

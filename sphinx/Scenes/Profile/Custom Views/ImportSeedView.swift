@@ -8,8 +8,8 @@
 
 import UIKit
 
-protocol ImportSeedViewDelegate : NSObject{
-    func showImportSeedView(network:String,host:String,relay:String)//TODO: review this before shipping prod. May not need this anymore
+protocol ImportSeedViewDelegate : class {
+    func showImportSeedView(network: String, host: String, relay: String)
     func showImportSeedView()
     func didTapCancelImportSeed()
     func didTapConfirm()
@@ -30,7 +30,7 @@ class ImportSeedView: UIView {
     @IBOutlet weak var activityViewContainer: UIView!
     @IBOutlet weak var activityView: UIActivityIndicatorView!
     
-    var delegate : ImportSeedViewDelegate? = nil
+    weak var delegate : ImportSeedViewDelegate? = nil
     var context : ImportSeedViewPresentationContext = .Swarm
     
     var originalFrame: CGRect = .zero

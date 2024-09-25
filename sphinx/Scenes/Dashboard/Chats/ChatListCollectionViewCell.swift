@@ -30,7 +30,7 @@ class ChatListCollectionViewCell: UICollectionViewCell {
     @IBOutlet weak var pendingContactDashedLineView: UIView!
     @IBOutlet weak var contactViewContainerWidth: NSLayoutConstraint!
     
-    var delegate : ChatListCollectionViewCellDelegate? = nil
+    weak var delegate : ChatListCollectionViewCellDelegate? = nil
     
     var chatListObject: ChatListCommonObject? {
         didSet {

@@ -9,11 +9,11 @@
 import Foundation
 import UIKit
 
-protocol ProfileManageStorageSpecificChatOrContentFeedItemVCDelegate : NSObject{
+protocol ProfileManageStorageSpecificChatOrContentFeedItemVCDelegate : class {
     func finishedDeleteAll(feedID:String)
 }
 
-public enum ProfileManageStorageSpecificChatOrContentFeedItemVCState{
+public enum ProfileManageStorageSpecificChatOrContentFeedItemVCState {
     case single
     case batch
 }
@@ -42,7 +42,7 @@ class ProfileManageStorageSpecificChatOrContentFeedItemVC : UIViewController{
     var chat : Chat? = nil
     var podcastFeed: PodcastFeed? = nil
     var items : [StorageManagerItem] = []
-    var delegate : ProfileManageStorageSpecificChatOrContentFeedItemVCDelegate? = nil
+    weak var delegate : ProfileManageStorageSpecificChatOrContentFeedItemVCDelegate? = nil
     var isFirstLoad:Bool = true
     var deleteAllInProcess : Bool = false
     

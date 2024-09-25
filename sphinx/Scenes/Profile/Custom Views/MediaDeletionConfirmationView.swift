@@ -10,7 +10,7 @@ import Foundation
 import UIKit
 
 
-protocol MediaDeletionConfirmationViewDelegate : NSObject{
+protocol MediaDeletionConfirmationViewDelegate : class {
     func mediaDeletionCancelTapped()
     func mediaDeletionConfirmTapped()
 }
@@ -56,7 +56,7 @@ class MediaDeletionConfirmationView: UIView {
             }
         }
     }
-    var delegate : MediaDeletionConfirmationViewDelegate? = nil
+    weak var delegate : MediaDeletionConfirmationViewDelegate? = nil
     var type: StorageManagerMediaType? = nil {
         didSet{
            if let typeString = getContentTypeString(){

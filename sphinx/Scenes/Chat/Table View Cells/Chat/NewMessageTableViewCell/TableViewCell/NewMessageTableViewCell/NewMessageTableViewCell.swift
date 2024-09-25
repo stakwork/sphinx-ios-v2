@@ -32,7 +32,6 @@ protocol ChatTableViewCellProtocol: class {
         threadOriginalMsgMediaData: MessageTableCellState.MediaData?,
         tribeData: MessageTableCellState.TribeData?,
         linkData: MessageTableCellState.LinkData?,
-        botWebViewData: MessageTableCellState.BotWebViewData?,
         uploadProgressData: MessageTableCellState.UploadProgressData?,
         delegate: NewMessageTableViewCellDelegate?,
         searchingTerm: String?,
@@ -51,7 +50,6 @@ protocol NewMessageTableViewCellDelegate: class {
     func shouldLoadLinkImageDataFor(messageId: Int, and rowIndex: Int)
     func shouldLoadTextDataFor(messageId: Int, and rowIndex: Int)
     func shouldLoadLinkDataFor(messageId: Int, and rowIndex: Int)
-    func shouldLoadBotWebViewDataFor(messageId: Int, and rowIndex: Int)
     func shouldLoadAudioDataFor(messageId: Int, and rowIndex: Int)
     func shouldPodcastCommentDataFor(messageId: Int, and rowIndex: Int)
     
@@ -108,7 +106,6 @@ class NewMessageTableViewCell: CommonNewMessageTableViewCell, ChatTableViewCellP
     
     ///Constraints
     @IBOutlet weak var bubbleWidthConstraint: NSLayoutConstraint!
-    @IBOutlet weak var botResponseViewHeightConstraint: NSLayoutConstraint!
     
     ///First Container
     @IBOutlet weak var messageReplyView: NewMessageReplyView! 
@@ -129,7 +126,6 @@ class NewMessageTableViewCell: CommonNewMessageTableViewCell, ChatTableViewCellP
     @IBOutlet weak var podcastAudioView: PodcastAudioView!
     @IBOutlet weak var callLinkView: JoinVideoCallView!
     @IBOutlet weak var podcastBoostView: PodcastBoostView!
-    @IBOutlet weak var botResponseView: BotResponseView!
     
     ///Thirs Container
     @IBOutlet weak var textMessageView: UIView!
@@ -167,7 +163,6 @@ class NewMessageTableViewCell: CommonNewMessageTableViewCell, ChatTableViewCellP
         threadOriginalMsgMediaData: MessageTableCellState.MediaData?,
         tribeData: MessageTableCellState.TribeData?,
         linkData: MessageTableCellState.LinkData?,
-        botWebViewData: MessageTableCellState.BotWebViewData?,
         uploadProgressData: MessageTableCellState.UploadProgressData?,
         delegate: NewMessageTableViewCellDelegate?,
         searchingTerm: String?,
@@ -229,7 +224,6 @@ class NewMessageTableViewCell: CommonNewMessageTableViewCell, ChatTableViewCellP
         configureWith(podcastBoost: mutableMessageCellState.podcastBoost)
         configureWith(messageMedia: mutableMessageCellState.messageMedia, mediaData: mediaData, and: bubble)
         configureWith(genericFile: mutableMessageCellState.genericFile, mediaData: mediaData)
-        configureWith(botHTMLContent: mutableMessageCellState.botHTMLContent, botWebViewData: botWebViewData)
         configureWith(audio: mutableMessageCellState.audio, mediaData: mediaData, and: bubble)
         configureWith(podcastComment: mutableMessageCellState.podcastComment, mediaData: mediaData, and: bubble)
         

@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol MediaStorageTypeSummaryTableViewCellDelegate : NSObject{
+protocol MediaStorageTypeSummaryTableViewCellDelegate : class {
     func didTapDelete(type:StorageManagerMediaType)
 }
 
@@ -20,7 +20,7 @@ class MediaStorageTypeSummaryTableViewCell: UITableViewCell {
     @IBOutlet weak var deleteButton: UIButton!
     @IBOutlet weak var spinner: UIActivityIndicatorView!
     
-    var delegate : MediaStorageTypeSummaryTableViewCellDelegate? = nil
+    weak var delegate : MediaStorageTypeSummaryTableViewCellDelegate? = nil
     var type: StorageManagerMediaType? = nil
     
     static let reuseID = "MediaStorageTypeSummaryTableViewCell"

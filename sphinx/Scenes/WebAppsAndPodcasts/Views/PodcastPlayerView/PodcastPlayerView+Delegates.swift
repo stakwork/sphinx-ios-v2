@@ -73,16 +73,20 @@ extension PodcastPlayerView : PlayerDelegate {
     func handleQueueActions(){
         let fm = FeedsManager.sharedInstance
         let queued = fm.queuedPodcastEpisodes
-        print(queued)
-        if let queuedEpisode = FeedsManager.sharedInstance.queuedPodcastEpisodes.first,
-           let feed = queuedEpisode.feed,
-           let delegate = delegate as? NewPodcastPlayerViewController,
-           let delegatesDelegate = delegate.delegate as? DashboardRootViewController,
-           let podcast = FeedsManager.sharedInstance.getPodcastAndEpisodeFromPodcastFeed(pf: feed , itemID: queuedEpisode.itemID).0,
-           let episode = FeedsManager.sharedInstance.getPodcastAndEpisodeFromPodcastFeed(pf: feed , itemID: queuedEpisode.itemID).1 {
-            delegate.dismiss(animated: true)
-            delegatesDelegate.presentPodcastPlayerFor(podcast,queuedEpisode: episode)
-            //delegate.pla
+        
+        if let queuedEpisode = FeedsManager.sharedInstance.queuedPodcastEpisodes.first {
+            if let feedID = queuedEpisode.feedID, let contentFeed = ContentFeed.getFeedById(feedId: feedID) {
+                let feed = PodcastFeed.convertFrom(contentFeed: contentFeed)
+                
+                if let delegate = delegate as? NewPodcastPlayerViewController,
+                   let delegatesDelegate = delegate.delegate as? DashboardRootViewController,
+                   let podcast = FeedsManager.sharedInstance.getPodcastAndEpisodeFromPodcastFeed(pf: feed , itemID: queuedEpisode.itemID).0,
+                   let episode = FeedsManager.sharedInstance.getPodcastAndEpisodeFromPodcastFeed(pf: feed , itemID: queuedEpisode.itemID).1 
+                {
+                    delegate.dismiss(animated: true)
+                    delegatesDelegate.presentPodcastPlayerFor(podcast,queuedEpisode: episode)
+                }
+            }
         }
     }
 }

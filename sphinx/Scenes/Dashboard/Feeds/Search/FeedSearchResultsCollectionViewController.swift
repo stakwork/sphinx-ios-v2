@@ -19,7 +19,7 @@ class FeedSearchResultsCollectionViewController: UICollectionViewController {
     var feedSearchResults: [FeedSearchResult]!
     
     var interSectionSpacing: CGFloat = 0.0
-    var delegate : FeedSearchResultsCollectionViewControllerDelegate? = nil
+    weak var delegate : FeedSearchResultsCollectionViewControllerDelegate? = nil
 
     var onSubscribedFeedCellSelected: ((FeedSearchResult) -> Void)!
     var onFeedSearchResultCellSelected: ((FeedSearchResult) -> Void)!

@@ -373,7 +373,7 @@ extension AllTribeFeedsCollectionViewController {
 
     func makeCellProvider(for collectionView: UICollectionView) -> DataSource.CellProvider {
         { [weak self] (collectionView, indexPath, dataSourceItem) -> UICollectionViewCell? in
-            guard let self else {
+            guard let _ = self else {
                 return nil
             }
             
@@ -780,9 +780,9 @@ extension AllTribeFeedsCollectionViewController {
                 recommendedFeeds,
                 recommendation.id
             )
-        } else if let episode = dataSourceItem.episodeEntity?.0, let feed = episode.feed {
+        } else if let episode = dataSourceItem.episodeEntity?.0, let feedID = episode.feedID     {
             onDownloadedItemSelected?(
-                feed.feedID,
+                feedID,
                 episode.itemID
             )
         }

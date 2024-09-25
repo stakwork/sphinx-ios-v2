@@ -196,8 +196,6 @@ extension SphinxOnionManager {
         lastMessageIndex: Int,
         msgCountLimit: Int
     ){
-        startWatchdogTimer()
-        
         do {
             let rr = try fetchFirstMsgsPerKey(
                 seed: seed,
@@ -275,8 +273,6 @@ extension SphinxOnionManager {
         reverse: Bool
     ) {
         let safeLastMsgIndex = max(lastMessageIndex, 0)
-        
-        startWatchdogTimer()
         
         do {
             let rr = try fetchMsgsBatch(
@@ -651,35 +647,6 @@ extension SphinxOnionManager {
             chat.status = Chat.ChatStatus.rejected.rawValue
         }
     }
-
-    func endWatchdogTime() {
-        watchdogTimer?.invalidate()
-        watchdogTimer = nil
-    }
-    
-    func startWatchdogTimer() {
-        watchdogTimer?.invalidate()
-        
-        watchdogTimer = Timer.scheduledTimer(
-            timeInterval: 10.0,
-            target: self,
-            selector: #selector(watchdogTimerFired),
-            userInfo: nil,
-            repeats: false
-        )
-    }
-    
-    @objc func watchdogTimerFired() {
-        onMessageRestoredCallback = nil
-        firstSCIDMsgsCallback = nil
-        totalMsgsCountCallback = nil
-        
-        messageFetchParams = nil
-        chatsFetchParams = nil
-        
-        endWatchdogTime()
-        resetFromRestore()
-    }
     
     func attempFinishResotoration() {
         messageFetchParams = nil
@@ -697,7 +664,6 @@ extension SphinxOnionManager {
         restoredContactInfoTracker = []
         
         requestPings()
-        endWatchdogTime()
         resetFromRestore()
         updateRoutingInfo()
         

@@ -14,7 +14,7 @@ protocol SubscriptionFormRowDelegate: class {
 
 class SubscriptionFormButtonTableViewCell: UITableViewCell {
     
-    var delegate: SubscriptionFormRowDelegate!
+    weak var delegate: SubscriptionFormRowDelegate!
 
     @IBOutlet weak var shadowView: UIView!
     @IBOutlet weak var subscribeButton: UIButton!

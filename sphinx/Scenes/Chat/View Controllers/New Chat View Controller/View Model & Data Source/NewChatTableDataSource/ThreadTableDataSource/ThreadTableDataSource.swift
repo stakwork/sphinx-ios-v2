@@ -7,7 +7,6 @@
 //
 
 import UIKit
-import WebKit
 import CoreData
 
 class ThreadTableDataSource : NewChatTableDataSource {
@@ -25,7 +24,6 @@ class ThreadTableDataSource : NewChatTableDataSource {
         headerImageView: UIImageView?,
         bottomView: UIView,
         headerView: UIView,
-        webView: WKWebView,
         delegate: NewChatTableDataSourceDelegate?
     ) {
         
@@ -38,7 +36,6 @@ class ThreadTableDataSource : NewChatTableDataSource {
             headerImageView: headerImageView,
             bottomView: bottomView,
             headerView: headerView,
-            webView: webView,
             delegate: delegate
         )
     }
