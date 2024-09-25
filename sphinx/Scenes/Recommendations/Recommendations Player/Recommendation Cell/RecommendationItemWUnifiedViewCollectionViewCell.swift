@@ -10,7 +10,7 @@ import UIKit
 
 class RecommendationItemWUnifiedViewCollectionViewCell: UICollectionViewCell {
     
-    @IBOutlet weak var unifiedEpisodeView: UnifiedEpisodeView!
+    @IBOutlet weak var unifiedEpisodeView: NewUnifiedEpisodeView!
     
     weak var delegate : FeedItemRowDelegate?
     
@@ -23,11 +23,11 @@ class RecommendationItemWUnifiedViewCollectionViewCell: UICollectionViewCell {
         andDelegate delegate: FeedItemRowDelegate,
         isPlaying: Bool
     ) {
-        if let feed = item.feed {
+        if let feedID = item.feedID, let contentFeed = ContentFeed.getFeedById(feedId: feedID) {
             self.delegate = delegate
             
             unifiedEpisodeView.configureWith(
-                podcast: feed,
+                podcast: PodcastFeed.convertFrom(contentFeed: contentFeed),
                 and: item,
                 download: nil,
                 delegate: self,

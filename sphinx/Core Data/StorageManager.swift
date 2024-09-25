@@ -231,7 +231,7 @@ class StorageManager {
     }
     
     func processGarbageCleanup(){
-        if(garbageCleanIsInProgress == false){
+        if (garbageCleanIsInProgress == false) {
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0, execute: {
                 self.refreshAllStoredData {
                     self.cleanupGarbage(completion: {
@@ -554,7 +554,7 @@ class StorageManager {
     }
     
     //returns an array of structs describing each downloaded podcast episode
-    func getDownloadedPodcastEpisodeList()->[StorageManagerItem]{
+    func getDownloadedPodcastEpisodeList() -> [StorageManagerItem]{
         downloadedPods = []
         let pairs = extractFeedItemIdPairs()
         var storageItems = [StorageManagerItem]()
@@ -575,8 +575,20 @@ class StorageManager {
                 //2. Extract the size value in MB
                 for item in downloadedItems{
                     if let size = item.getFileSizeMB(){
-                        let newItem = StorageManagerItem(source: .podcasts, type: .audio, sizeMB: size, label: "\(item.feed?.title ?? "Unknown Feed")- \(item.title ?? "Unknown Episode Title")",date: item.datePublished ?? (Date()),sourceFilePath: item.getLocalFileName(),uid: item.itemID)
-                        storageItems.append(newItem)
+                        
+                        if let feedID = item.feedID, let contentFeed = ContentFeed.getFeedById(feedId: feedID) {
+                            let newItem = StorageManagerItem(
+                                source: .podcasts,
+                                type: .audio,
+                                sizeMB: size,
+                                label: "\(contentFeed.title ?? "Unknown Feed") - \(item.title ?? "Unknown Episode Title")",
+                                date: item.datePublished ?? (Date()),
+                                sourceFilePath: item.getLocalFileName(),
+                                uid: item.itemID
+                            )
+                            
+                            storageItems.append(newItem)
+                        }
                     }
                 }
             }

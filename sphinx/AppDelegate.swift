@@ -455,16 +455,33 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         didReceiveRemoteNotification userInfo: [AnyHashable : Any],
         fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
     ) {
+        let dispatchGroup = DispatchGroup()
+            
+        var newData = false
+        dispatchGroup.enter()  // Enter the group before starting the task
+        
         if !UserData.sharedInstance.isUserLogged() {
-            completionHandler(.noData)
+            newData = false
+            dispatchGroup.leave()
             return
         }
         
         som.reconnectToServer(hideRestoreViewCallback: {
-            completionHandler(.newData)
+            newData = true
+            dispatchGroup.leave()
         }, errorCallback: {
-            completionHandler(.noData)
+            newData = false
+            dispatchGroup.leave()
         })
+        
+        // Notify when all tasks are done
+        dispatchGroup.notify(queue: .main) {
+            if newData {
+                completionHandler(.newData)
+            } else {
+                completionHandler(.noData)
+            }
+        }
     }
 
     func userNotificationCenter(

@@ -14,7 +14,7 @@ import WebKit
 import SwiftyJSON
 import ObjectMapper
 
-protocol WebAppHelperDelegate : NSObject{
+protocol WebAppHelperDelegate : class {
     func setBudget(budget:Int)
 }
 
@@ -60,7 +60,7 @@ class WebAppHelper : NSObject {
     var authorizeBudgetHandler: (([String: AnyObject]) -> ())! = nil
     
     var persistingValues: [String: AnyObject] = [:]
-    var delegate : WebAppHelperDelegate? = nil
+    weak var delegate : WebAppHelperDelegate? = nil
     
     var lsatInProgress: LSatInProgress? = nil
     var lsatTimer: Timer? = nil

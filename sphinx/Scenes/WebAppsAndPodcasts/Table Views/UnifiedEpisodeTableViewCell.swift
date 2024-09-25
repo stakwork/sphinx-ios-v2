@@ -10,7 +10,7 @@ import UIKit
 
 class UnifiedEpisodeTableViewCell: UITableViewCell {
     
-    @IBOutlet weak var unifiedEpisodeView: UnifiedEpisodeView!
+    @IBOutlet weak var unifiedEpisodeView: NewUnifiedEpisodeView!
     
     weak var delegate : FeedItemRowDelegate?
 
@@ -38,6 +38,12 @@ class UnifiedEpisodeTableViewCell: UITableViewCell {
             playing: playing,
             playingSound: playingSound
         )
+    }
+    
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        
+        unifiedEpisodeView.prepareForReuse()
     }
     
 }

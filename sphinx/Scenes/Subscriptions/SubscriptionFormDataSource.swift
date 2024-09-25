@@ -28,7 +28,7 @@ struct TableSection {
 
 class SubscriptionFormDataSource : NSObject {
     
-    var delegate: SubscriptionFormDataSourceDelegate!
+    weak var delegate: SubscriptionFormDataSourceDelegate!
     
     let firstSection = TableSection(title: "amount.upper".localized, rowsCount: 1, rowsHeight: [250.0])
     var secondSection = TableSection(title: "time.interval.upper".localized, rowsCount: 1, rowsHeight: [200.0])

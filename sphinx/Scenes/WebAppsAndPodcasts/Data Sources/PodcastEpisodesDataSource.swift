@@ -117,10 +117,13 @@ extension PodcastEpisodesDataSource : UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        tableView.dequeueReusableCell(
+        if let cell = tableView.dequeueReusableCell(
             withIdentifier: "UnifiedEpisodeTableViewCell",
             for: indexPath
-        ) as! UnifiedEpisodeTableViewCell
+        ) as? UnifiedEpisodeTableViewCell {
+            return cell
+        }
+        return UITableViewCell()
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {

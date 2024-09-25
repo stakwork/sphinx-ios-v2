@@ -10,8 +10,8 @@ import Foundation
 import UIKit
 
 
-protocol DiscoverTribesTagSelectionDelegate{
-    func didSelect(selections:[String])
+protocol DiscoverTribesTagSelectionDelegate: class {
+    func didSelect(selections: [String])
 }
 
 class DiscoverTribesTagSelectionVC : UIViewController{
@@ -27,7 +27,7 @@ class DiscoverTribesTagSelectionVC : UIViewController{
     
     @IBOutlet weak var tagsSelectionViewBottomConstraint: NSLayoutConstraint!
     
-    var delegate : DiscoverTribesTagSelectionDelegate?
+    weak var delegate : DiscoverTribesTagSelectionDelegate?
     
     lazy var discoverTribeTagSelectionVM: DiscoverTribesTagSelectionVM = {
         return DiscoverTribesTagSelectionVM(vc: self, collectionView: collectionView)

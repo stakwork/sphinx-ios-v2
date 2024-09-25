@@ -29,7 +29,7 @@ enum MessagesFieldMode: Int {
 
 class ChatMessageTextFieldView: UIView {
     
-    var delegate: ChatMessageTextFieldViewDelegate?
+    weak var delegate: ChatMessageTextFieldViewDelegate?
 
     @IBOutlet var contentView: UIView!
     

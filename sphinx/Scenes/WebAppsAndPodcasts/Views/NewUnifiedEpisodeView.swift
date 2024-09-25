@@ -1,12 +1,11 @@
 //
-//  UnifiedEpisodeView.swift
+//  NewUnifiedEpisodeView.swift
 //  sphinx
 //
-//  Created by James Carucci on 3/6/23.
-//  Copyright © 2023 sphinx. All rights reserved.
+//  Created by Tomas Timinskas on 25/09/2024.
+//  Copyright © 2024 sphinx. All rights reserved.
 //
 
-import Foundation
 import UIKit
 import Lottie
 
@@ -41,7 +40,7 @@ protocol VideoRowDelegate : class {
     func shouldStartDownloading(video:Video)
 }
 
-class UnifiedEpisodeView : UIView {
+class NewUnifiedEpisodeView: UIView {
     
     @IBOutlet var contentView: UIView!
     
@@ -67,9 +66,8 @@ class UnifiedEpisodeView : UIView {
     @IBOutlet weak var animationContainer: UIView!
     @IBOutlet weak var animationView: AnimationView!
     
-    
-    var episode: PodcastEpisode! = nil
-    var videoEpisode: Video! = nil
+    weak var episode: PodcastEpisode! = nil
+    weak var videoEpisode: Video! = nil
     
     weak var podcastDelegate: PodcastEpisodeRowDelegate?
     weak var videoDelegate: VideoRowDelegate?
@@ -77,19 +75,19 @@ class UnifiedEpisodeView : UIView {
     var thumbnailImageViewURL: URL? {
         videoEpisode.thumbnailURL
     }
-    
+
     override init(frame: CGRect) {
         super.init(frame: frame)
         setup()
     }
-    
+
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         setup()
     }
-    
+
     private func setup() {
-        Bundle.main.loadNibNamed("UnifiedEpisodeView", owner: self, options: nil)
+        Bundle.main.loadNibNamed("NewUnifiedEpisodeView", owner: self, options: nil)
         addSubview(contentView)
         contentView.frame = self.bounds
         contentView.autoresizingMask = [.flexibleHeight, .flexibleWidth]
@@ -99,6 +97,10 @@ class UnifiedEpisodeView : UIView {
         roundCorners()
         configureAnimation()
         configureButtons()
+    }
+    
+    func prepareForReuse() {
+        animationView.stop()
     }
     
     func configureButtons() {
@@ -242,7 +244,7 @@ class UnifiedEpisodeView : UIView {
         episodeImageView.isUserInteractionEnabled = true
         descriptionLabel.isUserInteractionEnabled = true
         
-        if (episode.feed?.feedID == "Recommendations-Feed"){
+        if episode.isRecommendationsPodcast {
             timeRemainingLabel.isHidden = episode.isYoutubeVideo
             didPlayImageView.isHidden = (didPlayImageView.isHidden || episode.isYoutubeVideo)
             dotView.isHidden = true
@@ -302,6 +304,7 @@ class UnifiedEpisodeView : UIView {
             let valid_time = episode.currentTime, valid_time > 0 {
             let percentage = max(Float(valid_time) / Float(valid_duration), Float(0.075))
             let newProgressWidth = (percentage * Float(fullWidth))
+            
             DispatchQueue.main.async {
                 self.progressWidthConstraint.constant = CGFloat(newProgressWidth)
                 
@@ -353,7 +356,6 @@ class UnifiedEpisodeView : UIView {
     }
     
     //End Networking
-    
     func updateDownloadState(_ download: Download) {
         let progress = CGFloat(download.progress) / CGFloat(100)
         downloadProgressBar.progressAnimation(to: progress, active: download.isDownloading)
@@ -374,7 +376,6 @@ class UnifiedEpisodeView : UIView {
     }
     
     @IBAction func downloadButtonTouched() {
-        print("touched!")
         if let episode = episode,
            !episode.isDownloaded {
             downloadProgressBar.progressAnimation(to: 0, active: true)
@@ -383,7 +384,6 @@ class UnifiedEpisodeView : UIView {
         else if let video = videoEpisode,
                 !video.isDownloaded,
             let vd = videoDelegate as? RecommendationItemWUnifiedViewCollectionViewCell{
-            print("downloading video!")
             vd.shouldStartDownloading(video: video)
         }
     }
@@ -403,5 +403,5 @@ class UnifiedEpisodeView : UIView {
             podcastDelegate?.shouldShowMore(episode: episode)
         }
     }
-    
+
 }

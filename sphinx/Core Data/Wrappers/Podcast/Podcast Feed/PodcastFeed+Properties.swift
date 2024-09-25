@@ -109,12 +109,6 @@ extension PodcastFeed {
         
         return podcastFeed
     }
-    
-    public func updateLastDownloadedEpisodeWith(id: String?) {
-        if let feed = ContentFeed.getFeedById(feedId: feedID) {
-            feed.lastDownloadedEpisodeId = id
-        }
-    }
 }
 
 extension PodcastFeed: Identifiable {}

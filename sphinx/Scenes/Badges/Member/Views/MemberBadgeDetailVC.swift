@@ -28,7 +28,7 @@ class MemberBadgeDetailVC : UIViewController{
     private lazy var loadingViewController = LoadingViewController(backgroundColor: UIColor.clear)
     
     var presentationContext : MemberBadgeDetailPresentationContext = .admin
-    var delegate : TribeMemberViewDelegate? = nil
+    weak var delegate : TribeMemberViewDelegate? = nil
     var loadingView: UIView? = nil
     var chatID: Int? = nil
 

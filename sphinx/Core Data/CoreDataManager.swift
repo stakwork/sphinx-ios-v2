@@ -244,8 +244,8 @@ class CoreDataManager {
         return nil
     }
     
-    func deleteObject(object: NSManagedObject) {
-        let managedContext = persistentContainer.viewContext
+    func deleteObject(object: NSManagedObject, context: NSManagedObjectContext? = nil) {
+        let managedContext = context ?? persistentContainer.viewContext
         managedContext.performAndWait {
             managedContext.delete(object)
         }

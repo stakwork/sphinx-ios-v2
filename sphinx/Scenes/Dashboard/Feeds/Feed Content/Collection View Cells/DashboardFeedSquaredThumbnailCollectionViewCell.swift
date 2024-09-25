@@ -219,7 +219,7 @@ extension VideoFeed: DashboardFeedSquaredThumbnailCollectionViewItem {
 extension PodcastEpisode: DashboardFeedSquaredThumbnailCollectionViewItem {
     
     var imageToShow: String? {
-        imageURLPath ?? feed?.imageURLPath
+        imageURLPath ?? feedImageURLPath
     }
     
     var placeholderImageName: String? {

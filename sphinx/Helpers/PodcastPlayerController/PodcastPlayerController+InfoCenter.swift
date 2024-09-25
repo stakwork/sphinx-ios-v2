@@ -43,7 +43,7 @@ extension PodcastPlayerController {
             if let image = self.playingEpisodeImage{
                 return image
             }
-            else if let url = URL(string: episode.feed?.imageURLPath ?? "") {
+            else if let url = URL(string: episode.feedImageURLPath ?? "") {
                 let session = URLSession.shared
                 let task = session.dataTask(with: url) { (data, response, error) in
                     if let error = error {

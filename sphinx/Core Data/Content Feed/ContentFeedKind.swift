@@ -12,13 +12,13 @@ public enum FeedSource: Int16{
 }
 
 public enum FeedType: Int16 {
+    case Podcast
+    case Video
+    case Newsletter
     case Album
     case Track
     case SearchTorrent
     case BrowseTorrent
-    case Podcast
-    case Video
-    case Newsletter
 }
 
 public enum OldFeedType: Int16 {

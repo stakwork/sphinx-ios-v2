@@ -24,7 +24,7 @@ import SDWebImage
 
 class ThreadHeaderView : UIView {
     
-    var delegate : ThreadHeaderViewDelegate? = nil
+    weak var delegate : ThreadHeaderViewDelegate? = nil
     
     var messageId: Int?
     

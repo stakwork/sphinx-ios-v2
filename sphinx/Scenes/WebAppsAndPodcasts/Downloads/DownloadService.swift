@@ -338,9 +338,9 @@ extension DownloadService : URLSessionDownloadDelegate {
         if (newProgress >= 100) { //detect transition from downloading to download complete
             StorageManager.sharedManager.processGarbageCleanup()
             
-            download.episode.feed?.updateLastDownloadedEpisodeWith(
-                id: download.episode.itemID
-            )
+            if let feedID = download.episode.feedID, let feed = ContentFeed.getFeedById(feedId: feedID) {
+                feed.lastDownloadedEpisodeId = download.episode.itemID
+            }
         }
         
         if (download.progress == newProgress) {

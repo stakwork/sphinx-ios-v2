@@ -10,6 +10,7 @@ import CoreData
 public class PodcastEpisode: NSObject {
     
     public var itemID: String
+    public var feedID: String?
     public var title: String?
     public var author: String?
     public var episodeDescription: String?
@@ -21,7 +22,9 @@ public class PodcastEpisode: NSObject {
     public var clipStartTime: Int?
     public var clipEndTime: Int?
     public var showTitle: String?
-    public var feed: PodcastFeed?
+    public var feedURLPath: String?
+    public var feedImageURLPath: String?
+    public var feedTitle: String?
     public var people: [String] = []
     public var topics: [String] = []
     public var destination: PodcastDestination? = nil
@@ -129,7 +132,10 @@ extension PodcastEpisode {
         podcastEpisode.linkURLPath = contentFeedItem.linkURL?.absoluteString
         podcastEpisode.imageURLPath = contentFeedItem.imageURL?.absoluteString
         podcastEpisode.title = contentFeedItem.title
-        podcastEpisode.feed = feed
+        podcastEpisode.feedID = feed?.feedID
+        podcastEpisode.feedURLPath = feed?.feedURLPath
+        podcastEpisode.feedImageURLPath = feed?.imageURLPath
+        podcastEpisode.feedTitle = feed?.title
         podcastEpisode.type = RecommendationsHelper.PODCAST_TYPE
         
         return podcastEpisode
@@ -149,6 +155,10 @@ extension PodcastEpisode {
     
     var isYoutubeVideo: Bool {
         return type == RecommendationsHelper.YOUTUBE_VIDEO_TYPE
+    }
+    
+    var isRecommendationsPodcast: Bool {
+        feedID == RecommendationsHelper.kRecommendationPodcastId
     }
 
     var intType: Int {
@@ -195,8 +205,8 @@ extension PodcastEpisode {
     
     func constructShareLink(useTimestamp:Bool=false)->String?{
         var link : String? = nil
-        if let feedID = self.feed?.feedID,
-           let feedURL = self.feed?.feedURLPath{
+        
+        if let feedID = self.feedID, let feedURL = self.feedURLPath {
             link = "sphinx.chat://?action=share_content&feedURL=\(feedURL)&feedID=\(feedID)&itemID=\(itemID)"
         }
         
