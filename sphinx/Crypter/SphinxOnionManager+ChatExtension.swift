@@ -1424,6 +1424,7 @@ extension SphinxOnionManager {
         muid: String?,
         content: String?,
         chat: Chat,
+        mnemonic:String?=nil,
         completion: @escaping (Bool, TransactionMessage?) -> ()
     ){
         guard let contact = chat.getContact(),
@@ -1443,6 +1444,7 @@ extension SphinxOnionManager {
                     muid: muid,
                     content: content,
                     chat: chat,
+                    mnemonic: mnemonic,
                     completion: { success, message in
                         completion(success,message)
                     }
@@ -1458,6 +1460,7 @@ extension SphinxOnionManager {
         muid: String?,
         content: String?,
         chat: Chat,
+        mnemonic:String?=nil,
         completion: @escaping (Bool, TransactionMessage?) -> ()
     ){
         guard let contact = chat.getContact() else {
@@ -1474,7 +1477,8 @@ extension SphinxOnionManager {
             muid: muid,
             mediaType: "image/png",
             threadUUID: nil,
-            replyUUID: nil
+            replyUUID: nil,
+            mnemonic: mnemonic
         ).0 {
             SphinxOnionManager.sharedInstance.assignReceiverId(localMsg: sentMessage)
             sentMessage.managedObjectContext?.saveContext()

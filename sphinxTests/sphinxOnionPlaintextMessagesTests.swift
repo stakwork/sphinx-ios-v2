@@ -540,20 +540,11 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
             XCTFail("Value coming back is invalid")
             return
         }
-        for key in dataDict.keys{
-            print("key:\(key), value:\(dataDict[key])")
-        }
         
         XCTAssert(msgType == "boost")
         let msatsString = String(boost_amount_msats)
         XCTAssert(msatsString == msats)
         
-        print(messageResult)
-        print("")
-        //TODO: figure out some way to get the wasm test regime to tell me when it's a boost reply!!!
-        
-        
-        print(messageResult)
     }
     
     func test_send_receive_direct_payment_3_7(){
@@ -561,6 +552,41 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
     }
     
     func test_send_direct_payment_3_8(){
-        //sendDirectPaymentMessage
+        let testMuid = "YkZJhKWUYWcSRM5JmFhqwq7SJpeV_ayx1Feiu6oq3CE="
+        guard let rand_dp_amount = CrypterManager().generateCryptographicallySecureRandomInt(upperBound: 100) else{
+            XCTFail()
+            return
+        }
+        guard let contact = UserContact.getContactWithDisregardStatus(pubkey: test_sender_pubkey),
+            let chat = contact.getChat() else{
+            XCTFail("Failed to establish self contact")
+            return
+        }
+        
+        var messageResult : JSON? = nil
+        requestListenForIncomingMessage(completion: {result in
+            messageResult = result
+        })
+        
+        enforceDelay(delay: 8.0)
+        
+        sphinxOnionManager.sendDirectPaymentMessage(amount: rand_dp_amount * 1000, muid: testMuid, content: nil, chat: chat,mnemonic:test_mnemonic2, completion: {success,_ in
+            XCTAssertTrue(success)
+        })
+        
+        enforceDelay(delay: 8.0)
+        
+        guard let resultDict = messageResult?.dictionaryValue,
+              let dataDict = resultDict["data"]?.dictionaryValue,
+              let msgType = dataDict["msg_type"]?.rawString(),
+              let msats = dataDict["msat"]?.rawString() else{
+            XCTFail("Value coming back is invalid")
+            return
+        }
+        
+        XCTAssert(msgType == "direct_payment")
+        let msatsString = String(rand_dp_amount * 1000)
+        XCTAssert(msatsString == msats)
+        
     }
 }
