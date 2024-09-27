@@ -64,6 +64,7 @@ func requestListenForIncomingMessage(completion: @escaping (JSON) -> ()) {
             completion(json)
         case .failure(let error):
             print("Error: \(error)")
+            completion(JSON())
         }
     }
 }//03ff1c4e658be3ee59575b24e631945cd640926fb7cb095a569da7bb3bfcad5867_02adccd7f574d17d627541b447f47493916e78e33c1583ba9936607b35ca99c392_529771090635784199
@@ -277,7 +278,11 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
     
     func sendTestMessage(
         content:String,
-        replyUuid:String?=nil
+        replyUuid:String?=nil,
+        msgType:UInt8=0,
+        muid:String?=nil,
+        mediaKey:String?=nil,
+        mediaType:String?=nil
         )->JSON?{
         guard let contact = UserContact.getContactWithDisregardStatus(pubkey: test_sender_pubkey),
             let chat = contact.getChat() else{
@@ -290,7 +295,7 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
         })
         enforceDelay(delay: 8.0)
         
-            sphinxOnionManager.sendMessage(to: contact, content: content, chat: chat, provisionalMessage: nil, amount: 0, shouldSendAsKeysend: false, msgType: 0, muid: nil, mediaKey: nil, mediaType: nil, threadUUID: nil, replyUUID: replyUuid, mnemonic: test_mnemonic2)
+        sphinxOnionManager.sendMessage(to: contact, content: content, chat: chat, provisionalMessage: nil, amount: 0, shouldSendAsKeysend: false, msgType: msgType, muid: muid, mediaKey: mediaKey, mediaType: mediaType, threadUUID: nil, replyUUID: replyUuid, mnemonic: test_mnemonic2)
         
         enforceDelay( delay: 14.0)
         
@@ -370,103 +375,31 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
     }
     
     func test_send_attachment_message_3_4() throws {
-//        let expectation = XCTestExpectation(description: "Expecting to have retrieved message in time")
-//        enforceDelay(delay: 8.0)
-//        //2. Send message with random content
-//        guard let rand = CrypterManager().generateCryptographicallySecureRandomInt(upperBound: 100_000_000) else{
-//            XCTFail()
-//            return
-//        }
-//        let content = String(describing: rand)
-//        
-//        guard let contact = UserContact.getContactWithDisregardStatus(pubkey: test_sender_pubkey),
-//            let chat = contact.getChat() else{
-//            XCTFail("Failed to establish self contact")
-//            return
-//        }
-//        var messageResult : JSON? = nil
-//        requestListenForIncomingMessage(completion: {result in
-//            messageResult = result
-//        })
-//        let expectation2 = XCTestExpectation(description: "Expecting to have retrieved message in time")
-//        enforceDelay(delay: 8.0)
-//
-//        let fakeFile: NSDictionary = [
-//            "description": "description",
-//            "template": 0,
-//            "updated": "2024-02-19T15:45:51.088669581Z",
-//            "ttl": 31536000,
-//            "filename": "image.jpg",
-//            "mime": "image/jpg",
-//            "tags": [],
-//            "width": 0,
-//            "owner_pub_key": "Al-nkDa5wmTQJNOPP9z49R7Jja3D9HPn1ofNNSqOEoRX",
-//            "size": 500674,
-//            "price": 0,
-//            "muid": "nIGa243jKrQP4vkOMU-ub0ZS4di8paVR9FSmxx9MYBs=",
-//            "created": "2024-02-19T15:45:51.088669581Z",
-//            "expiry": "2025-02-19T15:45:51.088669581Z",
-//            "height": 0,
-//            "name": "image"
-//        ]
-//        
-//        let exampleData = Data(count: 500674) // Replace with actual data
-//        let exampleImage = UIImage() // Replace with actual UIImage
-//        let testMediaKey = "Njc0MTZCMEZBNDAzNEMzNzk4RDczMDFD"
-//        // Creating the AttachmentObject instance
-//        var attachmentObject = AttachmentObject(
-//            data: exampleData,
-//            mediaKey: testMediaKey,
-//            type: .Photo,
-//            image: exampleImage,
-//            contactPubkey: "023be900c195aee419e5f68bf4b7bc156597da7649a9103b1afec949d233e4d1aa"
-//        )
-//
-//        attachmentObject.text = content
-//        guard let sentMessage = sphinxOnionManager.sendAttachment(file: fakeFile, attachmentObject: attachmentObject, chat: chat, replyingMessage: nil, threadUUID: nil),
-//              let testMediaToken = sentMessage.mediaToken else{
-//            XCTFail("Expected to get back valid pre-flight message")
-//            return
-//        }
-//        
-//        
-//        
-//        let expectation3 = XCTestExpectation(description: "Expecting to have retrieved message in time")
-//        enforceDelay( delay: 14.0)
-//        
-//        //Example result for reference:
-////        => msg type: attachment
-////        => msg {"content":"","mediaToken":"bWVtZXMuc3BoaW54LmNoYXQ=.M_ZcxtcbRUZmDcHDYahSDvZJV4eOFvapZOb2wa-qNy0=..Z7X6KA==..ILxohNjxscIumj0f5NH1fySoR1HirySwMEHwVTGCAqzgPxXINtIyVO4agyf12hulTvCLDbKyOatmdotD9TBqLD4=","mediaKey":"Q0QxQjUyMkMzODM3NDE2NTg1NDgxQTBD","mediaType":"image/jpg","date":2182593930}
-////        => sender {"pubkey":"025fa79036b9c264d024d38f3fdcf8f51ec98dadc3f473e7d687cd352a8e128457","alias":"ALICE","photo_url":"","person":"","confirmed":true}
-////        => msat 0n
-////        => uuid fe278dc86e968281ad368f5586243ce682045013cdca85aa8b9c8c9838e60b11
-////        => index 155
-//        guard let resultDict = messageResult?.dictionaryValue,
-//              let dataDict = resultDict["data"]?.dictionaryValue,
-//                let msg = dataDict["msg"]?.rawString() else{
-//            XCTFail("Value coming back is invalid")
-//            return
-//        }
-//        for key in dataDict.keys{
-//            print("key:\(key), value:\(dataDict[key])")
-//        }
-//        
-//        let contentMatch = msg.contains(content)
-//        XCTAssert(contentMatch == true)
-//        let mediaKeyMatch = msg.contains(testMediaKey)
-//        XCTAssert(mediaKeyMatch == true)
-//        let mediaTokenMatch = msg.contains(testMediaToken)
-//        XCTAssert(mediaTokenMatch == true)
-//        
-//        print(messageResult)
-//        
-        //let stringContent = String(content)
+        let expectation = XCTestExpectation(description: "Expecting to have retrieved message in time")
+        enforceDelay(delay: 8.0)
+        //2. Send message with random content
+        guard let rand = CrypterManager().generateCryptographicallySecureRandomInt(upperBound: 100_000_000) else{
+            XCTFail()
+            return
+        }
+        let content = String(describing: rand)
         
-        //sphinxOnionManager.sendMessage(to: contact, content: stringContent)
-        
-        //3. Await ACK message
-        
-        //4. Ensure ACK message reflects same message we sent out.
+        let testMuid = "RnXZTEHHyVeAgvh6tGX_f8wjpAjSA-fLXHfp3YcPmhw="
+        let testMediaKey = "5961753374583674655549543239554d6e73656a6b794f775955575236673050"
+        let testMediaType = "image/jpg"
+        let echoedMessage = sendTestMessage(content: content,msgType: UInt8(TransactionMessage.TransactionMessageType.attachment.rawValue),muid: testMuid, mediaKey: testMediaKey, mediaType: testMediaType)
+                
+        guard let resultDict = echoedMessage?.dictionaryValue,
+              let dataDict = resultDict["data"]?.dictionaryValue,
+              let msg = dataDict["msg"]?.dictionaryValue else {
+            XCTFail("Value coming back is invalid")
+            return
+        }
+
+        XCTAssertEqual(dataDict["msg_type"]?.stringValue, "attachment", "Incorrect message type")
+        XCTAssertEqual(msg["content"]?.stringValue, content, "Incorrect content")
+        XCTAssertEqual(msg["mediaKey"]?.stringValue, testMediaKey, "Incorrect media key")
+        XCTAssertEqual(msg["mediaType"]?.stringValue, testMediaType, "Incorrect media type")
     }
     
     
