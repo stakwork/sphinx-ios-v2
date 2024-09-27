@@ -105,10 +105,11 @@ extension SphinxOnionManager {
     ///invoices related
     func createInvoice(
         amountMsat: Int,
-        description: String? = nil
+        description: String? = nil,
+        mnemonic:String? = nil
     ) -> String? {
             
-        guard let seed = getAccountSeed(), let selfContact = UserContact.getOwner(), let _ = selfContact.nickname else {
+        guard let seed = getAccountSeed(mnemonic: mnemonic), let selfContact = UserContact.getOwner(), let _ = selfContact.nickname else {
             return nil
         }
             

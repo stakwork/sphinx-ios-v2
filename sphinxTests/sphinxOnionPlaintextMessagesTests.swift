@@ -282,7 +282,8 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
         msgType:UInt8=0,
         muid:String?=nil,
         mediaKey:String?=nil,
-        mediaType:String?=nil
+        mediaType:String?=nil,
+        invoiceString:String?=nil
         )->JSON?{
         guard let contact = UserContact.getContactWithDisregardStatus(pubkey: test_sender_pubkey),
             let chat = contact.getChat() else{
@@ -295,7 +296,7 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
         })
         enforceDelay(delay: 8.0)
         
-        sphinxOnionManager.sendMessage(to: contact, content: content, chat: chat, provisionalMessage: nil, amount: 0, shouldSendAsKeysend: false, msgType: msgType, muid: muid, mediaKey: mediaKey, mediaType: mediaType, threadUUID: nil, replyUUID: replyUuid, mnemonic: test_mnemonic2)
+        sphinxOnionManager.sendMessage(to: contact, content: content, chat: chat, provisionalMessage: nil, amount: 0, shouldSendAsKeysend: false, msgType: msgType, muid: muid, mediaKey: mediaKey, mediaType: mediaType, threadUUID: nil, replyUUID: replyUuid,invoiceString: invoiceString, mnemonic: test_mnemonic2)
         
         enforceDelay( delay: 14.0)
         
@@ -565,6 +566,52 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
         XCTAssert(msgType == "direct_payment")
         let msatsString = String(rand_dp_amount * 1000)
         XCTAssert(msatsString == msats)
+        
+    }
+    
+    func test_send_inline_invoice_3_9() {
+        let expectation = XCTestExpectation(description: "Expecting to have sent and retrieved inline invoice message in time")
+        enforceDelay(delay: 8.0)
+        
+        // Generate a random amount for the invoice
+        guard let rand_amount = CrypterManager().generateCryptographicallySecureRandomInt(upperBound: 1000) else {
+            XCTFail("Failed to generate random amount")
+            return
+        }
+        let amount = rand_amount * 1000 // Convert to millisatoshis
+        
+        // Create a sample message with an inline invoice
+        let content = "Here's an invoice for \(rand_amount) sats"
+        
+        // Generate a legitimate BOLT11 invoice using SphinxOnionManager
+        guard let invoiceString = sphinxOnionManager.createInvoice(
+            amountMsat: amount,
+            description: content,
+            mnemonic: test_mnemonic2
+        ) else {
+            XCTFail("Failed to create invoice")
+            return
+        }
+
+        let echoedMessage = sendTestMessage(
+            content: content,
+            msgType: UInt8(TransactionMessage.TransactionMessageType.invoice.rawValue),
+            invoiceString: invoiceString
+        )
+        
+        guard let resultDict = echoedMessage?.dictionaryValue,
+              let dataDict = resultDict["data"]?.dictionaryValue,
+              let msg = dataDict["msg"]?.dictionaryValue else {
+            XCTFail("Value coming back is invalid")
+            return
+        }
+
+        // Verify the message content
+        XCTAssertEqual(dataDict["msg_type"]?.stringValue, "invoice", "Incorrect message type")
+        XCTAssertEqual(msg["content"]?.stringValue, content, "Incorrect content")
+        
+        // Verify the invoice
+        XCTAssertEqual(msg["invoice"]?.stringValue, invoiceString, "Incorrect invoice string")
         
     }
 }
