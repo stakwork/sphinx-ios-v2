@@ -34,8 +34,16 @@ class GroupDetailsViewController: UIViewController {
     
     @IBOutlet weak var badgeManagementContainerView: UIView!
     @IBOutlet weak var badgeManagementContainerHeight : NSLayoutConstraint!
+    @IBOutlet weak var adminInfoContainerView: UIView!
+    
+    @IBOutlet weak var adminAvatarImageView: UIImageView!
+    @IBOutlet weak var adminNameLabel: UILabel!
+    @IBOutlet weak var adminSubtitleLabel: UILabel!
+    @IBOutlet weak var groupInfoContainerView: UIView!
     
     @IBOutlet var keyboardAccessoryView: UIView!
+    
+    
     
     var imagePickerManager = ImagePickerManager.sharedInstance
     var tableDataSource : GroupMembersDataSource!
@@ -87,11 +95,29 @@ class GroupDetailsViewController: UIViewController {
         groupImageView.layer.cornerRadius = groupImageView.frame.size.height / 2
         groupImageView.clipsToBounds = true
         
+        adminAvatarImageView.layer.cornerRadius = groupImageView.frame.size.height / 2
+        adminAvatarImageView.clipsToBounds = true
+        
         if let urlString = chat.photoUrl, let nsUrl = URL(string: urlString) {
             MediaLoader.asyncLoadImage(imageView: groupImageView, nsUrl: nsUrl, placeHolderImage: UIImage(named: "profile_avatar"))
         } else {
             groupImageView.image = UIImage(named: "profile_avatar")
         }
+        
+        if !chat.isTribeICreated{
+            if let urlString = lookupAdminImage(),
+                let nsUrl = URL(string: urlString) {
+                MediaLoader.asyncLoadImage(imageView: adminAvatarImageView, nsUrl: nsUrl, placeHolderImage: UIImage(named: "profile_avatar"))
+            } else {
+                adminAvatarImageView.image = UIImage(named: "profile_avatar")
+            }
+            adminNameLabel.text = chat.tribeInfo?.ownerAlias ?? "unknown".localized
+        }
+        else{
+            adminInfoContainerView.isHidden = true
+        }
+        
+        adminSubtitleLabel.text = "admin".localized
         
         groupNameLabel.text = chat.name ?? "unknown.group".localized
         
@@ -101,6 +127,17 @@ class GroupDetailsViewController: UIViewController {
         updateTribePrices()
         configureTribeMemberView()
         configureBadgeManagementView()
+    }
+    
+    func lookupAdminImage()->String?{
+        if let tribeInfo = chat.tribeInfo,
+           let ownerAlias = tribeInfo.ownerAlias,
+           let messagesSet = chat.messages,
+           let groupMessages = Array<Any>(messagesSet) as? [TransactionMessage],
+           let ownerMessage = groupMessages.filter({$0.senderAlias == ownerAlias}).first{
+            return ownerMessage.senderPic
+        }
+        return nil
     }
     
     func updateTribePrices() {
