@@ -154,6 +154,7 @@
 		4733C7E523C4DF4C006A2C51 /* GroupContactsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4733C7E423C4DF4C006A2C51 /* GroupContactsViewController.swift */; };
 		4733ED212CA4888E00078EF2 /* NewUnifiedEpisodeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4733ED202CA4888E00078EF2 /* NewUnifiedEpisodeView.swift */; };
 		4733ED232CA4889600078EF2 /* NewUnifiedEpisodeView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 4733ED222CA4889600078EF2 /* NewUnifiedEpisodeView.xib */; };
+		4733ED272CA72AA200078EF2 /* SphinxOnionManager+PeopleExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4733ED262CA72AA200078EF2 /* SphinxOnionManager+PeopleExtension.swift */; };
 		47341E8428C79A8B00426055 /* CustomAlertController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47341E8328C79A8B00426055 /* CustomAlertController.swift */; };
 		4734D3C9241AA24C00D6957E /* PaymentTemplateViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4734D3C8241AA24C00D6957E /* PaymentTemplateViewController.swift */; };
 		4734D3CB241AA7A000D6957E /* PaymentTemplatesDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4734D3CA241AA7A000D6957E /* PaymentTemplatesDataSource.swift */; };
@@ -1268,6 +1269,7 @@
 		4733C7E423C4DF4C006A2C51 /* GroupContactsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupContactsViewController.swift; sourceTree = "<group>"; };
 		4733ED202CA4888E00078EF2 /* NewUnifiedEpisodeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewUnifiedEpisodeView.swift; sourceTree = "<group>"; };
 		4733ED222CA4889600078EF2 /* NewUnifiedEpisodeView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = NewUnifiedEpisodeView.xib; sourceTree = "<group>"; };
+		4733ED262CA72AA200078EF2 /* SphinxOnionManager+PeopleExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SphinxOnionManager+PeopleExtension.swift"; sourceTree = "<group>"; };
 		47341E8028C642DC00426055 /* sphinx 34.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 34.xcdatamodel"; sourceTree = "<group>"; };
 		47341E8328C79A8B00426055 /* CustomAlertController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomAlertController.swift; sourceTree = "<group>"; };
 		4734D3C8241AA24C00D6957E /* PaymentTemplateViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentTemplateViewController.swift; sourceTree = "<group>"; };
@@ -4216,6 +4218,7 @@
 				CECE9C2A2AA7779E0039B843 /* WordsList.swift */,
 				4741EBEA2BFF726300EFF49E /* SphinxOnionManager+ReadMuteExtension.swift */,
 				CE50CB9E2C3DBB45009E71FB /* SphinxOnionManager+BTClient.swift */,
+				4733ED262CA72AA200078EF2 /* SphinxOnionManager+PeopleExtension.swift */,
 			);
 			path = Crypter;
 			sourceTree = "<group>";
@@ -5674,6 +5677,7 @@
 				F39F2C8526E2840500D357F6 /* FeedSearchResultsCollectionViewSectionHeader.swift in Sources */,
 				47F826702A0D2E3A002E81F0 /* ChatMessageTextFieldView.swift in Sources */,
 				4735967A2A6FFCFD00489606 /* ShimmeringList.swift in Sources */,
+				4733ED272CA72AA200078EF2 /* SphinxOnionManager+PeopleExtension.swift in Sources */,
 				4733C7E523C4DF4C006A2C51 /* GroupContactsViewController.swift in Sources */,
 				4787F87224743D7C00CCE8B9 /* NewPublicGroupViewControllerExtension.swift in Sources */,
 				F3EF52C726B28DBE00F06668 /* PodcastFeedCollectionViewController.swift in Sources */,
