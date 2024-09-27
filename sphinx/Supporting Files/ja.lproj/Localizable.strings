@@ -161,7 +161,7 @@
 "picker-title.tribe-form.feed-type" = "フィードタイプ";
 "alias.allowed-characters" = "トライブエイリアスには文字、数字、アンダースコアのみ使用できます";
 "invalid.url" = "無効なURL";
-"admin" = "Admin";
+"admin" = "管理者";
 
 //SUBSCRIPTIONS
 "leave.lose.unsaved.changed" = "保存していない変更がある場合、移動すると変更内容が失われます。よろしいですか。";

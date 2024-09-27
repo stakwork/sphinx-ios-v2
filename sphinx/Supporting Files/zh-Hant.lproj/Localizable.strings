@@ -56,7 +56,7 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 "error.app-store-receipt-validation-failed" = "AppStore收據驗證失敗。";
 "error.rss.sync.failed.title" = "RSS Error";
 "error.rss.sync.failed.message" = "Sync to RSS Feed Failed. Please try again.";
-"admin" = "Admin";
+"admin" = "行政人員";
 
 // 儀表板
 "dashboard.tabs.feed" = "Feed";
