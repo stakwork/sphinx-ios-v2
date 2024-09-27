@@ -52,19 +52,7 @@ class AuthExternalView: CommonModalView {
     }
     
     func verifyExternal() {
-        if let query = self.query {
-            SphinxOnionManager.sharedInstance.processPeopleAuthChallenge(
-                urlString: query,
-                completion: { authParams in
-                    if authParams != nil{
-                        self.authInfo?.host = authParams!.0
-                        self.authInfo?.challenge = authParams!.1
-                        self.authInfo?.token = authParams!.2
-                        self.authInfo?.verificationSignature = authParams!.3["verification_signature"] as? String
-                    }
-                    self.authorizationDone(success: authParams != nil, host: self.authInfo?.host ?? "")
-            })
-        } else {
+        guard let query = self.query else {
             AlertHelper.showAlert(
                 title: "Error",
                 message: "Could not parse auth request"
@@ -73,7 +61,20 @@ class AuthExternalView: CommonModalView {
                 success: false,
                 host: self.authInfo?.host ?? ""
             )
+            return
         }
+        
+        SphinxOnionManager.sharedInstance.processPeopleAuthChallenge(
+            query: query,
+            completion: { authParams in
+                if authParams != nil{
+                    self.authInfo?.host = authParams!.0
+                    self.authInfo?.challenge = authParams!.1
+                    self.authInfo?.token = authParams!.2
+                    self.authInfo?.verificationSignature = authParams!.3["verification_signature"] as? String
+                }
+                self.authorizationDone(success: authParams != nil, host: self.authInfo?.host ?? "")
+        })
     }
     
     func authorizationDone(success: Bool, host: String) {
