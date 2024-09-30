@@ -614,4 +614,45 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
         XCTAssertEqual(msg["invoice"]?.stringValue, invoiceString, "Incorrect invoice string")
         
     }
+    
+    func test_receive_inline_invoice_3_10() {
+        // Set up the test
+        NotificationCenter.default.addObserver(self, selector: #selector(handleNewOnionMessageReceived), name: .newOnionMessageWasReceived, object: nil)
+        
+        // Generate a random amount between 1000 and 100,000 millisats
+        guard let randomAmount = CrypterManager().generateCryptographicallySecureRandomInt(upperBound: 100) else {
+            XCTFail("Failed to generate random amount")
+            return
+        }
+        let amountMsats = randomAmount * 1000 // Ensure minimum of 1000 msats
+        
+        // Generate a random memo
+        let randomMemo = "Invoice-\(UUID().uuidString.prefix(8))"
+        
+        // Prepare the command for the remote server
+        guard let profile = UserContact.getOwner(),
+              let pubkey = profile.publicKey else {
+            XCTFail("Failed to get owner's public key")
+            return
+        }
+        
+        // Send the invoice message using the remote server
+        let cmd = "send_invoice_msg"
+        sendRemoteServerMessageRequest(cmd: cmd, pubkey: pubkey, theMsg: randomMemo, amount: amountMsats)
+        
+        // Wait for the message to be received
+        enforceDelay(delay: 10.0)
+        
+        // Verify the received message
+        XCTAssertNotNil(receivedMessage, "No message was received")
+        
+        guard let receivedMessage = receivedMessage else {
+            XCTFail("Received message is nil")
+            return
+        }
+        
+        XCTAssertEqual(receivedMessage["type"] as? Int, TransactionMessage.TransactionMessageType.invoice.rawValue, "Incorrect message type")
+        XCTAssertEqual(receivedMessage["content"] as? String, randomMemo, "Incorrect memo")
+        XCTAssertEqual(receivedMessage["amount"] as! Int, amountMsats/1000)
+    }
 }
