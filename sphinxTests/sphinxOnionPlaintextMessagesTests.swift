@@ -655,4 +655,74 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
         XCTAssertEqual(receivedMessage["content"] as? String, randomMemo, "Incorrect memo")
         XCTAssertEqual(receivedMessage["amount"] as! Int, amountMsats/1000)
     }
+    
+    func test_send_invoice_and_receive_payment_3_11() {
+        // Set up the test
+        NotificationCenter.default.addObserver(self, selector: #selector(handleNewOnionMessageReceived), name: .newOnionMessageWasReceived, object: nil)
+        
+        // Generate a random amount between 1000 and 100,000 millisats
+        guard let randomAmount = CrypterManager().generateCryptographicallySecureRandomInt(upperBound: 100) else {
+            XCTFail("Failed to generate random amount")
+            return
+        }
+        let amountMsats = randomAmount * 1000 // Ensure minimum of 1000 msats
+        
+        // Generate a random memo
+        let randomMemo = "Invoice-\(UUID().uuidString.prefix(8))"
+        
+        // Create an invoice using the Swift client
+        guard let invoiceString = sphinxOnionManager.createInvoice(
+            amountMsat: amountMsats,
+            description: randomMemo,
+            mnemonic: test_mnemonic2
+        ) else {
+            XCTFail("Failed to create invoice")
+            return
+        }
+        
+        // Send the invoice message
+        let messageResult = sendTestMessage(
+            content: randomMemo,
+            msgType: UInt8(TransactionMessage.TransactionMessageType.invoice.rawValue),
+            invoiceString: invoiceString
+        )
+        
+        // Verify the sent invoice message
+        XCTAssertNotNil(messageResult, "Failed to send invoice message")
+        
+        // Extract the UUID of the sent message
+        guard let resultDict = messageResult?.dictionaryValue,
+              let dataDict = resultDict["data"]?.dictionaryValue else {
+            XCTFail("Failed to extract message UUID")
+            return
+        }
+        
+        // Prepare to pay the invoice using the remote server
+        guard let profile = UserContact.getOwner(),
+              let pubkey = profile.publicKey else {
+            XCTFail("Failed to get owner's public key")
+            return
+        }
+        
+        // Trigger payment of the invoice using the remote server
+        let payCmd = "pay_invoice"
+        sendRemoteServerMessageRequest(cmd: payCmd, pubkey: pubkey, theMsg: invoiceString, useAmount: false, useMsg: true)
+        
+        // Wait for the payment to be processed
+        enforceDelay(delay: 10.0)
+        
+        // Verify the payment was successful
+        XCTAssertNotNil(receivedMessage, "No payment confirmation message was received")
+        
+        guard let paymentConfirmation = receivedMessage else {
+            XCTFail("Payment confirmation message is nil")
+            return
+        }
+        
+        XCTAssertEqual(paymentConfirmation["type"] as? Int, TransactionMessage.TransactionMessageType.payment.rawValue, "Incorrect payment message type")
+        XCTAssertEqual(paymentConfirmation["amount"] as? Int, amountMsats/1000, "Incorrect payment amount")
+        XCTAssertTrue(paymentConfirmation["success"] as? Bool ?? false, "Payment was not successful")
+        
+        print("Invoice sent and paid successfully: Amount = \(amountMsats) msats, Memo = \(randomMemo)")
+    }
 }
