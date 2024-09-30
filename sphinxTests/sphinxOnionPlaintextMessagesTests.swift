@@ -15,29 +15,35 @@ import SwiftyJSON
 
 
 func sendRemoteServerMessageRequest(
-    cmd: String ,
+    cmd: String,
     pubkey: String,
     theMsg: String,
-    amount:Int=0,
-    useAmount:Bool=true,
-    useMsg:Bool=true,
-    additionalParams:[String]=[]
-    ) {
+    amount: Int = 0,
+    useAmount: Bool = true,
+    useMsg: Bool = true,
+    additionalParams: [String] = [],
+    omitPubkey: Bool = false
+) {
     let url = "http://localhost:4020/command"
-    var parametersArray: [Any] = [pubkey, amount, theMsg] + additionalParams
+    var parametersArray: [Any] = []
     
-    if !useAmount {
-        parametersArray.remove(at: 1)
-    }
-    if !useMsg {
-        // If amount is not used, the message index shifts to 1, otherwise it's 2.
-        let msgIndex = useAmount ? 2 : 1
-        if parametersArray.count > msgIndex { // Ensure the array is large enough
-            parametersArray.remove(at: msgIndex)
+    if cmd == "pay_invoice" {
+        // For pay_invoice, we only want to send the invoice string
+        parametersArray = [theMsg]
+    } else {
+        if !omitPubkey {
+            parametersArray.append(pubkey)
         }
+        if useAmount {
+            parametersArray.append(amount)
+        }
+        if useMsg {
+            parametersArray.append(theMsg)
+        }
+        parametersArray += additionalParams
     }
     
-    var parameters: [String: Any] = [
+    let parameters: [String: Any] = [
         "command": cmd,
         "parameters": parametersArray
     ]
@@ -697,16 +703,9 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
             return
         }
         
-        // Prepare to pay the invoice using the remote server
-        guard let profile = UserContact.getOwner(),
-              let pubkey = profile.publicKey else {
-            XCTFail("Failed to get owner's public key")
-            return
-        }
-        
         // Trigger payment of the invoice using the remote server
         let payCmd = "pay_invoice"
-        sendRemoteServerMessageRequest(cmd: payCmd, pubkey: pubkey, theMsg: invoiceString, useAmount: false, useMsg: true)
+        sendRemoteServerMessageRequest(cmd: payCmd, pubkey: "", theMsg: invoiceString, amount: 0, useAmount: false, useMsg: true, additionalParams: [], omitPubkey: true)
         
         // Wait for the payment to be processed
         enforceDelay(delay: 10.0)
