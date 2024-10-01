@@ -56,7 +56,6 @@ extension NewMessageTableViewCell {
         podcastAudioView.isHidden = true
         callLinkView.isHidden = true
         podcastBoostView.isHidden = true
-        botResponseView.isHidden = true
         textMessageView.isHidden = true
         tribeLinkPreviewView.isHidden = true
         contactLinkPreviewView.isHidden = true

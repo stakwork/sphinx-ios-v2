@@ -7,7 +7,7 @@
 
 import UIKit
 
-protocol VideoFeedEpisodePlayerCollectionViewControllerDelegate{
+protocol VideoFeedEpisodePlayerCollectionViewControllerDelegate: class {
     func requestPlay()
 }
 
@@ -25,7 +25,7 @@ class VideoFeedEpisodePlayerCollectionViewController: UICollectionViewController
     let downloadService : DownloadService = DownloadService.sharedInstance
     
     weak var boostDelegate: CustomBoostDelegate?
-    var delegate:VideoFeedEpisodePlayerCollectionViewControllerDelegate? = nil
+    weak var delegate:VideoFeedEpisodePlayerCollectionViewControllerDelegate? = nil
 }
 
 

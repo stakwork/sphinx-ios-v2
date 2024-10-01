@@ -156,9 +156,12 @@ class NewPodcastPlayerViewController: UIViewController {
 extension NewPodcastPlayerViewController : PodcastEpisodesDSDelegate {
     func didDismiss() {}
     
-    func didTapForDescriptionAt(episode: PodcastEpisode,cell:UITableViewCell) {
-        if let feed = episode.feed,
-           let index = tableView.indexPath(for: cell)?.row{
+    func didTapForDescriptionAt(
+        episode: PodcastEpisode,
+        cell: UITableViewCell
+    ) {
+        if let feedID = episode.feedID, let contentFeed = ContentFeed.getFeedById(feedId: feedID), let index = tableView.indexPath(for: cell)?.row {
+            let feed = PodcastFeed.convertFrom(contentFeed: contentFeed)
             let vc = ItemDescriptionViewController.instantiate(podcast: feed, episode: episode,index:index)
             self.navigationController?.pushViewController(vc, animated: true)
         }
@@ -304,7 +307,7 @@ extension UIViewController {
     func askForShareType(
         episode: PodcastEpisode
     ) {
-        if episode.feed?.isRecommendationsPodcast == true {
+        if episode.isRecommendationsPodcast == true {
             self.executeShare(episode: episode,useCurrentTime: false)
             return
         }
@@ -330,7 +333,7 @@ extension UIViewController {
         episode: PodcastEpisode,
         useCurrentTime: Bool = false
     ){
-        let firstActivityItem = "Hey I think you'd enjoy this content I found on Sphinx iOS: \(episode.feed?.title ?? "") - \(episode.title ?? "")"
+        let firstActivityItem = "Hey I think you'd enjoy this content I found on Sphinx iOS: \(episode.feedTitle ?? "") - \(episode.title ?? "")"
         
         //TODO: need a way to decide whether to use time stamp
         let link = episode.constructShareLink(useTimestamp: useCurrentTime) ?? episode.linkURLPath ?? episode.urlPath ?? ""

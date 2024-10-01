@@ -8,7 +8,6 @@
 
 import UIKit
 import CoreData
-import WebKit
 
 class NewChatViewController: NewKeyboardHandlerViewController {
     
@@ -16,11 +15,7 @@ class NewChatViewController: NewKeyboardHandlerViewController {
     @IBOutlet weak var headerView: NewChatHeaderView!
     @IBOutlet weak var chatTableView: UITableView!
     @IBOutlet weak var newMsgsIndicatorView: NewMessagesIndicatorView!
-    @IBOutlet weak var botWebView: WKWebView!
-    @IBOutlet weak var botWebViewWidthConstraint: NSLayoutConstraint!
-    
     @IBOutlet weak var chatTableViewHeightConstraint: NSLayoutConstraint!
-    
     @IBOutlet weak var mentionsAutocompleteTableView: UITableView!
     @IBOutlet weak var webAppContainerView: UIView!
     @IBOutlet weak var chatTableHeaderHeightConstraint: NSLayoutConstraint!
@@ -207,9 +202,6 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         if !isThread {
             headerView.addShadow(location: .bottom, color: UIColor.black, opacity: 0.1)
         }
-        
-        botWebViewWidthConstraint.constant = ((UIScreen.main.bounds.width - (MessageTableCellState.kRowLeftMargin + MessageTableCellState.kRowRightMargin)) * MessageTableCellState.kBubbleWidthPercentage) - (MessageTableCellState.kLabelMargin * 2)
-        botWebView.layoutIfNeeded()
     }
     
     func setupData() {

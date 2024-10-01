@@ -9,8 +9,7 @@
 import UIKit
 
 class FeedItemDetailHeaderCell: UITableViewCell {
-    
-    
+
     @IBOutlet weak var feedItemImageView: UIImageView!
     @IBOutlet weak var feedNameLabel: UILabel!
     @IBOutlet weak var feedSubtitleLabel: UILabel!
@@ -36,7 +35,7 @@ class FeedItemDetailHeaderCell: UITableViewCell {
     func configureView(
         episode: PodcastEpisode
     ){
-        feedNameLabel.text = episode.feed?.title
+        feedNameLabel.text = episode.feedTitle
         feedSubtitleLabel.text = episode.title
         feedItemImageView.sd_setImage(with: URL(string: episode.imageToShow ?? ""))
         dateLabel.text = episode.dateString

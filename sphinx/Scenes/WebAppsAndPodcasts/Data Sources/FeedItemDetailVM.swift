@@ -11,7 +11,7 @@ import UIKit
 
 class FeedItemDetailVM : NSObject {
     
-    var delegate: PodcastEpisodesDSDelegate?
+    weak var delegate: PodcastEpisodesDSDelegate?
     
     weak var vc: FeedItemDetailVC?
     weak var tableView:UITableView?
@@ -30,7 +30,7 @@ class FeedItemDetailVM : NSObject {
             ]
         }
         let isInQueue = FeedsManager.sharedInstance.queuedPodcastEpisodes.contains(where: {$0.itemID == episode?.itemID})
-        if (episode?.feed?.isRecommendationsPodcast ?? false) {
+        if (episode?.isRecommendationsPodcast ?? false) {
             return [
                 .share,
                 .copyLink,

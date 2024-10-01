@@ -10,7 +10,7 @@ import UIKit
 
 class ThreadsListHeaderView: UIView {
     
-    var delegate : ThreadHeaderViewDelegate? = nil
+    weak var delegate : ThreadHeaderViewDelegate? = nil
     
     @IBOutlet var contentView: UIView!
 

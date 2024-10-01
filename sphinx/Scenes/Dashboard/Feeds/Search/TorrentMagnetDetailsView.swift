@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol TorrentMagnetDetailsViewDelegate{
+protocol TorrentMagnetDetailsViewDelegate: class {
     func didTapAddMagnet()
     func didTapCancelMagnet()
 }
@@ -26,7 +26,7 @@ class TorrentMagnetDetailsView: UIView {
     @IBOutlet weak var cancelButton: UIButton!
     @IBOutlet weak var magnetImageView: UIImageView!
     
-    var delegate: TorrentMagnetDetailsViewDelegate? = nil
+    weak var delegate: TorrentMagnetDetailsViewDelegate? = nil
     
     var isLoading : Bool = false {
         didSet{

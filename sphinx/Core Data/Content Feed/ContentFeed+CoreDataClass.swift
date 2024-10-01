@@ -27,7 +27,7 @@ public class ContentFeed: NSManagedObject {
         
         var contentFeed: ContentFeed
         
-        ContentFeed.deleteFeedWith(feedId: feedId)
+        ContentFeed.deleteFeedWith(feedId: feedId, context: context)
         
         guard let items = json[CodingKeys.items.rawValue].array, items.count > 0 else {
             return nil

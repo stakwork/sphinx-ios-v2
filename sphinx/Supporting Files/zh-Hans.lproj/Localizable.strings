@@ -55,6 +55,7 @@
 "error.app-store-receipt-validation-failed" = "AppStore 收据验证失败。";
 "error.rss.sync.failed.title" = "RSS Error";
 "error.rss.sync.failed.message" = "Sync to RSS Feed Failed. Please try again.";
+"admin" = "行政人员";
 
 // DASHBOARD
 "dashboard.tabs.feed" = "动态";

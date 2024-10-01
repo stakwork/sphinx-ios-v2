@@ -14,7 +14,7 @@ import WebKit
 import SwiftyJSON
 import ObjectMapper
 
-protocol WebAppHelperDelegate : NSObject{
+protocol WebAppHelperDelegate : class {
     func setBudget(budget:Int)
 }
 
@@ -60,7 +60,7 @@ class WebAppHelper : NSObject {
     var authorizeBudgetHandler: (([String: AnyObject]) -> ())! = nil
     
     var persistingValues: [String: AnyObject] = [:]
-    var delegate : WebAppHelperDelegate? = nil
+    weak var delegate : WebAppHelperDelegate? = nil
     
     var lsatInProgress: LSatInProgress? = nil
     var lsatTimer: Timer? = nil
@@ -124,6 +124,8 @@ extension WebAppHelper : WKScriptMessageHandler {
                     break
                 case "GETBUDGET":
                     getBudget(dict)
+                case "GETSIGNEDTOKEN":
+                    getSignedToken(dict)
                     break
                 default:
                     defaultAction(dict)
@@ -131,6 +133,25 @@ extension WebAppHelper : WKScriptMessageHandler {
                 }
             }
         }
+    }
+    
+    func getSignedToken(_ dict: [String: AnyObject]) {
+        if let token = SphinxOnionManager.sharedInstance.getSignedToken() {
+            var newDict = dict
+            newDict["token"] = token as AnyObject
+
+            self.getSignedTokenResponse(dict: newDict, success: true)
+        } else {
+            self.getSignedTokenResponse(dict: dict, success: false)
+        }
+    }
+    
+    func getSignedTokenResponse(dict: [String: AnyObject], success: Bool) {
+        var params: [String: AnyObject] = [:]
+        setTypeApplicationAndPassword(params: &params, dict: dict)
+        params["success"] = success as AnyObject
+
+        sendMessage(dict: params)
     }
     
     func jsonStringWithObject(obj: AnyObject) -> String? {

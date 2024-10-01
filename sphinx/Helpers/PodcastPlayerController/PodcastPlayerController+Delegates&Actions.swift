@@ -478,13 +478,19 @@ extension PodcastPlayerController {
         }
     }
     
-    func handlePodcastQueue(){
-        if let nextTrack = FeedsManager.sharedInstance.queuedPodcastEpisodes.first,
-           let data = nextTrack.feed?.getPodcastData(episodeId: nextTrack.itemID){
-            FeedsManager.sharedInstance.queuedPodcastEpisodes.removeAll(where: {$0.itemID == nextTrack.itemID})
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: {
-                self.play(data)
-            })
+    func handlePodcastQueue() {
+        if let nextTrack = FeedsManager.sharedInstance.queuedPodcastEpisodes.first {
+            if let feedID = nextTrack.feedID, let contentFeed = ContentFeed.getFeedById(feedId: feedID) {
+                let feed = PodcastFeed.convertFrom(contentFeed: contentFeed)
+                
+                if let data = feed.getPodcastData(episodeId: nextTrack.itemID) {
+                    FeedsManager.sharedInstance.queuedPodcastEpisodes.removeAll(where: {$0.itemID == nextTrack.itemID})
+                    
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: {
+                        self.play(data)
+                    })
+                }
+            }
         }
     }
 }

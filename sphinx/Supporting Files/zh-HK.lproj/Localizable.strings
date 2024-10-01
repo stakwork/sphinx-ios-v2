@@ -157,6 +157,7 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 "picker-title.tribe-form.feed-type" = "Feed類型";
 "alias.allowed-characters" = "部落別名中僅允許使用字母、數字和下劃線";
 "invalid.url" = "無效的URL";
+"admin" = "行政人員";
 
 //訂閱
 "leave.lose.unsaved.changed" = "您確定要離開並丟失任何未保存的更改嗎？";

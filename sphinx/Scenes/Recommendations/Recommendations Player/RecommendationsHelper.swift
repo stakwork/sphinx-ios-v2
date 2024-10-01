@@ -56,7 +56,10 @@ class RecommendationsHelper {
             episode.urlPath = item.link
             episode.imageURLPath = item.mediumImageUrl ?? item.smallImageUrl
             episode.linkURLPath = item.link
-            episode.feed = podcast
+            episode.feedID = podcast.feedID
+            episode.feedURLPath = podcast.feedURLPath
+            episode.feedImageURLPath = podcast.imageURLPath
+            episode.feedTitle = podcast.title
             episode.type = item.type
             episode.clipStartTime = item.startSeconds
             episode.clipEndTime = item.endSeconds

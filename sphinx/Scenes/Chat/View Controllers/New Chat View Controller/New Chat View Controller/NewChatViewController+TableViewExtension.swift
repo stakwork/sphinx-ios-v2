@@ -31,7 +31,6 @@ extension NewChatViewController {
                 headerImageView: getContactImageView(),
                 bottomView: bottomView,
                 headerView: headerView,
-                webView: botWebView,
                 delegate: self
             )
         } else {
@@ -42,7 +41,6 @@ extension NewChatViewController {
                 headerImageView: getContactImageView(),
                 bottomView: bottomView,
                 headerView: headerView,
-                webView: botWebView,
                 delegate: self
             )
         }

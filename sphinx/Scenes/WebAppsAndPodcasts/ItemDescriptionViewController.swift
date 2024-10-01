@@ -9,7 +9,7 @@
 import Foundation
 import UIKit
 
-protocol ItemDescriptionViewControllerDelegate{
+protocol ItemDescriptionViewControllerDelegate: class {
     func shouldDismissAndPlayVideo(video:Video)
     func shouldDismissAndPlayVideo(episodeAsVideo:PodcastEpisode)
     func didDismissDescriptionView(index:Int)
@@ -37,7 +37,7 @@ class ItemDescriptionViewController : UIViewController{
     var video:Video!
     
     var isExpanded : Bool = false
-    var delegate : ItemDescriptionViewControllerDelegate? = nil
+    weak var delegate : ItemDescriptionViewControllerDelegate? = nil
     
     let kHeaderCellHeight: CGFloat = 276.0
     let kDescriptionCellCollapsedHeight: CGFloat = 150.0
@@ -313,7 +313,7 @@ extension ItemDescriptionViewController : UITableViewDelegate, UITableViewDataSo
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: {
                 self.delegate?.shouldDismissAndPlayVideo(video: video)
             })
-        } else if let episode = episode, episode.isYoutubeVideo && episode.feed?.feedID == "Recommendations-Feed" {
+        } else if let episode = episode, episode.isYoutubeVideo && episode.feedID == "Recommendations-Feed" {
             self.navigationController?.popViewController(animated: true)
             
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: {
