@@ -201,7 +201,7 @@ extension SphinxOnionManager {
         }
     }
     
-    func payInvoiceMessage(message: TransactionMessage) {
+    func payInvoiceMessage(message: TransactionMessage,mnemonic:String?=nil) {
         guard let invoiceDict = getInvoiceDetails(invoice: message.invoice ?? ""),
               let owner = UserContact.getOwner(),
               let _ = owner.nickname,
@@ -217,7 +217,7 @@ extension SphinxOnionManager {
             amtMsat: Int(UInt64(amount))
         ) { success in
             if success {
-                self.finalizePayInvoiceMessage(message: message)
+                self.finalizePayInvoiceMessage(message: message,mnemnoic: mnemonic)
             } else {
                 ///error getting route info
                 AlertHelper.showAlert(
@@ -229,11 +229,12 @@ extension SphinxOnionManager {
     }
     
     func finalizePayInvoiceMessage(
-        message: TransactionMessage
+        message: TransactionMessage,
+        mnemnoic:String?=nil
     ) {
         guard message.type == TransactionMessage.TransactionMessageType.invoice.rawValue,
               let invoice = message.invoice,
-              let seed = getAccountSeed(),
+              let seed = getAccountSeed(mnemonic:mnemnoic),
               let owner = UserContact.getOwner(),
               let nickname = owner.nickname else
         {

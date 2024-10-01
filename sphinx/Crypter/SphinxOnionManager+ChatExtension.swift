@@ -1059,6 +1059,11 @@ extension SphinxOnionManager {
         newMessage.amount = NSDecimalNumber(value: msgAmount / 1000)
         newMessage.amountMsat = NSDecimalNumber(value: msgAmount)
         
+        if type == TransactionMessage.TransactionMessageType.invoice.rawValue,
+           let invoice = message.invoice{
+            newMessage.invoice = invoice
+        }
+        
         if type == TransactionMessage.TransactionMessageType.payment.rawValue,
            let ph = message.paymentHash,
            let _ = TransactionMessage.getInvoiceWith(paymentHash: ph)

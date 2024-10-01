@@ -200,7 +200,8 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
             "mediaToken": message.mediaToken ?? "",
             "replyUuid": message.replyUUID ?? "",
             "amount": message.amount ?? 0,
-            "type" : message.type
+            "type" : message.type,
+            "invoice": message.invoice
         ]
     }
     
@@ -720,5 +721,69 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
         
         XCTAssertEqual(paymentConfirmation["type"] as? Int, TransactionMessage.TransactionMessageType.payment.rawValue, "Incorrect payment message type")
         XCTAssertEqual(paymentConfirmation["amount"] as? Int, amountMsats/1000, "Incorrect payment amount")
+    }
+    
+    func test_receive_invoice_and_send_payment_3_12() {
+        // Set up the test
+        NotificationCenter.default.addObserver(self, selector: #selector(handleNewOnionMessageReceived), name: .newOnionMessageWasReceived, object: nil)
+        
+        // Generate a random amount between 1000 and 100,000 millisats
+        guard let randomAmount = CrypterManager().generateCryptographicallySecureRandomInt(upperBound: 100) else {
+            XCTFail("Failed to generate random amount")
+            return
+        }
+        let amountMsats = randomAmount * 1000 // Ensure minimum of 1000 msats
+        
+        // Generate a random memo
+        let randomMemo = "Invoice-\(UUID().uuidString.prefix(8))"
+        
+        // Prepare the command for the remote server
+        guard let profile = UserContact.getOwner(),
+              let pubkey = profile.publicKey else {
+            XCTFail("Failed to get owner's public key")
+            return
+        }
+        
+        // Send the invoice message using the remote server
+        let cmd = "send_invoice_msg"
+        sendRemoteServerMessageRequest(cmd: cmd, pubkey: pubkey, theMsg: randomMemo, amount: amountMsats)
+        
+        // Wait for the message to be received
+        enforceDelay(delay: 10.0)
+        
+        // Verify the received invoice message
+        XCTAssertNotNil(receivedMessage, "No invoice message was received")
+        
+        guard let invoiceMessage = receivedMessage else {
+            XCTFail("Received invoice message is nil")
+            return
+        }
+        
+        XCTAssertEqual(invoiceMessage["type"] as? Int, TransactionMessage.TransactionMessageType.invoice.rawValue, "Incorrect message type")
+        XCTAssertEqual(invoiceMessage["content"] as? String, randomMemo, "Incorrect memo")
+        XCTAssertEqual(invoiceMessage["amount"] as? Int, amountMsats/1000, "Incorrect amount")
+        
+        // Extract the invoice string from the received message
+        guard let invoiceString = invoiceMessage["invoice"] as? String else {
+            XCTFail("Failed to extract invoice string from received message")
+            return
+        }
+        
+        guard let uuid = invoiceMessage["uuid"] as? String,
+              let invoiceMessageDb = TransactionMessage.getMessageWith(uuid: uuid) else{
+            XCTFail()
+            return
+        }
+    
+        var messageResult : JSON? = nil
+        requestListenForIncomingMessage(completion: {result in
+            messageResult = result
+        })
+        enforceDelay(delay: 8.0)
+        sphinxOnionManager.payInvoiceMessage(message: invoiceMessageDb,mnemonic:test_mnemonic2)
+        
+//    // Wait for the payment confirmation message
+        enforceDelay(delay: 10.0)
+        XCTAssertTrue(invoiceMessageDb.isPaid() == true)
     }
 }
