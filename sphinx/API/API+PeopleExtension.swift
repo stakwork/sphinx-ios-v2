@@ -20,7 +20,6 @@ extension API {
     typealias GetPersonProfileCallback = ((Bool, JSON?) -> ())
     typealias GetTribeMemberProfileCallback = ((Bool, TribeMemberStruct?) -> ())
     typealias SearchBTGatewayCallback = (([BTFeedSearchDataMapper]) -> ())
-    typealias CheckPeopleProfile = (Int?) -> ()
     typealias CreatePeopleProfile = (Bool) -> ()
     
     public func authorizeBTGateway(
@@ -241,34 +240,8 @@ extension API {
         }
     }
     
-    public func checkPeopleProfileWith(
-        publicKey: String,
-        callback: @escaping CheckPeopleProfile
-    ) {
-        let url = "\(API.tribesV1Url)/person/\(publicKey)"
-        
-        guard let request = createRequest(url, bodyParams: nil, method: "GET") else {
-            callback(nil)
-            return
-        }
-        
-        sphinxRequest(request) { response in
-            if let data = response.data {
-                let jsonProfile = JSON(data)
-                if let pubKey = jsonProfile["owner_pubkey"].string, pubKey == publicKey {
-                    callback(jsonProfile["id"].int)
-                } else {
-                    callback(nil)
-                }
-            } else {
-                callback(nil)
-            }
-        }
-    }
-    
     public func createPeopleProfileWith(
         token: String,
-        userId: Int?,
         alias: String,
         imageUrl: String?,
         publicKey: String,
@@ -278,7 +251,6 @@ extension API {
         let url = "\(API.tribesV1Url)/person?token=\(token)"
         
         let params: [String: AnyObject] = [
-            "id": userId as AnyObject,
             "owner_pubkey": publicKey as AnyObject,
             "owner_alias": alias as AnyObject,
             "owner_route_hint": routeHint as AnyObject,
