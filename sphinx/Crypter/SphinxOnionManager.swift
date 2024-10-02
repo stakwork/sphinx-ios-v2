@@ -28,7 +28,7 @@ class SphinxOnionManager : NSObject {
     }
     
     let walletBalanceService = WalletBalanceService()
-    var isUnitTestMode:Bool = true
+    var isUnitTestMode:Bool = false
     
     ///Invite
     var pendingInviteLookupByTag : [String:String] = [String:String]()
