@@ -373,7 +373,7 @@ public class Chat: NSManagedObject {
         self.unseenMentionsCount = 0
         
         if let lastMessage = self.getLastMessageToShow(includeContactKeyTypes: true) {
-            if lastMessage.isKeyExchangeType() {
+            if lastMessage.isKeyExchangeType() || (lastMessage.isTribeInitialMessageType() && messages?.count == 1) {
                 if let maxMessageIndex = TransactionMessage.getMaxIndex() {
                     let _  = SphinxOnionManager.sharedInstance.setReadLevel(
                         index: UInt64(maxMessageIndex),
