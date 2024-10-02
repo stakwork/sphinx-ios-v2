@@ -221,6 +221,7 @@ extension RestoreUserFormViewController : NSFetchedResultsControllerDelegate{
             
             if self.selfContactFetchListener?.fetchedObjects?.first == nil {
                 DispatchQueue.main.async {
+                    self.loading = false
                     self.navigationController?.popViewController(animated: true)
                 }
             } else {
