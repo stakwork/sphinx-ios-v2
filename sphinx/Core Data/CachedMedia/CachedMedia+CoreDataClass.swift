@@ -86,7 +86,7 @@ public class CachedMedia: NSManagedObject {
     
     func removePhotoObject(completion: @escaping ()->()) {
         let managedContext = CoreDataManager.sharedManager.persistentContainer.viewContext
-        if let key = self.key{
+        if let key = self.key {
             MediaLoader.clearImageCacheFor(url: key)
             managedContext.delete(self)
             managedContext.saveContext()
@@ -97,6 +97,20 @@ public class CachedMedia: NSManagedObject {
     public static func getAll() -> [CachedMedia] {
         let sortDescriptors = [NSSortDescriptor(key: "id", ascending: true)]
         let cachedMedia: [CachedMedia] = CoreDataManager.sharedManager.getAllOfType(entityName: "CachedMedia", sortDescriptors: sortDescriptors)
+        return cachedMedia
+    }
+    
+    public static func getMediaBefore(
+        date: Date,
+        context: NSManagedObjectContext? = nil
+    ) -> [CachedMedia] {
+        let sortDescriptors = [NSSortDescriptor(key: "id", ascending: true)]
+        let cachedMedia: [CachedMedia] = CoreDataManager.sharedManager.getObjectsOfTypeWith(
+            predicate: NSPredicate(format: "creationDate < %@", date as NSDate),
+            sortDescriptors: sortDescriptors,
+            entityName: "CachedMedia",
+            context: context
+        )
         return cachedMedia
     }
     

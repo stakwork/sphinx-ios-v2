@@ -20,11 +20,6 @@ extension SphinxOnionManager {
             let contacts = UserContact.getContactsWith(pubkeys: pubKeys)
             
             for (pubKey, lastReadId) in lastReadMap {
-                
-                if pubKey == "02b5d8c2522cd31693c00c2c8a5366cbbed6967dcbf131f4068ed3885472510c6b" {
-                    print("test")
-                }
-                
                 guard let lastReadId = lastReadId as? Int else {
                     continue
                 }

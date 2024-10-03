@@ -87,9 +87,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         configureSVGRendering()
         connectMQTT()
         registerForVoIP()
+        StorageManager.sharedManager.deleteOldMedia()
         
         setInitialVC()
-//        setupSharedNotifExtension()
                 
         NetworkMonitor.shared.startMonitoring()
 
