@@ -8,6 +8,7 @@
 
 import Foundation
 import SDWebImage
+import CoreData
 
 public enum StorageManagerMediaType{
     case audio
@@ -107,7 +108,7 @@ class StorageManager {
                     date: halfMonthAgo,
                     context: backgroundContext
                 )
-                self.deleteCacheItems(cms: mediaObjects, completion: {})
+                self.deleteCacheItems(cms: mediaObjects, context: backgroundContext, completion: {})
             }
         }
     }
@@ -436,17 +437,21 @@ class StorageManager {
     }
     
     
-    func deleteCacheItems(cms: [CachedMedia], completion: @escaping ()->()){
+    func deleteCacheItems(
+        cms: [CachedMedia],
+        context: NSManagedObjectContext? = nil,
+        completion: @escaping ()->()
+    ) {
         var cmCounter = cms.count
         cmCounter == 0 ? (completion()) : ()
         for cm in cms {
             if cm.fileExtension == "png" {
-                cm.removePhotoObject(completion: {
+                cm.removePhotoObject(context: context, completion: {
                     cmCounter -= 1
                     cmCounter > 0 ? () : (completion())
                 })
             } else {
-                cm.removeSphinxCacheObject(completion: {
+                cm.removeSphinxCacheObject(context: context, completion: {
                     cmCounter -= 1
                     cmCounter > 0 ? () : (completion())
                 })

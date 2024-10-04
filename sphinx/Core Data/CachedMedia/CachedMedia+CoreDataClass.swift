@@ -73,9 +73,12 @@ public class CachedMedia: NSManagedObject {
         return cachedMedia
     }
     
-    func removeSphinxCacheObject(completion:@escaping ()->()){
-        let managedContext = CoreDataManager.sharedManager.persistentContainer.viewContext
-        if let key = key{
+    func removeSphinxCacheObject(
+        context: NSManagedObjectContext? = nil,
+        completion:@escaping ()->()
+    ){
+        let managedContext = context ?? CoreDataManager.sharedManager.persistentContainer.viewContext
+        if let key = key {
             let _ = SphinxCache().removeFromDisk(forKey: key)
             managedContext.delete(self)
             managedContext.saveContext()
@@ -84,8 +87,11 @@ public class CachedMedia: NSManagedObject {
         
     }
     
-    func removePhotoObject(completion: @escaping ()->()) {
-        let managedContext = CoreDataManager.sharedManager.persistentContainer.viewContext
+    func removePhotoObject(
+        context: NSManagedObjectContext? = nil,
+        completion: @escaping ()->()
+    ) {
+        let managedContext = context ?? CoreDataManager.sharedManager.persistentContainer.viewContext
         if let key = self.key {
             MediaLoader.clearImageCacheFor(url: key)
             managedContext.delete(self)

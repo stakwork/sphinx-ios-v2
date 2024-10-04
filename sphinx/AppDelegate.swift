@@ -500,7 +500,7 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         })
         
         // Notify when all tasks are done
-        dispatchGroup.notify(queue: .main) {
+        dispatchGroup.notify(queue: .main) { @MainActor in
             if newData {
                 completionHandler(.newData)
             } else {
