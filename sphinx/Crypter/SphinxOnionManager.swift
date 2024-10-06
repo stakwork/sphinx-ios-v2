@@ -28,6 +28,7 @@ class SphinxOnionManager : NSObject {
     }
     
     let walletBalanceService = WalletBalanceService()
+    var isUnitTestMode:Bool = false
     
     ///Invite
     var pendingInviteLookupByTag : [String:String] = [String:String]()
@@ -109,7 +110,10 @@ class SphinxOnionManager : NSObject {
     //MARK: Hardcoded Values!
     var serverIP: String {
         get {
-            if let storedServerIP: String = UserDefaults.Keys.serverIP.get() {
+            if isUnitTestMode{
+                return "127.0.0.1"
+            }
+            else if let storedServerIP: String = UserDefaults.Keys.serverIP.get() {
                 return storedServerIP
             }
             return kTestServerIP
@@ -118,7 +122,10 @@ class SphinxOnionManager : NSObject {
     
     var serverPORT: UInt16 {
         get {
-            if let storedServerPORT: Int = UserDefaults.Keys.serverPORT.get() {
+            if isUnitTestMode{
+                return 1883
+            }
+            else if let storedServerPORT: Int = UserDefaults.Keys.serverPORT.get() {
                 return UInt16(storedServerPORT)
             }
             return kTestServerPort
@@ -500,19 +507,20 @@ class SphinxOnionManager : NSObject {
     func subscribeAndPublishMyTopics(
         pubkey: String,
         idx: Int,
-        inviteCode: String? = nil
+        inviteCode: String? = nil,
+        mnemonic: String? = nil
     ) {
         do {
             let ret = try sphinx.setNetwork(network: network)
             let _ = handleRunReturn(rr: ret)
             
-            guard let seed = getAccountSeed() else{
+            guard let seed = getAccountSeed(mnemonic: mnemonic) else{
                 return
             }
             
             mqtt.didReceiveMessage = { mqtt, receivedMessage, id in
                 self.isConnected = true
-                self.processMqttMessages(message: receivedMessage)
+                self.processMqttMessages(message: receivedMessage,mnemonic: mnemonic)
             }
             
             let ret3 = try sphinx.initialSetup(
@@ -534,7 +542,9 @@ class SphinxOnionManager : NSObject {
             self.mqtt.subscribe([
                 (tribeMgmtTopic, CocoaMQTTQoS.qos1)
             ])
-        } catch {}
+        } catch {
+            print("failed to subscribe to my topics")
+        }
     }
     
     func fetchMyAccountFromState() {
@@ -677,15 +687,20 @@ class SphinxOnionManager : NSObject {
                 self.subscribeAndPublishMyTopics(
                     pubkey: pubkey,
                     idx: idx,
-                    inviteCode: inviteCode
+                    inviteCode: inviteCode,
+                    mnemonic: mnemonic
                 )
             }
         }
         return success
     }
     
-    func processMqttMessages(message: CocoaMQTTMessage) {
-        guard let seed = getAccountSeed() else {
+    func setupMqttCallbacks(mqtt:CocoaMQTT){
+        
+    }
+    
+    func processMqttMessages(message: CocoaMQTTMessage, mnemonic:String? = nil) {
+        guard let seed = getAccountSeed(mnemonic: mnemonic) else {
             return
         }
         if !readyForPing && message.topic.contains("ping") {

@@ -15,29 +15,35 @@ import SwiftyJSON
 
 
 func sendRemoteServerMessageRequest(
-    cmd: String ,
+    cmd: String,
     pubkey: String,
     theMsg: String,
-    amount:Int=0,
-    useAmount:Bool=true,
-    useMsg:Bool=true,
-    additionalParams:[String]=[]
-    ) {
+    amount: Int = 0,
+    useAmount: Bool = true,
+    useMsg: Bool = true,
+    additionalParams: [String] = [],
+    omitPubkey: Bool = false
+) {
     let url = "http://localhost:4020/command"
-    var parametersArray: [Any] = [pubkey, amount, theMsg] + additionalParams
+    var parametersArray: [Any] = []
     
-    if !useAmount {
-        parametersArray.remove(at: 1)
-    }
-    if !useMsg {
-        // If amount is not used, the message index shifts to 1, otherwise it's 2.
-        let msgIndex = useAmount ? 2 : 1
-        if parametersArray.count > msgIndex { // Ensure the array is large enough
-            parametersArray.remove(at: msgIndex)
+    if cmd == "pay_invoice" {
+        // For pay_invoice, we only want to send the invoice string
+        parametersArray = [theMsg]
+    } else {
+        if !omitPubkey {
+            parametersArray.append(pubkey)
         }
+        if useAmount {
+            parametersArray.append(amount)
+        }
+        if useMsg {
+            parametersArray.append(theMsg)
+        }
+        parametersArray += additionalParams
     }
     
-    var parameters: [String: Any] = [
+    let parameters: [String: Any] = [
         "command": cmd,
         "parameters": parametersArray
     ]
@@ -64,6 +70,7 @@ func requestListenForIncomingMessage(completion: @escaping (JSON) -> ()) {
             completion(json)
         case .failure(let error):
             print("Error: \(error)")
+            completion(JSON())
         }
     }
 }//03ff1c4e658be3ee59575b24e631945cd640926fb7cb095a569da7bb3bfcad5867_02adccd7f574d17d627541b447f47493916e78e33c1583ba9936607b35ca99c392_529771090635784199
@@ -76,8 +83,9 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
     var receivedMessage : [String:Any]? = nil
     let test_sender_pubkey = "023be900c195aee419e5f68bf4b7bc156597da7649a9103b1afec949d233e4d1aa"
     let test_contact_info = "023be900c195aee419e5f68bf4b7bc156597da7649a9103b1afec949d233e4d1aa_02adccd7f574d17d627541b447f47493916e78e33c1583ba9936607b35ca99c392_529771090670583808"
-    var test_received_message_content = "Sphinx_is_awesome"
+    var test_received_message_content = "SphinxIsAwesome"
     let self_alias = "satoshi"
+    let myPubkey = "0224ac5c13ac02ba7b12b60e0661711952e371976df3e5de90247777ab9d708339"
     
     //Mnemonic for "sock puppet" account that helps test: post captain sister quit hurt stadium brand leopard air give funny begin
     
@@ -163,14 +171,14 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
 
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.
-        UserData.sharedInstance.save(walletMnemonic: test_mnemonic2)
         
-//        establish_self_contact()
-//        let expectation = XCTestExpectation(description: "Expecting to have established self contact in this time.")
-//        enforceDelay(expectation: expectation, delay: 8.0)
-//        establish_test_contact()
-//        let expectation2 = XCTestExpectation(description: "Expecting to have established test contact in this time.")
-//        enforceDelay(expectation: expectation2, delay: 45.0)
+        UserData.sharedInstance.save(walletMnemonic: test_mnemonic2)
+        sphinxOnionManager.isUnitTestMode = true
+        enforceDelay(delay: 2.0)
+        let success = sphinxOnionManager.createMyAccount(mnemonic: test_mnemonic2)
+        XCTAssert(success == true)
+        
+        enforceDelay(delay: 8.0)
     }
 
     override func tearDownWithError() throws {
@@ -191,9 +199,12 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
             "mediaKey": message.mediaKey ?? "",
             "mediaToken": message.mediaToken ?? "",
             "replyUuid": message.replyUUID ?? "",
-            "amount": message.amount ?? 0
+            "amount": message.amount ?? 0,
+            "type" : message.type,
+            "invoice": message.invoice
         ]
     }
+    
     //MARK: Test Helpers:
     func makeServerSendMessage(customMessage:String?=nil, replyUuid:String?=nil){
         NotificationCenter.default.addObserver(self, selector: #selector(handleNewOnionMessageReceived), name: .newOnionMessageWasReceived, object: nil)
@@ -238,9 +249,48 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
         enforceDelay(delay: 10.0)
     }
     
+    func makeServerSendDirectPayment(amount: Int, muid: String? = nil, content: String? = nil) {
+        NotificationCenter.default.addObserver(self, selector: #selector(handleNewOnionMessageReceived), name: .newOnionMessageWasReceived, object: nil)
+        
+        guard let profile = UserContact.getOwner(),
+              let pubkey = profile.publicKey else {
+            XCTFail("Failed to establish self contact")
+            return
+        }
+
+        // Convert amount from sats to msats
+        let amountMsats = amount * 1000
+
+        var additionalParams: [String] = []
+        if let muid = muid {
+            additionalParams.append(muid)
+        }
+        if let content = content {
+            additionalParams.append(content)
+        }
+
+        // Send direct payment command
+        sendRemoteServerMessageRequest(
+            cmd: "send_direct_payment",
+            pubkey: pubkey,
+            theMsg: "",
+            amount: amountMsats,
+            useAmount: true,
+            useMsg: false,
+            additionalParams: additionalParams
+        )
+
+        enforceDelay(delay: 10.0)
+    }
+    
     func sendTestMessage(
         content:String,
-        replyUuid:String?=nil
+        replyUuid:String?=nil,
+        msgType:UInt8=0,
+        muid:String?=nil,
+        mediaKey:String?=nil,
+        mediaType:String?=nil,
+        invoiceString:String?=nil
         )->JSON?{
         guard let contact = UserContact.getContactWithDisregardStatus(pubkey: test_sender_pubkey),
             let chat = contact.getChat() else{
@@ -253,7 +303,7 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
         })
         enforceDelay(delay: 8.0)
         
-            sphinxOnionManager.sendMessage(to: contact, content: content, chat: chat, provisionalMessage: nil, amount: 0, shouldSendAsKeysend: false, msgType: 0, muid: nil, mediaKey: nil, mediaType: nil, threadUUID: nil, replyUUID: replyUuid)
+        sphinxOnionManager.sendMessage(to: contact, content: content, chat: chat, provisionalMessage: nil, amount: 0, shouldSendAsKeysend: false, msgType: msgType, muid: muid, mediaKey: mediaKey, mediaType: mediaType, threadUUID: nil, replyUUID: replyUuid,invoiceString: invoiceString, mnemonic: test_mnemonic2)
         
         enforceDelay( delay: 14.0)
         
@@ -342,94 +392,22 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
         }
         let content = String(describing: rand)
         
-        guard let contact = UserContact.getContactWithDisregardStatus(pubkey: test_sender_pubkey),
-            let chat = contact.getChat() else{
-            XCTFail("Failed to establish self contact")
-            return
-        }
-        var messageResult : JSON? = nil
-        requestListenForIncomingMessage(completion: {result in
-            messageResult = result
-        })
-        let expectation2 = XCTestExpectation(description: "Expecting to have retrieved message in time")
-        enforceDelay(delay: 8.0)
-
-        let fakeFile: NSDictionary = [
-            "description": "description",
-            "template": 0,
-            "updated": "2024-02-19T15:45:51.088669581Z",
-            "ttl": 31536000,
-            "filename": "image.jpg",
-            "mime": "image/jpg",
-            "tags": [],
-            "width": 0,
-            "owner_pub_key": "Al-nkDa5wmTQJNOPP9z49R7Jja3D9HPn1ofNNSqOEoRX",
-            "size": 500674,
-            "price": 0,
-            "muid": "nIGa243jKrQP4vkOMU-ub0ZS4di8paVR9FSmxx9MYBs=",
-            "created": "2024-02-19T15:45:51.088669581Z",
-            "expiry": "2025-02-19T15:45:51.088669581Z",
-            "height": 0,
-            "name": "image"
-        ]
-        
-        let exampleData = Data(count: 500674) // Replace with actual data
-        let exampleImage = UIImage() // Replace with actual UIImage
-        let testMediaKey = "Njc0MTZCMEZBNDAzNEMzNzk4RDczMDFD"
-        // Creating the AttachmentObject instance
-        var attachmentObject = AttachmentObject(
-            data: exampleData,
-            mediaKey: testMediaKey,
-            type: .Photo,
-            image: exampleImage,
-            contactPubkey: "023be900c195aee419e5f68bf4b7bc156597da7649a9103b1afec949d233e4d1aa"
-        )
-
-        attachmentObject.text = content
-        guard let sentMessage = sphinxOnionManager.sendAttachment(file: fakeFile, attachmentObject: attachmentObject, chat: chat, replyingMessage: nil, threadUUID: nil),
-              let testMediaToken = sentMessage.mediaToken else{
-            XCTFail("Expected to get back valid pre-flight message")
-            return
-        }
-        
-        
-        
-        let expectation3 = XCTestExpectation(description: "Expecting to have retrieved message in time")
-        enforceDelay( delay: 14.0)
-        
-        //Example result for reference:
-//        => msg type: attachment
-//        => msg {"content":"","mediaToken":"bWVtZXMuc3BoaW54LmNoYXQ=.M_ZcxtcbRUZmDcHDYahSDvZJV4eOFvapZOb2wa-qNy0=..Z7X6KA==..ILxohNjxscIumj0f5NH1fySoR1HirySwMEHwVTGCAqzgPxXINtIyVO4agyf12hulTvCLDbKyOatmdotD9TBqLD4=","mediaKey":"Q0QxQjUyMkMzODM3NDE2NTg1NDgxQTBD","mediaType":"image/jpg","date":2182593930}
-//        => sender {"pubkey":"025fa79036b9c264d024d38f3fdcf8f51ec98dadc3f473e7d687cd352a8e128457","alias":"ALICE","photo_url":"","person":"","confirmed":true}
-//        => msat 0n
-//        => uuid fe278dc86e968281ad368f5586243ce682045013cdca85aa8b9c8c9838e60b11
-//        => index 155
-        guard let resultDict = messageResult?.dictionaryValue,
+        let testMuid = "RnXZTEHHyVeAgvh6tGX_f8wjpAjSA-fLXHfp3YcPmhw="
+        let testMediaKey = "5961753374583674655549543239554d6e73656a6b794f775955575236673050"
+        let testMediaType = "image/jpg"
+        let echoedMessage = sendTestMessage(content: content,msgType: UInt8(TransactionMessage.TransactionMessageType.attachment.rawValue),muid: testMuid, mediaKey: testMediaKey, mediaType: testMediaType)
+                
+        guard let resultDict = echoedMessage?.dictionaryValue,
               let dataDict = resultDict["data"]?.dictionaryValue,
-                let msg = dataDict["msg"]?.rawString() else{
+              let msg = dataDict["msg"]?.dictionaryValue else {
             XCTFail("Value coming back is invalid")
             return
         }
-        for key in dataDict.keys{
-            print("key:\(key), value:\(dataDict[key])")
-        }
-        
-        let contentMatch = msg.contains(content)
-        XCTAssert(contentMatch == true)
-        let mediaKeyMatch = msg.contains(testMediaKey)
-        XCTAssert(mediaKeyMatch == true)
-        let mediaTokenMatch = msg.contains(testMediaToken)
-        XCTAssert(mediaTokenMatch == true)
-        
-        print(messageResult)
-        
-        //let stringContent = String(content)
-        
-        //sphinxOnionManager.sendMessage(to: contact, content: stringContent)
-        
-        //3. Await ACK message
-        
-        //4. Ensure ACK message reflects same message we sent out.
+
+        XCTAssertEqual(dataDict["msg_type"]?.stringValue, "attachment", "Incorrect message type")
+        XCTAssertEqual(msg["content"]?.stringValue, content, "Incorrect content")
+        XCTAssertEqual(msg["mediaKey"]?.stringValue, testMediaKey, "Incorrect media key")
+        XCTAssertEqual(msg["mediaType"]?.stringValue, testMediaType, "Incorrect media type")
     }
     
     
@@ -456,7 +434,7 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
         XCTAssertTrue(receivedMessage?["content"] as? String == test_content_value)
         XCTAssertTrue(receivedMessage?["replyUuid"] as? String == originalUuid)
         print(receivedMessage)
-        
+        receivedMessage = nil
         
         //3. Make server boost initial message: yarn auto boost MYPUBKEY MYMESSSAGEUUID RANDOMSATVALUE
         guard let rand_amount = CrypterManager().generateCryptographicallySecureRandomInt(upperBound: 1000) else{
@@ -464,9 +442,11 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
             return
         }
         
+        sphinxOnionManager.readyForPing = true
         makeServerSendBoost(replyUuid: originalUuid, amount: rand_amount * 1000)
         XCTAssertTrue(receivedMessage?["replyUuid"] as? String == originalUuid)
         XCTAssertTrue(receivedMessage?["amount"] as? Int == (rand_amount))
+        XCTAssertTrue(receivedMessage?["type"] as? Int == TransactionMessage.TransactionMessageType.boost.rawValue)
         print(receivedMessage)
     }
     
@@ -506,14 +486,14 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
             return 
         }
         
-        let boost_amount_sats = 100
+        let boost_amount_msats = 100000  // Changed from 1000 to 100000
         let params: [String: AnyObject] = [
-            "text": "" as AnyObject,
-            "reply_uuid": rmUuid as AnyObject,
-            "boost": 1 as AnyObject,
-            "chat_id": chat.id as AnyObject,
             "message_price": 0 as AnyObject,
-            "amount": boost_amount_sats as AnyObject
+            "boost": 1 as AnyObject,
+            "reply_uuid": rmUuid as AnyObject,
+            "chat_id": chat.id as AnyObject,
+            "text": "" as AnyObject,
+            "amount": boost_amount_msats as AnyObject
         ]
         
         var messageResult : JSON? = nil
@@ -523,7 +503,7 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
         
         enforceDelay(delay: 8.0)
         
-        //sphinxOnionManager.sendBoostReply(params: params, chat: chat)
+        sphinxOnionManager.sendBoostReply(params: params, chat: chat, completion: {_ in},mnemonic: test_mnemonic2)
         
         enforceDelay( delay: 14.0)
         
@@ -535,27 +515,275 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
             XCTFail("Value coming back is invalid")
             return
         }
-        for key in dataDict.keys{
-            print("key:\(key), value:\(dataDict[key])")
-        }
         
         XCTAssert(msgType == "boost")
-        let msatsString = String(boost_amount_sats * 1000)
+        let msatsString = String(boost_amount_msats)
         XCTAssert(msatsString == msats)
         
-        print(messageResult)
-        print("")
-        //TODO: figure out some way to get the wasm test regime to tell me when it's a boost reply!!!
-        
-        
-        print(messageResult)
     }
     
-    func test_send_receive_direct_payment_3_7(){
+    func test_receive_direct_payment_3_7() {
+        guard let rand_dp_amount = CrypterManager().generateCryptographicallySecureRandomInt(upperBound: 100) else{
+            XCTFail()
+            return
+        }
         
+        sphinxOnionManager.readyForPing = true
+        makeServerSendDirectPayment(amount: rand_dp_amount)
+        
+        XCTAssertTrue(receivedMessage != nil)
+        XCTAssertTrue(receivedMessage?["type"] as? Int == TransactionMessage.TransactionMessageType.directPayment.rawValue)
+        XCTAssertTrue(receivedMessage?["amount"] as? Int == rand_dp_amount)
+        // Add more assertions as needed
     }
     
     func test_send_direct_payment_3_8(){
-        //sendDirectPaymentMessage
+        let testMuid = "YkZJhKWUYWcSRM5JmFhqwq7SJpeV_ayx1Feiu6oq3CE="
+        guard let rand_dp_amount = CrypterManager().generateCryptographicallySecureRandomInt(upperBound: 100) else{
+            XCTFail()
+            return
+        }
+        guard let contact = UserContact.getContactWithDisregardStatus(pubkey: test_sender_pubkey),
+            let chat = contact.getChat() else{
+            XCTFail("Failed to establish self contact")
+            return
+        }
+        
+        var messageResult : JSON? = nil
+        requestListenForIncomingMessage(completion: {result in
+            messageResult = result
+        })
+        
+        enforceDelay(delay: 8.0)
+        
+        sphinxOnionManager.sendDirectPaymentMessage(amount: rand_dp_amount * 1000, muid: testMuid, content: nil, chat: chat,mnemonic:test_mnemonic2, completion: {success,_ in
+            XCTAssertTrue(success)
+        })
+        
+        enforceDelay(delay: 8.0)
+        
+        guard let resultDict = messageResult?.dictionaryValue,
+              let dataDict = resultDict["data"]?.dictionaryValue,
+              let msgType = dataDict["msg_type"]?.rawString(),
+              let msats = dataDict["msat"]?.rawString() else{
+            XCTFail("Value coming back is invalid")
+            return
+        }
+        
+        XCTAssert(msgType == "direct_payment")
+        let msatsString = String(rand_dp_amount * 1000)
+        XCTAssert(msatsString == msats)
+        
+    }
+    
+    func test_send_inline_invoice_3_9() {
+        let expectation = XCTestExpectation(description: "Expecting to have sent and retrieved inline invoice message in time")
+        enforceDelay(delay: 8.0)
+        
+        // Generate a random amount for the invoice
+        guard let rand_amount = CrypterManager().generateCryptographicallySecureRandomInt(upperBound: 1000) else {
+            XCTFail("Failed to generate random amount")
+            return
+        }
+        let amount = rand_amount * 1000 // Convert to millisatoshis
+        
+        // Create a sample message with an inline invoice
+        let content = "Here's an invoice for \(rand_amount) sats"
+        
+        // Generate a legitimate BOLT11 invoice using SphinxOnionManager
+        guard let invoiceString = sphinxOnionManager.createInvoice(
+            amountMsat: amount,
+            description: content,
+            mnemonic: test_mnemonic2
+        ) else {
+            XCTFail("Failed to create invoice")
+            return
+        }
+
+        let echoedMessage = sendTestMessage(
+            content: content,
+            msgType: UInt8(TransactionMessage.TransactionMessageType.invoice.rawValue),
+            invoiceString: invoiceString
+        )
+        
+        guard let resultDict = echoedMessage?.dictionaryValue,
+              let dataDict = resultDict["data"]?.dictionaryValue,
+              let msg = dataDict["msg"]?.dictionaryValue else {
+            XCTFail("Value coming back is invalid")
+            return
+        }
+
+        // Verify the message content
+        XCTAssertEqual(dataDict["msg_type"]?.stringValue, "invoice", "Incorrect message type")
+        XCTAssertEqual(msg["content"]?.stringValue, content, "Incorrect content")
+        
+        // Verify the invoice
+        XCTAssertEqual(msg["invoice"]?.stringValue, invoiceString, "Incorrect invoice string")
+        
+    }
+    
+    func test_receive_inline_invoice_3_10() {
+        // Set up the test
+        NotificationCenter.default.addObserver(self, selector: #selector(handleNewOnionMessageReceived), name: .newOnionMessageWasReceived, object: nil)
+        
+        // Generate a random amount between 1000 and 100,000 millisats
+        guard let randomAmount = CrypterManager().generateCryptographicallySecureRandomInt(upperBound: 100) else {
+            XCTFail("Failed to generate random amount")
+            return
+        }
+        let amountMsats = randomAmount * 1000 // Ensure minimum of 1000 msats
+        
+        // Generate a random memo
+        let randomMemo = "Invoice-\(UUID().uuidString.prefix(8))"
+        
+        // Prepare the command for the remote server
+        guard let profile = UserContact.getOwner(),
+              let pubkey = profile.publicKey else {
+            XCTFail("Failed to get owner's public key")
+            return
+        }
+        
+        // Send the invoice message using the remote server
+        let cmd = "send_invoice_msg"
+        sendRemoteServerMessageRequest(cmd: cmd, pubkey: pubkey, theMsg: randomMemo, amount: amountMsats)
+        
+        // Wait for the message to be received
+        enforceDelay(delay: 10.0)
+        
+        // Verify the received message
+        XCTAssertNotNil(receivedMessage, "No message was received")
+        
+        guard let receivedMessage = receivedMessage else {
+            XCTFail("Received message is nil")
+            return
+        }
+        
+        XCTAssertEqual(receivedMessage["type"] as? Int, TransactionMessage.TransactionMessageType.invoice.rawValue, "Incorrect message type")
+        XCTAssertEqual(receivedMessage["content"] as? String, randomMemo, "Incorrect memo")
+        XCTAssertEqual(receivedMessage["amount"] as! Int, amountMsats/1000)
+    }
+    
+    func test_send_invoice_and_receive_payment_3_11() {
+        // Set up the test
+        NotificationCenter.default.addObserver(self, selector: #selector(handleNewOnionMessageReceived), name: .newOnionMessageWasReceived, object: nil)
+        
+        // Generate a random amount between 1000 and 100,000 millisats
+        guard let randomAmount = CrypterManager().generateCryptographicallySecureRandomInt(upperBound: 100) else {
+            XCTFail("Failed to generate random amount")
+            return
+        }
+        let amountMsats = randomAmount * 1000 // Ensure minimum of 1000 msats
+        
+        // Generate a random memo
+        let randomMemo = "Invoice-\(UUID().uuidString.prefix(8))"
+        
+        // Create an invoice using the Swift client
+        guard let invoiceString = sphinxOnionManager.createInvoice(
+            amountMsat: amountMsats,
+            description: randomMemo,
+            mnemonic: test_mnemonic2
+        ) else {
+            XCTFail("Failed to create invoice")
+            return
+        }
+        
+        // Send the invoice message
+        let messageResult = sendTestMessage(
+            content: randomMemo,
+            msgType: UInt8(TransactionMessage.TransactionMessageType.invoice.rawValue),
+            invoiceString: invoiceString
+        )
+        
+        // Verify the sent invoice message
+        XCTAssertNotNil(messageResult, "Failed to send invoice message")
+        
+        // Extract the UUID of the sent message
+        guard let resultDict = messageResult?.dictionaryValue,
+              let dataDict = resultDict["data"]?.dictionaryValue else {
+            XCTFail("Failed to extract message UUID")
+            return
+        }
+        
+        // Trigger payment of the invoice using the remote server
+        let payCmd = "pay_contact_invoice"
+        sendRemoteServerMessageRequest(cmd: payCmd, pubkey: "", theMsg: invoiceString, amount: 0, useAmount: false, useMsg: true, additionalParams: [], omitPubkey: true)
+        
+        // Wait for the payment to be processed
+        enforceDelay(delay: 10.0)
+        
+        // Verify the payment was successful
+        XCTAssertNotNil(receivedMessage, "No payment confirmation message was received")
+        
+        guard let paymentConfirmation = receivedMessage else {
+            XCTFail("Payment confirmation message is nil")
+            return
+        }
+        
+        XCTAssertEqual(paymentConfirmation["type"] as? Int, TransactionMessage.TransactionMessageType.payment.rawValue, "Incorrect payment message type")
+        XCTAssertEqual(paymentConfirmation["amount"] as? Int, amountMsats/1000, "Incorrect payment amount")
+    }
+    
+    func test_receive_invoice_and_send_payment_3_12() {
+        // Set up the test
+        NotificationCenter.default.addObserver(self, selector: #selector(handleNewOnionMessageReceived), name: .newOnionMessageWasReceived, object: nil)
+        
+        // Generate a random amount between 1000 and 100,000 millisats
+        guard let randomAmount = CrypterManager().generateCryptographicallySecureRandomInt(upperBound: 100) else {
+            XCTFail("Failed to generate random amount")
+            return
+        }
+        let amountMsats = randomAmount * 1000 // Ensure minimum of 1000 msats
+        
+        // Generate a random memo
+        let randomMemo = "Invoice-\(UUID().uuidString.prefix(8))"
+        
+        // Prepare the command for the remote server
+        guard let profile = UserContact.getOwner(),
+              let pubkey = profile.publicKey else {
+            XCTFail("Failed to get owner's public key")
+            return
+        }
+        
+        // Send the invoice message using the remote server
+        let cmd = "send_invoice_msg"
+        sendRemoteServerMessageRequest(cmd: cmd, pubkey: pubkey, theMsg: randomMemo, amount: amountMsats)
+        
+        // Wait for the message to be received
+        enforceDelay(delay: 10.0)
+        
+        // Verify the received invoice message
+        XCTAssertNotNil(receivedMessage, "No invoice message was received")
+        
+        guard let invoiceMessage = receivedMessage else {
+            XCTFail("Received invoice message is nil")
+            return
+        }
+        
+        XCTAssertEqual(invoiceMessage["type"] as? Int, TransactionMessage.TransactionMessageType.invoice.rawValue, "Incorrect message type")
+        XCTAssertEqual(invoiceMessage["content"] as? String, randomMemo, "Incorrect memo")
+        XCTAssertEqual(invoiceMessage["amount"] as? Int, amountMsats/1000, "Incorrect amount")
+        
+        // Extract the invoice string from the received message
+        guard let invoiceString = invoiceMessage["invoice"] as? String else {
+            XCTFail("Failed to extract invoice string from received message")
+            return
+        }
+        
+        guard let uuid = invoiceMessage["uuid"] as? String,
+              let invoiceMessageDb = TransactionMessage.getMessageWith(uuid: uuid) else{
+            XCTFail()
+            return
+        }
+    
+        var messageResult : JSON? = nil
+        requestListenForIncomingMessage(completion: {result in
+            messageResult = result
+        })
+        enforceDelay(delay: 8.0)
+        sphinxOnionManager.payInvoiceMessage(message: invoiceMessageDb,mnemonic:test_mnemonic2)
+        
+//    // Wait for the payment confirmation message
+        enforceDelay(delay: 10.0)
+        XCTAssertTrue(invoiceMessageDb.isPaid() == true)
     }
 }

@@ -206,10 +206,11 @@ extension SphinxOnionManager {
         replyUUID: String?,
         invoiceString: String? = nil,
         tribeKickMember: String? = nil,
-        paidAttachmentMediaToken: String? = nil
+        paidAttachmentMediaToken: String? = nil,
+        mnemonic:String?=nil
     ) -> (TransactionMessage?, String?) {
         
-        guard let seed = getAccountSeed() else {
+        guard let seed = getAccountSeed(mnemonic: mnemonic) else {
             return (nil, "Account seed not found")
         }
         
@@ -1058,6 +1059,11 @@ extension SphinxOnionManager {
         newMessage.amount = NSDecimalNumber(value: msgAmount / 1000)
         newMessage.amountMsat = NSDecimalNumber(value: msgAmount)
         
+        if type == TransactionMessage.TransactionMessageType.invoice.rawValue,
+           let invoice = message.invoice{
+            newMessage.invoice = invoice
+        }
+        
         if type == TransactionMessage.TransactionMessageType.payment.rawValue,
            let ph = message.paymentHash,
            let _ = TransactionMessage.getInvoiceWith(paymentHash: ph)
@@ -1070,6 +1076,12 @@ extension SphinxOnionManager {
         }
                 
         newMessage.setAsLastMessage()
+        
+        if (self.isUnitTestMode) {
+            let userInfo = ["message": newMessage]
+            NotificationCenter.default.post(name: .newOnionMessageWasReceived, object: nil, userInfo: userInfo)
+        }
+        
         
         return newMessage
     }
@@ -1338,7 +1350,8 @@ extension SphinxOnionManager {
     func sendBoostReply(
         params: [String: AnyObject],
         chat: Chat,
-        completion: @escaping (TransactionMessage?) -> ()
+        completion: @escaping (TransactionMessage?) -> (),
+        mnemonic:String?=nil
     ) {
         let pubkey = chat.getContact()?.publicKey ?? chat.ownerPubkey
         let routeHint = chat.getContact()?.routeHint
@@ -1370,7 +1383,8 @@ extension SphinxOnionManager {
             if success {
                 let message = self.finalizeSendBoostReply(
                     params: params,
-                    chat: chat
+                    chat: chat,
+                    mnemonic: mnemonic
                 )
                 completion(message)
             } else {
@@ -1407,7 +1421,8 @@ extension SphinxOnionManager {
     
     func finalizeSendBoostReply(
         params: [String: AnyObject],
-        chat:Chat
+        chat:Chat,
+        mnemonic:String?=nil
     ) -> TransactionMessage? {
         guard let text = params["text"] as? String,
             let amount = params["amount"] as? Int else{
@@ -1422,7 +1437,8 @@ extension SphinxOnionManager {
             amount: amount,
             msgType: UInt8(TransactionMessage.TransactionMessageType.boost.rawValue),
             threadUUID: nil,
-            replyUUID: params["reply_uuid"] as? String
+            replyUUID: params["reply_uuid"] as? String,
+            mnemonic: mnemonic
         )
         
         return sentMessage
@@ -1433,6 +1449,7 @@ extension SphinxOnionManager {
         muid: String?,
         content: String?,
         chat: Chat,
+        mnemonic:String?=nil,
         completion: @escaping (Bool, TransactionMessage?) -> ()
     ){
         guard let contact = chat.getContact(),
@@ -1452,6 +1469,7 @@ extension SphinxOnionManager {
                     muid: muid,
                     content: content,
                     chat: chat,
+                    mnemonic: mnemonic,
                     completion: { success, message in
                         completion(success,message)
                     }
@@ -1467,6 +1485,7 @@ extension SphinxOnionManager {
         muid: String?,
         content: String?,
         chat: Chat,
+        mnemonic:String?=nil,
         completion: @escaping (Bool, TransactionMessage?) -> ()
     ){
         guard let contact = chat.getContact() else {
@@ -1483,7 +1502,8 @@ extension SphinxOnionManager {
             muid: muid,
             mediaType: "image/png",
             threadUUID: nil,
-            replyUUID: nil
+            replyUUID: nil,
+            mnemonic: mnemonic
         ).0 {
             SphinxOnionManager.sharedInstance.assignReceiverId(localMsg: sentMessage)
             sentMessage.managedObjectContext?.saveContext()

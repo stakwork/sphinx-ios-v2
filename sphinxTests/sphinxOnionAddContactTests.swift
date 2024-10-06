@@ -16,9 +16,9 @@ class sphinxOnionAddContactTests: XCTestCase {
     let test_mnemonic1_expected_seed = "dea65b969cd1b0926889f35699586ff7e19469c64e7a944d0c6b68342158a1a8"
     let test_mnemonic1_expected_okKey = "02c24c838266d07cbde76642e08a62a4b5c750e3ba318a9fbbf97f8ec0ff66b134"
     let test_mnemonic1_expected_xpub = "tpubDAGRb7j9yEF51RrPBjxYk6inEyxzX9oZEqRfWGGtnhEaux2xsma2eQFNBYeRgEHLC5pc4Cif4KPJXXRqS1aTErvhvTiZGaGggq9UoTZdEsH"
-    let test_server_ip = "34.229.52.200"
-    let test_server_pubkey = "0343f9e2945b232c5c0e7833acef052d10acf80d1e8a168d86ccb588e63cd962cd"
-    let test_contact_info = "023be900c195aee419e5f68bf4b7bc156597da7649a9103b1afec949d233e4d1aa_02adccd7f574d17d627541b447f47493916e78e33c1583ba9936607b35ca99c392_529771090653741056"
+    let test_server_ip = "127.0.0.1"
+    let test_server_pubkey = "02162c52716637fb8120ab0261e410b185d268d768cc6f6227c58102d194ad0bc2"
+    let test_contact_info = "023be900c195aee419e5f68bf4b7bc156597da7649a9103b1afec949d233e4d1aa_02162c52716637fb8120ab0261e410b185d268d768cc6f6227c58102d194ad0bc2_1099615698944"
     
     //MARK: specific to key exchange
     let test_key_exchange_response_message_json : [String: Any] = [
@@ -30,6 +30,7 @@ class sphinxOnionAddContactTests: XCTestCase {
     
     let test_key_exchange_response_prompt = "IMPORTANT - run the following command from sphinx/wasm/test/cli within the next 60 seconds: yarn cli bob friend alice 03a898d978e42c9feaa25ca103d70b27a2a83472b3b00cd11bbf2a9b3be14460f4_0343f9e2945b232c5c0e7833acef052d10acf80d1e8a168d86ccb588e63cd962cd_529771090671435780"
     
+    var originalServerIP:String?=nil
     var server : Server? = nil
     var balance: String? = nil
     var hopsJSON: [[String: String]]? = nil
@@ -71,13 +72,31 @@ class sphinxOnionAddContactTests: XCTestCase {
     
     override func setUp() {
         // Put setup code here. This method is called before the invocation of each test method in the class.
-        UserData.sharedInstance.save(walletMnemonic: test_mnemonic1)
+        guard let mnemonic = SphinxOnionManager.sharedInstance.generateMnemonic() else{
+            XCTFail("couldn't generate mnemonic")
+            return
+        }
+        UserData.sharedInstance.save(walletMnemonic: mnemonic)
+        sphinxOnionManager.isUnitTestMode = true
+        updateToTestServer()
     }
 
     override func tearDown() {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
         server = nil
         expectation = nil
+    }
+    
+    func updateToTestServer(){
+        originalServerIP = sphinxOnionManager.serverIP
+        UserDefaults.Keys.serverIP.set(test_server_ip)
+    }
+    
+    func resetToOriginalServer(){
+        guard let originalServerIP = originalServerIP else{
+            return
+        }
+        UserDefaults.Keys.serverIP.set(originalServerIP)
     }
 
     func test_seed_generation(){
@@ -258,7 +277,7 @@ class sphinxOnionAddContactTests: XCTestCase {
         fulfillExpectationAfterDelay(expectation, delayInSeconds: delayTime)
         // Wait for the expectation to be fulfilled.
         wait(for: [expectation], timeout: delayTime + 1.0) // Adjust the timeout as needed
-        print("\n\n\n\n WARNING: Must run yarn cli alice from inside the wasm tests folder in the Sphinx repo in order to ensure the receiver is online & available to respond with the correct data!")
+        print("\n\n\n\n WARNING: Must run yarn auto from inside the wasm tests folder in the Sphinx repo in order to ensure the receiver is online & available to respond with the correct data!")
         guard let contact = UserContact.getAll().filter({$0.isOwner == false}).first else{
             XCTFail("Failed contact registration")
             return
