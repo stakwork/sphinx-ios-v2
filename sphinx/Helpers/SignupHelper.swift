@@ -39,27 +39,6 @@ class SignupHelper {
         }
     }
     
-    public static var step: Int {
-        get {
-            return UserDefaults.Keys.signupStep.get(defaultValue: 0)
-        }
-        set {
-            UserDefaults.Keys.signupStep.set(newValue)
-        }
-    }
-    
-    public static func isPinSet() -> Bool {
-        return step >= SignupHelper.SignupStep.PINSet.rawValue
-    }
-    
-    public static func isLogged() -> Bool {
-        return step >= SignupHelper.SignupStep.SignupComplete.rawValue
-    }
-    
-    public static func completeSignup() {
-        step = SignupStep.SignupComplete.rawValue
-    }
-    
     public static func resetInviteInfo() {
         UserDefaults.Keys.currentIP.removeValue()
         UserDefaults.Keys.inviteString.removeValue()

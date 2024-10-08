@@ -149,6 +149,7 @@ extension ChatMessageTextFieldView {
         cursorPosition: Int?
     ) -> String? {
         let relevantText = text[0..<(cursorPosition ?? text.count)]
+        
         if let firstLetter = relevantText.first, firstLetter == "/" {
             return relevantText
         }

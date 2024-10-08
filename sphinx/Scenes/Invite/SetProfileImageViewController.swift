@@ -108,7 +108,7 @@ class SetProfileImageViewController: SetDataViewController {
     }
     
     func goToSphinxDesktopAd() {
-        SignupHelper.step = SignupHelper.SignupStep.PersonalInfoSet.rawValue
+        UserData.sharedInstance.signupStep = SignupHelper.SignupStep.PersonalInfoSet.rawValue
         let sphinxDesktopAdVC = SphinxDesktopAdViewController.instantiate()
         sphinxDesktopAdVC.isRestoreFlow = self.isRestoreFlow
         self.navigationController?.pushViewController(sphinxDesktopAdVC, animated: true)

@@ -20,7 +20,7 @@ extension API {
         tags : [String] = []
     ) {
         let host = SphinxOnionManager.sharedInstance.tribesServerIP
-        let hostProtocol = UserDefaults.Keys.isProductionEnv.get(defaultValue: false) ? "https" : "http"
+        let hostProtocol = SphinxOnionManager.sharedInstance.isProductionEnv ? "https" : "http"
         var url = API.getUrl(route: "\(hostProtocol)://\(host)/tribes?limit=\(limit)&sortBy=member_count&page=\(page)")
         
         if !tags.isEmpty {
@@ -56,8 +56,8 @@ extension API {
         callback: @escaping CreateGroupCallback,
         errorCallback: @escaping EmptyCallback
     ) {
-        let hostProtocol = UserDefaults.Keys.isProductionEnv.get(defaultValue: false) ? "https" : "http"
-        let finalHost = UserDefaults.Keys.isProductionEnv.get(defaultValue: false) ? host : SphinxOnionManager.sharedInstance.kTestV2TribesServer
+        let hostProtocol = SphinxOnionManager.sharedInstance.isProductionEnv ? "https" : "http"
+        let finalHost = SphinxOnionManager.sharedInstance.isProductionEnv ? host : SphinxOnionManager.sharedInstance.kTestV2TribesServer
         let url = API.getUrl(route: "\(hostProtocol)://\(finalHost)/tribes/\(uuid)")
         let tribeRequest : URLRequest? = createRequest(url, bodyParams: nil, method: "GET")
         

@@ -19,7 +19,7 @@ final class sphinxOnionAccountCreateUITests: XCTestCase {
         app = XCUIApplication()
         app.launch()
         
-        //SignupHelper.step = SignupHelper.SignupStep.Start.rawValue
+        //UserData.sharedInstance.signupStep = SignupHelper.SignupStep.Start.rawValue
 
         // In UI tests it is usually best to stop immediately when a failure occurs.
         continueAfterFailure = false

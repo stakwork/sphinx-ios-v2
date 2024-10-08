@@ -58,7 +58,7 @@ class NewUserSignupFormViewController: UIViewController, ConnectionCodeSignupHan
     
     
     @IBAction func backButtonTapped(_ sender: UIButton) {
-        SignupHelper.step = SignupHelper.SignupStep.Start.rawValue
+        UserData.sharedInstance.signupStep = SignupHelper.SignupStep.Start.rawValue
         
         navigationController?.popToRootViewController(animated: true)
     }

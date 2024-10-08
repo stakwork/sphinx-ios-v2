@@ -83,7 +83,7 @@ extension NewUserSignupFormViewController {
     }
     
     func getConfigData() {
-        if UserDefaults.Keys.isProductionEnv.get(defaultValue: false) == false {
+        if !SphinxOnionManager.sharedInstance.isProductionEnv {
             presentConnectingLoadingScreenVC()
             return
         }

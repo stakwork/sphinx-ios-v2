@@ -92,6 +92,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         setInitialVC()
                 
         NetworkMonitor.shared.startMonitoring()
+        
+        ColorsManager.sharedInstance.storeColorsInMemory()
+        SphinxOnionManager.sharedInstance.storeOnionStateInMemory()
 
         return true
     }
@@ -288,12 +291,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             feedsManager.restoreContentFeedStatusInBackground()
         }
 
-        takeUserToInitialVC(isUserLogged: SignupHelper.isLogged())
+        takeUserToInitialVC(isUserLogged: UserData.sharedInstance.isSignupCompleted())
         presentPINIfNeeded()
     }
     
     func updateDefaultTribe() {
-        if UserDefaults.Keys.isProductionEnv.get(defaultValue: false) == false {
+        if !SphinxOnionManager.sharedInstance.isProductionEnv {
             return
         }
         
@@ -425,7 +428,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 if style != UIScreen.main.traitCollection.userInterfaceStyle {
                     style = UIScreen.main.traitCollection.userInterfaceStyle
 
-                    takeUserToInitialVC(isUserLogged: SignupHelper.isLogged())
+                    takeUserToInitialVC(isUserLogged: UserData.sharedInstance.isSignupCompleted())
                 }
                 return
             }

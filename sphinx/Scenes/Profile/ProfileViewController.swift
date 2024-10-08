@@ -256,7 +256,7 @@ class ProfileViewController: NewKeyboardHandlerViewController {
     func configureServers() {
         inviteServerTextField.text = API.kHUBServerUrl
         memesServerTextField.text = API.kAttachmentsServerUrl
-        meetingServerTextField.text = API.kVideoCallServer
+        meetingServerTextField.text = API.sharedInstance.kVideoCallServer
         meetingAmountTextField.text = "\(UserContact.kTipAmount)"
     }
     

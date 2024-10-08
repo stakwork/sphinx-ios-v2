@@ -33,11 +33,11 @@ extension RestoreUserFormViewController {
             options: ["Bitcoin","Regtest"],
             callbacks: [
                 {
-                    UserDefaults.Keys.isProductionEnv.set(true)
+                    SphinxOnionManager.sharedInstance.isProductionEnv = true
                     self.getConfigData(code: code)
                 },
                 {
-                    UserDefaults.Keys.isProductionEnv.set(false)
+                    SphinxOnionManager.sharedInstance.isProductionEnv = false
                     self.continueWith(code: code)
                 }
             ],
@@ -144,12 +144,12 @@ extension RestoreUserFormViewController : NSFetchedResultsControllerDelegate{
             return
         }
         
-        SignupHelper.step = SignupHelper.SignupStep.OwnerCreated.rawValue
+        UserData.sharedInstance.signupStep = SignupHelper.SignupStep.OwnerCreated.rawValue
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
             guard let self = self else { return }
 
-            SignupHelper.step = SignupHelper.SignupStep.InviterContactCreated.rawValue
+            UserData.sharedInstance.signupStep = SignupHelper.SignupStep.InviterContactCreated.rawValue
             
             let setPinVC = SetPinCodeViewController.instantiate()
             setPinVC.isRestoreFlow = true

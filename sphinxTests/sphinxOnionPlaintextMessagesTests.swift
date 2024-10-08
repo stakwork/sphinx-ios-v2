@@ -285,7 +285,7 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
         let expectation = XCTestExpectation(description: "Expecting to have retrieved message in time")
         enforceDelay(delay: 8.0)
         //2. Send message with random content
-        guard let rand = CrypterManager().generateCryptographicallySecureRandomInt(upperBound: 100_000_000) else{
+        guard let rand = SphinxOnionManager.sharedInstance.generateCryptographicallySecureRandomInt(upperBound: 100_000_000) else{
             XCTFail()
             return
         }
@@ -336,7 +336,7 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
         let expectation = XCTestExpectation(description: "Expecting to have retrieved message in time")
         enforceDelay(delay: 8.0)
         //2. Send message with random content
-        guard let rand = CrypterManager().generateCryptographicallySecureRandomInt(upperBound: 100_000_000) else{
+        guard let rand = SphinxOnionManager.sharedInstance.generateCryptographicallySecureRandomInt(upperBound: 100_000_000) else{
             XCTFail()
             return
         }
@@ -386,7 +386,7 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
         )
 
         attachmentObject.text = content
-        guard let sentMessage = sphinxOnionManager.sendAttachment(file: fakeFile, attachmentObject: attachmentObject, chat: chat, replyingMessage: nil, threadUUID: nil),
+        guard let sentMessage = sphinxOnionManager.sendAttachment(file: fakeFile, attachmentObject: attachmentObject, chat: chat, replyingMessage: nil, threadUUID: nil).0,
               let testMediaToken = sentMessage.mediaToken else{
             XCTFail("Expected to get back valid pre-flight message")
             return
@@ -437,7 +437,7 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
     //MARK: Boost and replies related:
     func test_receive_reply_and_boost_3_5() throws {
         //1. Construct initial message
-        guard let rand = CrypterManager().generateCryptographicallySecureRandomInt(upperBound: 100_000_000) else{
+        guard let rand = SphinxOnionManager.sharedInstance.generateCryptographicallySecureRandomInt(upperBound: 100_000_000) else{
             XCTFail()
             return
         }
@@ -459,7 +459,7 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
         
         
         //3. Make server boost initial message: yarn auto boost MYPUBKEY MYMESSSAGEUUID RANDOMSATVALUE
-        guard let rand_amount = CrypterManager().generateCryptographicallySecureRandomInt(upperBound: 1000) else{
+        guard let rand_amount = SphinxOnionManager.sharedInstance.generateCryptographicallySecureRandomInt(upperBound: 1000) else{
             XCTFail()
             return
         }
@@ -476,7 +476,7 @@ final class sphinxOnionPlaintextMessagesTests: XCTestCase {
         makeServerSendMessage()
         guard let receivedMessage = receivedMessage,
         let rmUuid = receivedMessage["uuid"] as? String,
-        let rand = CrypterManager().generateCryptographicallySecureRandomInt(upperBound: 100_000_000) else{
+              let rand = SphinxOnionManager.sharedInstance.generateCryptographicallySecureRandomInt(upperBound: 100_000_000) else{
             XCTFail()
             return
         }

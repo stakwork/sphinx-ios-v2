@@ -106,6 +106,22 @@ class SphinxOnionManager : NSObject {
     let kSharedGroupName = "group.com.gl.sphinx.v2"
     let kChildIndexesStorageKey = "childIndexesStorageKey"
     
+    var onionState: [String: [UInt8]] = [:]
+    
+    var mutationKeys: [String] {
+        get {
+            if let onionState: String = UserDefaults.Keys.onionState.get() {
+                return onionState.components(separatedBy: ",")
+            }
+            return []
+        }
+        set {
+            UserDefaults.Keys.onionState.set(
+                newValue.joined(separator: ",")
+            )
+        }
+    }
+    
     //MARK: Hardcoded Values!
     var serverIP: String {
         get {
@@ -125,12 +141,21 @@ class SphinxOnionManager : NSObject {
         }
     }
     
+    var storedRouteUrl: String? = nil
     var routerUrl: String {
         get {
+            if let storedRouteUrl = storedRouteUrl {
+                return storedRouteUrl
+            }
             if let routerUrl: String = UserDefaults.Keys.routerUrl.get() {
+                storedRouteUrl = routerUrl
                 return routerUrl
             }
+            storedRouteUrl = kTestRouterUrl
             return kTestRouterUrl
+        }
+        set {
+            UserDefaults.Keys.routerUrl.set(newValue)
         }
     }
     
@@ -183,9 +208,24 @@ class SphinxOnionManager : NSObject {
         }
     }
     
+    var isProductionEnvStored: Bool? = nil
+    var isProductionEnv : Bool {
+        get {
+            if let isProductionEnvStored = isProductionEnvStored {
+                return isProductionEnvStored
+            }
+            let isProductionEnv = UserDefaults.Keys.isProductionEnv.get(defaultValue: false)
+            self.isProductionEnvStored = isProductionEnv
+            return isProductionEnv
+        }
+        set {
+            UserDefaults.Keys.isProductionEnv.set(newValue)
+        }
+    }
+    
     var network: String {
         get {
-            return UserDefaults.Keys.isProductionEnv.get(defaultValue: false) ? "bitcoin" : "regtest"
+            return isProductionEnv ? "bitcoin" : "regtest"
         }
     }
     
@@ -281,7 +321,7 @@ class SphinxOnionManager : NSObject {
     func getTimeWithEntropy() -> String {
         let currentTimeMilliseconds = Int(Date().timeIntervalSince1970 * 1000)
         let upperBound = 1_000
-        let randomInt = CrypterManager().generateCryptographicallySecureRandomInt(upperBound: upperBound)
+        let randomInt = generateCryptographicallySecureRandomInt(upperBound: upperBound)
         let timePlusRandom = currentTimeMilliseconds + randomInt!
         let randomString = String(describing: timePlusRandom)
         return randomString

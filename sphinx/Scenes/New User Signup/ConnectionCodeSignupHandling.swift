@@ -70,7 +70,7 @@ extension ConnectionCodeSignupHandling {
             return
         }
         
-        SignupHelper.step = SignupHelper.SignupStep.OwnerCreated.rawValue
+        UserData.sharedInstance.signupStep = SignupHelper.SignupStep.OwnerCreated.rawValue
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
             guard let self = self else { return }
