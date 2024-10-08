@@ -57,8 +57,13 @@ extension ChatMessageTextFieldView : UITextViewDelegate {
             text: textView.text != kFieldPlaceHolder ? textView.text : ""
         )
         
-        processMention(text: textView.text)
-        processMacro(text: textView.text, cursorPosition: textView.text.length)
+        let string = textView.text ?? ""
+        let cursorPosition = textView.selectedRange.location
+        
+        DispatchQueue.global(qos: .userInitiated).async {
+            self.processMention(text: string, cursorPosition: cursorPosition)
+            self.processMacro(text: string, cursorPosition: cursorPosition)
+        }
     }
     
     func animateElements(
@@ -80,14 +85,13 @@ extension ChatMessageTextFieldView : UITextViewDelegate {
 extension ChatMessageTextFieldView {
     
     func getAtMention(
-        text: String
+        text: String,
+        cursorPosition: Int
     ) -> String? {
         
         if text.trim().isEmpty {
             return nil
         }
-        
-        let cursorPosition = textView.selectedRange.location
         
         let relevantText = text[0..<cursorPosition]
         
@@ -110,12 +114,12 @@ extension ChatMessageTextFieldView {
         mention: String
     ) {
         if let text = textView.text {
-            let initialPosition = textView.selectedRange.location
+            let cursorPosition = textView.selectedRange.location
             
-            if let typedMentionText = getAtMention(text: text) {
+            if let typedMentionText = getAtMention(text: text, cursorPosition: cursorPosition) {
                 
-                let startIndex = text.index(text.startIndex, offsetBy: initialPosition - typedMentionText.count)
-                let endIndex = text.index(text.startIndex, offsetBy: initialPosition)
+                let startIndex = text.index(text.startIndex, offsetBy: cursorPosition - typedMentionText.count)
+                let endIndex = text.index(text.startIndex, offsetBy: cursorPosition)
                 
                 textView.text = textView.text.replacingOccurrences(
                     of: typedMentionText,
@@ -125,7 +129,7 @@ extension ChatMessageTextFieldView {
                 )
                 
 
-                let position = initialPosition + (("@\(mention) ".count - typedMentionText.count))
+                let position = cursorPosition + (("@\(mention) ".count - typedMentionText.count))
                 textView.selectedRange = NSRange(location: position, length: 0)
                 
                 textViewDidChange(textView)
@@ -134,9 +138,10 @@ extension ChatMessageTextFieldView {
     }
     
     func processMention(
-        text: String
+        text: String,
+        cursorPosition: Int
     ) {
-        if let mention = getAtMention(text: text) {
+        if let mention = getAtMention(text: text, cursorPosition: cursorPosition) {
             let mentionValue = String(mention).replacingOccurrences(of: "@", with: "").lowercased()
             self.delegate?.didDetectPossibleMention(mentionText: mentionValue)
         } else {
@@ -149,6 +154,7 @@ extension ChatMessageTextFieldView {
         cursorPosition: Int?
     ) -> String? {
         let relevantText = text[0..<(cursorPosition ?? text.count)]
+        
         if let firstLetter = relevantText.first, firstLetter == "/" {
             return relevantText
         }

@@ -33,7 +33,8 @@ class ActionsManager {
     }
     
     func isTrackingEnabled() -> Bool {
-        return UserDefaults.Keys.shouldTrackActions.get(defaultValue: false)
+//        return UserDefaults.Keys.shouldTrackActions.get(defaultValue: false)
+        return false
     }
     
     var searchActions: [FeedSearchAction] = []

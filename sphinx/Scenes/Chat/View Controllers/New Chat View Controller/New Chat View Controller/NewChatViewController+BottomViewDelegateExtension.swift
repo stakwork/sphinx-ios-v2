@@ -10,7 +10,9 @@ import UIKit
 
 extension NewChatViewController : ChatMessageTextFieldViewDelegate {
     func didChangeText(text: String) {
-        ChatTrackingHandler.shared.saveOngoingMessage(with: text, chatId: chat?.id)
+        DispatchQueue.global(qos: .userInitiated).async {
+            ChatTrackingHandler.shared.saveOngoingMessage(with: text, chatId: self.chat?.id)
+        }
     }
     
     func shouldSendMessage(

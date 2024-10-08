@@ -125,7 +125,7 @@ class ImportSeedView: UIView {
     
     @IBAction func confirmTapped(_ sender: Any) {
         let words = textView.text.split(separator: " ").map { String($0).trim().lowercased() }
-        let (error, additionalString) = CrypterManager.sharedInstance.validateSeed(words: words)
+        let (error, additionalString) = SphinxOnionManager.sharedInstance.validateSeed(words: words)
         
         if let error = error {
             AlertHelper.showAlert(

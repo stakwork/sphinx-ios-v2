@@ -203,7 +203,7 @@ class SetPinCodeViewController: UIViewController {
         } else {
             UserData.sharedInstance.save(pin: getPinString())
             
-            SignupHelper.step = SignupHelper.SignupStep.PINSet.rawValue
+            UserData.sharedInstance.signupStep = SignupHelper.SignupStep.PINSet.rawValue
             
             if (isRestoreFlow) {
                 let setNickNameVC = SetNickNameViewController.instantiate()

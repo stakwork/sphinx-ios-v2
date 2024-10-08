@@ -63,7 +63,7 @@ class RestoreUserFormViewController: UIViewController {
     
     
     @IBAction func backButtonTapped(_ sender: UIButton) {
-        SignupHelper.step = SignupHelper.SignupStep.Start.rawValue
+        UserData.sharedInstance.signupStep = SignupHelper.SignupStep.Start.rawValue
         
         self.navigationController?.popToRootViewController(animated: true)
     }

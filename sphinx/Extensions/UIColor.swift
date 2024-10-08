@@ -168,17 +168,23 @@ public extension UIColor {
     }
     
     static func getColorFor(key: String) -> UIColor {
-        if let colorCode = UserDefaults.standard.string(forKey: key){
+        if let colorCode = ColorsManager.sharedInstance.getColorFor(key: key) {
+            return UIColor(hex: colorCode)
+        } else if let colorCode = UserDefaults.standard.value(forKey: key) as? String {
             return UIColor(hex: colorCode)
         } else {
             let newColor = UIColor.random()
-            UserDefaults.standard.set(newColor.toHexString(), forKey: key)
-            UserDefaults.standard.synchronize()
+            if let hexString = newColor.toHexString() {
+                UserDefaults.standard.set(hexString, forKey: key)
+                UserDefaults.standard.synchronize()
+                ColorsManager.sharedInstance.saveColorFor(colorHex: hexString, key: key)
+            }
             return newColor
         }
     }
     
     static func removeColorFor(key: String) {
+        ColorsManager.sharedInstance.removeColorFor(key: key)
         UserDefaults.standard.removeObject(forKey: key)
         UserDefaults.standard.synchronize()
     }

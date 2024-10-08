@@ -276,16 +276,32 @@ extension SphinxOnionManager {
 
     
     func deleteTribe(tribeChat: Chat) -> Bool {
-        if let _ = sendMessage(
-            to: nil,
-            content: "",
-            chat: tribeChat,
-            provisionalMessage: nil,
-            msgType: UInt8(TransactionMessage.TransactionMessageType.groupDelete.rawValue),
-            threadUUID: nil,
-            replyUUID: nil
-        ).0 {
-            return true
+        if let seed = getAccountSeed(),
+            let tribesServerPubKey = getTribePubkey(),
+            let tribePubkey = tribeChat.ownerPubkey,
+            let _ = sendMessage(
+                to: nil,
+                content: "",
+                chat: tribeChat,
+                provisionalMessage: nil,
+                msgType: UInt8(TransactionMessage.TransactionMessageType.groupDelete.rawValue),
+                threadUUID: nil,
+                replyUUID: nil
+            ).0
+        {
+            do {
+                let rr = try sphinx.deleteTribe(
+                    seed: seed,
+                    uniqueTime: getTimeWithEntropy(),
+                    state: loadOnionStateAsData(),
+                    tribeServerPubkey: tribesServerPubKey,
+                    tribePubkey: tribePubkey
+                )
+                let _ = handleRunReturn(rr: rr)
+                return true
+            } catch {
+                return false
+            }
         }
         return false
     }
@@ -302,7 +318,7 @@ extension SphinxOnionManager {
         var chatDict = rawTribeJSON
         
         let mappedFields : [String:Any] = [
-            "id": CrypterManager.sharedInstance.generateCryptographicallySecureRandomInt(upperBound: Int(1e5)) as Any,
+            "id": SphinxOnionManager.sharedInstance.generateCryptographicallySecureRandomInt(upperBound: Int(1e5)) as Any,
             "owner_pubkey": ownerPubkey,
             "name" : name,
             "is_tribe_i_created": true,

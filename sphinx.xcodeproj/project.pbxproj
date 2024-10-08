@@ -155,6 +155,8 @@
 		4733ED212CA4888E00078EF2 /* NewUnifiedEpisodeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4733ED202CA4888E00078EF2 /* NewUnifiedEpisodeView.swift */; };
 		4733ED232CA4889600078EF2 /* NewUnifiedEpisodeView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 4733ED222CA4889600078EF2 /* NewUnifiedEpisodeView.xib */; };
 		4733ED272CA72AA200078EF2 /* SphinxOnionManager+PeopleExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4733ED262CA72AA200078EF2 /* SphinxOnionManager+PeopleExtension.swift */; };
+		4733ED2F2CB556F500078EF2 /* ColorsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4733ED2E2CB556F500078EF2 /* ColorsManager.swift */; };
+		4733ED312CB5572700078EF2 /* SphinxOnionManager+OnionStateExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4733ED302CB5572700078EF2 /* SphinxOnionManager+OnionStateExtension.swift */; };
 		47341E8428C79A8B00426055 /* CustomAlertController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47341E8328C79A8B00426055 /* CustomAlertController.swift */; };
 		4734D3C9241AA24C00D6957E /* PaymentTemplateViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4734D3C8241AA24C00D6957E /* PaymentTemplateViewController.swift */; };
 		4734D3CB241AA7A000D6957E /* PaymentTemplatesDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4734D3CA241AA7A000D6957E /* PaymentTemplatesDataSource.swift */; };
@@ -1270,6 +1272,8 @@
 		4733ED202CA4888E00078EF2 /* NewUnifiedEpisodeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewUnifiedEpisodeView.swift; sourceTree = "<group>"; };
 		4733ED222CA4889600078EF2 /* NewUnifiedEpisodeView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = NewUnifiedEpisodeView.xib; sourceTree = "<group>"; };
 		4733ED262CA72AA200078EF2 /* SphinxOnionManager+PeopleExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SphinxOnionManager+PeopleExtension.swift"; sourceTree = "<group>"; };
+		4733ED2E2CB556F500078EF2 /* ColorsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorsManager.swift; sourceTree = "<group>"; };
+		4733ED302CB5572700078EF2 /* SphinxOnionManager+OnionStateExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SphinxOnionManager+OnionStateExtension.swift"; sourceTree = "<group>"; };
 		47341E8028C642DC00426055 /* sphinx 34.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 34.xcdatamodel"; sourceTree = "<group>"; };
 		47341E8328C79A8B00426055 /* CustomAlertController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomAlertController.swift; sourceTree = "<group>"; };
 		4734D3C8241AA24C00D6957E /* PaymentTemplateViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentTemplateViewController.swift; sourceTree = "<group>"; };
@@ -2446,6 +2450,7 @@
 		471FACD623E89E19007DE1C8 /* Managers */ = {
 			isa = PBXGroup;
 			children = (
+				4733ED2D2CB556E700078EF2 /* Colors Manager */,
 				471161E329156531008EAFF2 /* Actions Manager */,
 				47C52C4327F49E8E007B43E2 /* Requests Signing */,
 				474A136124E58070007C7528 /* Tor */,
@@ -2654,6 +2659,14 @@
 				4787F87024743D6400CCE8B9 /* Public Groups */,
 			);
 			path = Groups;
+			sourceTree = "<group>";
+		};
+		4733ED2D2CB556E700078EF2 /* Colors Manager */ = {
+			isa = PBXGroup;
+			children = (
+				4733ED2E2CB556F500078EF2 /* ColorsManager.swift */,
+			);
+			path = "Colors Manager";
 			sourceTree = "<group>";
 		};
 		4734D3CC241AA8CB00D6957E /* Payment Templates */ = {
@@ -4219,6 +4232,7 @@
 				4741EBEA2BFF726300EFF49E /* SphinxOnionManager+ReadMuteExtension.swift */,
 				CE50CB9E2C3DBB45009E71FB /* SphinxOnionManager+BTClient.swift */,
 				4733ED262CA72AA200078EF2 /* SphinxOnionManager+PeopleExtension.swift */,
+				4733ED302CB5572700078EF2 /* SphinxOnionManager+OnionStateExtension.swift */,
 			);
 			path = Crypter;
 			sourceTree = "<group>";
@@ -5343,6 +5357,7 @@
 				47363D002A4B374600C295D4 /* ChatSearchResultsBar.swift in Sources */,
 				F38744E1271FD7CB00E28C84 /* Video+DisplayUtils.swift in Sources */,
 				F358212F2698BE6800A314F1 /* API+HubError.swift in Sources */,
+				4733ED2F2CB556F500078EF2 /* ColorsManager.swift in Sources */,
 				472161CD293A67A50088B87B /* YoutubeRecommendationFeedPlayerViewController.swift in Sources */,
 				47A79D3A2444A15C005CD72F /* MessageOptionsView.swift in Sources */,
 				47E6A4CC2A2E68A700A9509E /* DeletedMessageView.swift in Sources */,
@@ -5587,6 +5602,7 @@
 				CEF821D62963B68600CBB28F /* DiscoverTribesWebViewController.swift in Sources */,
 				F3188B80271792CE00890DDD /* VideoFeed+Properties.swift in Sources */,
 				47BF27F12A37782E00F15EE9 /* NewChatTableDataSource+PreloaderExtension.swift in Sources */,
+				4733ED312CB5572700078EF2 /* SphinxOnionManager+OnionStateExtension.swift in Sources */,
 				476EB47523C50662009745E2 /* GroupContactTableViewCell.swift in Sources */,
 				47183CB0254893B100E6FD19 /* NewPodcastPlayerViewController.swift in Sources */,
 				47E300DF234B81F800DB56DB /* LeftMenuAddFriendTableViewCell.swift in Sources */,

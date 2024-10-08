@@ -52,7 +52,7 @@ class SphinxDesktopAdViewController: UIViewController {
     }
     
     func goToApp() {
-        SignupHelper.completeSignup()
+        UserData.sharedInstance.completeSignup()
         resetSignupData()
         UserDefaults.Keys.lastPinDate.set(Date())
         

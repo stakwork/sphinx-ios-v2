@@ -62,7 +62,7 @@ extension ProfileViewController : UITextFieldDelegate {
                     API.kAttachmentsServerUrl = text
                     break
                 case ProfileFields.VideoCallServer.rawValue:
-                    API.kVideoCallServer = text
+                    API.sharedInstance.kVideoCallServer = text
                     break
                 default:
                     break

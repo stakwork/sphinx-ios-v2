@@ -72,7 +72,7 @@ class InviteWelcomeViewController: UIViewController {
     }
     
     func continueToPinView() {
-        SignupHelper.step = SignupHelper.SignupStep.InviterContactCreated.rawValue
+        UserData.sharedInstance.signupStep = SignupHelper.SignupStep.InviterContactCreated.rawValue
         
         let setPinVC = SetPinCodeViewController.instantiate()
         self.navigationController?.pushViewController(setPinVC, animated: true)

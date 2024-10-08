@@ -482,7 +482,8 @@ extension AllTribeFeedsCollectionViewController {
 extension AllTribeFeedsCollectionViewController {
 
     func isTrackingEnabled() -> Bool{
-        return UserDefaults.Keys.shouldTrackActions.get(defaultValue: false)
+//        return UserDefaults.Keys.shouldTrackActions.get(defaultValue: false)
+        return false
     }
     
     func makeSnapshotForCurrentState(

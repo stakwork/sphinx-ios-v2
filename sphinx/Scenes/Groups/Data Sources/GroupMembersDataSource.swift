@@ -72,7 +72,7 @@ class GroupMembersDataSource: GroupAllContactsDataSource {
         var lastLetter = ""
         
         for contact in  contacts {
-            let id = contact.getJSONId() ?? CrypterManager.sharedInstance.generateCryptographicallySecureRandomInt(upperBound: 100_000)
+            let id = contact.getJSONId() ?? SphinxOnionManager.sharedInstance.generateCryptographicallySecureRandomInt(upperBound: 100_000)
             let nickname = contact["alias"].stringValue
             let avatarUrl = contact["photo_url"].stringValue
             let pubkey = contact["pubkey"].stringValue

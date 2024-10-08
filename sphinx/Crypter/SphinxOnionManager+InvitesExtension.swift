@@ -158,23 +158,23 @@ extension SphinxOnionManager{//invites related
             if let port = components.port {
                 UserDefaults.Keys.serverPORT.set(port)
                 UserDefaults.Keys.serverIP.set(host.replacingOccurrences(of: ":\(port)", with: ""))
-                UserDefaults.Keys.isProductionEnv.set(port == kProdServerPort)
+                SphinxOnionManager.sharedInstance.isProductionEnv = port == kProdServerPort
             } else {
                 UserDefaults.Keys.serverIP.set(host)
-                UserDefaults.Keys.isProductionEnv.set(false)
+                SphinxOnionManager.sharedInstance.isProductionEnv = false
             }
         } else if let components = URLComponents(string: "https://\(lspHost)"), let host = components.host {
             if let port = components.port {
                 UserDefaults.Keys.serverPORT.set(port)
                 UserDefaults.Keys.serverIP.set(host.replacingOccurrences(of: ":\(port)", with: ""))
-                UserDefaults.Keys.isProductionEnv.set(port == kProdServerPort)
+                SphinxOnionManager.sharedInstance.isProductionEnv = port == kProdServerPort
             } else {
                 UserDefaults.Keys.serverIP.set(host)
-                UserDefaults.Keys.isProductionEnv.set(false)
+                SphinxOnionManager.sharedInstance.isProductionEnv = false
             }
         } else {
             UserDefaults.Keys.serverIP.set(lspHost)
-            UserDefaults.Keys.isProductionEnv.set(false)
+            SphinxOnionManager.sharedInstance.isProductionEnv = false
         }
     }
 }

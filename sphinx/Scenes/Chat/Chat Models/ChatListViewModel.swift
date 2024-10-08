@@ -23,6 +23,6 @@ final class ChatListViewModel {
     var syncing = false
     
     func finishRestoring() {
-        SignupHelper.completeSignup()
+        UserData.sharedInstance.completeSignup()
     }
 }
