@@ -439,8 +439,6 @@ class SphinxOnionManager : NSObject {
         self.messageRestoreCallback = messageRestoreCallback
         self.errorCallback = errorCallback
         
-        self.startWatchdogTimer()
-        
         self.disconnectMqtt() { delay in
             
             DelayPerformedHelper.performAfterDelay(seconds: delay, completion: { [weak self] in

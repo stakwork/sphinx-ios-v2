@@ -1065,7 +1065,7 @@ extension SphinxOnionManager {
             newMessage.setPaymentInvoiceAsPaid()
         }
         
-        if (delaySave == false) {
+        if !delaySave {
             managedContext.saveContext()
         }
                 
