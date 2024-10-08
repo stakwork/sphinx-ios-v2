@@ -36,6 +36,7 @@ class SphinxOnionManager : NSObject {
     var stashedInviteCode: String? = nil
     var stashedInviterAlias: String? = nil
     
+    var watchdogTimer: Timer? = nil
     var reconnectionTimer: Timer? = nil
     var sendTimeoutTimers: [String: Timer] = [:]
     
@@ -80,6 +81,7 @@ class SphinxOnionManager : NSObject {
     var messageRestoreCallback: RestoreProgressCallback? = nil
     var contactRestoreCallback: RestoreProgressCallback? = nil
     var hideRestoreCallback: (() -> ())? = nil
+    var errorCallback: (() -> ())? = nil
     var tribeMembersCallback: (([String: AnyObject]) -> ())? = nil
     var paymentsHistoryCallback: ((String?, String?) -> ())? = nil
     var inviteCreationCallback: ((String?) -> ())? = nil
@@ -398,7 +400,8 @@ class SphinxOnionManager : NSObject {
         }
         connectToServer(
             connectingCallback: connectingCallback,
-            hideRestoreViewCallback: hideRestoreViewCallback
+            hideRestoreViewCallback: hideRestoreViewCallback,
+            errorCallback: errorCallback
         )
     }
     
@@ -417,7 +420,8 @@ class SphinxOnionManager : NSObject {
         connectingCallback: (() -> ())? = nil,
         contactRestoreCallback: RestoreProgressCallback? = nil,
         messageRestoreCallback: RestoreProgressCallback? = nil,
-        hideRestoreViewCallback: (()->())? = nil
+        hideRestoreViewCallback: (()->())? = nil,
+        errorCallback: (()->())? = nil
     ){
         connectingCallback?()
         
@@ -425,6 +429,7 @@ class SphinxOnionManager : NSObject {
               let myPubkey = getAccountOnlyKeysendPubkey(seed: seed),
               let my_xpub = getAccountXpub(seed: seed) else
         {
+            errorCallback?()
             hideRestoreViewCallback?()
             return
         }
@@ -432,6 +437,9 @@ class SphinxOnionManager : NSObject {
         self.hideRestoreCallback = hideRestoreViewCallback
         self.contactRestoreCallback = contactRestoreCallback
         self.messageRestoreCallback = messageRestoreCallback
+        self.errorCallback = errorCallback
+        
+        self.startWatchdogTimer()
         
         self.disconnectMqtt() { delay in
             
@@ -472,7 +480,6 @@ class SphinxOnionManager : NSObject {
                             
                             hideRestoreViewCallback?()
                         }
-                        
                         self.syncContactsAndMessages()
                     } else {
                         self.contactRestoreCallback = nil
@@ -487,10 +494,10 @@ class SphinxOnionManager : NSObject {
                     completionHandler(true)
                 }
                 
-                self.mqtt.didDisconnect = { _, _ in
-                    self.isConnected = false
-                    self.mqtt = nil
-                    self.startReconnectionTimer()
+                self.mqtt.didDisconnect = { [weak self] _, _ in
+                    self?.isConnected = false
+                    self?.mqtt = nil
+                    self?.startReconnectionTimer()
                 }
                 
                 self.startReconnectionTimer(delay: 2.0)
@@ -522,6 +529,8 @@ class SphinxOnionManager : NSObject {
     }
     
     @objc func reconnectionTimerFired() {
+        errorCallback?()
+        
         if (UIApplication.shared.delegate as? AppDelegate)?.isActive == false {
             return
         }

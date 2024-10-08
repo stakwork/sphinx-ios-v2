@@ -172,6 +172,7 @@ extension SphinxOnionManager {
         startIndex: Int = 0
     ) {
         guard let seed = getAccountSeed() else{
+            finishRestoration()
             return
         }
         
@@ -243,6 +244,7 @@ extension SphinxOnionManager {
         reverse: Bool
     ) {
         guard let seed = getAccountSeed() else {
+            finishRestoration()
             return
         }
         
@@ -403,6 +405,7 @@ extension SphinxOnionManager {
         }
         
         guard let seed = getAccountSeed() else {
+            finishRestoration()
             return
         }
         
@@ -437,6 +440,7 @@ extension SphinxOnionManager {
         }
         
         guard let seed = getAccountSeed() else {
+            finishRestoration()
             return
         }
         
@@ -653,6 +657,37 @@ extension SphinxOnionManager {
         chatsFetchParams = nil
     }
     
+    func endWatchdogTime() {
+        watchdogTimer?.invalidate()
+        watchdogTimer = nil
+    }
+    
+    func startWatchdogTimer() {
+        watchdogTimer?.invalidate()
+        
+        watchdogTimer = Timer.scheduledTimer(
+            timeInterval: 10.0,
+            target: self,
+            selector: #selector(watchdogTimerFired),
+            userInfo: nil,
+            repeats: false
+        )
+    }
+    
+    @objc func watchdogTimerFired() {
+        onMessageRestoredCallback = nil
+        firstSCIDMsgsCallback = nil
+        totalMsgsCountCallback = nil
+        
+        messageFetchParams = nil
+        chatsFetchParams = nil
+        
+        restoredContactInfoTracker = []
+        
+        endWatchdogTime()
+        resetFromRestore()
+    }
+    
     func finishRestoration() {
         onMessageRestoredCallback = nil
         firstSCIDMsgsCallback = nil
@@ -663,6 +698,7 @@ extension SphinxOnionManager {
         
         restoredContactInfoTracker = []
         
+        endWatchdogTime()
         requestPings()
         resetFromRestore()
         updateRoutingInfo()
