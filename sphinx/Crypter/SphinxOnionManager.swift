@@ -527,8 +527,6 @@ class SphinxOnionManager : NSObject {
     }
     
     @objc func reconnectionTimerFired() {
-        errorCallback?()
-        
         if (UIApplication.shared.delegate as? AppDelegate)?.isActive == false {
             return
         }
@@ -537,10 +535,10 @@ class SphinxOnionManager : NSObject {
             return
         }
         
-        connectToServer(
-            contactRestoreCallback: self.contactRestoreCallback,
-            messageRestoreCallback: self.messageRestoreCallback,
-            hideRestoreViewCallback: self.hideRestoreCallback
+        reconnectToServer(
+            connectingCallback: nil,
+            hideRestoreViewCallback: self.hideRestoreCallback,
+            errorCallback: self.errorCallback
         )
     }
     

@@ -483,10 +483,11 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         didReceiveRemoteNotification userInfo: [AnyHashable : Any],
         fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
     ) {
-        let dispatchGroup = DispatchGroup()
-            
         var newData = false
-        dispatchGroup.enter()  // Enter the group before starting the task
+        var didEndFetch = false
+        
+        let dispatchGroup = DispatchGroup()
+        dispatchGroup.enter()
         
         if !UserData.sharedInstance.isUserLogged() {
             newData = false
@@ -495,14 +496,27 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         }
         
         som.reconnectToServer(hideRestoreViewCallback: {
-            newData = true
-            dispatchGroup.leave()
+            if !didEndFetch {
+                didEndFetch = true
+                newData = true
+                dispatchGroup.leave()
+            }
         }, errorCallback: {
-            newData = false
-            dispatchGroup.leave()
+            if !didEndFetch {
+                didEndFetch = true
+                newData = false
+                dispatchGroup.leave()
+            }
         })
         
-        // Notify when all tasks are done
+        DelayPerformedHelper.performAfterDelay(seconds: 20, completion: {
+            if !didEndFetch {
+                didEndFetch = true
+                newData = false
+                dispatchGroup.leave()
+            }
+        })
+        
         dispatchGroup.notify(queue: .main) { @MainActor in
             if newData {
                 completionHandler(.newData)
