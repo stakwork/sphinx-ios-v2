@@ -384,6 +384,8 @@ class SphinxOnionManager : NSObject {
     
     func reconnectToServer(
         connectingCallback: (() -> ())? = nil,
+        contactRestoreCallback: RestoreProgressCallback? = nil,
+        messageRestoreCallback: RestoreProgressCallback? = nil,
         hideRestoreViewCallback: (()->())? = nil,
         errorCallback: (()->())? = nil
     ) {
@@ -400,6 +402,8 @@ class SphinxOnionManager : NSObject {
         }
         connectToServer(
             connectingCallback: connectingCallback,
+            contactRestoreCallback: contactRestoreCallback,
+            messageRestoreCallback: messageRestoreCallback,
             hideRestoreViewCallback: hideRestoreViewCallback,
             errorCallback: errorCallback
         )
@@ -537,6 +541,8 @@ class SphinxOnionManager : NSObject {
         
         reconnectToServer(
             connectingCallback: nil,
+            contactRestoreCallback: self.contactRestoreCallback,
+            messageRestoreCallback: self.messageRestoreCallback,
             hideRestoreViewCallback: self.hideRestoreCallback,
             errorCallback: self.errorCallback
         )
