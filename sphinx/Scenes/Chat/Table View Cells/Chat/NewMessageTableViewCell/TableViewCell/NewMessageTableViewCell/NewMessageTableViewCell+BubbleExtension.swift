@@ -149,7 +149,7 @@ extension NewMessageTableViewCell {
     
     func configureWith(
         invoiceLines: BubbleMessageLayoutState.InvoiceLines
-    ) {
+    ) {     
         leftLineContainer.isHidden = true
         rightLineContainer.isHidden = true
         
