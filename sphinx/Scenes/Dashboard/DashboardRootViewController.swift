@@ -172,17 +172,16 @@ class DashboardRootViewController: RootViewController {
         return "RSS"
     }
     
-    func configureAddTribeBehavior(oldTab:DashboardTab,visibilityOverride:Bool?=nil,oldFeedSource:FeedSource){
-        if let visibilityOverride = visibilityOverride{
-            let newConstant = (visibilityOverride) ? 16 : -120
-            addTribeTrailing.constant = CGFloat(newConstant)
-        }
-        else if (activeTab == .tribes || (activeTab == .feed && oldTab != .feed)) {
+    func configureAddTribeBehavior(
+        oldTab: DashboardTab,
+        visibilityOverride: Bool? = nil,
+        oldFeedSource: FeedSource
+    ){
+        if (activeTab == .tribes || activeTab == .feed) {
             addTribeTrailing.constant = 16
+        } else {
+            addTribeTrailing.constant = -120
         }
-//        else {
-//            addTribeTrailing.constant = -120
-//        }
         let title = (activeTab == .feed) ? getFeedModeButtonText() : ("Add Tribe")
         let icon = (activeTab == .feed) ? ("switch_access_shortcut") : ("add")
         searchBarContainer.isUserInteractionEnabled = true
@@ -190,7 +189,7 @@ class DashboardRootViewController: RootViewController {
         addTribeButton.setTitle(title, for: .normal)
         addTribeIconLabel.text = icon
         
-        if(oldFeedSource != feedSource){
+        if (oldFeedSource != feedSource) {
             showChipFilterOptions()
         }
     }
