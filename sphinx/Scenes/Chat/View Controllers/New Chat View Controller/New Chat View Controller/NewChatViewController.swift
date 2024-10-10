@@ -124,17 +124,26 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         
     }
     
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        
+        if self.isMovingFromParent {
+            chat?.setChatMessagesAsSeen()
+        }
+    }
+    
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         
         if self.isMovingFromParent {
             chatTableDataSource?.saveSnapshotCurrentState()
             chatTableDataSource?.stopListeningToResultsController()
-            chat?.setChatMessagesAsSeen()
 
             stopPlayingClip()
         }
-        
+    }
+    
+    deinit {
         NotificationCenter.default.removeObserver(self, name: .webViewImageClicked, object: nil)
     }
     

@@ -98,6 +98,7 @@ class SphinxOnionManager : NSObject {
     
     let newMessageBubbleHelper = NewMessageBubbleHelper()
     let managedContext = CoreDataManager.sharedManager.persistentContainer.viewContext
+    let backgroundContext = CoreDataManager.sharedManager.getBackgroundContext()
     
     var notificationsResultsController: NSFetchedResultsController<NotificationData>!
     
