@@ -20,14 +20,18 @@ extension TransactionMessage {
         return message
     }
     
-    static func getMessageWith(tag: String) -> TransactionMessage? {
+    static func getMessageWith(
+        tag: String,
+        context: NSManagedObjectContext? = nil
+    ) -> TransactionMessage? {
         let predicate = NSPredicate(format: "tag == %@", tag)
         let sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]
         
         let message: TransactionMessage? = CoreDataManager.sharedManager.getObjectOfTypeWith(
             predicate: predicate,
             sortDescriptors: sortDescriptors,
-            entityName: "TransactionMessage"
+            entityName: "TransactionMessage",
+            managedContext: context
         )
         
         return message
@@ -591,14 +595,15 @@ extension TransactionMessage {
         }
     }
     
-    static func getMessagesWith(tags: [String]) -> [TransactionMessage] {
+    static func getMessagesWith(tags: [String], context: NSManagedObjectContext? = nil) -> [TransactionMessage] {
         let predicate = NSPredicate(format: "tag IN %@", tags)
         let sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]
 
         let messages: [TransactionMessage] = CoreDataManager.sharedManager.getObjectsOfTypeWith(
             predicate: predicate,
             sortDescriptors: sortDescriptors,
-            entityName: "TransactionMessage"
+            entityName: "TransactionMessage",
+            context: context
         )
 
         return messages

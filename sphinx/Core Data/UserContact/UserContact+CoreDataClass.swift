@@ -313,25 +313,32 @@ public class UserContact: NSManagedObject {
         return contact
     }
     
-    public static func getContactsWith(pubkeys: [String]) -> [UserContact] {
+    public static func getContactsWith(
+        pubkeys: [String],
+        context: NSManagedObjectContext? = nil
+    ) -> [UserContact] {
         let predicate = NSPredicate(format: "publicKey IN %@ AND isOwner == %@", pubkeys, NSNumber(value: false))
         let sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]
         
         let contacts: [UserContact] = CoreDataManager.sharedManager.getObjectsOfTypeWith(
             predicate: predicate,
             sortDescriptors: sortDescriptors,
-            entityName: "UserContact"
+            entityName: "UserContact",
+            context: context
         )
         
         return contacts
     }
     
-    public static func getOwner() -> UserContact? {
+    public static func getOwner(
+        context: NSManagedObjectContext? = nil
+    ) -> UserContact? {
         let predicate = NSPredicate(format: "isOwner == %@", NSNumber(value: true))
         let contact:UserContact? = CoreDataManager.sharedManager.getObjectOfTypeWith(
             predicate: predicate,
             sortDescriptors: [],
-            entityName: "UserContact"
+            entityName: "UserContact",
+            managedContext: context
         )
         return contact
     }
@@ -354,18 +361,35 @@ public class UserContact: NSManagedObject {
     
     var conversation: Chat? = nil
     
-    public func getChat() -> Chat? {
+    public func getContactChat(
+        context: NSManagedObjectContext? = nil
+    ) -> Chat? {
+        if conversation == nil {
+            setContactConversation(context: context)
+        }
+        return conversation
+    }
+    
+    public func getChat(
+    ) -> Chat? {
         if conversation == nil {
             setContactConversation()
         }
         return conversation
     }
     
-    public func setContactConversation() {
-        let userId = UserData.sharedInstance.getUserId()
+    public func setContactConversation(
+        context: NSManagedObjectContext? = nil
+    ) {
+        let userId = UserData.sharedInstance.getUserId(context: context)
         let predicate = NSPredicate(format: "(contactIds == %@ OR contactIds == %@) AND type = %d", [userId, self.id], [self.id, userId], Chat.ChatType.conversation.rawValue)
         let sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]
-        conversation = CoreDataManager.sharedManager.getObjectOfTypeWith(predicate: predicate, sortDescriptors: sortDescriptors, entityName: "Chat")
+        conversation = CoreDataManager.sharedManager.getObjectOfTypeWith(
+            predicate: predicate,
+            sortDescriptors: sortDescriptors,
+            entityName: "Chat",
+            managedContext: context
+        )
     }
     
     public func getChat(chats: [Chat]) -> Chat? {

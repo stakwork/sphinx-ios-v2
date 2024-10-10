@@ -143,8 +143,8 @@ class CoreDataManager {
         return objects
     }
     
-    func getObjectOfTypeWith<T>(id: Int, entityName: String) -> T? {
-        let managedContext = persistentContainer.viewContext
+    func getObjectOfTypeWith<T>(id: Int, entityName: String, context: NSManagedObjectContext? = nil) -> T? {
+        let managedContext = context ?? persistentContainer.viewContext
         var objects:[T] = [T]()
         
         let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName:"\(entityName)")

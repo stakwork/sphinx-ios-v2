@@ -242,7 +242,10 @@ public class Chat: NSManagedObject {
         return chats
     }
     
-    static func getTribeChatWithOwnerPubkey(ownerPubkey: String) -> Chat? {
+    static func getTribeChatWithOwnerPubkey(
+        ownerPubkey: String,
+        context: NSManagedObjectContext? = nil
+    ) -> Chat? {
         let predicate = NSPredicate(
             format: "type == %d AND ownerPubkey == %@",
             Chat.ChatType.publicGroup.rawValue,
@@ -255,13 +258,17 @@ public class Chat: NSManagedObject {
             predicate: predicate,
             sortDescriptors: sortDescriptors,
             entityName: "Chat",
-            fetchLimit: 1
+            fetchLimit: 1,
+            context: context
         ).first
         
         return chat
     }
     
-    static func getChatTribesFor(ownerPubkeys: [String]) -> [Chat] {
+    static func getChatTribesFor(
+        ownerPubkeys: [String],
+        context: NSManagedObjectContext? = nil
+    ) -> [Chat] {
         let predicate = NSPredicate(
             format: "type == %d AND ownerPubkey IN %@",
             Chat.ChatType.publicGroup.rawValue,
@@ -273,7 +280,8 @@ public class Chat: NSManagedObject {
         let chats : [Chat] = CoreDataManager.sharedManager.getObjectsOfTypeWith(
             predicate: predicate,
             sortDescriptors: sortDescriptors,
-            entityName: "Chat"
+            entityName: "Chat",
+            context: context
         )
         
         return chats
@@ -442,8 +450,12 @@ public class Chat: NSManagedObject {
         unseenMentionsCount = mentionsCount
     }
     
-    static func updateMessageReadStatus(chatId: Int, lastReadId: Int) {
-        let managedContext = CoreDataManager.sharedManager.persistentContainer.viewContext
+    static func updateMessageReadStatus(
+        chatId: Int,
+        lastReadId: Int,
+        context: NSManagedObjectContext? = nil
+    ) {
+        let managedContext = context ?? CoreDataManager.sharedManager.persistentContainer.viewContext
         let fetchRequest: NSFetchRequest<TransactionMessage> = TransactionMessage.fetchRequest()
         
         fetchRequest.predicate = NSPredicate(

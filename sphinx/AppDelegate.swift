@@ -88,13 +88,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         connectMQTT()
         registerForVoIP()
         StorageManager.sharedManager.deleteOldMedia()
-        
-        setInitialVC()
-                
         NetworkMonitor.shared.startMonitoring()
-        
         ColorsManager.sharedInstance.storeColorsInMemory()
         SphinxOnionManager.sharedInstance.storeOnionStateInMemory()
+        
+        setInitialVC()
 
         return true
     }
