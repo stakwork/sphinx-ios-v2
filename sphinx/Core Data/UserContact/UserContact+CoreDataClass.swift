@@ -255,15 +255,29 @@ public class UserContact: NSManagedObject {
         return false
     }
     
-    public static func getContactsWith(ids: [Int], includeOwner: Bool, ownerAtEnd: Bool) -> [UserContact] {
+    public static func getContactsWith(
+        ids: [Int],
+        includeOwner: Bool,
+        ownerAtEnd: Bool,
+        context: NSManagedObjectContext? = nil
+    ) -> [UserContact] {
         var predicate: NSPredicate! = nil
         if includeOwner {
             predicate = NSPredicate(format: "id IN %@", ids)
         } else {
             predicate = NSPredicate(format: "id IN %@ AND isOwner == %@", ids, NSNumber(value: false))
         }
-        let sortDescriptors = ownerAtEnd ? [NSSortDescriptor(key: "isOwner", ascending: false), NSSortDescriptor(key: "id", ascending: false)] : [NSSortDescriptor(key: "id", ascending: false)]
-        let contacts: [UserContact] = CoreDataManager.sharedManager.getObjectsOfTypeWith(predicate: predicate, sortDescriptors: sortDescriptors, entityName: "UserContact")
+        let sortDescriptors = ownerAtEnd ? [
+            NSSortDescriptor(key: "isOwner", ascending: false),
+            NSSortDescriptor(key: "id", ascending: false)
+        ] : [NSSortDescriptor(key: "id", ascending: false)]
+        
+        let contacts: [UserContact] = CoreDataManager.sharedManager.getObjectsOfTypeWith(
+            predicate: predicate,
+            sortDescriptors: sortDescriptors,
+            entityName: "UserContact",
+            context: context
+        )
         return contacts
     }
     
@@ -295,11 +309,18 @@ public class UserContact: NSManagedObject {
         return contact
     }
     
-    public static func getContactWithDisregardStatus(pubkey: String,
-                                      managedContext: NSManagedObjectContext? = nil) -> UserContact? {
+    public static func getContactWithDisregardStatus(
+        pubkey: String,
+        managedContext: NSManagedObjectContext? = nil
+    ) -> UserContact? {
         let predicate = NSPredicate(format: "publicKey == %@", pubkey)
         let sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]
-        let contact:UserContact? = CoreDataManager.sharedManager.getObjectOfTypeWith(predicate: predicate, sortDescriptors: sortDescriptors, entityName: "UserContact",managedContext: managedContext)
+        let contact:UserContact? = CoreDataManager.sharedManager.getObjectOfTypeWith(
+            predicate: predicate,
+            sortDescriptors: sortDescriptors,
+            entityName: "UserContact",
+            managedContext: managedContext
+        )
         return contact
     }
     

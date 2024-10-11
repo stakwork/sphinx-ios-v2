@@ -33,7 +33,9 @@ extension Chat: ChatListCommonObject {
         return date ?? createdAt
     }
     
-    func getConversationContact() -> UserContact? {
+    func getConversationContact(
+        context: NSManagedObjectContext? = nil
+    ) -> UserContact? {
         if isGroup() {
             return nil
         }
