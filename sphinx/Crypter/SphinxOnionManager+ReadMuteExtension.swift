@@ -38,10 +38,7 @@ extension SphinxOnionManager {
                         )
                     }
                 }
-                self.updateChatReadStatus(
-                    chatListUnreadDict: chatListUnreadDict,
-                    context: self.backgroundContext
-                )
+                self.updateChatReadStatus(chatListUnreadDict: chatListUnreadDict)
             }
         }
         
@@ -65,14 +62,13 @@ extension SphinxOnionManager {
     }
 
     func updateChatReadStatus(
-        chatListUnreadDict: [Int: Int],
-        context: NSManagedObjectContext? = nil
+        chatListUnreadDict: [Int: Int]
     ) {
         for (chatId, lastReadId) in chatListUnreadDict {
             Chat.updateMessageReadStatus(
                 chatId: chatId,
                 lastReadId: lastReadId,
-                context: context
+                context: backgroundContext
             )
         }
     }

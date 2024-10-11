@@ -189,8 +189,10 @@ extension TransactionMessage {
         }
     }
     
-    static func getMaxIndex() -> Int? {
-        let context = CoreDataManager.sharedManager.persistentContainer.viewContext
+    static func getMaxIndex(
+        context: NSManagedObjectContext? = nil
+    ) -> Int? {
+        let context = context ?? CoreDataManager.sharedManager.persistentContainer.viewContext
         let fetchRequest: NSFetchRequest<TransactionMessage> = TransactionMessage.fetchRequest()
         ///Not consider group join since those messages could be restored during contacts/tribes restore
         fetchRequest.predicate = NSPredicate(format: "id >= 0")
