@@ -274,7 +274,7 @@ extension SphinxOnionManager {
         msgCountLimit: Int,
         reverse: Bool
     ) {
-        startWatchdogTimer()
+//        startWatchdogTimer()
         
         let safeLastMsgIndex = max(lastMessageIndex, 0)
         
@@ -701,8 +701,9 @@ extension SphinxOnionManager {
         restoredContactInfoTracker = []
         
         endWatchdogTime()
-        requestPings()
         resetFromRestore()
+        
+        requestPings()
         updateRoutingInfo()
         
         if let maxMessageIndex = TransactionMessage.getMaxIndex() {
