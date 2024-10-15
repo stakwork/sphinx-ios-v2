@@ -165,7 +165,7 @@ class API {
     }
     
     public static let kPodcastIndexURL = "https://api.podcastindex.org"
-    public static let tribesV1Url = "https://tribes.sphinx.chat"
+    public static let tribesV1Url = "https://people.sphinx.chat"
     
 
     class func getUrl(route: String) -> String {
