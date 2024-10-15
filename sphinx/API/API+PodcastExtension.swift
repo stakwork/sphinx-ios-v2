@@ -35,7 +35,7 @@ extension API {
     
     
     func getPodcastInfo(podcastId: Int, callback: @escaping PodcastInfoCallback, errorCallback: @escaping EmptyCallback) {
-        let url = "https://tribes.sphinx.chat/podcast?id=\(podcastId)"
+        let url = "\(API.tribesV1Url)/podcast?id=\(podcastId)"
         let tribeRequest : URLRequest? = createRequest(url, bodyParams: nil, method: "GET")
         
         guard let request = tribeRequest else {
