@@ -373,10 +373,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         task.expirationHandler = {
             task.setTaskCompleted(success: false)
         }
-        
-        let dispatchGroup = DispatchGroup()
             
         var newData = false
+        var didEndFetch = false
+        
+        let dispatchGroup = DispatchGroup()
         dispatchGroup.enter()
         
         if !UserData.sharedInstance.isUserLogged() {
@@ -386,15 +387,20 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         }
         
         som.reconnectToServer(hideRestoreViewCallback: {
-            newData = true
-            dispatchGroup.leave()
+            if !didEndFetch {
+                didEndFetch = true
+                newData = true
+                dispatchGroup.leave()
+            }
         }, errorCallback: {
-            newData = false
-            dispatchGroup.leave()
+            if !didEndFetch {
+                didEndFetch = true
+                newData = false
+                dispatchGroup.leave()
+            }
         })
         
-        // Notify when all tasks are done
-        dispatchGroup.notify(queue: .main) {
+        dispatchGroup.notify(queue: .main) { @MainActor in
             if newData {
                 task.setTaskCompleted(success: true)
             } else {
