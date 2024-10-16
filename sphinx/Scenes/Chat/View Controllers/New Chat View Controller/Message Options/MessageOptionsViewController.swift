@@ -19,6 +19,7 @@ import UIKit
     func shouldReloadChat()
     func shouldToggleReadUnread(chat: Chat)
     func shouldDeleteContact(contact: UserContact)
+    func shouldDeleteChat(chat: Chat)
 }
 
 class MessageOptionsViewController: UIViewController {
@@ -271,6 +272,10 @@ extension MessageOptionsViewController : MessageOptionsDelegate {
     
     func shouldDeleteContact(contact: UserContact) {
         delegate?.shouldDeleteContact(contact: contact)
+    }
+    
+    func shouldDeleteChat(chat: Chat) {
+        delegate?.shouldDeleteChat(chat: chat)
     }
     
 }

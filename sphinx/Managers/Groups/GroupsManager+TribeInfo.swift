@@ -136,8 +136,7 @@ extension GroupsManager {
     ){
         if let pubkey = getV2Pubkey(qrString: qrString),
            let chatJSON = GroupsManager.getChatJSON(tribeInfo:tribeInfo),
-           let routeHint = tribeInfo.ownerRouteHint,
-           let chat = Chat.insertChat(chat: chatJSON)
+           let routeHint = tribeInfo.ownerRouteHint
         {
             let isPrivate = tribeInfo.privateTribe
             
@@ -153,9 +152,11 @@ extension GroupsManager {
                     )
                 }
             ) {
-                chat.status = (isPrivate) ? Chat.ChatStatus.pending.rawValue : Chat.ChatStatus.approved.rawValue
-                chat.type = Chat.ChatType.publicGroup.rawValue
-                chat.managedObjectContext?.saveContext()
+                if let chat = Chat.insertChat(chat: chatJSON) {
+                    chat.status = (isPrivate) ? Chat.ChatStatus.pending.rawValue : Chat.ChatStatus.approved.rawValue
+                    chat.type = Chat.ChatType.publicGroup.rawValue
+                    chat.managedObjectContext?.saveContext()
+                }
             }
         }
     }

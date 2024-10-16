@@ -394,7 +394,7 @@ extension ChatsCollectionViewController : ChatListCollectionViewCellDelegate, Me
     ) {
         if let indexPath = collectionView.indexPath(for: cell) {
             
-            if chatListObject.lastMessage?.isOutgoing(ownerId: owner.id) == true || ///last message is outgoing, should show mark as read/unread
+            if chatListObject.lastMessage?.isOutgoing(ownerId: owner.id) == false || ///last message is outgoing, should show mark as read/unread
                 chatListObject.isConversation() ///it's a contact, should show delete contact
             {
                 if let rowRectAndPath = ChatHelper.getChatRowRectAndPath(
@@ -485,6 +485,10 @@ extension ChatsCollectionViewController : ChatListCollectionViewCellDelegate, Me
         }
                 
         CoreDataManager.sharedManager.deleteContactObjectsFor(contact)
+    }
+    
+    func shouldDeleteChat(chat: Chat) {
+        CoreDataManager.sharedManager.deleteChatObjectsFor(chat)
     }
     
     func shouldDeleteMessage(message: TransactionMessage) {}
