@@ -20,6 +20,7 @@ import UIKit
     func shouldTogglePinState(pin: Bool)
     func shouldToggleReadUnread(chat: Chat)
     func shouldDeleteContact(contact: UserContact)
+    func shouldDeleteChat(chat: Chat)
 }
 
 class MessageOptionsView : UIView {
@@ -267,9 +268,12 @@ extension MessageOptionsView : MessageOptionViewDelegate {
         if let chat = chat, option == .ToggleReadUnread {
             delegate?.shouldToggleReadUnread(chat: chat)
         }
-        
-        if let contact = contact, option == .Delete {
-            delegate?.shouldDeleteContact(contact: contact)
+        if option == .Delete {
+            if let contact = contact {
+                delegate?.shouldDeleteContact(contact: contact)
+            } else if let chat = chat, chat.isConversation() {
+                delegate?.shouldDeleteChat(chat: chat)
+            }
         }
         
         guard let message = message else {

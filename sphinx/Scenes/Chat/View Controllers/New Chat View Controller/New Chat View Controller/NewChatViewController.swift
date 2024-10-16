@@ -266,6 +266,10 @@ class NewChatViewController: NewKeyboardHandlerViewController {
             return
         }
         
+        if chat.isPublicGroup() {
+            return
+        }
+        
         DispatchQueue.main.async {
             self.emptyAvatarPlaceholderView.configureWith(chat: chat)
             self.emptyAvatarPlaceholderView.isHidden = false
