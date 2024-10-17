@@ -534,6 +534,7 @@
 "authorization.failed" = "認証に失敗しました";
 "already.connected" = "既にこの人と繋がっています";
 "price.to.meet" = "会うための価格：";
+"invalid.public-key" = "無効な公開鍵";
 
 "people.save-profile" = "プロファイルを保存：";
 "people.delete-profile" = "プロファイルを削除：";

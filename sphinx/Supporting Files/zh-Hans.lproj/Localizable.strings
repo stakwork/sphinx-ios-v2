@@ -536,6 +536,7 @@
 "authorization.failed" = "授权失败";
 "already.connected" = "您已与此人连接";
 "price.to.meet" = "见面的价格：";
+"invalid.public-key" = "无效公钥";
 
 "people.save-profile" = "从...保存资料";
 "people.delete-profile" = "从...删除资料";
