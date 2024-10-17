@@ -57,12 +57,31 @@ extension ChatMessageTextFieldView : UITextViewDelegate {
             text: textView.text != kFieldPlaceHolder ? textView.text : ""
         )
         
+        adjustTextViewHeight()
+        
         let string = textView.text ?? ""
         let cursorPosition = textView.selectedRange.location
         
         DispatchQueue.global(qos: .userInitiated).async {
             self.processMention(text: string, cursorPosition: cursorPosition)
             self.processMacro(text: string, cursorPosition: cursorPosition)
+        }
+    }
+    
+    func adjustTextViewHeight() {
+        if textView.contentSize.height > 250 {
+            if !textView.isScrollEnabled {
+                textViewHeightConstraint?.isActive = false
+                textViewHeightConstraint = textView.heightAnchor.constraint(equalToConstant: 250)
+                textViewHeightConstraint?.isActive = true
+                textView.isScrollEnabled = true
+            }
+        } else if textView.contentSize.height < 250 {
+            if textView.isScrollEnabled {
+                textViewHeightConstraint?.isActive = false
+                textView.isScrollEnabled = false
+                textView.invalidateIntrinsicContentSize()
+            }
         }
     }
     

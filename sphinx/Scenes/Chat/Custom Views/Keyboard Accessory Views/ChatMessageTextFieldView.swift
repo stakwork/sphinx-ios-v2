@@ -50,6 +50,8 @@ class ChatMessageTextFieldView: UIView {
     @IBOutlet weak var recordingBlueCircle: UIView!
     @IBOutlet weak var animatedMicLabelView: IntermitentAlphaAnimatedView!
     
+    var textViewHeightConstraint: NSLayoutConstraint? = nil
+    
     let kFieldPlaceHolder = "message.placeholder".localized
     let kThreadFieldPlaceHolder = "message.placeholder".localized
     let kAttchmentFieldPlaceHolder = ChatAttachmentViewController.kFieldPlaceHolder
