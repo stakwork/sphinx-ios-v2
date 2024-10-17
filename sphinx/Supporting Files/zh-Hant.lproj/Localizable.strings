@@ -535,6 +535,7 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 "authorization.failed" = "授權失敗";
 "already.connected" = "您已經與此人連接";
 "price.to.meet" = "見面的價格：";
+"invalid.public-key" = "公鑰無效";
 
 "people.save-profile" = "從：保存個人資料";
 "people.delete-profile" = "從：刪除個人資料";

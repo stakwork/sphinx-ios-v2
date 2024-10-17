@@ -520,6 +520,8 @@
 "authorization.failed" = "Nabigong Awtorisasyon";
 "already.connected" = "Naka konekta ka na sa taong ito";
 "price.to.meet" = "Presyo dapat matugunan: ";
+"invalid.public-key" = "Di-wastong Public Key";
+
 "people.save-profile" = "I-save ang Profile mula sa:";
 "people.delete-profile" = "Tanggalin ang Profile mula sa:";
 "people.save-failed" = "Nabigo ang pag-save ng Profile";

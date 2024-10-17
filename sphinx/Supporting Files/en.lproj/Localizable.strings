@@ -540,6 +540,7 @@
 "authorization.failed" = "Authorization Failed";
 "already.connected" = "You are already connected with this person";
 "price.to.meet" = "Price to meet: ";
+"invalid.public-key" = "Invalid Public Key";
 
 "people.save-profile" = "Save Profile from:";
 "people.delete-profile" = "Delete Profile from:";
