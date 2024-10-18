@@ -295,22 +295,35 @@ class CreateInvoiceViewController: CommonPaymentViewController {
         SphinxOnionManager.sharedInstance.payInvoice(
             invoice: invoice,
             overPayAmountMsat: UInt64(1000 * amount)
-        ) { (success, errorMsg, tag) in
+        ) { [weak self] (success, errorMsg) in
             if success {
-                self.paymentTag = tag
-                
-                if success {
-                    self.addPaymentObserver()
-                } else {
-                    self.showErrorAlertAndDismiss()
-                }
+                self?.showPendingAlert()
             } else {
-                AlertHelper.showAlert(
-                    title: "generic.error.title".localized,
-                    message: errorMsg ?? "generic.error.message".localized
-                )
+                guard let self = self else {
+                    return
+                }
+                DispatchQueue.main.async {
+                    AlertHelper.showAlert(
+                        title: "generic.error.title".localized,
+                        message: errorMsg ?? "generic.error.message".localized,
+                        completion: {
+                            self.dismissView()
+                        }
+                    )
+                }
             }
         }
+    }
+    
+    func showPendingAlert() {
+        DelayPerformedHelper.performAfterDelay(seconds: 2.0, completion: {
+            AlertHelper.showAlert(
+                title: "Processsing payment",
+                message: "This process could take up to 60 seconds. You will be notified when completed"
+            ) {
+                self.dismissView()
+            }
+        })
     }
     
     private func shouldSendDirectPayment() {
