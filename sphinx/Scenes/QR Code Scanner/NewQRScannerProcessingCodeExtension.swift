@@ -179,7 +179,11 @@ extension NewQRScannerViewController {
         
         SphinxOnionManager.sharedInstance.payInvoice(invoice: invoice) { [weak self] (success, errorMsg) in
             if success {
-                self?.showPendingAlert()
+                if let routeHint = SphinxOnionManager.sharedInstance.getInvoiceDetails(invoice: invoice)?.hopHints?.last {
+                    self?.dismiss(animated: true)
+                } else {
+                    self?.showPendingAlert()
+                }
             } else {
                 guard let self = self else {
                     return
@@ -200,8 +204,8 @@ extension NewQRScannerViewController {
     func showPendingAlert() {
         DelayPerformedHelper.performAfterDelay(seconds: 2.0, completion: {
             AlertHelper.showAlert(
-                title: "Processsing payment",
-                message: "This process could take up to 60 seconds. You will be notified when completed"
+                title: "processing.payment".localized,
+                message: "processing.payment.description".localized
             ) {
                 self.dismiss(animated: true)
             }
