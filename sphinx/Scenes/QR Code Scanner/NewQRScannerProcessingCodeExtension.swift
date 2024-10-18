@@ -45,7 +45,6 @@ extension NewQRScannerViewController {
     }
     
     func validateZeroAmountInvoice(string:String) -> Bool{
-        print("isZeroAmountInvoice:\(prDecoder.isZeroAmountInvoice(invoice: string))")
         if(prDecoder.isZeroAmountInvoice(invoice: string)){
             DispatchQueue.main.async {
                 self.presentSendZeroAmountInvoiceVC(invoice: string)
@@ -178,76 +177,34 @@ extension NewQRScannerViewController {
     private func payInvoice(invoice: String) {
         invoiceLoading = true
         
-        SphinxOnionManager.sharedInstance.payInvoice(invoice: invoice) { (success, errorMsg, tag) in
+        SphinxOnionManager.sharedInstance.payInvoice(invoice: invoice) { [weak self] (success, errorMsg) in
             if success {
-                self.paymentTag = tag
-                self.addPaymentObserver()
+                self?.showPendingAlert()
             } else {
-                self.showErrorAlertAndDismiss()
-            }
-        }
-    }
-    
-    func addPaymentObserver() {
-        NotificationCenter.default.removeObserver(
-            self,
-            name: .onKeysendStatusReceived,
-            object: nil
-        )
-        
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(onKeysendStatusReceived),
-            name: .onKeysendStatusReceived,
-            object: nil
-        )
-        
-        paymentTimer = Timer.scheduledTimer(
-            timeInterval: 5.0,
-            target: self,
-            selector: #selector(self.showErrorAlertAndDismiss),
-            userInfo: nil,
-            repeats: false
-        )
-    }
-    
-    @objc func onKeysendStatusReceived(n: Notification) {
-        if let tag = n.userInfo?["tag"] as? String,
-           let status = n.userInfo?["status"] as? String {
-            
-            if tag == paymentTag {
-                if status == SphinxOnionManager.kCompleteStatus {
-                    resetTimerAndObserver()
-                    dismiss(animated: true)
-                } else {
-                    showErrorAlertAndDismiss()
+                guard let self = self else {
+                    return
+                }
+                DispatchQueue.main.async {
+                    AlertHelper.showAlert(
+                        title: "generic.error.title".localized,
+                        message: errorMsg ?? "generic.error.message".localized,
+                        completion: {
+                            self.dismiss(animated: true)
+                        }
+                    )
                 }
             }
         }
     }
     
-    func resetTimerAndObserver() {
-        paymentTag = nil
-        
-        paymentTimer?.invalidate()
-        paymentTimer = nil
-        
-        NotificationCenter.default.removeObserver(
-            self,
-            name: .onKeysendStatusReceived,
-            object: nil
-        )
-    }
-    
-    @objc func showErrorAlertAndDismiss() {
-        resetTimerAndObserver()
-        
-        AlertHelper.showAlert(
-            title: "generic.error.title".localized,
-            message: "generic.error.message".localized,
-            completion: {
+    func showPendingAlert() {
+        DelayPerformedHelper.performAfterDelay(seconds: 2.0, completion: {
+            AlertHelper.showAlert(
+                title: "Processsing payment",
+                message: "This process could take up to 60 seconds. You will be notified when completed"
+            ) {
                 self.dismiss(animated: true)
             }
-        )
+        })
     }
 }

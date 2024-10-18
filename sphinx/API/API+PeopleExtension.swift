@@ -147,7 +147,7 @@ extension API {
                     if let status = response.response?.statusCode,
                        let bolt11 = String(data: data, encoding: .utf8), status == 402
                     {
-                        SphinxOnionManager.sharedInstance.payInvoice(invoice: bolt11, callback:{ (success, errorMsg, _) in
+                        SphinxOnionManager.sharedInstance.payInvoice(invoice: bolt11, callback:{ (success, errorMsg) in
                             if (success) {
                                 callback(true,bolt11)
                             } else {
