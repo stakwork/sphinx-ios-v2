@@ -541,6 +541,8 @@
 "already.connected" = "Ya estas conectado con esta persona";
 "price.to.meet" = "Precio para conectar: ";
 "invalid.public-key" = "Clave pública Inválida";
+"processing.payment" = "Procesando pago";
+"processing.payment.description" = "Este proceso puede tardar hasta 60 segundos. Se le notificará cuando finalice";
 
 "people.save-profile" = "Guardar Perfil de:";
 "people.delete-profile" = "Borrar Perfil de:";

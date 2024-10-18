@@ -537,6 +537,8 @@
 "already.connected" = "您已与此人连接";
 "price.to.meet" = "见面的价格：";
 "invalid.public-key" = "无效公钥";
+"processing.payment" = "处理付款";
+"processing.payment.description" = "此过程可能需要 60 秒。完成后您将收到通知";
 
 "people.save-profile" = "从...保存资料";
 "people.delete-profile" = "从...删除资料";
