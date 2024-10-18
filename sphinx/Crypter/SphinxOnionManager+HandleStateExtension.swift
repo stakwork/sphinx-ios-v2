@@ -510,10 +510,12 @@ extension SphinxOnionManager {
                             object: nil,
                             userInfo: [
                                 "tag" : tag,
-                                "status": sentStatus.status ?? TransactionMessage.TransactionMessageStatus.failed.rawValue
+                                "status": sentStatus.status ?? SphinxOnionManager.kFailedStatus
                             ]
                         )
                     )
+                    
+                    self.onPaymentStatusReceivedFor(tag: tag, status: sentStatus.status ?? SphinxOnionManager.kFailedStatus)
                 }
             }
         }
