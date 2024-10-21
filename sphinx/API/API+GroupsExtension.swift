@@ -81,4 +81,44 @@ extension API {
             }
         }
     }
+    
+    func getTribeLeaderboard(
+        tribeUUID:String,
+        callback: @escaping GetTribeBadgesCallback,
+        errorCallback: @escaping EmptyCallback
+    ){
+        let urlPath = API.tribesV1Url + "/leaderboard/\(tribeUUID)"
+        
+        let urlComponents = URLComponents(string: urlPath)!
+
+        guard let urlString = urlComponents.url?.absoluteString else {
+            errorCallback()
+            return
+        }
+
+        guard let request = createRequest(
+            urlString,
+            bodyParams: nil,
+            method: "GET"
+        ) else {
+            errorCallback()
+            return
+        }
+
+        sphinxRequest(request) { response in
+            switch response.result {
+            case .success(let data):
+                if let json = data as? [NSDictionary] {
+                    //print(json)
+                    callback(json)
+                    return
+                }
+                //print(response.response?.statusCode)
+                errorCallback()
+            case .failure(_):
+                //print(response.response?.statusCode)
+                errorCallback()
+            }
+        }
+    }
 }
