@@ -264,9 +264,9 @@ extension NewChatViewController : NewChatTableDataSourceDelegate {
             vc.modalPresentationStyle = .overCurrentContext
             self.present(vc, animated: false)
         } else {
-            let tribeMemberPopupVC = TribeMemberPopupViewController.instantiate(message: message, delegate: self)
-            tribeMemberPopupVC.modalPresentationStyle = .overCurrentContext
-            self.present(tribeMemberPopupVC, animated: false)
+//            let tribeMemberPopupVC = TribeMemberPopupViewController.instantiate(message: message, delegate: self)
+//            tribeMemberPopupVC.modalPresentationStyle = .overCurrentContext
+//            self.present(tribeMemberPopupVC, animated: false)
         }
     }
     

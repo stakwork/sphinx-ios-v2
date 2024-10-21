@@ -445,67 +445,56 @@ class SphinxOnionManager : NSObject {
         self.messageRestoreCallback = messageRestoreCallback
         self.errorCallback = errorCallback
         
-        self.disconnectMqtt() { delay in
+        if isV2Restore {
+            contactRestoreCallback?(2)
+        }
+        
+        let success = connectToBroker(seed: seed, xpub: my_xpub)
+        
+        if (success == false) {
+            hideRestoreViewCallback?()
+            return
+        }
+        
+        mqtt.didConnectAck = { [weak self] _, _ in
+            guard let self = self else {
+                return
+            }
             
-            DelayPerformedHelper.performAfterDelay(seconds: delay, completion: { [weak self] in
-                guard let self = self else {
-                    return
-                }
-                
-                if self.isV2Restore {
-                    contactRestoreCallback?(2)
-                }
-                
-                let success = self.connectToBroker(seed: seed, xpub: my_xpub)
-                
-                if (success == false) {
+            self.endReconnectionTimer()
+            self.isConnected = true
+            
+            self.subscribeAndPublishMyTopics(pubkey: myPubkey, idx: 0)
+            
+            if self.isV2InitialSetup {
+                self.isV2InitialSetup = false
+                self.doInitialInviteSetup()
+            }
+             
+            if self.isV2Restore {
+                self.hideRestoreCallback = {
+                    self.isV2Restore = false
+                    
                     hideRestoreViewCallback?()
-                    return
                 }
+                self.syncContactsAndMessages()
+            } else {
+                self.contactRestoreCallback = nil
+                self.messageRestoreCallback = nil
                 
-                self.mqtt.didConnectAck = { [weak self] _, _ in
-                    guard let self = self else {
-                        return
-                    }
-                    
-                    self.endReconnectionTimer()
-                    self.isConnected = true
-                    
-                    self.subscribeAndPublishMyTopics(pubkey: myPubkey, idx: 0)
-                    
-                    if self.isV2InitialSetup {
-                        self.isV2InitialSetup = false
-                        self.doInitialInviteSetup()
-                    }
-                     
-                    if self.isV2Restore {
-                        self.hideRestoreCallback = {
-                            self.isV2Restore = false
-                            
-                            hideRestoreViewCallback?()
-                        }
-                        self.syncContactsAndMessages()
-                    } else {
-                        self.contactRestoreCallback = nil
-                        self.messageRestoreCallback = nil
-                        
-                        self.getReads()
-                        self.syncNewMessages()
-                    }
-                }
-                
-                self.mqtt.didReceiveTrust = { _, _, completionHandler in
-                    completionHandler(true)
-                }
-                
-                self.mqtt.didDisconnect = { [weak self] _, _ in
-                    self?.isConnected = false
-                    self?.mqtt = nil
-                    self?.startReconnectionTimer()
-                }
-                
-                self.startReconnectionTimer(delay: 2.0)
-            })
+                self.getReads()
+                self.syncNewMessages()
+            }
+        }
+        
+        mqtt.didReceiveTrust = { _, _, completionHandler in
+            completionHandler(true)
+        }
+        
+        mqtt.didDisconnect = { [weak self] _, _ in
+            self?.isConnected = false
+            self?.mqtt = nil
+            self?.startReconnectionTimer()
         }
     }
     
