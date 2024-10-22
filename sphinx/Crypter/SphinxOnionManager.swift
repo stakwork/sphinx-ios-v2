@@ -436,7 +436,6 @@ class SphinxOnionManager : NSObject {
               let my_xpub = getAccountXpub(seed: seed) else
         {
             errorCallback?()
-            hideRestoreViewCallback?()
             return
         }
         
@@ -552,9 +551,9 @@ class SphinxOnionManager : NSObject {
                 return
             }
             
-            mqtt.didReceiveMessage = { mqtt, receivedMessage, id in
-                self.isConnected = true
-                self.processMqttMessages(message: receivedMessage)
+            mqtt.didReceiveMessage = { [weak self] mqtt, receivedMessage, id in
+                self?.isConnected = true
+                self?.processMqttMessages(message: receivedMessage)
             }
             
             let ret3 = try sphinx.initialSetup(
@@ -694,9 +693,9 @@ class SphinxOnionManager : NSObject {
         let idx = 0
         
         if success {
-            mqtt.didReceiveMessage = { mqtt, receivedMessage, id in
-                self.isConnected = true
-                self.processMqttMessages(message: receivedMessage)
+            mqtt.didReceiveMessage = { [weak self] mqtt, receivedMessage, id in
+                self?.isConnected = true
+                self?.processMqttMessages(message: receivedMessage)
             }
             
             mqtt.didDisconnect = { _, _ in
