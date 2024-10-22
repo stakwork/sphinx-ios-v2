@@ -499,21 +499,21 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
             return
         }
         
-        som.reconnectToServer(hideRestoreViewCallback: {
+        som.reconnectToServer(hideRestoreViewCallback: { [weak self] in
+            guard let self = self else {
+                return
+            }
+            
             if !didEndFetch {
                 didEndFetch = true
                 newData = true
                 dispatchGroup.leave()
             }
-        }, errorCallback: {
-            if !didEndFetch {
-                didEndFetch = true
-                newData = false
-                dispatchGroup.leave()
+        }, errorCallback: { [weak self] in
+            guard let self = self else {
+                return
             }
-        })
-        
-        DelayPerformedHelper.performAfterDelay(seconds: 20, completion: {
+            
             if !didEndFetch {
                 didEndFetch = true
                 newData = false

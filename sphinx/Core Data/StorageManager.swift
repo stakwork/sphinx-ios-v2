@@ -102,7 +102,10 @@ class StorageManager {
     func deleteOldMedia() {
         let backgroundContext = CoreDataManager.sharedManager.getBackgroundContext()
         
-        backgroundContext.perform {
+        backgroundContext.perform { [weak self] in
+            guard let self = self else {
+                return
+            }
             if let halfMonthAgo = Calendar.current.date(byAdding: .day, value: -15, to: Date()) {
                 let mediaObjects = CachedMedia.getMediaBefore(
                     date: halfMonthAgo,
