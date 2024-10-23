@@ -391,6 +391,11 @@ class SphinxOnionManager : NSObject {
         hideRestoreViewCallback: (()->())? = nil,
         errorCallback: (()->())? = nil
     ) {
+        if !ConnectivityHelper.isConnectedToInternet {
+            errorCallback?()
+            return
+        }
+        
         if let mqtt = self.mqtt, mqtt.connState == .connected && isConnected {
             ///If already fetching content, then process is already running
             if !isFetchingContent() {

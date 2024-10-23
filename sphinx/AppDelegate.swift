@@ -38,8 +38,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     let chatListViewModel = ChatListViewModel()
     
     let som = SphinxOnionManager.sharedInstance
-    var timer: Timer?
-    var startTime: Date?
     
     var isActive = false
     
@@ -374,36 +372,33 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             task.setTaskCompleted(success: false)
         }
             
-        var newData = false
-        var didEndFetch = false
-        
-        let dispatchGroup = DispatchGroup()
-        dispatchGroup.enter()
-        
-        if !UserData.sharedInstance.isUserLogged() {
-            newData = false
-            dispatchGroup.leave()
+        if isActive || !UserData.sharedInstance.isUserLogged() {
+            task.setTaskCompleted(success: false)
             return
         }
         
+        var timer: Timer? = nil
+        var didEndFetch = false
+        
         som.reconnectToServer(hideRestoreViewCallback: {
             if !didEndFetch {
+                timer?.invalidate()
                 didEndFetch = true
-                newData = true
-                dispatchGroup.leave()
+                task.setTaskCompleted(success: true)
             }
         }, errorCallback: {
             if !didEndFetch {
+                timer?.invalidate()
                 didEndFetch = true
-                newData = false
-                dispatchGroup.leave()
+                task.setTaskCompleted(success: false)
             }
         })
         
-        dispatchGroup.notify(queue: .main) { @MainActor in
-            if newData {
-                task.setTaskCompleted(success: true)
-            } else {
+        timer?.invalidate()
+        timer = Timer.scheduledTimer(withTimeInterval: 20, repeats: false) { _ in
+            if !didEndFetch {
+                timer?.invalidate()
+                didEndFetch = true
                 task.setTaskCompleted(success: false)
             }
         }
@@ -487,44 +482,33 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         didReceiveRemoteNotification userInfo: [AnyHashable : Any],
         fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
     ) {
-        var newData = false
-        var didEndFetch = false
-        
-        let dispatchGroup = DispatchGroup()
-        dispatchGroup.enter()
-        
-        if !UserData.sharedInstance.isUserLogged() {
-            newData = false
-            dispatchGroup.leave()
+        if isActive || !UserData.sharedInstance.isUserLogged() {
+            completionHandler(.noData)
             return
         }
         
-        som.reconnectToServer(hideRestoreViewCallback: { [weak self] in
-            guard let self = self else {
-                return
-            }
-            
+        var timer: Timer? = nil
+        var didEndFetch = false
+        
+        som.reconnectToServer(hideRestoreViewCallback: {
             if !didEndFetch {
+                timer?.invalidate()
                 didEndFetch = true
-                newData = true
-                dispatchGroup.leave()
+                completionHandler(.newData)
             }
-        }, errorCallback: { [weak self] in
-            guard let self = self else {
-                return
-            }
-            
+        }, errorCallback: {
             if !didEndFetch {
+                timer?.invalidate()
                 didEndFetch = true
-                newData = false
-                dispatchGroup.leave()
+                completionHandler(.noData)
             }
         })
         
-        dispatchGroup.notify(queue: .main) { @MainActor in
-            if newData {
-                completionHandler(.newData)
-            } else {
+        timer?.invalidate()
+        timer = Timer.scheduledTimer(withTimeInterval: 20, repeats: false) { _ in
+            if !didEndFetch {
+                timer?.invalidate()
+                didEndFetch = true
                 completionHandler(.noData)
             }
         }
