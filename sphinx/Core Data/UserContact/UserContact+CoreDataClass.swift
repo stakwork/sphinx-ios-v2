@@ -489,22 +489,20 @@ public class UserContact: NSManagedObject {
         newDeviceId: String? = nil
     ) {
         if let currentDeviceId = newDeviceId ?? UserDefaults.Keys.deviceId.get(), !currentDeviceId.isEmpty {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 5.0, execute: {
-                SphinxOnionManager.sharedInstance.registerDeviceID(id: currentDeviceId)
-            })
+            SphinxOnionManager.sharedInstance.registerDeviceID(id: currentDeviceId)
         }
     }
     
     public static func syncVoipDeviceId(
         pushKitToken: String? = nil
     ) {
-        if let currentVoipDeviceId = pushKitToken ?? UserDefaults.Keys.voipDeviceId.get(), !currentVoipDeviceId.isEmpty {
-            
-            let parameters : [String: AnyObject] = ["push_kit_token" : currentVoipDeviceId as AnyObject]
-            let id = UserData.sharedInstance.getUserId()
-            
-            //TODO: @Jim reimplement VoIP in V2
-        }
+//        if let currentVoipDeviceId = pushKitToken ?? UserDefaults.Keys.voipDeviceId.get(), !currentVoipDeviceId.isEmpty {
+//            
+//            let parameters : [String: AnyObject] = ["push_kit_token" : currentVoipDeviceId as AnyObject]
+//            let id = UserData.sharedInstance.getUserId()
+//            
+//            //TODO: @Jim reimplement VoIP in V2
+//        }
     }
     
     public static func updateTipAmount(amount: Int) {

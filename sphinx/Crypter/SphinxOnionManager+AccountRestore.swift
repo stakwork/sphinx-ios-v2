@@ -700,15 +700,21 @@ extension SphinxOnionManager {
         
         restoredContactInfoTracker = []
         
-        endWatchdogTime()
-        resetFromRestore()
-        
-        requestPings()
-        updateRoutingInfo()
+        if (UIApplication.shared.delegate as? AppDelegate)?.isActive == true {
+            ///Avoid processes that will run after the completion handler is called
+            requestPings()
+            updateRoutingInfo()
+        } else {
+            ///Disconnect MQTT if it's a background process
+            disconnectMqtt()
+        }
         
         if let maxMessageIndex = TransactionMessage.getMaxIndex() {
             UserDefaults.Keys.maxMessageIndex.set(maxMessageIndex)
         }
+        
+        endWatchdogTime()
+        resetFromRestore()
     }
     
     func requestPings() {
@@ -739,11 +745,11 @@ extension SphinxOnionManager {
         contactRestoreCallback = nil
         messageRestoreCallback = nil
         
+        joinInitialTribe()
+        
         if let hideRestoreCallback = hideRestoreCallback {
             hideRestoreCallback()
         }
-        
-        joinInitialTribe()
     }
     
     func setLastMessagesOnChats() {

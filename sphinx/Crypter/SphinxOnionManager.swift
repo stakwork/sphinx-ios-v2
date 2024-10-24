@@ -703,10 +703,10 @@ class SphinxOnionManager : NSObject {
                 self?.processMqttMessages(message: receivedMessage)
             }
             
-            mqtt.didDisconnect = { _, _ in
-                self.isConnected = false
-                self.mqtt = nil
-                self.startReconnectionTimer()
+            mqtt.didDisconnect = { [weak self] _, _ in
+                self?.isConnected = false
+                self?.mqtt = nil
+                self?.startReconnectionTimer()
             }
             
             mqtt.didReceiveTrust = { _, _, completionHandler in
@@ -714,13 +714,10 @@ class SphinxOnionManager : NSObject {
             }
             
             //subscribe to relevant topics
-            mqtt.didConnectAck = { _, _ in
-                self.isConnected = true
-                //self.showSuccessWithMessage("MQTT connected")
-                print("SphinxOnionManager: MQTT Connected")
-                print("mqtt.didConnectAck")
+            mqtt.didConnectAck = { [weak self] _, _ in
+                self?.isConnected = true
                 
-                self.subscribeAndPublishMyTopics(
+                self?.subscribeAndPublishMyTopics(
                     pubkey: pubkey,
                     idx: idx,
                     inviteCode: inviteCode
