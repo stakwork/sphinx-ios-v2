@@ -371,37 +371,35 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         task.expirationHandler = {
             task.setTaskCompleted(success: false)
         }
-            
+        
         if isActive || !UserData.sharedInstance.isUserLogged() {
             task.setTaskCompleted(success: false)
             return
         }
         
-        var timer: Timer? = nil
         var didEndFetch = false
         
-        som.reconnectToServer(hideRestoreViewCallback: {
-            if !didEndFetch {
-                timer?.invalidate()
-                didEndFetch = true
-                task.setTaskCompleted(success: true)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 20) {
+            guard !didEndFetch else {
+                return
             }
-        }, errorCallback: {
-            if !didEndFetch {
-                timer?.invalidate()
-                didEndFetch = true
-                task.setTaskCompleted(success: false)
-            }
-        })
-        
-        timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 20, repeats: false) { _ in
-            if !didEndFetch {
-                timer?.invalidate()
-                didEndFetch = true
-                task.setTaskCompleted(success: false)
-            }
+            didEndFetch = true
+            task.setTaskCompleted(success: false)
         }
+        
+        som.reconnectToServer(hideRestoreViewCallback: {
+            guard !didEndFetch else {
+                return
+            }
+            didEndFetch = true
+            task.setTaskCompleted(success: true)
+        }, errorCallback: {
+            guard !didEndFetch else {
+                return
+            }
+            didEndFetch = true
+            task.setTaskCompleted(success: false)
+        })
     }
     
     func scheduleAppRefresh() {
@@ -487,31 +485,29 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
             return
         }
         
-        var timer: Timer? = nil
         var didEndFetch = false
         
-        som.reconnectToServer(hideRestoreViewCallback: {
-            if !didEndFetch {
-                timer?.invalidate()
-                didEndFetch = true
-                completionHandler(.newData)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 20) {
+            guard !didEndFetch else {
+                return
             }
-        }, errorCallback: {
-            if !didEndFetch {
-                timer?.invalidate()
-                didEndFetch = true
-                completionHandler(.noData)
-            }
-        })
-        
-        timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 20, repeats: false) { _ in
-            if !didEndFetch {
-                timer?.invalidate()
-                didEndFetch = true
-                completionHandler(.noData)
-            }
+            didEndFetch = true
+            completionHandler(.noData)
         }
+        
+        som.reconnectToServer(hideRestoreViewCallback: {
+            guard !didEndFetch else {
+                return
+            }
+            didEndFetch = true
+            completionHandler(.newData)
+        }, errorCallback: {
+            guard !didEndFetch else {
+                return
+            }
+            didEndFetch = true
+            completionHandler(.noData)
+        })
     }
 
     func userNotificationCenter(

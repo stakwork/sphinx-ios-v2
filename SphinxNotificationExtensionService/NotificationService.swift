@@ -55,7 +55,8 @@ class NotificationService: UNNotificationServiceExtension {
                     pushKey: pushKey
                 )
             } catch {
-                print("error decrypting child index")
+                showPush()
+                return
             }
         }
         
