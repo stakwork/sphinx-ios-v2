@@ -138,9 +138,8 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 "edit.tribe.upper" = "編輯部落";
 "just.left.group" = "%@剛剛離開群組";
 "just.left.tribe" = "%@剛剛離開部落";
-"you.joined.tribe" = "You have joined the tribe";
 "has.joined.group" = "%@已加入群組";
-"has.joined.tribe" = "%@已加入部落";
+"has.joined.tribe" = "%@已加入群組";
 "you.joined.tribe" = "你已加入部落";
 "added.to.group" = "%@已被添加到群組";
 "new.public.group" = "新部落";
