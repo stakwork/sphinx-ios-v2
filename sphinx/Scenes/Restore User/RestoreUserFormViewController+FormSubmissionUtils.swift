@@ -23,7 +23,10 @@ extension RestoreUserFormViewController {
         
         view.endEditing(true)
         
-        askForEnvironmentWith(code: code)
+//        askForEnvironmentWith(code: code)
+        
+        SphinxOnionManager.sharedInstance.isProductionEnv = true
+        getConfigData(code: code)
     }
     
     func askForEnvironmentWith(code: String) {

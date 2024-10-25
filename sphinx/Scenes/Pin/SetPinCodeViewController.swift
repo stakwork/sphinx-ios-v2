@@ -205,10 +205,11 @@ class SetPinCodeViewController: UIViewController {
             
             UserData.sharedInstance.signupStep = SignupHelper.SignupStep.PINSet.rawValue
             
-            if (isRestoreFlow) {
-                let setNickNameVC = SetNickNameViewController.instantiate()
-                setNickNameVC.isRestoreFlow = true
-                self.navigationController?.pushViewController(setNickNameVC, animated: true)
+            if isRestoreFlow {
+                UserData.sharedInstance.signupStep = SignupHelper.SignupStep.PersonalInfoSet.rawValue
+                let sphinxDesktopAdVC = SphinxDesktopAdViewController.instantiate()
+                sphinxDesktopAdVC.isRestoreFlow = self.isRestoreFlow
+                self.navigationController?.pushViewController(sphinxDesktopAdVC, animated: true)
             } else {
                 let newUserGreetingVC = NewUserGreetingViewController.instantiate()
                 self.navigationController?.pushViewController(newUserGreetingVC, animated: true)

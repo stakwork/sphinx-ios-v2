@@ -78,7 +78,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         try? AVAudioSession.sharedInstance().setCategory(.playback)
                 
         setAppConfiguration()
-        registerAppRefresh()
+//        registerAppRefresh()
         configureGiphy()
         configureNotificationCenter()
         configureStoreKit()
@@ -165,7 +165,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         CoreDataManager.sharedManager.saveContext()
         
-        scheduleAppRefresh()
+//        scheduleAppRefresh()
         
         NetworkMonitor.shared.stopMonitoring()
         som.disconnectMqtt()
@@ -234,11 +234,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         saveCurrentStyle()
     }
     
-    func registerAppRefresh() {
-        BGTaskScheduler.shared.register(forTaskWithIdentifier: "com.gl.sphinx.refresh", using: nil, launchHandler: { task in
-            self.handleAppRefresh(task: task)
-        })
-    }
+//    func registerAppRefresh() {
+//        BGTaskScheduler.shared.register(forTaskWithIdentifier: "com.gl.sphinx.refresh", using: nil, launchHandler: { task in
+//            self.handleAppRefresh(task: task)
+//        })
+//    }
     
     func configureSVGRendering(){
         let SVGCoder = SDImageSVGCoder.shared
@@ -365,52 +365,52 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         VideoCallManager.sharedInstance.startVideoCall(link: callLink, audioOnly: audioOnly)
     }
     
-    func handleAppRefresh(task: BGTask) {
-        scheduleAppRefresh()
-        
-        task.expirationHandler = {
-            task.setTaskCompleted(success: false)
-        }
-        
-        if isActive || !UserData.sharedInstance.isUserLogged() {
-            task.setTaskCompleted(success: false)
-            return
-        }
-        
-        var didEndFetch = false
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 20) {
-            guard !didEndFetch else {
-                return
-            }
-            didEndFetch = true
-            task.setTaskCompleted(success: false)
-        }
-        
-        som.reconnectToServer(hideRestoreViewCallback: {
-            guard !didEndFetch else {
-                return
-            }
-            didEndFetch = true
-            task.setTaskCompleted(success: true)
-        }, errorCallback: {
-            guard !didEndFetch else {
-                return
-            }
-            didEndFetch = true
-            task.setTaskCompleted(success: false)
-        })
-    }
-    
-    func scheduleAppRefresh() {
-        let request = BGAppRefreshTaskRequest(identifier: "com.gl.sphinx.refresh")
-        request.earliestBeginDate = Date(timeIntervalSinceNow: 15 * 60)
-        do {
-            try BGTaskScheduler.shared.submit(request)
-        } catch {
-            print("Could not schedule app refresh \(error)")
-        }
-    }
+//    func handleAppRefresh(task: BGTask) {
+//        scheduleAppRefresh()
+//        
+//        task.expirationHandler = {
+//            task.setTaskCompleted(success: false)
+//        }
+//        
+//        if isActive || !UserData.sharedInstance.isUserLogged() {
+//            task.setTaskCompleted(success: false)
+//            return
+//        }
+//        
+//        var didEndFetch = false
+//        
+//        DispatchQueue.main.asyncAfter(deadline: .now() + 20) {
+//            guard !didEndFetch else {
+//                return
+//            }
+//            didEndFetch = true
+//            task.setTaskCompleted(success: false)
+//        }
+//        
+//        som.reconnectToServer(hideRestoreViewCallback: {
+//            guard !didEndFetch else {
+//                return
+//            }
+//            didEndFetch = true
+//            task.setTaskCompleted(success: true)
+//        }, errorCallback: {
+//            guard !didEndFetch else {
+//                return
+//            }
+//            didEndFetch = true
+//            task.setTaskCompleted(success: false)
+//        })
+//    }
+//    
+//    func scheduleAppRefresh() {
+//        let request = BGAppRefreshTaskRequest(identifier: "com.gl.sphinx.refresh")
+//        request.earliestBeginDate = Date(timeIntervalSinceNow: 15 * 60)
+//        do {
+//            try BGTaskScheduler.shared.submit(request)
+//        } catch {
+//            print("Could not schedule app refresh \(error)")
+//        }
+//    }
 
     //App stylre
     func saveCurrentStyle() {
@@ -495,7 +495,7 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
             completionHandler(.noData)
         }
         
-        som.reconnectToServer(hideRestoreViewCallback: {
+        som.reconnectToServer(hideRestoreViewCallback: { _ in
             guard !didEndFetch else {
                 return
             }
