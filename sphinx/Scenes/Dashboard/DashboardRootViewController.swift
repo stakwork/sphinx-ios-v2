@@ -476,7 +476,7 @@ extension DashboardRootViewController {
     }
     
     func finishUserInfoSetup() {
-        if let owner = UserContact.getOwner(), owner.nickname?.trim().isEmpty == true {
+        if let owner = UserContact.getOwner(), (owner.nickname ?? "").trim().isEmpty == true {
             let setNickNameVC = SetNickNameViewController.instantiate()
             setNickNameVC.isRestoreFlow = true
             presentNavigationControllerWith(vc: setNickNameVC)
