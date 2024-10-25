@@ -459,7 +459,7 @@ extension DashboardRootViewController {
         SphinxOnionManager.sharedInstance.isConnected = false
     }
     
-    func hideRestoreViewCallback() {
+    func hideRestoreViewCallback(isRestore: Bool) {
         DispatchQueue.main.async {
             self.restoreProgressView.hideViewAnimated()
             self.isLoading = false
@@ -468,6 +468,18 @@ extension DashboardRootViewController {
             self.refreshUnreadStatus()
             
             self.chatsListViewModel.askForNotificationPermissions()
+            
+            if isRestore {
+                self.finishUserInfoSetup()
+            }
+        }
+    }
+    
+    func finishUserInfoSetup() {
+        if let owner = UserContact.getOwner(), owner.nickname?.trim().isEmpty == true {
+            let setNickNameVC = SetNickNameViewController.instantiate()
+            setNickNameVC.isRestoreFlow = true
+            presentNavigationControllerWith(vc: setNickNameVC)
         }
     }
     

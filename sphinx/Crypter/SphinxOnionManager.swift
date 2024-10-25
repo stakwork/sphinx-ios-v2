@@ -81,7 +81,7 @@ class SphinxOnionManager : NSObject {
     typealias RestoreProgressCallback = (Int) -> Void
     var messageRestoreCallback: RestoreProgressCallback? = nil
     var contactRestoreCallback: RestoreProgressCallback? = nil
-    var hideRestoreCallback: (() -> ())? = nil
+    var hideRestoreCallback: ((Bool) -> ())? = nil
     var errorCallback: (() -> ())? = nil
     var tribeMembersCallback: (([String: AnyObject]) -> ())? = nil
     var paymentsHistoryCallback: ((String?, String?) -> ())? = nil
@@ -388,7 +388,7 @@ class SphinxOnionManager : NSObject {
         connectingCallback: (() -> ())? = nil,
         contactRestoreCallback: RestoreProgressCallback? = nil,
         messageRestoreCallback: RestoreProgressCallback? = nil,
-        hideRestoreViewCallback: (()->())? = nil,
+        hideRestoreViewCallback: ((Bool)->())? = nil,
         errorCallback: (()->())? = nil
     ) {
         if !ConnectivityHelper.isConnectedToInternet {
@@ -431,7 +431,7 @@ class SphinxOnionManager : NSObject {
         connectingCallback: (() -> ())? = nil,
         contactRestoreCallback: RestoreProgressCallback? = nil,
         messageRestoreCallback: RestoreProgressCallback? = nil,
-        hideRestoreViewCallback: (()->())? = nil,
+        hideRestoreViewCallback: ((Bool)->())? = nil,
         errorCallback: (()->())? = nil
     ){
         connectingCallback?()
@@ -456,7 +456,7 @@ class SphinxOnionManager : NSObject {
         let success = connectToBroker(seed: seed, xpub: my_xpub)
         
         if (success == false) {
-            hideRestoreViewCallback?()
+            hideRestoreViewCallback?(false)
             return
         }
         
@@ -476,10 +476,10 @@ class SphinxOnionManager : NSObject {
             }
              
             if self.isV2Restore {
-                self.hideRestoreCallback = {
+                self.hideRestoreCallback = { _ in
                     self.isV2Restore = false
                     
-                    hideRestoreViewCallback?()
+                    hideRestoreViewCallback?(true)
                 }
                 self.syncContactsAndMessages()
             } else {
