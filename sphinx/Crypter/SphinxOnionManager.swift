@@ -253,6 +253,9 @@ class SphinxOnionManager : NSObject {
             }
             return TransactionMessage.getMaxIndex()
         }
+        set {
+            UserDefaults.Keys.maxMessageIndex.set(newValue)
+        }
     }
     
     ///Create tribe
