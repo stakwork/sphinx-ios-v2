@@ -3,6 +3,8 @@ import CoreData
 import UIKit
 import KeychainAccess
 import RNCryptor
+import Bugsnag
+import BugsnagPerformance
 
 class NotificationService: UNNotificationServiceExtension {
     
@@ -30,6 +32,12 @@ class NotificationService: UNNotificationServiceExtension {
     
     override init() {
         super.init()
+        configureBugsnag()
+    }
+    
+    func configureBugsnag() {
+        Bugsnag.start()
+        BugsnagPerformance.start()
     }
     
     override func didReceive(

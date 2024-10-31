@@ -17,6 +17,8 @@ import AVFAudio
 import SDWebImageSVGCoder
 import PushKit
 import CoreData
+import Bugsnag
+import BugsnagPerformance
 
 
 @UIApplicationMain
@@ -80,6 +82,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         setAppConfiguration()
 //        registerAppRefresh()
         configureGiphy()
+        configureBugsnag()
         configureNotificationCenter()
         configureStoreKit()
         configureSVGRendering()
@@ -250,6 +253,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         if let GIPHY_API_KEY = Bundle.main.object(forInfoDictionaryKey: "GIPHY_API_KEY") as? String {
             Giphy.configure(apiKey: GIPHY_API_KEY)
         }
+    }
+    
+    func configureBugsnag() {
+        Bugsnag.start()
+        BugsnagPerformance.start()
     }
     
     func configureNotificationCenter() {

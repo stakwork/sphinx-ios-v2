@@ -48,9 +48,13 @@ target 'sphinx' do
     pod 'MessagePack.swift', '~> 4.0'
     pod 'EPUBKit'
     pod 'MobileVLCKit'
+    pod 'Bugsnag'
+    pod 'BugsnagPerformance'
 end
 
 target 'SphinxNotificationExtensionService' do
     pod 'RNCryptor', '~> 5.0'
     pod 'KeychainAccess'
+    pod 'Bugsnag'
+    pod 'BugsnagPerformance'
 end
