@@ -1,6 +1,8 @@
 PODS:
   - AEXML (4.7.0)
   - Alamofire (5.6.4)
+  - Bugsnag (6.30.1)
+  - BugsnagPerformance (1.10.1)
   - CocoaMQTT (2.1.6):
     - CocoaMQTT/Core (= 2.1.6)
   - CocoaMQTT/Core (2.1.6):
@@ -67,6 +69,8 @@ PODS:
 
 DEPENDENCIES:
   - Alamofire (~> 5.6.4)
+  - Bugsnag
+  - BugsnagPerformance
   - CocoaMQTT (from `https://github.com/emqx/CocoaMQTT.git`)
   - EPUBKit
   - Giphy (= 2.1.20)
@@ -97,6 +101,8 @@ SPEC REPOS:
   trunk:
     - AEXML
     - Alamofire
+    - Bugsnag
+    - BugsnagPerformance
     - EPUBKit
     - FLAnimatedImage
     - Giphy
@@ -145,6 +151,8 @@ CHECKOUT OPTIONS:
 SPEC CHECKSUMS:
   AEXML: 5ff2a4695529348cda96b8b872cf73212ad050d7
   Alamofire: 4e95d97098eacb88856099c4fc79b526a299e48c
+  Bugsnag: e40189b5cc4446c2e8fb31240167532d85fa0aaf
+  BugsnagPerformance: 784f3b03370bae49b26860341f8e980aff907c10
   CocoaMQTT: 1f206228b29318eabdacad0c2e4e88575922c27a
   EPUBKit: 7ba9a980346d75acda03717fd66d1696fafe6417
   FLAnimatedImage: 8f3e854ebf9680b71f0b6e700939687fc4d82b4b
@@ -177,6 +185,6 @@ SPEC CHECKSUMS:
   youtube-ios-player-helper: 0185c57db23c80d63d6ca11251d110abb8a4ca61
   Zip: b3fef584b147b6e582b2256a9815c897d60ddc67
 
-PODFILE CHECKSUM: 1c501a793148ccb5bb681a5bcfad40b71156ec24
+PODFILE CHECKSUM: 58f01df1ac81e3e427e5424c5e28c911d5bf9ab3
 
 COCOAPODS: 1.11.3
