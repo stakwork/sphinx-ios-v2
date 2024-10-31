@@ -44,65 +44,71 @@ class VideoCallManager : NSObject {
         audioOnly: Bool? = nil
     ) {
         
-        if activeCall {
-            return
-        }
-        
-        switch(AVAudioSession.sharedInstance().recordPermission){
-        case .denied://show alert
-            AlertHelper.showAlert(title: "microphone.permission.required".localized, message: "microphone.permission.denied.jitsi" .localized)
-            return
-        case .undetermined://request access & preempt starting video
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.01, execute: {
-                let _ = AudioRecorderHelper().configureAudioSession(delegate: self)
-            })
-            return
-        case .granted://continue
-            break
-        }
-
-        if let owner = UserContact.getOwner() {
+        if link.isJitsiCallLink {
+            if let url = URL(string: link) {
+                UIApplication.shared.open(url)
+            }
+        } else {
+            if activeCall {
+                return
+            }
             
-            let linkUrl = VoIPRequestMessage.getFromString(link)?.link ?? link
-            
-            cleanUp()
+            switch(AVAudioSession.sharedInstance().recordPermission){
+            case .denied://show alert
+                AlertHelper.showAlert(title: "microphone.permission.required".localized, message: "microphone.permission.denied.jitsi" .localized)
+                return
+            case .undetermined://request access & preempt starting video
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.01, execute: {
+                    let _ = AudioRecorderHelper().configureAudioSession(delegate: self)
+                })
+                return
+            case .granted://continue
+                break
+            }
 
-            let jitsiMeetView = JitsiMeetView()
-            jitsiMeetView.delegate = self
-            
-            self.jitsiMeetView = jitsiMeetView
+            if let owner = UserContact.getOwner() {
+                
+                let linkUrl = VoIPRequestMessage.getFromString(link)?.link ?? link
+                
+                cleanUp()
 
-            let options = JitsiMeetConferenceOptions.fromBuilder({(builder: JitsiMeetConferenceOptionsBuilder) -> Void in
-                builder.serverURL = URL(string: linkUrl)!
-                builder.room = linkUrl.callRoom
-                builder.setAudioOnly(audioOnly ?? linkUrl.contains("startAudioOnly=true"))
-                builder.setAudioMuted(false)
-                builder.setVideoMuted(false)
-                builder.setFeatureFlag("welcomepage.enabled", withValue: false)
-                builder.setFeatureFlag("prejoinpage.enabled", withValue: false)
-                builder.setSubject(" ")
-                builder.userInfo = JitsiMeetUserInfo(
-                    displayName: owner.nickname,
-                    andEmail: nil,
-                    andAvatar: URL(string: owner.avatarUrl ?? "")
-                )
-            })
+                let jitsiMeetView = JitsiMeetView()
+                jitsiMeetView.delegate = self
+                
+                self.jitsiMeetView = jitsiMeetView
 
-            jitsiMeetView.join(options)
-            jitsiMeetView.alpha = 0
-            jitsiMeetView.layer.cornerRadius = 10
-            jitsiMeetView.clipsToBounds = true
+                let options = JitsiMeetConferenceOptions.fromBuilder({(builder: JitsiMeetConferenceOptionsBuilder) -> Void in
+                    builder.serverURL = URL(string: linkUrl)!
+                    builder.room = linkUrl.callRoom
+                    builder.setAudioOnly(audioOnly ?? linkUrl.contains("startAudioOnly=true"))
+                    builder.setAudioMuted(false)
+                    builder.setVideoMuted(false)
+                    builder.setFeatureFlag("welcomepage.enabled", withValue: false)
+                    builder.setFeatureFlag("prejoinpage.enabled", withValue: false)
+                    builder.setSubject(" ")
+                    builder.userInfo = JitsiMeetUserInfo(
+                        displayName: owner.nickname,
+                        andEmail: nil,
+                        andAvatar: URL(string: owner.avatarUrl ?? "")
+                    )
+                })
 
-            if let window = UIApplication.shared.windows.first {
-                pipViewCoordinator = CustomPipViewCoordinator(withView: jitsiMeetView)
-                pipViewCoordinator?.delegate = self
-                pipViewCoordinator?.configureAsStickyView(withParentView: window)
-                pipViewCoordinator?.initialPositionInSuperview = .upperRightCorner
-                pipViewCoordinator?.show()
+                jitsiMeetView.join(options)
+                jitsiMeetView.alpha = 0
+                jitsiMeetView.layer.cornerRadius = 10
+                jitsiMeetView.clipsToBounds = true
 
-                if !isGroupChat() {
-                    videoCallPayButton = getPaymentView()
-                    window.addSubview(videoCallPayButton!)
+                if let window = UIApplication.shared.windows.first {
+                    pipViewCoordinator = CustomPipViewCoordinator(withView: jitsiMeetView)
+                    pipViewCoordinator?.delegate = self
+                    pipViewCoordinator?.configureAsStickyView(withParentView: window)
+                    pipViewCoordinator?.initialPositionInSuperview = .upperRightCorner
+                    pipViewCoordinator?.show()
+
+                    if !isGroupChat() {
+                        videoCallPayButton = getPaymentView()
+                        window.addSubview(videoCallPayButton!)
+                    }
                 }
             }
         }
