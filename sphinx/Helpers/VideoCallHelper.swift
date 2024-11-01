@@ -30,7 +30,7 @@ class VideoCallHelper {
         let room = "\(API.sharedInstance.kVideoCallServer)\(TransactionMessage.kCallRoomName).\(time)"
         
         let audioCallback: (() -> ()) = {
-            callback(room + "#config.startAudioOnly=true")
+            callback(room)
         }
         
         let videoCallback: (() -> ()) = {

@@ -145,6 +145,8 @@ class API {
         }
     }
 
+    public static let kJitsiCallServer = "https://jitsi.sphinx.chat"
+
     var storedVideoCallServer: String? = nil
     public var kVideoCallServer : String {
         get {
@@ -155,7 +157,7 @@ class API {
                 self.storedVideoCallServer = meetingServerURL
                 return meetingServerURL
             }
-            self.storedVideoCallServer = "https://jitsi.sphinx.chat"
+            self.storedVideoCallServer = "https://chat.sphinx.chat/rooms"
             return self.storedVideoCallServer!
         }
         set {
