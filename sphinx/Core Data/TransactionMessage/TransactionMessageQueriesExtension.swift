@@ -141,12 +141,14 @@ extension TransactionMessage {
     static func getAllMessagesFor(
         chat: Chat,
         limit: Int? = nil,
-        context: NSManagedObjectContext? = nil
+        context: NSManagedObjectContext? = nil,
+        forceAllMsgs: Bool = false
     ) -> [TransactionMessage] {
         
         let fetchRequest = getChatMessagesFetchRequest(
             for: chat,
-            with: limit
+            with: limit,
+            forceAllMsgs: forceAllMsgs
         )
         
         var messages: [TransactionMessage] = []
@@ -271,7 +273,8 @@ extension TransactionMessage {
         for chat: Chat,
         threadUUID: String? = nil,
         with limit: Int? = nil,
-        pinnedMessageId: Int? = nil
+        pinnedMessageId: Int? = nil,
+        forceAllMsgs: Bool = false
     ) -> NSFetchRequest<TransactionMessage> {
         
         var typesToExclude = typesToExcludeFromChat
@@ -280,6 +283,10 @@ extension TransactionMessage {
         if chat.isMyPublicGroup() {
             typesToExclude.append(TransactionMessageType.memberApprove.rawValue)
             typesToExclude.append(TransactionMessageType.memberReject.rawValue)
+        }
+
+        if forceAllMsgs {
+            typesToExclude = []
         }
         
         let predicate = TransactionMessage.getPredicate(
