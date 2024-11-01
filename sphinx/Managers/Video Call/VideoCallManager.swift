@@ -43,8 +43,8 @@ class VideoCallManager : NSObject {
         link: String,
         audioOnly: Bool? = nil
     ) {
-        
-        if link.isJitsiCallLink {
+
+        if !link.isJitsiCallLink {
             if let url = URL(string: link) {
                 UIApplication.shared.open(url)
             }
