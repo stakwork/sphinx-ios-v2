@@ -157,7 +157,7 @@ class API {
                 self.storedVideoCallServer = meetingServerURL
                 return meetingServerURL
             }
-            self.storedVideoCallServer = "https://chat.sphinx.chat/rooms/"
+            self.storedVideoCallServer = "https://chat.sphinx.chat/rooms"
             return self.storedVideoCallServer!
         }
         set {
