@@ -43,12 +43,11 @@ class VideoCallManager : NSObject {
         link: String,
         audioOnly: Bool? = nil
     ) {
-
-        if !link.isJitsiCallLink {
-            if let url = URL(string: link) {
-                UIApplication.shared.open(url)
-            }
-        } else {
+        if link.isLiveKitCallLink {
+            let liveKitVC = LiveKitCallViewController()
+            liveKitVC.url = link
+            liveKitVC.audioOnly = audioOnly ?? false
+        } else if link.isJitsiCallLink {
             if activeCall {
                 return
             }
@@ -110,6 +109,10 @@ class VideoCallManager : NSObject {
                         window.addSubview(videoCallPayButton!)
                     }
                 }
+            }
+        } else {
+            if let url = URL(string: link) {
+                UIApplication.shared.open(url)
             }
         }
     }

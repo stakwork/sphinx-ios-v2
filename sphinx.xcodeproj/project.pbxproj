@@ -190,6 +190,7 @@
 		473842F52391970B00AA640F /* FullScreenImageView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 473842F42391970B00AA640F /* FullScreenImageView.xib */; };
 		473842F7239197E700AA640F /* FullScreenImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 473842F6239197E700AA640F /* FullScreenImageView.swift */; };
 		473842F92391A9DF00AA640F /* KeyboardHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 473842F82391A9DF00AA640F /* KeyboardHelper.swift */; };
+		473873AE2CD906C500CBBC28 /* LiveKit in Frameworks */ = {isa = PBXBuildFile; productRef = 473873AD2CD906C500CBBC28 /* LiveKit */; };
 		47393E682461F6F600E6F93E /* KeychainManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47393E672461F6F600E6F93E /* KeychainManager.swift */; };
 		473BC88D25F287340070E519 /* PodcastNewEpisodeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 473BC88C25F287340070E519 /* PodcastNewEpisodeViewController.swift */; };
 		473BC89A260238DC0070E519 /* JSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = 473BC899260238DC0070E519 /* JSON.swift */; };
@@ -625,6 +626,7 @@
 		47FA727C2A32373900FB4535 /* NewOnlyTextMessageTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47FA727A2A32373900FB4535 /* NewOnlyTextMessageTableViewCell.swift */; };
 		47FA727D2A32373900FB4535 /* NewOnlyTextMessageTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 47FA727B2A32373900FB4535 /* NewOnlyTextMessageTableViewCell.xib */; };
 		47FB189B23A299000097695B /* SignupHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47FB189A23A299000097695B /* SignupHelper.swift */; };
+		47FCE2C02CD903B6005DB8AF /* LiveKitCallViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47FCE2BF2CD903B6005DB8AF /* LiveKitCallViewController.swift */; };
 		47FDDB1C2562D77200BBF15F /* boost_animation.json in Resources */ = {isa = PBXBuildFile; fileRef = 47FDDB1B2562D77100BBF15F /* boost_animation.json */; };
 		47FE9A3E23C381A20090913F /* UITapGestureRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47FE9A3D23C381A20090913F /* UITapGestureRecognizer.swift */; };
 		9344269DACF491E8A3F8651C /* Pods_SphinxNotificationExtensionService.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3867EC056CA5757264104904 /* Pods_SphinxNotificationExtensionService.framework */; };
@@ -1855,6 +1857,7 @@
 		47FA727A2A32373900FB4535 /* NewOnlyTextMessageTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewOnlyTextMessageTableViewCell.swift; sourceTree = "<group>"; };
 		47FA727B2A32373900FB4535 /* NewOnlyTextMessageTableViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = NewOnlyTextMessageTableViewCell.xib; sourceTree = "<group>"; };
 		47FB189A23A299000097695B /* SignupHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignupHelper.swift; sourceTree = "<group>"; };
+		47FCE2BF2CD903B6005DB8AF /* LiveKitCallViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveKitCallViewController.swift; sourceTree = "<group>"; };
 		47FDDB1B2562D77100BBF15F /* boost_animation.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = boost_animation.json; sourceTree = "<group>"; };
 		47FE9A3D23C381A20090913F /* UITapGestureRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITapGestureRecognizer.swift; sourceTree = "<group>"; };
 		487E10CEB3D07B0840A84681 /* Pods_sphinx.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_sphinx.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -2162,6 +2165,7 @@
 				F331199D268E93FB005082EB /* StoreKit.framework in Frameworks */,
 				4703CF932519425E007B685C /* PDFKit.framework in Frameworks */,
 				12075275C652A9404FC48EBC /* Pods_sphinx.framework in Frameworks */,
+				473873AE2CD906C500CBBC28 /* LiveKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3045,6 +3049,7 @@
 		475BDC93232AC15200C5BBD6 /* View Controllers */ = {
 			isa = PBXGroup;
 			children = (
+				47FCE2BE2CD903A4005DB8AF /* Like Kit */,
 				470146242A3F9A9A00A00DF8 /* Payments */,
 				477D9699244E0C1B00830406 /* Chat Attachment */,
 				473258AA241BD6E7006E6602 /* Common */,
@@ -4308,6 +4313,14 @@
 			path = "Custom Views";
 			sourceTree = "<group>";
 		};
+		47FCE2BE2CD903A4005DB8AF /* Like Kit */ = {
+			isa = PBXGroup;
+			children = (
+				47FCE2BF2CD903B6005DB8AF /* LiveKitCallViewController.swift */,
+			);
+			path = "Like Kit";
+			sourceTree = "<group>";
+		};
 		CE3133A32977747E00E91E3A /* Badges */ = {
 			isa = PBXGroup;
 			children = (
@@ -4837,6 +4850,9 @@
 				CE677B772C6A88220050CFFC /* PBXTargetDependency */,
 			);
 			name = sphinx;
+			packageProductDependencies = (
+				473873AD2CD906C500CBBC28 /* LiveKit */,
+			);
 			productName = sphinx;
 			productReference = 4779F15E232AA0F200D35E81 /* sphinx.app */;
 			productType = "com.apple.product-type.application";
@@ -4936,6 +4952,9 @@
 				"zh-Hant",
 			);
 			mainGroup = 4779F155232AA0F200D35E81;
+			packageReferences = (
+				473873AC2CD906C500CBBC28 /* XCRemoteSwiftPackageReference "client-sdk-swift" */,
+			);
 			productRefGroup = 4779F15F232AA0F200D35E81 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -5441,6 +5460,7 @@
 				4746807D293E566700F51457 /* PodcastPlayerPlaybackSliderView.swift in Sources */,
 				471161DF29156480008EAFF2 /* NSObject.swift in Sources */,
 				F313024626BA62B300A1396E /* ChatsCollectionViewController.swift in Sources */,
+				47FCE2C02CD903B6005DB8AF /* LiveKitCallViewController.swift in Sources */,
 				CE4B53FD2AFC389C00708A0C /* SphinxOnionManager.swift in Sources */,
 				CE51F350298870BF00ABBACB /* MemberBadgeDetailVM.swift in Sources */,
 				4705D39F2799C339009C0729 /* UITextField.swift in Sources */,
@@ -7166,6 +7186,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		473873AC2CD906C500CBBC28 /* XCRemoteSwiftPackageReference "client-sdk-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/livekit/client-sdk-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.16;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		473873AD2CD906C500CBBC28 /* LiveKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 473873AC2CD906C500CBBC28 /* XCRemoteSwiftPackageReference "client-sdk-swift" */;
+			productName = LiveKit;
+		};
+/* End XCSwiftPackageProductDependency section */
 
 /* Begin XCVersionGroup section */
 		47F35D4A2373156A0042A58F /* sphinx.xcdatamodeld */ = {

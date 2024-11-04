@@ -679,6 +679,12 @@ extension String {
         }
     }
     
+    var isLiveKitCallLink: Bool {
+        get {
+            return self.lowerClean.starts(with: "http") && self.lowerClean.contains(API.kLiveKitCallServer)
+        }
+    }
+    
     var isCallLink: Bool {
         get {
             return self.lowerClean.starts(with: "http") && self.lowerClean.contains(TransactionMessage.kCallRoomName)
