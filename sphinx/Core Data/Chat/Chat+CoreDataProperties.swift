@@ -42,6 +42,7 @@ extension Chat {
     @NSManaged public var contentFeed: ContentFeed?
     @NSManaged public var contactIds: [NSNumber]
     @NSManaged public var pendingContactIds: [NSNumber]
+    @NSManaged public var secondBrainUrl: String?
 
     @NSManaged public var isTribeICreated: Bool
     @NSManaged public var messages: NSSet?

@@ -242,6 +242,20 @@ public class Chat: NSManagedObject {
         return chats
     }
     
+    static func getAllSecondBrainTribes() -> [Chat] {
+        let predicate = NSPredicate(format: "type == %d AND secondBrainUrl != nil", Chat.ChatType.publicGroup.rawValue)
+        
+        let sortDescriptors = [NSSortDescriptor(key: "name", ascending: true)]
+        
+        let chats:[Chat] = CoreDataManager.sharedManager.getObjectsOfTypeWith(
+            predicate: predicate,
+            sortDescriptors: sortDescriptors,
+            entityName: "Chat"
+        )
+        
+        return chats
+    }
+    
     static func getTribeChatWithOwnerPubkey(
         ownerPubkey: String,
         context: NSManagedObjectContext? = nil
@@ -848,6 +862,8 @@ public class Chat: NSManagedObject {
             photoUrl = tribeImage
             image = nil
         }
+        
+        self.secondBrainUrl = tribeInfo?.secondBrainUrl
         
         saveChat()
     }
