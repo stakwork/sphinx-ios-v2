@@ -48,9 +48,15 @@ class TransactionTableViewCell: UITableViewCell {
         
         paymentIcon.image = transaction.isFailed() ? failedPmtImage : directionPmtImage
         
-        failedPaymentLabel.isHidden = !transaction.isFailed() && !transaction.isBountyPayment()
-        failedPaymentLabel.textColor = transaction.isFailed() ? UIColor.Sphinx.PrimaryRed : UIColor.Sphinx.PrimaryGreen
-        failedPaymentLabel.text = transaction.isFailed() ? "failed.payment".localized : "Bounty"
+        failedPaymentLabel.isHidden = !transaction.isFailed()
+        
+        if transaction.isBountyPayment() {
+            failedPaymentLabel.lineBreakMode = .byWordWrapping
+        } else {
+            failedPaymentLabel.lineBreakMode = .byTruncatingTail
+        }
+        
+        failedPaymentLabel.text = "failed.payment".localized
         
         let bottomViewVisible = transaction.isFailed() && transaction.expanded
         bottomView.isHidden = !bottomViewVisible
