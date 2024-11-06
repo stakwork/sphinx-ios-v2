@@ -506,6 +506,8 @@
 "see-all" = "查看全部";
 "only-mentions" = "仅提及";
 "mute-chat" = "静音聊天";
+"error.getting.token.title" = "获取令牌时出错";
+"error.getting.token.description" = "获取加入通话的令牌时出错。请稍后重试";
 
 //OTHER
 "create.call" = "创建通话";

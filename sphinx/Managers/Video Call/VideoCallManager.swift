@@ -64,7 +64,7 @@ class VideoCallManager : NSObject {
                     }
                 },
                 errorCallback: { _ in
-                    
+                    AlertHelper.showAlert(title: "error.getting.token.title".localized, message: "error.getting.token.description".localized)
                 }
             )
         } else if linkUrl.isJitsiCallLink {
@@ -74,7 +74,7 @@ class VideoCallManager : NSObject {
             
             switch(AVAudioSession.sharedInstance().recordPermission){
             case .denied://show alert
-                AlertHelper.showAlert(title: "microphone.permission.required".localized, message: "microphone.permission.denied.jitsi" .localized)
+                AlertHelper.showAlert(title: "microphone.permission.required".localized, message: "microphone.permission.denied.jitsi".localized)
                 return
             case .undetermined://request access & preempt starting video
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.01, execute: {
