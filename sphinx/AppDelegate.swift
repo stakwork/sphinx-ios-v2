@@ -367,7 +367,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
     
     func handleAcceptedCall(
-        callLink:String,
+        callLink: String,
         audioOnly: Bool
     ){
         VideoCallManager.sharedInstance.startVideoCall(link: callLink, audioOnly: audioOnly)
