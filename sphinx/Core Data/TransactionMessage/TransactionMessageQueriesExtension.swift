@@ -604,6 +604,29 @@ extension TransactionMessage {
         }
     }
     
+    static func fetchTransactionMessagesForHistoryWith(
+        msgIndexes: [Int],
+        msgPmtHashes: [String]
+    ) -> [TransactionMessage] {
+        let context = CoreDataManager.sharedManager.persistentContainer.viewContext
+        let predicate = NSPredicate(format: "id IN %@ OR paymentHash IN %@", msgIndexes, msgPmtHashes)
+        
+        // Sort descriptors to order by date in descending order
+        let sortDescriptors = [NSSortDescriptor(key: "date", ascending: false)]
+        
+        let fetchRequest = NSFetchRequest<TransactionMessage>(entityName: "TransactionMessage")
+        fetchRequest.predicate = predicate
+        fetchRequest.sortDescriptors = sortDescriptors
+        
+        do {
+            let fetchedMessages = try context.fetch(fetchRequest)
+            return fetchedMessages
+        } catch {
+            print("Error fetching transaction messages for history: \(error)")
+            return []
+        }
+    }
+    
     static func getMessagesWith(tags: [String], context: NSManagedObjectContext? = nil) -> [TransactionMessage] {
         let predicate = NSPredicate(format: "tag IN %@", tags)
         let sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]

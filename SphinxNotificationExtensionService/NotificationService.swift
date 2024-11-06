@@ -3,8 +3,6 @@ import CoreData
 import UIKit
 import KeychainAccess
 import RNCryptor
-import Bugsnag
-import BugsnagPerformance
 
 class NotificationService: UNNotificationServiceExtension {
     
@@ -29,16 +27,6 @@ class NotificationService: UNNotificationServiceExtension {
     }
     
     let keychain = Keychain(service: "sphinx-app", accessGroup: NotificationService.kKeychainGroup).synchronizable(true)
-    
-    override init() {
-        super.init()
-        configureBugsnag()
-    }
-    
-    func configureBugsnag() {
-        Bugsnag.start()
-        BugsnagPerformance.start()
-    }
     
     override func didReceive(
         _ request: UNNotificationRequest,

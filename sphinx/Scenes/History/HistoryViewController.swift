@@ -83,15 +83,18 @@ class HistoryViewController: UIViewController {
         }
         
         var history = [PaymentTransaction]()
-        
-        // 1. Pull history with messages from local DB
-        let messages = TransactionMessage.fetchTransactionMessagesForHistory()
-        
 
         if let jsonString = jsonString,
            let results = Mapper<PaymentTransactionFromServer>().mapArray(JSONString: jsonString) {
             
             for result in results {
+                
+                let msgIndexes = results.compactMap({ $0.msg_idx })
+                let msgPmtHashes = results.compactMap({ $0.rhash })
+                var messages = TransactionMessage.fetchTransactionMessagesForHistory()
+                let messagesMatching = TransactionMessage.fetchTransactionMessagesForHistoryWith(msgIndexes: msgIndexes, msgPmtHashes: msgPmtHashes)
+                messages.append(contentsOf: messagesMatching)
+                
                 if let localHistoryMessage = messages.filter({ $0.id == result.msg_idx ?? -1 }).first {
                     let paymentTransaction = PaymentTransaction(fromTransactionMessage: localHistoryMessage, ts: result.ts)
                     history.append(paymentTransaction)

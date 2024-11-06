@@ -358,6 +358,7 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 "error.loading.transactions" = "加載交易列表時出錯。請稍後再試。";
 "loading.more.transactions" = "加載更多交易...";
 "transactions.failure-reason" = "失敗原因：";
+"failed.payment" = "付款失敗";
 
 //二維碼掃描器
 "scan.qr.code.upper" = "掃描二維碼";
