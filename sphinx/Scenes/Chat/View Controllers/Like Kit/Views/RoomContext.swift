@@ -23,7 +23,10 @@ final class RoomContext: ObservableObject {
     let jsonDecoder = JSONDecoder()
     
     typealias OnConnected = () -> Void
+    typealias OnCallEnded = () -> Void
+    
     private var onConnected: OnConnected? = nil
+    private var onCallEnded: OnCallEnded? = nil
 
     private let store: ValueStore<Preferences>
 
@@ -112,10 +115,12 @@ final class RoomContext: ObservableObject {
     @MainActor
     func connect(
         entry: ConnectionHistory? = nil,
-        onConnected: OnConnected? = nil
+        onConnected: OnConnected? = nil,
+        onCallEnded: OnCallEnded? = nil
     ) async throws -> Room {
         
         self.onConnected = onConnected
+        self.onCallEnded = onCallEnded
         
         if let entry {
             url = entry.url
@@ -237,21 +242,26 @@ extension RoomContext: RoomDelegate {
     func room(_ room: Room, didUpdateConnectionState connectionState: ConnectionState, from oldValue: ConnectionState) {
         print("Did update connectionState \(oldValue) -> \(connectionState)")
 
-        if case .disconnected = connectionState,
-           let error = room.disconnectError,
-           error.type != .cancelled
-        {
-            latestError = room.disconnectError
+        if case .disconnected = connectionState {
+            if let error = room.disconnectError {
+                if error.type == .cancelled {
+                    onCallEnded?()
+                } else {
+                    latestError = room.disconnectError
 
-            Task.detached { @MainActor [weak self] in
-                guard let self else { return }
-                self.shouldShowDisconnectReason = true
-                // Reset state
-                self.focusParticipant = nil
-                self.showMessagesView = false
-                self.textFieldString = ""
-                self.messages.removeAll()
-                // self.objectWillChange.send()
+                    Task.detached { @MainActor [weak self] in
+                        guard let self else { return }
+                        self.shouldShowDisconnectReason = true
+                        // Reset state
+                        self.focusParticipant = nil
+                        self.showMessagesView = false
+                        self.textFieldString = ""
+                        self.messages.removeAll()
+                        // self.objectWillChange.send()
+                    }
+                }
+            } else {
+                onCallEnded?()
             }
         }
         

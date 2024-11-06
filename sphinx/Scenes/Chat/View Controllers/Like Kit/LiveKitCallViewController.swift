@@ -33,9 +33,11 @@ class LiveKitCallViewController: UIViewController {
         roomCtx.token = token
         
         // Create the SwiftUI view
-        let swiftUIView = RoomContextView(audioOnly: audioOnly)
-            .environmentObject(appCtx)
-            .environmentObject(roomCtx)
+        let swiftUIView = RoomContextView(audioOnly: audioOnly, onCallEnded: {
+            Task { @MainActor in
+                self.dismiss(animated: true)
+            }
+        }).environmentObject(appCtx).environmentObject(roomCtx)
 
         // Create a hosting controller
         let hostingController = UIHostingController(rootView: swiftUIView)
@@ -126,8 +128,12 @@ struct RoomContextView: View {
     
     var audioOnly: Bool = true
     
-    init(audioOnly: Bool) {
+    typealias OnCallEnded = () -> Void
+    private var onCallEnded: OnCallEnded? = nil
+    
+    init(audioOnly: Bool, onCallEnded: OnCallEnded? = nil) {
         self.audioOnly = audioOnly
+        self.onCallEnded = onCallEnded
     }
     
     var body: some View {
@@ -145,13 +151,15 @@ struct RoomContextView: View {
             .onAppear() {
                 Task {
                     if !roomCtx.token.isEmpty {
-                        let room = try await roomCtx.connect() {
+                        let room = try await roomCtx.connect(onConnected: {
                             self.enableMic()
                             
                             if !self.audioOnly {
                                 self.enableCamera()
                             }
-                        }
+                        }, onCallEnded: {
+                            self.onCallEnded?()
+                        })
                         appCtx.connectionHistory.update(room: room, e2ee: false, e2eeKey: "")
                     }
                 }

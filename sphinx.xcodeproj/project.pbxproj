@@ -2663,6 +2663,22 @@
 			path = Ack;
 			sourceTree = "<group>";
 		};
+		4730EF582CDBCC5B0014581F /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				4730EF392CDA90620014581F /* ValueStore.swift */,
+				4730EF3B2CDA90D00014581F /* AppContext.swift */,
+				4730EF3D2CDA90EA0014581F /* RoomContext.swift */,
+				4730EF3F2CDA914E0014581F /* RoomView.swift */,
+				4730EF412CDA916F0014581F /* ConnectView.swift */,
+				4730EF462CDA91F60014581F /* CustomViews.swift */,
+				4730EF482CDA94500014581F /* ParticipantView.swift */,
+				4730EF4A2CDA94E70014581F /* PublishOptionsView.swift */,
+				4730EF4C2CDA95B20014581F /* Participant+Helper.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
 		473258AA241BD6E7006E6602 /* Common */ = {
 			isa = PBXGroup;
 			children = (
@@ -4340,15 +4356,7 @@
 			isa = PBXGroup;
 			children = (
 				47FCE2BF2CD903B6005DB8AF /* LiveKitCallViewController.swift */,
-				4730EF392CDA90620014581F /* ValueStore.swift */,
-				4730EF3B2CDA90D00014581F /* AppContext.swift */,
-				4730EF3D2CDA90EA0014581F /* RoomContext.swift */,
-				4730EF3F2CDA914E0014581F /* RoomView.swift */,
-				4730EF412CDA916F0014581F /* ConnectView.swift */,
-				4730EF462CDA91F60014581F /* CustomViews.swift */,
-				4730EF482CDA94500014581F /* ParticipantView.swift */,
-				4730EF4A2CDA94E70014581F /* PublishOptionsView.swift */,
-				4730EF4C2CDA95B20014581F /* Participant+Helper.swift */,
+				4730EF582CDBCC5B0014581F /* Views */,
 			);
 			path = "Like Kit";
 			sourceTree = "<group>";
