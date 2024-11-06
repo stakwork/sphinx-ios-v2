@@ -43,19 +43,38 @@ class VideoCallManager : NSObject {
         link: String,
         audioOnly: Bool? = nil
     ) {
-
-        if !link.isJitsiCallLink {
-            if let url = URL(string: link) {
-                UIApplication.shared.open(url)
-            }
-        } else {
+        guard let owner = UserContact.getOwner() else {
+            return
+        }
+        
+        let linkUrl = VoIPRequestMessage.getFromString(link)?.link ?? link
+        
+        if linkUrl.isLiveKitCallLink, let room = linkUrl.liveKitRoomName {
+            API.sharedInstance.getLikeKitToken(
+                room: room,
+                alias: owner.nickname ?? "",
+                callback: { url, token in
+                    let liveKitVC = LiveKitCallViewController()
+                    liveKitVC.url = url
+                    liveKitVC.token = token
+                    liveKitVC.audioOnly = audioOnly ?? false
+                    
+                    if let appDelegate = UIApplication.shared.delegate as? AppDelegate, let dashboardVC = appDelegate.getDashboardVC() {
+                        dashboardVC.present(liveKitVC, animated: true)
+                    }
+                },
+                errorCallback: { _ in
+                    AlertHelper.showAlert(title: "error.getting.token.title".localized, message: "error.getting.token.description".localized)
+                }
+            )
+        } else if linkUrl.isJitsiCallLink {
             if activeCall {
                 return
             }
             
             switch(AVAudioSession.sharedInstance().recordPermission){
             case .denied://show alert
-                AlertHelper.showAlert(title: "microphone.permission.required".localized, message: "microphone.permission.denied.jitsi" .localized)
+                AlertHelper.showAlert(title: "microphone.permission.required".localized, message: "microphone.permission.denied.jitsi".localized)
                 return
             case .undetermined://request access & preempt starting video
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.01, execute: {
@@ -66,50 +85,49 @@ class VideoCallManager : NSObject {
                 break
             }
 
-            if let owner = UserContact.getOwner() {
-                
-                let linkUrl = VoIPRequestMessage.getFromString(link)?.link ?? link
-                
-                cleanUp()
+            cleanUp()
 
-                let jitsiMeetView = JitsiMeetView()
-                jitsiMeetView.delegate = self
-                
-                self.jitsiMeetView = jitsiMeetView
+            let jitsiMeetView = JitsiMeetView()
+            jitsiMeetView.delegate = self
+            
+            self.jitsiMeetView = jitsiMeetView
 
-                let options = JitsiMeetConferenceOptions.fromBuilder({(builder: JitsiMeetConferenceOptionsBuilder) -> Void in
-                    builder.serverURL = URL(string: linkUrl)!
-                    builder.room = linkUrl.callRoom
-                    builder.setAudioOnly(audioOnly ?? linkUrl.contains("startAudioOnly=true"))
-                    builder.setAudioMuted(false)
-                    builder.setVideoMuted(false)
-                    builder.setFeatureFlag("welcomepage.enabled", withValue: false)
-                    builder.setFeatureFlag("prejoinpage.enabled", withValue: false)
-                    builder.setSubject(" ")
-                    builder.userInfo = JitsiMeetUserInfo(
-                        displayName: owner.nickname,
-                        andEmail: nil,
-                        andAvatar: URL(string: owner.avatarUrl ?? "")
-                    )
-                })
+            let options = JitsiMeetConferenceOptions.fromBuilder({(builder: JitsiMeetConferenceOptionsBuilder) -> Void in
+                builder.serverURL = URL(string: linkUrl)!
+                builder.room = linkUrl.callRoom
+                builder.setAudioOnly(audioOnly ?? linkUrl.contains("startAudioOnly=true"))
+                builder.setAudioMuted(false)
+                builder.setVideoMuted(false)
+                builder.setFeatureFlag("welcomepage.enabled", withValue: false)
+                builder.setFeatureFlag("prejoinpage.enabled", withValue: false)
+                builder.setSubject(" ")
+                builder.userInfo = JitsiMeetUserInfo(
+                    displayName: owner.nickname,
+                    andEmail: nil,
+                    andAvatar: URL(string: owner.avatarUrl ?? "")
+                )
+            })
 
-                jitsiMeetView.join(options)
-                jitsiMeetView.alpha = 0
-                jitsiMeetView.layer.cornerRadius = 10
-                jitsiMeetView.clipsToBounds = true
+            jitsiMeetView.join(options)
+            jitsiMeetView.alpha = 0
+            jitsiMeetView.layer.cornerRadius = 10
+            jitsiMeetView.clipsToBounds = true
 
-                if let window = UIApplication.shared.windows.first {
-                    pipViewCoordinator = CustomPipViewCoordinator(withView: jitsiMeetView)
-                    pipViewCoordinator?.delegate = self
-                    pipViewCoordinator?.configureAsStickyView(withParentView: window)
-                    pipViewCoordinator?.initialPositionInSuperview = .upperRightCorner
-                    pipViewCoordinator?.show()
+            if let window = UIApplication.shared.windows.first {
+                pipViewCoordinator = CustomPipViewCoordinator(withView: jitsiMeetView)
+                pipViewCoordinator?.delegate = self
+                pipViewCoordinator?.configureAsStickyView(withParentView: window)
+                pipViewCoordinator?.initialPositionInSuperview = .upperRightCorner
+                pipViewCoordinator?.show()
 
-                    if !isGroupChat() {
-                        videoCallPayButton = getPaymentView()
-                        window.addSubview(videoCallPayButton!)
-                    }
+                if !isGroupChat() {
+                    videoCallPayButton = getPaymentView()
+                    window.addSubview(videoCallPayButton!)
                 }
+            }
+        } else {
+            if let url = URL(string: linkUrl) {
+                UIApplication.shared.open(url)
             }
         }
     }

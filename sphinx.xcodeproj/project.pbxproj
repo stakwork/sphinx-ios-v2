@@ -150,6 +150,17 @@
 		47308E1524FEE6E700FFAC6F /* SocketIOStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47308DFB24FEE6E300FFAC6F /* SocketIOStatus.swift */; };
 		47308E1624FEE6E700FFAC6F /* SocketAckManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47308DFD24FEE6E300FFAC6F /* SocketAckManager.swift */; };
 		47308E1724FEE6E700FFAC6F /* SocketAckEmitter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47308DFE24FEE6E300FFAC6F /* SocketAckEmitter.swift */; };
+		4730EF382CDA70A10014581F /* API+LiveKitExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4730EF372CDA70A10014581F /* API+LiveKitExtension.swift */; };
+		4730EF3A2CDA90620014581F /* ValueStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4730EF392CDA90620014581F /* ValueStore.swift */; };
+		4730EF3C2CDA90D00014581F /* AppContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4730EF3B2CDA90D00014581F /* AppContext.swift */; };
+		4730EF3E2CDA90EA0014581F /* RoomContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4730EF3D2CDA90EA0014581F /* RoomContext.swift */; };
+		4730EF402CDA914E0014581F /* RoomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4730EF3F2CDA914E0014581F /* RoomView.swift */; };
+		4730EF422CDA916F0014581F /* ConnectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4730EF412CDA916F0014581F /* ConnectView.swift */; };
+		4730EF452CDA91CF0014581F /* SFSafeSymbols in Frameworks */ = {isa = PBXBuildFile; productRef = 4730EF442CDA91CF0014581F /* SFSafeSymbols */; };
+		4730EF472CDA91F60014581F /* CustomViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4730EF462CDA91F60014581F /* CustomViews.swift */; };
+		4730EF492CDA94500014581F /* ParticipantView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4730EF482CDA94500014581F /* ParticipantView.swift */; };
+		4730EF4B2CDA94E70014581F /* PublishOptionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4730EF4A2CDA94E70014581F /* PublishOptionsView.swift */; };
+		4730EF4D2CDA95B20014581F /* Participant+Helper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4730EF4C2CDA95B20014581F /* Participant+Helper.swift */; };
 		473258AC241BD700006E6602 /* CommonPaymentViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 473258AB241BD700006E6602 /* CommonPaymentViewController.swift */; };
 		4733C7E523C4DF4C006A2C51 /* GroupContactsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4733C7E423C4DF4C006A2C51 /* GroupContactsViewController.swift */; };
 		4733ED212CA4888E00078EF2 /* NewUnifiedEpisodeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4733ED202CA4888E00078EF2 /* NewUnifiedEpisodeView.swift */; };
@@ -190,6 +201,7 @@
 		473842F52391970B00AA640F /* FullScreenImageView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 473842F42391970B00AA640F /* FullScreenImageView.xib */; };
 		473842F7239197E700AA640F /* FullScreenImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 473842F6239197E700AA640F /* FullScreenImageView.swift */; };
 		473842F92391A9DF00AA640F /* KeyboardHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 473842F82391A9DF00AA640F /* KeyboardHelper.swift */; };
+		473873AE2CD906C500CBBC28 /* LiveKit in Frameworks */ = {isa = PBXBuildFile; productRef = 473873AD2CD906C500CBBC28 /* LiveKit */; };
 		47393E682461F6F600E6F93E /* KeychainManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47393E672461F6F600E6F93E /* KeychainManager.swift */; };
 		473BC88D25F287340070E519 /* PodcastNewEpisodeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 473BC88C25F287340070E519 /* PodcastNewEpisodeViewController.swift */; };
 		473BC89A260238DC0070E519 /* JSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = 473BC899260238DC0070E519 /* JSON.swift */; };
@@ -625,6 +637,7 @@
 		47FA727C2A32373900FB4535 /* NewOnlyTextMessageTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47FA727A2A32373900FB4535 /* NewOnlyTextMessageTableViewCell.swift */; };
 		47FA727D2A32373900FB4535 /* NewOnlyTextMessageTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 47FA727B2A32373900FB4535 /* NewOnlyTextMessageTableViewCell.xib */; };
 		47FB189B23A299000097695B /* SignupHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47FB189A23A299000097695B /* SignupHelper.swift */; };
+		47FCE2C02CD903B6005DB8AF /* LiveKitCallViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47FCE2BF2CD903B6005DB8AF /* LiveKitCallViewController.swift */; };
 		47FDDB1C2562D77200BBF15F /* boost_animation.json in Resources */ = {isa = PBXBuildFile; fileRef = 47FDDB1B2562D77100BBF15F /* boost_animation.json */; };
 		47FE9A3E23C381A20090913F /* UITapGestureRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47FE9A3D23C381A20090913F /* UITapGestureRecognizer.swift */; };
 		9344269DACF491E8A3F8651C /* Pods_SphinxNotificationExtensionService.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3867EC056CA5757264104904 /* Pods_SphinxNotificationExtensionService.framework */; };
@@ -1267,6 +1280,16 @@
 		47308DFD24FEE6E300FFAC6F /* SocketAckManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SocketAckManager.swift; sourceTree = "<group>"; };
 		47308DFE24FEE6E300FFAC6F /* SocketAckEmitter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SocketAckEmitter.swift; sourceTree = "<group>"; };
 		47308E1925013DE100FFAC6F /* Tor.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Tor.framework; path = Carthage/Build/iOS/Tor.framework; sourceTree = "<group>"; };
+		4730EF372CDA70A10014581F /* API+LiveKitExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+LiveKitExtension.swift"; sourceTree = "<group>"; };
+		4730EF392CDA90620014581F /* ValueStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValueStore.swift; sourceTree = "<group>"; };
+		4730EF3B2CDA90D00014581F /* AppContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppContext.swift; sourceTree = "<group>"; };
+		4730EF3D2CDA90EA0014581F /* RoomContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomContext.swift; sourceTree = "<group>"; };
+		4730EF3F2CDA914E0014581F /* RoomView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomView.swift; sourceTree = "<group>"; };
+		4730EF412CDA916F0014581F /* ConnectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectView.swift; sourceTree = "<group>"; };
+		4730EF462CDA91F60014581F /* CustomViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomViews.swift; sourceTree = "<group>"; };
+		4730EF482CDA94500014581F /* ParticipantView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParticipantView.swift; sourceTree = "<group>"; };
+		4730EF4A2CDA94E70014581F /* PublishOptionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublishOptionsView.swift; sourceTree = "<group>"; };
+		4730EF4C2CDA95B20014581F /* Participant+Helper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Participant+Helper.swift"; sourceTree = "<group>"; };
 		473258AB241BD700006E6602 /* CommonPaymentViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommonPaymentViewController.swift; sourceTree = "<group>"; };
 		4733C7E423C4DF4C006A2C51 /* GroupContactsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupContactsViewController.swift; sourceTree = "<group>"; };
 		4733ED202CA4888E00078EF2 /* NewUnifiedEpisodeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewUnifiedEpisodeView.swift; sourceTree = "<group>"; };
@@ -1856,6 +1879,7 @@
 		47FA727A2A32373900FB4535 /* NewOnlyTextMessageTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewOnlyTextMessageTableViewCell.swift; sourceTree = "<group>"; };
 		47FA727B2A32373900FB4535 /* NewOnlyTextMessageTableViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = NewOnlyTextMessageTableViewCell.xib; sourceTree = "<group>"; };
 		47FB189A23A299000097695B /* SignupHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignupHelper.swift; sourceTree = "<group>"; };
+		47FCE2BF2CD903B6005DB8AF /* LiveKitCallViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveKitCallViewController.swift; sourceTree = "<group>"; };
 		47FDDB1B2562D77100BBF15F /* boost_animation.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = boost_animation.json; sourceTree = "<group>"; };
 		47FE9A3D23C381A20090913F /* UITapGestureRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITapGestureRecognizer.swift; sourceTree = "<group>"; };
 		487E10CEB3D07B0840A84681 /* Pods_sphinx.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_sphinx.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -2159,10 +2183,12 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4730EF452CDA91CF0014581F /* SFSafeSymbols in Frameworks */,
 				474C7A5128D3A765007A3E17 /* universal-sphinxrs.a in Frameworks */,
 				F331199D268E93FB005082EB /* StoreKit.framework in Frameworks */,
 				4703CF932519425E007B685C /* PDFKit.framework in Frameworks */,
 				12075275C652A9404FC48EBC /* Pods_sphinx.framework in Frameworks */,
+				473873AE2CD906C500CBBC28 /* LiveKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2638,6 +2664,22 @@
 			path = Ack;
 			sourceTree = "<group>";
 		};
+		4730EF582CDBCC5B0014581F /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				4730EF392CDA90620014581F /* ValueStore.swift */,
+				4730EF3B2CDA90D00014581F /* AppContext.swift */,
+				4730EF3D2CDA90EA0014581F /* RoomContext.swift */,
+				4730EF3F2CDA914E0014581F /* RoomView.swift */,
+				4730EF412CDA916F0014581F /* ConnectView.swift */,
+				4730EF462CDA91F60014581F /* CustomViews.swift */,
+				4730EF482CDA94500014581F /* ParticipantView.swift */,
+				4730EF4A2CDA94E70014581F /* PublishOptionsView.swift */,
+				4730EF4C2CDA95B20014581F /* Participant+Helper.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
 		473258AA241BD6E7006E6602 /* Common */ = {
 			isa = PBXGroup;
 			children = (
@@ -3046,6 +3088,7 @@
 		475BDC93232AC15200C5BBD6 /* View Controllers */ = {
 			isa = PBXGroup;
 			children = (
+				47FCE2BE2CD903A4005DB8AF /* Like Kit */,
 				470146242A3F9A9A00A00DF8 /* Payments */,
 				477D9699244E0C1B00830406 /* Chat Attachment */,
 				473258AA241BD6E7006E6602 /* Common */,
@@ -3179,6 +3222,7 @@
 				47F6CA0D287C6524005EBCB6 /* API+CrypterExtension.swift */,
 				474CCFA9291562180037E1D4 /* API+ActionsExtension.swift */,
 				473615F42C35920C00EE3334 /* API+V2Extension.swift */,
+				4730EF372CDA70A10014581F /* API+LiveKitExtension.swift */,
 			);
 			path = API;
 			sourceTree = "<group>";
@@ -4309,6 +4353,15 @@
 			path = "Custom Views";
 			sourceTree = "<group>";
 		};
+		47FCE2BE2CD903A4005DB8AF /* Like Kit */ = {
+			isa = PBXGroup;
+			children = (
+				47FCE2BF2CD903B6005DB8AF /* LiveKitCallViewController.swift */,
+				4730EF582CDBCC5B0014581F /* Views */,
+			);
+			path = "Like Kit";
+			sourceTree = "<group>";
+		};
 		CE3133A32977747E00E91E3A /* Badges */ = {
 			isa = PBXGroup;
 			children = (
@@ -4838,6 +4891,10 @@
 				CE677B772C6A88220050CFFC /* PBXTargetDependency */,
 			);
 			name = sphinx;
+			packageProductDependencies = (
+				473873AD2CD906C500CBBC28 /* LiveKit */,
+				4730EF442CDA91CF0014581F /* SFSafeSymbols */,
+			);
 			productName = sphinx;
 			productReference = 4779F15E232AA0F200D35E81 /* sphinx.app */;
 			productType = "com.apple.product-type.application";
@@ -4937,6 +4994,10 @@
 				"zh-Hant",
 			);
 			mainGroup = 4779F155232AA0F200D35E81;
+			packageReferences = (
+				473873AC2CD906C500CBBC28 /* XCRemoteSwiftPackageReference "client-sdk-swift" */,
+				4730EF432CDA91CF0014581F /* XCRemoteSwiftPackageReference "SFSafeSymbols" */,
+			);
 			productRefGroup = 4779F15F232AA0F200D35E81 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -5283,6 +5344,7 @@
 				47308E0324FEE6E600FFAC6F /* SocketTypes.swift in Sources */,
 				47CC7CE523E361B800730E6F /* PaymentTransaction.swift in Sources */,
 				F33846E3267ACF6A0041F1EA /* InitialWelcomeViewController.swift in Sources */,
+				4730EF472CDA91F60014581F /* CustomViews.swift in Sources */,
 				470F5CAF243E8881007E054F /* VideoCallPayButton.swift in Sources */,
 				47B46F66254AFE1C007F61CD /* ChatHeaderView.swift in Sources */,
 				47468079293E564B00F51457 /* PodcastPlayerControlsView.swift in Sources */,
@@ -5415,6 +5477,7 @@
 				F3DC6B02273C9BD000458E09 /* ContentFeedItem+CoreDataProperties.swift in Sources */,
 				47D46A2C237B1D140005A548 /* SubscriptionFormButtonTableViewCell.swift in Sources */,
 				CED14D78293CF683004B8B25 /* ChatMentionAutocompleteDataSource.swift in Sources */,
+				4730EF3C2CDA90D00014581F /* AppContext.swift in Sources */,
 				47893A9C240D8783002F675B /* Int.swift in Sources */,
 				47FA18CF2434D21A00469C8F /* TransactionMessageQueriesExtension.swift in Sources */,
 				4789E25F24F033B8003991BE /* SettingsTabsView.swift in Sources */,
@@ -5442,6 +5505,7 @@
 				4746807D293E566700F51457 /* PodcastPlayerPlaybackSliderView.swift in Sources */,
 				471161DF29156480008EAFF2 /* NSObject.swift in Sources */,
 				F313024626BA62B300A1396E /* ChatsCollectionViewController.swift in Sources */,
+				47FCE2C02CD903B6005DB8AF /* LiveKitCallViewController.swift in Sources */,
 				CE4B53FD2AFC389C00708A0C /* SphinxOnionManager.swift in Sources */,
 				CE51F350298870BF00ABBACB /* MemberBadgeDetailVM.swift in Sources */,
 				4705D39F2799C339009C0729 /* UITextField.swift in Sources */,
@@ -5449,6 +5513,7 @@
 				47FA727C2A32373900FB4535 /* NewOnlyTextMessageTableViewCell.swift in Sources */,
 				F32A697926D515AB0004B8B3 /* PodcastFeed+Computeds.swift in Sources */,
 				CE3133B32977747E00E91E3A /* BadgeAdminManagementListVC.swift in Sources */,
+				4730EF3E2CDA90EA0014581F /* RoomContext.swift in Sources */,
 				CE3D8CA329B10FA500EDB637 /* FeedItemDetailVM.swift in Sources */,
 				4752324D2A8AA4940009E75D /* ThreadListTableViewCell+MessageTypesExtension.swift in Sources */,
 				47468FD323314EE80072124A /* PinCodeViewController.swift in Sources */,
@@ -5461,6 +5526,7 @@
 				475E416C23858D4900928931 /* Subscription+CoreDataClass.swift in Sources */,
 				CE2349852B8E749F00A708CB /* SphinxOnionManager+InvitesExtension.swift in Sources */,
 				477924822A28DF6700CD3CF1 /* NewMessageReplyView.swift in Sources */,
+				4730EF492CDA94500014581F /* ParticipantView.swift in Sources */,
 				472A4E242C4EB69F00B10934 /* LSat+FetchUtils.swift in Sources */,
 				473633EA25559945007405F2 /* LogarithmicSlider.swift in Sources */,
 				47363CF82A4B269700C295D4 /* ChatSearchTextFieldView.swift in Sources */,
@@ -5501,6 +5567,7 @@
 				F34BFED7267B350D003F6D55 /* RestoreUserDescriptionViewController.swift in Sources */,
 				472092C92A278B0400468796 /* NewMessageTableViewCell.swift in Sources */,
 				472092B92A24FF6100468796 /* NewChatHeaderView.swift in Sources */,
+				4730EF422CDA916F0014581F /* ConnectView.swift in Sources */,
 				4712994529227C460049CBE3 /* TribeMemberProfileView.swift in Sources */,
 				47FA440923749D0B005D8C63 /* SubscriptionFormTableHeaderView.swift in Sources */,
 				F3DC6B23273F60FF00458E09 /* ContentFeedPaymentDestination+CoreDataClass.swift in Sources */,
@@ -5642,6 +5709,7 @@
 				9386C28B2BB25EDC00ABDEF3 /* AddedTagsView.swift in Sources */,
 				47E6A4F72A2F788300A9509E /* NewChatTableDataSource+ResultsControllerExtension.swift in Sources */,
 				4785C10224D4A0BE004E2D6C /* Constants.swift in Sources */,
+				4730EF4B2CDA94E70014581F /* PublishOptionsView.swift in Sources */,
 				CE3133AD2977747E00E91E3A /* BadgeAdminManagementListDataSource.swift in Sources */,
 				475BDD73232BF76B00C5BBD6 /* UserData.swift in Sources */,
 				47308E1424FEE6E700FFAC6F /* SocketIOClientSpec.swift in Sources */,
@@ -5690,6 +5758,7 @@
 				470146212A3F93B200A00DF8 /* NewChatViewModel+AttachmentsExtension.swift in Sources */,
 				473BC89A260238DC0070E519 /* JSON.swift in Sources */,
 				F3E357A8271E19EF00B91C54 /* VideoFeedEpisodePlayerContainerViewController.swift in Sources */,
+				4730EF402CDA914E0014581F /* RoomView.swift in Sources */,
 				470146112A3B79E300A00DF8 /* NewOnlyTextMessageTableViewCell+LayoutExtension.swift in Sources */,
 				F39F2C8526E2840500D357F6 /* FeedSearchResultsCollectionViewSectionHeader.swift in Sources */,
 				47F826702A0D2E3A002E81F0 /* ChatMessageTextFieldView.swift in Sources */,
@@ -5762,6 +5831,7 @@
 				478DCF9E2343D7AC009A03D6 /* SetDataViewController.swift in Sources */,
 				472092C52A268A1500468796 /* ChatAttachmentViewController+AnimatinsExtension.swift in Sources */,
 				473596932A70031000489606 /* ThreadsListDataSource.swift in Sources */,
+				4730EF4D2CDA95B20014581F /* Participant+Helper.swift in Sources */,
 				47357A112729A13600A49EEE /* NewsletterFeed+DisplayUtils.swift in Sources */,
 				4705D3992799AAB5009C0729 /* CustomBoostView.swift in Sources */,
 				F39767C826C5A85F00DDFC0A /* LeftMenuDelegate.swift in Sources */,
@@ -5784,6 +5854,7 @@
 				4779247E2A28D1D200CD3CF1 /* StatusHeaderView.swift in Sources */,
 				47FA44172374B6F7005D8C63 /* SubscriptionEndRuleView.swift in Sources */,
 				CED7F9B12A9EA03D008F77BA /* ImportSeedView.swift in Sources */,
+				4730EF3A2CDA90620014581F /* ValueStore.swift in Sources */,
 				478DCFA02344E5EF009A03D6 /* CameraHelper.swift in Sources */,
 				F39F2C8126E2805D00D357F6 /* FeedSearchResultCollectionViewCell.swift in Sources */,
 				4754FA8F2729DD38006295A5 /* DashboardNewsletterFeedCollectionViewController.swift in Sources */,
@@ -5801,6 +5872,7 @@
 				47F228A0236872E8001429A4 /* SwipableCell.swift in Sources */,
 				47E300E4234B83EC00DB56DB /* AddFriendRowButton.swift in Sources */,
 				4712BB4923D89A5100DDCC3B /* ClipboardHelper.swift in Sources */,
+				4730EF382CDA70A10014581F /* API+LiveKitExtension.swift in Sources */,
 				F3B2519C26E118E700C96D42 /* DashboardRootViewController+UITextFieldDelegate.swift in Sources */,
 				477ADCC72A1BE2B1004E74CE /* PinnedMessageView.swift in Sources */,
 				F3D86DBE26B109FD00EB9711 /* DashboardFeedSquaredThumbnailCollectionViewCell.swift in Sources */,
@@ -6790,6 +6862,7 @@
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = sphinx/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -6880,6 +6953,7 @@
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = sphinx/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -7167,6 +7241,38 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		4730EF432CDA91CF0014581F /* XCRemoteSwiftPackageReference "SFSafeSymbols" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SFSafeSymbols/SFSafeSymbols";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.3.0;
+			};
+		};
+		473873AC2CD906C500CBBC28 /* XCRemoteSwiftPackageReference "client-sdk-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/livekit/client-sdk-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.16;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		4730EF442CDA91CF0014581F /* SFSafeSymbols */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4730EF432CDA91CF0014581F /* XCRemoteSwiftPackageReference "SFSafeSymbols" */;
+			productName = SFSafeSymbols;
+		};
+		473873AD2CD906C500CBBC28 /* LiveKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 473873AC2CD906C500CBBC28 /* XCRemoteSwiftPackageReference "client-sdk-swift" */;
+			productName = LiveKit;
+		};
+/* End XCSwiftPackageProductDependency section */
 
 /* Begin XCVersionGroup section */
 		47F35D4A2373156A0042A58F /* sphinx.xcdatamodeld */ = {

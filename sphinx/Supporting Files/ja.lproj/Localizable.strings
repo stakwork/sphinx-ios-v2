@@ -504,6 +504,8 @@
 "see-all" = "すべて見る";
 "only-mentions" = "メンションのみ";
 "mute-chat" = "チャットをミュート";
+"error.getting.token.title" = "トークンの取得中にエラーが発生しました";
+"error.getting.token.description" = "通話に参加するためのトークンの取得中にエラーが発生しました。しばらくしてからもう一度お試しください。";
 
 
 //OTHER

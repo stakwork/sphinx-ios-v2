@@ -510,6 +510,8 @@
 "see-all" = "See All";
 "only-mentions" = "Only Mentions";
 "mute-chat" = "Mute Chat";
+"error.getting.token.title" = "Error getting token";
+"error.getting.token.description" = "There was an error getting a token to join the call. Please try again later";
 
 
 //OTHER

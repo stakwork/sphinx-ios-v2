@@ -27,10 +27,10 @@ class VideoCallHelper {
     
     public static func createCallMessage(button: UIButton, callback: @escaping (String) -> ()) {
         let time = Date.timeIntervalSinceReferenceDate
-        let room = "\(API.sharedInstance.kVideoCallServer)\(TransactionMessage.kCallRoomName).\(time)"
+        let room = "\(API.sharedInstance.kVideoCallServer)/rooms\(TransactionMessage.kCallRoomName).\(time)"
         
         let audioCallback: (() -> ()) = {
-            callback(room)
+            callback(room + "?startAudioOnly=true")
         }
         
         let videoCallback: (() -> ()) = {

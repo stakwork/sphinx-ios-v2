@@ -505,6 +505,8 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 "see-all" = "查看全部";
 "only-mentions" = "僅提及";
 "mute-chat" = "靜音聊天";
+"error.getting.token.title" = "取得令牌時發生錯誤";
+"error.getting.token.description" = "取得加入通話的令牌時發生錯誤。請稍後重試";
 
 
 //其他
