@@ -1315,6 +1315,7 @@
 		473842F42391970B00AA640F /* FullScreenImageView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = FullScreenImageView.xib; sourceTree = "<group>"; };
 		473842F6239197E700AA640F /* FullScreenImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullScreenImageView.swift; sourceTree = "<group>"; };
 		473842F82391A9DF00AA640F /* KeyboardHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardHelper.swift; sourceTree = "<group>"; };
+		473873B02CD92C1300CBBC28 /* sphinx 52.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 52.xcdatamodel"; sourceTree = "<group>"; };
 		47393E672461F6F600E6F93E /* KeychainManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainManager.swift; sourceTree = "<group>"; };
 		473BC88C25F287340070E519 /* PodcastNewEpisodeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastNewEpisodeViewController.swift; sourceTree = "<group>"; };
 		473BC899260238DC0070E519 /* JSON.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSON.swift; sourceTree = "<group>"; };
@@ -7171,6 +7172,7 @@
 		47F35D4A2373156A0042A58F /* sphinx.xcdatamodeld */ = {
 			isa = XCVersionGroup;
 			children = (
+				473873B02CD92C1300CBBC28 /* sphinx 52.xcdatamodel */,
 				CE9D766E2C73D569008CEEA0 /* sphinx 51.xcdatamodel */,
 				472A4E1B2C4EB5C400B10934 /* sphinx 50.xcdatamodel */,
 				CEEF6E0D2BD2ECE300953752 /* sphinx 49.xcdatamodel */,
@@ -7223,7 +7225,7 @@
 				475E4162238588A200928931 /* sphinx 2.xcdatamodel */,
 				47F35D4B2373156A0042A58F /* sphinx.xcdatamodel */,
 			);
-			currentVersion = CE9D766E2C73D569008CEEA0 /* sphinx 51.xcdatamodel */;
+			currentVersion = 473873B02CD92C1300CBBC28 /* sphinx 52.xcdatamodel */;
 			path = sphinx.xcdatamodeld;
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;

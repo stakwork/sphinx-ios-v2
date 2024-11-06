@@ -127,12 +127,31 @@ extension WebAppHelper : WKScriptMessageHandler {
                 case "GETSIGNEDTOKEN":
                     getSignedToken(dict)
                     break
+                case "GETSECONDBRAINLIST​​":
+                    getSecondBrainList(dict)
+                    break
                 default:
                     defaultAction(dict)
                     break
                 }
             }
         }
+    }
+    
+    func getSecondBrainList(_ dict: [String: AnyObject]) {
+        var params: [String: AnyObject] = [:]
+        setTypeApplicationAndPassword(params: &params, dict: dict)
+        let sbTribes = Chat.getAllSecondBrainTribes()
+        
+        if sbTribes.count > 0 {
+            params["second_brain_list"] = sbTribes.filter({
+                $0.secondBrainUrl != nil && $0.secondBrainUrl?.isNotEmpty == true
+            }).compactMap({
+                $0.secondBrainUrl ?? ""
+            }) as? AnyObject
+        }
+
+        sendMessage(dict: params)
     }
     
     func getSignedToken(_ dict: [String: AnyObject]) {
