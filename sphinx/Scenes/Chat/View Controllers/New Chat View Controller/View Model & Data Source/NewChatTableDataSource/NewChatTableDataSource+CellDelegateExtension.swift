@@ -821,7 +821,7 @@ extension NewChatTableDataSource {
                     )
                 } else if link.isTribeJoinLink {
                     delegate?.didTapOnTribeWith(joinLink: link)
-                } else if link.starts(with: API.sharedInstance.kVideoCallServer) || link.starts(with: API.kJitsiCallServer) {
+                } else if link.isJitsiCallLink || link.isLiveKitCallLink {
                     VideoCallManager.sharedInstance.startVideoCall(link: link)
                 } else if let url = URL(string: link.withProtocol(protocolString: "http")) {
                     UIApplication.shared.open(

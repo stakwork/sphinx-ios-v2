@@ -94,7 +94,7 @@ class DeepLinksHandlerHelper {
     }
     
     static func storeJitsiCallLink(url: URL) {
-        if url.absoluteString.starts(with: API.sharedInstance.kVideoCallServer) {
+        if url.absoluteString.isJitsiCallLink || url.absoluteString.isLiveKitCallLink {
             UserDefaults.Keys.jitsiLinkUrl.set(url.absoluteString)
         }
     }
@@ -102,7 +102,7 @@ class DeepLinksHandlerHelper {
     static func storeLinkQueryFrom(url: URL) -> Bool {
         var shouldSetVC = false
         
-        if url.absoluteString.starts(with: API.sharedInstance.kVideoCallServer) {
+        if url.absoluteString.isJitsiCallLink || url.absoluteString.isLiveKitCallLink {
             UserDefaults.Keys.jitsiLinkUrl.set(url.absoluteString)
             return true
         }

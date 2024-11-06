@@ -61,6 +61,7 @@ typealias SyncActionsCallback = ((Bool) -> ())
 typealias RecommendationsCallback = (([RecommendationResult]) -> ())
 typealias PinMessageCallback = ((String) -> ())
 typealias ErrorCallback = ((String) -> ())
+typealias LiveKitTokenCallback = ((String, String) -> ())
 
 // HUB calls
 typealias SignupWithCodeCallback = ((JSON, String, String) -> ())
@@ -146,7 +147,7 @@ class API {
     }
 
     public static let kJitsiCallServer = "https://jitsi.sphinx.chat"
-    public static let kLiveKitCallServer = "https://chat.sphinx.chat/rooms"
+    public static let kLiveKitCallServer = "https://chat.sphinx.chat"
 
     var storedVideoCallServer: String? = nil
     public var kVideoCallServer : String {

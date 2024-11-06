@@ -75,6 +75,10 @@ extension NewChatViewModel {
         
         completion(validMessage != nil, errorMsg)
         
+        if let message = validMessage {
+            joinIfCallMessage(message: message)
+        }
+        
         resetReply()
     }
     
@@ -115,8 +119,11 @@ extension NewChatViewModel {
         message: TransactionMessage
     ) {
         if message.isCallMessageType() {
-            if let callLink = message.messageContent {
-                VideoCallManager.sharedInstance.startVideoCall(link: callLink)
+            if let link = message.messageContent {
+                VideoCallManager.sharedInstance.startVideoCall(
+                    link: link,
+                    audioOnly: link.contains("startAudioOnly=true")
+                )
             }
         }
     }
