@@ -51,15 +51,11 @@ extension SphinxOnionManager {
             publicKey: pubkey,
             routeHint: routeHint,
             callback: { succes in
-                if succes {
-                    processQueryAndAuthorize(
-                        host: host,
-                        challenge: challenge,
-                        completion: completion
-                    )
-                } else {
-                    completion(nil)
-                }
+                processQueryAndAuthorize(
+                    host: host,
+                    challenge: challenge,
+                    completion: completion
+                )
             }
         )
 
