@@ -25,11 +25,8 @@ class NewUserSignupFormViewController: UIViewController, ConnectionCodeSignupHan
     let authenticationHelper = BiometricAuthenticationHelper()
     let newMessageBubbleHelper = NewMessageBubbleHelper()
     
-    var generateTokenRetries = 0
-    var generateTokenSuccess: Bool = false
-    var hasAdminRetries: Int = 0
-    
-    var isV2:Bool = false
+    var isProcessingCode = false
+    var isV2: Bool = false
     var server : Server? = nil
     var balance : String? = nil
     let som = SphinxOnionManager.sharedInstance

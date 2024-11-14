@@ -42,7 +42,9 @@ extension NewUserSignupFormViewController {
     }
     
     func continueWith(code: String) {
-        if (code.isInviteCode) {
+        if (code.isInviteCode && !isProcessingCode) {
+            isProcessingCode = true
+            
             som.vc = self
             som.showMnemonicToUser(completion: { [weak self] success in
                 guard let self = self else {
@@ -99,6 +101,8 @@ extension NewUserSignupFormViewController {
     }
     
     func showInviteError() {
+        isProcessingCode = false
+        
         AlertHelper.showAlert(
             title: "Error redeeming invite",
             message: "Please try again or ask for another invite."
@@ -126,13 +130,14 @@ extension NewUserSignupFormViewController {
     }
     
     func handleSignupConnectionError(message: String) {
-        // Pop the "Connecting" VC
         navigationController?.popViewController(animated: true)
 
         SignupHelper.resetInviteInfo()
 
         codeTextField.text = ""
         newMessageBubbleHelper.showGenericMessageView(text: message)
+        
+        isProcessingCode = false
     }
 }
 

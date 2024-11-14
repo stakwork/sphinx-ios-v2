@@ -25,11 +25,6 @@ class NewUserSignupOptionsViewController: UIViewController, ConnectionCodeSignup
 
     let newMessageBubbleHelper = NewMessageBubbleHelper()
     let storeKitService = StoreKitService.shared
-
-    var generateTokenRetries = 0
-    var hasAdminRetries = 0
-    var generateTokenSuccess: Bool = false
-    
     
     var isPurchaseProcessing: Bool = false {
         didSet {
