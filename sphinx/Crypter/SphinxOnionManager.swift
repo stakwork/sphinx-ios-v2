@@ -777,12 +777,12 @@ extension SphinxOnionManager {//Sign Up UI Related:
         completion:@escaping (Bool)->()
     ){
         let generateSeedCallback: (() -> ()) = {
-            guard let mneomnic = self.generateMnemonic(), let _ = self.vc as? NewUserSignupFormViewController else {
+            guard let mnemonic = self.generateMnemonic(), let _ = self.vc as? NewUserSignupFormViewController else {
                 completion(false)
                 return
             }
             
-            self.showMnemonicToUser(mnemonic: mneomnic, callback: {
+            self.showMnemonicToUser(mnemonic: mnemonic, callback: {
                 completion(true)
             })
         }
