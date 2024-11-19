@@ -50,9 +50,10 @@ class VideoCallManager : NSObject {
         let linkUrl = VoIPRequestMessage.getFromString(link)?.link ?? link
         
         if linkUrl.isLiveKitCallLink, let room = linkUrl.liveKitRoomName {
-            API.sharedInstance.getLikeKitToken(
+            API.sharedInstance.getLiveKitToken(
                 room: room,
                 alias: owner.nickname ?? "",
+                profilePicture: owner.avatarUrl,
                 callback: { url, token in
                     let liveKitVC = LiveKitCallViewController()
                     liveKitVC.url = url

@@ -83,11 +83,7 @@ struct ConnectView: View {
                                     .renderingMode(.original)
                                 Text("Room Options")
                             }
-                            #if os(macOS)
-                            .menuStyle(BorderlessButtonMenuStyle(showsMenuIndicator: true))
-                            #elseif os(iOS)
                             .menuStyle(BorderlessButtonMenuStyle())
-                            #endif
                             .fixedSize()
                         }
                     }.frame(maxWidth: 350)
@@ -141,11 +137,7 @@ struct ConnectView: View {
                                         .renderingMode(.original)
                                     Text("Recent")
                                 }
-                                #if os(macOS)
-                                .menuStyle(BorderlessButtonMenuStyle(showsMenuIndicator: true))
-                                #elseif os(iOS)
                                 .menuStyle(BorderlessButtonMenuStyle())
-                                #endif
                                 .fixedSize()
                             }
 
@@ -158,9 +150,6 @@ struct ConnectView: View {
                 .frame(minHeight: geometry.size.height) // Set the content’s min height to the parent
             }
         }
-        #if os(macOS)
-        .frame(minWidth: 500, minHeight: 500)
-        #endif
         .alert(isPresented: $roomCtx.shouldShowDisconnectReason) {
             Alert(title: Text("Disconnected"),
                   message: Text("Reason: " + String(describing: roomCtx.latestError)))
