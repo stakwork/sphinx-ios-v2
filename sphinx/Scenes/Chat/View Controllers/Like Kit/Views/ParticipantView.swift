@@ -17,6 +17,7 @@
 import LiveKit
 import SFSafeSymbols
 import SwiftUI
+import SDWebImageSwiftUI
 
 struct ParticipantView: View {
     @ObservedObject var participant: Participant
@@ -26,12 +27,14 @@ struct ParticipantView: View {
     var onTap: ((_ participant: Participant) -> Void)?
 
     @State private var isRendering: Bool = false
+    
+    @State private var retry: Bool = false
 
     func bgView(systemSymbol: SFSymbol, geometry: GeometryProxy) -> some View {
         Image(systemSymbol: systemSymbol)
             .resizable()
             .aspectRatio(contentMode: .fit)
-            .foregroundColor(Color(UIColor.gray))
+            .foregroundColor(Color(UIColor.Sphinx.SecondaryText))
             .frame(width: min(geometry.size.width, geometry.size.height) * 0.3)
             .frame(
                 maxWidth: .infinity,
@@ -66,14 +69,37 @@ struct ParticipantView: View {
                                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                         }
                     }
-                } else if let publication = participant.mainVideoPublication as? RemoteTrackPublication,
-                          case .notAllowed = publication.subscriptionState
-                {
-                    // Show no permission icon
-                    bgView(systemSymbol: .exclamationmarkCircle, geometry: geometry)
+                } else if let profilePictureUrl = participant.profilePictureUrl, let url = URL(string: profilePictureUrl) {
+                    WebImage(url: url)
+                        .onSuccess { _,_,_ in
+                            print("success")
+                        }
+                        .onFailure { error in
+                            self.retry = true
+                        }
+                        .resizable()
+                        .scaledToFill()
+                        .frame(
+                            width: min(geometry.size.width, geometry.size.height) * 0.8,
+                            height: min(geometry.size.width, geometry.size.height) * 0.8
+                        )
+                        .clipped()
+                        .cornerRadius(min(geometry.size.width, geometry.size.height) * 0.4)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .overlay(
+                            Group {
+                                if retry {
+                                    bgView(systemSymbol: .videoSlashFill, geometry: geometry)
+                                }
+                            }
+                        )
                 } else {
-                    // Show no camera icon
-                    bgView(systemSymbol: .videoSlashFill, geometry: geometry)
+                    if let publication = participant.mainVideoPublication as? RemoteTrackPublication,
+                       case .notAllowed = publication.subscriptionState {
+                        bgView(systemSymbol: .exclamationmarkCircle, geometry: geometry)
+                    } else {
+                        bgView(systemSymbol: .videoSlashFill, geometry: geometry)
+                    }
                 }
 
                 if appCtx.showInformationOverlay {
@@ -118,8 +144,14 @@ struct ParticipantView: View {
 
                     // Bottom user info bar
                     HStack {
-                        if let identity = participant.identity {
+                        if let name = participant.name, name.isNotEmpty {
+                            Text(String(describing: name))
+                                .font(Font(UIFont(name: "Roboto-Regular", size: 16.0)!))
+                                .lineLimit(1)
+                                .truncationMode(.tail)
+                        } else if let identity = participant.identity {
                             Text(String(describing: identity))
+                                .font(Font(UIFont(name: "Roboto-Regular", size: 16.0)!))
                                 .lineLimit(1)
                                 .truncationMode(.tail)
                         }
@@ -150,24 +182,20 @@ struct ParticipantView: View {
                                 } label: {
                                     if case .subscribed = remotePub.subscriptionState {
                                         Image(systemSymbol: .videoFill)
-                                            .foregroundColor(Color.green)
+                                            .foregroundColor(Color(UIColor.Sphinx.PrimaryGreen))
                                     } else if case .notAllowed = remotePub.subscriptionState {
                                         Image(systemSymbol: .exclamationmarkCircle)
-                                            .foregroundColor(Color.red)
+                                            .foregroundColor(Color(UIColor.Sphinx.BadgeRed))
                                     } else {
                                         Image(systemSymbol: .videoSlashFill)
                                     }
                                 }
-                                #if os(macOS)
-                                .menuStyle(BorderlessButtonMenuStyle(showsMenuIndicator: true))
-                                #elseif os(iOS)
                                 .menuStyle(BorderlessButtonMenuStyle())
-                                #endif
                                 .fixedSize()
                             } else {
                                 // local
                                 Image(systemSymbol: .videoFill)
-                                    .foregroundColor(Color.green)
+                                    .foregroundColor(Color(UIColor.Sphinx.PrimaryGreen))
                             }
 
                         } else {
@@ -201,24 +229,20 @@ struct ParticipantView: View {
                                 } label: {
                                     if case .subscribed = remotePub.subscriptionState {
                                         Image(systemSymbol: .micFill)
-                                            .foregroundColor(Color.orange)
+                                            .foregroundColor(Color(UIColor.Sphinx.SphinxOrange))
                                     } else if case .notAllowed = remotePub.subscriptionState {
                                         Image(systemSymbol: .exclamationmarkCircle)
-                                            .foregroundColor(Color.red)
+                                            .foregroundColor(Color(UIColor.Sphinx.BadgeRed))
                                     } else {
                                         Image(systemSymbol: .micSlashFill)
                                     }
                                 }
-                                #if os(macOS)
-                                .menuStyle(BorderlessButtonMenuStyle(showsMenuIndicator: true))
-                                #elseif os(iOS)
                                 .menuStyle(BorderlessButtonMenuStyle())
-                                #endif
                                 .fixedSize()
                             } else {
                                 // local
                                 Image(systemSymbol: .micFill)
-                                    .foregroundColor(Color.orange)
+                                    .foregroundColor(Color(UIColor.Sphinx.SphinxOrange))
                             }
 
                         } else {
@@ -228,21 +252,21 @@ struct ParticipantView: View {
 
                         if participant.connectionQuality == .excellent {
                             Image(systemSymbol: .wifi)
-                                .foregroundColor(.green)
+                                .foregroundColor(Color(UIColor.Sphinx.PrimaryGreen))
                         } else if participant.connectionQuality == .good {
                             Image(systemSymbol: .wifi)
-                                .foregroundColor(Color.orange)
+                                .foregroundColor(Color(UIColor.Sphinx.SphinxOrange))
                         } else if participant.connectionQuality == .poor {
                             Image(systemSymbol: .wifiExclamationmark)
-                                .foregroundColor(Color.red)
+                                .foregroundColor(Color(UIColor.Sphinx.BadgeRed))
                         }
 
                         if participant.firstTrackEncryptionType == .none {
                             Image(systemSymbol: .lockOpenFill)
-                                .foregroundColor(.red)
+                                .foregroundColor(Color(UIColor.Sphinx.BadgeRed))
                         } else {
                             Image(systemSymbol: .lockFill)
-                                .foregroundColor(.green)
+                                .foregroundColor(Color(UIColor.Sphinx.PrimaryGreen))
                         }
 
                     }.padding(5)
@@ -255,7 +279,7 @@ struct ParticipantView: View {
             .overlay(
                 participant.isSpeaking ?
                     RoundedRectangle(cornerRadius: 5)
-                    .stroke(Color.blue, lineWidth: 5.0)
+                    .stroke(Color(UIColor.Sphinx.PrimaryBlue), lineWidth: 5.0)
                     : nil
             )
         }.gesture(TapGesture()

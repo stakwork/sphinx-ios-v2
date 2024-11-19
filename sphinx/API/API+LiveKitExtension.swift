@@ -10,14 +10,24 @@ import Foundation
 import SwiftyJSON
 
 extension API {
-    func getLikeKitToken(
+    func getLiveKitToken(
         room: String,
         alias: String,
+        profilePicture: String?,
         callback: @escaping LiveKitTokenCallback,
         errorCallback: @escaping ErrorCallback
     ) {
-        let url = "\(self.kVideoCallServer)/api/connection-details?roomName=\(room)&participantName=\(alias)"
-        let request : URLRequest? = createRequest(url, bodyParams: nil, method: "GET")
+        var url = "\(self.kVideoCallServer)/api/connection-details?roomName=\(room)&participantName=\(alias)"
+        
+        if let profilePicture = profilePicture {
+            url = url + "&metadata={\"profilePictureUrl\":\"\(profilePicture)\"}"
+        }
+        
+        let request : URLRequest? = createRequest(
+            url,
+            bodyParams: nil,
+            method: "GET"
+        )
         
         guard let request = request else {
             errorCallback("")

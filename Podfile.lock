@@ -55,6 +55,8 @@ PODS:
     - SDWebImage/Core (~> 5.10)
   - SDWebImageSVGCoder (1.5.2):
     - SDWebImage/Core (~> 5.6)
+  - SDWebImageSwiftUI (2.2.7):
+    - SDWebImage (~> 5.10)
   - Starscream (3.1.1)
   - SwiftLinkPreview (3.4.0)
   - SwiftyJSON (4.3.0)
@@ -88,6 +90,7 @@ DEPENDENCIES:
   - SDWebImage (~> 5.12)
   - SDWebImageFLPlugin
   - SDWebImageSVGCoder (~> 1.5.0)
+  - SDWebImageSwiftUI
   - Starscream (~> 3.1)
   - SwiftLinkPreview (~> 3.4.0)
   - SwiftyJSON
@@ -124,6 +127,7 @@ SPEC REPOS:
     - SDWebImage
     - SDWebImageFLPlugin
     - SDWebImageSVGCoder
+    - SDWebImageSwiftUI
     - Starscream
     - SwiftLinkPreview
     - SwiftyJSON
@@ -175,6 +179,7 @@ SPEC CHECKSUMS:
   SDWebImage: 0905f1b7760fc8ac4198cae0036600d67478751e
   SDWebImageFLPlugin: 245c7ce1e77028b6ef415240847b3f8aa4b106b7
   SDWebImageSVGCoder: b0258f66521c222aba5c13ab29bdf35520d5d536
+  SDWebImageSwiftUI: 65a2c8b4b0d9577f2e11556cb163cc4613b9ee54
   Starscream: 4bb2f9942274833f7b4d296a55504dcfc7edb7b0
   SwiftLinkPreview: c1bc5b2cb3cd42f2865137c1a61f5d788dcf5c9c
   SwiftyJSON: 6faa0040f8b59dead0ee07436cbf76b73c08fd08
@@ -185,6 +190,6 @@ SPEC CHECKSUMS:
   youtube-ios-player-helper: 0185c57db23c80d63d6ca11251d110abb8a4ca61
   Zip: b3fef584b147b6e582b2256a9815c897d60ddc67
 
-PODFILE CHECKSUM: 58f01df1ac81e3e427e5424c5e28c911d5bf9ab3
+PODFILE CHECKSUM: fe0348fe9c9790e2557352b81cf4f679621e8bf5
 
 COCOAPODS: 1.11.3

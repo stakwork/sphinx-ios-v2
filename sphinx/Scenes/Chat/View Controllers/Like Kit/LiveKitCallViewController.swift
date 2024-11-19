@@ -86,9 +86,9 @@ struct RoomSwitchView: View {
             if let localParticipantName = room.localParticipant.name {
                 elements.append(localParticipantName)
             }
-            if let localParticipantIdentity = room.localParticipant.identity {
-                elements.append(String(describing: localParticipantIdentity))
-            }
+//            if let localParticipantIdentity = room.localParticipant.identity {
+//                elements.append(String(describing: localParticipantIdentity))
+//            }
             return elements.joined(separator: " ")
         }
 
