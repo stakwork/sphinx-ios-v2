@@ -47,7 +47,7 @@ struct ParticipantView: View {
 
             ZStack(alignment: .bottom) {
                 // Background color
-                Color(UIColor.darkGray).ignoresSafeArea()
+                Color(UIColor.Sphinx.HeaderBG).ignoresSafeArea()
 
                 // VideoView for the Participant
                 if let publication = participant.mainVideoPublication,

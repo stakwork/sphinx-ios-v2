@@ -97,8 +97,7 @@ struct RoomSwitchView: View {
 
     var body: some View {
         ZStack {
-            Color.black
-                .ignoresSafeArea()
+            Color(UIColor.Sphinx.Body).ignoresSafeArea()
 
             if shouldShowRoomView {
                 RoomView()
@@ -107,16 +106,8 @@ struct RoomSwitchView: View {
             }
         }
         .navigationTitle(computeTitle())
-        .onChange(of: shouldShowRoomView) { newValue in
-            #if os(visionOS)
-                Task {
-                    if newValue {
-                        await openImmersiveSpace(id: "ImmersiveSpace")
-                    } else {
-                        await dismissImmersiveSpace()
-                    }
-                }
-            #endif
+        .onChange(of: shouldShowRoomView) { _ in
+            
         }
     }
 }

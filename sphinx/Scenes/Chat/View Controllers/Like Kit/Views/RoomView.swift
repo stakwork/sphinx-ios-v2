@@ -43,10 +43,6 @@ struct RoomView: View {
 
     @State private var cameraPublishOptions = VideoPublishOptions()
 
-    #if os(macOS)
-        @ObservedObject private var windowAccess = WindowAccess()
-    #endif
-
     @State private var showConnectionTime = true
     @State private var canSwitchCameraPosition = false
 
@@ -126,7 +122,7 @@ struct RoomView: View {
                     roomCtx.sendMessage()
                 } label: {
                     Image(systemSymbol: .paperplaneFill)
-                        .foregroundColor(roomCtx.textFieldString.isEmpty ? nil : Color(UIColor.Sphinx.PrimaryRed))
+                        .foregroundColor(roomCtx.textFieldString.isEmpty ? nil : Color(UIColor.Sphinx.PrimaryGreen))
                 }
                 .buttonStyle(.borderless)
             }
@@ -175,7 +171,7 @@ struct RoomView: View {
                                 roomCtx.focusParticipant = nil
                             }
                             .overlay(RoundedRectangle(cornerRadius: 5)
-                                .stroke(Color(UIColor.Sphinx.PrimaryGreen).opacity(1.0), lineWidth: 3))
+                            .stroke(Color(UIColor.Sphinx.PrimaryGreen).opacity(1.0), lineWidth: 3))
                             
                             Text("SELECTED")
                                 .font(.system(size: 10))
@@ -213,6 +209,7 @@ struct RoomView: View {
             }
         }
         .padding(5)
+        .background(Color(UIColor.Sphinx.Body))
     }
 
     var body: some View {
@@ -221,6 +218,7 @@ struct RoomView: View {
                 content(geometry: geometry)
             }
             .toolbar {
+                
                 ToolbarItemGroup(placement: toolbarPlacement) {
                     Spacer()
 
