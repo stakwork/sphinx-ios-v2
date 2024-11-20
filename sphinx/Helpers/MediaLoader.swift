@@ -591,7 +591,7 @@ class MediaLoader {
             let randomInt = Int.random(in: 0...Int(1e9))
             let name = message.getFileName()
             
-            let _ = CachedMedia.createObject(
+            CachedMedia.createObject(
                 id: randomInt,
                 chat: chat,
                 filePath: path,
@@ -626,7 +626,7 @@ class MediaLoader {
             let fileExtension = message.getCMExtensionAssignment()
             let name = message.getFileName()
             
-            let _ = CachedMedia.createObject(
+            CachedMedia.createObject(
                 id: randomInt,
                 chat: chat,
                 filePath: path,
