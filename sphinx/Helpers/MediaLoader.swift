@@ -21,11 +21,6 @@ class MediaLoader {
         completion: @escaping (Data, String?) -> (),
         errorCompletion: @escaping () -> ()
     ) {
-        if !ConnectivityHelper.isConnectedToInternet {
-            errorCompletion()
-            return
-        }
-        
         let sessionConfig = URLSessionConfiguration.default
         let session = URLSession(configuration: sessionConfig, delegate: nil, delegateQueue: nil)
         var request = URLRequest(url: URL as URL)

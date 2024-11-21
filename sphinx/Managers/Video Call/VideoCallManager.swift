@@ -64,8 +64,8 @@ class VideoCallManager : NSObject {
                         dashboardVC.present(liveKitVC, animated: true)
                     }
                 },
-                errorCallback: { _ in
-                    AlertHelper.showAlert(title: "error.getting.token.title".localized, message: "error.getting.token.description".localized)
+                errorCallback: { error in
+                    AlertHelper.showAlert(title: "error.getting.token.title".localized, message: error)
                 }
             )
         } else if linkUrl.isJitsiCallLink {
