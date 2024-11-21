@@ -251,7 +251,8 @@ struct RoomView: View {
                                     }
                                 } label: {
                                     Image(systemSymbol: .videoFill)
-                                        .renderingMode(.original)
+                                        .renderingMode(.template)
+                                        .foregroundColor(isCameraEnabled ? Color(UIColor.Sphinx.PrimaryGreen) : Color.white)
                                 }
                                 // disable while publishing/un-publishing
                                 .disabled(isCameraPublishingBusy)
@@ -270,7 +271,8 @@ struct RoomView: View {
                                        },
                                        label: {
                                            Image(systemSymbol: .videoFill)
-                                               .renderingMode(isCameraEnabled ? .original : .template)
+                                                .renderingMode(.template)
+                                                .foregroundColor(isCameraEnabled ? Color(UIColor.Sphinx.PrimaryGreen) : Color.white)
                                        })
                                        // disable while publishing/un-publishing
                                        .disabled(isCameraPublishingBusy)
@@ -301,7 +303,8 @@ struct RoomView: View {
                                },
                                label: {
                                    Image(systemSymbol: .micFill)
-                                       .renderingMode(isMicrophoneEnabled ? .original : .template)
+                                       .renderingMode(.template)
+                                       .foregroundColor(isMicrophoneEnabled ? Color(UIColor.Sphinx.PrimaryGreen) : Color.white)
                                })
                                // disable while publishing/un-publishing
                                .disabled(isMicrophonePublishingBusy)
@@ -315,7 +318,8 @@ struct RoomView: View {
                        },
                        label: {
                            Image(systemSymbol: .rectangleFillOnRectangleFill)
-                               .renderingMode(isScreenShareEnabled ? .original : .template)
+                               .renderingMode(.template)
+                               .foregroundColor(isScreenShareEnabled ? Color(UIColor.Sphinx.PrimaryGreen) : Color.white)
                        })
                        // disable while publishing/un-publishing
                        .disabled(isScreenSharePublishingBusy)
@@ -328,7 +332,8 @@ struct RoomView: View {
                                },
                                label: {
                                    Image(systemSymbol: .messageFill)
-                                       .renderingMode(roomCtx.showMessagesView ? .original : .template)
+                                        .renderingMode(.template)
+                                        .foregroundColor(roomCtx.showMessagesView ? Color(UIColor.Sphinx.PrimaryGreen) : Color.white)
                                })
                     }
 

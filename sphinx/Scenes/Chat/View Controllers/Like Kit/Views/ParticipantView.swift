@@ -195,6 +195,7 @@ struct ParticipantView: View {
                             } else {
                                 // local
                                 Image(systemSymbol: .videoFill)
+                                    .renderingMode(.template)
                                     .foregroundColor(Color(UIColor.Sphinx.PrimaryGreen))
                             }
 
@@ -229,7 +230,7 @@ struct ParticipantView: View {
                                 } label: {
                                     if case .subscribed = remotePub.subscriptionState {
                                         Image(systemSymbol: .micFill)
-                                            .foregroundColor(Color(UIColor.Sphinx.SphinxOrange))
+                                            .foregroundColor(Color(UIColor.Sphinx.PrimaryGreen))
                                     } else if case .notAllowed = remotePub.subscriptionState {
                                         Image(systemSymbol: .exclamationmarkCircle)
                                             .foregroundColor(Color(UIColor.Sphinx.BadgeRed))
@@ -242,7 +243,7 @@ struct ParticipantView: View {
                             } else {
                                 // local
                                 Image(systemSymbol: .micFill)
-                                    .foregroundColor(Color(UIColor.Sphinx.SphinxOrange))
+                                    .foregroundColor(Color(UIColor.Sphinx.PrimaryGreen))
                             }
 
                         } else {
