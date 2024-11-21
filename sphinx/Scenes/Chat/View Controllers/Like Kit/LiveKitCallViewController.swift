@@ -35,7 +35,7 @@ class LiveKitCallViewController: UIViewController {
         // Create the SwiftUI view
         let swiftUIView = RoomContextView(audioOnly: audioOnly, onCallEnded: {
             Task { @MainActor in
-                self.dismiss(animated: true)
+                VideoCallManager.sharedInstance.closePipController()
             }
         }).environmentObject(appCtx).environmentObject(roomCtx)
 
@@ -67,11 +67,6 @@ struct RoomSwitchView: View {
     @EnvironmentObject var appCtx: AppContext
     @EnvironmentObject var roomCtx: RoomContext
     @EnvironmentObject var room: Room
-
-    #if os(visionOS)
-        @Environment(\.openImmersiveSpace) var openImmersiveSpace
-        @Environment(\.dismissImmersiveSpace) var dismissImmersiveSpace
-    #endif
 
     var shouldShowRoomView: Bool {
         true

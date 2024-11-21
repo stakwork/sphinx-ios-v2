@@ -38,6 +38,14 @@ class VideoCallManager : NSObject {
         let isGroup = (chat?.isGroup() ?? false)
         return isGroup
     }
+    
+    func closePipController() {
+        self.pipViewCoordinator?.hide() { _ in
+            self.onPiP = false
+            self.activeCall = false
+            self.pipViewCoordinator = nil
+        }
+    }
 
     func startVideoCall(
         link: String,
@@ -50,6 +58,10 @@ class VideoCallManager : NSObject {
         let linkUrl = VoIPRequestMessage.getFromString(link)?.link ?? link
         
         if linkUrl.isLiveKitCallLink, let room = linkUrl.liveKitRoomName {
+            if activeCall {
+                return
+            }
+            
             API.sharedInstance.getLiveKitToken(
                 room: room,
                 alias: owner.nickname ?? "",
@@ -60,9 +72,24 @@ class VideoCallManager : NSObject {
                     liveKitVC.token = token
                     liveKitVC.audioOnly = audioOnly ?? false
                     
-                    if let appDelegate = UIApplication.shared.delegate as? AppDelegate, let dashboardVC = appDelegate.getDashboardVC() {
-                        dashboardVC.present(liveKitVC, animated: true)
+                    if let window = UIApplication.shared.windows.first {
+                        let customView = UIView(frame: CGRectMake(0, 0, 200, 200))
+                        customView.backgroundColor = UIColor.red
+                        
+                        self.pipViewCoordinator = CustomPipViewCoordinator(withView: liveKitVC.view)
+                        self.pipViewCoordinator?.delegate = self
+                        self.pipViewCoordinator?.configureAsStickyView(withParentView: window)
+                        self.pipViewCoordinator?.initialPositionInSuperview = .upperRightCorner
+                        self.pipViewCoordinator?.show()
+                        
+                        DelayPerformedHelper.performAfterDelay(seconds: 2.0, completion: {
+                            self.pipViewCoordinator?.enterPictureInPicture()
+                        })
                     }
+                    
+//                    if let appDelegate = UIApplication.shared.delegate as? AppDelegate, let dashboardVC = appDelegate.getDashboardVC() {
+//                        dashboardVC.present(liveKitVC, animated: true)
+//                    }
                 },
                 errorCallback: { _ in
                     AlertHelper.showAlert(title: "error.getting.token.title".localized, message: "error.getting.token.description".localized)

@@ -61,7 +61,11 @@ public class CustomPipViewCoordinator {
     
     public weak var delegate: CustomPipViewCoordinatorDelegate?
 
-    private(set) var isInPiP: Bool = false
+    private(set) var isInPiP: Bool = false {
+        didSet {
+            dragController.isInPip = isInPiP
+        }
+    }
 
     private(set) var view: UIView
     private var currentBounds: CGRect = CGRect.zero
@@ -111,7 +115,7 @@ public class CustomPipViewCoordinator {
     public func enterPictureInPicture() {
         isInPiP = true
         animateViewChange()
-        dragController.startDragListener(inView: view)
+        dragController.startDragListener(inView: view, with: self)
         dragController.insets = dragBoundInsets
 
         let exitSelector = #selector(toggleExitPiP)
@@ -126,7 +130,7 @@ public class CustomPipViewCoordinator {
     @objc public func exitPictureInPicture() {
         isInPiP = false
         animateViewChange()
-        dragController.stopDragListener()
+//        dragController.stopDragListener()
 
         exitPiPButton?.removeFromSuperview()
         exitPiPButton = nil
@@ -244,19 +248,38 @@ public class CustomPipViewCoordinator {
     }
 }
 
+extension CustomPipViewCoordinator : DragGestureDelegate {
+    func shouldEnterPip() {
+        self.enterPictureInPicture()
+    }
+}
+
+protocol DragGestureDelegate: class {
+    func shouldEnterPip()
+}
+
 final class DragGestureController {
 
     var insets: UIEdgeInsets = UIEdgeInsets.zero
 
     private var frameBeforeDragging: CGRect = CGRect.zero
     private weak var view: UIView?
+    
+    var isInPip = false
+    weak var delegate: DragGestureDelegate?
+    
     private lazy var panGesture: UIPanGestureRecognizer = {
         return UIPanGestureRecognizer(target: self,
                                       action: #selector(handlePan(gesture:)))
     }()
 
-    func startDragListener(inView view: UIView) {
+    func startDragListener(
+        inView view: UIView,
+        with delegate: DragGestureDelegate
+    ) {
         self.view = view
+        self.delegate = delegate
+        
         view.addGestureRecognizer(panGesture)
         panGesture.isEnabled = true
     }
@@ -269,6 +292,11 @@ final class DragGestureController {
 
     @objc private func handlePan(gesture: UIPanGestureRecognizer) {
         guard let view = self.view else { return }
+        
+        if !isInPip {
+            delegate?.shouldEnterPip()
+            return
+        }
 
         let translation = gesture.translation(in: view.superview)
         let velocity = gesture.velocity(in: view.superview)
