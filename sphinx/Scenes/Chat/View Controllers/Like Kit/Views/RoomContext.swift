@@ -36,6 +36,8 @@ final class RoomContext: ObservableObject {
     public var latestError: LiveKitError?
 
     public let room = Room()
+    
+    public var audioOnly = true
 
     @Published var url: String = "" {
         didSet { store.value.url = url }
@@ -84,6 +86,12 @@ final class RoomContext: ObservableObject {
     @Published var messages: [ExampleRoomMessage] = []
 
     @Published var textFieldString: String = ""
+    
+    @Published var isInPip: Bool = false {
+        didSet {
+            VideoCallManager.sharedInstance.togglePip(pipEnabled: isInPip)
+        }
+    }
 
     var _connectTask: Task<Void, Error>?
 

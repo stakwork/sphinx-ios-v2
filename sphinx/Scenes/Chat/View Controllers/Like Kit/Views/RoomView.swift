@@ -54,14 +54,12 @@ struct RoomView: View {
                 Spacer()
             }
 
-            //            VStack(alignment: isMe ? .trailing : .leading) {
-            //                Text(message.identity)
             Text(message.text)
                 .padding(8)
                 .background(Color(isMe ? UIColor.Sphinx.PrimaryGreen : UIColor.Sphinx.SecondaryText))
                 .foregroundColor(Color.white)
                 .cornerRadius(18)
-            //            }
+            
             if !isMe {
                 Spacer()
             }
@@ -218,10 +216,21 @@ struct RoomView: View {
                 content(geometry: geometry)
             }
             .toolbar {
-                
                 ToolbarItemGroup(placement: toolbarPlacement) {
                     Spacer()
-
+                    
+                    Button(action: {
+                       withAnimation {
+                           roomCtx.isInPip.toggle()
+                       }
+                    },
+                    label: {
+                        Image(systemSymbol: roomCtx.isInPip ? .pipExit : .pipEnter)
+                            .renderingMode(.template)
+                            .foregroundColor(Color.white)
+                            .font(.system(size: 14))
+                    })
+                    
                     Group {
                         let isCameraEnabled = room.localParticipant.isCameraEnabled()
                         let isMicrophoneEnabled = room.localParticipant.isMicrophoneEnabled()
@@ -253,6 +262,7 @@ struct RoomView: View {
                                     Image(systemSymbol: .videoFill)
                                         .renderingMode(.template)
                                         .foregroundColor(isCameraEnabled ? Color(UIColor.Sphinx.PrimaryGreen) : Color.white)
+                                        .font(.system(size: 14))
                                 }
                                 // disable while publishing/un-publishing
                                 .disabled(isCameraPublishingBusy)
@@ -273,6 +283,7 @@ struct RoomView: View {
                                            Image(systemSymbol: .videoFill)
                                                 .renderingMode(.template)
                                                 .foregroundColor(isCameraEnabled ? Color(UIColor.Sphinx.PrimaryGreen) : Color.white)
+                                                .font(.system(size: 14))
                                        })
                                        // disable while publishing/un-publishing
                                        .disabled(isCameraPublishingBusy)
@@ -295,190 +306,195 @@ struct RoomView: View {
 
                         // Toggle microphone enabled
                         Button(action: {
-                                   Task {
-                                       isMicrophonePublishingBusy = true
-                                       defer { Task { @MainActor in isMicrophonePublishingBusy = false } }
-                                       try await room.localParticipant.setMicrophone(enabled: !isMicrophoneEnabled)
-                                   }
-                               },
-                               label: {
-                                   Image(systemSymbol: .micFill)
-                                       .renderingMode(.template)
-                                       .foregroundColor(isMicrophoneEnabled ? Color(UIColor.Sphinx.PrimaryGreen) : Color.white)
-                               })
-                               // disable while publishing/un-publishing
-                               .disabled(isMicrophonePublishingBusy)
-
-                        Button(action: {
                            Task {
-                               isScreenSharePublishingBusy = true
-                               defer { Task { @MainActor in isScreenSharePublishingBusy = false } }
-                               try await room.localParticipant.setScreenShare(enabled: !isScreenShareEnabled)
+                               isMicrophonePublishingBusy = true
+                               defer { Task { @MainActor in isMicrophonePublishingBusy = false } }
+                               try await room.localParticipant.setMicrophone(enabled: !isMicrophoneEnabled)
                            }
-                       },
-                       label: {
-                           Image(systemSymbol: .rectangleFillOnRectangleFill)
+                        },
+                        label: {
+                           Image(systemSymbol: .micFill)
                                .renderingMode(.template)
-                               .foregroundColor(isScreenShareEnabled ? Color(UIColor.Sphinx.PrimaryGreen) : Color.white)
-                       })
-                       // disable while publishing/un-publishing
-                       .disabled(isScreenSharePublishingBusy)
+                               .foregroundColor(isMicrophoneEnabled ? Color(UIColor.Sphinx.PrimaryGreen) : Color.white)
+                               .font(.system(size: 14))
+                        })
+                        // disable while publishing/un-publishing
+                        .disabled(isMicrophonePublishingBusy)
 
-                        // Toggle messages view (chat example)
-                        Button(action: {
-                                   withAnimation {
-                                       roomCtx.showMessagesView.toggle()
-                                   }
-                               },
-                               label: {
-                                   Image(systemSymbol: .messageFill)
-                                        .renderingMode(.template)
-                                        .foregroundColor(roomCtx.showMessagesView ? Color(UIColor.Sphinx.PrimaryGreen) : Color.white)
-                               })
+                        if !roomCtx.isInPip {
+                            Button(action: {
+                               Task {
+                                   isScreenSharePublishingBusy = true
+                                   defer { Task { @MainActor in isScreenSharePublishingBusy = false } }
+                                   try await room.localParticipant.setScreenShare(enabled: !isScreenShareEnabled)
+                               }
+                            },
+                            label: {
+                               Image(systemSymbol: .rectangleFillOnRectangleFill)
+                                   .renderingMode(.template)
+                                   .foregroundColor(isScreenShareEnabled ? Color(UIColor.Sphinx.PrimaryGreen) : Color.white)
+                                   .font(.system(size: 14))
+                            })
+                            // disable while publishing/un-publishing
+                            .disabled(isScreenSharePublishingBusy)
+                            
+                            Button(action: {
+                               withAnimation {
+                                   roomCtx.showMessagesView.toggle()
+                               }
+                            },
+                            label: {
+                               Image(systemSymbol: .messageFill)
+                                    .renderingMode(.template)
+                                    .foregroundColor(roomCtx.showMessagesView ? Color(UIColor.Sphinx.PrimaryGreen) : Color.white)
+                                    .font(.system(size: 14))
+                            })
+                        }
                     }
 
-                    // Spacer()
-
-                    SwiftUIAudioRoutePickerButton()
-
-                    Menu {
-                        Toggle("Show info overlay", isOn: $appCtx.showInformationOverlay)
-
-                        Group {
-                            Toggle("VideoView visible", isOn: $appCtx.videoViewVisible)
-                            Toggle("VideoView flip", isOn: $appCtx.videoViewMirrored)
-                            Toggle("VideoView renderMode: .sampleBuffer", isOn: $appCtx.preferSampleBufferRendering)
-    //                        #if os(iOS)
-    //                            Menu("Pinch to zoom") {
-    //                                Toggle("Zoom In", isOn: $appCtx.videoViewPinchToZoomOptions.bind(.zoomIn))
-    //                                Toggle("Zoom Out", isOn: $appCtx.videoViewPinchToZoomOptions.bind(.zoomOut))
-    //                                Toggle("Auto Reset", isOn: $appCtx.videoViewPinchToZoomOptions.bind(.resetOnRelease))
-    //                            }
-    //                        #endif
-                            Divider()
-                        }
+                    if !roomCtx.isInPip {
+                        SwiftUIAudioRoutePickerButton()
                         
-                        Group {
-                            Divider()
-
-                            Button {
-                                Task {
-                                    await room.localParticipant.unpublishAll()
-                                }
-                            } label: {
-                                Text("Unpublish all")
+                        Menu {
+                            Toggle("Show info overlay", isOn: $appCtx.showInformationOverlay)
+                            
+                            Group {
+                                Toggle("VideoView visible", isOn: $appCtx.videoViewVisible)
+                                Toggle("VideoView flip", isOn: $appCtx.videoViewMirrored)
+                                Toggle("VideoView renderMode: .sampleBuffer", isOn: $appCtx.preferSampleBufferRendering)
+                                //                                Menu("Pinch to zoom") {
+                                //                                    Toggle("Zoom In", isOn: $appCtx.videoViewPinchToZoomOptions.bind(.zoomIn))
+                                //                                    Toggle("Zoom Out", isOn: $appCtx.videoViewPinchToZoomOptions.bind(.zoomOut))
+                                //                                    Toggle("Auto Reset", isOn: $appCtx.videoViewPinchToZoomOptions.bind(.resetOnRelease))
+                                //                                }
+                                Divider()
                             }
-
-                            Divider()
-
-                            Menu {
+                            
+                            Group {
+                                Divider()
+                                
                                 Button {
                                     Task {
-                                        try await room.debug_simulate(scenario: .quickReconnect)
+                                        await room.localParticipant.unpublishAll()
                                     }
                                 } label: {
-                                    Text("Quick reconnect")
+                                    Text("Unpublish all")
                                 }
-
-                                Button {
-                                    Task {
-                                        try await room.debug_simulate(scenario: .fullReconnect)
+                                
+                                Divider()
+                                
+                                Menu {
+                                    Button {
+                                        Task {
+                                            try await room.debug_simulate(scenario: .quickReconnect)
+                                        }
+                                    } label: {
+                                        Text("Quick reconnect")
+                                    }
+                                    
+                                    Button {
+                                        Task {
+                                            try await room.debug_simulate(scenario: .fullReconnect)
+                                        }
+                                    } label: {
+                                        Text("Full reconnect")
+                                    }
+                                    
+                                    Button {
+                                        Task {
+                                            try await room.debug_simulate(scenario: .nodeFailure)
+                                        }
+                                    } label: {
+                                        Text("Node failure")
+                                    }
+                                    
+                                    Button {
+                                        Task {
+                                            try await room.debug_simulate(scenario: .serverLeave)
+                                        }
+                                    } label: {
+                                        Text("Server leave")
+                                    }
+                                    
+                                    Button {
+                                        Task {
+                                            try await room.debug_simulate(scenario: .migration)
+                                        }
+                                    } label: {
+                                        Text("Migration")
+                                    }
+                                    
+                                    Button {
+                                        Task {
+                                            try await room.debug_simulate(scenario: .speakerUpdate(seconds: 3))
+                                        }
+                                    } label: {
+                                        Text("Speaker update")
+                                    }
+                                    Button {
+                                        Task {
+                                            try await room.debug_simulate(scenario: .forceTCP)
+                                        }
+                                    } label: {
+                                        Text("Force TCP")
+                                    }
+                                    Button {
+                                        Task {
+                                            try await room.debug_simulate(scenario: .forceTLS)
+                                        }
+                                    } label: {
+                                        Text("Force TLS")
                                     }
                                 } label: {
-                                    Text("Full reconnect")
+                                    Text("Simulate scenario")
                                 }
-
-                                Button {
-                                    Task {
-                                        try await room.debug_simulate(scenario: .nodeFailure)
-                                    }
-                                } label: {
-                                    Text("Node failure")
-                                }
-
-                                Button {
-                                    Task {
-                                        try await room.debug_simulate(scenario: .serverLeave)
-                                    }
-                                } label: {
-                                    Text("Server leave")
-                                }
-
-                                Button {
-                                    Task {
-                                        try await room.debug_simulate(scenario: .migration)
-                                    }
-                                } label: {
-                                    Text("Migration")
-                                }
-
-                                Button {
-                                    Task {
-                                        try await room.debug_simulate(scenario: .speakerUpdate(seconds: 3))
-                                    }
-                                } label: {
-                                    Text("Speaker update")
-                                }
-                                Button {
-                                    Task {
-                                        try await room.debug_simulate(scenario: .forceTCP)
-                                    }
-                                } label: {
-                                    Text("Force TCP")
-                                }
-                                Button {
-                                    Task {
-                                        try await room.debug_simulate(scenario: .forceTLS)
-                                    }
-                                } label: {
-                                    Text("Force TLS")
-                                }
-                            } label: {
-                                Text("Simulate scenario")
                             }
+                            
+                            Group {
+                                Menu {
+                                    Button {
+                                        Task {
+                                            try await room.localParticipant.setTrackSubscriptionPermissions(allParticipantsAllowed: true)
+                                        }
+                                    } label: {
+                                        Text("Allow all")
+                                    }
+                                    
+                                    Button {
+                                        Task {
+                                            try await room.localParticipant.setTrackSubscriptionPermissions(allParticipantsAllowed: false)
+                                        }
+                                    } label: {
+                                        Text("Disallow all")
+                                    }
+                                } label: {
+                                    Text("Track permissions")
+                                }
+                                
+                                Toggle("Prefer speaker output", isOn: $appCtx.preferSpeakerOutput)
+                                
+                                Toggle("E2EE enabled", isOn: $roomCtx.isE2eeEnabled)
+                            }
+                            
+                        } label: {
+                            Image(systemSymbol: .gear)
+                                .renderingMode(.original)
+                                .font(.system(size: 14))
                         }
-
-                        Group {
-                            Menu {
-                                Button {
-                                    Task {
-                                        try await room.localParticipant.setTrackSubscriptionPermissions(allParticipantsAllowed: true)
-                                    }
-                                } label: {
-                                    Text("Allow all")
-                                }
-
-                                Button {
-                                    Task {
-                                        try await room.localParticipant.setTrackSubscriptionPermissions(allParticipantsAllowed: false)
-                                    }
-                                } label: {
-                                    Text("Disallow all")
-                                }
-                            } label: {
-                                Text("Track permissions")
-                            }
-
-                            Toggle("Prefer speaker output", isOn: $appCtx.preferSpeakerOutput)
-
-                            Toggle("E2EE enabled", isOn: $roomCtx.isE2eeEnabled)
-                        }
-
-                    } label: {
-                        Image(systemSymbol: .gear)
-                            .renderingMode(.original)
                     }
 
                     // Disconnect
                     Button(action: {
-                               Task {
-                                   await roomCtx.disconnect()
-                               }
-                           },
-                           label: {
-                               Image(systemSymbol: .xmarkCircleFill)
-                                   .renderingMode(.original)
-                           })
+                       Task {
+                           await roomCtx.disconnect()
+                       }
+                    },
+                    label: {
+                       Image(systemSymbol: .xmarkCircleFill)
+                           .renderingMode(.original)
+                           .font(.system(size: 18))
+                    })
+                    .buttonStyle(PlainButtonStyle())
                 }
             }
             .onAppear {

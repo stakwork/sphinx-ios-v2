@@ -59,6 +59,8 @@ class ChatMessageTextFieldView: UIView {
     let kFieldPlaceHolderColor = UIColor.Sphinx.PlaceholderText
     let kFieldFont = UIFont(name: "Roboto-Regular", size: UIDevice.current.isIpad ? 20.0 : 16.0)!
     
+    public static let kAccessoryViewHeight: CGFloat = 58
+    
     var mode = MessagesFieldMode.Chat
     
     override init(frame: CGRect) {

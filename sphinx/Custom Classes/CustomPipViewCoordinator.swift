@@ -53,7 +53,7 @@ public class CustomPipViewCoordinator {
         case .pad:
             return 0.25
         case .phone:
-            return 0.50
+            return 0.55
         default:
             return 0.25
         }
@@ -69,14 +69,26 @@ public class CustomPipViewCoordinator {
 
     private(set) var view: UIView
     private var currentBounds: CGRect = CGRect.zero
+    
+    private var isLiveKit: Bool = false
 
     private var tapGestureRecognizer: UITapGestureRecognizer?
     private var exitPiPButton: UIButton?
 
     private let dragController: DragGestureController = DragGestureController()
 
-    public init(withView view: UIView) {
+    public init(withView view: UIView, isLiveKit: Bool) {
         self.view = view
+        self.isLiveKit = isLiveKit
+        
+        let windowInsets = getWindowInsets()
+        
+        dragBoundInsets = UIEdgeInsets(
+            top: windowInsets.top + 5,
+            left: 5,
+            bottom: windowInsets.bottom + ChatMessageTextFieldView.kAccessoryViewHeight + 5,
+            right: 5
+        )
         
         NotificationCenter.default.addObserver(self, selector: #selector(onKeyboardShown(_:)), name: .onKeyboardShown, object: nil)
     }
@@ -85,8 +97,10 @@ public class CustomPipViewCoordinator {
         guard
             let parentView = parentView
             else { return }
-        
-        parentView.addSubview(view)
+       
+        if !isLiveKit {
+            parentView.addSubview(view)
+        }
         currentBounds = parentView.bounds
         view.frame = currentBounds
         view.layer.zPosition = CGFloat(Float.greatestFiniteMagnitude).nextDown
@@ -115,7 +129,7 @@ public class CustomPipViewCoordinator {
     public func enterPictureInPicture() {
         isInPiP = true
         animateViewChange()
-        dragController.startDragListener(inView: view, with: self)
+        dragController.startDragListener(inView: view)
         dragController.insets = dragBoundInsets
 
         let exitSelector = #selector(toggleExitPiP)
@@ -130,7 +144,7 @@ public class CustomPipViewCoordinator {
     @objc public func exitPictureInPicture() {
         isInPiP = false
         animateViewChange()
-//        dragController.stopDragListener()
+        dragController.stopDragListener()
 
         exitPiPButton?.removeFromSuperview()
         exitPiPButton = nil
@@ -248,16 +262,6 @@ public class CustomPipViewCoordinator {
     }
 }
 
-extension CustomPipViewCoordinator : DragGestureDelegate {
-    func shouldEnterPip() {
-        self.enterPictureInPicture()
-    }
-}
-
-protocol DragGestureDelegate: class {
-    func shouldEnterPip()
-}
-
 final class DragGestureController {
 
     var insets: UIEdgeInsets = UIEdgeInsets.zero
@@ -266,7 +270,6 @@ final class DragGestureController {
     private weak var view: UIView?
     
     var isInPip = false
-    weak var delegate: DragGestureDelegate?
     
     private lazy var panGesture: UIPanGestureRecognizer = {
         return UIPanGestureRecognizer(target: self,
@@ -274,11 +277,9 @@ final class DragGestureController {
     }()
 
     func startDragListener(
-        inView view: UIView,
-        with delegate: DragGestureDelegate
+        inView view: UIView
     ) {
         self.view = view
-        self.delegate = delegate
         
         view.addGestureRecognizer(panGesture)
         panGesture.isEnabled = true
@@ -292,11 +293,6 @@ final class DragGestureController {
 
     @objc private func handlePan(gesture: UIPanGestureRecognizer) {
         guard let view = self.view else { return }
-        
-        if !isInPip {
-            delegate?.shouldEnterPip()
-            return
-        }
 
         let translation = gesture.translation(in: view.superview)
         let velocity = gesture.velocity(in: view.superview)

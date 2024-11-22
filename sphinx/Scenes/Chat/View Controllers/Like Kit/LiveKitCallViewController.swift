@@ -18,7 +18,6 @@ class LiveKitCallViewController: UIViewController {
     var token: String? = nil
     var audioOnly: Bool = true
     
-    // Initialize AppContext and RoomContext as regular properties
     var appCtx = AppContext(store: sync)
     var roomCtx = RoomContext(store: sync)
     
@@ -31,9 +30,10 @@ class LiveKitCallViewController: UIViewController {
         
         roomCtx.url = url
         roomCtx.token = token
+        roomCtx.audioOnly = audioOnly
         
         // Create the SwiftUI view
-        let swiftUIView = RoomContextView(audioOnly: audioOnly, onCallEnded: {
+        let swiftUIView = RoomContextView(onCallEnded: {
             Task { @MainActor in
                 VideoCallManager.sharedInstance.closePipController()
             }
@@ -81,9 +81,6 @@ struct RoomSwitchView: View {
             if let localParticipantName = room.localParticipant.name {
                 elements.append(localParticipantName)
             }
-//            if let localParticipantIdentity = room.localParticipant.identity {
-//                elements.append(String(describing: localParticipantIdentity))
-//            }
             return elements.joined(separator: " ")
         }
 
@@ -112,13 +109,10 @@ struct RoomContextView: View {
     @EnvironmentObject var appCtx: AppContext
     @EnvironmentObject var roomCtx: RoomContext    
     
-    var audioOnly: Bool = true
-    
     typealias OnCallEnded = () -> Void
     private var onCallEnded: OnCallEnded? = nil
     
-    init(audioOnly: Bool, onCallEnded: OnCallEnded? = nil) {
-        self.audioOnly = audioOnly
+    init(onCallEnded: OnCallEnded? = nil) {
         self.onCallEnded = onCallEnded
     }
     
@@ -140,7 +134,7 @@ struct RoomContextView: View {
                         let room = try await roomCtx.connect(onConnected: {
                             self.enableMic()
                             
-                            if !self.audioOnly {
+                            if !roomCtx.audioOnly {
                                 self.enableCamera()
                             }
                         }, onCallEnded: {
@@ -183,6 +177,7 @@ struct RoomContextView: View {
                     }
                 }
             })
+            .border(Color(UIColor.Sphinx.MainBottomIcons), width: roomCtx.isInPip ? 1 : 0)
     }
     
     func enableMic() {
