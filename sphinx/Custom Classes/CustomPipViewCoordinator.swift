@@ -53,7 +53,7 @@ public class CustomPipViewCoordinator {
         case .pad:
             return 0.25
         case .phone:
-            return 0.50
+            return 0.55
         default:
             return 0.25
         }
@@ -61,18 +61,34 @@ public class CustomPipViewCoordinator {
     
     public weak var delegate: CustomPipViewCoordinatorDelegate?
 
-    private(set) var isInPiP: Bool = false
+    private(set) var isInPiP: Bool = false {
+        didSet {
+            dragController.isInPip = isInPiP
+        }
+    }
 
     private(set) var view: UIView
     private var currentBounds: CGRect = CGRect.zero
+    
+    private var isLiveKit: Bool = false
 
     private var tapGestureRecognizer: UITapGestureRecognizer?
     private var exitPiPButton: UIButton?
 
     private let dragController: DragGestureController = DragGestureController()
 
-    public init(withView view: UIView) {
+    public init(withView view: UIView, isLiveKit: Bool) {
         self.view = view
+        self.isLiveKit = isLiveKit
+        
+        let windowInsets = getWindowInsets()
+        
+        dragBoundInsets = UIEdgeInsets(
+            top: windowInsets.top + 5,
+            left: 5,
+            bottom: windowInsets.bottom + ChatMessageTextFieldView.kAccessoryViewHeight + 5,
+            right: 5
+        )
         
         NotificationCenter.default.addObserver(self, selector: #selector(onKeyboardShown(_:)), name: .onKeyboardShown, object: nil)
     }
@@ -81,8 +97,10 @@ public class CustomPipViewCoordinator {
         guard
             let parentView = parentView
             else { return }
-        
-        parentView.addSubview(view)
+       
+        if !isLiveKit {
+            parentView.addSubview(view)
+        }
         currentBounds = parentView.bounds
         view.frame = currentBounds
         view.layer.zPosition = CGFloat(Float.greatestFiniteMagnitude).nextDown
@@ -250,13 +268,19 @@ final class DragGestureController {
 
     private var frameBeforeDragging: CGRect = CGRect.zero
     private weak var view: UIView?
+    
+    var isInPip = false
+    
     private lazy var panGesture: UIPanGestureRecognizer = {
         return UIPanGestureRecognizer(target: self,
                                       action: #selector(handlePan(gesture:)))
     }()
 
-    func startDragListener(inView view: UIView) {
+    func startDragListener(
+        inView view: UIView
+    ) {
         self.view = view
+        
         view.addGestureRecognizer(panGesture)
         panGesture.isEnabled = true
     }

@@ -38,6 +38,37 @@ class VideoCallManager : NSObject {
         let isGroup = (chat?.isGroup() ?? false)
         return isGroup
     }
+    
+    func closePipController() {
+        self.pipViewCoordinator?.hide() { _ in
+            self.onPiP = false
+            self.activeCall = false
+            self.pipViewCoordinator = nil
+        }
+    }
+    
+    func togglePip(pipEnabled: Bool) {
+        if pipEnabled {
+            pipViewCoordinator?.enterPictureInPicture()
+        } else {
+            pipViewCoordinator?.exitPictureInPicture()
+        }
+    }
+    
+    func getKeyWindow() -> UIWindow? {
+        if #available(iOS 13.0, *) {
+            if let window = UIApplication.shared.connectedScenes
+                .compactMap({ ($0 as? UIWindowScene)?.windows.first })
+                .first(where: { $0.isKeyWindow }) {
+                return window
+            }
+        } else {
+            if let window = UIApplication.shared.keyWindow {
+                return window
+            }
+        }
+        return nil
+    }
 
     func startVideoCall(
         link: String,
@@ -48,6 +79,10 @@ class VideoCallManager : NSObject {
         }
         
         let linkUrl = VoIPRequestMessage.getFromString(link)?.link ?? link
+        
+        if activeCall {
+            return
+        }
         
         if linkUrl.isLiveKitCallLink, let room = linkUrl.liveKitRoomName {
             API.sharedInstance.getLiveKitToken(
@@ -60,8 +95,21 @@ class VideoCallManager : NSObject {
                     liveKitVC.token = token
                     liveKitVC.audioOnly = audioOnly ?? false
                     
-                    if let appDelegate = UIApplication.shared.delegate as? AppDelegate, let dashboardVC = appDelegate.getDashboardVC() {
-                        dashboardVC.present(liveKitVC, animated: true)
+                    if let window = self.getKeyWindow() {
+                        let rootViewController = window.rootViewController
+                        rootViewController?.addChild(liveKitVC)
+                        rootViewController?.view.addSubview(liveKitVC.view)
+                        
+                        self.pipViewCoordinator = CustomPipViewCoordinator(withView: liveKitVC.view, isLiveKit: true)
+                        self.pipViewCoordinator?.delegate = self
+                        self.pipViewCoordinator?.configureAsStickyView(withParentView: window)
+                        self.pipViewCoordinator?.initialPositionInSuperview = .upperRightCorner
+                        
+                        liveKitVC.didMove(toParent: rootViewController)
+                        
+                        self.pipViewCoordinator?.show()
+                        
+                        self.activeCall = true
                     }
                 },
                 errorCallback: { error in
@@ -69,10 +117,6 @@ class VideoCallManager : NSObject {
                 }
             )
         } else if linkUrl.isJitsiCallLink {
-            if activeCall {
-                return
-            }
-            
             switch(AVAudioSession.sharedInstance().recordPermission){
             case .denied://show alert
                 AlertHelper.showAlert(title: "microphone.permission.required".localized, message: "microphone.permission.denied.jitsi".localized)
@@ -114,8 +158,8 @@ class VideoCallManager : NSObject {
             jitsiMeetView.layer.cornerRadius = 10
             jitsiMeetView.clipsToBounds = true
 
-            if let window = UIApplication.shared.windows.first {
-                pipViewCoordinator = CustomPipViewCoordinator(withView: jitsiMeetView)
+            if let window = getKeyWindow() {
+                pipViewCoordinator = CustomPipViewCoordinator(withView: jitsiMeetView, isLiveKit: false)
                 pipViewCoordinator?.delegate = self
                 pipViewCoordinator?.configureAsStickyView(withParentView: window)
                 pipViewCoordinator?.initialPositionInSuperview = .upperRightCorner
