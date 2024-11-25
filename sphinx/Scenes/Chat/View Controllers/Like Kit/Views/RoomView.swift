@@ -201,9 +201,9 @@ struct RoomView: View {
                     maxHeight: .infinity
                 )
                 // Show messages view if enabled
-                if roomCtx.showMessagesView {
-                    messagesView(geometry: geometry)
-                }
+//                if roomCtx.showMessagesView {
+//                    messagesView(geometry: geometry)
+//                }
             }
         }
         .padding(5)
@@ -338,17 +338,17 @@ struct RoomView: View {
                             // disable while publishing/un-publishing
                             .disabled(isScreenSharePublishingBusy)
                             
-                            Button(action: {
-                               withAnimation {
-                                   roomCtx.showMessagesView.toggle()
-                               }
-                            },
-                            label: {
-                               Image(systemSymbol: .messageFill)
-                                    .renderingMode(.template)
-                                    .foregroundColor(roomCtx.showMessagesView ? Color(UIColor.Sphinx.PrimaryGreen) : Color.white)
-                                    .font(.system(size: 14))
-                            })
+//                            Button(action: {
+//                               withAnimation {
+//                                   roomCtx.showMessagesView.toggle()
+//                               }
+//                            },
+//                            label: {
+//                               Image(systemSymbol: .messageFill)
+//                                    .renderingMode(.template)
+//                                    .foregroundColor(roomCtx.showMessagesView ? Color(UIColor.Sphinx.PrimaryGreen) : Color.white)
+//                                    .font(.system(size: 14))
+//                            })
                         }
                     }
 
