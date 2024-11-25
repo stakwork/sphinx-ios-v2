@@ -343,6 +343,8 @@
 		476A10B923A7E9E500817892 /* ContactTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 476A10B723A7E9E500817892 /* ContactTableViewCell.xib */; };
 		476A10BE23AA8C8E00817892 /* SubscriptionDetailsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 476A10BD23AA8C8E00817892 /* SubscriptionDetailsViewController.swift */; };
 		476AAAA22A24F9F80092AC87 /* NewChatViewController+TribeExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 476AAAA12A24F9F80092AC87 /* NewChatViewController+TribeExtension.swift */; };
+		476C5B092CF4AF9C00CFB270 /* MyCustomRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 476C5B082CF4AF9C00CFB270 /* MyCustomRenderer.swift */; };
+		476C5B0B2CF4B06900CFB270 /* MySwiftUICustomRendererView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 476C5B0A2CF4B06800CFB270 /* MySwiftUICustomRendererView.swift */; };
 		476EB46823C4F1AE009745E2 /* GroupContactCollectionViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 476EB46623C4F1AE009745E2 /* GroupContactCollectionViewCell.swift */; };
 		476EB46923C4F1AE009745E2 /* GroupContactCollectionViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 476EB46723C4F1AE009745E2 /* GroupContactCollectionViewCell.xib */; };
 		476EB47023C50640009745E2 /* GroupAddedContactsDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 476EB46F23C50640009745E2 /* GroupAddedContactsDataSource.swift */; };
@@ -1501,6 +1503,8 @@
 		476A10BC23A9207700817892 /* sphinx 6.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 6.xcdatamodel"; sourceTree = "<group>"; };
 		476A10BD23AA8C8E00817892 /* SubscriptionDetailsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionDetailsViewController.swift; sourceTree = "<group>"; };
 		476AAAA12A24F9F80092AC87 /* NewChatViewController+TribeExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NewChatViewController+TribeExtension.swift"; sourceTree = "<group>"; };
+		476C5B082CF4AF9C00CFB270 /* MyCustomRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyCustomRenderer.swift; sourceTree = "<group>"; };
+		476C5B0A2CF4B06800CFB270 /* MySwiftUICustomRendererView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MySwiftUICustomRendererView.swift; sourceTree = "<group>"; };
 		476EB46623C4F1AE009745E2 /* GroupContactCollectionViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupContactCollectionViewCell.swift; sourceTree = "<group>"; };
 		476EB46723C4F1AE009745E2 /* GroupContactCollectionViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = GroupContactCollectionViewCell.xib; sourceTree = "<group>"; };
 		476EB46F23C50640009745E2 /* GroupAddedContactsDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupAddedContactsDataSource.swift; sourceTree = "<group>"; };
@@ -2676,6 +2680,8 @@
 				4730EF482CDA94500014581F /* ParticipantView.swift */,
 				4730EF4A2CDA94E70014581F /* PublishOptionsView.swift */,
 				4730EF4C2CDA95B20014581F /* Participant+Helper.swift */,
+				476C5B082CF4AF9C00CFB270 /* MyCustomRenderer.swift */,
+				476C5B0A2CF4B06800CFB270 /* MySwiftUICustomRendererView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -5496,6 +5502,7 @@
 				476A10B823A7E9E500817892 /* ContactTableViewCell.swift in Sources */,
 				477ADCC52A1BAC65004E74CE /* PinMessageViewController.swift in Sources */,
 				4740538C244CFE0000826533 /* CustomImageScrollView.swift in Sources */,
+				476C5B0B2CF4B06900CFB270 /* MySwiftUICustomRendererView.swift in Sources */,
 				47E6A4AC2A2E237400A9509E /* PodcastBoostView.swift in Sources */,
 				4787F88724746A5400CCE8B9 /* AlignedCollectionViewFlowLayout.swift in Sources */,
 				473BC88D25F287340070E519 /* PodcastNewEpisodeViewController.swift in Sources */,
@@ -5707,6 +5714,7 @@
 				F373BF0C26AAFB990093C886 /* CustomSegmentedControl.swift in Sources */,
 				F3197C1326811DE400330F79 /* RestoreUserFormViewController+KeychainRestorationUtils.swift in Sources */,
 				9386C28B2BB25EDC00ABDEF3 /* AddedTagsView.swift in Sources */,
+				476C5B092CF4AF9C00CFB270 /* MyCustomRenderer.swift in Sources */,
 				47E6A4F72A2F788300A9509E /* NewChatTableDataSource+ResultsControllerExtension.swift in Sources */,
 				4785C10224D4A0BE004E2D6C /* Constants.swift in Sources */,
 				4730EF4B2CDA94E70014581F /* PublishOptionsView.swift in Sources */,

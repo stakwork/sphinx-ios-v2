@@ -16,6 +16,7 @@
 
 import LiveKit
 import SwiftUI
+import AVFoundation
 
 // This class contains the logic to control behavior of the whole app.
 final class RoomContext: ObservableObject {
@@ -35,7 +36,7 @@ final class RoomContext: ObservableObject {
     @Published var shouldShowDisconnectReason: Bool = false
     public var latestError: LiveKitError?
 
-    public let room = Room()
+    public let room = Room(roomOptions: RoomOptions(suspendLocalVideoTracksInBackground: false))
     
     public var audioOnly = true
 
@@ -98,6 +99,15 @@ final class RoomContext: ObservableObject {
     public init(
         store: ValueStore<Preferences>
     ) {
+        #if os(iOS)
+            // Audio session category switch is required for PIP to work
+            do {
+                try AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback)
+            } catch {
+                print("Setting category to AVAudioSessionCategoryPlayback failed.")
+            }
+        #endif
+        
         self.store = store
         room.add(delegate: self)
 

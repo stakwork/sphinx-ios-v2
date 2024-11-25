@@ -52,17 +52,31 @@ struct ParticipantView: View {
                 // VideoView for the Participant
                 if let publication = participant.mainVideoPublication,
                    !publication.isMuted,
-                   let track = publication.track as? VideoTrack,
                    appCtx.videoViewVisible
                 {
+                    var track = publication.track as? VideoTrack
+                    
                     ZStack(alignment: .topLeading) {
-                        SwiftUIVideoView(track,
-                                         layoutMode: videoViewMode,
-                                         mirrorMode: appCtx.videoViewMirrored ? .mirror : .auto,
-                                         renderMode: appCtx.preferSampleBufferRendering ? .sampleBuffer : .auto,
-                                         pinchToZoomOptions: appCtx.videoViewPinchToZoomOptions,
-                                         isDebugMode: appCtx.showInformationOverlay,
-                                         isRendering: $isRendering)
+                        Group {
+                            if let track {
+                                MySwiftUICustomRendererView(track: track)
+                            } else {
+                                Text("No Video track")
+                            }
+                        }.onAppear {
+                            track = LocalVideoTrack.createCameraTrack()
+                            
+                            Task {
+                                if let cameraCapturer = track?.capturer as? CameraCapturer {
+                                    cameraCapturer.isMultitaskingAccessEnabled = true
+                                }
+                                try await track?.start()
+                            }
+                        }.onDisappear {
+                            Task {
+                                try await track?.stop()
+                            }
+                        }
 
                         if !isRendering {
                             ProgressView().progressViewStyle(CircularProgressViewStyle())
@@ -131,15 +145,31 @@ struct ParticipantView: View {
 
                 VStack(alignment: .trailing, spacing: 0) {
                     // Show the sub-video view
-                    if let subVideoTrack = participant.subVideoTrack {
-                        SwiftUIVideoView(subVideoTrack,
-                                         layoutMode: .fill,
-                                         mirrorMode: appCtx.videoViewMirrored ? .mirror : .auto)
-                            .background(Color.black)
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: min(geometry.size.width, geometry.size.height) * 0.3)
-                            .cornerRadius(8)
-                            .padding()
+                    var track = participant.subVideoTrack
+                    
+                    Group {
+                        if let track {
+                            MySwiftUICustomRendererView(track: track)
+                                .background(Color.black)
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: min(geometry.size.width, geometry.size.height) * 0.3)
+                                .cornerRadius(8)
+                                .padding()
+                        } else {
+                            Text("No Video track")
+                        }
+                    }.onAppear {
+                        track = LocalVideoTrack.createCameraTrack()
+                        Task {
+                            if let cameraCapturer = track?.capturer as? CameraCapturer {
+                                cameraCapturer.isMultitaskingAccessEnabled = true
+                            }
+                            try await track?.start()
+                        }
+                    }.onDisappear {
+                        Task {
+                            try await track?.stop()
+                        }
                     }
 
                     // Bottom user info bar
