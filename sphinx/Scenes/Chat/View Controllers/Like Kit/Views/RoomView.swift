@@ -201,9 +201,9 @@ struct RoomView: View {
                     maxHeight: .infinity
                 )
                 // Show messages view if enabled
-                if roomCtx.showMessagesView {
-                    messagesView(geometry: geometry)
-                }
+//                if roomCtx.showMessagesView {
+//                    messagesView(geometry: geometry)
+//                }
             }
         }
         .padding(5)
@@ -269,24 +269,24 @@ struct RoomView: View {
                             } else {
                                 // Toggle camera enabled
                                 Button(action: {
-                                           if isCameraEnabled {
-                                               Task {
-                                                   isCameraPublishingBusy = true
-                                                   defer { Task { @MainActor in isCameraPublishingBusy = false } }
-                                                   try await room.localParticipant.setCamera(enabled: false)
-                                               }
-                                           } else {
-                                               publishOptionsPickerPresented = true
-                                           }
-                                       },
-                                       label: {
-                                           Image(systemSymbol: .videoFill)
-                                                .renderingMode(.template)
-                                                .foregroundColor(isCameraEnabled ? Color(UIColor.Sphinx.PrimaryGreen) : Color.white)
-                                                .font(.system(size: 14))
-                                       })
-                                       // disable while publishing/un-publishing
-                                       .disabled(isCameraPublishingBusy)
+                                   if isCameraEnabled {
+                                       Task {
+                                           isCameraPublishingBusy = true
+                                           defer { Task { @MainActor in isCameraPublishingBusy = false } }
+                                           try await room.localParticipant.setCamera(enabled: false)
+                                       }
+                                   } else {
+                                       publishOptionsPickerPresented = true
+                                   }
+                                },
+                                label: {
+                                   Image(systemSymbol: .videoFill)
+                                        .renderingMode(.template)
+                                        .foregroundColor(isCameraEnabled ? Color(UIColor.Sphinx.PrimaryGreen) : Color.white)
+                                        .font(.system(size: 14))
+                                })
+                                // disable while publishing/un-publishing
+                                .disabled(isCameraPublishingBusy)
                             }
                         }
                         .popover(isPresented: $publishOptionsPickerPresented) {
@@ -338,17 +338,17 @@ struct RoomView: View {
                             // disable while publishing/un-publishing
                             .disabled(isScreenSharePublishingBusy)
                             
-                            Button(action: {
-                               withAnimation {
-                                   roomCtx.showMessagesView.toggle()
-                               }
-                            },
-                            label: {
-                               Image(systemSymbol: .messageFill)
-                                    .renderingMode(.template)
-                                    .foregroundColor(roomCtx.showMessagesView ? Color(UIColor.Sphinx.PrimaryGreen) : Color.white)
-                                    .font(.system(size: 14))
-                            })
+//                            Button(action: {
+//                               withAnimation {
+//                                   roomCtx.showMessagesView.toggle()
+//                               }
+//                            },
+//                            label: {
+//                               Image(systemSymbol: .messageFill)
+//                                    .renderingMode(.template)
+//                                    .foregroundColor(roomCtx.showMessagesView ? Color(UIColor.Sphinx.PrimaryGreen) : Color.white)
+//                                    .font(.system(size: 14))
+//                            })
                         }
                     }
 
@@ -592,36 +592,36 @@ struct ParticipantLayout<Content: View>: View {
                             }
                         }
                     }
-                //            case 6:
-                //                if geometry.isTall {
-                //                    VStack {
-                //                        HStack {
-                //                            views[0]
-                //                            views[1]
-                //                        }
-                //                        HStack {
-                //                            views[2]
-                //                            views[3]
-                //                        }
-                //                        HStack {
-                //                            views[4]
-                //                            views[5]
-                //                        }
-                //                    }
-                //                } else {
-                //                    VStack {
-                //                        HStack {
-                //                            views[0]
-                //                            views[1]
-                //                            views[2]
-                //                        }
-                //                        HStack {
-                //                            views[3]
-                //                            views[4]
-                //                            views[5]
-                //                        }
-                //                    }
-                //                }
+                case 6:
+                    if geometry.isTall {
+                        VStack {
+                            HStack {
+                                views[0]
+                                views[1]
+                            }
+                            HStack {
+                                views[2]
+                                views[3]
+                            }
+                            HStack {
+                                views[4]
+                                views[5]
+                            }
+                        }
+                    } else {
+                        VStack {
+                            HStack {
+                                views[0]
+                                views[1]
+                                views[2]
+                            }
+                            HStack {
+                                views[3]
+                                views[4]
+                                views[5]
+                            }
+                        }
+                    }
                 default:
                     let c = computeColumn(with: geometry)
                     VStack(spacing: spacing) {

@@ -177,7 +177,7 @@ struct RoomContextView: View {
                     }
                 }
             })
-            .border(Color(UIColor.Sphinx.MainBottomIcons), width: roomCtx.isInPip ? 1 : 0)
+            .border(Color(UIColor.Sphinx.TextInverted), width: roomCtx.isInPip ? 1 : 0)
     }
     
     func enableMic() {
