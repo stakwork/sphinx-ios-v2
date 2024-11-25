@@ -205,41 +205,6 @@ final class RoomContext: ObservableObject {
             }
         }
     }
-
-    #if os(macOS)
-        weak var screenShareTrack: LocalTrackPublication?
-
-        @available(macOS 12.3, *)
-        func setScreenShareMacOS(isEnabled: Bool, screenShareSource: MacOSScreenCaptureSource? = nil) async throws {
-            if isEnabled, let screenShareSource {
-                let track = LocalVideoTrack.createMacOSScreenShareTrack(source: screenShareSource)
-                let options = VideoPublishOptions(preferredCodec: VideoCodec.h264)
-                screenShareTrack = try await room.localParticipant.publish(videoTrack: track, options: options)
-            }
-
-            if !isEnabled, let screenShareTrack {
-                try await room.localParticipant.unpublish(publication: screenShareTrack)
-            }
-        }
-    #endif
-
-    #if os(visionOS) && compiler(>=6.0)
-        weak var arCameraTrack: LocalTrackPublication?
-
-        func setARCamera(isEnabled: Bool) async throws {
-            if #available(visionOS 2.0, *) {
-                if isEnabled {
-                    let track = LocalVideoTrack.createARCameraTrack()
-                    arCameraTrack = try await room.localParticipant.publish(videoTrack: track)
-                }
-            }
-
-            if !isEnabled, let arCameraTrack {
-                try await room.localParticipant.unpublish(publication: arCameraTrack)
-                self.arCameraTrack = nil
-            }
-        }
-    #endif
 }
 
 extension RoomContext: RoomDelegate {
