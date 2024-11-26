@@ -27,9 +27,7 @@ class KeychainManager {
         case pushKey = "push_key"
     }
     
-    let keychain = Keychain(service: "sphinx-app", accessGroup: KeychainManager.kKeychainGroup).synchronizable(true)
-    let deleteKeychain = Keychain(service: "sphinx-app", accessGroup: KeychainManager.kKeychainGroup).synchronizable(false)
-
+    let keychain = Keychain(service: "sphinx-app", accessGroup: KeychainManager.kKeychainGroup)
     
     func getValueFor(composedKey: String) -> String? {
         do {

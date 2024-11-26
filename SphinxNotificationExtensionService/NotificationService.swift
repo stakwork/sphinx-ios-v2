@@ -6,9 +6,6 @@ import RNCryptor
 
 class NotificationService: UNNotificationServiceExtension {
     
-    var contentHandler: ((UNNotificationContent) -> Void)?
-    var bestAttemptContent: UNMutableNotificationContent?
-    
     let kSharedGroupName = "group.com.gl.sphinx.v2"
     let kPushKey = "push_key"
     let kChildIndexesStorageKey = "childIndexesStorageKey"
@@ -26,24 +23,24 @@ class NotificationService: UNNotificationServiceExtension {
         }
     }
     
-    let keychain = Keychain(service: "sphinx-app", accessGroup: NotificationService.kKeychainGroup).synchronizable(true)
+    let keychain = Keychain(service: "sphinx-app", accessGroup: NotificationService.kKeychainGroup)
     
     override func didReceive(
         _ request: UNNotificationRequest,
         withContentHandler contentHandler: @escaping (UNNotificationContent) -> Void
     ) {
-        self.contentHandler = contentHandler
+        var contentHandler = contentHandler
         
-        bestAttemptContent = (request.content.mutableCopy() as? UNMutableNotificationContent)
+        var bestAttemptContent = (request.content.mutableCopy() as? UNMutableNotificationContent)
         bestAttemptContent?.title = "Sphinx"
         bestAttemptContent?.body = "You have new messages"
         
         var decryptedChildIndex: UInt64? = nil
         
         if
-            let pushKey = pushKey,
+            let pushKey = self.pushKey,
             let userInfo = bestAttemptContent?.userInfo as? [String:AnyObject],
-            let child = getEncryptedIndexFrom(notification: userInfo)
+            let child = self.getEncryptedIndexFrom(notification: userInfo)
         {
             do {
                 decryptedChildIndex = try decryptChildIndex(
@@ -51,20 +48,33 @@ class NotificationService: UNNotificationServiceExtension {
                     pushKey: pushKey
                 )
             } catch {
-                showPush()
+                if let bestAttemptContent = bestAttemptContent {
+                    contentHandler(bestAttemptContent)
+                } else {
+                    contentHandler(request.content)
+                }
                 return
             }
         }
         
         if let decryptedChildIndex = decryptedChildIndex {
             let shareableUserDefaults = UserDefaults(suiteName: kSharedGroupName)
+            
             guard let encryptedString = shareableUserDefaults?.string(forKey: kChildIndexesStorageKey) else {
-                showPush()
+                if let bestAttemptContent = bestAttemptContent {
+                    contentHandler(bestAttemptContent)
+                } else {
+                    contentHandler(request.content)
+                }
                 return
             }
             
-            guard let pushKey = pushKey, let decrypted = decryptString(text: encryptedString, key: pushKey) else {
-                showPush()
+            guard let pushKey = self.pushKey, let decrypted = self.decryptString(text: encryptedString, key: pushKey) else {
+                if let bestAttemptContent = bestAttemptContent {
+                    contentHandler(bestAttemptContent)
+                } else {
+                    contentHandler(request.content)
+                }
                 return
             }
             
@@ -76,15 +86,13 @@ class NotificationService: UNNotificationServiceExtension {
                 }
             }
         }
-        
-        showPush()
-    }
-    
-    func showPush() {
-        if let bestAttemptContent = bestAttemptContent, let contentHandler = contentHandler {
+            
+        if let bestAttemptContent = bestAttemptContent {
             contentHandler(bestAttemptContent)
-            self.resetAfterSend()
+        } else {
+            contentHandler(request.content)
         }
+        return
     }
     
     func getContactsJsonDic(contacts: String) -> [String: String]? {
@@ -162,18 +170,5 @@ class NotificationService: UNNotificationServiceExtension {
             }
         }
         return nil
-    }
-    
-    override func serviceExtensionTimeWillExpire() {
-        if let contentHandler = contentHandler, let bestAttemptContent = bestAttemptContent {
-            contentHandler(bestAttemptContent)
-            
-            self.resetAfterSend()
-        }
-    }
-    
-    func resetAfterSend() {
-        self.bestAttemptContent = nil
-        self.contentHandler = nil
     }
 }
