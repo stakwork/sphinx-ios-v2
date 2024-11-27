@@ -106,7 +106,7 @@ class LeftMenuViewController: UIViewController {
         
         configureProfile()
         configureTable()
-        configureKarmaPurchaseButton()
+//        configureKarmaPurchaseButton()
         configureBalanceTap()
     }
     
