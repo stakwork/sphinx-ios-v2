@@ -79,15 +79,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         try? AVAudioSession.sharedInstance().setCategory(.playback)
                 
+        //        registerAppRefresh()
+        //        configureStoreKit()
+        //        registerForVoIP()
+        
         setAppConfiguration()
-//        registerAppRefresh()
         configureGiphy()
         configureBugsnag()
         configureNotificationCenter()
-        configureStoreKit()
         configureSVGRendering()
         connectMQTT()
-        registerForVoIP()
         StorageManager.sharedManager.deleteOldMedia()
         NetworkMonitor.shared.startMonitoring()
         ColorsManager.sharedInstance.storeColorsInMemory()
@@ -221,7 +222,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     ) {
         setBadge(application: application)
 
-        SKPaymentQueue.default().remove(StoreKitService.shared)
+//        SKPaymentQueue.default().remove(StoreKitService.shared)
 
         podcastPlayerController.finishAndSaveContentConsumed()
         CoreDataManager.sharedManager.saveContext()
@@ -258,6 +259,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func configureBugsnag() {
         Bugsnag.start()
         BugsnagPerformance.start()
+        
+        if let ownerName = UserContact.getOwner()?.nickname {
+            Bugsnag.setUser(nil, withEmail: nil, andName: ownerName)
+        }
     }
     
     func configureNotificationCenter() {

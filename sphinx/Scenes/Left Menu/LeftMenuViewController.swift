@@ -28,7 +28,7 @@ class LeftMenuViewController: UIViewController {
         }
     }
     
-    let storeKitService = StoreKitService.shared
+//    let storeKitService = StoreKitService.shared
 
     var buttonsCount = 2
     
@@ -88,8 +88,8 @@ class LeftMenuViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        storeKitService.requestDelegate = self
-        storeKitService.transactionObserverDelegate = self
+//        storeKitService.requestDelegate = self
+//        storeKitService.transactionObserverDelegate = self
         
         walletIcon.tintColorDidChange()
         
@@ -138,16 +138,16 @@ class LeftMenuViewController: UIViewController {
     }
     
     
-    func configureKarmaPurchaseButton() {
-        guard canUserBuyKarmaForNode else {
-            karmaPurchaseButton.isHidden = true
-            return
-        }
-        
-        storeKitService.fetchProducts(matchingIdentifiers: [
-            StoreKitService.ProductIdentifiers.add1000Karma,
-        ])
-    }
+//    func configureKarmaPurchaseButton() {
+//        guard canUserBuyKarmaForNode else {
+//            karmaPurchaseButton.isHidden = true
+//            return
+//        }
+//        
+//        storeKitService.fetchProducts(matchingIdentifiers: [
+//            StoreKitService.ProductIdentifiers.add1000Karma,
+//        ])
+//    }
     
     
     func goToChatList() {
@@ -209,11 +209,11 @@ class LeftMenuViewController: UIViewController {
     
     
     @IBAction func karmaPurchaseButtonTapped() {
-        guard let karmaPurchaseProduct = karmaPurchaseProduct else {
-            preconditionFailure()
-        }
-        startPurchaseProgressIndicator()
-        storeKitService.purchase(karmaPurchaseProduct)
+//        guard let karmaPurchaseProduct = karmaPurchaseProduct else {
+//            preconditionFailure()
+//        }
+//        startPurchaseProgressIndicator()
+//        storeKitService.purchase(karmaPurchaseProduct)
     }
     
     private func updateBalance() {

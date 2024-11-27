@@ -24,7 +24,7 @@ class NewUserSignupOptionsViewController: UIViewController, ConnectionCodeSignup
     internal var hubNodeInvoice: API.HUBNodeInvoice?
 
     let newMessageBubbleHelper = NewMessageBubbleHelper()
-    let storeKitService = StoreKitService.shared
+//    let storeKitService = StoreKitService.shared
     
     var isPurchaseProcessing: Bool = false {
         didSet {
@@ -60,11 +60,11 @@ class NewUserSignupOptionsViewController: UIViewController, ConnectionCodeSignup
     }
     
     
-    override func viewDidDisappear(_ animated: Bool) {
-        super.viewDidDisappear(animated)
-        
-        storeKitService.requestDelegate = nil
-    }
+//    override func viewDidDisappear(_ animated: Bool) {
+//        super.viewDidDisappear(animated)
+//        
+//        storeKitService.requestDelegate = nil
+//    }
 }
  
 
