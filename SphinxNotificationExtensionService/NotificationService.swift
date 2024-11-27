@@ -26,17 +26,18 @@ class NotificationService: UNNotificationServiceExtension {
     
     let keychain = Keychain(service: "sphinx-app", accessGroup: NotificationService.kKeychainGroup)
     
-    func configureBugsnag() {
-        Bugsnag.start()
+    override init() {
+        super.init()
+        
+        DispatchQueue.global(qos: .background).async {
+            Bugsnag.start()
+        }
     }
     
     override func didReceive(
         _ request: UNNotificationRequest,
         withContentHandler contentHandler: @escaping (UNNotificationContent) -> Void
     ) {
-        
-        configureBugsnag()
-        
         let contentHandler = contentHandler
         
         let bestAttemptContent = (request.content.mutableCopy() as? UNMutableNotificationContent)
