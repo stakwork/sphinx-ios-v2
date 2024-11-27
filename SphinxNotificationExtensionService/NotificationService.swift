@@ -3,6 +3,7 @@ import CoreData
 import UIKit
 import KeychainAccess
 import RNCryptor
+import Bugsnag
 
 class NotificationService: UNNotificationServiceExtension {
     
@@ -25,13 +26,23 @@ class NotificationService: UNNotificationServiceExtension {
     
     let keychain = Keychain(service: "sphinx-app", accessGroup: NotificationService.kKeychainGroup)
     
+    override init() {
+        super.init()
+        
+        configureBugsnag()
+    }
+    
+    func configureBugsnag() {
+        Bugsnag.start()
+    }
+    
     override func didReceive(
         _ request: UNNotificationRequest,
         withContentHandler contentHandler: @escaping (UNNotificationContent) -> Void
     ) {
-        var contentHandler = contentHandler
+        let contentHandler = contentHandler
         
-        var bestAttemptContent = (request.content.mutableCopy() as? UNMutableNotificationContent)
+        let bestAttemptContent = (request.content.mutableCopy() as? UNMutableNotificationContent)
         bestAttemptContent?.title = "Sphinx"
         bestAttemptContent?.body = "You have new messages"
         
