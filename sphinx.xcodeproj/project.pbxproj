@@ -343,6 +343,7 @@
 		476A10B923A7E9E500817892 /* ContactTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 476A10B723A7E9E500817892 /* ContactTableViewCell.xib */; };
 		476A10BE23AA8C8E00817892 /* SubscriptionDetailsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 476A10BD23AA8C8E00817892 /* SubscriptionDetailsViewController.swift */; };
 		476AAAA22A24F9F80092AC87 /* NewChatViewController+TribeExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 476AAAA12A24F9F80092AC87 /* NewChatViewController+TribeExtension.swift */; };
+		476C5B112CF7878000CFB270 /* Bugsnag.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 476C5B102CF7878000CFB270 /* Bugsnag.framework */; };
 		476EB46823C4F1AE009745E2 /* GroupContactCollectionViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 476EB46623C4F1AE009745E2 /* GroupContactCollectionViewCell.swift */; };
 		476EB46923C4F1AE009745E2 /* GroupContactCollectionViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 476EB46723C4F1AE009745E2 /* GroupContactCollectionViewCell.xib */; };
 		476EB47023C50640009745E2 /* GroupAddedContactsDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 476EB46F23C50640009745E2 /* GroupAddedContactsDataSource.swift */; };
@@ -1501,6 +1502,7 @@
 		476A10BC23A9207700817892 /* sphinx 6.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 6.xcdatamodel"; sourceTree = "<group>"; };
 		476A10BD23AA8C8E00817892 /* SubscriptionDetailsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionDetailsViewController.swift; sourceTree = "<group>"; };
 		476AAAA12A24F9F80092AC87 /* NewChatViewController+TribeExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NewChatViewController+TribeExtension.swift"; sourceTree = "<group>"; };
+		476C5B102CF7878000CFB270 /* Bugsnag.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Bugsnag.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		476EB46623C4F1AE009745E2 /* GroupContactCollectionViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupContactCollectionViewCell.swift; sourceTree = "<group>"; };
 		476EB46723C4F1AE009745E2 /* GroupContactCollectionViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = GroupContactCollectionViewCell.xib; sourceTree = "<group>"; };
 		476EB46F23C50640009745E2 /* GroupAddedContactsDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupAddedContactsDataSource.swift; sourceTree = "<group>"; };
@@ -2210,6 +2212,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				476C5B112CF7878000CFB270 /* Bugsnag.framework in Frameworks */,
 				4777E0192C78FC81009F5F05 /* universal-sphinxrs.a in Frameworks */,
 				9344269DACF491E8A3F8651C /* Pods_SphinxNotificationExtensionService.framework in Frameworks */,
 			);
@@ -2221,6 +2224,7 @@
 		29CA57C9FD66D9C3750CE036 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				476C5B102CF7878000CFB270 /* Bugsnag.framework */,
 				474C7A5028D3A75D007A3E17 /* universal-sphinxrs.a */,
 				47F6CA06287869A6005EBCB6 /* libresolv.tbd */,
 				F331199C268E93FB005082EB /* StoreKit.framework */,
