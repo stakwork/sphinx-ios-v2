@@ -24,7 +24,7 @@ class NotificationService: UNNotificationServiceExtension {
         }
     }
     
-    let keychain = Keychain(service: "sphinx-app", accessGroup: NotificationService.kKeychainGroup)
+    let keychain = Keychain(service: "sphinx-app", accessGroup: NotificationService.kKeychainGroup).synchronizable(true)
     
     override init() {
         super.init()
