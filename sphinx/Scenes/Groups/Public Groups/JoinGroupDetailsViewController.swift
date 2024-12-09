@@ -142,10 +142,10 @@ class JoinGroupDetailsViewController: KeyboardEventsViewController {
         
         groupNameLabel.text = tribeInfo?.name ?? ""
         groupDescriptionLabel.text = tribeInfo?.description ?? ""
-        joinPriceLabel.text = "\(tribeInfo?.priceToJoin ?? 0)"
-        messagePriceLabel.text = "\(tribeInfo?.pricePerMessage ?? 0)"
-        amountToStakeLabel.text = "\(tribeInfo?.amountToStake ?? 0)"
-        timeToStakeLabel.text = "\(tribeInfo?.timeToStake ?? 0)"
+        joinPriceLabel.text = "\((tribeInfo?.priceToJoin ?? 0) / 1000)"
+        messagePriceLabel.text = "\((tribeInfo?.pricePerMessage ?? 0) / 1000)"
+        amountToStakeLabel.text = "\((tribeInfo?.amountToStake ?? 0) / 1000)"
+        timeToStakeLabel.text = "\((tribeInfo?.timeToStake ?? 0) / 1000)"
         
         groupImageView.contentMode = .scaleAspectFill
         groupImageView.layer.cornerRadius = groupImageView.frame.size.height / 2

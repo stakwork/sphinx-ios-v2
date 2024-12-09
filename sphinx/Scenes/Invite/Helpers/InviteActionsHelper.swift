@@ -105,10 +105,12 @@ class InviteActionsHelper {
            let chat = Chat.insertChat(chat: chatJSON)
         {
             let isPrivate = tribeInfo.privateTribe
+            let priceToJoin = tribeInfo.priceToJoin ?? 1000
             
             if SphinxOnionManager.sharedInstance.joinTribe(
                 tribePubkey: pubkey,
                 routeHint: routeHint,
+                joinAmountMsats: priceToJoin,
                 alias: UserContact.getOwner()?.nickname,
                 isPrivate: isPrivate, 
                 errorCallback: { error in
