@@ -405,7 +405,11 @@ public class Chat: NSManagedObject {
             chat.unseenMessagesCount = 0
             chat.unseenMentionsCount = 0
             
-            if let lastMessage = chat.getLastMessageToShow(includeContactKeyTypes: true, context: backgroundContext) {
+            if let lastMessage = chat.getLastMessageToShow(
+                includeContactKeyTypes: true,
+                sortById: true,
+                context: backgroundContext
+            ) {
                 if lastMessage.isKeyExchangeType() || (lastMessage.isTribeInitialMessageType() && chat.messages?.count == 1) {
                     if let maxMessageIndex = TransactionMessage.getMaxIndex(context: backgroundContext) {
                         let _  = SphinxOnionManager.sharedInstance.setReadLevel(
@@ -428,7 +432,7 @@ public class Chat: NSManagedObject {
     }
     
     func getReceivedUnseenMessages(
-        context: NSManagedObjectContext? = nil
+        context: NSManagedObjectContext
     ) -> [TransactionMessage] {
         
         let userId = UserData.sharedInstance.getUserId()
@@ -440,14 +444,12 @@ public class Chat: NSManagedObject {
             self,
             NSNumber(booleanLiteral: false)
         )
-        
         let messages: [TransactionMessage] = CoreDataManager.sharedManager.getObjectsOfTypeWith(
             predicate: predicate,
             sortDescriptors: [],
             entityName: "TransactionMessage",
             context: context
         )
-        
         return messages
     }
     
@@ -635,6 +637,7 @@ public class Chat: NSManagedObject {
     
     func getLastMessageToShow(
         includeContactKeyTypes: Bool = false,
+        sortById: Bool = false,
         context: NSManagedObjectContext? = nil
     ) -> TransactionMessage? {
         let context = context ?? CoreDataManager.sharedManager.persistentContainer.viewContext
@@ -656,7 +659,11 @@ public class Chat: NSManagedObject {
             typeToExclude
         )
         
-        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "date", ascending: false)]
+        if sortById {
+            fetchRequest.sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]
+        } else {
+            fetchRequest.sortDescriptors = [NSSortDescriptor(key: "date", ascending: false)]
+        }
         fetchRequest.fetchLimit = 1
 
         do {
