@@ -470,7 +470,7 @@
 "amount.too.low" = "金額が低すぎます";
 "amount.too.high" = "金額が高すぎます";
 "onchain.amount.too.low" = "金額が低すぎます。最小限250000 satsが必要です";
-"chat-header.balance.unit" = "カルマ";
+"chat-header.balance.unit" = "sats";
 "users" = "ユーザー";
 "optional.message.placeholder" = "オプショナルメッセージ...";
 "price.required" = "価格が必要です";

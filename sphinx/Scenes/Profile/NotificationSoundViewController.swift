@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import KeychainAccess
 
 protocol NotificationSoundDelegate: class {
     func didUpdateSound()
@@ -27,6 +28,9 @@ class NotificationSoundViewController: UIViewController {
     
     var notificationSoundHelper: NotificationSoundHelper!
     let audioPlayerHelper = SoundsPlayer()
+    
+    let kSharedGroupName = "group.com.gl.sphinx.v2"
+    let kSoundKey = "sound_key"
     
     var loading = false {
         didSet {
@@ -75,19 +79,18 @@ class NotificationSoundViewController: UIViewController {
     func updateProfile() {
         let id = UserData.sharedInstance.getUserId()
         let file = notificationSoundHelper.getSelectedSound().file
-        let parameters = ["notification_sound" : file as AnyObject]
-
-        //@Tom not exactly sure what this code is meant to do but I can reimplement
-//        API.sharedInstance.updateUser(id: id, params: parameters, callback: { contact in
-//            let _ = UserContactsHelper.insertContact(contact: contact)
-//
-//            self.delegate?.didUpdateSound()
-//            self.backButtonTouched()
-//        }, errorCallback: {
-//            AlertHelper.showAlert(title: "generic.error.title".localized, message: "generic.error.message".localized, completion: {
-//                self.backButtonTouched()
-//            })
-//        })
+        
+        if let owner = UserContact.getOwner() {
+            owner.notificationSound = file
+            owner.managedObjectContext?.saveContext()
+        }
+        
+        let sharedUserDefaults = UserDefaults(suiteName: kSharedGroupName)
+        sharedUserDefaults?.setValue(file, forKey: kSoundKey)
+        sharedUserDefaults?.synchronize()
+        
+        delegate?.didUpdateSound()
+        backButtonTouched()
     }
 }
 

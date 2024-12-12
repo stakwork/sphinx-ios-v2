@@ -9,6 +9,7 @@ class NotificationService: UNNotificationServiceExtension {
     
     let kSharedGroupName = "group.com.gl.sphinx.v2"
     let kPushKey = "push_key"
+    let kSoundKey = "sound_key"
     let kChildIndexesStorageKey = "childIndexesStorageKey"
     public static let kKeychainGroup = "8297M44YTW.sphinxV2SharedItems"
     
@@ -26,15 +27,24 @@ class NotificationService: UNNotificationServiceExtension {
     
     let keychain = Keychain(service: "sphinx-app", accessGroup: NotificationService.kKeychainGroup)
     
+    var contentHandler: ((UNNotificationContent) -> Void)?
+    var bestAttemptContent: UNMutableNotificationContent?
+    
     override func didReceive(
         _ request: UNNotificationRequest,
         withContentHandler contentHandler: @escaping (UNNotificationContent) -> Void
     ) {
-        let contentHandler = contentHandler
+        self.contentHandler = contentHandler
         
-        let bestAttemptContent = (request.content.mutableCopy() as? UNMutableNotificationContent)
+        self.bestAttemptContent = (request.content.mutableCopy() as? UNMutableNotificationContent)
         bestAttemptContent?.title = "Sphinx"
         bestAttemptContent?.body = "You have new messages"
+        
+        let shareableUserDefaults = UserDefaults(suiteName: kSharedGroupName)
+        
+        if let sound = shareableUserDefaults?.string(forKey: kSoundKey) {
+            bestAttemptContent?.sound = UNNotificationSound(named: UNNotificationSoundName(sound))
+        }
         
         var decryptedChildIndex: UInt64? = nil
         
@@ -50,8 +60,10 @@ class NotificationService: UNNotificationServiceExtension {
                 )
             } catch {
                 if let bestAttemptContent = bestAttemptContent {
+                    resetContentHandler()
                     contentHandler(bestAttemptContent)
                 } else {
+                    resetContentHandler()
                     contentHandler(request.content)
                 }
                 return
@@ -59,12 +71,12 @@ class NotificationService: UNNotificationServiceExtension {
         }
         
         if let decryptedChildIndex = decryptedChildIndex {
-            let shareableUserDefaults = UserDefaults(suiteName: kSharedGroupName)
-            
             guard let encryptedString = shareableUserDefaults?.string(forKey: kChildIndexesStorageKey) else {
                 if let bestAttemptContent = bestAttemptContent {
+                    resetContentHandler()
                     contentHandler(bestAttemptContent)
                 } else {
+                    resetContentHandler()
                     contentHandler(request.content)
                 }
                 return
@@ -72,8 +84,10 @@ class NotificationService: UNNotificationServiceExtension {
             
             guard let pushKey = self.pushKey, let decrypted = self.decryptString(text: encryptedString, key: pushKey) else {
                 if let bestAttemptContent = bestAttemptContent {
+                    resetContentHandler()
                     contentHandler(bestAttemptContent)
                 } else {
+                    resetContentHandler()
                     contentHandler(request.content)
                 }
                 return
@@ -89,11 +103,18 @@ class NotificationService: UNNotificationServiceExtension {
         }
             
         if let bestAttemptContent = bestAttemptContent {
+            resetContentHandler()
             contentHandler(bestAttemptContent)
         } else {
+            resetContentHandler()
             contentHandler(request.content)
         }
         return
+    }
+    
+    func resetContentHandler() {
+        self.contentHandler = nil
+        self.bestAttemptContent = nil
     }
     
     func getContactsJsonDic(contacts: String) -> [String: String]? {
@@ -120,16 +141,6 @@ class NotificationService: UNNotificationServiceExtension {
         } catch let error {
             print(error.localizedDescription)
             return nil
-        }
-    }
-    
-    func saveKeychain(value: String, forComposedKey key: String) -> Bool {
-        do {
-            try keychain.set(value, key: key)
-            return true
-        } catch let error {
-            print(error.localizedDescription)
-            return false
         }
     }
     
@@ -171,5 +182,11 @@ class NotificationService: UNNotificationServiceExtension {
             }
         }
         return nil
+    }
+    
+    override func serviceExtensionTimeWillExpire() {
+        if let contentHandler = contentHandler, let bestAttemptContent = bestAttemptContent {
+            contentHandler(bestAttemptContent)
+        }
     }
 }

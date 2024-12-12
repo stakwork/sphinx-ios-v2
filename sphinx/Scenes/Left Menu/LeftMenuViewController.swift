@@ -99,6 +99,7 @@ class LeftMenuViewController: UIViewController {
         karmaPurchaseButton.setTitle("left-menu.buy-karma-button".localized, for: .normal)
         karmaPurchaseButton.layer.cornerRadius = karmaPurchaseButton.frame.size.height / 2
         karmaPurchaseButton.clipsToBounds = true
+        karmaPurchaseButton.isHidden = true
     }
     
     override func viewWillAppear(_ animated: Bool) {
