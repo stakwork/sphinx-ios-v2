@@ -476,7 +476,7 @@
 "amount.too.low" = "Importe demasiado bajo";
 "amount.too.high" = "Importe demasiado alto";
 "onchain.amount.too.low" = "Importe demasiado bajo. Mínimo 250000 sats";
-"chat-header.balance.unit" = "karma";
+"chat-header.balance.unit" = "sats";
 "users" = "users";
 "optional.message.placeholder" = "Mensaje opcional...";
 "price.required" = "Precio requerido";

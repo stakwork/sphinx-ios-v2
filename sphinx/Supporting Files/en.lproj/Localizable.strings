@@ -476,7 +476,7 @@
 "amount.too.low" = "Amount too low";
 "amount.too.high" = "Amount too high";
 "onchain.amount.too.low" = "Amount too low. Minimum 250000 sats";
-"chat-header.balance.unit" = "karma";
+"chat-header.balance.unit" = "sats";
 "users" = "users";
 "optional.message.placeholder" = "Optional Message...";
 "price.required" = "Price is required";

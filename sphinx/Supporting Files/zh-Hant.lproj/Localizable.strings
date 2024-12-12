@@ -471,7 +471,7 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 "amount.too.low" = "金額太低";
 "amount.too.high" = "金額太高";
 "onchain.amount.too.low" = "金額太低。最低250000 sats";
-"chat-header.balance.unit" = "karma";
+"chat-header.balance.unit" = "sats";
 "users" = "用戶";
 "optional.message.placeholder" = "可選消息...";
 "price.required" = "價格是必需的";

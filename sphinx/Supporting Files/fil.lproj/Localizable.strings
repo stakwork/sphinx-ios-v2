@@ -458,7 +458,7 @@
 "amount.too.low" = "Masyadong mababa ang halaga";
 "amount.too.high" = "Masyadong mataas ang halaga";
 "onchain.amount.too.low" = "Masyadong mababa ang halaga. Pinakamaliit na maari ay 250000 sats";
-"chat-header.balance.unit" = "karma";
+"chat-header.balance.unit" = "sats";
 "users" = "mga gumagamit";
 "optional.message.placeholder" = "Opsyonal na Mensahe...";
 "price.required" = "Kinakailangan ang presyo";

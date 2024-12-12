@@ -472,7 +472,7 @@
 "amount.too.low" = "金额过低";
 "amount.too.high" = "金额过高";
 "onchain.amount.too.low" = "金额过低。最低250000 sats";
-"chat-header.balance.unit" = "karma";
+"chat-header.balance.unit" = "sats";
 "users" = "用户";
 "optional.message.placeholder" = "可选消息...";
 "price.required" = "需要价格";
