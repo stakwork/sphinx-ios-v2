@@ -37,6 +37,13 @@ extension GroupsManager {
         var bots : [Bot] = []
         var badgeIds: [Int] = []
         
+        var nonZeroPriceToJoin: Int {
+            if let priceToJoin = priceToJoin, priceToJoin > 0 {
+                return priceToJoin
+            }
+            return 1000
+        }
+        
         static func == (lhs: TribeInfo, rhs: TribeInfo) -> Bool {
             return lhs.name           == rhs.name &&
                    lhs.description    == rhs.description &&
@@ -139,7 +146,7 @@ extension GroupsManager {
            let routeHint = tribeInfo.ownerRouteHint
         {
             let isPrivate = tribeInfo.privateTribe
-            let priceToJoin = tribeInfo.priceToJoin ?? 1000
+            let priceToJoin = tribeInfo.nonZeroPriceToJoin
             
             if SphinxOnionManager.sharedInstance.joinTribe(
                 tribePubkey: pubkey,
