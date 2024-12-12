@@ -13,7 +13,7 @@ class SphinxDesktopAdViewController: UIViewController {
     @IBOutlet weak var getItNowButtonView: UIButton!
     @IBOutlet weak var skipButtonView: UIButton!
     
-    static let desktopAppStoreURL = URL(string: "https://sphinx.chat/")!
+    static let desktopAppStoreURL = URL(string: "https://testflight.apple.com/join/p721ALD9")!
     
     var isRestoreFlow: Bool = false
     
