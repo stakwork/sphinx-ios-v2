@@ -152,8 +152,8 @@ extension ThreadTableCellState {
         if isSent {
             senderInfo = (
                 owner.getColor(),
-                owner.nickname ?? "Unknown",
-                owner.avatarUrl
+                message.senderAlias ?? owner.nickname ?? "Unknow",
+                message.senderPic ?? owner.avatarUrl
             )
         } else {
             senderInfo = (
