@@ -124,34 +124,25 @@ extension Data {
     
     static func delayForImageAtIndex(_ index: Int, source: CGImageSource!) -> Double {
         var delay = 0.1
-        
+            
+        // Safely get properties at the given index
         guard let cfProperties = CGImageSourceCopyPropertiesAtIndex(source, index, nil) else {
             return delay
         }
         
-        guard let gifPropDictionary = CFDictionaryGetValue(
-            cfProperties,
-            Unmanaged.passUnretained(kCGImagePropertyGIFDictionary).toOpaque()) else {
+        // Safely retrieve GIF properties dictionary
+        guard let gifProperties = (cfProperties as NSDictionary)[kCGImagePropertyGIFDictionary] as? NSDictionary else {
             return delay
         }
         
-        let gifProperties: CFDictionary = unsafeBitCast(gifPropDictionary, to: CFDictionary.self)
-        
-        guard let delayDictionary = CFDictionaryGetValue(
-            gifProperties,
-            Unmanaged.passUnretained(kCGImagePropertyGIFUnclampedDelayTime).toOpaque()) else {
-            return delay
+        // Attempt to get the delay time
+        if let unclampedDelayTime = gifProperties[kCGImagePropertyGIFUnclampedDelayTime] as? Double {
+            delay = unclampedDelayTime
+        } else if let delayTime = gifProperties[kCGImagePropertyGIFDelayTime] as? Double {
+            delay = delayTime
         }
         
-        var delayObject: AnyObject = unsafeBitCast(delayDictionary, to: AnyObject.self)
-        
-        if delayObject.doubleValue == 0 {
-            delayObject = unsafeBitCast(CFDictionaryGetValue(gifProperties,
-                Unmanaged.passUnretained(kCGImagePropertyGIFDelayTime).toOpaque()), to: AnyObject.self)
-        }
-        
-        delay = (delayObject as? Double) ?? delay
-        
+        // Ensure delay is at least 0.1
         if delay < 0.1 {
             delay = 0.1
         }
