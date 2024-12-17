@@ -104,6 +104,8 @@ public class CustomPipViewCoordinator {
         currentBounds = parentView.bounds
         view.frame = currentBounds
         view.layer.zPosition = CGFloat(Float.greatestFiniteMagnitude).nextDown
+        view.layer.backgroundColor = UIColor.clear.cgColor
+        view.backgroundColor = UIColor.clear
     }
 
     public func show(completion: AnimationCompletion? = nil) {
@@ -182,19 +184,19 @@ public class CustomPipViewCoordinator {
     }
 
     @objc private func toggleExitPiP() {
-        if exitPiPButton == nil {
-            // show button
-            let exitSelector = #selector(exitPictureInPicture)
-            let button = configureExitPiPButton(target: self,
-                                                action: exitSelector)
-            view.addSubview(button)
-            exitPiPButton = button
-
-        } else {
-            // hide button
-            exitPiPButton?.removeFromSuperview()
-            exitPiPButton = nil
-        }
+//        if exitPiPButton == nil {
+//            // show button
+//            let exitSelector = #selector(exitPictureInPicture)
+//            let button = configureExitPiPButton(target: self,
+//                                                action: exitSelector)
+//            view.addSubview(button)
+//            exitPiPButton = button
+//
+//        } else {
+//            // hide button
+//            exitPiPButton?.removeFromSuperview()
+//            exitPiPButton = nil
+//        }
     }
 
     private func animateViewChange() {

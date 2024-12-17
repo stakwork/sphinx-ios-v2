@@ -32,15 +32,20 @@ class LiveKitCallViewController: UIViewController {
         roomCtx.token = token
         roomCtx.audioOnly = audioOnly
         
+        self.view.backgroundColor = UIColor.clear
+        
         // Create the SwiftUI view
         let swiftUIView = RoomContextView(onCallEnded: {
             Task { @MainActor in
                 VideoCallManager.sharedInstance.closePipController()
             }
         }).environmentObject(appCtx).environmentObject(roomCtx)
+        
+        let _ = swiftUIView.background(Color.clear)
 
         // Create a hosting controller
         let hostingController = UIHostingController(rootView: swiftUIView)
+        hostingController.view.backgroundColor = UIColor.clear
         
         // Add the hosting controller as a child
         addChild(hostingController)
@@ -48,6 +53,8 @@ class LiveKitCallViewController: UIViewController {
         
         // Set up constraints or frame for the hosting controller's view
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+        hostingController.view.layer.backgroundColor = UIColor.clear.cgColor
+        
         NSLayoutConstraint.activate([
             hostingController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             hostingController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
@@ -89,8 +96,6 @@ struct RoomSwitchView: View {
 
     var body: some View {
         ZStack {
-            Color(UIColor.Sphinx.Body).ignoresSafeArea()
-
             if shouldShowRoomView {
                 RoomView()
             } else {
@@ -177,7 +182,6 @@ struct RoomContextView: View {
                     }
                 }
             })
-            .border(Color(UIColor.Sphinx.TextInverted), width: roomCtx.isInPip ? 1 : 0)
     }
     
     func enableMic() {
