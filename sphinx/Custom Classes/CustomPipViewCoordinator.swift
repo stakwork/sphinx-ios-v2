@@ -104,6 +104,8 @@ public class CustomPipViewCoordinator {
         currentBounds = parentView.bounds
         view.frame = currentBounds
         view.layer.zPosition = CGFloat(Float.greatestFiniteMagnitude).nextDown
+        view.layer.backgroundColor = UIColor.clear.cgColor
+        view.backgroundColor = UIColor.clear
     }
 
     public func show(completion: AnimationCompletion? = nil) {
