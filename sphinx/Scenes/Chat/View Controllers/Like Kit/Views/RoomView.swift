@@ -144,7 +144,7 @@ struct RoomView: View {
     }
 
     func content(geometry: GeometryProxy) -> some View {
-        VStack {
+        VStack(spacing: roomCtx.isInPip ? 0 : 8) {
             if !roomCtx.isInPip {
                 HStack(spacing: 20) {
                     Button(action: {
@@ -195,7 +195,6 @@ struct RoomView: View {
                         Group {
                             Toggle("VideoView visible", isOn: $appCtx.videoViewVisible)
                             Toggle("VideoView flip", isOn: $appCtx.videoViewMirrored)
-                            Toggle("VideoView renderMode: .sampleBuffer", isOn: $appCtx.preferSampleBufferRendering)
                             Divider()
                         }
                         
@@ -209,100 +208,6 @@ struct RoomView: View {
                             } label: {
                                 Text("Unpublish all")
                             }
-                            
-                            Divider()
-                            
-                            Menu {
-                                Button {
-                                    Task {
-                                        try await room.debug_simulate(scenario: .quickReconnect)
-                                    }
-                                } label: {
-                                    Text("Quick reconnect")
-                                }
-                                
-                                Button {
-                                    Task {
-                                        try await room.debug_simulate(scenario: .fullReconnect)
-                                    }
-                                } label: {
-                                    Text("Full reconnect")
-                                }
-                                
-                                Button {
-                                    Task {
-                                        try await room.debug_simulate(scenario: .nodeFailure)
-                                    }
-                                } label: {
-                                    Text("Node failure")
-                                }
-                                
-                                Button {
-                                    Task {
-                                        try await room.debug_simulate(scenario: .serverLeave)
-                                    }
-                                } label: {
-                                    Text("Server leave")
-                                }
-                                
-                                Button {
-                                    Task {
-                                        try await room.debug_simulate(scenario: .migration)
-                                    }
-                                } label: {
-                                    Text("Migration")
-                                }
-                                
-                                Button {
-                                    Task {
-                                        try await room.debug_simulate(scenario: .speakerUpdate(seconds: 3))
-                                    }
-                                } label: {
-                                    Text("Speaker update")
-                                }
-                                Button {
-                                    Task {
-                                        try await room.debug_simulate(scenario: .forceTCP)
-                                    }
-                                } label: {
-                                    Text("Force TCP")
-                                }
-                                Button {
-                                    Task {
-                                        try await room.debug_simulate(scenario: .forceTLS)
-                                    }
-                                } label: {
-                                    Text("Force TLS")
-                                }
-                            } label: {
-                                Text("Simulate scenario")
-                            }
-                        }
-                        
-                        Group {
-                            Menu {
-                                Button {
-                                    Task {
-                                        try await room.localParticipant.setTrackSubscriptionPermissions(allParticipantsAllowed: true)
-                                    }
-                                } label: {
-                                    Text("Allow all")
-                                }
-                                
-                                Button {
-                                    Task {
-                                        try await room.localParticipant.setTrackSubscriptionPermissions(allParticipantsAllowed: false)
-                                    }
-                                } label: {
-                                    Text("Disallow all")
-                                }
-                            } label: {
-                                Text("Track permissions")
-                            }
-                            
-                            Toggle("Prefer speaker output", isOn: $appCtx.preferSpeakerOutput)
-                            
-                            Toggle("E2EE enabled", isOn: $roomCtx.isE2eeEnabled)
                         }
                         
                     } label: {
@@ -388,10 +293,10 @@ struct RoomView: View {
                                         Image(systemSymbol: isCameraEnabled ? .videoFill : .videoSlashFill)
                                             .renderingMode(.template)
                                             .foregroundColor(isCameraEnabled ? Color.white : Color(UIColor(hex: "#FF6F6F")))
-                                            .font(.system(size: 24))
-                                            .frame(width: size)
+                                            .font(.system(size: roomCtx.isInPip ? 18 : 24))
+                                            .frame(width: roomCtx.isInPip ? min(geometry.size.width, 50) : size)
                                             .frame(height: size)
-                                            .aspectRatio(1, contentMode: .fill)
+                                            .aspectRatio(roomCtx.isInPip ? nil : 1, contentMode: .fill)
                                     }
                                     // disable while publishing/un-publishing
                                     .disabled(isCameraPublishingBusy)
@@ -399,9 +304,9 @@ struct RoomView: View {
                                         Color(isCameraEnabled ? UIColor.Sphinx.MainBottomIcons : UIColor.Sphinx.BadgeRed)
                                             .opacity(isCameraEnabled ? 0.2 : 0.2)
                                             .cornerRadius(size / 2)
-                                            .frame(width: size)
+                                            .frame(width: roomCtx.isInPip ? min(geometry.size.width, 50) : size)
                                             .frame(height: size)
-                                            .aspectRatio(1, contentMode: .fill)
+                                            .aspectRatio(roomCtx.isInPip ? nil : 1, contentMode: .fill)
                                     )
                                 }
                                 .frame(maxWidth: .infinity)
@@ -427,11 +332,11 @@ struct RoomView: View {
                                         Image(systemSymbol: isCameraEnabled ? .videoFill : .videoSlashFill)
                                             .renderingMode(.template)
                                             .foregroundColor(isCameraEnabled ? Color.white : Color(UIColor(hex: "#FF6F6F")))
-                                            .font(.system(size: 24))
-                                            .frame(width: size)
+                                            .font(.system(size: roomCtx.isInPip ? 18 : 24))
+                                            .frame(width: roomCtx.isInPip ? min(geometry.size.width, 50) : size)
                                             .frame(height: size)
+                                            .aspectRatio(roomCtx.isInPip ? nil : 1, contentMode: .fill)
                                             .padding(.leading, HPadding / 2)
-                                            .aspectRatio(1, contentMode: .fill)
                                     })
                                     // disable while publishing/un-publishing
                                     .disabled(isCameraPublishingBusy)
@@ -439,10 +344,10 @@ struct RoomView: View {
                                         Color(isCameraEnabled ? UIColor.Sphinx.MainBottomIcons : UIColor.Sphinx.BadgeRed)
                                             .opacity(isCameraEnabled ? 0.2 : 0.2)
                                             .cornerRadius(size / 2)
-                                            .frame(width: size)
+                                            .frame(width: roomCtx.isInPip ? min(geometry.size.width, 50) : size)
                                             .frame(height: size)
+                                            .aspectRatio(roomCtx.isInPip ? nil : 1, contentMode: .fill)
                                             .padding(.leading, HPadding / 2)
-                                            .aspectRatio(1, contentMode: .fill)
                                     )
                                 }
                                 .frame(maxWidth: .infinity)
@@ -465,7 +370,7 @@ struct RoomView: View {
                         }
                     }
                     .frame(maxWidth: .infinity)
-                    .frame(height: 64)
+                    .frame(height: roomCtx.isInPip ? 40 : 64)
                     .layoutPriority(1)
                     
                     ZStack(alignment: .center) {
@@ -485,10 +390,10 @@ struct RoomView: View {
                                Image(systemSymbol: isMicrophoneEnabled ? .micFill : .micSlashFill)
                                    .renderingMode(.template)
                                    .foregroundColor(isMicrophoneEnabled ? Color.white : Color(UIColor(hex: "#FF6F6F")))
-                                   .font(.system(size: 24))
-                                   .frame(width: size)
+                                   .font(.system(size: roomCtx.isInPip ? 18 : 24))
+                                   .frame(width: roomCtx.isInPip ? min(geometry.size.width, 50) : size)
                                    .frame(height: size)
-                                   .aspectRatio(1, contentMode: .fill)
+                                   .aspectRatio(roomCtx.isInPip ? nil : 1, contentMode: .fill)
                             })
                             // disable while publishing/un-publishing
                             .disabled(isMicrophonePublishingBusy)
@@ -496,9 +401,9 @@ struct RoomView: View {
                                 Color(isMicrophoneEnabled ? UIColor.Sphinx.MainBottomIcons : UIColor.Sphinx.BadgeRed)
                                     .opacity(isMicrophoneEnabled ? 0.2 : 0.2)
                                     .cornerRadius(size / 2)
-                                    .frame(width: size)
+                                    .frame(width: roomCtx.isInPip ? min(geometry.size.width, 50) : size)
                                     .frame(height: size)
-                                    .aspectRatio(1, contentMode: .fill)
+                                    .aspectRatio(roomCtx.isInPip ? nil : 1, contentMode: .fill)
                             )
                             .frame(maxWidth: .infinity)
                             .aspectRatio(1, contentMode: .fill)
@@ -507,48 +412,80 @@ struct RoomView: View {
                         .frame(maxHeight: .infinity)
                     }
                     .frame(maxWidth: .infinity)
-                    .frame(height: 64)
+                    .frame(height: roomCtx.isInPip ? 40 : 64)
                     .layoutPriority(1)
                     
-                    ZStack(alignment: .center) {
-//                        let isMicrophoneEnabled = room.localParticipant.isMicrophoneEnabled()
-                        
-                        GeometryReader { geometry in
-                            let size = (geometry.size.width > geometry.size.height) ? geometry.size.height : geometry.size.width
-                            
-                            Button(action: {
-                               Task {
-                                   
-                               }
-                            },
-                            label: {
-                                Image(systemSymbol: .person2Fill)
-                                   .renderingMode(.template)
-                                   .foregroundColor(Color.white)
-                                   .font(.system(size: 24))
-                                   .frame(width: size)
-                                   .frame(height: size)
-                                   .aspectRatio(1, contentMode: .fill)
-                            })
-                            // disable while publishing/un-publishing
-                            .disabled(isMicrophonePublishingBusy)
-                            .background(
-                                Color(UIColor.Sphinx.MainBottomIcons)
-                                    .opacity(0.2)
-                                    .cornerRadius(size / 2)
-                                    .frame(width: size)
-                                    .frame(height: size)
-                                    .aspectRatio(1, contentMode: .fill)
-                            )
+                    if !roomCtx.isInPip {
+                        ZStack(alignment: .center) {
+                            GeometryReader { geometry in
+                                let size = (geometry.size.width > geometry.size.height) ? geometry.size.height : geometry.size.width
+                                
+                                Button(action: {
+                                   Task {
+                                       
+                                   }
+                                },
+                                label: {
+                                    Image(systemSymbol: .person2Fill)
+                                       .renderingMode(.template)
+                                       .foregroundColor(Color.white)
+                                       .font(.system(size: 24))
+                                       .frame(width: size)
+                                       .frame(height: size)
+                                       .aspectRatio(1, contentMode: .fill)
+                                })
+                                // disable while publishing/un-publishing
+                                .disabled(isMicrophonePublishingBusy)
+                                .background(
+                                    Color(UIColor.Sphinx.MainBottomIcons)
+                                        .opacity(0.2)
+                                        .cornerRadius(size / 2)
+                                        .frame(width: size)
+                                        .frame(height: size)
+                                        .aspectRatio(1, contentMode: .fill)
+                                )
+                                .frame(maxWidth: .infinity)
+                                .aspectRatio(1, contentMode: .fill)
+                            }
                             .frame(maxWidth: .infinity)
-                            .aspectRatio(1, contentMode: .fill)
+                            .frame(maxHeight: .infinity)
                         }
                         .frame(maxWidth: .infinity)
-                        .frame(maxHeight: .infinity)
+                        .frame(height: 64)
+                        .layoutPriority(1)
+                    } else {
+                        ZStack(alignment: .center) {
+                            GeometryReader { geometry in
+                                Button(action: {
+                                   Task {
+                                       roomCtx.isInPip.toggle()
+                                   }
+                                },
+                                label: {
+                                    Image(systemSymbol: .pipExit)
+                                       .renderingMode(.template)
+                                       .foregroundColor(Color.white)
+                                       .font(.system(size: 16))
+                                       .frame(height: geometry.size.height)
+                                       .frame(width: min(geometry.size.width, 50))
+                                })
+                                .background(
+                                    Color(UIColor.Sphinx.MainBottomIcons)
+                                        .opacity(0.2)
+                                        .cornerRadius(geometry.size.height / 2)
+                                        .frame(height: geometry.size.height)
+                                        .frame(width: min(geometry.size.width, 50))
+                                )
+                                .frame(maxWidth: .infinity)
+                                .aspectRatio(1, contentMode: .fill)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .frame(maxHeight: .infinity)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 40)
+                        .layoutPriority(1)
                     }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 64)
-                    .layoutPriority(1)
                     
                     ZStack {
                         GeometryReader { geometry in
@@ -561,16 +498,16 @@ struct RoomView: View {
                                 Image(systemSymbol: .phoneDownFill)
                                    .renderingMode(.template)
                                    .foregroundColor(Color.white)
-                                   .font(.system(size: 24))
+                                   .font(.system(size: roomCtx.isInPip ? 18 : 24))
                                    .frame(height: geometry.size.height)
-                                   .frame(width: min(geometry.size.width, 80))
+                                   .frame(width: min(geometry.size.width, roomCtx.isInPip ? 50 : 80))
                             })
                             .background(
                                 Color(UIColor.Sphinx.BadgeRed)
                                     .opacity(1)
                                     .cornerRadius(geometry.size.height / 2)
                                     .frame(height: geometry.size.height)
-                                    .frame(width: min(geometry.size.width, 80))
+                                    .frame(width: min(geometry.size.width, roomCtx.isInPip ? 50 : 80))
                             )
                             .frame(maxWidth: .infinity)
                             .aspectRatio(1, contentMode: .fill)
@@ -579,159 +516,20 @@ struct RoomView: View {
                         .frame(maxHeight: .infinity)
                     }
                     .frame(maxWidth: .infinity)
-                    .frame(height: 64)
+                    .frame(height: roomCtx.isInPip ? 40 : 64)
                     .layoutPriority(1)
                 }
-                .padding(.vertical, 30)
-                .frame(height: 64)
+                .padding(.vertical, roomCtx.isInPip ? 12 : 30)
+                .frame(height: roomCtx.isInPip ? 40 : 64)
                 .frame(maxWidth: .infinity)
-                
-                
-//                Group {
-//                    let isCameraEnabled = room.localParticipant.isCameraEnabled()
-//                    let isMicrophoneEnabled = room.localParticipant.isMicrophoneEnabled()
-//                    let isScreenShareEnabled = room.localParticipant.isScreenShareEnabled()
-//
-//                    Group {
-//                        if isCameraEnabled, canSwitchCameraPosition {
-//                            Menu {
-//                                Button("Switch position") {
-//                                    Task {
-//                                        isCameraPublishingBusy = true
-//                                        defer { Task { @MainActor in isCameraPublishingBusy = false } }
-//                                        if let track = room.localParticipant.firstCameraVideoTrack as? LocalVideoTrack,
-//                                           let cameraCapturer = track.capturer as? CameraCapturer
-//                                        {
-//                                            try await cameraCapturer.switchCameraPosition()
-//                                        }
-//                                    }
-//                                }
-//
-//                                Button("Disable") {
-//                                    Task {
-//                                        isCameraPublishingBusy = true
-//                                        defer { Task { @MainActor in isCameraPublishingBusy = false } }
-//                                        try await room.localParticipant.setCamera(enabled: !isCameraEnabled)
-//                                    }
-//                                }
-//                            } label: {
-//                                Image(systemSymbol: .videoFill)
-//                                    .renderingMode(.template)
-//                                    .foregroundColor(isCameraEnabled ? Color(UIColor.Sphinx.PrimaryGreen) : Color.white)
-//                                    .font(.system(size: 14))
-//                            }
-//                            // disable while publishing/un-publishing
-//                            .disabled(isCameraPublishingBusy)
-//                        } else {
-//                            // Toggle camera enabled
-//                            Button(action: {
-//                               if isCameraEnabled {
-//                                   Task {
-//                                       isCameraPublishingBusy = true
-//                                       defer { Task { @MainActor in isCameraPublishingBusy = false } }
-//                                       try await room.localParticipant.setCamera(enabled: false)
-//                                   }
-//                               } else {
-//                                   publishOptionsPickerPresented = true
-//                               }
-//                            },
-//                            label: {
-//                               Image(systemSymbol: .videoFill)
-//                                    .renderingMode(.template)
-//                                    .foregroundColor(isCameraEnabled ? Color(UIColor.Sphinx.PrimaryGreen) : Color.white)
-//                                    .font(.system(size: 14))
-//                            })
-//                            // disable while publishing/un-publishing
-//                            .disabled(isCameraPublishingBusy)
-//                        }
-//                    }
-//                    .popover(isPresented: $publishOptionsPickerPresented) {
-//                        PublishOptionsView(publishOptions: cameraPublishOptions) { captureOptions, publishOptions in
-//                            publishOptionsPickerPresented = false
-//                            isCameraPublishingBusy = true
-//                            cameraPublishOptions = publishOptions
-//                            Task {
-//                                defer { Task { @MainActor in isCameraPublishingBusy = false } }
-//                                try await room.localParticipant.setCamera(enabled: true,
-//                                                                          captureOptions: captureOptions,
-//                                                                          publishOptions: publishOptions)
-//                            }
-//                        }
-//                        .padding()
-//                    }
-//
-//                    // Toggle microphone enabled
-//                    Button(action: {
-//                       Task {
-//                           isMicrophonePublishingBusy = true
-//                           defer { Task { @MainActor in isMicrophonePublishingBusy = false } }
-//                           try await room.localParticipant.setMicrophone(enabled: !isMicrophoneEnabled)
-//                       }
-//                    },
-//                    label: {
-//                       Image(systemSymbol: .micFill)
-//                           .renderingMode(.template)
-//                           .foregroundColor(isMicrophoneEnabled ? Color(UIColor.Sphinx.PrimaryGreen) : Color.white)
-//                           .font(.system(size: 14))
-//                    })
-//                    // disable while publishing/un-publishing
-//                    .disabled(isMicrophonePublishingBusy)
-//
-//                    if !roomCtx.isInPip {
-//                        Button(action: {
-//                           Task {
-//                               isScreenSharePublishingBusy = true
-//                               defer { Task { @MainActor in isScreenSharePublishingBusy = false } }
-//                               try await room.localParticipant.setScreenShare(enabled: !isScreenShareEnabled)
-//                           }
-//                        },
-//                        label: {
-//                           Image(systemSymbol: .rectangleFillOnRectangleFill)
-//                               .renderingMode(.template)
-//                               .foregroundColor(isScreenShareEnabled ? Color(UIColor.Sphinx.PrimaryGreen) : Color.white)
-//                               .font(.system(size: 14))
-//                        })
-//                        // disable while publishing/un-publishing
-//                        .disabled(isScreenSharePublishingBusy)
-//                        
-////                            Button(action: {
-////                               withAnimation {
-////                                   roomCtx.showMessagesView.toggle()
-////                               }
-////                            },
-////                            label: {
-////                               Image(systemSymbol: .messageFill)
-////                                    .renderingMode(.template)
-////                                    .foregroundColor(roomCtx.showMessagesView ? Color(UIColor.Sphinx.PrimaryGreen) : Color.white)
-////                                    .font(.system(size: 14))
-////                            })
-//                    }
-//                }
-
-//                if !roomCtx.isInPip {
-//                    SwiftUIAudioRoutePickerButton()
-//                }
-
-                // Disconnect
-//                Button(action: {
-//                   Task {
-//                       await roomCtx.disconnect()
-//                   }
-//                },
-//                label: {
-//                   Image(systemSymbol: .xmarkCircleFill)
-//                       .renderingMode(.original)
-//                       .font(.system(size: 18))
-//                })
-//                .buttonStyle(PlainButtonStyle())
             }
-            .frame(height: 124)
+            .frame(height: roomCtx.isInPip ? 64 : 124)
             .frame(minWidth: 0, maxWidth: .infinity)
-            .padding(.horizontal, 16)
-//            .background(Color.red)
+            .padding(.horizontal, roomCtx.isInPip ? 8 : 16)
         }
         .padding(5)
         .background(Color.black.opacity(0.5))
+        .cornerRadius(8.0)
     }
 
     var body: some View {
@@ -739,11 +537,6 @@ struct RoomView: View {
             GeometryReader { geometry in
                 content(geometry: geometry)
             }
-//            .toolbar {
-//                ToolbarItemGroup(placement: toolbarPlacement) {
-//                    
-//                }
-//            }
             .onAppear {
                 Task { @MainActor in
                     canSwitchCameraPosition = try await CameraCapturer.canSwitchPosition()

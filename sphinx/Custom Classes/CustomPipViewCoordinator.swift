@@ -182,19 +182,19 @@ public class CustomPipViewCoordinator {
     }
 
     @objc private func toggleExitPiP() {
-        if exitPiPButton == nil {
-            // show button
-            let exitSelector = #selector(exitPictureInPicture)
-            let button = configureExitPiPButton(target: self,
-                                                action: exitSelector)
-            view.addSubview(button)
-            exitPiPButton = button
-
-        } else {
-            // hide button
-            exitPiPButton?.removeFromSuperview()
-            exitPiPButton = nil
-        }
+//        if exitPiPButton == nil {
+//            // show button
+//            let exitSelector = #selector(exitPictureInPicture)
+//            let button = configureExitPiPButton(target: self,
+//                                                action: exitSelector)
+//            view.addSubview(button)
+//            exitPiPButton = button
+//
+//        } else {
+//            // hide button
+//            exitPiPButton?.removeFromSuperview()
+//            exitPiPButton = nil
+//        }
     }
 
     private func animateViewChange() {

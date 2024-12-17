@@ -45,7 +45,6 @@ struct ParticipantView: View {
 
     var body: some View {
         GeometryReader { geometry in
-
             ZStack(alignment: .bottom) {
                 // Background color
                 Color(UIColor.Sphinx.HeaderBG).ignoresSafeArea()

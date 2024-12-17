@@ -89,8 +89,6 @@ struct RoomSwitchView: View {
 
     var body: some View {
         ZStack {
-            Color(UIColor.Sphinx.Body).ignoresSafeArea()
-
             if shouldShowRoomView {
                 RoomView()
             } else {
@@ -177,7 +175,6 @@ struct RoomContextView: View {
                     }
                 }
             })
-            .border(Color(UIColor.Sphinx.TextInverted), width: roomCtx.isInPip ? 1 : 0)
     }
     
     func enableMic() {
