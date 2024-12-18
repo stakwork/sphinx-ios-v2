@@ -48,6 +48,8 @@ struct RoomView: View {
 
     @State private var showConnectionTime = true
     @State private var canSwitchCameraPosition = false
+    
+    @State var isAnyParticipantAudioSubscribed = true
 
     func sortedParticipants() -> [Participant] {
         room.allParticipants.values.sorted { p1, p2 in
@@ -61,6 +63,14 @@ struct RoomView: View {
         guard let first = sortedParticipants().first else { return }
         withAnimation {
             scrollView.scrollTo(first.id)
+        }
+    }
+    
+    private func updateAudioSubscriptionStatus() {
+        isAnyParticipantAudioSubscribed = room.remoteParticipants.count == 0 || room.remoteParticipants.values.filter({ ($0.firstAudioPublication as? RemoteTrackPublication)?.subscriptionState == .subscribed }).count > 0
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            isAnyParticipantAudioSubscribed = room.remoteParticipants.count == 0 || room.remoteParticipants.values.filter({ ($0.firstAudioPublication as? RemoteTrackPublication)?.subscriptionState == .subscribed }).count > 0
         }
     }
 
@@ -90,6 +100,23 @@ struct RoomView: View {
                         
                         Spacer()
                         
+                        Button(action: {
+                            Task {
+                                for participant in room.remoteParticipants.values {
+                                    if let remotePub = participant.firstAudioPublication as? RemoteTrackPublication {
+                                        try await remotePub.set(subscribed: !isAnyParticipantAudioSubscribed)
+                                    }
+                                }
+                                updateAudioSubscriptionStatus()
+                            }
+                        },
+                        label: {
+                            Image(systemSymbol: isAnyParticipantAudioSubscribed ? .speakerWave2Fill : .speakerSlashFill)
+                                .renderingMode(.template)
+                                .foregroundColor(Color.white)
+                                .font(.system(size: 20))
+                        })
+                        
                         let isCameraEnabled = room.localParticipant.isCameraEnabled()
                         
                         if isCameraEnabled, canSwitchCameraPosition {
@@ -105,7 +132,7 @@ struct RoomView: View {
                                 }
                             },
                             label: {
-                                Image(systemSymbol: .arrowTriangle2CirclepathCamera)
+                                Image(systemSymbol: .arrowTriangle2CirclepathCameraFill)
                                     .renderingMode(.template)
                                     .foregroundColor(Color.white)
                                     .font(.system(size: 20))
@@ -134,10 +161,9 @@ struct RoomView: View {
                             }
                             
                         } label: {
-                            Image(systemSymbol: .line3Horizontal)
-                                .renderingMode(.template)
+                            Text("more_vert")
+                                .font(.custom("MaterialIcons-Regular", size: 24))
                                 .foregroundColor(Color.white)
-                                .font(.system(size: 20))
                         }
                     }
                     .frame(height: 60)
@@ -164,7 +190,6 @@ struct RoomView: View {
                             }
 
                         } else {
-                            // Array([room.allParticipants.values, room.allParticipants.values].joined())
                             ParticipantLayout(sortedParticipants(), spacing: 8) { participant in
                                 ParticipantView(participant: participant,
                                                 videoViewMode: appCtx.videoViewMode)
@@ -255,7 +280,7 @@ struct RoomView: View {
                                             Image(systemSymbol: isCameraEnabled ? .videoFill : .videoSlashFill)
                                                 .renderingMode(.template)
                                                 .foregroundColor(isCameraEnabled ? Color.white : Color(UIColor(hex: "#FF6F6F")))
-                                                .font(.system(size: roomCtx.isInPip ? 18 : 24))
+                                                .font(.system(size: roomCtx.isInPip ? 18 : 20))
                                                 .frame(width: roomCtx.isInPip ? min(geometry.size.width, 50) : size)
                                                 .frame(height: size)
                                                 .aspectRatio(roomCtx.isInPip ? nil : 1, contentMode: .fill)
@@ -313,7 +338,7 @@ struct RoomView: View {
                                    Image(systemSymbol: isMicrophoneEnabled ? .micFill : .micSlashFill)
                                        .renderingMode(.template)
                                        .foregroundColor(isMicrophoneEnabled ? Color.white : Color(UIColor(hex: "#FF6F6F")))
-                                       .font(.system(size: roomCtx.isInPip ? 18 : 24))
+                                       .font(.system(size: roomCtx.isInPip ? 18 : 20))
                                        .frame(width: roomCtx.isInPip ? min(geometry.size.width, 50) : size)
                                        .frame(height: size)
                                        .aspectRatio(roomCtx.isInPip ? nil : 1, contentMode: .fill)
@@ -353,7 +378,7 @@ struct RoomView: View {
                                             Image(systemSymbol: .person2Fill)
                                                 .renderingMode(.template)
                                                 .foregroundColor(Color.white)
-                                                .font(.system(size: 24))
+                                                .font(.system(size: 20))
                                                 .frame(width: size)
                                                 .frame(height: size)
                                                 .aspectRatio(1, contentMode: .fill)
@@ -371,6 +396,31 @@ struct RoomView: View {
                                     }
                                     .frame(maxWidth: .infinity)
                                     .frame(maxHeight: .infinity)
+                                }
+                                GeometryReader { geometry in
+                                    HStack() {
+                                        Spacer()
+                                        
+                                        VStack {
+                                            Text("\(room.participantCount)")
+                                                .foregroundColor(Color.black)
+                                                .font(Font(UIFont(name: "Roboto-Bold", size: 12.0)!))
+                                                .padding(.horizontal, 7.5)
+                                                .padding(.vertical, 4)
+                                                .background(
+                                                    Color(UIColor.white)
+                                                        .cornerRadius(geometry.size.height / 2)
+                                                        .frame(minWidth: 22)
+                                                )
+                                            
+                                            Spacer()
+                                        }
+                                        
+                                        Spacer()
+                                            .frame(width: (geometry.size.width - 64) / 2)
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 64)
                                 }
                             }
                             .frame(maxWidth: .infinity)
@@ -421,7 +471,7 @@ struct RoomView: View {
                                     Image(systemSymbol: .phoneDownFill)
                                        .renderingMode(.template)
                                        .foregroundColor(Color.white)
-                                       .font(.system(size: roomCtx.isInPip ? 18 : 24))
+                                       .font(.system(size: roomCtx.isInPip ? 18 : 20))
                                        .frame(height: geometry.size.height)
                                        .frame(width: min(geometry.size.width, roomCtx.isInPip ? 50 : 80))
                                 })
@@ -640,6 +690,7 @@ struct RoomView: View {
                                     Button {
                                         Task {
                                             try await remotePub.set(subscribed: false)
+                                            updateAudioSubscriptionStatus()
                                         }
                                     } label: {
                                         Text("Unsubscribe")
@@ -648,6 +699,7 @@ struct RoomView: View {
                                     Button {
                                         Task {
                                             try await remotePub.set(subscribed: true)
+                                            updateAudioSubscriptionStatus()
                                         }
                                     } label: {
                                         Text("Subscribe")
