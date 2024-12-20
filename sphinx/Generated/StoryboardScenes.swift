@@ -249,6 +249,8 @@ internal enum StoryboardScene {
         internal static let newContactViewController = SceneType<NewContactViewController>(storyboard: Contacts.self, identifier: "NewContactViewController")
         
         internal static let addressBookViewController = SceneType<AddressBookViewController>(storyboard: Contacts.self, identifier: "AddressBookViewController")
+        
+        internal static let contactDetailsViewController = SceneType<ContactDetailsViewController>(storyboard: Contacts.self, identifier: "ContactDetailsViewController")
     }
     
     internal enum QRCodeDetail: StoryboardType {

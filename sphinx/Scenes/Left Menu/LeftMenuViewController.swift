@@ -150,28 +150,8 @@ class LeftMenuViewController: UIViewController {
 //        ])
 //    }
     
-    
-    func goToChatList() {
-        let appDelegate = UIApplication.shared.delegate as! AppDelegate
-        
-        if
-            let centerVC = appDelegate.getCurrentVC(),
-            centerVC.isKind(of: DashboardRootViewController.self
-        ) {
-            centerVC.navigationController?.popViewController(animated: false)
-        } else {
-            let dashboardRootVC = DashboardRootViewController.instantiate(leftMenuDelegate: self)
-            goTo(vc: dashboardRootVC)
-        }
-    }
-    
     func goToSupport() {
         supportButtonTouched()
-    }
-    
-    func reloadDashboard() {
-        let dashboardRootVC = DashboardRootViewController.instantiate(leftMenuDelegate: self)
-        goTo(vc: dashboardRootVC)
     }
     
     public func goTo(vc: UIViewController) {

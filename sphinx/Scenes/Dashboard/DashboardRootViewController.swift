@@ -560,7 +560,7 @@ extension DashboardRootViewController {
         presentNavigationControllerWith(vc: viewController)
     }
     
-    func presentNewContactVC(pubkey:String){
+    func presentNewContactVC(pubkey: String) {
         let newContactVC = NewContactViewController.instantiate(pubkey: pubkey)
         newContactVC.delegate = self
         self.present(newContactVC, animated: true)

@@ -20,49 +20,47 @@ class AttachmentFullScreenViewController: UIViewController, CanRotate {
     @IBOutlet weak var shareButton: UIButton!
     @IBOutlet weak var fileNameLabel: UILabel!
     
-    var message: TransactionMessage!
+    var message: TransactionMessage? = nil
     var purchaseAcceptMessage: TransactionMessage?
     
     var pdfDocument: PDFDocument? = nil
-    var webViewImageURL:URL? = nil
+    var imageUrl: URL? = nil
     
     var animated = true
     
     static func instantiate(
-        messageId: Int,
+        messageId: Int? = nil,
         animated: Bool = true,
-        webViewImageUrl:URL?=nil
+        imageUrl: URL? = nil
     ) -> AttachmentFullScreenViewController? {
         
-        if let message = TransactionMessage.getMessageWith(id: messageId) {
-            
-            let viewController = StoryboardScene.Chat.attachmentFullScreenViewController.instantiate()
-            viewController.webViewImageURL = webViewImageUrl
+        let viewController = StoryboardScene.Chat.attachmentFullScreenViewController.instantiate()
+        
+        if let messageId = messageId, let message = TransactionMessage.getMessageWith(id: messageId) {
             viewController.message = message
-            viewController.animated = animated
             viewController.purchaseAcceptMessage = message.getPurchaseAcceptItem()
-            return viewController
         }
         
-        return nil
+        viewController.animated = animated
+        viewController.imageUrl = imageUrl
+        
+        return viewController
     }
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        if message.isPDF() {
+        if let message = message, message.isPDF(){
             showPDF()
-        }
-        else if let _ = webViewImageURL{
+        } else if let _ = imageUrl{
             showWebViewImage()
-        }
-        else {
+        } else {
             showImage()
         }
     }
     
     func showWebViewImage() {
-        guard let webViewImageURL = webViewImageURL else{
+        guard let imageUrl = imageUrl else{
             return
         }
         fullScreenImageView.isHidden = false
@@ -70,13 +68,16 @@ class AttachmentFullScreenViewController: UIViewController, CanRotate {
         
         self.view.backgroundColor = UIColor.black.withAlphaComponent(0.6)
         fullScreenImageView.configureImageScrollView()
-        fullScreenImageView.showWebViewImage(url: webViewImageURL )
+        fullScreenImageView.showWebViewImage(url: imageUrl)
         
         let tap = TouchUpGestureRecognizer(target: self, action: #selector(self.handleTap(_:)))
         self.view.addGestureRecognizer(tap)
     }
     
     func showImage() {
+        guard let message = message else{
+            return
+        }
         fullScreenImageView.isHidden = false
         pdfHeaderView.isHidden = true
         
@@ -89,6 +90,10 @@ class AttachmentFullScreenViewController: UIViewController, CanRotate {
     }
     
     func showPDF() {
+        guard let message = message else{
+            return
+        }
+        
         fullScreenImageView.isHidden = true
         pdfHeaderView.isHidden = false
         
@@ -104,7 +109,7 @@ class AttachmentFullScreenViewController: UIViewController, CanRotate {
                 message: message,
                 mediaKey: purchaseAcceptMessage?.mediaKey ?? message.mediaKey,
                 completion: { (_, data) in
-                    self.fileNameLabel.text = self.message.mediaFileName ?? "file.pdf"
+                    self.fileNameLabel.text = message.mediaFileName ?? "file.pdf"
                     self.pdfDocument = PDFDocument(data: data)
                     pdfView.document = self.pdfDocument
                 },
@@ -120,6 +125,10 @@ class AttachmentFullScreenViewController: UIViewController, CanRotate {
     }
     
     func deleteLocalPDF() {
+        guard let message = message else{
+            return
+        }
+        
         if let _ = pdfDocument, let url = URL(string: message.mediaFileName ?? "file.pdf") {
             do {
                 try FileManager.default.removeItem(at: url)
@@ -134,6 +143,9 @@ class AttachmentFullScreenViewController: UIViewController, CanRotate {
     }
     
     @IBAction func shareButtonTouched() {
+        guard let message = message else{
+            return
+        }
         if let pdfData = pdfDocument?.dataRepresentation(),
             let pdfUrl = MediaLoader.saveFileInMemory(
                 data: pdfData,
@@ -150,7 +162,6 @@ class AttachmentFullScreenViewController: UIViewController, CanRotate {
         
         if !UIDevice.current.isIpad {
             UIDevice.current.setValue(Int(UIInterfaceOrientation.portrait.rawValue), forKey: "orientation")
-            
         }
         
         self.dismiss(animated: animated, completion: {

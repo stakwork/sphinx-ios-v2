@@ -13,7 +13,7 @@ extension NewChatViewController : ChatHeaderViewDelegate, ThreadHeaderViewDelega
         var vc: UIViewController? = nil
         
         if let contact = contact {
-            vc = NewContactViewController.instantiate(contactId: contact.id)
+            vc = ContactDetailsViewController.instantiate(contactId: contact.id)
         } else if let chat = chat, chat.isGroup() {
             vc = GroupDetailsViewController.instantiate(chat: chat)
         }
