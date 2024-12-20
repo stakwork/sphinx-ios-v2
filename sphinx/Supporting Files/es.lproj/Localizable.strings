@@ -512,6 +512,8 @@
 "mute-chat" = "Silenciar Chat";
 "error.getting.token.title" = "Error al obtener el token";
 "error.getting.token.description" = "Se produjo un error al obtener un token para unirse a la llamada. Inténtelo nuevamente más tarde";
+"contact.info" = "Datos del contacto";
+"contact.connected.since" = "Conectado desde %@";
 
 
 //OTHER

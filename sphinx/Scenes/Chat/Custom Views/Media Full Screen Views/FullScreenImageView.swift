@@ -57,13 +57,18 @@ class FullScreenImageView: UIView {
         super.layoutSubviews()
     }
     
-    func showWebViewImage(url:URL){
+    func showWebViewImage(url: URL) {
         loading = true
         pictureImageView.image = nil
         contentView.isHidden = false
         isHidden = false
         
-        self.loadImage(webViewImageURL: url)
+        UIView.animate(withDuration: 0.2, animations: {
+            self.contentView.alpha = 1.0
+            self.alpha = 1.0
+        }, completion: { _ in
+            self.loadImage(webViewImageURL: url)
+        })
     }
     
     func showImage(message: TransactionMessage) {
@@ -95,19 +100,21 @@ class FullScreenImageView: UIView {
     }
     
     func loadImage(webViewImageURL: URL) {
-        URLSession.shared.dataTask(with: webViewImageURL) { data, response, error in
-            if let data = data, let image = UIImage(data: data) {
-                DispatchQueue.main.async { [self] in
-                    // Test displaying image with a simple UIImageView
-                    let webImageView = UIImageView(image: image)
-                    webImageView.frame = self.bounds // Adjust frame as necessary
-                    webImageView.contentMode = .scaleAspectFit
-                    self.addSubview(webImageView)
+        if let cachedImage = MediaLoader.getImageFromCachedUrl(url: webViewImageURL.absoluteString) {
+            self.imageScrollView.display(image: cachedImage)
+            self.loading = false
+        } else {
+            URLSession.shared.dataTask(with: webViewImageURL) { data, response, error in
+                if let data = data, let image = UIImage(data: data) {
+                    DispatchQueue.main.async { [self] in
+                        self.imageScrollView.display(image: image)
+                        self.loading = false
+                    }
+                } else if let error = error {
+                    print("Error loading image: \(error)")
                 }
-            } else if let error = error {
-                print("Error loading image: \(error)")
-            }
-        }.resume()
+            }.resume()
+        }
     }
     
     func loadImage(message: TransactionMessage?) {

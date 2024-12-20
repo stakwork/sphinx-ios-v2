@@ -509,6 +509,8 @@
 "mute-chat" = "静音聊天";
 "error.getting.token.title" = "获取令牌时出错";
 "error.getting.token.description" = "获取加入通话的令牌时出错。请稍后重试";
+"contact.info" = "联系方式";
+"contact.connected.since" = "%@日起连接";
 
 //OTHER
 "create.call" = "创建通话";

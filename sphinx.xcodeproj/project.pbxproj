@@ -513,6 +513,7 @@
 		47B9A645233BB54B00D2B022 /* AddressBookDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47B9A644233BB54B00D2B022 /* AddressBookDataSource.swift */; };
 		47B9A648233BB6AE00D2B022 /* AddressBookHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47B9A647233BB6AE00D2B022 /* AddressBookHeaderView.swift */; };
 		47B9A64A233BB6BA00D2B022 /* AddressBookHeaderView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 47B9A649233BB6BA00D2B022 /* AddressBookHeaderView.xib */; };
+		47BA317A2D15D8BB001AF7E5 /* ContactDetailsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47BA31792D15D8BB001AF7E5 /* ContactDetailsViewController.swift */; };
 		47BA7A9124118F6B0001773F /* CustomSwiftLinkPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47BA7A9024118F6B0001773F /* CustomSwiftLinkPreview.swift */; };
 		47BB1D5C239572A30049802B /* NewContactDelegatesExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47BB1D5B239572A30049802B /* NewContactDelegatesExtension.swift */; };
 		47BE85502465E09B00BE4AE8 /* BiometricAuthenticationHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47BE854F2465E09B00BE4AE8 /* BiometricAuthenticationHelper.swift */; };
@@ -1739,6 +1740,7 @@
 		47B9A644233BB54B00D2B022 /* AddressBookDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBookDataSource.swift; sourceTree = "<group>"; };
 		47B9A647233BB6AE00D2B022 /* AddressBookHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBookHeaderView.swift; sourceTree = "<group>"; };
 		47B9A649233BB6BA00D2B022 /* AddressBookHeaderView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = AddressBookHeaderView.xib; sourceTree = "<group>"; };
+		47BA31792D15D8BB001AF7E5 /* ContactDetailsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactDetailsViewController.swift; sourceTree = "<group>"; };
 		47BA7A9024118F6B0001773F /* CustomSwiftLinkPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomSwiftLinkPreview.swift; sourceTree = "<group>"; };
 		47BB1D5B239572A30049802B /* NewContactDelegatesExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewContactDelegatesExtension.swift; sourceTree = "<group>"; };
 		47BB1D6B23994F9E0049802B /* sphinx 4.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 4.xcdatamodel"; sourceTree = "<group>"; };
@@ -2895,6 +2897,7 @@
 				47468FEA233905AD0072124A /* NewContactViewController.swift */,
 				47B9A63E233BAEE500D2B022 /* AddressBookViewController.swift */,
 				47BB1D5B239572A30049802B /* NewContactDelegatesExtension.swift */,
+				47BA31792D15D8BB001AF7E5 /* ContactDetailsViewController.swift */,
 			);
 			path = Contacts;
 			sourceTree = "<group>";
@@ -5373,6 +5376,7 @@
 				F31EFCB42746968D00C05FF4 /* ContentFeed+FetchUtils.swift in Sources */,
 				475E416B23858D4900928931 /* Subscription+CoreDataProperties.swift in Sources */,
 				47308E0424FEE6E600FFAC6F /* SocketParsable.swift in Sources */,
+				47BA317A2D15D8BB001AF7E5 /* ContactDetailsViewController.swift in Sources */,
 				CE67902E2C7E20A000BC2D38 /* DashboardRootViewController+TorrentMagnetDetailsViewDelegate.swift in Sources */,
 				CE452E3A2BAB24BD008A0868 /* SphinxOnionManager+AccountRestore.swift in Sources */,
 				47C7C1782938E84D00264BF6 /* RecommendationResult.swift in Sources */,

@@ -133,7 +133,7 @@ extension NewChatViewController : NewChatTableDataSourceDelegate {
         isPdf: Bool,
         webViewImageURL:URL?=nil
     ) {
-        if let attachmentFullScreenVC = AttachmentFullScreenViewController.instantiate(messageId: messageId, animated: isPdf, webViewImageUrl: webViewImageURL) {
+        if let attachmentFullScreenVC = AttachmentFullScreenViewController.instantiate(messageId: messageId, animated: isPdf, imageUrl: webViewImageURL) {
             self.navigationController?.present(attachmentFullScreenVC, animated: isPdf)
         }
     }
