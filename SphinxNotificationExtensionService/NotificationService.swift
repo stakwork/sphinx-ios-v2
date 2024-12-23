@@ -3,7 +3,6 @@ import CoreData
 import UIKit
 import KeychainAccess
 import RNCryptor
-import Bugsnag
 
 class NotificationService: UNNotificationServiceExtension {
     

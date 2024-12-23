@@ -343,7 +343,6 @@
 		476A10B923A7E9E500817892 /* ContactTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 476A10B723A7E9E500817892 /* ContactTableViewCell.xib */; };
 		476A10BE23AA8C8E00817892 /* SubscriptionDetailsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 476A10BD23AA8C8E00817892 /* SubscriptionDetailsViewController.swift */; };
 		476AAAA22A24F9F80092AC87 /* NewChatViewController+TribeExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 476AAAA12A24F9F80092AC87 /* NewChatViewController+TribeExtension.swift */; };
-		476C5B112CF7878000CFB270 /* Bugsnag.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 476C5B102CF7878000CFB270 /* Bugsnag.framework */; };
 		476EB46823C4F1AE009745E2 /* GroupContactCollectionViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 476EB46623C4F1AE009745E2 /* GroupContactCollectionViewCell.swift */; };
 		476EB46923C4F1AE009745E2 /* GroupContactCollectionViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 476EB46723C4F1AE009745E2 /* GroupContactCollectionViewCell.xib */; };
 		476EB47023C50640009745E2 /* GroupAddedContactsDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 476EB46F23C50640009745E2 /* GroupAddedContactsDataSource.swift */; };
@@ -2214,7 +2213,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				476C5B112CF7878000CFB270 /* Bugsnag.framework in Frameworks */,
 				4777E0192C78FC81009F5F05 /* universal-sphinxrs.a in Frameworks */,
 				9344269DACF491E8A3F8651C /* Pods_SphinxNotificationExtensionService.framework in Frameworks */,
 			);

@@ -18,7 +18,7 @@ import SDWebImageSVGCoder
 import PushKit
 import CoreData
 import Bugsnag
-import BugsnagPerformance
+//import BugsnagPerformance
 
 
 @UIApplicationMain
@@ -258,7 +258,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     
     func configureBugsnag() {
         Bugsnag.start()
-        BugsnagPerformance.start()
+//        BugsnagPerformance.start()
         
         if let ownerName = UserContact.getOwner()?.nickname {
             Bugsnag.setUser(nil, withEmail: nil, andName: ownerName)
