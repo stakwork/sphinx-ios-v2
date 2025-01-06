@@ -58,24 +58,17 @@ class AttachmentsManager {
         self.delegate = delegate
     }
     
-    func runAuthentication(
-        forceAuthenticate: Bool = false
-    ) {
-        self.authenticate(
-            forceAuthenticate: forceAuthenticate,
-            completion: {_ in },
-            errorCompletion: {}
-        )
-    }
-    
     func authenticate(
-        forceAuthenticate: Bool = false,
         completion: @escaping (String) -> (),
         errorCompletion: @escaping () -> ()
     ) {
-        if let token: String = UserDefaults.Keys.attachmentsToken.get(), !forceAuthenticate {
-            completion(token)
-            return
+        if let token: String = UserDefaults.Keys.attachmentsToken.get() {
+            let expDate: Date? = UserDefaults.Keys.attachmentsTokenExpDate.get()
+            
+            if let expDate = expDate, expDate > Date() {
+                completion(token)
+                return
+            }
         }
         
         guard let _ = SphinxOnionManager.sharedInstance.getAccountSeed() else {
@@ -103,6 +96,13 @@ class AttachmentsManager {
                 API.sharedInstance.verifyAuthentication(id: id, sig: sig, pubkey: pubkey, callback: { token in
                     if let token = token {
                         UserDefaults.Keys.attachmentsToken.set(token)
+                        
+                        if let ts = token.decodeJWT().payload?["exp"] as? Int64 {
+                            let timestamp = TimeInterval(integerLiteral: ts)
+                            let date = Date(timeIntervalSince1970: timestamp)
+                            UserDefaults.Keys.attachmentsTokenExpDate.set(date)
+                        }
+                        
                         completion(token)
                     } else {
                         errorCompletion()
@@ -123,13 +123,30 @@ class AttachmentsManager {
         uploadedImage = nil
     }
     
+    func isAuthenticated() -> (Bool, String?) {
+        if let token: String = UserDefaults.Keys.attachmentsToken.get() {
+            let expDate: Date? = UserDefaults.Keys.attachmentsTokenExpDate.get()
+            
+            if let expDate = expDate, expDate > Date() {
+                return (true, token)
+            }
+        }
+        return (false, nil)
+    }
+    
     func getMediaItemInfo(message: TransactionMessage, callback: @escaping MediaInfoCallback) {
-        guard let token: String = UserDefaults.Keys.attachmentsToken.get() else {
+        let isAuthenticated = isAuthenticated()
+        
+        if !isAuthenticated.0 {
             self.authenticate(completion: { token in
                 self.getMediaItemInfo(message: message, callback: callback)
             }, errorCompletion: {
                 UserDefaults.Keys.attachmentsToken.removeValue()
             })
+            return
+        }
+        
+        guard let token = isAuthenticated.1 else {
             return
         }
         
@@ -139,7 +156,9 @@ class AttachmentsManager {
     func uploadImage(attachmentObject: AttachmentObject, route: String = "file") {
         delegate?.didUpdateUploadProgress?(progress: 5)
         
-        guard let token: String = UserDefaults.Keys.attachmentsToken.get() else {
+        let isAuthenticated = isAuthenticated()
+        
+        if !isAuthenticated.0 {
             self.authenticate(completion: { token in
                 self.uploadImage(attachmentObject: attachmentObject, route: route)
             }, errorCompletion: {
@@ -149,6 +168,10 @@ class AttachmentsManager {
             return
         }
         delegate?.didUpdateUploadProgress?(progress: 10)
+        
+        guard let token = isAuthenticated.1 else {
+            return
+        }
         
         if let _ = attachmentObject.data {
             uploadData(attachmentObject: attachmentObject, route: route, token: token) { fileJSON, _ in
@@ -169,7 +192,9 @@ class AttachmentsManager {
         uploading = true
         delegate?.didUpdateUploadProgress?(progress: 5)
         
-        guard let token: String = UserDefaults.Keys.attachmentsToken.get() else {
+        let isAuthenticated = isAuthenticated()
+        
+        if !isAuthenticated.0 {
             self.authenticate(completion: { token in
                 self.uploadAndSendAttachment(
                     attachmentObject: attachmentObject,
@@ -184,6 +209,10 @@ class AttachmentsManager {
             return
         }
         delegate?.didUpdateUploadProgress?(progress: 10)
+        
+        guard let token = isAuthenticated.1 else {
+            return
+        }
         
         if let _ = attachmentObject.data {
             uploadEncryptedData(attachmentObject: attachmentObject, token: token) { fileJSON, AttachmentObject in

@@ -24,6 +24,7 @@ extension UserDefaults {
         public static let tribeQuery = DefaultKey<String>("tribeQuery")
         public static let jitsiLinkUrl = DefaultKey<String>("jitsiLinkUrl")
         public static let attachmentsToken = DefaultKey<String>("attachmentsToken")
+        public static let attachmentsTokenExpDate = DefaultKey<Date>("attachmentsTokenExpDate")
         public static let inviterNickname = DefaultKey<String>("inviterNickname")
         public static let inviterPubkey = DefaultKey<String>("inviterPubkey")
         public static let inviterRouteHint = DefaultKey<String>("inviterRouteHint")
