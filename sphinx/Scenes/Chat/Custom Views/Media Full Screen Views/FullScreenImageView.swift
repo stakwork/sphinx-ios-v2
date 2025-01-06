@@ -123,15 +123,6 @@ class FullScreenImageView: UIView {
             return
         }
         
-        guard let _: String = UserDefaults.Keys.attachmentsToken.get() else {
-            AttachmentsManager.sharedInstance.authenticate(completion: { token in
-                self.loadImage(message: message)
-            }, errorCompletion: {
-                self.hideImage()
-            })
-            return
-        }
-        
         guard let message = message else {
             return
         }

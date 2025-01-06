@@ -322,7 +322,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             pinVC.loggingCompletion = {
                 
                 self.updateDefaultTribe()
-                AttachmentsManager.sharedInstance.runAuthentication(forceAuthenticate: true)
                 
                 if let currentVC = self.getCurrentVC() {
                     let _ = DeepLinksHandlerHelper.joinJitsiCall(vc: currentVC, forceJoin: true)

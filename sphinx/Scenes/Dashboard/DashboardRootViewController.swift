@@ -452,6 +452,9 @@ extension DashboardRootViewController {
     }
 
     @objc private func didConnectToInternet() {
+        if (UIApplication.shared.delegate as? AppDelegate)?.isActive == false {
+            return
+        }
         self.reconnectToServer()
     }
 
