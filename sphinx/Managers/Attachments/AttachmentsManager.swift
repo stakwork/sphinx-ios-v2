@@ -59,14 +59,14 @@ class AttachmentsManager {
     }
     
     func authenticate(
-        completion: @escaping (String) -> (),
+        completion: @escaping () -> (),
         errorCompletion: @escaping () -> ()
     ) {
         if let token: String = UserDefaults.Keys.attachmentsToken.get() {
             let expDate: Date? = UserDefaults.Keys.attachmentsTokenExpDate.get()
             
             if let expDate = expDate, expDate > Date() {
-                completion(token)
+                completion()
                 return
             }
         }
@@ -103,7 +103,7 @@ class AttachmentsManager {
                             UserDefaults.Keys.attachmentsTokenExpDate.set(date)
                         }
                         
-                        completion(token)
+                        completion()
                     } else {
                         errorCompletion()
                     }
@@ -138,7 +138,7 @@ class AttachmentsManager {
         let isAuthenticated = isAuthenticated()
         
         if !isAuthenticated.0 {
-            self.authenticate(completion: { token in
+            self.authenticate(completion: {
                 self.getMediaItemInfo(message: message, callback: callback)
             }, errorCompletion: {
                 UserDefaults.Keys.attachmentsToken.removeValue()
@@ -159,7 +159,7 @@ class AttachmentsManager {
         let isAuthenticated = isAuthenticated()
         
         if !isAuthenticated.0 {
-            self.authenticate(completion: { token in
+            self.authenticate(completion: {
                 self.uploadImage(attachmentObject: attachmentObject, route: route)
             }, errorCompletion: {
                 UserDefaults.Keys.attachmentsToken.removeValue()
@@ -195,7 +195,7 @@ class AttachmentsManager {
         let isAuthenticated = isAuthenticated()
         
         if !isAuthenticated.0 {
-            self.authenticate(completion: { token in
+            self.authenticate(completion: {
                 self.uploadAndSendAttachment(
                     attachmentObject: attachmentObject,
                     chat: chat,
