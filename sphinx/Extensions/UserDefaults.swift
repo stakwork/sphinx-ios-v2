@@ -22,7 +22,7 @@ extension UserDefaults {
         public static let subscriptionQuery = DefaultKey<String>("subscriptionQuery")
         public static let invoiceQuery = DefaultKey<String>("invoiceQuery")
         public static let tribeQuery = DefaultKey<String>("tribeQuery")
-        public static let jitsiLinkUrl = DefaultKey<String>("jitsiLinkUrl")
+        public static let callLinkUrl = DefaultKey<String>("callLinkUrl")
         public static let attachmentsToken = DefaultKey<String>("attachmentsToken")
         public static let attachmentsTokenExpDate = DefaultKey<Date>("attachmentsTokenExpDate")
         public static let inviterNickname = DefaultKey<String>("inviterNickname")
