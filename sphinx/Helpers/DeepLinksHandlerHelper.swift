@@ -63,12 +63,15 @@ class DeepLinksHandlerHelper {
     }
     
     static func joinJitsiCall(vc: UIViewController, forceJoin: Bool = false) -> Bool {
-        if let jitsiCall = UserDefaults.Keys.jitsiLinkUrl.get(defaultValue: ""), jitsiCall.isNotEmpty {
+        if let callLink = UserDefaults.Keys.callLinkUrl.get(defaultValue: ""), callLink.isNotEmpty {
             
             if !GroupsPinManager.sharedInstance.shouldAskForPin() || forceJoin {
-                UserDefaults.Keys.jitsiLinkUrl.removeValue()
+                UserDefaults.Keys.callLinkUrl.removeValue()
                 
-                VideoCallManager.sharedInstance.startVideoCall(link: jitsiCall)
+                VideoCallManager.sharedInstance.startVideoCall(
+                    link: callLink,
+                    audioOnly: callLink.contains("startAudioOnly=true")
+                )
 
                 return true
             }
@@ -93,17 +96,11 @@ class DeepLinksHandlerHelper {
         return false
     }
     
-    static func storeJitsiCallLink(url: URL) {
-        if url.absoluteString.isJitsiCallLink || url.absoluteString.isLiveKitCallLink {
-            UserDefaults.Keys.jitsiLinkUrl.set(url.absoluteString)
-        }
-    }
-    
     static func storeLinkQueryFrom(url: URL) -> Bool {
         var shouldSetVC = false
         
         if url.absoluteString.isJitsiCallLink || url.absoluteString.isLiveKitCallLink {
-            UserDefaults.Keys.jitsiLinkUrl.set(url.absoluteString)
+            UserDefaults.Keys.callLinkUrl.set(url.absoluteString)
             return true
         }
         
