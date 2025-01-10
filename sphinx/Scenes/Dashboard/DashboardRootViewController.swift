@@ -18,7 +18,7 @@ class DashboardRootViewController: RootViewController {
     @IBOutlet weak var podcastSmallPlayer: PodcastSmallPlayer!
     @IBOutlet weak var headerView: ChatListHeader!
     @IBOutlet weak var searchBar: UIView!
-    @IBOutlet weak var searchTextField: UITextField!
+    @IBOutlet weak var searchTextField: ClearNonActiveTextField!
     @IBOutlet weak var searchBarContainer: UIView!
     @IBOutlet weak var mainContentContainerView: UIView!
     @IBOutlet weak var restoreProgressView: RestoreProgressView!
@@ -707,5 +707,22 @@ extension DashboardRootViewController {
         case transactionsHistory
         case scanQRCode
         case sendSats
+    }
+}
+
+class ClearNonActiveTextField: UITextField {
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        if let clearButton = self.value(forKey: "clearButton") as? UIView {
+            let convertedPoint = self.convert(point, to: clearButton)
+            if clearButton.point(inside: convertedPoint, with: event) {
+                if !self.isFirstResponder {
+                    text = ""
+                    sendActions(for: .editingChanged)
+                    let _ = delegate?.textFieldShouldClear?(self)
+                    return nil
+                }
+            }
+        }
+        return super.hitTest(point, with: event)
     }
 }
