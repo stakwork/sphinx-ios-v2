@@ -18,7 +18,6 @@ class DashboardRootViewController: RootViewController {
     @IBOutlet weak var podcastSmallPlayer: PodcastSmallPlayer!
     @IBOutlet weak var headerView: ChatListHeader!
     @IBOutlet weak var searchBar: UIView!
-    @IBOutlet weak var searchBarLoadingActivityIndicator: UIActivityIndicatorView!
     @IBOutlet weak var searchTextField: UITextField!
     @IBOutlet weak var searchBarContainer: UIView!
     @IBOutlet weak var mainContentContainerView: UIView!
@@ -28,8 +27,7 @@ class DashboardRootViewController: RootViewController {
     @IBOutlet weak var addTribeIconLabel: UILabel!
     
     @IBOutlet weak var bottomBarBottomConstraint: NSLayoutConstraint!
-    var isFirstFeedsLoad : Bool = false
-    lazy var loadingViewController = LoadingViewController(backgroundColor: UIColor.Sphinx.SecondaryTextInverted.withAlphaComponent(0.5))
+    
     let buttonTitles : [String] = [
         "dashboard.tabs.feed".localized,
         "dashboard.tabs.friends".localized,
@@ -53,7 +51,6 @@ class DashboardRootViewController: RootViewController {
     internal weak var leftMenuDelegate: LeftMenuDelegate?
     
     internal var managedObjectContext: NSManagedObjectContext!
-    internal let onionConnector = SphinxOnionConnector.sharedInstance
     internal let actionsManager = ActionsManager.sharedInstance
     internal let contactsService = ContactsService.sharedInstance
     internal let refreshControl = UIRefreshControl()
@@ -63,13 +60,6 @@ class DashboardRootViewController: RootViewController {
     internal let podcastPlayerController = PodcastPlayerController.sharedInstance
     
     let som = SphinxOnionManager.sharedInstance
-    var feedSource:FeedSource = .RSS
-    
-    //MARK: Torrents related
-    var stashedMagnetLink :String? = nil
-    var stashedDetailsResponse : MagnetDetailsResponse? = nil
-    var torrentMagnetDetailsView: TorrentMagnetDetailsView!
-    //END Torrents Related
     
     internal lazy var chatsListViewModel: ChatListViewModel = {
         ChatListViewModel()
@@ -81,16 +71,6 @@ class DashboardRootViewController: RootViewController {
             feedsListContainerDelegate: self
         )
     }()
-    
-    func setupFeedsContainer(){
-        //Auto populate
-        //MARK: @BTRefactor TODO come back to this
-        //        if(isFirstFeedsLoad == false){
-        //            isFirstFeedsLoad = true
-        //            self.presentFeedSearchView()
-        //            feedSearchResultsContainerViewController.prePopulateSearch()
-        //        }
-    }
     
     internal lazy var feedSearchResultsContainerViewController = {
         FeedSearchContainerViewController.instantiate(
@@ -125,22 +105,15 @@ class DashboardRootViewController: RootViewController {
             resetSearchField()
             feedViewMode = .rootList
             
-            configureAddTribeBehavior(oldTab: oldValue,oldFeedSource: feedSource)
-            
-            if(activeTab == .feed){
-                self.setupFeedsContainer()
-                if(feedSource == .BitTorrent){feedsContainerViewController.showEmptyStateViewController()}
+            if (activeTab == .tribes) {
+                addTribeTrailing.constant = 16
+            } else {
+                addTribeTrailing.constant = -120
             }
             
             UIView.animate(withDuration: 0.10) {
                 self.searchBarContainer.layoutIfNeeded()
             }
-        }
-    }
-    
-    internal var feedMode : FeedMode = .RSS {
-        didSet{
-            //TODO
         }
     }
     
@@ -152,58 +125,14 @@ class DashboardRootViewController: RootViewController {
             LoadingWheelHelper.toggleLoadingWheel(
                 loading: shouldShowHeaderLoadingWheel,
                 loadingWheel: headerView.loadingWheel,
-                loadingWheelColor: UIColor.Sphinx.Text,
+                loadingWheelColor: UIColor.white,
                 views: [
                     searchBarContainer,
-//                    mainContentContainerView,
+                    mainContentContainerView,
                     bottomBarContainer,
                 ]
             )
         }
-    }
-    
-    func getFeedModeButtonText()->String{
-        if feedSource == .BitTorrent{
-            return "RSS"
-        }
-        else if feedSource == .RSS{
-            return "BitTorrent"
-        }
-        return "RSS"
-    }
-    
-    func configureAddTribeBehavior(
-        oldTab: DashboardTab,
-        visibilityOverride: Bool? = nil,
-        oldFeedSource: FeedSource
-    ){
-        if (activeTab == .tribes || activeTab == .feed) {
-            addTribeTrailing.constant = 16
-        } else {
-            addTribeTrailing.constant = -120
-        }
-        let title = (activeTab == .feed) ? getFeedModeButtonText() : ("Add Tribe")
-        let icon = (activeTab == .feed) ? ("switch_access_shortcut") : ("add")
-        searchBarContainer.isUserInteractionEnabled = true
-        searchBarLoadingActivityIndicator.isHidden = true
-        addTribeButton.setTitle(title, for: .normal)
-        addTribeIconLabel.text = icon
-        
-        if (oldFeedSource != feedSource) {
-            showChipFilterOptions()
-        }
-    }
-    
-    func showChipFilterOptions(){
-        activeTab = .feed
-        //feedSearchResultsContainerViewController.presentInitialStateView()
-    }
-    
-    func toggleFeedSourceType(){
-        let oldFeedSource = feedSource
-        (oldFeedSource == .RSS) ? (feedSource = .BitTorrent) : (feedSource = .RSS)
-        configureAddTribeBehavior(oldTab: .feed,visibilityOverride: true, oldFeedSource: oldFeedSource)
-        filterChipDidChange()//treat it as a chip filter
     }
     
     func forceShowLoadingWheel() {
@@ -260,7 +189,8 @@ extension DashboardRootViewController {
         let viewController = StoryboardScene.Dashboard.dashboardRootViewController.instantiate()
         
         viewController.leftMenuDelegate = leftMenuDelegate
-        viewController.managedObjectContext = managedObjectContext        
+        viewController.managedObjectContext = managedObjectContext   
+        
         return viewController
     }
 }
@@ -294,21 +224,6 @@ extension DashboardRootViewController {
         setupObservers()
     }
     
-    func launchEpubReader(){
-        let manager = EpubConverterManager()
-
-        Task {
-            do {
-                let epubUrl = "https://files.bt2.bard.garden:21433/The%20Mom%20Test_%20How%20to%20Talk%20to%20Customers%20by%20Rob%20Fitzpatrick%20EPUB/The%20Mom%20Test_%20How%20to%20Talk%20to%20Customers%20by%20Rob%20Fitzpatrick.epub"
-                let savedPdfUrl = try await manager.convertEpub(url: epubUrl)
-                print("PDF saved at: \(savedPdfUrl.path)")
-                // Use the savedPdfUrl as needed (e.g., display the PDF, share it, etc.)
-            } catch {
-                print("Conversion failed: \(error)")
-            }
-        }
-    }
-    
     func addAccessibilityIdentifiers(){
         bottomBar.accessibilityIdentifier = "bottomBar"
         bottomBarContainer.accessibilityIdentifier = "bottomBarContainer"
@@ -334,13 +249,8 @@ extension DashboardRootViewController {
     }
     
     @IBAction func didTapAddTribeButton() {
-        if activeTab == .tribes{
-            let discoverVC = DiscoverTribesWebViewController.instantiate()
-            navigationController?.pushViewController(discoverVC, animated: true)
-        }
-        else if activeTab == .feed{
-            toggleFeedSourceType()
-        }
+        let discoverVC = DiscoverTribesWebViewController.instantiate()
+        navigationController?.pushViewController(discoverVC, animated: true)
     }
     
     func setupPlayerBar() {
@@ -398,12 +308,6 @@ extension DashboardRootViewController {
         headerView.showBalance()
         
         handleDeepLinksAndPush()
-        
-        setupAddTribeButton()
-        
-//        DispatchQueue.main.asyncAfter(deadline: .now() + 5.0, execute: {
-//            self.launchEpubReader()
-//        })
     }
     
     func refreshUnreadStatus(){
@@ -785,11 +689,6 @@ extension DashboardRootViewController {
         case feed
         case friends
         case tribes
-    }
-    
-    enum FeedMode: Int, Hashable{
-        case BitTorrent
-        case RSS
     }
 }
 

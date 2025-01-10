@@ -36,16 +36,6 @@ extension DashboardRootViewController: UITextFieldDelegate {
    
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         view.endEditing(true)
-        feedSearchResultsContainerViewController.didPressEnter = true
-        
-        // Trigger the search again with the current text
-        if case .feed = activeTab, let searchText = textField.text {
-            feedSearchResultsContainerViewController.updateSearchQuery(
-                with: searchText,
-                and: getSearchFeedType(),
-                feedSource: getFeedSource()
-            )
-        }
         
         return true
     }
@@ -56,10 +46,6 @@ extension DashboardRootViewController: UITextFieldDelegate {
             return FeedType.Podcast
         case DashboardFeedsContainerViewController.ContentFilterOption.watch.id:
             return FeedType.Video
-        case DashboardFeedsContainerViewController.ContentFilterOption.browse.id:
-            return FeedType.BrowseTorrent
-        case DashboardFeedsContainerViewController.ContentFilterOption.discover.id:
-            return FeedType.SearchTorrent
         case DashboardFeedsContainerViewController.ContentFilterOption.read.id:
             return FeedType.Newsletter
         default:
@@ -72,8 +58,7 @@ extension DashboardRootViewController: UITextFieldDelegate {
         case .feed:
             feedSearchResultsContainerViewController.updateSearchQuery(
                 with: "",
-                and: getSearchFeedType(),
-                feedSource: feedSource
+                and: getSearchFeedType()
             )
             if (!textField.isEditing) {
                 presentRootFeedsListView()
@@ -108,8 +93,7 @@ extension DashboardRootViewController: UITextFieldDelegate {
             
             feedSearchResultsContainerViewController.updateSearchQuery(
                 with: queryString,
-                and: getSearchFeedType(),
-                feedSource: feedSource
+                and: getSearchFeedType()
             )
         case .friends:
             contactsService.updateContactsSearchQuery(term: queryString)

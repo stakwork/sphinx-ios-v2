@@ -701,7 +701,6 @@
 		CE6790252C73E86A00BC2D38 /* NotificationData+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE6790232C73E86A00BC2D38 /* NotificationData+CoreDataProperties.swift */; };
 		CE67902A2C7CFC0B00BC2D38 /* TorrentMagnetDetailsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE6790292C7CFC0B00BC2D38 /* TorrentMagnetDetailsView.swift */; };
 		CE67902C2C7CFC3900BC2D38 /* TorrentMagnetDetailsView.xib in Resources */ = {isa = PBXBuildFile; fileRef = CE67902B2C7CFC3900BC2D38 /* TorrentMagnetDetailsView.xib */; };
-		CE67902E2C7E20A000BC2D38 /* DashboardRootViewController+TorrentMagnetDetailsViewDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE67902D2C7E20A000BC2D38 /* DashboardRootViewController+TorrentMagnetDetailsViewDelegate.swift */; };
 		CE6C83FC29B918BD00E9FE7C /* TopMostVCsHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE6C83FB29B918BD00E9FE7C /* TopMostVCsHelper.swift */; };
 		CE792FAB2AFED7AF007FD4FE /* Server+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE792FAA2AFED7AF007FD4FE /* Server+CoreDataClass.swift */; };
 		CE792FAD2AFED7B9007FD4FE /* Server+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE792FAC2AFED7B9007FD4FE /* Server+CoreDataProperties.swift */; };
@@ -1943,7 +1942,6 @@
 		CE6790232C73E86A00BC2D38 /* NotificationData+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NotificationData+CoreDataProperties.swift"; sourceTree = "<group>"; };
 		CE6790292C7CFC0B00BC2D38 /* TorrentMagnetDetailsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorrentMagnetDetailsView.swift; sourceTree = "<group>"; };
 		CE67902B2C7CFC3900BC2D38 /* TorrentMagnetDetailsView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = TorrentMagnetDetailsView.xib; sourceTree = "<group>"; };
-		CE67902D2C7E20A000BC2D38 /* DashboardRootViewController+TorrentMagnetDetailsViewDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DashboardRootViewController+TorrentMagnetDetailsViewDelegate.swift"; sourceTree = "<group>"; };
 		CE6C83FB29B918BD00E9FE7C /* TopMostVCsHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopMostVCsHelper.swift; sourceTree = "<group>"; };
 		CE7840162B922F4D002038AE /* sphinx 48.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 48.xcdatamodel"; sourceTree = "<group>"; };
 		CE792FAA2AFED7AF007FD4FE /* Server+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Server+CoreDataClass.swift"; sourceTree = "<group>"; };
@@ -4708,7 +4706,6 @@
 				4746466E2988331A00FAF58B /* Dashboard.storyboard */,
 				F3531C3C26BD505F00E9586C /* DashboardChatsListDelegate.swift */,
 				F373BF0026A9CE1B0093C886 /* DashboardRootViewController.swift */,
-				CE67902D2C7E20A000BC2D38 /* DashboardRootViewController+TorrentMagnetDetailsViewDelegate.swift */,
 				F38744E427202DBC00E28C84 /* DashboardRootViewController+CustomSegmentedControlDelegate.swift */,
 				F3531C3E26BD511300E9586C /* DashboardRootViewController+DashboardChatsListDelegate.swift */,
 				F3B2519426DFA1E800C96D42 /* DashboardRootViewController+DashboardFeedsListContainerViewControllerDelegate.swift */,
@@ -5375,7 +5372,6 @@
 				475E416B23858D4900928931 /* Subscription+CoreDataProperties.swift in Sources */,
 				47308E0424FEE6E600FFAC6F /* SocketParsable.swift in Sources */,
 				47BA317A2D15D8BB001AF7E5 /* ContactDetailsViewController.swift in Sources */,
-				CE67902E2C7E20A000BC2D38 /* DashboardRootViewController+TorrentMagnetDetailsViewDelegate.swift in Sources */,
 				CE452E3A2BAB24BD008A0868 /* SphinxOnionManager+AccountRestore.swift in Sources */,
 				47C7C1782938E84D00264BF6 /* RecommendationResult.swift in Sources */,
 				475043D72976F96F00830E9E /* PodcastSmallPlayer+Delegates.swift in Sources */,

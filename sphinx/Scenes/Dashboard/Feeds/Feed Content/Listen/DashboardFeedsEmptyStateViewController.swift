@@ -51,7 +51,7 @@ extension DashboardFeedsEmptyStateViewController {
         updateEmptyStateLabel()
     }
     
-    func updateEmptyStateLabel(){
+    func updateEmptyStateLabel() {
         emptyStateMessageLabel.text = emptyStateMessageText
     }
 }

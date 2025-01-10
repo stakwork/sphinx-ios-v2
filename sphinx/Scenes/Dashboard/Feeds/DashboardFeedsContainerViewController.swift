@@ -49,9 +49,6 @@ protocol DashboardFeedsListContainerViewControllerDelegate: AnyObject {
     func viewControllerContentScrolled(
         scrollView: UIScrollView
     )
-    
-    func filterChipDidChange()
-    func getFeedSource()->FeedSource
 }
 
 
@@ -76,7 +73,6 @@ class DashboardFeedsContainerViewController: UIViewController {
                     from: oldValue,
                     to: self!.activeFilterOption
                 )
-                self?.feedsListContainerDelegate?.filterChipDidChange()
             }
         }
     }
@@ -247,10 +243,6 @@ extension DashboardFeedsContainerViewController {
         switch activeFilterOption.id {
         case ContentFilterOption.allContent.id:
             return allTribeFeedsCollectionViewController
-        case ContentFilterOption.browse.id:
-            return videoFeedCollectionViewController
-        case ContentFilterOption.discover.id:
-            return allTribeFeedsCollectionViewController
         case ContentFilterOption.listen.id:
             return podcastFeedCollectionViewController
         case ContentFilterOption.watch.id:
@@ -280,8 +272,8 @@ extension DashboardFeedsContainerViewController {
             container: feedContentCollectionViewContainer
         )
         
-        if activeFilterOption.id == ContentFilterOption.discover.id {
-            actionsManager.saveFeedSearches()
+        if activeFilterOption.id == ContentFilterOption.allContent.id {
+//            actionsManager.saveFeedSearches()
             synActionsAndRefreshRecommendations()
         }
     }
