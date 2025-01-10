@@ -629,11 +629,11 @@
 "feed.recently-published" = "Recently Published";
 "feed.recently-read" = "Recently Read";
 "feed.play-now" = "Play Now";
-"feed.no-feed-found" = "No Feed Results Found";
-"feed.no-listen-found" = "No \"Listen\" Results Found";
-"feed.no-watch-found" = "No \"Watch\" Results Found";
-"feed.no-read-found" = "No \"Read\" Results Found";
-"feed.no-play-found" = "No \"Play\" Results Found";
+"feed.no-feed-found" = "No Feed results found";
+"feed.no-listen-found" = "No \"Listen\" results found";
+"feed.no-watch-found" = "No \"Watch\" results found";
+"feed.no-read-found" = "No \"Read\" results found";
+"feed.no-play-found" = "No \"Play\" results found";
 
 "feed.search-over" = "Search over";
 "feed.search-tracks-quantity" = "millions of tracks";

@@ -66,7 +66,7 @@ extension PodcastPlayerController {
             return #imageLiteral(resourceName: "appPinIcon")
         })
         
-        MPNowPlayingInfoCenter.default().playbackState = isPlaying ? MPNowPlayingPlaybackState.playing : MPNowPlayingPlaybackState.paused
+//        MPNowPlayingInfoCenter.default().playbackState = isPlaying ? MPNowPlayingPlaybackState.playing : MPNowPlayingPlaybackState.paused
         /*
         if episode.urlPath == "https://megaphone.imgix.net/podcasts/e4c412e6-e1f0-11e8-9bde-83f9d376f059/image/Podcast_Tile_6000x6000px.png?ixlib=rails-4.3.1&max-w=3000&max-h=3000&fit=crop&auto=format,compress"{
             episode.urlPath = "https://megaphone.imgix.net/podcasts/e4c412e6-e1f0-11e8-9bde-83f9d376f059/image/Podcast_Tile_6000x6000px.png"
