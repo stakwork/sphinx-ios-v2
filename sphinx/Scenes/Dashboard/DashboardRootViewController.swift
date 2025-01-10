@@ -208,6 +208,7 @@ extension DashboardRootViewController {
         setupHeaderViews()
         listenForEvents()
         setupPlayerBar()
+        setupAddTribeButton()
         
         restoreProgressView.delegate = self
         
@@ -243,7 +244,7 @@ extension DashboardRootViewController {
         }
     }
     
-    func setupAddTribeButton(){
+    func setupAddTribeButton() {
         addTribeButton.layer.cornerRadius = 22.0
         addTribeButton.clipsToBounds = true
     }
@@ -356,10 +357,12 @@ extension DashboardRootViewController {
     }
 
     @objc private func didConnectToInternet() {
-        if (UIApplication.shared.delegate as? AppDelegate)?.isActive == false {
-            return
+        DispatchQueue.main.async {
+            if (UIApplication.shared.delegate as? AppDelegate)?.isActive == false {
+                return
+            }
+            self.reconnectToServer()
         }
-        self.reconnectToServer()
     }
 
     @objc private func didDisconnectFromInternet() {
