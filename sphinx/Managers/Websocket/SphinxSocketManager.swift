@@ -1,11 +1,3 @@
-//
-//  SphinxSocketManager.swift
-//  sphinx
-//
-//  Created by Tomas Timinskas on 11/10/2019.
-//  Copyright © 2019 Sphinx. All rights reserved.
-//
-
 import UIKit
 import SwiftyJSON
 
@@ -155,46 +147,51 @@ class SphinxSocketManager {
 extension SphinxSocketManager {
     
     func insertData(dataString: String) {
-        if let dataFromString = dataString.data(using: .utf8, allowLossyConversion: false) {
-            var json : JSON!
-            do {
-                json = try JSON(data: dataFromString)
-            } catch {
-                return
-            }
-            
-            if let type = json["type"].string {
-                let response = json["response"]
+        do {
+            if let dataFromString = dataString.data(using: .utf8, allowLossyConversion: false) {
+                var json : JSON!
+                do {
+                    json = try JSON(data: dataFromString)
+                } catch {
+                    print("Error parsing JSON: \(error)")
+                    return
+                }
                 
-                switch(type) {
-                case "contact":
-                    didReceiveContact(contactJson: response)
-                case "invite":
-                    didReceiveInvite(inviteJson: response)
-                case "group_create":
-                    didReceiveGroup(groupJson: response)
-                case "group_leave":
-                    didLeaveGroup(type: type, json: response)
-                case "group_join":
-                    didJoinGroup(type: type, json: response)
-                case "group_kick", "tribe_delete":
-                    tribeDeletedOrkickedFromGroup(type: type, json: response)
-                case "member_request":
-                    memberRequest(type: type, json: response)
-                case "member_approve", "member_reject":
-                    memberRequestResponse(type: type, json: response)
-                case "invoice_payment":
-                    didReceiveInvoicePayment(json: response)
-                case "chat_seen":
-                    didSeenChat(chatJson: response)
-                case "purchase", "purchase_accept", "purchase_deny":
-                    didReceivePurchaseMessage(type: type, messageJson: response)
-                case "keysend":
-                    keysendReceived(json: response)
-                default:
-                    didReceiveMessage(type: type, messageJson: response)
+                if let type = json["type"].string {
+                    let response = json["response"]
+                    
+                    switch(type) {
+                    case "contact":
+                        didReceiveContact(contactJson: response)
+                    case "invite":
+                        didReceiveInvite(inviteJson: response)
+                    case "group_create":
+                        didReceiveGroup(groupJson: response)
+                    case "group_leave":
+                        didLeaveGroup(type: type, json: response)
+                    case "group_join":
+                        didJoinGroup(type: type, json: response)
+                    case "group_kick", "tribe_delete":
+                        tribeDeletedOrkickedFromGroup(type: type, json: response)
+                    case "member_request":
+                        memberRequest(type: type, json: response)
+                    case "member_approve", "member_reject":
+                        memberRequestResponse(type: type, json: response)
+                    case "invoice_payment":
+                        didReceiveInvoicePayment(json: response)
+                    case "chat_seen":
+                        didSeenChat(chatJson: response)
+                    case "purchase", "purchase_accept", "purchase_deny":
+                        didReceivePurchaseMessage(type: type, messageJson: response)
+                    case "keysend":
+                        keysendReceived(json: response)
+                    default:
+                        didReceiveMessage(type: type, messageJson: response)
+                    }
                 }
             }
+        } catch {
+            print("Error handling socket data: \(error)")
         }
     }
     

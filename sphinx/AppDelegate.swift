@@ -1,11 +1,3 @@
-//
-//  AppDelegate.swift
-//  sphinx
-//
-//  Created by Tomas Timinskas on 12/09/2019.
-//  Copyright © 2019 Sphinx. All rights reserved.
-//
-
 import UIKit
 import UserNotifications
 import StoreKit
@@ -461,19 +453,24 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         didReceiveRemoteNotification userInfo: [AnyHashable : Any],
         fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
     ) {
-        if application.applicationState == .background {
-            self.chatListViewModel.syncMessages(
-                onPushReceived: true,
-                progressCallback: { _ in },
-                completion: { (_, _) in
-                    completionHandler(.newData)
-                },
-                errorCompletion: {
-                    completionHandler(.noData)
-                }
-            )
-        } else {
-            completionHandler(.noData)
+        do {
+            if application.applicationState == .background {
+                self.chatListViewModel.syncMessages(
+                    onPushReceived: true,
+                    progressCallback: { _ in },
+                    completion: { (_, _) in
+                        completionHandler(.newData)
+                    },
+                    errorCompletion: {
+                        completionHandler(.noData)
+                    }
+                )
+            } else {
+                completionHandler(.noData)
+            }
+        } catch {
+            print("Error handling remote notification: \(error)")
+            completionHandler(.failed)
         }
     }
 
@@ -616,6 +613,3 @@ extension AppDelegate : PKPushRegistryDelegate{
         print("invalidated token")
     }
 }
-
-
-

@@ -1,11 +1,3 @@
-//
-//  APIMessagesExtension.swift
-//  sphinx
-//
-//  Created by Tomas Timinskas on 21/11/2019.
-//  Copyright © 2019 Sphinx. All rights reserved.
-//
-
 import Foundation
 import Alamofire
 import SwiftyJSON
@@ -92,7 +84,8 @@ extension API {
                 }
                 self.cancellableRequest = nil
                 errorCallback()
-            case .failure(_):
+            case .failure(let error):
+                print("Error fetching paginated messages: \(error)")
                 self.cancellableRequest = nil
                 errorCallback()
             }

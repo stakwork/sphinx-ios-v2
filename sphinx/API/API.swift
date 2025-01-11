@@ -1,11 +1,3 @@
-//
-//  API.swift
-//  sphinx
-//
-//  Created by Tomas Timinskas on 12/09/2019.
-//  Copyright © 2019 Sphinx. All rights reserved.
-//
-
 import Foundation
 import Alamofire
 import SwiftyJSON
@@ -419,7 +411,8 @@ class API {
                     }
                 }
                 self.retryGettingIPFromHUB()
-            case .failure(_):
+            case .failure(let error):
+                print("Error getting IP from HUB: \(error)")
                 self.retryGettingIPFromHUB()
             }
         }
