@@ -513,6 +513,8 @@
 		47B9A648233BB6AE00D2B022 /* AddressBookHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47B9A647233BB6AE00D2B022 /* AddressBookHeaderView.swift */; };
 		47B9A64A233BB6BA00D2B022 /* AddressBookHeaderView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 47B9A649233BB6BA00D2B022 /* AddressBookHeaderView.xib */; };
 		47BA317A2D15D8BB001AF7E5 /* ContactDetailsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47BA31792D15D8BB001AF7E5 /* ContactDetailsViewController.swift */; };
+		47BA317B2D355026001AF7E5 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEA6BC1F2C1794AD00494071 /* NetworkMonitor.swift */; };
+		47BA317C2D3550BD001AF7E5 /* Notification.Name.swift in Sources */ = {isa = PBXBuildFile; fileRef = 470F5CAA243E7D27007E054F /* Notification.Name.swift */; };
 		47BA7A9124118F6B0001773F /* CustomSwiftLinkPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47BA7A9024118F6B0001773F /* CustomSwiftLinkPreview.swift */; };
 		47BB1D5C239572A30049802B /* NewContactDelegatesExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47BB1D5B239572A30049802B /* NewContactDelegatesExtension.swift */; };
 		47BE85502465E09B00BE4AE8 /* BiometricAuthenticationHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47BE854F2465E09B00BE4AE8 /* BiometricAuthenticationHelper.swift */; };
@@ -5990,6 +5992,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				47BA317C2D3550BD001AF7E5 /* Notification.Name.swift in Sources */,
+				47BA317B2D355026001AF7E5 /* NetworkMonitor.swift in Sources */,
 				4777E01A2C78FD26009F5F05 /* Sphinxrs-Bridging-Header.h in Sources */,
 				4777E01B2C78FD26009F5F05 /* sphinxrs.swift in Sources */,
 				4777E01C2C78FD26009F5F05 /* sphinxrsFFI.h in Sources */,

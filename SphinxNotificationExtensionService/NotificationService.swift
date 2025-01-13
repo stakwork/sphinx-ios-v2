@@ -29,10 +29,26 @@ class NotificationService: UNNotificationServiceExtension {
     var contentHandler: ((UNNotificationContent) -> Void)?
     var bestAttemptContent: UNMutableNotificationContent?
     
+    override init() {
+        super.init()
+        
+        NetworkMonitor.shared.startMonitoring()
+    }
+    
+    deinit {
+        NetworkMonitor.shared.stopMonitoring()
+    }
+
     override func didReceive(
         _ request: UNNotificationRequest,
         withContentHandler contentHandler: @escaping (UNNotificationContent) -> Void
     ) {
+        if !NetworkMonitor.shared.isNetworkConnected() {
+            resetContentHandler()
+            contentHandler(request.content)
+            return
+        }
+        
         self.contentHandler = contentHandler
         
         self.bestAttemptContent = (request.content.mutableCopy() as? UNMutableNotificationContent)
@@ -108,7 +124,6 @@ class NotificationService: UNNotificationServiceExtension {
             resetContentHandler()
             contentHandler(request.content)
         }
-        return
     }
     
     func resetContentHandler() {
