@@ -116,7 +116,7 @@ class FeedItemDetailVM : NSObject {
             break
         case .copyLink:
             if let episode = episode {
-                if let link = episode.linkURLPath {
+                if let link = episode.linkURLPath ?? episode.urlPath {
                     ClipboardHelper.copyToClipboard(text: link, message: "link.copied.clipboard".localized)
                 }
             }
