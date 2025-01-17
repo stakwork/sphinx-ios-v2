@@ -38,30 +38,39 @@ public class PodcastEpisode: NSObject {
     
     var wasPlayed: Bool? {
         get {
-            return UserDefaults.standard.value(forKey: "wasPlayed-\(itemID)") as? Bool
+            return UserDefaults.standard.value(forKey: "wasPlayed-\(feedAndItemId)") as? Bool
         }
         set {
-            UserDefaults.standard.set(newValue, forKey: "wasPlayed-\(itemID)")
+            UserDefaults.standard.set(newValue, forKey: "wasPlayed-\(feedAndItemId)")
         }
     }
     
     var duration: Int? {
         get {
-            return UserDefaults.standard.value(forKey: "duration-\(itemID)") as? Int
+            return UserDefaults.standard.value(forKey: "duration-\(feedAndItemId)") as? Int
         }
         set {
             if (newValue ?? 0 > 0) {
-                UserDefaults.standard.set(newValue, forKey: "duration-\(itemID)")
+                UserDefaults.standard.set(newValue, forKey: "duration-\(feedAndItemId)")
             }
         }
     }
     
     var currentTime: Int? {
         get {
-            return UserDefaults.standard.value(forKey: "current-time-\(itemID)") as? Int
+            return UserDefaults.standard.value(forKey: "current-time-\(feedAndItemId)") as? Int
         }
         set {
-            UserDefaults.standard.set(newValue, forKey: "current-time-\(itemID)")
+            UserDefaults.standard.set(newValue, forKey: "current-time-\(feedAndItemId)")
+        }
+    }
+    
+    var feedAndItemId: String {
+        get {
+            if let feedID = feedID {
+                return "\(feedID)-\(itemID)"
+            }
+            return "\(itemID)"
         }
     }
     
