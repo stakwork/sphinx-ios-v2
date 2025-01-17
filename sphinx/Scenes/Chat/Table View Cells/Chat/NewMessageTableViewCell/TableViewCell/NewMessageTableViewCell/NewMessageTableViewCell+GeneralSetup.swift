@@ -11,6 +11,8 @@ import UIKit
 extension NewMessageTableViewCell {
     
     func setupViews() {
+        tap = UITapGestureRecognizer(target: self, action: #selector(labelTapped(gesture:)))
+        
         mediaContentHeightConstraint.constant = (UIScreen.main.bounds.width - MessageTableCellState.kRowLeftMargin - MessageTableCellState.kRowRightMargin) * 0.7
         
         bubbleAllView.layer.cornerRadius = MessageTableCellState.kBubbleCornerRadius

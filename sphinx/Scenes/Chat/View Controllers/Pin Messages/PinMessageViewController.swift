@@ -40,6 +40,8 @@ class PinMessageViewController: UIViewController {
     
     var mode = ViewMode.PinnedMessageInfo
     
+    var tap: UITapGestureRecognizer! = nil
+    
     public enum ViewMode {
         case MessagePinned
         case MessageUnpinned
@@ -62,6 +64,8 @@ class PinMessageViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        tap = UITapGestureRecognizer(target: self, action: #selector(labelTapped(gesture:)))
         
         setupLayout()
         setupMessageData()
@@ -283,8 +287,6 @@ extension PinMessageViewController {
                 messageLabel.isUserInteractionEnabled = true
             }
         }
-        
-        let tap = UITapGestureRecognizer(target: self, action: #selector(labelTapped(gesture:)))
         
         if urlRanges.isEmpty {
             messageLabel.removeGestureRecognizer(tap)
