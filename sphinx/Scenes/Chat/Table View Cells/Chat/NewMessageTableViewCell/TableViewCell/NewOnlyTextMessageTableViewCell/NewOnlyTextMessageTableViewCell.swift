@@ -35,6 +35,8 @@ class NewOnlyTextMessageTableViewCell: CommonNewMessageTableViewCell, ChatTableV
     @IBOutlet weak var leftLineContainer: UIView!
     @IBOutlet weak var rightLineContainer: UIView!
     
+    var tap: UITapGestureRecognizer! = nil
+    
     override func awakeFromNib() {
         super.awakeFromNib()
         
@@ -47,6 +49,8 @@ class NewOnlyTextMessageTableViewCell: CommonNewMessageTableViewCell, ChatTableV
     }
     
     func setupViews() {
+        tap = UITapGestureRecognizer(target: self, action: #selector(labelTapped(gesture:)))
+        
         bubbleOnlyText.layer.cornerRadius = MessageTableCellState.kBubbleCornerRadius
 
         receivedArrow.drawReceivedBubbleArrow(color: UIColor.Sphinx.ReceivedMsgBG)

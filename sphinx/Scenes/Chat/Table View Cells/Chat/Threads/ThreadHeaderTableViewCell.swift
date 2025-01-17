@@ -47,6 +47,7 @@ class ThreadHeaderTableViewCell: UITableViewCell {
     @IBOutlet weak var bottomMarginView: UIView!
     @IBOutlet weak var differenceViewHeightConstraint: NSLayoutConstraint!
     
+    var tap: UITapGestureRecognizer! = nil
     var urlRanges = [NSRange]()
     
     override func awakeFromNib() {
@@ -62,6 +63,8 @@ class ThreadHeaderTableViewCell: UITableViewCell {
         
         audioMessageView.layer.cornerRadius = 9
         audioMessageView.clipsToBounds = true
+        
+        tap = UITapGestureRecognizer(target: self, action: #selector(labelTapped(gesture:)))
         
         mediaMessageView.removeMargin()
         
@@ -274,8 +277,6 @@ class ThreadHeaderTableViewCell: UITableViewCell {
             messageLabel.attributedText = attributedString
             messageLabel.isUserInteractionEnabled = true
         }
-        
-        let tap = UITapGestureRecognizer(target: self, action: #selector(labelTapped(gesture:)))
         
         if urlRanges.isEmpty {
             messageLabel.removeGestureRecognizer(tap)

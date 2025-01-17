@@ -50,6 +50,8 @@ class ThreadHeaderView : UIView {
     
     var urlRanges = [NSRange]()
     
+    var tap: UITapGestureRecognizer! = nil
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
         setup()
@@ -69,6 +71,8 @@ class ThreadHeaderView : UIView {
         
         mediaView.layer.cornerRadius = 4
         mediaView.clipsToBounds = true
+        
+        tap = UITapGestureRecognizer(target: self, action: #selector(labelTapped(gesture:)))
     }
     
     func configureWith(
@@ -217,8 +221,6 @@ class ThreadHeaderView : UIView {
             messageAndMediaLabel.isUserInteractionEnabled = true
             messageLabel.isUserInteractionEnabled = true
         }
-        
-        let tap = UITapGestureRecognizer(target: self, action: #selector(labelTapped(gesture:)))
         
         if urlRanges.isEmpty {
             messageAndMediaLabel.removeGestureRecognizer(tap)
