@@ -55,6 +55,8 @@ struct RoomView: View {
     @State private var isProcessingRecordRequest = false
     @State private var shouldAnimate = false
     
+    let newMessageBubbleHelper = NewMessageBubbleHelper()
+    
     private func startAnimation() {
         shouldAnimate = true
         withAnimation(.easeInOut(duration: 0.7).repeatForever(autoreverses: true)) {
@@ -84,6 +86,14 @@ struct RoomView: View {
             action: urlAction,
             callback: { success in
                 if success {
+                    self.newMessageBubbleHelper.showGenericMessageView(
+                        text: self.isRecording ? "Recording ended. This call is no longer being recorded." : "Recording in progress. Please be aware this call is being recorded.",
+                        delay: 5,
+                        textColor: UIColor.white,
+                        backColor: UIColor.Sphinx.BadgeRed,
+                        backAlpha: 1.0
+                    )
+                    
                     self.isRecording = !self.isRecording
                     self.shouldAnimate = !self.shouldAnimate
                 }
