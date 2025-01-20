@@ -61,6 +61,7 @@ typealias RecommendationsCallback = (([RecommendationResult]) -> ())
 typealias PinMessageCallback = ((String) -> ())
 typealias ErrorCallback = ((String) -> ())
 typealias LiveKitTokenCallback = ((String, String) -> ())
+typealias LiveKitRecordingCallback = ((Bool) -> ())
 
 // HUB calls
 typealias SignupWithCodeCallback = ((JSON, String, String) -> ())
