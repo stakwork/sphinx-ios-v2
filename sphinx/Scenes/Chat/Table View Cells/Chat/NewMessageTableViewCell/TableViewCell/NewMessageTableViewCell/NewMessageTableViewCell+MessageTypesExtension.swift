@@ -123,9 +123,7 @@ extension NewMessageTableViewCell {
                 messageLabel.attributedText = attributedString
                 messageLabel.isUserInteractionEnabled = true
             }
-            
-            let tap = UITapGestureRecognizer(target: self, action: #selector(labelTapped(gesture:)))
-            
+
             if urlRanges.isEmpty {
                 messageLabel.removeGestureRecognizer(tap)
             } else {

@@ -24,6 +24,8 @@ class FeedSearchContainerViewController: UIViewController {
     private var managedObjectContext: NSManagedObjectContext!
     private weak var resultsDelegate: FeedSearchResultsViewControllerDelegate?
     
+    var onContentScrolled: ((UIScrollView) -> Void)?
+    
     var feedType: FeedType? = nil
     var searchTimer: Timer? = nil
     
@@ -40,7 +42,8 @@ class FeedSearchContainerViewController: UIViewController {
     internal lazy var searchResultsViewController: FeedSearchResultsCollectionViewController = {
         .instantiate(
             onSubscribedFeedCellSelected: handleFeedCellSelection,
-            onFeedSearchResultCellSelected: handleSearchResultCellSelection
+            onFeedSearchResultCellSelected: handleSearchResultCellSelection,
+            onContentScrolled: onContentScrolled
         )
     }()
     
@@ -60,7 +63,8 @@ extension FeedSearchContainerViewController {
     
     static func instantiate(
         managedObjectContext: NSManagedObjectContext = CoreDataManager.sharedManager.persistentContainer.viewContext,
-        resultsDelegate: FeedSearchResultsViewControllerDelegate
+        resultsDelegate: FeedSearchResultsViewControllerDelegate,
+        onContentScrolled: ((UIScrollView) -> Void)? = nil
     ) -> FeedSearchContainerViewController {
         let viewController = StoryboardScene
             .Dashboard
@@ -69,6 +73,7 @@ extension FeedSearchContainerViewController {
         
         viewController.managedObjectContext = managedObjectContext
         viewController.resultsDelegate = resultsDelegate
+        viewController.onContentScrolled = onContentScrolled
         viewController.fetchedResultsController.delegate = viewController
         
         return viewController

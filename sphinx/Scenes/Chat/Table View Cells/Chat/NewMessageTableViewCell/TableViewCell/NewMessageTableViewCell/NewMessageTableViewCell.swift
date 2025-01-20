@@ -147,6 +147,8 @@ class NewMessageTableViewCell: CommonNewMessageTableViewCell, ChatTableViewCellP
     @IBOutlet weak var leftPaymentDot: UIView!
     @IBOutlet weak var rightPaymentDot: UIView!
     
+    var tap: UITapGestureRecognizer! = nil
+    
     override func awakeFromNib() {
         super.awakeFromNib()
         

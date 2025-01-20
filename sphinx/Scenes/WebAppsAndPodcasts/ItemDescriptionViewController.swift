@@ -40,6 +40,7 @@ class ItemDescriptionViewController : UIViewController{
     weak var delegate : ItemDescriptionViewControllerDelegate? = nil
     
     let kHeaderCellHeight: CGFloat = 276.0
+    let kHeaderCellHeightDiff: CGFloat = 160.0
     let kDescriptionCellCollapsedHeight: CGFloat = 150.0
     let kHorizontalMargins: CGFloat = 32.0
     
@@ -216,7 +217,14 @@ extension ItemDescriptionViewController : UITableViewDelegate, UITableViewDataSo
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         if (indexPath.row == 0) {
-            return kHeaderCellHeight
+            let font = UIFont(name: "Roboto-Bold", size: 28.0)!
+            let title = episode?.title ?? video?.title ?? ""
+            
+            return UILabel.getLabelSize(
+                width: UIScreen.main.bounds.width - kHorizontalMargins,
+                text: title,
+                font: font
+            ).height + kHeaderCellHeightDiff
         } else if(indexPath.row == 1){
             let description = episode?.episodeDescription ?? video?.videoDescription ?? ""
             

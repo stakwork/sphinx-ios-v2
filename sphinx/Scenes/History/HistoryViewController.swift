@@ -28,6 +28,8 @@ class HistoryViewController: UIViewController {
     var didReachLimit = false
     let itemsPerPage : UInt32 = 50
     
+    var succeededPaymentHashes: [String] = []
+    
     static func instantiate() -> HistoryViewController {
         let viewController = StoryboardScene.History.historyViewController.instantiate()
         return viewController
@@ -87,13 +89,19 @@ class HistoryViewController: UIViewController {
         if let jsonString = jsonString,
            let results = Mapper<PaymentTransactionFromServer>().mapArray(JSONString: jsonString) {
             
+            succeededPaymentHashes += (results.filter({ $0.isSucceeded() })).compactMap({ $0.rhash })
+            
+            let msgIndexes = results.compactMap({ $0.msg_idx })
+            let msgPmtHashes = results.compactMap({ $0.rhash })
+            var messages = TransactionMessage.fetchTransactionMessagesForHistory()
+            let messagesMatching = TransactionMessage.fetchTransactionMessagesForHistoryWith(msgIndexes: msgIndexes, msgPmtHashes: msgPmtHashes)
+            messages.append(contentsOf: messagesMatching)
+            
             for result in results {
                 
-                let msgIndexes = results.compactMap({ $0.msg_idx })
-                let msgPmtHashes = results.compactMap({ $0.rhash })
-                var messages = TransactionMessage.fetchTransactionMessagesForHistory()
-                let messagesMatching = TransactionMessage.fetchTransactionMessagesForHistoryWith(msgIndexes: msgIndexes, msgPmtHashes: msgPmtHashes)
-                messages.append(contentsOf: messagesMatching)
+                if let rHash = result.rhash, result.isFailed() && succeededPaymentHashes.contains(rHash) {
+                    continue
+                }
                 
                 if let localHistoryMessage = messages.filter({ $0.id == result.msg_idx ?? -1 }).first {
                     let paymentTransaction = PaymentTransaction(fromTransactionMessage: localHistoryMessage, ts: result.ts)
