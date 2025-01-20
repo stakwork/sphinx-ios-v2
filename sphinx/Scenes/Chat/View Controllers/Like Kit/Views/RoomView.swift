@@ -50,6 +50,57 @@ struct RoomView: View {
     @State private var canSwitchCameraPosition = false
     
     @State var isAnyParticipantAudioSubscribed = true
+    
+    @State private var isRecording = false
+    @State private var isProcessingRecordRequest = false
+    @State private var shouldAnimate = false
+    
+    let newMessageBubbleHelper = NewMessageBubbleHelper()
+    
+    private func startAnimation() {
+        shouldAnimate = true
+        withAnimation(.easeInOut(duration: 0.7).repeatForever(autoreverses: true)) {
+            shouldAnimate.toggle()
+        }
+    }
+    
+    private func toggleRecording() {
+        guard let roomName = room.name else {
+            return
+        }
+        isProcessingRecordRequest = true
+        
+        let urlAction = isRecording ? "stop" : "start"
+        var isoStringWithMilliseconds: String? = nil
+        
+        if !isRecording {
+            let currentDate = Date()
+            let isoFormatter = ISO8601DateFormatter()
+            isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            isoStringWithMilliseconds = isoFormatter.string(from: currentDate)
+        }
+        
+        API.sharedInstance.toggleLiveKitRecording(
+            room: roomName,
+            now: isoStringWithMilliseconds,
+            action: urlAction,
+            callback: { success in
+                if success {
+                    self.newMessageBubbleHelper.showGenericMessageView(
+                        text: self.isRecording ? "Recording ended. This call is no longer being recorded." : "Recording in progress. Please be aware this call is being recorded.",
+                        delay: 5,
+                        textColor: UIColor.white,
+                        backColor: UIColor.Sphinx.BadgeRed,
+                        backAlpha: 1.0
+                    )
+                    
+                    self.isRecording = !self.isRecording
+                    self.shouldAnimate = !self.shouldAnimate
+                }
+                self.isProcessingRecordRequest = false
+            }
+        )
+    }
 
     func sortedParticipants() -> [Participant] {
         room.allParticipants.values.sorted { p1, p2 in
@@ -99,6 +150,23 @@ struct RoomView: View {
                         })
                         
                         Spacer()
+                        
+                        if isRecording {
+                            Image(systemSymbol: .recordCircle)
+                                .renderingMode(.template)
+                                .foregroundColor(Color(UIColor.Sphinx.BadgeRed))
+                                .font(.system(size: 30))
+                                .frame(height: 40.0)
+                                .frame(width: 40.0)
+                                .opacity(shouldAnimate ? 0.4 : 1.0)
+                                .onAppear {
+                                    startAnimation()
+                                }
+                                .onDisappear {
+                                    shouldAnimate = false
+                                    isRecording = false
+                                }
+                        }
                         
                         Button(action: {
                             Task {
@@ -157,6 +225,20 @@ struct RoomView: View {
                                     }
                                 } label: {
                                     Text("Unpublish all")
+                                }
+                            }
+                            
+                            if !isProcessingRecordRequest {
+                                Group {
+                                    Divider()
+                                    
+                                    Button {
+                                        Task { @MainActor in
+                                            toggleRecording()
+                                        }
+                                    } label: {
+                                        Text(isRecording ? "Stop Recording" : "Start Recording")
+                                    }
                                 }
                             }
                             
@@ -464,6 +546,9 @@ struct RoomView: View {
                             GeometryReader { geometry in
                                 Button(action: {
                                     Task {
+                                        if (isRecording) {
+                                            toggleRecording()
+                                        }
                                         await roomCtx.disconnect()
                                     }
                                 },
