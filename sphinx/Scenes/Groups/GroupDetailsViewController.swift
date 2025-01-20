@@ -26,7 +26,6 @@ class GroupDetailsViewController: UIViewController {
     @IBOutlet weak var viewTitle: UILabel!
     @IBOutlet weak var tribeMemberInfoContainer: UIView!
     @IBOutlet weak var tribeMemberInfoView: TribeMemberInfoView!
-    @IBOutlet weak var tribeMemberInfoContainerHeight: NSLayoutConstraint!
     @IBOutlet weak var imageUploadContainer: UIView!
     @IBOutlet weak var imageUploadLoadingWheel: UIActivityIndicatorView!
     @IBOutlet weak var imageUploadLabel: UILabel!
@@ -99,22 +98,9 @@ class GroupDetailsViewController: UIViewController {
         adminAvatarImageView.clipsToBounds = true
         
         if let urlString = chat.photoUrl, let nsUrl = URL(string: urlString) {
-            MediaLoader.asyncLoadImage(imageView: groupImageView, nsUrl: nsUrl, placeHolderImage: UIImage(named: "profile_avatar"))
+            MediaLoader.asyncLoadImage(imageView: groupImageView, nsUrl: nsUrl, placeHolderImage: UIImage(named: "tribePlaceholder"))
         } else {
-            groupImageView.image = UIImage(named: "profile_avatar")
-        }
-        
-        if !chat.isTribeICreated{
-            if let urlString = lookupAdminImage(),
-                let nsUrl = URL(string: urlString) {
-                MediaLoader.asyncLoadImage(imageView: adminAvatarImageView, nsUrl: nsUrl, placeHolderImage: UIImage(named: "profile_avatar"))
-            } else {
-                adminAvatarImageView.image = UIImage(named: "profile_avatar")
-            }
-            adminNameLabel.text = chat.tribeInfo?.ownerAlias ?? "unknown".localized
-        }
-        else{
-            adminInfoContainerView.isHidden = true
+            groupImageView.image = UIImage(named: "tribePlaceholder")
         }
         
         adminSubtitleLabel.text = "admin".localized
@@ -125,8 +111,9 @@ class GroupDetailsViewController: UIViewController {
         groupDateLabel.text = createdOn
         
         updateTribePrices()
+        configureTribeAdminView()
         configureTribeMemberView()
-        configureBadgeManagementView()
+//        configureBadgeManagementView()
     }
     
     func lookupAdminImage()->String?{
@@ -151,11 +138,8 @@ class GroupDetailsViewController: UIViewController {
     
     func configureTribeMemberView() {
         if let chat = chat, let owner = UserContact.getOwner(), chat.isPublicGroup() {
-            let alias = chat.myAlias ?? owner.nickname
-            let photoUrl = chat.myPhotoUrl ?? owner.getPhotoUrl()
-            
-            tribeMemberInfoContainerHeight.constant = 160
-            tribeMemberInfoView.layoutIfNeeded()
+            let alias = (chat.myAlias?.isNotEmpty == true) ? chat.myAlias : owner.nickname
+            let photoUrl = (chat.myPhotoUrl?.isNotEmpty == true) ? chat.myPhotoUrl : owner.getPhotoUrl()
             
             tribeMemberInfoView.configureWith(
                 vc: self,
@@ -165,6 +149,24 @@ class GroupDetailsViewController: UIViewController {
             )
             
             tribeMemberInfoContainer.isHidden = false
+        } else {
+            tribeMemberInfoContainer.isHidden = true
+        }
+    }
+    
+    func configureTribeAdminView() {
+        if chat.isTribeICreated {
+            adminInfoContainerView.isHidden = true
+        } else {
+            if let urlString = lookupAdminImage(),
+               let nsUrl = URL(string: urlString) {
+                MediaLoader.asyncLoadImage(imageView: adminAvatarImageView, nsUrl: nsUrl, placeHolderImage: UIImage(named: "profile_avatar"))
+            } else {
+                adminAvatarImageView.image = UIImage(named: "profile_avatar")
+            }
+            adminNameLabel.text = chat.tribeInfo?.ownerAlias ?? "unknown".localized
+            
+            adminInfoContainerView.isHidden = false
         }
     }
     
