@@ -545,7 +545,7 @@
 "already.connected" = "You are already connected with this person";
 "price.to.meet" = "Price to meet: ";
 "invalid.public-key" = "Invalid Public Key";
-"processing.payment" = "Processsing payment";
+"processing.payment" = "Processing payment";
 "processing.payment.description" = "This process could take up to 60 seconds. You will be notified when completed";
 
 "people.save-profile" = "Save Profile from:";
