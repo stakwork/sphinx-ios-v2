@@ -126,6 +126,16 @@ class NewChatHeaderView: UIView {
             chatSearchView.makeFieldActive()
         }
     }
+    
+    func configureScheduleIcon(
+        lastMessage: TransactionMessage,
+        ownerId: Int
+    ) {
+        chatHeaderView.configureScheduleIcon(
+            lastMessage: lastMessage,
+            ownerId: ownerId
+        )
+    }
 }
 
 extension NewChatHeaderView : ChatSearchTextFieldViewDelegate {

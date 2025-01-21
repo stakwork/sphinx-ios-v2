@@ -19,6 +19,7 @@ class StatusHeaderView: UIView {
     
     @IBOutlet weak var sentStatusHeader: UIStackView!
     @IBOutlet weak var sentDateLabel: UILabel!
+    @IBOutlet weak var sentScheduleIcon: UILabel!
     @IBOutlet weak var sentLockIcon: UILabel!
     @IBOutlet weak var sentLightningIcon: UILabel!
     
@@ -90,6 +91,22 @@ class StatusHeaderView: UIView {
         expiredInvoiceSentHeader.isHidden = !statusHeader.showExpiredSent
         expiredInvoiceReceivedHeader.isHidden = !statusHeader.showExpiredReceived
         configureWith(expirationTimestamp: statusHeader.expirationTimestamp)
+        
+        let thirtySecondsAgo = Date().addingTimeInterval(-30)
+        let isScheduleVisible = !statusHeader.showBoltIcon && !statusHeader.showBoltGreyIcon && statusHeader.messageDate < thirtySecondsAgo
+        sentScheduleIcon.isHidden = !isScheduleVisible
+        
+        if !isScheduleVisible {
+            DelayPerformedHelper.performAfterDelay(seconds: 30, completion: { [weak self] in
+                guard let self = self else {
+                    return
+                }
+                        
+                let thirtySecondsAgo = Date().addingTimeInterval(-30)
+                let isScheduleVisible = !statusHeader.showBoltIcon && !statusHeader.showBoltGreyIcon && statusHeader.messageDate < thirtySecondsAgo
+                self.sentScheduleIcon.isHidden = !isScheduleVisible
+            })
+        }
         
         if let uploadProgressData = uploadProgressData, uploadProgressData.progress < 100 {
             uploadingHeader.isHidden = false

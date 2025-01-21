@@ -784,6 +784,7 @@ extension NewChatTableDataSource : NSFetchedResultsControllerDelegate {
                     self.updateMessagesStatusesFrom(messages: self.messagesArray)
                     self.processMessages(messages: self.messagesArray)
                     self.configureSecondaryMessagesResultsController()
+                    self.delegate?.shouldUpdateHeaderScheduleIcon(message: messages.first)
                 }
             } else {
                 if !(self.delegate?.isOnStandardMode() ?? true) {

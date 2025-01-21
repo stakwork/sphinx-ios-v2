@@ -67,6 +67,9 @@ protocol NewChatTableDataSourceDelegate : class {
         messageCellState: MessageTableCellState,
         mediaData: MessageTableCellState.MediaData?
     )
+    
+    ///Pending outgoing message
+    func shouldUpdateHeaderScheduleIcon(message: TransactionMessage?)
 }
 
 class NewChatTableDataSource : NSObject {

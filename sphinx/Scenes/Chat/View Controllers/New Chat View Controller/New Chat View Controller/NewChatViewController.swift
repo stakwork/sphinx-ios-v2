@@ -25,6 +25,7 @@ class NewChatViewController: NewKeyboardHandlerViewController {
     var contact: UserContact?
     var chat: Chat?
     var threadUUID: String? = nil
+    var owner: UserContact!
     
     var isThread: Bool {
         get {
@@ -83,6 +84,8 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         if let contactId = contactId {
             viewController.contact = UserContact.getContactWith(id: contactId)
         }
+        
+        viewController.owner = UserContact.getOwner()
         
         viewController.threadUUID = threadUUID
         viewController.chatListViewModel = chatListViewModel

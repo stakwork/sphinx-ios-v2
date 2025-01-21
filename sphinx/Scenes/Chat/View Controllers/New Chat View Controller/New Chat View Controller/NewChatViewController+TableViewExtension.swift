@@ -290,6 +290,16 @@ extension NewChatViewController : NewChatTableDataSourceDelegate {
     func didTapThread(threadUUID: String ){
         self.showThread(threadID: threadUUID)
     }
+    
+    func shouldUpdateHeaderScheduleIcon(message: TransactionMessage?) {
+        guard let message = message else {
+            return
+        }
+        headerView.configureScheduleIcon(
+            lastMessage: message,
+            ownerId: owner.id
+        )
+    }
 }
 
 extension NewChatViewController {
