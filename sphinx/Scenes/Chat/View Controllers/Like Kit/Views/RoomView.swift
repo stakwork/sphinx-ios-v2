@@ -492,30 +492,32 @@ struct RoomView: View {
                                     .frame(maxWidth: .infinity)
                                     .frame(maxHeight: .infinity)
                                 }
-                                GeometryReader { geometry in
-                                    HStack() {
-                                        Spacer()
-                                        
-                                        VStack {
-                                            Text("\(room.participantCount)")
-                                                .foregroundColor(Color.black)
-                                                .font(Font(UIFont(name: "Roboto-Bold", size: 12.0)!))
-                                                .padding(.horizontal, 7.5)
-                                                .padding(.vertical, 4)
-                                                .background(
-                                                    Color(UIColor.white)
-                                                        .cornerRadius(geometry.size.height / 2)
-                                                        .frame(minWidth: 22)
-                                                )
+                                if room.participantCount > 0 {
+                                    GeometryReader { geometry in
+                                        HStack() {
+                                            Spacer()
+                                            
+                                            VStack {
+                                                Text("\(room.participantCount)")
+                                                    .foregroundColor(Color.black)
+                                                    .font(Font(UIFont(name: "Roboto-Bold", size: 12.0)!))
+                                                    .padding(.horizontal, 7.5)
+                                                    .padding(.vertical, 4)
+                                                    .background(
+                                                        Color(UIColor.white)
+                                                            .cornerRadius(geometry.size.height / 2)
+                                                            .frame(minWidth: 22)
+                                                    )
+                                                
+                                                Spacer()
+                                            }
                                             
                                             Spacer()
+                                                .frame(width: (geometry.size.width - 64) / 2)
                                         }
-                                        
-                                        Spacer()
-                                            .frame(width: (geometry.size.width - 64) / 2)
+                                        .frame(maxWidth: .infinity)
+                                        .frame(height: 64)
                                     }
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: 64)
                                 }
                             }
                             .frame(maxWidth: .infinity)
