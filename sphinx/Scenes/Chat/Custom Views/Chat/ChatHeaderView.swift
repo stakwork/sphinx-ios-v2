@@ -38,6 +38,7 @@ class ChatHeaderView: UIView {
     @IBOutlet weak var contributedSatsIcon: UILabel!
     @IBOutlet weak var lockSign: UILabel!
     @IBOutlet weak var boltSign: UILabel!
+    @IBOutlet weak var scheduleIcon: UILabel!
     @IBOutlet weak var keyLoadingWheel: UIActivityIndicatorView!
     @IBOutlet weak var volumeButton: UIButton!
     @IBOutlet weak var secondBrainButton: UIButton!
@@ -106,6 +107,20 @@ class ChatHeaderView: UIView {
         setVolumeState(muted: chat?.isMuted() ?? false)
         configureImageOrInitials()
         setupPendingUI()
+    }
+    
+    func configureScheduleIcon(
+        lastMessage: TransactionMessage,
+        ownerId: Int
+    ) {
+        scheduleIcon.isHidden = true
+        
+        if lastMessage.isOutgoing(ownerId: ownerId), !lastMessage.isConfirmedAsReceived() {
+            let thirtySecondsAgo = Date().addingTimeInterval(-30)
+            if lastMessage.messageDate < thirtySecondsAgo {
+                scheduleIcon.isHidden = false
+            }
+        }
     }
     
     func setupPendingUI() {
