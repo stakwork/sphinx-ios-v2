@@ -42,6 +42,8 @@ class PodcastPlayerView: UIView {
     @IBOutlet weak var customBoostView: CustomBoostView!
     @IBOutlet weak var shareClipButton: UIButton!
     @IBOutlet weak var satsPerMinuteView: PodcastSatsView!
+    @IBOutlet weak var advertContainer: UIView!
+    @IBOutlet weak var advertLabel: UILabel!
     
     @IBOutlet weak var audioLoadingWheel: UIActivityIndicatorView!
     
@@ -49,6 +51,8 @@ class PodcastPlayerView: UIView {
     
     var livePodcastDataSource: PodcastLiveDataSource? = nil
     var liveMessages: [Int: [TransactionMessage]] = [:]
+    
+    var skippingAdvert = false
     
     var audioLoading = false {
         didSet {
@@ -112,6 +116,7 @@ class PodcastPlayerView: UIView {
         playPauseButton.layer.cornerRadius = playPauseButton.frame.size.height / 2
         currentTimeDot.layer.cornerRadius = currentTimeDot.frame.size.height / 2
         subscriptionToggleButton.layer.cornerRadius = subscriptionToggleButton.frame.size.height / 2
+        advertContainer.layer.cornerRadius = advertContainer.frame.size.height / 2
         
         subscriptionToggleButton.setTitle(
             subscriptionToggleButtonTitle,

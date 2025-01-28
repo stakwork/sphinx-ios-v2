@@ -109,6 +109,10 @@ extension PodcastPlayerView {
         duration: Int,
         currentTime: Int
     ) {
+        if skipAdvertIfNeeded(duration: duration, currentTime: currentTime) {
+            return
+        }
+        
         let currentTimeString = currentTime.getPodcastTimeString()
         
         currentTimeLabel.text = currentTimeString
@@ -124,6 +128,71 @@ extension PodcastPlayerView {
         
         progressLineWidth.constant = progressWidth
         progressLine.layoutIfNeeded()
+    }
+    
+    func skipAdvertIfNeeded(
+        duration: Int,
+        currentTime: Int
+    ) -> Bool {
+        if skippingAdvert {
+            return true
+        }
+        
+        if podcast.getCurrentEpisode()?.itemID == "32979984626" {
+            if currentTime == 35 {
+                advertLabel.text = "Ad detected"
+                advertContainer.isHidden = false
+            } else if currentTime == 37 {
+                skippingAdvert = true
+                advertLabel.text = "Skipping Ad"
+                advertContainer.isHidden = false
+
+                let newTime = 766
+                
+                let progress = (Double(newTime) * 100 / Double(duration))/100
+                let durationLineWidth = UIScreen.main.bounds.width - 64
+                var progressWidth = durationLineWidth * CGFloat(progress)
+                
+                if !progressWidth.isFinite || progressWidth < 0 {
+                    progressWidth = 0
+                }
+                
+                progressLineWidth.constant = progressWidth
+                
+                togglePlayState()
+                
+                UIView.animate(withDuration: 1.0, animations: {
+                    self.progressLine.superview?.layoutIfNeeded()
+                }, completion: { _ in
+                    guard let podcastData = self.podcast.getPodcastData(
+                        currentTime: newTime
+                    ) else {
+                        return
+                    }
+                    
+                    self.setProgress(
+                        duration: podcastData.duration ?? 0,
+                        currentTime: newTime
+                    )
+                    
+                    self.podcastPlayerController.submitAction(
+                        UserAction.Seek(podcastData)
+                    )
+                    
+                    self.togglePlayState()
+                    self.skippingAdvert = false
+                    self.hideAdvertLabel()
+                })
+                return true
+            }
+        }
+        return false
+    }
+    
+    func hideAdvertLabel() {
+        DelayPerformedHelper.performAfterDelay(seconds: 1.0, completion: {
+            self.advertContainer.isHidden = true
+        })
     }
     
     func addMessagesFor(ts: Int) {
