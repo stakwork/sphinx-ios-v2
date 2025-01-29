@@ -679,7 +679,11 @@ extension NewChatTableDataSource {
             messageId: messageId,
             and: rowIndex
         ), let link = tableCellState.1.callLink?.link {
-            ClipboardHelper.copyToClipboard(text: link, message: "call.link.copied.clipboard".localized)
+            if !link.contains("startAudioOnly") {
+                ClipboardHelper.copyToClipboard(text: "\(link)?startAudioOnly=true", message: "call.link.copied.clipboard".localized)
+            } else {
+                ClipboardHelper.copyToClipboard(text: link, message: "call.link.copied.clipboard".localized)
+            }
         }
     }
     
