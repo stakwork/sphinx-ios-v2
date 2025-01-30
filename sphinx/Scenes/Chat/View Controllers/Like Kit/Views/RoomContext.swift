@@ -81,21 +81,38 @@ final class RoomContext: ObservableObject {
     }
 
     @Published var focusParticipant: Participant?
-
-    @Published var showMessagesView: Bool = false
-    @Published var messages: [ExampleRoomMessage] = []
-
-    @Published var textFieldString: String = ""
     
     @Published var isInPip: Bool = false {
         didSet {
             VideoCallManager.sharedInstance.togglePip(pipEnabled: isInPip)
         }
     }
+    
+    @Published var didStartRecording = false
+    @Published var isProcessingRecordRequest = false
+    @Published var shouldAnimate = false
+    @Published private var timer: Timer?
 
     var _connectTask: Task<Void, Error>?
     
     var colors: [String: Color] = [:]
+    
+    func startAnimation() {
+        if let _ = timer {
+            return
+        }
+        timer = Timer.scheduledTimer(withTimeInterval: 0.7, repeats: true) { _ in
+            withAnimation(.easeInOut(duration: 0.7)) {
+                self.shouldAnimate.toggle()
+            }
+        }
+    }
+    
+    func stopAnimation() {
+        timer?.invalidate()
+        timer = nil
+        shouldAnimate = false
+    }
 
     public init(
         store: ValueStore<Preferences>
@@ -185,28 +202,6 @@ final class RoomContext: ObservableObject {
     func disconnect() async {
         await room.disconnect()
     }
-
-    func sendMessage() {
-        // Make sure the message is not empty
-        guard !textFieldString.isEmpty else { return }
-
-        let roomMessage = ExampleRoomMessage(messageId: UUID().uuidString,
-                                             senderSid: room.localParticipant.sid,
-                                             senderIdentity: room.localParticipant.identity,
-                                             text: textFieldString)
-        textFieldString = ""
-        messages.append(roomMessage)
-
-        Task.detached { [weak self] in
-            guard let self else { return }
-            do {
-                let json = try self.jsonEncoder.encode(roomMessage)
-                try await self.room.localParticipant.publish(data: json)
-            } catch {
-                print("Failed to encode data \(error)")
-            }
-        }
-    }
 }
 
 extension RoomContext: RoomDelegate {
@@ -227,12 +222,7 @@ extension RoomContext: RoomDelegate {
                     Task.detached { @MainActor [weak self] in
                         guard let self else { return }
                         self.shouldShowDisconnectReason = true
-                        // Reset state
                         self.focusParticipant = nil
-                        self.showMessagesView = false
-                        self.textFieldString = ""
-                        self.messages.removeAll()
-                        // self.objectWillChange.send()
                     }
                 }
             } else {
@@ -255,24 +245,7 @@ extension RoomContext: RoomDelegate {
     }
 
     func room(_: Room, participant _: RemoteParticipant?, didReceiveData data: Data, forTopic _: String) {
-        do {
-            let roomMessage = try jsonDecoder.decode(ExampleRoomMessage.self, from: data)
-            // Update UI from main queue
-            Task.detached { @MainActor [weak self] in
-                guard let self else { return }
-
-                withAnimation {
-                    // Add messages to the @Published messages property
-                    // which will trigger the UI to update
-                    self.messages.append(roomMessage)
-                    // Show the messages view when new messages arrive
-                    self.showMessagesView = true
-                }
-            }
-
-        } catch {
-            print("Failed to decode data \(error)")
-        }
+        print("didReceiveData")
     }
 
     func room(_: Room, participant _: Participant, trackPublication _: TrackPublication, didReceiveTranscriptionSegments segments: [TranscriptionSegment]) {
