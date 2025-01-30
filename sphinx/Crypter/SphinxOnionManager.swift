@@ -403,6 +403,7 @@ class SphinxOnionManager : NSObject {
             } else {
                 errorCallback?()
             }
+            listAndUpdateContacts()
             return
         }
         connectToServer(
@@ -592,7 +593,13 @@ class SphinxOnionManager : NSObject {
                 time: getTimeWithEntropy(),
                 network: network
             )
-
+        } catch {}
+        
+        listAndUpdateContacts()
+    }
+    
+    func listAndUpdateContacts() {
+        do {
             let listContactsResponse = try sphinx.listContacts(state: loadOnionStateAsData())
             saveContactsToSharedUserDefaults(contacts: listContactsResponse)
         } catch {}
