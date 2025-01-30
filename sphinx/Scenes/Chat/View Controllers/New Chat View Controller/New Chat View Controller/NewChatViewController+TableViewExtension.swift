@@ -126,6 +126,9 @@ extension NewChatViewController : NewChatTableDataSourceDelegate {
         )
         
         headerView.toggleThreadHeaderView(expanded: expanded)
+        
+        setTableViewHeight()
+        shouldAdjustTableViewTopInset()
     }
     
     func shouldGoToAttachmentViewFor(
