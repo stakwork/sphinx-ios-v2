@@ -18,7 +18,6 @@ class NewChatViewController: NewKeyboardHandlerViewController {
     @IBOutlet weak var chatTableViewHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var mentionsAutocompleteTableView: UITableView!
     @IBOutlet weak var webAppContainerView: UIView!
-    @IBOutlet weak var chatTableHeaderHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var shimmeringTableView: ShimmeringTableView!
     @IBOutlet weak var emptyAvatarPlaceholderView: ChatEmptyAvatarPlaceholderView!
     
@@ -170,9 +169,6 @@ class NewChatViewController: NewKeyboardHandlerViewController {
     }
     
     func shouldAdjustTableViewTopInset() {
-        if isThread {
-           return
-        }
         DelayPerformedHelper.performAfterDelay(seconds: 0.5, completion: {
             let newInset = Constants.kChatTableContentInset + abs(self.chatTableView.frame.origin.y)
             self.chatTableView.contentInset.bottom = newInset
@@ -229,7 +225,7 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         
         bottomView.updateFieldStateFrom(chat)
         showPendingApprovalMessage()
-        
+
         updateEmptyView()
     }
     
