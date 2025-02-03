@@ -47,7 +47,8 @@ class ProfileViewController: NewKeyboardHandlerViewController {
     @IBOutlet weak var storageSumaryLabel: UILabel!
     @IBOutlet weak var storageSummaryBarView: StorageSummaryView!
     @IBOutlet weak var spinner: UIActivityIndicatorView!
-    
+    @IBOutlet weak var timezoneIdentifierLabel: UILabel!
+    @IBOutlet weak var dateTimeLabel: UILabel!
     @IBOutlet var tabContainers: [UIScrollView]!
     
     @IBOutlet var keyboardAccessoryView: UIView!
@@ -114,6 +115,7 @@ class ProfileViewController: NewKeyboardHandlerViewController {
         configureServers()
         showStorageSpinner()
         configureBalanceTap()
+        updateTimezoneLabel()
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -454,5 +456,17 @@ class ProfileViewController: NewKeyboardHandlerViewController {
                 setShadows()
             }
         }
+    }
+
+    private func updateTimezoneLabel() {
+        let timezone = TimeZone.current
+
+        let formattedIdentifier = timezone.identifier.replacingOccurrences(of: "_", with: " ")
+        timezoneIdentifierLabel.text = formattedIdentifier
+        
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        dateFormatter.timeZone = timezone
+        dateTimeLabel.text = dateFormatter.string(from: Date())
     }
 }
