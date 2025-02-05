@@ -49,11 +49,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         case AppStore
     }
 
+    static var orientationLock = UIInterfaceOrientationMask.portrait
+
     //Lifecycle events
     func application(
         _ application: UIApplication,
         supportedInterfaceOrientationsFor window: UIWindow?
     ) -> UIInterfaceOrientationMask {
+        if AppDelegate.orientationLock != .portrait {
+            return AppDelegate.orientationLock
+        }
         
         if UIDevice.current.isIpad {
             return .allButUpsideDown
