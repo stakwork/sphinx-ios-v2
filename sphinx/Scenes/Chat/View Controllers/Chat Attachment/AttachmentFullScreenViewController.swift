@@ -59,6 +59,26 @@ class AttachmentFullScreenViewController: UIViewController, CanRotate {
         }
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        AppDelegate.orientationLock = .all
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        
+        AppDelegate.orientationLock = .portrait
+    }
+    
+    override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
+        return .all
+    }
+    
+    override var shouldAutorotate: Bool {
+        return true
+    }
+    
     func showWebViewImage() {
         guard let imageUrl = imageUrl else{
             return
@@ -162,6 +182,7 @@ class AttachmentFullScreenViewController: UIViewController, CanRotate {
         
         if !UIDevice.current.isIpad {
             UIDevice.current.setValue(Int(UIInterfaceOrientation.portrait.rawValue), forKey: "orientation")
+            AppDelegate.orientationLock = .portrait
         }
         
         self.dismiss(animated: animated, completion: {
