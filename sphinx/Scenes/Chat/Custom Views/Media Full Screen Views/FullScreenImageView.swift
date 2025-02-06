@@ -177,4 +177,8 @@ class FullScreenImageView: UIView {
         
         self.hideImage()
     }
+    
+    func adjustFrameToCenter() {
+        self.imageScrollView.adjustFrameToCenter()
+    }
 }

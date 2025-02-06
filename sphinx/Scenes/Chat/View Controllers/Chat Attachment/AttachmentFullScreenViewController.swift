@@ -50,6 +50,10 @@ class AttachmentFullScreenViewController: UIViewController, CanRotate {
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        showContent()
+    }
+    
+    func showContent() {
         if let message = message, message.isPDF(){
             showPDF()
         } else if let _ = imageUrl{
@@ -188,5 +192,14 @@ class AttachmentFullScreenViewController: UIViewController, CanRotate {
         self.dismiss(animated: animated, completion: {
             WindowsManager.sharedInstance.removeCoveringWindow()
         })
+    }
+    
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+
+        coordinator.animate(alongsideTransition: nil) { _ in
+            let orientation = UIDevice.current.orientation
+            self.fullScreenImageView.adjustFrameToCenter()
+        }
     }
 }
