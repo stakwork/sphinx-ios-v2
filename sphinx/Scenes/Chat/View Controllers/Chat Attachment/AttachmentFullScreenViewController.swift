@@ -19,6 +19,7 @@ class AttachmentFullScreenViewController: UIViewController, CanRotate {
     @IBOutlet weak var pdfHeaderView: UIView!
     @IBOutlet weak var shareButton: UIButton!
     @IBOutlet weak var fileNameLabel: UILabel!
+    @IBOutlet weak var pdfView: PDFView!
     
     var message: TransactionMessage? = nil
     var purchaseAcceptMessage: TransactionMessage?
@@ -123,10 +124,8 @@ class AttachmentFullScreenViewController: UIViewController, CanRotate {
         
         if let url = purchaseAcceptMessage?.getMediaUrlFromMediaToken() ?? message.getMediaUrlFromMediaToken() {
             
-            let pdfView = PDFView(frame: getPDFViewFrame())
             pdfView.autoScales = true
-            self.view.addSubview(pdfView)
-            self.view.sendSubviewToBack(pdfView)
+            pdfView.isHidden = false
             
             MediaLoader.loadFileData(
                 url: url,
@@ -135,17 +134,11 @@ class AttachmentFullScreenViewController: UIViewController, CanRotate {
                 completion: { (_, data) in
                     self.fileNameLabel.text = message.mediaFileName ?? "file.pdf"
                     self.pdfDocument = PDFDocument(data: data)
-                    pdfView.document = self.pdfDocument
+                    self.pdfView.document = self.pdfDocument
                 },
                 errorCompletion: { _ in }
             )
         }
-    }
-    
-    func getPDFViewFrame() -> CGRect {
-        let screenSize = UIScreen.main.bounds
-        let headerHeight = pdfHeaderView.frame.height + getWindowInsets().top
-        return CGRect(x: 0, y: headerHeight, width: screenSize.width, height: screenSize.height - headerHeight)
     }
     
     func deleteLocalPDF() {
@@ -196,9 +189,10 @@ class AttachmentFullScreenViewController: UIViewController, CanRotate {
     
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
+        
+        showContent()
 
         coordinator.animate(alongsideTransition: nil) { _ in
-            let orientation = UIDevice.current.orientation
             self.fullScreenImageView.adjustFrameToCenter()
         }
     }

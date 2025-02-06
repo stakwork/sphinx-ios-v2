@@ -285,14 +285,21 @@
                                     <constraint firstAttribute="bottom" secondItem="U43-0n-c62" secondAttribute="bottom" id="ag3-Cr-vWG"/>
                                 </constraints>
                             </view>
+                            <view hidden="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="K3d-HZ-Xpn" customClass="PDFView">
+                                <rect key="frame" x="0.0" y="85" width="375" height="582"/>
+                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                            </view>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="OXx-Fq-YSp"/>
                         <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <constraints>
+                            <constraint firstItem="K3d-HZ-Xpn" firstAttribute="leading" secondItem="OXx-Fq-YSp" secondAttribute="leading" id="0N8-RG-th7"/>
                             <constraint firstItem="qCe-BX-iow" firstAttribute="leading" secondItem="qMa-3i-plY" secondAttribute="leading" id="23J-G6-9om"/>
                             <constraint firstItem="WfD-f8-WgH" firstAttribute="top" secondItem="eVU-Kq-I8w" secondAttribute="bottom" id="4Ly-Fa-LI2"/>
                             <constraint firstItem="OXx-Fq-YSp" firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="1xZ-F7-avR" secondAttribute="trailing" symbolic="YES" id="81w-eO-BhK"/>
+                            <constraint firstItem="K3d-HZ-Xpn" firstAttribute="top" secondItem="pfD-9q-8na" secondAttribute="bottom" id="J6D-bC-Z6W"/>
                             <constraint firstAttribute="trailing" secondItem="eVU-Kq-I8w" secondAttribute="trailing" id="Kl1-tq-vco"/>
+                            <constraint firstItem="OXx-Fq-YSp" firstAttribute="trailing" secondItem="K3d-HZ-Xpn" secondAttribute="trailing" id="Q0U-ve-Zgf"/>
                             <constraint firstItem="pfD-9q-8na" firstAttribute="top" secondItem="qMa-3i-plY" secondAttribute="top" id="QvW-b8-T8j"/>
                             <constraint firstItem="WfD-f8-WgH" firstAttribute="leading" secondItem="qMa-3i-plY" secondAttribute="leading" id="R7W-Ad-Yf7"/>
                             <constraint firstItem="U43-0n-c62" firstAttribute="top" secondItem="OXx-Fq-YSp" secondAttribute="top" id="VcF-Zl-Nsp"/>
@@ -307,6 +314,7 @@
                             <constraint firstItem="eVU-Kq-I8w" firstAttribute="leading" secondItem="qMa-3i-plY" secondAttribute="leading" id="mY6-Kg-J5K"/>
                             <constraint firstItem="1xZ-F7-avR" firstAttribute="top" secondItem="OXx-Fq-YSp" secondAttribute="top" id="ozQ-zd-CuU"/>
                             <constraint firstItem="WfD-f8-WgH" firstAttribute="top" secondItem="OXx-Fq-YSp" secondAttribute="top" id="puv-Nn-POR"/>
+                            <constraint firstAttribute="bottom" secondItem="K3d-HZ-Xpn" secondAttribute="bottom" id="xU7-gi-Wsp"/>
                         </constraints>
                     </view>
                     <connections>
@@ -314,6 +322,7 @@
                         <outlet property="fileNameLabel" destination="EfS-E1-otw" id="TN8-2F-3k4"/>
                         <outlet property="fullScreenImageView" destination="qCe-BX-iow" id="QkK-2w-2Xk"/>
                         <outlet property="pdfHeaderView" destination="pfD-9q-8na" id="5nN-n9-Hm6"/>
+                        <outlet property="pdfView" destination="K3d-HZ-Xpn" id="axG-0R-hvz"/>
                         <outlet property="shareButton" destination="OOb-Ll-9z2" id="EZ5-qf-bTM"/>
                     </connections>
                 </viewController>
