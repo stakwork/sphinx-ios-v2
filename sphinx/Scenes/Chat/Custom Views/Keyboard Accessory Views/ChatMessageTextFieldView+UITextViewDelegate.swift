@@ -138,7 +138,8 @@ extension ChatMessageTextFieldView {
             if let typedMentionText = getAtMention(text: text, cursorPosition: cursorPosition) {
                 
                 let startIndex = text.index(text.startIndex, offsetBy: cursorPosition - typedMentionText.count)
-                let endIndex = text.index(text.startIndex, offsetBy: cursorPosition)
+                let safeOffset = min(text.count, cursorPosition)
+                let endIndex = text.index(text.startIndex, offsetBy: safeOffset)
                 
                 textView.text = textView.text.replacingOccurrences(
                     of: typedMentionText,
