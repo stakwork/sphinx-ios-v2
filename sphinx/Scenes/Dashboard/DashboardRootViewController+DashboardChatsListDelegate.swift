@@ -9,6 +9,7 @@ extension DashboardRootViewController: DashboardChatsListDelegate {
         didSelectChat chat: Chat?,
         orContact contact: UserContact?
     ) {
+        view.endEditing(true)
         presentChatDetailsVC(for: chat, contact: contact)
     }
     
