@@ -139,6 +139,10 @@ extension AllTribeFeedsCollectionViewController {
         case loading
         case noResults
         
+        case recentPodcastItem(ContentFeed, ContentFeedItem, Int)
+        case recentVideoItem(ContentFeed, ContentFeedItem, Int)
+        case recentNewsletterItem(ContentFeed, ContentFeedItem, Int)
+        
         static func hasEqualValues(_ lhs: DataSourceItem, _ rhs: DataSourceItem) -> Bool {
             if let lhsContentFeed = lhs.feedEntity as? ContentFeed,
                let rhsContentFeed = rhs.feedEntity as? ContentFeed {
@@ -161,6 +165,13 @@ extension AllTribeFeedsCollectionViewController {
                     lhsContentFeed.id == rhsContentFeed.id &&
                     lhsContentFeed.link == rhsContentFeed.link
             }
+            
+            if let (lhsFeed, lhsItem) = lhs.recentItemEntity,
+               let (rhsFeed, rhsItem) = rhs.recentItemEntity {
+                return lhsFeed.feedID == rhsFeed.feedID && 
+                       lhsItem.id == rhsItem.id &&
+                       lhsItem.datePublished == rhsItem.datePublished
+            }
             return false
         }
 
@@ -182,6 +193,10 @@ extension AllTribeFeedsCollectionViewController {
         func hash(into hasher: inout Hasher) {
             if let contentFeed = self.feedEntity as? ContentFeed {
                 hasher.combine(contentFeed.feedID)
+            }
+            if let (feed, item) = self.recentItemEntity {
+                hasher.combine(feed.feedID)
+                hasher.combine(item.id)
             }
             if let recommendation = self.resultEntity {
                 hasher.combine(recommendation.uuid)
@@ -425,6 +440,8 @@ extension AllTribeFeedsCollectionViewController {
                     feedCell.configure(withItem: feedEntity)
                 } else if let resultEntity = dataSourceItem.resultEntity {
                     feedCell.configure(withItem: resultEntity as DashboardFeedSquaredThumbnailCollectionViewItem)
+                } else if let (feed, item) = dataSourceItem.recentItemEntity {
+                    feedCell.configure(withRecentItem: item, feed: feed)
                 } else if let episodeEntity = dataSourceItem.episodeEntity {
                     feedCell.configure(withItem: episodeEntity.0)
                 }
@@ -535,18 +552,28 @@ extension AllTribeFeedsCollectionViewController {
             return nil
         }
         
-        let recentlyPlayedFeed = allFeeds
+        let recentlyPlayedItems = allFeeds
             .filter { $0.dateLastConsumed != nil }
-            .compactMap { contentFeed -> DataSourceItem? in
-                if contentFeed.isPodcast {
-                    return DataSourceItem.tribePodcastFeed(contentFeed, CollectionViewSection.recentlyPlayed.rawValue)
-                } else if contentFeed.isVideo {
-                    return DataSourceItem.tribeVideoFeed(contentFeed, CollectionViewSection.recentlyPlayed.rawValue)
-                } else if contentFeed.isNewsletter {
-                    return DataSourceItem.tribeNewsletterFeed(contentFeed, CollectionViewSection.recentlyPlayed.rawValue)
+            .sorted { first, second in
+                let firstDate = first.dateLastConsumed ?? Date(timeIntervalSince1970: 0)
+                let secondDate = second.dateLastConsumed ?? Date(timeIntervalSince1970: 0)
+                return firstDate > secondDate
+            }
+            .compactMap { feed -> DataSourceItem? in
+                if feed.isPodcast {
+                    let podcastFeed = PodcastFeed.convertFrom(contentFeed: feed)
+                    if let currentEpisode = podcastFeed.getCurrentEpisode() {
+                        return DataSourceItem.recentPodcastItem(feed, feed.items?.first(where: { $0.id == currentEpisode.itemID }) ?? feed.currentItem!, CollectionViewSection.recentlyPlayed.rawValue)
+                    }
+                }
+                guard let currentItem = feed.currentItem else { return nil }
+                if feed.isVideo {
+                    return DataSourceItem.recentVideoItem(feed, currentItem, CollectionViewSection.recentlyPlayed.rawValue)
+                } else if feed.isNewsletter {
+                    return DataSourceItem.recentNewsletterItem(feed, currentItem, CollectionViewSection.recentlyPlayed.rawValue)
                 }
                 return nil
-        }
+            }
         
         var downloadedEpisodes = [PodcastEpisode]()
         var downloadedItems = [DataSourceItem]()
@@ -581,11 +608,11 @@ extension AllTribeFeedsCollectionViewController {
             )
         }
         
-        if !recentlyPlayedFeed.isEmpty {
+        if !recentlyPlayedItems.isEmpty {
             snapshot.appendSections([CollectionViewSection.recentlyPlayed])
             
             snapshot.appendItems(
-                recentlyPlayedFeed,
+                recentlyPlayedItems,
                 toSection: CollectionViewSection.recentlyPlayed
             )
         }
@@ -644,7 +671,6 @@ extension AllTribeFeedsCollectionViewController {
         let isLoadingRecommendations = firstDataSourceItem?.isLoading == true
 
         if let dataSource = dataSource {
-            
             let snapshot = makeSnapshotForCurrentState(
                 loadingRecommendations: isLoadingRecommendations
             )
@@ -776,8 +802,11 @@ extension AllTribeFeedsCollectionViewController {
             return
         }
         
-
-        if let feedEntity = dataSourceItem.feedEntity as? ContentFeed {
+        if let (feed, _) = dataSourceItem.recentItemEntity {
+            onCellSelected?(feed.feedID)
+            scrollBackMostRecentFeed()
+        }
+        else if let feedEntity = dataSourceItem.feedEntity as? ContentFeed {
             onCellSelected?(feedEntity.id)
             scrollBackMostRecentFeed()
         } else if let recommendation = dataSourceItem.resultEntity {
@@ -785,7 +814,7 @@ extension AllTribeFeedsCollectionViewController {
                 recommendedFeeds,
                 recommendation.id
             )
-        } else if let episode = dataSourceItem.episodeEntity?.0, let feedID = episode.feedID     {
+        } else if let episode = dataSourceItem.episodeEntity?.0, let feedID = episode.feedID {
             onDownloadedItemSelected?(
                 feedID,
                 episode.itemID
@@ -901,6 +930,17 @@ extension AllTribeFeedsCollectionViewController.DataSourceItem {
             return true
         default:
             return false
+        }
+    }
+    
+    var recentItemEntity: (ContentFeed, ContentFeedItem)? {
+        switch self {
+        case .recentPodcastItem(let feed, let item, _),
+             .recentVideoItem(let feed, let item, _),
+             .recentNewsletterItem(let feed, let item, _):
+            return (feed, item)
+        default:
+            return nil
         }
     }
 }
