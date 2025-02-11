@@ -185,13 +185,13 @@ extension PodcastPlayerController {
                 
                 self.podcastItems[podcastData.episodeUrl.absoluteString] = item
                 
-                DispatchQueue.main.async {
-                    playAssetAfterLoad(item)
-                }
+                playAssetAfterLoad(item)
             }
         }
         
         func playAssetAfterLoad(_ playerItem: CachingPlayerItem) {
+            playerItem.preferredForwardBufferDuration = 5
+            
             if self.player == nil {
                 self.player = AVPlayer(playerItem: playerItem)
             } else {
@@ -204,12 +204,26 @@ extension PodcastPlayerController {
             
             if let currentTime = podcastData.currentTime, currentTime > 0 {
                 self.player?.seek(to: CMTime(seconds: Double(currentTime), preferredTimescale: 1)) { _ in
-                    self.player?.play()
-                    self.didStartPlaying(playerItem)
+                    DispatchQueue.main.async {
+                        playerItem.addObserver(self, forKeyPath: "status", options: [.new], context: nil)
+                    }
                 }
             } else {
+                DispatchQueue.main.async {
+                    playerItem.addObserver(self, forKeyPath: "status", options: [.new], context: nil)
+                }
+            }
+        }
+    }
+    
+    override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
+        if keyPath == "status" {
+            if self.player?.currentItem?.status == .readyToPlay {
                 self.player?.play()
-                self.didStartPlaying(playerItem)
+                
+                if let playerItem = self.player?.currentItem {
+                    self.didStartPlaying(playerItem)
+                }
             }
         }
     }

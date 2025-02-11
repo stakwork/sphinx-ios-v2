@@ -37,19 +37,21 @@ extension PodcastPlayerView {
                 currentTime: 0
             )
             
-            let asset = AVAsset(url: url)
-            asset.loadValuesAsynchronously(forKeys: ["duration"], completionHandler: {
-                let duration = Int(Double(asset.duration.value) / Double(asset.duration.timescale))
-                episode?.duration = duration
-                
-                DispatchQueue.main.async {
-                    self.setProgress(
-                        duration: duration,
-                        currentTime: episode?.currentTime ?? 0
-                    )
-                    self.audioLoading = false
-                }
-            })
+            DispatchQueue.global(qos: .userInitiated).async {
+                let asset = AVAsset(url: url)
+                asset.loadValuesAsynchronously(forKeys: ["duration"], completionHandler: {
+                    let duration = Int(Double(asset.duration.value) / Double(asset.duration.timescale))
+                    episode?.duration = duration
+                    
+                    DispatchQueue.main.async {
+                        self.setProgress(
+                            duration: duration,
+                            currentTime: episode?.currentTime ?? 0
+                        )
+                        self.audioLoading = false
+                    }
+                })
+            }
         }
     }
     
