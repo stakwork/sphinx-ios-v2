@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="21507" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="22155" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
     <device id="retina6_12" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="21505"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="22131"/>
         <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -27,60 +27,68 @@
         </placeholder>
         <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
         <view contentMode="scaleToFill" id="iN0-l3-epB">
-            <rect key="frame" x="0.0" y="0.0" width="393" height="65"/>
+            <rect key="frame" x="0.0" y="0.0" width="393" height="90"/>
             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
             <subviews>
                 <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="DhJ-Rf-rpo">
-                    <rect key="frame" x="94.333333333333329" y="10" width="204.66666666666669" height="45"/>
+                    <rect key="frame" x="72" y="10" width="249" height="70"/>
                     <subviews>
-                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" textAlignment="center" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="U3Q-yS-Rb5">
-                            <rect key="frame" x="12" y="9.6666666666666679" width="88.666666666666671" height="26.000000000000004"/>
-                            <string key="text">Tomas T wants to
+                        <stackView opaque="NO" contentMode="scaleToFill" alignment="center" spacing="12" translatesAutoresizingMaskIntoConstraints="NO" id="ZFn-7M-bKW">
+                            <rect key="frame" x="16" y="0.0" width="217" height="70"/>
+                            <subviews>
+                                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" textAlignment="center" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="U3Q-yS-Rb5">
+                                    <rect key="frame" x="0.0" y="18.666666666666671" width="113" height="33"/>
+                                    <string key="text">Tomas T wants to
 join the group</string>
-                            <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="11"/>
-                            <color key="textColor" name="Text"/>
-                            <nil key="highlightedColor"/>
-                        </label>
-                        <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Tjt-Tu-P4O">
-                            <rect key="frame" x="120.66666666666669" y="9" width="27" height="27"/>
-                            <color key="backgroundColor" name="GreenBorder"/>
+                                    <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="14"/>
+                                    <color key="textColor" name="Text"/>
+                                    <nil key="highlightedColor"/>
+                                </label>
+                                <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Tjt-Tu-P4O">
+                                    <rect key="frame" x="125" y="15" width="40" height="40"/>
+                                    <color key="backgroundColor" name="GreenBorder"/>
+                                    <constraints>
+                                        <constraint firstAttribute="width" constant="40" id="knq-QT-LS4"/>
+                                        <constraint firstAttribute="height" constant="40" id="nRP-Lw-MhS"/>
+                                    </constraints>
+                                    <fontDescription key="fontDescription" name="MaterialIcons-Regular" family="Material Icons" pointSize="20"/>
+                                    <state key="normal" title="done">
+                                        <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                    </state>
+                                    <connections>
+                                        <action selector="doneButtonTouched" destination="-1" eventType="touchUpInside" id="7px-3E-kwv"/>
+                                    </connections>
+                                </button>
+                                <button opaque="NO" tag="1" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="5x8-nU-AlW">
+                                    <rect key="frame" x="177" y="15" width="40" height="40"/>
+                                    <color key="backgroundColor" name="BadgeRed"/>
+                                    <constraints>
+                                        <constraint firstAttribute="height" constant="40" id="lt3-nA-GKs"/>
+                                        <constraint firstAttribute="width" constant="40" id="mSb-rU-5Ha"/>
+                                    </constraints>
+                                    <fontDescription key="fontDescription" name="MaterialIcons-Regular" family="Material Icons" pointSize="20"/>
+                                    <inset key="imageEdgeInsets" minX="0.0" minY="0.0" maxX="2.2250738585072014e-308" maxY="0.0"/>
+                                    <state key="normal" title="close">
+                                        <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                    </state>
+                                    <connections>
+                                        <action selector="cancelButtonTouched" destination="-1" eventType="touchUpInside" id="NWo-QX-GIb"/>
+                                    </connections>
+                                </button>
+                            </subviews>
                             <constraints>
-                                <constraint firstAttribute="width" constant="27" id="knq-QT-LS4"/>
-                                <constraint firstAttribute="height" constant="27" id="nRP-Lw-MhS"/>
+                                <constraint firstItem="5x8-nU-AlW" firstAttribute="centerY" secondItem="ZFn-7M-bKW" secondAttribute="centerY" id="bUl-lo-1vn"/>
+                                <constraint firstItem="U3Q-yS-Rb5" firstAttribute="centerY" secondItem="ZFn-7M-bKW" secondAttribute="centerY" id="n0o-k8-gVH"/>
+                                <constraint firstItem="Tjt-Tu-P4O" firstAttribute="centerY" secondItem="ZFn-7M-bKW" secondAttribute="centerY" id="qgv-Nx-zA9"/>
                             </constraints>
-                            <fontDescription key="fontDescription" name="MaterialIcons-Regular" family="Material Icons" pointSize="20"/>
-                            <state key="normal" title="done">
-                                <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                            </state>
-                            <connections>
-                                <action selector="doneButtonTouched" destination="-1" eventType="touchUpInside" id="7px-3E-kwv"/>
-                            </connections>
-                        </button>
-                        <button opaque="NO" tag="1" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="5x8-nU-AlW">
-                            <rect key="frame" x="157.66666666666669" y="9" width="27" height="27"/>
-                            <color key="backgroundColor" name="BadgeRed"/>
-                            <constraints>
-                                <constraint firstAttribute="height" constant="27" id="lt3-nA-GKs"/>
-                                <constraint firstAttribute="width" constant="27" id="mSb-rU-5Ha"/>
-                            </constraints>
-                            <fontDescription key="fontDescription" name="MaterialIcons-Regular" family="Material Icons" pointSize="20"/>
-                            <state key="normal" title="close">
-                                <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                            </state>
-                            <connections>
-                                <action selector="cancelButtonTouched" destination="-1" eventType="touchUpInside" id="NWo-QX-GIb"/>
-                            </connections>
-                        </button>
+                        </stackView>
                     </subviews>
                     <color key="backgroundColor" name="ReceivedMsgBG"/>
                     <constraints>
-                        <constraint firstAttribute="trailing" secondItem="5x8-nU-AlW" secondAttribute="trailing" constant="20" id="0Ad-LG-YLe"/>
-                        <constraint firstItem="Tjt-Tu-P4O" firstAttribute="leading" secondItem="U3Q-yS-Rb5" secondAttribute="trailing" constant="20" id="6jX-5v-alP"/>
-                        <constraint firstItem="Tjt-Tu-P4O" firstAttribute="centerY" secondItem="DhJ-Rf-rpo" secondAttribute="centerY" id="8cI-k7-I9y"/>
-                        <constraint firstItem="U3Q-yS-Rb5" firstAttribute="centerY" secondItem="DhJ-Rf-rpo" secondAttribute="centerY" id="R6I-oY-HtA"/>
-                        <constraint firstItem="5x8-nU-AlW" firstAttribute="centerY" secondItem="DhJ-Rf-rpo" secondAttribute="centerY" id="V5a-DF-Nfd"/>
-                        <constraint firstItem="U3Q-yS-Rb5" firstAttribute="leading" secondItem="DhJ-Rf-rpo" secondAttribute="leading" constant="12" id="YmY-H9-fYG"/>
-                        <constraint firstItem="5x8-nU-AlW" firstAttribute="leading" secondItem="Tjt-Tu-P4O" secondAttribute="trailing" constant="10" id="a36-yd-dg7"/>
+                        <constraint firstAttribute="bottom" secondItem="ZFn-7M-bKW" secondAttribute="bottom" id="GTQ-Hw-xFt"/>
+                        <constraint firstItem="ZFn-7M-bKW" firstAttribute="leading" secondItem="DhJ-Rf-rpo" secondAttribute="leading" constant="16" id="Lxp-zZ-a13"/>
+                        <constraint firstItem="ZFn-7M-bKW" firstAttribute="top" secondItem="DhJ-Rf-rpo" secondAttribute="top" id="W8S-SQ-bYg"/>
+                        <constraint firstAttribute="trailing" secondItem="ZFn-7M-bKW" secondAttribute="trailing" constant="16" id="aIN-HL-pYA"/>
                     </constraints>
                 </view>
             </subviews>
