@@ -42,6 +42,8 @@ final class RoomContext: ObservableObject {
     @Published var url: String = "" {
         didSet { store.value.url = url }
     }
+    
+    var startRecording: Bool = false
 
     @Published var token: String = "" {
         didSet { store.value.token = token }
@@ -96,6 +98,15 @@ final class RoomContext: ObservableObject {
     var _connectTask: Task<Void, Error>?
     
     var colors: [String: Color] = [:]
+    
+    var shouldStartRecording : Bool {
+        get {
+            if startRecording && !room.isRecording {
+                return true
+            }
+            return false
+        }
+    }
     
     func startAnimation() {
         if let _ = timer {

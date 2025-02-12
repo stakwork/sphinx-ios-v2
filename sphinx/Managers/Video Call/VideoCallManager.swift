@@ -92,6 +92,7 @@ class VideoCallManager : NSObject {
                 callback: { url, token in
                     let liveKitVC = LiveKitCallViewController()
                     liveKitVC.url = url
+                    liveKitVC.startRecording = linkUrl.contains("record=true")
                     liveKitVC.token = token
                     liveKitVC.audioOnly = audioOnly ?? false
                     

@@ -15,6 +15,7 @@ import AVFoundation
 class LiveKitCallViewController: UIViewController {
     
     var url: String? = nil
+    var startRecording: Bool = false
     var token: String? = nil
     var audioOnly: Bool = true
     
@@ -29,6 +30,7 @@ class LiveKitCallViewController: UIViewController {
         }
         
         roomCtx.url = url
+        roomCtx.startRecording = startRecording
         roomCtx.token = token
         roomCtx.audioOnly = audioOnly
         
