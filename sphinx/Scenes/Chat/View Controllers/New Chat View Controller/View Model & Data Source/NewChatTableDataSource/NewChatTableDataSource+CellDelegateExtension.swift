@@ -1044,7 +1044,9 @@ extension NewChatTableDataSource {
             type: TransactionMessage.TransactionMessageType.memberApprove
         )
         
-        messageBubbleHelper.hideLoadingWheel()
+        DelayPerformedHelper.performAfterDelay(seconds: 1.0, completion: {
+            self.messageBubbleHelper.hideLoadingWheel()
+        })
     }
     
     func shouldRejectMember(message: TransactionMessage) {
