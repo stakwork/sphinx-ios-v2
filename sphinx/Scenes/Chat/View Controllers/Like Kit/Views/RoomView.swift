@@ -858,15 +858,14 @@ struct RoomView: View {
             GeometryReader { geometry in
                 content(geometry: geometry)
             }
-            .onAppear {
+        }.onAppear {
+            Task { @MainActor in
+                canSwitchCameraPosition = try await CameraCapturer.canSwitchPosition()
+            }
+            Timer.scheduledTimer(withTimeInterval: 3, repeats: false) { _ in
                 Task { @MainActor in
-                    canSwitchCameraPosition = try await CameraCapturer.canSwitchPosition()
-                }
-                Timer.scheduledTimer(withTimeInterval: 3, repeats: false) { _ in
-                    Task { @MainActor in
-                        withAnimation {
-                            showConnectionTime = false
-                        }
+                    withAnimation {
+                        showConnectionTime = false
                     }
                 }
             }
@@ -886,6 +885,14 @@ struct RoomView: View {
             } else {
                 roomCtx.stopAnimation()
                 roomCtx.didStartRecording = false
+            }
+        }.onChange(of: room.connectionState) { newValue in
+            if newValue == .connected {
+                Task { @MainActor in
+                    if roomCtx.shouldStartRecording {
+                        toggleRecording()
+                    }
+                }
             }
         }
     }
