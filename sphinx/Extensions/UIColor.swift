@@ -107,6 +107,9 @@ public extension UIColor {
         public static let HighlightedText = color("HighlightedText")
         public static let HighlightedTextBackground = color("HighlightedTextBackground")
         
+        public static let MemberApprovalAccepted = color("MemberApprovalAccepted")
+        public static let MemberApprovalRejected = color("MemberApprovalRejected")
+        
         private static func color(_ name: String) -> UIColor {
             return UIColor(named: name, in: Bundle.main, compatibleWith: nil) ?? UIColor.magenta
             

@@ -69,8 +69,9 @@ class GroupRequestView: UIView {
             messageLabel.text = String(format: "member.request".localized, senderAlias)
         }
         
-        messageView.backgroundColor = (rejected ? UIColor.Sphinx.BadgeRed.withAlphaComponent(0.7) : (approved ? UIColor.Sphinx.PrimaryGreen.withAlphaComponent(0.7) : UIColor.Sphinx.ReceivedMsgBG))
+        messageView.backgroundColor = (rejected ? UIColor.Sphinx.MemberApprovalRejected : (approved ? UIColor.Sphinx.MemberApprovalAccepted : UIColor.Sphinx.ReceivedMsgBG))
         messageView.layer.borderColor = (rejected || approved) ? UIColor.clear.resolvedCGColor(with: self) : UIColor.Sphinx.LightDivider.resolvedCGColor(with: self)
+        messageLabel.textColor = (rejected || approved) ? UIColor.white : UIColor.Sphinx.Text
     }
     
     @IBAction func doneButtonTouched() {

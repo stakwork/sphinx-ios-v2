@@ -61,7 +61,7 @@ join the group</string>
                                 </button>
                                 <button opaque="NO" tag="1" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="5x8-nU-AlW">
                                     <rect key="frame" x="177" y="15" width="40" height="40"/>
-                                    <color key="backgroundColor" name="BadgeRed"/>
+                                    <color key="backgroundColor" red="0.55686274509803924" green="0.55686274509803924" blue="0.57647058823529407" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                     <constraints>
                                         <constraint firstAttribute="height" constant="40" id="lt3-nA-GKs"/>
                                         <constraint firstAttribute="width" constant="40" id="mSb-rU-5Ha"/>
@@ -103,9 +103,6 @@ join the group</string>
         </view>
     </objects>
     <resources>
-        <namedColor name="BadgeRed">
-            <color red="1" green="0.32156862745098042" blue="0.32156862745098042" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-        </namedColor>
         <namedColor name="GreenBorder">
             <color red="0.18431372549019609" green="0.70196078431372544" blue="0.47450980392156861" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>
