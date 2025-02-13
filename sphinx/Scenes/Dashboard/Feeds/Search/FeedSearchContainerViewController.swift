@@ -277,17 +277,15 @@ extension FeedSearchContainerViewController {
                 persistingIn: managedObjectContext,
                 then: { result in
                     
-                    if case .success(_) = result {
+                    if case .success(let contentFeed) = result {
                         self.managedObjectContext.saveContext()
                         
-                        self.feedsManager.loadCurrentEpisodeDurationFor(feedId: searchResult.feedId, completion: {
-                            self.newMessageBubbleHelper.hideLoadingWheel()
-                            
-                            self.resultsDelegate?.viewController(
-                                self,
-                                didSelectFeedSearchResult: searchResult.feedId
-                            )
-                        })
+                        self.newMessageBubbleHelper.hideLoadingWheel()
+                        
+                        self.resultsDelegate?.viewController(
+                            self,
+                            didSelectFeedSearchResult: contentFeed.feedID
+                        )
                     } else {
                         self.newMessageBubbleHelper.hideLoadingWheel()
                         
