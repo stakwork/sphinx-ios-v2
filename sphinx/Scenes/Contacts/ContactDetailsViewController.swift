@@ -16,6 +16,7 @@ class ContactDetailsViewController: UIViewController {
     @IBOutlet weak var publicKeyLabel: UILabel!
     @IBOutlet weak var routeHintLabel: UILabel!
     @IBOutlet weak var removeContactButtonBack: UIView!
+    @IBOutlet weak var timezoneSharingView: TimezoneSharingView!
     
     var contact: UserContact! = nil
     

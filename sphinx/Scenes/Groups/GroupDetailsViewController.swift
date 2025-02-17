@@ -39,6 +39,7 @@ class GroupDetailsViewController: UIViewController {
     @IBOutlet weak var adminNameLabel: UILabel!
     @IBOutlet weak var adminSubtitleLabel: UILabel!
     @IBOutlet weak var groupInfoContainerView: UIView!
+    @IBOutlet weak var timezoneSharingView: TimezoneSharingView!
     
     @IBOutlet var keyboardAccessoryView: UIView!
     
