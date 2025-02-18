@@ -115,7 +115,7 @@ class ChatHeaderView: UIView {
     ) {
         scheduleIcon.isHidden = true
         
-        if lastMessage.isOutgoing(ownerId: ownerId), !lastMessage.isConfirmedAsReceived() {
+        if lastMessage.isOutgoing(ownerId: ownerId), !lastMessage.isConfirmedAsReceived() && !lastMessage.failed() {
             let thirtySecondsAgo = Date().addingTimeInterval(-30)
             if lastMessage.messageDate < thirtySecondsAgo {
                 scheduleIcon.isHidden = false
