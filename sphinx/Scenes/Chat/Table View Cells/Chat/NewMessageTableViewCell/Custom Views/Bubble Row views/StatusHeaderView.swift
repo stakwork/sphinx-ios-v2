@@ -93,20 +93,20 @@ class StatusHeaderView: UIView {
         configureWith(expirationTimestamp: statusHeader.expirationTimestamp)
         
         let thirtySecondsAgo = Date().addingTimeInterval(-30)
-        let isScheduleVisible = !statusHeader.showBoltIcon && !statusHeader.showBoltGreyIcon && statusHeader.messageDate < thirtySecondsAgo
+        let isScheduleVisible = statusHeader.showScheduleIcon && statusHeader.messageDate < thirtySecondsAgo
         sentScheduleIcon.isHidden = !isScheduleVisible
         
-        if !isScheduleVisible {
-            DelayPerformedHelper.performAfterDelay(seconds: 30, completion: { [weak self] in
-                guard let self = self else {
-                    return
-                }
-                        
-                let thirtySecondsAgo = Date().addingTimeInterval(-30)
-                let isScheduleVisible = !statusHeader.showBoltIcon && !statusHeader.showBoltGreyIcon && statusHeader.messageDate < thirtySecondsAgo
-                self.sentScheduleIcon.isHidden = !isScheduleVisible
-            })
-        }
+//        if !isScheduleVisible {
+//            DelayPerformedHelper.performAfterDelay(seconds: 30, completion: { [weak self] in
+//                guard let self = self else {
+//                    return
+//                }
+//                        
+//                let thirtySecondsAgo = Date().addingTimeInterval(-30)
+//                let isScheduleVisible = !statusHeader.showBoltIcon && !statusHeader.showBoltGreyIcon && statusHeader.messageDate < thirtySecondsAgo
+//                self.sentScheduleIcon.isHidden = !isScheduleVisible
+//            })
+//        }
         
         if let uploadProgressData = uploadProgressData, uploadProgressData.progress < 100 {
             uploadingHeader.isHidden = false
