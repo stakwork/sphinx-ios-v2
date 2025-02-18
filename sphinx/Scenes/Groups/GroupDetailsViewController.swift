@@ -78,6 +78,8 @@ class GroupDetailsViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        timezoneSharingView.delegate = self
+        
         viewTitle.text = (chat.isPublicGroup() ? "tribe.details" : "group.details").localized
         tribeBadgesLabel.text = "badges.tribe-badges".localized
         
@@ -426,5 +428,15 @@ extension GroupDetailsViewController : TribeMemberInfoDelegate {
         
         self.chat.myAlias = alias
         self.chat.myPhotoUrl = photoUrl ?? self.chat.myPhotoUrl
+    }
+}
+
+extension GroupDetailsViewController : TimezoneSharingViewDelegate {
+    func shouldPresentPickerViewWith(delegate: PickerViewDelegate) {
+        let selectedValue = TimezoneSharingView.kDefaultValue
+        var timezones = TimeZone.knownTimeZoneIdentifiers
+        timezones.insert(selectedValue, at: 0)
+        let pickerVC = PickerViewController.instantiate(values: timezones, selectedValue: selectedValue, delegate: delegate)
+        self.present(pickerVC, animated: false, completion: nil)
     }
 }

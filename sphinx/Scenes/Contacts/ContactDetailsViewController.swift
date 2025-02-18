@@ -38,6 +38,8 @@ class ContactDetailsViewController: UIViewController {
     }
     
     func setupView() {
+        timezoneSharingView.delegate = self
+        
         removeContactButtonBack.backgroundColor = UIColor.Sphinx.PrimaryRed.withAlphaComponent(0.1)
         removeContactButtonBack.layer.cornerRadius = 6
     }
@@ -129,5 +131,15 @@ class ContactDetailsViewController: UIViewController {
         CoreDataManager.sharedManager.deleteContactObjectsFor(contact)
         
         self.navigationController?.popToRootViewController(animated: true)
+    }
+}
+
+extension ContactDetailsViewController : TimezoneSharingViewDelegate {
+    func shouldPresentPickerViewWith(delegate: PickerViewDelegate) {
+        let selectedValue = TimezoneSharingView.kDefaultValue
+        var timezones = TimeZone.knownTimeZoneIdentifiers
+        timezones.insert(selectedValue, at: 0)
+        let pickerVC = PickerViewController.instantiate(values: timezones, selectedValue: selectedValue, delegate: delegate)
+        self.present(pickerVC, animated: false, completion: nil)
     }
 }
