@@ -52,4 +52,5 @@ extension TransactionMessage {
     @NSManaged public var mediaFileSize: Int
     @NSManaged public var muid: String?
     @NSManaged public var threadUUID: String?
+    @NSManaged public var remoteTimezoneIdentifier: String?
 }
