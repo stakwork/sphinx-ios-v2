@@ -150,7 +150,7 @@
 "new.public.group" = "新部落";
 "edit.public.group" = "编辑部落";
 "tribe.kick" = "管理员已将您从此部落中移除";
-"tribe.kick.as.admin" = "You've removed %@ from \nthis tribe";
+"tribe.kick.as.admin" = "You've removed a member from this tribe";
 "tribe.deleted" = "管理员已删除此部落";
 "member.request" = "%@ 请求加入部落";
 "member.request.rejected" = "管理员拒绝了您的请求";

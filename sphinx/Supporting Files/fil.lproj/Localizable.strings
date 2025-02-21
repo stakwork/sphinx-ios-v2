@@ -137,7 +137,7 @@
 "added.to.group" = "Naidagdag si %@ sa grupo";
 "new.public.group" = "BAGONG TRIBO";
 "edit.public.group" = "I-EDIT ANG TRIBO";
-"tribe.kick.as.admin" = "You've removed %@ from \nthis tribe";
+"tribe.kick.as.admin" = "You've removed a member from this tribe";
 "tribe.kick" = "Inalis ka ng admin sa tribong ito";
 "tribe.deleted" = "Tinanggal ng admin ang kanyang tribo";
 "member.request" = "Gustong sumali ni %@ sa tribo";
