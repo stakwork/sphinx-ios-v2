@@ -399,6 +399,7 @@ class SphinxOnionManager : NSObject {
             if !isFetchingContent() {
                 self.hideRestoreCallback = hideRestoreViewCallback
                 self.getReads()
+                self.getMuteLevels()
                 self.syncNewMessages()
             } else {
                 errorCallback?()
@@ -486,6 +487,7 @@ class SphinxOnionManager : NSObject {
                 self.messageRestoreCallback = nil
                 
                 self.getReads()
+                self.getMuteLevels()
                 self.syncNewMessages()
             }
         }
