@@ -148,7 +148,7 @@
 "added.to.group" = "%@ がグループに追加されました";
 "new.public.group" = "新しいトライブ";
 "edit.public.group" = "トライブを編集";
-"tribe.kick.as.admin" = "You've removed %@ from \nthis tribe";
+"tribe.kick.as.admin" = "You've removed a member from this tribe";
 "tribe.kick" = "管理者によってこのトライブから削除されました";
 "tribe.deleted" = "管理者によってこのトライブが削除されました";
 "member.request" = "%@ がトライブに参加をリクエストしています";
