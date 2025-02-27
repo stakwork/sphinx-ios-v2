@@ -153,7 +153,7 @@
 "new.public.group" = "NEW TRIBE";
 "edit.public.group" = "EDIT TRIBE";
 "tribe.kick" = "The admin has removed\nyou from this tribe";
-"tribe.kick.as.admin" = "You've removed %@ from \nthis tribe";
+"tribe.kick.as.admin" = "You've removed a member from this tribe";
 "tribe.deleted" = "The admin has deleted\nthis tribe";
 "member.request" = "%@ wants\nto join the tribe";
 "member.request.rejected" = "The admin\ndeclined your request";
