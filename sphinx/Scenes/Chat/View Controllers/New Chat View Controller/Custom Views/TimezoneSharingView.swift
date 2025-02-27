@@ -10,6 +10,7 @@ import UIKit
 
 protocol TimezoneSharingViewDelegate: class {
     func shouldPresentPickerViewWith(delegate: PickerViewDelegate)
+    func timezoneSharingSettingsChanged(enabled: Bool, identifier: String?)
 }
 
 class TimezoneSharingView: UIView {
@@ -40,6 +41,33 @@ class TimezoneSharingView: UIView {
         
         shareTimezoneSwitch.onTintColor = UIColor.Sphinx.PrimaryBlue
         timezoneField.text = TimezoneSharingView.kDefaultValue
+        
+        shareTimezoneSwitch.addTarget(self, action: #selector(switchValueChanged), for: .valueChanged)
+    }
+    
+    @objc func switchValueChanged() {
+        notifyDelegate()
+    }
+    
+    func configure(enabled: Bool, identifier: String?) {
+        shareTimezoneSwitch.isOn = enabled
+        timezoneField.text = identifier ?? TimezoneSharingView.kDefaultValue
+    }
+    
+    func getTimezoneIdentifier() -> String? {
+        let value = timezoneField.text ?? TimezoneSharingView.kDefaultValue
+        return value == TimezoneSharingView.kDefaultValue ? nil : value
+    }
+    
+    func isTimezoneEnabled() -> Bool {
+        return shareTimezoneSwitch.isOn
+    }
+    
+    private func notifyDelegate() {
+        delegate?.timezoneSharingSettingsChanged(
+            enabled: isTimezoneEnabled(),
+            identifier: getTimezoneIdentifier()
+        )
     }
     
     @IBAction func timezoneButtonTouched() {
@@ -50,5 +78,6 @@ class TimezoneSharingView: UIView {
 extension TimezoneSharingView : PickerViewDelegate {
     func didSelectValue(value: String) {
         timezoneField.text = value
+        notifyDelegate()
     }
 }

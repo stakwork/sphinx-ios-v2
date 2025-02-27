@@ -59,6 +59,15 @@ class ContactDetailsViewController: UIViewController {
         contactDate.text = String.init(format: "contact.connected.since".localized, contact.createdAt.getStringDate(format: "MMMM dd, YYYY"))
         publicKeyLabel.text = contact.publicKey ?? ""
         routeHintLabel.text = contact.routeHint ?? ""
+        
+        if let chat = contact.getChat() {
+            timezoneSharingView.configure(
+                enabled: chat.timezoneEnabled,
+                identifier: chat.timezoneIdentifier
+            )
+        } else {
+            timezoneSharingView.configure(enabled: false, identifier: nil)
+        }
     }
     
     @IBAction func contactAvatarButtonTapped() {
@@ -136,10 +145,29 @@ class ContactDetailsViewController: UIViewController {
 
 extension ContactDetailsViewController : TimezoneSharingViewDelegate {
     func shouldPresentPickerViewWith(delegate: PickerViewDelegate) {
-        let selectedValue = TimezoneSharingView.kDefaultValue
+        let selectedValue = timezoneSharingView.getTimezoneIdentifier() ?? TimezoneSharingView.kDefaultValue
         var timezones = TimeZone.knownTimeZoneIdentifiers
-        timezones.insert(selectedValue, at: 0)
+        timezones.insert(TimezoneSharingView.kDefaultValue, at: 0)
         let pickerVC = PickerViewController.instantiate(values: timezones, selectedValue: selectedValue, delegate: delegate)
         self.present(pickerVC, animated: false, completion: nil)
+    }
+    
+    func timezoneSharingSettingsChanged(enabled: Bool, identifier: String?) {
+        guard let contact = contact, let chat = contact.getChat() else { return }
+        
+        let timezoneEnabledChanged = chat.timezoneEnabled != enabled
+        let timezoneIdentifierChanged = chat.timezoneIdentifier != identifier
+        
+        if timezoneEnabledChanged || timezoneIdentifierChanged {
+            chat.timezoneEnabled = enabled
+            chat.timezoneIdentifier = identifier
+            
+            if timezoneIdentifierChanged {
+                chat.timezoneUpdated = true
+            }
+            
+            CoreDataManager.sharedManager.saveContext()
+            
+        }
     }
 }

@@ -120,11 +120,27 @@ extension SphinxOnionManager {
         invoiceString: String?,
         tribeKickMember: String? = nil,
         paidAttachmentMediaToken: String? = nil,
-        isTribe: Bool
+        isTribe: Bool,
+        chat: Chat? = nil
     ) -> (String?, String?)? {
         
         var msg: [String: Any] = ["content": content]
         var mt: String? = nil
+        
+        // Add timezone metadata if enabled and needs updating
+        if let chat = chat, chat.timezoneEnabled, chat.timezoneUpdated {
+            if let timezoneIdentifier = chat.timezoneIdentifier {
+                let timezoneMetadata = ["timezone": timezoneIdentifier]
+                if let metadataJSON = try? JSONSerialization.data(withJSONObject: timezoneMetadata),
+                   let metadataString = String(data: metadataJSON, encoding: .utf8) {
+                    msg["metadata"] = metadataString)
+                }
+            }
+            
+            // Reset the update flag after including it in a message
+            chat.timezoneUpdated = false
+            chat.managedObjectContext?.saveContext()
+        }
         
         switch TransactionMessage.TransactionMessageType(rawValue: Int(type)) {
         case .message, .boost, .delete, .call, .groupLeave, .memberReject, .memberApprove,.groupDelete:
@@ -235,7 +251,8 @@ extension SphinxOnionManager {
             invoiceString: invoiceString,
             tribeKickMember: tribeKickMember,
             paidAttachmentMediaToken: paidAttachmentMediaToken,
-            isTribe: isTribe
+            isTribe: isTribe,
+            chat: chat
         ) else {
             return (nil, "Msg json format issue")
         }
@@ -1110,6 +1127,14 @@ extension SphinxOnionManager {
            let _ = TransactionMessage.getInvoiceWith(paymentHash: ph)
         {
             newMessage.setPaymentInvoiceAsPaid()
+        }
+
+        if let timezone = message.timezone {
+            if chat.isGroup() {
+                newMessage.remoteTimezoneIdentifier = timezone
+            } else {
+                chat.remoteTimezoneIdentifier = timezone
+            }
         }
         
         if !delaySave {
