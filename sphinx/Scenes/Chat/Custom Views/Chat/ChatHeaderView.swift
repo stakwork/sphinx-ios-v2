@@ -49,6 +49,7 @@ class ChatHeaderView: UIView {
     @IBOutlet weak var pendingChatDashedOutline: UIView!
     @IBOutlet weak var imageContainerWidth: NSLayoutConstraint!
     @IBOutlet weak var imageWidthConstraint: NSLayoutConstraint!
+    @IBOutlet weak var remoteTimezoneIdentifier: UILabel!
     
     var chat: Chat? = nil
     var contact: UserContact? = nil
@@ -99,6 +100,7 @@ class ChatHeaderView: UIView {
         let isEncrypted = (contact?.status == UserContact.Status.Confirmed.rawValue) || (chat?.status == Chat.ChatStatus.approved.rawValue)
         lockSign.text = isEncrypted ? "lock" : "lock_open"
         lockSign.isHidden = !isEncrypted
+        remoteTimezoneIdentifier.text = chat?.remoteTimezoneIdentifier?.replacingOccurrences(of: "_", with: " ")
         
         configureWebAppButton()
         configureThreadsButton()

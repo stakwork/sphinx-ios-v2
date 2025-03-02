@@ -35,6 +35,9 @@ class StatusHeaderView: UIView {
     
     @IBOutlet weak var expiredInvoiceReceivedHeader: UIStackView!
     @IBOutlet weak var expiredInvoiceReceivedLabel: UILabel!
+    @IBOutlet weak var remoteTimezoneIdentifier: UILabel!
+
+    
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -91,6 +94,13 @@ class StatusHeaderView: UIView {
         expiredInvoiceSentHeader.isHidden = !statusHeader.showExpiredSent
         expiredInvoiceReceivedHeader.isHidden = !statusHeader.showExpiredReceived
         configureWith(expirationTimestamp: statusHeader.expirationTimestamp)
+
+        if let identifier = statusHeader.remoteTimezoneIdentifier?.replacingOccurrences(of: "_", with: " "), !identifier.isEmpty {
+            remoteTimezoneIdentifier.isHidden = false
+            remoteTimezoneIdentifier.text = identifier
+        } else {
+            remoteTimezoneIdentifier.isHidden = true
+        }
         
         let thirtySecondsAgo = Date().addingTimeInterval(-30)
         let isScheduleVisible = statusHeader.showScheduleIcon && statusHeader.messageDate < thirtySecondsAgo

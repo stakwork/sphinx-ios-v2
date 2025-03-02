@@ -203,6 +203,7 @@ struct MessageTableCellState {
         let showBoltIcon = message.isConfirmedAsReceived()
         let showBoltGreyIcon = !message.isConfirmedAsReceived() && (message.isDirectPayment() || message.isPayment())
         let showFailedContainer = isSent && message.failed()
+        let timezoneIdentifier = chat.isGroup() ? (message.remoteTimezoneIdentifier ?? "") : ""
         
         var statusHeader = BubbleMessageLayoutState.StatusHeader(
             senderName: (chat.isConversation() ? nil : message.senderAlias),
@@ -219,7 +220,8 @@ struct MessageTableCellState {
             showScheduleIcon: !showBoltIcon && !showBoltGreyIcon && !showFailedContainer && isSent,
             expirationTimestamp: expirationTimestamp,
             timestamp: timestamp,
-            messageDate: message.date ?? Date()
+            messageDate: message.date ?? Date(),
+            remoteTimezoneIdentifier: timezoneIdentifier
         )
         
         return statusHeader
