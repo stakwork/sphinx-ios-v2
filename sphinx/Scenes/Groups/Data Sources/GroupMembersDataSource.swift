@@ -66,10 +66,14 @@ class GroupMembersDataSource: GroupAllContactsDataSource {
         })
     }
     
-    func getGroupContactsFrom(contacts: [JSON]) -> [GroupContact] {
+    func getGroupContactsFrom(
+        contacts: [JSON]
+    ) -> [GroupContact] {
         var groupContacts = [GroupContact]()
         
         var lastLetter = ""
+        
+        let timezones = TransactionMessage.getTimezonesByAlias(for: contacts.map({ $0["alias"].stringValue }), in: chat)
         
         for contact in  contacts {
             let id = contact.getJSONId() ?? SphinxOnionManager.sharedInstance.generateCryptographicallySecureRandomInt(upperBound: 100_000)
@@ -89,6 +93,7 @@ class GroupMembersDataSource: GroupAllContactsDataSource {
                 groupContact.pubkey = pubkey
                 groupContact.selected = false
                 groupContact.firstOnLetter = (initialString != lastLetter)
+                groupContact.timezone = timezones[nickname]
                 
                 lastLetter = initialString
                 

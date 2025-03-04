@@ -23,26 +23,26 @@
         </placeholder>
         <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
         <view contentMode="scaleToFill" id="iN0-l3-epB">
-            <rect key="frame" x="0.0" y="0.0" width="393" height="150"/>
+            <rect key="frame" x="0.0" y="0.0" width="393" height="120"/>
             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
             <subviews>
                 <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="55T-sI-uwH">
-                    <rect key="frame" x="0.0" y="0.0" width="393" height="60"/>
+                    <rect key="frame" x="0.0" y="0.0" width="393" height="50"/>
                     <subviews>
                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" text="Share timezone" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="b3C-WQ-9t9">
-                            <rect key="frame" x="0.0" y="34.666666666666664" width="319.66666666666669" height="20"/>
+                            <rect key="frame" x="0.0" y="24.666666666666671" width="319.66666666666669" height="20"/>
                             <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="17"/>
                             <color key="textColor" name="Text"/>
                             <nil key="highlightedColor"/>
                         </label>
                         <switch opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="751" verticalHuggingPriority="750" horizontalCompressionResistancePriority="751" contentHorizontalAlignment="center" contentVerticalAlignment="center" on="YES" translatesAutoresizingMaskIntoConstraints="NO" id="3u6-hm-q5f">
-                            <rect key="frame" x="344" y="29" width="51" height="31"/>
+                            <rect key="frame" x="344" y="19" width="51" height="31"/>
                         </switch>
                     </subviews>
                     <viewLayoutGuide key="safeArea" id="Zxz-NH-iWA"/>
                     <color key="backgroundColor" name="Body"/>
                     <constraints>
-                        <constraint firstAttribute="height" constant="60" id="3Rh-aq-gzW"/>
+                        <constraint firstAttribute="height" constant="50" id="3Rh-aq-gzW"/>
                         <constraint firstAttribute="bottom" secondItem="3u6-hm-q5f" secondAttribute="bottom" id="79U-Zo-dwZ"/>
                         <constraint firstItem="b3C-WQ-9t9" firstAttribute="leading" secondItem="55T-sI-uwH" secondAttribute="leading" id="Oaa-IE-GoZ"/>
                         <constraint firstAttribute="trailing" secondItem="3u6-hm-q5f" secondAttribute="trailing" id="cTW-su-g3N"/>
@@ -51,10 +51,10 @@
                     </constraints>
                 </view>
                 <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="heK-Sd-mB1">
-                    <rect key="frame" x="0.0" y="68" width="393" height="75"/>
+                    <rect key="frame" x="0.0" y="58" width="393" height="55"/>
                     <subviews>
                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Timezone" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="GV0-Ul-bw4">
-                            <rect key="frame" x="0.0" y="25.000000000000004" width="53" height="14.666666666666668"/>
+                            <rect key="frame" x="0.0" y="4.9999999999999991" width="53" height="14.666666666666664"/>
                             <constraints>
                                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="GV0-Ul-bw4" secondAttribute="trailing" symbolic="YES" id="Dcs-ej-kaU"/>
                             </constraints>
@@ -63,13 +63,13 @@
                             <nil key="highlightedColor"/>
                         </label>
                         <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="pdm-vD-ui3">
-                            <rect key="frame" x="0.0" y="39.666666666666671" width="393" height="34.333333333333329"/>
+                            <rect key="frame" x="0.0" y="19.666666666666675" width="393" height="34.333333333333343"/>
                             <color key="textColor" name="Text"/>
                             <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="17"/>
                             <textInputTraits key="textInputTraits" autocapitalizationType="words" returnKeyType="done"/>
                         </textField>
                         <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="OvP-1A-5t5">
-                            <rect key="frame" x="0.0" y="0.0" width="393" height="75"/>
+                            <rect key="frame" x="0.0" y="0.0" width="393" height="55"/>
                             <state key="normal" title="Button"/>
                             <buttonConfiguration key="configuration" style="plain"/>
                             <connections>
@@ -77,7 +77,7 @@
                             </connections>
                         </button>
                         <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Qs4-XT-hBY">
-                            <rect key="frame" x="0.0" y="74" width="393" height="1"/>
+                            <rect key="frame" x="0.0" y="54" width="393" height="1"/>
                             <color key="backgroundColor" name="LightDivider"/>
                             <constraints>
                                 <constraint firstAttribute="height" constant="1" id="lCE-n8-fh8"/>
@@ -94,11 +94,11 @@
                         <constraint firstAttribute="bottom" secondItem="Qs4-XT-hBY" secondAttribute="bottom" id="Czb-TA-r5m"/>
                         <constraint firstItem="Qs4-XT-hBY" firstAttribute="leading" secondItem="heK-Sd-mB1" secondAttribute="leading" id="EMp-kh-xAc"/>
                         <constraint firstItem="pdm-vD-ui3" firstAttribute="leading" secondItem="heK-Sd-mB1" secondAttribute="leading" id="Z42-RS-DQh"/>
-                        <constraint firstAttribute="height" constant="75" id="c6h-ZM-BPo"/>
+                        <constraint firstAttribute="height" constant="55" id="c6h-ZM-BPo"/>
                         <constraint firstItem="Qs4-XT-hBY" firstAttribute="top" secondItem="pdm-vD-ui3" secondAttribute="bottom" id="eGi-og-xSv"/>
                         <constraint firstItem="GV0-Ul-bw4" firstAttribute="leading" secondItem="heK-Sd-mB1" secondAttribute="leading" id="kdf-VV-6KI"/>
                         <constraint firstAttribute="trailing" secondItem="Qs4-XT-hBY" secondAttribute="trailing" id="ock-I9-jWo"/>
-                        <constraint firstItem="GV0-Ul-bw4" firstAttribute="top" secondItem="heK-Sd-mB1" secondAttribute="top" constant="25" id="v3e-sd-XoO"/>
+                        <constraint firstItem="GV0-Ul-bw4" firstAttribute="top" secondItem="heK-Sd-mB1" secondAttribute="top" constant="5" id="v3e-sd-XoO"/>
                         <constraint firstAttribute="trailing" secondItem="OvP-1A-5t5" secondAttribute="trailing" id="yOh-74-bfY"/>
                     </constraints>
                 </view>
