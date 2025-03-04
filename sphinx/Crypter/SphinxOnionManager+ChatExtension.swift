@@ -1134,7 +1134,9 @@ extension SphinxOnionManager {
             if chat.isGroup() {
                 newMessage.remoteTimezoneIdentifier = timezone
             } else {
-                chat.remoteTimezoneIdentifier = timezone
+                if !isV2Restore || chat.remoteTimezoneIdentifier == nil {
+                    chat.remoteTimezoneIdentifier = timezone
+                }
             }
         }
         
