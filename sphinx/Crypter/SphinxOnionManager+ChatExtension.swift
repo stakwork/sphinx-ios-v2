@@ -127,19 +127,17 @@ extension SphinxOnionManager {
         var msg: [String: Any] = ["content": content]
         var mt: String? = nil
         
-        // Add timezone metadata if enabled and needs updating
         if let chat = chat, chat.timezoneEnabled, chat.timezoneUpdated {
-            if let timezoneIdentifier = chat.timezoneIdentifier {
-                let timezoneMetadata = ["timezone": timezoneIdentifier]
-                if let metadataJSON = try? JSONSerialization.data(withJSONObject: timezoneMetadata),
-                   let metadataString = String(data: metadataJSON, encoding: .utf8) {
-                    msg["metadata"] = metadataString
-                }
-            }
+            let timezoneToSend = chat.timezoneIdentifier ?? TimeZone.current.identifier
+            let timezoneMetadata = ["timezone": timezoneToSend]
             
-            // Reset the update flag after including it in a message
-            chat.timezoneUpdated = false
-            chat.managedObjectContext?.saveContext()
+            if let metadataJSON = try? JSONSerialization.data(withJSONObject: timezoneMetadata),
+               let metadataString = String(data: metadataJSON, encoding: .utf8) {
+                msg["metadata"] = metadataString
+                
+                chat.timezoneUpdated = false
+                chat.managedObjectContext?.saveContext()
+            }
         }
 
         
