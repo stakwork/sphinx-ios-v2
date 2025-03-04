@@ -133,7 +133,7 @@ extension SphinxOnionManager {
                 let timezoneMetadata = ["timezone": timezoneIdentifier]
                 if let metadataJSON = try? JSONSerialization.data(withJSONObject: timezoneMetadata),
                    let metadataString = String(data: metadataJSON, encoding: .utf8) {
-                    msg["metadata"] = metadataString)
+                    msg["metadata"] = metadataString
                 }
             }
             
@@ -141,6 +141,7 @@ extension SphinxOnionManager {
             chat.timezoneUpdated = false
             chat.managedObjectContext?.saveContext()
         }
+
         
         switch TransactionMessage.TransactionMessageType(rawValue: Int(type)) {
         case .message, .boost, .delete, .call, .groupLeave, .memberReject, .memberApprove,.groupDelete:
