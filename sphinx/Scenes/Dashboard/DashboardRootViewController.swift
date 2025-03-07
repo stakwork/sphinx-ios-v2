@@ -81,14 +81,12 @@ class DashboardRootViewController: RootViewController {
     
     internal lazy var contactChatsContainerViewController: ChatsContainerViewController = {
         ChatsContainerViewController.instantiate(
-            tab: ChatsContainerViewController.Tab.Friends,
             chatsListDelegate: self
         )
     }()
     
     internal lazy var tribeChatsContainerViewController: ChatsContainerViewController = {
         ChatsContainerViewController.instantiate(
-            tab: ChatsContainerViewController.Tab.Tribes,
             chatsListDelegate: self
         )
     }()

@@ -13,8 +13,6 @@ class ChatsContainerViewController: UIViewController {
         case Friends
         case Tribes
     }
-    
-    var tab: Tab = Tab.Friends
 }
 
 
@@ -22,7 +20,6 @@ class ChatsContainerViewController: UIViewController {
 extension ChatsContainerViewController {
 
     static func instantiate(
-        tab: Tab,
         chatsListDelegate: DashboardChatsListDelegate
     ) -> ChatsContainerViewController {
         
@@ -32,7 +29,6 @@ extension ChatsContainerViewController {
             .instantiate()
         
         viewController.chatsListDelegate = chatsListDelegate
-        viewController.tab = tab
         
         return viewController
     }
