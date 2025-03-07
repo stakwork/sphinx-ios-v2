@@ -263,7 +263,7 @@ class PodcastPlayerView: UIView {
         }
     }
     
-    func playEpisode(episode:PodcastEpisode){
+    func playEpisode(episode: PodcastEpisode) {
         guard let podcastData = podcast.getPodcastData(
             episodeId: episode.itemID
         ) else {
