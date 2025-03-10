@@ -9,6 +9,20 @@
 import Foundation
 import UIKit
 import MobileCoreServices
+import UniformTypeIdentifiers
+
+enum JSONError : Error {
+    case notArray
+    case notNSDictionary
+}
+
+extension CharacterSet {
+    static var allowedURLCharacterSet: CharacterSet {
+        return CharacterSet(charactersIn: "!*'();:@&=+$,/?%#[]\" {}^|").inverted
+    }
+}
+
+typealias JSONDictionary = [String: Any]
 
 extension String {
     
@@ -815,16 +829,14 @@ extension String {
     }
     
     func mimeTypeForPath() -> String {
-        let url = NSURL(fileURLWithPath: self)
-        let pathExtension = url.pathExtension
-
-        if let uti = UTTypeCreatePreferredIdentifierForTag(kUTTagClassFilenameExtension, pathExtension! as NSString, nil)?.takeRetainedValue() {
-            if let mimetype = UTTypeCopyPreferredTagWithClass(uti, kUTTagClassMIMEType)?.takeRetainedValue() {
-                return mimetype as String
-            }
+        let url = URL(fileURLWithPath: self)
+        if let pathExtension = url.pathExtension.isEmpty ? nil : url.pathExtension,
+           let utType = UTType(filenameExtension: pathExtension) {
+            return utType.preferredMIMEType ?? "application/octet-stream"
         }
         return "application/octet-stream"
     }
+
     
     func withURLParam(key: String, value: String) -> String {
         if self.contains("?") {
@@ -1196,5 +1208,27 @@ extension String {
     
     func toMessageInnerContent() -> MessageInnerContent? {
         return MessageInnerContent(JSONString: self)
+    }
+    
+    func toArray() throws -> [Any] {
+        guard let stringData = data(using: .utf16, allowLossyConversion: false) else { return [] }
+        guard let array = try JSONSerialization.jsonObject(with: stringData, options: .mutableContainers) as? [Any] else {
+             throw JSONError.notArray
+        }
+
+        return array
+    }
+
+    func toDictionary() throws -> [String: Any] {
+        guard let binData = data(using: .utf16, allowLossyConversion: false) else { return [:] }
+        guard let json = try JSONSerialization.jsonObject(with: binData, options: .allowFragments) as? [String: Any] else {
+            throw JSONError.notNSDictionary
+        }
+
+        return json
+    }
+
+    func urlEncode() -> String? {
+        return addingPercentEncoding(withAllowedCharacters: .allowedURLCharacterSet)
     }
 }

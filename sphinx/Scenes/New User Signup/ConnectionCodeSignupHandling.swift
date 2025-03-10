@@ -23,7 +23,6 @@ protocol ConnectionCodeSignupHandling: UIViewController {
 // MARK: - Default Properties
 extension ConnectionCodeSignupHandling {
     var userData: UserData { .sharedInstance }
-    var onionConnector: SphinxOnionConnector { .sharedInstance }
 }
 
 
