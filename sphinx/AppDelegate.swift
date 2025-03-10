@@ -30,7 +30,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var notificationUserInfo : [String: AnyObject]? = nil
     var backgroundSessionCompletionHandler: (() -> Void)?
     
-    let onionConnector = SphinxOnionConnector.sharedInstance
     let actionsManager = ActionsManager.sharedInstance
     let feedsManager = FeedsManager.sharedInstance
     let storageManager = StorageManager.sharedManager

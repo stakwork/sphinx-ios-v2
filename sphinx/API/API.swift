@@ -108,7 +108,6 @@ class API {
     }
 
     let interceptor = SphinxInterceptor()
-    var onionConnector = SphinxOnionConnector.sharedInstance
     var cancellableRequest: DataRequest?
     var podcastSearchRequest: DataRequest?
     var currentRequestType : API.CancellableRequestType = API.CancellableRequestType.messages
@@ -278,11 +277,6 @@ class API {
         contentType: String = "application/json",
         token: String? = nil
     ) -> URLRequest? {
-        if onionConnector.usingTor() && !onionConnector.isReady() {
-            onionConnector.startIfNeeded()
-            return nil
-        }
-
         if let nsURL = URL(string: url) {
             var request = URLRequest(url: nsURL)
             request.httpMethod = method
