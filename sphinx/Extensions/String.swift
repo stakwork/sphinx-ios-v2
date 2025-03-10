@@ -22,6 +22,7 @@ extension CharacterSet {
     }
 }
 
+typealias JSONDictionary = [String: Any]
 
 extension String {
     
