@@ -56,6 +56,10 @@ class RecommendationItemWUnifiedViewCollectionViewCell: UICollectionViewCell {
 }
 
 extension RecommendationItemWUnifiedViewCollectionViewCell : PodcastEpisodeRowDelegate {
+    func shouldToggleChapters(episode: PodcastEpisode) {
+        
+    }
+    
     func shouldShowDescription(episode: PodcastEpisode) {
         delegate?.shouldShowDescription(episode: episode,cell:UITableViewCell())
     }

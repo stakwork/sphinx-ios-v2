@@ -28,12 +28,18 @@ public class PodcastEpisode: NSObject {
     public var people: [String] = []
     public var topics: [String] = []
     public var destination: PodcastDestination? = nil
+    public var chapters: Array<Chapter>? = nil
 
     //For recommendations podcast
     public var type: String?
     
     init(_ itemID: String) {
         self.itemID = itemID
+        
+        self.chapters = [
+            Chapter(dateAddedToGraph: Date.now, nodeType: "Chapter", isAd: false, name: "Chapter 1: solution for money supply", sourceLink: "", timestamp: "00:15:00", referenceId: "asdkjhasdkjhsadkjhad"),
+            Chapter(dateAddedToGraph: Date.now, nodeType: "Chapter", isAd: true, name: "Chapter 2: and now what?", sourceLink: "", timestamp: "00:35:25", referenceId: "asdkjhasdkjhsadkjhadsadjhasd")
+        ]
     }
     
     var wasPlayed: Bool? {

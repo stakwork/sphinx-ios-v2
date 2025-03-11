@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="21507" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="23504" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
     <device id="retina6_1" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="21505"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23506"/>
         <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -22,6 +22,7 @@
         <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner" customClass="PodcastPlayerView" customModule="sphinx" customModuleProvider="target">
             <connections>
                 <outlet property="audioLoadingWheel" destination="kFQ-zV-BtX" id="31I-gG-yfD"/>
+                <outlet property="chaptersContainer" destination="mpV-Tb-d4h" id="Dz5-yL-D4T"/>
                 <outlet property="contentView" destination="iN0-l3-epB" id="WkH-Pi-lwg"/>
                 <outlet property="currentTimeDot" destination="Mtu-jO-ZFp" id="RPs-Ww-FWa"/>
                 <outlet property="currentTimeLabel" destination="iDW-iO-P0o" id="6to-ww-AnB"/>
@@ -100,6 +101,13 @@
                             <color key="backgroundColor" name="ReceivedIcon"/>
                             <constraints>
                                 <constraint firstAttribute="width" id="ZVG-Fi-rtQ"/>
+                            </constraints>
+                        </view>
+                        <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="mpV-Tb-d4h">
+                            <rect key="frame" x="32" y="104" width="350" height="28"/>
+                            <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                            <constraints>
+                                <constraint firstAttribute="height" constant="28" id="ZWa-r4-kxb"/>
                             </constraints>
                         </view>
                         <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Mtu-jO-ZFp">
@@ -234,6 +242,7 @@
                     <constraints>
                         <constraint firstItem="VV8-QB-b2B" firstAttribute="centerX" secondItem="hny-dv-u2n" secondAttribute="centerX" id="24D-gD-hru"/>
                         <constraint firstItem="iDW-iO-P0o" firstAttribute="leading" secondItem="hlq-Ib-TyG" secondAttribute="leading" id="3wg-tp-VXP"/>
+                        <constraint firstItem="mpV-Tb-d4h" firstAttribute="bottom" secondItem="KTf-4e-LmA" secondAttribute="bottom" id="4g1-xu-7rM"/>
                         <constraint firstItem="Jf7-jW-t9r" firstAttribute="bottom" secondItem="hlq-Ib-TyG" secondAttribute="bottom" id="4ho-DG-4Z1"/>
                         <constraint firstItem="28w-L6-a8W" firstAttribute="top" secondItem="Tb8-08-zgd" secondAttribute="top" id="4j8-8d-K7u"/>
                         <constraint firstItem="wIY-t2-tmY" firstAttribute="top" secondItem="yFL-Ym-JIV" secondAttribute="top" constant="32" id="57u-ek-8ym"/>
@@ -248,12 +257,14 @@
                         <constraint firstAttribute="height" constant="256" id="Q46-Hf-DHT"/>
                         <constraint firstItem="Mtu-jO-ZFp" firstAttribute="centerY" secondItem="hlq-Ib-TyG" secondAttribute="centerY" id="Q4w-xg-6ok"/>
                         <constraint firstAttribute="trailing" secondItem="hlq-Ib-TyG" secondAttribute="trailing" constant="32" id="QED-4f-ZlW"/>
+                        <constraint firstItem="mpV-Tb-d4h" firstAttribute="top" secondItem="KTf-4e-LmA" secondAttribute="top" id="QlZ-au-P1g"/>
                         <constraint firstItem="Mtu-jO-ZFp" firstAttribute="leading" secondItem="Jf7-jW-t9r" secondAttribute="trailing" constant="-9" id="U0e-Kj-LrE"/>
                         <constraint firstItem="hny-dv-u2n" firstAttribute="top" secondItem="VV8-QB-b2B" secondAttribute="bottom" constant="5" id="UHt-TW-SIf"/>
                         <constraint firstItem="iDW-iO-P0o" firstAttribute="top" secondItem="hlq-Ib-TyG" secondAttribute="bottom" constant="10" id="UgD-C3-pcW"/>
                         <constraint firstAttribute="trailing" secondItem="Lvk-UX-m39" secondAttribute="trailing" constant="16" id="VGj-QK-tiu"/>
                         <constraint firstItem="KTf-4e-LmA" firstAttribute="leading" secondItem="hlq-Ib-TyG" secondAttribute="leading" id="VIO-2G-7o2"/>
                         <constraint firstItem="bIp-4g-4ho" firstAttribute="leading" secondItem="hny-dv-u2n" secondAttribute="trailing" id="VQj-P4-gXi"/>
+                        <constraint firstItem="mpV-Tb-d4h" firstAttribute="trailing" secondItem="KTf-4e-LmA" secondAttribute="trailing" id="Ym9-Iv-3qE"/>
                         <constraint firstAttribute="trailing" secondItem="wIY-t2-tmY" secondAttribute="trailing" constant="32" id="bW0-3D-7H6"/>
                         <constraint firstItem="Tb8-08-zgd" firstAttribute="centerY" secondItem="hny-dv-u2n" secondAttribute="centerY" id="bj0-57-QdP"/>
                         <constraint firstItem="Jf7-jW-t9r" firstAttribute="leading" secondItem="hlq-Ib-TyG" secondAttribute="leading" id="cut-aU-G9q"/>
@@ -263,6 +274,7 @@
                         <constraint firstItem="KTf-4e-LmA" firstAttribute="top" secondItem="hlq-Ib-TyG" secondAttribute="top" constant="-12" id="ho1-uU-axK"/>
                         <constraint firstItem="w3F-zG-zqr" firstAttribute="leading" secondItem="kFQ-zV-BtX" secondAttribute="trailing" constant="10" id="iMc-g4-T77"/>
                         <constraint firstItem="wIY-t2-tmY" firstAttribute="leading" secondItem="yFL-Ym-JIV" secondAttribute="leading" constant="32" id="oPj-Qp-0mf"/>
+                        <constraint firstItem="mpV-Tb-d4h" firstAttribute="leading" secondItem="KTf-4e-LmA" secondAttribute="leading" id="sFi-P9-tOg"/>
                         <constraint firstItem="hny-dv-u2n" firstAttribute="leading" secondItem="28w-L6-a8W" secondAttribute="trailing" id="spR-K7-2U1"/>
                         <constraint firstItem="28w-L6-a8W" firstAttribute="bottom" secondItem="Tb8-08-zgd" secondAttribute="bottom" id="tVM-7f-XwI"/>
                         <constraint firstItem="w3F-zG-zqr" firstAttribute="trailing" secondItem="hlq-Ib-TyG" secondAttribute="trailing" id="tdK-3i-eFk"/>

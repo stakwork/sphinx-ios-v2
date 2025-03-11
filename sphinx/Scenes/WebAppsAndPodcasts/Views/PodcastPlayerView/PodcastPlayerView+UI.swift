@@ -126,6 +126,39 @@ extension PodcastPlayerView {
         
         progressLineWidth.constant = progressWidth
         progressLine.layoutIfNeeded()
+        
+        addChaptersDots(duration: duration)
+    }
+    
+    func addChaptersDots(
+        duration: Int
+    ) {
+        guard let episode = podcast.getCurrentEpisode() else {
+            return
+        }
+        
+        if chaptersContainer.subviews.count == (episode.chapters ?? []).count {
+            return
+        }
+        
+        let chapters = episode.chapters ?? []
+        
+        for chapter in chapters {
+            guard let chapterTime = chapter.timestamp.timeStringToSeconds() else {
+                continue
+            }
+            let progress = (Double(chapterTime) * 100 / Double(duration))/100
+            let durationLineWidth = UIScreen.main.bounds.width - 64
+            let progressWidth = durationLineWidth * CGFloat(progress)
+            
+            let dotSize: CGFloat = 10
+            let dotHalfSize: CGFloat = 5
+            let containerHeight: CGFloat = 28
+            let chapterDot = UIView(frame: CGRect(x: progressWidth - dotHalfSize, y: (containerHeight / 2) - dotHalfSize, width: dotSize, height: dotSize))
+            chapterDot.backgroundColor = chapter.isAd ? UIColor.Sphinx.SecondaryText : UIColor.white
+            chapterDot.layer.cornerRadius = dotHalfSize
+            chaptersContainer.addSubview(chapterDot)
+        }
     }
     
     func addMessagesFor(ts: Int) {

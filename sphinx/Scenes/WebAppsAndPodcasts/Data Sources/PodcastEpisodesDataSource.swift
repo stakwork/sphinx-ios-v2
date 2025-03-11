@@ -24,6 +24,7 @@ class PodcastEpisodesDataSource : NSObject {
     weak var delegate: PodcastEpisodesDSDelegate?
     
     let kRowHeight: CGFloat = 200
+    let kChapterHeight: CGFloat = 40
     let kHeaderHeight: CGFloat = 50
     let kHeaderLabelFont = UIFont(name: "Roboto-Medium", size: 14.0)!
     let windowTopInset = getWindowInsets().top
@@ -31,6 +32,7 @@ class PodcastEpisodesDataSource : NSObject {
     var tableView: UITableView! = nil
     var podcast: PodcastFeed! = nil
     var episodes: [PodcastEpisode] = []
+    var episodesExpanded: [Int: Bool] = [:]
     
     let podcastPlayerController = PodcastPlayerController.sharedInstance
     
@@ -58,7 +60,14 @@ class PodcastEpisodesDataSource : NSObject {
 
 extension PodcastEpisodesDataSource : UITableViewDelegate {
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return kRowHeight
+        let episodes = getEpisodes()
+        let episode = episodes[indexPath.row]
+        
+        if episodesExpanded[indexPath.row] ?? false {
+            return kRowHeight + (CGFloat((episode.chapters?.count ?? 0)) * kChapterHeight)
+        } else {
+            return kRowHeight
+        }
     }
     
     func getEpisodes() -> [PodcastEpisode] {
@@ -81,7 +90,8 @@ extension PodcastEpisodesDataSource : UITableViewDelegate {
                 delegate: self,
                 isLastRow: indexPath.row + 1 == episodes.count,
                 playing: isPlaying,
-                playingSound: podcastPlayerController.isSoundPlaying
+                playingSound: podcastPlayerController.isSoundPlaying,
+                expanded: episodesExpanded[indexPath.row] ?? false
             )
         }
     }
@@ -147,6 +157,10 @@ extension PodcastEpisodesDataSource : UIScrollViewDelegate {
 }
 
 extension PodcastEpisodesDataSource : FeedItemRowDelegate {
+    func shouldToggleChapters(video: Video, cell: UITableViewCell) {
+        ///Implement for video chapters
+    }
+    
     func shouldShowDescription(episode: PodcastEpisode,cell:UITableViewCell) {
         delegate?.didTapForDescriptionAt(episode:episode,cell:cell)
     }
@@ -182,6 +196,28 @@ extension PodcastEpisodesDataSource : FeedItemRowDelegate {
     func shouldShowMore(episode: PodcastEpisode, cell: UITableViewCell){
         if let indexPath = tableView.indexPath(for: cell) {
             delegate?.showEpisodeDetails(episode: episode,indexPath: indexPath)
+        }
+    }
+    
+    func shouldToggleChapters(episode: PodcastEpisode, cell: UITableViewCell) {
+        if let indexPath = tableView.indexPath(for: cell) {
+            var indexRowsToUpdate: [IndexPath] = [indexPath]
+            
+            for (index, _) in episodesExpanded.enumerated() {
+                if index != indexPath.row {
+                    if (episodesExpanded[index] ?? false) {
+                        indexRowsToUpdate.append(IndexPath(row: index, section: 0))
+                    }
+                    episodesExpanded[index] = false
+                }
+            }
+            
+            episodesExpanded[indexPath.row] = !(episodesExpanded[indexPath.row] ?? false)
+            
+            tableView.reloadRows(at: indexRowsToUpdate, with: .none)
+            
+            tableView.beginUpdates()
+            tableView.endUpdates()
         }
     }
 }

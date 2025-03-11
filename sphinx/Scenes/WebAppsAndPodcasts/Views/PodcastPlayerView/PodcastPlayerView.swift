@@ -42,6 +42,7 @@ class PodcastPlayerView: UIView {
     @IBOutlet weak var customBoostView: CustomBoostView!
     @IBOutlet weak var shareClipButton: UIButton!
     @IBOutlet weak var satsPerMinuteView: PodcastSatsView!
+    @IBOutlet weak var chaptersContainer: UIView!
     
     @IBOutlet weak var audioLoadingWheel: UIActivityIndicatorView!
     

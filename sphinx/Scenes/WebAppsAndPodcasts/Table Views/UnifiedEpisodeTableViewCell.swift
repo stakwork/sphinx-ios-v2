@@ -25,7 +25,8 @@ class UnifiedEpisodeTableViewCell: UITableViewCell {
         delegate: FeedItemRowDelegate,
         isLastRow: Bool,
         playing: Bool,
-        playingSound: Bool = false
+        playingSound: Bool = false,
+        expanded: Bool = false
     ) {
         self.delegate = delegate
         
@@ -36,7 +37,8 @@ class UnifiedEpisodeTableViewCell: UITableViewCell {
             delegate: self,
             isLastRow: isLastRow,
             playing: playing,
-            playingSound: playingSound
+            playingSound: playingSound,
+            expanded: expanded
         )
     }
     
@@ -71,5 +73,9 @@ extension UnifiedEpisodeTableViewCell : PodcastEpisodeRowDelegate {
     
     func shouldShare(episode: PodcastEpisode) {
         delegate?.shouldShare(episode: episode)
+    }
+    
+    func shouldToggleChapters(episode: PodcastEpisode) {
+        delegate?.shouldToggleChapters(episode: episode, cell: self)
     }
 }

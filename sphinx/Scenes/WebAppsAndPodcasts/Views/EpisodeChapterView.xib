@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="23504" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+    <device id="retina6_12" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23506"/>
+        <capability name="Named colors" minToolsVersion="9.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <customFonts key="customFonts">
+        <array key="Roboto-Regular.ttf">
+            <string>Roboto-Regular</string>
+        </array>
+    </customFonts>
+    <objects>
+        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner" customClass="EpisodeChapterView" customModule="sphinx" customModuleProvider="target">
+            <connections>
+                <outlet property="adLabel" destination="dzq-hM-Tjd" id="p8f-pe-zuf"/>
+                <outlet property="contentView" destination="iN0-l3-epB" id="BCs-3v-xEu"/>
+                <outlet property="timeLabel" destination="nDI-EM-X6E" id="DAa-aF-t8K"/>
+                <outlet property="titleLabel" destination="07Z-Wh-gyP" id="9jO-ZE-VCh"/>
+            </connections>
+        </placeholder>
+        <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
+        <view contentMode="scaleToFill" insetsLayoutMarginsFromSafeArea="NO" id="iN0-l3-epB">
+            <rect key="frame" x="0.0" y="0.0" width="393" height="40"/>
+            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+            <subviews>
+                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" horizontalCompressionResistancePriority="748" text="Chapter title" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="07Z-Wh-gyP">
+                    <rect key="frame" x="16" y="12" width="71.333333333333329" height="16"/>
+                    <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="13"/>
+                    <color key="textColor" name="MainBottomIcons"/>
+                    <nil key="highlightedColor"/>
+                </label>
+                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" horizontalCompressionResistancePriority="749" text=" - Ad" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="dzq-hM-Tjd">
+                    <rect key="frame" x="87.333333333333314" y="12" width="28" height="16"/>
+                    <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="13"/>
+                    <color key="textColor" name="MainBottomIcons"/>
+                    <nil key="highlightedColor"/>
+                </label>
+                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="00:00:00" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="nDI-EM-X6E">
+                    <rect key="frame" x="326.33333333333331" y="12" width="50.666666666666686" height="16"/>
+                    <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="13"/>
+                    <color key="textColor" name="MainBottomIcons"/>
+                    <nil key="highlightedColor"/>
+                </label>
+                <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Egc-FR-bq9">
+                    <rect key="frame" x="0.0" y="0.0" width="393" height="40"/>
+                    <state key="normal" title="Button"/>
+                    <buttonConfiguration key="configuration" style="plain"/>
+                    <connections>
+                        <action selector="chapterButtonTouched" destination="-1" eventType="touchUpInside" id="IEH-yo-a6X"/>
+                    </connections>
+                </button>
+                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="VcL-fP-JPn">
+                    <rect key="frame" x="16" y="39" width="361" height="1"/>
+                    <color key="backgroundColor" name="ReceivedMsgBG"/>
+                    <constraints>
+                        <constraint firstAttribute="height" constant="1" id="WXu-se-cRR"/>
+                    </constraints>
+                </view>
+            </subviews>
+            <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+            <constraints>
+                <constraint firstAttribute="trailing" secondItem="Egc-FR-bq9" secondAttribute="trailing" id="0U1-LR-vvG"/>
+                <constraint firstAttribute="bottom" secondItem="Egc-FR-bq9" secondAttribute="bottom" id="2La-jh-Jz1"/>
+                <constraint firstItem="Egc-FR-bq9" firstAttribute="top" secondItem="iN0-l3-epB" secondAttribute="top" id="41b-Tc-lUZ"/>
+                <constraint firstAttribute="trailing" secondItem="VcL-fP-JPn" secondAttribute="trailing" constant="16" id="7ry-gl-SbI"/>
+                <constraint firstItem="Egc-FR-bq9" firstAttribute="leading" secondItem="iN0-l3-epB" secondAttribute="leading" id="B0T-Vz-QtX"/>
+                <constraint firstAttribute="trailing" secondItem="nDI-EM-X6E" secondAttribute="trailing" constant="16" id="CFU-Wd-MzH"/>
+                <constraint firstItem="07Z-Wh-gyP" firstAttribute="leading" secondItem="iN0-l3-epB" secondAttribute="leading" constant="16" id="Sb5-Xw-GSZ"/>
+                <constraint firstItem="07Z-Wh-gyP" firstAttribute="centerY" secondItem="iN0-l3-epB" secondAttribute="centerY" id="V9l-zN-mdX"/>
+                <constraint firstItem="dzq-hM-Tjd" firstAttribute="leading" secondItem="07Z-Wh-gyP" secondAttribute="trailing" id="byE-gN-fCJ"/>
+                <constraint firstItem="nDI-EM-X6E" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="dzq-hM-Tjd" secondAttribute="trailing" constant="12" id="eTp-GO-IYX"/>
+                <constraint firstItem="VcL-fP-JPn" firstAttribute="leading" secondItem="iN0-l3-epB" secondAttribute="leading" constant="16" id="gY8-z6-0v4"/>
+                <constraint firstAttribute="bottom" secondItem="VcL-fP-JPn" secondAttribute="bottom" id="lZn-2k-P9T"/>
+                <constraint firstItem="nDI-EM-X6E" firstAttribute="centerY" secondItem="07Z-Wh-gyP" secondAttribute="centerY" id="mLU-gh-CKW"/>
+                <constraint firstItem="dzq-hM-Tjd" firstAttribute="centerY" secondItem="07Z-Wh-gyP" secondAttribute="centerY" id="rxe-nh-2vT"/>
+            </constraints>
+            <freeformSimulatedSizeMetrics key="simulatedDestinationMetrics"/>
+            <point key="canvasLocation" x="106" y="20"/>
+        </view>
+    </objects>
+    <resources>
+        <namedColor name="MainBottomIcons">
+            <color red="0.37254901960784315" green="0.38823529411764707" blue="0.40784313725490196" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+        <namedColor name="ReceivedMsgBG">
+            <color red="0.94901960784313721" green="0.95294117647058818" blue="0.96078431372549022" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+    </resources>
+</document>

@@ -498,9 +498,13 @@
 		47BF7D4B25A8A59100593489 /* API+VersionsExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47BF7D4A25A8A59100593489 /* API+VersionsExtension.swift */; };
 		47C0613B2A4A1BAA00CEF221 /* UISegmentedControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C0613A2A4A1BAA00CEF221 /* UISegmentedControl.swift */; };
 		47C3DB712A4B5CB400F0557A /* NewChatViewController+SearchMessagesExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C3DB702A4B5CB400F0557A /* NewChatViewController+SearchMessagesExtension.swift */; };
+		47C45E012D806E0A007A9BD7 /* EpisodeChapterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C45E002D806E0A007A9BD7 /* EpisodeChapterView.swift */; };
+		47C45E052D806E1B007A9BD7 /* EpisodeChapterView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 47C45E042D806E1B007A9BD7 /* EpisodeChapterView.xib */; };
 		47C52C4527F49EA9007B43E2 /* HMACSigningManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C52C4427F49EA9007B43E2 /* HMACSigningManager.swift */; };
 		47C7C1782938E84D00264BF6 /* RecommendationResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C7C1772938E84D00264BF6 /* RecommendationResult.swift */; };
 		47C7D704278749CF006D2809 /* PeopleTorActionsView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 47C7D706278749CF006D2809 /* PeopleTorActionsView.xib */; };
+		47CA05B42D80611400AE1AE5 /* Chapter+Properties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47CA05B32D80610500AE1AE5 /* Chapter+Properties.swift */; };
+		47CA05B62D80611D00AE1AE5 /* Chapter+Computed.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47CA05B52D80611800AE1AE5 /* Chapter+Computed.swift */; };
 		47CC7CE523E361B800730E6F /* PaymentTransaction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47CC7CE423E361B800730E6F /* PaymentTransaction.swift */; };
 		47CC7CE923E4718600730E6F /* AttachmentFullScreenViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47CC7CE823E4718600730E6F /* AttachmentFullScreenViewController.swift */; };
 		47CD9508265EC2A4009B06A4 /* CommonModalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47CD9507265EC2A4009B06A4 /* CommonModalView.swift */; };
@@ -1697,11 +1701,15 @@
 		47BF7D4A25A8A59100593489 /* API+VersionsExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+VersionsExtension.swift"; sourceTree = "<group>"; };
 		47C0613A2A4A1BAA00CEF221 /* UISegmentedControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UISegmentedControl.swift; sourceTree = "<group>"; };
 		47C3DB702A4B5CB400F0557A /* NewChatViewController+SearchMessagesExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NewChatViewController+SearchMessagesExtension.swift"; sourceTree = "<group>"; };
+		47C45E002D806E0A007A9BD7 /* EpisodeChapterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EpisodeChapterView.swift; sourceTree = "<group>"; };
+		47C45E042D806E1B007A9BD7 /* EpisodeChapterView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = EpisodeChapterView.xib; sourceTree = "<group>"; };
 		47C52C4427F49EA9007B43E2 /* HMACSigningManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HMACSigningManager.swift; sourceTree = "<group>"; };
 		47C7C1772938E84D00264BF6 /* RecommendationResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendationResult.swift; sourceTree = "<group>"; };
 		47C7D705278749CF006D2809 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/PeopleTorActionsView.xib; sourceTree = "<group>"; };
 		47C7D70B278749D5006D2809 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/PeopleTorActionsView.strings; sourceTree = "<group>"; };
 		47C7D70D278749D9006D2809 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/PeopleTorActionsView.strings; sourceTree = "<group>"; };
+		47CA05B32D80610500AE1AE5 /* Chapter+Properties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Chapter+Properties.swift"; sourceTree = "<group>"; };
+		47CA05B52D80611800AE1AE5 /* Chapter+Computed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Chapter+Computed.swift"; sourceTree = "<group>"; };
 		47CC7CE423E361B800730E6F /* PaymentTransaction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentTransaction.swift; sourceTree = "<group>"; };
 		47CC7CE823E4718600730E6F /* AttachmentFullScreenViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentFullScreenViewController.swift; sourceTree = "<group>"; };
 		47CD9507265EC2A4009B06A4 /* CommonModalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommonModalView.swift; sourceTree = "<group>"; };
@@ -3491,6 +3499,7 @@
 		4780FA2B275AA2FD0099CE75 /* Podcast */ = {
 			isa = PBXGroup;
 			children = (
+				47CA05B22D8060F200AE1AE5 /* Chapter */,
 				F32A695226CFEEF50004B8B3 /* Podcast Destination */,
 				F32A695026CFEED70004B8B3 /* Podcast Episode */,
 				F32A694F26CFEECD0004B8B3 /* Podcast Feed */,
@@ -3611,6 +3620,8 @@
 				47EB025C29BA37D50032CFB5 /* CircularProgressView.xib */,
 				4733ED202CA4888E00078EF2 /* NewUnifiedEpisodeView.swift */,
 				4733ED222CA4889600078EF2 /* NewUnifiedEpisodeView.xib */,
+				47C45E002D806E0A007A9BD7 /* EpisodeChapterView.swift */,
+				47C45E042D806E1B007A9BD7 /* EpisodeChapterView.xib */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -3856,6 +3867,15 @@
 				47C7C1772938E84D00264BF6 /* RecommendationResult.swift */,
 			);
 			path = Recommendations;
+			sourceTree = "<group>";
+		};
+		47CA05B22D8060F200AE1AE5 /* Chapter */ = {
+			isa = PBXGroup;
+			children = (
+				47CA05B52D80611800AE1AE5 /* Chapter+Computed.swift */,
+				47CA05B32D80610500AE1AE5 /* Chapter+Properties.swift */,
+			);
+			path = Chapter;
 			sourceTree = "<group>";
 		};
 		47CC7CE323E3619E00730E6F /* Models */ = {
@@ -4928,6 +4948,7 @@
 				475BDD4A232AD00D00C5BBD6 /* MyriadPro-Regular.otf in Resources */,
 				47D46A29237B1D030005A548 /* SubscriptionFormTableViewCell.xib in Resources */,
 				F34BFEDF267B3C30003F6D55 /* RestoreUser.storyboard in Resources */,
+				47C45E052D806E1B007A9BD7 /* EpisodeChapterView.xib in Resources */,
 				CE67902C2C7CFC3900BC2D38 /* TorrentMagnetDetailsView.xib in Resources */,
 				F39F2C8626E2840500D357F6 /* FeedSearchResultsCollectionViewSectionHeader.xib in Resources */,
 				474E465A2AAF8FC80098AD24 /* ImportSeedView.xib in Resources */,
@@ -5277,6 +5298,7 @@
 				472161CD293A67A50088B87B /* YoutubeRecommendationFeedPlayerViewController.swift in Sources */,
 				47A79D3A2444A15C005CD72F /* MessageOptionsView.swift in Sources */,
 				47E6A4CC2A2E68A700A9509E /* DeletedMessageView.swift in Sources */,
+				47C45E012D806E0A007A9BD7 /* EpisodeChapterView.swift in Sources */,
 				CE67902A2C7CFC0B00BC2D38 /* TorrentMagnetDetailsView.swift in Sources */,
 				93D7B5472BAE0FEA007C53A9 /* AddTagsButtonCell.swift in Sources */,
 				475BDD89232C086C00C5BBD6 /* HistoryViewController.swift in Sources */,
@@ -5532,6 +5554,7 @@
 				47CFA9462A38C5200030BC23 /* NewChatTableDataSource+ScrollExtension.swift in Sources */,
 				477BCF322A0031060080ED65 /* TransactionTableViewCell.swift in Sources */,
 				47FB189B23A299000097695B /* SignupHelper.swift in Sources */,
+				47CA05B42D80611400AE1AE5 /* Chapter+Properties.swift in Sources */,
 				47669F3F23CF7CB300C17A77 /* ChatListCommonObject.swift in Sources */,
 				CE887EFA2B1E5C7B00DBA670 /* SphinxOnionManager+ContactExtension.swift in Sources */,
 				4701461F2A3F939600A00DF8 /* NewChatViewModel+MessageMenuActionsExtension.swift in Sources */,
@@ -5553,6 +5576,7 @@
 				9386C28B2BB25EDC00ABDEF3 /* AddedTagsView.swift in Sources */,
 				47E6A4F72A2F788300A9509E /* NewChatTableDataSource+ResultsControllerExtension.swift in Sources */,
 				4785C10224D4A0BE004E2D6C /* Constants.swift in Sources */,
+				47CA05B62D80611D00AE1AE5 /* Chapter+Computed.swift in Sources */,
 				4730EF4B2CDA94E70014581F /* PublishOptionsView.swift in Sources */,
 				CE3133AD2977747E00E91E3A /* BadgeAdminManagementListDataSource.swift in Sources */,
 				475BDD73232BF76B00C5BBD6 /* UserData.swift in Sources */,

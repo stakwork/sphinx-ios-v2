@@ -20,9 +20,12 @@ protocol FeedItemRowDelegate : class {
     func shouldShowMore(episode: PodcastEpisode,cell: UICollectionViewCell)
     func shouldShowDescription(episode: PodcastEpisode,cell:UITableViewCell)
     
-    func shouldShowMore(video:Video,cell: UICollectionViewCell)
-    func shouldShare(video:Video)
+    func shouldShowMore(video: Video, cell: UICollectionViewCell)
+    func shouldShare(video: Video)
     func shouldShowDescription(video: Video)
+    
+    func shouldToggleChapters(episode: PodcastEpisode, cell: UITableViewCell)
+    func shouldToggleChapters(video: Video, cell: UITableViewCell)
 }
 
 protocol PodcastEpisodeRowDelegate : class {
@@ -30,7 +33,8 @@ protocol PodcastEpisodeRowDelegate : class {
     func shouldDeleteFile(episode: PodcastEpisode)
     func shouldShowMore(episode: PodcastEpisode)
     func shouldShare(episode: PodcastEpisode)
-    func shouldShowDescription(episode:PodcastEpisode)
+    func shouldShowDescription(episode: PodcastEpisode)
+    func shouldToggleChapters(episode: PodcastEpisode)
 }
 
 protocol VideoRowDelegate : class {
@@ -38,6 +42,7 @@ protocol VideoRowDelegate : class {
     func shouldShare(video: Video)
     func shouldShowDescription(video:Video)
     func shouldStartDownloading(video:Video)
+//    func shouldToggleChapters(video: Video)
 }
 
 class NewUnifiedEpisodeView: UIView {
@@ -65,12 +70,16 @@ class NewUnifiedEpisodeView: UIView {
     @IBOutlet weak var downloadProgressBar: CircularProgressView!
     @IBOutlet weak var animationContainer: UIView!
     @IBOutlet weak var animationView: AnimationView!
+    @IBOutlet weak var chaptersContainer: UIStackView!
+    @IBOutlet weak var chaptersButton: UIButton!
     
     weak var episode: PodcastEpisode! = nil
     weak var videoEpisode: Video! = nil
     
     weak var podcastDelegate: PodcastEpisodeRowDelegate?
     weak var videoDelegate: VideoRowDelegate?
+    
+    let kChapterHeight: CGFloat = 40
     
     var thumbnailImageViewURL: URL? {
         videoEpisode.thumbnailURL
@@ -107,6 +116,7 @@ class NewUnifiedEpisodeView: UIView {
         downloadButton.tintColor = UIColor.Sphinx.Text.withAlphaComponent(0.5)
         sharebutton.tintColor = UIColor.Sphinx.Text.withAlphaComponent(0.5)
         moreDetailsButton.tintColor = UIColor.Sphinx.Text.withAlphaComponent(0.5)
+        chaptersButton.setTitleColor(UIColor.Sphinx.Text.withAlphaComponent(0.5), for: .normal)
     }
     
     func roundCorners(){
@@ -171,7 +181,6 @@ class NewUnifiedEpisodeView: UIView {
         downloadButton.isHidden = false
         
         configureDownload(video: videoEpisode, download: download)
-
         
         descriptionLabel.text = videoEpisode.videoDescription
         episodeLabel.text = videoEpisode.titleForDisplay
@@ -185,7 +194,8 @@ class NewUnifiedEpisodeView: UIView {
        delegate: PodcastEpisodeRowDelegate,
        isLastRow: Bool,
        playing: Bool,
-       playingSound: Bool = false
+       playingSound: Bool = false,
+       expanded: Bool = false
     ) {
         self.episode = episode
         self.podcastDelegate = delegate
@@ -207,7 +217,12 @@ class NewUnifiedEpisodeView: UIView {
         descriptionLabel.text = episode.episodeDescription?.nonHtmlRawString
         descriptionLabel.isHidden = (episode.episodeDescription?.nonHtmlRawString ?? "").isEmpty
         
+        chaptersButton.isHidden = (episode.chapters?.count ?? 0) == 0
+        chaptersButton.setTitleColor(expanded ? UIColor.Sphinx.Text : UIColor.Sphinx.Text.withAlphaComponent(0.5), for: .normal)
+        
         divider.isHidden = isLastRow
+        
+        configureWithChapters(episode.chapters ?? [])
         
         if let typeIconImage = episode.typeIconImage {
             mediaTypeImageView.image = UIImage(named: typeIconImage)
@@ -249,6 +264,33 @@ class NewUnifiedEpisodeView: UIView {
             didPlayImageView.isHidden = (didPlayImageView.isHidden || episode.isYoutubeVideo)
             dotView.isHidden = true
             downloadButtonImage.alpha = 0.25
+        }
+    }
+    
+    func configureWithChapters(
+        _ chapters: [Chapter]
+    ) {
+        for view in chaptersContainer.subviews {
+            view.removeFromSuperview()
+        }
+        
+        for (index, chapter) in chapters.enumerated() {
+            let newChapterView = EpisodeChapterView(
+                frame: CGRect(
+                    x: 0,
+                    y: index * Int(kChapterHeight),
+                    width: Int(UIScreen.main.bounds.size.width),
+                    height: Int(kChapterHeight)
+                )
+            )
+            chaptersContainer.addSubview(newChapterView)
+            
+            newChapterView.configureWith(
+                chapter: chapter,
+                delegate: self,
+                index: index,
+                episodeRow: true
+            )
         }
     }
     
@@ -404,4 +446,17 @@ class NewUnifiedEpisodeView: UIView {
         }
     }
 
+    @IBAction func chaptersButtonTouched() {
+        if let _ = videoEpisode {
+//            videoDelegate?.shouldToggleChapters(video: video)
+        } else if let episode = episode {
+            podcastDelegate?.shouldToggleChapters(episode: episode)
+        }
+    }
+}
+
+extension NewUnifiedEpisodeView : ChapterViewDelegate {
+    func shouldPlayChapterWith(index: Int) {
+        ///Implement playing chapter
+    }
 }
