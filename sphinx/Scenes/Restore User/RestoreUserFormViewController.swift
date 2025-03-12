@@ -28,7 +28,6 @@ class RestoreUserFormViewController: UIViewController {
     }
     
     let userData = UserData.sharedInstance
-    let onionConnector = SphinxOnionConnector.sharedInstance
     let authenticationHelper = BiometricAuthenticationHelper()
     let newMessageBubbleHelper = NewMessageBubbleHelper()
     
