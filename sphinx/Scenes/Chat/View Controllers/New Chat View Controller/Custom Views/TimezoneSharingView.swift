@@ -23,6 +23,8 @@ class TimezoneSharingView: UIView {
     
     public static let kDefaultValue = "Use Computer Settings"
     
+    let newMessageBubbleHelper = NewMessageBubbleHelper()
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
         setup()
@@ -64,6 +66,14 @@ class TimezoneSharingView: UIView {
     }
     
     private func notifyDelegate() {
+        newMessageBubbleHelper.showGenericMessageView(
+            text: "timezone.changed".localized,
+            delay: 7,
+            textColor: UIColor.white,
+            backColor: UIColor.Sphinx.PrimaryGreen,
+            backAlpha: 1.0
+        )
+        
         delegate?.timezoneSharingSettingsChanged(
             enabled: isTimezoneEnabled(),
             identifier: getTimezoneIdentifier()

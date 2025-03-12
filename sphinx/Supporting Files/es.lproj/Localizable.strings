@@ -514,6 +514,7 @@
 "error.getting.token.description" = "Se produjo un error al obtener un token para unirse a la llamada. Inténtelo nuevamente más tarde";
 "contact.info" = "Datos del contacto";
 "contact.connected.since" = "Conectado desde %@";
+"timezone.changed" = "La configuración de zona horaria para este chat se\nguarda solo en este dispositivo. Si usas la aplicación en\notro dispositivo, deberás configurarla nuevamente.";
 
 
 //OTHER
