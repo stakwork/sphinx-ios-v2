@@ -108,10 +108,9 @@ extension PodcastEpisodesDataSource : UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
         let windowWidth = WindowsManager.getWindowWidth()
-        let episodes = podcast.episodes ?? []
         
         let headerView = EpisodesHeaderView(frame: CGRect(x: 0, y: 0, width: windowWidth, height: kHeaderHeight))
-        headerView.configureWith(count: episodes.count)
+        headerView.configureWith(podcast: podcast)
         headerView.addShadow(offset: CGSize(width: 0.0, height: 5.0), opacity: 0.15, radius: 3)
         return headerView
     }

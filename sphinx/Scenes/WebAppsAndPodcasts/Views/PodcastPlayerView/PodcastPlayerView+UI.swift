@@ -111,6 +111,10 @@ extension PodcastPlayerView {
         duration: Int,
         currentTime: Int
     ) {
+        if skipAdvertIfNeeded(duration: duration, currentTime: currentTime) {
+            return
+        }
+        
         let currentTimeString = currentTime.getPodcastTimeString()
         
         currentTimeLabel.text = currentTimeString
@@ -159,6 +163,86 @@ extension PodcastPlayerView {
             chapterDot.layer.cornerRadius = dotHalfSize
             chaptersContainer.addSubview(chapterDot)
         }
+    }
+    
+    func skipAdvertIfNeeded(
+        duration: Int,
+        currentTime: Int
+    ) -> Bool {
+        if !podcast.skipAds {
+            return false
+        }
+        
+        guard let episode = podcast.getCurrentEpisode() else {
+            return false
+        }
+        
+        if skippingAdvert {
+            return true
+        }
+        
+        let adTimestamps: [(Int, Int)] = episode.getAdTimestamps()
+        let addTimestampStarts = adTimestamps.map({ $0.0 })
+        let addTimestampEnds = adTimestamps.map({ $0.1 })
+        
+        if addTimestampStarts.contains(currentTime + 2) {
+            advertLabel.text = "Ad detected"
+            advertContainer.isHidden = false
+        } else if addTimestampStarts.contains(currentTime) {
+            if let currentAddTimestamps = adTimestamps.first(where: { $0.0 == currentTime }) {
+                skippingAdvert = true
+                advertLabel.text = "Skipping Ad"
+                advertContainer.isHidden = false
+
+                let newTime = currentAddTimestamps.1
+                
+                let progress = (Double(newTime) * 100 / Double(duration))/100
+                let durationLineWidth = UIScreen.main.bounds.width - 64
+                var progressWidth = durationLineWidth * CGFloat(progress)
+                
+                if !progressWidth.isFinite || progressWidth < 0 {
+                    progressWidth = 0
+                }
+                
+                progressLineWidth.constant = progressWidth
+                
+                togglePlayState()
+                
+                UIView.animate(withDuration: 1.0, animations: {
+                    self.progressLine.superview?.layoutIfNeeded()
+                }, completion: { _ in
+                    guard let podcastData = self.podcast.getPodcastData(
+                        currentTime: newTime
+                    ) else {
+                        return
+                    }
+                    
+                    self.setProgress(
+                        duration: podcastData.duration ?? 0,
+                        currentTime: newTime
+                    )
+                    
+                    self.podcastPlayerController.submitAction(
+                        UserAction.Seek(podcastData)
+                    )
+                    
+                    self.togglePlayState()
+                    self.skippingAdvert = false
+                    self.hideAdvertLabel()
+                })
+                return true
+            } else {
+                advertContainer.isHidden = true
+                return false
+            }
+        }
+        return false
+    }
+    
+    func hideAdvertLabel() {
+        DelayPerformedHelper.performAfterDelay(seconds: 1.0, completion: {
+            self.advertContainer.isHidden = true
+        })
     }
     
     func addMessagesFor(ts: Int) {

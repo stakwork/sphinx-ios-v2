@@ -16,17 +16,7 @@ class EpisodesHeaderView: UIView {
     @IBOutlet weak var skipAdsContainer: UIView!
     @IBOutlet weak var skipAdsLabel: UILabel!
     
-    public var skipAds : Bool {
-        get {
-            if let skipAds = UserDefaults.Keys.skipAds.get(defaultValue: false) {
-                return skipAds
-            }
-            return false
-        }
-        set {
-            UserDefaults.Keys.skipAds.set(newValue)
-        }
-    }
+    var podcast: PodcastFeed! = nil
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -48,16 +38,18 @@ class EpisodesHeaderView: UIView {
         skipAdsContainer.layer.borderWidth = 1
     }
     
-    func configureWith(count: Int) {
-        episodesLabel.text = "episodes".localized.uppercased()
-        episodesCountLabel.text = "\(count)"
+    func configureWith(podcast: PodcastFeed) {
+        self.podcast = podcast
         
-        configureSkipAdsButton(enable: skipAds)
+        episodesLabel.text = "episodes".localized.uppercased()
+        episodesCountLabel.text = "\((podcast.episodes ?? []).count)"
+        
+        configureSkipAdsButton(enable: podcast.skipAds)
     }
     
     @IBAction func skipAdsButtonTouched() {
-        let newValue = !skipAds
-        skipAds = newValue
+        let newValue = !podcast.skipAds
+        podcast.skipAds = newValue
         configureSkipAdsButton(enable: newValue)
     }
     

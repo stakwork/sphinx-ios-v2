@@ -38,7 +38,8 @@ public class PodcastEpisode: NSObject {
         
         self.chapters = [
             Chapter(dateAddedToGraph: Date.now, nodeType: "Chapter", isAd: false, name: "Chapter 1: solution for money supply", sourceLink: "", timestamp: "00:15:00", referenceId: "asdkjhasdkjhsadkjhad"),
-            Chapter(dateAddedToGraph: Date.now, nodeType: "Chapter", isAd: true, name: "Chapter 2: and now what?", sourceLink: "", timestamp: "00:35:25", referenceId: "asdkjhasdkjhsadkjhadsadjhasd")
+            Chapter(dateAddedToGraph: Date.now, nodeType: "Chapter", isAd: true, name: "Chapter 2: and now what?", sourceLink: "", timestamp: "00:35:25", referenceId: "asdkjhasdkjhsadkjhadsadjhasd"),
+            Chapter(dateAddedToGraph: Date.now, nodeType: "Chapter", isAd: false, name: "Chapter 3: new chapter episode?", sourceLink: "", timestamp: "00:45:20", referenceId: "asdkjhasdkjhsadkjhadsadjhasd")
         ]
     }
     
@@ -231,6 +232,24 @@ extension PodcastEpisode {
             link! += "&atTime=\(timestamp)"
         }
         return link
+    }
+    
+    func getAdTimestamps() -> [(Int, Int)] {
+        guard let chapters = chapters else {
+            return []
+        }
+        
+        var timestamps: [(Int, Int)] = []
+        
+        for (index, chapter) in chapters.enumerated() {
+            if chapter.isAd {
+                if let nextChapterStart = chapters[index + 1].timestamp.timeStringToSeconds(), let adStart = chapter.timestamp.timeStringToSeconds() {
+                    timestamps.append((adStart, nextChapterStart))
+                }
+            }
+        }
+        
+        return timestamps
     }
     
 }

@@ -28,6 +28,5 @@ public class Chapter {
         self.sourceLink = sourceLink
         self.timestamp = timestamp
         self.referenceId = referenceId
-    }
-    
+    }    
 }
