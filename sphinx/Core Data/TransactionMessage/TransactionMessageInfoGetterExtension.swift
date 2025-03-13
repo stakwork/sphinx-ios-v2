@@ -443,6 +443,10 @@ extension TransactionMessage {
         return false
     }
     
+    func isTribeTimezoneMsg() -> Bool {
+        return chat?.isPublicGroup() == true && remoteTimezoneIdentifier?.isNotEmpty == true
+    }
+    
     func isNotConsecutiveMessage() -> Bool {
         return isPayment() || isInvoice() || isGroupActionMessage() || isDeleted()
     }
@@ -1025,7 +1029,17 @@ extension TransactionMessage {
     
     //Grouping Logic
     func shouldAvoidGrouping() -> Bool {
-        return pending() || failed() || isDeleted() || isInvoice() || isPayment() || isGroupActionMessage() || isFlagged() || (isDirectPayment() && confirmed())
+        return
+            pending() ||
+            failed() ||
+            isDeleted() ||
+            isInvoice() ||
+            isPayment() ||
+            isGroupActionMessage() ||
+            isFlagged() ||
+            (isDirectPayment() && confirmed()) ||
+            isTribeTimezoneMsg()
+            
     }
     
     func hasSameSenderThanMessage(_ message: TransactionMessage) -> Bool {
