@@ -132,7 +132,7 @@ class CoreDataManager {
         let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName:"\(entityName)")
         fetchRequest.sortDescriptors = sortDescriptors ?? [NSSortDescriptor(key: "id", ascending: false)]
         
-        managedContext.performAndWait {
+        managedContext.perform {
             do {
                 try objects = managedContext.fetch(fetchRequest) as! [T]
             } catch let error as NSError {
@@ -153,7 +153,7 @@ class CoreDataManager {
         fetchRequest.sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]
         fetchRequest.fetchLimit = 1
         
-        managedContext.performAndWait {
+        managedContext.perform {
             do {
                 try objects = managedContext.fetch(fetchRequest) as! [T]
             } catch let error as NSError {
@@ -185,7 +185,7 @@ class CoreDataManager {
             fetchRequest.fetchLimit = fetchLimit
         }
         
-        managedContext.performAndWait {
+        managedContext.perform {
             do {
                 try objects = managedContext.fetch(fetchRequest) as! [T]
             } catch let error as NSError {
@@ -205,7 +205,7 @@ class CoreDataManager {
             fetchRequest.predicate = predicate
         }
         
-        managedContext.performAndWait {
+        managedContext.perform {
             do {
                 try count = managedContext.count(for: fetchRequest)
             } catch let error as NSError {
@@ -230,7 +230,7 @@ class CoreDataManager {
         fetchRequest.sortDescriptors = sortDescriptors
         fetchRequest.fetchLimit = 1
         
-        managedContext.performAndWait {
+        managedContext.perform {
             do {
                 try objects = managedContext.fetch(fetchRequest) as! [T]
             } catch let error as NSError {
@@ -246,7 +246,7 @@ class CoreDataManager {
     
     func deleteObject(object: NSManagedObject, context: NSManagedObjectContext? = nil) {
         let managedContext = context ?? persistentContainer.viewContext
-        managedContext.performAndWait {
+        managedContext.perform {
             managedContext.delete(object)
         }
     }
