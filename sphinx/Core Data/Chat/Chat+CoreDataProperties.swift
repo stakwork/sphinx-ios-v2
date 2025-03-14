@@ -49,6 +49,10 @@ extension Chat {
     @NSManaged public var cachedMediaSet: NSSet?
     @NSManaged public var subscription: Subscription?
     @NSManaged public var lastMessage: TransactionMessage?
+    @NSManaged public var timezoneEnabled: Bool
+    @NSManaged public var timezoneIdentifier: String?
+    @NSManaged public var remoteTimezoneIdentifier: String?
+    @NSManaged public var timezoneUpdated: Bool
 }
 
 

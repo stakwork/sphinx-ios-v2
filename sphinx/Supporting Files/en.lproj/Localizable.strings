@@ -514,6 +514,7 @@
 "error.getting.token.description" = "There was an error getting a token to join the call. Please try again later";
 "contact.info" = "Contact Details";
 "contact.connected.since" = "Connected since %@";
+"timezone.changed" = "Timezone settings for this chat are saved \nonly on this device. If you use the app on another\ndevice, you'll need to set the timezone again.";
 
 
 //OTHER

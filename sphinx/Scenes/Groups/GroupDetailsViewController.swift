@@ -39,9 +39,9 @@ class GroupDetailsViewController: UIViewController {
     @IBOutlet weak var adminNameLabel: UILabel!
     @IBOutlet weak var adminSubtitleLabel: UILabel!
     @IBOutlet weak var groupInfoContainerView: UIView!
+    @IBOutlet weak var timezoneSharingView: TimezoneSharingView!
     
     @IBOutlet var keyboardAccessoryView: UIView!
-    
     
     
     var imagePickerManager = ImagePickerManager.sharedInstance
@@ -77,10 +77,13 @@ class GroupDetailsViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        timezoneSharingView.delegate = self
+        
         viewTitle.text = (chat.isPublicGroup() ? "tribe.details" : "group.details").localized
         tribeBadgesLabel.text = "badges.tribe-badges".localized
         
         loadData()
+        setupTimezoneSharing()
     }
     
     func loadData() {
@@ -369,6 +372,19 @@ class GroupDetailsViewController: UIViewController {
     @IBAction func backButtonTouched() {
         self.navigationController?.popViewController(animated: true)
     }
+    
+    func setupTimezoneSharing() {
+        timezoneSharingView.delegate = self
+        
+        if let chat = self.chat {
+            timezoneSharingView.configure(
+                enabled: chat.timezoneEnabled,
+                identifier: chat.timezoneIdentifier
+            )
+        } else {
+            timezoneSharingView.configure(enabled: false, identifier: nil)
+        }
+    }
 }
 
 extension GroupDetailsViewController : UIImagePickerControllerDelegate, UINavigationControllerDelegate {
@@ -425,5 +441,34 @@ extension GroupDetailsViewController : TribeMemberInfoDelegate {
         
         self.chat.myAlias = alias
         self.chat.myPhotoUrl = photoUrl ?? self.chat.myPhotoUrl
+    }
+}
+
+extension GroupDetailsViewController : TimezoneSharingViewDelegate {
+    func shouldPresentPickerViewWith(delegate: PickerViewDelegate) {
+        let selectedValue = timezoneSharingView.getTimezoneIdentifier() ?? TimezoneSharingView.kDefaultValue
+        var timezones = TimeZone.knownTimeZoneIdentifiers
+        timezones.insert(TimezoneSharingView.kDefaultValue, at: 0)
+        let pickerVC = PickerViewController.instantiate(values: timezones, selectedValue: selectedValue, delegate: delegate)
+        self.present(pickerVC, animated: false, completion: nil)
+    }
+    
+    func timezoneSharingSettingsChanged(enabled: Bool, identifier: String?) {
+        guard let chat = self.chat else { return }
+        
+        let timezoneEnabledChanged = chat.timezoneEnabled != enabled
+        let timezoneIdentifierChanged = chat.timezoneIdentifier != identifier
+        
+        if timezoneEnabledChanged || timezoneIdentifierChanged {
+            chat.timezoneEnabled = enabled
+            chat.timezoneIdentifier = identifier
+            
+            if timezoneIdentifierChanged {
+                chat.timezoneUpdated = true
+            }
+            
+            CoreDataManager.sharedManager.saveContext()
+            
+        }
     }
 }

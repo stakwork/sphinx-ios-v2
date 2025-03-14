@@ -141,6 +141,7 @@ class HistoryViewController: UIViewController {
             }
         }
         
+        history = history.filter({ ($0.amount ?? 0) >= 1 })
         history = history.sorted { $0.getDate() > $1.getDate() }
         
         setNoResultsLabel(count: history.count)

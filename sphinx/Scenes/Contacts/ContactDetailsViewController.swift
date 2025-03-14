@@ -16,6 +16,7 @@ class ContactDetailsViewController: UIViewController {
     @IBOutlet weak var publicKeyLabel: UILabel!
     @IBOutlet weak var routeHintLabel: UILabel!
     @IBOutlet weak var removeContactButtonBack: UIView!
+    @IBOutlet weak var timezoneSharingView: TimezoneSharingView!
     
     var contact: UserContact! = nil
     
@@ -37,6 +38,8 @@ class ContactDetailsViewController: UIViewController {
     }
     
     func setupView() {
+        timezoneSharingView.delegate = self
+        
         removeContactButtonBack.backgroundColor = UIColor.Sphinx.PrimaryRed.withAlphaComponent(0.1)
         removeContactButtonBack.layer.cornerRadius = 6
     }
@@ -56,6 +59,15 @@ class ContactDetailsViewController: UIViewController {
         contactDate.text = String.init(format: "contact.connected.since".localized, contact.createdAt.getStringDate(format: "MMMM dd, YYYY"))
         publicKeyLabel.text = contact.publicKey ?? ""
         routeHintLabel.text = contact.routeHint ?? ""
+        
+        if let chat = contact.getChat() {
+            timezoneSharingView.configure(
+                enabled: chat.timezoneEnabled,
+                identifier: chat.timezoneIdentifier
+            )
+        } else {
+            timezoneSharingView.configure(enabled: false, identifier: nil)
+        }
     }
     
     @IBAction func contactAvatarButtonTapped() {
@@ -128,5 +140,34 @@ class ContactDetailsViewController: UIViewController {
         CoreDataManager.sharedManager.deleteContactObjectsFor(contact)
         
         self.navigationController?.popToRootViewController(animated: true)
+    }
+}
+
+extension ContactDetailsViewController : TimezoneSharingViewDelegate {
+    func shouldPresentPickerViewWith(delegate: PickerViewDelegate) {
+        let selectedValue = timezoneSharingView.getTimezoneIdentifier() ?? TimezoneSharingView.kDefaultValue
+        var timezones = TimeZone.knownTimeZoneIdentifiers
+        timezones.insert(TimezoneSharingView.kDefaultValue, at: 0)
+        let pickerVC = PickerViewController.instantiate(values: timezones, selectedValue: selectedValue, delegate: delegate)
+        self.present(pickerVC, animated: false, completion: nil)
+    }
+    
+    func timezoneSharingSettingsChanged(enabled: Bool, identifier: String?) {
+        guard let contact = contact, let chat = contact.getChat() else { return }
+        
+        let timezoneEnabledChanged = chat.timezoneEnabled != enabled
+        let timezoneIdentifierChanged = chat.timezoneIdentifier != identifier
+        
+        if timezoneEnabledChanged || timezoneIdentifierChanged {
+            chat.timezoneEnabled = enabled
+            chat.timezoneIdentifier = identifier
+            
+            if timezoneIdentifierChanged {
+                chat.timezoneUpdated = true
+            }
+            
+            CoreDataManager.sharedManager.saveContext()
+            
+        }
     }
 }

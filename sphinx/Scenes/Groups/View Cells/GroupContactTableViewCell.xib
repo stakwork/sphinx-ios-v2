@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="15702" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="22155" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
     <device id="retina6_1" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="15704"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="22131"/>
         <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -90,14 +90,25 @@
                                             <constraint firstAttribute="height" constant="1" id="ulT-Jz-0Y4"/>
                                         </constraints>
                                     </view>
-                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Test Contact" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="CtC-sJ-HOV">
-                                        <rect key="frame" x="0.0" y="21.5" width="97" height="20"/>
-                                        <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="17"/>
-                                        <color key="textColor" name="Text"/>
-                                        <nil key="highlightedColor"/>
-                                    </label>
+                                    <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" alignment="top" spacing="2" translatesAutoresizingMaskIntoConstraints="NO" id="6zg-lb-jAT">
+                                        <rect key="frame" x="0.0" y="21.5" width="291" height="20"/>
+                                        <subviews>
+                                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Test Contact" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="CtC-sJ-HOV">
+                                                <rect key="frame" x="0.0" y="0.0" width="97" height="20"/>
+                                                <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="17"/>
+                                                <color key="textColor" name="Text"/>
+                                                <nil key="highlightedColor"/>
+                                            </label>
+                                            <label hidden="YES" opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Buenos Aires" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="ZrN-bI-rGb">
+                                                <rect key="frame" x="0.0" y="20" width="71" height="0.0"/>
+                                                <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="12"/>
+                                                <color key="textColor" name="SecondaryText"/>
+                                                <nil key="highlightedColor"/>
+                                            </label>
+                                        </subviews>
+                                    </stackView>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="done" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="QZ2-In-U2H">
-                                        <rect key="frame" x="234.5" y="17" width="56.5" height="29.5"/>
+                                        <rect key="frame" x="266" y="19" width="25" height="25"/>
                                         <fontDescription key="fontDescription" name="MaterialIcons-Regular" family="Material Icons" pointSize="25"/>
                                         <color key="textColor" name="Body"/>
                                         <nil key="highlightedColor"/>
@@ -105,7 +116,7 @@
                                     <view hidden="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="syr-QC-ibb">
                                         <rect key="frame" x="191" y="0.0" width="100" height="63"/>
                                         <subviews>
-                                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="kxV-Mw-puf">
+                                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="kxV-Mw-puf">
                                                 <rect key="frame" x="26" y="15.5" width="32" height="32"/>
                                                 <color key="backgroundColor" name="GreenBorder"/>
                                                 <constraints>
@@ -120,7 +131,7 @@
                                                     <action selector="pendingApprovalButtonTouched:" destination="KGk-i7-Jjw" eventType="touchUpInside" id="PJL-R8-nMy"/>
                                                 </connections>
                                             </button>
-                                            <button opaque="NO" tag="1" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="3hv-0L-lFJ">
+                                            <button opaque="NO" tag="1" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="3hv-0L-lFJ">
                                                 <rect key="frame" x="68" y="15.5" width="32" height="32"/>
                                                 <color key="backgroundColor" name="BadgeRed"/>
                                                 <constraints>
@@ -149,15 +160,16 @@
                                 <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <constraints>
                                     <constraint firstItem="QZ2-In-U2H" firstAttribute="centerY" secondItem="waF-Mv-Bgy" secondAttribute="centerY" id="4w2-aX-fJ3"/>
-                                    <constraint firstItem="CtC-sJ-HOV" firstAttribute="leading" secondItem="waF-Mv-Bgy" secondAttribute="leading" id="5Xn-Tz-ww9"/>
                                     <constraint firstAttribute="trailing" secondItem="YtV-Ej-iFz" secondAttribute="trailing" id="CCi-zD-8l3"/>
                                     <constraint firstAttribute="trailing" secondItem="QZ2-In-U2H" secondAttribute="trailing" id="CdV-6r-PSr"/>
                                     <constraint firstItem="YtV-Ej-iFz" firstAttribute="leading" secondItem="waF-Mv-Bgy" secondAttribute="leading" id="DD4-d7-NgG"/>
+                                    <constraint firstItem="6zg-lb-jAT" firstAttribute="leading" secondItem="waF-Mv-Bgy" secondAttribute="leading" id="FwS-EB-ZCf"/>
+                                    <constraint firstItem="6zg-lb-jAT" firstAttribute="centerY" secondItem="waF-Mv-Bgy" secondAttribute="centerY" id="HXs-4d-GqZ"/>
                                     <constraint firstAttribute="bottom" secondItem="syr-QC-ibb" secondAttribute="bottom" id="K0f-1h-I6M"/>
                                     <constraint firstItem="syr-QC-ibb" firstAttribute="top" secondItem="waF-Mv-Bgy" secondAttribute="top" id="Kex-2p-b13"/>
-                                    <constraint firstItem="CtC-sJ-HOV" firstAttribute="centerY" secondItem="waF-Mv-Bgy" secondAttribute="centerY" id="OwM-OD-Kiy"/>
                                     <constraint firstAttribute="bottom" secondItem="YtV-Ej-iFz" secondAttribute="bottom" id="XZ6-7r-50R"/>
                                     <constraint firstAttribute="trailing" secondItem="syr-QC-ibb" secondAttribute="trailing" id="bik-iU-Zfm"/>
+                                    <constraint firstAttribute="trailing" secondItem="6zg-lb-jAT" secondAttribute="trailing" id="mVs-eP-1Qr"/>
                                 </constraints>
                             </view>
                         </subviews>
@@ -202,8 +214,8 @@
                     <constraint firstItem="KGE-WY-7C4" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leading" id="x9o-sL-ebA"/>
                 </constraints>
             </tableViewCellContentView>
-            <color key="backgroundColor" name="Body"/>
             <viewLayoutGuide key="safeArea" id="njF-e1-oar"/>
+            <color key="backgroundColor" name="Body"/>
             <connections>
                 <outlet property="acceptButton" destination="kxV-Mw-puf" id="WgT-3V-Pzz"/>
                 <outlet property="allContentView" destination="KGE-WY-7C4" id="voN-Cs-RYU"/>
@@ -213,6 +225,7 @@
                 <outlet property="contactImageView" destination="pvj-GC-nvO" id="14H-uD-hh8"/>
                 <outlet property="contactInitialsLabel" destination="tUo-uh-I5v" id="4EZ-VW-zeK"/>
                 <outlet property="contactNameLabel" destination="CtC-sJ-HOV" id="OG8-pi-zrU"/>
+                <outlet property="contactTimezoneLabel" destination="ZrN-bI-rGb" id="gZs-gO-R2V"/>
                 <outlet property="declineButton" destination="3hv-0L-lFJ" id="i15-Vq-EON"/>
                 <outlet property="leftConstraint" destination="x9o-sL-ebA" id="4CV-Ks-dyT"/>
                 <outlet property="letterLabel" destination="hP0-cs-hES" id="BHH-aG-Sxb"/>
