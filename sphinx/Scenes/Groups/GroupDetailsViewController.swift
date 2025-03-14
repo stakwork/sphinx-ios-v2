@@ -8,13 +8,7 @@
 
 import UIKit
 
-protocol GroupDetailsDelegate: class {
-    func shouldReloadMessage(message: TransactionMessage)
-}
-
 class GroupDetailsViewController: UIViewController {
-    weak var delegate: GroupDetailsDelegate?
-
     @IBOutlet weak var membersTableView: UITableView!
     @IBOutlet weak var groupImageView: UIImageView!
     @IBOutlet weak var groupNameLabel: UILabel!
@@ -66,10 +60,9 @@ class GroupDetailsViewController: UIViewController {
         }
     }
     
-    static func instantiate(chat: Chat, delegate: GroupDetailsDelegate? = nil) -> GroupDetailsViewController {
+    static func instantiate(chat: Chat) -> GroupDetailsViewController {
         let viewController = StoryboardScene.Groups.groupDetailsViewController.instantiate()
         viewController.chat = chat
-        viewController.delegate = delegate
         
         return viewController
     }
@@ -196,7 +189,6 @@ class GroupDetailsViewController: UIViewController {
         
         let title = (chat.isPublicGroup() ? "tribe.members.upper" : "group.members.upper").localized
         tableDataSource = GroupMembersDataSource(tableView: membersTableView, title: title)
-        tableDataSource.groupDetailsDelegate = delegate
         tableDataSource.addMemberDelegate = self
         membersTableView.backgroundColor = UIColor.Sphinx.Body
         membersTableView.delegate = tableDataSource

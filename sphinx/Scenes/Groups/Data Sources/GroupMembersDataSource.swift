@@ -14,7 +14,6 @@ class GroupMembersDataSource: GroupAllContactsDataSource {
     var chat: Chat!
     
     weak var addMemberDelegate: AddFriendRowButtonDelegate?
-    weak var groupDetailsDelegate: GroupDetailsDelegate?
     
     var messageBubbleHelper = NewMessageBubbleHelper()
     
@@ -222,8 +221,8 @@ extension GroupMembersDataSource : GroupMemberCellDelegate {
             message: requestMessage,
             chat: chat,
             type: TransactionMessage.TransactionMessageType.memberApprove,
-            completion: { [weak self] (chat, message) in
-                self?.reload(chat, and: message)
+            completion: { [weak self] (chat) in
+                self?.reload(chat)
             }
         )
     }
@@ -233,22 +232,21 @@ extension GroupMembersDataSource : GroupMemberCellDelegate {
             message: requestMessage,
             chat: chat,
             type: TransactionMessage.TransactionMessageType.memberReject,
-            completion: { [weak self] (chat, message) in
-                self?.reload(chat, and: message)
+            completion: { [weak self] (chat) in
+                self?.reload(chat)
             }
         )
     }
     
-    func reload(_ chat: Chat, and message: TransactionMessage) {
+    func reload(_ chat: Chat) {
         self.reloadContacts(chat: chat)
-        self.groupDetailsDelegate?.shouldReloadMessage(message: message)
     }
     
     func respondToRequest(
         message: TransactionMessage,
         chat: Chat,
         type: TransactionMessage.TransactionMessageType,
-        completion: @escaping (Chat, TransactionMessage) -> ()
+        completion: @escaping (Chat) -> ()
     ) {
         guard let uuid = message.uuid else {
             return
