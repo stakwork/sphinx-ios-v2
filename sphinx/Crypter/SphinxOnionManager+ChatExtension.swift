@@ -139,7 +139,6 @@ extension SphinxOnionManager {
                 chat.managedObjectContext?.saveContext()
             }
         }
-
         
         switch TransactionMessage.TransactionMessageType(rawValue: Int(type)) {
         case .message, .boost, .delete, .call, .groupLeave, .memberReject, .memberApprove,.groupDelete:

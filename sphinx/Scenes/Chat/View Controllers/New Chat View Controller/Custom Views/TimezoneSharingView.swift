@@ -48,7 +48,7 @@ class TimezoneSharingView: UIView {
     }
     
     @objc func switchValueChanged() {
-        notifyDelegate()
+        notifyDelegate(showToast: false)
     }
     
     func configure(enabled: Bool, identifier: String?) {
@@ -65,14 +65,18 @@ class TimezoneSharingView: UIView {
         return shareTimezoneSwitch.isOn
     }
     
-    private func notifyDelegate() {
-        newMessageBubbleHelper.showGenericMessageView(
-            text: "timezone.changed".localized,
-            delay: 7,
-            textColor: UIColor.white,
-            backColor: UIColor.Sphinx.PrimaryGreen,
-            backAlpha: 1.0
-        )
+    private func notifyDelegate(
+        showToast: Bool = false
+    ) {
+        if showToast {
+            newMessageBubbleHelper.showGenericMessageView(
+                text: "timezone.changed".localized,
+                delay: 7,
+                textColor: UIColor.white,
+                backColor: UIColor.Sphinx.PrimaryGreen,
+                backAlpha: 1.0
+            )
+        }
         
         delegate?.timezoneSharingSettingsChanged(
             enabled: isTimezoneEnabled(),
@@ -88,6 +92,6 @@ class TimezoneSharingView: UIView {
 extension TimezoneSharingView : PickerViewDelegate {
     func didSelectValue(value: String) {
         timezoneField.text = value
-        notifyDelegate()
+        notifyDelegate(showToast: true)
     }
 }

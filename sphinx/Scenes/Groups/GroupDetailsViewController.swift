@@ -44,7 +44,6 @@ class GroupDetailsViewController: UIViewController {
     @IBOutlet var keyboardAccessoryView: UIView!
     
     
-    
     var imagePickerManager = ImagePickerManager.sharedInstance
     var tableDataSource : GroupMembersDataSource!
     

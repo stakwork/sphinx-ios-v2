@@ -709,7 +709,4 @@ extension TransactionMessage {
         }
         return groupedMessages
     }
-
-
-
 }
