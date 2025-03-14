@@ -213,15 +213,25 @@ extension GroupMembersDataSource : GroupMemberCellDelegate {
     }
     
     func shouldApproveMember(_ contact: GroupAllContactsDataSource.GroupContact, requestMessage: TransactionMessage) {
-        respondToRequest(message: requestMessage, action: "approved", completion: { (chat, message) in
-            self.reload(chat, and: message)
-        })
+        respondToRequest(
+            message: requestMessage,
+            chat: chat,
+            type: TransactionMessage.TransactionMessageType.memberApprove,
+            completion: { [weak self] (chat, message) in
+                self?.reload(chat, and: message)
+            }
+        )
     }
     
     func shouldRejectMember(_ contact: GroupAllContactsDataSource.GroupContact, requestMessage: TransactionMessage) {
-        respondToRequest(message: requestMessage, action: "rejected", completion: { (chat, message) in
-            self.reload(chat, and: message)
-        })
+        respondToRequest(
+            message: requestMessage,
+            chat: chat,
+            type: TransactionMessage.TransactionMessageType.memberReject,
+            completion: { [weak self] (chat, message) in
+                self?.reload(chat, and: message)
+            }
+        )
     }
     
     func reload(_ chat: Chat, and message: TransactionMessage) {
@@ -229,8 +239,25 @@ extension GroupMembersDataSource : GroupMemberCellDelegate {
         self.groupDetailsDelegate?.shouldReloadMessage(message: message)
     }
     
-    func respondToRequest(message: TransactionMessage, action: String, completion: @escaping (Chat, TransactionMessage) -> ()) {
-        ///Implement approve/reject from pending members list
+    func respondToRequest(
+        message: TransactionMessage,
+        chat: Chat,
+        type: TransactionMessage.TransactionMessageType,
+        completion: @escaping (Chat, TransactionMessage) -> ()
+    ) {
+        guard let uuid = message.uuid else {
+            return
+        }
+        
+        SphinxOnionManager.sharedInstance.approveOrRejectTribeJoinRequest(
+            requestUuid: uuid,
+            chat: chat,
+            type: type
+        )
+        
+        DelayPerformedHelper.performAfterDelay(seconds: 1.0, completion: {
+            completion(chat)
+        })
     }
     
     func showErrorAlert() {

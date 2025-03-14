@@ -206,7 +206,7 @@ extension SphinxOnionManager {
         } catch {}
     }
     
-    func kickTribeMember(pubkey:String, chat:Chat){
+    func kickTribeMember(pubkey: String, chat: Chat){
         let _ = sendMessage(
             to: nil,
             content: "",

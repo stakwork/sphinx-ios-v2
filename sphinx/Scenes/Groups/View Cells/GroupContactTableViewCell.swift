@@ -148,11 +148,11 @@ class GroupContactTableViewCell: SwipableCell {
     }
     
     @IBAction func pendingApprovalButtonTouched(_ sender: UIButton) {
-        guard let contact = contact, let chat = chat else {
+        guard let contact = contact, let chat = chat, let nickname = contact.nickname else {
             return
         }
         
-        guard let message = TransactionMessage.getLastGroupRequestFor(contactId: contact.id, in: chat) else {
+        guard let message = TransactionMessage.getLastGroupRequestFor(senderAlias: nickname, in: chat) else {
             return
         }
         
