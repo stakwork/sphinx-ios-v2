@@ -1163,6 +1163,8 @@ extension SphinxOnionManager {
                 
         newMessage.setAsLastMessage()
         
+        newMessageBubbleHelper.showMessageView(message: newMessage)
+        
         return newMessage
     }
     
