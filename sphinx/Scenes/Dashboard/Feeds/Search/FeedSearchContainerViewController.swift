@@ -257,7 +257,7 @@ extension FeedSearchContainerViewController {
         
         var fetchRequestResult: [ContentFeed] = []
         
-        managedObjectContext.perform {
+        managedObjectContext.performAndWait {
             fetchRequestResult = try! self.managedObjectContext.fetch(existingFeedsFetchRequest)
         }
             

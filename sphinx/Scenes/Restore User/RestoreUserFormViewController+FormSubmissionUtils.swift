@@ -169,6 +169,7 @@ extension RestoreUserFormViewController : NSFetchedResultsControllerDelegate{
             
             proceedToNewUserWelcome()
         } else {
+            self.loading = false
             navigationController?.popViewController(animated: true)
             AlertHelper.showAlert(title: "Error", message: "Unable to connect to Sphinx V2 Server")
         }
