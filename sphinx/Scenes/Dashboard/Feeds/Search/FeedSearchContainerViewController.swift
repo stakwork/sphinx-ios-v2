@@ -257,8 +257,8 @@ extension FeedSearchContainerViewController {
         
         var fetchRequestResult: [ContentFeed] = []
         
-        managedObjectContext.performAndWait {
-            fetchRequestResult = try! managedObjectContext.fetch(existingFeedsFetchRequest)
+        managedObjectContext.perform {
+            fetchRequestResult = try! self.managedObjectContext.fetch(existingFeedsFetchRequest)
         }
             
         if let existingFeed = fetchRequestResult.first {
