@@ -18,6 +18,7 @@ class ChatListCollectionViewCell: UICollectionViewCell {
     @IBOutlet weak var dateLabel: UILabel!
     @IBOutlet weak var separatorLine: UIView!
     @IBOutlet weak var lockSign: UILabel!
+    @IBOutlet weak var scheduleIcon: UILabel!
     @IBOutlet weak var inviteIcon: UILabel!
     @IBOutlet weak var failedMessageIcon: UILabel!
     @IBOutlet weak var invitePriceContainer: UIView!
@@ -292,6 +293,7 @@ extension ChatListCollectionViewCell {
         } else {
             inviteIcon.isHidden = true
             failedMessageIcon.isHidden = true
+            scheduleIcon.isHidden = true
             
             if let lastMessage = chatListObject.lastMessage {
                 
@@ -315,6 +317,13 @@ extension ChatListCollectionViewCell {
                 dateLabel.isHidden = false
                 
                 failedMessageIcon.isHidden = !isFailedMessage
+                
+                if lastMessage.isOutgoing(ownerId: self.owner.id), !lastMessage.isConfirmedAsReceived() && !lastMessage.failed() {
+                    let thirtySecondsAgo = Date().addingTimeInterval(-30)
+                    if lastMessage.messageDate < thirtySecondsAgo {
+                        scheduleIcon.isHidden = false
+                    }
+                }
             } else {
                 messageLabel.superview?.isHidden = true
                 dateLabel.isHidden = true
