@@ -121,23 +121,14 @@ extension SphinxOnionManager {
         tribeKickMember: String? = nil,
         paidAttachmentMediaToken: String? = nil,
         isTribe: Bool,
-        chat: Chat? = nil
+        metaData: String? = nil
     ) -> (String?, String?)? {
         
         var msg: [String: Any] = ["content": content]
         var mt: String? = nil
         
-        if let chat = chat, chat.timezoneEnabled, chat.timezoneUpdated {
-            let timezoneToSend = chat.timezoneIdentifier ?? TimeZone.current.identifier
-            let timezoneMetadata = ["timezone": timezoneToSend]
-            
-            if let metadataJSON = try? JSONSerialization.data(withJSONObject: timezoneMetadata),
-               let metadataString = String(data: metadataJSON, encoding: .utf8) {
-                msg["metadata"] = metadataString
-                
-                chat.timezoneUpdated = false
-                chat.managedObjectContext?.saveContext()
-            }
+        if let metaData = metaData {
+            msg["metadata"] = metaData
         }
         
         switch TransactionMessage.TransactionMessageType(rawValue: Int(type)) {
@@ -236,6 +227,8 @@ extension SphinxOnionManager {
             return (nil, "Owner not found")
         }
         
+        let metaData = chat.getMetaDataJsonStringValue()
+        
         guard let (contentJSONString, mediaToken) = formatMsg(
             content: content,
             type: msgType,
@@ -250,7 +243,7 @@ extension SphinxOnionManager {
             tribeKickMember: tribeKickMember,
             paidAttachmentMediaToken: paidAttachmentMediaToken,
             isTribe: isTribe,
-            chat: chat
+            metaData: metaData
         ) else {
             return (nil, "Msg json format issue")
         }
@@ -310,12 +303,10 @@ extension SphinxOnionManager {
                 assignReceiverId(localMsg: sentMessage)
             }
             
-//            if let sentMessageUUID = sentMessage?.uuid {
-//                startSendTimeoutTimer(
-//                    for: sentMessageUUID,
-//                    msgType: msgType
-//                )
-//            }
+            if let metaData = metaData {
+                chat.timezoneUpdated = false
+                chat.managedObjectContext?.saveContext()
+            }
             
             return (sentMessage, nil)
         } catch let error {
@@ -516,7 +507,7 @@ extension SphinxOnionManager {
             do {
                 if 
                     let metadataDict = try JSONSerialization.jsonObject(with: metadataData, options: []) as? [String: Any],
-                    let timezone = metadataDict["timezone"] as? String
+                    let timezone = metadataDict["tz"] as? String
                 {
                     if localMsg.chat?.isPublicGroup() == true {
                         localMsg.remoteTimezoneIdentifier = timezone
@@ -1147,7 +1138,7 @@ extension SphinxOnionManager {
             newMessage.setPaymentInvoiceAsPaid()
         }
 
-        if let timezone = message.timezone {
+        if let timezone = message.tz {
             if chat.isGroup() {
                 newMessage.remoteTimezoneIdentifier = timezone
             } else {
@@ -1743,8 +1734,8 @@ extension SphinxOnionManager {
             bytes += threadBytes
         }
         
-        if let metaDataString = metaDataString {
-            bytes += metaDataString.byteSize()
+        if let metaDataBytes = metaDataString?.lengthOfBytes(using: .utf8) {
+            bytes += metaDataBytes
         }
         
         return bytes <= 869

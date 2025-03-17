@@ -453,6 +453,7 @@ extension GroupDetailsViewController : TimezoneSharingViewDelegate {
         
         if timezoneEnabledChanged || timezoneIdentifierChanged {
             chat.timezoneEnabled = enabled
+            
             chat.timezoneIdentifier = identifier
             
             if timezoneIdentifierChanged {
@@ -460,7 +461,6 @@ extension GroupDetailsViewController : TimezoneSharingViewDelegate {
             }
             
             CoreDataManager.sharedManager.saveContext()
-            
         }
     }
 }

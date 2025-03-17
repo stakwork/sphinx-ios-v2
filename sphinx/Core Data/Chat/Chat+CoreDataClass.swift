@@ -1001,6 +1001,23 @@ public class Chat: NSManagedObject {
         return options
     }
     
+    func getMetaDataJsonStringValue() -> String? {
+        var metaData: String? = nil
+        
+        if self.timezoneEnabled, self.timezoneUpdated {
+            if let timezoneToSend = TimeZone(identifier: self.timezoneIdentifier ?? TimeZone.current.identifier)?.abbreviation() {
+                let timezoneMetadata = ["tz": timezoneToSend]
+                
+                if let metadataJSON = try? JSONSerialization.data(withJSONObject: timezoneMetadata),
+                   let metadataString = String(data: metadataJSON, encoding: .utf8) {
+                    metaData = metadataString
+                }
+            }
+        }
+        
+        return metaData
+    }
+    
     func saveChat() {
         CoreDataManager.sharedManager.saveContext()
     }

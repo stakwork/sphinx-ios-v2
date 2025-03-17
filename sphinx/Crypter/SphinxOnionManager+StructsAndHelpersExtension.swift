@@ -163,7 +163,7 @@ struct GenericIncomingMessage: Mappable {
     var fullContactInfo: String? = nil
     var photoUrl: String? = nil
     var tag: String? = nil
-    var timezone: String? = nil
+    var tz: String? = nil
     
 
     init?(map: Map) {}
@@ -215,7 +215,7 @@ struct GenericIncomingMessage: Mappable {
                let metadataData = metadataString.data(using: .utf8) {
                 do {
                     if let metadataDict = try JSONSerialization.jsonObject(with: metadataData, options: []) as? [String: Any] {
-                        self.timezone = metadataDict["timezone"] as? String
+                        self.tz = metadataDict["tz"] as? String
                     }
                 } catch {
                     print("Error parsing metadata JSON: \(error)")
@@ -255,7 +255,7 @@ struct GenericIncomingMessage: Mappable {
         mediaType  <- map["mediaType"]
         mediaKey   <- map["mediaKey"]
         muid       <- map["muid"]
-        timezone   <- map["timezone"]
+        tz         <- map["tz"]
     }
 }
 
