@@ -515,6 +515,7 @@
 "contact.info" = "Datos del contacto";
 "contact.connected.since" = "Conectado desde %@";
 "timezone.changed" = "La configuración de zona horaria para este chat se\nguarda solo en este dispositivo. Si usas la aplicación en\notro dispositivo, deberás configurarla nuevamente.";
+"message.limit.reached" = "Límite de caracteres alcanzado.\nEditá o enviá tu mensaje.";
 
 
 //OTHER

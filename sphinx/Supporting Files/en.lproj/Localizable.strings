@@ -515,6 +515,7 @@
 "contact.info" = "Contact Details";
 "contact.connected.since" = "Connected since %@";
 "timezone.changed" = "Timezone settings for this chat are saved \nonly on this device. If you use the app on another\ndevice, you'll need to set the timezone again.";
+"message.limit.reached" = "Character limit reached.\nEdit or send your message.";
 
 
 //OTHER
