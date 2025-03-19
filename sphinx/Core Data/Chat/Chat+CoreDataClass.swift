@@ -933,42 +933,63 @@ public class Chat: NSManagedObject {
         }
     }
     
-    func processAliasesFrom(
-        messages: [TransactionMessage]
-    ) {
+    func processAliasesFrom(messages: [TransactionMessage]) {
+        
+        let threeMonthsAgo = Calendar.current.date(byAdding: .month, value: -3, to: Date()) ?? Date()
+        
+        let sortedMessages = messages
+            .filter { message in
+                guard let messageDate = message.date else { return false }
+                return messageDate > threeMonthsAgo
+            }
+            .sorted { $0.date ?? Date() > $1.date ?? Date() }
+        
+        aliasesAndPics = []
+        
+        var userStates: [String: (state: String, alias: String, pic: String)] = [:]
+        
         let ownerId = UserData.sharedInstance.getUserId()
         
-        for message in messages {
-            if !message.isIncoming(ownerId: ownerId) {
+        for message in sortedMessages {
+            if message.senderId == ownerId && message.type != TransactionMessage.TransactionMessageType.groupKick.rawValue {
                 continue
             }
-            if isDateBeforeThreeMonthsAgo(message.messageDate) {
-                continue
-            }
-            if let alias = message.senderAlias, alias.isNotEmpty {
-                if let picture = message.senderPic, picture.isNotEmpty {
-                    if !aliasesAndPics.contains(where: { $0.1 == picture || $0.0 == alias }) {
-                        self.aliasesAndPics.append(
-                            (alias, message.senderPic ?? "")
-                        )
+            
+            if message.type == TransactionMessage.TransactionMessageType.groupKick.rawValue {
+                if let recentJoinMessage = sortedMessages.first(where: { m in
+                    m.type == TransactionMessage.TransactionMessageType.groupJoin.rawValue &&
+                    (m.date ?? Date()) < (message.date ?? Date()) &&
+                    m.senderAlias?.isEmpty == false
+                }) {
+                    if let kickedAlias = recentJoinMessage.senderAlias {
+                        let normalizedAlias = kickedAlias.replacingOccurrences(of: "_", with: " ").lowercased()
+                        if userStates[normalizedAlias] == nil {
+                            userStates[normalizedAlias] = ("kicked", kickedAlias, recentJoinMessage.senderPic ?? "")
+                        }
                     }
+                }
+                continue
+            }
+            
+            guard let alias = message.senderAlias, !alias.isEmpty else { continue }
+            let normalizedAlias = alias.replacingOccurrences(of: "_", with: " ").lowercased()
+            
+            if userStates[normalizedAlias] == nil {
+                if message.type == TransactionMessage.TransactionMessageType.groupLeave.rawValue {
+                    userStates[normalizedAlias] = ("left", alias, message.senderPic ?? "")
+                } else if message.type == TransactionMessage.TransactionMessageType.groupJoin.rawValue {
+                    userStates[normalizedAlias] = ("joined", alias, message.senderPic ?? "")
                 } else {
-                    if !aliasesAndPics.contains(where: { $0.0 == alias }) {
-                        self.aliasesAndPics.append(
-                            (alias, message.senderPic ?? "")
-                        )
-                    }
+                    userStates[normalizedAlias] = ("active", alias, message.senderPic ?? "")
                 }
             }
         }
-    }
-    
-    func isDateBeforeThreeMonthsAgo(_ date: Date) -> Bool {
-        let calendar = Calendar.current
-        if let threeMonthsAgo = calendar.date(byAdding: .month, value: -3, to: Date()) {
-            return date < threeMonthsAgo
+        
+        for (_, userInfo) in userStates {
+            if userInfo.state == "joined" || userInfo.state == "active" {
+                aliasesAndPics.append((userInfo.alias, userInfo.pic))
+            }
         }
-        return false
     }
     
     func getActionsMenuOptions() -> [TransactionMessage.ActionsMenuOption] {
