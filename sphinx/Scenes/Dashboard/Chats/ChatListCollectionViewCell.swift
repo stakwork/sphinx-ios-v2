@@ -318,7 +318,7 @@ extension ChatListCollectionViewCell {
                 
                 failedMessageIcon.isHidden = !isFailedMessage
                 
-                if lastMessage.isOutgoing(ownerId: self.owner.id), !lastMessage.isConfirmedAsReceived() && !lastMessage.failed() {
+                if lastMessage.isPendingMessage(ownerId: self.owner.id) {
                     let thirtySecondsAgo = Date().addingTimeInterval(-30)
                     if lastMessage.messageDate < thirtySecondsAgo {
                         scheduleIcon.isHidden = false
