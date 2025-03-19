@@ -60,6 +60,8 @@ extension ChatsCollectionViewController {
         
         var objectId: String
         var messageId: Int?
+        var messageStatus: Int?
+        var message30SecOld: Bool
         var messageSeen: Bool
         var unseenCount: Int
         var contactStatus: Int?
@@ -69,6 +71,8 @@ extension ChatsCollectionViewController {
         init(
             objectId: String,
             messageId: Int?,
+            messageStatus: Int?,
+            message30SecOld: Bool,
             messageSeen: Bool,
             unseenCount: Int,
             contactStatus: Int?,
@@ -78,6 +82,8 @@ extension ChatsCollectionViewController {
         {
             self.objectId = objectId
             self.messageId = messageId
+            self.messageStatus = messageStatus
+            self.message30SecOld = message30SecOld
             self.messageSeen = messageSeen
             self.unseenCount = unseenCount
             self.contactStatus = contactStatus
@@ -89,6 +95,8 @@ extension ChatsCollectionViewController {
             let isEqual =
                 lhs.objectId == rhs.objectId &&
                 lhs.messageId == rhs.messageId &&
+                lhs.messageStatus == rhs.messageStatus &&
+                lhs.message30SecOld == rhs.message30SecOld &&
                 lhs.messageSeen == rhs.messageSeen &&
                 lhs.unseenCount == rhs.unseenCount &&
                 lhs.contactStatus == rhs.contactStatus &&
@@ -339,6 +347,8 @@ extension ChatsCollectionViewController {
             DataSourceItem(
                 objectId: $0.getObjectId(),
                 messageId: $0.lastMessage?.id,
+                messageStatus: $0.lastMessage?.status,
+                message30SecOld: ($0.lastMessage?.date ?? Date()) < Date().addingTimeInterval(-30),
                 messageSeen: $0.isSeen(ownerId: self.owner.id),
                 unseenCount: $0.getUnseenMessagesCount(ownerId: self.owner.id),
                 contactStatus: $0.getContactStatus(),
