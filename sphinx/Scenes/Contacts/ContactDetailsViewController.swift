@@ -160,6 +160,7 @@ extension ContactDetailsViewController : TimezoneSharingViewDelegate {
         
         if timezoneEnabledChanged || timezoneIdentifierChanged {
             chat.timezoneEnabled = enabled
+            
             chat.timezoneIdentifier = identifier
             
             if timezoneIdentifierChanged {
@@ -167,7 +168,6 @@ extension ContactDetailsViewController : TimezoneSharingViewDelegate {
             }
             
             CoreDataManager.sharedManager.saveContext()
-            
         }
     }
 }

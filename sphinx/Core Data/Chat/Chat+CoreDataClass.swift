@@ -221,9 +221,9 @@ public class Chat: NSManagedObject {
         return ids
     }
     
-    static func getAll() -> [Chat] {
+    static func getAll(context: NSManagedObjectContext? = nil) -> [Chat] {
         let predicate: NSPredicate? = Chat.Predicates.all()
-        let chats:[Chat] = CoreDataManager.sharedManager.getObjectsOfTypeWith(predicate: predicate, sortDescriptors: [], entityName: "Chat")
+        let chats:[Chat] = CoreDataManager.sharedManager.getObjectsOfTypeWith(predicate: predicate, sortDescriptors: [], entityName: "Chat", context: context)
         return chats
     }
     
@@ -315,7 +315,7 @@ public class Chat: NSManagedObject {
     }
     
     public static func getPrivateChats() -> [Chat] {
-        let predicate = NSPredicate(format: "pin != null")
+        let predicate = NSPredicate(format: "pin != nil")
         let chats: [Chat] = CoreDataManager.sharedManager.getObjectsOfTypeWith(predicate: predicate, sortDescriptors: [], entityName: "Chat")
         return chats
     }
@@ -903,6 +903,57 @@ public class Chat: NSManagedObject {
         return isPublicGroup() && isTribeICreated == true
     }
     
+    public static func processTimezoneChanges() {
+        DispatchQueue.global(qos: .background).async {
+            let backgroundContext = CoreDataManager.sharedManager.getBackgroundContext()
+            
+            backgroundContext.perform {
+                let didMigrateToTZ: Bool = UserDefaults.Keys.didMigrateToTZ.get(defaultValue: false)
+                
+                if !didMigrateToTZ {
+                    Chat.resetTimezones(context: backgroundContext)
+                }
+                
+                if let systemTimezone: String? = UserDefaults.Keys.systemTimezone.get() {
+                    if systemTimezone != TimeZone.current.abbreviation() {
+                        Chat.setChatsToTimezoneUpdated(context: backgroundContext)
+                    }
+                }
+                
+                UserDefaults.Keys.systemTimezone.set(TimeZone.current.abbreviation())
+                UserDefaults.Keys.didMigrateToTZ.set(true)
+                
+                backgroundContext.saveContext()
+            }
+        }
+    }
+    
+    public static func resetTimezones(context: NSManagedObjectContext) {
+        let chats: [Chat] = Chat.getAll(context: context)
+        
+        for chat in chats {
+            chat.remoteTimezoneIdentifier = nil
+            chat.timezoneIdentifier = nil
+            chat.timezoneEnabled = true
+            chat.timezoneUpdated = true
+        }
+    }
+    
+    public static func setChatsToTimezoneUpdated(context: NSManagedObjectContext) {
+        let predicate = NSPredicate(format: "timezoneIdentifier == nil && timezoneEnabled == true")
+        
+        let chats: [Chat] = CoreDataManager.sharedManager.getObjectsOfTypeWith(
+            predicate: predicate,
+            sortDescriptors: [],
+            entityName: "Chat",
+            context: context
+        )
+        
+        for chat in chats {
+            chat.timezoneUpdated = true
+        }
+    }
+    
     func getJoinChatLink() -> String? {
         if let pubkey = self.ownerPubkey {
             return "sphinx.chat://?action=tribeV2&pubkey=\(pubkey)&host=\(SphinxOnionManager.sharedInstance.tribesServerIP)"
@@ -999,6 +1050,23 @@ public class Chat: NSManagedObject {
         }
         
         return options
+    }
+    
+    func getMetaDataJsonStringValue() -> String? {
+        var metaData: String? = nil
+        
+        if self.timezoneEnabled, self.timezoneUpdated {
+            if let timezoneToSend = TimeZone(identifier: self.timezoneIdentifier ?? TimeZone.current.identifier)?.abbreviation() {
+                let timezoneMetadata = ["tz": timezoneToSend]
+                
+                if let metadataJSON = try? JSONSerialization.data(withJSONObject: timezoneMetadata),
+                   let metadataString = String(data: metadataJSON, encoding: .utf8) {
+                    metaData = metadataString
+                }
+            }
+        }
+        
+        return metaData
     }
     
     func saveChat() {

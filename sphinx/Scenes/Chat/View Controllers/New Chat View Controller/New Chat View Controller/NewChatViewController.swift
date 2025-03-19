@@ -44,6 +44,8 @@ class NewChatViewController: NewKeyboardHandlerViewController {
     var chatMentionAutocompleteDataSource : ChatMentionAutocompleteDataSource? = nil
     let messageBubbleHelper = NewMessageBubbleHelper()
     
+    let newMessageBubbleHelper = NewMessageBubbleHelper()
+    
     var webAppVC : WebAppViewController? = nil
     var isAppUrl = false
     

@@ -989,7 +989,7 @@ extension String {
     }
     
     func byteSize() -> Int {
-        let length = self.lengthOfBytes(using: .utf8) + 360 //add offset
+        let length = self.lengthOfBytes(using: .utf8) + 360
         return length
     }
     

@@ -100,8 +100,8 @@ class ChatHeaderView: UIView {
         let isEncrypted = (contact?.status == UserContact.Status.Confirmed.rawValue) || (chat?.status == Chat.ChatStatus.approved.rawValue)
         lockSign.text = isEncrypted ? "lock" : "lock_open"
         lockSign.isHidden = !isEncrypted
-        remoteTimezoneIdentifier.text = chat?.remoteTimezoneIdentifier?.replacingOccurrences(of: "_", with: " ")
         
+        configureTimezoneInfo()
         configureWebAppButton()
         configureThreadsButton()
         configureSecondBrainButton()
@@ -109,6 +109,23 @@ class ChatHeaderView: UIView {
         setVolumeState(muted: chat?.isMuted() ?? false)
         configureImageOrInitials()
         setupPendingUI()
+    }
+    
+    func configureTimezoneInfo() {
+        remoteTimezoneIdentifier.isHidden = true
+        
+        if let timezoneString = chat?.remoteTimezoneIdentifier {
+            let timezone = TimeZone(abbreviation: timezoneString) ?? TimeZone(identifier: timezoneString)
+            
+            if let timezone = timezone {
+                let dateFormatter = DateFormatter()
+                dateFormatter.dateFormat = "hh:mm a"
+                dateFormatter.timeZone = timezone
+
+                remoteTimezoneIdentifier.text = "\(dateFormatter.string(from: Date())) \(timezone.abbreviation() ?? timezone.identifier)"
+                remoteTimezoneIdentifier.isHidden = false
+            }
+        }
     }
     
     func configureScheduleIcon(

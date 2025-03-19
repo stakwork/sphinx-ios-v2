@@ -308,6 +308,7 @@ extension DashboardRootViewController {
         headerView.showBalance()
         
         handleDeepLinksAndPush()
+        Chat.processTimezoneChanges()
     }
     
     func refreshUnreadStatus(){

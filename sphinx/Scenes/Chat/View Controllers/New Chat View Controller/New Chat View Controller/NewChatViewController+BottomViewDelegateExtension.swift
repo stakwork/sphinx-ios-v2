@@ -77,26 +77,25 @@ extension NewChatViewController : ChatMessageTextFieldViewDelegate {
         text: String,
         sendingAttachment: Bool
     ) -> Bool {
-        
-        var metadataString: String? = nil
-        
-        if let chat = chat, chat.timezoneEnabled, chat.timezoneUpdated {
-            if let timezoneIdentifier = chat.timezoneIdentifier {
-                let timezoneMetadata = ["timezone": timezoneIdentifier]
-                if let metadataJSON = try? JSONSerialization.data(withJSONObject: timezoneMetadata),
-                   let metadataS = String(data: metadataJSON, encoding: .utf8) {
-                      metadataString = metadataS
-                }
-            }
-        }
-        
-        return SphinxOnionManager.sharedInstance.isMessageLengthValid(
+        let messageLengthValid = SphinxOnionManager.sharedInstance.isMessageLengthValid(
             text: text,
             sendingAttachment: sendingAttachment,
             threadUUID: self.chatViewModel.replyingTo?.uuid,
             replyUUID: self.threadUUID ?? self.chatViewModel.replyingTo?.replyUUID,
-            metaDataString: metadataString
+            metaDataString: chat?.getMetaDataJsonStringValue()
         )
+        
+        if !messageLengthValid {
+            self.newMessageBubbleHelper.showGenericMessageView(
+                text: "message.limit.reached".localized,
+                delay: 5,
+                textColor: UIColor.white,
+                backColor: UIColor.Sphinx.BadgeRed,
+                backAlpha: 1.0
+            )
+        }
+        
+        return messageLengthValid
     }
     
     func shouldStartGiphy(){
