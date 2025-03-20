@@ -643,7 +643,8 @@ extension DashboardRootViewController {
         let chatVC = NewChatViewController.instantiate(
             contactId: chatContact?.id,
             chatId: chat?.id,
-            chatListViewModel: chatsListViewModel
+            chatListViewModel: chatsListViewModel,
+            delegate: self
         )
         
         navigationController?.pushViewController(chatVC, animated: shouldAnimate)

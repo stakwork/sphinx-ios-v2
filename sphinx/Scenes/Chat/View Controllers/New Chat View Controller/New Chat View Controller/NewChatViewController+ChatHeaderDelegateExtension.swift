@@ -89,7 +89,6 @@ extension NewChatViewController : ChatHeaderViewDelegate, ThreadHeaderViewDelega
         )
 
         let isPublicGroup = chat?.isPublicGroup() ?? false
-        let isMyPublicGroup = chat?.isMyPublicGroup() ?? false
         
         alert.addAction(
             UIAlertAction(
