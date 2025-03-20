@@ -983,11 +983,12 @@ public class Chat: NSManagedObject {
             self.processAliasesFrom(messages: messages)
         }
     }
-    
+ 
     func processAliasesFrom(
         messages: [TransactionMessage]
     ) {
         let ownerId = UserData.sharedInstance.getUserId()
+        var leftMembers: [(String, String)] = []
         
         for message in messages {
             if !message.isIncoming(ownerId: ownerId) {
@@ -998,16 +999,28 @@ public class Chat: NSManagedObject {
             }
             if let alias = message.senderAlias, alias.isNotEmpty {
                 if let picture = message.senderPic, picture.isNotEmpty {
-                    if !aliasesAndPics.contains(where: { $0.1 == picture || $0.0 == alias }) {
-                        self.aliasesAndPics.append(
-                            (alias, message.senderPic ?? "")
-                        )
+                    if !aliasesAndPics.contains(where: { $0.1 == picture || $0.0 == alias }) && !leftMembers.contains(where: { $0.1 == picture || $0.0 == alias }) {
+                        if message.isGroupLeaveMessage() {
+                            leftMembers.append(
+                                (alias, message.senderPic ?? "")
+                            )
+                        } else {
+                            self.aliasesAndPics.append(
+                                (alias, message.senderPic ?? "")
+                            )
+                        }
                     }
                 } else {
-                    if !aliasesAndPics.contains(where: { $0.0 == alias }) {
-                        self.aliasesAndPics.append(
-                            (alias, message.senderPic ?? "")
-                        )
+                    if !aliasesAndPics.contains(where: { $0.0 == alias }) && !leftMembers.contains(where: { $0.0 == alias }) {
+                        if message.isGroupLeaveMessage() {
+                            leftMembers.append(
+                                (alias, message.senderPic ?? "")
+                            )
+                        } else {
+                            self.aliasesAndPics.append(
+                                (alias, message.senderPic ?? "")
+                            )
+                        }
                     }
                 }
             }
