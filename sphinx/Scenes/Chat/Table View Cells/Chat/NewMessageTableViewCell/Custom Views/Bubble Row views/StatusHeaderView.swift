@@ -125,7 +125,7 @@ class StatusHeaderView: UIView {
         remoteTimezoneIdentifier.isHidden = true
         
         if let timezoneString = timezoneString {
-            remoteTimezoneIdentifier.text = timezoneString
+            remoteTimezoneIdentifier.text = "/  \(timezoneString)"
             remoteTimezoneIdentifier.isHidden = false
         }
     }

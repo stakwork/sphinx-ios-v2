@@ -114,15 +114,15 @@
                             <color key="textColor" name="SecondaryText"/>
                             <nil key="highlightedColor"/>
                         </label>
-                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="lock" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="raA-FE-Oun">
-                            <rect key="frame" x="79.666666666666671" y="0.0" width="13" height="17"/>
-                            <fontDescription key="fontDescription" name="MaterialIcons-Regular" family="Material Icons" pointSize="13"/>
+                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="jGL-Xr-Bif">
+                            <rect key="frame" x="79.666666666666671" y="0.0" width="50.000000000000014" height="17"/>
+                            <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="11"/>
                             <color key="textColor" name="SecondaryText"/>
                             <nil key="highlightedColor"/>
                         </label>
-                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="jGL-Xr-Bif">
-                            <rect key="frame" x="96.666666666666671" y="0.0" width="50.000000000000014" height="17"/>
-                            <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="11"/>
+                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="lock" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="raA-FE-Oun">
+                            <rect key="frame" x="133.66666666666666" y="0.0" width="13" height="17"/>
+                            <fontDescription key="fontDescription" name="MaterialIcons-Regular" family="Material Icons" pointSize="13"/>
                             <color key="textColor" name="SecondaryText"/>
                             <nil key="highlightedColor"/>
                         </label>
