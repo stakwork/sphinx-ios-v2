@@ -261,6 +261,8 @@ extension ChatListCollectionViewCell {
     
     private func renderLastMessage(for chatListObject: ChatListCommonObject) {
         
+        scheduleIcon.isHidden = true
+        
         if let invite = chatListObject.getInvite(), chatListObject.isPending() {
             let (icon, iconColor, text) = invite.getDataForRow()
             
@@ -293,7 +295,6 @@ extension ChatListCollectionViewCell {
         } else {
             inviteIcon.isHidden = true
             failedMessageIcon.isHidden = true
-            scheduleIcon.isHidden = true
             
             if let lastMessage = chatListObject.lastMessage {
                 

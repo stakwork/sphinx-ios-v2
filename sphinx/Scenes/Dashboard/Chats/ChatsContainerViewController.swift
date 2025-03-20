@@ -42,6 +42,10 @@ extension ChatsContainerViewController {
         self.chatsCollectionViewController?.chatListObjects = chats
         self.chatsCollectionViewController?.updateSnapshot()
     }
+    
+    func shouldReloadRowFor(chatId: Int) {
+        chatsCollectionViewController?.shouldReloadRowFor(chatId: chatId)
+    }
 }
 
 

@@ -23,6 +23,20 @@ class ChatsCollectionViewController: UICollectionViewController {
         bottom: 0,
         trailing: 0
     )
+    
+    func shouldReloadRowFor(chatId: Int) {
+        if let index = chatListObjects.firstIndex(where: { chatId == $0.getChat()?.id }) {
+            var snapshot = self.dataSource.snapshot()
+            let itemIdentifier = snapshot.itemIdentifiers[index]
+            
+            self.dataSourceQueue.sync {
+                snapshot.reloadItems([itemIdentifier])
+                DispatchQueue.main.async {
+                    self.dataSource.apply(snapshot, animatingDifferences: true)
+                }
+            }
+        }
+    }
 }
 
 

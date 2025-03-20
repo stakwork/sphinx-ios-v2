@@ -302,6 +302,9 @@ extension NewChatViewController : NewChatTableDataSourceDelegate {
             lastMessage: message,
             ownerId: owner.id
         )
+        if let chatId = message.chat?.id {
+            delegate?.shouldReloadRowFor(chatId: chatId)
+        }
     }
 }
 

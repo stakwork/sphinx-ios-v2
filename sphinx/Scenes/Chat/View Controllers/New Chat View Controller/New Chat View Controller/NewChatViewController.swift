@@ -9,6 +9,10 @@
 import UIKit
 import CoreData
 
+protocol NewChatViewControllerDelegate: class {
+    func shouldReloadRowFor(chatId: Int)
+}
+
 class NewChatViewController: NewKeyboardHandlerViewController {
     
     @IBOutlet weak var bottomView: NewChatAccessoryView!
@@ -20,6 +24,8 @@ class NewChatViewController: NewKeyboardHandlerViewController {
     @IBOutlet weak var webAppContainerView: UIView!
     @IBOutlet weak var shimmeringTableView: ShimmeringTableView!
     @IBOutlet weak var emptyAvatarPlaceholderView: ChatEmptyAvatarPlaceholderView!
+    
+    weak var delegate: NewChatViewControllerDelegate? = nil
     
     var contact: UserContact?
     var chat: Chat?
@@ -74,7 +80,8 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         contactId: Int? = nil,
         chatId: Int? = nil,
         chatListViewModel: ChatListViewModel? = nil,
-        threadUUID: String? = nil
+        threadUUID: String? = nil,
+        delegate: NewChatViewControllerDelegate? = nil
     ) -> NewChatViewController {
         let viewController = StoryboardScene.Chat.newChatViewController.instantiate()
         
@@ -90,6 +97,7 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         
         viewController.threadUUID = threadUUID
         viewController.chatListViewModel = chatListViewModel
+        viewController.delegate = delegate
         
         viewController.chatViewModel = NewChatViewModel(
             chat: viewController.chat,
