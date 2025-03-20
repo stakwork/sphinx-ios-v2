@@ -95,7 +95,7 @@ class StatusHeaderView: UIView {
         expiredInvoiceReceivedHeader.isHidden = !statusHeader.showExpiredReceived
         configureWith(expirationTimestamp: statusHeader.expirationTimestamp)
         
-        configureTimezoneWith(timezoneString: statusHeader.remoteTimezoneIdentifier)
+        configureTimezoneWith(timezoneString: statusHeader.timezoneString)
         
         let thirtySecondsAgo = Date().addingTimeInterval(-30)
         let isScheduleVisible = statusHeader.showScheduleIcon && statusHeader.messageDate < thirtySecondsAgo
@@ -125,16 +125,8 @@ class StatusHeaderView: UIView {
         remoteTimezoneIdentifier.isHidden = true
         
         if let timezoneString = timezoneString {
-            let timezone = TimeZone(abbreviation: timezoneString) ?? TimeZone(identifier: timezoneString)
-            
-            if let timezone = timezone {
-                let dateFormatter = DateFormatter()
-                dateFormatter.dateFormat = "hh:mm a"
-                dateFormatter.timeZone = timezone
-
-                remoteTimezoneIdentifier.text = "\(dateFormatter.string(from: Date())) \(timezone.abbreviation() ?? timezone.identifier)"
-                remoteTimezoneIdentifier.isHidden = false
-            }
+            remoteTimezoneIdentifier.text = timezoneString
+            remoteTimezoneIdentifier.isHidden = false
         }
     }
     
