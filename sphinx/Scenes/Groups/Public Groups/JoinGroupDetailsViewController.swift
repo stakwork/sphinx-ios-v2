@@ -94,8 +94,7 @@ class JoinGroupDetailsViewController: KeyboardEventsViewController {
             vc: self,
             accessoryView: keyboardAccessoryView,
             alias: owner?.nickname,
-            picture: owner?.getPhotoUrl(),
-            shouldFixAlias: true
+            picture: owner?.getPhotoUrl()
         )
         
 

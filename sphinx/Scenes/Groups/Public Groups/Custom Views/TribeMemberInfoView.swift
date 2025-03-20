@@ -56,8 +56,7 @@ class TribeMemberInfoView: UIView {
         vc: UIViewController,
         accessoryView: UIView,
         alias: String?,
-        picture: String? = nil,
-        shouldFixAlias: Bool = false
+        picture: String? = nil
     ) {
         if let vc = vc as? TribeMemberInfoDelegate {
             self.delegate = vc
@@ -69,7 +68,7 @@ class TribeMemberInfoView: UIView {
         aliasTextField.inputAccessoryView = accessoryView
         pictureTextField.inputAccessoryView = accessoryView
         
-        aliasTextField.text = shouldFixAlias ? alias?.fixedAlias : alias
+        aliasTextField.text = alias?.fixedAlias
         pictureTextField.text = picture ?? ""
         
         loadImage(pictureUrl: picture)
@@ -105,7 +104,7 @@ class TribeMemberInfoView: UIView {
         if (sender.text?.contains(" ") == true) {
             allowedCharactersToast(true)
         }
-        sender.text = sender.text?.replacingOccurrences(of: " ", with: "_")
+        sender.text = sender.text?.fixedAlias
     }
 }
 
