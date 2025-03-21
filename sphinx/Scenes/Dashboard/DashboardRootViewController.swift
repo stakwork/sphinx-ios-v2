@@ -378,11 +378,11 @@ extension DashboardRootViewController {
             
             self.refreshUnreadStatus()
             
-            self.chatsListViewModel.askForNotificationPermissions()
-            
             if isRestore {
                 self.finishUserInfoSetup()
             }
+            
+            self.chatsListViewModel.askForNotificationPermissions()
         }
     }
     
