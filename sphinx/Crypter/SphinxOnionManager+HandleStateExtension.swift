@@ -673,6 +673,8 @@ extension SphinxOnionManager {
                             }
                             
                             self.backgroundContext.saveContext()
+                            
+                            NotificationCenter.default.post(name: .onContactsAndChatsChanged, object: nil)
                         }
                     }
                 } catch {
