@@ -31,6 +31,7 @@ class ChatsCollectionViewController: UICollectionViewController {
             
             self.dataSourceQueue.sync {
                 snapshot.reloadItems([itemIdentifier])
+                
                 DispatchQueue.main.async {
                     self.dataSource.apply(snapshot, animatingDifferences: true)
                 }
@@ -373,7 +374,10 @@ extension ChatsCollectionViewController {
         
         dataSourceQueue.sync {
             snapshot.appendItems(items, toSection: .all)
-            self.dataSource.apply(snapshot, animatingDifferences: true)
+            
+            DispatchQueue.main.async {
+                self.dataSource.apply(snapshot, animatingDifferences: true)
+            }
         }
     }
     

@@ -48,6 +48,7 @@ public class Chat: NSManagedObject {
     var image : UIImage? = nil
     var tribeInfo: GroupsManager.TribeInfo? = nil
     var aliasesAndPics: [(String, String)] = []
+    var timezoneData: [String: String] = [:]
     
     
     static func getChatInstance(id: Int, managedContext: NSManagedObjectContext) -> Chat {
@@ -988,7 +989,6 @@ public class Chat: NSManagedObject {
         messages: [TransactionMessage]
     ) {
         let ownerId = UserData.sharedInstance.getUserId()
-        var leftMembers: [(String, String)] = []
         
         for message in messages {
             if !message.isIncoming(ownerId: ownerId) {
@@ -998,29 +998,32 @@ public class Chat: NSManagedObject {
                 continue
             }
             if let alias = message.senderAlias, alias.isNotEmpty {
+                if let remoteTimezoneIdentifier = message.remoteTimezoneIdentifier, remoteTimezoneIdentifier.isNotEmpty {
+                    timezoneData[alias] = remoteTimezoneIdentifier
+                }
                 if let picture = message.senderPic, picture.isNotEmpty {
-                    if !aliasesAndPics.contains(where: { $0.1 == picture || $0.0 == alias }) && !leftMembers.contains(where: { $0.1 == picture || $0.0 == alias }) {
-                        if message.isGroupLeaveMessage() {
-                            leftMembers.append(
-                                (alias, message.senderPic ?? "")
-                            )
-                        } else {
-                            self.aliasesAndPics.append(
-                                (alias, message.senderPic ?? "")
-                            )
+                    if message.isGroupLeaveMessage() {
+                        if let index = aliasesAndPics.firstIndex(where: { $0.1 == picture || $0.0 == alias }) {
+                            aliasesAndPics.remove(at: index)
                         }
+                        continue
+                    }
+                    if !aliasesAndPics.contains(where: { $0.1 == picture || $0.0 == alias }) {
+                        self.aliasesAndPics.append(
+                            (alias, message.senderPic ?? "")
+                        )
                     }
                 } else {
-                    if !aliasesAndPics.contains(where: { $0.0 == alias }) && !leftMembers.contains(where: { $0.0 == alias }) {
-                        if message.isGroupLeaveMessage() {
-                            leftMembers.append(
-                                (alias, message.senderPic ?? "")
-                            )
-                        } else {
-                            self.aliasesAndPics.append(
-                                (alias, message.senderPic ?? "")
-                            )
+                    if message.isGroupLeaveMessage() {
+                        if let index = aliasesAndPics.firstIndex(where: { $0.0 == alias }) {
+                            aliasesAndPics.remove(at: index)
                         }
+                        continue
+                    }
+                    if !aliasesAndPics.contains(where: { $0.0 == alias }) {
+                        self.aliasesAndPics.append(
+                            (alias, message.senderPic ?? "")
+                        )
                     }
                 }
             }

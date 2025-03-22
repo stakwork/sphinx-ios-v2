@@ -43,6 +43,7 @@ struct MessageTableCellState {
     var linkTribe: LinkTribe? = nil
     var linkWeb: LinkWeb? = nil
     var invoiceData: (Bool, Bool) = (false, false)
+    var timezoneData: [String: String] = [:]
     var isThreadHeaderMessage: Bool = false
     
     ///Generic rows Data
@@ -73,6 +74,7 @@ struct MessageTableCellState {
         linkTribe: LinkTribe? = nil,
         linkWeb: LinkWeb? = nil,
         invoiceData: (Bool, Bool) = (false, false),
+        timezoneData: [String: String] = [:],
         isThreadHeaderMessage: Bool = false
     ) {
         self.message = message
@@ -98,6 +100,7 @@ struct MessageTableCellState {
         self.linkTribe = linkTribe
         self.linkWeb = linkWeb
         self.invoiceData = invoiceData
+        self.timezoneData = timezoneData
         
         self.isThreadHeaderMessage = isThreadHeaderMessage
     }
@@ -205,17 +208,20 @@ struct MessageTableCellState {
         let showFailedContainer = isSent && message.failed()
         
         var timezoneString: String? = nil
+        var timezone: TimeZone? = nil
         
         if let timezoneIdentifier = chat.isGroup() ? message.remoteTimezoneIdentifier : nil {
-            let timezone = TimeZone(abbreviation: timezoneIdentifier) ?? TimeZone(identifier: timezoneIdentifier)
-            
-            if let timezone = timezone {
-                let dateFormatter = DateFormatter()
-                dateFormatter.dateFormat = "hh:mm a"
-                dateFormatter.timeZone = timezone
+            timezone = TimeZone(abbreviation: timezoneIdentifier) ?? TimeZone(identifier: timezoneIdentifier)
+        } else if let senderAlias = message.senderAlias, let timezoneIdentifier = timezoneData[senderAlias] {
+            timezone = TimeZone(abbreviation: timezoneIdentifier) ?? TimeZone(identifier: timezoneIdentifier)
+        }
+        
+        if let timezone = timezone {
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "hh:mm a"
+            dateFormatter.timeZone = timezone
 
-                timezoneString = "\(dateFormatter.string(from: message.date ?? Date())) \(timezone.abbreviation() ?? timezone.identifier)"
-            }
+            timezoneString = "\(dateFormatter.string(from: message.date ?? Date())) \(timezone.abbreviation() ?? timezone.identifier)"
         }
         
         var statusHeader = BubbleMessageLayoutState.StatusHeader(

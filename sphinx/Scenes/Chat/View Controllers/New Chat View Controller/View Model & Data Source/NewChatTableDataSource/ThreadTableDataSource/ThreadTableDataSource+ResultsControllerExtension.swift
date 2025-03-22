@@ -97,7 +97,8 @@ extension ThreadTableDataSource {
                         contact: contact,
                         tribeAdmin: admin,
                         separatorDate: separatorDate,
-                        invoiceData: (invoiceData.0 > 0, invoiceData.1 > 0)
+                        invoiceData: (invoiceData.0 > 0, invoiceData.1 > 0),
+                        timezoneData: chat.timezoneData
                     ),
                     at: 0
                 )
@@ -127,7 +128,8 @@ extension ThreadTableDataSource {
                 linkContact: linkContact,
                 linkTribe: linkTribe,
                 linkWeb: linkWeb,
-                invoiceData: (invoiceData.0 > 0, invoiceData.1 > 0)
+                invoiceData: (invoiceData.0 > 0, invoiceData.1 > 0),
+                timezoneData: chat.timezoneData
             )
             
             array.insert(messageTableCellState, at: 0)
@@ -151,6 +153,7 @@ extension ThreadTableDataSource {
                     tribeAdmin: admin,
                     bubbleState: MessageTableCellState.BubbleState.Isolated,
                     boostMessages: boostsMessages,
+                    timezoneData: chat.timezoneData,
                     isThreadHeaderMessage: true
                 )
             )
