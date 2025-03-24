@@ -92,7 +92,7 @@ class NewMessageBubbleHelper {
         view.alpha = 0.0
         view.tag = NewMessageBubbleHelper.loadingViewTag
         
-        if let window = UIApplication.shared.windows.first {
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene, let window = windowScene.windows.first {
             window.isUserInteractionEnabled = false
             self.toggleGenericBubbleView(view: view, show: true, tag: NewMessageBubbleHelper.loadingViewTag)
         }
@@ -107,7 +107,7 @@ class NewMessageBubbleHelper {
     }
     
     func hideBubbleWith(tag: Int) {
-        if let window = UIApplication.shared.windows.first {
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene, let window = windowScene.windows.first {
             window.isUserInteractionEnabled = true
             
             for v in window.subviews {
@@ -127,7 +127,7 @@ class NewMessageBubbleHelper {
         show: Bool,
         tag: Int = NewMessageBubbleHelper.messageViewTag
     ) {
-        if let window = UIApplication.shared.windows.first {
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene, let window = windowScene.windows.first {
             if show {
                 for v in window.subviews {
                     if v.tag == tag {
@@ -239,7 +239,7 @@ class NewMessageBubbleHelper {
         onKeyWindow: Bool = true,
         isNewMessage: Bool = false
     ) {
-        if let window = UIApplication.shared.windows.first {
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene, let window = windowScene.windows.first {
             
             if let rootVC = (window.rootViewController as? RootViewController), isNewMessage {
                 if rootVC.isDashboardVC() {

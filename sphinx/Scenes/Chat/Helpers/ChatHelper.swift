@@ -139,7 +139,7 @@ class ChatHelper {
 func getWindowInsets() -> UIEdgeInsets {
     var insets = UIEdgeInsets(top: 20.0, left: 0.0, bottom: 0.0, right: 0.0)
     
-    if let rootWindow = UIApplication.shared.windows.first {
+    if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene, let rootWindow = windowScene.windows.first {
         if #available(iOS 11.0, *) {
             if !UIApplication.shared.isSplitOrSlideOver {
                 insets.top = rootWindow.safeAreaInsets.top

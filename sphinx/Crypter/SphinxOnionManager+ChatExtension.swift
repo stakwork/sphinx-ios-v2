@@ -1154,7 +1154,9 @@ extension SphinxOnionManager {
                 
         newMessage.setAsLastMessage()
         
-        newMessageBubbleHelper.showMessageView(message: newMessage)
+        if !fromMe {
+            newMessageBubbleHelper.showMessageView(message: newMessage)
+        }
         
         return newMessage
     }
