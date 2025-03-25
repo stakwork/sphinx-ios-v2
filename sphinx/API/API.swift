@@ -78,6 +78,13 @@ typealias VerifyAuthenticationCallback = ((String?) -> ())
 typealias UploadAttachmentCallback = ((Bool, NSDictionary?) -> ())
 typealias MediaInfoCallback = ((Int, String?, Int?) -> ())
 
+//GraphMindset
+typealias CheckNodeCallback = ((API.CheckNodeResponse) -> ())
+typealias GetNodeChaptersCallback = ((String) -> ())
+typealias GetNodeStatusCallback = ((API.NodeStatusResponse) -> ())
+typealias CreateRunCallback = ((API.CreateRunResponse) -> ())
+
+
 typealias FeedSearchCompletionHandler = (
     Result<[FeedSearchResult], API.RequestError>
 ) -> ()
@@ -147,6 +154,7 @@ class API {
 
     public static let kJitsiCallServer = "https://jitsi.sphinx.chat"
     public static let kLiveKitCallServer = "https://chat.sphinx.chat"
+    public static let kGraphMindsetUrl = "https://graphmindset.sphinx.chat/api"
 
     var storedVideoCallServer: String? = nil
     public var kVideoCallServer : String {
