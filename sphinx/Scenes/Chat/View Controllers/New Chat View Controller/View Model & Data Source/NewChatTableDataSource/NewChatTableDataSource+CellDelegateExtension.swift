@@ -553,11 +553,12 @@ extension NewChatTableDataSource {
             if rowIndex < 0 {
                 self.delegate?.shouldReloadThreadHeaderView()
             } else {
-                var snapshot = self.dataSource.snapshot()
+                mediaReloadQueue.async {
+                    var snapshot = self.dataSource.snapshot()
                 
-                if snapshot.itemIdentifiers.contains(tableCellState.1) {
-                    mediaReloadQueue.sync {
+                    if snapshot.itemIdentifiers.contains(tableCellState.1) {
                         snapshot.reloadItems([tableCellState.1])
+                        
                         DispatchQueue.main.async {
                             self.dataSource.apply(snapshot, animatingDifferences: true)
                         }
@@ -586,10 +587,10 @@ extension NewChatTableDataSource {
                     (UIScreen.main.bounds.width - (MessageTableCellState.kRowLeftMargin + MessageTableCellState.kRowRightMargin)) * (MessageTableCellState.kBubbleWidthPercentage)
             )
 
-            var snapshot = self.dataSource.snapshot()
+            dataSourceQueue.async {
+                var snapshot = self.dataSource.snapshot()
             
-            if snapshot.itemIdentifiers.contains(tableCellState.1) {
-                dataSourceQueue.sync {
+                if snapshot.itemIdentifiers.contains(tableCellState.1) {
                     snapshot.reloadItems([tableCellState.1])
                     DispatchQueue.main.async {
                         self.dataSource.apply(snapshot, animatingDifferences: true)
@@ -610,11 +611,12 @@ extension NewChatTableDataSource {
         ) {
             uploadingProgress[messageId] = updatedUploadProgressData
             
-            var snapshot = self.dataSource.snapshot()
+            dataSourceQueue.async {
+                var snapshot = self.dataSource.snapshot()
             
-            if snapshot.itemIdentifiers.contains(tableCellState.1) {
-                dataSourceQueue.sync {
+                if snapshot.itemIdentifiers.contains(tableCellState.1) {
                     snapshot.reloadItems([tableCellState.1])
+                    
                     DispatchQueue.main.async {
                         self.dataSource.apply(snapshot, animatingDifferences: false)
                     }
@@ -635,11 +637,12 @@ extension NewChatTableDataSource {
         {
             preloaderHelper.linksData[linkWeb.link] = linkData
 
-            var snapshot = self.dataSource.snapshot()
+            dataSourceQueue.async {
+                var snapshot = self.dataSource.snapshot()
             
-            if snapshot.itemIdentifiers.contains(tableCellState.1) {
-                dataSourceQueue.sync {
+                if snapshot.itemIdentifiers.contains(tableCellState.1) {
                     snapshot.reloadItems([tableCellState.1])
+                    
                     DispatchQueue.main.async {
                         self.dataSource.apply(snapshot, animatingDifferences: true)
                     }

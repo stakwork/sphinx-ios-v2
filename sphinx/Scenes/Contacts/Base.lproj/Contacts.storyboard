@@ -172,6 +172,13 @@
                                     <constraint firstAttribute="trailing" secondItem="BxW-jV-kGk" secondAttribute="trailing" id="fbp-zl-5DY"/>
                                 </constraints>
                             </stackView>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="OMg-Gb-TDH" customClass="TimezoneSharingView" customModule="sphinx" customModuleProvider="target">
+                                <rect key="frame" x="32" y="481.5" width="350" height="120"/>
+                                <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="120" id="nwu-G9-2tj"/>
+                                </constraints>
+                            </view>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="QYe-sB-iqn">
                                 <rect key="frame" x="32" y="790" width="350" height="40"/>
                                 <subviews>
@@ -219,6 +226,7 @@
                         <constraints>
                             <constraint firstItem="QYe-sB-iqn" firstAttribute="leading" secondItem="abN-vr-dUf" secondAttribute="leading" constant="32" id="02g-oH-18i"/>
                             <constraint firstItem="rEN-fs-VCA" firstAttribute="leading" secondItem="abN-vr-dUf" secondAttribute="leading" constant="32" id="1oK-ls-k9f"/>
+                            <constraint firstItem="abN-vr-dUf" firstAttribute="trailing" secondItem="OMg-Gb-TDH" secondAttribute="trailing" constant="32" id="2JG-Nc-fyS"/>
                             <constraint firstItem="QYe-sB-iqn" firstAttribute="bottom" secondItem="abN-vr-dUf" secondAttribute="bottom" constant="-32" id="2N6-CM-s6B"/>
                             <constraint firstItem="oFO-ne-xwn" firstAttribute="leading" secondItem="5JL-46-XsK" secondAttribute="leading" id="3CP-Ew-PnA"/>
                             <constraint firstItem="abN-vr-dUf" firstAttribute="trailing" secondItem="rEN-fs-VCA" secondAttribute="trailing" constant="32" id="5Nh-fZ-3jj"/>
@@ -233,8 +241,10 @@
                             <constraint firstItem="5JL-46-XsK" firstAttribute="top" secondItem="fim-Ud-OrE" secondAttribute="bottom" constant="32" id="YG6-3x-yYx"/>
                             <constraint firstItem="fim-Ud-OrE" firstAttribute="leading" secondItem="abN-vr-dUf" secondAttribute="leading" id="cfg-9l-rYv"/>
                             <constraint firstItem="fim-Ud-OrE" firstAttribute="trailing" secondItem="abN-vr-dUf" secondAttribute="trailing" id="cqA-Rg-MJo"/>
+                            <constraint firstItem="OMg-Gb-TDH" firstAttribute="leading" secondItem="abN-vr-dUf" secondAttribute="leading" constant="32" id="eoY-dK-czR"/>
                             <constraint firstItem="Hnv-Ks-ntM" firstAttribute="top" secondItem="5JL-46-XsK" secondAttribute="bottom" constant="25" id="oa7-Yq-Ao3"/>
                             <constraint firstItem="Hnv-Ks-ntM" firstAttribute="leading" secondItem="abN-vr-dUf" secondAttribute="leading" constant="32" id="r2g-o7-ohZ"/>
+                            <constraint firstItem="OMg-Gb-TDH" firstAttribute="top" secondItem="rEN-fs-VCA" secondAttribute="bottom" constant="8" id="rJH-bY-9jP"/>
                             <constraint firstItem="abN-vr-dUf" firstAttribute="trailing" secondItem="Ue6-CT-fwU" secondAttribute="trailing" constant="32" id="u0R-lr-mgt"/>
                             <constraint firstItem="Ue6-CT-fwU" firstAttribute="top" secondItem="Hnv-Ks-ntM" secondAttribute="bottom" constant="22" id="vYp-ZQ-qW0"/>
                             <constraint firstItem="abN-vr-dUf" firstAttribute="trailing" secondItem="QYe-sB-iqn" secondAttribute="trailing" constant="32" id="wpo-rb-Dl4"/>
@@ -249,6 +259,7 @@
                         <outlet property="publicKeyLabel" destination="VtL-aY-LPA" id="wlX-pI-NkC"/>
                         <outlet property="removeContactButtonBack" destination="QYe-sB-iqn" id="Zhs-IH-a8a"/>
                         <outlet property="routeHintLabel" destination="O7l-We-t6J" id="57D-Q1-X9D"/>
+                        <outlet property="timezoneSharingView" destination="OMg-Gb-TDH" id="US1-67-f00"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="sBF-w6-FXE" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
@@ -273,7 +284,7 @@
                                                 <rect key="frame" x="30" y="0.0" width="354" height="85"/>
                                                 <subviews>
                                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Nickname *" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="7eV-VN-bp2">
-                                                        <rect key="frame" x="0.0" y="35.5" width="62.5" height="14"/>
+                                                        <rect key="frame" x="0.0" y="35.5" width="61.5" height="14"/>
                                                         <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="12"/>
                                                         <color key="textColor" name="SecondaryText"/>
                                                         <nil key="highlightedColor"/>
@@ -451,7 +462,7 @@
                                 <rect key="frame" x="0.0" y="48" width="414" height="50"/>
                                 <subviews>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="NEW CONTACT" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="fLm-O4-dUI">
-                                        <rect key="frame" x="153.5" y="16.5" width="107.5" height="17.5"/>
+                                        <rect key="frame" x="157" y="17" width="100.5" height="16.5"/>
                                         <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                         <fontDescription key="fontDescription" name="Montserrat-SemiBold" family="Montserrat" pointSize="14"/>
                                         <color key="textColor" name="Text"/>
@@ -527,7 +538,7 @@
                                         </constraints>
                                     </view>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="SAVE TO CONTACTS" textAlignment="center" lineBreakMode="middleTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="o1h-CK-PTE">
-                                        <rect key="frame" x="44" y="17.5" width="142.5" height="17.5"/>
+                                        <rect key="frame" x="47.5" y="18" width="135" height="16.5"/>
                                         <fontDescription key="fontDescription" name="Montserrat-SemiBold" family="Montserrat" pointSize="14"/>
                                         <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                         <nil key="highlightedColor"/>
@@ -555,7 +566,7 @@
                                 </constraints>
                             </view>
                             <label hidden="YES" opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Uploaded: 0%" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="3Kx-UJ-unJ">
-                                <rect key="frame" x="173.5" y="749" width="67" height="13"/>
+                                <rect key="frame" x="171.5" y="749" width="71.5" height="13"/>
                                 <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="11"/>
                                 <color key="textColor" red="0.74901960784313726" green="0.76470588235294112" blue="0.79607843137254897" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <nil key="highlightedColor"/>
@@ -615,7 +626,7 @@
                                 <rect key="frame" x="0.0" y="48" width="414" height="50"/>
                                 <subviews>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="ADDRESS BOOK" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="0QV-li-AOO">
-                                        <rect key="frame" x="149" y="16.5" width="116.5" height="17.5"/>
+                                        <rect key="frame" x="152.5" y="17" width="109.5" height="16.5"/>
                                         <fontDescription key="fontDescription" name="Montserrat-SemiBold" family="Montserrat" pointSize="14"/>
                                         <color key="textColor" name="Text"/>
                                         <nil key="highlightedColor"/>

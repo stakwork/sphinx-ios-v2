@@ -31,7 +31,7 @@ class SetPinCodeViewController: UIViewController {
     let kOldPinTitle = "enter.old.pin".localized
     let kNewPinTitle = "enter.new.pin".localized
     
-    var isRestoreFlow:Bool = false // user is restoring rather than creating an account
+    var isRestoreFlow: Bool = false
     
     public enum SetPinMode: Int {
         case Set

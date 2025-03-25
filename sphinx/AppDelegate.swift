@@ -93,6 +93,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         configureNotificationCenter()
         configureSVGRendering()
         connectMQTT()
+        
         StorageManager.sharedManager.deleteOldMedia()
         NetworkMonitor.shared.startMonitoring()
         ColorsManager.sharedInstance.storeColorsInMemory()
@@ -189,6 +190,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             return
         }
         
+        Chat.processTimezoneChanges()
         presentPINIfNeeded()
         
         feedsManager.restoreContentFeedStatusInBackground()

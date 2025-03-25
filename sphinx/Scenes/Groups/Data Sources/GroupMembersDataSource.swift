@@ -14,7 +14,6 @@ class GroupMembersDataSource: GroupAllContactsDataSource {
     var chat: Chat!
     
     weak var addMemberDelegate: AddFriendRowButtonDelegate?
-    weak var groupDetailsDelegate: GroupDetailsDelegate?
     
     var messageBubbleHelper = NewMessageBubbleHelper()
     
@@ -66,10 +65,14 @@ class GroupMembersDataSource: GroupAllContactsDataSource {
         })
     }
     
-    func getGroupContactsFrom(contacts: [JSON]) -> [GroupContact] {
+    func getGroupContactsFrom(
+        contacts: [JSON]
+    ) -> [GroupContact] {
         var groupContacts = [GroupContact]()
         
         var lastLetter = ""
+        
+        let timezones = TransactionMessage.getTimezonesByAlias(for: contacts.map({ $0["alias"].stringValue }), in: chat)
         
         for contact in  contacts {
             let id = contact.getJSONId() ?? SphinxOnionManager.sharedInstance.generateCryptographicallySecureRandomInt(upperBound: 100_000)
@@ -89,6 +92,7 @@ class GroupMembersDataSource: GroupAllContactsDataSource {
                 groupContact.pubkey = pubkey
                 groupContact.selected = false
                 groupContact.firstOnLetter = (initialString != lastLetter)
+                groupContact.timezone = timezones[nickname]
                 
                 lastLetter = initialString
                 
@@ -213,24 +217,50 @@ extension GroupMembersDataSource : GroupMemberCellDelegate {
     }
     
     func shouldApproveMember(_ contact: GroupAllContactsDataSource.GroupContact, requestMessage: TransactionMessage) {
-        respondToRequest(message: requestMessage, action: "approved", completion: { (chat, message) in
-            self.reload(chat, and: message)
-        })
+        respondToRequest(
+            message: requestMessage,
+            chat: chat,
+            type: TransactionMessage.TransactionMessageType.memberApprove,
+            completion: { [weak self] (chat) in
+                self?.reload(chat)
+            }
+        )
     }
     
     func shouldRejectMember(_ contact: GroupAllContactsDataSource.GroupContact, requestMessage: TransactionMessage) {
-        respondToRequest(message: requestMessage, action: "rejected", completion: { (chat, message) in
-            self.reload(chat, and: message)
-        })
+        respondToRequest(
+            message: requestMessage,
+            chat: chat,
+            type: TransactionMessage.TransactionMessageType.memberReject,
+            completion: { [weak self] (chat) in
+                self?.reload(chat)
+            }
+        )
     }
     
-    func reload(_ chat: Chat, and message: TransactionMessage) {
+    func reload(_ chat: Chat) {
         self.reloadContacts(chat: chat)
-        self.groupDetailsDelegate?.shouldReloadMessage(message: message)
     }
     
-    func respondToRequest(message: TransactionMessage, action: String, completion: @escaping (Chat, TransactionMessage) -> ()) {
-        ///Implement approve/reject from pending members list
+    func respondToRequest(
+        message: TransactionMessage,
+        chat: Chat,
+        type: TransactionMessage.TransactionMessageType,
+        completion: @escaping (Chat) -> ()
+    ) {
+        guard let uuid = message.uuid else {
+            return
+        }
+        
+        SphinxOnionManager.sharedInstance.approveOrRejectTribeJoinRequest(
+            requestUuid: uuid,
+            chat: chat,
+            type: type
+        )
+        
+        DelayPerformedHelper.performAfterDelay(seconds: 1.0, completion: {
+            completion(chat)
+        })
     }
     
     func showErrorAlert() {

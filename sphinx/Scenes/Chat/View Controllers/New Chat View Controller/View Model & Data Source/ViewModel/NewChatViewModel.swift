@@ -38,12 +38,6 @@ class NewChatViewModel {
         self.chatDataSource = dataSource
     }
     
-    ///Notifications
-    func askForNotificationPermissions() {
-        let appDelegate = UIApplication.shared.delegate as! AppDelegate
-        appDelegate.registerForPushNotifications()
-    }
-    
     ///Volume
     func toggleVolume(
         completion: @escaping (Chat?) -> ()

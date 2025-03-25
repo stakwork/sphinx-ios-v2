@@ -490,6 +490,8 @@
 		47BA317B2D355026001AF7E5 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEA6BC1F2C1794AD00494071 /* NetworkMonitor.swift */; };
 		47BA317C2D3550BD001AF7E5 /* Notification.Name.swift in Sources */ = {isa = PBXBuildFile; fileRef = 470F5CAA243E7D27007E054F /* Notification.Name.swift */; };
 		47BA7A9124118F6B0001773F /* CustomSwiftLinkPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47BA7A9024118F6B0001773F /* CustomSwiftLinkPreview.swift */; };
+		47BACB1B2D63AD52006A4879 /* TimezoneSharingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47BACB1A2D63AD52006A4879 /* TimezoneSharingView.swift */; };
+		47BACB1F2D63AD80006A4879 /* TimezoneSharingView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 47BACB1E2D63AD80006A4879 /* TimezoneSharingView.xib */; };
 		47BB1D5C239572A30049802B /* NewContactDelegatesExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47BB1D5B239572A30049802B /* NewContactDelegatesExtension.swift */; };
 		47BE85502465E09B00BE4AE8 /* BiometricAuthenticationHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47BE854F2465E09B00BE4AE8 /* BiometricAuthenticationHelper.swift */; };
 		47BF27EF2A375EAA00F15EE9 /* NewChatTableDataSource+CellDelegateExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47BF27EE2A375EAA00F15EE9 /* NewChatTableDataSource+CellDelegateExtension.swift */; };
@@ -1692,6 +1694,8 @@
 		47B9A649233BB6BA00D2B022 /* AddressBookHeaderView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = AddressBookHeaderView.xib; sourceTree = "<group>"; };
 		47BA31792D15D8BB001AF7E5 /* ContactDetailsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactDetailsViewController.swift; sourceTree = "<group>"; };
 		47BA7A9024118F6B0001773F /* CustomSwiftLinkPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomSwiftLinkPreview.swift; sourceTree = "<group>"; };
+		47BACB1A2D63AD52006A4879 /* TimezoneSharingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimezoneSharingView.swift; sourceTree = "<group>"; };
+		47BACB1E2D63AD80006A4879 /* TimezoneSharingView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = TimezoneSharingView.xib; sourceTree = "<group>"; };
 		47BB1D5B239572A30049802B /* NewContactDelegatesExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewContactDelegatesExtension.swift; sourceTree = "<group>"; };
 		47BB1D6B23994F9E0049802B /* sphinx 4.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 4.xcdatamodel"; sourceTree = "<group>"; };
 		47BE854F2465E09B00BE4AE8 /* BiometricAuthenticationHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiometricAuthenticationHelper.swift; sourceTree = "<group>"; };
@@ -1841,6 +1845,7 @@
 		47FDDB1B2562D77100BBF15F /* boost_animation.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = boost_animation.json; sourceTree = "<group>"; };
 		47FE9A3D23C381A20090913F /* UITapGestureRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITapGestureRecognizer.swift; sourceTree = "<group>"; };
 		487E10CEB3D07B0840A84681 /* Pods_sphinx.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_sphinx.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		7734ED4D2D66C733003276BA /* sphinx 53.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 53.xcdatamodel"; sourceTree = "<group>"; };
 		9386C2882BB25C2200ABDEF3 /* AddTagsButtonCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = AddTagsButtonCell.xib; sourceTree = "<group>"; };
 		9386C28A2BB25EDC00ABDEF3 /* AddedTagsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddedTagsView.swift; sourceTree = "<group>"; };
 		9386C28C2BB25F2700ABDEF3 /* AddedTagsView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = AddedTagsView.xib; sourceTree = "<group>"; };
@@ -4132,6 +4137,8 @@
 				47E6A5012A30C68400A9509E /* ShimmeringTableView.xib */,
 				47CFA9492A38CA480030BC23 /* NewMessagesIndicatorView.swift */,
 				47CFA94B2A38CA4E0030BC23 /* NewMessagesIndicatorView.xib */,
+				47BACB1A2D63AD52006A4879 /* TimezoneSharingView.swift */,
+				47BACB1E2D63AD80006A4879 /* TimezoneSharingView.xib */,
 			);
 			path = "Custom Views";
 			sourceTree = "<group>";
@@ -5021,6 +5028,7 @@
 				4797E7A524B8F06A00D13270 /* PaidAttachmentView.xib in Resources */,
 				4749356A2A29250200AB5FFA /* PodcastAudioView.xib in Resources */,
 				4787F89A2478113E00CCE8B9 /* ChatAvatarView.xib in Resources */,
+				47BACB1F2D63AD80006A4879 /* TimezoneSharingView.xib in Resources */,
 				47F826722A0D2E46002E81F0 /* ChatMessageTextFieldView.xib in Resources */,
 				47AF0D3C254C9F1000C98398 /* fireworks.json in Resources */,
 				47158D77273083E200601F00 /* NewsletterFeed.storyboard in Resources */,
@@ -5792,6 +5800,7 @@
 				478BD8B62829B67300C733FD /* TribeMemberPopupViewController.swift in Sources */,
 				47FA18BE242534CD00469C8F /* UIViewController.swift in Sources */,
 				CEF341522C407FD8007FC173 /* BTSearchResultTableViewCell.swift in Sources */,
+				47BACB1B2D63AD52006A4879 /* TimezoneSharingView.swift in Sources */,
 				471161DD29156401008EAFF2 /* ContentFeedItem+FetchUtils.swift in Sources */,
 				470F5CAB243E7D27007E054F /* Notification.Name.swift in Sources */,
 				471D8D0E27274AA40024AEAC /* GroupsManager+TribeInfo.swift in Sources */,
@@ -6714,7 +6723,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sphinx/sphinx.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 172;
+				CURRENT_PROJECT_VERSION = 182;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 8297M44YTW;
 				ENABLE_BITCODE = NO;
@@ -6804,7 +6813,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sphinx/sphinx.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 172;
+				CURRENT_PROJECT_VERSION = 182;
 				DEVELOPMENT_TEAM = 8297M44YTW;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
@@ -7132,6 +7141,7 @@
 		47F35D4A2373156A0042A58F /* sphinx.xcdatamodeld */ = {
 			isa = XCVersionGroup;
 			children = (
+				7734ED4D2D66C733003276BA /* sphinx 53.xcdatamodel */,
 				473873B02CD92C1300CBBC28 /* sphinx 52.xcdatamodel */,
 				CE9D766E2C73D569008CEEA0 /* sphinx 51.xcdatamodel */,
 				472A4E1B2C4EB5C400B10934 /* sphinx 50.xcdatamodel */,
@@ -7185,7 +7195,7 @@
 				475E4162238588A200928931 /* sphinx 2.xcdatamodel */,
 				47F35D4B2373156A0042A58F /* sphinx.xcdatamodel */,
 			);
-			currentVersion = 473873B02CD92C1300CBBC28 /* sphinx 52.xcdatamodel */;
+			currentVersion = 7734ED4D2D66C733003276BA /* sphinx 53.xcdatamodel */;
 			path = sphinx.xcdatamodeld;
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;

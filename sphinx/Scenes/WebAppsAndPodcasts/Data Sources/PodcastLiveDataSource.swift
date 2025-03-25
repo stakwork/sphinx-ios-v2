@@ -91,7 +91,8 @@ class PodcastLiveDataSource : NSObject {
                 linkContact: nil,
                 linkTribe: nil,
                 linkWeb: nil,
-                invoiceData: (false, false)
+                invoiceData: (false, false),
+                timezoneData: chat.timezoneData
             )
             
             messagesTableCellStates.append(celState)

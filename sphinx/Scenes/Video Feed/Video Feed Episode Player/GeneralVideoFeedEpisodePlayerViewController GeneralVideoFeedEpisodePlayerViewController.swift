@@ -185,7 +185,7 @@ class GeneralVideoFeedEpisodePlayerViewController: UIViewController, VideoFeedEp
     }
     
     private func enterFullScreen() {
-        guard let window = UIApplication.shared.windows.first else { return }
+        guard let window = (UIApplication.shared.connectedScenes.first as? UIWindowScene)?.windows.first else { return }
         originalConstraints = videoPlayerView.constraints
         
         UIView.animate(withDuration: 0.3) {

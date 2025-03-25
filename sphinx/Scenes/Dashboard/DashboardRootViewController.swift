@@ -308,11 +308,13 @@ extension DashboardRootViewController {
         headerView.showBalance()
         
         handleDeepLinksAndPush()
+        Chat.processTimezoneChanges()
     }
     
     func refreshUnreadStatus(){
         som.getReads()
         som.getMuteLevels()
+        som.getMessagesStatusForPendingMessages()
     }
     
     func connectToServer() {
@@ -344,6 +346,7 @@ extension DashboardRootViewController {
         NotificationCenter.default.removeObserver(self, name: .onSizeConfigurationChanged, object: nil)
         
         NotificationCenter.default.addObserver(self, selector: #selector(dataDidChange), name: .onContactsAndChatsChanged, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(onMessagesStatusChangedWith(n:)), name: .onMessagesStatusChanged, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(sizeDidChange), name: .onSizeConfigurationChanged, object: nil)
         
         NotificationCenter.default.removeObserver(self, name: .connectedToInternet, object: nil)
@@ -376,11 +379,11 @@ extension DashboardRootViewController {
             
             self.refreshUnreadStatus()
             
-            self.chatsListViewModel.askForNotificationPermissions()
-            
             if isRestore {
                 self.finishUserInfoSetup()
             }
+            
+            self.chatsListViewModel.askForNotificationPermissions()
         }
     }
     
@@ -602,6 +605,13 @@ extension DashboardRootViewController {
         )
     }
     
+    @objc func onMessagesStatusChangedWith(n: Notification) {
+        if let chatIds = n.userInfo?["chat-ids"] as? [Int] {
+            contactChatsContainerViewController.onMessagesStatusChangedFor(chatIds: chatIds)
+            tribeChatsContainerViewController.onMessagesStatusChangedFor(chatIds: chatIds)
+        }
+    }
+    
     internal func finishLoading() {
         newBubbleHelper.hideLoadingWheel()
         restoreProgressView.hideViewAnimated()
@@ -642,7 +652,8 @@ extension DashboardRootViewController {
         let chatVC = NewChatViewController.instantiate(
             contactId: chatContact?.id,
             chatId: chat?.id,
-            chatListViewModel: chatsListViewModel
+            chatListViewModel: chatsListViewModel,
+            delegate: self
         )
         
         navigationController?.pushViewController(chatVC, animated: shouldAnimate)

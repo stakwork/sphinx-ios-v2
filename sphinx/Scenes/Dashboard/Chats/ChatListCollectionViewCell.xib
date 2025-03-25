@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="22155" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="23504" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
     <device id="retina6_1" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="22131"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23506"/>
         <capability name="Image references" minToolsVersion="12.0"/>
         <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
@@ -91,6 +91,12 @@
                                                 <rect key="frame" x="224.5" y="3" width="15" height="15"/>
                                                 <fontDescription key="fontDescription" name="MaterialIcons-Regular" family="Material Icons" pointSize="15"/>
                                                 <color key="textColor" name="SecondaryText"/>
+                                                <nil key="highlightedColor"/>
+                                            </label>
+                                            <label hidden="YES" opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" horizontalCompressionResistancePriority="1000" text="schedule" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="xbQ-kd-Tpq" userLabel="Schedule Icon">
+                                                <rect key="frame" x="239.5" y="3" width="15" height="15"/>
+                                                <fontDescription key="fontDescription" name="MaterialIcons-Regular" family="Material Icons" pointSize="15"/>
+                                                <color key="textColor" name="sphinxOrange"/>
                                                 <nil key="highlightedColor"/>
                                             </label>
                                         </subviews>
@@ -245,6 +251,7 @@
                 <outlet property="muteImageView" destination="jTQ-DK-F5a" id="m1Y-Ya-sBp"/>
                 <outlet property="nameLabel" destination="Mpk-9a-r2o" id="JoW-GG-oFP"/>
                 <outlet property="pendingContactDashedLineView" destination="FNf-JY-ZSV" id="CHv-F5-kd0"/>
+                <outlet property="scheduleIcon" destination="xbQ-kd-Tpq" id="UcU-rg-24L"/>
                 <outlet property="separatorLine" destination="gU9-vv-srT" id="7hf-hj-My6"/>
                 <outlet property="unreadMessageBadgeContainer" destination="pNu-Vj-0BE" id="r6G-Jf-My9"/>
                 <outlet property="unreadMessageBadgeLabel" destination="7CN-YG-eaM" id="GWm-uw-Nzg"/>
@@ -275,6 +282,9 @@
         </namedColor>
         <namedColor name="WashedOutReceivedText">
             <color red="0.69019607843137254" green="0.71764705882352942" blue="0.73725490196078436" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+        <namedColor name="sphinxOrange">
+            <color red="1" green="0.74099999666213989" blue="0.34900000691413879" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>
     </resources>
 </document>

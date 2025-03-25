@@ -138,7 +138,7 @@ extension RestoreUserFormViewController {
 extension RestoreUserFormViewController : NSFetchedResultsControllerDelegate{
     
     func proceedToNewUserWelcome() {
-        guard let inviter = SignupHelper.getInviter() else {
+        guard let _ = SignupHelper.getInviter() else {
             
             let defaultInviter = SignupHelper.getSupportContact(includePubKey: false)
             SignupHelper.saveInviterInfo(invite: defaultInviter)
@@ -169,6 +169,7 @@ extension RestoreUserFormViewController : NSFetchedResultsControllerDelegate{
             
             proceedToNewUserWelcome()
         } else {
+            self.loading = false
             navigationController?.popViewController(animated: true)
             AlertHelper.showAlert(title: "Error", message: "Unable to connect to Sphinx V2 Server")
         }

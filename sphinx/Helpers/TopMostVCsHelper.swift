@@ -36,7 +36,7 @@ extension UIApplication {
 extension UIWindow {
     static var key: UIWindow? {
         if #available(iOS 13, *) {
-            return UIApplication.shared.windows.first { $0.isKeyWindow }
+            return (UIApplication.shared.connectedScenes.first as? UIWindowScene)?.windows.first { $0.isKeyWindow }
         } else {
             return UIApplication.shared.keyWindow
         }

@@ -209,7 +209,7 @@ public class UserContact: NSManagedObject {
     }
     
     public static func getPrivateContacts() -> [UserContact] {
-        let predicate = NSPredicate(format: "pin != null")
+        let predicate = NSPredicate(format: "pin != nil")
         let contacts: [UserContact] = CoreDataManager.sharedManager.getObjectsOfTypeWith(predicate: predicate, sortDescriptors: [], entityName: "UserContact")
         return contacts
     }

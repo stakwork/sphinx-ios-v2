@@ -50,6 +50,25 @@ extension TransactionMessage {
         return messages
     }
     
+    static func getAllNotConfirmed() -> [TransactionMessage] {
+        let predicate = NSPredicate(
+            format: "senderId == %d AND (status == %d OR status == %d)",
+            UserData.sharedInstance.getUserId(),
+            TransactionMessage.TransactionMessageStatus.confirmed.rawValue,
+            TransactionMessage.TransactionMessageStatus.pending.rawValue
+        )
+        let sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]
+        
+        let messages: [TransactionMessage] = CoreDataManager.sharedManager.getObjectsOfTypeWith(
+            predicate: predicate,
+            sortDescriptors: sortDescriptors,
+            entityName: "TransactionMessage",
+            fetchLimit: 1000
+        )
+        
+        return messages
+    }
+    
     static func getAllInvoices() -> [TransactionMessage] {
         let predicate = NSPredicate(format: "type == %d", TransactionMessage.TransactionMessageType.invoice.rawValue)
         let sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]
@@ -154,12 +173,10 @@ extension TransactionMessage {
         var messages: [TransactionMessage] = []
         let context = context ?? CoreDataManager.sharedManager.persistentContainer.viewContext
         
-        context.performAndWait {
-            do {
-                try messages = context.fetch(fetchRequest)
-            } catch let error as NSError {
-                print("Error: " + error.localizedDescription)
-            }
+        do {
+            try messages = context.fetch(fetchRequest)
+        } catch let error as NSError {
+            print("Error: " + error.localizedDescription)
         }
         
         return messages
@@ -400,8 +417,8 @@ extension TransactionMessage {
         return invoice
     }
     
-    static func getLastGroupRequestFor(contactId: Int, in chat: Chat) -> TransactionMessage? {
-        let predicate = NSPredicate(format: "senderId == %d AND chat == %@ AND type == %d", contactId, chat, TransactionMessageType.memberRequest.rawValue)
+    static func getLastGroupRequestFor(senderAlias: String, in chat: Chat) -> TransactionMessage? {
+        let predicate = NSPredicate(format: "senderAlias == %@ AND chat == %@ AND type == %d", senderAlias, chat, TransactionMessageType.memberRequest.rawValue)
         let sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]
         let messages: [TransactionMessage] = CoreDataManager.sharedManager.getObjectsOfTypeWith(predicate: predicate, sortDescriptors: sortDescriptors, entityName: "TransactionMessage", fetchLimit: 1)
         
@@ -412,7 +429,7 @@ extension TransactionMessage {
         let userId = UserData.sharedInstance.getUserId()
 
         let predicate = NSPredicate(
-            format: "(senderId != %d || type == %d) AND NOT (type IN %@) AND seen == %@ AND chat != null AND id >= 0 AND chat.seen == %@ AND (chat.notify == %d OR (chat.notify == %d AND push == %@))",
+            format: "(senderId != %d || type == %d) AND NOT (type IN %@) AND seen == %@ AND chat != nil AND id >= 0 AND chat.seen == %@ AND (chat.notify == %d OR (chat.notify == %d AND push == %@))",
             userId,
             TransactionMessage.TransactionMessageType.groupJoin.rawValue,
             [
@@ -672,6 +689,41 @@ extension TransactionMessage {
         
         return message
     }
+    
+    static func getTimezonesByAlias(
+        for senderAliases: [String],
+        in chat: Chat,
+        context: NSManagedObjectContext? = nil
+    ) -> [String: String] {
+        let context = context ?? CoreDataManager.sharedManager.persistentContainer.viewContext
+        
+        let predicate = NSPredicate(
+            format: "chat == %@ && senderAlias IN %@ AND remoteTimezoneIdentifier != nil",
+            chat,
+            senderAliases
+        )
+        
+        // Sort by senderAlias and then by date (descending)
+        let sortDescriptors = [
+            NSSortDescriptor(key: "date", ascending: false)
+        ]
+        
+        let messages: [TransactionMessage] = CoreDataManager.sharedManager.getObjectsOfTypeWith(
+            predicate: predicate,
+            sortDescriptors: sortDescriptors,
+            entityName: "TransactionMessage",
+            context: context
+        )
 
-
+        var groupedMessages: [String: String] = [:]
+        
+        for message in messages {
+            if let sender = message.senderAlias, sender.isNotEmpty {
+                if groupedMessages[sender] == nil {
+                    groupedMessages[sender] = message.remoteTimezoneIdentifier
+                }
+            }
+        }
+        return groupedMessages
+    }
 }

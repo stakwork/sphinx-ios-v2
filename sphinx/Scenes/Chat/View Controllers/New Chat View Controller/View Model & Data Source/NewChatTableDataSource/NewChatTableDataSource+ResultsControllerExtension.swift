@@ -54,7 +54,6 @@ extension NewChatTableDataSource {
     }
     
     func updateSnapshot() {
-        
         let snapshot = makeSnapshotForCurrentState()
         DispatchQueue.main.async {
             CoreDataManager.sharedManager.saveContext()
@@ -201,7 +200,8 @@ extension NewChatTableDataSource {
                         contact: contact,
                         tribeAdmin: admin,
                         separatorDate: separatorDate,
-                        invoiceData: (invoiceData.0 > 0, invoiceData.1 > 0)
+                        invoiceData: (invoiceData.0 > 0, invoiceData.1 > 0),
+                        timezoneData: chat.timezoneData
                     ),
                     at: 0
                 )
@@ -225,7 +225,8 @@ extension NewChatTableDataSource {
                 linkContact: linkContact,
                 linkTribe: linkTribe,
                 linkWeb: linkWeb,
-                invoiceData: (invoiceData.0 > 0, invoiceData.1 > 0)
+                invoiceData: (invoiceData.0 > 0, invoiceData.1 > 0),
+                timezoneData: chat.timezoneData
             )
             
             array.insert(messageTableCellState, at: 0)

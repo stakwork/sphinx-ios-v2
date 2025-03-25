@@ -18,7 +18,7 @@ class ChatsContainerViewController: UIViewController {
 
 // MARK: - Instantiation
 extension ChatsContainerViewController {
-
+    
     static func instantiate(
         chatsListDelegate: DashboardChatsListDelegate
     ) -> ChatsContainerViewController {
@@ -41,6 +41,14 @@ extension ChatsContainerViewController {
         
         self.chatsCollectionViewController?.chatListObjects = chats
         self.chatsCollectionViewController?.updateSnapshot()
+    }
+    
+    func onMessagesStatusChangedFor(chatIds: [Int]) {
+        self.chatsCollectionViewController?.shouldReloadChatRowsFor(chatIds: chatIds)
+    }
+    
+    func shouldReloadRowFor(chatId: Int) {
+        chatsCollectionViewController?.shouldReloadRowFor(chatId: chatId)
     }
 }
 

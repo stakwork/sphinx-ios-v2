@@ -58,3 +58,10 @@ extension DashboardRootViewController: DashboardChatsListDelegate {
         return mainContentContainerView.frame.origin.y
     }
 }
+
+extension DashboardRootViewController: NewChatViewControllerDelegate {
+    func shouldReloadRowFor(chatId: Int) {
+        contactChatsContainerViewController.shouldReloadRowFor(chatId: chatId)
+        tribeChatsContainerViewController.shouldReloadRowFor(chatId: chatId)
+    }
+}

@@ -35,6 +35,9 @@ class StatusHeaderView: UIView {
     
     @IBOutlet weak var expiredInvoiceReceivedHeader: UIStackView!
     @IBOutlet weak var expiredInvoiceReceivedLabel: UILabel!
+    @IBOutlet weak var remoteTimezoneIdentifier: UILabel!
+
+    
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -92,6 +95,8 @@ class StatusHeaderView: UIView {
         expiredInvoiceReceivedHeader.isHidden = !statusHeader.showExpiredReceived
         configureWith(expirationTimestamp: statusHeader.expirationTimestamp)
         
+        configureTimezoneWith(timezoneString: statusHeader.timezoneString)
+        
         let thirtySecondsAgo = Date().addingTimeInterval(-30)
         let isScheduleVisible = statusHeader.showScheduleIcon && statusHeader.messageDate < thirtySecondsAgo
         sentScheduleIcon.isHidden = !isScheduleVisible
@@ -113,6 +118,15 @@ class StatusHeaderView: UIView {
             uploadingLabel.text = String(format: "uploaded.progress".localized, uploadProgressData.progress)
         } else {
             uploadingHeader.isHidden = true
+        }
+    }
+    
+    func configureTimezoneWith(timezoneString: String?) {
+        remoteTimezoneIdentifier.isHidden = true
+        
+        if let timezoneString = timezoneString {
+            remoteTimezoneIdentifier.text = "/  \(timezoneString)"
+            remoteTimezoneIdentifier.isHidden = false
         }
     }
     

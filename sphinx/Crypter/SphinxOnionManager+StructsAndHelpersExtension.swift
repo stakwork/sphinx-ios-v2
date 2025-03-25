@@ -112,6 +112,7 @@ struct MessageInnerContent: Mappable {
     var amount: Int? = nil
     var fullContactInfo: String? = nil
     var recipientAlias: String? = nil
+    var metadata: String? = nil
 
     init?(map: Map) {}
     
@@ -130,6 +131,7 @@ struct MessageInnerContent: Mappable {
         amount          <- map["amount"]
         fullContactInfo <- map["fullContactInfo"]
         recipientAlias  <- map["recipientAlias"]
+        metadata        <- map["metadata"]
     }
     
     func getRouteHint() -> String? {
@@ -161,6 +163,8 @@ struct GenericIncomingMessage: Mappable {
     var fullContactInfo: String? = nil
     var photoUrl: String? = nil
     var tag: String? = nil
+    var tz: String? = nil
+    
 
     init?(map: Map) {}
     
@@ -206,6 +210,17 @@ struct GenericIncomingMessage: Mappable {
             } else {
                 self.timestamp = innerContent.date
             }
+            
+            if let metadataString = innerContent.metadata,
+               let metadataData = metadataString.data(using: .utf8) {
+                do {
+                    if let metadataDict = try JSONSerialization.jsonObject(with: metadataData, options: []) as? [String: Any] {
+                        self.tz = metadataDict["tz"] as? String
+                    }
+                } catch {
+                    print("Error parsing metadata JSON: \(error)")
+                }
+            }
         }
         
         if let paymentHash = msg.paymentHash {
@@ -240,7 +255,7 @@ struct GenericIncomingMessage: Mappable {
         mediaType  <- map["mediaType"]
         mediaKey   <- map["mediaKey"]
         muid       <- map["muid"]
-        
+        tz         <- map["tz"]
     }
 }
 

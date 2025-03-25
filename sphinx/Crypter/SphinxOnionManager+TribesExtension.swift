@@ -84,7 +84,7 @@ extension SphinxOnionManager {
                 state: loadOnionStateAsData(),
                 tribePubkey: tribePubkey,
                 tribeRouteHint: routeHint,
-                alias: alias ?? "test",
+                alias: (alias ?? "Unknown").fixedAlias,
                 amtMsat: UInt64(joinAmountMsats),
                 isPrivate: isPrivate
             )
@@ -206,7 +206,7 @@ extension SphinxOnionManager {
         } catch {}
     }
     
-    func kickTribeMember(pubkey:String, chat:Chat){
+    func kickTribeMember(pubkey: String, chat: Chat){
         let _ = sendMessage(
             to: nil,
             content: "",

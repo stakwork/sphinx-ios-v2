@@ -120,11 +120,16 @@ extension SphinxOnionManager {
         invoiceString: String?,
         tribeKickMember: String? = nil,
         paidAttachmentMediaToken: String? = nil,
-        isTribe: Bool
+        isTribe: Bool,
+        metaData: String? = nil
     ) -> (String?, String?)? {
         
         var msg: [String: Any] = ["content": content]
         var mt: String? = nil
+        
+        if let metaData = metaData {
+            msg["metadata"] = metaData
+        }
         
         switch TransactionMessage.TransactionMessageType(rawValue: Int(type)) {
         case .message, .boost, .delete, .call, .groupLeave, .memberReject, .memberApprove,.groupDelete:
@@ -216,11 +221,13 @@ extension SphinxOnionManager {
         let isTribe = recipContact == nil
         
         guard let selfContact = UserContact.getOwner(),
-              let nickname = isTribe ? (chat.myAlias?.isNotEmpty == true ? chat.myAlias : selfContact.nickname)?.replacingOccurrences(of: " ", with: "_") : (chat.myAlias?.isNotEmpty == true ? chat.myAlias : selfContact.nickname),
+              let nickname = isTribe ? (chat.myAlias?.isNotEmpty == true ? chat.myAlias : selfContact.nickname)?.fixedAlias : (chat.myAlias?.isNotEmpty == true ? chat.myAlias : selfContact.nickname),
               let recipPubkey = recipContact?.publicKey ?? chat.ownerPubkey
         else {
             return (nil, "Owner not found")
         }
+        
+        let metaData = chat.getMetaDataJsonStringValue()
         
         guard let (contentJSONString, mediaToken) = formatMsg(
             content: content,
@@ -235,7 +242,8 @@ extension SphinxOnionManager {
             invoiceString: invoiceString,
             tribeKickMember: tribeKickMember,
             paidAttachmentMediaToken: paidAttachmentMediaToken,
-            isTribe: isTribe
+            isTribe: isTribe,
+            metaData: metaData
         ) else {
             return (nil, "Msg json format issue")
         }
@@ -295,12 +303,10 @@ extension SphinxOnionManager {
                 assignReceiverId(localMsg: sentMessage)
             }
             
-//            if let sentMessageUUID = sentMessage?.uuid {
-//                startSendTimeoutTimer(
-//                    for: sentMessageUUID,
-//                    msgType: msgType
-//                )
-//            }
+            if let metaData = metaData {
+                chat.timezoneUpdated = false
+                chat.managedObjectContext?.saveContext()
+            }
             
             return (sentMessage, nil)
         } catch let error {
@@ -490,6 +496,26 @@ extension SphinxOnionManager {
         } else if let owner = UserContact.getOwner() {
             localMsg.senderAlias = owner.nickname
             localMsg.senderPic = owner.avatarUrl
+        }
+        
+        if
+            let msg = remoteMsg.message,
+            let innerContent = MessageInnerContent(JSONString: msg),
+            let metadataString = innerContent.metadata,
+            let metadataData = metadataString.data(using: .utf8) 
+        {
+            do {
+                if 
+                    let metadataDict = try JSONSerialization.jsonObject(with: metadataData, options: []) as? [String: Any],
+                    let timezone = metadataDict["tz"] as? String
+                {
+                    if localMsg.chat?.isPublicGroup() == true {
+                        localMsg.remoteTimezoneIdentifier = timezone
+                    }
+                }
+            } catch {
+                print("Error parsing metadata JSON: \(error)")
+            }
         }
         
         localMsg.senderId = UserData.sharedInstance.getUserId()
@@ -1111,12 +1137,26 @@ extension SphinxOnionManager {
         {
             newMessage.setPaymentInvoiceAsPaid()
         }
+
+        if let timezone = message.tz {
+            if chat.isGroup() {
+                newMessage.remoteTimezoneIdentifier = timezone
+            } else {
+                if (!isV2Restore || chat.remoteTimezoneIdentifier == nil) && !fromMe {
+                    chat.remoteTimezoneIdentifier = timezone
+                }
+            }
+        }
         
         if !delaySave {
             managedContext.saveContext()
         }
                 
         newMessage.setAsLastMessage()
+        
+        if !fromMe {
+            newMessageBubbleHelper.showMessageView(message: newMessage)
+        }
         
         return newMessage
     }
@@ -1674,7 +1714,8 @@ extension SphinxOnionManager {
         text: String,
         sendingAttachment: Bool,
         threadUUID: String?,
-        replyUUID: String?
+        replyUUID: String?,
+        metaDataString: String? = nil
     ) -> Bool {
         let contentBytes: Int = 18
         let attachmentBytes: Int = 389
@@ -1693,6 +1734,10 @@ extension SphinxOnionManager {
         
         if threadUUID != nil {
             bytes += threadBytes
+        }
+        
+        if let metaDataBytes = metaDataString?.lengthOfBytes(using: .utf8) {
+            bytes += metaDataBytes
         }
         
         return bytes <= 869
@@ -1737,6 +1782,33 @@ extension SphinxOnionManager {
 //        sendTimeoutTimers[omuuid]?.invalidate()
 //        sendTimeoutTimers[omuuid] = nil
 //    }
+    
+    func getMessagesStatusForPendingMessages() {
+        let dispatchQueue = DispatchQueue.global(qos: .utility)
+        dispatchQueue.async {
+            let backgroundContext = CoreDataManager.sharedManager.getBackgroundContext()
+            
+            backgroundContext.performAndWait {
+                let messages = TransactionMessage.getAllNotConfirmed()
+                
+                if messages.isEmpty {
+                    return
+                }
+                
+                Task {
+                    for i in stride(from: 0, to: messages.count, by: 200) {
+                        let chunk = Array(messages[i..<min(i + 200, messages.count)])
+                        
+                        let tags = chunk.compactMap({ $0.tag })
+                        
+                        SphinxOnionManager.sharedInstance.getMessagesStatusFor(tags: tags)
+                        
+                        try? await Task.sleep(nanoseconds: 500_000_000)
+                    }
+                }
+            }
+        }
+    }
     
     func getMessagesStatusFor(tags: [String]) {
         guard let seed = getAccountSeed() else{

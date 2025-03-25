@@ -43,7 +43,7 @@ class NewUserSignupFormViewController: UIViewController, ConnectionCodeSignupHan
         super.viewDidLoad()
         
         newMessageBubbleHelper.genericMessageY = (
-            UIApplication.shared.windows.first?.safeAreaInsets.top ?? 60
+            (UIApplication.shared.connectedScenes.first as? UIWindowScene)?.windows.first?.safeAreaInsets.top ?? 60
         ) + 60
 
         setupCodeField()

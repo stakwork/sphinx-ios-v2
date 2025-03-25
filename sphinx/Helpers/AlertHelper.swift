@@ -11,9 +11,9 @@ import UIKit
 class AlertHelper {
     class func getRootVC() -> UIViewController? {
         if UIDevice.current.isIpad && UIApplication.shared.isSplitOrSlideOver {
-            return UIApplication.shared.windows.first?.rootViewController
+            return (UIApplication.shared.connectedScenes.first as? UIWindowScene)?.windows.first?.rootViewController
         } else {
-            return UIApplication.shared.windows.last?.rootViewController
+            return (UIApplication.shared.connectedScenes.first as? UIWindowScene)?.windows.last?.rootViewController
         }
     }
     

@@ -196,6 +196,12 @@ extension TransactionMessage {
         return getDirection(id: ownerId ?? UserData.sharedInstance.getUserId()) == TransactionMessageDirection.outgoing
     }
     
+    func isPendingMessage(
+        ownerId: Int? = nil
+    ) -> Bool {
+        return isOutgoing(ownerId: ownerId) && !isConfirmedAsReceived() && !failed() && (isTextMessage() || isAttachment())
+    }
+    
     //Statues
     func isSeen(
         ownerId: Int
@@ -441,6 +447,10 @@ extension TransactionMessage {
             return (UserDefaults.standard.value(forKey: "\(uuid)-message-flag") as? Bool) ?? false
         }
         return false
+    }
+    
+    func isTribeTimezoneMsg() -> Bool {
+        return chat?.isPublicGroup() == true && remoteTimezoneIdentifier?.isNotEmpty == true
     }
     
     func isNotConsecutiveMessage() -> Bool {
@@ -1025,7 +1035,17 @@ extension TransactionMessage {
     
     //Grouping Logic
     func shouldAvoidGrouping() -> Bool {
-        return pending() || failed() || isDeleted() || isInvoice() || isPayment() || isGroupActionMessage() || isFlagged() || (isDirectPayment() && confirmed())
+        return
+            pending() ||
+            failed() ||
+            isDeleted() ||
+            isInvoice() ||
+            isPayment() ||
+            isGroupActionMessage() ||
+            isFlagged() ||
+            (isDirectPayment() && confirmed()) ||
+            isTribeTimezoneMsg()
+            
     }
     
     func hasSameSenderThanMessage(_ message: TransactionMessage) -> Bool {
