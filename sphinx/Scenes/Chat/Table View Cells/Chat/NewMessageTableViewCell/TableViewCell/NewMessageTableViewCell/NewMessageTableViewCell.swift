@@ -35,7 +35,8 @@ protocol ChatTableViewCellProtocol: class {
         uploadProgressData: MessageTableCellState.UploadProgressData?,
         delegate: NewMessageTableViewCellDelegate?,
         searchingTerm: String?,
-        indexPath: IndexPath
+        indexPath: IndexPath,
+        replyViewHeight: CGFloat?
     )
 }
 
@@ -55,7 +56,7 @@ protocol NewMessageTableViewCellDelegate: class {
     
     //Actions handling
     ///Message reply
-    func didTapMessageReplyFor(messageId: Int, and rowIndex: Int)
+    func didTapMessageReplyFor(messageId: Int, and rowIndex: Int, with height: CGFloat?)
     ///Avatar view
     func didTapAvatarViewFor(messageId: Int, and rowIndex: Int)
     ///Call Links
@@ -109,6 +110,7 @@ class NewMessageTableViewCell: CommonNewMessageTableViewCell, ChatTableViewCellP
     
     ///First Container
     @IBOutlet weak var messageReplyView: NewMessageReplyView! 
+    @IBOutlet weak var messageReplyHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var threadLastReplyHeader: ThreadLastMessageHeader!
     @IBOutlet weak var messageThreadViewContainer: UIView!
     @IBOutlet weak var messageThreadView: MessageThreadView!
@@ -168,7 +170,8 @@ class NewMessageTableViewCell: CommonNewMessageTableViewCell, ChatTableViewCellP
         uploadProgressData: MessageTableCellState.UploadProgressData?,
         delegate: NewMessageTableViewCellDelegate?,
         searchingTerm: String?,
-        indexPath: IndexPath
+        indexPath: IndexPath,
+        replyViewHeight: CGFloat?
     ) {
         
         hideAllSubviews()
@@ -200,7 +203,11 @@ class NewMessageTableViewCell: CommonNewMessageTableViewCell, ChatTableViewCellP
         )
         
         ///Message Reply
-        configureWith(messageReply: mutableMessageCellState.messageReply, and: bubble)
+        configureWith(
+            messageReply: mutableMessageCellState.messageReply,
+            and: bubble,
+            replyViewHeight: replyViewHeight
+        )
         
         ///Thread
         configureWith(

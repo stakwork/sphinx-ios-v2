@@ -196,10 +196,18 @@ extension NewMessageTableViewCell {
     
     func configureWith(
         messageReply: BubbleMessageLayoutState.MessageReply?,
-        and bubble: BubbleMessageLayoutState.Bubble
+        and bubble: BubbleMessageLayoutState.Bubble,
+        replyViewHeight: CGFloat?
     ) {
         if let messageReply = messageReply {
-            messageReplyView.configureWith(messageReply: messageReply, and: bubble, delegate: self)
+            messageReplyHeightConstraint.constant = replyViewHeight ?? NewMessageReplyView.kMessageReplyHeight
+            
+            messageReplyView.configureWith(
+                messageReply: messageReply,
+                and: bubble,
+                delegate: self,
+                isExpanded: replyViewHeight != nil
+            )
             messageReplyView.isHidden = false
         }
     }
