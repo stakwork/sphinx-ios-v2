@@ -15,7 +15,8 @@ class ChatsCollectionViewController: UICollectionViewController {
     
     private var owner: UserContact!
     
-    let dataSourceQueue = DispatchQueue(label: "chatList.datasourceQueue", attributes: .concurrent)
+    let dataSourceQueue = DispatchQueue(label: "chatList.datasourceQueue", qos: .userInteractive)
+    private var updateWorkItem: DispatchWorkItem?
     
     private let itemContentInsets = NSDirectionalEdgeInsets(
         top: 0,
@@ -25,16 +26,36 @@ class ChatsCollectionViewController: UICollectionViewController {
     )
     
     func shouldReloadRowFor(chatId: Int) {
-        if let index = chatListObjects.firstIndex(where: { chatId == $0.getChat()?.id }) {
-            var snapshot = self.dataSource.snapshot()
-            let itemIdentifier = snapshot.itemIdentifiers[index]
+        shouldReloadChatRowsFor(chatIds: [chatId])
+    }
+    
+    func shouldReloadChatRowsFor(chatIds: [Int]) {
+        self.dataSourceQueue.async {
             
-            self.dataSourceQueue.sync {
-                snapshot.reloadItems([itemIdentifier])
-                
-                DispatchQueue.main.async {
-                    self.dataSource.apply(snapshot, animatingDifferences: true)
+            guard let dataSource = self.dataSource else {
+                return
+            }
+            
+            var snapshot = dataSource.snapshot()
+            var itemIdentifiers: [DataSourceItem] = []
+            
+            let indexes = self.chatListObjects.indices.filter {
+                if let chatId = self.chatListObjects[$0].getChat()?.id {
+                    return chatIds.contains( chatId )
                 }
+                return false
+            }
+            
+            for index in indexes {
+                if index < snapshot.itemIdentifiers.count {
+                    itemIdentifiers.append(snapshot.itemIdentifiers[index])
+                }
+            }
+            
+            snapshot.reloadItems(itemIdentifiers)
+            
+            DispatchQueue.main.async {
+                self.dataSource.apply(snapshot, animatingDifferences: true)
             }
         }
     }
@@ -354,27 +375,38 @@ extension ChatsCollectionViewController {
     func updateSnapshot() {
         updateOwner()
         
-        var snapshot = DataSourceSnapshot()
-        
-        snapshot.appendSections(CollectionViewSection.allCases)
-        
-        let items = self.chatListObjects.filter({ $0.getContact()?.isOwner != true }).map {
-            DataSourceItem(
-                objectId: $0.getObjectId(),
-                messageId: $0.lastMessage?.id,
-                messageStatus: $0.lastMessage?.status,
-                message30SecOld: ($0.lastMessage?.date ?? Date()) < Date().addingTimeInterval(-30),
-                messageSeen: $0.isSeen(ownerId: self.owner.id),
-                unseenCount: $0.getUnseenMessagesCount(ownerId: self.owner.id),
-                contactStatus: $0.getContactStatus(),
-                inviteStatus: $0.getInviteStatus(),
-                muted: $0.isMuted()
-            )
-        }
-        
-        dataSourceQueue.sync {
-            snapshot.appendItems(items, toSection: .all)
-            self.dataSource.apply(snapshot, animatingDifferences: true)
+        dataSourceQueue.async {
+            
+            self.updateWorkItem?.cancel()
+            
+            let workItem = DispatchWorkItem {
+                var snapshot = DataSourceSnapshot()
+                
+                snapshot.appendSections(CollectionViewSection.allCases)
+
+                let items = self.chatListObjects.filter({ $0.getContact()?.isOwner != true }).map {
+                    DataSourceItem(
+                        objectId: $0.getObjectId(),
+                        messageId: $0.lastMessage?.id,
+                        messageStatus: $0.lastMessage?.status,
+                        message30SecOld: ($0.lastMessage?.date ?? Date()) < Date().addingTimeInterval(-30),
+                        messageSeen: $0.isSeen(ownerId: self.owner.id),
+                        unseenCount: $0.getUnseenMessagesCount(ownerId: self.owner.id),
+                        contactStatus: $0.getContactStatus(),
+                        inviteStatus: $0.getInviteStatus(),
+                        muted: $0.isMuted()
+                    )
+                }
+
+                snapshot.appendItems(items, toSection: .all)
+            
+                DispatchQueue.main.async {
+                    self.dataSource.apply(snapshot, animatingDifferences: true)
+                }
+            }
+            
+            self.updateWorkItem = workItem
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: workItem)
         }
     }
     

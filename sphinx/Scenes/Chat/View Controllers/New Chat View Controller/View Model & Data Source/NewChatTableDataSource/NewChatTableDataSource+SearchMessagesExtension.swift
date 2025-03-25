@@ -164,9 +164,10 @@ extension NewChatTableDataSource {
     func reloadAllVisibleRows() {
         let tableCellStates = getTableCellStatesForVisibleRows()
         
-        self.dataSourceQueue.sync {
+        self.dataSourceQueue.async {
             var snapshot = self.dataSource.snapshot()
             snapshot.reloadItems(tableCellStates)
+            
             DispatchQueue.main.async {
                 self.dataSource.apply(snapshot, animatingDifferences: false)
             }
