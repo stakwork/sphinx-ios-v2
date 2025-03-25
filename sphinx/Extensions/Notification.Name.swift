@@ -20,6 +20,7 @@ extension Notification.Name {
     static let autocompleteMention = Notification.Name("autocompleteMention")
     static let refreshFeedUI = Notification.Name(rawValue: "refreshFeedUI")
     static let onContactsAndChatsChanged = Notification.Name("onContactsAndChatsChanged")
+    static let onMessagesStatusChanged = Notification.Name("onMessagesStatusChanged")
     static let onSizeConfigurationChanged = Notification.Name("onSizeConfigurationChanged")
     static let webViewImageClicked = Notification.Name("webViewImageClicked")
     static let keyExchangeResponseMessageWasConstructed = Notification.Name("keyExchangeMessageWasConstructed")

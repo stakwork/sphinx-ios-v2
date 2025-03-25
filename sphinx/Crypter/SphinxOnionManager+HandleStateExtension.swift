@@ -650,11 +650,18 @@ extension SphinxOnionManager {
                         }
 
                         let tags = array.compactMap({ $0["tag"].stringValue }).filter({ $0.isNotEmpty })
+                        
+                        if tags.isEmpty {
+                            return
+                        }
 
                         backgroundContext.perform { [weak self] in
                             guard let self = self else {
                                 return
                             }
+                            
+                            var chatIds: [Int] = []
+                            
                             for message in TransactionMessage.getMessagesWith(tags: tags, context: self.backgroundContext) {
                                 if let messageStatus = dictionary[message.tag ?? ""] {
                                     if messageStatus.isReceived() {
@@ -670,11 +677,19 @@ extension SphinxOnionManager {
                                         message.status = TransactionMessage.TransactionMessageStatus.failed.rawValue
                                     }
                                 }
+                                
+                                if let chatId = message.chat?.id, !chatIds.contains(chatId) {
+                                    chatIds.append(chatId)
+                                }
                             }
                             
                             self.backgroundContext.saveContext()
                             
-                            NotificationCenter.default.post(name: .onContactsAndChatsChanged, object: nil)
+                            
+                            if !chatIds.isEmpty {
+                                let userInfo: [String: [Int]] = ["chat-ids" : chatIds]
+                                NotificationCenter.default.post(name: .onMessagesStatusChanged, object: nil, userInfo: userInfo)
+                            }
                         }
                     }
                 } catch {

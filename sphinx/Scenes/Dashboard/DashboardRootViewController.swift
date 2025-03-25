@@ -346,6 +346,7 @@ extension DashboardRootViewController {
         NotificationCenter.default.removeObserver(self, name: .onSizeConfigurationChanged, object: nil)
         
         NotificationCenter.default.addObserver(self, selector: #selector(dataDidChange), name: .onContactsAndChatsChanged, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(onMessagesStatusChangedWith(n:)), name: .onMessagesStatusChanged, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(sizeDidChange), name: .onSizeConfigurationChanged, object: nil)
         
         NotificationCenter.default.removeObserver(self, name: .connectedToInternet, object: nil)
@@ -602,6 +603,13 @@ extension DashboardRootViewController {
         tribeChatsContainerViewController.updateWithNewChats(
             contactsService.chatListObjects
         )
+    }
+    
+    @objc func onMessagesStatusChangedWith(n: Notification) {
+        if let chatIds = n.userInfo?["chat-ids"] as? [Int] {
+            contactChatsContainerViewController.onMessagesStatusChangedFor(chatIds: chatIds)
+            tribeChatsContainerViewController.onMessagesStatusChangedFor(chatIds: chatIds)
+        }
     }
     
     internal func finishLoading() {
