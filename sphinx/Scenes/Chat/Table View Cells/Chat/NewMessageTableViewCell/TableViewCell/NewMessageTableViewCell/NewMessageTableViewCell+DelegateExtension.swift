@@ -9,9 +9,13 @@
 import Foundation
 
 extension NewMessageTableViewCell : NewMessageReplyViewDelegate {
-    func didTapMessageReplyView() {
+    func didTapMessageReplyViewWith(height: CGFloat?) {
         if let messageId = messageId {
-            delegate?.didTapMessageReplyFor(messageId: messageId, and: rowIndex)
+            delegate?.didTapMessageReplyFor(
+                messageId: messageId,
+                and: rowIndex,
+                with: height
+            )
         }
     }
 }
