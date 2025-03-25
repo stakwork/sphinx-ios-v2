@@ -20,7 +20,15 @@ public class Chapter {
     public var referenceId: String
     
     
-    init(dateAddedToGraph: Date, nodeType: String, isAd: Bool, name: String, sourceLink: String, timestamp: String, referenceId: String) {
+    init(
+        dateAddedToGraph: Date,
+        nodeType: String,
+        isAd: Bool,
+        name: String,
+        sourceLink: String,
+        timestamp: String,
+        referenceId: String
+    ) {
         self.dateAddedToGraph = dateAddedToGraph
         self.nodeType = nodeType
         self.isAd = isAd
@@ -30,3 +38,38 @@ public class Chapter {
         self.referenceId = referenceId
     }    
 }
+
+struct Properties: Codable {
+    var date_added_to_graph: String?
+    var weight: Int?
+    var date: TimeInterval?
+    var episode_title: String?
+    var image_url: String?
+    var media_url: String?
+    var source_link: String?
+    var status: String?
+    var is_ad: String?
+    var name: String?
+    var timestamp: String?
+}
+
+struct Node: Codable {
+    var date_added_to_graph: TimeInterval
+    var node_type: String
+    var properties: Properties
+    var ref_id: String
+}
+
+struct Edge: Codable {
+    var edge_type: String
+    var properties: Properties
+    var ref_id: String
+    var source: String
+    var target: String
+}
+
+struct GraphData: Codable {
+    var nodes: [Node]
+    var edges: [Edge]
+}
+

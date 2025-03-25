@@ -51,6 +51,12 @@ extension ContentFeedItem {
     
     @NSManaged
     public var isSubscribedToFromSearch: Bool
+    
+    @NSManaged
+    public var referenceId: String?
+    
+    @NSManaged
+    public var chaptersData: String?
 }
 
 

@@ -6,6 +6,7 @@
 
 import Foundation
 import CoreData
+import SwiftyJSON
 
 public class PodcastEpisode: NSObject {
     
@@ -28,6 +29,7 @@ public class PodcastEpisode: NSObject {
     public var people: [String] = []
     public var topics: [String] = []
     public var destination: PodcastDestination? = nil
+    public var referenceId: String? = nil
     public var chapters: Array<Chapter>? = nil
 
     //For recommendations podcast
@@ -153,8 +155,46 @@ extension PodcastEpisode {
         podcastEpisode.feedImageURLPath = feed?.imageURLPath
         podcastEpisode.feedTitle = feed?.title
         podcastEpisode.type = RecommendationsHelper.PODCAST_TYPE
+        podcastEpisode.referenceId = contentFeedItem.referenceId
+        
+        if let chaptersData = contentFeedItem.chaptersData {
+            podcastEpisode.chapters = PodcastEpisode.getChaptersFrom(json: chaptersData)
+        }
         
         return podcastEpisode
+    }
+    
+    public static func getChaptersFrom(json: String) -> [Chapter] {
+        var chapters: [Chapter] = []
+        
+        if let jsonData = json.data(using: .utf8) {
+            do {
+                let graphData = try JSONDecoder().decode(GraphData.self, from: jsonData)
+                
+                for node in graphData.nodes {
+                    let timestamp: TimeInterval = node.date_added_to_graph
+                    let date = Date(timeIntervalSince1970: timestamp)
+                    
+                    chapters.append(
+                        Chapter(
+                            dateAddedToGraph: date,
+                            nodeType: node.node_type,
+                            isAd: (node.properties.is_ad == "True") ? true : false,
+                            name: node.properties.name ?? "Unknown",
+                            sourceLink: node.properties.source_link ?? "Unknown",
+                            timestamp: node.properties.timestamp ?? "Unknown",
+                            referenceId: node.ref_id
+                        )
+                    )
+                }
+            } catch {
+                print("Error decoding JSON: \(error)")
+            }
+        } else {
+            print("Failed to convert string to Data.")
+        }
+        
+        return chapters
     }
     
     var isMusicClip: Bool {
