@@ -111,6 +111,8 @@ extension PodcastPlayerController {
     func play(
         _ podcastData: PodcastData
     ) {
+        ChaptersManager.sharedInstance.processChaptersData(episodeId: podcastData.episodeId)
+        
         setAudioSession()
         
         if let pd = self.podcastData, isPlaying {

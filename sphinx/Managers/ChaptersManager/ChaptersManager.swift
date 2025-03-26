@@ -8,6 +8,7 @@
 
 
 import Foundation
+import UIKit
 
 class ChaptersManager : NSObject {
     
@@ -18,14 +19,58 @@ class ChaptersManager : NSObject {
         return Static.instance
     }
     
+    var processingEpisodes: [String: Date] = [:]
+    
+    func isDateWithinLastHour(date: Date) -> Bool {
+        let currentDate = Date()  // Get the current date and time
+        let oneHourAgo = currentDate.addingTimeInterval(-3600)  // Subtract one hour (3600 seconds)
+        
+        // Check if the given date is after the time one hour ago
+        return date >= oneHourAgo && date <= currentDate
+    }
+    
     func processChaptersData(
-        episode: PodcastEpisode,
+        episodeId: String
+    ) {
+        processChaptersData(episodeId: episodeId, completion: { (success, chaptersData) in
+            if success && chaptersData.count > 0 {
+                DispatchQueue.main.async {
+                    if UIApplication.shared.applicationState == .active {
+                        NotificationCenter.default.post(name: .refreshFeedUI, object: nil)
+                    }
+                }
+            }
+        })
+    }
+    
+    func processChaptersData(
+        episodeId: String,
         completion: @escaping (Bool, [Chapter]) -> ()
     ) {
-        guard let contentFeedItem = ContentFeedItem.getItemWith(itemID: episode.itemID) else {
+        if let processingDate = processingEpisodes[episodeId], isDateWithinLastHour(date: processingDate) {
             completion(false, [])
             return
         }
+        
+        guard let contentFeedItem = ContentFeedItem.getItemWith(itemID: episodeId) else {
+            completion(false, [])
+            return
+        }
+        guard let feed = contentFeedItem.contentFeed else {
+            completion(false, [])
+            return
+        }
+        
+        let podcast = PodcastFeed.convertFrom(contentFeed: feed)
+        let episode = PodcastEpisode.convertFrom(contentFeedItem: contentFeedItem, feed: podcast)
+        
+        if (episode.chapters?.count ?? 0) > 0 {
+            completion(false, [])
+            return
+        }
+        
+        self.processingEpisodes[episodeId] = Date()
+        
         if let refereceId = episode.referenceId {
             ///ReferenceID stored in Episode. It was processed before. Try to fetch chapters data
             self.getAndStoreChaptersData(
@@ -58,12 +103,14 @@ class ChaptersManager : NSObject {
                                     contentFeedItem.managedObjectContext?.saveContext()
                                     completion(true, [])
                                 } else {
+                                    self.processingEpisodes[episodeId] = nil
                                     completion(false, [])
                                 }
                             }
                         )
                     }
                 } else {
+                    self.processingEpisodes[episodeId] = nil
                     completion(false, [])
                 }
             }
@@ -76,16 +123,24 @@ class ChaptersManager : NSObject {
         completion: @escaping (Bool, [Chapter]) -> ()
     ) {
         guard let contentFeedItem = ContentFeedItem.getItemWith(itemID: episode.itemID) else {
+            self.processingEpisodes[episode.itemID] = nil
             completion(false, [])
             return
         }
         
         self.getChaptersData(referenceId: referenceId, completion: { (success, jsonString) in
             if success, let jsonString = jsonString {
-                ///Chapters data available. Store in episode and return them
-                contentFeedItem.chaptersData = jsonString
-                episode.chapters = PodcastEpisode.getChaptersFrom(json: jsonString)
-                completion(true, episode.chapters ?? [])
+                let chapters = PodcastEpisode.getChaptersFrom(json: jsonString)
+                if chapters.count > 0 {
+                    ///Chapters data available. Store in episode and return them
+                    contentFeedItem.chaptersData = jsonString
+                    episode.chapters = chapters
+                    self.processingEpisodes[episode.itemID] = nil
+                    completion(true, episode.chapters ?? [])
+                } else {
+                    ///Node workflow already running. Just wait
+                    completion(true, [])
+                }
             } else {
                 ///Chapters data unavailable. Check episode status
                 self.checkEpisodeStatus(referenceId: referenceId, completion: { (success, nodeStatusResponse) in
@@ -114,6 +169,7 @@ class ChaptersManager : NSObject {
                                 }
                             })
                         } else {
+                            self.processingEpisodes[episode.itemID] = nil
                             completion(false, [])
                         }
                     }
@@ -176,11 +232,11 @@ class ChaptersManager : NSObject {
                 publishDate: Int(date.timeIntervalSince1970),
                 title: episodeTitle,
                 thumbnailUrl: episode.imageToShow,
-                showTitle: episode.showTitle ?? "Show Title",
+                showTitle: episode.feedTitle ?? "Show Title",
                 callback: { createRunResponse in
                     completion(createRunResponse.success)
                 },
-                errorCallback: { _ in
+                errorCallback: { error in
                     completion(false)
                 }
             )
