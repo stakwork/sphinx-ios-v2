@@ -9,7 +9,7 @@
 import UIKit
 
 protocol NewMessageReplyViewDelegate: class {
-    func didTapMessageReplyView()
+    func didTapMessageReplyViewWith(height: CGFloat?)
 }
 
 class NewMessageReplyView: UIView {
@@ -33,6 +33,11 @@ class NewMessageReplyView: UIView {
     
     @IBOutlet weak var replyDivider: UIView!
     
+    static let kMessageReplyHeight: CGFloat = 50
+    static let kMessageReplyVerticalMargings: CGFloat = 30
+    
+    var isExpanded = false
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
         setup()
@@ -53,11 +58,17 @@ class NewMessageReplyView: UIView {
     func configureWith(
         messageReply: BubbleMessageLayoutState.MessageReply,
         and bubble: BubbleMessageLayoutState.Bubble,
-        delegate: NewMessageReplyViewDelegate? = nil
+        delegate: NewMessageReplyViewDelegate? = nil,
+        isExpanded: Bool
     ) {
         self.delegate = delegate
+        self.isExpanded = isExpanded
         
-        messageLabel.textColor = bubble.direction.isIncoming() ? UIColor.Sphinx.WashedOutReceivedText : UIColor.Sphinx.WashedOutSentText
+        if isExpanded {
+            messageLabel.textColor = UIColor.Sphinx.Text.withAlphaComponent(0.7)
+        } else {
+            messageLabel.textColor = bubble.direction.isIncoming() ? UIColor.Sphinx.WashedOutReceivedText : UIColor.Sphinx.WashedOutSentText
+        }
         
         coloredLineView.backgroundColor = messageReply.color
         senderLabel.textColor = messageReply.color
@@ -96,6 +107,16 @@ class NewMessageReplyView: UIView {
     }
 
     @IBAction func buttonTouched() {
-        delegate?.didTapMessageReplyView()
+        if isExpanded {
+            delegate?.didTapMessageReplyViewWith(height: nil)
+        } else {
+            let labelHeight = UILabel.getLabelSize(
+                width: messageLabel.frame.width,
+                text: messageLabel.text ?? "",
+                font: messageLabel.font
+            ).height
+            
+            delegate?.didTapMessageReplyViewWith(height: labelHeight + NewMessageReplyView.kMessageReplyVerticalMargings)
+        }
     }
 }

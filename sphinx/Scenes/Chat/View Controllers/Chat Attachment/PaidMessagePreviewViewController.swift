@@ -130,7 +130,8 @@ extension PaidMessagePreviewViewController : UITableViewDataSource, UITableViewD
                 uploadProgressData: nil,
                 delegate: nil,
                 searchingTerm: nil,
-                indexPath: indexPath
+                indexPath: indexPath,
+                replyViewHeight: nil
             )
         }
         

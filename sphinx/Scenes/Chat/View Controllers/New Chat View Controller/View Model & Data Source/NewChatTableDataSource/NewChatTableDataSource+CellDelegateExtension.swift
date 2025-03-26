@@ -656,19 +656,38 @@ extension NewChatTableDataSource {
 extension NewChatTableDataSource {
     func didTapMessageReplyFor(
         messageId: Int,
-        and rowIndex: Int
+        and rowIndex: Int,
+        with height: CGFloat?
     ) {
+        replyViewHeight[messageId] = height
+        
         if var tableCellState = getTableCellStateFor(
             messageId: messageId,
             and: rowIndex
-        ) {
-            if let messageReply = tableCellState.1.messageReply {
-                if let replyingTableCellIndex = getTableCellStateFor(messageId: messageReply.messageId)?.0 {
-                    tableView.scrollToRow(
-                        at: IndexPath(row: replyingTableCellIndex, section: 0),
-                        at: .top,
-                        animated: true
-                    )
+        )
+        {
+            self.saveSnapshotCurrentState()
+            var snapshot = self.dataSource.snapshot()
+            
+            if snapshot.itemIdentifiers.contains(tableCellState.1) {
+                dataSourceQueue.sync {
+                    snapshot.reloadItems([tableCellState.1])
+                    
+                    DispatchQueue.main.async {
+                        self.dataSource.apply(snapshot, animatingDifferences: true) {
+                            if height == nil {
+                                if let messageReply = tableCellState.1.messageReply {
+                                    if let replyingTableCellIndex = self.getTableCellStateFor(messageId: messageReply.messageId)?.0 {
+                                        self.tableView.scrollToRow(
+                                            at: IndexPath(row: replyingTableCellIndex, section: 0),
+                                            at: .top,
+                                            animated: true
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

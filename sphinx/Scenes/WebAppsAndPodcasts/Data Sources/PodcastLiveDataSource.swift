@@ -134,7 +134,8 @@ extension PodcastLiveDataSource : UITableViewDataSource, UITableViewDelegate {
             uploadProgressData: nil,
             delegate: nil,
             searchingTerm: nil,
-            indexPath: indexPath
+            indexPath: indexPath,
+            replyViewHeight: nil
         )
         
         return cell
