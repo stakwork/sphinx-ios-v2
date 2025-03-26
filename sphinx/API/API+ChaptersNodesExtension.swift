@@ -127,7 +127,7 @@ extension API {
         callback: @escaping GetNodeChaptersCallback,
         errorCallback: @escaping ErrorCallback
     ) {
-        let url = "\(API.kGraphMindsetUrl)/graph/subgraph?node_type=[%27Chapter%27]&depth=1&include_properties=true&start_node=\(refId)"
+        let url = "\(API.kGraphMindsetUrl)/graph/subgraph?node_type=[\"Chapter\"]&depth=1&include_properties=true&start_node=\(refId)"
         
         let request : URLRequest? = createRequest(
             url,
@@ -143,9 +143,16 @@ extension API {
         sphinxRequest(request) { response in
             switch response.result {
             case .success(let data):
-                if let jsonString = data as? String {
-                    callback(jsonString)
-                    return
+                if let dictionary = data as? NSDictionary {
+                    do {
+                        let jsonData = try JSONSerialization.data(withJSONObject: dictionary, options: .withoutEscapingSlashes)
+                        if let jsonString = String(data: jsonData, encoding: .utf8) {
+                            callback(jsonString)
+                            return
+                        }
+                    } catch {
+                        print("Error converting NSDictionary to JSON: \(error.localizedDescription)")
+                    }
                 }
                 errorCallback("Error getting response data")
             case .failure(let error):
@@ -250,7 +257,7 @@ extension API {
             url,
             bodyParams: params as NSDictionary,
             method: "POST",
-            token: "eb193226b5f74a8b8fff70f9822a2b35​"
+            token: "REPLACE_WITH_TOKEN"
         )
         
         guard let request = request else {

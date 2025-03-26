@@ -175,17 +175,19 @@ extension PodcastEpisode {
                     let timestamp: TimeInterval = node.date_added_to_graph
                     let date = Date(timeIntervalSince1970: timestamp)
                     
-                    chapters.append(
-                        Chapter(
-                            dateAddedToGraph: date,
-                            nodeType: node.node_type,
-                            isAd: (node.properties.is_ad == "True") ? true : false,
-                            name: node.properties.name ?? "Unknown",
-                            sourceLink: node.properties.source_link ?? "Unknown",
-                            timestamp: node.properties.timestamp ?? "Unknown",
-                            referenceId: node.ref_id
+                    if node.node_type == "Chapter" {
+                        chapters.append(
+                            Chapter(
+                                dateAddedToGraph: date,
+                                nodeType: node.node_type,
+                                isAd: (node.properties.is_ad == "True") ? true : false,
+                                name: node.properties.name ?? node.properties.episode_title ?? "Unknown",
+                                sourceLink: node.properties.source_link ?? "Unknown",
+                                timestamp: node.properties.timestamp ?? "Unknown",
+                                referenceId: node.ref_id
+                            )
                         )
-                    )
+                    }
                 }
             } catch {
                 print("Error decoding JSON: \(error)")
