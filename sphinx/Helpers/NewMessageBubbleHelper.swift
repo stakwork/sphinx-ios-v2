@@ -24,6 +24,7 @@ class NewMessageBubbleHelper {
     var genericMessageY: CGFloat = 120.0
     
     var urlRanges = [NSRange]()
+    var bubbleLastMsgId: Int? = nil
     
     static let messageViewTag = -1
     static let loadingViewTag = -2
@@ -274,6 +275,12 @@ class NewMessageBubbleHelper {
         delay: Double = 2.5,
         onKeyWindow: Bool = true
     ) {
+        if bubbleLastMsgId == message.id {
+            return
+        }
+        
+        bubbleLastMsgId = message.id
+        
         let contactsService = ContactsService.sharedInstance
         
         guard let owner = contactsService.owner else {
