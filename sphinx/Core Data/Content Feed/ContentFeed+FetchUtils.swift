@@ -39,15 +39,37 @@ extension ContentFeed {
     public static func deleteFeedWith(
         feedId: String,
         context: NSManagedObjectContext? = nil
-    ) {
+    ) -> [String: String] {
+        var referenceIds: [String: String] = [:]
+        
         if let feed: ContentFeed = CoreDataManager.sharedManager.getObjectOfTypeWith(
             predicate: Predicates.matching(feedID: feedId),
             sortDescriptors: [],
             entityName: "ContentFeed",
             managedContext: context
         ) {
+            for item in feed.itemsArray {
+                if let referenceId = item.referenceId {
+                    referenceIds[item.itemID] = referenceId
+                }
+            }
+            
             CoreDataManager.sharedManager.deleteObject(object: feed, context: context)
         }
+        
+        return referenceIds
+    }
+    
+    func getReferenceIds() -> [String: String] {
+        var referenceIds: [String: String] = [:]
+        
+        for item in self.itemsArray {
+            if let referenceId = item.referenceId {
+                referenceIds[item.itemID] = referenceId
+            }
+        }
+        
+        return referenceIds
     }
 
     public enum Predicates {

@@ -14,7 +14,8 @@ public final class ContentFeedItem: NSManagedObject {
     
     public static func createObjectFrom(
         json: JSON,
-        context: NSManagedObjectContext? = nil
+        context: NSManagedObjectContext? = nil,
+        referenceIds: [String: String] = [:]
     ) -> ContentFeedItem? {
         
         guard let itemId = json[CodingKeys.itemID.rawValue].string else {
@@ -39,6 +40,7 @@ public final class ContentFeedItem: NSManagedObject {
         contentFeedItem.enclosureKind = json[CodingKeys.enclosureKind.rawValue].stringValue
         contentFeedItem.imageURL = URL(string: json[CodingKeys.imageURL.rawValue].stringValue)
         contentFeedItem.linkURL = URL(string: json[CodingKeys.linkURL.rawValue].stringValue)
+        contentFeedItem.referenceId = referenceIds[itemId]
         
         return contentFeedItem
     }

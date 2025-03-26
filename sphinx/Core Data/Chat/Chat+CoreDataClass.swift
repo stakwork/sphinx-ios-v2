@@ -808,7 +808,7 @@ public class Chat: NSManagedObject {
                         }
                         return
                     } else if let existingFeed = self.contentFeed {
-                        ContentFeed.deleteFeedWith(feedId: existingFeed.feedID)
+                        let _ = ContentFeed.deleteFeedWith(feedId: existingFeed.feedID)
                     }
                     completion()
                 },

@@ -139,6 +139,7 @@ class ChaptersManager : NSObject {
                     completion(true, episode.chapters ?? [])
                 } else {
                     ///Node workflow already running. Just wait
+                    self.processingEpisodes[episode.itemID] = nil
                     completion(true, [])
                 }
             } else {
