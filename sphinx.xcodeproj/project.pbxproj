@@ -213,6 +213,7 @@
 		474CCFAA291562180037E1D4 /* API+ActionsExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474CCFA9291562180037E1D4 /* API+ActionsExtension.swift */; };
 		474CCFAF291562E90037E1D4 /* ContentBoostAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474CCFAE291562E90037E1D4 /* ContentBoostAction.swift */; };
 		474DC4B72D9312DD00FB6087 /* API+ChaptersNodesExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474DC4B62D9312BF00FB6087 /* API+ChaptersNodesExtension.swift */; };
+		474DC4BA2D942E6D00FB6087 /* ChaptersManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474DC4B92D942E6A00FB6087 /* ChaptersManager.swift */; };
 		474E465A2AAF8FC80098AD24 /* ImportSeedView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 474E465C2AAF8FC80098AD24 /* ImportSeedView.xib */; };
 		474FE33123F5A07700C06FC8 /* CachingPlayerItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474FE33023F5A07700C06FC8 /* CachingPlayerItem.swift */; };
 		474FE33323F5A22A00C06FC8 /* AVViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474FE33223F5A22A00C06FC8 /* AVViewController.swift */; };
@@ -1345,6 +1346,7 @@
 		474CCFAE291562E90037E1D4 /* ContentBoostAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentBoostAction.swift; sourceTree = "<group>"; };
 		474DC4B52D9305E900FB6087 /* sphinx 54.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 54.xcdatamodel"; sourceTree = "<group>"; };
 		474DC4B62D9312BF00FB6087 /* API+ChaptersNodesExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+ChaptersNodesExtension.swift"; sourceTree = "<group>"; };
+		474DC4B92D942E6A00FB6087 /* ChaptersManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChaptersManager.swift; sourceTree = "<group>"; };
 		474E465B2AAF8FC80098AD24 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/ImportSeedView.xib; sourceTree = "<group>"; };
 		474E465E2AAF8FCA0098AD24 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/ImportSeedView.strings; sourceTree = "<group>"; };
 		474E46602AAF8FCA0098AD24 /* fil */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fil; path = fil.lproj/ImportSeedView.strings; sourceTree = "<group>"; };
@@ -2442,6 +2444,7 @@
 		471FACD623E89E19007DE1C8 /* Managers */ = {
 			isa = PBXGroup;
 			children = (
+				474DC4B82D942E5A00FB6087 /* ChaptersManager */,
 				4733ED2D2CB556E700078EF2 /* Colors Manager */,
 				471161E329156531008EAFF2 /* Actions Manager */,
 				47C52C4327F49E8E007B43E2 /* Requests Signing */,
@@ -2801,6 +2804,14 @@
 				471161D429156384008EAFF2 /* PodcastClipAction.swift */,
 			);
 			path = "Action Wrappers";
+			sourceTree = "<group>";
+		};
+		474DC4B82D942E5A00FB6087 /* ChaptersManager */ = {
+			isa = PBXGroup;
+			children = (
+				474DC4B92D942E6A00FB6087 /* ChaptersManager.swift */,
+			);
+			path = ChaptersManager;
 			sourceTree = "<group>";
 		};
 		475043C929719E3B00830E9E /* PodcastPlayerController */ = {
@@ -5438,6 +5449,7 @@
 				CE3D8CA129B0FF7100EDB637 /* FeedItemDetailVC.swift in Sources */,
 				472BF0412B62BE89009D5E1B /* ChatTrackingHandler.swift in Sources */,
 				47AAFC82238EFCE600E30BDA /* API+AttachmentsExtension.swift in Sources */,
+				474DC4BA2D942E6D00FB6087 /* ChaptersManager.swift in Sources */,
 				4787F878247449DC00CCE8B9 /* GroupTagTableViewCell.swift in Sources */,
 				47D03DF82510F3D20077A968 /* URLResponse.swift in Sources */,
 				47AF0D35254C957200C98398 /* PodcastAnimationViewController.swift in Sources */,

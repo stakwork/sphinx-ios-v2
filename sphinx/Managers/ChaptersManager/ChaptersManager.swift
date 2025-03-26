@@ -91,7 +91,7 @@ class ChaptersManager : NSObject {
                 self.checkEpisodeStatus(referenceId: referenceId, completion: { (success, nodeStatusResponse) in
                     if success, let nodeStatusResponse = nodeStatusResponse {
                         if nodeStatusResponse.processing {
-                            if let projectId = nodeStatusResponse.projectId {
+                            if let _ = nodeStatusResponse.projectId {
                                 ///Node workflow already running. Just wait
                                 completion(true, [])
                             } else {

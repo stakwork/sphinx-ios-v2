@@ -276,6 +276,16 @@ class PodcastPlayerView: UIView {
             return
         }
         
+        ChaptersManager.sharedInstance.processChaptersData(episode: episode, completion: { (success, chaptersData) in
+            if success && chaptersData.count > 0 {
+                DispatchQueue.main.async {
+                    if UIApplication.shared.applicationState == .active {
+                        NotificationCenter.default.post(name: .refreshFeedUI, object: nil)
+                    }
+                }
+            }
+        })
+        
         podcastPlayerController.submitAction(
             UserAction.TogglePlay(podcastData)
         )
