@@ -137,45 +137,41 @@ class ChaptersManager : NSObject {
                     episode.chapters = chapters
                     self.processingEpisodes[episode.itemID] = nil
                     completion(true, episode.chapters ?? [])
-                } else {
-                    ///Node workflow already running. Just wait
-                    self.processingEpisodes[episode.itemID] = nil
-                    completion(true, [])
+                    return
                 }
-            } else {
-                ///Chapters data unavailable. Check episode status
-                self.checkEpisodeStatus(referenceId: referenceId, completion: { (success, nodeStatusResponse) in
-                    if success, let nodeStatusResponse = nodeStatusResponse {
-                        if nodeStatusResponse.processing {
-                            if let _ = nodeStatusResponse.projectId {
-                                ///Node workflow already running. Just wait
-                                completion(true, [])
-                            } else {
-                                ///Node created but workflow not running. Run GraphMinset workflow to extract chapters
-                                self.runGraphMindset(
-                                    referenceId: referenceId,
-                                    episode: episode,
-                                    completion: { success in
-                                        completion(true, [])
-                                    }
-                                )
-                            }
-                        } else if nodeStatusResponse.completed {
-                            ///Node created and workflow run. Try to fetch chapters data again
-                            self.getChaptersData(referenceId: referenceId, completion: { (success, jsonString) in
-                                if success, let jsonString = jsonString {
-                                    contentFeedItem.chaptersData = jsonString
-                                    episode.chapters = PodcastEpisode.getChaptersFrom(json: jsonString)
-                                    completion(true, episode.chapters ?? [])
-                                }
-                            })
-                        } else {
-                            self.processingEpisodes[episode.itemID] = nil
-                            completion(false, [])
-                        }
-                    }
-                })
             }
+            ///Chapters data unavailable. Check episode status
+            self.checkEpisodeStatus(referenceId: referenceId, completion: { (success, nodeStatusResponse) in
+                if success, let nodeStatusResponse = nodeStatusResponse {
+                    if nodeStatusResponse.processing {
+                        if let _ = nodeStatusResponse.projectId {
+                            ///Node workflow already running. Just wait
+                            completion(true, [])
+                        } else {
+                            ///Node created but workflow not running. Run GraphMinset workflow to extract chapters
+                            self.runGraphMindset(
+                                referenceId: referenceId,
+                                episode: episode,
+                                completion: { success in
+                                    completion(true, [])
+                                }
+                            )
+                        }
+                    } else if nodeStatusResponse.completed {
+                        ///Node created and workflow run. Try to fetch chapters data again
+                        self.getChaptersData(referenceId: referenceId, completion: { (success, jsonString) in
+                            if success, let jsonString = jsonString {
+                                contentFeedItem.chaptersData = jsonString
+                                episode.chapters = PodcastEpisode.getChaptersFrom(json: jsonString)
+                                completion(true, episode.chapters ?? [])
+                            }
+                        })
+                    } else {
+                        self.processingEpisodes[episode.itemID] = nil
+                        completion(false, [])
+                    }
+                }
+            })
         })
     }
     
@@ -235,7 +231,11 @@ class ChaptersManager : NSObject {
                 thumbnailUrl: episode.imageToShow,
                 showTitle: episode.feedTitle ?? "Show Title",
                 callback: { createRunResponse in
-                    completion(createRunResponse.success)
+                    if let _ = createRunResponse.projectId, createRunResponse.success {
+                        completion(true)
+                    } else {
+                        completion(false)
+                    }
                 },
                 errorCallback: { error in
                     completion(false)
@@ -255,6 +255,21 @@ class ChaptersManager : NSObject {
             },
             errorCallback: { _ in
                 completion(false, nil)
+            }
+        )
+    }
+    
+    func checkProjectStatus(
+        projectId: String,
+        completion: @escaping (Bool) -> ()
+    ) {
+        API.sharedInstance.checkProjectStatus(
+            projectId: projectId,
+            callback: { success in
+                completion(success)
+            },
+            errorCallback: { error in
+                completion(false)
             }
         )
     }

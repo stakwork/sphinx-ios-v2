@@ -83,6 +83,7 @@ typealias CheckNodeCallback = ((API.CheckNodeResponse) -> ())
 typealias GetNodeChaptersCallback = ((String) -> ())
 typealias GetNodeStatusCallback = ((API.NodeStatusResponse) -> ())
 typealias CreateRunCallback = ((API.CreateRunResponse) -> ())
+typealias StatusProjectCallback = ((Bool) -> ())
 
 
 typealias FeedSearchCompletionHandler = (

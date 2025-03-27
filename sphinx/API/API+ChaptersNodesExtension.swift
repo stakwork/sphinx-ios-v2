@@ -286,5 +286,46 @@ extension API {
             }
         }
     }
+    
+    func checkProjectStatus(
+        projectId: String,
+        callback: @escaping StatusProjectCallback,
+        errorCallback: @escaping ErrorCallback
+    ) {
+        let url = "https://api.stakwork.com/api/v1/projects/\(projectId)/status"
+        
+        let request : URLRequest? = createRequest(
+            url,
+            bodyParams: nil,
+            method: "GET",
+            token: "eb193226b5f74a8b8fff70f9822a2b35​"
+        )
+        
+        guard let request = request else {
+            return
+        }
+        
+        sphinxRequest(request) { response in
+            switch response.result {
+            case .success(let data):
+                if let dictionary = data as? NSDictionary {
+                    if let success = dictionary["success"] as? Bool , success {
+                        if let data = dictionary["data"] as? NSDictionary, let status = data["status"] as? String {
+                            if status == "error" {
+                                errorCallback("Project error")
+                                return
+                            }
+                            callback(true)
+                            return
+                        }
+                    }
+                    errorCallback("Error parsing response")
+                }
+            case .failure(let error):
+                print(error)
+                errorCallback(error.localizedDescription)
+            }
+        }
+    }
 }
 
