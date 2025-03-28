@@ -78,15 +78,15 @@ class ChaptersManager : NSObject {
                 episode: episode,
                 completion: completion
             )
-        } else if let mediaUrl = episode.urlPath {
+        } else {
             ///ReferenceID not stored in Episode. Start process with checking if node exists
-            checkIfNodeExists(mediaUrl: mediaUrl) { (nodeExists, refId) in
+            checkIfNodeExists(episode: episode) { (nodeExists, refId) in
                 if let refId = refId {
+                    contentFeedItem.referenceId = refId
+                    contentFeedItem.managedObjectContext?.saveContext()
+                    
                     if nodeExists {
                         ///Node exists, save referenceId and try to fetch chapters data
-                        contentFeedItem.referenceId = refId
-                        contentFeedItem.managedObjectContext?.saveContext()
-                        
                         self.getAndStoreChaptersData(
                             referenceId: refId,
                             episode: episode,
@@ -94,20 +94,7 @@ class ChaptersManager : NSObject {
                         )
                     } else {
                         ///Node doesn't exist, but it was created. Run GraphMinset workflow to extract chapters
-                        self.runGraphMindset(
-                            referenceId: refId,
-                            episode: episode,
-                            completion: { success in
-                                if success {
-                                    contentFeedItem.referenceId = refId
-                                    contentFeedItem.managedObjectContext?.saveContext()
-                                    completion(true, [])
-                                } else {
-                                    self.processingEpisodes[episodeId] = nil
-                                    completion(false, [])
-                                }
-                            }
-                        )
+                        completion(true, [])
                     }
                 } else {
                     self.processingEpisodes[episodeId] = nil
@@ -176,26 +163,39 @@ class ChaptersManager : NSObject {
     }
     
     func checkIfNodeExists(
-        mediaUrl: String,
+        episode: PodcastEpisode,
         completion: @escaping (Bool, String?) -> ()
     ) {
-        API.sharedInstance.checkEpisodeNodeExists(
-            mediaUrl: mediaUrl,
-            callback: { checkNodeResponse in
-                let refId = checkNodeResponse.refId
-                
-                if checkNodeResponse.success {
-                    //Episode was created. Call graphmindset run
-                    completion(false, refId)
-                } else {
-                    //Episode already exists. Try getting chapters
-                    completion(true, refId)
+        if
+            let mediaUrl = episode.urlPath,
+            let date = episode.publishDate,
+            let episodeTitle = episode.title
+        {
+            API.sharedInstance.checkEpisodeNodeExists(
+                mediaUrl: mediaUrl,
+                publishDate: Int(date.timeIntervalSince1970),
+                title: episodeTitle,
+                thumbnailUrl: episode.imageToShow,
+                showTitle: episode.feedTitle ?? "Show Title",
+                callback: { checkNodeResponse in
+                    let refId = checkNodeResponse.refId
+                    
+                    if checkNodeResponse.success {
+                        //Episode was created. Call graphmindset run
+                        completion(false, refId)
+                    } else {
+                        //Episode already exists. Try getting chapters
+                        completion(true, refId)
+                    }
+                },
+                errorCallback: { _ in
+                    completion(false, nil)
                 }
-            },
-            errorCallback: { _ in
-                completion(false, nil)
-            }
-        )
+            )
+        } else {
+            completion(false, nil)
+        }
+        
     }
     
     func getChaptersData(

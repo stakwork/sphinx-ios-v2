@@ -63,14 +63,25 @@ extension API {
     
     func checkEpisodeNodeExists(
         mediaUrl: String,
+        publishDate: Int,
+        title: String,
+        thumbnailUrl: String?,
+        showTitle: String,
         callback: @escaping CheckNodeCallback,
         errorCallback: @escaping ErrorCallback
     ) {
         let url = "\(API.kGraphMindsetUrl)/add_node?sig=&msg="
         
+        var nodeDataParams = [String: AnyObject]()
+        nodeDataParams["source_link"] = mediaUrl as AnyObject
+        nodeDataParams["date"] = publishDate as AnyObject
+        nodeDataParams["episode_title"] = title as AnyObject
+        nodeDataParams["image_url"] = thumbnailUrl as AnyObject
+        nodeDataParams["show_title"] = showTitle as AnyObject
+        
         var params = [String: AnyObject]()
-        params["media_url"] = mediaUrl as AnyObject
-        params["content_type"] = "audio_video" as AnyObject
+        params["node_type"] = "Episode" as AnyObject
+        params["node_data"] = nodeDataParams as AnyObject
         
         let request : URLRequest? = createRequest(
             url,
@@ -184,7 +195,7 @@ extension API {
             case .success(let data):
                 if let dictionary = data as? NSDictionary, let properties = dictionary["properties"] as? NSDictionary {
                     if let status = properties["status"] as? String {
-                        if status == "completed" {
+                        if status == "completed" || status == "success" {
                             callback(
                                 NodeStatusResponse(
                                     completed: true,
@@ -232,11 +243,11 @@ extension API {
         let url = "https://api.stakwork.com/api/v1/projects"
         
         var varsParams = [String: AnyObject]()
-        varsParams["media_url"] = mediaUrl as AnyObject
+        varsParams["source_link"] = mediaUrl as AnyObject
         varsParams["ref_id"] = refId as AnyObject
-        varsParams["episode_publish_date"] = publishDate as AnyObject
+        varsParams["date"] = publishDate as AnyObject
         varsParams["episode_title"] = title as AnyObject
-        varsParams["episode_thumbnail_url"] = thumbnailUrl as AnyObject
+        varsParams["image_url"] = thumbnailUrl as AnyObject
         varsParams["show_title"] = showTitle as AnyObject
         
         var attributesParams = [String: AnyObject]()
@@ -252,7 +263,7 @@ extension API {
         params["name"] = mediaUrl as AnyObject
         params["workflow_id"] = 43837 as AnyObject
         params["workflow_params"] = workflowParams as AnyObject
-        
+
         let request : URLRequest? = createRequest(
             url,
             bodyParams: params as NSDictionary,
@@ -298,7 +309,7 @@ extension API {
             url,
             bodyParams: nil,
             method: "GET",
-            token: "eb193226b5f74a8b8fff70f9822a2b35​"
+            token: "REPLACE_WITH_TOKEN"
         )
         
         guard let request = request else {
