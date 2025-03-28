@@ -39,8 +39,8 @@ extension ContentFeed {
     public static func deleteFeedWith(
         feedId: String,
         context: NSManagedObjectContext? = nil
-    ) -> [String: String] {
-        var referenceIds: [String: String] = [:]
+    ) -> [String: (String, String?)] {
+        var itemsData: [String: (String, String?)] = [:]
         
         if let feed: ContentFeed = CoreDataManager.sharedManager.getObjectOfTypeWith(
             predicate: Predicates.matching(feedID: feedId),
@@ -50,26 +50,26 @@ extension ContentFeed {
         ) {
             for item in feed.itemsArray {
                 if let referenceId = item.referenceId {
-                    referenceIds[item.itemID] = referenceId
+                    itemsData[item.itemID] = (referenceId, item.chaptersData)
                 }
             }
             
             CoreDataManager.sharedManager.deleteObject(object: feed, context: context)
         }
         
-        return referenceIds
+        return itemsData
     }
     
-    func getReferenceIds() -> [String: String] {
-        var referenceIds: [String: String] = [:]
+    func getItemsData() -> [String: (String, String?)] {
+        var itemsData: [String: (String, String?)] = [:]
         
         for item in self.itemsArray {
             if let referenceId = item.referenceId {
-                referenceIds[item.itemID] = referenceId
+                itemsData[item.itemID] = (referenceId, item.chaptersData)
             }
         }
         
-        return referenceIds
+        return itemsData
     }
 
     public enum Predicates {

@@ -19,6 +19,7 @@ extension Notification.Name {
     static let onMQTTConnectionStatusChanged = Notification.Name("onMQTTConnectionStatusChanged")
     static let autocompleteMention = Notification.Name("autocompleteMention")
     static let refreshFeedUI = Notification.Name(rawValue: "refreshFeedUI")
+    static let refreshFeedDataAndUI = Notification.Name(rawValue: "refreshFeedDataAndUI")
     static let onContactsAndChatsChanged = Notification.Name("onContactsAndChatsChanged")
     static let onMessagesStatusChanged = Notification.Name("onMessagesStatusChanged")
     static let onSizeConfigurationChanged = Notification.Name("onSizeConfigurationChanged")

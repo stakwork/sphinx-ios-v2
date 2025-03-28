@@ -36,7 +36,7 @@ class ChaptersManager : NSObject {
             if success && chaptersData.count > 0 {
                 DispatchQueue.main.async {
                     if UIApplication.shared.applicationState == .active {
-                        NotificationCenter.default.post(name: .refreshFeedUI, object: nil)
+                        NotificationCenter.default.post(name: .refreshFeedDataAndUI, object: nil)
                     }
                 }
             }
@@ -122,6 +122,8 @@ class ChaptersManager : NSObject {
                     ///Chapters data available. Store in episode and return them
                     contentFeedItem.chaptersData = jsonString
                     episode.chapters = chapters
+                    contentFeedItem.managedObjectContext?.saveContext()
+                    
                     self.processingEpisodes[episode.itemID] = nil
                     completion(true, episode.chapters ?? [])
                     return

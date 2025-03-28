@@ -68,6 +68,7 @@ class NewPodcastPlayerViewController: UIViewController {
         
         NotificationCenter.default.removeObserver(self, name: .refreshFeedUI, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(showPodcastInfo), name: .refreshFeedUI, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(refreshPodcastInfo), name: .refreshFeedDataAndUI, object: nil)
         
         handleQueuedEpisode()
     }
@@ -123,6 +124,13 @@ class NewPodcastPlayerViewController: UIViewController {
         viewController.queuedEpisode = queuedEpisode
     
         return viewController
+    }
+    
+    @objc func refreshPodcastInfo() {
+        if let feed = ContentFeed.getFeedById(feedId: podcast.feedID) {
+            self.podcast = PodcastFeed.convertFrom(contentFeed: feed)
+        }
+        showPodcastInfo()
     }
     
     @objc func showPodcastInfo() {
