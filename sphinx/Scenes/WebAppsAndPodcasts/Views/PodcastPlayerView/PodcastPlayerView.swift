@@ -67,6 +67,8 @@ class PodcastPlayerView: UIView {
     
     var podcast: PodcastFeed! = nil
     
+    var chapterInfoEpisodeId: String? = nil
+    
     var chat: Chat? {
         get {
             return podcast?.chat

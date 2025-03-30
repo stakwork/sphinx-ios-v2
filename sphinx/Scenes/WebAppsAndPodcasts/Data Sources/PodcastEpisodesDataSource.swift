@@ -17,6 +17,7 @@ protocol PodcastEpisodesDSDelegate : class {
     func shareTapped(episode:PodcastEpisode)
     func showEpisodeDetails(episode:PodcastEpisode,indexPath:IndexPath)
     func didDismiss()
+    func shouldPlayChapterWith(index: Int, on episode: PodcastEpisode)
 }
 
 class PodcastEpisodesDataSource : NSObject {
@@ -158,6 +159,10 @@ extension PodcastEpisodesDataSource : UIScrollViewDelegate {
 extension PodcastEpisodesDataSource : FeedItemRowDelegate {
     func shouldToggleChapters(video: Video, cell: UITableViewCell) {
         ///Implement for video chapters
+    }
+    
+    func shouldPlayChapterWith(index: Int, on episode: PodcastEpisode) {
+        delegate?.shouldPlayChapterWith(index: index, on: episode)
     }
     
     func shouldShowDescription(episode: PodcastEpisode,cell:UITableViewCell) {

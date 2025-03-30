@@ -152,7 +152,8 @@ extension PodcastEpisode {
         podcastEpisode.referenceId = contentFeedItem.referenceId
         
         if let chaptersData = contentFeedItem.chaptersData {
-            podcastEpisode.chapters = PodcastEpisode.getChaptersFrom(json: chaptersData)
+            let chapters = PodcastEpisode.getChaptersFrom(json: chaptersData)
+            podcastEpisode.chapters = chapters.reversed()
         }
         
         return podcastEpisode

@@ -51,8 +51,8 @@ class UnifiedEpisodeTableViewCell: UITableViewCell {
 }
 
 extension UnifiedEpisodeTableViewCell : PodcastEpisodeRowDelegate {
-    func shouldShowDescription(episode:PodcastEpisode){
-        delegate?.shouldShowDescription(episode: episode,cell: self)
+    func shouldShowDescription(episode: PodcastEpisode){
+        delegate?.shouldShowDescription(episode: episode, cell: self)
     }
     
     func shouldShowDescription(video:Video){
@@ -77,5 +77,9 @@ extension UnifiedEpisodeTableViewCell : PodcastEpisodeRowDelegate {
     
     func shouldToggleChapters(episode: PodcastEpisode) {
         delegate?.shouldToggleChapters(episode: episode, cell: self)
+    }
+    
+    func shouldPlayChapterWith(index: Int, on episode: PodcastEpisode) {
+        delegate?.shouldPlayChapterWith(index: index, on: episode)
     }
 }

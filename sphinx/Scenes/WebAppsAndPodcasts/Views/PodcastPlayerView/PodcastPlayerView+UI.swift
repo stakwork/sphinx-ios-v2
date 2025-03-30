@@ -141,6 +141,14 @@ extension PodcastPlayerView {
             return
         }
         
+        if chapterInfoEpisodeId != episode.itemID {
+            for view in chaptersContainer.subviews {
+                view.removeFromSuperview()
+            }
+        }
+        
+        chapterInfoEpisodeId = episode.itemID
+        
         if chaptersContainer.subviews.count == (episode.chapters ?? []).count {
             return
         }
@@ -183,7 +191,6 @@ extension PodcastPlayerView {
         
         let adTimestamps: [(Int, Int)] = episode.getAdTimestamps()
         let addTimestampStarts = adTimestamps.map({ $0.0 })
-        let addTimestampEnds = adTimestamps.map({ $0.1 })
         
         if addTimestampStarts.contains(currentTime + 2) {
             advertLabel.text = "Ad detected"

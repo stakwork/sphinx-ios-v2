@@ -389,6 +389,8 @@ extension ItemDescriptionViewController: PodcastEpisodesDSDelegate {
     func shouldToggleTopView(show: Bool) {}
     
     func showEpisodeDetails(episode: PodcastEpisode, indexPath: IndexPath) {}
+    
+    func shouldPlayChapterWith(index: Int, on episode: PodcastEpisode) {}
 }
 
 

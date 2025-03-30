@@ -121,7 +121,7 @@ class ChaptersManager : NSObject {
                 if chapters.count > 0 {
                     ///Chapters data available. Store in episode and return them
                     contentFeedItem.chaptersData = jsonString
-                    episode.chapters = chapters
+                    episode.chapters = chapters.reversed()
                     contentFeedItem.managedObjectContext?.saveContext()
                     
                     self.processingEpisodes[episode.itemID] = nil
@@ -151,7 +151,8 @@ class ChaptersManager : NSObject {
                         self.getChaptersData(referenceId: referenceId, completion: { (success, jsonString) in
                             if success, let jsonString = jsonString {
                                 contentFeedItem.chaptersData = jsonString
-                                episode.chapters = PodcastEpisode.getChaptersFrom(json: jsonString)
+                                let chapters = PodcastEpisode.getChaptersFrom(json: jsonString)
+                                episode.chapters = chapters.reversed()
                                 completion(true, episode.chapters ?? [])
                             }
                         })

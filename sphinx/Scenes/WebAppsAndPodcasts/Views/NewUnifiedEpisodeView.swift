@@ -26,6 +26,7 @@ protocol FeedItemRowDelegate : class {
     
     func shouldToggleChapters(episode: PodcastEpisode, cell: UITableViewCell)
     func shouldToggleChapters(video: Video, cell: UITableViewCell)
+    func shouldPlayChapterWith(index: Int, on episode: PodcastEpisode)
 }
 
 protocol PodcastEpisodeRowDelegate : class {
@@ -35,6 +36,7 @@ protocol PodcastEpisodeRowDelegate : class {
     func shouldShare(episode: PodcastEpisode)
     func shouldShowDescription(episode: PodcastEpisode)
     func shouldToggleChapters(episode: PodcastEpisode)
+    func shouldPlayChapterWith(index: Int, on episode: PodcastEpisode)
 }
 
 protocol VideoRowDelegate : class {
@@ -457,6 +459,8 @@ class NewUnifiedEpisodeView: UIView {
 
 extension NewUnifiedEpisodeView : ChapterViewDelegate {
     func shouldPlayChapterWith(index: Int) {
-        ///Implement playing chapter
+        if let episode = episode {
+            podcastDelegate?.shouldPlayChapterWith(index: index, on: episode)
+        }
     }
 }
