@@ -153,7 +153,7 @@ extension PodcastEpisode {
         
         if let chaptersData = contentFeedItem.chaptersData {
             let chapters = PodcastEpisode.getChaptersFrom(json: chaptersData)
-            podcastEpisode.chapters = chapters.reversed()
+            podcastEpisode.chapters = chapters
         }
         
         return podcastEpisode
@@ -191,7 +191,7 @@ extension PodcastEpisode {
             print("Failed to convert string to Data.")
         }
         
-        return chapters
+        return chapters.sorted(by: { $0.timestamp.toSeconds() < $1.timestamp.toSeconds() })
     }
     
     var isMusicClip: Bool {

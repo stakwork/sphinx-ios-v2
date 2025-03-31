@@ -56,5 +56,6 @@ class EpisodesHeaderView: UIView {
     func configureSkipAdsButton(enable: Bool) {
         skipAdsContainer.backgroundColor = enable ? UIColor.Sphinx.PrimaryGreen : UIColor(hex: "#B0B7BC")
         skipAdsLabel.textColor = enable ? UIColor.white : UIColor(hex: "#6B7A8D")
+        skipAdsLabel.text = enable ? "SKIP ADS ENABLED" : "SKIP ADS DISABLED"
     }
 }
