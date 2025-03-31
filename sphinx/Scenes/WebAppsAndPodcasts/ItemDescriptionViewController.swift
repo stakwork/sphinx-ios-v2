@@ -43,6 +43,8 @@ class ItemDescriptionViewController : UIViewController{
     let kHeaderCellHeightDiff: CGFloat = 160.0
     let kDescriptionCellCollapsedHeight: CGFloat = 150.0
     let kHorizontalMargins: CGFloat = 32.0
+    let kChapterHeight: CGFloat = 40
+    let kChapterTitleHeight: CGFloat = 30
     
     override func viewDidLoad() {
         downloadService.setDelegate(
@@ -181,12 +183,14 @@ extension ItemDescriptionViewController : UITableViewDelegate, UITableViewDataSo
             if let episode = episode {
                 cell.configureView(
                     descriptionText: (episode.episodeDescription ?? "No description for this episode").nonHtmlRawString,
-                    isExpanded: self.isExpanded
+                    isExpanded: self.isExpanded,
+                    chapters: self.episode.chapters ?? []
                 )
             } else if let video = video {
                 cell.configureView(
                     descriptionText: (video.videoDescription ?? "No description for this episode").nonHtmlRawString,
-                    isExpanded: self.isExpanded
+                    isExpanded: self.isExpanded,
+                    chapters: []
                 )
             }
         } else if let cell = cell as? ItemDescriptionImageTableViewCell {
@@ -225,8 +229,9 @@ extension ItemDescriptionViewController : UITableViewDelegate, UITableViewDataSo
                 text: title,
                 font: font
             ).height + kHeaderCellHeightDiff
-        } else if(indexPath.row == 1){
+        } else if (indexPath.row == 1) {
             let description = episode?.episodeDescription ?? video?.videoDescription ?? ""
+            let chaptersHeight = CGFloat((episode?.chapters?.count ?? 0) * Int(kChapterHeight)) + kChapterTitleHeight
             
             if isExpanded {
                 let font = UIFont(name: "Roboto-Regular", size: 14.0)!
@@ -235,10 +240,10 @@ extension ItemDescriptionViewController : UITableViewDelegate, UITableViewDataSo
                     width: UIScreen.main.bounds.width - kHorizontalMargins,
                     text: description.nonHtmlRawString,
                     font: font
-                ).height + kHorizontalMargins
+                ).height + kHorizontalMargins + chaptersHeight
                 
             } else {
-                return kDescriptionCellCollapsedHeight
+                return kDescriptionCellCollapsedHeight + chaptersHeight
             }
         } else {
             return UIScreen.main.bounds.width - 32.0
@@ -384,6 +389,8 @@ extension ItemDescriptionViewController: PodcastEpisodesDSDelegate {
     func shouldToggleTopView(show: Bool) {}
     
     func showEpisodeDetails(episode: PodcastEpisode, indexPath: IndexPath) {}
+    
+    func shouldPlayChapterWith(index: Int, on episode: PodcastEpisode) {}
 }
 
 

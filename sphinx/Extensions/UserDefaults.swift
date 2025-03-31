@@ -70,6 +70,7 @@ extension UserDefaults {
         public static let defaultTribePublicKey = DefaultKey<String>("defaultTribePublicKey")
         public static let routerUrl = DefaultKey<String>("routerUrl")
         public static let routerPubkey = DefaultKey<String>("routerPubkey")
+        public static let skipAds = DefaultKey<Bool>("skipAds")
         public static let didMigrateToTZ = DefaultKey<Bool>("didMigrateToTZ")
         public static let systemTimezone = DefaultKey<String>("systemTimezone")
     }

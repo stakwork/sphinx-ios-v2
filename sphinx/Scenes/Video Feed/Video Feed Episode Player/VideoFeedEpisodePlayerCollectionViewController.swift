@@ -381,6 +381,12 @@ extension VideoFeedEpisodePlayerCollectionViewController {
 
 //MARK: Unified View Delegate
 extension VideoFeedEpisodePlayerCollectionViewController: FeedItemRowDelegate, PodcastEpisodesDSDelegate {
+    func shouldToggleChapters(episode: PodcastEpisode, cell: UITableViewCell) {}
+    
+    func shouldToggleChapters(video: Video, cell: UITableViewCell) {}
+    
+    func shouldPlayChapterWith(index: Int, on episode: PodcastEpisode) {}
+    
     func didDismiss() {}
     
     func shouldShowDescription(episode: PodcastEpisode,cell:UITableViewCell) {}

@@ -68,6 +68,7 @@ class NewPodcastPlayerViewController: UIViewController {
         
         NotificationCenter.default.removeObserver(self, name: .refreshFeedUI, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(showPodcastInfo), name: .refreshFeedUI, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(refreshPodcastInfo), name: .refreshFeedDataAndUI, object: nil)
         
         handleQueuedEpisode()
     }
@@ -123,6 +124,13 @@ class NewPodcastPlayerViewController: UIViewController {
         viewController.queuedEpisode = queuedEpisode
     
         return viewController
+    }
+    
+    @objc func refreshPodcastInfo() {
+        if let feed = ContentFeed.getFeedById(feedId: podcast.feedID) {
+            self.podcast = PodcastFeed.convertFrom(contentFeed: feed)
+        }
+        showPodcastInfo()
     }
     
     @objc func showPodcastInfo() {
@@ -208,6 +216,38 @@ extension NewPodcastPlayerViewController : PodcastEpisodesDSDelegate {
     func reload(_ row: Int) {
         if tableView.numberOfRows(inSection: 0) > row {
             tableView.reloadRows(at: [IndexPath(row: row, section: 0)], with: .none)
+        }
+    }
+    
+    func shouldPlayChapterWith(index: Int, on episode: PodcastEpisode) {
+        if let chapter = episode.chapters?[index] {
+            var newTime = chapter.timestamp.toSeconds()
+            newTime = max(newTime, 0)
+            newTime = min(newTime, (podcast?.duration ?? 0))
+            
+            guard let podcastData = podcast.getPodcastData(
+                episodeId: episode.itemID,
+                currentTime: newTime
+            ) else {
+                return
+            }
+            
+            if let duration = episode.duration {
+                tableHeaderView?.setProgress(
+                    duration: duration,
+                    currentTime: newTime
+                )
+            }
+            
+            if podcastPlayerController.isPlaying(episodeId: episode.itemID) {
+                podcastPlayerController.submitAction(
+                    UserAction.Seek(podcastData)
+                )
+            } else {
+                podcastPlayerController.submitAction(
+                    UserAction.Play(podcastData)
+                )
+            }
         }
     }
 }

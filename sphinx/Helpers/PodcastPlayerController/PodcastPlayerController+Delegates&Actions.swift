@@ -111,6 +111,8 @@ extension PodcastPlayerController {
     func play(
         _ podcastData: PodcastData
     ) {
+        ChaptersManager.sharedInstance.processChaptersData(episodeId: podcastData.episodeId)
+        
         setAudioSession()
         
         if let pd = self.podcastData, isPlaying {
@@ -185,36 +187,41 @@ extension PodcastPlayerController {
                 
                 self.podcastItems[podcastData.episodeUrl.absoluteString] = item
                 
-                playAssetAfterLoad(item)
+                DispatchQueue.main.async {
+                    playAssetAfterLoad(item)
+                }
             }
         }
         
+        @MainActor
         func playAssetAfterLoad(_ playerItem: CachingPlayerItem) {
             playerItem.preferredForwardBufferDuration = 5
             
-            if self.player == nil {
-                self.player = AVPlayer(playerItem: playerItem)
+            if player == nil {
+                player = AVPlayer(playerItem: playerItem)
             } else {
-                self.player?.replaceCurrentItem(with: playerItem)
+                player?.replaceCurrentItem(with: playerItem)
             }
             
-            self.player?.rate = podcastData.speed
-            self.player?.pause()
-            self.player?.automaticallyWaitsToMinimizeStalling = false
+            player?.rate = podcastData.speed
+            player?.pause()
+            player?.automaticallyWaitsToMinimizeStalling = false
+            
+            let addObserverToPlayerItem: () -> Void = { [weak self] in
+                guard let self = self else { return }
+                playerItem.addObserver(self, forKeyPath: "status", options: [.new], context: nil)
+            }
             
             if let currentTime = podcastData.currentTime, currentTime > 0 {
-                self.player?.seek(to: CMTime(seconds: Double(currentTime), preferredTimescale: 1)) { _ in
-                    DispatchQueue.main.async {
-                        playerItem.addObserver(self, forKeyPath: "status", options: [.new], context: nil)
-                    }
+                player?.seek(to: CMTime(seconds: Double(currentTime), preferredTimescale: 1)) { _ in
+                    addObserverToPlayerItem()
                 }
             } else {
-                DispatchQueue.main.async {
-                    playerItem.addObserver(self, forKeyPath: "status", options: [.new], context: nil)
-                }
+                addObserverToPlayerItem()
             }
         }
     }
+
     
     override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
         if keyPath == "status" {
