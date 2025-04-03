@@ -67,6 +67,7 @@ class NewPodcastPlayerViewController: UIViewController {
         }
         
         NotificationCenter.default.removeObserver(self, name: .refreshFeedUI, object: nil)
+        NotificationCenter.default.removeObserver(self, name: .refreshFeedDataAndUI, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(showPodcastInfo), name: .refreshFeedUI, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(refreshPodcastInfo), name: .refreshFeedDataAndUI, object: nil)
         

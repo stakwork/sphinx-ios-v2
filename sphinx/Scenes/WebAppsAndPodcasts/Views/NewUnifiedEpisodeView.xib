@@ -240,7 +240,9 @@
                 <button opaque="NO" contentMode="scaleAspectFit" horizontalCompressionResistancePriority="1000" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="hsu-M6-lTr">
                     <rect key="frame" x="134" y="151" width="32" height="32"/>
                     <constraints>
+                        <constraint firstAttribute="width" secondItem="hsu-M6-lTr" secondAttribute="height" multiplier="1:1" id="8ES-cf-oqf"/>
                         <constraint firstAttribute="width" constant="32" id="aOG-tT-8ww"/>
+                        <constraint firstAttribute="width" secondItem="hsu-M6-lTr" secondAttribute="height" multiplier="1:1" id="hgN-46-TFA"/>
                         <constraint firstAttribute="width" secondItem="hsu-M6-lTr" secondAttribute="height" multiplier="1:1" id="r1M-sn-Df6"/>
                         <constraint firstAttribute="width" secondItem="hsu-M6-lTr" secondAttribute="height" multiplier="1:1" id="tEL-TT-KMk"/>
                     </constraints>
@@ -284,7 +286,6 @@
                 <constraint firstItem="V16-8z-QEr" firstAttribute="leading" secondItem="vUN-kp-3ea" secondAttribute="leading" constant="16" id="46V-mQ-n3g"/>
                 <constraint firstItem="4vK-2X-02b" firstAttribute="leading" secondItem="mDF-6C-yek" secondAttribute="leading" id="4zr-sw-Imw"/>
                 <constraint firstItem="4vK-2X-02b" firstAttribute="trailing" secondItem="mDF-6C-yek" secondAttribute="trailing" id="5NT-0v-aU1"/>
-                <constraint firstItem="hsu-M6-lTr" firstAttribute="width" secondItem="hsu-M6-lTr" secondAttribute="height" multiplier="1:1" id="8ES-cf-oqf"/>
                 <constraint firstItem="4j0-Ka-pgl" firstAttribute="centerY" secondItem="CVl-JX-Bn9" secondAttribute="centerY" id="9P3-1M-KHy"/>
                 <constraint firstItem="5xN-ME-zQ6" firstAttribute="leading" secondItem="4j0-Ka-pgl" secondAttribute="trailing" constant="8" id="9ri-vn-lbA"/>
                 <constraint firstItem="PtN-Y2-lnp" firstAttribute="centerY" secondItem="5xN-ME-zQ6" secondAttribute="centerY" id="CHF-pU-8NV"/>
@@ -312,7 +313,6 @@
                 <constraint firstItem="n6i-V8-fJg" firstAttribute="leading" secondItem="7Gc-Ia-wiC" secondAttribute="trailing" constant="10" id="eaX-hH-jrz"/>
                 <constraint firstItem="l99-38-6Be" firstAttribute="centerY" secondItem="n6i-V8-fJg" secondAttribute="centerY" id="edx-wC-j1Z"/>
                 <constraint firstItem="hsu-M6-lTr" firstAttribute="leading" secondItem="n6i-V8-fJg" secondAttribute="trailing" constant="10" id="gRC-2w-4r2"/>
-                <constraint firstItem="hsu-M6-lTr" firstAttribute="width" secondItem="hsu-M6-lTr" secondAttribute="height" multiplier="1:1" id="hgN-46-TFA"/>
                 <constraint firstItem="PtN-Y2-lnp" firstAttribute="leading" secondItem="MQZ-Ft-jrX" secondAttribute="leading" id="i6o-Dh-icK"/>
                 <constraint firstItem="HR9-rc-MDj" firstAttribute="leading" secondItem="vUN-kp-3ea" secondAttribute="leading" id="ipS-gx-A82"/>
                 <constraint firstItem="mDF-6C-yek" firstAttribute="top" secondItem="V16-8z-QEr" secondAttribute="bottom" constant="20" id="lM1-Xr-D0C"/>
