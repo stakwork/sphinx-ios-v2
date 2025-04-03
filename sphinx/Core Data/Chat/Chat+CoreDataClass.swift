@@ -819,8 +819,6 @@ public class Chat: NSManagedObject {
         }
     }
     
-    
-    
     func getAppUrl() -> String? {
         if let tribeInfo = self.tribeInfo, let appUrl = tribeInfo.appUrl, !appUrl.isEmpty {
             return appUrl
@@ -834,7 +832,14 @@ public class Chat: NSManagedObject {
         }
         return nil
     }
-
+    
+    func hasWebApp() -> Bool {
+        return tribeInfo?.appUrl != nil && tribeInfo?.appUrl?.isEmpty == false
+    }
+    
+    func hasSecondBrainApp() -> Bool {
+        return tribeInfo?.secondBrainUrl != nil && tribeInfo?.secondBrainUrl?.isEmpty == false
+    }
     
     func getFeedUrl() -> String? {
         if

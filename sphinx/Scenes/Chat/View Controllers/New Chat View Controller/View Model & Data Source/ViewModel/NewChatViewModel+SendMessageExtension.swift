@@ -122,6 +122,7 @@ extension NewChatViewModel {
             if let link = message.messageContent {
                 VideoCallManager.sharedInstance.startVideoCall(
                     link: link,
+                    shouldStartRecording: chat?.hasSecondBrainApp() == true || chat?.hasWebApp() == true,
                     audioOnly: link.contains("startAudioOnly=true")
                 )
             }
@@ -172,31 +173,27 @@ extension NewChatViewModel {
     }
     
     func createCallMessage(sender: UIButton) {
-        VideoCallHelper.createCallMessage(button: sender, callback: { link in
-            self.sendCallMessage(link: link)
-        })
+        VideoCallHelper.createCallMessage(
+            button: sender,
+            secondBrainUrl: chat?.getSecondBrainAppUrl(),
+            appUrl: chat?.getAppUrl(),
+            callback: { link in
+                self.sendCallMessage(link: link)
+            }
+        )
     }
     
     func sendCallMessage(link: String) {
-        let type = (self.chat?.isGroup() == false) ?
-            TransactionMessage.TransactionMessageType.call.rawValue :
-            TransactionMessage.TransactionMessageType.message.rawValue
+        let voipRequestMessage = VoIPRequestMessage()
+        voipRequestMessage.recurring = false
+        voipRequestMessage.link = link
+        voipRequestMessage.cron = ""
         
-        var messageText = link
-        
-        if type == TransactionMessage.TransactionMessageType.call.rawValue {
-            
-            let voipRequestMessage = VoIPRequestMessage()
-            voipRequestMessage.recurring = false
-            voipRequestMessage.link = link
-            voipRequestMessage.cron = ""
-            
-            messageText = voipRequestMessage.getCallLinkMessage() ?? link
-        }
+        let messageText = voipRequestMessage.getCallLinkMessage() ?? link
         
         self.shouldSendMessage(
             text: messageText,
-            type: type,
+            type: TransactionMessage.TransactionMessageType.call.rawValue,
             provisionalMessage: nil,
             completion: { _, _ in }
         )

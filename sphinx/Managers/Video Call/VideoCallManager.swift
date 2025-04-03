@@ -72,6 +72,7 @@ class VideoCallManager : NSObject {
 
     func startVideoCall(
         link: String,
+        shouldStartRecording: Bool = false,
         audioOnly: Bool? = nil
     ) {
         guard let owner = UserContact.getOwner() else {
@@ -92,7 +93,7 @@ class VideoCallManager : NSObject {
                 callback: { url, token in
                     let liveKitVC = LiveKitCallViewController()
                     liveKitVC.url = url
-                    liveKitVC.startRecording = linkUrl.contains("record=true")
+                    liveKitVC.startRecording = linkUrl.contains("record=true") || shouldStartRecording
                     liveKitVC.token = token
                     liveKitVC.audioOnly = audioOnly ?? false
                     
