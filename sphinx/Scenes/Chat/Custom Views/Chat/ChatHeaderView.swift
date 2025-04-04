@@ -242,7 +242,7 @@ class ChatHeaderView: UIView {
     }
     
     func configureWebAppButton() {
-        let hasWebAppUrl = chat?.getAppUrl() != nil
+        let hasWebAppUrl = chat?.hasWebApp() != nil
         webAppButton.isHidden = !hasWebAppUrl
         webAppButton.setTitle("apps", for: .normal)
     }
