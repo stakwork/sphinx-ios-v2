@@ -280,9 +280,9 @@ extension PodcastEpisode {
         
         for (index, chapter) in chapters.enumerated() {
             if chapter.isAd {
-                if let nextChapterStart = chapters[index + 1].timestamp.timeStringToSeconds(), let adStart = chapter.timestamp.timeStringToSeconds() {
-                    timestamps.append((adStart, nextChapterStart))
-                }
+                let nextChapterStart = chapters[index + 1].timestamp.toSeconds()
+                let adStart = chapter.timestamp.toSeconds()
+                timestamps.append((adStart, nextChapterStart))
             }
         }
         

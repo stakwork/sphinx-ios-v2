@@ -156,9 +156,7 @@ extension PodcastPlayerView {
         let chapters = episode.chapters ?? []
         
         for chapter in chapters {
-            guard let chapterTime = chapter.timestamp.timeStringToSeconds() else {
-                continue
-            }
+            let chapterTime = chapter.timestamp.toSeconds()
             let progress = (Double(chapterTime) * 100 / Double(duration))/100
             let durationLineWidth = UIScreen.main.bounds.width - 64
             let progressWidth = durationLineWidth * CGFloat(progress)

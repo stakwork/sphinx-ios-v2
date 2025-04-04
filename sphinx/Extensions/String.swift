@@ -1231,18 +1231,4 @@ extension String {
     func urlEncode() -> String? {
         return addingPercentEncoding(withAllowedCharacters: .allowedURLCharacterSet)
     }
-    
-    func timeStringToSeconds() -> Int? {
-        let components = self.split(separator: ":")
-        guard components.count == 3,
-              let hours = Int(components[0]),
-              let minutes = Int(components[1]),
-              let seconds = Int(components[2]) else {
-            return nil // Invalid time string
-        }
-
-        // Convert time to milliseconds
-        let totalMilliseconds = (hours * 3600 + minutes * 60 + seconds)
-        return totalMilliseconds
-    }
 }
