@@ -242,13 +242,13 @@ class ChatHeaderView: UIView {
     }
     
     func configureWebAppButton() {
-        let hasWebAppUrl = chat?.hasWebApp() != nil
+        let hasWebAppUrl = chat?.hasWebApp() == true
         webAppButton.isHidden = !hasWebAppUrl
         webAppButton.setTitle("apps", for: .normal)
     }
     
     func configureSecondBrainButton() {
-        let hasSecondBrain = chat?.getSecondBrainAppUrl() != nil
+        let hasSecondBrain = chat?.hasSecondBrainApp() == true
         secondBrainButton.isHidden = !hasSecondBrain
     }
     
