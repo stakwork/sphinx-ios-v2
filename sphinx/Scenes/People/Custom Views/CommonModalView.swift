@@ -25,6 +25,7 @@ class CommonModalView: UIView, ModalViewInterface {
         var pubkey : String? = nil
         var verificationSignature : String? = nil
         var ts : Int? = nil
+        var callback : String? = nil
         var info : [String: AnyObject] = [:]
         var jsonBody : JSON = JSON()
         
@@ -70,8 +71,12 @@ class CommonModalView: UIView, ModalViewInterface {
                         break
                     case "pubkey":
                         authInfo?.pubkey = value
+                        break
                     case "key":
                         authInfo?.key = value
+                        break
+                    case "callback":
+                        authInfo?.callback = value
                         break
                     default:
                         break

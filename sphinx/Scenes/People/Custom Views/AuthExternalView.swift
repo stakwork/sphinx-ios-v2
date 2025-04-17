@@ -83,7 +83,9 @@ class AuthExternalView: CommonModalView {
     
     func authorizationDone(success: Bool, host: String) {
         if success {
-            if let host = authInfo?.host, let challenge = authInfo?.challenge, let url = URL(string: "https://\(host)?challenge=\(challenge)") {
+            if let callback = authInfo?.callback, let url = URL(string: "https://\(callback)") {
+                UIApplication.shared.open(url)
+            } else if let host = authInfo?.host, let challenge = authInfo?.challenge, let url = URL(string: "https://\(host)?challenge=\(challenge)") {
                 UIApplication.shared.open(url)
             }
         } else {
