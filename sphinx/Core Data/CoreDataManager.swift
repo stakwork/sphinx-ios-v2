@@ -83,7 +83,7 @@ class CoreDataManager {
     
     func deleteContactObjectsFor(_ contact: UserContact) {
         if let chat = contact.getChat() {
-            for message in chat.getAllMessages(limit: nil) {
+            for message in chat.getAllMessages(limit: nil, forceAllMsgs: true) {
                 MediaLoader.clearMessageMediaCache(message: message)
                 deleteObject(object: message)
             }

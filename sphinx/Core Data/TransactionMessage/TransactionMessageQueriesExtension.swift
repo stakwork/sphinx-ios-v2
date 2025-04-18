@@ -297,10 +297,10 @@ extension TransactionMessage {
         var typesToExclude = typesToExcludeFromChat
         typesToExclude.append(TransactionMessageType.boost.rawValue)
         
-        if chat.isMyPublicGroup() {
-            typesToExclude.append(TransactionMessageType.memberApprove.rawValue)
-            typesToExclude.append(TransactionMessageType.memberReject.rawValue)
-        }
+//        if chat.isMyPublicGroup() {
+//            typesToExclude.append(TransactionMessageType.memberApprove.rawValue)
+//            typesToExclude.append(TransactionMessageType.memberReject.rawValue)
+//        }
 
         if forceAllMsgs {
             typesToExclude = []

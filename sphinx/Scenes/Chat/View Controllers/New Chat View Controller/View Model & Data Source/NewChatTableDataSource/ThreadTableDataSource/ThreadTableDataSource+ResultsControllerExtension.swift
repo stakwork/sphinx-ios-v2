@@ -60,8 +60,6 @@ extension ThreadTableDataSource {
         let contact = chat.getConversationContact()
         let threadOriginalMessage = TransactionMessage.getMessageWith(uuid: threadUUID)
         
-        chat.processAliasesFrom(messages: sortedMessages)
-        
         let replyingMessagesMap = getReplyingMessagesMapFor(messages: sortedMessages)
         let boostMessagesMap = getBoostMessagesMapFor(messages: sortedMessages)
         let threadMessagesMap = getThreadMessagesFor(messages: sortedMessages)
