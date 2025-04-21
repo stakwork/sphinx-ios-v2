@@ -174,7 +174,13 @@ class PinCodeViewController: UIViewController {
     
     func showInvalidPinError(){
         loading = false
-        AlertHelper.showAlert(title: "generic.error.title".localized, message: "invalid.pin".localized)
+        
+        AlertHelper.showAlert(
+            title: "generic.error.title".localized,
+            message: "invalid.pin".localized,
+            on: self
+        )
+        
         pinArray = []
         reloadDots()
     }

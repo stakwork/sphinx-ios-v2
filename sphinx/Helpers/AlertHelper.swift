@@ -20,9 +20,10 @@ class AlertHelper {
     class func showAlert(
         title: String,
         message: String,
+        on vc: UIViewController? = nil,
         completion: (() -> ())? = nil
     ) {
-        if let rootViewController: UIViewController = getRootVC() {
+        if let rootViewController: UIViewController = vc ?? getRootVC() {
             showAlert(title: title, message: message, on: rootViewController, completion: completion)
         }
     }
