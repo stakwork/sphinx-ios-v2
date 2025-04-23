@@ -107,7 +107,8 @@ extension NewChatViewController : NewChatTableDataSourceDelegate {
     
     func didScrollOutOfBottomArea() {
         newMsgsIndicatorView.configureWith(
-            newMessagesCount: isThread ? (chatTableDataSource?.getMessagesCount() ?? 0) : nil,
+            newMessagesCount: isThread ? 0 : nil,
+//            newMessagesCount: isThread ? (chatTableDataSource?.getMessagesCount() ?? 0) : nil,
             hidden: chatTableDataSource?.shouldHideNewMsgsIndicator() ?? true
         )
     }

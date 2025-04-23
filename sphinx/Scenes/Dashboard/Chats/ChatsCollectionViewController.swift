@@ -144,6 +144,14 @@ extension ChatsCollectionViewController {
 
         func hash(into hasher: inout Hasher) {
             hasher.combine(objectId)
+            hasher.combine(messageId)
+            hasher.combine(messageStatus)
+            hasher.combine(message30SecOld)
+            hasher.combine(messageSeen)
+            hasher.combine(unseenCount)
+            hasher.combine(contactStatus)
+            hasher.combine(inviteStatus)
+            hasher.combine(muted)
         }
     }
 

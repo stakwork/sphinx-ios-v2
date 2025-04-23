@@ -161,8 +161,12 @@ extension ThreadTableDataSource {
         
         updateSnapshot()
         
+//        delegate?.configureNewMessagesIndicatorWith(
+//            newMsgCount: sortedMessages.count
+//        )
+        
         delegate?.configureNewMessagesIndicatorWith(
-            newMsgCount: sortedMessages.count
+            newMsgCount: 0
         )
         
         delegate?.shouldReloadThreadHeaderView()
