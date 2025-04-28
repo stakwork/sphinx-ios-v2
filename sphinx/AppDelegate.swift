@@ -174,10 +174,19 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         CoreDataManager.sharedManager.saveContext()
         
+        SDImageCache.shared.clearMemory()
+        SDWebImageManager.shared.cancelAll()
+        URLSession.shared.invalidateAndCancel()
+        
 //        scheduleAppRefresh()
         
         NetworkMonitor.shared.stopMonitoring()
         som.disconnectMqtt()
+    }
+    
+    func applicationDidReceiveMemoryWarning(_ application: UIApplication) {
+        SDImageCache.shared.clearMemory()
+        SDWebImageManager.shared.cancelAll()
     }
 
     func applicationWillEnterForeground(

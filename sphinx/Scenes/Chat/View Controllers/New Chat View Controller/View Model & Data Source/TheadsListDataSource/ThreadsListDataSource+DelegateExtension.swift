@@ -254,7 +254,7 @@ extension ThreadsListDataSource {
                     snapshot.reloadItems([tableCellState.1])
                     
                     DispatchQueue.main.async {
-                        self.dataSource.apply(snapshot, animatingDifferences: true)
+                        self.dataSource.apply(snapshot, animatingDifferences: false)
                     }
                 }
             }
