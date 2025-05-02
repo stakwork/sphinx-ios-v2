@@ -284,6 +284,8 @@ extension ChatAttachmentViewController : UIDocumentPickerDelegate {
         _ controller: UIDocumentPickerViewController,
         didPickDocumentAt url: URL
     ) {
+        hideOptionsContainer()
+        
         do {
             selectedFileData = try Data(contentsOf: url)
         } catch {}
@@ -292,7 +294,6 @@ extension ChatAttachmentViewController : UIDocumentPickerDelegate {
         let fileExtension = mimeType.getExtensionFromMimeType()
         fileName = (url.absoluteString as NSString).lastPathComponent.percentNotEscaped ?? "file.\(fileExtension)"
         selectedImage = selectedFileData?.getPDFThumbnail(size: self.view.frame.size)
-        toggleOptionsContainer(show: false)
         
         if let image = selectedImage {
             showImagePreview(image: image)
