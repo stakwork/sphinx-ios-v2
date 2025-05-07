@@ -130,8 +130,6 @@ extension PodcastPlayerController {
             }
         }
         
-        FeedsManager.sharedInstance.updateLastConsumedWithFeedID(feedID: podcastData.podcastId)
-        
         self.isSoundPlaying = false
         self.podcastData = podcastData
         
@@ -154,6 +152,8 @@ extension PodcastPlayerController {
             resetPlayingInfoCenter()
             return
         }
+        
+        FeedsManager.sharedInstance.updateLastConsumedWithFeedID(feedID: podcastData.podcastId)
         
         runLoadingStateUpdate()
         
@@ -209,7 +209,7 @@ extension PodcastPlayerController {
             
             let addObserverToPlayerItem: () -> Void = { [weak self] in
                 guard let self = self else { return }
-                playerItem.addObserver(self, forKeyPath: "status", options: [.new], context: nil)
+                playerItem.addObserver(self, forKeyPath: "status", options: [.initial, .new], context: nil)
             }
             
             if let currentTime = podcastData.currentTime, currentTime > 0 {
