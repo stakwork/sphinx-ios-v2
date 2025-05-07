@@ -26,6 +26,8 @@ class NewMessageBubbleHelper {
     var urlRanges = [NSRange]()
     var bubbleLastMsgId: Int? = nil
     
+    var messageView: UIView? = nil
+    
     static let messageViewTag = -1
     static let loadingViewTag = -2
     
@@ -252,20 +254,28 @@ class NewMessageBubbleHelper {
                 }
             }
             
+            if let messageView = messageView {
+                toggleBubbleView(view: messageView, show: false, animated: false)
+            }
+            
             let screenSize = WindowsManager.getWindowSize()
             let titleLabel = getTitleLabel(title: title, screenSize: screenSize)
             let messageLabel = getMessageLabel(text: text, screenSize: screenSize)
-            let v = getBubbleView(label: messageLabel, chatId: chatId)
+            messageView = getBubbleView(label: messageLabel, chatId: chatId)
             
-            v.addSubview(titleLabel)
-            v.addSubview(messageLabel)
+            messageView?.addSubview(titleLabel)
+            messageView?.addSubview(messageLabel)
             
-            window.addSubview(v)
-            
-            toggleBubbleView(view: v, show: true)
-            
-            DelayPerformedHelper.performAfterDelay(seconds: delay) {
-                self.toggleBubbleView(view: v, show: false)
+            if let messageView = messageView {
+                window.addSubview(messageView)
+                
+                toggleBubbleView(view: messageView, show: true)
+                
+                DelayPerformedHelper.performAfterDelay(seconds: delay) {
+                    self.toggleBubbleView(view: messageView, show: false, completion: {
+                        self.messageView = nil
+                    })
+                }
             }
         }
     }
@@ -319,7 +329,8 @@ class NewMessageBubbleHelper {
     func toggleBubbleView(
         view: UIView,
         show: Bool,
-        animated: Bool = true
+        animated: Bool = true,
+        completion: (() -> ())? = nil
     ) {
         let windowInsets = getWindowInsets()
         
@@ -335,6 +346,7 @@ class NewMessageBubbleHelper {
                 if !show {
                     view.removeFromSuperview()
                 }
+                completion?()
             })
         }
     }

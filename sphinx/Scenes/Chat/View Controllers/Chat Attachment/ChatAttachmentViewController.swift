@@ -143,10 +143,6 @@ class ChatAttachmentViewController: NewKeyboardHandlerViewController, BackCamera
         addSwipeToDismiss()
         imagePickerManager.configurePicker(vc: self)
         setupForBadges()
-    }
-    
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
         
         animateView()
     }
