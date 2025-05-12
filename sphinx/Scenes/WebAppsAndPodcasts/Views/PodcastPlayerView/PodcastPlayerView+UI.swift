@@ -141,6 +141,10 @@ extension PodcastPlayerView {
             return
         }
         
+        if duration <= 0 {
+            return
+        }
+        
         if chapterInfoEpisodeId != episode.itemID {
             for view in chaptersContainer.subviews {
                 view.removeFromSuperview()
