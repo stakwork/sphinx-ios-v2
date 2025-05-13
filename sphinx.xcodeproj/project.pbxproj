@@ -208,6 +208,7 @@
 		474935662A2919D600AB5FFA /* AudioMessageView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 474935652A2919D600AB5FFA /* AudioMessageView.xib */; };
 		474935682A2924FB00AB5FFA /* PodcastAudioView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474935672A2924FB00AB5FFA /* PodcastAudioView.swift */; };
 		4749356A2A29250200AB5FFA /* PodcastAudioView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 474935692A29250200AB5FFA /* PodcastAudioView.xib */; };
+		474A65FA2DD3D5D70024F489 /* TimeZone.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474A65F92DD3D5D40024F489 /* TimeZone.swift */; };
 		474C7A5128D3A765007A3E17 /* universal-sphinxrs.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 474C7A5028D3A75D007A3E17 /* universal-sphinxrs.a */; };
 		474C7A5528D3A7A2007A3E17 /* sphinxrs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474C7A5228D3A7A1007A3E17 /* sphinxrs.swift */; };
 		474CCFAA291562180037E1D4 /* API+ActionsExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474CCFA9291562180037E1D4 /* API+ActionsExtension.swift */; };
@@ -1333,6 +1334,7 @@
 		474935652A2919D600AB5FFA /* AudioMessageView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = AudioMessageView.xib; sourceTree = "<group>"; };
 		474935672A2924FB00AB5FFA /* PodcastAudioView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastAudioView.swift; sourceTree = "<group>"; };
 		474935692A29250200AB5FFA /* PodcastAudioView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = PodcastAudioView.xib; sourceTree = "<group>"; };
+		474A65F92DD3D5D40024F489 /* TimeZone.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeZone.swift; sourceTree = "<group>"; };
 		474A667E2493AFAB002C2D10 /* sphinx 16.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 16.xcdatamodel"; sourceTree = "<group>"; };
 		474A6692249A9F0D002C2D10 /* sphinx 17.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 17.xcdatamodel"; sourceTree = "<group>"; };
 		474C7A5028D3A75D007A3E17 /* universal-sphinxrs.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "universal-sphinxrs.a"; sourceTree = "<group>"; };
@@ -3058,6 +3060,7 @@
 		475BDD1F232AC63E00C5BBD6 /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
+				474A65F92DD3D5D40024F489 /* TimeZone.swift */,
 				47893AA1240E857F002F675B /* AVAudioSession.swift */,
 				4787F8932476B8E600CCE8B9 /* CGFloat.swift */,
 				472F9D3A2412F95100EFC30A /* Data.swift */,
@@ -5441,6 +5444,7 @@
 				CE94A5102A4B2DF3001EDF7E /* ChatMentionAutocompleteTableViewCell.swift in Sources */,
 				475BDD5C232AE26E00C5BBD6 /* TransactionMessage+CoreDataClass.swift in Sources */,
 				478BD8B92829B70700C733FD /* TribeMemberPopupView.swift in Sources */,
+				474A65FA2DD3D5D70024F489 /* TimeZone.swift in Sources */,
 				472161D1293A67EA0088B87B /* RecommendationFeedItemsCollectionViewController.swift in Sources */,
 				4701461B2A3CA1AF00A00DF8 /* UserContactsHelper.swift in Sources */,
 				475723A9247EBB56001ADC7E /* CustomAudioPlayer.swift in Sources */,
