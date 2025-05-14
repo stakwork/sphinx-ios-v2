@@ -27,17 +27,20 @@ class NewUserSignupFormViewController: UIViewController, ConnectionCodeSignupHan
     
     var isProcessingCode = false
     var isV2: Bool = false
+    var inviteCode: String? = nil
     var server : Server? = nil
     var balance : String? = nil
     let som = SphinxOnionManager.sharedInstance
     var selfContactFetchListener: NSFetchedResultsController<UserContact>?
     var watchdogTimer: Timer?
     
-    static func instantiate() -> NewUserSignupFormViewController {
+    static func instantiate(
+        inviteCode: String? = nil
+    ) -> NewUserSignupFormViewController {
         let viewController = StoryboardScene.NewUserSignup.newUserSignupFormViewController.instantiate()
+        viewController.inviteCode = inviteCode
         return viewController
     }
-    
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -46,11 +49,19 @@ class NewUserSignupFormViewController: UIViewController, ConnectionCodeSignupHan
             (UIApplication.shared.connectedScenes.first as? UIWindowScene)?.windows.first?.safeAreaInsets.top ?? 60
         ) + 60
 
-        setupCodeField()
-        setupSubmitButton()
-        
         titleLabel.text = "new.user".localized.uppercased()
         addAccessibilityIdentifiers()
+        
+        setupCodeField()
+        setupSubmitButton()
+        setupDeepLinkCode()
+    }
+    
+    func setupDeepLinkCode() {
+        if let inviteCode = inviteCode, inviteCode.isNotEmpty {
+            codeTextField.text = inviteCode
+            enableSubmitButton()
+        }
     }
     
     
