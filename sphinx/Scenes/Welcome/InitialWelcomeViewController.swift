@@ -40,7 +40,7 @@ class InitialWelcomeViewController: UIViewController {
     }
     
     internal func handleLinkQueries() {
-        if let code: String? = UserDefaults.Keys.inviteCode.get() {
+        if let code: String = UserDefaults.Keys.inviteCode.get() {
             let newUserSignupFormVC = NewUserSignupFormViewController.instantiate(inviteCode: code)
             self.navigationController?.pushViewController(newUserSignupFormVC, animated: true)
             UserDefaults.Keys.inviteCode.removeValue()
