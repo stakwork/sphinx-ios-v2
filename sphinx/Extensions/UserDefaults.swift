@@ -39,6 +39,7 @@ extension UserDefaults {
         public static let saveQuery = DefaultKey<String>("saveQuery")
         public static let shareContentQuery = DefaultKey<String>("shareContentQuery")
         public static let glyphQuery = DefaultKey<String>("glyphQuery")
+        public static let inviteCode = DefaultKey<String>("inviteCode")
         public static let defaultPIN = DefaultKey<String>("currentPin")
         public static let lastPinDate = DefaultKey<Date>("lastPinDate")
         public static let pinHours = DefaultKey<Int>("pinHours")

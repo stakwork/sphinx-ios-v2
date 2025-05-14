@@ -133,7 +133,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func handleUrl(_ url: URL) {
         if DeepLinksHandlerHelper.storeLinkQueryFrom(url: url) {
             if let currentVC = getCurrentVC() {
-                if let currentVC = currentVC as? DashboardRootViewController {
+                if let currentVC = currentVC as? InitialWelcomeViewController {
+                    currentVC.handleLinkQueries()
+                } else if let currentVC = currentVC as? DashboardRootViewController {
                     if let presentedVC = currentVC.navigationController?.presentedViewController {
                         presentedVC.dismiss(animated: true) {
                             currentVC.handleLinkQueries()
@@ -470,8 +472,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func getCurrentVC() -> UIViewController? {
         let rootVC = window?.rootViewController
 
-        if let rootVController = rootVC as? RootViewController, let currentVC = rootVController.getLastCenterViewController() {
-            return currentVC
+        if let rootVController = rootVC as? RootViewController {
+            if let currentVC = rootVController.getLastCenterViewController() {
+                return currentVC
+            }
+            if let currentVC = rootVController.currentViewController as? UINavigationController {
+                return currentVC.viewControllers.last
+            }
         }
         return nil
     }

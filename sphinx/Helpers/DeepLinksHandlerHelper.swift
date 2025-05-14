@@ -143,6 +143,10 @@ class DeepLinksHandlerHelper {
                     UserDefaults.Keys.glyphQuery.set(query)
                     shouldSetVC = true
                     break
+                case "i":
+                    UserDefaults.Keys.inviteCode.set(url.absoluteString)
+                    shouldSetVC = true
+                    break
                 default:
                     break
                 }
