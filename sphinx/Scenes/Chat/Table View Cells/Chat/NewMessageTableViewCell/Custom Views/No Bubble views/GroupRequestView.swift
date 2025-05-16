@@ -58,8 +58,8 @@ class GroupRequestView: UIView {
         doneButton.isEnabled = !isActiveMember && pending
         cancelButton.isEnabled = !isActiveMember && pending
 
-        doneButton.alpha = rejected ? 0.3 : 1.0
-        cancelButton.alpha = approved ? 0.3 : 1.0
+        doneButton.isHidden = rejected || approved
+        cancelButton.isHidden = rejected || approved
         
         if approved {
             messageLabel.text = String(format: "admin.request.approved".localized, senderAlias)
@@ -68,6 +68,10 @@ class GroupRequestView: UIView {
         } else {
             messageLabel.text = String(format: "member.request".localized, senderAlias)
         }
+        
+        messageView.backgroundColor = (rejected ? UIColor.Sphinx.MemberApprovalRejected : (approved ? UIColor.Sphinx.MemberApprovalAccepted : UIColor.Sphinx.ReceivedMsgBG))
+        messageView.layer.borderColor = (rejected || approved) ? UIColor.clear.resolvedCGColor(with: self) : UIColor.Sphinx.LightDivider.resolvedCGColor(with: self)
+        messageLabel.textColor = (rejected || approved) ? UIColor.white : UIColor.Sphinx.Text
     }
     
     @IBAction func doneButtonTouched() {

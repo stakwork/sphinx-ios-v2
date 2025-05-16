@@ -24,6 +24,8 @@ class FeedSearchContainerViewController: UIViewController {
     private var managedObjectContext: NSManagedObjectContext!
     private weak var resultsDelegate: FeedSearchResultsViewControllerDelegate?
     
+    var onContentScrolled: ((UIScrollView) -> Void)?
+    
     var feedType: FeedType? = nil
     var searchTimer: Timer? = nil
     
@@ -38,11 +40,11 @@ class FeedSearchContainerViewController: UIViewController {
     
     
     internal lazy var searchResultsViewController: FeedSearchResultsCollectionViewController = {
-        FeedSearchResultsCollectionViewController
-            .instantiate(
-                onSubscribedFeedCellSelected: handleFeedCellSelection,
-                onFeedSearchResultCellSelected: handleSearchResultCellSelection
-            )
+        .instantiate(
+            onSubscribedFeedCellSelected: handleFeedCellSelection,
+            onFeedSearchResultCellSelected: handleSearchResultCellSelection,
+            onContentScrolled: onContentScrolled
+        )
     }()
     
     
@@ -61,7 +63,8 @@ extension FeedSearchContainerViewController {
     
     static func instantiate(
         managedObjectContext: NSManagedObjectContext = CoreDataManager.sharedManager.persistentContainer.viewContext,
-        resultsDelegate: FeedSearchResultsViewControllerDelegate
+        resultsDelegate: FeedSearchResultsViewControllerDelegate,
+        onContentScrolled: ((UIScrollView) -> Void)? = nil
     ) -> FeedSearchContainerViewController {
         let viewController = StoryboardScene
             .Dashboard
@@ -70,11 +73,11 @@ extension FeedSearchContainerViewController {
         
         viewController.managedObjectContext = managedObjectContext
         viewController.resultsDelegate = resultsDelegate
+        viewController.onContentScrolled = onContentScrolled
         viewController.fetchedResultsController.delegate = viewController
         
         return viewController
     }
-    
     
     static func makeFetchedResultsController(
         using managedObjectContext: NSManagedObjectContext,
@@ -111,12 +114,15 @@ extension FeedSearchContainerViewController {
             presentInitialStateView()
         } else {
             presentResultsListView()
-            
             fetchResults(for: searchQuery, and: type)
         }
     }
     
-    
+    private func fetchFeedTypeSpecificContent(for searchQuery: String, type: FeedType?) {
+        presentResultsListView()
+        fetchResults(for: searchQuery, and: type)
+    }
+
     func presentResultsListView() {
         isShowingStartingEmptyStateVC = false
         
@@ -252,7 +258,7 @@ extension FeedSearchContainerViewController {
         var fetchRequestResult: [ContentFeed] = []
         
         managedObjectContext.performAndWait {
-            fetchRequestResult = try! managedObjectContext.fetch(existingFeedsFetchRequest)
+            fetchRequestResult = try! self.managedObjectContext.fetch(existingFeedsFetchRequest)
         }
             
         if let existingFeed = fetchRequestResult.first {
@@ -271,17 +277,15 @@ extension FeedSearchContainerViewController {
                 persistingIn: managedObjectContext,
                 then: { result in
                     
-                    if case .success(_) = result {
+                    if case .success(let contentFeed) = result {
                         self.managedObjectContext.saveContext()
                         
-                        self.feedsManager.loadCurrentEpisodeDurationFor(feedId: searchResult.feedId, completion: {
-                            self.newMessageBubbleHelper.hideLoadingWheel()
-                            
-                            self.resultsDelegate?.viewController(
-                                self,
-                                didSelectFeedSearchResult: searchResult.feedId
-                            )
-                        })
+                        self.newMessageBubbleHelper.hideLoadingWheel()
+                        
+                        self.resultsDelegate?.viewController(
+                            self,
+                            didSelectFeedSearchResult: contentFeed.feedID
+                        )
                     } else {
                         self.newMessageBubbleHelper.hideLoadingWheel()
                         

@@ -22,31 +22,54 @@ extension NewMessageTableViewCell {
             messageLabel.attributedText = nil
             messageLabel.text = nil
             
-            if messageContent.linkMatches.isEmpty && messageContent.highlightedMatches.isEmpty && searchingTerm == nil {
+            if messageContent.hasNoMarkdown && searchingTerm == nil {
                 messageLabel.text = messageContent.text
-                messageLabel.font = messageContent.font
+                messageLabel.font = UIFont.getMessageFont()
             } else {
                 let messageC = messageContent.text ?? ""
                 
                 let attributedString = NSMutableAttributedString(string: messageC)
-                attributedString.addAttributes([NSAttributedString.Key.font: messageContent.font], range: messageC.nsRange)
+                attributedString.addAttributes(
+                    [NSAttributedString.Key.font: UIFont.getMessageFont()], range: messageC.nsRange
+                )
                 
                 ///Highlighted text formatting
                 let highlightedNsRanges = messageContent.highlightedMatches.map {
                     return $0.range
                 }
                 
-                for (index, nsRange) in highlightedNsRanges.enumerated() {
+                for nsRange in highlightedNsRanges {
                     
-                    ///Subtracting the previous matches delimiter characters since they have been removed from the string
-                    let substractionNeeded = index * 2
-                    let adaptedRange = NSRange(location: nsRange.location - substractionNeeded, length: nsRange.length - 2)
+                    let adaptedRange = NSRange(
+                        location: nsRange.location,
+                        length: nsRange.length
+                    )
                     
                     attributedString.addAttributes(
                         [
                             NSAttributedString.Key.foregroundColor: UIColor.Sphinx.HighlightedText,
                             NSAttributedString.Key.backgroundColor: UIColor.Sphinx.HighlightedTextBackground,
-                            NSAttributedString.Key.font: messageContent.highlightedFont
+                            NSAttributedString.Key.font: UIFont.getHighlightedMessageFont()
+                        ],
+                        range: adaptedRange
+                    )
+                }
+                
+                ///Bold text formatting
+                let boldNsRanges = messageContent.boldMatches.map {
+                    return $0.range
+                }
+                
+                for nsRange in boldNsRanges {
+
+                    let adaptedRange = NSRange(
+                        location: nsRange.location,
+                        length: nsRange.length
+                    )
+                    
+                    attributedString.addAttributes(
+                        [
+                            NSAttributedString.Key.font: UIFont.getMessageBoldFont()
                         ],
                         range: adaptedRange
                     )
@@ -59,12 +82,32 @@ extension NewMessageTableViewCell {
                         [
                             NSAttributedString.Key.foregroundColor: UIColor.Sphinx.PrimaryBlue,
                             NSAttributedString.Key.underlineStyle: NSUnderlineStyle.single.rawValue,
-                            NSAttributedString.Key.font: messageContent.font
+                            NSAttributedString.Key.font: UIFont.getMessageFont()
                         ],
                         range: match.range
                     )
                     
                     urlRanges.append(match.range)
+                }
+                
+                ///Markdown Links formatting
+                for (textCheckingResult, _, link, _) in messageContent.linkMarkdownMatches {
+                    
+                    let nsRange = textCheckingResult.range
+                    
+                    if let url = URL(string: link) {
+                        attributedString.addAttributes(
+                            [
+                                NSAttributedString.Key.link: url,
+                                NSAttributedString.Key.foregroundColor: UIColor.Sphinx.PrimaryBlue,
+                                NSAttributedString.Key.underlineStyle: NSUnderlineStyle.single.rawValue,
+                                NSAttributedString.Key.font: UIFont.getMessageFont()
+                            ],
+                            range: nsRange
+                        )
+                    }
+                    
+                    urlRanges.append(nsRange)
                 }
                 
                 ///Search term formatting
@@ -80,9 +123,7 @@ extension NewMessageTableViewCell {
                 messageLabel.attributedText = attributedString
                 messageLabel.isUserInteractionEnabled = true
             }
-            
-            let tap = UITapGestureRecognizer(target: self, action: #selector(labelTapped(gesture:)))
-            
+
             if urlRanges.isEmpty {
                 messageLabel.removeGestureRecognizer(tap)
             } else {
@@ -155,10 +196,18 @@ extension NewMessageTableViewCell {
     
     func configureWith(
         messageReply: BubbleMessageLayoutState.MessageReply?,
-        and bubble: BubbleMessageLayoutState.Bubble
+        and bubble: BubbleMessageLayoutState.Bubble,
+        replyViewHeight: CGFloat?
     ) {
         if let messageReply = messageReply {
-            messageReplyView.configureWith(messageReply: messageReply, and: bubble, delegate: self)
+            messageReplyHeightConstraint.constant = replyViewHeight ?? NewMessageReplyView.kMessageReplyHeight
+            
+            messageReplyView.configureWith(
+                messageReply: messageReply,
+                and: bubble,
+                delegate: self,
+                isExpanded: replyViewHeight != nil
+            )
             messageReplyView.isHidden = false
         }
     }
@@ -197,40 +246,60 @@ extension NewMessageTableViewCell {
         and bubble: BubbleMessageLayoutState.Bubble
     ) {
         if let messageMedia = messageMedia {
-            
-            mediaContentView.configureWith(
-                messageMedia: messageMedia,
-                mediaData: mediaData,
-                isThreadOriginalMsg: false,
-                bubble: bubble,
-                and: self
-            )
-            
-            mediaContentView.isHidden = false
-            
-            if let messageId = messageId, mediaData == nil {
-                let delayTime = DispatchTime.now() + Double(Int64(0.5 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
-                DispatchQueue.global().asyncAfter(deadline: delayTime) {
-                    if messageMedia.isImage {
-                        self.delegate?.shouldLoadImageDataFor(
+            if messageMedia.isImageLink {
+                if let mediaData = mediaData {
+                    mediaContentView.configureWith(
+                        messageMedia: messageMedia,
+                        mediaData: mediaData,
+                        isThreadOriginalMsg: false,
+                        bubble: bubble,
+                        and: self
+                    )
+                    mediaContentView.isHidden = false
+                } else if let messageId = messageId, mediaData == nil {
+                    let delayTime = DispatchTime.now() + Double(Int64(0.5 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
+                    DispatchQueue.global().asyncAfter(deadline: delayTime) {
+                        self.delegate?.shouldLoadLinkImageDataFor(
                             messageId: messageId,
                             and: self.rowIndex
                         )
-                    } else if messageMedia.isPdf {
-                        self.delegate?.shouldLoadPdfDataFor(
-                            messageId: messageId,
-                            and: self.rowIndex
-                        )
-                    } else if messageMedia.isVideo {
-                        self.delegate?.shouldLoadVideoDataFor(
-                            messageId: messageId,
-                            and: self.rowIndex
-                        )
-                    } else if messageMedia.isGiphy {
-                        self.delegate?.shouldLoadGiphyDataFor(
-                            messageId: messageId,
-                            and: self.rowIndex
-                        )
+                    }
+                }
+            } else {
+                mediaContentView.configureWith(
+                    messageMedia: messageMedia,
+                    mediaData: mediaData,
+                    isThreadOriginalMsg: false,
+                    bubble: bubble,
+                    and: self
+                )
+                
+                mediaContentView.isHidden = false
+                
+                if let messageId = messageId, mediaData == nil {
+                    let delayTime = DispatchTime.now() + Double(Int64(0.5 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
+                    DispatchQueue.global().asyncAfter(deadline: delayTime) {
+                        if messageMedia.isImage {
+                            self.delegate?.shouldLoadImageDataFor(
+                                messageId: messageId,
+                                and: self.rowIndex
+                            )
+                        } else if messageMedia.isPdf {
+                            self.delegate?.shouldLoadPdfDataFor(
+                                messageId: messageId,
+                                and: self.rowIndex
+                            )
+                        } else if messageMedia.isVideo {
+                            self.delegate?.shouldLoadVideoDataFor(
+                                messageId: messageId,
+                                and: self.rowIndex
+                            )
+                        } else if messageMedia.isGiphy {
+                            self.delegate?.shouldLoadGiphyDataFor(
+                                messageId: messageId,
+                                and: self.rowIndex
+                            )
+                        }
                     }
                 }
             }
@@ -254,34 +323,6 @@ extension NewMessageTableViewCell {
                 let delayTime = DispatchTime.now() + Double(Int64(0.5 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
                 DispatchQueue.global().asyncAfter(deadline: delayTime) {
                     self.delegate?.shouldLoadFileDataFor(
-                        messageId: messageId,
-                        and: self.rowIndex
-                    )
-                }
-            }
-        }
-    }
-    
-    func configureWith(
-        botHTMLContent: BubbleMessageLayoutState.BotHTMLContent?,
-        botWebViewData: MessageTableCellState.BotWebViewData?
-    ) {
-        if let botHTMLContent = botHTMLContent {
-            
-            botResponseView.configureWith(
-                botHTMLContent: botHTMLContent,
-                botWebViewData: botWebViewData
-            )
-            botResponseView.isHidden = false
-            botResponseView.messageId = self.messageId
-            
-            if let botWebViewData = botWebViewData {
-                botResponseViewHeightConstraint.constant = botWebViewData.height
-                botResponseView.layoutIfNeeded()
-            } else if let messageId = messageId {
-                let delayTime = DispatchTime.now() + Double(Int64(0.5 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
-                DispatchQueue.global().asyncAfter(deadline: delayTime) {
-                    self.delegate?.shouldLoadBotWebViewDataFor(
                         messageId: messageId,
                         and: self.rowIndex
                     )

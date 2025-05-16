@@ -31,7 +31,7 @@ class SetPinCodeViewController: UIViewController {
     let kOldPinTitle = "enter.old.pin".localized
     let kNewPinTitle = "enter.new.pin".localized
     
-    var isV2 : Bool = false
+    var isRestoreFlow: Bool = false
     
     public enum SetPinMode: Int {
         case Set
@@ -182,11 +182,7 @@ class SetPinCodeViewController: UIViewController {
     }
     
     func getOldPin() -> String? {
-        if (pinMode == PinMode.Standard) {
-            return UserData.sharedInstance.getAppPin()
-        } else {
-            return UserData.sharedInstance.getPrivacyPin()
-        }
+        return UserData.sharedInstance.getAppPin()
     }
     
     func getPinString() -> String {
@@ -207,11 +203,17 @@ class SetPinCodeViewController: UIViewController {
         } else {
             UserData.sharedInstance.save(pin: getPinString())
             
-            SignupHelper.step = SignupHelper.SignupStep.PINSet.rawValue
+            UserData.sharedInstance.signupStep = SignupHelper.SignupStep.PINSet.rawValue
             
-            let newUserGreetingVC = NewUserGreetingViewController.instantiate()
-            newUserGreetingVC.isV2 = self.isV2
-            self.navigationController?.pushViewController(newUserGreetingVC, animated: true)
+            if isRestoreFlow {
+                UserData.sharedInstance.signupStep = SignupHelper.SignupStep.PersonalInfoSet.rawValue
+                let sphinxDesktopAdVC = SphinxDesktopAdViewController.instantiate()
+                sphinxDesktopAdVC.isRestoreFlow = self.isRestoreFlow
+                self.navigationController?.pushViewController(sphinxDesktopAdVC, animated: true)
+            } else {
+                let newUserGreetingVC = NewUserGreetingViewController.instantiate()
+                self.navigationController?.pushViewController(newUserGreetingVC, animated: true)
+            }
         }
     }
 }

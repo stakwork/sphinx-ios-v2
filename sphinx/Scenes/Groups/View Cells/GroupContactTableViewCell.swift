@@ -20,6 +20,7 @@ class GroupContactTableViewCell: SwipableCell {
     
     @IBOutlet weak var contactImageView: UIImageView!
     @IBOutlet weak var contactNameLabel: UILabel!
+    @IBOutlet weak var contactTimezoneLabel: UILabel!
     @IBOutlet weak var contactInitialsLabel: UILabel!
     @IBOutlet weak var checkboxLabel: UILabel!
     @IBOutlet weak var letterLabel: UILabel!
@@ -58,11 +59,13 @@ class GroupContactTableViewCell: SwipableCell {
         super.setSelected(selected, animated: animated)
     }
     
-    func configureFor(groupContact: GroupAllContactsDataSource.GroupContact,
-                      chat: Chat? = nil,
-                      delegate: GroupMemberCellDelegate? = nil,
-                      isPending: Bool = false,
-                      isLastCell: Bool = false) {
+    func configureFor(
+        groupContact: GroupAllContactsDataSource.GroupContact,
+        chat: Chat? = nil,
+        delegate: GroupMemberCellDelegate? = nil,
+        isPending: Bool = false,
+        isLastCell: Bool = false
+    ) {
         
         isUserInteractionEnabled = true
         
@@ -76,6 +79,13 @@ class GroupContactTableViewCell: SwipableCell {
         
         separatorLine.isHidden = isLastCell
         approveButtonsContainer.isHidden = !isPending
+        
+        contactTimezoneLabel.isHidden = true
+        
+        if let timezone = groupContact.timezone, timezone.isNotEmpty {
+            contactTimezoneLabel.text = timezone
+            contactTimezoneLabel.isHidden = false
+        }
         
         contactNameLabel.text = contact.getName()
         configureInitial(nickname: contact.getName(), firstOnLetter: groupContact.firstOnLetter)
@@ -109,7 +119,6 @@ class GroupContactTableViewCell: SwipableCell {
     func configureDeleteButton(showDelete: Bool = false) {
         
         numberOfButtons = .oneButton
-        button3 = button1
         button1.tintColorDidChange()
         isSwipeEnabled = showDelete
     }
@@ -149,11 +158,11 @@ class GroupContactTableViewCell: SwipableCell {
     }
     
     @IBAction func pendingApprovalButtonTouched(_ sender: UIButton) {
-        guard let contact = contact, let chat = chat else {
+        guard let contact = contact, let chat = chat, let nickname = contact.nickname else {
             return
         }
         
-        guard let message = TransactionMessage.getLastGroupRequestFor(contactId: contact.id, in: chat) else {
+        guard let message = TransactionMessage.getLastGroupRequestFor(senderAlias: nickname, in: chat) else {
             return
         }
         

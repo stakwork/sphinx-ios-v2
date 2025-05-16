@@ -115,27 +115,7 @@ class MemberBadgeDetailVM : NSObject {
         id:String,
         filterByThisTribeOnly: Bool = false
     ){
-        API.sharedInstance.getBadgeAssets(
-            user_uuid: id,
-            callback: { results in
-                if (filterByThisTribeOnly) {
-                    let knownIds = self.knownTribeBadges.compactMap({$0.badge_id})
-                    var newBadges = [Badge]()
-                    for result in results{
-                        if let valid_id = result.badge_id,
-                           knownIds.contains(valid_id){
-                            newBadges.append(result)
-                        }
-                    }
-                    self.badges = newBadges
-                } else {
-                    self.badges = results
-                }
-                
-                self.reloadTable()
-                
-            }, errorCallback: {}
-        )
+        //@Tom do we plan on reimplementing this on V2?
     }
     
     func reloadTable() {

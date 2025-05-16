@@ -60,6 +60,7 @@ typedef struct RustCallStatus {
 #endif // def UNIFFI_SHARED_H
 
 // Callbacks for UniFFI Futures
+typedef void (*UniFfiFutureCallbackUInt64)(const void * _Nonnull, uint64_t, RustCallStatus);
 typedef void (*UniFfiFutureCallbackRustBuffer)(const void * _Nonnull, RustBuffer, RustCallStatus);
 
 // Scaffolding functions
@@ -109,7 +110,11 @@ RustBuffer uniffi_sphinxrs_fn_func_peel_payment_msg(RustBuffer seed, uint64_t id
 );
 RustBuffer uniffi_sphinxrs_fn_func_sign_ms(RustBuffer seed, uint64_t idx, RustBuffer time, RustBuffer network, RustCallStatus *_Nonnull out_status
 );
+RustBuffer uniffi_sphinxrs_fn_func_signed_timestamp(RustBuffer seed, uint64_t idx, RustBuffer time, RustBuffer network, RustCallStatus *_Nonnull out_status
+);
 RustBuffer uniffi_sphinxrs_fn_func_sign_bytes(RustBuffer seed, uint64_t idx, RustBuffer time, RustBuffer network, RustBuffer msg, RustCallStatus *_Nonnull out_status
+);
+RustBuffer uniffi_sphinxrs_fn_func_sign_base64(RustBuffer seed, uint64_t idx, RustBuffer time, RustBuffer network, RustBuffer msg, RustCallStatus *_Nonnull out_status
 );
 RustBuffer uniffi_sphinxrs_fn_func_pubkey_from_seed(RustBuffer seed, uint64_t idx, RustBuffer time, RustBuffer network, RustCallStatus *_Nonnull out_status
 );
@@ -119,7 +124,11 @@ RustBuffer uniffi_sphinxrs_fn_func_xpub_from_seed(RustBuffer seed, RustBuffer ti
 );
 RustBuffer uniffi_sphinxrs_fn_func_set_network(RustBuffer network, RustCallStatus *_Nonnull out_status
 );
+RustBuffer uniffi_sphinxrs_fn_func_set_device(RustBuffer device, RustCallStatus *_Nonnull out_status
+);
 RustBuffer uniffi_sphinxrs_fn_func_set_blockheight(uint32_t blockheight, RustCallStatus *_Nonnull out_status
+);
+RustBuffer uniffi_sphinxrs_fn_func_get_blockheight(RustBuffer seed, RustBuffer unique_time, RustBuffer state, RustCallStatus *_Nonnull out_status
 );
 RustBuffer uniffi_sphinxrs_fn_func_add_contact(RustBuffer seed, RustBuffer unique_time, RustBuffer state, RustBuffer to_pubkey, RustBuffer route_hint, RustBuffer my_alias, RustBuffer my_img, uint64_t amt_msat, RustBuffer invite_code, RustBuffer their_alias, RustCallStatus *_Nonnull out_status
 );
@@ -127,17 +136,23 @@ RustBuffer uniffi_sphinxrs_fn_func_get_contact(RustBuffer state, RustBuffer pubk
 );
 RustBuffer uniffi_sphinxrs_fn_func_list_contacts(RustBuffer state, RustCallStatus *_Nonnull out_status
 );
-RustBuffer uniffi_sphinxrs_fn_func_get_subscription_topic(RustBuffer seed, RustBuffer unique_time, RustBuffer state, RustCallStatus *_Nonnull out_status
+RustBuffer uniffi_sphinxrs_fn_func_contact_pubkey_by_child_index(RustBuffer state, uint64_t child_idx, RustCallStatus *_Nonnull out_status
+);
+RustBuffer uniffi_sphinxrs_fn_func_contact_pubkey_by_encrypted_child(RustBuffer seed, RustBuffer state, RustBuffer child, RustCallStatus *_Nonnull out_status
 );
 RustBuffer uniffi_sphinxrs_fn_func_get_tribe_management_topic(RustBuffer seed, RustBuffer unique_time, RustBuffer state, RustCallStatus *_Nonnull out_status
 );
-RustBuffer uniffi_sphinxrs_fn_func_initial_setup(RustBuffer seed, RustBuffer unique_time, RustBuffer state, RustCallStatus *_Nonnull out_status
+RustBuffer uniffi_sphinxrs_fn_func_initial_setup(RustBuffer seed, RustBuffer unique_time, RustBuffer state, RustBuffer device, RustBuffer invite_code, RustCallStatus *_Nonnull out_status
 );
 RustBuffer uniffi_sphinxrs_fn_func_fetch_msgs(RustBuffer seed, RustBuffer unique_time, RustBuffer state, uint64_t last_msg_idx, RustBuffer limit, RustCallStatus *_Nonnull out_status
 );
 RustBuffer uniffi_sphinxrs_fn_func_handle(RustBuffer topic, RustBuffer payload, RustBuffer seed, RustBuffer unique_time, RustBuffer state, RustBuffer my_alias, RustBuffer my_img, RustCallStatus *_Nonnull out_status
 );
 RustBuffer uniffi_sphinxrs_fn_func_send(RustBuffer seed, RustBuffer unique_time, RustBuffer to, uint8_t msg_type, RustBuffer msg_json, RustBuffer state, RustBuffer my_alias, RustBuffer my_img, uint64_t amt_msat, int8_t is_tribe, RustCallStatus *_Nonnull out_status
+);
+RustBuffer uniffi_sphinxrs_fn_func_keysend(RustBuffer seed, RustBuffer unique_time, RustBuffer to, RustBuffer state, uint64_t amt_msat, RustBuffer data, RustBuffer route_hint, RustCallStatus *_Nonnull out_status
+);
+RustBuffer uniffi_sphinxrs_fn_func_pay(RustBuffer seed, RustBuffer unique_time, RustBuffer state, RustBuffer bolt11, RustCallStatus *_Nonnull out_status
 );
 RustBuffer uniffi_sphinxrs_fn_func_make_media_token(RustBuffer seed, RustBuffer unique_time, RustBuffer state, RustBuffer host, RustBuffer muid, RustBuffer to, uint32_t expiry, RustCallStatus *_Nonnull out_status
 );
@@ -161,11 +176,15 @@ RustBuffer uniffi_sphinxrs_fn_func_join_tribe(RustBuffer seed, RustBuffer unique
 );
 RustBuffer uniffi_sphinxrs_fn_func_list_tribe_members(RustBuffer seed, RustBuffer unique_time, RustBuffer state, RustBuffer tribe_server_pubkey, RustBuffer tribe_pubkey, RustCallStatus *_Nonnull out_status
 );
-RustBuffer uniffi_sphinxrs_fn_func_make_invite(RustBuffer seed, RustBuffer unique_time, RustBuffer state, RustBuffer host, uint64_t amt_msat, RustBuffer my_alias, RustBuffer tribe_host, RustBuffer tribe_pubkey, RustCallStatus *_Nonnull out_status
+RustBuffer uniffi_sphinxrs_fn_func_make_invite(RustBuffer seed, RustBuffer unique_time, RustBuffer state, RustBuffer host, uint64_t amt_msat, RustBuffer my_alias, RustBuffer tribe_host, RustBuffer tribe_pubkey, RustBuffer inviter_pubkey, RustBuffer inviter_route_hint, RustCallStatus *_Nonnull out_status
 );
 RustBuffer uniffi_sphinxrs_fn_func_process_invite(RustBuffer seed, RustBuffer unique_time, RustBuffer state, RustBuffer invite_qr, RustCallStatus *_Nonnull out_status
 );
+RustBuffer uniffi_sphinxrs_fn_func_parse_invite(RustBuffer invite_qr, RustCallStatus *_Nonnull out_status
+);
 RustBuffer uniffi_sphinxrs_fn_func_code_from_invite(RustBuffer invite_qr, RustCallStatus *_Nonnull out_status
+);
+RustBuffer uniffi_sphinxrs_fn_func_cancel_invite(RustBuffer seed, RustBuffer unique_time, RustBuffer state, RustBuffer invite_code, RustCallStatus *_Nonnull out_status
 );
 RustBuffer uniffi_sphinxrs_fn_func_get_default_tribe_server(RustBuffer state, RustCallStatus *_Nonnull out_status
 );
@@ -177,7 +196,9 @@ RustBuffer uniffi_sphinxrs_fn_func_mute(RustBuffer seed, RustBuffer unique_time,
 );
 RustBuffer uniffi_sphinxrs_fn_func_get_mutes(RustBuffer seed, RustBuffer unique_time, RustBuffer state, RustCallStatus *_Nonnull out_status
 );
-RustBuffer uniffi_sphinxrs_fn_func_set_push_token(RustBuffer seed, RustBuffer unique_time, RustBuffer state, RustBuffer push_token, RustCallStatus *_Nonnull out_status
+RustBuffer uniffi_sphinxrs_fn_func_set_push_token(RustBuffer seed, RustBuffer unique_time, RustBuffer state, RustBuffer push_token, RustBuffer push_key, RustCallStatus *_Nonnull out_status
+);
+uint64_t uniffi_sphinxrs_fn_func_decrypt_child_index(RustBuffer encrypted_child, RustBuffer push_key, RustCallStatus *_Nonnull out_status
 );
 RustBuffer uniffi_sphinxrs_fn_func_get_msgs_counts(RustBuffer seed, RustBuffer unique_time, RustBuffer state, RustCallStatus *_Nonnull out_status
 );
@@ -187,7 +208,27 @@ RustBuffer uniffi_sphinxrs_fn_func_fetch_msgs_batch_okkey(RustBuffer seed, RustB
 );
 RustBuffer uniffi_sphinxrs_fn_func_fetch_first_msgs_per_key(RustBuffer seed, RustBuffer unique_time, RustBuffer state, uint64_t last_msg_idx, RustBuffer limit, RustBuffer reverse, RustCallStatus *_Nonnull out_status
 );
-RustBuffer uniffi_sphinxrs_fn_func_fetch_payments(RustBuffer seed, RustBuffer unique_time, RustBuffer state, RustBuffer last_msg_idx, RustBuffer limit, RustBuffer scid, RustBuffer remote_only, RustBuffer min_msat, RustCallStatus *_Nonnull out_status
+RustBuffer uniffi_sphinxrs_fn_func_fetch_payments(RustBuffer seed, RustBuffer unique_time, RustBuffer state, RustBuffer since, RustBuffer limit, RustBuffer scid, RustBuffer remote_only, RustBuffer min_msat, RustBuffer reverse, RustCallStatus *_Nonnull out_status
+);
+RustBuffer uniffi_sphinxrs_fn_func_get_tags(RustBuffer seed, RustBuffer unique_time, RustBuffer state, RustBuffer tags, RustBuffer pubkey, RustCallStatus *_Nonnull out_status
+);
+RustBuffer uniffi_sphinxrs_fn_func_delete_msgs(RustBuffer seed, RustBuffer unique_time, RustBuffer state, RustBuffer pubkey, RustBuffer msg_idxs, RustCallStatus *_Nonnull out_status
+);
+RustBuffer uniffi_sphinxrs_fn_func_update_tribe(RustBuffer seed, RustBuffer unique_time, RustBuffer state, RustBuffer tribe_server_pubkey, RustBuffer tribe_json, RustCallStatus *_Nonnull out_status
+);
+RustBuffer uniffi_sphinxrs_fn_func_delete_tribe(RustBuffer seed, RustBuffer unique_time, RustBuffer state, RustBuffer tribe_server_pubkey, RustBuffer tribe_pubkey, RustCallStatus *_Nonnull out_status
+);
+RustBuffer uniffi_sphinxrs_fn_func_add_node(RustBuffer node, RustCallStatus *_Nonnull out_status
+);
+RustBuffer uniffi_sphinxrs_fn_func_concat_route(RustBuffer state, RustBuffer end_hops, RustBuffer router_pubkey, uint64_t amt_msat, RustCallStatus *_Nonnull out_status
+);
+RustBuffer uniffi_sphinxrs_fn_func_ping_done(RustBuffer seed, RustBuffer unique_time, RustBuffer state, uint64_t ping_ts, RustCallStatus *_Nonnull out_status
+);
+RustBuffer uniffi_sphinxrs_fn_func_fetch_pings(RustBuffer seed, RustBuffer unique_time, RustBuffer state, RustCallStatus *_Nonnull out_status
+);
+RustBuffer uniffi_sphinxrs_fn_func_id_from_macaroon(RustBuffer macaroon, RustCallStatus *_Nonnull out_status
+);
+RustBuffer uniffi_sphinxrs_fn_func_find_route(RustBuffer state, RustBuffer to_pubkey, RustBuffer route_hint, uint64_t amt_msat, RustCallStatus *_Nonnull out_status
 );
 RustBuffer ffi_sphinxrs_rustbuffer_alloc(int32_t size, RustCallStatus *_Nonnull out_status
 );
@@ -266,7 +307,13 @@ uint16_t uniffi_sphinxrs_checksum_func_peel_payment_msg(void
 uint16_t uniffi_sphinxrs_checksum_func_sign_ms(void
     
 );
+uint16_t uniffi_sphinxrs_checksum_func_signed_timestamp(void
+    
+);
 uint16_t uniffi_sphinxrs_checksum_func_sign_bytes(void
+    
+);
+uint16_t uniffi_sphinxrs_checksum_func_sign_base64(void
     
 );
 uint16_t uniffi_sphinxrs_checksum_func_pubkey_from_seed(void
@@ -281,7 +328,13 @@ uint16_t uniffi_sphinxrs_checksum_func_xpub_from_seed(void
 uint16_t uniffi_sphinxrs_checksum_func_set_network(void
     
 );
+uint16_t uniffi_sphinxrs_checksum_func_set_device(void
+    
+);
 uint16_t uniffi_sphinxrs_checksum_func_set_blockheight(void
+    
+);
+uint16_t uniffi_sphinxrs_checksum_func_get_blockheight(void
     
 );
 uint16_t uniffi_sphinxrs_checksum_func_add_contact(void
@@ -293,7 +346,10 @@ uint16_t uniffi_sphinxrs_checksum_func_get_contact(void
 uint16_t uniffi_sphinxrs_checksum_func_list_contacts(void
     
 );
-uint16_t uniffi_sphinxrs_checksum_func_get_subscription_topic(void
+uint16_t uniffi_sphinxrs_checksum_func_contact_pubkey_by_child_index(void
+    
+);
+uint16_t uniffi_sphinxrs_checksum_func_contact_pubkey_by_encrypted_child(void
     
 );
 uint16_t uniffi_sphinxrs_checksum_func_get_tribe_management_topic(void
@@ -309,6 +365,12 @@ uint16_t uniffi_sphinxrs_checksum_func_handle(void
     
 );
 uint16_t uniffi_sphinxrs_checksum_func_send(void
+    
+);
+uint16_t uniffi_sphinxrs_checksum_func_keysend(void
+    
+);
+uint16_t uniffi_sphinxrs_checksum_func_pay(void
     
 );
 uint16_t uniffi_sphinxrs_checksum_func_make_media_token(void
@@ -350,7 +412,13 @@ uint16_t uniffi_sphinxrs_checksum_func_make_invite(void
 uint16_t uniffi_sphinxrs_checksum_func_process_invite(void
     
 );
+uint16_t uniffi_sphinxrs_checksum_func_parse_invite(void
+    
+);
 uint16_t uniffi_sphinxrs_checksum_func_code_from_invite(void
+    
+);
+uint16_t uniffi_sphinxrs_checksum_func_cancel_invite(void
     
 );
 uint16_t uniffi_sphinxrs_checksum_func_get_default_tribe_server(void
@@ -371,6 +439,9 @@ uint16_t uniffi_sphinxrs_checksum_func_get_mutes(void
 uint16_t uniffi_sphinxrs_checksum_func_set_push_token(void
     
 );
+uint16_t uniffi_sphinxrs_checksum_func_decrypt_child_index(void
+    
+);
 uint16_t uniffi_sphinxrs_checksum_func_get_msgs_counts(void
     
 );
@@ -384,6 +455,36 @@ uint16_t uniffi_sphinxrs_checksum_func_fetch_first_msgs_per_key(void
     
 );
 uint16_t uniffi_sphinxrs_checksum_func_fetch_payments(void
+    
+);
+uint16_t uniffi_sphinxrs_checksum_func_get_tags(void
+    
+);
+uint16_t uniffi_sphinxrs_checksum_func_delete_msgs(void
+    
+);
+uint16_t uniffi_sphinxrs_checksum_func_update_tribe(void
+    
+);
+uint16_t uniffi_sphinxrs_checksum_func_delete_tribe(void
+    
+);
+uint16_t uniffi_sphinxrs_checksum_func_add_node(void
+    
+);
+uint16_t uniffi_sphinxrs_checksum_func_concat_route(void
+    
+);
+uint16_t uniffi_sphinxrs_checksum_func_ping_done(void
+    
+);
+uint16_t uniffi_sphinxrs_checksum_func_fetch_pings(void
+    
+);
+uint16_t uniffi_sphinxrs_checksum_func_id_from_macaroon(void
+    
+);
+uint16_t uniffi_sphinxrs_checksum_func_find_route(void
     
 );
 uint32_t ffi_sphinxrs_uniffi_contract_version(void

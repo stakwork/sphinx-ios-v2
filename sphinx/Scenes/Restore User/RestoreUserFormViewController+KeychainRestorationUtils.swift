@@ -11,22 +11,16 @@ import UIKit
 extension RestoreUserFormViewController {
     
     @IBAction func keychainRestoreButtonTouched() {
-        authenticationHelper.authenticationAction(policy: .deviceOwnerAuthentication) { success in
-            if success {
-                self.goToKeychainRestore()
-            }
-        }
-    }
-    
-    func goToKeychainRestore() {
-        let viewController = KeychainRestoreViewController.instantiate(delegate: self)
-        
-        present(viewController, animated: true)
+//        authenticationHelper.authenticationAction(policy: .deviceOwnerAuthentication) { success in
+//            if success {
+//                self.goToKeychainRestore()
+//            }
+//        }
     }
 }
 
 
-extension RestoreUserFormViewController: KeychainRestoreDelegate {
+extension RestoreUserFormViewController {
     
     func goToApp() {
         goToWelcomeCompleteScene()

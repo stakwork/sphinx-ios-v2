@@ -25,12 +25,37 @@ class VideoCallHelper {
         return mode
     }
     
-    public static func createCallMessage(button: UIButton, callback: @escaping (String) -> ()) {
+    public static func createCallMessage(
+        button: UIButton,
+        secondBrainUrl: String? = nil,
+        appUrl: String? = nil,
+        callback: @escaping (String) -> ()
+    ) {
         let time = Date.timeIntervalSinceReferenceDate
-        let room = "\(API.kVideoCallServer)\(TransactionMessage.kCallRoomName).\(time)"
+        var graphUrl: String? = nil
+        
+        if let secondBrainUrl = secondBrainUrl, !secondBrainUrl.isEmpty {
+            if let url = URL(string: secondBrainUrl), let host = url.host {
+                graphUrl = host
+            } else {
+                graphUrl = secondBrainUrl
+            }
+        } else if let appUrl = appUrl, !appUrl.isEmpty {
+            if let url = URL(string: appUrl), let host = url.host {
+                graphUrl = host
+            } else {
+                graphUrl = appUrl
+            }
+        }
+        
+        var room = "\(API.sharedInstance.kVideoCallServer)/rooms\(TransactionMessage.kCallRoomName).\(time)"
+        
+        if let graphUrl = graphUrl {
+            room = "\(API.sharedInstance.kVideoCallServer)/rooms\(TransactionMessage.kCallRoomName).-\(graphUrl)-.\(time)"
+        }
         
         let audioCallback: (() -> ()) = {
-            callback(room + "#config.startAudioOnly=true")
+            callback(room + "?startAudioOnly=true")
         }
         
         let videoCallback: (() -> ()) = {

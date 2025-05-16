@@ -11,6 +11,33 @@ import Alamofire
 import SwiftyJSON
 
 extension API {
+    public func askAuthentication(
+        host: String,
+        callback: @escaping AskAuthenticationCallback
+    ) {
+        let url = "https://\(host)/ask"
+        
+        guard let request = createRequest(url, bodyParams: nil, method: "GET") else {
+            callback(nil, nil)
+            return
+        }
+        
+        AF.request(request).responseJSON { (response) in
+            switch response.result {
+            case .success(let data):
+                if let json = data as? NSDictionary {
+                    if let ts = json["ts"] as? String, let challenge = json["challenge"] as? String {
+                        callback(ts, challenge)
+                    } else {
+                        callback(nil, nil)
+                    }
+                }
+            case .failure(_):
+                callback(nil, nil)
+            }
+        }
+    }
+    
     public func askAuthentication(callback: @escaping AskAuthenticationCallback) {
         let url = "\(API.kAttachmentsServerUrl)/ask"
         
@@ -41,7 +68,7 @@ extension API {
         pubkey: String,
         callback: @escaping VerifyAuthenticationCallback
     ) {
-        let url = "\(API.kAttachmentsServerUrl)/verify?id=\(id)&sig=\(sig)&pubkey=\(pubkey)"
+        let url = "\(API.kAttachmentsServerUrl)/verify?id=\(id)&sig=\(sig.urlSafe)&pubkey=\(pubkey)"
         
         guard let request = createRequest(url, bodyParams: nil, method: "POST", contentType: "multipart/form-data") else {
             callback(nil)
@@ -131,54 +158,6 @@ extension API {
         if let uploadRequest = uploadRequest {
             uploadRequest.cancel()
             self.uploadRequest = nil
-        }
-    }
-    
-    public func sendAttachment(
-        params: [String : AnyObject],
-        callback: @escaping MessageObjectCallback,
-        errorCallback: @escaping EmptyCallback
-    ) {
-        guard let request = getURLRequest(route: "/attachment", params: params as NSDictionary?, method: "POST") else {
-            errorCallback()
-            return
-        }
-        
-        sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool, let response = json["response"] as? NSDictionary, success {
-                        callback(JSON(response))
-                    } else {
-                        errorCallback()
-                    }
-                }
-            case .failure(_):
-                errorCallback()
-            }
-        }
-    }
-    
-    public func payAttachment(params: [String : AnyObject], callback: @escaping MessageObjectCallback, errorCallback: @escaping EmptyCallback) {
-        guard let request = getURLRequest(route: "/purchase", params: params as NSDictionary?, method: "POST") else {
-            errorCallback()
-            return
-        }
-
-        sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool, let response = json["response"] as? NSDictionary, success {
-                        callback(JSON(response))
-                    } else {
-                        errorCallback()
-                    }
-                }
-            case .failure(_):
-                errorCallback()
-            }
         }
     }
     

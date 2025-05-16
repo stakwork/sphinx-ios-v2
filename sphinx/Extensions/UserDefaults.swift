@@ -10,16 +10,8 @@ import Foundation
 
 extension UserDefaults {
     public enum Keys {
-        public static let lastSeenHistoryDate = DefaultKey<Date>("lastSeenHistoryDate")
-        public static let lastSeenMessagesDate = DefaultKey<Date>("lastSeenMessagesDate")
-        public static let lastSeenContactsDate = DefaultKey<Date>("lastSeenContactsDate")
+        public static let accountUUID = DefaultKey<String>("accountUUID")
         public static let hideBalances = DefaultKey<Bool>("hideBalances")
-        public static let channelBalance = DefaultKey<Int>("channelBalance")
-        public static let remoteBalance = DefaultKey<Int>("remoteBalance")
-        public static let currentIP = DefaultKey<String>("currentIP")
-        public static let authToken = DefaultKey<String>("authToken")
-        public static let transportKey = DefaultKey<String>("transportKey")
-        public static let hmacKey = DefaultKey<String>("hmacKey")
         public static let ownerId = DefaultKey<Int>("ownerId")
         public static let ownerPubKey = DefaultKey<Int>("ownerPubKey")
         public static let inviteString = DefaultKey<String>("inviteString")
@@ -30,17 +22,15 @@ extension UserDefaults {
         public static let subscriptionQuery = DefaultKey<String>("subscriptionQuery")
         public static let invoiceQuery = DefaultKey<String>("invoiceQuery")
         public static let tribeQuery = DefaultKey<String>("tribeQuery")
-        public static let jitsiLinkUrl = DefaultKey<String>("jitsiLinkUrl")
-        public static let stakworkPaymentQuery = DefaultKey<String>("stakworkPaymentQuery")
+        public static let callLinkUrl = DefaultKey<String>("callLinkUrl")
         public static let attachmentsToken = DefaultKey<String>("attachmentsToken")
+        public static let attachmentsTokenExpDate = DefaultKey<Date>("attachmentsTokenExpDate")
         public static let inviterNickname = DefaultKey<String>("inviterNickname")
         public static let inviterPubkey = DefaultKey<String>("inviterPubkey")
         public static let inviterRouteHint = DefaultKey<String>("inviterRouteHint")
         public static let inviteAction = DefaultKey<String>("inviteAction")
-        public static let nodePassword = DefaultKey<String>("nodePassword")
         public static let welcomeMessage = DefaultKey<String>("welcomeMessage")
         public static let signupStep = DefaultKey<Int>("signupStep")
-        public static let messagesFetchPage = DefaultKey<Int>("messagesFetchPage")
         public static let paymentProcessedInvites = DefaultKey<[String]>("paymentProcessedInvites")
         public static let challengeQuery = DefaultKey<String>("challengeQuery")
         public static let redeemSatsQuery = DefaultKey<String>("redeemSatsQuery")
@@ -49,30 +39,19 @@ extension UserDefaults {
         public static let saveQuery = DefaultKey<String>("saveQuery")
         public static let shareContentQuery = DefaultKey<String>("shareContentQuery")
         public static let glyphQuery = DefaultKey<String>("glyphQuery")
-        
-        public static let previousIP = DefaultKey<String>("previousIP")
-        
+        public static let inviteCode = DefaultKey<String>("inviteCode")
         public static let defaultPIN = DefaultKey<String>("currentPin")
-        public static let privacyPIN = DefaultKey<String>("privacyPIN")
-        public static let currentSessionPin = DefaultKey<String>("currentSessionPin")
         public static let lastPinDate = DefaultKey<Date>("lastPinDate")
         public static let pinHours = DefaultKey<Int>("pinHours")
-        public static let privacyPinHours = DefaultKey<Int>("privacyPinHours")
-        
         public static let maxMemory = DefaultKey<Int>("maxMemory")
-        
         public static let inviteServerURL = DefaultKey<String>("inviteServerURL")
         public static let fileServerURL = DefaultKey<String>("fileServerURL")
         public static let meetingServerURL = DefaultKey<String>("meetingServerURL")
         public static let meetingPmtAmount = DefaultKey<Int>("meetingPmtAmount")
-        
         public static let appAppearence = DefaultKey<Int>("appAppearence")
         public static let messagesSize = DefaultKey<Int>("messagesSize")
-        public static let webViewsHeight = DefaultKey<Int>("webViewsHeight")
-        
         public static let shouldTrackActions = DefaultKey<Bool>("shouldTrackActions")
         public static let shouldAutoDownloadSubscribedPods = DefaultKey<Bool>("shouldAutoDownloadSubscribedPods")
-        
         public static let setupSigningDevice = DefaultKey<Bool>("setupSigningDevice")
         public static let setupPhoneSigner = DefaultKey<Bool>("setupPhoneSigner")
         public static let phoneSignerHost = DefaultKey<String>("phoneSignerHost")
@@ -83,8 +62,18 @@ extension UserDefaults {
         public static let signerKeys = DefaultKey<String>("signerKeys")
         public static let onionState = DefaultKey<String>("onionState")
         public static let sequence = DefaultKey<String>("sequence")
-        
-        public static let lastV2MessageIndex = DefaultKey<Int>("lastV2MessageIndex")
+        public static let deletedTribesPubKeys = DefaultKey<[String]>("deletedTribesPubKeys")
+        public static let maxMessageIndex = DefaultKey<Int>("maxMessageIndex")
+        public static let isProductionEnv = DefaultKey<Bool>("isProductionEnv")
+        public static let serverIP = DefaultKey<String>("serverIP")
+        public static let serverPORT = DefaultKey<Int>("serverPORT")
+        public static let tribesServerIP = DefaultKey<String>("tribesServerIP")
+        public static let defaultTribePublicKey = DefaultKey<String>("defaultTribePublicKey")
+        public static let routerUrl = DefaultKey<String>("routerUrl")
+        public static let routerPubkey = DefaultKey<String>("routerPubkey")
+        public static let skipAds = DefaultKey<Bool>("skipAds")
+        public static let didMigrateToTZ = DefaultKey<Bool>("didMigrateToTZ")
+        public static let systemTimezone = DefaultKey<String>("systemTimezone")
     }
     
     class func resetUserDefaults() {
@@ -107,7 +96,7 @@ extension UserDefaults {
     }
 }
 
-public class DefaultKey<T> {
+public class DefaultKey<S> {
     private let name: String
     
     init(_ name: String) {

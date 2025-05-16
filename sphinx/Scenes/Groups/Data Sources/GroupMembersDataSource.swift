@@ -14,13 +14,14 @@ class GroupMembersDataSource: GroupAllContactsDataSource {
     var chat: Chat!
     
     weak var addMemberDelegate: AddFriendRowButtonDelegate?
-    weak var groupDetailsDelegate: GroupDetailsDelegate?
     
     var messageBubbleHelper = NewMessageBubbleHelper()
     
     public static let kItemsPerPage: Int = 25
     
     let kAddMemberCellHeight: CGFloat = 100.0
+    
+    let som = SphinxOnionManager.sharedInstance
     
     init(tableView: UITableView, title: String) {
         super.init(tableView: tableView, delegate: nil, title: title)
@@ -30,109 +31,55 @@ class GroupMembersDataSource: GroupAllContactsDataSource {
     func reloadContacts(chat: Chat) {
         self.chat = chat
         
-        messageBubbleHelper.showLoadingWheel()
-        
-        if chat.isMyPublicGroup() {
-            loadTribeContacts()
-        } else {
-            loadGroupContacts()
-        }
+        loadTribeContacts()
     }
     
     func loadTribeContacts() {
-        // Create a watchdog timer as a DispatchWorkItem.
-        let watchdogTimer = DispatchWorkItem { [weak self] in
-            self?.messageBubbleHelper.hideLoadingWheel()
-            self?.messageBubbleHelper.showGenericMessageView(text: "Error loading tribe members")
-        }
         
-        // Schedule the watchdog timer to run after 10 seconds.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5, execute: watchdogTimer)
-        
-        SphinxOnionManager.sharedInstance.getTribeMembers(tribeChat: self.chat, completion: { [weak self] tribeMembers in
+        som.getTribeMembers(tribeChat: self.chat, completion: { [weak self] tribeMembers in
             guard let weakSelf = self else { return }
             
-            // Cancel the watchdog timer as the completion block executed successfully.
-            watchdogTimer.cancel()
-            
             if let tribeMemberArray = tribeMembers["confirmedMembers"] as? [TribeMembersRRObject],
-               let selfContact = UserContact.getSelfContact(),
-            let pendingMembersArray = tribeMembers["pendingMembers"] as? [TribeMembersRRObject] {
-                var contactsMap = tribeMemberArray.map({
+               let pendingMembersArray = tribeMembers["pendingMembers"] as? [TribeMembersRRObject]
+            {
+                self?.chat.isTribeICreated = true
+                self?.chat.managedObjectContext?.saveContext()
+                
+                let contactsMap = tribeMemberArray.map({
                     var contact = JSON($0.toJSON())
                     contact["pending"] = false
                     return contact
-                })
+                }).sorted { $0["alias"].stringValue < $1["alias"].stringValue }
                 
-                var pendingContactsMap = pendingMembersArray.map({
+                let pendingContactsMap = pendingMembersArray.map({
                     var contact = JSON($0.toJSON())
                     contact["pending"] = true
                     return contact
-                })
+                }).sorted { $0["alias"].stringValue < $1["alias"].stringValue }
                 
-                let (contacts, pendingContacts) = weakSelf.getGroupContactsFrom(contacts: contactsMap + pendingContactsMap)
-                weakSelf.groupContacts = contacts
-                weakSelf.groupPendingContacts = pendingContacts
+                weakSelf.groupContacts = weakSelf.getGroupContactsFrom(contacts: contactsMap)
+                weakSelf.groupPendingContacts = weakSelf.getGroupContactsFrom(contacts: pendingContactsMap)
                 
                 weakSelf.tableView.reloadData()
-                weakSelf.messageBubbleHelper.hideLoadingWheel()
             }
-            print(tribeMembers)
         })
     }
     
-    func loadGroupContacts() {
-        let contacts = chat.getContacts().sorted { $0.nickname ?? "name.unknown".localized < $1.nickname ?? "name.unknown".localized }
-        let pendingContacts = chat.getPendingContacts().sorted { $0.nickname ?? "name.unknown".localized < $1.nickname ?? "name.unknown".localized }
-
-        self.groupContacts = getGroupContactsFrom(contacts: contacts)
-        self.groupPendingContacts = getGroupContactsFrom(contacts: pendingContacts)
-        
-        self.tableView.reloadData()
-        self.messageBubbleHelper.hideLoadingWheel()
-    }
-    
-    func getGroupContactsFrom(contacts: [UserContact]) -> [GroupContact] {
+    func getGroupContactsFrom(
+        contacts: [JSON]
+    ) -> [GroupContact] {
         var groupContacts = [GroupContact]()
         
         var lastLetter = ""
         
-        for contact in  contacts {
-            let nickName = contact.getName()
-            
-            if let initial = nickName.first {
-                let initialString = String(initial)
-            
-                var groupContact = GroupContact()
-                groupContact.id = contact.id
-                groupContact.nickname = nickName
-                groupContact.avatarUrl = contact.avatarUrl
-                groupContact.isOwner = contact.isOwner
-                groupContact.selected = false
-                groupContact.firstOnLetter = (initialString != lastLetter)
-                
-                lastLetter = initialString
-                
-                groupContacts.append(groupContact)
-            }
-        }
-        
-        return groupContacts
-    }
-    
-    func getGroupContactsFrom(contacts: [JSON]) -> ([GroupContact], [GroupContact]) {
-        var groupContacts = [GroupContact]()
-        var groupPendingContacts = [GroupContact]()
-        
-        var lastLetter = ""
+        let timezones = TransactionMessage.getTimezonesByAlias(for: contacts.map({ $0["alias"].stringValue }), in: chat)
         
         for contact in  contacts {
-            let id = contact.getJSONId() ?? CrypterManager.sharedInstance.generateCryptographicallySecureRandomInt(upperBound: 100_000)
+            let id = contact.getJSONId() ?? SphinxOnionManager.sharedInstance.generateCryptographicallySecureRandomInt(upperBound: 100_000)
             let nickname = contact["alias"].stringValue
             let avatarUrl = contact["photo_url"].stringValue
             let pubkey = contact["pubkey"].stringValue
-            let isOwner = pubkey == (UserContact.getSelfContact()?.publicKey ?? "-1")
-            let pending = contact["pending"].boolValue
+            let isOwner = pubkey == (UserContact.getOwner()?.publicKey ?? "-1")
             
             if let initial = nickname.first {
                 let initialString = String(initial)
@@ -145,18 +92,15 @@ class GroupMembersDataSource: GroupAllContactsDataSource {
                 groupContact.pubkey = pubkey
                 groupContact.selected = false
                 groupContact.firstOnLetter = (initialString != lastLetter)
+                groupContact.timezone = timezones[nickname]
                 
                 lastLetter = initialString
                 
-                if pending {
-                    groupPendingContacts.append(groupContact)
-                } else {
-                    groupContacts.append(groupContact)
-                }
+                groupContacts.append(groupContact)
             }
         }
         
-        return (groupContacts, groupPendingContacts)
+        return groupContacts
     }
 }
 
@@ -260,50 +204,62 @@ extension GroupMembersDataSource {
 extension GroupMembersDataSource : GroupMemberCellDelegate {
     func didKickContact(contact: GroupAllContactsDataSource.GroupContact, cell: UITableViewCell) {
         if let chat = chat,
-           let pubkey = contact.pubkey{
+           let pubkey = contact.pubkey
+        {
             messageBubbleHelper.showLoadingWheel()
             
-            SphinxOnionManager.sharedInstance.kickTribeMember(pubkey:pubkey, chat: chat)
-            self.reloadContacts(chat: chat)
-        }
-        else{
-            self.showErrorAlert()
+            som.kickTribeMember(pubkey: pubkey, chat: chat)
+            
+            reloadContacts(chat: chat)
+        } else {
+            showErrorAlert()
         }
     }
     
     func shouldApproveMember(_ contact: GroupAllContactsDataSource.GroupContact, requestMessage: TransactionMessage) {
-        respondToRequest(message: requestMessage, action: "approved", completion: { (chat, message) in
-            self.reload(chat, and: message)
-        })
+        respondToRequest(
+            message: requestMessage,
+            chat: chat,
+            type: TransactionMessage.TransactionMessageType.memberApprove,
+            completion: { [weak self] (chat) in
+                self?.reload(chat)
+            }
+        )
     }
     
     func shouldRejectMember(_ contact: GroupAllContactsDataSource.GroupContact, requestMessage: TransactionMessage) {
-        respondToRequest(message: requestMessage, action: "rejected", completion: { (chat, message) in
-            self.reload(chat, and: message)
-        })
-    }
-    
-    func reload(_ chat: Chat, and message: TransactionMessage) {
-        self.reloadContacts(chat: chat)
-        self.groupDetailsDelegate?.shouldReloadMessage(message: message)
-    }
-    
-    func respondToRequest(message: TransactionMessage, action: String, completion: @escaping (Chat, TransactionMessage) -> ()) {
-        messageBubbleHelper.showLoadingWheel()
-        
-        API.sharedInstance.requestAction(messageId: message.id, contactId: message.senderId, action: action, callback: { json in
-            if let chat = Chat.insertChat(
-                chat: json["chat"]
-            ), let message = TransactionMessage.insertMessage(
-                m: json["message"],
-                existingMessage: TransactionMessage.getMessageWith(id: json["id"].intValue)
-            ).0 {
-                completion(chat, message)
-                return
+        respondToRequest(
+            message: requestMessage,
+            chat: chat,
+            type: TransactionMessage.TransactionMessageType.memberReject,
+            completion: { [weak self] (chat) in
+                self?.reload(chat)
             }
-            self.showErrorAlert()
-        }, errorCallback: {
-            self.showErrorAlert()
+        )
+    }
+    
+    func reload(_ chat: Chat) {
+        self.reloadContacts(chat: chat)
+    }
+    
+    func respondToRequest(
+        message: TransactionMessage,
+        chat: Chat,
+        type: TransactionMessage.TransactionMessageType,
+        completion: @escaping (Chat) -> ()
+    ) {
+        guard let uuid = message.uuid else {
+            return
+        }
+        
+        SphinxOnionManager.sharedInstance.approveOrRejectTribeJoinRequest(
+            requestUuid: uuid,
+            chat: chat,
+            type: type
+        )
+        
+        DelayPerformedHelper.performAfterDelay(seconds: 1.0, completion: {
+            completion(chat)
         })
     }
     

@@ -28,7 +28,7 @@ class LeftMenuViewController: UIViewController {
         }
     }
     
-    let storeKitService = StoreKitService.shared
+//    let storeKitService = StoreKitService.shared
 
     var buttonsCount = 2
     
@@ -65,7 +65,9 @@ class LeftMenuViewController: UIViewController {
     
     
     var canUserBuyKarmaForNode: Bool {
-        UserContact.getOwner()?.isVirtualNode() ?? false
+        //TODO: @Jim reinstate for v2 if we decide to
+        false
+//        UserContact.getOwner()?.isVirtualNode() ?? false
     }
     
     var karmaPurchaseProduct: SKProduct? {
@@ -86,8 +88,8 @@ class LeftMenuViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        storeKitService.requestDelegate = self
-        storeKitService.transactionObserverDelegate = self
+//        storeKitService.requestDelegate = self
+//        storeKitService.transactionObserverDelegate = self
         
         walletIcon.tintColorDidChange()
         
@@ -97,6 +99,7 @@ class LeftMenuViewController: UIViewController {
         karmaPurchaseButton.setTitle("left-menu.buy-karma-button".localized, for: .normal)
         karmaPurchaseButton.layer.cornerRadius = karmaPurchaseButton.frame.size.height / 2
         karmaPurchaseButton.clipsToBounds = true
+        karmaPurchaseButton.isHidden = true
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -104,7 +107,7 @@ class LeftMenuViewController: UIViewController {
         
         configureProfile()
         configureTable()
-        configureKarmaPurchaseButton()
+//        configureKarmaPurchaseButton()
         configureBalanceTap()
     }
     
@@ -136,39 +139,19 @@ class LeftMenuViewController: UIViewController {
     }
     
     
-    func configureKarmaPurchaseButton() {
-        guard canUserBuyKarmaForNode else {
-            karmaPurchaseButton.isHidden = true
-            return
-        }
-        
-        storeKitService.fetchProducts(matchingIdentifiers: [
-            StoreKitService.ProductIdentifiers.add1000Karma,
-        ])
-    }
-    
-    
-    func goToChatList() {
-        let appDelegate = UIApplication.shared.delegate as! AppDelegate
-        
-        if
-            let centerVC = appDelegate.getCurrentVC(),
-            centerVC.isKind(of: DashboardRootViewController.self
-        ) {
-            centerVC.navigationController?.popViewController(animated: false)
-        } else {
-            let dashboardRootVC = DashboardRootViewController.instantiate(leftMenuDelegate: self)
-            goTo(vc: dashboardRootVC)
-        }
-    }
+//    func configureKarmaPurchaseButton() {
+//        guard canUserBuyKarmaForNode else {
+//            karmaPurchaseButton.isHidden = true
+//            return
+//        }
+//        
+//        storeKitService.fetchProducts(matchingIdentifiers: [
+//            StoreKitService.ProductIdentifiers.add1000Karma,
+//        ])
+//    }
     
     func goToSupport() {
         supportButtonTouched()
-    }
-    
-    func reloadDashboard() {
-        let dashboardRootVC = DashboardRootViewController.instantiate(leftMenuDelegate: self)
-        goTo(vc: dashboardRootVC)
     }
     
     public func goTo(vc: UIViewController) {
@@ -201,18 +184,17 @@ class LeftMenuViewController: UIViewController {
     }
     
     @IBAction func logoutButtonTouched() {
-        closeLeftMenu()
-        ContactsService.sharedInstance.reset()
-        GroupsPinManager.sharedInstance.logout()
+//        closeLeftMenu()
+//        ContactsService.sharedInstance.reset()
     }
     
     
     @IBAction func karmaPurchaseButtonTapped() {
-        guard let karmaPurchaseProduct = karmaPurchaseProduct else {
-            preconditionFailure()
-        }
-        startPurchaseProgressIndicator()
-        storeKitService.purchase(karmaPurchaseProduct)
+//        guard let karmaPurchaseProduct = karmaPurchaseProduct else {
+//            preconditionFailure()
+//        }
+//        startPurchaseProgressIndicator()
+//        storeKitService.purchase(karmaPurchaseProduct)
     }
     
     private func updateBalance() {

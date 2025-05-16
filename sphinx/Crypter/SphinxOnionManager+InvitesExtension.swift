@@ -10,78 +10,175 @@ import Foundation
 
 extension SphinxOnionManager{//invites related
     
-    func issueInvite(amountMsat:Int)->String?{
+    func messageIdIsFromHashed(msgId: Int) -> Bool {
+        return msgId < 0
+    }
+    
+    func uniqueIntHashFromString(stringInput:String) -> Int{
+        return -1 * Int(Int32(stringInput.hashValue & 0x7FFFFFFF))
+    }
+    
+    func requestInviteCode(amountMsat: Int) -> (Bool, String?) {
         guard let seed = getAccountSeed(),
-            let selfContact = UserContact.getSelfContact(),
-            let nickname = selfContact.nickname else{
-            return nil
+              let selfContact = UserContact.getOwner(),
+              let nickname = selfContact.nickname,
+              let pubkey = selfContact.publicKey,
+              let routeHint = selfContact.routeHint else
+        {
+            return (false, nil)
         }
-        do{
+        
+        do {
+            let rr = try makeInvite(
+                seed: seed,
+                uniqueTime: getTimeWithEntropy(),
+                state: loadOnionStateAsData(),
+                host: "\(serverIP):\(serverPORT)",
+                amtMsat: UInt64(amountMsat),
+                myAlias: nickname,
+                tribeHost: tribesServerIP,
+                tribePubkey: defaultTribePubkey,
+                inviterPubkey: pubkey,
+                inviterRouteHint: routeHint
+            )
             
-            let rr = try! makeInvite(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), host: self.server_IP, amtMsat: UInt64(amountMsat), myAlias: nickname,tribeHost: "\(server_IP):8801", tribePubkey: defaultTribePubkey)
-            handleRunReturn(rr: rr)
-            return rr.newInvite
+            let _ = handleRunReturn(rr: rr)
+            return (true, nil)
+        } catch let error {
+            return (false, (error as? SphinxError).debugDescription)
         }
-        catch{
+    }
+    
+    func redeemInvite(
+        inviteCode: String
+    ) -> String? {
+        do {
+            let parsedInvite = try parseInvite(inviteQr: inviteCode)
+            
+            if let lsp = parsedInvite.lspHost {
+                self.saveIPAndPortFrom(lspHost: lsp)
+            }
+            
+            self.stashedInviteCode = parsedInvite.code
+            
+            if let contactInfo = parsedInvite.inviterContactInfo {
+                self.stashedContactInfo = contactInfo
+            }
+            
+            if let initialTribe = parsedInvite.initialTribe {
+                self.stashedInitialTribe = initialTribe
+                
+                if let (host, _) = extractHostAndTribeIdentifier(from: initialTribe) {
+                    UserDefaults.Keys.tribesServerIP.set(host)
+                }
+            }
+            
+            if let inviterAlias = parsedInvite.inviterAlias {
+                self.stashedInviterAlias = inviterAlias
+            }
+            return parsedInvite.code
+        } catch let error {
+            print("Parse invite error \(error)")
             return nil
         }
     }
     
-    func redeemInvite(inviteCode:String){
-        guard let seed = getAccountSeed() else{
-            return
-        }
-        do{
-            let rr = try! processInvite(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData(), inviteQr: inviteCode)
-            handleRunReturn(rr: rr)
-            if let lsp = rr.lspHost{
-                self.server_IP = lsp
-            }
-            self.stashedContactInfo = rr.inviterContactInfo
-            self.stashedInitialTribe = rr.initialTribe
-            self.stashedInviteCode = inviteCode
-            self.stashedInviterAlias = rr.inviterAlias
-        }
-        catch{
-            return
-        }
-    }
     
-    
-    func doInitialInviteSetup(){
+    func doInitialInviteSetup() {
         guard let stashedInviteCode = stashedInviteCode else{
             return
         }
-        if let stashedContactInfo = stashedContactInfo{
+        
+        if let stashedContactInfo = stashedContactInfo {
             self.stashedContactInfo = nil
-            makeFriendRequest(contactInfo: stashedContactInfo,inviteCode: stashedInviteCode)
+            
+            makeFriendRequest(
+                contactInfo: stashedContactInfo,
+                nickname: stashedInviterAlias,
+                inviteCode: stashedInviteCode
+            )
         }
-        joinInitialTribe()
     }
     
-    func createContactForInvite(code:String,nickname:String){
+    func createContactForInvite(
+        code: String,
+        nickname: String
+    ) {
+        var inviteCode: String? = nil
+        do {
+            inviteCode = try codeFromInvite(inviteQr: code)
+        } catch {
+            print("Error getting code from invite")
+            return
+        }
+        
         let contact = UserContact(context: managedContext)
-        contact.id = Int(Int32(UUID().hashValue & 0x7FFFFFFF))
+        contact.id = uniqueIntHashFromString(stringInput: UUID().uuidString)
         contact.publicKey = ""//
         contact.isOwner = false//
         contact.nickname = nickname
         contact.createdAt = Date()
-        contact.newMessages = 0
         contact.status = UserContact.Status.Pending.rawValue
         contact.createdAt = Date()
-        contact.newMessages = 0
         contact.createdAt = Date()
         contact.fromGroup = false
         contact.privatePhoto = false
         contact.tipAmount = 0
-        contact.blocked = false
-        contact.sentInviteCode = try! codeFromInvite(inviteQr: code)
+        contact.sentInviteCode = inviteCode
+        
         let invite = UserInvite(context: managedContext)
         invite.inviteString = code
         invite.status = UserInvite.Status.Ready.rawValue
         contact.invite = invite
         invite.contact = contact
+        
         managedContext.saveContext()
     }
     
+    func saveConfigFrom(
+        lspHost: String,
+        tribeServerHost: String,
+        defaultTribePubkey: String,
+        routerUrl: String?
+    ) {
+        saveIPAndPortFrom(lspHost: lspHost)
+        
+        if UserDefaults.Keys.tribesServerIP.get() == nil {
+            UserDefaults.Keys.tribesServerIP.set(tribeServerHost)
+            UserDefaults.Keys.defaultTribePublicKey.set(defaultTribePubkey)
+        }
+        
+        if let routerUrl = routerUrl {
+            UserDefaults.Keys.routerUrl.set(routerUrl)
+        }
+    }
+    
+    func saveIPAndPortFrom(lspHost: String) {
+        if UserDefaults.Keys.serverIP.get() != nil {
+            return
+        }
+        
+        if let components = URLComponents(string: lspHost), let host = components.host {
+            if let port = components.port {
+                UserDefaults.Keys.serverPORT.set(port)
+                UserDefaults.Keys.serverIP.set(host.replacingOccurrences(of: ":\(port)", with: ""))
+                SphinxOnionManager.sharedInstance.isProductionEnv = port == kProdServerPort
+            } else {
+                UserDefaults.Keys.serverIP.set(host)
+                SphinxOnionManager.sharedInstance.isProductionEnv = false
+            }
+        } else if let components = URLComponents(string: "https://\(lspHost)"), let host = components.host {
+            if let port = components.port {
+                UserDefaults.Keys.serverPORT.set(port)
+                UserDefaults.Keys.serverIP.set(host.replacingOccurrences(of: ":\(port)", with: ""))
+                SphinxOnionManager.sharedInstance.isProductionEnv = port == kProdServerPort
+            } else {
+                UserDefaults.Keys.serverIP.set(host)
+                SphinxOnionManager.sharedInstance.isProductionEnv = false
+            }
+        } else {
+            UserDefaults.Keys.serverIP.set(lspHost)
+            SphinxOnionManager.sharedInstance.isProductionEnv = false
+        }
+    }
 }

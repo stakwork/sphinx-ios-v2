@@ -54,19 +54,10 @@ class SupportViewController: UIViewController {
         messageTextView.inputAccessoryView = keyboardAccessoryView
         messageTextView.text = placeHolderMessage
         
-        loadLogs()
+        //@Tom do we want to reinstate this as v2?
+        //loadLogs()
     }
     
-    func loadLogs() {
-        loading = true
-        
-        API.sharedInstance.getLogs(callback: { logs in
-            self.loading = false
-            self.logsTextView.text = logs
-        }, errorCallback: {
-            self.loading = false
-        })
-    }
     
     @IBAction func sendMessageButtonTouched() {
         var emailBody = ""

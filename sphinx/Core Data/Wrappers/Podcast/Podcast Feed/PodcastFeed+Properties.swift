@@ -26,6 +26,24 @@ public class PodcastFeed: NSObject {
     public var episodes: Array<PodcastEpisode>?
     public var destinations: Array<PodcastDestination>?
     
+    var skipAdsCache: Bool? = nil
+    public var skipAds : Bool {
+        get {
+            if let skipAdsCache = skipAdsCache {
+                return skipAdsCache
+            }
+            if let skipAds = UserDefaults.Keys.skipAds.get(defaultValue: true) {
+                skipAdsCache = skipAds
+                return skipAds
+            }
+            return false
+        }
+        set {
+            skipAdsCache = newValue
+            UserDefaults.Keys.skipAds.set(newValue)
+        }
+    }
+    
     
     init(
         _ feedID: String,
@@ -108,12 +126,6 @@ extension PodcastFeed {
         podcastFeed.generator = searchResult[ContentFeed.CodingKeys.generator.rawValue].stringValue
         
         return podcastFeed
-    }
-    
-    public func updateLastDownloadedEpisodeWith(id: String?) {
-        if let feed = ContentFeed.getFeedById(feedId: feedID) {
-            feed.lastDownloadedEpisodeId = id
-        }
     }
 }
 

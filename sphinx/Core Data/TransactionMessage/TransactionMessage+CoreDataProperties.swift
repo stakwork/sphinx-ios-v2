@@ -43,6 +43,7 @@ extension TransactionMessage {
     @NSManaged public var push: Bool
     @NSManaged public var person: String?
     @NSManaged public var errorMessage: String?
+    @NSManaged public var tag: String?
     
     @NSManaged public var mediaKey: String?
     @NSManaged public var mediaType: String?
@@ -51,4 +52,5 @@ extension TransactionMessage {
     @NSManaged public var mediaFileSize: Int
     @NSManaged public var muid: String?
     @NSManaged public var threadUUID: String?
+    @NSManaged public var remoteTimezoneIdentifier: String?
 }

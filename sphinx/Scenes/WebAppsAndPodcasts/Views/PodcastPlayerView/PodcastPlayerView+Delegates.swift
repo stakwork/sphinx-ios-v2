@@ -14,6 +14,7 @@ extension PodcastPlayerView : PlayerDelegate {
             return
         }
         
+        self.podcast.currentEpisodeId = podcastData.episodeId
         configureControls(playing: true)
         showInfo()
         audioLoading = true
@@ -48,7 +49,6 @@ extension PodcastPlayerView : PlayerDelegate {
         if podcastData.podcastId != podcast?.feedID {
             return
         }
-        handleQueueActions()
         configureControls(playing: false)
         setProgress(duration: podcastData.duration ?? 0, currentTime: podcastData.currentTime ?? 0)
     }
@@ -67,22 +67,6 @@ extension PodcastPlayerView : PlayerDelegate {
             self.delegate?.didFailPlayingPodcast()
         }
         
-    }
-    
-    func handleQueueActions(){
-        let fm = FeedsManager.sharedInstance
-        let queued = fm.queuedPodcastEpisodes
-        print(queued)
-        if let queuedEpisode = FeedsManager.sharedInstance.queuedPodcastEpisodes.first,
-           let feed = queuedEpisode.feed,
-           let delegate = delegate as? NewPodcastPlayerViewController,
-           let delegatesDelegate = delegate.delegate as? DashboardRootViewController,
-           let podcast = FeedsManager.sharedInstance.getPodcastAndEpisodeFromPodcastFeed(pf: feed , itemID: queuedEpisode.itemID).0,
-           let episode = FeedsManager.sharedInstance.getPodcastAndEpisodeFromPodcastFeed(pf: feed , itemID: queuedEpisode.itemID).1 {
-            delegate.dismiss(animated: true)
-            delegatesDelegate.presentPodcastPlayerFor(podcast,queuedEpisode: episode)
-            //delegate.pla
-        }
     }
 }
 
@@ -128,7 +112,7 @@ extension PodcastPlayerView: CustomBoostViewDelegate {
                 
                 feedBoostHelper.sendBoostMessage(
                     message: boostMessage,
-                    itemId: episode.itemID,
+                    episodeId: episode.itemID,
                     amount: amount,
                     completion: { (message, success) in
                         self.boostDelegate?.didSendBoostMessage(success: success, message: message)

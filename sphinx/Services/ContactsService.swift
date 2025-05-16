@@ -48,10 +48,6 @@ class ContactsService: NSObject {
         configureFetchResultsController()
     }
     
-    func isRestoring() -> Bool {
-        return UserData.sharedInstance.getLastMessageIndex() == nil
-    }
-    
     func reset() {
         contacts = []
         allContacts = []
@@ -148,16 +144,16 @@ extension ContactsService : NSFetchedResultsControllerDelegate {
             
             if resultController == contactsResultsController {
                 didCollectContacts = true
+                
+                if let contacts = firstSection.objects as? [UserContact] {
+                    self.allContacts = contacts
+                }
             } else if resultController == chatsResultsController {
                 didCollectChats = true
-            }
-            
-            if let contacts = firstSection.objects as? [UserContact] {
-                self.allContacts = contacts
-            }
-            
-            if let chats = firstSection.objects as? [Chat] {
-                self.chats = chats
+                
+                if let chats = firstSection.objects as? [Chat] {
+                    self.chats = chats
+                }
             }
         
             if didCollectChats && didCollectContacts {
@@ -285,7 +281,11 @@ extension ContactsService : NSFetchedResultsControllerDelegate {
         let orderedObjects = objects.sorted(by: {
             let contact1 = $0 as ChatListCommonObject
             let contact2 = $1 as ChatListCommonObject
-
+            
+            if contact1.getInvite() != nil || contact2.getInvite() != nil {
+                return contact1.getInvite() != nil && $1.getInvite() == nil
+            }
+            
             if contact1.isPending() || contact2.isPending() {
                 return $0.isPending() && !$1.isPending()
             }

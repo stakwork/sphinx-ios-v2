@@ -7,7 +7,6 @@
 import UIKit
 import CoreData
 
-
 class FeedSearchResultsCollectionViewController: UICollectionViewController {
     
     var subscribedFeeds: [FeedSearchResult]!
@@ -17,7 +16,7 @@ class FeedSearchResultsCollectionViewController: UICollectionViewController {
 
     var onSubscribedFeedCellSelected: ((FeedSearchResult) -> Void)!
     var onFeedSearchResultCellSelected: ((FeedSearchResult) -> Void)!
-
+    var onContentScrolled: ((UIScrollView) -> Void)?
     
     private var currentDataSnapshot: DataSourceSnapshot!
     private var dataSource: DataSource!
@@ -39,7 +38,8 @@ extension FeedSearchResultsCollectionViewController {
         feedSearchResults: [FeedSearchResult] = [],
         interSectionSpacing: CGFloat = 0.0,
         onSubscribedFeedCellSelected: ((FeedSearchResult) -> Void)!,
-        onFeedSearchResultCellSelected: ((FeedSearchResult) -> Void)!
+        onFeedSearchResultCellSelected: ((FeedSearchResult) -> Void)!,
+        onContentScrolled: ((UIScrollView) -> Void)? = nil
     ) -> FeedSearchResultsCollectionViewController {
         let viewController = StoryboardScene
             .Dashboard
@@ -51,6 +51,7 @@ extension FeedSearchResultsCollectionViewController {
         viewController.interSectionSpacing = interSectionSpacing
         viewController.onSubscribedFeedCellSelected = onSubscribedFeedCellSelected
         viewController.onFeedSearchResultCellSelected = onFeedSearchResultCellSelected
+        viewController.onContentScrolled = onContentScrolled
         
         return viewController
     }
@@ -98,6 +99,19 @@ extension FeedSearchResultsCollectionViewController {
         registerViews(for: collectionView)
         configure(collectionView)
         configureDataSource(for: collectionView)
+        addTableBottomInset(for: collectionView)
+    }
+    
+    override func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        onContentScrolled?(scrollView)
+    }
+    
+    func addTableBottomInset(for collectionView: UICollectionView) {
+        let windowInsets = getWindowInsets()
+        let bottomBarHeight:CGFloat = 64
+        
+        collectionView.contentInset.bottom = bottomBarHeight + windowInsets.bottom
+        collectionView.verticalScrollIndicatorInsets.bottom = bottomBarHeight + windowInsets.bottom
     }
 }
 

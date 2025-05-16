@@ -45,6 +45,8 @@
 "error.karma.receipt.validation.failed" = "Nabigo ang Balidasyon ng Resibo ng Karma. Maling mensahe:";
 "error.app-store-purchase-receipt-not-found" = "Hindi mahanap ang isang resibo sa pagbili ng AppStore.";
 "error.app-store-receipt-validation-failed" = "Nabigo ang pagpapatunay ng resibo ng AppStore.";
+"error.rss.sync.failed.title" = "RSS Error";
+"error.rss.sync.failed.message" = "Sync to RSS Feed Failed. Please try again.";
 
 // DASHBOARD
 "dashboard.tabs.feed" = "Feed";
@@ -57,7 +59,11 @@
 "dashboard.feeds.filters.play" = "Maglaro";
 "dashboard.feeds.section-headings.following" = "Mga Sumusunod";
 "dashboard.feeds.section-headings.directory" = "Direktoryo";
+"dashboard.feeds.section-headings.play.for.free" = "Play for Free";
+"dashboard.feeds.section-headings.download.to.play" = "Download to Play";
 "dashboard.feeds.content.empty-state-message" = "Walang Podcasts na Natagpuan";
+"dashboard.feeds.content.download.torrent.started.title" = "Torrent download started";
+"dashboard.feeds.content.download.torrent.started.message" = "Check back in a bit to consume your content";
 
 // DASHBOARD FEED SEARCH
 "dashboard.feeds.search.error-alert-title" = "May naganap na pagkakamali habang naghahanap ng mga Feed ng Podcast";
@@ -127,9 +133,11 @@
 "just.left.tribe" = "Si %@ ay kakaalis lang sa tribo";
 "has.joined.group" = "Si %@ ay sumali sa grupo";
 "has.joined.tribe" = "Si %@ ay sumali sa tribo";
+"you.joined.tribe" = "Sumali ka sa tribo";
 "added.to.group" = "Naidagdag si %@ sa grupo";
 "new.public.group" = "BAGONG TRIBO";
 "edit.public.group" = "I-EDIT ANG TRIBO";
+"tribe.kick.as.admin" = "You've removed a member from this tribe";
 "tribe.kick" = "Inalis ka ng admin sa tribong ito";
 "tribe.deleted" = "Tinanggal ng admin ang kanyang tribo";
 "member.request" = "Gustong sumali ni %@ sa tribo";
@@ -140,6 +148,7 @@
 "waiting.admin.approval" = "Naghihintay ng pag-apruba ng admin";
 "picker-title.tribe-form.feed-type" = "Uri ng Feed";
 "alias.allowed-characters" = "Mga titik, numero at underscore lamang ang pinapayagan sa mga alias ng tribo";
+"admin" = "Tagapangasiwa";
 
 //SUBSCRIPTIONS
 "leave.lose.unsaved.changed" = "Sigurado ka bang gusto mong umalis at mawala ang anumang hindi na-save na mga pagbabago?";
@@ -170,7 +179,7 @@
 "edit.contact.upper" = "EDIT CONTACT";
 "subscribed.upper" = "SUBSCRIBED";
 "subscribe.upper" = "SUBSCRIBE";
-"nickname.address.required" = "Kinakailangan ang Palayaw at Address.";
+"nickname.address.required"  = "Kinakailangan ang palayaw, Address at Pahiwatig ng Ruta.";
 "new.contact" = "Bagong kontak";
 "invalid.pubkey" = "Di-wastong pampublikong Susi";
 "address-boox.contact-delete.alert-title" = "Tanggalin ang Kontak";
@@ -179,6 +188,9 @@
 "address-boox.contact-block.alert-message" = "Sigurado ka bang gusto mong i-block ang kontak na ito?";
 "address-boox.contact-unblock.alert-title" = "I-unblock ang Kontak";
 "address-boox.contact-unblock.alert-message" = "Sigurado ka bang gusto mong i-unblock ang Kontak na ito?";
+"address-book.can-not-delete-contact-title" = "Hindi matanggal ang contact";
+"address-book.can-not-delete-contact-message" = "Hindi matatanggal ang mga kumpirmadong contact";
+"messages.encrypted.disclaimer" = "Ang mga mensahe at tawag ay sinigurado gamit ang end-to-end na pag-encrypt";
 
 //WELCOME
 "welcome.initial.title" = "Maligayang Pagdating";
@@ -190,9 +202,9 @@
 //RESTORE EXISTING USER
 "restore.keychain" = "Ibalik mula sa keychain";
 "restore.description.continue" = "Magpatuloy";
-"restore.description.label" = "Kopyahin ang iyong mga susi mula sa iyong desktop app at i-paste ito dito.";
-"restore.copy.keys" = "Kopyahin ang iyong mga susi";
-"restore.form.paste.keys.placeholder" = "Idikit ang iyong mga susi...";
+"restore.description.label" = "Kopyahin ang iyong seed na parirala mula sa\niyong mobile app at i-paste ito dito.";
+"restore.copy.keys" = "Kopyahin ang iyong seed";
+"restore.form.paste.keys.placeholder" = "Idikit ang iyong seed phrase...";
 "submit" = "Ipasa";
 "restore.invalid-code.relay-qr-code" = "Ito ay mukhang isang code ng koneksyon mula sa Sphinx Relay app. Upang maibalik ang isang umiiral nang account, kailangan mong ilagay ang iyong backup na string.";
 "resume-restoring" = "Ipagpatuloy ang Pagpapa Numbalik...";
@@ -260,9 +272,9 @@
 //PROFILE
 "address.copied.clipboard" = "Nakopya ang address sa clipboard";
 "route.hint.copied.clipboard" = "Na kopya sa clipboard ang Pahiwatig na Ruta";
-"pin.keys.encryption" = "Ilagay ang iyong PIN para i-encrypt ang iyong mga susi. Kakailanganin mo ito kapag ibinabalik ang account sa ibang aparato.";
-"export.keys" = "Mga Susi sa Pag-export";
-"keys.will.copy.clipboard" = "Kokopyahin ang iyong mga susi sa clipboard. I-save ang string na ito at tandaan ang iyong pin bago burahin ang app o mawawala ang lahat ng data.";
+"pin.keys.encryption" = "Ilagay ang iyong PIN para ma-access ang iyong seed phrase";
+"export.keys" = "I-export ang Parirala ng Binhi";
+"keys.will.copy.clipboard" = "Ang iyong seed na parirala ay makokopya sa clipboard. I-save ang string na ito nang secure o mawawala ang lahat ng data.";
 "keys.copied.clipboard" = "I-export ang mga key na kinopya sa clipboard";
 "server.url.updated" = "Matagumpay na na-update ang URL ng server";
 "hour" = "oras";
@@ -324,7 +336,7 @@
 "pin.doesnt.match" = "Hindi tumutugma ang pin";
 "enter.old.pin" = "IPASOK ANG  KASALUKUYANG PIN";
 "enter.new.pin" = "IPASOK ANG BAGONG PIN";
-"pin.changed" = "Na-update na ang iyong PIN. Mangyaring muling i-export ang iyong mga susi gamit ang bagong PIN.";
+"pin.changed" = "Na-update na ang iyong PIN";
 "contact.pin.error" = "Hindi mo magagamit ang iyong pangunahing PIN bilang PIN ng grupo";
 "set.privacy.pin" = "Itakda ang Privacy PIN";
 "change.privacy.pin" = "Baguhin ang Privacy PIN";
@@ -339,7 +351,8 @@
 //HISTORY
 "error.loading.transactions" = "Nagkaroon ng pagkakamali sa paglo-load ng listahan ng mga transaksyon. Subukang muli sa ibang pagkakataon.";
 "loading.more.transactions" = "Naglo-load ng higit pang mga transaksyon...";
-"transactions.failure-reason" = "Failure reason:";
+"transactions.failure-reason" = "Dahilan ng pagkabigo:";
+"failed.payment" = "Nabigong Pagbabayad";
 
 //QR CODE SCANNER
 "scan.qr.code.upper" = "MAG-SCAN NG QR CODE";
@@ -372,6 +385,7 @@
 "media.terms.expired" = "Nag-expire ang mga termino ng media";
 "message.failed" = "Nabigo ang Mensahe";
 "invite.name" = "Paanyaya: %@";
+"add.name" = "Idagdag: %@";
 "welcome.to.sphinx" = "Maligayang pagdating sa Sphinx!";
 "loading.more.messages" = "Naglo-load ng higit pang mga mensahe...";
 "message.placeholder" = "Mensahe...";
@@ -400,6 +414,10 @@
 "loading.paid.message" = "Naglo-load ng mensahe...";
 "mark.as.read" = "Markahan bilang nabasa";
 "mark.as.unread" = "Markahan bilang hindi nabasa";
+"delete.contact" = "Tanggalin ang Kontakto";
+"delete.invite" = "Tanggalin ang Imbitasyon";
+"delete.contact.warning" = "Sigurado ka bang nais mong tanggalin ang kontakto na ito?";
+"delete.invite.warning" = "Sigurado ka bang gusto mong tanggalin ang imbitasyong ito?";
 "copy.text" = "Kopyahin ang Text";
 "copy.link" = "Kopyahin ang Link";
 "copy.pub.key" = "Kopyahin ang Pampublikong susi";
@@ -440,7 +458,7 @@
 "amount.too.low" = "Masyadong mababa ang halaga";
 "amount.too.high" = "Masyadong mataas ang halaga";
 "onchain.amount.too.low" = "Masyadong mababa ang halaga. Pinakamaliit na maari ay 250000 sats";
-"chat-header.balance.unit" = "karma";
+"chat-header.balance.unit" = "sats";
 "users" = "mga gumagamit";
 "optional.message.placeholder" = "Opsyonal na Mensahe...";
 "price.required" = "Kinakailangan ang presyo";
@@ -474,6 +492,12 @@
 "see-all" = "Ipakita lahat";
 "only-mentions" = "Mga Pagbanggit lamang";
 "mute-chat" = "I-Mute ang Chat";
+"error.getting.token.title" = "Error sa pagkuha ng token";
+"error.getting.token.description" = "Nagkaroon ng error sa pagkuha ng token para sumali sa tawag. Pakisubukang muli mamaya";
+"contact.info" = "Mga Detalye ng Pakikipag-ugnayan";
+"contact.connected.since" = "Nakakonekta mula noong %@";
+"timezone.changed" = "Ang setting ng time zone para sa chat na ito\nnaka-save lamang sa device na ito.\nKung gagamitin mo ang app sa ibang device,\nkakailanganin mong itakda ulit ang time zone.";
+"message.limit.reached" = "Naabot na ang limitasyon ng mga karakter.\nI-edit o ipadala ang iyong mensahe.";
 
 //OTHER
 "create.call" = "Lumikha ng Tawag";
@@ -503,6 +527,10 @@
 "authorization.failed" = "Nabigong Awtorisasyon";
 "already.connected" = "Naka konekta ka na sa taong ito";
 "price.to.meet" = "Presyo dapat matugunan: ";
+"invalid.public-key" = "Di-wastong Public Key";
+"processing.payment" = "Pinoproseso ang pagbabayad";
+"processing.payment.description" = "Maaaring tumagal ng hanggang 60 segundo ang prosesong ito. Aabisuhan ka kapag nakumpleto na";
+
 "people.save-profile" = "I-save ang Profile mula sa:";
 "people.delete-profile" = "Tanggalin ang Profile mula sa:";
 "people.save-failed" = "Nabigo ang pag-save ng Profile";
@@ -537,6 +565,7 @@
 "invite.in.progress.message" = "Nagsa-sign on si %@.";
 "invite.pmt.in.progress.title" = "Kasalukuyang isinasagawa ang pagbabayad";
 "invite.pmt.in.progress.message" = "Pinoproseso ang iyong bayad.";
+"contact.pending" = "Naghihintay ng pag-apruba";
 
 //PODCAST
 "episodes" = "mga episode";
@@ -585,11 +614,13 @@
 "feed.no-read-found" = "Walang \"Basahin\" Natagpuan ang mga Resulta";
 "feed.no-play-found" = "Walang \"I-play\" Natagpuan ang mga Resulta";
 "feed.search-over" = "Search over";
+"feed.search-tracks-quantity" = "millions of tracks";
+"feed.search-torrent-source" = "on BitTorrent";
 "feed.search-podcast-quantity" = "4 000 000 podcasts";
 "feed.search-podcast-source" = "sa Podcast Index";
 "feed.search-video-quantity" = "libu-libong mga video";
 "feed.search-video-source" = "sa Youtube";
-"feed.search-other-source" = "ang iyong mga naka-subscribe na feed";
+"feed.search-other-source-rss" = "ang iyong mga naka-subscribe na feed";
 
 //TIME
 "time.in-the-future" = "sa hinaharap";

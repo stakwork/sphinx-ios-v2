@@ -106,6 +106,7 @@
                                                 <subviews>
                                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="TopLeft" horizontalHuggingPriority="251" verticalHuggingPriority="251" verticalCompressionResistancePriority="749" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="12" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="NmQ-7f-GFw" customClass="ExpandableLabel" customModule="ExpandableLabel">
                                                         <rect key="frame" x="0.0" y="0.0" width="376" height="245"/>
+                                                        <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                                         <string key="text">Are there any updates? At vero eos et accu amus et iusto odio dignis simos ducimus qui blanditiis prae sentium volu ptatum deleniti. Character Counter is a 100% free online character count calculator that's simple to use. Sometimes users prefer simplicity over all of the detailed writing information Word Counter provides, and this is exactly what this tool offers. It displays character count and word count which is often the only information a person needs to know about their writing. Best of all, you rece often the only information a person needs to know about their writing. Best of all, you rece often the only information a person needs to know about their writing. Best of all, you rece know about their writing. Best of all, you rece often the only information a person needs to know about their writing. Best of all, you rece </string>
                                                         <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="17"/>
                                                         <color key="textColor" name="TextMessages"/>
@@ -115,7 +116,7 @@
                                                 <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                                 <constraints>
                                                     <constraint firstItem="NmQ-7f-GFw" firstAttribute="top" secondItem="51d-af-xpA" secondAttribute="top" id="1Yt-pa-i5X"/>
-                                                    <constraint firstAttribute="trailing" secondItem="NmQ-7f-GFw" secondAttribute="trailing" id="EJU-mU-kX6"/>
+                                                    <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="NmQ-7f-GFw" secondAttribute="trailing" id="EJU-mU-kX6"/>
                                                     <constraint firstItem="NmQ-7f-GFw" firstAttribute="leading" secondItem="51d-af-xpA" secondAttribute="leading" id="Ygj-QP-ddj"/>
                                                     <constraint firstAttribute="bottom" secondItem="NmQ-7f-GFw" secondAttribute="bottom" constant="4" id="v2e-iv-2Fz"/>
                                                 </constraints>

@@ -122,7 +122,7 @@ class NewPublicGroupViewController: KeyboardEventsViewController, BackCameraVC {
         privateTribeSwitch.onTintColor = UIColor.Sphinx.PrimaryBlue
         
         listOnTribesSwitch.onTintColor = UIColor.Sphinx.PrimaryBlue
-        listOnTribesLabel.addLinkFor(link: "tribes.sphinx.chat")
+        listOnTribesLabel.addLinkFor(link: "tribes.v2.sphinx.chat")
         
         let tap = UITapGestureRecognizer(target: self, action: #selector(labelTapped(gesture:)))
         listOnTribesLabel.addGestureRecognizer(tap)
@@ -142,7 +142,7 @@ class NewPublicGroupViewController: KeyboardEventsViewController, BackCameraVC {
     
     @objc func labelTapped(gesture: UITapGestureRecognizer) {
         if let label = gesture.view as? UILabel, let text = label.text {
-            if let range = label.getRangeFor(link: "tribes.sphinx.chat") {
+            if let range = label.getRangeFor(link: "tribes.v2.sphinx.chat") {
                 if gesture.didTapAttributedTextInLabel(label, inRange: range) {
                     let linkString = (text as NSString).substring(with: range).withProtocol(protocolString: "https")
                     UIApplication.shared.open(URL(string: linkString)!, options: [:], completionHandler: nil)

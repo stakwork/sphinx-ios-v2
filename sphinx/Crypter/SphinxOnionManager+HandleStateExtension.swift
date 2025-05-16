@@ -16,53 +16,217 @@ import SwiftyJSON
 extension SphinxOnionManager {
     func handleRunReturn(
         rr: RunReturn,
-        publishDelay:Double=0.5,
-        completion: (([String:AnyObject]) ->())? = nil
-    ){
-        print("handleRR rr:\(rr)")
-        if let sm = rr.stateMp{
-            //update state map
-            let _ = storeOnionState(inc: sm.bytes)
+        topic: String? = nil,
+        inviteCode: String? = nil,
+        completion: (([String:AnyObject]) ->())? = nil,
+        isSendingMessage: Bool = false,
+        skipSettleTopic: Bool = false,
+        skipAsyncTopic: Bool = false
+    ) -> String? {
+        
+        if let topic = topic {
+            print("V2 Received topic: \(topic)")
         }
         
-        if let newTribe = rr.newTribe{
-            print(newTribe)
-            NotificationCenter.default.post(name: .newTribeCreationComplete, object: nil, userInfo: ["tribeJSON" : newTribe])
-        }
-        
-        DelayPerformedHelper.performAfterDelay(seconds: publishDelay, completion: {
-            for i in 0..<rr.topics.count{
-                self.pushRRTopic(topic: rr.topics[i], payloadData: rr.payloads[i])
+        ///If re-processing delayed RR Object then all inside this IF has been run already. Then skip
+        if !skipSettleTopic && !skipAsyncTopic {
+            ///Update state mape
+            updateStateMap(stateMap: rr.stateMp)
+            
+            ///Handling new tribe crated
+            handleTribeCreation(newTribe: rr.newTribe)
+            
+            ///Handling owner contact
+            handleOwnerContact(myContactInfo: rr.myContactInfo)
+            
+            ///Handling balance update
+            handleBalanceUpdate(newBalance: rr.newBalance)
+            
+            ///Handling messages totals
+            handleMessagesCount(msgsCounts: rr.msgsCounts)
+            
+            ///Handling tribes restore before messages restore
+            restoreTribesFrom(
+                rr: rr,
+                topic: topic
+            ) { [weak self] rr, topic in
+                
+                ///handling contacts restore
+                self?.restoreContactsFrom(messages: rr.msgs)
+                
+                ///Handling key exchange msgs restore
+                self?.processKeyExchangeMessages(rr: rr)
+                
+                ///Handling generic msgs restore
+                self?.processGenericMessages(rr: rr)
+                
+                ///Handling invoice paid
+                self?.processInvoicePaid(rr: rr)
+                
+                ///Handling messages statused
+                self?.handleMessagesStatus(tags: rr.tags)
+                
+                ///Handling incoming tags
+                self?.handleMessageStatusByTag(rr: rr)
+                
+                ///Handling read status
+                self?.handleReadStatus(rr: rr)
+                
+                ///Handling restore callbacks
+                self?.handleRestoreCallbacks(topic: topic, messages: rr.msgs)
             }
-        })
-        
-        
-        if let mci = rr.myContactInfo{
-            let components = mci.split(separator: "_").map({String($0)})
-            if let components = parseContactInfoString(fullContactInfo: mci),
-               UserContact.getContactWithDisregardStatus(pubkey: components.0) == nil{//only add this if we don't already have a "self" contact
-                createSelfContact(scid: components.2, serverPubkey: components.1,myOkKey: components.0)                
-            }
+            
+            ///Handling settle status
+            handleSettledStatus(settledStatus: rr.settledStatus)
+            
+            ///Handling async tag
+            handleAsyncTag(asyncTag: rr.asyncpayTag)
+            
+            ///Handling pings
+            handlePing(ping: rr.ping)
+            
+            ///Handling ping done
+            handlePingDone(msgs: rr.msgs)
+
+            ///Handling mute levels
+            handleMuteLevels(rr: rr)
+            
+            ///Handling invoice paid status
+            handleInvoiceSentStatus(sentStatus: rr.sentStatus)
+            
+            ///Handling error
+            handleError(error: rr.error)
+            
+            ///Handling new invites
+            handleNewInvite(newInvite: rr.newInvite, messages: rr.msgs)
+            
+            ///Handling tribe members
+            handleTribeMembers(tribeMembers: rr.tribeMembers)
+            
+            ///Handling state to delete
+            handleStateToDelete(stateToDelete: rr.stateToDelete)
+            
+            ///Handling Payment History
+            handlePaymentsHistory(payments: rr.payments)
+
+            ///Handling topics subscription
+            handleTopicsToSubscribe(topics: rr.subscriptionTopics)
         }
         
-        if let balance = rr.newBalance{
-            UserData.sharedInstance.save(balance: balance)
+        //Publishing to topics
+        ///Handling settle topics to publish
+        if !skipSettleTopic && handleTopicToPush(
+            topic: rr.settleTopic,
+            payload: rr.settlePayload
+        ) {
+            let lastKey = delayedRRObjects.keys.max() ?? 0
+            delayedRRObjects[lastKey + 1] = rr
+            
+            startDelayedRRTimeoutTimer(for: lastKey + 1)
+            return nil
+        }
+        
+        ///Handling register topics to publish
+        handleRegisterTopic(
+            rr: rr,
+            skipAsyncTopic: skipAsyncTopic
+        ) { [weak self] rr, skipAsyncTopic in
+            guard let self = self else {
+                return
+            }
+            
+            ///Handling async pay topics to publish
+            if !skipAsyncTopic && self.handleTopicToPush(
+                topic: rr.asyncpayTopic,
+                payload: rr.asyncpayPayload
+            ) {
+                let lastKey = self.delayedRRObjects.keys.min() ?? 0
+                self.delayedRRObjects[lastKey - 1] = rr
+                
+                self.startDelayedRRTimeoutTimer(for: lastKey - 1)
+                return
+            }
+            
+            ///Handling topics to publish on MQTT
+            self.handleTopicsToPush(topics: rr.topics, payloads: rr.payloads)
+        }
+        
+        return getMessageTag(messages: rr.msgs, isSendingMessage: isSendingMessage)
+    }
+    
+    func updateStateMap(stateMap: Data?) {
+        if let stateMap = stateMap {
+            let _ = storeOnionState(inc: stateMap.bytes)
+        }
+    }
+    
+    func handlePaymentsHistory(payments: String?) {
+        if let payments = payments, payments != "[]" {
+            if let paymentsHistoryCallback = paymentsHistoryCallback {
+                paymentsHistoryCallback(payments, nil)
+                
+                self.paymentsHistoryCallback = nil
+            }
+        }
+    }
+    
+    func handleTribeCreation(newTribe: String?) {
+        if let newTribe = newTribe {
+            if let createTribeCallback = createTribeCallback {
+                createTribeCallback(newTribe)
+                
+                self.createTribeCallback = nil
+            }
+        }
+    }
+    
+    func handleOwnerContact(myContactInfo: String?) {
+        if let myContactInfo = myContactInfo {
+            backgroundContext.perform { [weak self] in
+                guard let self = self else {
+                    return
+                }
+                if let components = self.parseContactInfoString(
+                    fullContactInfo: myContactInfo
+                ), UserContact.getContactWithDisregardStatus(
+                    pubkey: components.0,
+                    managedContext: self.backgroundContext
+                ) == nil {
+                    ///only add this if we don't already have a "self" contact
+                    let _ = self.createSelfContact(
+                        scid: components.2,
+                        serverPubkey: components.1,
+                        myOkKey: components.0,
+                        context: self.backgroundContext
+                    )
+                    
+                    self.backgroundContext.saveContext()
+                }
+            }
+        }
+    }
+    
+    func handleBalanceUpdate(newBalance: UInt64?) {
+        if let newBalance = newBalance {
+            self.walletBalanceService.balance = newBalance
+            
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.01, execute: {
-                NotificationCenter.default.post(Notification(name: .onBalanceDidChange, object: nil, userInfo: ["balance" : balance]))
+                NotificationCenter.default.post(
+                    Notification(
+                        name: .onBalanceDidChange,
+                        object: nil,
+                        userInfo: ["balance" : newBalance]
+                    )
+                )
             })
         }
-        
-        processKeyExchangeMessages(rr: rr)
-        
-        processGenericMessages(rr: rr)
-                
-        
-        
-        // Assuming 'rr.tribeMembers' is a JSON string similar to the 'po map.JSON' output you've shown
-        if let tribeMembersString = rr.tribeMembers,
+    }
+    
+    func handleTribeMembers(tribeMembers: String?) {
+        if let tribeMembersString = tribeMembers,
            let jsonData = tribeMembersString.data(using: .utf8),
-           let jsonDict = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any] {
-            
+           let jsonDict = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any]
+        {
             var confirmedMembers: [TribeMembersRRObject] = []
             var pendingMembers: [TribeMembersRRObject] = []
             
@@ -77,26 +241,63 @@ extension SphinxOnionManager {
             }
             
             // Assuming 'stashedCallback' expects a dictionary with confirmed and pending members
-            if let completion = stashedCallback {
-                completion(["confirmedMembers": confirmedMembers as AnyObject, "pendingMembers": pendingMembers as AnyObject])
-                stashedCallback = nil
+            if let completion = tribeMembersCallback {
+                completion(
+                    [
+                        "confirmedMembers": confirmedMembers as AnyObject,
+                        "pendingMembers": pendingMembers as AnyObject
+                    ]
+                )
+                tribeMembersCallback = nil
             }
         }
-        
-        
-        if let sentStatus = rr.sentStatus {
-            print(sentStatus)
-            // Assuming sentStatus is a JSON string, convert it to a dictionary
+    }
+    
+    func handleInvoiceSentStatus(sentStatus: String?) {
+        if let sentStatus = sentStatus {
             if let data = sentStatus.data(using: .utf8) {
                 do {
-                    // Decode the JSON string into a dictionary
                     if let dictionary = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any?] {
-                        // Check if payment_hash exists and is not nil
                         if let paymentHash = dictionary["payment_hash"] as? String, !paymentHash.isEmpty,
                            let preimage = dictionary["preimage"] as? String,
-                            !preimage.isEmpty{
-                            // Post to the notification center
-                            NotificationCenter.default.post(name: .invoiceIPaidSettled, object: nil, userInfo: dictionary)
+                           !preimage.isEmpty
+                        {
+                            NotificationCenter.default.post(
+                                name: .invoiceIPaidSettled,
+                                object: nil,
+                                userInfo: dictionary as [AnyHashable: Any]
+                            )
+                        }
+                    }
+                } catch {
+                    print("Error decoding JSON: \(error)")
+                }
+            }
+            
+            if let sentStatus = SentStatus(JSONString: sentStatus) {
+                processInvitePurchaseAcks(sentStatus: sentStatus)
+            }
+        }
+    }
+    
+    func handleSettledStatus(settledStatus: String?) {
+        if let settledStatus = settledStatus {
+            if let data = settledStatus.data(using: .utf8) {
+                do {
+                    if let dictionary = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any?] {
+                        if let htlcId = dictionary["htlc_id"] as? String, let settleStatus = dictionary["status"] as? String, settleStatus == SphinxOnionManager.kCompleteStatus {
+                            
+                            if let RRObject = delayedRRObjects.filter({
+                                return $0.value.msgs.filter({ $0.index == htlcId }).first != nil
+                            }).first {
+                                
+                                delayedRRObjects.removeValue(forKey: RRObject.key)
+                                
+                                let _ = handleRunReturn(
+                                    rr: RRObject.value,
+                                    skipSettleTopic: true
+                                )
+                            }
                         }
                     }
                 } catch {
@@ -104,322 +305,398 @@ extension SphinxOnionManager {
                 }
             }
         }
-        
-        if let settledStatus = rr.settledStatus{
-            print("settledStatus:\(rr.settledStatus)")
-        }
-        
-        if let error = rr.error {
-            
-        }
-        
-        if let msgsTotalsJSON = rr.msgsCounts,
-           let msgTotals = MsgTotalCounts(JSONString: msgsTotalsJSON) {
-            print(msgTotals) // Now you have your model populated with the JSON data
-            self.msgTotalCounts = msgTotals
-            NotificationCenter.default.post(name: .totalMessageCountReceived, object: nil)
-        }
-        
-        purgeObsoleteState(keys: rr.stateToDelete)
-        
     }
     
+    func handleAsyncTag(asyncTag: String?) {
+        if let asyncTag = asyncTag {
+            if let RRObject = delayedRRObjects.filter({
+                return $0.value.msgs.filter({ $0.tag == asyncTag }).first != nil
+            }).first {
+                
+                delayedRRObjects.removeValue(forKey: RRObject.key)
+                
+                let _ = handleRunReturn(
+                    rr: RRObject.value,
+                    skipSettleTopic: true,
+                    skipAsyncTopic: true
+                )
+            }
+        }
+    }
     
+    func handlePing(ping: String?) {
+        if let ping = ping {
+            if let (paymentHash, timestamp, tag) = ping.pingComponents {
+                if paymentHash != "_" {
+                    pingsMap[paymentHash] = timestamp
+                }
+                
+                if let tag = tag {
+                    pingsMap[tag] = timestamp
+                }
+            }
+        }
+    }
+    
+    func handlePingDone(
+        msgs: [Msg]
+    ) {
+        if msgs.isEmpty {
+            return
+        }
+        
+        guard let seed = getAccountSeed() else {
+            return
+        }
+        
+        for paymentHash in msgs.filter({ $0.paymentHash != nil && $0.paymentHash?.isEmpty == false }).compactMap({ $0.paymentHash! }) {
+            if let timestamp = pingsMap[paymentHash], let intTimestamp = UInt64(timestamp) {
+                do {
+                    let rr = try sphinx.pingDone(
+                        seed: seed,
+                        uniqueTime: getTimeWithEntropy(),
+                        state: loadOnionStateAsData(),
+                        pingTs: intTimestamp
+                    )
+                    let _ = handleRunReturn(rr: rr)
+                    removeFromPingsMapWith(paymentHash)
+                } catch {
+                    print("Error calling ping done")
+                }
+            }
+        }
+    }
+    
+    func startDelayedRRTimeoutTimer(
+        for key: Int
+    ) {
+        delayedRRTimers[key]?.invalidate()
 
-    func pushRRTopic(topic:String,payloadData:Data?){
-        let byteArray: [UInt8] = payloadData != nil ? [UInt8](payloadData!) : [UInt8]()
-        print("pushRRTopic | topic:\(topic) | payload:\(byteArray)")
-        self.mqtt.publish(
-            CocoaMQTTMessage(
-                topic: topic,
-                payload: byteArray
+        let timer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: false) { [weak self] timer in
+            self?.handleDelayedRRTimeout(for: key)
+        }
+        
+        delayedRRTimers[key] = timer
+    }
+
+    func handleDelayedRRTimeout(
+        for key: Int
+    ) {
+        guard let object = delayedRRObjects[key] else {
+            return
+        }
+        
+        delayedRRObjects.removeValue(forKey: key)
+        
+        if key < 0 {
+            let _ = handleRunReturn(
+                rr: object,
+                skipSettleTopic: true,
+                skipAsyncTopic: true
             )
-        )
+        }
     }
     
-    func timestampToDate(timestamp:UInt64)->Date?{
-        let date = Date(timeIntervalSince1970: TimeInterval(timestamp) / 1000)
-        return date
+    func handleError(error: String?) {
+        if let error = error {
+            print("Run return object error: \(error)")
+            
+            if error.contains("async pay not found") {
+                for tag in pingsMap.keys {
+                    if error.contains(tag) {
+                        guard let seed = getAccountSeed() else {
+                            return
+                        }
+                        
+                        if let timestamp = pingsMap[tag], let intTimestamp = UInt64(timestamp) {
+                            do {
+                                let rr = try sphinx.pingDone(
+                                    seed: seed,
+                                    uniqueTime: getTimeWithEntropy(),
+                                    state: loadOnionStateAsData(),
+                                    pingTs: intTimestamp
+                                )
+                                let _ = handleRunReturn(rr: rr)
+                                removeFromPingsMapWith(tag)
+                            } catch {
+                                print("Error calling ping done")
+                            }
+                            
+                        }
+                    }
+                }
+            }
+        }
     }
     
-    func timestampToInt(timestamp: UInt64) -> Int? {
-        let dateInSeconds = Double(timestamp) / 1000.0
-        return Int(dateInSeconds)
+    func removeFromPingsMapWith(_ key: String) {
+        if let value = pingsMap[key] {
+            for (key, _) in pingsMap.filter({ $0.value == value }) {
+                pingsMap.removeValue(forKey: key)
+            }
+        }
     }
-
-
-    func isGroupAction(type:UInt8)->Bool{
-        let throwAwayMessage = TransactionMessage(context: managedContext)
-        throwAwayMessage.type = Int(type)
-        return throwAwayMessage.isGroupActionMessage()
-    }
+    
+    func handleNewInvite(
+        newInvite: String?,
+        messages: [Msg]
+    ) {
+        guard let newInvite = newInvite else {
+            return
+        }
         
-
-    func isMyMessageNeedingIndexUpdate(msg:Msg)->Bool{
-        if let _ = msg.uuid,
-           let _ = msg.index{
+        if messages.count > 0, let tag = messages[0].tag {
+            self.pendingInviteLookupByTag[tag] = newInvite
+        }
+    }
+    
+    func processInvitePurchaseAcks(sentStatus: SentStatus) {
+        guard let tag = sentStatus.tag else{
+            return
+        }
+        if pendingInviteLookupByTag.keys.contains(tag) {
+            let inviteCode = sentStatus.status != "COMPLETE" ? (nil) : (pendingInviteLookupByTag[tag])
+            
+            inviteCreationCallback?(inviteCode)
+            
+            pendingInviteLookupByTag.removeValue(forKey: tag)
+        }
+        
+    }
+    
+    func handleMessagesCount(msgsCounts: String?) {
+        if let msgsTotalsJSON = msgsCounts,
+           let msgTotals = MsgTotalCounts(JSONString: msgsTotalsJSON)
+        {
+            msgTotalCounts = msgTotals
+            totalMsgsCountCallback?()
+        }
+    }
+    
+    func handleRestoreCallbacks(
+        topic: String?,
+        messages: [Msg]
+    ) {
+        ///Restore callbacks
+        if topic?.isMessagesFetchResponse == true {
+            if let firstSCIDMsgsCallback = firstSCIDMsgsCallback {
+                firstSCIDMsgsCallback(messages)
+            } else if let onMessageRestoredCallback = onMessageRestoredCallback {
+                onMessageRestoredCallback(messages)
+            }
+        }
+    }
+    
+    func handleMessageStatusByTag(rr: RunReturn) {
+        if let sentStatusJSON = rr.sentStatus,
+           let sentStatus = SentStatus(JSONString: sentStatusJSON),
+           let tag = sentStatus.tag
+        {
+            backgroundContext.perform { [weak self] in
+                guard let self = self else {
+                    return
+                }
+                if let cachedMessage = TransactionMessage.getMessageWith(tag: tag, context: self.backgroundContext) {
+                    if (sentStatus.status == SphinxOnionManager.kCompleteStatus) {
+                        cachedMessage.status = TransactionMessage.TransactionMessageStatus.received.rawValue
+                    } else if (sentStatus.status == SphinxOnionManager.kFailedStatus) {
+                        cachedMessage.status = TransactionMessage.TransactionMessageStatus.failed.rawValue
+                    }
+                    
+//                    if let uuid = cachedMessage.uuid {
+//                        self.receivedOMuuid(uuid)
+//                    }
+                    
+                    if cachedMessage.paymentHash == nil {
+                        cachedMessage.paymentHash = sentStatus.paymentHash
+                    }
+                    
+                    self.backgroundContext.saveContext()
+                } else {
+                    NotificationCenter.default.post(
+                        Notification(
+                            name: .onKeysendStatusReceived,
+                            object: nil,
+                            userInfo: [
+                                "tag" : tag,
+                                "status": sentStatus.status ?? SphinxOnionManager.kFailedStatus
+                            ]
+                        )
+                    )
+                    
+                    self.onPaymentStatusReceivedFor(tag: tag, status: sentStatus.status ?? SphinxOnionManager.kFailedStatus)
+                }
+            }
+        }
+    }
+    
+    func handleTopicsToPush(topics: [String], payloads: [Data]) {
+        DelayPerformedHelper.performAfterDelay(seconds: 0.5, completion: {
+            for i in 0..<topics.count {
+                let _ = self.handleTopicToPush(
+                    topic: topics[i],
+                    payload: payloads[i]
+                )
+            }
+        })
+    }
+    
+    func handleTopicToPush(
+        topic: String?,
+        payload: Data?
+    ) -> Bool {
+        if let topic = topic, let payload = payload {
+            
+            let byteArray: [UInt8] = [UInt8](payload)
+            
+            self.mqtt?.publish(
+                CocoaMQTTMessage(
+                    topic: topic,
+                    payload: byteArray
+                )
+            )
             return true
         }
         return false
     }
-
-    var mutationKeys: [String] {
-        get {
-            if let onionState: String = UserDefaults.Keys.onionState.get() {
-                return onionState.components(separatedBy: ",")
-            }
-            return []
-        }
-        set {
-            UserDefaults.Keys.onionState.set(
-                newValue.joined(separator: ",")
+    
+    func handleRegisterTopic(
+        rr: RunReturn,
+        skipAsyncTopic: Bool,
+        callback: @escaping (RunReturn, Bool) -> ()
+    ) {
+        if let topic = rr.registerTopic, let payload = rr.registerPayload {
+            
+            let byteArray: [UInt8] = [UInt8](payload)
+            
+            self.mqtt?.publish(
+                CocoaMQTTMessage(
+                    topic: topic,
+                    payload: byteArray
+                )
             )
+            
+            DelayPerformedHelper.performAfterDelay(seconds: 0.25, completion: {
+                callback(rr, skipAsyncTopic)
+            })
+            
+        } else {
+            callback(rr, skipAsyncTopic)
         }
     }
     
-    func loadOnionStateAsData() -> Data {
-        let state = loadOnionState()
-        
-        var mpDic = [MessagePackValue:MessagePackValue]()
-
-        for (key, value) in state {
-            mpDic[MessagePackValue(key)] = MessagePackValue(Data(value))
+    func handleTopicsToSubscribe(topics: [String]) {
+        for topic in topics {
+            self.mqtt.subscribe([
+                (topic, CocoaMQTTQoS.qos1)
+            ])
         }
-        
-        let stateBytes = pack(
-            MessagePackValue(mpDic)
-        ).bytes
-        
-        return Data(stateBytes)
-    }
-
-    private func loadOnionState() -> [String: [UInt8]] {
-        var state:[String: [UInt8]] = [:]
-        
-        for key in mutationKeys {
-            if let value = UserDefaults.standard.object(forKey: key) as? [UInt8] {
-                state[key] = value
-            }
-        }
-        return state
     }
     
+    func deleteContactFromState(pubkey: String) {
+        let contactDictKey = "c/" + pubkey
 
-    func storeOnionState(inc: [UInt8]) -> [NSNumber] {
-        let muts = try? unpack(Data(inc))
-        
-        guard let mutsDictionary = (muts?.value as? MessagePackValue)?.dictionaryValue else {
-            return []
+        var state = loadOnionState()
+
+        if state[contactDictKey] != nil {
+            state.removeValue(forKey: contactDictKey)
+            saveUpdatedOnionState(state: state)
+        } else {
+            print("No contact found with the specified pubkey:", pubkey)
         }
-        
-        persist_muts(muts: mutsDictionary)
-
-        return []
     }
-
-    private func persist_muts(muts: [MessagePackValue: MessagePackValue]) {
-        var keys: [String] = []
-        
-        for  mut in muts {
-            if let key = mut.key.stringValue, let value = mut.value.dataValue?.bytes {
-                keys.append(key)
-                UserDefaults.standard.removeObject(forKey: key)
-                UserDefaults.standard.synchronize()
+    
+    private func saveUpdatedOnionState(state: [String: [UInt8]]) {
+        for key in state.keys {
+            if let value = state[key] {
                 UserDefaults.standard.set(value, forKey: key)
-                UserDefaults.standard.synchronize()
+            } else {
+                UserDefaults.standard.removeObject(forKey: key)
             }
         }
-        
-        keys.append(contentsOf: mutationKeys)
+        UserDefaults.standard.synchronize()
+        updateMutationKeys(with: state.keys.sorted())
+    }
+
+    private func updateMutationKeys(with keys: [String]) {
         mutationKeys = keys
     }
     
-    func purgeObsoleteState(keys:[String]){
-        for key in keys{
-            UserDefaults.standard.removeObject(forKey: key)
-            UserDefaults.standard.synchronize()
+    func getMessageTag(
+        messages: [Msg],
+        isSendingMessage: Bool
+    ) -> String? {
+        if isSendingMessage, messages.count > 0,
+           let tag = messages[0].tag
+        {
+            return tag
         }
-    }
-
-}
-
-
-struct ContactServerResponse: Mappable {
-    var pubkey: String?
-    var alias: String?
-    var host:String?
-    var photoUrl: String?
-    var person: String?
-    var code: String?
-    var role: Int?
-    var fullContactInfo:String?
-    var recipientAlias:String?
-
-    init?(map: Map) {}
-
-    mutating func mapping(map: Map) {
-        pubkey    <- map["pubkey"]
-        alias     <- map["alias"]
-        photoUrl  <- map["photo_url"]
-        person    <- map["person"]
-        code <- map["code"]
-        host <- map["host"]
-        role <- map["role"]
-        fullContactInfo <- map["fullContactInfo"]
-        recipientAlias <- map["recipientAlias"]
+        return nil
     }
     
-}
+    func handleMessagesStatus(tags: String?) {
+        if let tags = tags {
+            if let data = tags.data(using: .utf8) {
+                do {
+                    if let array = try JSON(data: data).array {
+                        var dictionary: [String: MessageStatusMap] = [:]
 
+                        for message in array {
+                            if let dictionaryObject = message.dictionaryObject, let messageStatus = MessageStatusMap(JSON: dictionaryObject) {
+                                if let tag = messageStatus.tag {
+                                    dictionary[tag] = messageStatus
+                                }
+                            }
+                        }
 
+                        let tags = array.compactMap({ $0["tag"].stringValue }).filter({ $0.isNotEmpty })
+                        
+                        if tags.isEmpty {
+                            return
+                        }
 
-struct MessageInnerContent: Mappable {
-    var content:String?
-    var replyUuid:String?=nil
-    var threadUuid:String?=nil
-    var mediaKey:String?=nil
-    var mediaToken:String?=nil
-    var mediaType:String?=nil
-    var muid:String?=nil
-    var originalUuid:String?=nil
-    var date:Int?=nil
-    var invoice:String?=nil
-    var paymentHash:String?=nil
-    var amount:Int?=nil
-    var fullContactInfo:String?=nil
-    var recipientAlias:String?=nil
-
-    init?(map: Map) {}
-    
-    mutating func mapping(map: Map) {
-        content    <- map["content"]
-        replyUuid <- map["replyUuid"]
-        threadUuid <- map["threadUuid"]
-        mediaToken <- map["mediaToken"]
-        mediaType <- map["mediaType"]
-        mediaKey <- map["mediaKey"]
-        muid <- map["muid"]
-        date <- map["date"]
-        originalUuid <- map["originalUuid"]
-        invoice <- map["invoice"]
-        paymentHash <- map["paymentHash"]
-        amount <- map["amount"]
-        fullContactInfo <- map["fullContactInfo"]
-        recipientAlias <- map["recipientAlias"]
-    }
-    
-}
-
-
-struct GenericIncomingMessage: Mappable {
-    var content:String?
-    var amount:Int?
-    var senderPubkey:String?=nil
-    var uuid:String?=nil
-    var originalUuid:String?=nil
-    var index:String?=nil
-    var replyUuid:String?=nil
-    var threadUuid:String?=nil
-    var mediaKey:String?=nil
-    var mediaToken:String?=nil
-    var mediaType:String?=nil
-    var muid:String?=nil
-    var timestamp:Int?=nil
-    var invoice:String?=nil
-    var paymentHash:String?=nil
-    var alias:String?=nil
-    var fullContactInfo:String?=nil
-    var photoUrl:String?=nil
-
-    init?(map: Map) {}
-    
-    init(msg:Msg){
-        
-        if let fromMe = msg.fromMe, fromMe == true, let sentTo = msg.sentTo{
-            self.senderPubkey = sentTo
-        }
-        else if let sender = msg.sender,
-           let csr = ContactServerResponse(JSONString: sender){
-            self.senderPubkey = csr.pubkey
-            self.photoUrl = csr.photoUrl
-            self.alias = csr.alias
-        }
-        
-        
-        var innerContentAmount : UInt64? = nil
-        if let message = msg.message,
-           let innerContent = MessageInnerContent(JSONString: message){
-            self.content = innerContent.content
-            self.replyUuid = innerContent.replyUuid
-            self.threadUuid = innerContent.threadUuid
-            self.mediaKey = innerContent.mediaKey
-            self.mediaToken = innerContent.mediaToken
-            self.mediaType = innerContent.mediaType
-            self.muid = innerContent.muid
-            self.originalUuid = innerContent.originalUuid
-//            self.date = innerContent.date
-            self.invoice = innerContent.invoice
-            self.paymentHash = innerContent.paymentHash
-            innerContentAmount = UInt64(innerContent.amount ?? 0)
-            if msg.type == 33{
-                self.alias = innerContent.recipientAlias
-                self.fullContactInfo = innerContent.fullContactInfo
-            }
-            
-            let (isTribe, _) = SphinxOnionManager.sharedInstance.isMessageTribeMessage(senderPubkey: self.senderPubkey ?? "")
-            
-            if let timestamp = msg.timestamp,
-                isTribe == false{
-                self.timestamp = Int(timestamp)
-            }
-            else{
-                self.timestamp = innerContent.date
+                        backgroundContext.perform { [weak self] in
+                            guard let self = self else {
+                                return
+                            }
+                            
+                            var chatIds: [Int] = []
+                            
+                            for message in TransactionMessage.getMessagesWith(tags: tags, context: self.backgroundContext) {
+                                if let messageStatus = dictionary[message.tag ?? ""] {
+                                    if messageStatus.isReceived() {
+                                        if message.isInvoice() {
+                                            if message.status == TransactionMessage.TransactionMessageStatus.pending.rawValue {
+                                                ///Just set invoice as received if pending. Otherwise it might be confirmed/paid and revert to received when this happens
+                                                message.status = TransactionMessage.TransactionMessageStatus.received.rawValue
+                                            }
+                                        } else {
+                                            message.status = TransactionMessage.TransactionMessageStatus.received.rawValue
+                                        }
+                                    } else if messageStatus.isFailed() {
+                                        message.status = TransactionMessage.TransactionMessageStatus.failed.rawValue
+                                    }
+                                }
+                                
+                                if let chatId = message.chat?.id, !chatIds.contains(chatId) {
+                                    chatIds.append(chatId)
+                                }
+                            }
+                            
+                            self.backgroundContext.saveContext()
+                            
+                            
+                            if !chatIds.isEmpty {
+                                let userInfo: [String: [Int]] = ["chat-ids" : chatIds]
+                                NotificationCenter.default.post(name: .onMessagesStatusChanged, object: nil, userInfo: userInfo)
+                            }
+                        }
+                    }
+                } catch {
+                    print("Error decoding JSON: \(error)")
+                }
             }
         }
-        if let invoice = self.invoice{
-            print(msg)
-            let prd = PaymentRequestDecoder()
-            prd.decodePaymentRequest(paymentRequest: invoice)
-            let amount = prd.getAmount() ?? 0
-            self.amount = amount * 1000 // convert to msat
-        }
-        else{
-            self.amount = (msg.fromMe == true) ? Int((innerContentAmount) ?? 0) : Int((msg.msat ?? innerContentAmount) ?? 0)
-        }
-        
-        self.uuid = msg.uuid
-        self.index = msg.index
     }
 
-    mutating func mapping(map: Map) {
-        content    <- map["content"]
-        amount     <- map["amount"]
-        replyUuid <- map["replyUuid"]
-        threadUuid <- map["threadUuid"]
-        mediaToken <- map["mediaToken"]
-        mediaType <- map["mediaType"]
-        mediaKey <- map["mediaKey"]
-        muid <- map["muid"]
-        
-    }
-    
-}
-
-struct TribeMembersRRObject: Mappable {
-    var pubkey:String? = nil
-    var routeHint:String? = nil
-    var alias:String? = nil
-    var contactKey:String? = nil
-    var is_owner: Bool = false
-    var status:String? = nil
-
-    init?(map: Map) {}
-
-    mutating func mapping(map: Map) {
-        pubkey    <- map["pubkey"]
-        alias    <- map["alias"]
-        routeHint    <- map["route_hint"]
-        contactKey    <- map["contact_key"]
-    }
-    
 }

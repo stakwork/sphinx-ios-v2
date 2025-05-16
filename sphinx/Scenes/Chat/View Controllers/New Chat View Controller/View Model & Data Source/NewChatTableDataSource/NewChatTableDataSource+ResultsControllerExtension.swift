@@ -50,13 +50,11 @@ extension NewChatTableDataSource {
             messageTableCellStateArray,
             toSection: .messages
         )
-
         return snapshot
     }
     
     func updateSnapshot() {
         let snapshot = makeSnapshotForCurrentState()
-
         DispatchQueue.main.async {
             CoreDataManager.sharedManager.saveContext()
             
@@ -97,8 +95,8 @@ extension NewChatTableDataSource {
         let threadOriginalMessageMediaData = (dataSourceItem.threadOriginalMessage?.id != nil) ? self.mediaCached[dataSourceItem.threadOriginalMessage!.id] : nil
         let tribeData = (dataSourceItem.linkTribe?.uuid != nil) ? self.preloaderHelper.tribesData[dataSourceItem.linkTribe!.uuid] : nil
         let linkData = (dataSourceItem.linkWeb?.link != nil) ? self.preloaderHelper.linksData[dataSourceItem.linkWeb!.link] : nil
-        let botWebViewData = (dataSourceItem.messageId != nil) ? self.botsWebViewData[dataSourceItem.messageId!] : nil
         let uploadProgressData = (dataSourceItem.messageId != nil) ? self.uploadingProgress[dataSourceItem.messageId!] : nil
+        let replyViewHeight = (dataSourceItem.messageId != nil) ? self.replyViewHeight[dataSourceItem.messageId!] : nil
         
         cell?.configureWith(
             messageCellState: dataSourceItem,
@@ -106,11 +104,11 @@ extension NewChatTableDataSource {
             threadOriginalMsgMediaData: threadOriginalMessageMediaData,
             tribeData: tribeData,
             linkData: linkData,
-            botWebViewData: botWebViewData,
             uploadProgressData: uploadProgressData,
             delegate: self,
             searchingTerm: self.searchingTerm,
-            indexPath: indexPath
+            indexPath: indexPath,
+            replyViewHeight: replyViewHeight
         )
         
         self.configureTableCellTransformOn(cell: cell)
@@ -140,15 +138,16 @@ extension NewChatTableDataSource {
         let admin = chat.getAdmin()
         let contact = chat.getConversationContact()
         
-        chat.processAliasesFrom(messages: sortedMessages)
+        let replyingMessagesMap = getReplyingMessagesMapFor(messages: messages)
         
-        let replyingMessagesMap = getReplyingMessagesMapFor(messages: sortedMessages)
-        let boostMessagesMap = getBoostMessagesMapFor(messages: sortedMessages)
-        let threadMessagesMap = getThreadMessagesFor(messages: sortedMessages)
-        let purchaseMessagesMap = getPurchaseMessagesMapFor(messages: sortedMessages)
-        let linkContactsArray = getLinkContactsArrayFor(messages: sortedMessages)
-        let linkTribesArray = getLinkTribesArrayFor(messages: sortedMessages)
-        let webLinksArray = getWebLinksArrayFor(messages: sortedMessages)
+        let boostMessagesMap = getBoostMessagesMapFor(messages: messages)
+        let requestResponsesMap = getMemberRequestResponsesMapFor(messages: messages)
+        let purchaseMessagesMap = getPurchaseMessagesMapFor(messages: messages)
+        
+        let threadMessagesMap = getThreadMessagesFor(messages: messages)
+        let linkContactsArray = getLinkContactsArrayFor(messages: messages)
+        let linkTribesArray = getLinkTribesArrayFor(messages: messages)
+        let webLinksArray = getWebLinksArrayFor(messages: messages)
         
         var groupingDate: Date? = nil
         var invoiceData: (Int, Int) = (0, 0)
@@ -164,9 +163,11 @@ extension NewChatTableDataSource {
         )
 
         for (index, message) in filteredThreadMessages.enumerated() {
-            if(message.type == TransactionMessage.TransactionMessageType.delete.rawValue){
+            
+            if message.isGroupKickMessage() && chat.isTribeICreated {
                 continue
             }
+            
             invoiceData = (
                 invoiceData.0 + ((message.isPayment() && message.isIncoming(ownerId: owner.id)) ? -1 : 0),
                 invoiceData.1 + ((message.isPayment() && message.isOutgoing(ownerId: owner.id)) ? -1 : 0)
@@ -174,6 +175,7 @@ extension NewChatTableDataSource {
             
             let replyingMessage = (message.replyUUID != nil) ? replyingMessagesMap[message.replyUUID!] : nil
             let boostsMessages = (message.uuid != nil) ? (boostMessagesMap[message.uuid!] ?? []) : []
+            let memberRequestResponses = (message.uuid != nil) ? (requestResponsesMap[message.uuid!] ?? []) : []
             let threadMessages = (message.threadUUID != nil) ? (threadMessagesMap[message.threadUUID!] ?? []) : []
             let threadOriginalMsg = (message.threadUUID != nil) ? originalMessagesMap[message.threadUUID!] : nil
             let purchaseMessages = purchaseMessagesMap[message.getMUID()] ?? [:]
@@ -198,7 +200,8 @@ extension NewChatTableDataSource {
                         contact: contact,
                         tribeAdmin: admin,
                         separatorDate: separatorDate,
-                        invoiceData: (invoiceData.0 > 0, invoiceData.1 > 0)
+                        invoiceData: (invoiceData.0 > 0, invoiceData.1 > 0),
+                        timezoneData: chat.timezoneData
                     ),
                     at: 0
                 )
@@ -217,11 +220,13 @@ extension NewChatTableDataSource {
                 replyingMessage: replyingMessage,
                 threadMessages: threadMessages,
                 boostMessages: boostsMessages,
+                memberRequestResponse: memberRequestResponses.first,
                 purchaseMessages: purchaseMessages,
                 linkContact: linkContact,
                 linkTribe: linkTribe,
                 linkWeb: linkWeb,
-                invoiceData: (invoiceData.0 > 0, invoiceData.1 > 0)
+                invoiceData: (invoiceData.0 > 0, invoiceData.1 > 0),
+                timezoneData: chat.timezoneData
             )
             
             array.insert(messageTableCellState, at: 0)
@@ -493,6 +498,36 @@ extension NewChatTableDataSource {
         return boostMessagesMap
     }
     
+    func getMemberRequestResponsesMapFor(
+        messages: [TransactionMessage]
+    ) -> [String: [TransactionMessage]] {
+        
+        guard let chat = chat else {
+            return [:]
+        }
+        
+        let messageUUIDs: [String] = messages
+            .filter({ $0.type == TransactionMessage.TransactionMessageType.memberRequest.rawValue })
+            .map({ $0.uuid ?? "" })
+            .filter({ $0.isNotEmpty })
+        
+        let requestResponsesMessages = TransactionMessage.getMemberRequestsResponsesFor(messageUUIDs, on: chat)
+        
+        var responsesMessagesMap: [String: [TransactionMessage]] = [:]
+        
+        for responseMsg in requestResponsesMessages {
+            if let replyUUID = responseMsg.replyUUID, replyUUID.isNotEmpty {
+                if let map = responsesMessagesMap[replyUUID], map.count > 0 {
+                    responsesMessagesMap[replyUUID]?.append(responseMsg)
+                } else {
+                    responsesMessagesMap[replyUUID] = [responseMsg]
+                }
+            }
+        }
+        
+        return responsesMessagesMap
+    }
+    
     @objc func getThreadMessagesFor(
         messages: [TransactionMessage]
     ) -> [String: [TransactionMessage]] {
@@ -564,10 +599,10 @@ extension NewChatTableDataSource {
         
         messages.forEach({
             if $0.bubbleMessageContentString?.hasPubkeyLinks == true {
-                if let contactInfo = SphinxOnionManager.sharedInstance.parseContactInfoString(fullContactInfo: $0.messageContent ?? ""){
+                if let link = $0.messageContent?.stringFirstLink, link.isPubKey {
                     pubkeys[$0.id] = (
-                        contactInfo.0,
-                        contactInfo.1 + "_" + contactInfo.2
+                        link.pubkeyComponents.0,
+                        link.pubkeyComponents.1
                     )
                 }
             }
@@ -711,7 +746,7 @@ extension NewChatTableDataSource : NSFetchedResultsControllerDelegate {
         }
     }
     
-    func configureBoostAndPurchaseResultsController() {
+    func configureSecondaryMessagesResultsController() {
         guard let chat = chat else {
             return
         }
@@ -720,7 +755,7 @@ extension NewChatTableDataSource : NSFetchedResultsControllerDelegate {
             return
         }
         
-        let fetchRequest = TransactionMessage.getBoostsAndPurchaseMessagesFetchRequestOn(chat: chat)
+        let fetchRequest = TransactionMessage.getSecondaryMessagesFetchRequestOn(chat: chat)
 
         additionMessagesResultsController = NSFetchedResultsController(
             fetchRequest: fetchRequest,
@@ -747,14 +782,16 @@ extension NewChatTableDataSource : NSFetchedResultsControllerDelegate {
             
             if controller == messagesResultsController {
                 if let messages = firstSection.objects as? [TransactionMessage] {
-                    self.messagesArray = messages.reversed()
+                    self.chat?.processAliasesFrom(messages: messages.reversed())
+                    self.messagesArray = messages.filter({ !$0.isApprovedRequest() && !$0.isDeclinedRequest() }).reversed()
                     
                     if !(self.delegate?.isOnStandardMode() ?? true) {
                         return
                     }
-                    
+                    self.updateMessagesStatusesFrom(messages: self.messagesArray)
                     self.processMessages(messages: self.messagesArray)
-                    self.configureBoostAndPurchaseResultsController()
+                    self.configureSecondaryMessagesResultsController()
+                    self.delegate?.shouldUpdateHeaderScheduleIcon(message: messages.first)
                 }
             } else {
                 if !(self.delegate?.isOnStandardMode() ?? true) {
@@ -763,6 +800,38 @@ extension NewChatTableDataSource : NSFetchedResultsControllerDelegate {
                 
                 self.processMessages(messages: self.messagesArray)
             }
+        }
+    }
+    
+    func updateMessagesStatusesFrom(messages: [TransactionMessage]) {
+        let dispatchQueue = DispatchQueue.global(qos: .utility)
+        dispatchQueue.async {
+            if messages.isEmpty {
+                return
+            }
+
+            let confirmedMessages = messages.filter({
+                return $0.senderId == UserData.sharedInstance.getUserId() &&
+                       ($0.status == TransactionMessage.TransactionMessageStatus.confirmed.rawValue ||
+                        $0.status == TransactionMessage.TransactionMessageStatus.pending.rawValue)
+            })
+            let tags = confirmedMessages.compactMap({ $0.tag })
+
+            if tags.isEmpty {
+                return
+            }
+
+            if !self.messageTableCellStateArray.isEmpty {
+                if !self.loadingMoreItems {
+                    if self.lastMessageTagRestored == tags.last ?? "" {
+                        return
+                    }
+                }
+            }
+
+            self.lastMessageTagRestored = tags.last ?? ""
+
+            SphinxOnionManager.sharedInstance.getMessagesStatusFor(tags: tags)
         }
     }
 }

@@ -15,22 +15,44 @@ class MediaLoader {
     
     static let cache = SphinxCache()
     
+    class func isAuthenticated() -> (Bool, String?) {
+        if let token: String = UserDefaults.Keys.attachmentsToken.get() {
+            let expDate: Date? = UserDefaults.Keys.attachmentsTokenExpDate.get()
+            
+            if let expDate = expDate, expDate > Date() {
+                return (true, token)
+            }
+        }
+        return (false, nil)
+    }
+    
     class func loadDataFrom(
         URL: URL,
         includeToken: Bool = true,
         completion: @escaping (Data, String?) -> (),
         errorCompletion: @escaping () -> ()
     ) {
-        if !ConnectivityHelper.isConnectedToInternet {
-            errorCompletion()
-            return
-        }
-        
         let sessionConfig = URLSessionConfiguration.default
         let session = URLSession(configuration: sessionConfig, delegate: nil, delegateQueue: nil)
         var request = URLRequest(url: URL as URL)
         
-        if let token: String = UserDefaults.Keys.attachmentsToken.get(), includeToken {
+        let isAuthenticated = MediaLoader.isAuthenticated()
+        
+        if !isAuthenticated.0 {
+            AttachmentsManager.sharedInstance.authenticate(completion: {
+                self.loadDataFrom(
+                    URL: URL,
+                    includeToken: includeToken,
+                    completion: completion,
+                    errorCompletion: errorCompletion
+                )
+            }, errorCompletion: {
+                errorCompletion()
+            })
+            return
+        }
+        
+        if let token: String = isAuthenticated.1, includeToken {
             request.addValue(
                 "Bearer \(token)",
                 forHTTPHeaderField: "Authorization"
@@ -469,13 +491,13 @@ class MediaLoader {
         }
     }
     
-    class func loadPaymentTemplateImage(
+    class func loadPublicImage(
         url: URL,
-        message: TransactionMessage,
+        messageId: Int,
         completion: @escaping (Int, UIImage) -> (), errorCompletion: @escaping (Int) -> ()
     ) {
         if let cachedImage = getImageFromCachedUrl(url: url.absoluteString) {
-            completion(message.id, cachedImage)
+            completion(messageId, cachedImage)
         } else {
             loadDataFrom(URL: url, includeToken: true, completion: { (data, _) in
                 if let image = UIImage(data: data) {
@@ -486,7 +508,7 @@ class MediaLoader {
                     )
                     
                     DispatchQueue.main.async {
-                        completion(message.id, image)
+                        completion(messageId, image)
                     }
                     return
                 }
@@ -591,7 +613,7 @@ class MediaLoader {
             let randomInt = Int.random(in: 0...Int(1e9))
             let name = message.getFileName()
             
-            let _ = CachedMedia.createObject(
+            CachedMedia.createObject(
                 id: randomInt,
                 chat: chat,
                 filePath: path,
@@ -626,7 +648,7 @@ class MediaLoader {
             let fileExtension = message.getCMExtensionAssignment()
             let name = message.getFileName()
             
-            let _ = CachedMedia.createObject(
+            CachedMedia.createObject(
                 id: randomInt,
                 chat: chat,
                 filePath: path,

@@ -55,33 +55,13 @@ class PinnedMessageView: UIView {
                 ) {
                     setMessageAndShowView(message: message, delegate: delegate)
                 } else {
-                    fetchMessage(pinnedMessageUUID: pinnedMessageUUID, delegate: delegate)
+                    //TODO: @Jim add pinned messages
+//                    fetchMessage(pinnedMessageUUID: pinnedMessageUUID, delegate: delegate)
                 }
             } else {
                 hideView()
             }
         }
-    }
-    
-    func fetchMessage(
-        pinnedMessageUUID: String,
-        delegate: PinnedMessageViewDelegate
-    ) {
-        API.sharedInstance.getMessageBy(
-            messageUUID: pinnedMessageUUID,
-            callback: { messageJSON in
-                if let message = TransactionMessage.insertMessage(
-                    m: messageJSON,
-                    existingMessage: TransactionMessage.getMessageWith(id: messageJSON["id"].intValue)
-                ).0 {
-                    self.setMessageAndShowView(message: message, delegate: delegate)
-                } else {
-                    self.hideView()
-                }
-            } , errorCallback: {
-                self.hideView()
-            }
-        )
     }
     
     func setMessageAndShowView(
@@ -91,7 +71,7 @@ class PinnedMessageView: UIView {
         self.delegate = delegate
         self.messageId = message.id
         
-        pinnedMessageLabel.text = message.bubbleMessageContentString ?? ""
+        pinnedMessageLabel.text = message.bubbleMessageContentString?.removingMarkdownDelimiters ?? ""
         
         self.isHidden = false
         

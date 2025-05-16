@@ -53,7 +53,8 @@
 "error.karma.receipt.validation.failed" = "カルマの受信検証に失敗しました。エラーメッセージ：";
 "error.app-store-purchase-receipt-not-found" = "AppStore購入レシートが見つかりませんでした。";
 "error.app-store-receipt-validation-failed" = "AppStoreレシートの検証に失敗しました。";
-
+"error.rss.sync.failed.title" = "RSS Error";
+"error.rss.sync.failed.message" = "Sync to RSS Feed Failed. Please try again.";
 
 // DASHBOARD
 "dashboard.tabs.feed" = "フィード";
@@ -66,7 +67,11 @@
 "dashboard.feeds.filters.play" = "遊ぶ";
 "dashboard.feeds.section-headings.following" = "フォロー中";
 "dashboard.feeds.section-headings.directory" = "ディレクトリ";
+"dashboard.feeds.section-headings.play.for.free" = "Play for Free";
+"dashboard.feeds.section-headings.download.to.play" = "Download to Play";
 "dashboard.feeds.content.empty-state-message" = "Podcastが見つかりません";
+"dashboard.feeds.content.download.torrent.started.title" = "Torrent download started";
+"dashboard.feeds.content.download.torrent.started.message" = "Check back in a bit to consume your content";
 
 
 // DASHBOARD FEED SEARCH
@@ -138,10 +143,12 @@
 "just.left.group" = "%@ がグループを離れました";
 "just.left.tribe" = "%@ がトライブを離れました";
 "has.joined.group" = "%@ がグループに参加しました";
-"has.joined.tribe" = "%@ がトライブに参加しました";
+"has.joined.tribe" = "%@ が部族に参加しました";
+"you.joined.tribe" = "あなたは部族に加わりました";
 "added.to.group" = "%@ がグループに追加されました";
 "new.public.group" = "新しいトライブ";
 "edit.public.group" = "トライブを編集";
+"tribe.kick.as.admin" = "You've removed a member from this tribe";
 "tribe.kick" = "管理者によってこのトライブから削除されました";
 "tribe.deleted" = "管理者によってこのトライブが削除されました";
 "member.request" = "%@ がトライブに参加をリクエストしています";
@@ -153,6 +160,7 @@
 "picker-title.tribe-form.feed-type" = "フィードタイプ";
 "alias.allowed-characters" = "トライブエイリアスには文字、数字、アンダースコアのみ使用できます";
 "invalid.url" = "無効なURL";
+"admin" = "管理者";
 
 //SUBSCRIPTIONS
 "leave.lose.unsaved.changed" = "保存していない変更がある場合、移動すると変更内容が失われます。よろしいですか。";
@@ -181,7 +189,7 @@
 "edit.contact.upper" = "連絡先を編集";
 "subscribed.upper" = "定期購入";
 "subscribe.upper" = "定期購入";
-"nickname.address.required" = "ニックネームとアドレスが必要です。";
+"nickname.address.required" = "ニックネーム、住所、ルートヒントは必須です。";
 "new.contact" = "新しい連絡先";
 "invalid.pubkey" = "無効な公開鍵です。";
 "invalid.route.hint" = "無効なルートヒントです。";
@@ -191,6 +199,9 @@
 "address-boox.contact-block.alert-message" = "この連絡先をブロックしますか？";
 "address-boox.contact-unblock.alert-title" = "連絡先のブロック解除";
 "address-boox.contact-unblock.alert-message" = "この連絡先のブロックを解除しますか？";
+"address-book.can-not-delete-contact-title" = "連絡先を削除できません";
+"address-book.can-not-delete-contact-message" = "確認済みの連絡先は削除できません";
+"messages.encrypted.disclaimer" = "メッセージと通話はエンドツーエンドの暗号化で保護されます";
 
 //WELCOME
 "welcome.initial.title" = "ようこそ";
@@ -202,9 +213,9 @@
 //RESTORE EXISTING USER
 "restore.keychain" = "キーチェーンから復元";
 "restore.description.continue" = "続ける";
-"restore.description.label" = "デスクトップアプリからキーをコピーし、ここに貼り付けてください。";
-"restore.copy.keys" = "キーをコピー";
-"restore.form.paste.keys.placeholder" = "キーを貼り付ける...";
+"restore.description.label" = "モバイル アプリからシード フレーズをコピーしてここに貼り付けます。";
+"restore.copy.keys" = "モバイル アプリからシー";
+"restore.form.paste.keys.placeholder" = "シードフレーズを貼り付けます...";
 "submit" = "送信";
 "restore.invalid-code.relay-qr-code" = "これはSphinx Relayアプリからの接続コードのようです。既存のアカウントを復元するには、バックアップ文字列を入力する必要があります。";
 "resume-restoring" = "復元を再開します...";
@@ -271,9 +282,9 @@
 //PROFILE
 "address.copied.clipboard" = "アドレスをクリップボードにコピーしました";
 "route.hint.copied.clipboard" = "ルートヒントをクリップボードにコピーしました";
-"pin.keys.encryption" = "あなたのPINを入力して鍵を暗号化してください。他のデバイスでアカウントを復元する際に必要になります。";
-"export.keys" = "鍵をエクスポート";
-"keys.will.copy.clipboard" = "あなたの鍵はクリップボードにコピーされます。この文字列を保存し、アプリを削除する前にPINを覚えておいてください。さもないと、すべてのデータが失われます。";
+"pin.keys.encryption" = "PINを入力してシードフレーズにアクセスしてください";
+"export.keys" = "シードフレーズをエクスポート";
+"keys.will.copy.clipboard" = "シードフレーズがクリップボードにコピーされます。この文字列を安全に保存しないと、すべてのデータが失われます。";
 "keys.copied.clipboard" = "エクスポート鍵をクリップボードにコピーしました";
 "server.url.updated" = "サーバーURLが正常に更新されました";
 "hour" = "時間";
@@ -335,7 +346,7 @@
 "pin.doesnt.match" = "PINが一致しません";
 "enter.old.pin" = "現在のPINを入力";
 "enter.new.pin" = "新しいPINを入力";
-"pin.changed" = "PINが更新されました。新しいPINを使用して鍵を再エクスポートしてください。";
+"pin.changed" = "PINが更新されました";
 "contact.pin.error" = "メインのPINをグループPINとして使用することはできません";
 "set.privacy.pin" = "プライバシーPINを設定";
 "change.privacy.pin" = "プライバシーPINを変更";
@@ -351,6 +362,7 @@
 "error.loading.transactions" = "取引リストの読み込み中にエラーが発生しました。後ほど再試してください。";
 "loading.more.transactions" = "さらに取引を読み込んでいます...";
 "transactions.failure-reason" = "失敗の理由:";
+"failed.payment" = "支払い失敗";
 
 //QR CODE SCANNER
 "scan.qr.code.upper" = "QRコードをスキャン";
@@ -387,6 +399,7 @@
 "media.terms.expired" = "メディアの条件が期限切れです";
 "message.failed" = "メッセージの送信に失敗しました";
 "invite.name" = "招待: %@";
+"add.name" = "追加: %@";
 "welcome.to.sphinx" = "Sphinxへようこそ！";
 "loading.more.messages" = "さらにメッセージを読み込んでいます...";
 "message.placeholder" = "メッセージ...";
@@ -414,6 +427,10 @@
 "copy.text" = "テキストをコピー";
 "mark.as.read" = "既読にする";
 "mark.as.unread" = "未読にする";
+"delete.contact" = "連絡先を削除";
+"delete.invite" = "招待を削除";
+"delete.contact.warning" = "この連絡先を削除してもよろしいですか？";
+"delete.invite.warning" = "この招待を削除してもよろしいですか?";
 "copy.link" = "リンクをコピー";
 "copy.pub.key" = "公開鍵をコピー";
 "copy.call.link" = "通話リンクをコピー";
@@ -453,7 +470,7 @@
 "amount.too.low" = "金額が低すぎます";
 "amount.too.high" = "金額が高すぎます";
 "onchain.amount.too.low" = "金額が低すぎます。最小限250000 satsが必要です";
-"chat-header.balance.unit" = "カルマ";
+"chat-header.balance.unit" = "sats";
 "users" = "ユーザー";
 "optional.message.placeholder" = "オプショナルメッセージ...";
 "price.required" = "価格が必要です";
@@ -487,6 +504,12 @@
 "see-all" = "すべて見る";
 "only-mentions" = "メンションのみ";
 "mute-chat" = "チャットをミュート";
+"error.getting.token.title" = "トークンの取得中にエラーが発生しました";
+"error.getting.token.description" = "通話に参加するためのトークンの取得中にエラーが発生しました。しばらくしてからもう一度お試しください。";
+"contact.info" = "連絡先";
+"contact.connected.since" = "%@から接続";
+"timezone.changed" = "このチャットのタイムゾーン設定は、\nこのデバイスのみに保存されます。\n他のデバイスでアプリを使用する場合は、\nタイムゾーンを再設定する必要があります。";
+"message.limit.reached" = "文字数の上限に達しました。\nメッセージを編集または送信してください。";
 
 
 //OTHER
@@ -517,6 +540,9 @@
 "authorization.failed" = "認証に失敗しました";
 "already.connected" = "既にこの人と繋がっています";
 "price.to.meet" = "会うための価格：";
+"invalid.public-key" = "無効な公開鍵";
+"processing.payment" = "支払い処理中";
+"processing.payment.description" = "この処理には最大60秒かかる場合があります。完了すると通知されます。";
 
 "people.save-profile" = "プロファイルを保存：";
 "people.delete-profile" = "プロファイルを削除：";
@@ -552,6 +578,7 @@
 "invite.in.progress.message" = "%@がサインオン中。";
 "invite.pmt.in.progress.title" = "支払い進行中";
 "invite.pmt.in.progress.message" = "あなたの支払いが処理中です。";
+"contact.pending" = "承認待ち";
 
 //PODCAST
 "episodes" = "エピソード";
@@ -605,11 +632,13 @@
 "feed.no-play-found" = "「プレイ」の結果が見つかりません";
 
 "feed.search-over" = "検索終了";
+"feed.search-tracks-quantity" = "millions of tracks";
+"feed.search-torrent-source" = "on BitTorrent";
 "feed.search-podcast-quantity" = "4,000,000のポッドキャスト";
 "feed.search-podcast-source" = "ポッドキャストインデックスで";
 "feed.search-video-quantity" = "数千のビデオ";
 "feed.search-video-source" = "Youtubeで";
-"feed.search-other-source" = "購読しているフィードで";
+"feed.search-other-source-rss" = "購読しているフィードで";
 
 //TIME
 "time.in-the-future" = "将来に";

@@ -1,4 +1,4 @@
-platform :ios, '13.0'
+platform :ios, '15.0'
 use_frameworks!
 inhibit_all_warnings!
 
@@ -7,7 +7,8 @@ install! 'cocoapods'
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     target.build_configurations.each do |config|
-      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.6'
+      config.build_settings["EXCLUDED_ARCHS[sdk=iphonesimulator*]"] = "arm64"
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
       config.build_settings['ENABLE_BITCODE'] = 'NO'
       config.build_settings["SWIFT_OPTIMIZATION_LEVEL"] = "-Onone"
       config.build_settings['ONLY_ACTIVE_ARCH'] = 'NO'
@@ -27,17 +28,17 @@ target 'sphinx' do
     pod 'SDWebImage', '~> 5.12'
     pod 'SDWebImageFLPlugin'
     pod 'SDWebImageSVGCoder', '~> 1.5.0'
+    pod 'SDWebImageSwiftUI'
     pod 'KYDrawerController'
     pod 'SwiftyRSA'
     pod 'RNCryptor', '~> 5.0'
     pod 'SwiftLinkPreview', '~> 3.4.0'
-    pod 'JitsiMeetSDK', '~> 8.4.0'
+    pod 'JitsiMeetSDK', '~> 11.1.1'
     pod 'PINCache'
     pod 'KeychainAccess'
-    pod 'Giphy', '2.1.20'
+    pod 'Giphy', '2.2.12'
     pod 'Starscream', '~> 3.1'
     pod 'lottie-ios'
-    pod 'Tor', podspec: 'https://raw.githubusercontent.com/iCepa/Tor.framework/v405.8.1/Tor.podspec'
     pod "SwiftyXMLParser", :git => 'https://github.com/yahoojapan/SwiftyXMLParser.git'
     pod "youtube-ios-player-helper", "~> 1.0.3"
     pod 'MarqueeLabel'
@@ -45,4 +46,12 @@ target 'sphinx' do
     pod 'UIView-Shimmer', '~> 1.0'
     pod 'CocoaMQTT', :git => 'https://github.com/emqx/CocoaMQTT.git'
     pod 'MessagePack.swift', '~> 4.0'
+    pod 'EPUBKit'
+    pod 'MobileVLCKit'
+    pod 'Bugsnag'
+end
+
+target 'SphinxNotificationExtensionService' do
+    pod 'RNCryptor', '~> 5.0'
+    pod 'KeychainAccess'
 end

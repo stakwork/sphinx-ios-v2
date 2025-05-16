@@ -8,7 +8,6 @@
 
 import UIKit
 import CoreData
-import WebKit
 
 protocol NewChatTableDataSourceDelegate : class {
     ///New msgs indicator
@@ -68,6 +67,9 @@ protocol NewChatTableDataSourceDelegate : class {
         messageCellState: MessageTableCellState,
         mediaData: MessageTableCellState.MediaData?
     )
+    
+    ///Pending outgoing message
+    func shouldUpdateHeaderScheduleIcon(message: TransactionMessage?)
 }
 
 class NewChatTableDataSource : NSObject {
@@ -80,7 +82,6 @@ class NewChatTableDataSource : NSObject {
     var headerImage: UIImage?
     var headerView: UIView!
     var bottomView: UIView!
-    var webView: WKWebView!
     
     ///Chat
     var chat: Chat?
@@ -106,8 +107,8 @@ class NewChatTableDataSource : NSObject {
     var messagesArray: [TransactionMessage] = []
     var messageTableCellStateArray: [MessageTableCellState] = []
     var mediaCached: [Int: MessageTableCellState.MediaData] = [:]
-    var botsWebViewData: [Int: MessageTableCellState.BotWebViewData] = [:]
     var uploadingProgress: [Int: MessageTableCellState.UploadProgressData] = [:]
+    var replyViewHeight: [Int: CGFloat] = [:]
     
     var searchingTerm: String? = nil
     var searchMatches: [(Int, MessageTableCellState)] = []
@@ -119,9 +120,12 @@ class NewChatTableDataSource : NSObject {
     var loadingMoreItems = false
     var scrolledAtBottom = false
     
-    ///WebView Loading
-    let webViewSemaphore = DispatchSemaphore(value: 1)
-    var webViewLoadingCompletion: ((CGFloat?) -> ())? = nil
+    ///Messages statuses restore
+    var lastMessageTagRestored = ""
+    
+    ///Data source updates queue
+    let dataSourceQueue = DispatchQueue(label: "chat.datasourceQueue", qos: .userInteractive)
+    let mediaReloadQueue = DispatchQueue(label: "chat.media.datasourceQueue", qos: .userInteractive)
     
     init(
         chat: Chat?,
@@ -130,7 +134,6 @@ class NewChatTableDataSource : NSObject {
         headerImageView: UIImageView?,
         bottomView: UIView,
         headerView: UIView,
-        webView: WKWebView,
         delegate: NewChatTableDataSourceDelegate?
     ) {
         super.init()
@@ -143,7 +146,6 @@ class NewChatTableDataSource : NSObject {
         self.headerImage = headerImageView?.image
         self.bottomView = bottomView
         self.headerView = headerView
-        self.webView = webView
         
         self.delegate = delegate
         

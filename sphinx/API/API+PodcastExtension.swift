@@ -35,7 +35,7 @@ extension API {
     
     
     func getPodcastInfo(podcastId: Int, callback: @escaping PodcastInfoCallback, errorCallback: @escaping EmptyCallback) {
-        let url = API.getUrl(route: "https://tribes.sphinx.chat/podcast?id=\(podcastId)")
+        let url = "\(API.tribesV1Url)/podcast?id=\(podcastId)"
         let tribeRequest : URLRequest? = createRequest(url, bodyParams: nil, method: "GET")
         
         guard let request = tribeRequest else {
@@ -58,76 +58,32 @@ extension API {
         }
     }
     
-    func streamSats(params: [String: AnyObject], callback: @escaping EmptyCallback, errorCallback:@escaping EmptyCallback) {
-        guard let request = getURLRequest(route: "/stream", params: params as NSDictionary?, method: "POST") else {
-            errorCallback()
-            return
-        }
-        
-        sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool, success {
-                        callback()
-                        return
-                    }
-                }
-                errorCallback()
-            case .failure(_):
-                errorCallback()
-            }
-        }
-    }
-    
-    func updateChat(chatId: Int, params: [String: AnyObject], callback: @escaping EmptyCallback, errorCallback:@escaping EmptyCallback) {
-        guard let request = getURLRequest(route: "/chats/\(chatId)", params: params as NSDictionary?, method: "PUT") else {
-            errorCallback()
-            return
-        }
-        
-        sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool, success {
-                        callback()
-                        return
-                    }
-                }
-                errorCallback()
-            case .failure(_):
-                errorCallback()
-            }
-        }
-    }
-    
     func getAllContentFeedStatuses(
         persistingIn managedObjectContext: NSManagedObjectContext? = nil,
         callback: @escaping AllContentFeedStatusCallback,
         errorCallback: @escaping EmptyCallback
     ) {
-        guard let request = getURLRequest(route: "/content_feed_status", params: nil, method: "GET") else {
-            errorCallback()
-            return
-        }
-
-        sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool, success,
-                       let mapped_content_status = Mapper<ContentFeedStatus>().mapArray(JSONObject: json["response"]) {
-                        
-                        callback(mapped_content_status)
-                        return
-                    }
-                }
-                errorCallback()
-            case .failure(_):
-                errorCallback()
-            }
-        }
+//        guard let request = getURLRequest(route: "/content_feed_status", params: nil, method: "GET") else {
+//            errorCallback()
+//            return
+//        }
+//
+//        sphinxRequest(request) { response in
+//            switch response.result {
+//            case .success(let data):
+//                if let json = data as? NSDictionary {
+//                    if let success = json["success"] as? Bool, success,
+//                       let mapped_content_status = Mapper<ContentFeedStatus>().mapArray(JSONObject: json["response"]) {
+//                        
+//                        callback(mapped_content_status)
+//                        return
+//                    }
+//                }
+//                errorCallback()
+//            case .failure(_):
+//                errorCallback()
+//            }
+//        }
     }
     
     
@@ -136,27 +92,27 @@ extension API {
         callback: @escaping ContentFeedStatusCallback,
         errorCallback: @escaping EmptyCallback
     ) {
-        guard let request = getURLRequest(route: "/content_feed_status/\(feedId)", params: nil, method: "GET") else {
-            errorCallback()
-            return
-        }
-
-        sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool, success,
-                       let mapped_content_status = Mapper<ContentFeedStatus>().map(JSONObject: json["response"]) {
-                        
-                        callback(mapped_content_status)
-                        return
-                    }
-                }
-                errorCallback()
-            case .failure(_):
-                errorCallback()
-            }
-        }
+//        guard let request = getURLRequest(route: "/content_feed_status/\(feedId)", params: nil, method: "GET") else {
+//            errorCallback()
+//            return
+//        }
+//
+//        sphinxRequest(request) { response in
+//            switch response.result {
+//            case .success(let data):
+//                if let json = data as? NSDictionary {
+//                    if let success = json["success"] as? Bool, success,
+//                       let mapped_content_status = Mapper<ContentFeedStatus>().map(JSONObject: json["response"]) {
+//                        
+//                        callback(mapped_content_status)
+//                        return
+//                    }
+//                }
+//                errorCallback()
+//            case .failure(_):
+//                errorCallback()
+//            }
+//        }
     }
     
     func saveContentFeedStatusesToRemote(
@@ -164,28 +120,29 @@ extension API {
         callback: @escaping EmptyCallback,
         errorCallback: @escaping EmptyCallback
     ) {
-        var requestParams : [String:Any] = [String:Any]()
-        requestParams["contents"] = params
+        //TODO: @Jim reimplement on v2
         
-        guard let request = getURLRequest(route: "/content_feed_status", params: requestParams as NSDictionary?, method: "POST") else {
-            errorCallback()
-            return
-        }
-        
-        sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool, success {
-                        callback()
-                        return
-                    }
-                }
-                errorCallback()
-            case .failure(_):
-                errorCallback()
-            }
-        }
+//        var requestParams : [String:Any] = [String:Any]()
+//        requestParams["contents"] = params
+//        
+//        guard let request = getURLRequest(route: "/content_feed_status", params: requestParams as NSDictionary?, method: "POST") else {
+//            errorCallback()
+//            return
+//        }
+//        sphinxRequest(request) { response in
+//            switch response.result {
+//            case .success(let data):
+//                if let json = data as? NSDictionary {
+//                    if let success = json["success"] as? Bool, success {
+//                        callback()
+//                        return
+//                    }
+//                }
+//                errorCallback()
+//            case .failure(_):
+//                errorCallback()
+//            }
+//        }
     }
     
     func saveContentFeedStatusToRemote(
@@ -194,28 +151,29 @@ extension API {
         callback: @escaping EmptyCallback,
         errorCallback: @escaping EmptyCallback
     ) {
-        var requestParams: [String: Any] = [String: Any]()
-        requestParams["content"] = params
+        //TODO: @Jim reimplement on v2
         
-        guard let request = getURLRequest(route: "/content_feed_status/\(feedId)", params: requestParams as NSDictionary?, method: "PUT") else {
-            errorCallback()
-            return
-        }
-        
-        sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool, success {
-                        callback()
-                        return
-                    }
-                }
-                errorCallback()
-            case .failure(_):
-                errorCallback()
-            }
-        }
+//        var requestParams: [String: Any] = [String: Any]()
+//        requestParams["content"] = params
+//        
+//        guard let request = getURLRequest(route: "/content_feed_status/\(feedId)", params: requestParams as NSDictionary?, method: "PUT") else {
+//            errorCallback()
+//            return
+//        }
+//        sphinxRequest(request) { response in
+//            switch response.result {
+//            case .success(let data):
+//                if let json = data as? NSDictionary {
+//                    if let success = json["success"] as? Bool, success {
+//                        callback()
+//                        return
+//                    }
+//                }
+//                errorCallback()
+//            case .failure(_):
+//                errorCallback()
+//            }
+//        }
     }
     
     func requestToCacheVideoRemotely(
@@ -224,27 +182,28 @@ extension API {
         errorCallback: @escaping EmptyCallback
     ){
 
-        let videoURLPaths = getYoutubeVideoURLPaths(videoIDs: videoIDs)
-        var requestPath = API.getUrl(route: "\(API.kTribesServerBaseURL)/feed/download")
-        let params = [
-            "youtube_urls" : videoURLPaths
-        ]
+//        let videoURLPaths = getYoutubeVideoURLPaths(videoIDs: videoIDs)
+//        var requestPath = API.getUrl(route: "\(API.kTestV2TribesServer)/feed/download")
+//        let params = [
+//            "youtube_urls" : videoURLPaths
+//        ]
+//        
+//        guard let request = createRequest(requestPath.percentEscaped ?? requestPath, bodyParams: params as NSDictionary, method: "POST") else {
+//            errorCallback()
+//            return
+//        }
         
-        guard let request = createRequest(requestPath.percentEscaped ?? requestPath, bodyParams: params as NSDictionary, method: "POST") else {
-            errorCallback()
-            return
-        }
-        
-        AF.request(request).responseJSON { response in
-            switch response.result {
-            case .success(let data):
-                print(data)
-                callback()
-            case .failure(let error):
-                print(error)
-                errorCallback()
-            }
-        }
+        //TODO: @Jim reimplement on v2
+//        AF.request(request).responseJSON { response in
+//            switch response.result {
+//            case .success(let data):
+//                print(data)
+//                callback()
+//            case .failure(let error):
+//                print(error)
+//                errorCallback()
+//            }
+//        }
         
     }
     
@@ -270,23 +229,25 @@ extension API {
         callback: @escaping VideoFileExistsCallback,
         errorCallback: @escaping EmptyCallback
     ){
-        let urlPath = getRemoteVideoCachePath(videoID: videoID)
+        //TODO: @Jim reimplement on v2
         
-        guard let url = URL(string: urlPath) else{
-            errorCallback()
-            return
-        }
-        
-        getFileStatusAndLocation(url: url, completion: { status, location in
-            if let status = status,
-               status.lowercased()  == "completed" ,
-            let validPartialPath = location{
-                callback(self.getFullCachedFilePath(partialPath: validPartialPath))
-            }
-            else{
-                callback(nil)
-            }
-        })
+//        let urlPath = getRemoteVideoCachePath(videoID: videoID)
+//        
+//        guard let url = URL(string: urlPath) else{
+//            errorCallback()
+//            return
+//        }
+//        
+//        getFileStatusAndLocation(url: url, completion: { status, location in
+//            if let status = status,
+//               status.lowercased()  == "completed" ,
+//            let validPartialPath = location{
+//                callback(self.getFullCachedFilePath(partialPath: validPartialPath))
+//            }
+//            else{
+//                callback(nil)
+//            }
+//        })
     }
     
     func getFileStatusAndLocation(url: URL, completion: @escaping (String?, String?) -> Void) {

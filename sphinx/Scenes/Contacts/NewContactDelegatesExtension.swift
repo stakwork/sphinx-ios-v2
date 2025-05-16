@@ -10,28 +10,28 @@ import UIKit
 
 extension NewContactViewController {
     func updateProfile() {
-        guard let contact = contact else {
-            return
-        }
-        
-        let routeHint = routeHintTextField.text ?? ""
-        
-        if !routeHint.isEmpty && !routeHint.isRouteHint && !routeHint.isV2RouteHint {
-            showErrorAlert(message: "invalid.route.hint".localized)
-        } else if let nickname = nickNameTextField.text, contact.id > 0 && nickname != "", nickname != contact.nickname {
-            UserContactsHelper.updateContact(contact: contact, nickname: nickname, routeHint: routeHintTextField.text, callback: { success in
-                self.loading = false
-
-                if success {
-                    self.delegate?.shouldReloadContacts?(reload: true, dashboardTabIndex: -1)
-                    self.backButtonTouched()
-                } else {
-                    self.showErrorAlert(message: "generic.error.message".localized)
-                }
-            })
-        } else {
-            backButtonTouched()
-        }
+//        guard let contact = contact else {
+//            return
+//        }
+//        
+//        let routeHint = routeHintTextField.text ?? ""
+//        
+//        if !routeHint.isEmpty && !routeHint.isV2RouteHint {
+//            showErrorAlert(message: "invalid.route.hint".localized)
+//        } else if let nickname = nickNameTextField.text, contact.id > 0 && nickname != "", nickname != contact.nickname {
+//            UserContactsHelper.updateContact(contact: contact, nickname: nickname, routeHint: routeHintTextField.text, callback: { success in
+//                self.loading = false
+//
+//                if success {
+//                    self.delegate?.shouldReloadContacts?(reload: true, dashboardTabIndex: -1)
+//                    self.backButtonTouched()
+//                } else {
+//                    self.showErrorAlert(message: "generic.error.message".localized)
+//                }
+//            })
+//        } else {
+//            backButtonTouched()
+//        }
     }
     
     func createV2Contact(){
@@ -41,41 +41,14 @@ extension NewContactViewController {
         
         if !pubkey.isEmpty && !pubkey.isPubKey {
             showErrorAlert(message: "invalid.pubkey".localized)
-        } else if !routeHint.isEmpty && !routeHint.isV2RouteHint {
+        } else if !routeHint.isEmpty && !routeHint.isRouteHint {
             showErrorAlert(message: "invalid.route.hint".localized)
-        } else if nickname.isEmpty || pubkey.isEmpty {
+        } else if nickname.isEmpty || pubkey.isEmpty || routeHint.isEmpty {
             showErrorAlert(message: "nickname.address.required".localized)
         } else {
-            let pin = groupPinContainer.getPin()
-            UserContactsHelper().createV2Contact(nickname: nickname, pubKey: pubkey, routeHint: routeHint,pin: pin, callback: { (success, _) in
+            UserContactsHelper.createV2Contact(nickname: nickname, pubKey: pubkey, routeHint: routeHint, callback: { (success, _) in
                 self.loading = false
                 
-                if success {
-                    self.delegate?.shouldReloadContacts?(reload: true, dashboardTabIndex: 1)
-                    self.closeButtonTouched()
-                } else {
-                    self.showErrorAlert(message: "generic.error.message".localized)
-                }
-            })
-        }
-    }
-   
-    func createContact() {
-        let nickname = nickNameTextField.text ?? ""
-        let pubkey = addressTextField.text ?? ""
-        let routeHint = routeHintTextField.text ?? ""
-        
-        if !pubkey.isEmpty && !pubkey.isPubKey {
-            showErrorAlert(message: "invalid.pubkey".localized)
-        } else if !routeHint.isEmpty && !routeHint.isRouteHint && !routeHint.isV2RouteHint {
-            showErrorAlert(message: "invalid.route.hint".localized)
-        } else if nickname.isEmpty || pubkey.isEmpty {
-            showErrorAlert(message: "nickname.address.required".localized)
-        } else {
-            let pin = groupPinContainer.getPin()
-            UserContactsHelper.createContact(nickname: nickname, pubKey: pubkey, routeHint: routeHint, pin: pin, callback: { (success, _) in
-                self.loading = false
-
                 if success {
                     self.delegate?.shouldReloadContacts?(reload: true, dashboardTabIndex: 1)
                     self.closeButtonTouched()
@@ -104,18 +77,20 @@ extension NewContactViewController : UITextFieldDelegate {
             saveEnabled = false
             return
         }
-        saveEnabled = true
+        saveEnabled = nickNameTextField.text?.isNotEmpty == true &&
+                      addressTextField.text?.isNotEmpty == true && addressTextField.text?.isPubKey == true &&
+                      routeHintTextField.text?.isNotEmpty == true && routeHintTextField.text?.isRouteHint == true
     }
     
     func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
         let currentString = textField.text! as String
         let newString = (currentString as NSString).replacingCharacters(in: range, with: string) as String
+        
         if newString.isVirtualPubKey {
             DelayPerformedHelper.performAfterDelay(seconds: 0.3, completion: {
                 self.completePubkeyComponents(newString)
             })
-        }
-        else if let parsedContact = SphinxOnionManager.sharedInstance.parseContactInfoString(fullContactInfo: newString){
+        } else if let parsedContact = SphinxOnionManager.sharedInstance.parseContactInfoString(fullContactInfo: newString) {
             DelayPerformedHelper.performAfterDelay(seconds: 0.3, completion: {
                 self.addressTextField.text = parsedContact.0
                 self.routeHintTextField.text = parsedContact.1 + "_" + parsedContact.2
@@ -128,7 +103,11 @@ extension NewContactViewController : UITextFieldDelegate {
     func completePubkeyComponents(_ string: String) {
         let (pubkey, routeHint) = string.pubkeyComponents
         addressTextField.text = pubkey
-        routeHintTextField.text = routeHint
+        
+        if routeHint.isNotEmpty {
+            routeHintTextField.text = routeHint
+        }
+        
         routeHintTextField.becomeFirstResponder()
     }
 }

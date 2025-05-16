@@ -28,7 +28,7 @@ extension NewChatViewController : AttachmentsDelegate {
             text: message,
             type: TransactionMessage.TransactionMessageType.message.rawValue,
             data: data,
-            completion: { _ in }
+            completion: { (_, _) in }
         )
     }
     

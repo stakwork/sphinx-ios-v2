@@ -13,7 +13,7 @@ import AVFoundation
 @objc protocol AttachmentsManagerDelegate: class {
     @objc optional func didUpdateUploadProgressFor(messageId: Int, progress: Int)
     @objc optional func didUpdateUploadProgress(progress: Int)
-    @objc optional func didFailSendingMessage(provisionalMessage: TransactionMessage?)
+    @objc optional func didFailSendingMessage(provisionalMessage: TransactionMessage?, errorMessage: String)
     @objc optional func didSuccessSendingAttachment(message: TransactionMessage, image: UIImage?, provisionalMessageId: Int)
     @objc optional func didSuccessUploadingImage(url: String)
     @objc optional func shouldReplaceMediaDataFor(provisionalMessageId: Int, and messageId: Int)
@@ -58,14 +58,24 @@ class AttachmentsManager {
         self.delegate = delegate
     }
     
-    func runAuthentication() {
-        self.authenticate(completion: {_ in }, errorCompletion: {})
-    }
-    
     func authenticate(
-        completion: @escaping (String) -> (),
+        completion: @escaping () -> (),
         errorCompletion: @escaping () -> ()
     ) {
+        if let token: String = UserDefaults.Keys.attachmentsToken.get() {
+            let expDate: Date? = UserDefaults.Keys.attachmentsTokenExpDate.get()
+            
+            if let expDate = expDate, expDate > Date() {
+                completion()
+                return
+            }
+        }
+        
+        guard let _ = SphinxOnionManager.sharedInstance.getAccountSeed() else {
+            errorCompletion()
+            return
+        }
+        
         guard let pubkey = UserContact.getOwner()?.publicKey else {
             errorCompletion()
             return
@@ -86,7 +96,14 @@ class AttachmentsManager {
                 API.sharedInstance.verifyAuthentication(id: id, sig: sig, pubkey: pubkey, callback: { token in
                     if let token = token {
                         UserDefaults.Keys.attachmentsToken.set(token)
-                        completion(token)
+                        
+                        if let ts = token.decodeJWT().payload?["exp"] as? Int64 {
+                            let timestamp = TimeInterval(integerLiteral: ts)
+                            let date = Date(timeIntervalSince1970: timestamp)
+                            UserDefaults.Keys.attachmentsTokenExpDate.set(date)
+                        }
+                        
+                        completion()
                     } else {
                         errorCompletion()
                     }
@@ -106,13 +123,30 @@ class AttachmentsManager {
         uploadedImage = nil
     }
     
+    func isAuthenticated() -> (Bool, String?) {
+        if let token: String = UserDefaults.Keys.attachmentsToken.get() {
+            let expDate: Date? = UserDefaults.Keys.attachmentsTokenExpDate.get()
+            
+            if let expDate = expDate, expDate > Date() {
+                return (true, token)
+            }
+        }
+        return (false, nil)
+    }
+    
     func getMediaItemInfo(message: TransactionMessage, callback: @escaping MediaInfoCallback) {
-        guard let token: String = UserDefaults.Keys.attachmentsToken.get() else {
-            self.authenticate(completion: { token in
+        let isAuthenticated = isAuthenticated()
+        
+        if !isAuthenticated.0 {
+            self.authenticate(completion: {
                 self.getMediaItemInfo(message: message, callback: callback)
             }, errorCompletion: {
                 UserDefaults.Keys.attachmentsToken.removeValue()
             })
+            return
+        }
+        
+        guard let token = isAuthenticated.1 else {
             return
         }
         
@@ -122,16 +156,22 @@ class AttachmentsManager {
     func uploadImage(attachmentObject: AttachmentObject, route: String = "file") {
         delegate?.didUpdateUploadProgress?(progress: 5)
         
-        guard let token: String = UserDefaults.Keys.attachmentsToken.get() else {
-            self.authenticate(completion: { token in
+        let isAuthenticated = isAuthenticated()
+        
+        if !isAuthenticated.0 {
+            self.authenticate(completion: {
                 self.uploadImage(attachmentObject: attachmentObject, route: route)
             }, errorCompletion: {
                 UserDefaults.Keys.attachmentsToken.removeValue()
-                self.uploadFailed()
+                self.uploadFailed(errorMessage: "Could not authenticate with Memes server")
             })
             return
         }
         delegate?.didUpdateUploadProgress?(progress: 10)
+        
+        guard let token = isAuthenticated.1 else {
+            return
+        }
         
         if let _ = attachmentObject.data {
             uploadData(attachmentObject: attachmentObject, route: route, token: token) { fileJSON, _ in
@@ -144,37 +184,53 @@ class AttachmentsManager {
     
     func uploadAndSendAttachment(
         attachmentObject: AttachmentObject,
-        chat:Chat?,
+        chat: Chat?,
+        provisionalMessage: TransactionMessage? = nil,
         replyingMessage: TransactionMessage? = nil,
         threadUUID: String? = nil
     ) {
         uploading = true
         delegate?.didUpdateUploadProgress?(progress: 5)
         
-        guard let token: String = UserDefaults.Keys.attachmentsToken.get() else {
-            self.authenticate(completion: { token in
-                self.uploadAndSendAttachment(attachmentObject: attachmentObject, chat: chat, replyingMessage: replyingMessage)
+        let isAuthenticated = isAuthenticated()
+        
+        if !isAuthenticated.0 {
+            self.authenticate(completion: {
+                self.uploadAndSendAttachment(
+                    attachmentObject: attachmentObject,
+                    chat: chat,
+                    provisionalMessage: provisionalMessage,
+                    replyingMessage: replyingMessage
+                )
             }, errorCompletion: {
                 UserDefaults.Keys.attachmentsToken.removeValue()
-                self.uploadFailed()
+                self.uploadFailed(errorMessage: "Could not authenticate with Memes server")
             })
             return
         }
         delegate?.didUpdateUploadProgress?(progress: 10)
         
+        guard let token = isAuthenticated.1 else {
+            return
+        }
+        
         if let _ = attachmentObject.data {
             uploadEncryptedData(attachmentObject: attachmentObject, token: token) { fileJSON, AttachmentObject in
-                self.sendAttachment(
+                let (msg, errorMessage) = self.sendAttachment(
                     file: fileJSON,
-                    chat:chat,
+                    chat: chat,
                     attachmentObject: attachmentObject,
+                    provisionalMessage: provisionalMessage,
                     replyingMessage: replyingMessage,
                     threadUUID: threadUUID
                 )
+                
+                if let errorMessage = errorMessage, msg == nil {
+                    self.uploadFailed(errorMessage: errorMessage)
+                }
             }
         }
     }
-    
     
     func uploadEncryptedData(attachmentObject: AttachmentObject, token: String, completion: @escaping (NSDictionary, AttachmentObject) -> ()) {
         uploadData(attachmentObject: attachmentObject, route: "file", token: token, completion: completion)
@@ -197,7 +253,7 @@ class AttachmentsManager {
 
                 completion(fileJSON, attachmentObject)
             } else {
-                self.uploadFailed()
+                self.uploadFailed(errorMessage: "Failed to upload data to Memes server")
             }
         })
     }
@@ -206,30 +262,26 @@ class AttachmentsManager {
         file: NSDictionary,
         chat:Chat?,
         attachmentObject: AttachmentObject,
+        provisionalMessage: TransactionMessage? = nil,
         replyingMessage: TransactionMessage? = nil,
         threadUUID: String? = nil
-    ) {
-        
-        SphinxOnionManager.sharedInstance.sendAttachment(file: file, attachmentObject: attachmentObject, chat: chat,replyingMessage: replyingMessage,threadUUID: threadUUID)
+    ) -> (TransactionMessage?, String?) {
+        return SphinxOnionManager.sharedInstance.sendAttachment(
+            file: file,
+            attachmentObject: attachmentObject,
+            chat: chat,
+            provisionalMessage: provisionalMessage,
+            replyingMessage: replyingMessage,
+            threadUUID: threadUUID
+        )
         
     }
     
     func payAttachment(message: TransactionMessage, chat: Chat?, callback: @escaping (TransactionMessage?) -> ()) {
-        guard let price = message.getAttachmentPrice(), let params = TransactionMessage.getPayAttachmentParams(message: message, amount: price, chat: chat) else {
+        guard let price = message.getAttachmentPrice() else {
             return
         }
-        
-        API.sharedInstance.payAttachment(params: params, callback: { m in
-            if let message = TransactionMessage.insertMessage(
-                m: m,
-                existingMessage: TransactionMessage.getMessageWith(id: m["id"].intValue)
-            ).0 {
-                callback(message)
-            }
-        }, errorCallback: {
-            callback(nil)
-
-        })
+        SphinxOnionManager.sharedInstance.payAttachment(message: message, price: price)
     }
     
     func createLocalMessage(
@@ -285,9 +337,9 @@ class AttachmentsManager {
         }
     }
     
-    func uploadFailed() {
+    func uploadFailed(errorMessage: String) {
         uploading = false
-        delegate?.didFailSendingMessage?(provisionalMessage: provisionalMessage)
+        delegate?.didFailSendingMessage?(provisionalMessage: provisionalMessage, errorMessage: errorMessage)
     }
     
     func uploadSucceed(message: TransactionMessage) {

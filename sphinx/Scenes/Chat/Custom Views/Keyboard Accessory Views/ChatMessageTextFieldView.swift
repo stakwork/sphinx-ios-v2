@@ -11,7 +11,7 @@ import UIKit
 @objc protocol ChatMessageTextFieldViewDelegate {
     func didDetectPossibleMention(mentionText: String)
     func didDetectPossibleMacro(macro:String)
-    func shouldSendMessage(text: String, type: Int, completion: @escaping (Bool) -> ())
+    func shouldSendMessage(text: String, type: Int, completion: @escaping (Bool, String?) -> ())
     
     @objc optional func didChangeText(text: String)
     @objc optional func didTapSendBlueButton()
@@ -19,6 +19,7 @@ import UIKit
     @objc optional func shouldStartRecording()
     @objc optional func shouldStopAndSendAudio()
     @objc optional func shouldCancelRecording()
+    @objc optional func isMessageLengthValid(text: String, sendingAttachment: Bool) -> Bool
 }
 
 enum MessagesFieldMode: Int {
@@ -28,7 +29,7 @@ enum MessagesFieldMode: Int {
 
 class ChatMessageTextFieldView: UIView {
     
-    var delegate: ChatMessageTextFieldViewDelegate?
+    weak var delegate: ChatMessageTextFieldViewDelegate?
 
     @IBOutlet var contentView: UIView!
     
@@ -49,13 +50,16 @@ class ChatMessageTextFieldView: UIView {
     @IBOutlet weak var recordingBlueCircle: UIView!
     @IBOutlet weak var animatedMicLabelView: IntermitentAlphaAnimatedView!
     
-    let kCharacterLimit = 1000
+    var textViewHeightConstraint: NSLayoutConstraint? = nil
+    
     let kFieldPlaceHolder = "message.placeholder".localized
     let kThreadFieldPlaceHolder = "message.placeholder".localized
     let kAttchmentFieldPlaceHolder = ChatAttachmentViewController.kFieldPlaceHolder
     
     let kFieldPlaceHolderColor = UIColor.Sphinx.PlaceholderText
     let kFieldFont = UIFont(name: "Roboto-Regular", size: UIDevice.current.isIpad ? 20.0 : 16.0)!
+    
+    public static let kAccessoryViewHeight: CGFloat = 58
     
     var mode = MessagesFieldMode.Chat
     
@@ -112,12 +116,13 @@ class ChatMessageTextFieldView: UIView {
         
         clearMessage()
         
-        delegate?.shouldSendMessage(text: text, type: messageType, completion: { success in
+        delegate?.shouldSendMessage(text: text, type: messageType, completion: { (success, errorMsg) in
             if !success {
                 AlertHelper.showAlert(
                     title: "generic.error.title".localized,
-                    message: "generic.message.error".localized
+                    message: errorMsg ?? "generic.message.error".localized
                 )
+                self.textView.text = text
             }
             self.sendButton.isUserInteractionEnabled = true
         })

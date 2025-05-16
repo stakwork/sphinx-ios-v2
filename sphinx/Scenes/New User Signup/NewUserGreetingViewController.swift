@@ -13,7 +13,6 @@ class NewUserGreetingViewController: UIViewController {
     @IBOutlet weak var continueButton: UIButton!
     @IBOutlet weak var continueButtonContainer: UIView!
     @IBOutlet weak var pulsingCircleView: UIView!
-    var isV2 : Bool = false
     
     static func instantiate() -> NewUserGreetingViewController {
         let viewController = StoryboardScene.NewUserSignup.newUserGreetingViewController.instantiate()
@@ -33,7 +32,6 @@ class NewUserGreetingViewController: UIViewController {
     
     @IBAction func continueButtonTapped(_ sender: UIButton) {
         let setNickNameVC = SetNickNameViewController.instantiate()
-        setNickNameVC.isV2 = self.isV2
         self.navigationController?.pushViewController(setNickNameVC, animated: true)
     }
 }

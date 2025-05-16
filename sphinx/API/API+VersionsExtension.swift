@@ -11,8 +11,13 @@ import Alamofire
 import SwiftyJSON
 
 extension API {
-    func getAppVersions(callback: @escaping AppVersionsCallback) {
-        guard let request = getURLRequest(route: "/app_versions", method: "GET") else {
+    func getAppVersions(
+        callback: @escaping AppVersionsCallback
+    ) {
+        let url = "\(API.kHUBServerUrl)/api/v1/app_versions"
+
+        guard let request = createRequest(url, bodyParams: nil, method: "GET") else {
+            print("Error getting app version")
             return
         }
         
@@ -21,7 +26,7 @@ extension API {
             case .success(let data):
                 if let json = data as? NSDictionary {
                     if let success = json["success"] as? Bool, let response = json["response"] as? NSDictionary, success {
-                        if let version = response["ios"] as? String {
+                        if let version = response["mac-v2"] as? String {
                             callback(version)
                             return
                         }

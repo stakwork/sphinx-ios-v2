@@ -108,7 +108,7 @@
 /* Class = "UILabel"; text = "New Group Chat"; ObjectID = "uMU-CU-DoL"; */
 "uMU-CU-DoL.text" = "新しいグループチャット"; // Atarashii gurūpu chāto
 
-"IjR-gq-j9u.text" = "tribes.sphinx.chatにリストしますか？"; // Toraibu.sphinx.chat ni risuto shimasu ka?
+"IjR-gq-j9u.text" = "tribes.v2.sphinx.chatにリストしますか？"; // Toraibu.sphinx.chat ni risuto shimasu ka?
 
 "9fz-nc-HRb.text" = "各メンバーシップ要求を承認しますか？"; // Onōni mēmbāshippu yōkyū o shōnin shimasu ka?
 

@@ -13,13 +13,14 @@ class SphinxDesktopAdViewController: UIViewController {
     @IBOutlet weak var getItNowButtonView: UIButton!
     @IBOutlet weak var skipButtonView: UIButton!
     
-    static let desktopAppStoreURL = URL(string: "https://sphinx.chat/")!
+    static let desktopAppStoreURL = URL(string: "https://testflight.apple.com/join/p721ALD9")!
+    
+    var isRestoreFlow: Bool = false
     
     static func instantiate() -> SphinxDesktopAdViewController {
         let viewController = StoryboardScene.NewUserSignup.sphinxDesktopAdViewController.instantiate()
         return viewController
     }
-
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -35,8 +36,37 @@ class SphinxDesktopAdViewController: UIViewController {
     
     
     @IBAction func skipButtonTapped(_ sender: UIButton) {
-        let sphinxReadyVC = SphinxReadyViewController.instantiate()
-        navigationController?.pushViewController(sphinxReadyVC, animated: true)
+        if (isRestoreFlow) {
+            goToApp()
+        } else {
+            let sphinxReadyVC = SphinxReadyViewController.instantiate()
+            navigationController?.pushViewController(sphinxReadyVC, animated: true)
+        }
+    }
+    
+    func resetSignupData() {
+        UserDefaults.Keys.inviteString.removeValue()
+        UserDefaults.Keys.inviterNickname.removeValue()
+        UserDefaults.Keys.inviterPubkey.removeValue()
+        UserDefaults.Keys.welcomeMessage.removeValue()
+    }
+    
+    func goToApp() {
+        UserData.sharedInstance.completeSignup()
+        resetSignupData()
+        UserDefaults.Keys.lastPinDate.set(Date())
+        
+        DelayPerformedHelper.performAfterDelay(
+            seconds: 1.0,
+            completion: {
+                if let appDelegate = UIApplication.shared.delegate as? AppDelegate,
+                   let rootVC = appDelegate.getRootViewController()
+                {
+                    let mainCoordinator = MainCoordinator(rootViewController: rootVC)
+                    mainCoordinator.presentInitialDrawer()
+                }
+            }
+        )
     }
 }
 

@@ -10,112 +10,7 @@ import Foundation
 import SwiftyJSON
 import Alamofire
 
-extension API {
-    func createGroup(
-        params: [String: AnyObject],
-        callback: @escaping CreateGroupCallback,
-        errorCallback: @escaping EmptyCallback
-    ){
-        guard let request = getURLRequest(route: "/group", params: params as NSDictionary?, method: "POST") else {
-            errorCallback()
-            return
-        }
-        
-        sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool, let response = json["response"] as? NSDictionary, success {
-                        callback(JSON(response))
-                        return
-                    }
-                }
-                errorCallback()
-            case .failure(_):
-                errorCallback()
-            }
-        }
-    }
-    
-    func editGroup(
-        id: Int,
-        params: [String: AnyObject],
-        callback: @escaping CreateGroupCallback,
-        errorCallback: @escaping EmptyCallback
-    ){
-        guard let request = getURLRequest(route: "/group/\(id)", params: params as NSDictionary?, method: "PUT") else {
-            errorCallback()
-            return
-        }
-        
-        sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool, let response = json["response"] as? NSDictionary, success {
-                        callback(JSON(response))
-                        return
-                    }
-                }
-                errorCallback()
-            case .failure(_):
-                errorCallback()
-            }
-        }
-    }
-    
-    func deleteGroup(
-        id: Int,
-        callback: @escaping SuccessCallback
-    ) {
-        guard let request = getURLRequest(route: "/chat/\(id)", method: "DELETE") else {
-            callback(false)
-            return
-        }
-        
-        sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool, success {
-                        callback(true)
-                        return
-                    }
-                }
-                callback(false)
-            case .failure(_):
-                callback(false)
-            }
-        }
-    }
-    
-    func addMembers(
-        id: Int,
-        params: [String: AnyObject],
-        callback: @escaping CreateGroupCallback,
-        errorCallback: @escaping EmptyCallback
-    ) {
-        guard let request = getURLRequest(route: "/chat/\(id)", params: params as NSDictionary?, method: "PUT") else {
-            errorCallback()
-            return
-        }
-        
-        sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool, let response = json["response"] as? NSDictionary, success {
-                        callback(JSON(response))
-                        return
-                    }
-                }
-                errorCallback()
-            case .failure(_):
-                errorCallback()
-            }
-        }
-    }
-    
+extension API {            
     func getTribesList(
         callback: @escaping GetAllTribesCallback,
         errorCallback: @escaping EmptyCallback,
@@ -124,13 +19,17 @@ extension API {
         page : Int = 0,
         tags : [String] = []
     ) {
-        var url = API.getUrl(route: "\(API.kTribesServerBaseURL)/tribes?limit=\(limit)&sortBy=member_count&page=\(page)")
-        url = "\(API.kTestV2TribesServer)/tribes"
-        if tags.isEmpty == false {
+        let host = SphinxOnionManager.sharedInstance.tribesServerIP
+        let hostProtocol = SphinxOnionManager.sharedInstance.isProductionEnv ? "https" : "http"
+        var url = API.getUrl(route: "\(hostProtocol)://\(host)/tribes?limit=\(limit)&sortBy=member_count&page=\(page)")
+        
+        if !tags.isEmpty {
             url.append("&tags=")
+            
             for tag in tags {
                 url.append("\(tag),")
             }
+            
             url.remove(at: url.index(url.endIndex, offsetBy: -1))
         }
         
@@ -154,12 +53,12 @@ extension API {
     func getTribeInfo(
         host: String,
         uuid: String,
-        useSSL:Bool=true,
         callback: @escaping CreateGroupCallback,
         errorCallback: @escaping EmptyCallback
     ) {
-        var url = API.getUrl(route: "https://\(host)/tribes/\(uuid)")
-        url = useSSL ? (url) : (url.replacingOccurrences(of: "https", with: "http"))
+        let hostProtocol = SphinxOnionManager.sharedInstance.isProductionEnv ? "https" : "http"
+        let finalHost = SphinxOnionManager.sharedInstance.isProductionEnv ? host : SphinxOnionManager.sharedInstance.kTestV2TribesServer
+        let url = API.getUrl(route: "\(hostProtocol)://\(finalHost)/tribes/\(uuid)")
         let tribeRequest : URLRequest? = createRequest(url, bodyParams: nil, method: "GET")
         
         guard let request = tribeRequest else {
@@ -183,120 +82,12 @@ extension API {
         }
     }
     
-    func joinTribe(
-        params: [String: AnyObject],
-        callback: @escaping CreateGroupCallback,
-        errorCallback: @escaping EmptyCallback
-    ) {
-        guard let request = getURLRequest(route: "/tribe", params: params as NSDictionary?, method: "POST") else {
-            errorCallback()
-            return
-        }
-        
-        sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool, let response = json["response"] as? NSDictionary, success {
-                        callback(JSON(response))
-                        return
-                    }
-                }
-                errorCallback()
-            case .failure(_):
-                errorCallback()
-            }
-        }
-    }
-    
-    func kickMember(
-        chatId: Int,
-        contactId: Int,
-        callback: @escaping CreateGroupCallback,
-        errorCallback: @escaping EmptyCallback
-    ) {
-        guard let request = getURLRequest(route: "/kick/\(chatId)/\(contactId)", params: nil, method: "PUT") else {
-            errorCallback()
-            return
-        }
-        
-        sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool, let response = json["response"] as? NSDictionary, success {
-                        callback(JSON(response))
-                        return
-                    }
-                }
-                errorCallback()
-            case .failure(_):
-                errorCallback()
-            }
-        }
-    }
-    
-    func requestAction(
-        messageId: Int,
-        contactId: Int,
-        action: String,
-        callback: @escaping CreateGroupCallback,
-        errorCallback: @escaping EmptyCallback
-    ) {
-        guard let request = getURLRequest(route: "/member/\(contactId)/\(action)/\(messageId)", params: nil, method: "PUT") else {
-            errorCallback()
-            return
-        }
-        
-        sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool, let response = json["response"] as? NSDictionary, success {
-                        callback(JSON(response))
-                        return
-                    }
-                }
-                errorCallback()
-            case .failure(_):
-                errorCallback()
-            }
-        }
-    }
-    
-    func addTribeMember(
-        params: [String: AnyObject],
-        callback: @escaping CreateGroupCallback,
-        errorCallback: @escaping EmptyCallback
-    ) {
-        
-        guard let request = getURLRequest(route: "/tribe_member", params: params as NSDictionary?, method: "POST") else {
-            errorCallback()
-            return
-        }
-        
-        sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool, let response = json["response"] as? NSDictionary, success {
-                        callback(JSON(response))
-                        return
-                    }
-                }
-                errorCallback()
-            case .failure(_):
-                errorCallback()
-            }
-        }
-    }
-    
     func getTribeLeaderboard(
         tribeUUID:String,
         callback: @escaping GetTribeBadgesCallback,
         errorCallback: @escaping EmptyCallback
     ){
-        let urlPath = API.kTribesServerBaseURL + "/leaderboard/\(tribeUUID)"
+        let urlPath = API.tribesV1Url + "/leaderboard/\(tribeUUID)"
         
         let urlComponents = URLComponents(string: urlPath)!
 
@@ -326,179 +117,6 @@ extension API {
                 errorCallback()
             case .failure(_):
                 //print(response.response?.statusCode)
-                errorCallback()
-            }
-        }
-    }
-    
-    func createTribeAdminBadge(
-        badge: Badge,
-        amount:Int,
-        callback: @escaping CreateTribeBadgeCallback,
-        errorCallback: @escaping EmptyCallback
-    ){
-        var params = [String:Any]()
-        params = badge.toJSON()
-        params["amount"] = amount//10
-        
-        guard let request = getURLRequest(route: "/create_badge", params: params as NSDictionary, method: "POST") else {
-            errorCallback()
-            return
-        }
-        
-        sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool,
-                        success {
-                        callback(success)
-                        return
-                    }
-                }
-                //print(response.response?.statusCode)
-                errorCallback()
-            case .failure(_):
-                //print(response.response?.statusCode)
-                errorCallback()
-            }
-        }
-    }
-    
-    func changeActivationStateAdminBadgeTemplates(
-        badge: Badge,
-        callback: @escaping SuccessCallback,
-        errorCallback: @escaping EmptyCallback
-    ){
-        var params = [String:Any]()
-        if let id = badge.badge_id,
-           let chatId = badge.chat_id{
-            params = [
-                "badge_id" : id,
-                "chat_id" : chatId
-            ]
-        }
-        else{
-            errorCallback()
-            return
-        }
-        
-        let route = (badge.activationState == true) ? "/add_badge" : "/remove_badge"
-        guard let request = getURLRequest(route: route, params: params as NSDictionary, method: "POST") else {
-            errorCallback()
-            return
-        }
-        
-        sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool,
-                        success {
-                        callback(true)
-                        return
-                    }
-                }
-                errorCallback()
-            case .failure(_):
-                errorCallback()
-            }
-        }
-        
-    }
-    
-    func getTribeAdminBadgeTemplates(
-        callback: @escaping GetTribeBadgesCallback,
-        errorCallback: @escaping EmptyCallback
-    ){
-        guard let request = getURLRequest(route: "/badge_templates", params: nil, method: "GET") else {
-            errorCallback()
-            return
-        }
-        sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool,
-                        let response = json["response"] as? [NSDictionary],
-                        success {
-                        callback(response)
-                        return
-                    }
-                }
-                errorCallback()
-            case .failure(_):
-                errorCallback()
-            }
-        }
-    }
-    
-    func getTribeAdminBadges(
-        chatID:Int?,
-        callback: @escaping GetTribeBadgesCallback,
-        errorCallback: @escaping EmptyCallback
-    ){
-        let urlString = (chatID == nil) ? "/badges?limit=100&offset=0" : "/badge_per_tribe/\(chatID!)?limit=100&offset=0"
-        guard let request = getURLRequest(route: urlString, params: nil, method: "GET") else {
-            errorCallback()
-            return
-        }
-
-        sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool,
-                        let response = json["response"] as? [NSDictionary],
-                        success {
-                        callback((response))
-                        return
-                    }
-                }
-                errorCallback()
-            case .failure(_):
-                errorCallback()
-            }
-        }
-    }
-    
-    func pinChatMessage(
-        messageUUID: String?,
-        chatId: Int,
-        callback: @escaping PinMessageCallback,
-        errorCallback: @escaping EmptyCallback
-    ){
-        let params: [String: AnyObject] = [
-            "pin" : (messageUUID ?? "") as AnyObject
-        ]
-        
-        guard let request = getURLRequest(
-            route: "/chat_pin/\(chatId)",
-            params: params as NSDictionary,
-            method: "PUT"
-        ) else {
-            errorCallback()
-            return
-        }
-
-        sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool,
-                        let response = json["response"] as? NSDictionary,
-                        success {
-                        
-                        if let pin = response["pin"] as? String {
-                            callback(pin)
-                        } else {
-                            errorCallback()
-                        }
-                        return
-                    }
-                }
-                errorCallback()
-            case .failure(_):
                 errorCallback()
             }
         }

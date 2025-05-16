@@ -19,6 +19,7 @@ class StatusHeaderView: UIView {
     
     @IBOutlet weak var sentStatusHeader: UIStackView!
     @IBOutlet weak var sentDateLabel: UILabel!
+    @IBOutlet weak var sentScheduleIcon: UILabel!
     @IBOutlet weak var sentLockIcon: UILabel!
     @IBOutlet weak var sentLightningIcon: UILabel!
     
@@ -34,6 +35,9 @@ class StatusHeaderView: UIView {
     
     @IBOutlet weak var expiredInvoiceReceivedHeader: UIStackView!
     @IBOutlet weak var expiredInvoiceReceivedLabel: UILabel!
+    @IBOutlet weak var remoteTimezoneIdentifier: UILabel!
+
+    
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -75,7 +79,8 @@ class StatusHeaderView: UIView {
         
         receivedSenderLabel.textColor = statusHeader.color
         
-        sentLightningIcon.isHidden = !statusHeader.showBoltIcon
+        sentLightningIcon.isHidden = !statusHeader.showBoltIcon && !statusHeader.showBoltGreyIcon
+        sentLightningIcon.textColor = statusHeader.showBoltGreyIcon ? UIColor.Sphinx.SecondaryText : UIColor.Sphinx.PrimaryGreen
         
         sentLockIcon.isHidden = !statusHeader.showLockIcon
         receivedLockIcon.isHidden = !statusHeader.showLockIcon
@@ -90,11 +95,38 @@ class StatusHeaderView: UIView {
         expiredInvoiceReceivedHeader.isHidden = !statusHeader.showExpiredReceived
         configureWith(expirationTimestamp: statusHeader.expirationTimestamp)
         
+        configureTimezoneWith(timezoneString: statusHeader.timezoneString)
+        
+        let thirtySecondsAgo = Date().addingTimeInterval(-30)
+        let isScheduleVisible = statusHeader.showScheduleIcon && statusHeader.messageDate < thirtySecondsAgo
+        sentScheduleIcon.isHidden = !isScheduleVisible
+        
+//        if !isScheduleVisible {
+//            DelayPerformedHelper.performAfterDelay(seconds: 30, completion: { [weak self] in
+//                guard let self = self else {
+//                    return
+//                }
+//                        
+//                let thirtySecondsAgo = Date().addingTimeInterval(-30)
+//                let isScheduleVisible = !statusHeader.showBoltIcon && !statusHeader.showBoltGreyIcon && statusHeader.messageDate < thirtySecondsAgo
+//                self.sentScheduleIcon.isHidden = !isScheduleVisible
+//            })
+//        }
+        
         if let uploadProgressData = uploadProgressData, uploadProgressData.progress < 100 {
             uploadingHeader.isHidden = false
             uploadingLabel.text = String(format: "uploaded.progress".localized, uploadProgressData.progress)
         } else {
             uploadingHeader.isHidden = true
+        }
+    }
+    
+    func configureTimezoneWith(timezoneString: String?) {
+        remoteTimezoneIdentifier.isHidden = true
+        
+        if let timezoneString = timezoneString {
+            remoteTimezoneIdentifier.text = "/  \(timezoneString)"
+            remoteTimezoneIdentifier.isHidden = false
         }
     }
     

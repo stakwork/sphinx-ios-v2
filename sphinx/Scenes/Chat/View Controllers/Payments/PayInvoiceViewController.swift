@@ -11,6 +11,7 @@ import SwiftyJSON
 class PayInvoiceViewController: UIViewController {
     
     public weak var delegate: PaymentInvoiceDelegate?
+    
     var message: TransactionMessage?
     
     @IBOutlet weak var containerView: UIView!
@@ -105,61 +106,21 @@ class PayInvoiceViewController: UIViewController {
     }
     
     private func send() {
+        guard let message = message, let invoice = message.invoice else {
+            return
+        }
+        
         let prd = PaymentRequestDecoder()
-        prd.decodePaymentRequest(paymentRequest: message?.invoice ?? "")
-        guard let message = message,
-              let invoice = message.invoice,
-              let chat = message.chat,
-              let amount = prd.getAmount(),
-              let expiry = prd.getExpirationDate(),
-              let paymentHash = try? paymentHashFromInvoice(bolt11: invoice) else {
+        prd.decodePaymentRequest(paymentRequest: invoice)
+        
+        guard let _ = prd.getAmount() else {
             return
         }
         
         loading = true
         
-        
-        SphinxOnionManager.sharedInstance.payInvoice(invoice: invoice)
-        let localPaymentMessage : JSON = [
-            "id": CrypterManager.sharedInstance.generateCryptographicallySecureRandomInt(upperBound: 100_000),
-            "chat_id": chat.id,
-            "sender": 0,
-            "type": TransactionMessage.TransactionMessageType.payment.rawValue,
-            "amount":amount,
-            "amountMsat": amount * 1000,
-            "payment_hash":paymentHash,
-            "status": TransactionMessage.TransactionMessageStatus.confirmed.rawValue,
-            "createdAt": Date(),
-            "updatedAt": Date(),
-            "payment_request": invoice
-        ]
-        self.createLocalPayment(payment: localPaymentMessage)
-        handleMyInvoicePaymentSettled(paymentHash: paymentHash)
-
-        
+        SphinxOnionManager.sharedInstance.payInvoiceMessage(message: message)
         shouldDismiss(paymentCreated: true)
-    }
-    
-    @objc func handleMyInvoicePaymentSettled(paymentHash:String) {
-        if let message = TransactionMessage.getPaymentOfInvoiceWith(paymentHash: paymentHash){
-            message.setPaymentInvoiceAsPaid()
-            SphinxOnionManager.sharedInstance.sendPaymentOfInvoiceMessage(message: message)
-        }
-    }
-
-    
-    func createLocalPayment(payment: JSON?) {
-        if let payment = payment {
-            if let message = TransactionMessage.insertMessage(
-                m: payment,
-                existingMessage: TransactionMessage.getMessageWith(id: payment["id"].intValue)
-            ).0 {
-//                message.setPaymentInvoiceAsPaid()
-//                shouldDismiss(paymentCreated: true)
-            }
-        } else {
-            showErrorAlert()
-        }
     }
     
     func showErrorAlert(

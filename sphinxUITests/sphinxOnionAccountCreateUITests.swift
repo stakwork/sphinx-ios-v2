@@ -19,7 +19,7 @@ final class sphinxOnionAccountCreateUITests: XCTestCase {
         app = XCUIApplication()
         app.launch()
         
-        //SignupHelper.step = SignupHelper.SignupStep.Start.rawValue
+        //UserData.sharedInstance.signupStep = SignupHelper.SignupStep.Start.rawValue
 
         // In UI tests it is usually best to stop immediately when a failure occurs.
         continueAfterFailure = false
@@ -96,33 +96,6 @@ final class sphinxOnionAccountCreateUITests: XCTestCase {
         XCTAssertTrue(continueButton.exists)
         
         XCTAssertEqual(continueButton.label, "Continue")
-    }
-    
-    func test_fresh_launch_test_server_connection_UI() throws {
-        
-
-        // Find the buttons by their accessibility identifiers
-        let newUserButton = app.buttons["new.user"]
-
-        // Verify that the buttons exist
-        newUserButton.tap()
-        sleep(2)
-        
-        let connectionCodeButton = app.buttons["signup.signup-options.connection-code-button"]
-        connectionCodeButton.tap()
-        sleep(2)
-        
-        let continueButton = app.buttons["signup.description.continue"]
-        continueButton.tap()
-        sleep(2)
-        
-        let label = "Connect to Test Server"
-        let connectToTestServerButton = app.buttons[label]
-        
-        let submitButton = app.buttons["submit"]
-        
-        XCTAssertEqual(connectToTestServerButton.label, label)
-        XCTAssertEqual(submitButton.label, "Submit")
     }
     
     func test_fresh_launch_test_v2_flow_generate_copy_complete_sign_up_UI() throws {

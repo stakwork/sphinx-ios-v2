@@ -54,7 +54,9 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 "error.karma.receipt.validation.failed" = "Karma收據驗證失敗。錯誤消息：";
 "error.app-store-purchase-receipt-not-found" = "找不到AppStore購買收據。";
 "error.app-store-receipt-validation-failed" = "AppStore收據驗證失敗。";
-
+"error.rss.sync.failed.title" = "RSS Error";
+"error.rss.sync.failed.message" = "Sync to RSS Feed Failed. Please try again.";
+"admin" = "行政人員";
 
 // 儀表板
 "dashboard.tabs.feed" = "Feed";
@@ -68,6 +70,10 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 "dashboard.feeds.section-headings.following" = "正在關注";
 "dashboard.feeds.section-headings.directory" = "目錄";
 "dashboard.feeds.content.empty-state-message" = "未找到播客";
+"dashboard.feeds.section-headings.play.for.free" = "Play for Free";
+"dashboard.feeds.section-headings.download.to.play" = "Download to Play";
+"dashboard.feeds.content.download.torrent.started.title" = "Torrent download started";
+"dashboard.feeds.content.download.torrent.started.message" = "Check back in a bit to consume your content";
 
 
 // 儀表板飼料搜索
@@ -140,10 +146,12 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 "just.left.tribe" = "%@剛剛離開部落";
 "has.joined.group" = "%@已加入群組";
 "has.joined.tribe" = "%@已加入部落";
+"you.joined.tribe" = "你已加入部落";
 "added.to.group" = "%@已被添加到群組";
 "new.public.group" = "新部落";
 "edit.public.group" = "編輯部落";
 "tribe.kick" = "管理員已將\n您從此部落中移除";
+"tribe.kick.as.admin" = "You've removed a member from this tribe";
 "tribe.deleted" = "管理員已刪除\n此部落";
 "member.request" = "%@想要\n加入部落";
 "member.request.rejected" = "管理員\n拒絕了您的請求";
@@ -182,7 +190,7 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 "edit.contact.upper" = "編輯聯繫人";
 "subscribed.upper" = "已訂閱";
 "subscribe.upper" = "訂閱";
-"nickname.address.required" = "昵稱和地址是必需的。";
+"nickname.address.required" = "暱稱、地址和路線提示為必填項。";
 "new.contact" = "新聯繫人";
 "invalid.pubkey" = "無效的公鑰";
 "invalid.route.hint" = "無效的路由提示";
@@ -193,6 +201,9 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 "address-boox.contact-unblock.alert-title" = "解封聯繫人";
 "address-boox.contact-unblock.alert-message" = "您確定要解封此聯繫人嗎？";
 "contact.not.found" = "Contact not found";
+"address-book.can-not-delete-contact-title" = "無法刪除聯絡人";
+"address-book.can-not-delete-contact-message" = "已確認的聯絡人無法刪除";
+"messages.encrypted.disclaimer" = "透過端對端加密保護訊息和通話的安全";
 
 //歡迎
 "welcome.initial.title" = "歡迎";
@@ -204,9 +215,9 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 //恢復現有用戶
 "restore.keychain" = "從鑰匙串恢復";
 "restore.description.continue" = "繼續";
-"restore.description.label" = "從您的\n桌面應用程序複製您的鑰匙並粘貼在這裡。";
-"restore.copy.keys" = "複製您的鑰匙";
-"restore.form.paste.keys.placeholder" = "粘貼您的鑰匙...";
+"restore.description.label" = "從您的行動應用程式複製您的助記詞並將其貼到此處。";
+"restore.copy.keys" = "複製您的助記詞";
+"restore.form.paste.keys.placeholder" = "貼上您的助記詞...";
 "submit" = "提交";
 "restore.invalid-code.relay-qr-code" = "這看起來像是來自Sphinx Relay應用程序的連接代碼。要恢復現有帳戶，您需要輸入您的備份字符串。";
 "resume-restoring" = "恢復恢復...";
@@ -272,9 +283,9 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 //個人資料
 "address.copied.clipboard" = "地址已復制到剪貼板";
 "route.hint.copied.clipboard" = "路由提示已復制到剪貼板";
-"pin.keys.encryption" = "輸入您的PIN以加密您的鑰匙。在其他設備上恢復帳戶時，您將需要它。";
-"export.keys" = "導出鑰匙";
-"keys.will.copy.clipboard" = "您的鑰匙將被復制到剪貼板。在刪除應用程序或丟失所有數據之前，保存此字符串並記住您的pin。";
+"pin.keys.encryption" = "輸入您的 PIN 碼以存取您的助記詞";
+"export.keys" = "匯出種子短語";
+"keys.will.copy.clipboard" = "您的助記詞將複製到剪貼簿。安全地保存此字串，否則所有資料都將遺失。";
 "keys.copied.clipboard" = "導出鑰匙已復制到剪貼板";
 "server.url.updated" = "服務器URL成功更新";
 "hour" = "小時";
@@ -336,7 +347,7 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 "pin.doesnt.match" = "Pin不匹配";
 "enter.old.pin" = "輸入當前PIN";
 "enter.new.pin" = "輸入新PIN";
-"pin.changed" = "您的PIN已更新。請使用此新PIN重新導出您的鑰匙。";
+"pin.changed" = "您的 PIN 碼已更新";
 "contact.pin.error" = "您不能使用您的主PIN作為群組PIN";
 "set.privacy.pin" = "設置隱私PIN";
 "change.privacy.pin" = "更改隱私PIN";
@@ -352,6 +363,7 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 "error.loading.transactions" = "加載交易列表時出錯。請稍後再試。";
 "loading.more.transactions" = "加載更多交易...";
 "transactions.failure-reason" = "失敗原因：";
+"failed.payment" = "付款失敗";
 
 //二維碼掃描器
 "scan.qr.code.upper" = "掃描二維碼";
@@ -388,6 +400,7 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 "media.terms.expired" = "媒體條款已過期";
 "message.failed" = "消息失敗";
 "invite.name" = "邀請：%@";
+"add.name" = "添加: %@";
 "welcome.to.sphinx" = "歡迎來到Sphinx！";
 "loading.more.messages" = "加載更多消息...";
 "message.placeholder" = "消息...";
@@ -415,6 +428,10 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 "copy.text" = "複製文本";
 "mark.as.read" = "標記為已讀";
 "mark.as.unread" = "標記為未讀";
+"delete.contact" = "刪除聯絡人";
+"delete.invite" = "刪除邀請";
+"delete.contact.warning" = "您確定要刪除這個聯絡人嗎？";
+"delete.invite.warning" = "您確定要刪除此邀請嗎？";
 "copy.link" = "複製鏈接";
 "copy.pub.key" = "複製公鑰";
 "copy.call.link" = "複製通話鏈接";
@@ -454,7 +471,7 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 "amount.too.low" = "金額太低";
 "amount.too.high" = "金額太高";
 "onchain.amount.too.low" = "金額太低。最低250000 sats";
-"chat-header.balance.unit" = "karma";
+"chat-header.balance.unit" = "sats";
 "users" = "用戶";
 "optional.message.placeholder" = "可選消息...";
 "price.required" = "價格是必需的";
@@ -488,6 +505,12 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 "see-all" = "查看全部";
 "only-mentions" = "僅提及";
 "mute-chat" = "靜音聊天";
+"error.getting.token.title" = "取得令牌時發生錯誤";
+"error.getting.token.description" = "取得加入通話的令牌時發生錯誤。請稍後重試";
+"contact.info" = "聯絡方式";
+"contact.connected.since" = "%@起已上線";
+"timezone.changed" = "此聊天的時區設定僅儲存在此裝置上。\n如果你在其他裝置上使用應用程式，\n則需要重新設定時區。";
+"message.limit.reached" = "已達字數上限。請編輯或傳送您的訊息。";
 
 
 //其他
@@ -518,6 +541,9 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 "authorization.failed" = "授權失敗";
 "already.connected" = "您已經與此人連接";
 "price.to.meet" = "見面的價格：";
+"invalid.public-key" = "公鑰無效";
+"processing.payment" = "處理付款";
+"processing.payment.description" = "此過程最多可能需要 60 秒。完成後您將收到通知";
 
 "people.save-profile" = "從：保存個人資料";
 "people.delete-profile" = "從：刪除個人資料";
@@ -553,6 +579,7 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 "invite.in.progress.message" = "%@正在註冊。";
 "invite.pmt.in.progress.title" = "支付進行中";
 "invite.pmt.in.progress.message" = "您的支付正在處理中。";
+"contact.pending" = "等待批准";
 
 //播客
 "episodes" = "集";
@@ -606,11 +633,13 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 "feed.no-play-found" = "未找到“播放”結果";
 
 "feed.search-over" = "在超過";
+"feed.search-tracks-quantity" = "millions of tracks";
+"feed.search-torrent-source" = "on BitTorrent";
 "feed.search-podcast-quantity" = "4 000 000播客";
 "feed.search-podcast-source" = "在播客索引上";
 "feed.search-video-quantity" = "成千上萬的視頻";
 "feed.search-video-source" = "在Youtube上";
-"feed.search-other-source" = "您訂閱的飼料";
+"feed.search-other-source-rss" = "您訂閱的飼料";
 
 //時間
 "time.in-the-future" = "將來";

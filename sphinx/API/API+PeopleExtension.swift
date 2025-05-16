@@ -19,47 +19,148 @@ extension API {
     typealias PeopleTorRequestCallback = ((Bool) -> ())
     typealias GetPersonProfileCallback = ((Bool, JSON?) -> ())
     typealias GetTribeMemberProfileCallback = ((Bool, TribeMemberStruct?) -> ())
+    typealias SearchBTGatewayCallback = (([BTFeedSearchDataMapper]) -> ())
+    typealias CreatePeopleProfile = (Bool) -> ()
     
-    public func verifyExternal(callback: @escaping VerifyExternalCallback) {
-        guard let request = getURLRequest(route: "/verify_external", method: "POST") else {
-            callback(false, nil)
-            return
-        }
-        
-        sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool, let response = json["response"] as? NSDictionary, success {
-                        callback(true, response)
-                    }
-                }
-            case .failure(_):
-                callback(false, nil)
-            }
-        }
-    }
-    
-    public func signBase64(b64: String, callback: @escaping SignVerifyCallback) {
-        guard let request = getURLRequest(route: "/signer/\(b64)", method: "GET") else {
+    public func authorizeBTGateway(
+        url: String,
+        signedTimestamp:String,
+        callback: @escaping AuthorizeBTCallback
+    ){
+        var params = [String: AnyObject]()
+        params["signed_timestamp"] = signedTimestamp as? AnyObject
+        guard let request = createRequest(url, bodyParams: params as NSDictionary, method: "POST") else {
             callback(nil)
             return
         }
         
-        sphinxRequest(request) { response in
+        AF.request(request).responseJSON { (response) in
             switch response.result {
             case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool, let response = json["response"] as? NSDictionary, success {
-                        if let sig = response["sig"] as? String {
-                            callback(sig)
-                            return
-                        }
-                    }
+                if let dict = data as? NSDictionary {
+                    callback(dict)
                 }
-                callback(nil)
             case .failure(_):
                 callback(nil)
+            }
+        }
+    }
+    
+    public func searchBTGatewayForFeeds(
+        url:String,
+        authorizeDict:[String:String],
+        keyword:String,
+        callback: @escaping (Any) -> ()// SearchBTGatewayCallback
+    ){
+        var params = [String: AnyObject]()
+        params["keyword"] = keyword as? AnyObject
+        guard let request = createRequest(
+            url,
+            bodyParams: params as NSDictionary,
+            headers: authorizeDict,
+            method: "POST"
+        ) else {
+            callback([BTFeedSearchDataMapper]())
+            return
+        }
+        
+        AF.request(request).responseJSON { (response) in
+            switch response.result {
+            case .success(let value):
+                callback(value)
+            case .failure(_):
+                callback([BTFeedSearchDataMapper]())
+            }
+        }
+    }
+    
+    public func getMagnetDetails(
+            url:String,
+            authorizeDict:[String:String],
+            magnetLink:String,
+            callback: @escaping ((MagnetDetailsResponse?) -> ())
+    ){
+        var params = [String: AnyObject]()
+        params["magnet"] = magnetLink as? AnyObject
+        guard let request = createRequest(
+            url,
+            bodyParams: params as NSDictionary,
+            headers: authorizeDict,
+            method: "POST"
+        ) else {
+            callback(nil)
+            return
+        }
+        
+        AF.request(request).responseJSON { (response) in
+            switch response.result {
+            case .success(let value):
+                if let json = value as? [String: Any],
+                   let torrentDetails = MagnetDetailsResponse(JSON: json) {
+                    callback(torrentDetails)
+                } else {
+                    callback(nil)
+                }
+            case .failure(let error):
+                print("Request failed with error: \(error)")
+                callback(nil)
+            }
+        }
+    }
+    
+    public func requestTorrentDownload(
+        url: String,
+        authorizeDict: [String: String],
+        magnetLink: String,
+        initialPeers: [String],
+        paymenHash:String?,
+        callback: @escaping ((Bool,String?) -> ())
+    ) {
+        var params = [String: AnyObject]()
+        var options = [String: AnyObject]()
+        if let paymentHash = paymenHash{
+            params["payment_hash"] = paymenHash as AnyObject
+        }
+        params["magnet"] = magnetLink as AnyObject
+        options["peers"] = initialPeers as AnyObject
+        options["overwrite"] = true as AnyObject
+        options["list_only"] = false as AnyObject // Adding the list_only field with a default value
+        options["disable_trackers"] = false as AnyObject
+        options["paused"] = false as AnyObject // Adding the paused field with a default value
+        params["options"] = options as AnyObject
+        guard let request = createRequest(
+            url,
+            bodyParams: params as NSDictionary,
+            headers: authorizeDict,
+            method: "POST"
+        ) else {
+            callback(false,nil)
+            return
+        }
+
+        AF.request(request).responseJSON { (response) in
+            switch response.result {
+            case .success(_):
+                callback(true, nil)
+            case .failure(_):
+                if let data = response.data {
+                    if let status = response.response?.statusCode,
+                       let bolt11 = String(data: data, encoding: .utf8), status == 402
+                    {
+                        SphinxOnionManager.sharedInstance.payInvoice(invoice: bolt11, callback:{ (success, errorMsg) in
+                            if (success) {
+                                callback(true,bolt11)
+                            } else {
+                                AlertHelper.showAlert(title: "payment.failed".localized, message: "Error msg: \(errorMsg ?? "error unknown")")
+                                callback(false,nil)
+                            }
+                        })
+                    } else {
+                        callback(false,nil)
+                    }
+                } else {
+                    callback(false,nil)
+                }
             }
         }
     }
@@ -139,79 +240,116 @@ extension API {
         }
     }
     
-    public func savePeopleProfile(params: [String: AnyObject],
-                                  callback: @escaping PeopleTorRequestCallback) {
+    public func createPeopleProfileWith(
+        host: String,
+        token: String,
+        alias: String,
+        imageUrl: String?,
+        publicKey: String,
+        routeHint: String,
+        callback: @escaping CreatePeopleProfile
+    ) {
+        let url = "\(API.getUrl(route: host))/person?token=\(token)"
         
-        guard let request = getURLRequest(route: "/profile", params: params as NSDictionary, method: "POST") else {
+        let params: [String: AnyObject] = [
+            "owner_pubkey": publicKey as AnyObject,
+            "owner_alias": alias as AnyObject,
+            "owner_route_hint": routeHint as AnyObject,
+            "img": imageUrl as AnyObject
+        ]
+        
+        guard let request = createRequest(url, bodyParams: params as NSDictionary, method: "POST") else {
             callback(false)
             return
         }
         
         sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool,
-                       let _ = json["response"] as? NSDictionary, success {
-                        callback(true)
-                        return
-                    }
+            if let data = response.data {
+                let jsonProfile = JSON(data)
+                if let pubKey = jsonProfile["owner_pubkey"].string, pubKey == publicKey {
+                    callback(true)
+                } else {
+                    callback(false)
                 }
-                callback(false)
-            case .failure(_):
+            } else {
                 callback(false)
             }
         }
+    }
+    
+    public func savePeopleProfile(params: [String: AnyObject],
+                                  callback: @escaping PeopleTorRequestCallback) {
+        
+//        guard let request = getURLRequest(route: "/profile", params: params as NSDictionary, method: "POST") else {
+//            callback(false)
+//            return
+//        }
+//        
+//        sphinxRequest(request) { response in
+//            switch response.result {
+//            case .success(let data):
+//                if let json = data as? NSDictionary {
+//                    if let success = json["success"] as? Bool,
+//                       let _ = json["response"] as? NSDictionary, success {
+//                        callback(true)
+//                        return
+//                    }
+//                }
+//                callback(false)
+//            case .failure(_):
+//                callback(false)
+//            }
+//        }
     }
     
     public func deletePeopleProfile(params: [String: AnyObject],
                                     callback: @escaping PeopleTorRequestCallback) {
         
-        guard let request = getURLRequest(route: "/profile", params: params as NSDictionary, method: "DELETE") else {
-            callback(false)
-            return
-        }
-        
-        sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool,
-                       let _ = json["response"] as? NSDictionary, success {
-                        callback(true)
-                        return
-                    }
-                }
-                callback(false)
-            case .failure(_):
-                callback(false)
-            }
-        }
+//        guard let request = getURLRequest(route: "/profile", params: params as NSDictionary, method: "DELETE") else {
+//            callback(false)
+//            return
+//        }
+//        
+//        sphinxRequest(request) { response in
+//            switch response.result {
+//            case .success(let data):
+//                if let json = data as? NSDictionary {
+//                    if let success = json["success"] as? Bool,
+//                       let _ = json["response"] as? NSDictionary, success {
+//                        callback(true)
+//                        return
+//                    }
+//                }
+//                callback(false)
+//            case .failure(_):
+//                callback(false)
+//            }
+//        }
     }
     
     public func redeemBadgeTokens(params: [String: AnyObject],
                                   callback: @escaping PeopleTorRequestCallback) {
         
-        guard let request = getURLRequest(route: "/claim_on_liquid", params: params as NSDictionary, method: "POST") else {
-            callback(false)
-            return
-        }
-        
-        sphinxRequest(request) { response in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let success = json["success"] as? Bool,
-                       let _ = json["response"] as? NSDictionary, success {
-                        callback(true)
-                        return
-                    }
-                }
-                callback(false)
-            case .failure(_):
-                callback(false)
-            }
-        }
+//        guard let request = getURLRequest(route: "/claim_on_liquid", params: params as NSDictionary, method: "POST") else {
+//            callback(false)
+//            return
+//        }
+//        
+//        sphinxRequest(request) { response in
+//            switch response.result {
+//            case .success(let data):
+//                if let json = data as? NSDictionary {
+//                    if let success = json["success"] as? Bool,
+//                       let _ = json["response"] as? NSDictionary, success {
+//                        callback(true)
+//                        return
+//                    }
+//                }
+//                callback(false)
+//            case .failure(_):
+//                callback(false)
+//            }
+//        }
     }
     
     public func getTribeMemberInfo(

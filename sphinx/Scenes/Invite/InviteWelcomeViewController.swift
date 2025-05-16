@@ -18,7 +18,6 @@ class InviteWelcomeViewController: UIViewController {
     @IBOutlet weak var loadingWheel: UIActivityIndicatorView!
     @IBOutlet weak var nextButton: UIButton!
     
-    var isV2 : Bool = false
     var loading = false {
         didSet {
             LoadingWheelHelper.toggleLoadingWheel(loading: loading, loadingWheel: loadingWheel, loadingWheelColor: UIColor.white, view: view)
@@ -52,12 +51,9 @@ class InviteWelcomeViewController: UIViewController {
             }
         }
         
-        if isV2,
-           let alias = SphinxOnionManager.sharedInstance.stashedInviterAlias{
+        if let alias = SphinxOnionManager.sharedInstance.stashedInviterAlias {
             contactNameLabel.text = alias
-            //welcomeMessageLabel.text = currentInviter?.welcomeMessage
-        }
-        else if let inviter = currentInviter {
+        } else if let inviter = currentInviter {
             contactNameLabel.text = inviter.nickname
             welcomeMessageLabel.text = inviter.welcomeMessage
         }
@@ -72,25 +68,13 @@ class InviteWelcomeViewController: UIViewController {
     
     @IBAction func nextButtonTouched() {
         loading = true
-        
-        if let inviter = currentInviter, let pubkey = inviter.pubkey {
-            UserContactsHelper.createContact(nickname: inviter.nickname, pubKey: pubkey, routeHint: inviter.routeHint, callback: { (success, _) in
-                if success {
-                    self.continueToPinView()
-                } else {
-                    self.didFailCreatingContact()
-                }
-            })
-        } else {
-            self.continueToPinView()
-        }
+        self.continueToPinView()
     }
     
     func continueToPinView() {
-        SignupHelper.step = SignupHelper.SignupStep.InviterContactCreated.rawValue
+        UserData.sharedInstance.signupStep = SignupHelper.SignupStep.InviterContactCreated.rawValue
         
         let setPinVC = SetPinCodeViewController.instantiate()
-        setPinVC.isV2 = true
         self.navigationController?.pushViewController(setPinVC, animated: true)
     }
     

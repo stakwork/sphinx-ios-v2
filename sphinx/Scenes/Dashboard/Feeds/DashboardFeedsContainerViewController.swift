@@ -273,7 +273,7 @@ extension DashboardFeedsContainerViewController {
         )
         
         if activeFilterOption.id == ContentFilterOption.allContent.id {
-            actionsManager.saveFeedSearches()
+//            actionsManager.saveFeedSearches()
             synActionsAndRefreshRecommendations()
         }
     }
@@ -308,7 +308,7 @@ extension DashboardFeedsContainerViewController {
     }
     
     
-    private func showEmptyStateViewController() {
+    func showEmptyStateViewController() {
         emptyStateViewController.contentFilterOption = activeFilterOption
         
         addChildVC(

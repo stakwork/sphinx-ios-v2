@@ -20,6 +20,20 @@
                ReferencedContainer = "container:sphinx.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "CE677B702C6A88220050CFFC"
+               BuildableName = "SphinxNotificationExtensionService.appex"
+               BlueprintName = "SphinxNotificationExtensionService"
+               ReferencedContainer = "container:sphinx.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction

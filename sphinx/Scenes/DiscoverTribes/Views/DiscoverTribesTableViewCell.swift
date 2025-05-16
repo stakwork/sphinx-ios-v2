@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol DiscoverTribesCellDelegate{
+protocol DiscoverTribesCellDelegate: class {
     func handleJoin(url:URL)
 }
 
@@ -19,9 +19,9 @@ class DiscoverTribesTableViewCell: UITableViewCell {
     @IBOutlet weak var titleLabel: UILabel!
     @IBOutlet weak var descriptionLabel: UILabel!
     @IBOutlet weak var joinButton: UIButton!
-    var cellURL : URL? = nil
-    var delegate : DiscoverTribesCellDelegate? = nil
     
+    var tribeData: DiscoverTribeData? = nil
+    weak var delegate : DiscoverTribesCellDelegate? = nil
     
     static let reuseID = "DiscoverTribesTableViewCell"
     
@@ -67,23 +67,14 @@ class DiscoverTribesTableViewCell: UITableViewCell {
         self.descriptionLabel.textColor = UIColor.Sphinx.SecondaryText
     }
     
-    func configureJoinButton(tribeData:DiscoverTribeData,wasJoined:Bool){
+    func configureJoinButton(
+        tribeData: DiscoverTribeData,
+        wasJoined: Bool
+    ){
+        self.tribeData = tribeData
+        
         joinButton.layer.cornerRadius = 15.0
-        
-        let host = tribeData.host ?? API.kTribesServerBaseURL.replacingOccurrences(of: "https://", with: "")
-        
-        if let pubkey = tribeData.pubkey{
-            joinButton.isEnabled = true
-            cellURL = URL(string: "sphinx.chat://?action=tribeV2&pubkey=\(pubkey)&host=34.229.52.200:8801")
-            joinButton.addTarget(self, action: #selector(handleJoinTap), for: .touchUpInside)
-        }
-        else if let uuid = tribeData.uuid {
-            joinButton.isEnabled = true
-            cellURL = URL(string: "sphinx.chat://?action=tribe&uuid=\(uuid)&host=\(host)")
-            joinButton.addTarget(self, action: #selector(handleJoinTap), for: .touchUpInside)
-        } else {
-            joinButton.isEnabled = false
-        }
+        joinButton.isEnabled = tribeData.pubkey != nil
         
         if wasJoined {
             joinButton.backgroundColor = UIColor.Sphinx.ReceivedMsgBG
@@ -96,9 +87,14 @@ class DiscoverTribesTableViewCell: UITableViewCell {
         }
     }
     
-    @objc func handleJoinTap(){
-        if let valid_url = cellURL{
-            self.delegate?.handleJoin(url: valid_url)
+    @IBAction func joinButtonTapped(_ sender: Any) {
+        if let tribeData = tribeData, let pubkey = tribeData.pubkey {
+            let host = tribeData.host ?? SphinxOnionManager.sharedInstance.tribesServerIP
+            
+            guard let joinLinkUrl = URL(string: "sphinx.chat://?action=tribeV2&pubkey=\(pubkey)&host=\(host)") else {
+                return
+            }
+            self.delegate?.handleJoin(url: joinLinkUrl)
         }
     }
     

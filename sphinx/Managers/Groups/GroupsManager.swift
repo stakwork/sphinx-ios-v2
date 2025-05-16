@@ -70,49 +70,6 @@ class GroupsManager {
         return (true, parameters)
     }
     
-    func deleteGroup(
-        chat: Chat?,
-        completion: @escaping (Bool) -> ()
-    ) {
-        guard let chat = chat else {
-            completion(false)
-            return
-        }
-        
-        API.sharedInstance.deleteGroup(id: chat.id, callback: { success in
-            if success {
-                CoreDataManager.sharedManager.deleteChatObjectsFor(chat)
-                completion(true)
-            } else {
-                completion(false)
-            }
-        })
-    }
-    
-    func respondToRequest(
-        message: TransactionMessage,
-        action: String,
-        completion: @escaping (Chat, TransactionMessage) -> (),
-        errorCompletion: @escaping () -> ()
-    ) {
-        API.sharedInstance.requestAction(messageId: message.id, contactId: message.senderId, action: action, callback: { json in
-            if let chat = Chat.insertChat(chat: json["chat"]),
-                let message = TransactionMessage.insertMessage(
-                    m: json["message"],
-                    existingMessage: TransactionMessage.getMessageWith(id: json["message"]["id"].intValue)
-                ).0 {
-                
-                CoreDataManager.sharedManager.saveContext()
-                
-                completion(chat, message)
-                return
-            }
-            errorCompletion()
-        }, errorCallback: {
-            errorCompletion()
-        })
-    }
-    
     //chat scroll retention
     func setChatLastRead(chatID: Int, tablePosition: (Int, CGFloat)){
         chatLastReadLookup[chatID] = tablePosition
@@ -220,6 +177,7 @@ class GroupsManager {
                         break
                     case "pubkey":
                         tribeInfo.ownerPubkey = value
+                        tribeInfo.uuid = value
                         break
                     default:
                         break
@@ -245,9 +203,12 @@ class GroupsManager {
         
         parameters["owner_alias"] = (UserContact.getOwner()?.nickname ?? "anon") as AnyObject 
         parameters["name"] = (newGroupInfo.name ?? "") as AnyObject
-        parameters["price_per_message"] = (newGroupInfo.pricePerMessage ?? 0) as AnyObject
-        parameters["price_to_join"] = (newGroupInfo.priceToJoin ?? 0) as AnyObject
-        parameters["escrow_amount"] = (newGroupInfo.amountToStake ?? 0) as AnyObject
+        
+        parameters["price_per_message"] = ((newGroupInfo.pricePerMessage ?? 0) * 1000) as AnyObject
+        parameters["price_to_join"] = ((newGroupInfo.priceToJoin ?? 0) * 1000) as AnyObject
+        parameters["escrow_amount"] = ((newGroupInfo.amountToStake ?? 0) * 1000) as AnyObject
+        
+        parameters["pin"] = (newGroupInfo.pin ?? nil) as AnyObject
         
         let escrowMillis = (newGroupInfo.timeToStake ?? 0).millisFromHours
         parameters["escrow_millis"] = escrowMillis as AnyObject
@@ -431,42 +392,6 @@ class GroupsManager {
             }
         }
         return (price, failureMessage)
-    }
-    
-    func getAndJoinDefaultTribe(completion: @escaping () -> ()) {
-        getDefatulTribeInfo(completion: completion)
-    }
-    
-    func getDefatulTribeInfo(completion: @escaping () -> ()) {
-        let planetTribeQuery = "sphinx.chat://?action=tribe&uuid=X3IWAiAW5vNrtOX5TLEJzqNWWr3rrUaXUwaqsfUXRMGNF7IWOHroTGbD4Gn2_rFuRZcsER0tZkrLw3sMnzj4RFAk_sx0&host=tribes.sphinx.chat"
-        var tribeInfo = getGroupInfo(query: planetTribeQuery)
-        
-        if tribeInfo != nil {
-            API.sharedInstance.getTribeInfo(host: tribeInfo?.host ?? "", uuid: tribeInfo?.uuid ?? "", callback: { groupInfo in
-                self.update(tribeInfo: &tribeInfo!, from: groupInfo)
-                self.joinDefaultTribe(tribeInfo: tribeInfo!, completion: completion)
-            }, errorCallback: {
-                completion()
-            })
-        } else {
-            completion()
-        }
-    }
-    
-    func joinDefaultTribe(tribeInfo: TribeInfo, completion: @escaping () -> ()) {
-        let params = getParamsFrom(tribe: tribeInfo)
-        
-        API.sharedInstance.joinTribe(params: params, callback: { chatJson in
-            if let chat = Chat.insertChat(chat: chatJson) {
-                chat.pricePerMessage = NSDecimalNumber(floatLiteral: Double(tribeInfo.pricePerMessage ?? 0))
-                
-                completion()
-            } else {
-                completion()
-            }
-        }, errorCallback: {
-            completion()
-        })
     }
 }
 

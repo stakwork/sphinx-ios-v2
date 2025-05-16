@@ -58,33 +58,11 @@ class PaymentsViewModel : NSObject {
     func validateMemo(
         contact: UserContact?
     ) -> Bool {
-        
         guard let memo = payment.memo else {
             return true
         }
         
-        guard let contact = contact else {
-            return memo.count < 50
-        }
-        
-        if memo.count > 50 {
-            return false
-        }
-        
-        let encryptionManager = EncryptionManager.sharedInstance
-        let encryptedOwnMessage = encryptionManager.encryptMessageForOwner(message: memo)
-        let (contactIsEncrypted, encryptedContactMessage) = encryptionManager.encryptMessage(message: memo, for: contact)
-        
-        if contactIsEncrypted && !encryptedContactMessage.isValidLengthMemo() {
-            return memo.isValidLengthMemo()
-        }
-        
-        if contactIsEncrypted {
-            payment.encryptedMemo = encryptedOwnMessage
-            payment.remoteEncryptedMemo = encryptedContactMessage
-        }
-        
-        return true
+        return memo.isValidLengthMemo()
     }
     
     func validatePayment(
@@ -99,25 +77,6 @@ class PaymentsViewModel : NSObject {
         }
         
         return true
-    }
-    
-    func shouldSendDirectPayment(
-        parameters: [String: AnyObject],
-        callback: @escaping (TransactionMessage?) -> (),
-        errorCallback: @escaping () -> ()
-    ) {
-        API.sharedInstance.sendDirectPayment(params: parameters, callback: { payment in
-            if let payment = payment {
-                let (messageObject, success) = self.createLocalMessages(message: payment)
-                if let messageObject = messageObject, success {
-                    callback(messageObject)
-                    return
-                }
-            }
-            callback(nil)
-        }, errorCallback: { _ in
-            errorCallback()
-        })
     }
     
     func createLocalMessages(message: JSON?) -> (TransactionMessage?, Bool) {

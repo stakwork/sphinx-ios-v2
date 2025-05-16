@@ -12,5 +12,6 @@ extension DashboardRootViewController : RestoreProgressViewDelegate {
     func shouldFinishRestoring() {
         chatsListViewModel.finishRestoring()
         finishLoading()
+        SphinxOnionManager.sharedInstance.attempFinishResotoration()
     }
 }

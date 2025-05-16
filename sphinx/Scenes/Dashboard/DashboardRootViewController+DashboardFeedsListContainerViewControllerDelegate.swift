@@ -187,8 +187,7 @@ extension DashboardRootViewController {
             navigationController?.present(navController, animated: true)
         }
     }
-    
-    
+
     private func presentVideoPlayer(
         for videoEpisode: Video
     ) {

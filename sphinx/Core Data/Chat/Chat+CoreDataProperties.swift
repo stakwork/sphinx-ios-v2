@@ -42,12 +42,17 @@ extension Chat {
     @NSManaged public var contentFeed: ContentFeed?
     @NSManaged public var contactIds: [NSNumber]
     @NSManaged public var pendingContactIds: [NSNumber]
+    @NSManaged public var secondBrainUrl: String?
 
     @NSManaged public var isTribeICreated: Bool
     @NSManaged public var messages: NSSet?
     @NSManaged public var cachedMediaSet: NSSet?
     @NSManaged public var subscription: Subscription?
     @NSManaged public var lastMessage: TransactionMessage?
+    @NSManaged public var timezoneEnabled: Bool
+    @NSManaged public var timezoneIdentifier: String?
+    @NSManaged public var remoteTimezoneIdentifier: String?
+    @NSManaged public var timezoneUpdated: Bool
 }
 
 

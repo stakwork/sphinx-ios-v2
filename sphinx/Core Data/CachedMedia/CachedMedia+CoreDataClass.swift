@@ -48,34 +48,37 @@ public class CachedMedia: NSManagedObject {
         fileExtension: String?,
         key: String?,
         fileName: String?
-    ) -> CachedMedia? {
-        let managedContext = CoreDataManager.sharedManager.persistentContainer.viewContext
+    ) {
+        let backgroundContext = CoreDataManager.sharedManager.getBackgroundContext()
         
-        let cachedMedia = getCachedMediaInstance(id: id, managedContext: managedContext)
+        backgroundContext.perform {
+            let cachedMedia = getCachedMediaInstance(id: id, managedContext: backgroundContext)
 
-        cachedMedia.id = id
-        
-        if let chat = chat {
-            cachedMedia.chat = chat
+            cachedMedia.id = id
+            
+            if let chat = chat {
+                cachedMedia.chat = Chat.getChatWith(id: chat.id, managedContext: backgroundContext)
+            }
+            
+            if let truncatedPath = CachedMedia.getTruncatedFilePath(filePath: filePath){
+                cachedMedia.filePath = truncatedPath
+            }
+            
+            cachedMedia.fileExtension = fileExtension
+            cachedMedia.key = key
+            cachedMedia.fileName = fileName
+            cachedMedia.creationDate = Date()
+            
+            backgroundContext.saveContext()
         }
-        
-        if let truncatedPath = CachedMedia.getTruncatedFilePath(filePath: filePath){
-            cachedMedia.filePath = truncatedPath
-        }
-        
-        cachedMedia.fileExtension = fileExtension
-        cachedMedia.key = key
-        cachedMedia.fileName = fileName
-        cachedMedia.creationDate = Date()
-        
-        managedContext.saveContext()
-        
-        return cachedMedia
     }
     
-    func removeSphinxCacheObject(completion:@escaping ()->()){
-        let managedContext = CoreDataManager.sharedManager.persistentContainer.viewContext
-        if let key = key{
+    func removeSphinxCacheObject(
+        context: NSManagedObjectContext? = nil,
+        completion:@escaping ()->()
+    ){
+        let managedContext = context ?? CoreDataManager.sharedManager.persistentContainer.viewContext
+        if let key = key {
             let _ = SphinxCache().removeFromDisk(forKey: key)
             managedContext.delete(self)
             managedContext.saveContext()
@@ -84,9 +87,12 @@ public class CachedMedia: NSManagedObject {
         
     }
     
-    func removePhotoObject(completion: @escaping ()->()) {
-        let managedContext = CoreDataManager.sharedManager.persistentContainer.viewContext
-        if let key = self.key{
+    func removePhotoObject(
+        context: NSManagedObjectContext? = nil,
+        completion: @escaping ()->()
+    ) {
+        let managedContext = context ?? CoreDataManager.sharedManager.persistentContainer.viewContext
+        if let key = self.key {
             MediaLoader.clearImageCacheFor(url: key)
             managedContext.delete(self)
             managedContext.saveContext()
@@ -97,6 +103,20 @@ public class CachedMedia: NSManagedObject {
     public static func getAll() -> [CachedMedia] {
         let sortDescriptors = [NSSortDescriptor(key: "id", ascending: true)]
         let cachedMedia: [CachedMedia] = CoreDataManager.sharedManager.getAllOfType(entityName: "CachedMedia", sortDescriptors: sortDescriptors)
+        return cachedMedia
+    }
+    
+    public static func getMediaBefore(
+        date: Date,
+        context: NSManagedObjectContext? = nil
+    ) -> [CachedMedia] {
+        let sortDescriptors = [NSSortDescriptor(key: "id", ascending: true)]
+        let cachedMedia: [CachedMedia] = CoreDataManager.sharedManager.getObjectsOfTypeWith(
+            predicate: NSPredicate(format: "creationDate < %@", date as NSDate),
+            sortDescriptors: sortDescriptors,
+            entityName: "CachedMedia",
+            context: context
+        )
         return cachedMedia
     }
     

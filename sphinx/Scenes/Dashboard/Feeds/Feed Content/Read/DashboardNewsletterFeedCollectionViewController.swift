@@ -144,6 +144,10 @@ extension DashboardNewsletterFeedCollectionViewController {
         configure(collectionView)
         configureDataSource(for: collectionView)
         addTableBottomInset(for: collectionView)
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
         
         fetchItems()
     }

@@ -20,7 +20,17 @@ public class PaymentRequestDecoder {
     private let bech32CharValues = "qpzry9x8gf2tvdw0s3jn54khce6mua7l"
     
     func isZeroAmountInvoice(invoice:String)->Bool{
-        return invoice.starts(with: "lnbc1pj7t")
+        do{
+            let rawInvoiceResult = try parseInvoice(`invoiceJson`: invoice)
+            if let invoiceDict = ParseInvoiceResult(JSONString: rawInvoiceResult),
+               let amount = invoiceDict.value {
+                return amount == 0
+            }
+        }
+        catch{
+            //not zero amount or error
+        }
+        return false
     }
     
     func isPaymentRequest() -> Bool {

@@ -60,8 +60,6 @@ extension ThreadTableDataSource {
         let contact = chat.getConversationContact()
         let threadOriginalMessage = TransactionMessage.getMessageWith(uuid: threadUUID)
         
-        chat.processAliasesFrom(messages: sortedMessages)
-        
         let replyingMessagesMap = getReplyingMessagesMapFor(messages: sortedMessages)
         let boostMessagesMap = getBoostMessagesMapFor(messages: sortedMessages)
         let threadMessagesMap = getThreadMessagesFor(messages: sortedMessages)
@@ -97,7 +95,8 @@ extension ThreadTableDataSource {
                         contact: contact,
                         tribeAdmin: admin,
                         separatorDate: separatorDate,
-                        invoiceData: (invoiceData.0 > 0, invoiceData.1 > 0)
+                        invoiceData: (invoiceData.0 > 0, invoiceData.1 > 0),
+                        timezoneData: chat.timezoneData
                     ),
                     at: 0
                 )
@@ -127,7 +126,8 @@ extension ThreadTableDataSource {
                 linkContact: linkContact,
                 linkTribe: linkTribe,
                 linkWeb: linkWeb,
-                invoiceData: (invoiceData.0 > 0, invoiceData.1 > 0)
+                invoiceData: (invoiceData.0 > 0, invoiceData.1 > 0),
+                timezoneData: chat.timezoneData
             )
             
             array.insert(messageTableCellState, at: 0)
@@ -151,6 +151,7 @@ extension ThreadTableDataSource {
                     tribeAdmin: admin,
                     bubbleState: MessageTableCellState.BubbleState.Isolated,
                     boostMessages: boostsMessages,
+                    timezoneData: chat.timezoneData,
                     isThreadHeaderMessage: true
                 )
             )
@@ -160,8 +161,12 @@ extension ThreadTableDataSource {
         
         updateSnapshot()
         
+//        delegate?.configureNewMessagesIndicatorWith(
+//            newMsgCount: sortedMessages.count
+//        )
+        
         delegate?.configureNewMessagesIndicatorWith(
-            newMsgCount: sortedMessages.count
+            newMsgCount: 0
         )
         
         delegate?.shouldReloadThreadHeaderView()

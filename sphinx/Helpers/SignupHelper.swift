@@ -13,7 +13,7 @@ class SignupHelper {
     
     public enum SignupStep: Int {
         case Start
-        case IPAndTokenSet
+        case OwnerCreated
         case InviterContactCreated
         case PINSet
         case PersonalInfoSet
@@ -39,25 +39,7 @@ class SignupHelper {
         }
     }
     
-    public static var step: Int {
-        get {
-            return UserDefaults.Keys.signupStep.get(defaultValue: 0)
-        }
-        set {
-            UserDefaults.Keys.signupStep.set(newValue)
-        }
-    }
-    
-    public static func isLogged() -> Bool {
-        return step >= SignupHelper.SignupStep.SignupComplete.rawValue
-    }
-    
-    public static func completeSignup() {
-        step = SignupStep.SignupComplete.rawValue
-    }
-    
     public static func resetInviteInfo() {
-        UserDefaults.Keys.currentIP.removeValue()
         UserDefaults.Keys.inviteString.removeValue()
         UserDefaults.Keys.inviterNickname.removeValue()
         UserDefaults.Keys.inviterRouteHint.removeValue()

@@ -7,7 +7,7 @@
 
 import UIKit
 
-final class QRCodeDetailViewController: UIViewController, SocketManagerDelegate {
+final class QRCodeDetailViewController: UIViewController {
     
     @IBOutlet private weak var qrCodeImageView: UIImageView!
     @IBOutlet weak var titleLabel: UILabel!
@@ -17,6 +17,16 @@ final class QRCodeDetailViewController: UIViewController, SocketManagerDelegate 
     @IBOutlet private weak var shareButton: UIButton!
     @IBOutlet private weak var copyButton: UIButton!
     @IBOutlet weak var paidLabelContainer: UIView!
+    
+    var currentInvoicePaymentHash: String? {
+        if let invoice = viewModel?.qrCodeString,
+           let parsedInvoiceDetails = SphinxOnionManager.sharedInstance.getInvoiceDetails(invoice: invoice),
+           let paymentHash = parsedInvoiceDetails.paymentHash
+        {
+            return paymentHash
+        }
+        return nil
+    }
     
     public weak var delegate: PaymentInvoiceDelegate?
     public weak var presentedVCDelegate: PresentedViewControllerDelegate?
@@ -73,14 +83,42 @@ final class QRCodeDetailViewController: UIViewController, SocketManagerDelegate 
             amountLabelContainer.isHidden = false
             amountLabel.text = "\(amount) sats"
         }
+        
+        NotificationCenter.default.removeObserver(
+            self,
+            name: .sentInvoiceSettled,
+            object: nil
+        )
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handlePaidInvoiceNotification),
+            name: .sentInvoiceSettled,
+            object: nil
+        )
     }
     
-    func togglePaidContainer(invoice: String) {
-        if let qrCodeString = viewModel?.qrCodeString, qrCodeString == invoice {
-            UIView.animate(withDuration: 0.3, animations: {
-                self.paidLabelContainer.alpha = 1.0
-            })
+    override func viewDidDisappear(_ animated: Bool) {
+        NotificationCenter.default.removeObserver(
+            self,
+            name: .sentInvoiceSettled,
+            object: nil
+        )
+    }
+    
+    @objc func handlePaidInvoiceNotification(n: Notification) {
+        if let receivedPaymentHash = n.userInfo?["paymentHash"] as? String,
+           let currentInvoicePaymentHash = currentInvoicePaymentHash,
+           currentInvoicePaymentHash == receivedPaymentHash
+        {
+            togglePaidContainer()
         }
+    }
+    
+    func togglePaidContainer() {
+        UIView.animate(withDuration: 0.3, animations: {
+            self.paidLabelContainer.alpha = 1.0
+        })
     }
     
     @IBAction func copyQrCodeTapped() {

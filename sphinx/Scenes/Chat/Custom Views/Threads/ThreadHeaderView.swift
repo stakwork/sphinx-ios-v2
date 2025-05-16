@@ -24,7 +24,7 @@ import SDWebImage
 
 class ThreadHeaderView : UIView {
     
-    var delegate : ThreadHeaderViewDelegate? = nil
+    weak var delegate : ThreadHeaderViewDelegate? = nil
     
     var messageId: Int?
     
@@ -48,6 +48,10 @@ class ThreadHeaderView : UIView {
     
     var viewToShow: UIView! = nil
     
+    var urlRanges = [NSRange]()
+    
+    var tap: UITapGestureRecognizer! = nil
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
         setup()
@@ -67,6 +71,8 @@ class ThreadHeaderView : UIView {
         
         mediaView.layer.cornerRadius = 4
         mediaView.clipsToBounds = true
+        
+        tap = UITapGestureRecognizer(target: self, action: #selector(labelTapped(gesture:)))
     }
     
     func configureWith(
@@ -119,34 +125,57 @@ class ThreadHeaderView : UIView {
         messageLabel.attributedText = nil
         messageLabel.text = nil
         
-        if threadOriginalMessage.linkMatches.isEmpty && threadOriginalMessage.highlightedMatches.isEmpty {
+        if threadOriginalMessage.hasNoMarkdown {
             messageAndMediaLabel.text = threadOriginalMessage.text
-            messageAndMediaLabel.font = threadOriginalMessage.font
+            messageAndMediaLabel.font = UIFont.getThreadHeaderFont()
             
             messageLabel.text = threadOriginalMessage.text
-            messageLabel.font = threadOriginalMessage.font
+            messageLabel.font = UIFont.getThreadHeaderFont()
         } else {
             let messageC = threadOriginalMessage.text
             
             let attributedString = NSMutableAttributedString(string: messageC)
-            attributedString.addAttributes([NSAttributedString.Key.font: threadOriginalMessage.font], range: messageC.nsRange)
+            attributedString.addAttributes(
+                [NSAttributedString.Key.font: UIFont.getThreadHeaderFont()], range: messageC.nsRange
+            )
             
             ///Highlighted text formatting
             let highlightedNsRanges = threadOriginalMessage.highlightedMatches.map {
                 return $0.range
             }
             
-            for (index, nsRange) in highlightedNsRanges.enumerated() {
+            for nsRange in highlightedNsRanges {
                 
-                ///Subtracting the previous matches delimiter characters since they have been removed from the string
-                let substractionNeeded = index * 2
-                let adaptedRange = NSRange(location: nsRange.location - substractionNeeded, length: nsRange.length - 2)
+                let adaptedRange = NSRange(
+                    location: nsRange.location,
+                    length: nsRange.length
+                )
                 
                 attributedString.addAttributes(
                     [
                         NSAttributedString.Key.foregroundColor: UIColor.Sphinx.HighlightedText,
                         NSAttributedString.Key.backgroundColor: UIColor.Sphinx.HighlightedTextBackground,
-                        NSAttributedString.Key.font: threadOriginalMessage.highlightedFont
+                        NSAttributedString.Key.font: UIFont.getThreadHeaderHightlightedFont()
+                    ],
+                    range: adaptedRange
+                )
+            }
+            
+            ///Bold text formatting
+            let boldNsRanges = threadOriginalMessage.boldMatches.map {
+                return $0.range
+            }
+            
+            for nsRange in boldNsRanges {
+                
+                let adaptedRange = NSRange(
+                    location: nsRange.location,
+                    length: nsRange.length
+                )
+                
+                attributedString.addAttributes(
+                    [
+                        NSAttributedString.Key.font: UIFont.getThreadHeaderBoldFont()
                     ],
                     range: adaptedRange
                 )
@@ -159,14 +188,68 @@ class ThreadHeaderView : UIView {
                     [
                         NSAttributedString.Key.foregroundColor: UIColor.Sphinx.PrimaryBlue,
                         NSAttributedString.Key.underlineStyle: NSUnderlineStyle.single.rawValue,
-                        NSAttributedString.Key.font: threadOriginalMessage.font
+                        NSAttributedString.Key.font: UIFont.getThreadHeaderFont()
                     ],
                     range: match.range
                 )
+                
+                urlRanges.append(match.range)
+            }
+            
+            ///Markdown Links formatting
+            for (textCheckingResult, _, link, _) in threadOriginalMessage.linkMarkdownMatches {
+                
+                let nsRange = textCheckingResult.range
+                
+                if let url = URL(string: link) {
+                    attributedString.addAttributes(
+                        [
+                            NSAttributedString.Key.link: url,
+                            NSAttributedString.Key.foregroundColor: UIColor.Sphinx.PrimaryBlue,
+                            NSAttributedString.Key.underlineStyle: NSUnderlineStyle.single.rawValue,
+                            NSAttributedString.Key.font: UIFont.getThreadHeaderFont()
+                        ],
+                        range: nsRange
+                    )
+                }
+                
+                urlRanges.append(nsRange)
             }
             
             messageAndMediaLabel.attributedText = attributedString
             messageLabel.attributedText = attributedString
+            messageAndMediaLabel.isUserInteractionEnabled = true
+            messageLabel.isUserInteractionEnabled = true
+        }
+        
+        if urlRanges.isEmpty {
+            messageAndMediaLabel.removeGestureRecognizer(tap)
+            messageLabel.removeGestureRecognizer(tap)
+        } else {
+            messageAndMediaLabel.addGestureRecognizer(tap)
+            messageLabel.addGestureRecognizer(tap)
+        }
+        
+        urlRanges = ChatHelper.removeDuplicatedContainedFrom(urlRanges: urlRanges)
+    }
+    
+    @objc func labelTapped(
+        gesture: UITapGestureRecognizer
+    ) {
+        if let label = gesture.view as? UILabel, let attributedText = label.attributedText {
+            for range in urlRanges {
+                if gesture.didTapAttributedTextInLabel(
+                    label,
+                    inRange: range
+                ) {
+                    if let link = (attributedText.attribute(.link, at: range.location, effectiveRange: nil) as? URL)?.absoluteString {
+                        UIApplication.shared.open(URL(string: link)!, options: [:], completionHandler: nil)
+                    } else {
+                        let link = (attributedText.string as NSString).substring(with: range)
+                        UIApplication.shared.open(URL(string: link)!, options: [:], completionHandler: nil)
+                    }
+                }
+            }
         }
     }
     

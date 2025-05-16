@@ -6,10 +6,12 @@
 
 import Foundation
 import CoreData
+import SwiftyJSON
 
 public class PodcastEpisode: NSObject {
     
     public var itemID: String
+    public var feedID: String?
     public var title: String?
     public var author: String?
     public var episodeDescription: String?
@@ -21,10 +23,14 @@ public class PodcastEpisode: NSObject {
     public var clipStartTime: Int?
     public var clipEndTime: Int?
     public var showTitle: String?
-    public var feed: PodcastFeed?
+    public var feedURLPath: String?
+    public var feedImageURLPath: String?
+    public var feedTitle: String?
     public var people: [String] = []
     public var topics: [String] = []
     public var destination: PodcastDestination? = nil
+    public var referenceId: String? = nil
+    public var chapters: Array<Chapter>? = nil
 
     //For recommendations podcast
     public var type: String?
@@ -35,30 +41,39 @@ public class PodcastEpisode: NSObject {
     
     var wasPlayed: Bool? {
         get {
-            return UserDefaults.standard.value(forKey: "wasPlayed-\(itemID)") as? Bool
+            return UserDefaults.standard.value(forKey: "wasPlayed-\(feedAndItemId)") as? Bool
         }
         set {
-            UserDefaults.standard.set(newValue, forKey: "wasPlayed-\(itemID)")
+            UserDefaults.standard.set(newValue, forKey: "wasPlayed-\(feedAndItemId)")
         }
     }
     
     var duration: Int? {
         get {
-            return UserDefaults.standard.value(forKey: "duration-\(itemID)") as? Int
+            return UserDefaults.standard.value(forKey: "duration-\(feedAndItemId)") as? Int
         }
         set {
             if (newValue ?? 0 > 0) {
-                UserDefaults.standard.set(newValue, forKey: "duration-\(itemID)")
+                UserDefaults.standard.set(newValue, forKey: "duration-\(feedAndItemId)")
             }
         }
     }
     
     var currentTime: Int? {
         get {
-            return UserDefaults.standard.value(forKey: "current-time-\(itemID)") as? Int
+            return UserDefaults.standard.value(forKey: "current-time-\(feedAndItemId)") as? Int
         }
         set {
-            UserDefaults.standard.set(newValue, forKey: "current-time-\(itemID)")
+            UserDefaults.standard.set(newValue, forKey: "current-time-\(feedAndItemId)")
+        }
+    }
+    
+    var feedAndItemId: String {
+        get {
+            if let feedID = feedID {
+                return "\(feedID)-\(itemID)"
+            }
+            return "\(itemID)"
         }
     }
     
@@ -129,10 +144,54 @@ extension PodcastEpisode {
         podcastEpisode.linkURLPath = contentFeedItem.linkURL?.absoluteString
         podcastEpisode.imageURLPath = contentFeedItem.imageURL?.absoluteString
         podcastEpisode.title = contentFeedItem.title
-        podcastEpisode.feed = feed
+        podcastEpisode.feedID = feed?.feedID
+        podcastEpisode.feedURLPath = feed?.feedURLPath
+        podcastEpisode.feedImageURLPath = feed?.imageURLPath
+        podcastEpisode.feedTitle = feed?.title
         podcastEpisode.type = RecommendationsHelper.PODCAST_TYPE
+        podcastEpisode.referenceId = contentFeedItem.referenceId
+        
+        if let chaptersData = contentFeedItem.chaptersData {
+            let chapters = PodcastEpisode.getChaptersFrom(json: chaptersData)
+            podcastEpisode.chapters = chapters
+        }
         
         return podcastEpisode
+    }
+    
+    public static func getChaptersFrom(json: String) -> [Chapter] {
+        var chapters: [Chapter] = []
+        
+        if let jsonData = json.data(using: .utf8) {
+            do {
+                let graphData = try JSONDecoder().decode(GraphData.self, from: jsonData)
+                
+                for node in graphData.nodes {
+                    let timestamp: TimeInterval = node.date_added_to_graph
+                    let date = Date(timeIntervalSince1970: timestamp)
+                    
+                    if node.node_type == "Chapter" {
+                        chapters.append(
+                            Chapter(
+                                dateAddedToGraph: date,
+                                nodeType: node.node_type,
+                                isAd: (node.properties.is_ad == "True") ? true : false,
+                                name: node.properties.name ?? node.properties.episode_title ?? "Unknown",
+                                sourceLink: node.properties.source_link ?? "Unknown",
+                                timestamp: node.properties.timestamp ?? "Unknown",
+                                referenceId: node.ref_id
+                            )
+                        )
+                    }
+                }
+            } catch {
+                print("Error decoding JSON: \(error)")
+            }
+        } else {
+            print("Failed to convert string to Data.")
+        }
+        
+        return chapters.sorted(by: { $0.timestamp.toSeconds() < $1.timestamp.toSeconds() })
     }
     
     var isMusicClip: Bool {
@@ -149,6 +208,10 @@ extension PodcastEpisode {
     
     var isYoutubeVideo: Bool {
         return type == RecommendationsHelper.YOUTUBE_VIDEO_TYPE
+    }
+    
+    var isRecommendationsPodcast: Bool {
+        feedID == RecommendationsHelper.kRecommendationPodcastId
     }
 
     var intType: Int {
@@ -195,8 +258,8 @@ extension PodcastEpisode {
     
     func constructShareLink(useTimestamp:Bool=false)->String?{
         var link : String? = nil
-        if let feedID = self.feed?.feedID,
-           let feedURL = self.feed?.feedURLPath{
+        
+        if let feedID = self.feedID, let feedURL = self.feedURLPath {
             link = "sphinx.chat://?action=share_content&feedURL=\(feedURL)&feedID=\(feedID)&itemID=\(itemID)"
         }
         
@@ -206,6 +269,24 @@ extension PodcastEpisode {
             link! += "&atTime=\(timestamp)"
         }
         return link
+    }
+    
+    func getAdTimestamps() -> [(Int, Int)] {
+        guard let chapters = chapters else {
+            return []
+        }
+        
+        var timestamps: [(Int, Int)] = []
+        
+        for (index, chapter) in chapters.enumerated() {
+            if chapter.isAd {
+                let nextChapterStart = chapters[index + 1].timestamp.toSeconds()
+                let adStart = chapter.timestamp.toSeconds()
+                timestamps.append((adStart, nextChapterStart))
+            }
+        }
+        
+        return timestamps
     }
     
 }

@@ -33,7 +33,9 @@ extension Chat: ChatListCommonObject {
         return date ?? createdAt
     }
     
-    func getConversationContact() -> UserContact? {
+    func getConversationContact(
+        context: NSManagedObjectContext? = nil
+    ) -> UserContact? {
         if isGroup() {
             return nil
         }
@@ -59,10 +61,6 @@ extension Chat: ChatListCommonObject {
         return true
     }
     
-    public func hasEncryptionKey() -> Bool {
-        return true
-    }
-    
     public func subscribedToContact() -> Bool {
         return false
     }
@@ -74,7 +72,7 @@ extension Chat: ChatListCommonObject {
     public func isSeen(
         ownerId: Int
     ) -> Bool {
-        if self.lastMessage?.isOutgoing(ownerId: ownerId) ?? true {
+        if self.lastMessage?.isGroupJoinMessage() == false && self.lastMessage?.isOutgoing(ownerId: ownerId) ?? true {
             return true
         }
         
@@ -139,11 +137,24 @@ extension Chat: ChatListCommonObject {
         return nil
     }
     
+    public func isInvite() -> Bool {
+        return false
+    }
+    
     public func getContactStatus() -> Int? {
         return UserContact.Status.Confirmed.rawValue
     }
     
     public func getInviteStatus() -> Int? {
         return UserInvite.Status.Complete.rawValue
+    }
+    
+    public func getUnseenMessagesCount(
+        ownerId: Int
+    ) -> Int {
+        if self.isSeen(ownerId: ownerId) == true {
+            return 0
+        }
+        return self.getChat()?.getReceivedUnseenMessagesCount() ?? 0
     }
 }

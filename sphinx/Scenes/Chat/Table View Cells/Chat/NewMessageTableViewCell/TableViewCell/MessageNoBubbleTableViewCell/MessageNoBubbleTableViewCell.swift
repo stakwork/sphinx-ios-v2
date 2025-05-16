@@ -37,6 +37,8 @@ class MessageNoBubbleTableViewCell: UITableViewCell, ChatTableViewCellProtocol {
         dateSeparatorView.isHidden = true
         deletedMessageView.isHidden = true
         groupActionsView.isHidden = true
+        leftLineContainer.isHidden = true
+        rightLineContainer.isHidden = true
     }
     
     func setupViews() {
@@ -55,11 +57,11 @@ class MessageNoBubbleTableViewCell: UITableViewCell, ChatTableViewCellProtocol {
         threadOriginalMsgMediaData: MessageTableCellState.MediaData?,
         tribeData: MessageTableCellState.TribeData?,
         linkData: MessageTableCellState.LinkData?,
-        botWebViewData: MessageTableCellState.BotWebViewData?,
         uploadProgressData: MessageTableCellState.UploadProgressData?,
         delegate: NewMessageTableViewCellDelegate?,
         searchingTerm: String?,
-        indexPath: IndexPath
+        indexPath: IndexPath,
+        replyViewHeight: CGFloat?
     ) {
         hideAllSubviews()
         
@@ -148,23 +150,26 @@ class MessageNoBubbleTableViewCell: UITableViewCell, ChatTableViewCellProtocol {
     func configureWith(
         invoiceLines: BubbleMessageLayoutState.InvoiceLines
     ) {
-        switch (invoiceLines.linesState) {
-        case .None:
-            leftLineContainer.isHidden = true
-            rightLineContainer.isHidden = true
-            break
-        case .Left:
-            leftLineContainer.isHidden = false
-            rightLineContainer.isHidden = true
-            break
-        case .Right:
-            leftLineContainer.isHidden = true
-            rightLineContainer.isHidden = false
-            break
-        case .Both:
-            leftLineContainer.isHidden = false
-            rightLineContainer.isHidden = false
-            break
-        }
+        leftLineContainer.isHidden = true
+        rightLineContainer.isHidden = true
+        
+//        switch (invoiceLines.linesState) {
+//        case .None:
+//            leftLineContainer.isHidden = true
+//            rightLineContainer.isHidden = true
+//            break
+//        case .Left:
+//            leftLineContainer.isHidden = false
+//            rightLineContainer.isHidden = true
+//            break
+//        case .Right:
+//            leftLineContainer.isHidden = true
+//            rightLineContainer.isHidden = false
+//            break
+//        case .Both:
+//            leftLineContainer.isHidden = false
+//            rightLineContainer.isHidden = false
+//            break
+//        }
     }
 }

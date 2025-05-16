@@ -68,4 +68,50 @@ extension ContentFeed {
         
         return sortedItemsArray
     }
+    
+    var currentItemId: String {
+        get {
+            return UserDefaults.standard.string(forKey: "current-item-id-\(feedID)") ?? ""
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: "current-item-id-\(feedID)")
+        }
+    }
+    
+    var currentItem: ContentFeedItem? {
+        if !itemsArray.isEmpty {
+            // First try to get the current playing item
+            let currentId = currentItemId
+            if !currentId.isEmpty,
+               let currentItem = itemsArray.first(where: { $0.id == currentId }) {
+                return currentItem
+            }
+            // Then try the last consumed item
+            if let lastConsumedId = lastConsumedItemId,
+               let lastConsumedItem = itemsArray.first(where: { $0.id == lastConsumedId }) {
+                return lastConsumedItem
+            }
+            // Finally fall back to most recent item
+            return itemsArray.first
+        }
+        return nil
+    }
+    
+    var lastConsumedItemId: String? {
+        get {
+            return UserDefaults.standard.string(forKey: "last-consumed-item-id-\(feedID)")
+        }
+        set {
+            if let newValue = newValue {
+                UserDefaults.standard.set(newValue, forKey: "last-consumed-item-id-\(feedID)")
+            } else {
+                UserDefaults.standard.removeObject(forKey: "last-consumed-item-id-\(feedID)")
+            }
+        }
+    }
+    
+    func updateLastPlayedItem(_ item: ContentFeedItem) {
+        lastConsumedItemId = item.id
+        dateLastConsumed = Date()
+    }
 }

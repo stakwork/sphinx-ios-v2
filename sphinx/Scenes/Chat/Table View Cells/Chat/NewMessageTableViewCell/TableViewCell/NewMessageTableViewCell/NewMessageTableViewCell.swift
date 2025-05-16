@@ -32,11 +32,11 @@ protocol ChatTableViewCellProtocol: class {
         threadOriginalMsgMediaData: MessageTableCellState.MediaData?,
         tribeData: MessageTableCellState.TribeData?,
         linkData: MessageTableCellState.LinkData?,
-        botWebViewData: MessageTableCellState.BotWebViewData?,
         uploadProgressData: MessageTableCellState.UploadProgressData?,
         delegate: NewMessageTableViewCellDelegate?,
         searchingTerm: String?,
-        indexPath: IndexPath
+        indexPath: IndexPath,
+        replyViewHeight: CGFloat?
     )
 }
 
@@ -48,15 +48,15 @@ protocol NewMessageTableViewCellDelegate: class {
     func shouldLoadFileDataFor(messageId: Int, and rowIndex: Int)
     func shouldLoadVideoDataFor(messageId: Int, and rowIndex: Int)
     func shouldLoadGiphyDataFor(messageId: Int, and rowIndex: Int)
+    func shouldLoadLinkImageDataFor(messageId: Int, and rowIndex: Int)
     func shouldLoadTextDataFor(messageId: Int, and rowIndex: Int)
     func shouldLoadLinkDataFor(messageId: Int, and rowIndex: Int)
-    func shouldLoadBotWebViewDataFor(messageId: Int, and rowIndex: Int)
     func shouldLoadAudioDataFor(messageId: Int, and rowIndex: Int)
     func shouldPodcastCommentDataFor(messageId: Int, and rowIndex: Int)
     
     //Actions handling
     ///Message reply
-    func didTapMessageReplyFor(messageId: Int, and rowIndex: Int)
+    func didTapMessageReplyFor(messageId: Int, and rowIndex: Int, with height: CGFloat?)
     ///Avatar view
     func didTapAvatarViewFor(messageId: Int, and rowIndex: Int)
     ///Call Links
@@ -107,10 +107,10 @@ class NewMessageTableViewCell: CommonNewMessageTableViewCell, ChatTableViewCellP
     
     ///Constraints
     @IBOutlet weak var bubbleWidthConstraint: NSLayoutConstraint!
-    @IBOutlet weak var botResponseViewHeightConstraint: NSLayoutConstraint!
     
     ///First Container
     @IBOutlet weak var messageReplyView: NewMessageReplyView! 
+    @IBOutlet weak var messageReplyHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var threadLastReplyHeader: ThreadLastMessageHeader!
     @IBOutlet weak var messageThreadViewContainer: UIView!
     @IBOutlet weak var messageThreadView: MessageThreadView!
@@ -128,7 +128,6 @@ class NewMessageTableViewCell: CommonNewMessageTableViewCell, ChatTableViewCellP
     @IBOutlet weak var podcastAudioView: PodcastAudioView!
     @IBOutlet weak var callLinkView: JoinVideoCallView!
     @IBOutlet weak var podcastBoostView: PodcastBoostView!
-    @IBOutlet weak var botResponseView: BotResponseView!
     
     ///Thirs Container
     @IBOutlet weak var textMessageView: UIView!
@@ -150,6 +149,8 @@ class NewMessageTableViewCell: CommonNewMessageTableViewCell, ChatTableViewCellP
     @IBOutlet weak var leftPaymentDot: UIView!
     @IBOutlet weak var rightPaymentDot: UIView!
     
+    var tap: UITapGestureRecognizer! = nil
+    
     override func awakeFromNib() {
         super.awakeFromNib()
         
@@ -166,11 +167,11 @@ class NewMessageTableViewCell: CommonNewMessageTableViewCell, ChatTableViewCellP
         threadOriginalMsgMediaData: MessageTableCellState.MediaData?,
         tribeData: MessageTableCellState.TribeData?,
         linkData: MessageTableCellState.LinkData?,
-        botWebViewData: MessageTableCellState.BotWebViewData?,
         uploadProgressData: MessageTableCellState.UploadProgressData?,
         delegate: NewMessageTableViewCellDelegate?,
         searchingTerm: String?,
-        indexPath: IndexPath
+        indexPath: IndexPath,
+        replyViewHeight: CGFloat?
     ) {
         
         hideAllSubviews()
@@ -202,7 +203,11 @@ class NewMessageTableViewCell: CommonNewMessageTableViewCell, ChatTableViewCellP
         )
         
         ///Message Reply
-        configureWith(messageReply: mutableMessageCellState.messageReply, and: bubble)
+        configureWith(
+            messageReply: mutableMessageCellState.messageReply,
+            and: bubble,
+            replyViewHeight: replyViewHeight
+        )
         
         ///Thread
         configureWith(
@@ -228,7 +233,6 @@ class NewMessageTableViewCell: CommonNewMessageTableViewCell, ChatTableViewCellP
         configureWith(podcastBoost: mutableMessageCellState.podcastBoost)
         configureWith(messageMedia: mutableMessageCellState.messageMedia, mediaData: mediaData, and: bubble)
         configureWith(genericFile: mutableMessageCellState.genericFile, mediaData: mediaData)
-        configureWith(botHTMLContent: mutableMessageCellState.botHTMLContent, botWebViewData: botWebViewData)
         configureWith(audio: mutableMessageCellState.audio, mediaData: mediaData, and: bubble)
         configureWith(podcastComment: mutableMessageCellState.podcastComment, mediaData: mediaData, and: bubble)
         

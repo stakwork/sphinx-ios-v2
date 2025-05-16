@@ -14,42 +14,11 @@ extension ProfileViewController {
         let pinCodeVC = SetPinCodeViewController.instantiate(mode: SetPinCodeViewController.SetPinMode.Change)
         pinCodeVC.doneCompletion = { pin in
             pinCodeVC.dismiss(animated: true, completion: {
-                if pin == UserData.sharedInstance.getPrivacyPin() {
-                    AlertHelper.showAlert(title: "generic.error.title".localized, message: "pins.must.be.different".localized)
-                    return
-                }
                 AlertHelper.showTwoOptionsAlert(title: "pin.change".localized, message: "confirm.pin.change".localized, confirm: {
-                    GroupsPinManager.sharedInstance.didUpdateStandardPin(newPin: pin)
-                    self.newMessageBubbleHelper.showGenericMessageView(
-                        text: "pin.changed".localized,
-                        delay: 6,
-                        textColor: UIColor.white,
-                        backColor: UIColor.Sphinx.PrimaryGreen,
-                        backAlpha: 1.0
-                    )
-                })
-            })
-        }
-        self.present(pinCodeVC, animated: true)
-    }
-    
-    func shouldChangePrivacyPIN() {
-        let isPrivacyPinSet = GroupsPinManager.sharedInstance.isPrivacyPinSet()
-        let mode: SetPinCodeViewController.SetPinMode = isPrivacyPinSet ? .Change : .Set
-        let pinCodeVC = SetPinCodeViewController.instantiate(mode: mode, pinMode: .Privacy, subtitle: "")
-        pinCodeVC.doneCompletion = { pin in
-            pinCodeVC.dismiss(animated: true, completion: {
-                if pin == UserData.sharedInstance.getAppPin() {
-                    AlertHelper.showAlert(title: "generic.error.title".localized, message: "pins.must.be.different".localized)
-                    return
-                }
-                AlertHelper.showTwoOptionsAlert(title: "pin.change".localized, message: "confirm.privacy.pin.change".localized, confirm: {
-                    GroupsPinManager.sharedInstance.didUpdatePrivacyPin(newPin: pin)
-                    self.privacyPinLabel.text = "change.privacy.pin".localized
-                    let alertLabel = (isPrivacyPinSet ? "privacy.pin.changed" : "privacy.pin.set").localized
+                    UserData.sharedInstance.save(pin: pin)
                     
                     self.newMessageBubbleHelper.showGenericMessageView(
-                        text: alertLabel,
+                        text: "pin.changed".localized,
                         delay: 6,
                         textColor: UIColor.white,
                         backColor: UIColor.Sphinx.PrimaryGreen,
@@ -70,10 +39,6 @@ extension ProfileViewController : UITextFieldDelegate {
     
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         if let text = textField.text {
-            if textField.tag == ProfileFields.RelayUrl.rawValue {
-                updateRelayURL()
-                return true
-            }
             
             if textField.tag == ProfileFields.Name.rawValue {
                 setFieldsAfterEdit()
@@ -97,7 +62,7 @@ extension ProfileViewController : UITextFieldDelegate {
                     API.kAttachmentsServerUrl = text
                     break
                 case ProfileFields.VideoCallServer.rawValue:
-                    API.kVideoCallServer = text
+                    API.sharedInstance.kVideoCallServer = text
                     break
                 default:
                     break
@@ -122,41 +87,15 @@ extension ProfileViewController : UITextFieldDelegate {
     
     func updateProfile(photoUrl: String? = nil) {
         if let profile = UserContact.getOwner() {
-//            if profile.id < 0 {
-//                return
-//            }
-            
             let nickname = profile.nickname ?? ""
             let privatePhoto = profile.privatePhoto
             
             let updatedName = nameTextField.text ?? nickname
             let updatedPrivatePhoto = !sharePhotoSwitch.isOn
             
-            profile.avatarUrl = photoUrl
+            profile.avatarUrl = photoUrl ?? profile.avatarUrl
             
             self.configureProfile()
-            
-//            if nickname == updatedName && privatePhoto == updatedPrivatePhoto && photoUrl == nil {
-//                return
-//            }
-//            
-//            var parameters = [String : AnyObject]()
-//            parameters["alias"] = updatedName as AnyObject?
-//            parameters["private_photo"] = updatedPrivatePhoto as AnyObject?
-//            
-//            if let photoUrl = photoUrl, !photoUrl.isEmpty {
-//                parameters["photo_url"] = photoUrl as AnyObject?
-//            }
-            
-            
-            
-//            API.sharedInstance.updateUser(id: profile.id, params: parameters, callback: { contact in
-//                let _ = UserContactsHelper.insertContact(contact: contact)
-//                self.configureProfile()
-//            }, errorCallback: {
-//                self.configureProfile()
-//                AlertHelper.showAlert(title: "generic.error.title".localized, message: "generic.error.message".localized)
-//            })
         }
     }
 }

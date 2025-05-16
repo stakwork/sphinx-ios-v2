@@ -15,12 +15,50 @@ class ChatsCollectionViewController: UICollectionViewController {
     
     private var owner: UserContact!
     
+    let dataSourceQueue = DispatchQueue(label: "chatList.datasourceQueue", qos: .userInteractive)
+    private var updateWorkItem: DispatchWorkItem?
+    
     private let itemContentInsets = NSDirectionalEdgeInsets(
         top: 0,
         leading: 0,
         bottom: 0,
         trailing: 0
     )
+    
+    func shouldReloadRowFor(chatId: Int) {
+        shouldReloadChatRowsFor(chatIds: [chatId])
+    }
+    
+    func shouldReloadChatRowsFor(chatIds: [Int]) {
+        self.dataSourceQueue.async {
+            
+            guard let dataSource = self.dataSource else {
+                return
+            }
+            
+            var snapshot = dataSource.snapshot()
+            var itemIdentifiers: [DataSourceItem] = []
+            
+            let indexes = self.chatListObjects.indices.filter {
+                if let chatId = self.chatListObjects[$0].getChat()?.id {
+                    return chatIds.contains( chatId )
+                }
+                return false
+            }
+            
+            for index in indexes {
+                if index < snapshot.itemIdentifiers.count {
+                    itemIdentifiers.append(snapshot.itemIdentifiers[index])
+                }
+            }
+            
+            snapshot.reloadItems(itemIdentifiers)
+            
+            DispatchQueue.main.async {
+                self.dataSource.apply(snapshot, animatingDifferences: true)
+            }
+        }
+    }
 }
 
 
@@ -58,7 +96,10 @@ extension ChatsCollectionViewController {
         
         var objectId: String
         var messageId: Int?
+        var messageStatus: Int?
+        var message30SecOld: Bool
         var messageSeen: Bool
+        var unseenCount: Int
         var contactStatus: Int?
         var inviteStatus: Int?
         var muted: Bool
@@ -66,7 +107,10 @@ extension ChatsCollectionViewController {
         init(
             objectId: String,
             messageId: Int?,
+            messageStatus: Int?,
+            message30SecOld: Bool,
             messageSeen: Bool,
+            unseenCount: Int,
             contactStatus: Int?,
             inviteStatus: Int?,
             muted: Bool
@@ -74,7 +118,10 @@ extension ChatsCollectionViewController {
         {
             self.objectId = objectId
             self.messageId = messageId
+            self.messageStatus = messageStatus
+            self.message30SecOld = message30SecOld
             self.messageSeen = messageSeen
+            self.unseenCount = unseenCount
             self.contactStatus = contactStatus
             self.inviteStatus = inviteStatus
             self.muted = muted
@@ -84,7 +131,10 @@ extension ChatsCollectionViewController {
             let isEqual =
                 lhs.objectId == rhs.objectId &&
                 lhs.messageId == rhs.messageId &&
+                lhs.messageStatus == rhs.messageStatus &&
+                lhs.message30SecOld == rhs.message30SecOld &&
                 lhs.messageSeen == rhs.messageSeen &&
+                lhs.unseenCount == rhs.unseenCount &&
                 lhs.contactStatus == rhs.contactStatus &&
                 lhs.inviteStatus == rhs.inviteStatus &&
                 lhs.muted == rhs.muted
@@ -94,6 +144,14 @@ extension ChatsCollectionViewController {
 
         func hash(into hasher: inout Hasher) {
             hasher.combine(objectId)
+            hasher.combine(messageId)
+            hasher.combine(messageStatus)
+            hasher.combine(message30SecOld)
+            hasher.combine(messageSeen)
+            hasher.combine(unseenCount)
+            hasher.combine(contactStatus)
+            hasher.combine(inviteStatus)
+            hasher.combine(muted)
         }
     }
 
@@ -297,7 +355,6 @@ extension ChatsCollectionViewController {
                 cell.owner = self.owner
                 cell.chatListObject = self.chatListObjects[indexPath.row]
                 cell.delegate = self
-                cell.indexPath = indexPath
 
                 return cell
             }
@@ -326,26 +383,39 @@ extension ChatsCollectionViewController {
     func updateSnapshot() {
         updateOwner()
         
-        var snapshot = DataSourceSnapshot()
-
-        snapshot.appendSections(CollectionViewSection.allCases)
-
-        let items = chatListObjects.filter({$0.getContact()?.isOwner != true}).map {
+        dataSourceQueue.async {
             
-            DataSourceItem(
-                objectId: $0.getObjectId(),
-                messageId: $0.lastMessage?.id,
-                messageSeen: $0.isSeen(ownerId: owner.id),
-                contactStatus: $0.getContactStatus(),
-                inviteStatus: $0.getInviteStatus(),
-                muted: $0.isMuted()
-            )
+            self.updateWorkItem?.cancel()
             
+            let workItem = DispatchWorkItem {
+                var snapshot = DataSourceSnapshot()
+                
+                snapshot.appendSections(CollectionViewSection.allCases)
+
+                let items = self.chatListObjects.filter({ $0.getContact()?.isOwner != true }).map {
+                    DataSourceItem(
+                        objectId: $0.getObjectId(),
+                        messageId: $0.lastMessage?.id,
+                        messageStatus: $0.lastMessage?.status,
+                        message30SecOld: ($0.lastMessage?.date ?? Date()) < Date().addingTimeInterval(-30),
+                        messageSeen: $0.isSeen(ownerId: self.owner.id),
+                        unseenCount: $0.getUnseenMessagesCount(ownerId: self.owner.id),
+                        contactStatus: $0.getContactStatus(),
+                        inviteStatus: $0.getInviteStatus(),
+                        muted: $0.isMuted()
+                    )
+                }
+
+                snapshot.appendItems(items, toSection: .all)
+            
+                DispatchQueue.main.async {
+                    self.dataSource.apply(snapshot, animatingDifferences: true)
+                }
+            }
+            
+            self.updateWorkItem = workItem
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: workItem)
         }
-
-        snapshot.appendItems(items, toSection: .all)
-        
-        dataSource.apply(snapshot, animatingDifferences: true)
     }
     
     func updateOwner() {
@@ -383,34 +453,33 @@ extension ChatsCollectionViewController {
 
 extension ChatsCollectionViewController : ChatListCollectionViewCellDelegate, MessageOptionsVCDelegate{
     func didLongPressOnCell(
+        cell: ChatListCollectionViewCell,
         chatListObject: ChatListCommonObject,
-        owner: UserContact,
-        indexPath: IndexPath
+        owner: UserContact
     ) {
-        if let chat = chatListObject.getChat(),
-           let lastMessage = chat.lastMessage,
-           let _ = collectionView.cellForItem(at: indexPath) {
+        if let indexPath = collectionView.indexPath(for: cell) {
             
-            if lastMessage.isOutgoing(ownerId: owner.id){
-                return
-            }
-                
-            if let rowRectAndPath = ChatHelper.getChatRowRectAndPath(
-                collectionView: collectionView,
-                indexPath: indexPath,
-                yOffset: chatsListDelegate?.shouldGetChatsContainerYOffset() ?? 0
-            ) {
-                let messageOptionsVC = MessageOptionsViewController.instantiate(
-                    message: nil,
-                    chat: chat,
-                    purchaseAcceptMessage: nil,
-                    delegate: self,
-                    isThreadRow: false
-                )
-                
-                messageOptionsVC.setBubblePath(bubblePath: rowRectAndPath)
-                messageOptionsVC.modalPresentationStyle = .overCurrentContext
-                navigationController?.present(messageOptionsVC, animated: false)
+            if chatListObject.lastMessage?.isOutgoing(ownerId: owner.id) == false || ///last message is outgoing, should show mark as read/unread
+                chatListObject.isConversation() ///it's a contact, should show delete contact
+            {
+                if let rowRectAndPath = ChatHelper.getChatRowRectAndPath(
+                    collectionView: collectionView,
+                    indexPath: indexPath,
+                    yOffset: chatsListDelegate?.shouldGetChatsContainerYOffset() ?? 0
+                ) {
+                    let messageOptionsVC = MessageOptionsViewController.instantiate(
+                        message: nil,
+                        chat: chatListObject.getChat(),
+                        contact: chatListObject.getContact(),
+                        purchaseAcceptMessage: nil,
+                        delegate: self,
+                        isThreadRow: false
+                    )
+                    
+                    messageOptionsVC.setBubblePath(bubblePath: rowRectAndPath)
+                    messageOptionsVC.modalPresentationStyle = .overCurrentContext
+                    navigationController?.present(messageOptionsVC, animated: false)
+                }
             }
         }
     }
@@ -420,14 +489,72 @@ extension ChatsCollectionViewController : ChatListCollectionViewCellDelegate, Me
             return
         }
         
-        let desiredState = !chat.seen //store this immutable value and always sync both based on chat status
+        guard let previousMsg = TransactionMessage.getMessagePreviousTo(
+            messageId: lastMessage.id,
+            on: chat
+        ) else {
+            return
+        }
         
-        lastMessage.seen = desiredState
-        chat.seen = desiredState
-        chat.saveChat()
+        let success = SphinxOnionManager.sharedInstance.setReadLevel(
+            index: UInt64(previousMsg.id),
+            chat: chat,
+            recipContact: chat.getContact()
+        )
+        
+        if success {
+            let desiredState = !chat.seen
+            
+            lastMessage.seen = desiredState
+            chat.seen = desiredState
+            chat.saveChat()
+        } else {
+            AlertHelper.showAlert(
+                title: "generic.error.title".localized,
+                message: "generic.error.message".localized
+            )
+        }
     }
     
-    //Unused methods:
+    func shouldDeleteContact(contact: UserContact) {
+        let confirmDeletionCallback: (() -> ()) = {
+            self.deleteContact(contact: contact)
+        }
+        
+        let isInvite = contact.isInvite()
+        
+        AlertHelper.showTwoOptionsAlert(
+            title: "warning".localized,
+            message: (isInvite ? "delete.invite.warning" : "delete.contact.warning").localized,
+            confirm: confirmDeletionCallback
+        )
+    }
+    
+    func deleteContact(contact: UserContact) {
+        let som = SphinxOnionManager.sharedInstance
+        
+        if let inviteCode = contact.invite?.inviteString, contact.isInvite() {
+            if !som.cancelInvite(inviteCode: inviteCode) {
+                AlertHelper.showAlert(
+                    title: "generic.error.title".localized,
+                    message: "generic.error.message".localized
+                )
+                return
+            }
+        }
+        
+        if let publicKey = contact.publicKey, publicKey.isNotEmpty {
+            if som.deleteContactOrChatMsgsFor(contact: contact) {
+                som.deleteContactFromState(pubkey: publicKey)
+            }
+        }
+                
+        CoreDataManager.sharedManager.deleteContactObjectsFor(contact)
+    }
+    
+    func shouldDeleteChat(chat: Chat) {
+        CoreDataManager.sharedManager.deleteChatObjectsFor(chat)
+    }
     
     func shouldDeleteMessage(message: TransactionMessage) {}
     

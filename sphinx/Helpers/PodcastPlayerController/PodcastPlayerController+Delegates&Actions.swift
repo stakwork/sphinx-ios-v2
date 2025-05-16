@@ -111,6 +111,8 @@ extension PodcastPlayerController {
     func play(
         _ podcastData: PodcastData
     ) {
+        ChaptersManager.sharedInstance.processChaptersData(episodeId: podcastData.episodeId)
+        
         setAudioSession()
         
         if let pd = self.podcastData, isPlaying {
@@ -127,8 +129,6 @@ extension PodcastPlayerController {
                 runPausedStateUpdate()
             }
         }
-        
-        FeedsManager.sharedInstance.updateLastConsumedWithFeedID(feedID: podcastData.podcastId)
         
         self.isSoundPlaying = false
         self.podcastData = podcastData
@@ -152,6 +152,8 @@ extension PodcastPlayerController {
             resetPlayingInfoCenter()
             return
         }
+        
+        FeedsManager.sharedInstance.updateLastConsumedWithFeedID(feedID: podcastData.podcastId)
         
         runLoadingStateUpdate()
         
@@ -191,25 +193,44 @@ extension PodcastPlayerController {
             }
         }
         
+        @MainActor
         func playAssetAfterLoad(_ playerItem: CachingPlayerItem) {
-            if self.player == nil {
-                self.player = AVPlayer(playerItem: playerItem)
+            playerItem.preferredForwardBufferDuration = 5
+            
+            if player == nil {
+                player = AVPlayer(playerItem: playerItem)
             } else {
-                self.player?.replaceCurrentItem(with: playerItem)
+                player?.replaceCurrentItem(with: playerItem)
             }
             
-            self.player?.rate = podcastData.speed
-            self.player?.pause()
-            self.player?.automaticallyWaitsToMinimizeStalling = false
+            player?.rate = podcastData.speed
+            player?.pause()
+            player?.automaticallyWaitsToMinimizeStalling = false
+            
+            let addObserverToPlayerItem: () -> Void = { [weak self] in
+                guard let self = self else { return }
+                playerItem.addObserver(self, forKeyPath: "status", options: [.initial, .new], context: nil)
+            }
             
             if let currentTime = podcastData.currentTime, currentTime > 0 {
-                self.player?.seek(to: CMTime(seconds: Double(currentTime), preferredTimescale: 1)) { _ in
-                    self.player?.play()
-                    self.didStartPlaying(playerItem)
+                player?.seek(to: CMTime(seconds: Double(currentTime), preferredTimescale: 1)) { _ in
+                    addObserverToPlayerItem()
                 }
             } else {
+                addObserverToPlayerItem()
+            }
+        }
+    }
+
+    
+    override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
+        if keyPath == "status" {
+            if self.player?.currentItem?.status == .readyToPlay {
                 self.player?.play()
-                self.didStartPlaying(playerItem)
+                
+                if let playerItem = self.player?.currentItem {
+                    self.didStartPlaying(playerItem)
+                }
             }
         }
     }
@@ -478,13 +499,19 @@ extension PodcastPlayerController {
         }
     }
     
-    func handlePodcastQueue(){
-        if let nextTrack = FeedsManager.sharedInstance.queuedPodcastEpisodes.first,
-           let data = nextTrack.feed?.getPodcastData(episodeId: nextTrack.itemID){
-            FeedsManager.sharedInstance.queuedPodcastEpisodes.removeAll(where: {$0.itemID == nextTrack.itemID})
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: {
-                self.play(data)
-            })
+    func handlePodcastQueue() {
+        if let nextTrack = FeedsManager.sharedInstance.queuedPodcastEpisodes.first {
+            if let feedID = nextTrack.feedID, let contentFeed = ContentFeed.getFeedById(feedId: feedID) {
+                let feed = PodcastFeed.convertFrom(contentFeed: contentFeed)
+                
+                if let data = feed.getPodcastData(episodeId: nextTrack.itemID) {
+                    FeedsManager.sharedInstance.queuedPodcastEpisodes.removeAll(where: {$0.itemID == nextTrack.itemID})
+                    
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: {
+                        self.play(data)
+                    })
+                }
+            }
         }
     }
 }

@@ -13,10 +13,10 @@ extension NewChatViewModel {
         text: String,
         type: Int,
         data: Data,
-        completion: @escaping (Bool) -> ()
+        completion: @escaping (Bool, String?) -> ()
     ) {
         chatDataSource?.setMediaDataForMessageWith(
-            messageId: TransactionMessage.getProvisionalMessageId(),
+            messageId: SphinxOnionManager.sharedInstance.uniqueIntHashFromString(stringInput: UUID().uuidString),
             mediaData: MessageTableCellState.MediaData(
                 image: data.gifImageFromData(),
                 failed: false
@@ -26,6 +26,7 @@ extension NewChatViewModel {
         shouldSendMessage(
             text: text,
             type: type,
+            provisionalMessage: nil,
             completion: completion
         )
     }
@@ -33,76 +34,54 @@ extension NewChatViewModel {
     func shouldSendMessage(
         text: String,
         type: Int,
-        completion: @escaping (Bool) -> ()
+        provisionalMessage: TransactionMessage?,
+        completion: @escaping (Bool, String?) -> ()
     ) {
         var messageText = text
+        
+        if messageText.isEmpty {
+            return
+        }
         
         if let podcastComment = podcastComment {
             messageText = podcastComment.getJsonString(withComment: text) ?? text
         }
         
-        let (botAmount, wrongAmount) = isWrongBotCommandAmount(text: messageText)
+        let (_, wrongAmount) = isWrongBotCommandAmount(text: messageText)
         
         if wrongAmount {
-            completion(false)
+            completion(false, "Wrong Amount")
             return
         }
         guard let chat = chat else{
-            completion(false)
+            completion(false, "Chat not found")
             return
         }
         
         let tuuid = threadUUID ?? replyingTo?.threadUUID ?? replyingTo?.uuid
-        let validMessage = SphinxOnionManager.sharedInstance.sendMessage(to: contact, content: text, chat: chat,msgType: UInt8(type), threadUUID: tuuid, replyUUID: replyingTo?.uuid)
-        completion(validMessage != nil)
         
-    }
-    
-    func createProvisionalAndSend(
-        messageText: String,
-        type: Int,
-        botAmount: Int,
-        completion: @escaping (Bool) -> ()
-    ) -> TransactionMessage? {
-        
-        let provisionalMessage = insertProvisionalMessage(
-            text: messageText,
-            type: type,
-            chat: chat
-        )
-        
-        sendMessage(
-            provisionalMessage: provisionalMessage,
-            text: messageText,
-            botAmount: botAmount,
-            completion: completion
-        )
-        
-        return provisionalMessage
-    }
-
-    func insertProvisionalMessage(
-        text: String,
-        type: Int,
-        chat: Chat?
-    ) -> TransactionMessage? {
-        
-        let message = TransactionMessage.createProvisionalMessage(
-            messageContent: text,
-            type: type,
-            date: Date(),
+        let (validMessage, errorMsg) = SphinxOnionManager.sharedInstance.sendMessage(
+            to: contact,
+            content: messageText,
             chat: chat,
-            replyUUID: replyingTo?.uuid,
-            threadUUID: threadUUID ?? replyingTo?.threadUUID ?? replyingTo?.uuid
+            provisionalMessage: provisionalMessage,
+            msgType: UInt8(type),
+            threadUUID: tuuid,
+            replyUUID: replyingTo?.uuid
         )
         
-        if chat == nil {
-            ///Sending first message. Chat does not exist yet
-            updateSnapshotWith(message: message)
+        let message = validMessage?.makeProvisional(chat: self.chat)
+        updateSnapshotWith(message: message)
+        
+        completion(validMessage != nil, errorMsg)
+        
+        if let message = validMessage {
+            joinIfCallMessage(message: message)
         }
         
-        return message
+        resetReply()
     }
+    
     
     func updateSnapshotWith(
         message: TransactionMessage?
@@ -112,91 +91,6 @@ extension NewChatViewModel {
         }
         
         chatDataSource?.updateSnapshotWith(message: message)
-    }
-    
-    func sendMessage(
-        provisionalMessage: TransactionMessage?,
-        text: String,
-        isResend: Bool = false,
-        botAmount: Int = 0,
-        completion: @escaping (Bool) -> ()
-    ) {
-        let messageType = TransactionMessage.TransactionMessageType(fromRawValue: provisionalMessage?.type ?? 0)
-        let som = SphinxOnionManager.sharedInstance
-        guard let chat = chat else{
-            completion(false)
-            return
-        }
-        
-        let error = SphinxOnionManager.sharedInstance.sendMessage(to: contact!, content: text, chat: chat,threadUUID: threadUUID, replyUUID: replyingTo?.uuid)
-        
-        guard let params = TransactionMessage.getMessageParams(
-            contact: contact,
-            chat: chat,
-            type: messageType,
-            text: text,
-            botAmount: botAmount,
-            replyingMessage: replyingTo,
-            threadUUID: provisionalMessage?.threadUUID
-        ) else {
-            completion(false)
-            return
-        }
-        
-        sendMessage(
-            provisionalMessage: isResend ? nil : provisionalMessage,
-            params: params,
-            completion: completion
-        )
-    }
-
-    func sendMessage(
-        provisionalMessage: TransactionMessage?,
-        params: [String: AnyObject],
-        completion: @escaping (Bool) -> ()
-    ) {
-        askForNotificationPermissions()
-        
-        API.sharedInstance.sendMessage(params: params, callback: { m in
-            
-            let provisionalMessageId = provisionalMessage?.id
-            
-            if let provisionalMessage = provisionalMessage {
-                self.chatDataSource?.replaceMediaDataForMessageWith(
-                    provisionalMessageId: provisionalMessage.id,
-                    toMessageWith: m["id"].intValue
-                )
-            }
-            
-            if let message = TransactionMessage.insertMessage(m: m, existingMessage: provisionalMessage).0 {
-                message.managedObjectContext?.saveContext()
-                message.setPaymentInvoiceAsPaid()
-                
-                self.insertSentMessage(
-                    message: message,
-                    completion: completion
-                )
-                
-                self.deleteMessageWith(id: provisionalMessageId)
-                
-                ActionsManager.sharedInstance.trackMessageSent(message: message)
-            }
-            
-            if let podcastComment = self.podcastComment {
-                ActionsManager.sharedInstance.trackClipComment(podcastComment: podcastComment)
-            }
-            
-        }, errorCallback: {
-             if let provisionalMessage = provisionalMessage {
-                 
-                provisionalMessage.status = TransactionMessage.TransactionMessageStatus.failed.rawValue
-                 
-                self.insertSentMessage(
-                    message: provisionalMessage,
-                    completion: completion
-                )
-             }
-        })
     }
     
     func deleteMessageWith(
@@ -225,8 +119,12 @@ extension NewChatViewModel {
         message: TransactionMessage
     ) {
         if message.isCallMessageType() {
-            if let callLink = message.messageContent {
-                VideoCallManager.sharedInstance.startVideoCall(link: callLink)
+            if let link = message.messageContent {
+                VideoCallManager.sharedInstance.startVideoCall(
+                    link: link,
+                    shouldStartRecording: chat?.hasSecondBrainApp() == true || chat?.hasWebApp() == true,
+                    audioOnly: link.contains("startAudioOnly=true")
+                )
             }
         }
     }
@@ -258,48 +156,46 @@ extension NewChatViewModel {
         messageUUID: String,
         callback: (() -> ())?
     ) {
-        guard let params = TransactionMessage.getTribePaymentParams(
-            chat: chat,
-            messageUUID: messageUUID,
-            amount: amount,
-            text: message
-        ) else {
-            callback?()
-            return
-        }
+        //TODO: @Jim reimplement on V2
         
-        sendMessage(provisionalMessage: nil, params: params, completion: { _ in
-            callback?()
-        })
+//        guard let params = TransactionMessage.getTribePaymentParams(
+//            chat: chat,
+//            messageUUID: messageUUID,
+//            amount: amount,
+//            text: message
+//        ) else {
+//            callback?()
+//            return
+//        }
+//        sendMessage(provisionalMessage: nil, params: params, completion: { _ in
+//            callback?()
+//        })
     }
     
     func createCallMessage(sender: UIButton) {
-        VideoCallHelper.createCallMessage(button: sender, callback: { link in
-            self.sendCallMessage(link: link)
-        })
+        VideoCallHelper.createCallMessage(
+            button: sender,
+            secondBrainUrl: chat?.getSecondBrainAppUrl(),
+            appUrl: chat?.getAppUrl(),
+            callback: { link in
+                self.sendCallMessage(link: link)
+            }
+        )
     }
     
     func sendCallMessage(link: String) {
-        let type = (self.chat?.isGroup() == false) ?
-            TransactionMessage.TransactionMessageType.call.rawValue :
-            TransactionMessage.TransactionMessageType.message.rawValue
+        let voipRequestMessage = VoIPRequestMessage()
+        voipRequestMessage.recurring = false
+        voipRequestMessage.link = link
+        voipRequestMessage.cron = ""
         
-        var messageText = link
-        
-        if type == TransactionMessage.TransactionMessageType.call.rawValue {
-            
-            let voipRequestMessage = VoIPRequestMessage()
-            voipRequestMessage.recurring = false
-            voipRequestMessage.link = link
-            voipRequestMessage.cron = ""
-            
-            messageText = voipRequestMessage.getCallLinkMessage() ?? link
-        }
+        let messageText = voipRequestMessage.getCallLinkMessage() ?? link
         
         self.shouldSendMessage(
             text: messageText,
-            type: type,
-            completion: { _ in }
+            type: TransactionMessage.TransactionMessageType.call.rawValue,
+            provisionalMessage: nil,
+            completion: { _, _ in }
         )
     }
 }

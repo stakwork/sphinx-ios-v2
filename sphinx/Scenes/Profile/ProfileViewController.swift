@@ -26,7 +26,6 @@ class ProfileViewController: NewKeyboardHandlerViewController {
     @IBOutlet weak var memesServerTextField: UITextField!
     @IBOutlet weak var meetingServerTextField: UITextField!
     @IBOutlet weak var meetingAmountTextField: UITextField!
-    @IBOutlet weak var relayUrlTextField: UITextField!
     @IBOutlet weak var appearanceView: AppAppearenceView!
     @IBOutlet weak var sizeView: AppSizeView!
     @IBOutlet weak var settingsTabView: SettingsTabsView!
@@ -37,21 +36,19 @@ class ProfileViewController: NewKeyboardHandlerViewController {
     @IBOutlet weak var serversContainer: UIView!
     @IBOutlet weak var exportKeysContainer: UIView!
     @IBOutlet weak var exportKeyButton: UIButton!
-    @IBOutlet weak var relayContainerView: UIView!
     @IBOutlet weak var changePINContainerView: UIView!
     @IBOutlet weak var setGithubPATContainerView: UIView!
     @IBOutlet weak var uploadingLabel: UILabel!
     @IBOutlet weak var uploadLoadingWheel: UIActivityIndicatorView!
     @IBOutlet weak var contentScrollView: UIScrollView!
     @IBOutlet weak var advanceScrollView: UIScrollView!
-    @IBOutlet weak var privacyPinLabel: UILabel!
-    @IBOutlet weak var privacyPinGroupContainer: UIView!
     @IBOutlet weak var manageStorageChevronLabel: UILabel!
     @IBOutlet weak var manageStorageView: UIView!
     @IBOutlet weak var storageSumaryLabel: UILabel!
     @IBOutlet weak var storageSummaryBarView: StorageSummaryView!
     @IBOutlet weak var spinner: UIActivityIndicatorView!
-    
+    @IBOutlet weak var timezoneIdentifierLabel: UILabel!
+    @IBOutlet weak var dateTimeLabel: UILabel!
     @IBOutlet var tabContainers: [UIScrollView]!
     
     @IBOutlet var keyboardAccessoryView: UIView!
@@ -73,13 +70,13 @@ class ProfileViewController: NewKeyboardHandlerViewController {
         }
     }
     
-    let urlUpdateHelper = RelayURLUpdateHelper()
     let userData = UserData.sharedInstance
     
     var imagePickerManager = ImagePickerManager.sharedInstance
     var notificationSoundHelper = NotificationSoundHelper()
     let newMessageBubbleHelper = NewMessageBubbleHelper()
     var walletBalanceService = WalletBalanceService()
+    let som = SphinxOnionManager.sharedInstance
     
     public enum ProfileFields: Int {
         case Name
@@ -87,7 +84,6 @@ class ProfileViewController: NewKeyboardHandlerViewController {
         case VideoCallServer
         case InvitesServer
         case MemesServer
-        case RelayUrl
     }
     
     static func instantiate() -> ProfileViewController {
@@ -112,7 +108,6 @@ class ProfileViewController: NewKeyboardHandlerViewController {
         autoDownloadSubscribedPodsSwitch.onTintColor = UIColor.Sphinx.PrimaryBlue
         
         exportKeyButton.layer.cornerRadius = exportKeyButton.frame.height / 2
-        privacyPinLabel.text = (GroupsPinManager.sharedInstance.isPrivacyPinSet() ? "change.privacy.pin" : "set.privacy.pin").localized
         
         setShadows()
         configureFields()
@@ -120,6 +115,7 @@ class ProfileViewController: NewKeyboardHandlerViewController {
         configureServers()
         showStorageSpinner()
         configureBalanceTap()
+        updateTimezoneLabel()
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -133,9 +129,7 @@ class ProfileViewController: NewKeyboardHandlerViewController {
         settingsContainerView.addShadow(location: VerticalLocation.center, color: UIColor.black, opacity: 0.2, radius: 2.0)
         serversContainer.addShadow(location: VerticalLocation.center, color: UIColor.black, opacity: 0.2, radius: 2.0)
         exportKeysContainer.addShadow(location: VerticalLocation.center, color: UIColor.black, opacity: 0.2, radius: 2.0)
-        relayContainerView.addShadow(location: VerticalLocation.center, color: UIColor.black, opacity: 0.2, radius: 2.0)
         changePINContainerView.addShadow(location: VerticalLocation.center, color: UIColor.black, opacity: 0.2, radius: 2.0)
-        privacyPinGroupContainer.addShadow(location: VerticalLocation.center, color: UIColor.black, opacity: 0.2, radius: 2.0)
         
         setStatusBarColor()
     }
@@ -168,14 +162,12 @@ class ProfileViewController: NewKeyboardHandlerViewController {
         meetingServerTextField.delegate = self
         meetingAmountTextField.delegate = self
         nameTextField.delegate = self
-        relayUrlTextField.delegate = self
         
         inviteServerTextField.inputAccessoryView = keyboardAccessoryView
         memesServerTextField.inputAccessoryView = keyboardAccessoryView
         meetingServerTextField.inputAccessoryView = keyboardAccessoryView
         meetingAmountTextField.inputAccessoryView = keyboardAccessoryView
         nameTextField.inputAccessoryView = keyboardAccessoryView
-        relayUrlTextField.inputAccessoryView = keyboardAccessoryView
     }
     
     func configureProfile() {
@@ -212,8 +204,6 @@ class ProfileViewController: NewKeyboardHandlerViewController {
                 routeHintTextField.isUserInteractionEnabled = false
             }
         }
-        
-        relayUrlTextField.text = userData.getNodeIP()
     }
     
     func showStorageSpinner() {
@@ -268,7 +258,7 @@ class ProfileViewController: NewKeyboardHandlerViewController {
     func configureServers() {
         inviteServerTextField.text = API.kHUBServerUrl
         memesServerTextField.text = API.kAttachmentsServerUrl
-        meetingServerTextField.text = API.kVideoCallServer
+        meetingServerTextField.text = API.sharedInstance.kVideoCallServer
         meetingAmountTextField.text = "\(UserContact.kTipAmount)"
     }
     
@@ -372,11 +362,14 @@ class ProfileViewController: NewKeyboardHandlerViewController {
         setPinVC.doneCompletion = { pin in
             setPinVC.dismiss(animated: true, completion: {
                 if let mnemonic = UserData.sharedInstance.getMnemonic() {
-                    SphinxOnionManager.sharedInstance.vc = self
-                    SphinxOnionManager.sharedInstance.showMnemonicToUser(mnemonic: mnemonic, callback: {})
-                    SphinxOnionManager.sharedInstance.vc = nil
+                    self.som.vc = self
+                    self.som.showMnemonicToUser(mnemonic: mnemonic, callback: {})
+                    self.som.vc = nil
                 } else {
-                    AlertHelper.showAlert(title: "generic.error.title".localized, message: "generic.error.message".localized)
+                    AlertHelper.showAlert(
+                        title: "generic.error.title".localized,
+                        message: "generic.error.message".localized
+                    )
                 }
             })
         }
@@ -400,49 +393,45 @@ class ProfileViewController: NewKeyboardHandlerViewController {
     func sendGithubPAT(
         pat: String
     ) {
-        var parameters = [String : AnyObject]()
-        
-        if let transportK = userData.getTransportKey(),
-           let transportEncryptionKey = EncryptionManager.sharedInstance.getPublicKeyFromBase64String(base64String: transportK) {
-            
-            if let encryptedPat = EncryptionManager.sharedInstance.encryptToken(token: pat, key: transportEncryptionKey) {
-                parameters["encrypted_pat"] = encryptedPat as AnyObject?
-            }
-        }
-        
-        if (parameters.keys.isEmpty) {
-            AlertHelper.showAlert(
-                title: "generic.error.title".localized,
-                message: "profile.github-pat.error".localized
-            )
-            return
-        }
-        
-        API.sharedInstance.addGitPAT(
-            params: parameters,
-            callback: { _ in
-                self.newMessageBubbleHelper.showGenericMessageView(
-                    text: "profile.github-pat.success".localized,
-                    textColor: UIColor.white,
-                    backColor: UIColor.Sphinx.PrimaryGreen,
-                    backAlpha: 1.0
-                )
-            },
-            errorCallback: {
-                AlertHelper.showAlert(
-                    title: "generic.error.title".localized,
-                    message: "profile.github-pat.error".localized
-                )
-            }
-        )
+//        var parameters = [String : AnyObject]()
+//        
+//        if let transportK = userData.getTransportKey(),
+//           let transportEncryptionKey = EncryptionManager.sharedInstance.getPublicKeyFromBase64String(base64String: transportK) {
+//            
+//            if let encryptedPat = EncryptionManager.sharedInstance.encryptToken(token: pat, key: transportEncryptionKey) {
+//                parameters["encrypted_pat"] = encryptedPat as AnyObject?
+//            }
+//        }
+//        
+//        if (parameters.keys.isEmpty) {
+//            AlertHelper.showAlert(
+//                title: "generic.error.title".localized,
+//                message: "profile.github-pat.error".localized
+//            )
+//            return
+//        }
+//        
+//        API.sharedInstance.addGitPAT(
+//            params: parameters,
+//            callback: { _ in
+//                self.newMessageBubbleHelper.showGenericMessageView(
+//                    text: "profile.github-pat.success".localized,
+//                    textColor: UIColor.white,
+//                    backColor: UIColor.Sphinx.PrimaryGreen,
+//                    backAlpha: 1.0
+//                )
+//            },
+//            errorCallback: {
+//                AlertHelper.showAlert(
+//                    title: "generic.error.title".localized,
+//                    message: "profile.github-pat.error".localized
+//                )
+//            }
+//        )
     }
     
     @IBAction func changePinButtonTouched() {
         shouldChangePIN()
-    }
-    
-    @IBAction func privacyPinButtonTouched() {
-        shouldChangePrivacyPIN()
     }
     
     @IBAction func notificationButtonTouched() {
@@ -467,5 +456,17 @@ class ProfileViewController: NewKeyboardHandlerViewController {
                 setShadows()
             }
         }
+    }
+
+    private func updateTimezoneLabel() {
+        let timezone = TimeZone.current
+
+        let formattedIdentifier = timezone.identifier.replacingOccurrences(of: "_", with: " ")
+        timezoneIdentifierLabel.text = formattedIdentifier
+        
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        dateFormatter.timeZone = timezone
+        dateTimeLabel.text = dateFormatter.string(from: Date())
     }
 }

@@ -82,7 +82,6 @@ class ChatListHeader: UIView {
     }
     
     func updateConnectionSign() {
-
         let connected = SphinxOnionManager.sharedInstance.isConnected
         healthCheckButton.setTitleColor(connected ? ChatListHeader.kConnectedColor : ChatListHeader.kNotConnectedColor, for: .normal)
     }
@@ -107,10 +106,10 @@ class ChatListHeader: UIView {
         if (hideBalances) {
             smallBalanceLabel.text = "＊＊＊＊"
         } else {
-            smallBalanceLabel.text = walletBalanceService.balance.formattedWithSeparator
+            walletBalanceService.updateBalance(labels: [smallBalanceLabel])
         }
         
-        shouldCheckAppVersions()
+//        shouldCheckAppVersions()
     }
     
     func updateBalance() {
@@ -150,64 +149,8 @@ class ChatListHeader: UIView {
     }
     
     @IBAction func healthCheckButtonTouched() {
-        let status = API.sharedInstance.connectionStatus
-        let socketConnected = SphinxSocketManager.sharedInstance.isConnected()
-//        var message: String? = nil
-        
-//        let som = SphinxOnionManager.sharedInstance
-//        let selfContact = UserContact.getSelfContact()
-//        for contact in UserContact.getAll().filter({$0.publicKey != selfContact?.publicKey}){
-//            som.sendMessage(to: contact, content: "Sphinx is awesome.")
-//        }
-        
-//        SphinxOnionManager.sharedInstance.createTribe()
-        //SphinxOnionManager.sharedInstance.joinTribe(tribePubkey: "02a73be90947476b45b96bb4db6a7285e4a276abd13fb79473ab0cd29f8ca277d3", routeHint: <#T##String#>, alias: <#T##String?#>)
-//        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: {
-//            if let url = URL(string: "https://sphinxx.chat?action=tribeV2&pubkey=03e2c7df9811f0562451a4eb4108e422835838b507b5de01b8077c05d0eb4ff4d7&host=34.229.52.200:8801"){
-//                DeepLinksHandlerHelper.storeLinkQueryFrom(url: url)
-//                if let delegate = self.delegate as? DashboardRootViewController{
-//                    delegate.handleLinkQueries()
-//                }
-//            }
-//        })
-//        let som = SphinxOnionManager.sharedInstance
-////        som.issueInvite(amountMsat: 10_000)
-////        let invoice = som.createInvoice(amountMsat: 11_000)
-////        print(invoice)
-//        //som.payInvoice(invoice: "lnbcrt110n1pj70yn4dqqpp5xg04cz9gcqhrdvyvcnqfvqfueny9rkzfe70nqxw9ry6hdueq3lcssp5tjxk49cl342jlkyq2p234ngwuhgcu67dr4w7t3485d3pafctvp8s9qrsgqcqpjrzjq2kue4l4wngh6cn4gx6y0ar5jwgku78r8s2c8w5exes8kdw2n8peyp66yqqqs5gqqsqqqqqqqqqqqqqq9gmvxpumzm95g5kh9240eqlehvlr6lvvmstdaux6nmy22su9chu74ycpupfwyy9e6wgsejl226q0a3agxun9k79uhq3q8qykk9fsxlt9cpj2d30v")
-//        som.stashedInitialTribe = "https://34.229.52.200:8801/tribes/032dbf9a31140897e52b66743f2c78e93cff2d5ecf6fe4814327d8912243106ff6"
-//        som.joinInitialTribe()
-//        
-//        return
-        
-//        switch(status) {
-//        case API.ConnectionStatus.Connecting:
-//            break
-//        case API.ConnectionStatus.Connected:
-//            if socketConnected {
-//                message = "connected.to.node".localized
-//            } else {
-//                message = "socket.disconnected".localized
-//            }
-//            break
-//        case API.ConnectionStatus.NotConnected:
-//            takeUserToSupport()
-//            message = "unable.to.connect".localized
-//            break
-//        case API.ConnectionStatus.Unauthorize:
-//            takeUserToSupport()
-//            message = "unauthorized.error.message".localized
-//            break
-//        default:
-//            message = "network.connection.lost".localized
-//            break
-//        }
-//        
-//        if let message = message {
-//            DelayPerformedHelper.performAfterDelay(seconds: 0.5, completion: {
-//                self.messageBubbleHelper.showGenericMessageView(text:message, delay: 3)
-//            })
-//        }
+//        let status = API.sharedInstance.connectionStatus
+//        let socketConnected = SphinxSocketManager.sharedInstance.isConnected()
     }
     
     @IBAction func upgradeAppButtonTouched() {

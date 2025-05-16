@@ -38,33 +38,100 @@ class VideoCallManager : NSObject {
         let isGroup = (chat?.isGroup() ?? false)
         return isGroup
     }
+    
+    func closePipController() {
+        self.pipViewCoordinator?.hide() { _ in
+            self.onPiP = false
+            self.activeCall = false
+            self.pipViewCoordinator = nil
+        }
+    }
+    
+    func togglePip(pipEnabled: Bool) {
+        if pipEnabled {
+            pipViewCoordinator?.enterPictureInPicture()
+        } else {
+            pipViewCoordinator?.exitPictureInPicture()
+        }
+    }
+    
+    func getKeyWindow() -> UIWindow? {
+        if #available(iOS 13.0, *) {
+            if let window = UIApplication.shared.connectedScenes
+                .compactMap({ ($0 as? UIWindowScene)?.windows.first })
+                .first(where: { $0.isKeyWindow }) {
+                return window
+            }
+        } else {
+            if let window = UIApplication.shared.keyWindow {
+                return window
+            }
+        }
+        return nil
+    }
 
     func startVideoCall(
         link: String,
+        shouldStartRecording: Bool = false,
         audioOnly: Bool? = nil
     ) {
+        guard let owner = UserContact.getOwner() else {
+            return
+        }
+        
+        let linkUrl = VoIPRequestMessage.getFromString(link)?.link ?? link
         
         if activeCall {
             return
         }
         
-        switch(AVAudioSession.sharedInstance().recordPermission){
-        case .denied://show alert
-            AlertHelper.showAlert(title: "microphone.permission.required".localized, message: "microphone.permission.denied.jitsi" .localized)
-            return
-        case .undetermined://request access & preempt starting video
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.01, execute: {
-                let _ = AudioRecorderHelper().configureAudioSession(delegate: self)
-            })
-            return
-        case .granted://continue
-            break
-        }
+        if linkUrl.isLiveKitCallLink, let room = linkUrl.liveKitRoomName {
+            API.sharedInstance.getLiveKitToken(
+                room: room,
+                alias: owner.nickname ?? "",
+                profilePicture: owner.avatarUrl,
+                callback: { url, token in
+                    let liveKitVC = LiveKitCallViewController()
+                    liveKitVC.url = url
+                    liveKitVC.startRecording = linkUrl.contains("record=true") || shouldStartRecording
+                    liveKitVC.token = token
+                    liveKitVC.audioOnly = audioOnly ?? false
+                    
+                    if let window = self.getKeyWindow() {
+                        let rootViewController = window.rootViewController
+                        rootViewController?.addChild(liveKitVC)
+                        rootViewController?.view.addSubview(liveKitVC.view)
+                        
+                        self.pipViewCoordinator = CustomPipViewCoordinator(withView: liveKitVC.view, isLiveKit: true)
+                        self.pipViewCoordinator?.delegate = self
+                        self.pipViewCoordinator?.configureAsStickyView(withParentView: window)
+                        self.pipViewCoordinator?.initialPositionInSuperview = .upperRightCorner
+                        
+                        liveKitVC.didMove(toParent: rootViewController)
+                        
+                        self.pipViewCoordinator?.show()
+                        
+                        self.activeCall = true
+                    }
+                },
+                errorCallback: { error in
+                    AlertHelper.showAlert(title: "error.getting.token.title".localized, message: error)
+                }
+            )
+        } else if linkUrl.isJitsiCallLink {
+            switch(AVAudioSession.sharedInstance().recordPermission){
+            case .denied://show alert
+                AlertHelper.showAlert(title: "microphone.permission.required".localized, message: "microphone.permission.denied.jitsi".localized)
+                return
+            case .undetermined://request access & preempt starting video
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.01, execute: {
+                    let _ = AudioRecorderHelper().configureAudioSession(delegate: self)
+                })
+                return
+            case .granted://continue
+                break
+            }
 
-        if let owner = UserContact.getOwner() {
-            
-            let linkUrl = VoIPRequestMessage.getFromString(link)?.link ?? link
-            
             cleanUp()
 
             let jitsiMeetView = JitsiMeetView()
@@ -93,8 +160,8 @@ class VideoCallManager : NSObject {
             jitsiMeetView.layer.cornerRadius = 10
             jitsiMeetView.clipsToBounds = true
 
-            if let window = UIApplication.shared.windows.first {
-                pipViewCoordinator = CustomPipViewCoordinator(withView: jitsiMeetView)
+            if let window = getKeyWindow() {
+                pipViewCoordinator = CustomPipViewCoordinator(withView: jitsiMeetView, isLiveKit: false)
                 pipViewCoordinator?.delegate = self
                 pipViewCoordinator?.configureAsStickyView(withParentView: window)
                 pipViewCoordinator?.initialPositionInSuperview = .upperRightCorner
@@ -104,6 +171,10 @@ class VideoCallManager : NSObject {
                     videoCallPayButton = getPaymentView()
                     window.addSubview(videoCallPayButton!)
                 }
+            }
+        } else {
+            if let url = URL(string: linkUrl) {
+                UIApplication.shared.open(url)
             }
         }
     }

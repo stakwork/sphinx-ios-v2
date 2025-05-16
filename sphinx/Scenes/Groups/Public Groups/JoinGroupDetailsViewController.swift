@@ -39,10 +39,6 @@ class JoinGroupDetailsViewController: KeyboardEventsViewController {
     var qrString: String! = nil
     var tribeInfo : GroupsManager.TribeInfo? = nil
     
-    var isV2Tribe : Bool {
-        return qrString.contains("action=tribeV2") && qrString.contains("pubkey=")
-    }
-    
     var loading = false {
         didSet {
             LoadingWheelHelper.toggleLoadingWheel(loading: loading, loadingWheel: loadingWheel, loadingWheelColor: UIColor.white, view: view)
@@ -98,8 +94,7 @@ class JoinGroupDetailsViewController: KeyboardEventsViewController {
             vc: self,
             accessoryView: keyboardAccessoryView,
             alias: owner?.nickname,
-            picture: owner?.getPhotoUrl(),
-            shouldFixAlias: true
+            picture: owner?.getPhotoUrl()
         )
         
 
@@ -119,20 +114,15 @@ class JoinGroupDetailsViewController: KeyboardEventsViewController {
     func loadGroupDetails() {
         loadingGroup = true
         
-         if(isV2Tribe),
-           let pubkey = groupsManager.getV2Pubkey(qrString: qrString),
-           let host = groupsManager.getV2Host(qrString: qrString){
-             tribeInfo = GroupsManager.TribeInfo(ownerPubkey:pubkey, host: host,uuid: pubkey)
-        }
-        else{
-            tribeInfo = groupsManager.getGroupInfo(query: qrString)
+        if let pubkey = groupsManager.getV2Pubkey(qrString: qrString), let host = groupsManager.getV2Host(qrString: qrString) {
+            tribeInfo = GroupsManager.TribeInfo(ownerPubkey:pubkey, host: host,uuid: pubkey)
         }
         
         if let tribeInfo = tribeInfo {
             groupsManager.fetchTribeInfo(
                 host: tribeInfo.host,
                 uuid: tribeInfo.uuid,
-                useSSL: !isV2Tribe,
+                useSSL: false,
                 completion: { groupInfo in
                     self.completeDataAndShow(groupInfo: groupInfo)
                 },
@@ -151,10 +141,10 @@ class JoinGroupDetailsViewController: KeyboardEventsViewController {
         
         groupNameLabel.text = tribeInfo?.name ?? ""
         groupDescriptionLabel.text = tribeInfo?.description ?? ""
-        joinPriceLabel.text = "\(tribeInfo?.priceToJoin ?? 0)"
-        messagePriceLabel.text = "\(tribeInfo?.pricePerMessage ?? 0)"
-        amountToStakeLabel.text = "\(tribeInfo?.amountToStake ?? 0)"
-        timeToStakeLabel.text = "\(tribeInfo?.timeToStake ?? 0)"
+        joinPriceLabel.text = "\((tribeInfo?.priceToJoin ?? 0) / 1000)"
+        messagePriceLabel.text = "\((tribeInfo?.pricePerMessage ?? 0) / 1000)"
+        amountToStakeLabel.text = "\((tribeInfo?.amountToStake ?? 0) / 1000)"
+        timeToStakeLabel.text = "\((tribeInfo?.timeToStake ?? 0) / 1000)"
         
         groupImageView.contentMode = .scaleAspectFill
         groupImageView.layer.cornerRadius = groupImageView.frame.size.height / 2
@@ -197,52 +187,18 @@ class JoinGroupDetailsViewController: KeyboardEventsViewController {
     }
     
     func joinTribe(name: String?, imageUrl: String?) {
-        if isV2Tribe,
-        let tribeInfo = tribeInfo{
-            groupsManager.finalizeTribeJoin(tribeInfo: tribeInfo, qrString: qrString)
-            self.closeButtonTouched()
-        }
-        else{
-            guard let name = name, !name.isEmpty else {
-                loading = false
-                AlertHelper.showAlert(title: "generic.error.title".localized, message: "alias.cannot.empty".localized)
-                return
+        if let tribeInfo = tribeInfo {
+            groupsManager.finalizeTribeJoin(
+                tribeInfo: tribeInfo,
+                qrString: qrString
+            )
+            AlertHelper.showAlert(title: "generic.success.title".localized, message: "you.joined.tribe".localized) {
+                self.closeButtonTouched()
             }
-            
-            if let tribeInfo = tribeInfo {
-                var params = groupsManager.getParamsFrom(tribe: tribeInfo)
-                params["my_alias"] = name as AnyObject
-                params["my_photo_url"] = (imageUrl ?? "") as AnyObject
-                
-                API.sharedInstance.joinTribe(params: params, callback: { chatJson in
-                    if let chat = Chat.insertChat(chat: chatJson) {
-                        chat.tribeInfo = tribeInfo
-                        chat.pricePerMessage = NSDecimalNumber(floatLiteral: Double(tribeInfo.pricePerMessage ?? 0))
-                        
-                        
-                        if let feedUrl = tribeInfo.feedUrl {
-                            ContentFeed.fetchChatFeedContentInBackground(feedUrl: feedUrl, chatId: chat.id, completion: { feedId in
-                                
-                                if let feedId = feedId {
-                                    chat.contentFeed = ContentFeed.getFeedById(feedId: feedId)
-                                    chat.saveChat()
-                                }
-                                
-                                self.delegate?.shouldReloadContacts?(reload: true, dashboardTabIndex: 2)
-                                self.closeButtonTouched()
-                            })
-                        }
-                    } else {
-                        self.showErrorAndDismiss()
-                    }
-                }, errorCallback: {
-                    self.showErrorAndDismiss()
-                })
-            } else {
-                showErrorAndDismiss()
-            }
+        } else {
+            loading = false
+            AlertHelper.showAlert(title: "generic.error.title".localized, message: "alias.cannot.empty".localized)
         }
-       
     }
 }
 

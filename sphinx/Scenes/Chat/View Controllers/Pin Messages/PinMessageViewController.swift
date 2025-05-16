@@ -36,7 +36,11 @@ class PinMessageViewController: UIViewController {
     
     var message: TransactionMessage! = nil
     
+    var urlRanges = [NSRange]()
+    
     var mode = ViewMode.PinnedMessageInfo
+    
+    var tap: UITapGestureRecognizer! = nil
     
     public enum ViewMode {
         case MessagePinned
@@ -60,6 +64,8 @@ class PinMessageViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        tap = UITapGestureRecognizer(target: self, action: #selector(labelTapped(gesture:)))
         
         setupLayout()
         setupMessageData()
@@ -157,8 +163,160 @@ extension PinMessageViewController {
             usernameLabel.textColor = ChatHelper.getSenderColorFor(message: message)
         }
         
-        messageLabel.text = message.bubbleMessageContentString ?? ""
         unpinButtonView.isHidden = message.chat?.isMyPublicGroup() == false
+        
+        if let messageContent = message.bubbleMessageContentString, messageContent.isNotEmpty {
+            configureWith(
+                messageContent: BubbleMessageLayoutState.MessageContent(
+                    text: messageContent.removingMarkdownDelimiters,
+                    linkMatches: messageContent.stringLinks + messageContent.pubKeyMatches + messageContent.mentionMatches,
+                    highlightedMatches: messageContent.highlightedMatches,
+                    boldMatches: messageContent.boldMatches,
+                    linkMarkdownMatches: messageContent.linkMarkdownMatches,
+                    shouldLoadPaidText: false
+                )
+            )
+        } else {
+            messageLabel.text = message.bubbleMessageContentString ?? ""
+        }
+    }
+    
+    func configureWith(
+        messageContent: BubbleMessageLayoutState.MessageContent?
+    ) {
+        urlRanges = []
+        
+        if let messageContent = messageContent {
+            
+            let font = UIFont(name: "Roboto-Regular", size: 15.0)!
+            let highlightedFont = UIFont(name: "Roboto-Regular", size: 15.0)!
+            let boldFont = UIFont(name: "Roboto-Black", size: 15.0)!
+            
+            messageLabel.attributedText = nil
+            messageLabel.text = nil
+            
+            if messageContent.hasNoMarkdown {
+                messageLabel.text = messageContent.text
+                messageLabel.font = font
+            } else {
+                let messageC = messageContent.text ?? ""
+                
+                let attributedString = NSMutableAttributedString(string: messageC)
+                attributedString.addAttributes(
+                    [NSAttributedString.Key.font: font], range: messageC.nsRange
+                )
+                
+                ///Highlighted text formatting
+                let highlightedNsRanges = messageContent.highlightedMatches.map {
+                    return $0.range
+                }
+                
+                for nsRange in highlightedNsRanges {
+                    
+                    let adaptedRange = NSRange(
+                        location: nsRange.location,
+                        length: nsRange.length
+                    )
+                    
+                    attributedString.addAttributes(
+                        [
+                            NSAttributedString.Key.foregroundColor: UIColor.Sphinx.HighlightedText,
+                            NSAttributedString.Key.backgroundColor: UIColor.Sphinx.HighlightedTextBackground,
+                            NSAttributedString.Key.font: highlightedFont
+                        ],
+                        range: adaptedRange
+                    )
+                }
+                
+                ///Bold text formatting
+                let boldNsRanges = messageContent.boldMatches.map {
+                    return $0.range
+                }
+                
+                for nsRange in boldNsRanges {
+                    
+                    let adaptedRange = NSRange(
+                        location: nsRange.location,
+                        length: nsRange.length
+                    )
+                    
+                    attributedString.addAttributes(
+                        [
+                            NSAttributedString.Key.font: boldFont
+                        ],
+                        range: adaptedRange
+                    )
+                }
+                
+                ///Links formatting
+                for match in messageContent.linkMatches {
+                    
+                    attributedString.addAttributes(
+                        [
+                            NSAttributedString.Key.foregroundColor: UIColor.Sphinx.PrimaryBlue,
+                            NSAttributedString.Key.underlineStyle: NSUnderlineStyle.single.rawValue,
+                            NSAttributedString.Key.font: font
+                        ],
+                        range: match.range
+                    )
+                    
+                    urlRanges.append(match.range)
+                }
+                
+                ///Markdown Links formatting
+                for (textCheckingResult, _, link, _) in messageContent.linkMarkdownMatches {
+                    
+                    let nsRange = textCheckingResult.range
+                    
+                    if let url = URL(string: link) {
+                        attributedString.addAttributes(
+                            [
+                                NSAttributedString.Key.link: url,
+                                NSAttributedString.Key.foregroundColor: UIColor.Sphinx.PrimaryBlue,
+                                NSAttributedString.Key.underlineStyle: NSUnderlineStyle.single.rawValue,
+                                NSAttributedString.Key.font: font
+                            ],
+                            range: nsRange
+                        )
+                    }
+                    
+                    urlRanges.append(nsRange)
+                }
+                
+                messageLabel.attributedText = attributedString
+                messageLabel.isUserInteractionEnabled = true
+            }
+        }
+        
+        if urlRanges.isEmpty {
+            messageLabel.removeGestureRecognizer(tap)
+        } else {
+            messageLabel.addGestureRecognizer(tap)
+        }
+        
+        urlRanges = ChatHelper.removeDuplicatedContainedFrom(urlRanges: urlRanges)
+    }
+    
+    @objc func labelTapped(
+        gesture: UITapGestureRecognizer
+    ) {
+        if let label = gesture.view as? UILabel, let attributedText = label.attributedText {
+            for range in urlRanges {
+                if gesture.didTapAttributedTextInLabel(
+                    label,
+                    inRange: range
+                ) {
+                    if let link = (attributedText.attribute(.link, at: range.location, effectiveRange: nil) as? URL)?.absoluteString {
+                        UIApplication.shared.open(URL(string: link)!, options: [:], completionHandler: nil)
+                    } else {
+                        let link = (attributedText.string as NSString).substring(with: range)
+                        UIApplication.shared.open(URL(string: link)!, options: [:], completionHandler: nil)
+                    }
+                } else {
+                    self.navigateToMessageButtonTouched()
+                }
+            }
+        }
     }
 }
 

@@ -49,14 +49,10 @@ class SphinxReadyViewController: UIViewController {
         loading = true
         
         let wbs = WalletBalanceService()
-        if let storedBalance = wbs.getBalance(){
+        if let storedBalance = wbs.balance {
             loading = false
-            self.setAttributedTitles(local: storedBalance, remote: 0)
+            self.setAttributedTitles(local: Int(storedBalance), remote: 0)
         }
-//        let (_, _) = walletBalanceService.getBalanceAll(completion: { local, remote in
-//            self.loading = false
-//            self.setAttributedTitles(local: local, remote: remote)
-//        })
     }
     
     func setAttributedTitles(local: Int, remote: Int) {
@@ -80,18 +76,7 @@ class SphinxReadyViewController: UIViewController {
     
     @IBAction func nextButtonTouched() {
         loading = true
-        
-        if let inviteString: String = UserDefaults.Keys.inviteString.get() {
-            API.sharedInstance.finishInvite(inviteString: inviteString, callback: { success in
-                if success {
-                    self.finishSignup()
-                } else {
-                    self.nextButtonTouched()
-                }
-            })
-        } else {
-            self.finishSignup()
-        }
+        self.finishSignup()
     }
     
     func resetSignupData() {
@@ -102,9 +87,7 @@ class SphinxReadyViewController: UIViewController {
     }
     
     func finishSignup() {
-        let (_, _) = EncryptionManager.sharedInstance.getOrCreateKeys() {
-            self.handleInviteActions()
-        }
+        self.handleInviteActions()
     }
     
     func handleInviteActions() {
@@ -114,7 +97,7 @@ class SphinxReadyViewController: UIViewController {
     }
     
     func goToApp() {
-        SignupHelper.completeSignup()
+        UserData.sharedInstance.completeSignup()
         resetSignupData()
         UserDefaults.Keys.lastPinDate.set(Date())
         

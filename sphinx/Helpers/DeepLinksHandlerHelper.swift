@@ -34,9 +34,10 @@ class DeepLinksHandlerHelper {
             return false
         }
         
-        if WindowsManager.sharedInstance.showRedeemSats() {
-            return false
-        }
+        //TODO: @Jim reinstate if we decide to
+//        if WindowsManager.sharedInstance.showRedeemSats() {
+//            return false
+//        }
         
         if WindowsManager.sharedInstance.showAuth() {
             return false
@@ -62,12 +63,15 @@ class DeepLinksHandlerHelper {
     }
     
     static func joinJitsiCall(vc: UIViewController, forceJoin: Bool = false) -> Bool {
-        if let jitsiCall = UserDefaults.Keys.jitsiLinkUrl.get(defaultValue: ""), jitsiCall.isNotEmpty {
+        if let callLink = UserDefaults.Keys.callLinkUrl.get(defaultValue: ""), callLink.isNotEmpty {
             
             if !GroupsPinManager.sharedInstance.shouldAskForPin() || forceJoin {
-                UserDefaults.Keys.jitsiLinkUrl.removeValue()
+                UserDefaults.Keys.callLinkUrl.removeValue()
                 
-                VideoCallManager.sharedInstance.startVideoCall(link: jitsiCall)
+                VideoCallManager.sharedInstance.startVideoCall(
+                    link: callLink,
+                    audioOnly: callLink.contains("startAudioOnly=true")
+                )
 
                 return true
             }
@@ -92,17 +96,11 @@ class DeepLinksHandlerHelper {
         return false
     }
     
-    static func storeJitsiCallLink(url: URL) {
-        if url.absoluteString.starts(with: API.kVideoCallServer) {
-            UserDefaults.Keys.jitsiLinkUrl.set(url.absoluteString)
-        }
-    }
-    
     static func storeLinkQueryFrom(url: URL) -> Bool {
         var shouldSetVC = false
         
-        if url.absoluteString.starts(with: API.kVideoCallServer) {
-            UserDefaults.Keys.jitsiLinkUrl.set(url.absoluteString)
+        if url.absoluteString.isJitsiCallLink || url.absoluteString.isLiveKitCallLink {
+            UserDefaults.Keys.callLinkUrl.set(url.absoluteString)
             return true
         }
         
@@ -117,7 +115,7 @@ class DeepLinksHandlerHelper {
                     UserDefaults.Keys.invoiceQuery.set(query)
                     shouldSetVC = true
                     break
-                case "tribe", "tribeV2" :
+                case "tribeV2" :
                     UserDefaults.Keys.tribeQuery.set(query)
                     shouldSetVC = true
                     break
@@ -143,6 +141,10 @@ class DeepLinksHandlerHelper {
                     shouldSetVC = true
                 case "glyph":
                     UserDefaults.Keys.glyphQuery.set(query)
+                    shouldSetVC = true
+                    break
+                case "i":
+                    UserDefaults.Keys.inviteCode.set(url.absoluteString)
                     shouldSetVC = true
                     break
                 default:

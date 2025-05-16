@@ -124,17 +124,7 @@ extension AddressBookDataSource : ContactCellDelegate {
             return
         }
         
-        if contact.isBlocked() {
-            AlertHelper.showTwoOptionsAlert(
-                title: "address-boox.contact-unblock.alert-title".localized,
-                message: "address-boox.contact-unblock.alert-message".localized,
-                confirm: {
-                    self.shouldUnBlockContact(contact: contact, cell: cell)
-                }
-            )
-        } else {
-            delegate?.didTapOnContact(contact: contact)
-        }
+        delegate?.didTapOnContact(contact: contact)
     }
     
     func shouldDeleteContact(contact: UserContact?, cell: UITableViewCell) {
@@ -143,49 +133,7 @@ extension AddressBookDataSource : ContactCellDelegate {
         }
         
         delegate?.shouldToggleInteraction(enable: false)
-        
-        API.sharedInstance.deleteContact(id: contact.id, callback: { success in
-            if success {
-                self.deleteContactAndRow(contact: contact, cell: cell)
-            } else {
-                self.delegate?.shouldToggleInteraction(enable: true)
-                self.delegate?.shouldShowAlert(title: "generic.error.title".localized, text: "generic.error.message".localized)
-            }
-        })
-    }
-    
-    func shouldBlockContact(contact: UserContact?, cell: UITableViewCell) {
-        shouldToggleBlockContact(contact: contact, route: .Block, cell: cell)
-    }
-    
-    func shouldUnBlockContact(contact: UserContact?, cell: UITableViewCell) {
-        shouldToggleBlockContact(contact: contact, route: .Unblock, cell: cell)
-    }
-    
-    func shouldToggleBlockContact(contact: UserContact?, route: API.ToggleBlockRoute, cell: UITableViewCell) {
-        guard let contact = contact else {
-            return
-        }
-        
-        delegate?.shouldToggleInteraction(enable: false)
-        
-        API.sharedInstance.toggleBlockContact(
-            id: contact.id,
-            route: route,
-            callback: { contactJson in
-                
-                if let _ = UserContact.insertContact(contact: contactJson) {
-                    self.updateContactsAndReloadRow(cell: cell)
-                    self.delegate?.shouldToggleInteraction(enable: true)
-                }
-                
-            }, errorCallback: {
-                
-                self.delegate?.shouldToggleInteraction(enable: true)
-                self.delegate?.shouldShowAlert(title: "generic.error.title".localized, text: "generic.error.message".localized)
-                
-            }
-        )
+        self.deleteContactAndRow(contact: contact, cell: cell)
     }
     
     func updateContactsAndReloadRow(cell: UITableViewCell) {
@@ -199,6 +147,24 @@ extension AddressBookDataSource : ContactCellDelegate {
     }
     
     func deleteContactAndRow(contact: UserContact, cell: UITableViewCell) {
+        let som = SphinxOnionManager.sharedInstance
+        
+        if let inviteCode = contact.invite?.inviteString, contact.isInvite() {
+            if !som.cancelInvite(inviteCode: inviteCode) {
+                AlertHelper.showAlert(
+                    title: "generic.error.title".localized,
+                    message: "generic.error.message".localized
+                )
+                return
+            }
+        }
+        
+        if let publicKey = contact.publicKey, publicKey.isNotEmpty {
+            if som.deleteContactOrChatMsgsFor(contact: contact) {
+                som.deleteContactFromState(pubkey: publicKey)
+            }
+        }
+                
         let contactsCount = contacts.count
         
         deleteObjects(contact: contact)
@@ -207,11 +173,7 @@ extension AddressBookDataSource : ContactCellDelegate {
         
         if contacts.count == contactsCount - 1 {
             deleteCell(cell: cell)
-            return
-        }
-        
-        delegate?.shouldToggleInteraction(enable: true)
-        delegate?.shouldShowAlert(title: "generic.error.title".localized, text: "generic.error.message".localized)
+        }        
     }
     
     func deleteObjects(contact: UserContact) {

@@ -8,7 +8,10 @@
 
 import UIKit
 import CoreData
-import WebKit
+
+protocol NewChatViewControllerDelegate: class {
+    func shouldReloadRowFor(chatId: Int)
+}
 
 class NewChatViewController: NewKeyboardHandlerViewController {
     
@@ -16,18 +19,18 @@ class NewChatViewController: NewKeyboardHandlerViewController {
     @IBOutlet weak var headerView: NewChatHeaderView!
     @IBOutlet weak var chatTableView: UITableView!
     @IBOutlet weak var newMsgsIndicatorView: NewMessagesIndicatorView!
-    @IBOutlet weak var botWebView: WKWebView!
-    @IBOutlet weak var botWebViewWidthConstraint: NSLayoutConstraint!
-    
     @IBOutlet weak var chatTableViewHeightConstraint: NSLayoutConstraint!
-    
     @IBOutlet weak var mentionsAutocompleteTableView: UITableView!
     @IBOutlet weak var webAppContainerView: UIView!
-    @IBOutlet weak var chatTableHeaderHeightConstraint: NSLayoutConstraint!
-
+    @IBOutlet weak var shimmeringTableView: ShimmeringTableView!
+    @IBOutlet weak var emptyAvatarPlaceholderView: ChatEmptyAvatarPlaceholderView!
+    
+    weak var delegate: NewChatViewControllerDelegate? = nil
+    
     var contact: UserContact?
     var chat: Chat?
     var threadUUID: String? = nil
+    var owner: UserContact!
     
     var isThread: Bool {
         get {
@@ -47,6 +50,8 @@ class NewChatViewController: NewKeyboardHandlerViewController {
     var chatMentionAutocompleteDataSource : ChatMentionAutocompleteDataSource? = nil
     let messageBubbleHelper = NewMessageBubbleHelper()
     
+    let newMessageBubbleHelper = NewMessageBubbleHelper()
+    
     var webAppVC : WebAppViewController? = nil
     var isAppUrl = false
     
@@ -59,17 +64,24 @@ class NewChatViewController: NewKeyboardHandlerViewController {
     var viewMode = ViewMode.Standard
     var macros = [MentionOrMacroItem]()
     
+    var scrolledAtBottom = false
+    
     override var preferredScreenEdgesDeferringSystemGestures: UIRectEdge {
         get {
             return [.bottom, .right]
         }
     }
     
+    var shouldShowPendingChat: Bool {
+        return (chat?.isPending() ?? false) || (chat == nil)
+    }
+    
     static func instantiate(
         contactId: Int? = nil,
         chatId: Int? = nil,
         chatListViewModel: ChatListViewModel? = nil,
-        threadUUID: String? = nil
+        threadUUID: String? = nil,
+        delegate: NewChatViewControllerDelegate? = nil
     ) -> NewChatViewController {
         let viewController = StoryboardScene.Chat.newChatViewController.instantiate()
         
@@ -81,8 +93,11 @@ class NewChatViewController: NewKeyboardHandlerViewController {
             viewController.contact = UserContact.getContactWith(id: contactId)
         }
         
+        viewController.owner = UserContact.getOwner()
+        
         viewController.threadUUID = threadUUID
         viewController.chatListViewModel = chatListViewModel
+        viewController.delegate = delegate
         
         viewController.chatViewModel = NewChatViewModel(
             chat: viewController.chat,
@@ -118,6 +133,15 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         
         fetchTribeData()
         loadReplyableMeesage()
+        
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        
+        if self.isMovingFromParent {
+            chat?.setChatMessagesAsSeen()
+        }
     }
     
     override func viewDidDisappear(_ animated: Bool) {
@@ -127,11 +151,11 @@ class NewChatViewController: NewKeyboardHandlerViewController {
             chatTableDataSource?.saveSnapshotCurrentState()
             chatTableDataSource?.stopListeningToResultsController()
 
-            SphinxSocketManager.sharedInstance.setDelegate(delegate: nil)
-
             stopPlayingClip()
         }
-        
+    }
+    
+    deinit {
         NotificationCenter.default.removeObserver(self, name: .webViewImageClicked, object: nil)
     }
     
@@ -155,9 +179,6 @@ class NewChatViewController: NewKeyboardHandlerViewController {
     }
     
     func shouldAdjustTableViewTopInset() {
-        if isThread {
-           return
-        }
         DelayPerformedHelper.performAfterDelay(seconds: 0.5, completion: {
             let newInset = Constants.kChatTableContentInset + abs(self.chatTableView.frame.origin.y)
             self.chatTableView.contentInset.bottom = newInset
@@ -199,10 +220,6 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         if !isThread {
             headerView.addShadow(location: .bottom, color: UIColor.black, opacity: 0.1)
         }
-        
-        botWebViewWidthConstraint.constant = ((UIScreen.main.bounds.width - (MessageTableCellState.kRowLeftMargin + MessageTableCellState.kRowRightMargin)) * MessageTableCellState.kBubbleWidthPercentage) - (MessageTableCellState.kLabelMargin * 2)
-        botWebView.layoutIfNeeded()
-        
     }
     
     func setupData() {
@@ -218,6 +235,8 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         
         bottomView.updateFieldStateFrom(chat)
         showPendingApprovalMessage()
+
+        updateEmptyView()
     }
     
     func configureThreadHeaderAndBottomView() {
@@ -234,8 +253,6 @@ class NewChatViewController: NewKeyboardHandlerViewController {
             messageFieldDelegate: self,
             searchDelegate: self
         )
-        
-        SphinxSocketManager.sharedInstance.setDelegate(delegate: self)
     }
     
     private func loadReplyableMeesage() {
@@ -250,6 +267,45 @@ class NewChatViewController: NewKeyboardHandlerViewController {
             shouldAdjustTableViewTopInset()
         } else {
             bottomView.resetReplyView()
+        }
+    }
+    
+    private func setupEmptyChatPlaceholder() {
+        guard let chat = chat else {
+            return
+        }
+        
+        if chat.isPublicGroup() {
+            return
+        }
+        
+        DispatchQueue.main.async {
+            self.emptyAvatarPlaceholderView.configureWith(chat: chat)
+            self.emptyAvatarPlaceholderView.isHidden = false
+            self.bottomView.isHidden = false
+        }
+    }
+
+    private func setupPendingChatPlaceholder() {
+        guard let contact = contact else {
+            return
+        }
+        
+        DispatchQueue.main.async {
+            self.emptyAvatarPlaceholderView.configureWith(contact: contact)
+            self.emptyAvatarPlaceholderView.isHidden = false
+            self.bottomView.isHidden = true
+        }
+    }
+
+    func updateEmptyView() {
+        if shouldShowPendingChat {
+            setupPendingChatPlaceholder()
+        } else if chat?.lastMessage == nil {
+            setupEmptyChatPlaceholder()
+        } else {
+            emptyAvatarPlaceholderView.isHidden = true
+            bottomView.isHidden = false
         }
     }
 }

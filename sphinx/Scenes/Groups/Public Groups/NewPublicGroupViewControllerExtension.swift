@@ -81,15 +81,15 @@ extension NewPublicGroupViewController {
                         completeUrlAndLoadImage(textField: field)
                         break
                     case GroupFields.PriceToJoin.rawValue:
-                        let priceToJoin = chatTribeInfo.priceToJoin ?? 0
+                        let priceToJoin = (chatTribeInfo.priceToJoin ?? 0) / 1000
                         field.text = priceToJoin > 0 ? "\(priceToJoin)" : ""
                         break
                     case GroupFields.PricePerMessage.rawValue:
-                        let pricePerMessage = chatTribeInfo.pricePerMessage ?? 0
+                        let pricePerMessage = (chatTribeInfo.pricePerMessage ?? 0) / 1000
                         field.text = pricePerMessage > 0 ? "\(pricePerMessage)" : ""
                         break
                     case GroupFields.AmountToStake.rawValue:
-                        let amountToStake = chatTribeInfo.amountToStake ?? 0
+                        let amountToStake = (chatTribeInfo.amountToStake ?? 0) / 1000
                         field.text = amountToStake > 0 ? "\(amountToStake)" : ""
                         break
                     case GroupFields.TimeToStake.rawValue:
@@ -137,83 +137,90 @@ extension NewPublicGroupViewController {
     }
     
     func editOrCreateGroup() {
+//        if !NetworkMonitor.shared.isNetworkConnected() {
+//            AlertHelper.showAlert(
+//                title: "generic.error.title".localized,
+//                message: SphinxOnionManagerError.SOMNetworkError.localizedDescription
+//            )
+//            return
+//        }
+        
         uploadingPhoto = false
         loading = true
         
         let params = groupsManager.getNewGroupParams()
         
-        if isEditing() {
-            editGroup(id: chat!.id, params: params)
-            return
+        if let chat = chat {
+            editGroup(id: chat.id, params: params)
+        } else {
+            createGroup(params: params)
         }
-        createGroup(params: params)
-    }
-    
-    func mapChatJSON(rawTribeJSON:[String:Any])->JSON?{
-        guard let name = rawTribeJSON["name"] as? String,
-              let ownerPubkey = rawTribeJSON["pubkey"] as? String,
-              ownerPubkey.isPubKey else{
-            self.showErrorAlert()
-            return nil
-          }
-        var chatDict = rawTribeJSON
-        
-        let mappedFields : [String:Any] = [
-            "id":CrypterManager.sharedInstance.generateCryptographicallySecureRandomInt(upperBound: Int(1e5)),
-            "owner_pubkey": ownerPubkey,
-            "name" : name,
-            "is_tribe_i_created":true,
-            "type":Chat.ChatType.publicGroup.rawValue
-            //"created_at":createdAt
-        ]
-        
-        for key in mappedFields.keys{
-            chatDict[key] = mappedFields[key]
-        }
-        
-        let chatJSON = JSON(chatDict)
-        return chatJSON
     }
     
     func createGroup(params: [String: AnyObject]) {
-        guard let name = params["name"] as? String,
-            let description = params["description"] as? String else{
-            //Send Alert?
-            self.showErrorAlert()
+        guard let _ = params["name"] as? String, let _ = params["description"] as? String else {
+            showErrorAlert()
             return
         }
         
-        NotificationCenter.default.addObserver(self, selector: #selector(handleNewTribeNotification(_:)), name: .newTribeCreationComplete, object: nil)
-        SphinxOnionManager.sharedInstance.createTribe(params:params)
+        let _ = SphinxOnionManager.sharedInstance.createTribe(params: params, callback: handleNewTribeNotification, errorCallback: { error in
+            AlertHelper.showAlert(
+                title: "generic.error.title".localized,
+                message: error?.localizedDescription ?? ""
+            )
+        })
     }
     
-
-    @objc func handleNewTribeNotification(_ notification: Notification) {
-        NotificationCenter.default.removeObserver(self, name: .newTribeCreationComplete, object: nil)
-        if let tribeJSONString = notification.userInfo?["tribeJSON"] as? String,
-           let tribeJSON = try? tribeJSONString.toDictionary(),
-           let chatJSON = mapChatJSON(rawTribeJSON: tribeJSON),
+    func handleNewTribeNotification(tribeJSONString: String) {
+        if let tribeJSON = try? tribeJSONString.toDictionary(),
+           let chatJSON = SphinxOnionManager.sharedInstance.mapChatJSON(rawTribeJSON: tribeJSON),
            let chat = Chat.insertChat(chat: chatJSON)
         {
             chat.managedObjectContext?.saveContext()
-            self.shouldDismissView()
+            shouldDismissView()
             return
         }
         showErrorAlert()
     }
     
-    func editGroup(id: Int, params: [String: AnyObject]) {
-        API.sharedInstance.editGroup(id: id, params: params, callback: { chatJson in
-            if let chat = Chat.insertChat(chat: chatJson) {
-                chat.tribeInfo = self.groupsManager.newGroupInfo
+    func editGroup(
+        id: Int,
+        params: [String: AnyObject]
+    ) {    
+        guard let chat = Chat.getChatWith(id: id),
+              let pubkey = chat.ownerPubkey else 
+        {
+            showErrorAlert()
+            return
+        }
+
+        let success = SphinxOnionManager.sharedInstance.updateTribe(
+            params: params,
+            pubkey: pubkey
+        )
+        
+        if success {
+            updateChat(
+                chat: chat,
+                withParams: params
+            )
+        }
+        
+        DelayPerformedHelper.performAfterDelay(
+            seconds: 0.5,
+            completion: {
+                self.loading = false
                 self.shouldDismissView(chat: chat)
-            } else {
-                self.showErrorAlert()
             }
-        }, errorCallback: {
-            self.showErrorAlert()
-        })
+        )
     }
+
+    func updateChat(chat: Chat, withParams params: [String: AnyObject]) {
+        chat.tribeInfo = GroupsManager.sharedInstance.getTribesInfoFrom(json: JSON(params))
+        chat.updateChatFromTribesInfo()
+        chat.managedObjectContext?.saveContext()
+    }
+
     
     func shouldDismissView(chat: Chat? = nil) {
         if let chat = chat {
@@ -247,7 +254,46 @@ extension NewPublicGroupViewController : PickerViewDelegate {
         feedContentTypeField.text = selectedValue?.description ?? "-"
         groupsManager.newGroupInfo.feedContentType = selectedValue
         
+        if(value == "Newsletter"){
+            if let rawText = formFields[8].text,
+               let rssFeed = formatAsRssFeedUrl(from: rawText){
+                validateNewsletterRssFeed(
+                    rawFeedUrl: rssFeed,
+                    completion: {success in
+                        if(success == false){
+                            self.handleRssSyncFailure()
+                        }
+                        else{//set the values to the proven valid scheme
+                            self.groupsManager.newGroupInfo.feedUrl = rssFeed
+                            self.formFields[8].text = rssFeed
+                        }
+                    })
+            }
+            else{
+                handleRssSyncFailure()
+            }
+        }
+        
         toggleConfirmButton()
+    }
+    
+    func handleRssSyncFailure(){
+        self.formFields[8].text = ""
+        self.groupsManager.newGroupInfo.feedUrl = ""
+        feedContentTypeField.text = "-"
+        self.groupsManager.newGroupInfo.feedContentType = nil
+        AlertHelper.showAlert(title: "error.rss.sync.failed.title".localized, message: "error.rss.sync.failed.message".localized)
+    }
+    
+    func validateNewsletterRssFeed(
+        rawFeedUrl:String,
+        completion: @escaping (Bool) -> ()
+    ){
+       validateRSSFeed(
+        from: rawFeedUrl,
+        completion: { result in
+           completion(result)
+       })
     }
 }
 

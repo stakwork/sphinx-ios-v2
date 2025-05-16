@@ -15,7 +15,7 @@ class SetNickNameViewController: SetDataViewController {
     @IBOutlet weak var textFieldContainer: UIView!
     @IBOutlet weak var nickNameField: UITextField!
     @IBOutlet weak var loadingWheel: UIActivityIndicatorView!
-    var isV2 : Bool = false
+    var isRestoreFlow : Bool = false
     
     static func instantiate() -> SetNickNameViewController {
         let viewController = StoryboardScene.Invite.setNickNameViewController.instantiate()
@@ -50,7 +50,7 @@ class SetNickNameViewController: SetDataViewController {
         nickNameField.becomeFirstResponder()
     }
     
-    func validateNickname()->String?{
+    func validateNickname() -> String?{
         if let nickname = nickNameField.text, nickname != ""{
             return nickname
         }
@@ -58,43 +58,16 @@ class SetNickNameViewController: SetDataViewController {
     }
     
     @IBAction func nextButtonTouched() {
-        if isV2,
-            let nickname = validateNickname(),
-            let selfContact = SphinxOnionManager.sharedInstance.pendingContact,
-            selfContact.isOwner == true{
-            selfContact.nickname = nickname
-            self.goToProfilePicture()
-        }
-        else if isV2 == false, let _ = validateNickname() {
-            loading = true
+        if let nickname = validateNickname(), let owner = UserContact.getOwner() {
+            owner.nickname = nickname
             
-            API.sharedInstance.getContacts(callback: {(contacts, _, _) -> () in
-                self.insertAndUpdateOwner(contacts: contacts)
-            })
-        } else {
-            AlertHelper.showAlert(title: "generic.error.title".localized, message: "nickname.cannot.empty".localized)
+            goToProfilePicture()
         }
-    }
-    
-    func insertAndUpdateOwner(contacts: [JSON]) {
-        UserContactsHelper.insertContacts(contacts: contacts)
-        UserData.sharedInstance.saveNewNodeOnKeychain()
-        
-        let id = UserData.sharedInstance.getUserId()
-        let parameters = ["alias" : (nickNameField.text ?? "") as AnyObject]
-        
-        API.sharedInstance.updateUser(id: id, params: parameters, callback: { contact in
-            self.loading = false
-            let _ = UserContactsHelper.insertContact(contact: contact)
-            self.goToProfilePicture()
-        }, errorCallback: {
-            AlertHelper.showAlert(title: "generic.error.title".localized, message: "generic.error.message".localized)
-        })
     }
     
     func goToProfilePicture() {
         let profilePictureVC = SetProfileImageViewController.instantiate(nickname: nickNameField.text ?? nil)
-        profilePictureVC.isV2 = self.isV2
+        profilePictureVC.isRestoreFlow = self.isRestoreFlow
         self.navigationController?.pushViewController(profilePictureVC, animated: true)
     }
 }

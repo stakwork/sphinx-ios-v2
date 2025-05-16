@@ -10,6 +10,14 @@ public enum FeedType: Int16 {
     case Podcast
     case Video
     case Newsletter
+    case Album
+    case Track
+}
+
+public enum OldFeedType: Int16 {
+    case Podcast
+    case Video
+    case Newsletter
 }
 
 public struct FeedContentType {
@@ -52,5 +60,16 @@ public struct FeedContentType {
     
     var isNewsletter: Bool {
         return self.id == FeedType.Newsletter.rawValue
+    }
+    
+    static func getFeedTypeFrom(oldFeedType: OldFeedType) -> FeedType {
+        switch (oldFeedType) {
+        case .Podcast:
+            return FeedType.Podcast
+        case .Video:
+            return FeedType.Video
+        case .Newsletter:
+            return FeedType.Newsletter
+        }
     }
 }

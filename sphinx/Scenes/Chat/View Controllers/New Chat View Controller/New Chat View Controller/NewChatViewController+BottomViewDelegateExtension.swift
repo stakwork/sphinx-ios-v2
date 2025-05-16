@@ -10,22 +10,32 @@ import UIKit
 
 extension NewChatViewController : ChatMessageTextFieldViewDelegate {
     func didChangeText(text: String) {
-        ChatTrackingHandler.shared.saveOngoingMessage(with: text, chatId: chat?.id)
+        DispatchQueue.global(qos: .userInitiated).async {
+            ChatTrackingHandler.shared.saveOngoingMessage(with: text, chatId: self.chat?.id)
+        }
     }
     
-    func shouldSendMessage(text: String, type: Int, completion: @escaping (Bool) -> ()) {
+    func shouldSendMessage(
+        text: String,
+        type: Int,
+        completion: @escaping (Bool, String?) -> ()
+    ) {
         bottomView.resetReplyView()
         
         ChatTrackingHandler.shared.deleteReplyableMessage(with: chat?.id)
         
-        chatViewModel.shouldSendMessage(text: text, type: type, completion: { success in
-            
-            if success {
-                self.scrollToBottomAfterSend()
+        chatViewModel.shouldSendMessage(
+            text: text,
+            type: type,
+            provisionalMessage: nil,
+            completion: { (success, errorMsg) in
+                if success {
+                    self.scrollToBottomAfterSend()
+                }
+                
+                completion(success, errorMsg)
             }
-            
-            completion(success)
-        })
+        )
     }
     
     func scrollToBottomAfterSend() {
@@ -61,6 +71,31 @@ extension NewChatViewController : ChatMessageTextFieldViewDelegate {
     
     func shouldCancelRecording() {
         chatViewModel.shouldCancelRecording()
+    }
+    
+    func isMessageLengthValid(
+        text: String,
+        sendingAttachment: Bool
+    ) -> Bool {
+        let messageLengthValid = SphinxOnionManager.sharedInstance.isMessageLengthValid(
+            text: text,
+            sendingAttachment: sendingAttachment,
+            threadUUID: self.chatViewModel.replyingTo?.uuid,
+            replyUUID: self.threadUUID ?? self.chatViewModel.replyingTo?.replyUUID,
+            metaDataString: chat?.getMetaDataJsonStringValue()
+        )
+        
+        if !messageLengthValid {
+            self.newMessageBubbleHelper.showGenericMessageView(
+                text: "message.limit.reached".localized,
+                delay: 5,
+                textColor: UIColor.white,
+                backColor: UIColor.Sphinx.BadgeRed,
+                backAlpha: 1.0
+            )
+        }
+        
+        return messageLengthValid
     }
     
     func shouldStartGiphy(){

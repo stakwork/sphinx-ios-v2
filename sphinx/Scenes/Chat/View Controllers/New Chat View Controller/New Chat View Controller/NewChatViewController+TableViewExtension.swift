@@ -31,7 +31,6 @@ extension NewChatViewController {
                 headerImageView: getContactImageView(),
                 bottomView: bottomView,
                 headerView: headerView,
-                webView: botWebView,
                 delegate: self
             )
         } else {
@@ -42,7 +41,6 @@ extension NewChatViewController {
                 headerImageView: getContactImageView(),
                 bottomView: bottomView,
                 headerView: headerView,
-                webView: botWebView,
                 delegate: self
             )
         }
@@ -73,7 +71,7 @@ extension NewChatViewController {
     }
 }
 
-extension NewChatViewController : NewChatTableDataSourceDelegate, SocketManagerDelegate {
+extension NewChatViewController : NewChatTableDataSourceDelegate {
     func shouldDismissKeyboard() {
         self.bottomView.messageFieldView.shouldDismissKeyboard()
     }
@@ -96,6 +94,12 @@ extension NewChatViewController : NewChatTableDataSourceDelegate, SocketManagerD
             return
         }
         
+        if scrolledAtBottom {
+            return
+        }
+        
+        scrolledAtBottom = true
+        
         DelayPerformedHelper.performAfterDelay(seconds: 0.5, completion: {
             self.chat?.setChatMessagesAsSeen()
         })
@@ -103,7 +107,8 @@ extension NewChatViewController : NewChatTableDataSourceDelegate, SocketManagerD
     
     func didScrollOutOfBottomArea() {
         newMsgsIndicatorView.configureWith(
-            newMessagesCount: isThread ? (chatTableDataSource?.getMessagesCount() ?? 0) : nil,
+            newMessagesCount: isThread ? 0 : nil,
+//            newMessagesCount: isThread ? (chatTableDataSource?.getMessagesCount() ?? 0) : nil,
             hidden: chatTableDataSource?.shouldHideNewMsgsIndicator() ?? true
         )
     }
@@ -122,6 +127,9 @@ extension NewChatViewController : NewChatTableDataSourceDelegate, SocketManagerD
         )
         
         headerView.toggleThreadHeaderView(expanded: expanded)
+        
+        setTableViewHeight()
+        shouldAdjustTableViewTopInset()
     }
     
     func shouldGoToAttachmentViewFor(
@@ -129,7 +137,7 @@ extension NewChatViewController : NewChatTableDataSourceDelegate, SocketManagerD
         isPdf: Bool,
         webViewImageURL:URL?=nil
     ) {
-        if let attachmentFullScreenVC = AttachmentFullScreenViewController.instantiate(messageId: messageId, animated: isPdf, webViewImageUrl: webViewImageURL) {
+        if let attachmentFullScreenVC = AttachmentFullScreenViewController.instantiate(messageId: messageId, animated: isPdf, imageUrl: webViewImageURL) {
             self.navigationController?.present(attachmentFullScreenVC, animated: isPdf)
         }
     }
@@ -154,7 +162,9 @@ extension NewChatViewController : NewChatTableDataSourceDelegate, SocketManagerD
     }
     
     func didTapOnTribeWith(joinLink: String) {
-        if let uuid = GroupsManager.sharedInstance.getGroupInfo(query: joinLink)?.uuid, let chat = Chat.getChatWith(uuid: uuid) {
+        if let ownerPubkey = GroupsManager.sharedInstance.getGroupInfo(query: joinLink)?.ownerPubkey,
+           let chat = Chat.getTribeChatWithOwnerPubkey(ownerPubkey: ownerPubkey)
+        {
             goToChatWith(contactId: nil, chatId: chat.id)
         } else {
             let joinTribeVC = JoinGroupDetailsViewController.instantiate(qrString: joinLink)
@@ -258,9 +268,9 @@ extension NewChatViewController : NewChatTableDataSourceDelegate, SocketManagerD
             vc.modalPresentationStyle = .overCurrentContext
             self.present(vc, animated: false)
         } else {
-            let tribeMemberPopupVC = TribeMemberPopupViewController.instantiate(message: message, delegate: self)
-            tribeMemberPopupVC.modalPresentationStyle = .overCurrentContext
-            self.present(tribeMemberPopupVC, animated: false)
+//            let tribeMemberPopupVC = TribeMemberPopupViewController.instantiate(message: message, delegate: self)
+//            tribeMemberPopupVC.modalPresentationStyle = .overCurrentContext
+//            self.present(tribeMemberPopupVC, animated: false)
         }
     }
     
@@ -283,6 +293,19 @@ extension NewChatViewController : NewChatTableDataSourceDelegate, SocketManagerD
     
     func didTapThread(threadUUID: String ){
         self.showThread(threadID: threadUUID)
+    }
+    
+    func shouldUpdateHeaderScheduleIcon(message: TransactionMessage?) {
+        guard let message = message else {
+            return
+        }
+        headerView.configureScheduleIcon(
+            lastMessage: message,
+            ownerId: owner.id
+        )
+        if let chatId = message.chat?.id {
+            delegate?.shouldReloadRowFor(chatId: chatId)
+        }
     }
 }
 
@@ -313,6 +336,7 @@ extension NewChatViewController {
             let messageOptionsVC = MessageOptionsViewController.instantiate(
                 message: message,
                 chat: nil,
+                contact: nil,
                 purchaseAcceptMessage: message.getPurchaseAcceptItem(),
                 delegate: self, isThreadRow: self.isThread
             )

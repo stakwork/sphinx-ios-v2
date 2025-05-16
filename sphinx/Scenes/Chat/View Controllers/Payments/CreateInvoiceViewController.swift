@@ -41,6 +41,7 @@ class CreateInvoiceViewController: CommonPaymentViewController {
     let kCharacterLimit = 200
     let kMaximumAmount = 9999999
     var preloadedPubkey : String? = nil
+    var preloadedZeroAmountInvoice: String? = nil    
     
     var textColor: UIColor = UIColor.Sphinx.Text {
         didSet {
@@ -62,6 +63,7 @@ class CreateInvoiceViewController: CommonPaymentViewController {
         delegate: PaymentInvoiceDelegate? = nil,
         paymentMode: PaymentsViewModel.PaymentMode = PaymentsViewModel.PaymentMode.receive,
         preloadedPubkey: String? = nil,
+        preloadedZeroAmountInvoice:String? = nil,
         presentationContext: CreateInvoiceVCPresentationContext = .Default
     ) -> CreateInvoiceViewController {
         
@@ -72,6 +74,7 @@ class CreateInvoiceViewController: CommonPaymentViewController {
         viewController.chat = chat
         viewController.delegate = delegate
         viewController.preloadedPubkey = preloadedPubkey
+        viewController.preloadedZeroAmountInvoice = preloadedZeroAmountInvoice
         
         if let messageUUID = messageUUID {
             viewController.message = TransactionMessage.getMessageWith(uuid: messageUUID)
@@ -174,8 +177,7 @@ class CreateInvoiceViewController: CommonPaymentViewController {
         let amount = Int(input) ?? 0
         
         if amount >= 0 && amount <= kMaximumAmount {
-            let contactsCount = 1
-            let walletBalance = WalletBalanceService().balance
+            let walletBalance = WalletBalanceService().balance ?? 0
             let sending = (mode == PaymentsViewModel.PaymentMode.send || mode == PaymentsViewModel.PaymentMode.sendOnchain)
             
             if amount > walletBalance && sending && false {
@@ -186,9 +188,7 @@ class CreateInvoiceViewController: CommonPaymentViewController {
             let amountString = amount.formattedWithSeparator
             nextButton.isHidden = amount == 0
             amountTextField.text = amount == 0 ? "" : amountString
-            
-            let totalAmountString = amount.formattedWithSeparator
-            groupTotalLabel.text = contactsCount > 1 ? "\("Total") \(totalAmountString)" : ""
+            groupTotalLabel.text = ""
             
             paymentsViewModel.payment.amount = amount
             return true
@@ -225,7 +225,11 @@ class CreateInvoiceViewController: CommonPaymentViewController {
         
         switch mode {
         case .send:
-            shouldSendDirectPayment()
+            if let preloadedZeroAmountInvoice = preloadedZeroAmountInvoice {
+                shouldPayZeroAmountInvoice(invoice: preloadedZeroAmountInvoice)
+            } else {
+                shouldSendDirectPayment()
+            }
         case .sendOnchain:
             processOnchainPayment()
         default:
@@ -246,8 +250,6 @@ class CreateInvoiceViewController: CommonPaymentViewController {
         let viewController = QRCodeDetailViewController.instantiate(
             with: qrCodeDetailViewModel
         )
-        
-        SphinxSocketManager.sharedInstance.setDelegate(delegate: viewController)
         
         self.navigationController?.pushViewController(viewController, animated: true)
     }
@@ -271,7 +273,66 @@ class CreateInvoiceViewController: CommonPaymentViewController {
         self.present(viewController, animated: true)
     }
     
+    private func shouldPayZeroAmountInvoice() {
+        if let _ = self.contact {
+            goToPaymentTemplate()
+        } else if let _ = message {
+            sendTribePayment()
+        } else if let _ = paymentsViewModel.payment.destinationKey {
+            sendDirectPayment()
+        } else {
+            goToScanner()
+        }
+    }
+    
+    private func shouldPayZeroAmountInvoice(invoice: String) {
+        guard let amount = paymentsViewModel.payment.amount,
+            amount > 0 else {
+            AlertHelper.showAlert(title: "Invalid Amount", message: "generic.message.message".localized)
+            return
+        }
+        
+        SphinxOnionManager.sharedInstance.payInvoice(
+            invoice: invoice,
+            overPayAmountMsat: UInt64(1000 * amount)
+        ) { [weak self] (success, errorMsg) in
+            if success {
+                if let routeHint = SphinxOnionManager.sharedInstance.getInvoiceDetails(invoice: invoice)?.hopHints?.last {
+                    self?.dismissView()
+                } else {
+                    self?.showPendingAlert()
+                }
+            } else {
+                guard let self = self else {
+                    return
+                }
+                DispatchQueue.main.async {
+                    AlertHelper.showAlert(
+                        title: "generic.error.title".localized,
+                        message: errorMsg ?? "generic.error.message".localized,
+                        completion: {
+                            self.dismissView()
+                        }
+                    )
+                }
+            }
+        }
+    }
+    
+    func showPendingAlert() {
+        DelayPerformedHelper.performAfterDelay(seconds: 2.0, completion: {
+            AlertHelper.showAlert(
+                title: "processing.payment".localized,
+                message: "processing.payment.description".localized
+            ) {
+                self.dismissView()
+            }
+        })
+    }
+    
     private func shouldSendDirectPayment() {
+        paymentTag = nil
+        
         if let _ = self.contact {
             goToPaymentTemplate()
         } else if let _ = message {
@@ -311,54 +372,138 @@ class CreateInvoiceViewController: CommonPaymentViewController {
     }
     
     private func sendDirectPayment() {
-        let fetchedChat = UserContact.getContactWith(pubkey: preloadedPubkey ?? "")?.getChat()
-        guard let chat = chat ?? fetchedChat else{
-            AlertHelper.showAlert(title: "generic.error.title".localized, message: "contact.not.found".localized, completion: {
-                self.shouldDismissView()
-            })
+        var paymentChat: Chat? = nil
+        
+        if let chat = chat {
+            paymentChat = chat
+        } else if let pubkey = paymentsViewModel.payment.destinationKey, let chat = UserContact.getContactWith(pubkey: pubkey)?.getChat() {
+            paymentChat = chat
+        }
+        
+        guard let amount = paymentsViewModel.payment.amount else {
             return
         }
-        let parameters = TransactionMessage.getPaymentParamsFor(
-            payment: paymentsViewModel.payment,
-            contact: contact,
-            chat: chat
+        
+        if let paymentChat = paymentChat {
+            finalizeContactDirectPayment(
+                amount: amount,
+                paymentChat: paymentChat
+            )
+        } else if let pubkey = paymentsViewModel.payment.destinationKey, let amt = paymentsViewModel.payment.amount {
+            SphinxOnionManager.sharedInstance.keysend(
+                pubkey: pubkey,
+                routeHint: paymentsViewModel.payment.routeHint,
+                amt: Double(amt)
+            ) { (success, tag) in
+                self.paymentTag = tag
+                
+                if success {
+                    self.addPaymentObserver()
+                } else {
+                    self.showErrorAlertAndDismiss()
+                }
+            }
+        } else {
+            showErrorAlertAndDismiss()
+        }
+    }
+    
+    func addPaymentObserver() {
+        NotificationCenter.default.removeObserver(
+            self,
+            name: .onKeysendStatusReceived,
+            object: nil
         )
         
-        let image =  #imageLiteral(resourceName: "appPinIcon")
-        SphinxOnionManager.sharedInstance.sendDirectPaymentMessage(params: parameters, chat: chat, image: image, completion: { success, _ in
-            if(success){
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(onKeysendStatusReceived),
+            name: .onKeysendStatusReceived,
+            object: nil
+        )
+        
+        paymentTimer = Timer.scheduledTimer(
+            timeInterval: 5.0,
+            target: self,
+            selector: #selector(self.showErrorAlertAndDismiss),
+            userInfo: nil,
+            repeats: false
+        )
+    }
+    
+    @objc func onKeysendStatusReceived(n: Notification) {
+        if let tag = n.userInfo?["tag"] as? String,
+           let status = n.userInfo?["status"] as? String {
+            
+            if tag == paymentTag {
+                if status == SphinxOnionManager.kCompleteStatus {
+                    shouldDismissView()
+                } else {
+                    showErrorAlertAndDismiss()
+                }
+            }
+        }
+    }
+    
+    @objc func showErrorAlertAndDismiss() {
+        resetTimerAndObserver()
+        
+        AlertHelper.showAlert(
+            title: "generic.error.title".localized,
+            message: "generic.error.message".localized,
+            completion: {
                 self.shouldDismissView()
             }
-            else{
-                AlertHelper.showAlert(title: "generic.error.title".localized, message: "generic.error.message".localized, completion: {
+        )
+    }
+    
+    func finalizeContactDirectPayment(
+        amount: Int,
+        paymentChat: Chat
+    ) {
+        SphinxOnionManager.sharedInstance.sendDirectPaymentMessage(
+            amount: amount * 1000,
+            muid: paymentsViewModel.payment.muid,
+            content: paymentsViewModel.payment.message,
+            chat: paymentChat,
+            completion: { success, _ in
+                if (success) {
                     self.shouldDismissView()
-                })
+                } else {
+                    self.showErrorAlertAndDismiss()
+                }
             }
-        })
+        )
     }
     
     private func createPaymentRequest() {
         if !paymentsViewModel.validateMemo(contact: contact) {
             loading = false
-            AlertHelper.showAlert(title: "generic.error.title".localized, message: "memo.too.large".localized)
+            showErrorAlertAndDismiss()
             return
         }
         
-        let parameters = TransactionMessage.getPaymentParamsFor(payment: paymentsViewModel.payment, contact: contact, chat: chat)
-        print(parameters)
         if let paymentAmount = paymentsViewModel.payment.amount,
-           let invoice = SphinxOnionManager.sharedInstance.createInvoice(amountMsat: paymentAmount * 1000, description: paymentsViewModel.payment.memo ?? "") {
+           let invoice = SphinxOnionManager.sharedInstance.createInvoice(
+                amountMsat: paymentAmount * 1000,
+                description: paymentsViewModel.payment.memo ?? ""
+           ) {
             if presentationContext == .InChat,
                let contact = contact,
-               let chat = chat{
-                SphinxOnionManager.sharedInstance.sendInvoiceMessage(contact: contact, chat: chat, invoiceString: invoice)
+               let chat = chat {
+                
+                SphinxOnionManager.sharedInstance.sendInvoiceMessage(
+                    contact: contact,
+                    chat: chat,
+                    invoiceString: invoice,
+                    memo: paymentsViewModel.payment.memo ?? ""
+                )
+                
                 self.dismissView()
-            }
-            else{
+            } else {
                 self.presentInvoiceDetailsVC(invoiceString: invoice)
             }
-        }
-        else{
+        } else {
             delegate?.didFailCreatingInvoice?()
         }
     }
@@ -407,8 +552,6 @@ extension CreateInvoiceViewController : QRCodeScannerDelegate {
             return
         }
 
-        AlertHelper.showAlert(title: "generic.error.title".localized, message: "invalid.btc.address".localized, completion: {
-            self.shouldDismissView()
-        })
+        showErrorAlertAndDismiss()
     }
 }

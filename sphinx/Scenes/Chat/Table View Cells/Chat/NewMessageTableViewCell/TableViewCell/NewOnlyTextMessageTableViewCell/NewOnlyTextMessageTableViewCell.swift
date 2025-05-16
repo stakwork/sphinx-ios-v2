@@ -35,9 +35,12 @@ class NewOnlyTextMessageTableViewCell: CommonNewMessageTableViewCell, ChatTableV
     @IBOutlet weak var leftLineContainer: UIView!
     @IBOutlet weak var rightLineContainer: UIView!
     
+    var tap: UITapGestureRecognizer! = nil
+    
     override func awakeFromNib() {
         super.awakeFromNib()
         
+        hideAllSubviews()
         setupViews()
     }
 
@@ -46,6 +49,8 @@ class NewOnlyTextMessageTableViewCell: CommonNewMessageTableViewCell, ChatTableV
     }
     
     func setupViews() {
+        tap = UITapGestureRecognizer(target: self, action: #selector(labelTapped(gesture:)))
+        
         bubbleOnlyText.layer.cornerRadius = MessageTableCellState.kBubbleCornerRadius
 
         receivedArrow.drawReceivedBubbleArrow(color: UIColor.Sphinx.ReceivedMsgBG)
@@ -60,23 +65,30 @@ class NewOnlyTextMessageTableViewCell: CommonNewMessageTableViewCell, ChatTableV
         leftLineContainer.layer.addSublayer(leftLineLayer)
     }
     
+    func hideAllSubviews() {
+        leftLineContainer.isHidden = true
+        rightLineContainer.isHidden = true
+    }
+    
     func configureWith(
         messageCellState: MessageTableCellState,
         mediaData: MessageTableCellState.MediaData?,
         threadOriginalMsgMediaData: MessageTableCellState.MediaData?,
         tribeData: MessageTableCellState.TribeData?,
         linkData: MessageTableCellState.LinkData?,
-        botWebViewData: MessageTableCellState.BotWebViewData?,
         uploadProgressData: MessageTableCellState.UploadProgressData?,
         delegate: NewMessageTableViewCellDelegate?,
         searchingTerm: String?,
-        indexPath: IndexPath
+        indexPath: IndexPath,
+        replyViewHeight: CGFloat?
     ) {
         var mutableMessageCellState = messageCellState
         
         guard let bubble = mutableMessageCellState.bubble else {
             return
         }
+        
+        hideAllSubviews()
         
         self.delegate = delegate
         self.rowIndex = indexPath.row

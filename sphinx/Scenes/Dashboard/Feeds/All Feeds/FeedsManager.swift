@@ -175,23 +175,25 @@ class FeedsManager : NSObject {
         progressCallback: ((Int) -> ())? = nil,
         completionCallback: (() -> ())? = nil
     ){
-        API.sharedInstance.getAllContentFeedStatuses(
-            callback: { results in
-                self.restoreFeedStatuses(
-                    from: results,
-                    progressCallback: progressCallback,
-                    completionCallback: {
-                        self.refreshFeedUI()
-                        completionCallback?()
-                        
-                        self.fetchNewItems()
-                    }
-                )
-            },
-            errorCallback: {
-                completionCallback?()
-            }
-        )
+        //@Tom need reimplementing on V2 but I'm going to comment out to prevent any issues
+        completionCallback?()
+//        API.sharedInstance.getAllContentFeedStatuses(
+//            callback: { results in
+//                self.restoreFeedStatuses(
+//                    from: results,
+//                    progressCallback: progressCallback,
+//                    completionCallback: {
+//                        self.refreshFeedUI()
+//                        completionCallback?()
+//                        
+//                        self.fetchNewItems()
+//                    }
+//                )
+//            },
+//            errorCallback: {
+//                completionCallback?()
+//            }
+//        )
     }
     
     func getRestoreProgress(totalFeeds:Int,syncedFeeds:Int)->Int{
@@ -345,7 +347,7 @@ class FeedsManager : NSObject {
         }
         
         downloadLastEpisodeFor(feed: localFeed)
-//        loadEpisodesDurationFor(feed: localFeed)
+        loadEpisodesDurationFor(feed: localFeed)
     }
     
     func restoreEpisodeStatus(

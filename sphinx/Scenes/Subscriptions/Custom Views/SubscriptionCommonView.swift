@@ -20,7 +20,7 @@ protocol SubscriptionFormViewDelegate: class {
 
 class SubscriptionCommonView : UIView {
     
-    var delegate: SubscriptionFormViewDelegate!
+    weak var delegate: SubscriptionFormViewDelegate!
     
     var checkboxesArray = [UILabel]()
     var labelsArray = [UILabel]()

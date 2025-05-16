@@ -19,6 +19,8 @@ import UIKit
     func shouldFlagMessage()
     func shouldTogglePinState(pin: Bool)
     func shouldToggleReadUnread(chat: Chat)
+    func shouldDeleteContact(contact: UserContact)
+    func shouldDeleteChat(chat: Chat)
 }
 
 class MessageOptionsView : UIView {
@@ -32,6 +34,7 @@ class MessageOptionsView : UIView {
     
     var message: TransactionMessage? = nil
     var chat: Chat? = nil
+    var contact: UserContact? = nil
     
     public enum VerticalPosition: Int {
         case Top
@@ -51,6 +54,7 @@ class MessageOptionsView : UIView {
     init(
         message: TransactionMessage?,
         chat: Chat?,
+        contact: UserContact?,
         leftTopCorner: CGPoint,
         rightBottomCorner: CGPoint,
         isThreadRow: Bool,
@@ -61,15 +65,16 @@ class MessageOptionsView : UIView {
         self.delegate = delegate
         self.message = message
         self.chat = chat
-        
-        if message == nil && chat == nil {
-            return
-        }
+        self.contact = contact
         
         let incoming = message?.isIncoming() ?? true
         let coordinates = getCoordinates(leftTopCorner: leftTopCorner, rightBottomCorner: rightBottomCorner)
         let messageOptions = getActionsMenuOptions(isThreadRow: isThreadRow)
         let optionsCount = messageOptions.count
+        
+        if optionsCount == 0 {
+            return
+        }
 
         let (menuRect, verticalPosition, horizontalPosition) = getMenuRectAndPosition(
             coordinates: coordinates,
@@ -127,14 +132,22 @@ class MessageOptionsView : UIView {
         isThreadRow: Bool
     ) -> [TransactionMessage.ActionsMenuOption] {
         
-        if let chat = chat {
-            return chat.getActionsMenuOptions()
+        if let message = message {
+            return message.getActionsMenuOptions(isThreadRow: isThreadRow)
         }
         
-        guard let message = message else {
-            return []
+        if let chat = chat {
+            return chat.getActionsMenuOptions()
+        } else {
+            return [
+                TransactionMessage.ActionsMenuOption.init(
+                    tag: TransactionMessage.MessageActionsItem.Delete,
+                    materialIconName: "delete",
+                    iconImage: nil,
+                    label: "delete.invite".localized
+                )
+            ]
         }
-        return message.getActionsMenuOptions(isThreadRow: isThreadRow)
     }
     
     func addMenuOptions(options: [TransactionMessage.ActionsMenuOption]) {
@@ -252,12 +265,14 @@ extension MessageOptionsView : MessageOptionViewDelegate {
     private func handleActionWith(_ tag: Int) {
         let option = TransactionMessage.MessageActionsItem(rawValue: tag)
         
-        if let chat = chat {
-            switch(option) {
-            case .ToggleReadUnread:
-                delegate?.shouldToggleReadUnread(chat: chat)
-            default:
-                break
+        if let chat = chat, option == .ToggleReadUnread {
+            delegate?.shouldToggleReadUnread(chat: chat)
+        }
+        if option == .Delete {
+            if let contact = contact {
+                delegate?.shouldDeleteContact(contact: contact)
+            } else if let chat = chat, chat.isConversation() {
+                delegate?.shouldDeleteChat(chat: chat)
             }
         }
         
@@ -269,7 +284,17 @@ extension MessageOptionsView : MessageOptionViewDelegate {
         case .Copy:
             ClipboardHelper.copyToClipboard(text: message.bubbleMessageContentString ?? "", message: "text.copied.clipboard".localized)
         case .CopyLink:
-            ClipboardHelper.copyToClipboard(text: message.bubbleMessageContentString?.stringFirstLink ?? "", message: "link.copied.clipboard".localized)
+            if let link = message.messageContent?.removingMarkdownDelimiters.stringFirstLink {
+                ClipboardHelper.copyToClipboard(
+                    text: link,
+                    message: "link.copied.clipboard".localized
+                )
+            } else if let link = message.messageContent?.linkMarkdownMatches.first?.2 {
+                ClipboardHelper.copyToClipboard(
+                    text: link,
+                    message: "link.copied.clipboard".localized
+                )
+            }
         case .CopyPubKey:
             ClipboardHelper.copyToClipboard(text: message.bubbleMessageContentString?.stringFirstPubKey?.0 ?? "", message: "pub.key.copied.clipboard".localized)
         case .CopyCallLink:

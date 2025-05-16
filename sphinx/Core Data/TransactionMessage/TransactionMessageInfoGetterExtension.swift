@@ -67,16 +67,12 @@ extension TransactionMessage {
     ) -> String {
         var alias = "name.unknown".localized
         
-        if let senderAlias = senderAlias {
+        if isOutgoing(ownerId: owner.id) {
+            return "name.you".localized
+        } else if let senderAlias = senderAlias {
             alias = senderAlias
-        } else {
-            if isIncoming(ownerId: owner.id) {
-                if let sender = (contact ?? getMessageSender()) {
-                    alias = sender.getUserName(forceNickname: forceNickname)
-                }
-            } else {
-                alias = owner.getUserName(forceNickname: forceNickname)
-            }
+        } else if let sender = (contact ?? getMessageSender()) {
+            alias = sender.getUserName(forceNickname: forceNickname)
         }
         
         if let first = alias.components(separatedBy: " ").first, minimized {
@@ -165,13 +161,13 @@ extension TransactionMessage {
             adjustedMC = "join.call".localized
         }
         
-        return adjustedMC
+        return adjustedMC.removingMarkdownDelimiters
     }
     
     func getReplyMessageContent() -> String {
         if hasMessageContent() {
             let messageContent = bubbleMessageContentString ?? ""
-            return messageContent.isValidHTML ? "bot.response.preview".localized : messageContent
+            return messageContent.isValidHTML ? "bot.response.preview".localized : messageContent.removingMarkdownDelimiters
         }
         if let fileName = self.mediaFileName {
             return fileName
@@ -200,11 +196,17 @@ extension TransactionMessage {
         return getDirection(id: ownerId ?? UserData.sharedInstance.getUserId()) == TransactionMessageDirection.outgoing
     }
     
+    func isPendingMessage(
+        ownerId: Int? = nil
+    ) -> Bool {
+        return isOutgoing(ownerId: ownerId) && !isConfirmedAsReceived() && !failed() && (isTextMessage() || isAttachment())
+    }
+    
     //Statues
     func isSeen(
         ownerId: Int
     ) -> Bool {
-        return self.isOutgoing(ownerId: ownerId) || self.seen
+        return (self.isGroupJoinMessage() == false && self.isOutgoing(ownerId: ownerId)) || self.seen
     }
     
     func isProvisional() -> Bool {
@@ -217,6 +219,10 @@ extension TransactionMessage {
     
     func received() -> Bool {
         return status == TransactionMessageStatus.received.rawValue
+    }
+    
+    func confirmed() -> Bool {
+        return status == TransactionMessageStatus.confirmed.rawValue
     }
     
     func failed() -> Bool {
@@ -236,16 +242,23 @@ extension TransactionMessage {
         return status == TransactionMessageStatus.cancelled.rawValue
     }
     
+    func setAsLastMessage() {
+        guard let lastMessageDate = self.chat?.lastMessage?.date,
+        SphinxOnionManager.sharedInstance.messageIdIsFromHashed(msgId: self.id) == false //ignore temporary id hashes
+        else {
+            self.chat?.lastMessage = self
+            return
+        }
+        
+        if lastMessageDate < self.date ?? Date() {
+            self.chat?.lastMessage = self
+        }
+    }
+    
     public func isConfirmedAsReceived() -> Bool {
         return
             self.status == TransactionMessageStatus.received.rawValue ||
-            (
-                self.status == TransactionMessageStatus.confirmed.rawValue &&
-                (
-                    self.type == TransactionMessageType.payment.rawValue ||
-                    self.type == TransactionMessageType.invoice.rawValue
-                )
-            )
+            (self.status == TransactionMessageStatus.confirmed.rawValue && self.type == TransactionMessageType.invoice.rawValue)
     }
     
     //Message type
@@ -422,6 +435,10 @@ extension TransactionMessage {
         return status == TransactionMessageStatus.deleted.rawValue
     }
     
+    func isDeleteRequest() -> Bool {
+        return type == TransactionMessageType.delete.rawValue
+    }
+    
     func isFlagged() -> Bool {
         if !isFlagActionAllowed {
             return false
@@ -430,6 +447,10 @@ extension TransactionMessage {
             return (UserDefaults.standard.value(forKey: "\(uuid)-message-flag") as? Bool) ?? false
         }
         return false
+    }
+    
+    func isTribeTimezoneMsg() -> Bool {
+        return chat?.isPublicGroup() == true && remoteTimezoneIdentifier?.isNotEmpty == true
     }
     
     func isNotConsecutiveMessage() -> Bool {
@@ -460,6 +481,17 @@ extension TransactionMessage {
         return type == TransactionMessageType.call.rawValue
     }
     
+    func isKeyExchangeType() -> Bool {
+        return self.type == TransactionMessage.TransactionMessageType.contactKey.rawValue ||
+                self.type == TransactionMessage.TransactionMessageType.contactKeyConfirmation.rawValue ||
+                self.type == TransactionMessage.TransactionMessageType.unknown.rawValue
+    }
+    
+    func isTribeInitialMessageType() -> Bool {
+        return self.type == TransactionMessage.TransactionMessageType.groupJoin.rawValue ||
+                self.type == TransactionMessage.TransactionMessageType.memberApprove.rawValue
+    }
+    
     func canBeDeleted() -> Bool {
         return isOutgoing() || (self.chat?.isMyPublicGroup() ?? false)
     }
@@ -477,11 +509,12 @@ extension TransactionMessage {
         return amountString
     }
     
-    func getInvoicePaidAmountString() -> String {
+    func getInvoicePaidAmountString(
+        amount: Int? = nil
+    ) -> String {
         let invoice = TransactionMessage.getInvoiceWith(paymentHash: self.paymentHash ?? "")
-        return invoice?.getAmountString() ?? "0"
+        return invoice?.getAmountString() ?? "\(amount ?? 0)"
     }
-    
 
     func getActionsMenuOptions(
         isThreadRow: Bool = false,
@@ -656,7 +689,7 @@ extension TransactionMessage {
     var isCopyLinkActionAllowed: Bool {
         get {
             if let messageContent = bubbleMessageContentString {
-                return messageContent.stringLinks.count > 0
+                return messageContent.stringLinks.count > 0 || messageContent.linkMarkdownMatches.count > 0
             }
             return false
         }
@@ -691,7 +724,20 @@ extension TransactionMessage {
     
     var isResendActionAllowed: Bool {
         get {
-            return (isTextMessage() && status == TransactionMessageStatus.failed.rawValue)
+            if isTextMessage() || isAttachment() {
+                if isPaidAttachment() {
+                    return false
+                }
+            }
+            if status == TransactionMessageStatus.failed.rawValue {
+                return true
+            }
+            if status == TransactionMessageStatus.pending.rawValue, let date = date {
+                let thirtySecondsAgo = Date().addingTimeInterval(-30)
+                return date < thirtySecondsAgo
+            }
+            
+            return false
         }
     }
     
@@ -743,12 +789,6 @@ extension TransactionMessage {
                 return nil
             }
             
-            if let messageC = messageContent {
-                if messageC.isEncryptedString() {
-                    return "encryption.error".localized
-                }
-            }
-            
             return self.messageContent
         }
     }
@@ -775,7 +815,7 @@ extension TransactionMessage {
         let directionString = incoming ? "received".localized : "sent".localized
         let senderAlias = self.getMessageSenderNickname(minimized: true, owner: owner, contact: contact)
         
-        if isDeleted() {
+        if isDeleted() || isDeleteRequest() {
             return "message.x.deleted".localized
         }
 
@@ -790,7 +830,7 @@ extension TransactionMessage {
         case TransactionMessage.TransactionMessageType.invoice.rawValue:
             return  "\("invoice".localized) \(directionString): \(amountString) sats"
         case TransactionMessage.TransactionMessageType.payment.rawValue:
-            let invoiceAmount = getInvoicePaidAmountString()
+            let invoiceAmount = getInvoicePaidAmountString(amount: amount.intValue)
             return  "\("payment".localized) \(directionString): \(invoiceAmount) sats"
         case TransactionMessage.TransactionMessageType.directPayment.rawValue:
             let isTribe = self.chat?.isPublicGroup() ?? false
@@ -857,7 +897,7 @@ extension TransactionMessage {
         case TransactionMessageType.groupLeave.rawValue:
             message = getGroupLeaveMessageText(owner: owner, contact: contact)
         case TransactionMessageType.groupKick.rawValue:
-            message = "tribe.kick".localized
+            message = (self.chat?.isTribeICreated ?? false) ? String(format: "tribe.kick.as.admin".localized) : "tribe.kick".localized
         case TransactionMessageType.groupDelete.rawValue:
             message = "tribe.deleted".localized
         case TransactionMessageType.memberRequest.rawValue:
@@ -876,7 +916,7 @@ extension TransactionMessage {
         owner: UserContact,
         contact: UserContact?
     ) -> String {
-        if self.chat?.isMyPublicGroup(ownerPubKey: owner.publicKey) ?? false {
+        if self.chat?.isMyPublicGroup() ?? false {
             return String(format: "admin.request.rejected".localized, getMessageSenderNickname(owner: owner, contact: contact))
         } else {
             return "member.request.rejected".localized
@@ -887,10 +927,14 @@ extension TransactionMessage {
         owner: UserContact,
         contact: UserContact?
     ) -> String {
-        if self.chat?.isMyPublicGroup(ownerPubKey: owner.publicKey) ?? false {
+        if self.chat?.isMyPublicGroup() ?? false {
             return String(format: "admin.request.approved".localized, getMessageSenderNickname(owner: owner, contact: contact))
         } else {
-            return "member.request.approved".localized
+            if self.isOutgoing(ownerId: owner.id) {
+                return "you.joined.tribe".localized
+            } else {
+                return String(format: "has.joined.tribe".localized, getMessageSenderNickname(owner: owner, contact: contact))
+            }
         }
     }
     
@@ -902,7 +946,7 @@ extension TransactionMessage {
             senderAlias: getMessageSenderNickname(
                 owner: owner,
                 contact: contact
-            )
+            ), ownerId: owner.id
         )
     }
     
@@ -918,8 +962,12 @@ extension TransactionMessage {
         )
     }
     
-    func getGroupJoinMessageText(senderAlias: String) -> String {
-        return String(format: "has.joined.tribe".localized, senderAlias)
+    func getGroupJoinMessageText(senderAlias: String, ownerId: Int) -> String {
+        if self.isOutgoing(ownerId: ownerId) {
+            return "you.joined.tribe".localized
+        } else {
+            return String(format: "has.joined.tribe".localized, senderAlias)
+        }
     }
     
     func getGroupLeaveMessageText(senderAlias: String) -> String {
@@ -985,25 +1033,19 @@ extension TransactionMessage {
         return nil
     }
     
-    func shouldAvoidShowingBubble() -> Bool {
-        let groupsPinManager = GroupsPinManager.sharedInstance
-        let isStandardPIN = groupsPinManager.isStandardPIN
-        let isPrivateConversation = !(chat?.isGroup() ?? false)
-        let messageSender = getMessageSender()
-        
-        if isPrivateConversation {
-            return (isStandardPIN && !(messageSender?.pin ?? "").isEmpty) ||
-                   (!isStandardPIN && (messageSender?.pin ?? "").isEmpty) ||
-                   messageSender?.isBlocked() == true
-        } else {
-            return (isStandardPIN && !(chat?.pin ?? "").isEmpty) ||
-                   (!isStandardPIN && (chat?.pin ?? "").isEmpty)
-        }
-    }
-    
     //Grouping Logic
     func shouldAvoidGrouping() -> Bool {
-        return pending() || failed() || isDeleted() || isInvoice() || isPayment() || isGroupActionMessage() || isFlagged()
+        return
+            pending() ||
+            failed() ||
+            isDeleted() ||
+            isInvoice() ||
+            isPayment() ||
+            isGroupActionMessage() ||
+            isFlagged() ||
+            (isDirectPayment() && confirmed()) ||
+            isTribeTimezoneMsg()
+            
     }
     
     func hasSameSenderThanMessage(_ message: TransactionMessage) -> Bool {

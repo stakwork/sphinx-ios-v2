@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="21507" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="23504" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
     <device id="retina6_1" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="21505"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23506"/>
         <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -21,7 +21,10 @@
     <objects>
         <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner" customClass="PodcastPlayerView" customModule="sphinx" customModuleProvider="target">
             <connections>
+                <outlet property="advertContainer" destination="Mge-KB-wdr" id="GRs-h7-GD3"/>
+                <outlet property="advertLabel" destination="oVC-Yg-Ieb" id="4x1-8g-B67"/>
                 <outlet property="audioLoadingWheel" destination="kFQ-zV-BtX" id="31I-gG-yfD"/>
+                <outlet property="chaptersContainer" destination="mpV-Tb-d4h" id="Dz5-yL-D4T"/>
                 <outlet property="contentView" destination="iN0-l3-epB" id="WkH-Pi-lwg"/>
                 <outlet property="currentTimeDot" destination="Mtu-jO-ZFp" id="RPs-Ww-FWa"/>
                 <outlet property="currentTimeLabel" destination="iDW-iO-P0o" id="6to-ww-AnB"/>
@@ -110,11 +113,36 @@
                                 <constraint firstAttribute="height" constant="18" id="flu-ib-Auw"/>
                             </constraints>
                         </view>
+                        <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="mpV-Tb-d4h">
+                            <rect key="frame" x="32" y="104" width="350" height="28"/>
+                            <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                            <constraints>
+                                <constraint firstAttribute="height" constant="28" id="ZWa-r4-kxb"/>
+                            </constraints>
+                        </view>
                         <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="KTf-4e-LmA">
                             <rect key="frame" x="32" y="104" width="350" height="28"/>
                             <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                             <constraints>
                                 <constraint firstAttribute="height" constant="28" id="mGy-FF-UJV"/>
+                            </constraints>
+                        </view>
+                        <view hidden="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Mge-KB-wdr">
+                            <rect key="frame" x="121.5" y="102.5" width="171.5" height="31.5"/>
+                            <subviews>
+                                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Advert identified" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="oVC-Yg-Ieb">
+                                    <rect key="frame" x="12" y="4" width="147.5" height="23.5"/>
+                                    <fontDescription key="fontDescription" name="Roboto-Medium" family="Roboto" pointSize="20"/>
+                                    <color key="textColor" name="TextInverted"/>
+                                    <nil key="highlightedColor"/>
+                                </label>
+                            </subviews>
+                            <color key="backgroundColor" name="Text"/>
+                            <constraints>
+                                <constraint firstAttribute="trailing" secondItem="oVC-Yg-Ieb" secondAttribute="trailing" constant="12" id="5um-fg-xmB"/>
+                                <constraint firstAttribute="bottom" secondItem="oVC-Yg-Ieb" secondAttribute="bottom" constant="4" id="CzY-Tk-dcg"/>
+                                <constraint firstItem="oVC-Yg-Ieb" firstAttribute="leading" secondItem="Mge-KB-wdr" secondAttribute="leading" constant="12" id="JNh-Gk-oy4"/>
+                                <constraint firstItem="oVC-Yg-Ieb" firstAttribute="top" secondItem="Mge-KB-wdr" secondAttribute="top" constant="4" id="u84-3b-zMI"/>
                             </constraints>
                         </view>
                         <button opaque="NO" tag="1" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Tb8-08-zgd">
@@ -234,6 +262,7 @@
                     <constraints>
                         <constraint firstItem="VV8-QB-b2B" firstAttribute="centerX" secondItem="hny-dv-u2n" secondAttribute="centerX" id="24D-gD-hru"/>
                         <constraint firstItem="iDW-iO-P0o" firstAttribute="leading" secondItem="hlq-Ib-TyG" secondAttribute="leading" id="3wg-tp-VXP"/>
+                        <constraint firstItem="mpV-Tb-d4h" firstAttribute="bottom" secondItem="KTf-4e-LmA" secondAttribute="bottom" id="4g1-xu-7rM"/>
                         <constraint firstItem="Jf7-jW-t9r" firstAttribute="bottom" secondItem="hlq-Ib-TyG" secondAttribute="bottom" id="4ho-DG-4Z1"/>
                         <constraint firstItem="28w-L6-a8W" firstAttribute="top" secondItem="Tb8-08-zgd" secondAttribute="top" id="4j8-8d-K7u"/>
                         <constraint firstItem="wIY-t2-tmY" firstAttribute="top" secondItem="yFL-Ym-JIV" secondAttribute="top" constant="32" id="57u-ek-8ym"/>
@@ -241,6 +270,7 @@
                         <constraint firstItem="KTf-4e-LmA" firstAttribute="bottom" secondItem="hlq-Ib-TyG" secondAttribute="bottom" constant="12" id="6N2-ZI-lGO"/>
                         <constraint firstItem="w3F-zG-zqr" firstAttribute="top" secondItem="hlq-Ib-TyG" secondAttribute="bottom" constant="10" id="8kv-m5-YCE"/>
                         <constraint firstItem="KTf-4e-LmA" firstAttribute="trailing" secondItem="hlq-Ib-TyG" secondAttribute="trailing" id="95g-BK-BWO"/>
+                        <constraint firstItem="Mge-KB-wdr" firstAttribute="centerY" secondItem="KTf-4e-LmA" secondAttribute="centerY" id="BsT-zS-Ws2"/>
                         <constraint firstItem="hny-dv-u2n" firstAttribute="centerX" secondItem="yFL-Ym-JIV" secondAttribute="centerX" id="DeV-kM-TAg"/>
                         <constraint firstItem="hny-dv-u2n" firstAttribute="top" secondItem="KTf-4e-LmA" secondAttribute="bottom" constant="50" id="JAC-y3-QDr"/>
                         <constraint firstItem="Jf7-jW-t9r" firstAttribute="top" secondItem="hlq-Ib-TyG" secondAttribute="top" id="LtM-h6-n3Z"/>
@@ -248,12 +278,15 @@
                         <constraint firstAttribute="height" constant="256" id="Q46-Hf-DHT"/>
                         <constraint firstItem="Mtu-jO-ZFp" firstAttribute="centerY" secondItem="hlq-Ib-TyG" secondAttribute="centerY" id="Q4w-xg-6ok"/>
                         <constraint firstAttribute="trailing" secondItem="hlq-Ib-TyG" secondAttribute="trailing" constant="32" id="QED-4f-ZlW"/>
+                        <constraint firstItem="mpV-Tb-d4h" firstAttribute="top" secondItem="KTf-4e-LmA" secondAttribute="top" id="QlZ-au-P1g"/>
                         <constraint firstItem="Mtu-jO-ZFp" firstAttribute="leading" secondItem="Jf7-jW-t9r" secondAttribute="trailing" constant="-9" id="U0e-Kj-LrE"/>
                         <constraint firstItem="hny-dv-u2n" firstAttribute="top" secondItem="VV8-QB-b2B" secondAttribute="bottom" constant="5" id="UHt-TW-SIf"/>
                         <constraint firstItem="iDW-iO-P0o" firstAttribute="top" secondItem="hlq-Ib-TyG" secondAttribute="bottom" constant="10" id="UgD-C3-pcW"/>
                         <constraint firstAttribute="trailing" secondItem="Lvk-UX-m39" secondAttribute="trailing" constant="16" id="VGj-QK-tiu"/>
                         <constraint firstItem="KTf-4e-LmA" firstAttribute="leading" secondItem="hlq-Ib-TyG" secondAttribute="leading" id="VIO-2G-7o2"/>
                         <constraint firstItem="bIp-4g-4ho" firstAttribute="leading" secondItem="hny-dv-u2n" secondAttribute="trailing" id="VQj-P4-gXi"/>
+                        <constraint firstItem="Mge-KB-wdr" firstAttribute="centerX" secondItem="KTf-4e-LmA" secondAttribute="centerX" id="Wmb-KO-ogI"/>
+                        <constraint firstItem="mpV-Tb-d4h" firstAttribute="trailing" secondItem="KTf-4e-LmA" secondAttribute="trailing" id="Ym9-Iv-3qE"/>
                         <constraint firstAttribute="trailing" secondItem="wIY-t2-tmY" secondAttribute="trailing" constant="32" id="bW0-3D-7H6"/>
                         <constraint firstItem="Tb8-08-zgd" firstAttribute="centerY" secondItem="hny-dv-u2n" secondAttribute="centerY" id="bj0-57-QdP"/>
                         <constraint firstItem="Jf7-jW-t9r" firstAttribute="leading" secondItem="hlq-Ib-TyG" secondAttribute="leading" id="cut-aU-G9q"/>
@@ -263,6 +296,7 @@
                         <constraint firstItem="KTf-4e-LmA" firstAttribute="top" secondItem="hlq-Ib-TyG" secondAttribute="top" constant="-12" id="ho1-uU-axK"/>
                         <constraint firstItem="w3F-zG-zqr" firstAttribute="leading" secondItem="kFQ-zV-BtX" secondAttribute="trailing" constant="10" id="iMc-g4-T77"/>
                         <constraint firstItem="wIY-t2-tmY" firstAttribute="leading" secondItem="yFL-Ym-JIV" secondAttribute="leading" constant="32" id="oPj-Qp-0mf"/>
+                        <constraint firstItem="mpV-Tb-d4h" firstAttribute="leading" secondItem="KTf-4e-LmA" secondAttribute="leading" id="sFi-P9-tOg"/>
                         <constraint firstItem="hny-dv-u2n" firstAttribute="leading" secondItem="28w-L6-a8W" secondAttribute="trailing" id="spR-K7-2U1"/>
                         <constraint firstItem="28w-L6-a8W" firstAttribute="bottom" secondItem="Tb8-08-zgd" secondAttribute="bottom" id="tVM-7f-XwI"/>
                         <constraint firstItem="w3F-zG-zqr" firstAttribute="trailing" secondItem="hlq-Ib-TyG" secondAttribute="trailing" id="tdK-3i-eFk"/>
@@ -327,6 +361,9 @@
         </namedColor>
         <namedColor name="Text">
             <color red="0.23529411764705882" green="0.24705882352941178" blue="0.25490196078431371" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+        <namedColor name="TextInverted">
+            <color red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>
         <namedColor name="WashedOutSentText">
             <color red="0.69019607843137254" green="0.71764705882352942" blue="0.73725490196078436" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>

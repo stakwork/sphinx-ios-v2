@@ -34,6 +34,8 @@ class ConfirmAddFriendViewController: UIViewController {
     let kPlaceHolderColor = UIColor.Sphinx.PlaceholderText
     let kTextViewColor = UIColor.Sphinx.Text
     
+    let som = SphinxOnionManager.sharedInstance
+    
     private var lowestPrice : Int?
     
     var loading = false {
@@ -91,9 +93,6 @@ class ConfirmAddFriendViewController: UIViewController {
         nickNameField.delegate = self
         
         amountField.textColor = kTextViewColor
-        
-        getLowestPrice()
-        
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -106,60 +105,83 @@ class ConfirmAddFriendViewController: UIViewController {
     }
     
     @IBAction func createInvitationButtonTouched() {
-        if let lowestPrice = lowestPrice, walletBalanceService.balance <= lowestPrice {
-            AlertHelper.showAlert(title: "generic.error.title".localized, message: "invite.more.sats".localized)
-            return
-        }
         createInvite()
     }
     
-    func getLowestPrice() {
-        bottomLeftContainer.alpha = 0.0
-        createInvitationButton.isUserInteractionEnabled = false
-        
-        API.sharedInstance.getLowestPrice(callback: { price in
-            self.createInvitationButton.isUserInteractionEnabled = true
-            self.lowestPrice = Int(price)
-            self.configurePriceContainer(lowestPrice: Int(price))
-        }, errorCallback: {
-            self.bottomLeftContainer.alpha = 0.0
-            self.createInvitationButton.isUserInteractionEnabled = true
-        })
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
     }
     
-    func configurePriceContainer(lowestPrice: Int) {
-        let localBalance = walletBalanceService.balance
-        if localBalance > lowestPrice && lowestPrice > 0 {
-            amountLabel.text = lowestPrice.formattedWithSeparator
-            UIView.animate(withDuration: 0.3, animations: {
-                self.bottomLeftContainer.alpha = 1.0
-            })
-        } else {
-            bottomLeftContainer.alpha = 0.0
+    func processRequestedInviteAck(code: String?){
+        if let code = code{
+            loading = false
+            self.delegate?.shouldDismissView?()
+            self.closeButtonTouched()
+            let nickname = nickNameField.text ?? "unknown"
+            SphinxOnionManager.sharedInstance.createContactForInvite(code: code, nickname: nickname)
+            ClipboardHelper.copyToClipboard(text: code)
+        }
+        else{
+            AlertHelper.showAlert(title: "generic.error.title".localized, message: "generic.error.message".localized)
         }
     }
     
     func createInvite() {
         view.endEditing(true)
         
-        if let amount = amountField.text,
-            let amountSats = Int(amount)
-        {
-            loading = true
-            if let code = SphinxOnionManager.sharedInstance.issueInvite(amountMsat: amountSats * 1000){
-                loading = false
-                self.delegate?.shouldDismissView?()
-                self.closeButtonTouched()
-                let nickname = nickNameField.text ?? "unknown"
-                SphinxOnionManager.sharedInstance.createContactForInvite(code: code, nickname: nickname)
-                ClipboardHelper.copyToClipboard(text: code)
-            }
-            else{
-                AlertHelper.showAlert(title: "generic.error.title".localized, message: "generic.error.message".localized)
-            }
-        } else {
-            AlertHelper.showAlert(title: "generic.error.title".localized, message: "nickname.cannot.empty".localized)
+        guard let amount = amountField.text else {
+            return
         }
+        
+        guard let amountSats = Int(amount) else {
+            return
+        }
+        
+        loading = true
+        
+        som.inviteCreationCallback = handleInviteCodeAck
+        let (success, errorMsg) = som.requestInviteCode(amountMsat: amountSats * 1000)
+        
+        if !success {
+            inviteFailed(error: errorMsg)
+        }
+    }
+    
+    func inviteFailed(error: String?) {
+        AlertHelper.showAlert(
+            title: "Invite Error",
+            message: (error != nil) ? "Error: \(error!)" : "There was an error creating the invite"
+        )
+        
+        som.inviteCreationCallback = nil
+        
+        loading = false
+        delegate?.shouldDismissView?()
+        closeButtonTouched()
+    }
+    
+    func handleInviteCodeAck(
+        inviteCode: String?
+    ){
+        guard let inviteCode = inviteCode else {
+            AlertHelper.showAlert(title: "generic.error.title".localized, message: "generic.error.message".localized)
+            return
+        }
+        
+        let nickname = nickNameField.text ?? "unknown"
+        
+        som.createContactForInvite(
+            code: inviteCode,
+            nickname: nickname
+        )
+        
+        ClipboardHelper.copyToClipboard(text: inviteCode)
+        
+        som.inviteCreationCallback = nil
+        
+        loading = false
+        delegate?.shouldDismissView?()
+        closeButtonTouched()
     }
     
     func goToInviteCodeString(inviteCode: String) {

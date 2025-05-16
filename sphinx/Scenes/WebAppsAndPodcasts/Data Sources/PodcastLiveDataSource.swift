@@ -91,7 +91,8 @@ class PodcastLiveDataSource : NSObject {
                 linkContact: nil,
                 linkTribe: nil,
                 linkWeb: nil,
-                invoiceData: (false, false)
+                invoiceData: (false, false),
+                timezoneData: chat.timezoneData
             )
             
             messagesTableCellStates.append(celState)
@@ -130,11 +131,11 @@ extension PodcastLiveDataSource : UITableViewDataSource, UITableViewDelegate {
             threadOriginalMsgMediaData: nil,
             tribeData: nil,
             linkData: nil,
-            botWebViewData: nil,
             uploadProgressData: nil,
             delegate: nil,
             searchingTerm: nil,
-            indexPath: indexPath
+            indexPath: indexPath,
+            replyViewHeight: nil
         )
         
         return cell

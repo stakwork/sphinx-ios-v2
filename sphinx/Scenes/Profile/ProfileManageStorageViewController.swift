@@ -47,10 +47,11 @@ class ProfileManageStorageViewController : UIViewController{
     var usageKB : Double = 0.0
     var maxGB: Int = 0
     var isEditingMaxMemory : Bool = false {
-        didSet{
+        didSet {
             storageSummaryView.memorySliderUpdated(value: UserData.sharedInstance.getMaxMemoryGB())
             storageSummaryView.isEditingMaxMemory = isEditingMaxMemory
-            if(oldValue == false && isEditingMaxMemory == true){
+            
+            if (oldValue == false && isEditingMaxMemory) {
                 
                 self.maxSliderView.isHidden = false
                 self.cancelButton.isHidden = false
@@ -77,8 +78,14 @@ class ProfileManageStorageViewController : UIViewController{
                     self.changeStorageLabel.isHidden = true
                     
                 })
-            }
-            else if(oldValue == true && isEditingMaxMemory == false){
+            } else if (oldValue == true && isEditingMaxMemory == false) {
+                self.maxSliderView.isHidden = true
+                self.cancelButton.isHidden = true
+                self.saveButton.isHidden = true
+                
+                self.changeStorageButton.isHidden = false
+                self.changeStorageLabel.isHidden = false
+                
                 UIView.animate(withDuration: 0.25, delay: 0, animations: {
                     self.warningView.isHidden = true
                     self.sliderVerticalSpacing.constant = self.sliderHiddenYConstraint
@@ -95,14 +102,7 @@ class ProfileManageStorageViewController : UIViewController{
                     self.saveButton.alpha = 0.0
                     self.usedStorageLabel.isHidden = false
                     self.freeStorageLabel.isHidden = false
-                },completion: {_ in
-                    self.changeStorageButton.isHidden = false
-                    self.changeStorageLabel.isHidden = false
-                    self.maxSliderView.isHidden = true
-                    
-                    self.saveButton.isHidden = true
-                    self.cancelButton.isHidden = true
-                })
+                },completion: {_ in })
             }
             
             editingModeUsedStorageLabel.text = usedStorageLabel.text
@@ -120,8 +120,7 @@ class ProfileManageStorageViewController : UIViewController{
         }
     }
     
-    func showDeletionWarningAlert(type:StorageManagerMediaType){
-        
+    func showDeletionWarningAlert(type: StorageManagerMediaType) {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05, execute: {
             self.overlayView = UIView(frame: self.view.frame)
             if let overlayView = self.overlayView{
@@ -146,18 +145,18 @@ class ProfileManageStorageViewController : UIViewController{
         })
     }
     
-    func hideDeletionWarningAlert(){
+    func hideDeletionWarningAlert() {
         self.overlayView?.removeFromSuperview()
         self.overlayView = nil
         
         self.mediaDeletionConfirmationView.isHidden = true
     }
     
-    func setIsLoading(){
+    func setIsLoading() {
         mediaDeletionConfirmationView.state = .loading
     }
     
-    func resetIsLoading(type:StorageManagerMediaType){
+    func resetIsLoading(type: StorageManagerMediaType) {
         mediaDeletionConfirmationView.state = .finished
     }
     
@@ -170,12 +169,12 @@ class ProfileManageStorageViewController : UIViewController{
     }()
     
     
-    func freeMemory()-> Int {
+    func freeMemory() -> Int {
         return (maxGB * Int(1e9) - Int(usageKB * 1e6))
     }
     
     static func instantiate(
-        storageStats:[StorageManagerMediaType:Double]
+        storageStats: [StorageManagerMediaType:Double]
     ) -> ProfileManageStorageViewController {
         let viewController = StoryboardScene.Profile.profileManageStorageViewController.instantiate()
         viewController.tempTypeStats = storageStats
@@ -187,7 +186,7 @@ class ProfileManageStorageViewController : UIViewController{
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        if(isFirstLoad){
+        if (isFirstLoad) {
             setupStorageViewsAndModels()
         }
         hideDeletionWarningAlert()
@@ -195,16 +194,15 @@ class ProfileManageStorageViewController : UIViewController{
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        if(isFirstLoad == false){
+        if (isFirstLoad == false) {
             DispatchQueue.main.async{
                 self.setupStorageViewsAndModels()
             }
         }
-        
         isFirstLoad = false
     }
     
-    func setupStorageViewsAndModels(){
+    func setupStorageViewsAndModels() {
         hideSpinner()
         
         maxSliderView.delegate = self
@@ -232,14 +230,14 @@ class ProfileManageStorageViewController : UIViewController{
         spinner.isHidden = false
     }
     
-    func hideSpinner(){
+    func hideSpinner() {
         changeStorageButton.isHidden = false
         changeStorageLabel.isHidden = false
         loadingLabel.isHidden = true
         spinner.isHidden = true
     }
     
-    func showSourceDetailsVC(source:StorageManagerMediaSource){
+    func showSourceDetailsVC(source: StorageManagerMediaSource) {
         var items : [StorageManagerItem]? = nil
         switch(source){
         case .chats:
@@ -257,7 +255,7 @@ class ProfileManageStorageViewController : UIViewController{
     }
     
     
-    func updateUsageLabels(){
+    func updateUsageLabels() {
         let usage = StorageManager.sharedManager.getItemGroupTotalSize(items: StorageManager.sharedManager.allItems)
         usedStorageLabel.text = "\(formatBytes(Int(usage*1e6)))"
         freeStorageLabel.text = "\(formatBytes(freeMemory())) Free"
@@ -284,13 +282,11 @@ class ProfileManageStorageViewController : UIViewController{
     }
     
     @IBAction func backButtonTap(_ sender: Any) {
-        if(isEditingMaxMemory){
+        if (isEditingMaxMemory) {
             isEditingMaxMemory = false
-        }
-        else{
+        } else {
             self.navigationController?.popViewController(animated: true)
         }
-        
     }
     
     @IBAction func changeButtonTap(_ sender: Any) {
@@ -319,23 +315,21 @@ class ProfileManageStorageViewController : UIViewController{
         
     }
     
-    func checkForImmediateDeletion(newMaxGB:Int){
+    func checkForImmediateDeletion(newMaxGB: Int) {
         let maxInBytes = Int(Double(newMaxGB) * 1e9)
         let usageInBytes = Int(usageKB * 1e6)
-        if(maxInBytes < usageInBytes){
+        if (maxInBytes < usageInBytes) {
             let differential = formatBytes(usageInBytes - maxInBytes)
             self.view.bringSubviewToFront(warningView)
             let warningMessage = String(format: NSLocalizedString("saving.limit.warning", comment: ""), differential)            
             self.warningLabel.text = warningMessage
             self.warningView.isHidden = false
             self.editingModeMaximumLabel.textColor = UIColor.Sphinx.PrimaryRed
-        }
-        else{
+        } else {
             self.warningView.isHidden = true
             self.editingModeMaximumLabel.textColor = UIColor.Sphinx.Text
         }
     }
-    
 }
 
 func formatBytes(_ bytes: Int) -> String {
@@ -357,8 +351,8 @@ func formatBytes(_ bytes: Int) -> String {
 
 
 
-extension ProfileManageStorageViewController: MaxMemorySliderDelegate{
-    func sliderValueChanged(value:Int){
+extension ProfileManageStorageViewController: MaxMemorySliderDelegate {
+    func sliderValueChanged(value: Int) {
         checkForImmediateDeletion(newMaxGB: value)
         self.editingModeMaximumLabel.text = formatBytes(Int(Double(value) * 1e9))
         self.storageSummaryView.memorySliderUpdated(value: value)

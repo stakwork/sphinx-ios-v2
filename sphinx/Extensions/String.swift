@@ -9,6 +9,20 @@
 import Foundation
 import UIKit
 import MobileCoreServices
+import UniformTypeIdentifiers
+
+enum JSONError : Error {
+    case notArray
+    case notNSDictionary
+}
+
+extension CharacterSet {
+    static var allowedURLCharacterSet: CharacterSet {
+        return CharacterSet(charactersIn: "!*'();:@&=+$,/?%#[]\" {}^|").inverted
+    }
+}
+
+typealias JSONDictionary = [String: Any]
 
 extension String {
     
@@ -106,19 +120,6 @@ extension String {
         return fixedInvoice
     }
     
-    var fixedRestoreCode : String {
-        get {
-            let codeWithoutSpaces = self.replacingOccurrences(of: "\\n", with: "")
-                                        .replacingOccurrences(of: "\\r", with: "")
-                                        .replacingOccurrences(of: "\\s", with: "")
-                                        .replacingOccurrences(of: " ", with: "")
-            
-            let fixedCode = codeWithoutSpaces.filter("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=".contains)
-            
-            return fixedCode
-        }
-    }
-    
     func removeProtocol() -> String {
         return self.replacingOccurrences(of: "http://", with: "").replacingOccurrences(of: "https://", with: "")
     }
@@ -127,65 +128,57 @@ extension String {
         return self.removingPercentEncoding
     }
     
-    var isRelayQRCode : Bool {
-        get {
-            return self.base64Decoded?.starts(with: "ip::") ?? false
-        }
-    }
-    
-    var isSwarmConnectCode : Bool {
-        get {
-            return self.localizedStandardContains("connect::")
-        }
-    }
-    
-    var isSwarmClaimCode : Bool {
-        get {
-            return self.localizedStandardContains("claim::")
-        }
-    }
-    
-    var isSwarmGlyphAction : Bool {//if they're signing up with their own signing device
-        get {
-            return self.localizedStandardContains("glyph")
-        }
-    }
-    
-    func getIPAndPassword() -> (String?, String?) {
-        if let decodedString = self.base64Decoded, decodedString.starts(with: "ip::") {
-            let stringWithoutPrefix = decodedString.replacingOccurrences(of: "ip::", with: "")
-            let items = stringWithoutPrefix.components(separatedBy: "::")
-            
-            if items.count == 2 {
-                return (items[0], items[1])
-            }
-        }
-        return (nil, nil)
-    }
-    
-    var isRestoreKeysString : Bool {
-        get {
-            return self.base64Decoded?.starts(with: "keys::") ?? false
-        }
-    }
-    
-    var isRestoreKeysStringLength : Bool {
-        get {
-            return self.length > 3000
-        }
-    }    
-    
-    func getRestoreKeys() -> String? {
-        if let decodedString = self.base64Decoded, decodedString.starts(with: "keys::") {
-            let stringWithoutPrefix = decodedString.replacingOccurrences(of: "keys::", with: "")
-            return stringWithoutPrefix
-        }
-        return nil
+    var isMessagesFetchResponse : Bool {
+        return self.contains("/batch")
     }
     
     func trim() -> String {
         return self.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
     }
+    
+    func markdownTrim() -> String {
+        if self.isEmpty {
+            return self
+        }
+        
+        var trimmedString = self
+        let zeroWidthSpace = "\u{200B}"
+
+        ///Replace new line with empty space if it starts with highlight char and new line
+        if self.starts(with: "\(zeroWidthSpace)\n") {
+            trimmedString = trimmedString.replacingOccurrences(
+                of: "\(zeroWidthSpace)\n",
+                with: "\(zeroWidthSpace)\(zeroWidthSpace)",
+                range: Range(NSRange(location: 0, length: 2), in: trimmedString)
+            )
+        }
+        ///Replace new line with empty space if it starts with bold chars and new line
+        if self.starts(with: "\(zeroWidthSpace)\(zeroWidthSpace)\n") {
+            trimmedString = trimmedString.replacingOccurrences(
+                of: "\(zeroWidthSpace)\(zeroWidthSpace)\n",
+                with: "\(zeroWidthSpace)\(zeroWidthSpace)\(zeroWidthSpace)",
+                range: Range(NSRange(location: 0, length: 3), in: trimmedString)
+            )
+        }
+        ///Replace new line with empty space if it ends with new line and highlight char
+        if self.hasSuffix("\n\(zeroWidthSpace)") {
+            trimmedString = trimmedString.replacingOccurrences(
+                of: "\n\(zeroWidthSpace)",
+                with: "\(zeroWidthSpace)\(zeroWidthSpace)",
+                range: Range(NSRange(location: self.length - 2, length: 2), in: trimmedString)
+            )
+        }
+        ///Replace new line with empty space if it ends with new line and bold chars
+        if self.hasSuffix("\n\(zeroWidthSpace)\(zeroWidthSpace)") {
+            trimmedString = trimmedString.replacingOccurrences(
+                of: "\n\(zeroWidthSpace)\(zeroWidthSpace)",
+                with: "\(zeroWidthSpace)\(zeroWidthSpace)\(zeroWidthSpace)",
+                range: Range(NSRange(location: self.length - 3, length: 3), in: trimmedString)
+            )
+        }
+        return trimmedString
+    }
+
     
     func isEncryptedString() -> Bool {
         if let _ = Data(base64Encoded: self), self.hasSuffix("=") {
@@ -247,50 +240,146 @@ extension String {
     }
     
     var stringLinks: [NSTextCheckingResult] {
-        let textWithoutHightlights = self.replacingHightlightedChars
+        let textWithoutMarkdown = self.removingMarkdownDelimiters
         let types: NSTextCheckingResult.CheckingType = .link
         let detector = try? NSDataDetector(types: types.rawValue)
         
         let matches = detector!.matches(
-            in: textWithoutHightlights,
+            in: textWithoutMarkdown,
             options: [],
-            range: NSMakeRange(0, textWithoutHightlights.utf16.count)
+            range: NSMakeRange(0, textWithoutMarkdown.utf16.count)
         )
         
         return matches
     }
     
     var pubKeyMatches: [NSTextCheckingResult] {
-        let textWithoutHightlights = self.replacingHightlightedChars
+        let textWithoutMarkdown = self.removingMarkdownDelimiters
         let pubkeyRegex = try? NSRegularExpression(pattern: "\\b[A-F0-9a-f]{66}\\b")
-        let virtualPubkeyRegex = try? NSRegularExpression(pattern: "\\b[A-F0-9a-f]{66}:[A-F0-9a-f]{66}:[0-9]+\\b")
+        let virtualPubkeyRegex = try? NSRegularExpression(pattern: "\\b[A-F0-9a-f]{66}_[A-F0-9a-f]{66}_[0-9]+\\b")
         
         let virtualPubkeyResults = virtualPubkeyRegex?.matches(
-            in: textWithoutHightlights,
-            range: NSRange(textWithoutHightlights.startIndex..., in: textWithoutHightlights)
+            in: textWithoutMarkdown,
+            range: NSRange(textWithoutMarkdown.startIndex..., in: textWithoutMarkdown)
         ) ?? []
         
         let pubkeyResults = pubkeyRegex?.matches(
-            in: textWithoutHightlights,
-            range: NSRange(textWithoutHightlights.startIndex..., in: textWithoutHightlights)
+            in: textWithoutMarkdown,
+            range: NSRange(textWithoutMarkdown.startIndex..., in: textWithoutMarkdown)
         ) ?? []
         
         return virtualPubkeyResults + pubkeyResults
     }
     
     var mentionMatches: [NSTextCheckingResult] {
-        let textWithoutHightlights = self.replacingHightlightedChars
+        let textWithoutMarkdown = self.removingMarkdownDelimiters
         let mentionRegex = try? NSRegularExpression(pattern: "\\B@[^\\s]+")
         
         return mentionRegex?.matches(
-            in: textWithoutHightlights,
-            range: NSRange(textWithoutHightlights.startIndex..., in: textWithoutHightlights)
+            in: textWithoutMarkdown,
+            range: NSRange(textWithoutMarkdown.startIndex..., in: textWithoutMarkdown)
         ) ?? []
     }
     
     var highlightedMatches: [NSTextCheckingResult] {
+        if !self.contains("`") {
+            return []
+        }
         let highlightedRegex = try? NSRegularExpression(pattern: "`(.*?)`", options: .dotMatchesLineSeparators)
         return highlightedRegex?.matches(in: self, range: NSRange(self.startIndex..., in: self)) ?? []
+    }
+    
+    var boldMatches: [NSTextCheckingResult] {
+        if !self.contains("**") {
+            return []
+        }
+        let highlightedRegex = try? NSRegularExpression(pattern: "\\*\\*(.*?)\\*\\*", options: .dotMatchesLineSeparators)
+        return highlightedRegex?.matches(in: self, range: NSRange(self.startIndex..., in: self)) ?? []
+    }
+    
+    var itemsMatches: [NSTextCheckingResult] {
+        if !self.contains("-") {
+            return []
+        }
+        let highlightedRegex = try? NSRegularExpression(pattern: "(?<=^|\n)([\u{200B}]*)(-)(?!-)", options: .dotMatchesLineSeparators)
+        return highlightedRegex?.matches(in: self, range: NSRange(self.startIndex..., in: self)) ?? []
+    }
+    
+    var linkMarkdownMatches: [(NSTextCheckingResult, String, String, Bool)] {
+        if !self.contains("[") && self.contains("(") {
+            return []
+        }
+        
+        var results: [(NSTextCheckingResult, String, String, Bool)] = []
+        
+        let linkMarkdownPattern = #"!\[([^\]]+)\]\((http[s]?:\/\/[^\s\)]+)\)"#
+        let linkMarkdownRegex = try? NSRegularExpression(pattern: linkMarkdownPattern)
+        let matches = linkMarkdownRegex?.matches(in: self, range: NSRange(self.startIndex..., in: self)) ?? []
+        
+        for match in matches {
+            if let result = getMatchAndStringsFrom(match: match, hasExclamationMark: true) {
+                results.append(result)
+            }
+        }
+        
+        let linkMarkdownPattern2 = #"\[([^\]]+)\]\((http[s]?:\/\/[^\s\)]+)\)"#
+        let linkMarkdownRegex2 = try? NSRegularExpression(pattern: linkMarkdownPattern2)
+        let matches2 = linkMarkdownRegex2?.matches(in: self, range: NSRange(self.startIndex..., in: self)) ?? []
+        
+        for match in matches2 {
+            if let result = getMatchAndStringsFrom(match: match, hasExclamationMark: false) {
+                results.append(result)
+            }
+        }
+        
+        return results
+    }
+    
+    func getMatchAndStringsFrom(
+        match: NSTextCheckingResult,
+        hasExclamationMark: Bool
+    ) -> (NSTextCheckingResult, String, String, Bool)? {
+        if let imageRange = Range(match.range(at: 1), in: self),
+           let linkRange = Range(match.range(at: 2), in: self) {
+            let imageText = String(self[imageRange])
+            let linkText = String(self[linkRange])
+            return (match, "\(imageText)", "\(linkText)", hasExclamationMark)
+        }
+        return nil
+    }
+    
+    var removingMarkdownDelimiters: String {
+        return self.trim().replacingHightlightedChars.replacingBoldDelimeterChars.replacingHyphensWithBullets.replacingMarkdownLinks.markdownTrim()
+    }
+    
+    var replacingMarkdownLinks: String {
+        if !self.contains("[") && self.contains("(") {
+            return self
+        }
+        
+        var adaptedString = self
+        
+        for (match, text, link, hasExclamationMark)  in linkMarkdownMatches {
+
+            let adaptedRange = NSRange(location: match.range.location, length: match.range.length)
+            let zeroWidthSpace = "\u{200B}"
+            
+            let prefixString = (hasExclamationMark) ? "\(zeroWidthSpace)\(zeroWidthSpace)" : "\(zeroWidthSpace)"
+            let afterLinkChartsCount = 3 + link.count
+            
+            var suffixString = ""
+            for _ in 0..<afterLinkChartsCount {
+                suffixString += zeroWidthSpace
+            }
+            
+            adaptedString = adaptedString.replacingOccurrences(
+                of: hasExclamationMark ? "![\(text)](\(link))" : "[\(text)](\(link))",
+                with: "\(prefixString)\(text)\(suffixString)",
+                range: Range(adaptedRange, in: adaptedString)
+            )
+        }
+        
+        return adaptedString
     }
     
     var replacingHightlightedChars: String {
@@ -299,18 +388,60 @@ extension String {
         }
         
         var adaptedString = self
-        let highlightedRegex = try? NSRegularExpression(pattern: "`(.*?)`", options: .dotMatchesLineSeparators)
-        let matches =  highlightedRegex?.matches(in: self, range: NSRange(self.startIndex..., in: self)) ?? []
         
-        for (index, match) in matches.enumerated() {
+        for match in highlightedMatches {
             
             ///Subtracting the previous matches delimiter characters since they have been removed from the string
-            let substractionNeeded = index * 2
-            let adaptedRange = NSRange(location: match.range.location - substractionNeeded, length: match.range.length)
+            let adaptedRange = NSRange(location: match.range.location, length: match.range.length)
+            let zeroWidthSpace = "\u{200B}"
             
             adaptedString = adaptedString.replacingOccurrences(
                 of: "`",
-                with: "",
+                with: zeroWidthSpace,
+                range: Range(adaptedRange, in: adaptedString)
+            )
+        }
+        
+        return adaptedString
+    }
+    
+    var replacingBoldDelimeterChars: String {
+        if !self.contains("**") {
+            return self
+        }
+        
+        var adaptedString = self
+        
+        for match in boldMatches {
+            
+            ///Subtracting the previous matches delimiter characters since they have been removed from the string
+            let adaptedRange = NSRange(location: match.range.location, length: match.range.length)
+            let zeroWidthSpace = "\u{200B}"
+            
+            adaptedString = adaptedString.replacingOccurrences(
+                of: "*",
+                with: zeroWidthSpace,
+                range: Range(adaptedRange, in: adaptedString)
+            )
+        }
+        
+        return adaptedString
+    }
+    
+    var replacingHyphensWithBullets: String {
+        if !self.contains("-") {
+            return self
+        }
+        
+        var adaptedString = self
+        
+        for match in itemsMatches {
+            
+            let adaptedRange = NSRange(location: match.range.location, length: match.range.length)
+            
+            adaptedString = adaptedString.replacingOccurrences(
+                of: "-",
+                with: "•",
                 range: Range(adaptedRange, in: adaptedString)
             )
         }
@@ -410,7 +541,7 @@ extension String {
     }
     
     var hasPubkeyLinks: Bool {
-        if let contactInfo = SphinxOnionManager.sharedInstance.parseContactInfoString(fullContactInfo: self){
+        if let _ = SphinxOnionManager.sharedInstance.parseContactInfoString(fullContactInfo: self) {
             return true
         }
         return pubKeyMatches.count > 0 && !hasTribeLinks
@@ -431,45 +562,19 @@ extension String {
     
     var isRouteHint : Bool {
         get {
-            let routeHintRegex = try? NSRegularExpression(pattern: "^[A-F0-9a-f]{66}:[0-9]+$")
+            let routeHintRegex = try? NSRegularExpression(pattern: "^[A-F0-9a-f]{66}_[0-9]+$")
             return (routeHintRegex?.matches(in: self, range: NSRange(self.startIndex..., in: self)) ?? []).count > 0
         }
     }
-    //uses _ instead of :
-    var isV2RouteHint: Bool {
-        get {
-            // Adjust the number inside the curly braces {18} to match the expected length of digits.
-            let v2RouteHintRegex = try? NSRegularExpression(pattern: "^[A-F0-9a-f]{66}_[0-9]{18}$")
-            return (v2RouteHintRegex?.matches(in: self, range: NSRange(self.startIndex..., in: self)) ?? []).count > 0
-        }
-    }
-    
-    var isV2Pubkey: Bool {
-        get {
-            let v2PubkeyRegex = try? NSRegularExpression(pattern: "^[A-F0-9a-f]{66}_[A-F0-9a-f]{66}_[0-9]{18}$")
-            return (v2PubkeyRegex?.matches(in: self, range: NSRange(self.startIndex..., in: self)) ?? []).count > 0
-        }
-    }
-
     
     var isVirtualPubKey : Bool {
         get {
-            let completePubkeyRegex = try? NSRegularExpression(pattern: "^[A-F0-9a-f]{66}:[A-F0-9a-f]{66}:[0-9]+$")
+            let completePubkeyRegex = try? NSRegularExpression(pattern: "^[A-F0-9a-f]{66}_[A-F0-9a-f]{66}_[0-9]+$")
             return (completePubkeyRegex?.matches(in: self, range: NSRange(self.startIndex..., in: self)) ?? []).count > 0
         }
     }
     
     var pubkeyComponents : (String, String) {
-        get {
-            let components = self.components(separatedBy: ":")
-            if components.count >= 3 {
-                return (components[0], self.replacingOccurrences(of: components[0] + ":", with: ""))
-            }
-            return (self, "")
-        }
-    }
-    
-    var v2PubkeyComponents : (String, String) {
         get {
             let components = self.components(separatedBy: "_")
             if components.count >= 3 {
@@ -481,10 +586,12 @@ extension String {
     
     func isExistingContactPubkey() -> (Bool, UserContact?) {
         if let pubkey = self.stringFirstPubKey?.0 {
-            let (pk, _) = (pubkey.isV2Pubkey) ? pubkey.v2PubkeyComponents : pubkey.pubkeyComponents
-            if let contact = UserContact.getContactWith(pubkey: pk), !contact.fromGroup {
+            let (pk, _) = pubkey.pubkeyComponents
+            
+            if let contact = UserContact.getContactWith(pubkey: pk) {
                return (true, contact)
             }
+            
             if let owner = UserContact.getOwner(), owner.publicKey == pk {
                 return (true, owner)
             }
@@ -492,16 +599,9 @@ extension String {
         return (false, nil)
    }
     
-    var isV2InviteCode : Bool{
-        get {
-            return self.localizedStandardContains("action=i&d")
-        }
-    }
-    
     var isInviteCode : Bool {
         get {
-            let regex = try? NSRegularExpression(pattern: "^[A-F0-9a-f]{40}$")
-            return ((regex?.matches(in: self, range: NSRange(self.startIndex..., in: self)) ?? []).count > 0) || isV2InviteCode
+            return self.starts(with: "sphinx.chat://?action=i&d")
         }
     }
     
@@ -540,6 +640,30 @@ extension String {
         return Data(base64Encoded: self.replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/"))
     }
     
+    var urlSafe: String {
+        return self.replacingOccurrences(of: "+", with: "-").replacingOccurrences(of: "/", with: "_")
+    }
+    
+    var nonBase64Data: Data? {
+        get {
+            var valid = self.count % 4 == 0
+            var fixedString = self
+            
+            while (!valid) {
+                fixedString = String(fixedString.dropLast())
+                valid = fixedString.count % 4 == 0
+            }
+            let fixedChallenge = fixedString
+                .replacingOccurrences(of: "-", with: "+")
+                .replacingOccurrences(of: "_", with: "/")
+            
+            if let challengeData = Data(base64Encoded: fixedChallenge) {
+                return challengeData
+            }
+            return nil
+        }
+    }
+    
     var lowerClean : String {
         return self.trim().lowercased()
     }
@@ -561,6 +685,28 @@ extension String {
             return String(room)
         }
         return self.lowerClean
+    }
+    
+    var isJitsiCallLink: Bool {
+        get {
+            return self.lowerClean.starts(with: "http") && self.lowerClean.contains(API.kJitsiCallServer)
+        }
+    }
+    
+    var isLiveKitCallLink: Bool {
+        get {
+            return self.lowerClean.starts(with: "http") && self.lowerClean.contains(API.kLiveKitCallServer)
+        }
+    }
+    
+    var liveKitRoomName: String? {
+        get {
+            let elements = self.components(separatedBy: "rooms/")
+            if elements.count > 1 {
+                return (elements[1].components(separatedBy: "#").first)?.components(separatedBy: "?").first
+            }
+            return nil
+        }
     }
     
     var isCallLink: Bool {
@@ -683,16 +829,14 @@ extension String {
     }
     
     func mimeTypeForPath() -> String {
-        let url = NSURL(fileURLWithPath: self)
-        let pathExtension = url.pathExtension
-
-        if let uti = UTTypeCreatePreferredIdentifierForTag(kUTTagClassFilenameExtension, pathExtension! as NSString, nil)?.takeRetainedValue() {
-            if let mimetype = UTTypeCopyPreferredTagWithClass(uti, kUTTagClassMIMEType)?.takeRetainedValue() {
-                return mimetype as String
-            }
+        let url = URL(fileURLWithPath: self)
+        if let pathExtension = url.pathExtension.isEmpty ? nil : url.pathExtension,
+           let utType = UTType(filenameExtension: pathExtension) {
+            return utType.preferredMIMEType ?? "application/octet-stream"
         }
         return "application/octet-stream"
     }
+
     
     func withURLParam(key: String, value: String) -> String {
         if self.contains("?") {
@@ -843,6 +987,80 @@ extension String {
         
         return (actualHost, port, ssl)
     }
+    
+    func byteSize() -> Int {
+        let length = self.lengthOfBytes(using: .utf8) + 360
+        return length
+    }
+    
+    var pingComponents: (String, String, String?)? {
+        get {
+            let components = self.components(separatedBy: ":")
+            if components.count > 1 {
+                let paymentHash = components[0]
+                let timestamp = components[1]
+                
+                if components.count > 2 {
+                    let tag = components[2]
+                    return (paymentHash, timestamp, tag)
+                }
+                return (paymentHash, timestamp, nil)
+            }
+            return nil
+        }
+    }
+    
+    var isBase64Encoded: Bool {
+        get {
+            if self.count % 4 != 0 {
+                return false
+            }
+            
+            if let _ = Data(base64Encoded: self) {
+                return true
+            } else {
+                return false
+            }
+        }
+    }
+    
+    func decodeJWT() -> (header: [String: Any]?, payload: [String: Any]?, signature: String?) {
+        let segments = self.split(separator: ".").map(String.init)
+        guard segments.count == 3 else {
+            print("Invalid JWT structure")
+            return (nil, nil, nil)
+        }
+
+        let header = decodeBase64Url(segments[0])
+        let payload = decodeBase64Url(segments[1])
+        let signature = segments[2] // Signature is not decoded, it's typically used for verification.
+
+        return (header, payload, signature)
+    }
+    
+    func decodeBase64Url(_ base64Url: String) -> [String: Any]? {
+        var base64 = base64Url
+            .replacingOccurrences(of: "-", with: "+")
+            .replacingOccurrences(of: "_", with: "/")
+        
+        // Add padding if necessary
+        while base64.count % 4 != 0 {
+            base64 += "="
+        }
+
+        guard let data = Data(base64Encoded: base64) else {
+            print("Failed to decode Base64Url string")
+            return nil
+        }
+
+        do {
+            let json = try JSONSerialization.jsonObject(with: data, options: [])
+            return json as? [String: Any]
+        } catch {
+            print("Failed to parse JSON: \(error)")
+            return nil
+        }
+    }
 }
 
 extension Character {
@@ -981,5 +1199,36 @@ extension String {
     
     func isNotEmptyField(with placeHolder: String) -> Bool {
         return !isEmpty && self != placeHolder
+    }
+    
+    func parseContactInfoString() -> (String, String, String)? {
+        let components = self.split(separator: "_").map({ String($0) })
+        return (components.count >= 3) ? (components[0], components[1], components[2]) : nil
+    }
+    
+    func toMessageInnerContent() -> MessageInnerContent? {
+        return MessageInnerContent(JSONString: self)
+    }
+    
+    func toArray() throws -> [Any] {
+        guard let stringData = data(using: .utf16, allowLossyConversion: false) else { return [] }
+        guard let array = try JSONSerialization.jsonObject(with: stringData, options: .mutableContainers) as? [Any] else {
+             throw JSONError.notArray
+        }
+
+        return array
+    }
+
+    func toDictionary() throws -> [String: Any] {
+        guard let binData = data(using: .utf16, allowLossyConversion: false) else { return [:] }
+        guard let json = try JSONSerialization.jsonObject(with: binData, options: .allowFragments) as? [String: Any] else {
+            throw JSONError.notNSDictionary
+        }
+
+        return json
+    }
+
+    func urlEncode() -> String? {
+        return addingPercentEncoding(withAllowedCharacters: .allowedURLCharacterSet)
     }
 }

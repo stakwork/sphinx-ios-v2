@@ -68,16 +68,10 @@ extension NewChatViewController : PinnedMessageViewDelegate, PinMessageDelegate 
         guard let chat = self.chat else {
             return
         }
-        
-        API.sharedInstance.pinChatMessage(
-            messageUUID: (pin ? message.uuid : "_"),
-            chatId: chat.id,
-            callback: { pinnedMessageUUID in
-                self.chat?.pinnedMessageUUID = pinnedMessageUUID
-                self.chat?.saveChat()
-                
+        chatViewModel.shouldTogglePinState(message: message, pin: pin, callback: { success in
+            if success {
                 self.configurePinnedMessageView()
-                
+
                 let vc = PinMessageViewController.instantiate(
                     messageId: message.id,
                     delegate: self,
@@ -85,11 +79,14 @@ extension NewChatViewController : PinnedMessageViewDelegate, PinMessageDelegate 
                 )
                 vc.modalPresentationStyle = .overCurrentContext
                 self.present(vc, animated: false)
-            },
-            errorCallback: {
-                AlertHelper.showAlert(title: "generic.error.title".localized, message: "generic.error.message".localized)
+            } else {
+                AlertHelper.showAlert(
+                    title: "generic.error.title".localized,
+                    message: "generic.error.message".localized
+                )
             }
-        )
+        })
+
     }
     
     func showMessagePinnedInfo(messageId: Int) {

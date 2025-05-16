@@ -23,14 +23,6 @@ extension NewUserSignupFormViewController {
         
         present(viewController, animated: true)
     }
-    
-    @IBAction func connectToTestServer(){
-        print("connecting to test server")
-        let som = SphinxOnionManager.sharedInstance
-        som.vc = self
-        som.shouldPostUpdates = true
-        //som.chooseImportOrGenerateSeed()
-    }
 }
     
 
@@ -46,83 +38,87 @@ extension NewUserSignupFormViewController {
 
         view.endEditing(true)
         
-        if(code.isV2InviteCode){
-            SphinxOnionManager.sharedInstance.vc = self
-            SphinxOnionManager.sharedInstance.chooseImportOrGenerateSeed(completion: {success in
-                if(success),
-                  let code = self.codeTextField.text{
-                    self.handleInviteCodeV2SignUp(code: code)
+        continueWith(code: code)
+    }
+    
+    func continueWith(code: String) {
+        if (code.isInviteCode && !isProcessingCode) {
+            isProcessingCode = true
+            
+            som.vc = self
+            som.showMnemonicToUser(completion: { [weak self] success in
+                guard let self = self else {
+                    return
                 }
-                else{
-                    AlertHelper.showAlert(title: "Error redeeming invite", message: "Please try again or ask for another invite.")
+                
+                if (success), let code = self.codeTextField.text {
+                    self.handleInviteCode(code: code)
+                } else {
+                    self.showInviteError()
                 }
-                SphinxOnionManager.sharedInstance.vc = nil
+                self.som.vc = nil
             })
         }
-        else{
-            startSignup(with: code)
-        }
     }
     
-    func handleInviteCodeV2SignUp(code:String){
-        if let mnemonic = UserData.sharedInstance.getMnemonic(),
-           SphinxOnionManager.sharedInstance.createMyAccount(mnemonic: mnemonic){
-            SphinxOnionManager.sharedInstance.redeemInvite(inviteCode: code)
+    func handleInviteCode(code: String) {
+        guard let mnemonic = UserData.sharedInstance.getMnemonic() else {
+            showInviteError()
+            return
+        }
+        
+        let inviteCode = som.redeemInvite(inviteCode: code)
+        
+        guard let inviteCode = inviteCode else {
+            showInviteError()
+            return
+        }
+        
+        if som.createMyAccount(
+            mnemonic: mnemonic,
+            inviteCode: inviteCode
+        ) {
             setupWatchdogTimer()
-            listenForSelfContactRegistration()//get callbacks ready for sign up
-            self.signup_v2_with_test_server()
+            listenForSelfContactRegistration()
+            getConfigData()
         }
     }
     
-    
-    func startSignup(with code: String) {
-        if code.isRelayQRCode {
-            let (ip, password) = code.getIPAndPassword()
-            
-            if let ip = ip, let password = password {
-                signupWithRelayQRCode(ip: ip, password: password)
+    func getConfigData() {
+        if !SphinxOnionManager.sharedInstance.isProductionEnv {
+            presentConnectingLoadingScreenVC()
+            return
+        }
+        
+        API.sharedInstance.getServerConfig() { success in
+            if success {
+                self.presentConnectingLoadingScreenVC()
+            } else {
+                self.navigationController?.popViewController(animated: true)
+                AlertHelper.showAlert(title: "Error", message: "Unable to get config from Sphinx V2 Server")
             }
-        } else if code.isInviteCode {
-            signup(withConnectionCode: code)
-        }
-        else if code.isSwarmConnectCode{
-            signUp(withSwarmConnectCode: code)
-        }
-        else if code.isSwarmClaimCode{
-            signUp(withSwarmClaimCode: code)
-        }
-        else if code.isSwarmGlyphAction{
-            signUp(withSwarmMqttCode: code)
-        }
-        else {
-            preconditionFailure("Attempted to start sign up without a valid code.")
         }
     }
     
+    func showInviteError() {
+        isProcessingCode = false
+        
+        AlertHelper.showAlert(
+            title: "Error redeeming invite",
+            message: "Please try again or ask for another invite."
+        )
+    }
     
     func isCodeValid(_ code: String) -> Bool {
-        return code.isRelayQRCode || code.isInviteCode || code.isSwarmClaimCode || code.isSwarmConnectCode || code.isSwarmGlyphAction
+        return code.isInviteCode
     }
-    //sphinx.chat://?action=invite&d=EMxQifHIEKUzDUkq3TrkIbvIoFMxaKClqy_Fd5YVUNQCJKxcE6wCunsStg4GYXEZUuNxl23z5d6QJHd3q51wgzkCrczX9XTRfWJ1QbRH9HSTkW544zwVg7qZNmB7NcqZw5IHWiAACF0ABDM0LjIyOS41Mi4yMDA=
     
     func validateCode(_ code: String) -> Bool {
         if isCodeValid(code) {
             return true
         } else {
-            var errorMessage: String
-            
-            if code.isRestoreKeysString {
-                errorMessage = "signup.invalid-code.restore-key".localized
-            } else if code.isPubKey {
-                errorMessage = "invalid.code.pubkey".localized
-            } else if code.isLNDInvoice {
-                errorMessage = "invalid.code.invoice".localized
-            } else {
-                errorMessage = "invalid.code".localized
-            }
-            
             newMessageBubbleHelper.showGenericMessageView(
-                text: errorMessage,
+                text: "invalid.code".localized,
                 delay: 6,
                 textColor: UIColor.white,
                 backColor: UIColor.Sphinx.BadgeRed,
@@ -133,25 +129,15 @@ extension NewUserSignupFormViewController {
         }
     }
     
-    
-    func signupWithRelayQRCode(ip: String, password: String) {
-        presentConnectingLoadingScreenVC()
-        
-        let invite = SignupHelper.getSupportContact(includePubKey: false)
-        SignupHelper.saveInviterInfo(invite: invite)
-        
-        connectToNode(ip: ip, password: password)
-    }
-    
-    
     func handleSignupConnectionError(message: String) {
-        // Pop the "Connecting" VC
         navigationController?.popViewController(animated: true)
 
         SignupHelper.resetInviteInfo()
 
         codeTextField.text = ""
         newMessageBubbleHelper.showGenericMessageView(text: message)
+        
+        isProcessingCode = false
     }
 }
 
@@ -170,59 +156,59 @@ extension NewUserSignupFormViewController: QRCodeScannerDelegate {
 
 extension NewUserSignupFormViewController : NSFetchedResultsControllerDelegate{
     
-    
     private func listenForSelfContactRegistration() {
-            let managedContext = CoreDataManager.sharedManager.persistentContainer.viewContext
+        let managedContext = CoreDataManager.sharedManager.persistentContainer.viewContext
 
-            let fetchRequest: NSFetchRequest<UserContact> = UserContact.fetchRequest()
-            // Assuming 'isOwner' and 'routeHint' are attributes of your UserContact entity
-            fetchRequest.predicate = NSPredicate(format: "isOwner == true AND routeHint != nil")
-            fetchRequest.sortDescriptors = [NSSortDescriptor(key: "index", ascending: true)]
-            
-            selfContactFetchListener = NSFetchedResultsController(fetchRequest: fetchRequest,
-                                                                  managedObjectContext: managedContext,
-                                                                  sectionNameKeyPath: nil,
-                                                                  cacheName: nil)
-            selfContactFetchListener?.delegate = self
+        let fetchRequest: NSFetchRequest<UserContact> = UserContact.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "isOwner == true AND routeHint != nil")
+        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "index", ascending: true)]
+        
+        selfContactFetchListener = NSFetchedResultsController(
+            fetchRequest: fetchRequest,
+            managedObjectContext: managedContext,
+            sectionNameKeyPath: nil,
+            cacheName: nil
+        )
+        
+        selfContactFetchListener?.delegate = self
 
-            do {
-                try selfContactFetchListener?.performFetch()
-                // Check if we already have the desired data
-                if let _ = selfContactFetchListener?.fetchedObjects?.first {
-                    watchdogTimer?.invalidate()
-                    watchdogTimer = nil
-                    finalizeSignup()
-                    self.selfContactFetchListener = nil
-                }
-            } catch let error as NSError {
-                watchdogTimer?.invalidate()
-                self.selfContactFetchListener = nil
-                print("Could not fetch. \(error), \(error.userInfo)")
-            }
+        do {
+            try selfContactFetchListener?.performFetch()
+        } catch _ as NSError {
+            watchdogTimer?.invalidate()
+            selfContactFetchListener = nil
         }
+    }
     
-    func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
-            // Called when the content of the fetchedResultsController changes.
-            if let _ = controller.fetchedObjects?.first {
-                finalizeSignup()
-                self.selfContactFetchListener = nil
+    func controller(
+        _ controller: NSFetchedResultsController<NSFetchRequestResult>,
+        didChangeContentWith snapshot: NSDiffableDataSourceSnapshotReference
+    ) {
+        if let resultController = controller as? NSFetchedResultsController<NSManagedObject>,
+           let firstSection = resultController.sections?.first {
+            
+            if let _ = firstSection.objects?.first {
+                selfContactFetchListener = nil
+                
                 watchdogTimer?.invalidate()
                 watchdogTimer = nil
+                
+                finalizeSignup()
             }
         }
+    }
     
     private func setupWatchdogTimer() {
-            watchdogTimer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: false) { [weak self] _ in
-                guard let self = self else { return }
-                
-                // Check if the fetch result is still nil
-                if self.selfContactFetchListener?.fetchedObjects?.first == nil {
-                    // Perform the fallback action
-                    DispatchQueue.main.async {
-                        self.navigationController?.popViewController(animated: true)
-                        AlertHelper.showAlert(title: "Error", message: "Unable to connect to Sphinx V2 Test Server")
-                    }
+        watchdogTimer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: false) { [weak self] _ in
+            guard let self = self else { return }
+            
+            if self.selfContactFetchListener?.fetchedObjects?.first == nil {
+                DispatchQueue.main.async {
+                    self.navigationController?.popViewController(animated: true)
                 }
+            } else {
+                self.finalizeSignup()
             }
         }
+    }
 }

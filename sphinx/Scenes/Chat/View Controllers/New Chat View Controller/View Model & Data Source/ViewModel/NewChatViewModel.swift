@@ -38,12 +38,6 @@ class NewChatViewModel {
         self.chatDataSource = dataSource
     }
     
-    ///Notifications
-    func askForNotificationPermissions() {
-        let appDelegate = UIApplication.shared.delegate as! AppDelegate
-        appDelegate.registerForPushNotifications()
-    }
-    
     ///Volume
     func toggleVolume(
         completion: @escaping (Chat?) -> ()
@@ -54,12 +48,8 @@ class NewChatViewModel {
         
         let currentMode = chat.isMuted()
         
-        API.sharedInstance.toggleChatSound(chatId: chat.id, muted: !currentMode, callback: { chatJson in
-            if let updatedChat = Chat.insertChat(chat: chatJson) {
-                completion(updatedChat)
-            }
-        }, errorCallback: {
-            completion(nil)
+        SphinxOnionManager.sharedInstance.toggleChatSound(chatId: chat.id, muted: !currentMode, completion: { chat in
+            completion(chat)
         })
     }
     
@@ -85,13 +75,7 @@ class NewChatViewModel {
     
     func getChatBadges(){
         if let chat = chat, let tribeInfo = chat.tribeInfo {
-            API.sharedInstance.getAssetsByID(
-                assetIDs: tribeInfo.badgeIds,
-                callback: { results in
-                    self.availableBadges = results
-                },
-                errorCallback: {}
-            )
+            //@Tom do we plan on doing this in V2?
         }
     }
     

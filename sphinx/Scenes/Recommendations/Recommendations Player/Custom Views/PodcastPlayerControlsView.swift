@@ -164,16 +164,22 @@ extension PodcastPlayerControlsView : CustomBoostViewDelegate{
         if let episode = podcast.getCurrentEpisode() {
             
             let itemID = episode.itemID
-            let currentTime = podcast.getCurrentEpisode()?.currentTime ?? 0
-                
+            
+            guard let boostMessage = feedBoostHelper.getBoostMessage(itemID: itemID, amount: amount) else {
+                return
+            }
+            
             let podcastAnimationVC = PodcastAnimationViewController.instantiate(amount: amount)
             WindowsManager.sharedInstance.showConveringWindowWith(rootVC: podcastAnimationVC)
             podcastAnimationVC.showBoostAnimation()
-                
-            feedBoostHelper.sendBoostOnRecommendation(
-                itemID: itemID,
-                currentTime:currentTime,
-                amount: amount
+            
+            feedBoostHelper.processPayment(itemID: itemID, amount: amount)
+            
+            feedBoostHelper.sendBoostMessage(
+                message: boostMessage,
+                episodeId: itemID,
+                amount: amount,
+                completion: { _, _ in }
             )
         }
     }

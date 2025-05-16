@@ -32,13 +32,15 @@ struct ThreadTableCellState {
     
     lazy var threadMessagesState : ThreadLayoutState.ThreadMessages? = {
         let originalMessageDate = (originalMessage.date ?? Date())
-        let timestamp = "\(originalMessageDate.getStringDate(format: "MMMM dd")) at \(originalMessageDate.getStringDate(format: "hh:mm a"))"
+        let timestamp = "\(originalMessageDate.getStringDate(format: "MMMM dd", showToday: true)), \(originalMessageDate.getStringDate(format: "hh:mm a"))"
         let messageContent = originalMessage.bubbleMessageContentString ?? ""
         
         let orignalMessageThred = ThreadLayoutState.ThreadOriginalMessage(
-            text: messageContent.replacingHightlightedChars,
+            text: messageContent.removingMarkdownDelimiters,
             linkMatches: messageContent.stringLinks + messageContent.pubKeyMatches + messageContent.mentionMatches,
             highlightedMatches: messageContent.highlightedMatches,
+            boldMatches: messageContent.boldMatches,
+            linkMarkdownMatches: messageContent.linkMarkdownMatches,
             timestamp: timestamp,
             senderInfo: getSenderInfo(message: originalMessage)
         )
@@ -86,6 +88,7 @@ struct ThreadTableCellState {
             isGif: message.isGif(),
             isPdf: message.isPDF(),
             isGiphy: message.isGiphy(),
+            isImageLink: false,
             isPaid: false,
             isPaymentTemplate: false
         )
@@ -149,13 +152,13 @@ extension ThreadTableCellState {
         if isSent {
             senderInfo = (
                 owner.getColor(),
-                owner.nickname ?? "Unknow",
-                owner.avatarUrl
+                message.senderAlias ?? owner.nickname ?? "Unknow",
+                message.senderPic ?? owner.avatarUrl
             )
         } else {
             senderInfo = (
                 ChatHelper.getSenderColorFor(message: message),
-                message.senderAlias ?? "Unknow",
+                message.senderAlias ?? "Unknown",
                 message.senderPic
             )
         }

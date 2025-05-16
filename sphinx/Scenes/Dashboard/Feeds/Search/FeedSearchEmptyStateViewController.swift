@@ -63,7 +63,7 @@ extension FeedSearchEmptyStateViewController {
         default:
             searchPlaceholderImage.isHidden = true
             
-            searchPlaceholder2.text = "feed.search-other-source".localized
+            searchPlaceholder2.text = "feed.search-other-source-rss".localized
             searchPlaceholder3.text = ""
             break
         }

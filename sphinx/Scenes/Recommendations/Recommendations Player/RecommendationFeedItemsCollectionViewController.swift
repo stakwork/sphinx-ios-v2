@@ -338,17 +338,22 @@ extension RecommendationFeedItemsCollectionViewController {
 
 
 extension RecommendationFeedItemsCollectionViewController : FeedItemRowDelegate {
+    func shouldToggleChapters(episode: PodcastEpisode, cell: UITableViewCell) {}
+    
+    func shouldToggleChapters(video: Video, cell: UITableViewCell) {}
+    
+    func shouldPlayChapterWith(index: Int, on episode: PodcastEpisode) {}
+    
     func shouldShowDescription(episode: PodcastEpisode, cell:UITableViewCell) {
-        if let feed = episode.feed{
+        if let feedID = episode.feedID, let contentFeed = ContentFeed.getFeedById(feedId: feedID) {
+            let feed = PodcastFeed.convertFrom(contentFeed: contentFeed)
             let vc = ItemDescriptionViewController.instantiate(podcast: feed, episode: episode, index: 0)
             vc.delegate = self
             self.navigationController?.pushViewController(vc, animated: true)
         }
     }
     
-    func shouldShowDescription(video: Video) {
-        
-    }
+    func shouldShowDescription(video: Video) {}
     
     func shouldShare(video: Video) {
         shareTapped(video: video)
@@ -386,7 +391,7 @@ extension RecommendationFeedItemsCollectionViewController : PodcastEpisodesDSDel
     func downloadTapped(_ indexPath: IndexPath, episode: PodcastEpisode) {}
     func deleteTapped(_ indexPath: IndexPath, episode: PodcastEpisode) {}
     func shouldToggleTopView(show: Bool) {}
-    func showEpisodeDetails(episode: PodcastEpisode,indexPath:IndexPath) {}
+    func showEpisodeDetails(episode: PodcastEpisode, indexPath: IndexPath) {}
 }
 
 

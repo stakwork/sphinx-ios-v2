@@ -7,7 +7,7 @@
 
 import UIKit
 
-protocol VideoFeedEpisodePlayerCollectionViewControllerDelegate{
+protocol VideoFeedEpisodePlayerCollectionViewControllerDelegate: class {
     func requestPlay()
 }
 
@@ -25,7 +25,7 @@ class VideoFeedEpisodePlayerCollectionViewController: UICollectionViewController
     let downloadService : DownloadService = DownloadService.sharedInstance
     
     weak var boostDelegate: CustomBoostDelegate?
-    var delegate:VideoFeedEpisodePlayerCollectionViewControllerDelegate? = nil
+    weak var delegate:VideoFeedEpisodePlayerCollectionViewControllerDelegate? = nil
 }
 
 
@@ -381,6 +381,12 @@ extension VideoFeedEpisodePlayerCollectionViewController {
 
 //MARK: Unified View Delegate
 extension VideoFeedEpisodePlayerCollectionViewController: FeedItemRowDelegate, PodcastEpisodesDSDelegate {
+    func shouldToggleChapters(episode: PodcastEpisode, cell: UITableViewCell) {}
+    
+    func shouldToggleChapters(video: Video, cell: UITableViewCell) {}
+    
+    func shouldPlayChapterWith(index: Int, on episode: PodcastEpisode) {}
+    
     func didDismiss() {}
     
     func shouldShowDescription(episode: PodcastEpisode,cell:UITableViewCell) {}
@@ -535,8 +541,11 @@ extension VideoFeedEpisodePlayerCollectionViewController:ItemDescriptionViewCont
         var snapshot = dataSource.snapshot()
         if let _ = videoFeedEpisodes.firstIndex(of: video) {
             let itemIdentifier = DataSourceItem.videoFeedEpisode(video)
-            snapshot.reloadItems([itemIdentifier])
-            dataSource.apply(snapshot, animatingDifferences: true)
+            
+            if snapshot.itemIdentifiers.contains(itemIdentifier) {
+                snapshot.reloadItems([itemIdentifier])
+                dataSource.apply(snapshot, animatingDifferences: true)
+            }
         }
     }
     

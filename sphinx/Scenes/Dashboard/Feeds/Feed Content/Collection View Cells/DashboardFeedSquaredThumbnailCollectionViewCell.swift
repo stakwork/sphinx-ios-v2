@@ -52,6 +52,24 @@ extension DashboardFeedSquaredThumbnailCollectionViewCell {
     var placeholderImage: UIImage? {
         UIImage(named: item.placeholderImageName ?? "podcastPlaceholder")
     }
+
+    func configure(withRecentItem item: ContentFeedItem, feed: ContentFeed) {
+        titleLabel.text = item.title
+        subtitleLabel.text = feed.title
+        
+        if let imageURL = item.imageURL ?? feed.imageURL {
+            thumbnailImageView.sd_setImage(
+                with: imageURL,
+                placeholderImage: UIImage(named: "podcast-placeholder"),
+                options: [.highPriority],
+                progress: nil
+            )
+        } else {
+            thumbnailImageView.image = UIImage(named: "podcast-placeholder")
+        }
+        
+        dateLabel.text = item.datePublished?.publishDateString ?? "Date unavailable"
+    }
 }
     
 
@@ -219,7 +237,7 @@ extension VideoFeed: DashboardFeedSquaredThumbnailCollectionViewItem {
 extension PodcastEpisode: DashboardFeedSquaredThumbnailCollectionViewItem {
     
     var imageToShow: String? {
-        imageURLPath ?? feed?.imageURLPath
+        imageURLPath ?? feedImageURLPath
     }
     
     var placeholderImageName: String? {

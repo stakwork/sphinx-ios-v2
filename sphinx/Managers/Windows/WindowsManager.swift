@@ -38,7 +38,7 @@ class WindowsManager {
     var coveringWindow : PassthroughWindow?
     
     func getCoveringWindow() -> UIWindow? {
-        guard let windowFrame = UIApplication.shared.windows.first?.frame else {
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene, let windowFrame = windowScene.windows.first?.frame else {
             return nil
         }
         

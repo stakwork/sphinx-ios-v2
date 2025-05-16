@@ -23,7 +23,7 @@ class ChatMentionAutocompleteTableViewCell: UITableViewCell {
         UINib(nibName: "ChatMentionAutocompleteTableViewCell", bundle: nil)
     }()
     
-    var delegate : ChatMentionAutocompleteDelegate? = nil
+    weak var delegate : ChatMentionAutocompleteDelegate? = nil
     var alias : String? = nil
     var type : MentionOrMacroType = .mention
     var action: (()->())? = nil

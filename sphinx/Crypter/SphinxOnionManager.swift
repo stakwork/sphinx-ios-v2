@@ -13,301 +13,756 @@ import CoreData
 
 
 class SphinxOnionManager : NSObject {
-    class var sharedInstance : SphinxOnionManager {
-        struct Static {
-            static let instance = SphinxOnionManager()
+    
+    private static var _sharedInstance: SphinxOnionManager? = nil
+
+    static var sharedInstance: SphinxOnionManager {
+        if _sharedInstance == nil {
+            _sharedInstance = SphinxOnionManager()
         }
-        return Static.instance
+        return _sharedInstance!
+    }
+
+    static func resetSharedInstance() {
+        _sharedInstance = nil
     }
     
-    var pendingContact : UserContact? = nil
-    var currentServer : Server? = nil
-    var stashedContactInfo:String?=nil
-    var stashedInitialTribe:String?=nil
-    var stashedInviteCode:String?=nil
-    var stashedInviterAlias:String?=nil
-    var watchdogTimer:Timer?=nil
-    var nextMessageBlockWasReceived = false
+    let walletBalanceService = WalletBalanceService()
     
+    ///Invite
+    var pendingInviteLookupByTag : [String:String] = [String:String]()
+    var stashedContactInfo: String? = nil
+    var stashedInitialTribe: String? = nil
+    var stashedInviteCode: String? = nil
+    var stashedInviterAlias: String? = nil
+    
+    var watchdogTimer: Timer? = nil
+    var reconnectionTimer: Timer? = nil
+    var sendTimeoutTimers: [String: Timer] = [:]
+    var paymentTimeoutTimers: [String: Timer] = [:]
+    
+    var chatsFetchParams : ChatsFetchParams? = nil
     var messageFetchParams : MessageFetchParams? = nil
-    var newMessageSyncedListener: NSFetchedResultsController<TransactionMessage>?
-    var isV2InitialSetup:Bool=false
-    let newMessageBubbleHelper = NewMessageBubbleHelper()
-    var shouldPostUpdates : Bool = false
-    let tribeMinEscrowSats = 3
     
-    var vc: UIViewController! = nil{
-        didSet{
-            print("vc set:\(vc)")
+    var deletedTribesPubKeys: [String] {
+        get {
+            return UserDefaults.Keys.deletedTribesPubKeys.get(defaultValue: [])
+        }
+        set {
+            UserDefaults.Keys.deletedTribesPubKeys.set(newValue)
         }
     }
-    var mqtt: CocoaMQTT! = nil
-    let managedContext = CoreDataManager.sharedManager.persistentContainer.viewContext
     
-    var stashedCallback : (([String:AnyObject]) ->())? = nil
+    var isV2InitialSetup: Bool = false
+    var isV2Restore: Bool = false
+    var shouldPostUpdates : Bool = false
+    
+    let tribeMinSats: Int = 3000
+    let kRoutingOffset = 3
+    
+    var restoredContactInfoTracker = [String]()
+    
+    var vc: UIViewController! = nil
+    var mqtt: CocoaMQTT! = nil
+    
     var isConnected : Bool = false{
         didSet{
             NotificationCenter.default.post(name: .onConnectionStatusChanged, object: nil)
         }
     }
+    
+    var delayedRRObjects: [Int: RunReturn] = [:]
+    var delayedRRTimers: [Int: Timer] = [:]
+    var pingsMap: [String: String] = [:]
+    var readyForPing = false
+    
     var msgTotalCounts : MsgTotalCounts? = nil
+    
     typealias RestoreProgressCallback = (Int) -> Void
-    var messageRestoreCallback : RestoreProgressCallback? = nil
-    var contactRestoreCallback : RestoreProgressCallback? = nil
-    var hideRestoreCallback: (() -> ())? = nil
-    public static let kMessageBatchSize = 50
+    var messageRestoreCallback: RestoreProgressCallback? = nil
+    var contactRestoreCallback: RestoreProgressCallback? = nil
+    var hideRestoreCallback: ((Bool) -> ())? = nil
+    var errorCallback: (() -> ())? = nil
+    var tribeMembersCallback: (([String: AnyObject]) -> ())? = nil
+    var paymentsHistoryCallback: ((String?, String?) -> ())? = nil
+    var inviteCreationCallback: ((String?) -> ())? = nil
+    
+    ///Session Pin to decrypt mnemonic and seed
+    var appSessionPin : String? = nil
+    var defaultInitialSignupPin : String = "111111"
+    
+    public static let kContactsBatchSize = 100
+    public static let kMessageBatchSize = 100
 
+    public static let kCompleteStatus = "COMPLETE"
+    public static let kFailedStatus = "FAILED"
+    
+    let newMessageBubbleHelper = NewMessageBubbleHelper()
+    let managedContext = CoreDataManager.sharedManager.persistentContainer.viewContext
+    let backgroundContext = CoreDataManager.sharedManager.getBackgroundContext()
+    
+    var notificationsResultsController: NSFetchedResultsController<NotificationData>!
+    
+    let kHostedTorrentBaseURL = "https://files.bt2.bard.garden:21433"
+    let kAllTorrentLookupBaseURL = "https://tome.bt2.bard.garden:21433"
+    var btAuthDict : NSDictionary? = nil
+    
+    let kSharedGroupName = "group.com.gl.sphinx.v2"
+    let kChildIndexesStorageKey = "childIndexesStorageKey"
+    
+    var onionState: [String: [UInt8]] = [:]
+    
+    var mutationKeys: [String] {
+        get {
+            if let onionState: String = UserDefaults.Keys.onionState.get() {
+                return onionState.components(separatedBy: ",")
+            }
+            return []
+        }
+        set {
+            UserDefaults.Keys.onionState.set(
+                newValue.joined(separator: ",")
+            )
+        }
+    }
     
     //MARK: Hardcoded Values!
-    var server_IP = "34.229.52.200"
-    let server_PORT = 1883
-    let defaultTribePubkey = "032dbf9a31140897e52b66743f2c78e93cff2d5ecf6fe4814327d8912243106ff6"
-    let network = "regtest"
-    
-    
-    func getAccountSeed(mnemonic:String?=nil)->String?{
-        do{
-            if let mnemonic = mnemonic{ // if we have a non-default value, use it
-                let seed = try mnemonicToSeed(mnemonic: mnemonic)
-                return seed
+    var serverIP: String {
+        get {
+            if let storedServerIP: String = UserDefaults.Keys.serverIP.get() {
+                return storedServerIP
             }
-            else if let mnemonic = UserData.sharedInstance.getMnemonic(){ //pull from memory if argument is nil
-                let seed = try mnemonicToSeed(mnemonic: mnemonic)
-                return seed
+            return kTestServerIP
+        }
+    }
+    
+    var serverPORT: UInt16 {
+        get {
+            if let storedServerPORT: Int = UserDefaults.Keys.serverPORT.get() {
+                return UInt16(storedServerPORT)
             }
-            else{
+            return kTestServerPort
+        }
+    }
+    
+    var storedRouteUrl: String? = nil
+    var routerUrl: String {
+        get {
+            if let storedRouteUrl = storedRouteUrl {
+                return storedRouteUrl
+            }
+            if let routerUrl: String = UserDefaults.Keys.routerUrl.get() {
+                storedRouteUrl = routerUrl
+                return routerUrl
+            }
+            storedRouteUrl = kTestRouterUrl
+            return kTestRouterUrl
+        }
+        set {
+            UserDefaults.Keys.routerUrl.set(newValue)
+        }
+    }
+    
+    var routerPubkey: String? {
+        get {
+            if let routerPubkey: String = UserDefaults.Keys.routerPubkey.get() {
+                return routerPubkey
+            }
+            return nil
+        }
+    }
+    
+    var tribesServerIP: String {
+        get {
+            if let storedTribesServer: String = UserDefaults.Keys.tribesServerIP.get() {
+                return storedTribesServer
+            }
+            return kTestV2TribesServer
+        }
+    }
+    
+    var defaultTribePubkey: String? {
+        get {
+            if let defaultTribePublicKey: String = UserDefaults.Keys.defaultTribePublicKey.get() {
+                if defaultTribePublicKey.isEmpty {
+                    return nil
+                }
+                return defaultTribePublicKey
+            }
+            return kTestDefaultTribe
+        }
+    }
+    
+    var pushKey: String? {
+        get {
+            if let value = KeychainManager.sharedInstance.getValueFor(
+                composedKey: KeychainManager.KeychainKeys.pushKey.rawValue
+            ), !value.isEmpty
+            {
+                return value
+            }
+            let newValue = Nonce(length: 32).hexString
+            if KeychainManager.sharedInstance.save(
+                value: newValue,
+                forComposedKey: KeychainManager.KeychainKeys.pushKey.rawValue
+            ) {
+                return newValue
+            }
+            return nil
+        }
+    }
+    
+    var isProductionEnvStored: Bool? = nil
+    var isProductionEnv : Bool {
+        get {
+            if let isProductionEnvStored = isProductionEnvStored {
+                return isProductionEnvStored
+            }
+            let isProductionEnv = UserDefaults.Keys.isProductionEnv.get(defaultValue: false)
+            self.isProductionEnvStored = isProductionEnv
+            return isProductionEnv
+        }
+        set {
+            UserDefaults.Keys.isProductionEnv.set(newValue)
+        }
+    }
+    
+    var network: String {
+        get {
+            return isProductionEnv ? "bitcoin" : "regtest"
+        }
+    }
+    
+    let kTestServerIP = "75.101.247.127"
+    let kTestServerPort: UInt16 = 1883
+    let kProdServerPort: UInt16 = 8883
+    let kTestV2TribesServer = "75.101.247.127:8801"
+    let kTestDefaultTribe = "0213ddd7df0077abe11d6ec9753679eeef9f444447b70f2980e44445b3f7959ad1"
+    let kTestRouterUrl = "mixer.router1.sphinx.chat"
+    
+    //MARK: Callback
+    ///Restore
+    var totalMsgsCountCallback: (() -> ())? = nil
+    var firstSCIDMsgsCallback: (([Msg]) -> ())? = nil
+    var onMessageRestoredCallback: (([Msg]) -> ())? = nil
+    
+    var maxMessageIndex: Int? {
+        get {
+            if let maxMessageIndex: Int = UserDefaults.Keys.maxMessageIndex.get() {
+                return maxMessageIndex
+            }
+            return TransactionMessage.getMaxIndex()
+        }
+        set {
+            UserDefaults.Keys.maxMessageIndex.set(newValue)
+        }
+    }
+    
+    ///Create tribe
+    var createTribeCallback: ((String) -> ())? = nil
+    
+    func getAccountSeed(
+        mnemonic: String? = nil
+    ) -> String? {
+        do {
+            if let mnemonic = mnemonic { // if we have a non-default value, use it
+                let seed = try sphinx.mnemonicToSeed(mnemonic: mnemonic)
+                return seed
+            } else if let mnemonic = UserData.sharedInstance.getMnemonic() { //pull from memory if argument is nil
+                let seed = try sphinx.mnemonicToSeed(mnemonic: mnemonic)
+                return seed
+            } else {
                 return nil
             }
-        }
-        catch{
+        } catch {
             print("error in getAccountSeed")
             return nil
         }
     }
     
-    func generateMnemonic()->String?{
+    func generateMnemonic() -> String? {
         var result : String? = nil
         do {
-            result = try mnemonicFromEntropy(entropy: Data.randomBytes(length: 16).hexString)
-            guard let result = result else{
+            result = try sphinx.mnemonicFromEntropy(
+                entropy: Data.randomBytes(length: 16).hexString
+            )
+            guard let result = result else {
                 return nil
             }
             UserData.sharedInstance.save(walletMnemonic: result)
-        }
-        catch let error{
+        } catch let error {
             print("error getting seed\(error)")
         }
         return result
     }
     
-    func getAccountXpub(seed:String) -> String?  {
-        do{
-            let xpub = try xpubFromSeed(seed: seed, time: getTimeWithEntropy(), network: network)
+    func getAccountXpub(seed: String) -> String?  {
+        do {
+            let xpub = try xpubFromSeed(
+                seed: seed,
+                time: getTimeWithEntropy(),
+                network: network
+            )
             return xpub
-        }
-        catch{
+        } catch {
             return nil
         }
     }
     
-    func getAccountOnlyKeysendPubkey(seed:String)->String?{
-        do{
-            let pubkey = try pubkeyFromSeed(seed: seed, idx: 0, time: getTimeWithEntropy(), network: network)
+    func getAccountOnlyKeysendPubkey(
+        seed: String
+    ) -> String? {
+        do {
+            let pubkey = try pubkeyFromSeed(
+                seed: seed,
+                idx: 0,
+                time: getTimeWithEntropy(),
+                network: network
+            )
             return pubkey
-        }
-        catch{
+        } catch {
             return nil
         }
     }
     
-    func getTimeWithEntropy()->String{
+    func getTimeWithEntropy() -> String {
         let currentTimeMilliseconds = Int(Date().timeIntervalSince1970 * 1000)
         let upperBound = 1_000
-        let randomInt = CrypterManager().generateCryptographicallySecureRandomInt(upperBound: upperBound)
+        let randomInt = generateCryptographicallySecureRandomInt(upperBound: upperBound)
         let timePlusRandom = currentTimeMilliseconds + randomInt!
         let randomString = String(describing: timePlusRandom)
         return randomString
     }
     
-    func connectToBroker(seed:String,xpub:String)->Bool{
-        do{
+    func connectToBroker(
+        seed: String,
+        xpub: String
+    ) -> Bool {
+        do {
             let now = getTimeWithEntropy()
-            let sig = try rootSignMs(seed: seed, time: now, network: network)
             
-            mqtt = CocoaMQTT(clientID: xpub,host: server_IP ,port:  UInt16(server_PORT))
+            let sig = try rootSignMs(
+                seed: seed,
+                time: now,
+                network: network
+            )
+            
+            mqtt = CocoaMQTT(
+                clientID: xpub,
+                host: serverIP,
+                port: serverPORT
+            )
+            
             mqtt.username = now
             mqtt.password = sig
+            
+            if UserDefaults.Keys.isProductionEnv.get(defaultValue: false) {
+                mqtt.enableSSL = true
+                mqtt.allowUntrustCACertificate = true
+                
+                mqtt.sslSettings = [
+                    "kCFStreamSSLPeerName": "\(serverIP)" as NSObject
+                ] as [String: NSObject]
+            }
             
             let success = mqtt.connect()
             print("mqtt.connect success:\(success)")
             return success
-        }
-        catch{
+        } catch {
             return false
         }
     }
     
-    
-    
-    
-    func disconnectMqtt(){
-        if let mqtt = self.mqtt{
+    func disconnectMqtt(
+        callback: ((Double) -> ())? = nil
+    ) {
+        if let mqtt = self.mqtt, mqtt.connState == .connected {
             mqtt.disconnect()
+        } else {
+            callback?(0.0)
         }
     }
-
-    func connectToV2Server(contactRestoreCallback: @escaping RestoreProgressCallback, messageRestoreCallback: @escaping RestoreProgressCallback,hideRestoreViewCallback: @escaping ()->()){
-        let som = self
-        guard let seed = som.getAccountSeed(),
-              let myPubkey = som.getAccountOnlyKeysendPubkey(seed: seed),
-              let my_xpub = som.getAccountXpub(seed: seed)
-        else{
-            //possibly send error message?
-            AlertHelper.showAlert(title: "Error", message: "Could not connect to server")
+    
+    func isFetchingContent() -> Bool {
+        return onMessageRestoredCallback != nil || firstSCIDMsgsCallback != nil || totalMsgsCountCallback != nil
+    }
+    
+    func reconnectToServer(
+        connectingCallback: (() -> ())? = nil,
+        contactRestoreCallback: RestoreProgressCallback? = nil,
+        messageRestoreCallback: RestoreProgressCallback? = nil,
+        hideRestoreViewCallback: ((Bool)->())? = nil,
+        errorCallback: (()->())? = nil
+    ) {
+        if let mqtt = self.mqtt, mqtt.connState == .connected && isConnected {
+            ///If already fetching content, then process is already running
+            if !isFetchingContent() {
+                self.hideRestoreCallback = hideRestoreViewCallback
+                self.getReads()
+                self.getMuteLevels()
+                self.syncNewMessages()
+            } else {
+                errorCallback?()
+            }
+            listAndUpdateContacts()
             return
         }
-        som.disconnectMqtt()
-        DelayPerformedHelper.performAfterDelay(seconds: 2.0, completion: {
-            let success = som.connectToBroker(seed:seed,xpub: my_xpub)
-            if(success == false) {
-                AlertHelper.showAlert(title: "Error", message: "Could not connect to MQTT Broker.")
-                return
-              }
-            som.mqtt.didConnectAck = {_, _ in
-                som.subscribeAndPublishMyTopics(pubkey: myPubkey, idx: 0)
-                if(som.isV2InitialSetup){
-                    //self.contactRestoreCallback(percentage: 0)
-                    som.isV2InitialSetup = false
-                    som.doInitialInviteSetup()
-                    som.performAccountRestore(
-                        contactRestoreCallback: contactRestoreCallback,
-                        messageRestoreCallback: messageRestoreCallback,
-                        hideRestoreViewCallback: hideRestoreViewCallback
-                    )
-                }
-                else{
-                    if let hideRestoreCallback = self.hideRestoreCallback{
-                        hideRestoreCallback()
-                    }
-                    som.syncMessagesSinceLastKnownIndexHeight()
-                }
-            }
-        })
+        connectToServer(
+            connectingCallback: connectingCallback,
+            contactRestoreCallback: contactRestoreCallback,
+            messageRestoreCallback: messageRestoreCallback,
+            hideRestoreViewCallback: hideRestoreViewCallback,
+            errorCallback: errorCallback
+        )
+    }
+    
+    func syncNewMessages() {
+        let maxIndex = maxMessageIndex
+        
+        startAllMsgBlockFetch(
+            startIndex: (maxIndex != nil) ? maxIndex! + 1 : 0,
+            itemsPerPage: SphinxOnionManager.kMessageBatchSize,
+            stopIndex: 0,
+            reverse: false
+        )
     }
 
-    func listContacts()->String{
-        let contacts = try! sphinx.listContacts(state: self.loadOnionStateAsData())
-        return contacts
+    func connectToServer(
+        connectingCallback: (() -> ())? = nil,
+        contactRestoreCallback: RestoreProgressCallback? = nil,
+        messageRestoreCallback: RestoreProgressCallback? = nil,
+        hideRestoreViewCallback: ((Bool)->())? = nil,
+        errorCallback: (()->())? = nil
+    ){
+        connectingCallback?()
+        
+        guard let seed = getAccountSeed(),
+              let myPubkey = getAccountOnlyKeysendPubkey(seed: seed),
+              let my_xpub = getAccountXpub(seed: seed) else
+        {
+            errorCallback?()
+            return
+        }
+        
+        self.hideRestoreCallback = hideRestoreViewCallback
+        self.contactRestoreCallback = contactRestoreCallback
+        self.messageRestoreCallback = messageRestoreCallback
+        self.errorCallback = errorCallback
+        
+        if isV2Restore {
+            contactRestoreCallback?(2)
+        }
+        
+        let success = connectToBroker(seed: seed, xpub: my_xpub)
+        
+        if (success == false) {
+            hideRestoreViewCallback?(false)
+            return
+        }
+        
+        mqtt.didConnectAck = { [weak self] _, _ in
+            guard let self = self else {
+                return
+            }
+            
+            self.endReconnectionTimer()
+            self.isConnected = true
+            
+            self.subscribeAndPublishMyTopics(pubkey: myPubkey, idx: 0)
+            
+            if self.isV2InitialSetup {
+                self.isV2InitialSetup = false
+                self.doInitialInviteSetup()
+            }
+             
+            if self.isV2Restore {
+                self.hideRestoreCallback = { _ in
+                    self.isV2Restore = false
+                    
+                    hideRestoreViewCallback?(true)
+                }
+                self.syncContactsAndMessages()
+            } else {
+                self.contactRestoreCallback = nil
+                self.messageRestoreCallback = nil
+                
+                self.getReads()
+                self.getMuteLevels()
+                self.syncNewMessages()
+            }
+        }
+        
+        mqtt.didReceiveTrust = { _, _, completionHandler in
+            completionHandler(true)
+        }
+        
+        mqtt.didDisconnect = { [weak self] _, _ in
+            self?.isConnected = false
+            self?.mqtt = nil
+            self?.startReconnectionTimer()
+        }
     }
-    func subscribeAndPublishMyTopics(pubkey:String,idx:Int){
-        do{
-            let ret = try setNetwork(network: network)
-            handleRunReturn(rr: ret)
-            let ret2 = try setBlockheight(blockheight: 0)
-            handleRunReturn(rr: ret2)
+    
+    func endReconnectionTimer() {
+        reconnectionTimer?.invalidate()
+        reconnectionTimer = nil
+    }
+    
+    func startReconnectionTimer(
+        delay: Double = 0.5
+    ) {
+        if (UIApplication.shared.delegate as? AppDelegate)?.isActive == false {
+            return
+        }
+        
+        reconnectionTimer?.invalidate()
+        
+        reconnectionTimer = Timer.scheduledTimer(
+            timeInterval: delay,
+            target: self,
+            selector: #selector(reconnectionTimerFired),
+            userInfo: nil,
+            repeats: false
+        )
+    }
+    
+    @objc func reconnectionTimerFired() {
+        if (UIApplication.shared.delegate as? AppDelegate)?.isActive == false {
+            return
+        }
+        
+        if !NetworkMonitor.shared.isConnected {
+            return
+        }
+        
+        reconnectToServer(
+            connectingCallback: nil,
+            contactRestoreCallback: self.contactRestoreCallback,
+            messageRestoreCallback: self.messageRestoreCallback,
+            hideRestoreViewCallback: self.hideRestoreCallback,
+            errorCallback: self.errorCallback
+        )
+    }
+    
+    func subscribeAndPublishMyTopics(
+        pubkey: String,
+        idx: Int,
+        inviteCode: String? = nil
+    ) {
+        do {
+            let ret = try sphinx.setNetwork(network: network)
+            let _ = handleRunReturn(rr: ret)
             
             guard let seed = getAccountSeed() else{
                 return
             }
             
-            let subtopic = try! sphinx.getSubscriptionTopic(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData())
-            
-            mqtt.didReceiveMessage = { mqtt, receivedMessage, id in
-                self.isConnected = true
-                self.processMqttMessages(message: receivedMessage)
+            mqtt.didReceiveMessage = { [weak self] mqtt, receivedMessage, id in
+                self?.isConnected = true
+                self?.processMqttMessages(message: receivedMessage)
             }
             
-            self.mqtt.subscribe([
-                (subtopic, CocoaMQTTQoS.qos1)
-            ])
+            let ret3 = try sphinx.initialSetup(
+                seed: seed,
+                uniqueTime: getTimeWithEntropy(),
+                state: loadOnionStateAsData(),
+                device: UUID().uuidString,
+                inviteCode: inviteCode
+            )
             
-            let ret3 = try initialSetup(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData())
-            handleRunReturn(rr: ret3)
+            let _ = handleRunReturn(rr: ret3)
             
-            let tribeMgmtTopic = try getTribeManagementTopic(seed: seed, uniqueTime: getTimeWithEntropy(), state: loadOnionStateAsData())
-            
+            let tribeMgmtTopic = try sphinx.getTribeManagementTopic(
+                seed: seed,
+                uniqueTime: getTimeWithEntropy(),
+                state: loadOnionStateAsData()
+            )
             
             self.mqtt.subscribe([
                 (tribeMgmtTopic, CocoaMQTTQoS.qos1)
             ])
-        }
-        catch{
-            
-        }
+        } catch {}
     }
     
-    func fetchMyAccountFromState(){
+    func fetchMyAccountFromState() {
         guard let seed = getAccountSeed() else{
             return
         }
-        do{
-            let myPubkey = try pubkeyFromSeed(seed: seed, idx: 0, time: getTimeWithEntropy(), network: network)
-            let myFullAccount = try sphinx.listContacts(state: loadOnionStateAsData())
-            print(myFullAccount)
-        }
-        catch{
-            
+        do {
+            let _ = try sphinx.pubkeyFromSeed(
+                seed: seed,
+                idx: 0,
+                time: getTimeWithEntropy(),
+                network: network
+            )
+        } catch {}
+        
+        listAndUpdateContacts()
+    }
+    
+    func listAndUpdateContacts() {
+        do {
+            let listContactsResponse = try sphinx.listContacts(state: loadOnionStateAsData())
+            saveContactsToSharedUserDefaults(contacts: listContactsResponse)
+        } catch {}
+    }
+    
+    func saveContactsToSharedUserDefaults(contacts: String) {
+        var newDictionary: [String: String] = [:]
+        
+        if let contactsJsonArray : [[String: Any]] = getContactsJsonArray(contacts: contacts) {
+            for contact in contactsJsonArray {
+                let contactJson = JSON(contact)
+                let index = contactJson["my_idx"].stringValue
+                let publicKey = contactJson["pubkey"].stringValue
+                
+                if index.isNotEmpty && publicKey.isNotEmpty {
+                    newDictionary[index] = publicKey
+                }
+            }
         }
         
+        let pubkeys: [String] = Array(newDictionary.values)
+        let contacts = UserContact.getContactsWith(pubkeys: pubkeys).compactMap({ ($0.publicKey, $0.nickname) })
+        let tribes = Chat.getChatTribesFor(ownerPubkeys: pubkeys).compactMap({ ($0.ownerPubkey, $0.name) })
+        
+        var childNameDictionary: [String: String] = [:]
+        
+        for (key, value) in newDictionary {
+            if let contact = contacts.filter({ $0.0 == value }).first {
+                childNameDictionary["contact-\(key)"] = contact.1
+                continue
+            }
+            
+            if let tribe = tribes.filter({ $0.0 == value }).first {
+                childNameDictionary["tribe-\(key)"] = tribe.1
+                continue
+            }
+        }
+        
+        if let jsonString = convertToJsonString(dictionary: childNameDictionary), let pushKey = pushKey {
+            if let encrypted = SymmetricEncryptionManager.sharedInstance.encryptString(text: jsonString, key: pushKey) {
+                let sharedUserDefaults = UserDefaults(suiteName: kSharedGroupName)
+                sharedUserDefaults?.setValue(encrypted, forKey: kChildIndexesStorageKey)
+                sharedUserDefaults?.synchronize()
+            }
+        }
     }
     
-    
-    func createMyAccount(mnemonic:String)->Bool{
-        do{
-            //1. Generate Seed -> Display to screen the mnemonic for backup???
-            guard let seed = getAccountSeed(mnemonic: mnemonic) else{
-                //possibly send error message?
-                return false
-            }
-            //2. Create the 0th pubkey
-            guard let pubkey = getAccountOnlyKeysendPubkey(seed: seed),
-                  let my_xpub = getAccountXpub(seed: seed) else{
-                  return false
-            }
-            //3. Connect to server/broker
-            let success = connectToBroker(seed:seed,xpub: my_xpub)
-            
-            //4. Subscribe to relevant topics based on OK key
-            let idx = 0
-            if success{
-                mqtt.didReceiveMessage = { mqtt, receivedMessage, id in
-                    self.isConnected = true
-                    self.processMqttMessages(message: receivedMessage)
-                }
-                
-                //subscribe to relevant topics
-                mqtt.didConnectAck = { _, _ in
-                    //self.showSuccessWithMessage("MQTT connected")
-                    print("SphinxOnionManager: MQTT Connected")
-                    print("mqtt.didConnectAck")
-                    self.subscribeAndPublishMyTopics(pubkey: pubkey, idx: idx)
-                }
-            }
-            return success
+    func convertToJsonString(dictionary: [String: String]) -> String? {
+        let jsonData  = try? JSONSerialization.data(
+            withJSONObject: dictionary,
+            options: JSONSerialization.WritingOptions(rawValue: 0)
+        )
+        
+        if let jsonData = jsonData {
+            return String(data: jsonData, encoding: .utf8)
         }
-        catch{
-            print("error connecting to mqtt broker")
+        
+        return nil
+    }
+    
+    func getContactsJsonArray(contacts: String) -> [[String: Any]]? {
+        if let jsonData = contacts.data(using: .utf8) {
+            do {
+                // Parse the JSON data into a dictionary
+                if let jsonDict = try JSONSerialization.jsonObject(
+                    with: jsonData,
+                    options: []
+                ) as? [[String: Any]] {
+                    return jsonDict
+                }
+            } catch {
+                return nil
+            }
+        }
+        return nil
+    }
+    
+    func deleteOwnerFromState() {
+        if let publicKey = UserContact.getOwner()?.publicKey {
+            SphinxOnionManager.sharedInstance.deleteContactFromState(pubkey: publicKey)
+        }
+    }
+    
+    func createMyAccount(
+        mnemonic: String,
+        inviteCode: String? = nil
+    ) -> Bool {
+        //1. Generate Seed -> Display to screen the mnemonic for backup???
+        guard let seed = getAccountSeed(mnemonic: mnemonic) else {
+            //possibly send error message?
             return false
         }
-       
+        //2. Create the 0th pubkey
+        guard let pubkey = getAccountOnlyKeysendPubkey(seed: seed), let my_xpub = getAccountXpub(seed: seed) else{
+            return false
+        }
+        //3. Connect to server/broker
+        let success = connectToBroker(seed: seed, xpub: my_xpub)
+        
+        //4. Subscribe to relevant topics based on OK key
+        let idx = 0
+        
+        if success {
+            mqtt.didReceiveMessage = { [weak self] mqtt, receivedMessage, id in
+                self?.isConnected = true
+                self?.processMqttMessages(message: receivedMessage)
+            }
+            
+            mqtt.didDisconnect = { [weak self] _, _ in
+                self?.isConnected = false
+                self?.mqtt = nil
+                self?.startReconnectionTimer()
+            }
+            
+            mqtt.didReceiveTrust = { _, _, completionHandler in
+                completionHandler(true)
+            }
+            
+            //subscribe to relevant topics
+            mqtt.didConnectAck = { [weak self] _, _ in
+                self?.isConnected = true
+                
+                self?.subscribeAndPublishMyTopics(
+                    pubkey: pubkey,
+                    idx: idx,
+                    inviteCode: inviteCode
+                )
+            }
+        }
+        return success
     }
     
-    
-    func processMqttMessages(message:CocoaMQTTMessage){
-        guard let seed = getAccountSeed() else{
+    func processMqttMessages(message: CocoaMQTTMessage) {
+        guard let seed = getAccountSeed() else {
             return
         }
-        do{
+        if !readyForPing && message.topic.contains("ping") {
+            return
+        }
+        do {
             let owner = UserContact.getOwner()
             let alias = owner?.nickname ?? ""
             let pic = owner?.avatarUrl ?? ""
-            let ret4 = try handle(topic: message.topic, payload: Data(message.payload), seed: seed, uniqueTime: getTimeWithEntropy(), state: self.loadOnionStateAsData(), myAlias: alias, myImg: pic)
-            handleRunReturn(rr: ret4)
-        }
-        catch{
             
+            let ret4 = try handle(
+                topic: message.topic,
+                payload: Data(message.payload),
+                seed: seed,
+                uniqueTime: getTimeWithEntropy(),
+                state: self.loadOnionStateAsData(),
+                myAlias: alias,
+                myImg: pic
+            )
+            
+            let _ = handleRunReturn(
+                rr: ret4,
+                topic: message.topic
+            )
+        } catch let error {
+            print(error)
         }
-        
     }
     
     func showSuccessWithMessage(_ message: String) {
@@ -321,31 +776,22 @@ class SphinxOnionManager : NSObject {
     }
 }
 
-extension SphinxOnionManager{//Sign Up UI Related:
-    func chooseImportOrGenerateSeed(completion:@escaping (Bool)->()){
-        let requestEnteredMneumonicCallback: (() -> ()) = {
-            self.importSeedPhrase()
-        }
-        
+extension SphinxOnionManager {//Sign Up UI Related:
+    func showMnemonicToUser(
+        completion:@escaping (Bool)->()
+    ){
         let generateSeedCallback: (() -> ()) = {
-            guard let mneomnic = self.generateMnemonic(),
-                  let _ = self.vc as? NewUserSignupFormViewController else{
+            guard let mnemonic = self.generateMnemonic(), let _ = self.vc as? NewUserSignupFormViewController else {
                 completion(false)
                 return
             }
-            self.showMnemonicToUser(mnemonic: mneomnic, callback: {
+            
+            self.showMnemonicToUser(mnemonic: mnemonic, callback: {
                 completion(true)
             })
         }
         
-        AlertHelper.showTwoOptionsAlert(
-            title: "profile.mnemonic-generate-or-import-title".localized,
-            message: "profile.mnemonic-generate-or-import-prompt".localized,
-            confirmButtonTitle: "profile.mnemonic-generate-prompt".localized,
-            cancelButtonTitle: "profile.mnemonic-import-prompt".localized,
-            confirm: generateSeedCallback,
-            cancel: requestEnteredMneumonicCallback
-        )
+        generateSeedCallback()
     }
     
     func importSeedPhrase(){
@@ -355,30 +801,46 @@ extension SphinxOnionManager{//Sign Up UI Related:
     }
     
     func showMnemonicToUser(mnemonic: String, callback: @escaping () -> ()) {
-        guard let vc = vc else {
+        guard let _ = vc else {
             callback()
             return
         }
-        
-        let copyAction = UIAlertAction(
-            title: "Copy",
-            style: .default,
-            handler: { _ in
-                ClipboardHelper.copyToClipboard(text: mnemonic, message: "profile.mnemonic-copied".localized)
-                callback()
-            }
-        )
         
         AlertHelper.showAlert(
             title: "profile.store-mnemonic".localized,
             message: mnemonic,
             on: vc,
-            additionAlertAction: copyAction,
+            confirmLabel: "Copy",
             completion: {
+                ClipboardHelper.copyToClipboard(text: mnemonic, message: "profile.mnemonic-copied".localized)
                 callback()
             }
         )
     }
     
+    func mapNotificationToChat(notificationUserInfo : [String: AnyObject]) -> (Chat, String)? {
+        if let encryptedChild = getEncryptedIndexFrom(notification: notificationUserInfo),
+           let chat = findChatForNotification(child: encryptedChild)
+        {
+            return (chat, encryptedChild)
+        }
+        
+        return nil
+    }
+    
+    func getEncryptedIndexFrom(
+        notification: [String: AnyObject]?
+    ) -> String? {
+        if
+            let notification = notification,
+            let aps = notification["aps"] as? [String: AnyObject],
+            let customData = aps["custom_data"] as? [String: AnyObject]
+        {
+            if let chatId = customData["child"] as? String {
+                return chatId
+            }
+        }
+        return nil
+    }
 }
 

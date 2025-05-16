@@ -24,6 +24,9 @@ class NewMessageBubbleHelper {
     var genericMessageY: CGFloat = 120.0
     
     var urlRanges = [NSRange]()
+    var bubbleLastMsgId: Int? = nil
+    
+    var messageView: UIView? = nil
     
     static let messageViewTag = -1
     static let loadingViewTag = -2
@@ -52,10 +55,6 @@ class NewMessageBubbleHelper {
         backColor: UIColor = UIColor.Sphinx.Text,
         backAlpha: CGFloat = 0.7
     ) {
-        if GroupsPinManager.sharedInstance.shouldAskForPin() {
-            return
-        }
-        
         let messageLabel = getGenericMessageLabel(text: text, textColor: textColor)
         let view = getGenericMessageBubbleView(label: messageLabel, backColor: backColor, backAlpha: backAlpha)
         view.addSubview(messageLabel)
@@ -75,10 +74,6 @@ class NewMessageBubbleHelper {
         backColor: UIColor = UIColor.Sphinx.Text,
         backAlpha: CGFloat = 0.8
     ) {
-        if GroupsPinManager.sharedInstance.shouldAskForPin() {
-            return
-        }
-        
         var label: UILabel? = nil
         
         if let text = text {
@@ -100,7 +95,7 @@ class NewMessageBubbleHelper {
         view.alpha = 0.0
         view.tag = NewMessageBubbleHelper.loadingViewTag
         
-        if let window = UIApplication.shared.windows.first {
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene, let window = windowScene.windows.first {
             window.isUserInteractionEnabled = false
             self.toggleGenericBubbleView(view: view, show: true, tag: NewMessageBubbleHelper.loadingViewTag)
         }
@@ -115,7 +110,7 @@ class NewMessageBubbleHelper {
     }
     
     func hideBubbleWith(tag: Int) {
-        if let window = UIApplication.shared.windows.first {
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene, let window = windowScene.windows.first {
             window.isUserInteractionEnabled = true
             
             for v in window.subviews {
@@ -135,7 +130,7 @@ class NewMessageBubbleHelper {
         show: Bool,
         tag: Int = NewMessageBubbleHelper.messageViewTag
     ) {
-        if let window = UIApplication.shared.windows.first {
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene, let window = windowScene.windows.first {
             if show {
                 for v in window.subviews {
                     if v.tag == tag {
@@ -247,7 +242,7 @@ class NewMessageBubbleHelper {
         onKeyWindow: Bool = true,
         isNewMessage: Bool = false
     ) {
-        if let window = UIApplication.shared.windows.first {
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene, let window = windowScene.windows.first {
             
             if let rootVC = (window.rootViewController as? RootViewController), isNewMessage {
                 if rootVC.isDashboardVC() {
@@ -259,20 +254,28 @@ class NewMessageBubbleHelper {
                 }
             }
             
+            if let messageView = messageView {
+                toggleBubbleView(view: messageView, show: false, animated: false)
+            }
+            
             let screenSize = WindowsManager.getWindowSize()
             let titleLabel = getTitleLabel(title: title, screenSize: screenSize)
             let messageLabel = getMessageLabel(text: text, screenSize: screenSize)
-            let v = getBubbleView(label: messageLabel, chatId: chatId)
+            messageView = getBubbleView(label: messageLabel, chatId: chatId)
             
-            v.addSubview(titleLabel)
-            v.addSubview(messageLabel)
+            messageView?.addSubview(titleLabel)
+            messageView?.addSubview(messageLabel)
             
-            window.addSubview(v)
-            
-            toggleBubbleView(view: v, show: true)
-            
-            DelayPerformedHelper.performAfterDelay(seconds: delay) {
-                self.toggleBubbleView(view: v, show: false)
+            if let messageView = messageView {
+                window.addSubview(messageView)
+                
+                toggleBubbleView(view: messageView, show: true)
+                
+                DelayPerformedHelper.performAfterDelay(seconds: delay) {
+                    self.toggleBubbleView(view: messageView, show: false, completion: {
+                        self.messageView = nil
+                    })
+                }
             }
         }
     }
@@ -282,6 +285,12 @@ class NewMessageBubbleHelper {
         delay: Double = 2.5,
         onKeyWindow: Bool = true
     ) {
+        if bubbleLastMsgId == message.id {
+            return
+        }
+        
+        bubbleLastMsgId = message.id
+        
         let contactsService = ContactsService.sharedInstance
         
         guard let owner = contactsService.owner else {
@@ -320,7 +329,8 @@ class NewMessageBubbleHelper {
     func toggleBubbleView(
         view: UIView,
         show: Bool,
-        animated: Bool = true
+        animated: Bool = true,
+        completion: (() -> ())? = nil
     ) {
         let windowInsets = getWindowInsets()
         
@@ -336,6 +346,7 @@ class NewMessageBubbleHelper {
                 if !show {
                     view.removeFromSuperview()
                 }
+                completion?()
             })
         }
     }

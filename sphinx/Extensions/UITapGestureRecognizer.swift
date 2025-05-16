@@ -9,14 +9,16 @@
 import UIKit
 
 extension UITapGestureRecognizer {
-    func didTapAttributedTextInLabel(_ label: UILabel, inRange targetRange: NSRange,isThreadHeader:Bool=false) -> Bool {
+    func didTapAttributedTextInLabel(
+        _ label: UILabel,
+        inRange targetRange: NSRange
+    ) -> Bool {
         guard let attributedString = label.attributedText else { return false }
         
         let layoutManager = NSLayoutManager()
         let textContainer = NSTextContainer(size: CGSize.zero)
         
         let mutableAttribString = NSMutableAttributedString(attributedString: attributedString)
-        mutableAttribString.addAttributes([NSAttributedString.Key.font: label.font], range: NSRange(location: 0, length: attributedString.length))
         let textStorage = NSTextStorage(attributedString: mutableAttribString)
 
         layoutManager.addTextContainer(textContainer)
@@ -31,11 +33,22 @@ extension UITapGestureRecognizer {
         let locationOfTouchInLabel = self.location(in: label)
         let textBoundingBox = layoutManager.usedRect(for: textContainer)
 
-        let textContainerOffset = CGPoint(x: (labelSize.width - textBoundingBox.size.width) * 0.5 - textBoundingBox.origin.x, y: (labelSize.height - textBoundingBox.size.height) * 0.5 - textBoundingBox.origin.y)
+        let textContainerOffset = CGPoint(
+            x: (labelSize.width - textBoundingBox.size.width) * 0.5 - textBoundingBox.origin.x,
+            y: (labelSize.height - textBoundingBox.size.height) * 0.5 - textBoundingBox.origin.y
+        )
 
-        let locationOfTouchInTextContainer = CGPoint(x: locationOfTouchInLabel.x - textContainerOffset.x, y: locationOfTouchInLabel.y - textContainerOffset.y)
-        let indexOfCharacter = layoutManager.characterIndex(for: locationOfTouchInTextContainer, in: textContainer, fractionOfDistanceBetweenInsertionPoints: nil)
+        let locationOfTouchInTextContainer = CGPoint(
+            x: locationOfTouchInLabel.x - textContainerOffset.x,
+            y: locationOfTouchInLabel.y - textContainerOffset.y
+        )
         
-        return isThreadHeader ? indexOfCharacter > 0 : NSLocationInRange(indexOfCharacter, targetRange)
+        let indexOfCharacter = layoutManager.characterIndex(
+            for: locationOfTouchInTextContainer,
+            in: textContainer,
+            fractionOfDistanceBetweenInsertionPoints: nil
+        )
+        
+        return NSLocationInRange(indexOfCharacter, targetRange)
     }
 }

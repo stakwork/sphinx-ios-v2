@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import ObjectMapper
 
 class HistoryViewController: UIViewController {
     
@@ -25,7 +26,9 @@ class HistoryViewController: UIViewController {
     
     var page = 1
     var didReachLimit = false
-    let itemsPerPage = 50
+    let itemsPerPage : UInt32 = 50
+    
+    var succeededPaymentHashes: [String] = []
     
     static func instantiate() -> HistoryViewController {
         let viewController = StoryboardScene.History.historyViewController.instantiate()
@@ -55,23 +58,96 @@ class HistoryViewController: UIViewController {
         historyTableView.delegate = historyDataSource
         historyTableView.dataSource = historyDataSource
         
-        //loading = true
-        loading = false
+        loading = true
+        checkResultsLimit(count: 0)
         
-        self.setNoResultsLabel(count: 0)
-        self.checkResultsLimit(count: 0)
+        SphinxOnionManager.sharedInstance.getTransactionsHistory(
+            paymentsHistoryCallback: handlePaymentHistoryCompletion,
+            itemsPerPage: itemsPerPage,
+            sinceTimestamp: UInt64(Date().timeIntervalSince1970)
+        )
+        
+    }
+    
+    func handlePaymentHistoryCompletion(
+        jsonString: String?,
+        error: String?
+    ) {
+        if let _ = error {
+            setNoResultsLabel(count: 0)
+            loading = false
+            
+            AlertHelper.showAlert(
+                title: "generic.error.title".localized,
+                message: "error.loading.transactions".localized
+            )
+            return
+        }
+        
+        var history = [PaymentTransaction]()
 
-//        API.sharedInstance.getTransactionsList(page: page, itemsPerPage: itemsPerPage, callback: { transactions in
-//            self.setNoResultsLabel(count: transactions.count)
-//            self.checkResultsLimit(count: transactions.count)
-//            self.historyDataSource.loadTransactions(transactions: transactions)
-//            self.loading = false
-//        }, errorCallback: {
-//            self.checkResultsLimit(count: 0)
-//            self.historyTableView.alpha = 0.0
-//            self.loading = false
-//            AlertHelper.showAlert(title: "generic.error.title".localized, message: "error.loading.transactions".localized)
-//        })
+        if let jsonString = jsonString,
+           let results = Mapper<PaymentTransactionFromServer>().mapArray(JSONString: jsonString) {
+            
+            succeededPaymentHashes += (results.filter({ $0.isSucceeded() })).compactMap({ $0.rhash })
+            
+            let msgIndexes = results.compactMap({ $0.msg_idx })
+            let msgPmtHashes = results.compactMap({ $0.rhash })
+            var messages = TransactionMessage.fetchTransactionMessagesForHistory()
+            let messagesMatching = TransactionMessage.fetchTransactionMessagesForHistoryWith(msgIndexes: msgIndexes, msgPmtHashes: msgPmtHashes)
+            messages.append(contentsOf: messagesMatching)
+            
+            for result in results {
+                
+                if let rHash = result.rhash, result.isFailed() && succeededPaymentHashes.contains(rHash) {
+                    continue
+                }
+                
+                if let localHistoryMessage = messages.filter({ $0.id == result.msg_idx ?? -1 }).first {
+                    let paymentTransaction = PaymentTransaction(fromTransactionMessage: localHistoryMessage, ts: result.ts)
+                    history.append(paymentTransaction)
+                    continue
+                }
+                
+                if let localHistoryMessage = messages.filter({ $0.paymentHash == result.rhash ?? "" }).first {
+                    let paymentTransaction = PaymentTransaction(fromTransactionMessage: localHistoryMessage, ts: result.ts)
+                    history.append(paymentTransaction)
+                    continue
+                }
+                
+                let amountThreshold = 5000 // msats
+                let timestampThreshold: TimeInterval = 10 // seconds
+                
+                if let localHistoryMessage = messages.filter({
+                    guard let messageAmountSats = $0.amount?.intValue,
+                          let messageTimestamp = $0.date?.timeIntervalSince1970 else {
+                        return false
+                    }
+                    let messageAmountMsats = messageAmountSats * 1000
+                    let resultAmountMsats = result.amt_msat ?? 0
+                    let resultTimestamp = TimeInterval(result.ts ?? 0) / 1000
+                    
+                    return resultAmountMsats > amountThreshold &&
+                           resultAmountMsats == messageAmountMsats &&
+                           abs(resultTimestamp - messageTimestamp) <= timestampThreshold
+                }).first {
+                    let paymentTransaction = PaymentTransaction(fromTransactionMessage: localHistoryMessage, ts: result.ts)
+                    history.append(paymentTransaction)
+                    continue
+                }
+                
+                let newHistory = PaymentTransaction(fromFetchedParams: result)
+                history.append(newHistory)
+            }
+        }
+        
+        history = history.filter({ ($0.amount ?? 0) >= 1 })
+        history = history.sorted { $0.getDate() > $1.getDate() }
+        
+        setNoResultsLabel(count: history.count)
+        checkResultsLimit(count: history.count)
+        historyDataSource.loadTransactions(transactions: history)
+        loading = false
     }
     
     func setNoResultsLabel(count: Int) {
@@ -94,11 +170,16 @@ extension HistoryViewController : HistoryDataSourceDelegate {
             return
         }
         
-        page = page + 1
+        guard let oldestTransaction = historyDataSource.transactions.last else {
+            return
+        }
         
-        API.sharedInstance.getTransactionsList(page: page, itemsPerPage: itemsPerPage, callback: { transactions in
-            self.checkResultsLimit(count: transactions.count)
-            self.historyDataSource.addMoreTransactions(transactions: transactions)
-        }, errorCallback: { })
+        let oldestTimestamp = UInt64(oldestTransaction.getDate().timeIntervalSince1970)
+        
+        SphinxOnionManager.sharedInstance.getTransactionsHistory(
+            paymentsHistoryCallback: handlePaymentHistoryCompletion,
+            itemsPerPage: itemsPerPage,
+            sinceTimestamp: oldestTimestamp
+        )
     }
 }

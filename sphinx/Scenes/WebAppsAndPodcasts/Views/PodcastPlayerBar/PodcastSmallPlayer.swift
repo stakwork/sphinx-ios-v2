@@ -95,6 +95,20 @@ class PodcastSmallPlayer: UIView {
         isHidden = false
     }
     
+    func configureForBitTorrent(
+        itemID: String,
+        feed:PodcastFeed,
+        delegate: PodcastPlayerVCDelegate,
+        andKey playerDelegateKey: String
+    ){
+        self.podcast = feed
+        self.delegate = delegate
+        podcastPlayerController.addDelegate(
+            self,
+            withKey: playerDelegateKey
+        )
+    }
+    
     func runAnimation() {
         let darkMode = traitCollection.userInterfaceStyle == .dark
         let pauseAnimation = Animation.named(darkMode ? "pause_animation" : "pause_animation_light")

@@ -46,7 +46,10 @@ extension NewChatTableDataSource {
         }
         if (itemsCount > self.messagesArray.count || isNewSearch) {
             ///Process messages if loading more items or doing a new search
-            self.messagesArray = TransactionMessage.getAllMessagesFor(chat: chat, limit: itemsCount).reversed()
+            self.messagesArray = TransactionMessage.getAllMessagesFor(chat: chat, limit: itemsCount)
+                .filter({ !$0.isApprovedRequest() && !$0.isDeclinedRequest() })
+                .reversed()
+            
             self.processMessages(messages: self.messagesArray)
             self.isLastSearchPage = self.messagesArray.count < itemsCount
         }
@@ -164,9 +167,14 @@ extension NewChatTableDataSource {
     func reloadAllVisibleRows() {
         let tableCellStates = getTableCellStatesForVisibleRows()
         
-        var snapshot = self.dataSource.snapshot()
-        snapshot.reloadItems(tableCellStates)
-        self.dataSource.apply(snapshot, animatingDifferences: false)
+        self.dataSourceQueue.async {
+            var snapshot = self.dataSource.snapshot()
+            snapshot.reloadItems(tableCellStates)
+            
+            DispatchQueue.main.async {
+                self.dataSource.apply(snapshot, animatingDifferences: false)
+            }
+        }
     }
     
     func shouldNavigateOnSearchResultsWith(

@@ -11,7 +11,7 @@
 "39P-Xw-u5x.text" = "Address *";
 
 
-"vHf-rK-nEW.text" = "Hint ng Ruta";
+"vHf-rK-nEW.text" = "Hint ng Ruta *";
 
 
 /* Class = "UILabel"; text = "Nickname *"; ObjectID = "7eV-VN-bp2"; */
@@ -36,3 +36,7 @@
 
 /* Class = "UILabel"; text = "SAVE TO CONTACTS"; ObjectID = "o1h-CK-PTE"; */
 "o1h-CK-PTE.text" = "I-SAVE SA MGA CONTACT";
+
+"akb-VK-ehF.text" = "Pahiwatig ng Ruta";
+
+"rtm-YI-j8R.text" = "Alisin ang Contact";

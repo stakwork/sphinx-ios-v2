@@ -19,22 +19,25 @@ final class MainCoordinator: NSObject {
     }
     
     func presentSignUpScreen() {
-        switch(SignupHelper.step) {
-        case SignupHelper.SignupStep.Start.rawValue:
-            presentInitialWelcomeViewController()
-        case SignupHelper.SignupStep.IPAndTokenSet.rawValue:
-            presentInviteWelcomeViewController()
-        case SignupHelper.SignupStep.InviterContactCreated.rawValue:
-            presentSetPinViewController()
-        case SignupHelper.SignupStep.PINSet.rawValue:
-            presentNewUserGreetingViewController()
-        case SignupHelper.SignupStep.PersonalInfoSet.rawValue:
-            presentSphinxReadyViewController()
-        case SignupHelper.SignupStep.SignupComplete.rawValue:
-            presentInitialDrawer()
-        default:
-            presentInitialWelcomeViewController()
-        }
+//        switch(SignupHelper.step) {
+//        case SignupHelper.SignupStep.Start.rawValue:
+//            presentInitialWelcomeViewController()
+//        case SignupHelper.SignupStep.OwnerCreated.rawValue:
+//            presentInviteWelcomeViewController()
+//        case SignupHelper.SignupStep.InviterContactCreated.rawValue:
+//            presentSetPinViewController()
+//        case SignupHelper.SignupStep.PINSet.rawValue:
+//            presentNewUserGreetingViewController()
+//        case SignupHelper.SignupStep.PersonalInfoSet.rawValue:
+//            presentSphinxReadyViewController()
+//        case SignupHelper.SignupStep.SignupComplete.rawValue:
+//            presentInitialDrawer()
+//        default:
+//            presentInitialWelcomeViewController()
+//        }
+        
+        UserData.sharedInstance.clearData()
+        presentInitialWelcomeViewController()
     }
     
     func presentInitialWelcomeViewController() {
@@ -87,10 +90,6 @@ final class MainCoordinator: NSObject {
         let leftViewController = LeftMenuViewController.instantiate()
         let mainViewController = DashboardRootViewController.instantiate(leftMenuDelegate: leftViewController)
         let navigationController = UINavigationController(rootViewController: mainViewController)
-        
-        UserData.sharedInstance.saveNewNodeOnKeychain()
-        
-        runBackgroundProcesses()
 
         drawerController = KYDrawerController(drawerDirection: .left, drawerWidth: 270.0)
         drawerController.delegate = leftViewController
@@ -102,15 +101,6 @@ final class MainCoordinator: NSObject {
         drawerController.setDrawerState(.closed, animated: false)
         
         rootViewController.switchToViewController(drawerController)
-    }
-    
-    func runBackgroundProcesses() {
-        DispatchQueue.global().async {
-            CoreDataManager.sharedManager.deleteExpiredInvites()
-            
-            let (_, _) = EncryptionManager.sharedInstance.getOrCreateKeys()
-            AttachmentsManager.sharedInstance.runAuthentication()
-        }
     }
 }
 

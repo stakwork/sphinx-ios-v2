@@ -16,6 +16,10 @@ import BackgroundTasks
 import AVFAudio
 import SDWebImageSVGCoder
 import PushKit
+import CoreData
+import Bugsnag
+//import BugsnagPerformance
+
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -26,7 +30,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var notificationUserInfo : [String: AnyObject]? = nil
     var backgroundSessionCompletionHandler: (() -> Void)?
     
-    let onionConnector = SphinxOnionConnector.sharedInstance
     let actionsManager = ActionsManager.sharedInstance
     let feedsManager = FeedsManager.sharedInstance
     let storageManager = StorageManager.sharedManager
@@ -35,13 +38,26 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     let newMessageBubbleHelper = NewMessageBubbleHelper()
     let chatListViewModel = ChatListViewModel()
     
-    var activatedFromBackground = false
+    let som = SphinxOnionManager.sharedInstance
+    
+    var isActive = false
+    
+    public enum BuildType: Int {
+        case Sideload
+        case Testflight
+        case AppStore
+    }
+
+    static var orientationLock = UIInterfaceOrientationMask.portrait
 
     //Lifecycle events
     func application(
         _ application: UIApplication,
         supportedInterfaceOrientationsFor window: UIWindow?
     ) -> UIInterfaceOrientationMask {
+        if AppDelegate.orientationLock != .portrait {
+            return AppDelegate.orientationLock
+        }
         
         if UIDevice.current.isIpad {
             return .allButUpsideDown
@@ -59,23 +75,29 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
         
-        activatedFromBackground = false
+        isActive = true
         
         if #available(iOS 15.0, *) {
             UITableView.appearance().sectionHeaderTopPadding = CGFloat(0)
         }
         
         try? AVAudioSession.sharedInstance().setCategory(.playback)
+                
+        //        registerAppRefresh()
+        //        configureStoreKit()
+        //        registerForVoIP()
         
         setAppConfiguration()
-        registerAppRefresh()
         configureGiphy()
+        configureBugsnag()
         configureNotificationCenter()
-        configureStoreKit()
         configureSVGRendering()
-        connectTor()
         connectMQTT()
-        registerForVoIP()
+        
+        StorageManager.sharedManager.deleteOldMedia()
+        NetworkMonitor.shared.startMonitoring()
+        ColorsManager.sharedInstance.storeColorsInMemory()
+        SphinxOnionManager.sharedInstance.storeOnionStateInMemory()
         
         setInitialVC()
 
@@ -94,23 +116,26 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(
         _ application: UIApplication,
         continue userActivity: NSUserActivity,
-        restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {
-            guard userActivity.activityType == NSUserActivityTypeBrowsingWeb,
-                    let url = userActivity.webpageURL,
-                    let _ = URLComponents(url: url, resolvingAgainstBaseURL: true) else
-            {
-                return false
-            }
-            
-            handleUrl(url)
-             
-            return true
+        restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void
+    ) -> Bool {
+        guard userActivity.activityType == NSUserActivityTypeBrowsingWeb,
+                let url = userActivity.webpageURL,
+                let _ = URLComponents(url: url, resolvingAgainstBaseURL: true) else
+        {
+            return false
+        }
+        
+        handleUrl(url)
+         
+        return true
     }
     
     func handleUrl(_ url: URL) {
         if DeepLinksHandlerHelper.storeLinkQueryFrom(url: url) {
             if let currentVC = getCurrentVC() {
-                if let currentVC = currentVC as? DashboardRootViewController {
+                if let currentVC = currentVC as? InitialWelcomeViewController {
+                    currentVC.handleLinkQueries()
+                } else if let currentVC = currentVC as? DashboardRootViewController {
                     if let presentedVC = currentVC.navigationController?.presentedViewController {
                         presentedVC.dismiss(animated: true) {
                             currentVC.handleLinkQueries()
@@ -139,6 +164,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func applicationDidEnterBackground(
         _ application: UIApplication
     ) {
+        isActive = false
         saveCurrentStyle()
         setBadge(application: application)
         
@@ -150,51 +176,62 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         CoreDataManager.sharedManager.saveContext()
         
-        scheduleAppRefresh()
+        SDImageCache.shared.clearMemory()
+        SDWebImageManager.shared.cancelAll()
+        URLSession.shared.invalidateAndCancel()
+        
+//        scheduleAppRefresh()
+        
+        NetworkMonitor.shared.stopMonitoring()
+        som.disconnectMqtt()
+    }
+    
+    func applicationDidReceiveMemoryWarning(_ application: UIApplication) {
+        SDImageCache.shared.clearMemory()
+        SDWebImageManager.shared.cancelAll()
     }
 
     func applicationWillEnterForeground(
         _ application: UIApplication
     ) {
-        activatedFromBackground = true
+        isActive = true
         notificationUserInfo = nil
 
         if !UserData.sharedInstance.isUserLogged() {
             return
         }
         
+        Chat.processTimezoneChanges()
         presentPINIfNeeded()
         
         feedsManager.restoreContentFeedStatusInBackground()
         podcastPlayerController.finishAndSaveContentConsumed()
         
-        SphinxOnionManager.sharedInstance.connectToV2Server(contactRestoreCallback: {_ in }, messageRestoreCallback: {_ in }, hideRestoreViewCallback: {})
+        getDashboardVC()?.reconnectToServer()
     }
     
     func applicationDidBecomeActive(
         _ application: UIApplication
     ) {
+        isActive = true
         reloadAppIfStyleChanged()
         
         if !UserData.sharedInstance.isUserLogged() {
             return
         }
         
-        SphinxSocketManager.sharedInstance.connectWebsocket(forceConnect: true)
         handlePushAndFetchData()
     }
 
     func handlePushAndFetchData() {
-        if
-            let chatId = getChatIdFrom(notification: notificationUserInfo),
-            let chat = Chat.getChatWith(id: chatId)
-        {
-            reloadMessages() {
-                self.goTo(chat: chat)
-            }
-        } else if activatedFromBackground {
-            reloadContactsAndMessages()
+        guard let notificationUserInfo = notificationUserInfo else {
+            return
         }
+        if let chat = SphinxOnionManager.sharedInstance.mapNotificationToChat(notificationUserInfo: notificationUserInfo)?.0 {
+            goTo(chat: chat)
+        }
+        
+        self.notificationUserInfo = nil
     }
     
     func applicationWillTerminate(
@@ -202,10 +239,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     ) {
         setBadge(application: application)
 
-        SKPaymentQueue.default().remove(StoreKitService.shared)
+//        SKPaymentQueue.default().remove(StoreKitService.shared)
 
         podcastPlayerController.finishAndSaveContentConsumed()
         CoreDataManager.sharedManager.saveContext()
+        
+        NetworkMonitor.shared.stopMonitoring()
+        som.disconnectMqtt()
     }
     
     ///On app launch
@@ -215,11 +255,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         saveCurrentStyle()
     }
     
-    func registerAppRefresh() {
-        BGTaskScheduler.shared.register(forTaskWithIdentifier: "com.gl.sphinx.refresh", using: nil, launchHandler: { task in
-            self.handleAppRefresh(task: task)
-        })
-    }
+//    func registerAppRefresh() {
+//        BGTaskScheduler.shared.register(forTaskWithIdentifier: "com.gl.sphinx.refresh", using: nil, launchHandler: { task in
+//            self.handleAppRefresh(task: task)
+//        })
+//    }
     
     func configureSVGRendering(){
         let SVGCoder = SDImageSVGCoder.shared
@@ -230,6 +270,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func configureGiphy() {
         if let GIPHY_API_KEY = Bundle.main.object(forInfoDictionaryKey: "GIPHY_API_KEY") as? String {
             Giphy.configure(apiKey: GIPHY_API_KEY)
+        }
+    }
+    
+    func configureBugsnag() {
+        Bugsnag.start()
+//        BugsnagPerformance.start()
+        
+        if let ownerName = UserContact.getOwner()?.nickname {
+            Bugsnag.setUser(nil, withEmail: nil, andName: ownerName)
         }
     }
     
@@ -251,22 +300,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
     
     func connectMQTT() {
-        if let phoneSignerSetup: Bool = UserDefaults.Keys.setupPhoneSigner.get(),
-            phoneSignerSetup,
+        if let phoneSignerSetup: Bool = UserDefaults.Keys.setupPhoneSigner.get(), phoneSignerSetup,
            let network : String = UserDefaults.Keys.phoneSignerNetwork.get(),
            let host : String = UserDefaults.Keys.phoneSignerHost.get(),
            let relay : String = UserDefaults.Keys.phoneSignerRelay.get(){
             let _ = CrypterManager.sharedInstance.performWalletFinalization(network: network, host: host, relay: relay)
         }
-    }
-    
-    func connectTor() {
-        if !SignupHelper.isLogged() { return }
-
-        if !onionConnector.usingTor() {
-            return
-        }
-        onionConnector.startTor(delegate: self)
     }
     
     //Initial VC
@@ -275,20 +314,38 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         if isUserLogged {
             syncDeviceId()
-            getRelayKeys()
             feedsManager.restoreContentFeedStatusInBackground()
         }
 
-        takeUserToInitialVC(isUserLogged: isUserLogged)
+        takeUserToInitialVC(isUserLogged: UserData.sharedInstance.isSignupCompleted())
         presentPINIfNeeded()
+    }
+    
+    func updateDefaultTribe() {
+        if !SphinxOnionManager.sharedInstance.isProductionEnv {
+            return
+        }
+        
+        if !UserData.sharedInstance.isUserLogged() {
+            return
+        }
+        
+        API.sharedInstance.updateDefaultTribe()
     }
 
     func presentPINIfNeeded() {
         if GroupsPinManager.sharedInstance.shouldAskForPin() {
             let pinVC = PinCodeViewController.instantiate()
             pinVC.loggingCompletion = {
+                
+                self.updateDefaultTribe()
+                
                 if let currentVC = self.getCurrentVC() {
                     let _ = DeepLinksHandlerHelper.joinJitsiCall(vc: currentVC, forceJoin: true)
+                    
+                    if let currentVC = currentVC as? DashboardRootViewController {
+                        currentVC.connectToServer()
+                    }
                 }
             }
             WindowsManager.sharedInstance.showConveringWindowWith(rootVC: pinVC)
@@ -300,7 +357,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     ) {
         let rootViewController = StoryboardScene.Root.initialScene.instantiate()
         let mainCoordinator = MainCoordinator(rootViewController: rootViewController)
-
+        
         if let window = window {
             window.rootViewController = rootViewController
             window.makeKeyAndVisible()
@@ -311,13 +368,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         } else {
             window?.setDarkStyle()
             mainCoordinator.presentSignUpScreen()
-        }
-    }
-    
-    func getRelayKeys() {
-        if UserData.sharedInstance.isUserLogged() {
-            UserData.sharedInstance.getAndSaveTransportKey(forceGet: true)
-            UserData.sharedInstance.getOrCreateHMACKey(forceGet: true)
         }
     }
     
@@ -338,38 +388,58 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
     
     func handleAcceptedCall(
-        callLink:String,
+        callLink: String,
         audioOnly: Bool
     ){
         VideoCallManager.sharedInstance.startVideoCall(link: callLink, audioOnly: audioOnly)
     }
     
-    //Background App refresh
-    func handleAppRefresh(task: BGTask) {
-        scheduleAppRefresh()
-        
-        chatListViewModel.loadFriends { _ in
-            self.chatListViewModel.syncMessages(
-                progressCallback: { _ in },
-                completion: { (_, _) in
-                    task.setTaskCompleted(success: true)
-                },
-                errorCompletion: {
-                    task.setTaskCompleted(success: true)
-                }
-            )
-        }
-    }
-    
-    func scheduleAppRefresh() {
-        let request = BGAppRefreshTaskRequest(identifier: "com.gl.sphinx.refresh")
-        request.earliestBeginDate = Date(timeIntervalSinceNow: 15 * 60)
-        do {
-            try BGTaskScheduler.shared.submit(request)
-        } catch {
-            print("Could not schedule app refresh \(error)")
-        }
-    }
+//    func handleAppRefresh(task: BGTask) {
+//        scheduleAppRefresh()
+//        
+//        task.expirationHandler = {
+//            task.setTaskCompleted(success: false)
+//        }
+//        
+//        if isActive || !UserData.sharedInstance.isUserLogged() {
+//            task.setTaskCompleted(success: false)
+//            return
+//        }
+//        
+//        var didEndFetch = false
+//        
+//        DispatchQueue.main.asyncAfter(deadline: .now() + 20) {
+//            guard !didEndFetch else {
+//                return
+//            }
+//            didEndFetch = true
+//            task.setTaskCompleted(success: false)
+//        }
+//        
+//        som.reconnectToServer(hideRestoreViewCallback: {
+//            guard !didEndFetch else {
+//                return
+//            }
+//            didEndFetch = true
+//            task.setTaskCompleted(success: true)
+//        }, errorCallback: {
+//            guard !didEndFetch else {
+//                return
+//            }
+//            didEndFetch = true
+//            task.setTaskCompleted(success: false)
+//        })
+//    }
+//    
+//    func scheduleAppRefresh() {
+//        let request = BGAppRefreshTaskRequest(identifier: "com.gl.sphinx.refresh")
+//        request.earliestBeginDate = Date(timeIntervalSinceNow: 15 * 60)
+//        do {
+//            try BGTaskScheduler.shared.submit(request)
+//        } catch {
+//            print("Could not schedule app refresh \(error)")
+//        }
+//    }
 
     //App stylre
     func saveCurrentStyle() {
@@ -384,8 +454,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 if style != UIScreen.main.traitCollection.userInterfaceStyle {
                     style = UIScreen.main.traitCollection.userInterfaceStyle
 
-                    let isUserLogged = UserData.sharedInstance.isUserLogged()
-                    takeUserToInitialVC(isUserLogged: isUserLogged)
+                    takeUserToInitialVC(isUserLogged: UserData.sharedInstance.isSignupCompleted())
                 }
                 return
             }
@@ -403,7 +472,21 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func getCurrentVC() -> UIViewController? {
         let rootVC = window?.rootViewController
 
-        if let rootVController = rootVC as? RootViewController, let currentVC = rootVController.getLastCenterViewController() {
+        if let rootVController = rootVC as? RootViewController {
+            if let currentVC = rootVController.getLastCenterViewController() {
+                return currentVC
+            }
+            if let currentVC = rootVController.currentViewController as? UINavigationController {
+                return currentVC.viewControllers.last
+            }
+        }
+        return nil
+    }
+    
+    func getDashboardVC() -> DashboardRootViewController? {
+        let rootVC = window?.rootViewController
+
+        if let rootVController = rootVC as? RootViewController, let currentVC = rootVController.getDashboardViewController() {
             return currentVC
         }
         return nil
@@ -414,36 +497,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         if let roowVController = window?.rootViewController as? RootViewController, let leftMenuVC = roowVController.getLeftMenuVC() {
             leftMenuVC.goToSupport()
         }
-    }
-
-    //Content fetch
-    func reloadContactsAndMessages() {
-        chatListViewModel.loadFriends() { [weak self] restoring in
-            guard let self = self else { return }
-            
-            self.chatListViewModel.syncMessages(
-                progressCallback: { _ in },
-                completion: { (_,_) in }
-            )
-        }
-    }
-    
-    func reloadMessages(
-        completion: @escaping () -> ()
-    ) {
-        let dashboardVC = getCurrentVC() as? DashboardRootViewController
-        dashboardVC?.forceShowLoadingWheel()
-        
-        chatListViewModel.syncMessages(
-            progressCallback: { _ in },
-            completion: { (_,_) in
-                completion()
-                dashboardVC?.forceHideLoadingWheel()
-            },
-            errorCompletion: {
-                dashboardVC?.forceHideLoadingWheel()
-            }
-        )
     }
 
     //Notifications bagde
@@ -461,20 +514,34 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         didReceiveRemoteNotification userInfo: [AnyHashable : Any],
         fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
     ) {
-        if application.applicationState == .background {
-            self.chatListViewModel.syncMessages(
-                onPushReceived: true,
-                progressCallback: { _ in },
-                completion: { (_, _) in
-                    completionHandler(.newData)
-                },
-                errorCompletion: {
-                    completionHandler(.noData)
-                }
-            )
-        } else {
+        if isActive || !UserData.sharedInstance.isUserLogged() {
+            completionHandler(.noData)
+            return
+        }
+        
+        var didEndFetch = false
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 20) {
+            guard !didEndFetch else {
+                return
+            }
+            didEndFetch = true
             completionHandler(.noData)
         }
+        
+        som.reconnectToServer(hideRestoreViewCallback: { _ in
+            guard !didEndFetch else {
+                return
+            }
+            didEndFetch = true
+            completionHandler(.newData)
+        }, errorCallback: {
+            guard !didEndFetch else {
+                return
+            }
+            didEndFetch = true
+            completionHandler(.noData)
+        })
     }
 
     func userNotificationCenter(
@@ -494,6 +561,7 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
     ) {
         let tokenParts = deviceToken.map { data in String(format: "%02.2hhx", data) }
         let token = tokenParts.joined()
+        
         UserContact.updateDeviceId(deviceId: token)
     }
 
@@ -560,26 +628,6 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
     }
 }
 
-extension AppDelegate : SphinxOnionConnectorDelegate {
-    func onionConnecting() {
-        newMessageBubbleHelper.showLoadingWheel(text: "establishing.tor.circuit".localized)
-    }
-    
-    func onionConnectionFinished() {
-        newMessageBubbleHelper.hideLoadingWheel()
-        
-        SphinxSocketManager.sharedInstance.reconnectSocketOnTor()
-        reloadContactsAndMessages()
-    }
-
-    func onionConnectionFailed() {
-        newMessageBubbleHelper.hideLoadingWheel()
-        newMessageBubbleHelper.showGenericMessageView(text: "tor.connection.failed".localized)
-        
-//        NotificationCenter.default.post(name: .onConnectionStatusChanged, object: nil)
-    }
-}
-
 extension AppDelegate : PKPushRegistryDelegate{
     func pushRegistry(_ registry: PKPushRegistry, didUpdate pushCredentials: PKPushCredentials, for type: PKPushType) {
         if type == PKPushType.voIP {
@@ -590,32 +638,32 @@ extension AppDelegate : PKPushRegistryDelegate{
     }
     
     func pushRegistry(_ registry: PKPushRegistry, didReceiveIncomingPushWith payload: PKPushPayload, for type: PKPushType, completion: @escaping () -> Void) {
-        if let dict = payload.dictionaryPayload as? [String:Any],
-           let aps = dict["aps"] as? [String:Any],
-           let contents = aps["alert"] as? String,
-           let pushMessage = VoIPPushMessage.voipMessage(jsonString: contents),
-           let pushBody = pushMessage.body as? VoIPPushMessageBody {
-           
-            if #available(iOS 14.0, *) {
-                let (result, link) = EncryptionManager.sharedInstance.decryptMessage(message: pushBody.linkURL)
-                pushBody.linkURL = link
-                
-                let manager = JitsiIncomingCallManager.sharedInstance
-                manager.currentJitsiURL = (result == true) ? link : pushBody.linkURL
-                manager.hasVideo = pushBody.isVideoCall()
-                
-                self.handleIncomingCall(callerName: pushBody.callerName)
-            }
-            completion()
-        } else {
-            completion()
-        }
+//        if let dict = payload.dictionaryPayload as? [String:Any],
+//           let aps = dict["aps"] as? [String:Any],
+//           let contents = aps["alert"] as? String,
+//           let pushMessage = VoIPPushMessage.voipMessage(jsonString: contents),
+//           let pushBody = pushMessage.body as? VoIPPushMessageBody {
+//            
+//            if #available(iOS 14.0, *) {
+//                //                let (result, link) = EncryptionManager.sharedInstance.decryptMessage(message: pushBody.linkURL)
+//                //                pushBody.linkURL = link
+//                //                
+//                //                let manager = JitsiIncomingCallManager.sharedInstance
+//                //                manager.currentJitsiURL = (result == true) ? link : pushBody.linkURL
+//                //                manager.hasVideo = pushBody.isVideoCall()
+//                //                
+//                //                self.handleIncomingCall(callerName: pushBody.callerName)
+//            }
+//            completion()
+//        } else {
+//            completion()
+//        }
+        
+        completion()
     }
     
     func pushRegistry(_ registry: PKPushRegistry, didInvalidatePushTokenFor type: PKPushType) {
         print("invalidated token")
     }
 }
-
-
 

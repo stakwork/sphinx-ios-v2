@@ -44,14 +44,11 @@ class PodcastSatsView: UIView {
         self.podcast = podcast
         
         if podcast.destinationsArray.isEmpty {
-            alpha = 0.5
-            
-            setSliderValue(value: 0)
-            amountSlider.isUserInteractionEnabled = false
-            titleLabel.text = "sats.stream.disabled".localized
-            
+            self.isHidden = true
             return
         }
+        
+        self.isHidden = false
         
         if let storedAmount = podcast.satsPerMinute {
             setSliderValue(value: storedAmount)

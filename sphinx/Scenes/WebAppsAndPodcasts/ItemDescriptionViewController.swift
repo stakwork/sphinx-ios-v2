@@ -9,7 +9,7 @@
 import Foundation
 import UIKit
 
-protocol ItemDescriptionViewControllerDelegate{
+protocol ItemDescriptionViewControllerDelegate: class {
     func shouldDismissAndPlayVideo(video:Video)
     func shouldDismissAndPlayVideo(episodeAsVideo:PodcastEpisode)
     func didDismissDescriptionView(index:Int)
@@ -37,11 +37,14 @@ class ItemDescriptionViewController : UIViewController{
     var video:Video!
     
     var isExpanded : Bool = false
-    var delegate : ItemDescriptionViewControllerDelegate? = nil
+    weak var delegate : ItemDescriptionViewControllerDelegate? = nil
     
     let kHeaderCellHeight: CGFloat = 276.0
+    let kHeaderCellHeightDiff: CGFloat = 160.0
     let kDescriptionCellCollapsedHeight: CGFloat = 150.0
     let kHorizontalMargins: CGFloat = 32.0
+    let kChapterHeight: CGFloat = 40
+    let kChapterTitleHeight: CGFloat = 30
     
     override func viewDidLoad() {
         downloadService.setDelegate(
@@ -180,12 +183,14 @@ extension ItemDescriptionViewController : UITableViewDelegate, UITableViewDataSo
             if let episode = episode {
                 cell.configureView(
                     descriptionText: (episode.episodeDescription ?? "No description for this episode").nonHtmlRawString,
-                    isExpanded: self.isExpanded
+                    isExpanded: self.isExpanded,
+                    chapters: self.episode.chapters ?? []
                 )
             } else if let video = video {
                 cell.configureView(
                     descriptionText: (video.videoDescription ?? "No description for this episode").nonHtmlRawString,
-                    isExpanded: self.isExpanded
+                    isExpanded: self.isExpanded,
+                    chapters: []
                 )
             }
         } else if let cell = cell as? ItemDescriptionImageTableViewCell {
@@ -216,9 +221,17 @@ extension ItemDescriptionViewController : UITableViewDelegate, UITableViewDataSo
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         if (indexPath.row == 0) {
-            return kHeaderCellHeight
-        } else if(indexPath.row == 1){
+            let font = UIFont(name: "Roboto-Bold", size: 28.0)!
+            let title = episode?.title ?? video?.title ?? ""
+            
+            return UILabel.getLabelSize(
+                width: UIScreen.main.bounds.width - kHorizontalMargins,
+                text: title,
+                font: font
+            ).height + kHeaderCellHeightDiff
+        } else if (indexPath.row == 1) {
             let description = episode?.episodeDescription ?? video?.videoDescription ?? ""
+            let chaptersHeight = CGFloat((episode?.chapters?.count ?? 0) * Int(kChapterHeight)) + kChapterTitleHeight
             
             if isExpanded {
                 let font = UIFont(name: "Roboto-Regular", size: 14.0)!
@@ -227,10 +240,10 @@ extension ItemDescriptionViewController : UITableViewDelegate, UITableViewDataSo
                     width: UIScreen.main.bounds.width - kHorizontalMargins,
                     text: description.nonHtmlRawString,
                     font: font
-                ).height + kHorizontalMargins
+                ).height + kHorizontalMargins + chaptersHeight
                 
             } else {
-                return kDescriptionCellCollapsedHeight
+                return kDescriptionCellCollapsedHeight + chaptersHeight
             }
         } else {
             return UIScreen.main.bounds.width - 32.0
@@ -313,7 +326,7 @@ extension ItemDescriptionViewController : UITableViewDelegate, UITableViewDataSo
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: {
                 self.delegate?.shouldDismissAndPlayVideo(video: video)
             })
-        } else if let episode = episode, episode.isYoutubeVideo && episode.feed?.feedID == "Recommendations-Feed" {
+        } else if let episode = episode, episode.isYoutubeVideo && episode.feedID == "Recommendations-Feed" {
             self.navigationController?.popViewController(animated: true)
             
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: {
@@ -376,6 +389,8 @@ extension ItemDescriptionViewController: PodcastEpisodesDSDelegate {
     func shouldToggleTopView(show: Bool) {}
     
     func showEpisodeDetails(episode: PodcastEpisode, indexPath: IndexPath) {}
+    
+    func shouldPlayChapterWith(index: Int, on episode: PodcastEpisode) {}
 }
 
 

@@ -77,10 +77,16 @@ extension NewChatTableDataSource : AudioPlayerHelperDelegate {
                     )
                 )
                 
-                DispatchQueue.main.async {
+                dataSourceQueue.async {
                     var snapshot = self.dataSource.snapshot()
-                    snapshot.reloadItems([tableCellState.1])
-                    self.dataSource.apply(snapshot, animatingDifferences: false)
+                
+                    if snapshot.itemIdentifiers.contains(tableCellState.1) {
+                        snapshot.reloadItems([tableCellState.1])
+                        
+                        DispatchQueue.main.async {
+                            self.dataSource.apply(snapshot, animatingDifferences: false)
+                        }
+                    }
                 }
             }
         }
@@ -198,10 +204,16 @@ extension NewChatTableDataSource : PlayerDelegate {
                     )
                 )
 
-                DispatchQueue.main.async {
+                dataSourceQueue.async {
                     var snapshot = self.dataSource.snapshot()
-                    snapshot.reloadItems([tableCellState.1])
-                    self.dataSource.apply(snapshot, animatingDifferences: false)
+                
+                    if snapshot.itemIdentifiers.contains(tableCellState.1) {
+                        snapshot.reloadItems([tableCellState.1])
+                        
+                        DispatchQueue.main.async {
+                            self.dataSource.apply(snapshot, animatingDifferences: false)
+                        }
+                    }
                 }
             }
         }

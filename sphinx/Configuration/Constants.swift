@@ -16,14 +16,16 @@ public enum MessagesSize: Int {
 
 class Constants {
     
+    public static var kMaxPinTimeoutValue : Int = 25
+    
     public static var kMargin: CGFloat = 16.0
     public static var kMarginForAllThreads: CGFloat = 48.0
     public static var kChatTableContentInset: CGFloat = 16.0
     
     //Fonts
     public static var kMessageFont = UIFont(name: "Roboto-Regular", size: UIDevice.current.isIpad ? 20.0 : 16.0)!
+    public static var kMessageBoldFont = UIFont(name: "Roboto-Black", size: UIDevice.current.isIpad ? 20.0 : 16.0)!
     public static var kMessageHighlightedFont = UIFont(name: "Roboto-Light", size: UIDevice.current.isIpad ? 20.0 : 16.0)!
-    public static var kMessageBoldFont = UIFont(name: "Roboto-Regular", size: UIDevice.current.isIpad ? 20.0 : 16.0)!
     public static var kEmojisFont = UIFont(name: "Roboto-Regular", size: UIDevice.current.isIpad ? 40.0 : 30.0)!
     public static let kAmountFont = UIFont(name: "Roboto-Bold", size: UIDevice.current.isIpad ? 20.0 : 16.0)!
     public static let kBoldSmallMessageFont = UIFont(name: "Roboto-Bold", size: UIDevice.current.isIpad ? 20.0 : 16.0)!
@@ -32,9 +34,10 @@ class Constants {
     public static var kChatNameFont = UIFont(name: "Roboto-Regular", size: 17.0)!
     public static var kThreadHeaderFont = UIFont(name: "Roboto-Regular", size: 16.0)!
     public static var kThreadHeaderHighlightedFont = UIFont(name: "Roboto-Light", size: 16.0)!
+    public static var kThreadHeaderBoldFont = UIFont(name: "Roboto-Black", size: 16.0)!
     public static var kThreadListFont = UIFont(name: "Roboto-Regular", size: 17.0)!
     public static var kThreadListHighlightedFont = UIFont(name: "Roboto-Light", size: 17.0)!
-
+    public static var kThreadListBoldFont = UIFont(name: "Roboto-Black", size: 17.0)!
     
     //Sizes
     public static var kChatListRowHeight: CGFloat = 90
@@ -65,12 +68,13 @@ class Constants {
     
     
     public static func setSize() {
-        let size = UserDefaults.Keys.messagesSize.get(defaultValue: MessagesSize.Big.rawValue)
+        let size = UserDefaults.Keys.messagesSize.get(defaultValue: MessagesSize.Medium.rawValue)
         let isIpad = UIDevice.current.isIpad
         
         switch(size) {
         case MessagesSize.Small.rawValue:
             kMessageFont = UIFont(name: "Roboto-Regular", size: isIpad ? 17.0 : 13.0)!
+            kMessageBoldFont = UIFont(name: "Roboto-Black", size: isIpad ? 17.0 : 13.0)!
             kMessageHighlightedFont = UIFont(name: "Roboto-Light", size: UIDevice.current.isIpad ? 17.0 : 13.0)!
             kEmojisFont = UIFont(name: "Roboto-Regular", size: 30.0)!
             kMessagePreviewFont = UIFont(name: "Roboto-Regular", size: 12.0)!
@@ -90,6 +94,7 @@ class Constants {
             break
         case MessagesSize.Medium.rawValue:
             kMessageFont = UIFont(name: "Roboto-Regular", size: isIpad ? 18.0 : 15.0)!
+            kMessageBoldFont = UIFont(name: "Roboto-Black", size: isIpad ? 18.0 : 15.0)!
             kMessageHighlightedFont = UIFont(name: "Roboto-Light", size: UIDevice.current.isIpad ? 18.0 : 15.0)!
             kEmojisFont = UIFont(name: "Roboto-Regular", size: isIpad ? 35.0 : 33.0)!
             kMessagePreviewFont = UIFont(name: "Roboto-Regular", size: 13.0)!
@@ -109,6 +114,7 @@ class Constants {
             break
         case MessagesSize.Big.rawValue:
             kMessageFont = UIFont(name: "Roboto-Regular", size: isIpad ? 20.0 : 18.0)!
+            kMessageBoldFont = UIFont(name: "Roboto-Black", size: isIpad ? 20.0 : 18.0)!
             kMessageHighlightedFont = UIFont(name: "Roboto-Light", size: UIDevice.current.isIpad ? 20.0 : 18.0)!
             kEmojisFont = UIFont(name: "Roboto-Regular", size: isIpad ? 40.0 : 36.0)!
             kMessagePreviewFont = UIFont(name: "Roboto-Regular", size: 14.0)!

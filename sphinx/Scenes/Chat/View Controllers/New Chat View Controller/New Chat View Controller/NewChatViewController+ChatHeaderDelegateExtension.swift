@@ -13,7 +13,7 @@ extension NewChatViewController : ChatHeaderViewDelegate, ThreadHeaderViewDelega
         var vc: UIViewController? = nil
         
         if let contact = contact {
-            vc = NewContactViewController.instantiate(contactId: contact.id)
+            vc = ContactDetailsViewController.instantiate(contactId: contact.id)
         } else if let chat = chat, chat.isGroup() {
             vc = GroupDetailsViewController.instantiate(chat: chat)
         }
@@ -59,6 +59,7 @@ extension NewChatViewController : ChatHeaderViewDelegate, ThreadHeaderViewDelega
         chatTableDataSource?.shouldLoadGiphyDataFor(messageId: messageId, and: rowIndex)
     }
     
+    
     func didTapMuteButton() {
         guard let chat = chat else {
             return
@@ -88,7 +89,6 @@ extension NewChatViewController : ChatHeaderViewDelegate, ThreadHeaderViewDelega
         )
 
         let isPublicGroup = chat?.isPublicGroup() ?? false
-        let isMyPublicGroup = chat?.isMyPublicGroup() ?? false
         
         alert.addAction(
             UIAlertAction(
@@ -121,17 +121,15 @@ extension NewChatViewController : ChatHeaderViewDelegate, ThreadHeaderViewDelega
                 )
             )
             
-            if isMyPublicGroup {
-                alert.addAction(
-                    UIAlertAction(
-                        title: "share.group".localized,
-                        style: .default,
-                        handler: { (UIAlertAction) in
-                            self.goToShare()
-                        }
-                    )
+            alert.addAction(
+                UIAlertAction(
+                    title: "share.group".localized,
+                    style: .default,
+                    handler: { (UIAlertAction) in
+                        self.goToShare()
+                    }
                 )
-            }
+            )
         }
 
         alert.addAction(UIAlertAction(title: "cancel".localized, style: .cancel ))

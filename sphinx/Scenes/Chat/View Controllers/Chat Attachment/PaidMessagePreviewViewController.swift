@@ -82,7 +82,8 @@ class PaidMessagePreviewViewController: UIViewController {
             tribeAdmin: nil,
             separatorDate: nil,
             bubbleState: MessageTableCellState.BubbleState.Isolated,
-            invoiceData: (false, false)
+            invoiceData: (false, false),
+            timezoneData: chat.timezoneData
         )
 
         previewTableView.rowHeight = UITableView.automaticDimension
@@ -126,11 +127,11 @@ extension PaidMessagePreviewViewController : UITableViewDataSource, UITableViewD
                 threadOriginalMsgMediaData: nil,
                 tribeData: nil,
                 linkData: nil,
-                botWebViewData: nil,
                 uploadProgressData: nil,
                 delegate: nil,
                 searchingTerm: nil,
-                indexPath: indexPath
+                indexPath: indexPath,
+                replyViewHeight: nil
             )
         }
         

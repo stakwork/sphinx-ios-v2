@@ -9,6 +9,7 @@ import UIKit
 import CoreData
 
 class RestoreUserFormViewController: UIViewController {
+    
     @IBOutlet weak var titleLabel: UILabel!
     @IBOutlet weak var backButton: UIButton!
     @IBOutlet weak var codeTextField: UITextField!
@@ -20,9 +21,13 @@ class RestoreUserFormViewController: UIViewController {
     @IBOutlet weak var keychainRestoreButtonContainer: UIView!
     @IBOutlet weak var keychainRestoreLabel: UILabel!
     
+    var loading = false {
+        didSet {
+            LoadingWheelHelper.toggleLoadingWheel(loading: loading, loadingWheel: loadingWheel, loadingWheelColor: UIColor.white, view: submitButton)
+        }
+    }
     
     let userData = UserData.sharedInstance
-    let onionConnector = SphinxOnionConnector.sharedInstance
     let authenticationHelper = BiometricAuthenticationHelper()
     let newMessageBubbleHelper = NewMessageBubbleHelper()
     
@@ -57,7 +62,7 @@ class RestoreUserFormViewController: UIViewController {
     
     
     @IBAction func backButtonTapped(_ sender: UIButton) {
-        SignupHelper.step = SignupHelper.SignupStep.Start.rawValue
+        UserData.sharedInstance.signupStep = SignupHelper.SignupStep.Start.rawValue
         
         self.navigationController?.popToRootViewController(animated: true)
     }
@@ -87,7 +92,7 @@ extension RestoreUserFormViewController {
     
     
     func setupKeychainButtonContainer() {
-        keychainRestoreButtonContainer.alpha = userData.isRestoreAvailable() ? 1.0 : 0.0
+        keychainRestoreButtonContainer.alpha = 0.0
     }
     
     
@@ -112,12 +117,6 @@ extension RestoreUserFormViewController {
         submitButton.addShadow(location: .bottom, opacity: 0.5, radius: 2.0)
         
         submitButtonArrow.textColor = UIColor.white
-    }
-    
-    
-    func save(ip: String, and password: String) {
-        userData.save(ip: ip)
-        userData.save(password: password)
     }
 }
 

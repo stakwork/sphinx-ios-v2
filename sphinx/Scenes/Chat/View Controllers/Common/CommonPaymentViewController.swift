@@ -27,10 +27,28 @@ class CommonPaymentViewController : UIViewController {
     
     public weak var delegate: PaymentInvoiceDelegate?
     
+    var paymentTag: String? = nil
+    var paymentTimer : Timer? = nil
+    
     func shouldDismissView() {
+        resetTimerAndObserver()
+        
         DelayPerformedHelper.performAfterDelay(seconds: 0.5) {
             self.dismissView()
         }
+    }
+    
+    func resetTimerAndObserver() {
+        paymentTag = nil
+        
+        paymentTimer?.invalidate()
+        paymentTimer = nil
+        
+        NotificationCenter.default.removeObserver(
+            self,
+            name: .onKeysendStatusReceived,
+            object: nil
+        )
     }
     
     func dismissView() {

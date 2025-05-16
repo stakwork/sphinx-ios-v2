@@ -8,13 +8,7 @@
 
 import UIKit
 
-protocol GroupDetailsDelegate: class {
-    func shouldReloadMessage(message: TransactionMessage)
-}
-
 class GroupDetailsViewController: UIViewController {
-    weak var delegate: GroupDetailsDelegate?
-
     @IBOutlet weak var membersTableView: UITableView!
     @IBOutlet weak var groupImageView: UIImageView!
     @IBOutlet weak var groupNameLabel: UILabel!
@@ -26,17 +20,23 @@ class GroupDetailsViewController: UIViewController {
     @IBOutlet weak var viewTitle: UILabel!
     @IBOutlet weak var tribeMemberInfoContainer: UIView!
     @IBOutlet weak var tribeMemberInfoView: TribeMemberInfoView!
-    @IBOutlet weak var tribeMemberInfoContainerHeight: NSLayoutConstraint!
     @IBOutlet weak var imageUploadContainer: UIView!
     @IBOutlet weak var imageUploadLoadingWheel: UIActivityIndicatorView!
     @IBOutlet weak var imageUploadLabel: UILabel!
     @IBOutlet weak var tribeBadgesLabel: UILabel!
-    @IBOutlet weak var groupPinContainer: GroupPinView!
     
     @IBOutlet weak var badgeManagementContainerView: UIView!
     @IBOutlet weak var badgeManagementContainerHeight : NSLayoutConstraint!
+    @IBOutlet weak var adminInfoContainerView: UIView!
+    
+    @IBOutlet weak var adminAvatarImageView: UIImageView!
+    @IBOutlet weak var adminNameLabel: UILabel!
+    @IBOutlet weak var adminSubtitleLabel: UILabel!
+    @IBOutlet weak var groupInfoContainerView: UIView!
+    @IBOutlet weak var timezoneSharingView: TimezoneSharingView!
     
     @IBOutlet var keyboardAccessoryView: UIView!
+    
     
     var imagePickerManager = ImagePickerManager.sharedInstance
     var tableDataSource : GroupMembersDataSource!
@@ -60,10 +60,9 @@ class GroupDetailsViewController: UIViewController {
         }
     }
     
-    static func instantiate(chat: Chat, delegate: GroupDetailsDelegate? = nil) -> GroupDetailsViewController {
+    static func instantiate(chat: Chat) -> GroupDetailsViewController {
         let viewController = StoryboardScene.Groups.groupDetailsViewController.instantiate()
         viewController.chat = chat
-        viewController.delegate = delegate
         
         return viewController
     }
@@ -71,10 +70,13 @@ class GroupDetailsViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        timezoneSharingView.delegate = self
+        
         viewTitle.text = (chat.isPublicGroup() ? "tribe.details" : "group.details").localized
         tribeBadgesLabel.text = "badges.tribe-badges".localized
         
         loadData()
+        setupTimezoneSharing()
     }
     
     func loadData() {
@@ -88,13 +90,16 @@ class GroupDetailsViewController: UIViewController {
         groupImageView.layer.cornerRadius = groupImageView.frame.size.height / 2
         groupImageView.clipsToBounds = true
         
-        groupPinContainer.configureWith(chat: chat)
+        adminAvatarImageView.layer.cornerRadius = groupImageView.frame.size.height / 2
+        adminAvatarImageView.clipsToBounds = true
         
         if let urlString = chat.photoUrl, let nsUrl = URL(string: urlString) {
-            MediaLoader.asyncLoadImage(imageView: groupImageView, nsUrl: nsUrl, placeHolderImage: UIImage(named: "profile_avatar"))
+            MediaLoader.asyncLoadImage(imageView: groupImageView, nsUrl: nsUrl, placeHolderImage: UIImage(named: "tribePlaceholder"))
         } else {
-            groupImageView.image = UIImage(named: "profile_avatar")
+            groupImageView.image = UIImage(named: "tribePlaceholder")
         }
+        
+        adminSubtitleLabel.text = "admin".localized
         
         groupNameLabel.text = chat.name ?? "unknown.group".localized
         
@@ -102,8 +107,20 @@ class GroupDetailsViewController: UIViewController {
         groupDateLabel.text = createdOn
         
         updateTribePrices()
+        configureTribeAdminView()
         configureTribeMemberView()
-        configureBadgeManagementView()
+//        configureBadgeManagementView()
+    }
+    
+    func lookupAdminImage()->String?{
+        if let tribeInfo = chat.tribeInfo,
+           let ownerAlias = tribeInfo.ownerAlias,
+           let messagesSet = chat.messages,
+           let groupMessages = Array<Any>(messagesSet) as? [TransactionMessage],
+           let ownerMessage = groupMessages.filter({$0.senderAlias == ownerAlias}).first{
+            return ownerMessage.senderPic
+        }
+        return nil
     }
     
     func updateTribePrices() {
@@ -117,10 +134,8 @@ class GroupDetailsViewController: UIViewController {
     
     func configureTribeMemberView() {
         if let chat = chat, let owner = UserContact.getOwner(), chat.isPublicGroup() {
-            let alias = chat.myAlias ?? owner.nickname
-            let photoUrl = chat.myPhotoUrl ?? owner.getPhotoUrl()
-            
-            tribeMemberInfoContainerHeight.constant = 160
+            let alias = (chat.myAlias?.isNotEmpty == true) ? chat.myAlias : owner.nickname
+            let photoUrl = (chat.myPhotoUrl?.isNotEmpty == true) ? chat.myPhotoUrl : owner.getPhotoUrl()
             
             tribeMemberInfoView.configureWith(
                 vc: self,
@@ -130,18 +145,37 @@ class GroupDetailsViewController: UIViewController {
             )
             
             tribeMemberInfoContainer.isHidden = false
+        } else {
+            tribeMemberInfoContainer.isHidden = true
+        }
+    }
+    
+    func configureTribeAdminView() {
+        if chat.isTribeICreated {
+            adminInfoContainerView.isHidden = true
+        } else {
+            if let urlString = lookupAdminImage(),
+               let nsUrl = URL(string: urlString) {
+                MediaLoader.asyncLoadImage(imageView: adminAvatarImageView, nsUrl: nsUrl, placeHolderImage: UIImage(named: "profile_avatar"))
+            } else {
+                adminAvatarImageView.image = UIImage(named: "profile_avatar")
+            }
+            adminNameLabel.text = chat.tribeInfo?.ownerAlias ?? "unknown".localized
+            
+            adminInfoContainerView.isHidden = false
         }
     }
     
     func configureBadgeManagementView(){
-        if let chat = chat,
-           chat.isMyPublicGroup(){
-            badgeManagementContainerView.backgroundColor = UIColor.Sphinx.Body
-            badgeManagementContainerHeight.constant = 90
-            badgeManagementContainerView.isHidden = false
-            badgeManagementContainerView.isUserInteractionEnabled = true
-            badgeManagementContainerView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(didTapBadgeManagementView)))
-        }
+        //TODO: @Jim reinstate when ready for v2 badges
+//        if let chat = chat,
+//           chat.isMyPublicGroup(){
+//            badgeManagementContainerView.backgroundColor = UIColor.Sphinx.Body
+//            badgeManagementContainerHeight.constant = 90
+//            badgeManagementContainerView.isHidden = false
+//            badgeManagementContainerView.isUserInteractionEnabled = true
+//            badgeManagementContainerView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(didTapBadgeManagementView)))
+//        }
     }
     
     @objc func didTapBadgeManagementView(){
@@ -155,7 +189,6 @@ class GroupDetailsViewController: UIViewController {
         
         let title = (chat.isPublicGroup() ? "tribe.members.upper" : "group.members.upper").localized
         tableDataSource = GroupMembersDataSource(tableView: membersTableView, title: title)
-        tableDataSource.groupDetailsDelegate = delegate
         tableDataSource.addMemberDelegate = self
         membersTableView.backgroundColor = UIColor.Sphinx.Body
         membersTableView.delegate = tableDataSource
@@ -175,17 +208,12 @@ class GroupDetailsViewController: UIViewController {
             alert.addAction(UIAlertAction(title: "notifications.level".localized, style: .default, handler:{ (UIAlertAction) in
                 self.goToNotificationsLevel()
             }))
+            alert.addAction(UIAlertAction(title: "share.group".localized, style: .default, handler:{ (UIAlertAction) in
+                self.goToShare()
+            }))
             if isMyPublicGroup {
-                alert.addAction(UIAlertAction(title: "share.group".localized, style: .default, handler:{ (UIAlertAction) in
-                    self.goToShare()
-                }))
-                
                 alert.addAction(UIAlertAction(title: "edit.tribe".localized, style: .default, handler:{ (UIAlertAction) in
                     self.goToEditGroup()
-                }))
-                
-                alert.addAction(UIAlertAction(title: "tribe.add-member".localized, style: .default, handler:{ (UIAlertAction) in
-                    self.goToAddMember()
                 }))
                 
                 alert.addAction(UIAlertAction(title: "delete.tribe".localized, style: .destructive, handler:{ (UIAlertAction) in
@@ -228,51 +256,71 @@ class GroupDetailsViewController: UIViewController {
         }
     }
     
-    func goToAddMember() {
-        let viewController = AddTribeMemberViewController.instantiate(with: chat, delegate: self)
-        self.present(viewController, animated: true, completion: nil)
-    }
-    
     func goToNotificationsLevel() {
         let notificationsVC = NotificationsLevelViewController.instantiate(chatId: chat.id, delegate: nil)
         self.present(notificationsVC, animated: true, completion: nil)
     }
     
     func exitAndDeleteGroup() {
+//        if !NetworkMonitor.shared.isNetworkConnected() {
+//            AlertHelper.showAlert(
+//                title: "generic.error.title".localized,
+//                message: SphinxOnionManagerError.SOMNetworkError.localizedDescription
+//            )
+//            return
+//        }
+        
+        guard let chat = self.chat else {
+            return
+        }
+        
         let isPublicGroup = chat.isPublicGroup()
         let isMyPublicGroup = chat.isMyPublicGroup()
         let deleteLabel = (isPublicGroup ? "delete.tribe" : "delete.group").localized
         let confirmDeleteLabel = (isMyPublicGroup ? "confirm.delete.tribe" : (isPublicGroup ? "confirm.exit.delete.tribe" : "confirm.exit.delete.group")).localized
         
         AlertHelper.showTwoOptionsAlert(title: deleteLabel, message: confirmDeleteLabel, confirm: {
-            self.loading = true
-            SphinxOnionManager.sharedInstance.deleteTribe(tribeChat: self.chat)
-            DispatchQueue.main.async{
-                CoreDataManager.sharedManager.deleteChatObjectsFor(self.chat)
+            DispatchQueue.main.async {
+                self.loading = true
             }
-            DelayPerformedHelper.performAfterDelay(seconds: 1.5, completion: {
-                self.navigationController?.popToRootViewController(animated: true)
-            })
+            
+            let som = SphinxOnionManager.sharedInstance
+            var success = false
+            
+            if isMyPublicGroup {
+                success = som.deleteTribe(tribeChat: chat)
+            } else {
+                success = som.exitTribe(
+                    tribeChat: chat,
+                    errorCallback: { error in
+                        AlertHelper.showAlert(
+                            title: "generic.error.title".localized,
+                            message: error.localizedDescription
+                        )
+                    }
+                )
+            }
+            
+            if !success {
+                return
+            }
+            
+            let _ = som.deleteContactOrChatMsgsFor(chat: chat)
+            
+            DispatchQueue.main.async {
+                DelayPerformedHelper.performAfterDelay(seconds: 0.5) {
+                    self.navigationController?.popToRootViewController(animated: true)
+                    CoreDataManager.sharedManager.deleteChatObjectsFor(chat)
+                }
+            }
         })
     }
+
     
     func uploadImage(image: UIImage) {
-        let id = chat.id
-        let fixedImage = image.fixedOrientation()
-        loading = true
-        
-        API.sharedInstance.uploadImage(chatId: id, image: fixedImage, progressCallback: { progress in
-            print("Progress: \(progress)")
-        }, callback: { (success, fileUrl) in
-            self.loading = false
-            
-            if let fileUrl = fileUrl, success {
-                MediaLoader.storeImageInCache(img: image, url: fileUrl, message: nil)
-                self.imageUploaded(photoUrl: fileUrl)
-            } else {
-                self.imageUploaded(photoUrl: nil)
-            }
-        })
+//        let id = chat.id
+//        let fixedImage = image.fixedOrientation()
+//        loading = true
     }
     
     func imageUploaded(photoUrl: String?) {
@@ -287,8 +335,7 @@ class GroupDetailsViewController: UIViewController {
     
     func groupDeleted() {
         navigationController?.popToRootViewController(animated: true)
-//        let mainCoordinator = MainCoordinator(rootViewController: rootViewController)
-//        mainCoordinator.presentInitialDrawer()
+
     }
     
     @IBAction func groupPictureButtonTouched() {
@@ -317,6 +364,19 @@ class GroupDetailsViewController: UIViewController {
     @IBAction func backButtonTouched() {
         self.navigationController?.popViewController(animated: true)
     }
+    
+    func setupTimezoneSharing() {
+        timezoneSharingView.delegate = self
+        
+        if let chat = self.chat {
+            timezoneSharingView.configure(
+                enabled: chat.timezoneEnabled,
+                identifier: chat.timezoneIdentifier
+            )
+        } else {
+            timezoneSharingView.configure(enabled: false, identifier: nil)
+        }
+    }
 }
 
 extension GroupDetailsViewController : UIImagePickerControllerDelegate, UINavigationControllerDelegate {
@@ -336,12 +396,6 @@ extension GroupDetailsViewController : UIImagePickerControllerDelegate, UINaviga
     }
 }
 
-extension GroupDetailsViewController : AddTribeMemberDelegate {
-    func shouldReloadMembers() {
-        tableDataSource.reloadContacts(chat: chat)
-    }
-}
-
 extension GroupDetailsViewController : AddFriendRowButtonDelegate {
     func didTouchAddFriend() {
         let groupContactVC = GroupContactsViewController.instantiate(delegate: self, chat: chat)
@@ -351,12 +405,10 @@ extension GroupDetailsViewController : AddFriendRowButtonDelegate {
 
 extension GroupDetailsViewController : NewContactVCDelegate {
     func shouldReloadChat(chat: Chat) {
-        let chatListViewModel = ChatListViewModel()
-        
-        chatListViewModel.loadFriends { _ in
-            self.chat = chat
-            self.loadData()
-        }
+        self.chat = chat
+        self.tableDataSource.chat = chat
+        configureTableView()
+        setGroupInfo()
     }
 }
 
@@ -378,11 +430,50 @@ extension GroupDetailsViewController : TribeMemberInfoDelegate {
             AlertHelper.showAlert(title: "generic.error.title".localized, message: "alias.cannot.empty".localized)
             return
         }
-        let params: [String: AnyObject] = ["my_alias" : alias as AnyObject, "my_photo_url": (photoUrl ?? "") as AnyObject]
         
-        API.sharedInstance.updateChat(chatId: chat.id, params: params, callback: {
-            self.chat.myAlias = alias
-            self.chat.myPhotoUrl = photoUrl ?? self.chat.myPhotoUrl
-        }, errorCallback: {})
+        let didChangeAlias = self.chat.myAlias != alias
+        
+        if didChangeAlias && self.chat.timezoneEnabled {
+            self.chat.timezoneUpdated = true
+        }
+        
+        self.chat.myAlias = alias
+        self.chat.myPhotoUrl = photoUrl ?? self.chat.myPhotoUrl
+        self.chat.saveChat()
+        finishUpdating()
+    }
+    
+    func finishUpdating() {
+        loading = false
+        uploading = false
+    }
+}
+
+extension GroupDetailsViewController : TimezoneSharingViewDelegate {
+    func shouldPresentPickerViewWith(delegate: PickerViewDelegate) {
+        let selectedValue = timezoneSharingView.getTimezoneIdentifier() ?? TimezoneSharingView.kDefaultValue
+        var timezones = TimeZone.knownTimeZoneIdentifiers
+        timezones.insert(TimezoneSharingView.kDefaultValue, at: 0)
+        let pickerVC = PickerViewController.instantiate(values: timezones, selectedValue: selectedValue, delegate: delegate)
+        self.present(pickerVC, animated: false, completion: nil)
+    }
+    
+    func timezoneSharingSettingsChanged(enabled: Bool, identifier: String?) {
+        guard let chat = self.chat else { return }
+        
+        let timezoneEnabledChanged = chat.timezoneEnabled != enabled
+        let timezoneIdentifierChanged = chat.timezoneIdentifier != identifier
+        
+        if timezoneEnabledChanged || timezoneIdentifierChanged {
+            chat.timezoneEnabled = enabled
+            
+            chat.timezoneIdentifier = identifier
+            
+            if timezoneIdentifierChanged {
+                chat.timezoneUpdated = true
+            }
+            
+            CoreDataManager.sharedManager.saveContext()
+        }
     }
 }

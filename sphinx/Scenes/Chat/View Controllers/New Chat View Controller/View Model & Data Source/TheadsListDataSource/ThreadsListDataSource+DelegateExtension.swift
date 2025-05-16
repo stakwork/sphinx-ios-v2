@@ -247,10 +247,16 @@ extension ThreadsListDataSource {
         ) {
             mediaCached[messageId] = updatedCachedMedia
             
-            DispatchQueue.main.async {
+            self.dataSourceQueue.async {
                 var snapshot = self.dataSource.snapshot()
-                snapshot.reloadItems([tableCellState.1])
-                self.dataSource.apply(snapshot, animatingDifferences: true)
+            
+                if snapshot.itemIdentifiers.contains(tableCellState.1) {
+                    snapshot.reloadItems([tableCellState.1])
+                    
+                    DispatchQueue.main.async {
+                        self.dataSource.apply(snapshot, animatingDifferences: false)
+                    }
+                }
             }
         }
     }
@@ -271,6 +277,10 @@ extension ThreadsListDataSource {
                 tableCellState = (i, threadTableCellStateArray[i])
                 break
             }
+        }
+        
+        if let rowIndex = rowIndex, tableCellState == nil && threadTableCellStateArray.count > rowIndex {
+            return (rowIndex, threadTableCellStateArray[rowIndex])
         }
         
         return tableCellState

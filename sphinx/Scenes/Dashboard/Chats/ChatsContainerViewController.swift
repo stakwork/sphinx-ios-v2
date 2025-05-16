@@ -13,16 +13,13 @@ class ChatsContainerViewController: UIViewController {
         case Friends
         case Tribes
     }
-    
-    var tab: Tab = Tab.Friends
 }
 
 
 // MARK: - Instantiation
 extension ChatsContainerViewController {
-
+    
     static func instantiate(
-        tab: Tab,
         chatsListDelegate: DashboardChatsListDelegate
     ) -> ChatsContainerViewController {
         
@@ -32,7 +29,6 @@ extension ChatsContainerViewController {
             .instantiate()
         
         viewController.chatsListDelegate = chatsListDelegate
-        viewController.tab = tab
         
         return viewController
     }
@@ -45,6 +41,14 @@ extension ChatsContainerViewController {
         
         self.chatsCollectionViewController?.chatListObjects = chats
         self.chatsCollectionViewController?.updateSnapshot()
+    }
+    
+    func onMessagesStatusChangedFor(chatIds: [Int]) {
+        self.chatsCollectionViewController?.shouldReloadChatRowsFor(chatIds: chatIds)
+    }
+    
+    func shouldReloadRowFor(chatId: Int) {
+        chatsCollectionViewController?.shouldReloadRowFor(chatId: chatId)
     }
 }
 

@@ -9,6 +9,7 @@ extension DashboardRootViewController: DashboardChatsListDelegate {
         didSelectChat chat: Chat?,
         orContact contact: UserContact?
     ) {
+        view.endEditing(true)
         presentChatDetailsVC(for: chat, contact: contact)
     }
     
@@ -17,7 +18,7 @@ extension DashboardRootViewController: DashboardChatsListDelegate {
         _ viewController: UIViewController,
         using refreshControl: UIRefreshControl
     ) {
-        loadContactsAndSyncMessages()
+        self.reconnectToServer()
         refreshControl.endRefreshing()
     }
     
@@ -55,5 +56,12 @@ extension DashboardRootViewController: DashboardChatsListDelegate {
     
     func shouldGetChatsContainerYOffset() -> CGFloat {
         return mainContentContainerView.frame.origin.y
+    }
+}
+
+extension DashboardRootViewController: NewChatViewControllerDelegate {
+    func shouldReloadRowFor(chatId: Int) {
+        contactChatsContainerViewController.shouldReloadRowFor(chatId: chatId)
+        tribeChatsContainerViewController.shouldReloadRowFor(chatId: chatId)
     }
 }

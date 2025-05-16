@@ -82,6 +82,10 @@ extension UserContact : ChatListCommonObject {
         return self.invite
     }
     
+    public func isInvite() -> Bool {
+        return self.invite != nil || self.sentInviteCode != nil
+    }
+    
     public func getContactStatus() -> Int? {
         return status
     }
@@ -101,16 +105,15 @@ extension UserContact : ChatListCommonObject {
     }
     
     public func isSeen(ownerId: Int) -> Bool {
-        let lastMessage = self.getChat()?.lastMessage
-        
-        if lastMessage?.isOutgoing(ownerId: ownerId) ?? true {
-            return true
+        return self.getChat()?.isSeen(ownerId: ownerId) ?? true
+    }
+    
+    public func getUnseenMessagesCount(
+        ownerId: Int
+    ) -> Int {
+        if self.isSeen(ownerId: ownerId) == true {
+            return 0
         }
-        
-        if lastMessage?.isSeen(ownerId: ownerId) ?? true {
-            return true
-        }
-        
-        return self.getChat()?.seen ?? true
+        return self.getChat()?.getReceivedUnseenMessagesCount() ?? 0
     }
 }

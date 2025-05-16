@@ -67,7 +67,9 @@ class NewPodcastPlayerViewController: UIViewController {
         }
         
         NotificationCenter.default.removeObserver(self, name: .refreshFeedUI, object: nil)
+        NotificationCenter.default.removeObserver(self, name: .refreshFeedDataAndUI, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(showPodcastInfo), name: .refreshFeedUI, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(refreshPodcastInfo), name: .refreshFeedDataAndUI, object: nil)
         
         handleQueuedEpisode()
     }
@@ -90,7 +92,7 @@ class NewPodcastPlayerViewController: UIViewController {
     
     func handleQueuedEpisode(){
         if let queuedEpisode = queuedEpisode,
-           let episodeIndex = tableDataSource.episodes.firstIndex(where: {$0.itemID == queuedEpisode.itemID}){
+           let episodeIndex = tableDataSource.episodes.firstIndex(where: {$0.itemID == queuedEpisode.itemID}) {
             self.tableDataSource.tableView(tableDataSource.tableView, didSelectRowAt: IndexPath(item: episodeIndex, section: 0))
             FeedsManager.sharedInstance.queuedPodcastEpisodes.removeAll(where: {$0.itemID == queuedEpisode.itemID})
         }
@@ -111,7 +113,7 @@ class NewPodcastPlayerViewController: UIViewController {
         boostDelegate: CustomBoostDelegate,
         fromDashboard: Bool = false,
         fromDownloadedSection: Bool = false,
-        queuedEpisode:PodcastEpisode? = nil
+        queuedEpisode: PodcastEpisode? = nil
     ) -> NewPodcastPlayerViewController {
         let viewController = StoryboardScene.WebApps.newPodcastPlayerViewController.instantiate()
         
@@ -123,6 +125,13 @@ class NewPodcastPlayerViewController: UIViewController {
         viewController.queuedEpisode = queuedEpisode
     
         return viewController
+    }
+    
+    @objc func refreshPodcastInfo() {
+        if let feed = ContentFeed.getFeedById(feedId: podcast.feedID) {
+            self.podcast = PodcastFeed.convertFrom(contentFeed: feed)
+        }
+        showPodcastInfo()
     }
     
     @objc func showPodcastInfo() {
@@ -156,9 +165,12 @@ class NewPodcastPlayerViewController: UIViewController {
 extension NewPodcastPlayerViewController : PodcastEpisodesDSDelegate {
     func didDismiss() {}
     
-    func didTapForDescriptionAt(episode: PodcastEpisode,cell:UITableViewCell) {
-        if let feed = episode.feed,
-           let index = tableView.indexPath(for: cell)?.row{
+    func didTapForDescriptionAt(
+        episode: PodcastEpisode,
+        cell: UITableViewCell
+    ) {
+        if let feedID = episode.feedID, let contentFeed = ContentFeed.getFeedById(feedId: feedID), let index = tableView.indexPath(for: cell)?.row {
+            let feed = PodcastFeed.convertFrom(contentFeed: contentFeed)
             let vc = ItemDescriptionViewController.instantiate(podcast: feed, episode: episode,index:index)
             self.navigationController?.pushViewController(vc, animated: true)
         }
@@ -207,9 +219,41 @@ extension NewPodcastPlayerViewController : PodcastEpisodesDSDelegate {
             tableView.reloadRows(at: [IndexPath(row: row, section: 0)], with: .none)
         }
     }
+    
+    func shouldPlayChapterWith(index: Int, on episode: PodcastEpisode) {
+        if let chapter = episode.chapters?[index] {
+            var newTime = chapter.timestamp.toSeconds()
+            newTime = max(newTime, 0)
+            newTime = min(newTime, (podcast?.duration ?? 0))
+            
+            guard let podcastData = podcast.getPodcastData(
+                episodeId: episode.itemID,
+                currentTime: newTime
+            ) else {
+                return
+            }
+            
+            if let duration = episode.duration {
+                tableHeaderView?.setProgress(
+                    duration: duration,
+                    currentTime: newTime
+                )
+            }
+            
+            if podcastPlayerController.isPlaying(episodeId: episode.itemID) {
+                podcastPlayerController.submitAction(
+                    UserAction.Seek(podcastData)
+                )
+            } else {
+                podcastPlayerController.submitAction(
+                    UserAction.Play(podcastData)
+                )
+            }
+        }
+    }
 }
 
-extension NewPodcastPlayerViewController : PodcastPlayerViewDelegate {
+ extension NewPodcastPlayerViewController : PodcastPlayerViewDelegate {
     
     func didTapSubscriptionToggleButton() {
         podcast.isSubscribedToFromSearch.toggle()
@@ -304,16 +348,20 @@ extension UIViewController {
     func askForShareType(
         episode: PodcastEpisode
     ) {
-        if episode.feed?.isRecommendationsPodcast == true {
-            self.executeShare(episode: episode,useCurrentTime: false)
+        if episode.isRecommendationsPodcast == true {
+            self.executeShare(episode: episode, useCurrentTime: false)
             return
         }
         
         let timestampCallback: (() -> ()) = {
-            self.executeShare(episode: episode,useCurrentTime: true)
+            DispatchQueue.main.async {
+                self.executeShare(episode: episode, useCurrentTime: true)
+            }
         }
         let noTimestampCallback: (() -> ()) = {
-            self.executeShare(episode: episode,useCurrentTime: false)
+            DispatchQueue.main.async {
+                self.executeShare(episode: episode, useCurrentTime: false)
+            }
         }
         
         AlertHelper.showOptionsPopup(
@@ -330,15 +378,15 @@ extension UIViewController {
         episode: PodcastEpisode,
         useCurrentTime: Bool = false
     ){
-        let firstActivityItem = "Hey I think you'd enjoy this content I found on Sphinx iOS: \(episode.feed?.title ?? "") - \(episode.title ?? "")"
-        
+//        let firstActivityItem = "Hey I think you'd enjoy this content I found on Sphinx iOS: \(episode.feedTitle ?? "") - \(episode.title ?? "")"
+
         //TODO: need a way to decide whether to use time stamp
         let link = episode.constructShareLink(useTimestamp: useCurrentTime) ?? episode.linkURLPath ?? episode.urlPath ?? ""
         
-        let secondActivityItem : NSURL = NSURL(string: link)!
+        let activityItem : NSURL = NSURL(string: link)!
         
         shouldShare(
-            items: [firstActivityItem, secondActivityItem]
+            items: [activityItem]
         )
     }
 
@@ -383,10 +431,14 @@ extension UIViewController {
         currentTime: Int
     ) {
         let timestampCallback: (() -> ()) = {
-            self.executeShare(video: video, videoTime: currentTime)
+            DispatchQueue.main.async {
+                self.executeShare(video: video, videoTime: currentTime)
+            }
         }
         let noTimestampCallback: (() -> ()) = {
-            self.executeShare(video: video)
+            DispatchQueue.main.async {
+                self.executeShare(video: video)
+            }
         }
         AlertHelper.showOptionsPopup(
             title: "Share from Current Timestamp?",
@@ -402,15 +454,15 @@ extension UIViewController {
         video: Video,
         videoTime: Int? = nil
     ) {
-        let firstActivityItem =
-        "Hey I think you'd enjoy this video I found on Sphinx iOS: \(video.videoFeed?.title ?? "") - \(video.title ?? "")"
-        
+//        let firstActivityItem =
+//        "Hey I think you'd enjoy this video I found on Sphinx iOS: \(video.videoFeed?.title ?? "") - \(video.title ?? "")"
+//        
         let videoURL = video.constructShareLink(currentTimeStamp: videoTime) ?? ""
         
-        let secondActivityItem : NSURL = NSURL(string: videoURL)!
+        let activityItem : NSURL = NSURL(string: videoURL)!
         
         shouldShare(
-            items: [firstActivityItem, secondActivityItem]
+            items: [activityItem]
         )
     }
     

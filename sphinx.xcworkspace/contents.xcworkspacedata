@@ -2,6 +2,9 @@
 <Workspace
    version = "1.0">
    <FileRef
+      location = "group:/Users/tomastiminskas/Documents/Projects/sphinx-ios-v2/PrivacyInfo.xcprivacy">
+   </FileRef>
+   <FileRef
       location = "group:sphinx.xcodeproj">
    </FileRef>
    <FileRef

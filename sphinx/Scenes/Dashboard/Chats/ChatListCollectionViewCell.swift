@@ -1,7 +1,11 @@
 import UIKit
 
 protocol ChatListCollectionViewCellDelegate : NSObject{
-    func didLongPressOnCell(chatListObject: ChatListCommonObject, owner: UserContact, indexPath: IndexPath)
+    func didLongPressOnCell(
+        cell: ChatListCollectionViewCell,
+        chatListObject: ChatListCommonObject,
+        owner: UserContact
+    )
 }
 
 class ChatListCollectionViewCell: UICollectionViewCell {
@@ -14,6 +18,7 @@ class ChatListCollectionViewCell: UICollectionViewCell {
     @IBOutlet weak var dateLabel: UILabel!
     @IBOutlet weak var separatorLine: UIView!
     @IBOutlet weak var lockSign: UILabel!
+    @IBOutlet weak var scheduleIcon: UILabel!
     @IBOutlet weak var inviteIcon: UILabel!
     @IBOutlet weak var failedMessageIcon: UILabel!
     @IBOutlet weak var invitePriceContainer: UIView!
@@ -23,8 +28,10 @@ class ChatListCollectionViewCell: UICollectionViewCell {
     @IBOutlet weak var unreadMessageBadgeLabel: UILabel!
     @IBOutlet weak var mentionsBadgeContainer: UIView!
     @IBOutlet weak var mentionsBadgeLabel: UILabel!
+    @IBOutlet weak var pendingContactDashedLineView: UIView!
+    @IBOutlet weak var contactViewContainerWidth: NSLayoutConstraint!
     
-    var delegate : ChatListCollectionViewCellDelegate? = nil
+    weak var delegate : ChatListCollectionViewCellDelegate? = nil
     
     var chatListObject: ChatListCommonObject? {
         didSet {
@@ -37,7 +44,6 @@ class ChatListCollectionViewCell: UICollectionViewCell {
     }
     
     var owner: UserContact!
-    var indexPath: IndexPath? = nil
 }
 
 
@@ -115,16 +121,16 @@ extension ChatListCollectionViewCell {
     
     
     private func render(with chatListObject: ChatListCommonObject) {
-        
         nameLabel.font = Constants.kChatNameFont
         
         if chatListObject.isPending() {
             
-            let inviteString = String(
-                format: "invite.name".localized,
-                chatListObject.getName()
-            )
-            nameLabel.text = inviteString
+            if chatListObject.isInvite() {
+                let inviteString = String(format: "invite.name".localized, chatListObject.getName())
+                nameLabel.text = inviteString
+            } else {
+                nameLabel.text = chatListObject.getName()
+            }
             
             muteImageView.isHidden = true
             lockSign.isHidden = true
@@ -137,7 +143,7 @@ extension ChatListCollectionViewCell {
             
             nameLabel.text = chatListObject.getName()
             muteImageView.isHidden = (chatListObject.getChat()?.isMuted() ?? false) == false
-            lockSign.isHidden = chatListObject.hasEncryptionKey() == false
+            lockSign.isHidden = chatListObject.isEncrypted() == false
         }
         
         renderLastMessage(for: chatListObject)
@@ -145,6 +151,7 @@ extension ChatListCollectionViewCell {
         renderMentionsView(for: chatListObject)
         renderContactImageViews(for: chatListObject)
         renderInvitePrice(for: chatListObject)
+        renderPendingUI(for: chatListObject)
     }
     
     
@@ -194,7 +201,7 @@ extension ChatListCollectionViewCell {
         
         contactImageView.sd_cancelCurrentImageLoad()
         
-        if chatListObject.isPending() {
+        if let _ = chatListObject.getInvite(), chatListObject.isPending() {
             
             contactImageView.tintColor = UIColor.Sphinx.TextMessages
             contactImageView.tintColorDidChange()
@@ -253,8 +260,10 @@ extension ChatListCollectionViewCell {
     
     
     private func renderLastMessage(for chatListObject: ChatListCommonObject) {
+        
+        scheduleIcon.isHidden = true
+        
         if let invite = chatListObject.getInvite(), chatListObject.isPending() {
-            
             let (icon, iconColor, text) = invite.getDataForRow()
             
             inviteIcon.text = icon
@@ -269,8 +278,21 @@ extension ChatListCollectionViewCell {
             messageLabel.font = Constants.kNewMessagePreviewFont
             messageLabel.textColor = .Sphinx.TextMessages
             
-        } else {
+        } else if chatListObject.isPending() {
+            inviteIcon.isHidden = false
+            inviteIcon.text = "schedule"
+            inviteIcon.textColor = UIColor.Sphinx.SecondaryText
+            failedMessageIcon.isHidden = true
             
+            messageLabel.superview?.isHidden = false
+            dateLabel.isHidden = true
+            
+            messageLabel.font = Constants.kMessagePreviewFont
+            messageLabel.textColor = .Sphinx.SecondaryText
+            
+            messageLabel.text = "contact.pending".localized
+            
+        } else {
             inviteIcon.isHidden = true
             failedMessageIcon.isHidden = true
             
@@ -278,15 +300,12 @@ extension ChatListCollectionViewCell {
                 
                 let isFailedMessage = lastMessage.failed()
                 
-                messageLabel.font = hasUnreadMessages ?
-                    Constants.kNewMessagePreviewFont
-                    : Constants.kMessagePreviewFont
+                messageLabel.font = hasUnreadMessages ? Constants.kNewMessagePreviewFont : Constants.kMessagePreviewFont
+                
                 if isFailedMessage {
                     messageLabel.textColor = .Sphinx.PrimaryRed
                 } else {
-                    messageLabel.textColor = hasUnreadMessages ?
-                        .Sphinx.TextMessages
-                        : .Sphinx.SecondaryText
+                    messageLabel.textColor = hasUnreadMessages ? .Sphinx.TextMessages : .Sphinx.SecondaryText
                 }
                 
                 messageLabel.text = lastMessage.getMessageContentPreview(
@@ -299,9 +318,51 @@ extension ChatListCollectionViewCell {
                 dateLabel.isHidden = false
                 
                 failedMessageIcon.isHidden = !isFailedMessage
+                
+                if lastMessage.isPendingMessage(ownerId: self.owner.id) {
+                    let thirtySecondsAgo = Date().addingTimeInterval(-30)
+                    if lastMessage.messageDate < thirtySecondsAgo {
+                        scheduleIcon.isHidden = false
+                    }
+                }
             } else {
                 messageLabel.superview?.isHidden = true
                 dateLabel.isHidden = true
+            }
+        }
+    }
+    
+    private func renderPendingUI(
+        for chatListObject: ChatListCommonObject
+    ) {
+        if chatListObject.isPending() && !chatListObject.isInvite() {
+            contactViewContainerWidth.constant = 35
+            contactImageView.superview?.layoutIfNeeded()
+            
+            contactImageView.makeCircular()
+            contactInitialsLabel.makeCircular()
+            
+            pendingContactDashedLineView.addDottedCircularBorder(
+                lineWidth: 1.0,
+                dashPattern: [3,2],
+                color: UIColor.Sphinx.PlaceholderText
+            )
+            pendingContactDashedLineView.isHidden = false
+            
+            inviteIcon.isHidden = false
+        } else {
+            inviteIcon.isHidden = true
+            pendingContactDashedLineView.isHidden = true
+            
+            contactViewContainerWidth.constant = 45
+            contactImageView.superview?.layoutIfNeeded()
+            
+            if chatListObject.isInvite() {
+                contactImageView.undoMakeCircular()
+                contactInitialsLabel.undoMakeCircular()
+            } else {
+                contactImageView.makeCircular()
+                contactInitialsLabel.makeCircular()
             }
         }
     }
@@ -320,18 +381,20 @@ extension ChatListCollectionViewCell {
     
     @objc func handleLongPress() {
         guard let delegate = delegate,
-              let chatListObject = chatListObject,
-              let indexPath = indexPath else {
+              let chatListObject = chatListObject else {
             return
         }
-        delegate.didLongPressOnCell(chatListObject: chatListObject, owner: owner, indexPath: indexPath)
+        delegate.didLongPressOnCell(
+            cell: self,
+            chatListObject: chatListObject,
+            owner: owner
+        )
     }
     
     override func prepareForReuse() {
         super.prepareForReuse()
         delegate = nil
         chatListObject = nil
-        indexPath = nil
     }
 }
 

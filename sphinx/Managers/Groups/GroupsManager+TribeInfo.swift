@@ -37,6 +37,13 @@ extension GroupsManager {
         var bots : [Bot] = []
         var badgeIds: [Int] = []
         
+        var nonZeroPriceToJoin: Int {
+            if let priceToJoin = priceToJoin, priceToJoin > 0 {
+                return priceToJoin
+            }
+            return 1000
+        }
+        
         static func == (lhs: TribeInfo, rhs: TribeInfo) -> Bool {
             return lhs.name           == rhs.name &&
                    lhs.description    == rhs.description &&
@@ -63,12 +70,15 @@ extension GroupsManager {
         }
     }
     
-    func getChatJSON(tribeInfo:TribeInfo)->JSON?{
-        var chatDict : [String:Any] = [
-            "id":CrypterManager.sharedInstance.generateCryptographicallySecureRandomInt(upperBound: Int(1e5)),
-            "owner_pubkey": tribeInfo.ownerPubkey,
+    ///Sphinx v2
+    static func getChatJSON(
+        tribeInfo: TribeInfo
+    ) -> JSON? {
+        let chatDict : [String: Any] = [
+            "id": SphinxOnionManager.sharedInstance.generateCryptographicallySecureRandomInt(upperBound: Int(1e5)) as Any,
+            "owner_pubkey": tribeInfo.ownerPubkey as Any,
             "name" : tribeInfo.name ?? "Unknown Name",
-            "private": tribeInfo.privateTribe ?? false,
+            "private": tribeInfo.privateTribe,
             "photo_url": tribeInfo.img ?? "",
             "unlisted": tribeInfo.unlisted,
             "price_per_message": tribeInfo.pricePerMessage ?? 0,
@@ -78,21 +88,23 @@ extension GroupsManager {
         return chatJSON
     }
     
-    func getV2Pubkey(qrString:String)->String?{
+    func getV2Pubkey(qrString: String) -> String? {
         if let url = URL(string: "\(API.kHUBServerUrl)?\(qrString)"),
             let components = URLComponents(url: url, resolvingAgainstBaseURL: true),
             let queryItems = components.queryItems,
-           let pubkey = queryItems.first(where: { $0.name == "pubkey" })?.value{
+            let pubkey = queryItems.first(where: { $0.name == "pubkey" })?.value
+        {
             return cleanPubKey(pubkey)
         }
         return nil
     }
     
-    func getV2Host(qrString:String)->String?{
+    func getV2Host(qrString: String) -> String? {
         if let url = URL(string: "\(API.kHUBServerUrl)?\(qrString)"),
             let components = URLComponents(url: url, resolvingAgainstBaseURL: true),
             let queryItems = components.queryItems,
-           let host = queryItems.first(where: { $0.name == "host" })?.value{
+            let host = queryItems.first(where: { $0.name == "host" })?.value
+        {
             return cleanPubKey(host)
         }
         return nil
@@ -108,66 +120,93 @@ extension GroupsManager {
     }
     
     func fetchTribeInfo(
-        host:String,
-        uuid:String,
-        useSSL:Bool,
+        host: String,
+        uuid: String,
+        useSSL: Bool = false,
         completion: @escaping CreateGroupCallback,
         errorCallback: @escaping EmptyCallback
     ){
-        API.sharedInstance.getTribeInfo(host: host, uuid: uuid, useSSL: useSSL, callback: { groupInfo in
-            completion(groupInfo)
-        }, errorCallback: {
-            errorCallback()
-        })
+        API.sharedInstance.getTribeInfo(
+            host: host,
+            uuid: uuid,
+            callback: { groupInfo in
+                completion(groupInfo)
+            }, errorCallback: {
+                errorCallback()
+            }
+        )
     }
     
-    func finalizeTribeJoin(tribeInfo:TribeInfo,qrString:String){
+    func finalizeTribeJoin(
+        tribeInfo: TribeInfo,
+        qrString: String
+    ){
         if let pubkey = getV2Pubkey(qrString: qrString),
-           let chatJSON = getChatJSON(tribeInfo:tribeInfo),
-           let routeHint = tribeInfo.ownerRouteHint,
-           let chat = Chat.insertChat(chat: chatJSON){
+           let chatJSON = GroupsManager.getChatJSON(tribeInfo:tribeInfo),
+           let routeHint = tribeInfo.ownerRouteHint
+        {
             let isPrivate = tribeInfo.privateTribe
-            SphinxOnionManager.sharedInstance.joinTribe(tribePubkey: pubkey, routeHint: routeHint, alias: UserContact.getOwner()?.nickname,isPrivate: isPrivate)
-            chat.status = (isPrivate) ? Chat.ChatStatus.pending.rawValue : Chat.ChatStatus.approved.rawValue
-            chat.type = Chat.ChatType.publicGroup.rawValue
-            chat.managedObjectContext?.saveContext()
+            let priceToJoin = tribeInfo.nonZeroPriceToJoin
+            
+            if SphinxOnionManager.sharedInstance.joinTribe(
+                tribePubkey: pubkey,
+                routeHint: routeHint,
+                joinAmountMsats: priceToJoin,
+                alias: UserContact.getOwner()?.nickname,
+                isPrivate: isPrivate,
+                errorCallback: { error in
+                    AlertHelper.showAlert(
+                        title: "generic.error.title".localized,
+                        message: error.localizedDescription
+                    )
+                }
+            ) {
+                if let chat = Chat.insertChat(chat: chatJSON) {
+                    chat.status = (isPrivate) ? Chat.ChatStatus.pending.rawValue : Chat.ChatStatus.approved.rawValue
+                    chat.type = Chat.ChatType.publicGroup.rawValue
+                    chat.managedObjectContext?.saveContext()
+                }
+            }
         }
     }
     
-    func lookupAndRestoreTribe(pubkey:String, host:String,completion: @escaping (Chat?)->()){
-        var tribeInfo = GroupsManager.TribeInfo(ownerPubkey:pubkey, host: host,uuid: pubkey)
+    func lookupAndRestoreTribe(
+        pubkey: String,
+        host: String,
+        completion: @escaping (Chat?) -> ()
+    ){
+        let tribeInfo = GroupsManager.TribeInfo(ownerPubkey: pubkey, host: host, uuid: pubkey)
         
         GroupsManager.sharedInstance.fetchTribeInfo(
             host: tribeInfo.host,
             uuid: tribeInfo.uuid,
             useSSL: false,
             completion: { groupInfo in
-                //1. parse tribe info
-                print(groupInfo)
+                if groupInfo["deleted"].boolValue == true {
+                    completion(nil)
+                    return
+                }
                 
-                var chatDict : [String:Any] = [
-                    "id":CrypterManager.sharedInstance.generateCryptographicallySecureRandomInt(upperBound: Int(1e5)),
+                let chatDict : [String: Any] = [
+                    "id": SphinxOnionManager.sharedInstance.generateCryptographicallySecureRandomInt(upperBound: Int(1e5)) as Any,
                     "owner_pubkey": groupInfo["pubkey"],
                     "name" : groupInfo["name"],
                     "private": groupInfo["private"],
                     "photo_url": groupInfo["img"],
                     "unlisted": groupInfo["unlisted"],
                     "price_per_message": groupInfo["price_per_message"],
-                    "escrow_amount": max(groupInfo["escrow_amount"] ?? 3, 3)
+                    "escrow_amount": max(groupInfo["escrow_amount"].int ?? 3, 3)
                 ]
+                
                 let chatJSON = JSON(chatDict)
-                //2. take the relevant information and create a chat accordingly
                 let resultantChat = Chat.insertChat(chat: chatJSON)
                 resultantChat?.status = (chatDict["private"] as? Bool ?? false) ? Chat.ChatStatus.pending.rawValue : Chat.ChatStatus.approved.rawValue
                 resultantChat?.type = (chatDict["private"] as? Bool ?? false) ? Chat.ChatType.privateGroup.rawValue : Chat.ChatType.publicGroup.rawValue
                 resultantChat?.managedObjectContext?.saveContext()
                 completion(resultantChat)
-                return
             },
             errorCallback: {
-                AlertHelper.showAlert(title: "Error Restoring tribe", message: "")
+                completion(nil)
         })
-        
-        completion(nil)
     }
 }

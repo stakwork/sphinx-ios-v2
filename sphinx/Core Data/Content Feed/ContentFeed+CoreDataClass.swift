@@ -22,7 +22,16 @@ public class ContentFeed: NSManagedObject {
             return nil
         }
         
+        let feedUrl = json[CodingKeys.feedURL.rawValue].stringValue
+        let feedId = fId.fixedFeedId(feedUrl: feedUrl)
+        
         var contentFeed: ContentFeed
+        
+        let itemsData = ContentFeed.deleteFeedWith(feedId: feedId, context: context)
+        
+        guard let items = json[CodingKeys.items.rawValue].array, items.count > 0 else {
+            return nil
+        }
         
         if let managedObjectContext = context {
             contentFeed = ContentFeed(context: managedObjectContext)
@@ -30,19 +39,11 @@ public class ContentFeed: NSManagedObject {
             contentFeed = ContentFeed(entity: ContentFeed.entity(), insertInto: nil)
         }
         
-        let feedUrl = json[CodingKeys.feedURL.rawValue].stringValue
-        let feedId = fId.fixedFeedId(feedUrl: feedUrl)
-        
         contentFeed.feedURL = URL(string: feedUrl)
         contentFeed.feedID = feedId
-        
-        guard let items = json[CodingKeys.items.rawValue].array, items.count > 0 else {
-            ContentFeed.deleteFeedWith(feedId: feedId)
-            return nil
-        }
-        
         contentFeed.title = json[CodingKeys.title.rawValue].stringValue
-        contentFeed.feedKindValue = FeedType(rawValue: json[CodingKeys.feedKindValue.rawValue].int16Value)?.rawValue ?? 0
+        let oldFeedType = OldFeedType(rawValue: json[CodingKeys.feedKindValue.rawValue].int16Value) ?? OldFeedType.Podcast
+        contentFeed.feedKindValue = FeedContentType.getFeedTypeFrom(oldFeedType: oldFeedType).rawValue
         contentFeed.ownerURL = URL(string: json[CodingKeys.ownerURL.rawValue].stringValue)
         contentFeed.generator = json[CodingKeys.generator.rawValue].stringValue
         contentFeed.authorName = json[CodingKeys.authorName.rawValue].stringValue
@@ -66,7 +67,11 @@ public class ContentFeed: NSManagedObject {
         
         if let items = json[CodingKeys.items.rawValue].array {
             for item in items {
-                let i = ContentFeedItem.createObjectFrom(json: item, context: context)
+                let i = ContentFeedItem.createObjectFrom(
+                    json: item,
+                    context: context,
+                    itemsData: itemsData
+                )
                 i?.contentFeed = contentFeed
             }
         }
@@ -135,7 +140,7 @@ public class ContentFeed: NSManagedObject {
         persistingIn managedObjectContext: NSManagedObjectContext,
         then completionHandler: ((Result<ContentFeed, Error>) -> Void)? = nil
     ) {
-        let tribesServerURL = "\(API.kTribesServerBaseURL)/feed?url=\(feedURLPath)&fulltext=true"
+        let tribesServerURL = "\(API.tribesV1Url)/feed?url=\(feedURLPath)&fulltext=true"
         
         API.sharedInstance.getContentFeed(
             url: tribesServerURL,
@@ -186,15 +191,21 @@ public class ContentFeed: NSManagedObject {
         persistingIn managedObjectContext: NSManagedObjectContext,
         then completionHandler: ((Result<ContentFeed, Error>) -> Void)? = nil
     ) {
-        let tribesServerURL = "\(API.kTribesServerBaseURL)/feed?url=\(feedURLPath)&fulltext=true"
+        let tribesServerURL = "\(API.tribesV1Url)/feed?url=\(feedURLPath)&fulltext=true"
         
         API.sharedInstance.getContentFeed(
             url: tribesServerURL,
             callback: { feedJSON in
                 if let contentFeed = contentFeed {
+                    let itemsData = contentFeed.getItemsData()
+                    
                     if let items = feedJSON[ContentFeed.CodingKeys.items.rawValue].array {
                         for item in items {
-                            let i = ContentFeedItem.createObjectFrom(json: item, context: managedObjectContext)
+                            let i = ContentFeedItem.createObjectFrom(
+                                json: item,
+                                context: managedObjectContext,
+                                itemsData: itemsData
+                            )
                             i?.contentFeed = contentFeed
                         }
                     }

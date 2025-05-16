@@ -33,8 +33,11 @@ typealias UpdateUserCallback = ((JSON) -> ())
 typealias UploadProgressCallback = ((Int) -> ())
 typealias UploadCallback = ((Bool, String?) -> ())
 typealias SuccessCallback = ((Bool) -> ())
+typealias FetchRoutingInfoCallback = ((String?) -> ())
+typealias UpdateRoutingInfoCallback = ((String?, String?) -> ())
 typealias CreateSubscriptionCallback = ((JSON) -> ())
 typealias GetSubscriptionsCallback = (([JSON]) -> ())
+typealias AuthorizeBTCallback = ((NSDictionary?) -> ())
 typealias MuteChatCallback = ((JSON) -> ())
 typealias NotificationLevelCallback = ((JSON) -> ())
 typealias GetAllTribesCallback = (([NSDictionary]) -> ())
@@ -51,13 +54,14 @@ typealias PodcastInfoCallback = ((JSON) -> ())
 typealias OnchainAddressCallback = ((String) -> ())
 typealias AppVersionsCallback = ((String) -> ())
 typealias TransportKeyCallback = ((String) -> ())
-typealias HMACKeyCallback = ((String) -> ())
 typealias HardwarePublicKeyCallback = ((String) -> ())
 typealias HardwareSeedCallback = ((Bool) -> ())
 typealias SyncActionsCallback = ((Bool) -> ())
 typealias RecommendationsCallback = (([RecommendationResult]) -> ())
 typealias PinMessageCallback = ((String) -> ())
 typealias ErrorCallback = ((String) -> ())
+typealias LiveKitTokenCallback = ((String, String) -> ())
+typealias LiveKitRecordingCallback = ((Bool) -> ())
 
 // HUB calls
 typealias SignupWithCodeCallback = ((JSON, String, String) -> ())
@@ -74,8 +78,20 @@ typealias VerifyAuthenticationCallback = ((String?) -> ())
 typealias UploadAttachmentCallback = ((Bool, NSDictionary?) -> ())
 typealias MediaInfoCallback = ((Int, String?, Int?) -> ())
 
+//GraphMindset
+typealias CheckNodeCallback = ((API.CheckNodeResponse) -> ())
+typealias GetNodeChaptersCallback = ((String) -> ())
+typealias GetNodeStatusCallback = ((API.NodeStatusResponse) -> ())
+typealias CreateRunCallback = ((API.CreateRunResponse) -> ())
+typealias StatusProjectCallback = ((Bool) -> ())
+
+
 typealias FeedSearchCompletionHandler = (
     Result<[FeedSearchResult], API.RequestError>
+) -> ()
+
+typealias BTSearchCompletionHandler = (
+    Result<[BTMedia], API.RequestError>
 ) -> ()
 
 typealias GetHasAdminCompletionHandler = (
@@ -100,26 +116,17 @@ class API {
     }
 
     let interceptor = SphinxInterceptor()
-    var onionConnector = SphinxOnionConnector.sharedInstance
     var cancellableRequest: DataRequest?
     var podcastSearchRequest: DataRequest?
     var currentRequestType : API.CancellableRequestType = API.CancellableRequestType.messages
     var uploadRequest: UploadRequest?
 
     let messageBubbleHelper = NewMessageBubbleHelper()
+    let btBaseUrl = "https://files.bt2.bard.garden:21433"
 
     enum CancellableRequestType {
         case contacts
         case messages
-    }
-
-    var lastSeenMessagesDate: Date? {
-        get {
-            return UserDefaults.Keys.lastSeenMessagesDate.get(defaultValue: nil)
-        }
-        set {
-            UserDefaults.Keys.lastSeenMessagesDate.set(newValue)
-        }
     }
 
     public static var kAttachmentsServerUrl : String {
@@ -146,23 +153,31 @@ class API {
         }
     }
 
-    public static var kVideoCallServer : String {
+    public static let kJitsiCallServer = "https://jitsi.sphinx.chat"
+    public static let kLiveKitCallServer = "https://chat.sphinx.chat"
+    public static let kGraphMindsetUrl = "https://graphmindset.sphinx.chat/api"
+
+    var storedVideoCallServer: String? = nil
+    public var kVideoCallServer : String {
         get {
+            if let storedVideoCallServer = storedVideoCallServer {
+                return storedVideoCallServer
+            }
             if let meetingServerURL = UserDefaults.Keys.meetingServerURL.get(defaultValue: ""), meetingServerURL != "" {
+                self.storedVideoCallServer = meetingServerURL
                 return meetingServerURL
             }
-            return "https://jitsi.sphinx.chat"
+            self.storedVideoCallServer = API.kLiveKitCallServer
+            return self.storedVideoCallServer!
         }
         set {
+            self.storedVideoCallServer = newValue
             UserDefaults.Keys.meetingServerURL.set(newValue)
         }
     }
     
     public static let kPodcastIndexURL = "https://api.podcastindex.org"
-    
-    public static let kTribesServerBaseURL = "https://tribes.sphinx.chat"
-    
-    public static let kTestV2TribesServer = "http://34.229.52.200:8801"
+    public static let tribesV1Url = "https://people.sphinx.chat"
     
 
     class func getUrl(route: String) -> String {
@@ -173,81 +188,8 @@ class API {
         
     }
 
-    class func getWebsocketUrl(route: String) -> String {
-        if route.contains("://") {
-            return getUrl(route: route)
-            .replacingOccurrences(of: "https://", with: "wss://")
-            .replacingOccurrences(of: "http://", with: "ws://")
-        }
-        return "wss://\(route)"
-    }
-
     func session() -> Alamofire.Session? {
-        if !onionConnector.usingTor() {
-            return Alamofire.Session.default
-        }
-
-        switch (onionConnector.onionManager.state) {
-        case .connected:
-            guard let torSession = onionConnector.torSession else {
-                let appDelegate = UIApplication.shared.delegate as! AppDelegate
-                onionConnector.startTor(delegate: appDelegate)
-
-                return nil
-            }
-            return torSession
-        default:
-            return nil
-        }
-    }
-
-    func getURLRequest(
-        route: String,
-        params: NSDictionary? = nil,
-        method: String,
-        additionalHeaders: [String: String] = [:]
-    ) -> URLRequest? {
-        
-        let ip = UserData.sharedInstance.getNodeIP()
-
-        if ip.isEmpty {
-            connectionStatus = .Unauthorize
-            postConnectionStatusChange()
-            return nil
-        }
-
-        let url = API.getUrl(route: "\(ip)\(route)")
-
-        return createAuthenticatedRequest(
-            url,
-            params: params,
-            method: method,
-            additionalHeaders: additionalHeaders
-        )
-    }
-    
-    func getUnauthenticatedURLRequest(
-        route: String,
-        params: NSDictionary? = nil,
-        method: String
-    ) -> URLRequest? {
-        
-        let ip = UserData.sharedInstance.getNodeIP()
-
-        if ip.isEmpty {
-            connectionStatus = .Unauthorize
-            postConnectionStatusChange()
-            return nil
-        }
-
-        let url = API.getUrl(route: "\(ip)\(route)")
-
-        return createRequest(
-            url,
-            bodyParams: params,
-            method: method
-        )
-
+        return Alamofire.Session.default
     }
 
     var errorCounter = 0
@@ -268,41 +210,17 @@ class API {
     var connectionStatus = ConnectionStatus.Connecting
 
     func sphinxRequest(
-        _ urlRequest: URLRequestConvertible,
+        _ urlRequest: URLRequest,
         completionHandler: @escaping (AFDataResponse<Any>) -> Void
     ) {
-        let _ = unauthorizedHandledRequest(urlRequest, completionHandler: completionHandler)
+        unauthorizedHandledRequest(urlRequest, completionHandler: completionHandler)
     }
-
-    func cancellableRequest(
-        _ urlRequest: URLRequestConvertible,
-        type: CancellableRequestType?,
-        completionHandler: @escaping (AFDataResponse<Any>) -> Void
-    ) {
-        if let cancellableRequest = cancellableRequest, type != nil && type == currentRequestType {
-            cancellableRequest.cancel()
-        }
-
-        let request = unauthorizedHandledRequest(urlRequest) { (response) in
-            self.postConnectionStatusChange()
-
-            completionHandler(response)
-        }
-
-        if (type != nil) { currentRequestType = type! }
-        cancellableRequest = request
-    }
-
-    func cleanMessagesRequest() {
-        cancellableRequest?.cancel()
-        cancellableRequest = nil
-    }
-
+    
     func unauthorizedHandledRequest(
-        _ urlRequest: URLRequestConvertible,
+        _ urlRequest: URLRequest,
         completionHandler: @escaping (AFDataResponse<Any>) -> Void
-    ) -> DataRequest? {
-        let request = session()?.request(
+    ) {
+        session()?.request(
             urlRequest,
             interceptor: interceptor
         ).responseJSON { (response) in
@@ -313,8 +231,6 @@ class API {
             case self.successStatusCode:
                 self.connectionStatus = .Connected
             case self.unauthorizedStatusCode:
-                self.getRelaykeys()
-                
                 self.connectionStatus = .Unauthorize
             default:
                 if response.response == nil ||
@@ -328,7 +244,6 @@ class API {
                     if self.errorCounter < 5 {
                         self.errorCounter = self.errorCounter + 1
                     } else if response.response != nil {
-                        self.getIPFromHUB()
                         return
                     }
                     completionHandler(response)
@@ -344,30 +259,7 @@ class API {
                 completionHandler(response)
             }
         }
-        return request
     }
-    
-    func getRelaykeys() {
-        if let appDelegate = UIApplication.shared.delegate as? AppDelegate {
-            appDelegate.getRelayKeys()
-        }
-    }
-    
-//    func getHMACKeyAndRetry(
-//        _ urlRequest: URLRequestConvertible,
-//        completionHandler: @escaping (AFDataResponse<Any>) -> Void
-//    ) -> Bool {
-//        if UserData.sharedInstance.getHmacKey() == nil {
-//            UserData.sharedInstance.getAndSaveHMACKey(completion: {
-//                let _ = self.unauthorizedHandledRequest(
-//                    urlRequest,
-//                    completionHandler: completionHandler
-//                )
-//            })
-//            return true
-//        }
-//        return false
-//    }
 
     func networksConnectionLost() {
         DispatchQueue.main.async {
@@ -379,64 +271,13 @@ class API {
             }
 
             self.connectionStatus = .NoNetwork
-            self.postConnectionStatusChange()
         }
-    }
-
-    func postConnectionStatusChange() {
-        NotificationCenter.default.post(name: .onConnectionStatusChanged, object: nil)
     }
     
     func postMQTTStatusChange(){
         NotificationCenter.default.post(name: .onMQTTConnectionStatusChanged, object: nil)
     }
 
-    func getIPFromHUB() {
-        self.errorCounter = 0
-
-        guard let ownerPubKey = UserData.sharedInstance.getUserPubKey() else {
-            return
-        }
-
-        let url = "\(API.kHUBServerUrl)/api/v1/nodes/\(ownerPubKey)"
-        guard let request = createRequest(url, bodyParams: nil, method: "GET") else {
-            return
-        }
-
-        AF.request(request).responseJSON { (response) in
-            switch response.result {
-            case .success(let data):
-                if let json = data as? NSDictionary {
-                    if let status = json["status"] as? String, status == "ok" {
-                        if let object = json["object"] as? NSDictionary {
-                            if let ip = object["node_ip"] as? String, !ip.isEmpty {
-                                UserData.sharedInstance.save(ip: ip)
-                                SphinxSocketManager.sharedInstance.reconnectSocketToNewIP()
-                                self.reloadDashboard()
-                                return
-                            }
-                        }
-                    }
-                }
-                self.retryGettingIPFromHUB()
-            case .failure(_):
-                self.retryGettingIPFromHUB()
-            }
-        }
-    }
-
-    func retryGettingIPFromHUB() {
-        DelayPerformedHelper.performAfterDelay(seconds: 5, completion: {
-            self.getIPFromHUB()
-        })
-    }
-
-    func reloadDashboard() {
-        let appDelegate = UIApplication.shared.delegate as! AppDelegate
-        appDelegate.reloadContactsAndMessages()
-    }
-
-    
     func createRequest(
         _ url: String,
         bodyParams: NSDictionary?,
@@ -445,17 +286,6 @@ class API {
         contentType: String = "application/json",
         token: String? = nil
     ) -> URLRequest? {
-        
-        if !ConnectivityHelper.isConnectedToInternet {
-            networksConnectionLost()
-            return nil
-        }
-
-        if onionConnector.usingTor() && !onionConnector.isReady() {
-            onionConnector.startIfNeeded()
-            return nil
-        }
-
         if let nsURL = URL(string: url) {
             var request = URLRequest(url: nsURL)
             request.httpMethod = method
@@ -475,65 +305,6 @@ class API {
                 } catch let error as NSError {
                     print("Error: " + error.localizedDescription)
                 }
-            }
-
-            return request
-        } else {
-            return nil
-        }
-    }
-
-    func createAuthenticatedRequest(
-        _ url: String,
-        params: NSDictionary?,
-        method: String,
-        additionalHeaders: [String: String] = [:]
-    ) -> URLRequest? {
-        
-        if !ConnectivityHelper.isConnectedToInternet {
-            networksConnectionLost()
-            return nil
-        }
-
-        if onionConnector.usingTor() && !onionConnector.isReady() {
-            onionConnector.startIfNeeded()
-            return nil
-        }
-
-        if let nsURL = NSURL(string: url) {
-            var request = URLRequest(url: nsURL as URL)
-            request.httpMethod = method
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.setValue("no-cache", forHTTPHeaderField: "Cache-Control")
-            
-            for (key, value) in UserData.sharedInstance.getAuthenticationHeader() {
-                request.setValue(value, forHTTPHeaderField: key)
-            }
-            
-            for (key, value) in additionalHeaders {
-                request.setValue(value, forHTTPHeaderField: key)
-            }
-
-            var bodyData: Data? = nil
-            
-            if let p = params {
-                do {
-                    try bodyData = JSONSerialization.data(withJSONObject: p, options: [])
-                } catch let error as NSError {
-                    print("Error: " + error.localizedDescription)
-                }
-            }
-            
-            if let bodyData = bodyData {
-                request.httpBody = bodyData
-            }
-            
-            for (key, value) in UserData.sharedInstance.getHMACHeader(
-                url: nsURL as URL,
-                method: method,
-                bodyData: bodyData
-            ) {
-                request.setValue(value, forHTTPHeaderField: key)
             }
 
             return request

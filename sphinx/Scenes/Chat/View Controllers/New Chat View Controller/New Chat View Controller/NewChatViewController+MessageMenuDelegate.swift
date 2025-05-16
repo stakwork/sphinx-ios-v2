@@ -62,4 +62,8 @@ extension NewChatViewController : MessageOptionsVCDelegate {
     
     //Unused stubs:
     func shouldToggleReadUnread(chat: Chat) {}
+    
+    func shouldDeleteContact(contact: UserContact) {}
+    
+    func shouldDeleteChat(chat: Chat) {}
 }

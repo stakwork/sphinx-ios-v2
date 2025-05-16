@@ -4,7 +4,7 @@
 /* Class = "UILabel"; text = "Address *"; ObjectID = "39P-Xw-u5x"; */
 "39P-Xw-u5x.text" = "地址 *"; // Dìzhǐ *
 
-"vHf-rK-nEW.text" = "路由提示"; // Lóuyóu tǐshì
+"vHf-rK-nEW.text" = "路由提示 "; // Lóuyóu tǐshì
 
 /* Class = "UILabel"; text = "Nickname *"; ObjectID = "7eV-VN-bp2"; */
 "7eV-VN-bp2.text" = "暱稱 *"; // Nìchēng *
@@ -22,4 +22,8 @@
 "hvF-Lr-QK6.placeholder" = "搜尋"; // Sōusuǒ
 
 /* SAVE TO CONTACTS */
-"o1h-CK-PTE.text" = "儲存至聯絡人"; // Chǔcún zhì liánxì rén 
+"o1h-CK-PTE.text" = "儲存至聯絡人"; // Chǔcún zhì liánxì rén
+
+"akb-VK-ehF.text" = "路由提示";
+
+"rtm-YI-j8R.text" = "刪除聯絡人";

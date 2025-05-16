@@ -35,11 +35,21 @@ class InitialWelcomeViewController: UIViewController {
             withTitle: "existing.user".localized,
             withAccessibilityString: "existing.user"
         )
+        
+        handleLinkQueries()
+    }
+    
+    internal func handleLinkQueries() {
+        if let code: String = UserDefaults.Keys.inviteCode.get() {
+            let newUserSignupFormVC = NewUserSignupFormViewController.instantiate(inviteCode: code)
+            self.navigationController?.pushViewController(newUserSignupFormVC, animated: true)
+            UserDefaults.Keys.inviteCode.removeValue()
+        }
     }
     
     
     @IBAction func newUserButtonTapped(_ sender: UIButton) {
-        let nextVC = NewUserSignupOptionsViewController.instantiate()
+        let nextVC = NewUserSignupDescriptionViewController.instantiate()
         
         navigationController?
             .pushViewController(nextVC, animated: true)

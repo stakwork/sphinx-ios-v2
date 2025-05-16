@@ -132,7 +132,7 @@ extension NewChatTableDataSource : NewMessageTableViewCellDelegate {
             }
             
             if message.isDirectPayment() {
-                MediaLoader.loadPaymentTemplateImage(url: imageUrl, message: message, completion: { messageId, image in
+                MediaLoader.loadPublicImage(url: imageUrl, messageId: message.id, completion: { messageId, image in
                     let updatedMediaData = MessageTableCellState.MediaData(
                         image: image
                     )
@@ -391,35 +391,61 @@ extension NewChatTableDataSource : NewMessageTableViewCellDelegate {
         }
     }
     
-    func shouldLoadBotWebViewDataFor(
+    func shouldLoadLinkImageDataFor(
         messageId: Int,
         and rowIndex: Int
     ) {
         if var tableCellState = getTableCellStateFor(
             messageId: messageId,
             and: rowIndex
-        ),
-           let html = tableCellState.1.botHTMLContent?.html
-        {
-            webViewSemaphore.wait()
+        ) {
             
-            loadWebViewContent(
-                html,
-                completion: { height in
-                    if let height = height {
-                        self.botsWebViewData[messageId] = MessageTableCellState.BotWebViewData(height: height)
-                        
-                        DispatchQueue.main.async {
-                            var snapshot = self.dataSource.snapshot()
-                            snapshot.reloadItems([tableCellState.1])
-                            self.dataSource.apply(snapshot, animatingDifferences: true)
-                        }
-                    }
-                    
-                    self.webViewSemaphore.signal()
+            var url = tableCellState.1.messageMedia?.url
+            
+            if messageId == tableCellState.1.threadOriginalMessage?.id {
+                url = tableCellState.1.threadOriginalMessageMedia?.url
+            }
+            
+            guard let url = url else {
+                return
+            }
+            
+            self.isImageURL(url, completion: { isImage in
+                if !isImage {
+                    return
                 }
-            )
+                MediaLoader.loadPublicImage(url: url, messageId: messageId, completion: { messageId, image in
+                    let updatedMediaData = MessageTableCellState.MediaData(
+                        image: image
+                    )
+                    self.updateMessageTableCellStateFor(rowIndex: rowIndex, messageId: messageId, with: updatedMediaData)
+                }, errorCompletion: { messageId in
+                    let updatedMediaData = MessageTableCellState.MediaData(
+                        failed: true
+                    )
+                    self.updateMessageTableCellStateFor(rowIndex: rowIndex, messageId: messageId, with: updatedMediaData)
+                })
+            })
         }
+    }
+    
+    func isImageURL(_ url: URL, completion: @escaping (Bool) -> Void) {
+        var request = URLRequest(url: url)
+        request.httpMethod = "HEAD"
+
+        URLSession.shared.dataTask(with: request) { (_, response, error) in
+            guard error == nil, let httpResponse = response as? HTTPURLResponse else {
+                completion(false)
+                return
+            }
+
+            if let contentType = httpResponse.allHeaderFields["Content-Type"] as? String {
+                let imageTypes = ["image/jpeg", "image/png", "image/gif", "image/bmp", "image/tiff", "image/webp"]
+                completion(imageTypes.contains(contentType))
+            } else {
+                completion(false)
+            }
+        }.resume()
     }
     
     func shouldLoadTextDataFor(
@@ -527,10 +553,16 @@ extension NewChatTableDataSource {
             if rowIndex < 0 {
                 self.delegate?.shouldReloadThreadHeaderView()
             } else {
-                DispatchQueue.main.async {
+                mediaReloadQueue.async {
                     var snapshot = self.dataSource.snapshot()
-                    snapshot.reloadItems([tableCellState.1])
-                    self.dataSource.apply(snapshot, animatingDifferences: true)
+                
+                    if snapshot.itemIdentifiers.contains(tableCellState.1) {
+                        snapshot.reloadItems([tableCellState.1])
+                        
+                        DispatchQueue.main.async {
+                            self.dataSource.apply(snapshot, animatingDifferences: false)
+                        }
+                    }
                 }
             }
         }
@@ -555,10 +587,15 @@ extension NewChatTableDataSource {
                     (UIScreen.main.bounds.width - (MessageTableCellState.kRowLeftMargin + MessageTableCellState.kRowRightMargin)) * (MessageTableCellState.kBubbleWidthPercentage)
             )
 
-            DispatchQueue.main.async {
+            dataSourceQueue.async {
                 var snapshot = self.dataSource.snapshot()
-                snapshot.reloadItems([tableCellState.1])
-                self.dataSource.apply(snapshot, animatingDifferences: true)
+            
+                if snapshot.itemIdentifiers.contains(tableCellState.1) {
+                    snapshot.reloadItems([tableCellState.1])
+                    DispatchQueue.main.async {
+                        self.dataSource.apply(snapshot, animatingDifferences: true)
+                    }
+                }
             }
         }
     }
@@ -574,10 +611,16 @@ extension NewChatTableDataSource {
         ) {
             uploadingProgress[messageId] = updatedUploadProgressData
             
-            DispatchQueue.main.async {
+            dataSourceQueue.async {
                 var snapshot = self.dataSource.snapshot()
-                snapshot.reloadItems([tableCellState.1])
-                self.dataSource.apply(snapshot, animatingDifferences: true)
+            
+                if snapshot.itemIdentifiers.contains(tableCellState.1) {
+                    snapshot.reloadItems([tableCellState.1])
+                    
+                    DispatchQueue.main.async {
+                        self.dataSource.apply(snapshot, animatingDifferences: false)
+                    }
+                }
             }
         }
     }
@@ -594,10 +637,16 @@ extension NewChatTableDataSource {
         {
             preloaderHelper.linksData[linkWeb.link] = linkData
 
-            DispatchQueue.main.async {
+            dataSourceQueue.async {
                 var snapshot = self.dataSource.snapshot()
-                snapshot.reloadItems([tableCellState.1])
-                self.dataSource.apply(snapshot, animatingDifferences: true)
+            
+                if snapshot.itemIdentifiers.contains(tableCellState.1) {
+                    snapshot.reloadItems([tableCellState.1])
+                    
+                    DispatchQueue.main.async {
+                        self.dataSource.apply(snapshot, animatingDifferences: true)
+                    }
+                }
             }
         }
     }
@@ -607,19 +656,38 @@ extension NewChatTableDataSource {
 extension NewChatTableDataSource {
     func didTapMessageReplyFor(
         messageId: Int,
-        and rowIndex: Int
+        and rowIndex: Int,
+        with height: CGFloat?
     ) {
+        replyViewHeight[messageId] = height
+        
         if var tableCellState = getTableCellStateFor(
             messageId: messageId,
             and: rowIndex
-        ) {
-            if let messageReply = tableCellState.1.messageReply {
-                if let replyingTableCellIndex = getTableCellStateFor(messageId: messageReply.messageId)?.0 {
-                    tableView.scrollToRow(
-                        at: IndexPath(row: replyingTableCellIndex, section: 0),
-                        at: .top,
-                        animated: true
-                    )
+        )
+        {
+            self.saveSnapshotCurrentState()
+            var snapshot = self.dataSource.snapshot()
+            
+            if snapshot.itemIdentifiers.contains(tableCellState.1) {
+                dataSourceQueue.sync {
+                    snapshot.reloadItems([tableCellState.1])
+                    
+                    DispatchQueue.main.async {
+                        self.dataSource.apply(snapshot, animatingDifferences: true) {
+                            if height == nil {
+                                if let messageReply = tableCellState.1.messageReply {
+                                    if let replyingTableCellIndex = self.getTableCellStateFor(messageId: messageReply.messageId)?.0 {
+                                        self.tableView.scrollToRow(
+                                            at: IndexPath(row: replyingTableCellIndex, section: 0),
+                                            at: .top,
+                                            animated: true
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -633,7 +701,11 @@ extension NewChatTableDataSource {
             messageId: messageId,
             and: rowIndex
         ), let link = tableCellState.1.callLink?.link {
-            ClipboardHelper.copyToClipboard(text: link, message: "call.link.copied.clipboard".localized)
+            if !link.contains("startAudioOnly") {
+                ClipboardHelper.copyToClipboard(text: "\(link)?startAudioOnly=true", message: "call.link.copied.clipboard".localized)
+            } else {
+                ClipboardHelper.copyToClipboard(text: link, message: "call.link.copied.clipboard".localized)
+            }
         }
     }
     
@@ -775,7 +847,7 @@ extension NewChatTableDataSource {
                     )
                 } else if link.isTribeJoinLink {
                     delegate?.didTapOnTribeWith(joinLink: link)
-                } else if link.starts(with: API.kVideoCallServer) {
+                } else if link.isJitsiCallLink || link.isLiveKitCallLink {
                     VideoCallManager.sharedInstance.startVideoCall(link: link)
                 } else if let url = URL(string: link.withProtocol(protocolString: "http")) {
                     UIApplication.shared.open(
@@ -946,40 +1018,76 @@ extension NewChatTableDataSource {
     
     func deleteGroup() {
         messageBubbleHelper.showLoadingWheel()
-        guard let chat = chat else{
+        
+        guard let chat = chat else {
             return
         }
-        SphinxOnionManager.sharedInstance.exitTribe(tribeChat: chat)
-        DelayPerformedHelper.performAfterDelay(seconds: 1.5, completion: {
-            CoreDataManager.sharedManager.deleteChatObjectsFor(chat)
-            if let vc = self.delegate as? NewChatViewController{
-                vc.navigationController?.popViewController(animated: true)
+        
+        let som = SphinxOnionManager.sharedInstance
+        let success = som.exitTribe(
+            tribeChat: chat,
+            errorCallback: { error in
+                AlertHelper.showAlert(
+                    title: "generic.error.title".localized,
+                    message: error.localizedDescription
+                )
+                self.messageBubbleHelper.hideLoadingWheel()
             }
-        })
+        )
+        
+        if !success {
+            return
+        }
+        
+        let _ = som.deleteContactOrChatMsgsFor(chat: chat)
+        
+        CoreDataManager.sharedManager.deleteChatObjectsFor(chat)
+        
+        if let vc = self.delegate as? NewChatViewController {
+            vc.navigationController?.popViewController(animated: true)
+            self.messageBubbleHelper.hideLoadingWheel()
+        }
     }
     
     func shouldApproveMember(message: TransactionMessage) {
         messageBubbleHelper.showLoadingWheel()
+        
         guard let uuid = message.uuid,
-        let chat = chat else{
+        let chat = chat else
+        {
             messageBubbleHelper.hideLoadingWheel()
             AlertHelper.showAlert(title: "Error", message: "There was an error with corrupted data from this request (invalid uuid)")
             return
         }
-        SphinxOnionManager.sharedInstance.approveOrRejectTribeJoinRequest(requestUuid: uuid, chat: chat, type: TransactionMessage.TransactionMessageType.memberApprove)
-        messageBubbleHelper.hideLoadingWheel()
+        
+        SphinxOnionManager.sharedInstance.approveOrRejectTribeJoinRequest(
+            requestUuid: uuid, 
+            chat: chat,
+            type: TransactionMessage.TransactionMessageType.memberApprove
+        )
+        
+        DelayPerformedHelper.performAfterDelay(seconds: 1.0, completion: {
+            self.messageBubbleHelper.hideLoadingWheel()
+        })
     }
     
     func shouldRejectMember(message: TransactionMessage) {
         messageBubbleHelper.showLoadingWheel()
         
         guard let uuid = message.uuid,
-        let chat = chat else{
+        let chat = chat else
+        {
             messageBubbleHelper.hideLoadingWheel()
             AlertHelper.showAlert(title: "Error", message: "There was an error with corrupted data from this request (invalid uuid)")
             return
         }
-        SphinxOnionManager.sharedInstance.approveOrRejectTribeJoinRequest(requestUuid: uuid, chat: chat, type: TransactionMessage.TransactionMessageType.memberReject)
+        
+        SphinxOnionManager.sharedInstance.approveOrRejectTribeJoinRequest(
+            requestUuid: uuid,
+            chat: chat,
+            type: TransactionMessage.TransactionMessageType.memberReject
+        )
+        
         messageBubbleHelper.hideLoadingWheel()
     }
     
@@ -1021,14 +1129,17 @@ extension NewChatTableDataSource {
                 if mutableTableCellState.bubble?.grouping == .Empty {
                     return
                 }
+                
+                if let messageId = tableCellState.1.message?.id {
+                    delegate?.didLongPressOn(
+                        cell: cell,
+                        with: messageId,
+                        bubbleViewRect: bubbleViewRect,
+                        isThreadRow: messageIsThread(cell: cell, with: messageId)
+                    )
+                }
             }
         }
-        delegate?.didLongPressOn(
-            cell: cell,
-            with: messageId,
-            bubbleViewRect: bubbleViewRect,
-            isThreadRow: messageIsThread(cell: cell, with: messageId)
-        )
     }
     
     func messageIsThread(
@@ -1078,6 +1189,10 @@ extension NewChatTableDataSource {
                 tableCellState = (i, messageTableCellStateArray[i])
                 break
             }
+        }
+        
+        if let rowIndex = rowIndex, tableCellState == nil && messageTableCellStateArray.count > rowIndex {
+            return (rowIndex, messageTableCellStateArray[rowIndex])
         }
         
         return tableCellState

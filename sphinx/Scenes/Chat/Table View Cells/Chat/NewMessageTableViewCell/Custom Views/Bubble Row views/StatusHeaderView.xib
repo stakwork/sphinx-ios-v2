@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="21507" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="23504" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
     <device id="retina6_12" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="21505"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23506"/>
         <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -33,12 +33,14 @@
                 <outlet property="receivedLockIcon" destination="raA-FE-Oun" id="lHR-Si-lBZ"/>
                 <outlet property="receivedSenderLabel" destination="a1n-vE-EGm" id="EXz-zw-X2C"/>
                 <outlet property="receivedStatusHeader" destination="doW-39-j69" id="Kvp-MX-YxC"/>
+                <outlet property="remoteTimezoneIdentifier" destination="jGL-Xr-Bif" id="czC-8V-J8z"/>
                 <outlet property="sentDateLabel" destination="Izc-1S-aLu" id="YrD-XY-4pA"/>
                 <outlet property="sentErrorIcon" destination="DRW-Za-E1A" id="Nzd-89-9ma"/>
                 <outlet property="sentErrorMessage" destination="jBP-CU-thj" id="0nY-9i-UIy"/>
                 <outlet property="sentFailureHeader" destination="RA9-ez-Aki" id="M0F-ZG-5wm"/>
                 <outlet property="sentLightningIcon" destination="5WX-MN-zYk" id="g7D-4B-DAw"/>
                 <outlet property="sentLockIcon" destination="usL-tn-6iZ" id="qXJ-cY-aOH"/>
+                <outlet property="sentScheduleIcon" destination="GPh-gh-4Kj" id="a4x-BG-BdY"/>
                 <outlet property="sentStatusHeader" destination="Atd-K5-zNf" id="gcM-1j-Y2B"/>
                 <outlet property="uploadingHeader" destination="DzI-Kn-kTP" id="vSb-wX-2ev"/>
                 <outlet property="uploadingLabel" destination="3F3-gL-YNH" id="p68-cd-iL4"/>
@@ -96,7 +98,7 @@
                     <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                 </stackView>
                 <stackView opaque="NO" contentMode="scaleToFill" spacing="4" translatesAutoresizingMaskIntoConstraints="NO" id="doW-39-j69">
-                    <rect key="frame" x="0.0" y="0.0" width="92.666666666666671" height="17"/>
+                    <rect key="frame" x="0.0" y="0.0" width="146.66666666666666" height="17"/>
                     <subviews>
                         <label hidden="YES" opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Tom" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="a1n-vE-EGm">
                             <rect key="frame" x="0.0" y="0.0" width="0.0" height="17"/>
@@ -112,8 +114,14 @@
                             <color key="textColor" name="SecondaryText"/>
                             <nil key="highlightedColor"/>
                         </label>
+                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="jGL-Xr-Bif">
+                            <rect key="frame" x="79.666666666666671" y="0.0" width="50.000000000000014" height="17"/>
+                            <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="11"/>
+                            <color key="textColor" name="SecondaryText"/>
+                            <nil key="highlightedColor"/>
+                        </label>
                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="lock" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="raA-FE-Oun">
-                            <rect key="frame" x="79.666666666666671" y="0.0" width="13" height="17"/>
+                            <rect key="frame" x="133.66666666666666" y="0.0" width="13" height="17"/>
                             <fontDescription key="fontDescription" name="MaterialIcons-Regular" family="Material Icons" pointSize="13"/>
                             <color key="textColor" name="SecondaryText"/>
                             <nil key="highlightedColor"/>
@@ -151,6 +159,12 @@
                                 </view>
                             </subviews>
                         </stackView>
+                        <label hidden="YES" opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="schedule" textAlignment="right" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="GPh-gh-4Kj">
+                            <rect key="frame" x="96.333333333333314" y="0.0" width="0.0" height="17"/>
+                            <fontDescription key="fontDescription" name="MaterialIcons-Regular" family="Material Icons" pointSize="12"/>
+                            <color key="textColor" name="sphinxOrange"/>
+                            <nil key="highlightedColor"/>
+                        </label>
                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="flash_on" textAlignment="right" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="5WX-MN-zYk">
                             <rect key="frame" x="98.333333333333314" y="0.0" width="12" height="17"/>
                             <fontDescription key="fontDescription" name="MaterialIcons-Regular" family="Material Icons" pointSize="12"/>
@@ -211,6 +225,9 @@
         </namedColor>
         <namedColor name="Text">
             <color red="0.23529411764705882" green="0.24705882352941178" blue="0.25490196078431371" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+        <namedColor name="sphinxOrange">
+            <color red="1" green="0.74099999666213989" blue="0.34900000691413879" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>
     </resources>
 </document>

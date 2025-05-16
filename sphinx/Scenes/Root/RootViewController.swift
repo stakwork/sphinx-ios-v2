@@ -29,6 +29,17 @@ class RootViewController: UIViewController, ContainerViewController {
         setNeedsStatusBarAppearanceUpdate()
     }
     
+    func getDashboardViewController() -> DashboardRootViewController? {
+        if let drawerController = currentViewController as? KYDrawerController {
+            if let centerVC = drawerController.mainViewController as? UINavigationController {
+                if let dashboardVC = centerVC.viewControllers.first as? DashboardRootViewController {
+                    return dashboardVC
+                }
+            }
+        }
+        return nil
+    }
+    
     func getLastCenterViewController() -> UIViewController? {
         if let drawerController = currentViewController as? KYDrawerController {
             if let centerVC = drawerController.mainViewController as? UINavigationController {

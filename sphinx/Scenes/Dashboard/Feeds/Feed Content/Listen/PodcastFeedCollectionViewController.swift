@@ -82,22 +82,9 @@ extension PodcastFeedCollectionViewController {
 
     enum DataSourceItem: Hashable, Equatable {
         case listenNowEpisode(PodcastEpisode, Int)
-        case subscribedPodcastFeed(PodcastFeed)
+        case recentlyPlayedEpisode(PodcastEpisode, Int)
         
         static func == (lhs: DataSourceItem, rhs: DataSourceItem) -> Bool {
-            if let lhsContentFeed = lhs.feedEntity,
-               let rhsContentFeed = rhs.feedEntity {
-                    
-                return
-                    lhsContentFeed.feedID == rhsContentFeed.feedID &&
-                    lhsContentFeed.title == rhsContentFeed.title &&
-                    lhsContentFeed.feedURLPath == rhsContentFeed.feedURLPath &&
-                    lhsContentFeed.dateLastConsumed == rhsContentFeed.dateLastConsumed &&
-                    lhsContentFeed.episodesArray.count == rhsContentFeed.episodesArray.count &&
-                    lhsContentFeed.getLastEpisode()?.id == rhsContentFeed.getLastEpisode()?.id &&
-                    lhsContentFeed.getLastEpisode()?.datePublished == rhsContentFeed.getLastEpisode()?.datePublished
-            }
-            
             if let lhsEpisode = lhs.episodeEntity,
                let rhsEpisode = rhs.episodeEntity {
                     
@@ -111,10 +98,6 @@ extension PodcastFeedCollectionViewController {
          }
 
         func hash(into hasher: inout Hasher) {
-            if let contentFeed = self.feedEntity {
-                hasher.combine(contentFeed.feedID)
-            }
-            
             if let episode = self.episodeEntity {
                 hasher.combine(episode.0.itemID)
             }
@@ -141,6 +124,13 @@ extension PodcastFeedCollectionViewController {
         configure(collectionView)
         configureDataSource(for: collectionView)
         addTableBottomInset(for: collectionView)
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        
+        NotificationCenter.default.removeObserver(self, name: .refreshFeedUI, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(forceItemsRefresh), name: .refreshFeedUI, object: nil)
         
         fetchItems()
     }
@@ -151,13 +141,6 @@ extension PodcastFeedCollectionViewController {
         
         collectionView.contentInset.bottom = bottomBarHeight + windowInsets.bottom
         collectionView.verticalScrollIndicatorInsets.bottom = bottomBarHeight + windowInsets.bottom
-    }
-
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        
-        NotificationCenter.default.removeObserver(self, name: .refreshFeedUI, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(forceItemsRefresh), name: .refreshFeedUI, object: nil)
     }
     
     override func viewDidDisappear(_ animated: Bool) {
@@ -318,32 +301,27 @@ extension PodcastFeedCollectionViewController {
     func makeSnapshotForCurrentState() -> DataSourceSnapshot {
         var snapshot = DataSourceSnapshot()
 
-        if (followedPodcastFeeds.isEmpty) {
-            return snapshot
-        }
-        
-        snapshot.appendSections([CollectionViewSection.recentlyReleasePods])
+        // Handle recently released (subscribed) podcasts
+        let recentlyReleasedEpisodes = followedPodcastFeeds
+            .compactMap { $0.episodesArray.first }
+            .map { episode in
+                DataSourceItem.listenNowEpisode(episode, episode.currentTime ?? 0)
+            }
 
-        snapshot.appendItems(
-            self.followedPodcastFeeds
-                .compactMap { $0.episodesArray.first }
-                .map { episode in
-                    DataSourceItem.listenNowEpisode(episode, episode.currentTime ?? 0)
-                },
-            toSection: .recentlyReleasePods
-       )
-        
-        let recentlyPlayedFeed = allPodcastFeeds.filter { $0.dateLastConsumed != nil }.compactMap { contentFeed -> DataSourceItem? in
-            return DataSourceItem.subscribedPodcastFeed(contentFeed)
-        }
-        
-        if !recentlyPlayedFeed.isEmpty {
+        snapshot.appendSections([CollectionViewSection.recentlyReleasePods])
+        snapshot.appendItems(recentlyReleasedEpisodes, toSection: .recentlyReleasePods)
+
+        // Handle recently played episodes
+        let recentlyPlayedEpisodes = allPodcastFeeds
+            .filter { $0.dateLastConsumed != nil }
+            .compactMap { feed -> DataSourceItem? in
+                guard let lastPlayedEpisode = feed.getCurrentEpisode() else { return nil }
+                return DataSourceItem.recentlyPlayedEpisode(lastPlayedEpisode, lastPlayedEpisode.currentTime ?? 0)
+            }
+
+        if !recentlyPlayedEpisodes.isEmpty {
             snapshot.appendSections([CollectionViewSection.recentlyPlayedPods])
-            
-            snapshot.appendItems(
-                recentlyPlayedFeed,
-                toSection: .recentlyPlayedPods
-            )
+            snapshot.appendItems(recentlyPlayedEpisodes, toSection: .recentlyPlayedPods)
         }
 
         return snapshot
@@ -418,10 +396,9 @@ extension PodcastFeedCollectionViewController {
             }
 
             switch dataSourceItem {
-            case .listenNowEpisode(let podcastEpisode, _):
+            case .listenNowEpisode(let podcastEpisode, _),
+                 .recentlyPlayedEpisode(let podcastEpisode, _):
                 cell.configure(withItem: podcastEpisode)
-            case .subscribedPodcastFeed(let podcastFeed):
-                cell.configure(withItem: podcastFeed)
             }
 
             return cell
@@ -494,10 +471,9 @@ extension PodcastFeedCollectionViewController {
         }
 
         switch dataSourceItem {
-        case .listenNowEpisode(let podcastEpisode, _):
+        case .listenNowEpisode(let podcastEpisode, _),
+             .recentlyPlayedEpisode(let podcastEpisode, _):
             onPodcastEpisodeCellSelected(podcastEpisode.itemID)
-        case .subscribedPodcastFeed(let podcastFeed):
-            onSubscribedPodcastFeedCellSelected(podcastFeed)
         }
     }
 }
@@ -537,21 +513,11 @@ extension PodcastFeedCollectionViewController: NSFetchedResultsControllerDelegat
 
 extension PodcastFeedCollectionViewController.DataSourceItem {
     
-    var feedEntity: PodcastFeed? {
-        switch self {
-        case .subscribedPodcastFeed(let podcastFeed):
-            return podcastFeed
-        default:
-            return nil
-        }
-    }
-    
     var episodeEntity: (PodcastEpisode, Int)? {
         switch self {
-        case .listenNowEpisode(let podcastEpisode, let currentTime):
+        case .listenNowEpisode(let podcastEpisode, let currentTime),
+             .recentlyPlayedEpisode(let podcastEpisode, let currentTime):
             return (podcastEpisode, currentTime)
-        default:
-            return nil
         }
     }
 }

@@ -43,8 +43,10 @@ extension ChatAttachmentViewController {
     }
     
     func hideOptionsContainer() {
-        optionsContainerBottomConstraint.constant = kOptionsBottomViewConstant
-        optionsContainer.superview?.layoutSubviews()
+        DispatchQueue.main.async {
+            self.optionsContainerBottomConstraint.constant = self.kOptionsBottomViewConstant
+            self.optionsContainer.superview?.layoutSubviews()
+        }
     }
     
     func dismissView(

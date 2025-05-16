@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import SwiftyJSON
 
 extension NewChatViewModel {
     func shouldBoostMessage(message: TransactionMessage) {
@@ -14,21 +15,90 @@ extension NewChatViewModel {
             contact: contact,
             chat: chat,
             replyingMessage: message
-        ),
-        let chat = chat else {
+        ), let chat = chat else {
             return
         }
         
-        SphinxOnionManager.sharedInstance.sendBoostReply(params: params, chat: chat)
+        SphinxOnionManager.sharedInstance.sendBoostReply(
+            params: params,
+            chat: chat,
+            completion: { _ in}
+        )
     }
     
     func shouldResendMessage(message: TransactionMessage) {
-        sendMessage(
-            provisionalMessage: message,
-            text: message.messageContent ?? "",
-            isResend: true,
-            completion: { _ in }
+        guard let chat = message.chat else{
+            return
+        }
+        
+        if message.isTextMessage() {
+            let _ = SphinxOnionManager.sharedInstance.sendMessage(
+                to: message.chat?.getContact(),
+                content: message.messageContent ?? "",
+                chat: chat,
+                provisionalMessage: message,
+                threadUUID: message.threadUUID,
+                replyUUID: message.replyUUID
+            )
+        } else if message.isAttachment() {
+            let _ = SphinxOnionManager.sharedInstance.sendMessage(
+                to: message.chat?.getContact(),
+                content: message.messageContent ?? "",
+                chat: chat,
+                provisionalMessage: message,
+                msgType: UInt8(message.type),
+                muid: message.muid,
+                mediaKey: message.mediaKey,
+                mediaType: message.mediaType,
+                threadUUID: message.threadUUID,
+                replyUUID: message.replyUUID
+            )
+        }
+    }
+    
+    func shouldTogglePinState(
+        message: TransactionMessage,
+        pin: Bool,
+        callback: @escaping (Bool) -> ()
+    ) {
+        guard let chat = self.chat,
+              let pubkey = chat.ownerPubkey else
+        {
+            return
+        }
+        
+        let groupsManager = GroupsManager()
+        
+        guard let tribeInfo = chat.tribeInfo else {
+            return
+        }
+        groupsManager.newGroupInfo = tribeInfo
+        groupsManager.newGroupInfo.pin = pin ? message.uuid : nil
+        
+        let params = groupsManager.getNewGroupParams()
+        
+        let success = SphinxOnionManager.sharedInstance.updateTribe(
+            params: params,
+            pubkey: pubkey
         )
+        
+        if success {
+            updateChat(
+                chat: chat,
+                withParams: params
+            )
+        }
+        
+        callback(success)
+    }
+    
+    func updateChat(
+        chat: Chat,
+        withParams params: [String: AnyObject]
+    ) {
+        chat.tribeInfo = GroupsManager.sharedInstance.getTribesInfoFrom(json: JSON(params))
+        chat.updateChatFromTribesInfo()
+        chat.managedObjectContext?.saveContext()
     }
 }
 
@@ -86,15 +156,15 @@ extension NewChatViewModel {
         contact: UserContact,
         text: String
     ) {
-        guard let params = TransactionMessage.getMessageParams(
-                contact: contact,
-                type: TransactionMessage.TransactionMessageType.message,
-                text: text
-        ) else {
-            return
-        }
+//        guard let params = TransactionMessage.getMessageParams(
+//                contact: contact,
+//                type: TransactionMessage.TransactionMessageType.message,
+//                text: text
+//        ) else {
+//            return
+//        }
         
-        API.sharedInstance.sendMessage(params: params, callback: { _ in }, errorCallback: {})
+//        API.sharedInstance.sendMessage(params: params, callback: { _ in }, errorCallback: {})
     }
 }
 

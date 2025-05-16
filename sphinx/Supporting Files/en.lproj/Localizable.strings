@@ -54,6 +54,8 @@
 "error.karma.receipt.validation.failed" = "Karma Receipt Validation Failed. Error Message:";
 "error.app-store-purchase-receipt-not-found" = "An AppStore purchase receipt could not be found.";
 "error.app-store-receipt-validation-failed" = "An AppStore receipt validation failed.";
+"error.rss.sync.failed.title" = "RSS Error";
+"error.rss.sync.failed.message" = "Sync to RSS Feed Failed. Please try again.";
 
 
 // DASHBOARD
@@ -62,12 +64,18 @@
 "dashboard.tabs.tribes" = "Tribes";
 "dashboard.feeds.filters.all" = "All";
 "dashboard.feeds.filters.listen" = "Listen";
+"dashboard.feeds.filters.discover" = "Discover New";
+"dashboard.feeds.filters.browse" = "Browse Instance";
 "dashboard.feeds.filters.watch" = "Watch";
 "dashboard.feeds.filters.read" = "Read";
 "dashboard.feeds.filters.play" = "Play";
 "dashboard.feeds.section-headings.following" = "Following";
 "dashboard.feeds.section-headings.directory" = "Directory";
+"dashboard.feeds.section-headings.play.for.free" = "Play for Free";
+"dashboard.feeds.section-headings.download.to.play" = "Download to Play";
 "dashboard.feeds.content.empty-state-message" = "No Podcasts Found";
+"dashboard.feeds.content.download.torrent.started.title" = "Torrent download started";
+"dashboard.feeds.content.download.torrent.started.message" = "Check back in a bit to consume your content";
 
 
 // DASHBOARD FEED SEARCH
@@ -139,11 +147,13 @@
 "just.left.group" = "%@ just left the group";
 "just.left.tribe" = "%@ just left the tribe";
 "has.joined.group" = "%@ has joined the group";
+"you.joined.tribe" = "You have joined the tribe";
 "has.joined.tribe" = "%@ has joined the tribe";
 "added.to.group" = "%@ has been added to group";
 "new.public.group" = "NEW TRIBE";
 "edit.public.group" = "EDIT TRIBE";
 "tribe.kick" = "The admin has removed\nyou from this tribe";
+"tribe.kick.as.admin" = "You've removed a member from this tribe";
 "tribe.deleted" = "The admin has deleted\nthis tribe";
 "member.request" = "%@ wants\nto join the tribe";
 "member.request.rejected" = "The admin\ndeclined your request";
@@ -154,6 +164,7 @@
 "picker-title.tribe-form.feed-type" = "Feed Type";
 "alias.allowed-characters" = "Only letters, numbers and underscore\nare allowed in tribe aliases";
 "invalid.url" = "Invalid URL";
+"admin" = "Admin";
 
 //SUBSCRIPTIONS
 "leave.lose.unsaved.changed" = "Are you sure you want to leave and lose any unsaved changes?";
@@ -183,7 +194,7 @@
 "edit.contact.upper" = "EDIT CONTACT";
 "subscribed.upper" = "SUBSCRIBED";
 "subscribe.upper" = "SUBSCRIBE";
-"nickname.address.required" = "Nickname and Address are required.";
+"nickname.address.required" = "Nickname, Address and Route Hint are required.";
 "new.contact" = "New Contact";
 "invalid.pubkey" = "Invalid Public Key";
 "invalid.route.hint" = "Invalid Route Hint";
@@ -193,6 +204,9 @@
 "address-boox.contact-block.alert-message" = "Are you sure you want to block this contact?";
 "address-boox.contact-unblock.alert-title" = "Unblock Contact";
 "address-boox.contact-unblock.alert-message" = "Are you sure you want to unblock this contact?";
+"address-book.can-not-delete-contact-title" = "Can not delete contact";
+"address-book.can-not-delete-contact-message" = "Confirmed contacts can not be deleted";
+"messages.encrypted.disclaimer" = "Messages and calls are secured with end-to-end encryption";
 
 //WELCOME
 "welcome.initial.title" = "Welcome";
@@ -204,9 +218,9 @@
 //RESTORE EXISTING USER
 "restore.keychain" = "Restore from keychain";
 "restore.description.continue" = "Continue";
-"restore.description.label" = "Copy your keys from your\ndesktop app and paste it here.";
-"restore.copy.keys" = "Copy your keys";
-"restore.form.paste.keys.placeholder" = "Paste your keys...";
+"restore.description.label" = "Copy your seed phrase from your\nmobile app and paste it here.";
+"restore.copy.keys" = "Copy your seed phrase";
+"restore.form.paste.keys.placeholder" = "Paste your seed phrase...";
 "submit" = "Submit";
 "restore.invalid-code.relay-qr-code" = "This looks like a connection code from the Sphinx Relay app. To restore an existing account, you need to enter your backup string.";
 "resume-restoring" = "Resuming Restore...";
@@ -272,9 +286,9 @@
 //PROFILE
 "address.copied.clipboard" = "Address copied to clipboard";
 "route.hint.copied.clipboard" = "Route Hint copied to clipboard";
-"pin.keys.encryption" = "Enter your PIN to encrypt your keys. You will need it when restoring account on other device.";
-"export.keys" = "Export Keys";
-"keys.will.copy.clipboard" = "Your keys will be copied to the clipboard. Save this string & remember your pin before deleting the app or all data will be lost.";
+"pin.keys.encryption" = "Enter your PIN to access your seed phrase";
+"export.keys" = "Export Seed Phrase";
+"keys.will.copy.clipboard" = "Your seed phrase will be copied to the clipboard. Save this string securely or all data will be lost.";
 "keys.copied.clipboard" = "Export keys copied to clipboard";
 "server.url.updated" = "Server URL successfully updated";
 "hour" = "hour";
@@ -336,7 +350,7 @@
 "pin.doesnt.match" = "Pin doesn't match";
 "enter.old.pin" = "ENTER CURRENT PIN";
 "enter.new.pin" = "ENTER NEW PIN";
-"pin.changed" = "Your PIN has been updated. Please re-export your keys using this new PIN.";
+"pin.changed" = "Your PIN has been updated";
 "contact.pin.error" = "You can't use your main PIN as group PIN";
 "set.privacy.pin" = "Set Privacy PIN";
 "change.privacy.pin" = "Change Privacy PIN";
@@ -352,6 +366,7 @@
 "error.loading.transactions" = "There was an error loading transactions list. Please try again later.";
 "loading.more.transactions" = "Loading more transactions...";
 "transactions.failure-reason" = "Failure reason:";
+"failed.payment" = "Failed Payment";
 
 //QR CODE SCANNER
 "scan.qr.code.upper" = "SCAN A QR CODE";
@@ -390,6 +405,7 @@
 "media.terms.expired" = "Media terms expired";
 "message.failed" = "Message Failed";
 "invite.name" = "Invite: %@";
+"add.name" = "Add: %@";
 "welcome.to.sphinx" = "Welcome to Sphinx!";
 "loading.more.messages" = "Loading more messages...";
 "message.placeholder" = "Message...";
@@ -417,6 +433,10 @@
 "copy.text" = "Copy Text";
 "mark.as.read" = "Mark as Read";
 "mark.as.unread" = "Mark as Unread";
+"delete.contact" = "Delete Contact";
+"delete.invite" = "Cancel Invite";
+"delete.contact.warning" = "Are you sure you want to delete this contact?";
+"delete.invite.warning" = "Are you sure you want to delete this invite?";
 "copy.link" = "Copy Link";
 "copy.pub.key" = "Copy Public Key";
 "copy.call.link" = "Copy Call Link";
@@ -456,7 +476,7 @@
 "amount.too.low" = "Amount too low";
 "amount.too.high" = "Amount too high";
 "onchain.amount.too.low" = "Amount too low. Minimum 250000 sats";
-"chat-header.balance.unit" = "karma";
+"chat-header.balance.unit" = "sats";
 "users" = "users";
 "optional.message.placeholder" = "Optional Message...";
 "price.required" = "Price is required";
@@ -490,6 +510,12 @@
 "see-all" = "See All";
 "only-mentions" = "Only Mentions";
 "mute-chat" = "Mute Chat";
+"error.getting.token.title" = "Error getting token";
+"error.getting.token.description" = "There was an error getting a token to join the call. Please try again later";
+"contact.info" = "Contact Details";
+"contact.connected.since" = "Connected since %@";
+"timezone.changed" = "Timezone settings for this chat are saved \nonly on this device. If you use the app on another\ndevice, you'll need to set the timezone again.";
+"message.limit.reached" = "Character limit reached.\nEdit or send your message.";
 
 
 //OTHER
@@ -520,6 +546,9 @@
 "authorization.failed" = "Authorization Failed";
 "already.connected" = "You are already connected with this person";
 "price.to.meet" = "Price to meet: ";
+"invalid.public-key" = "Invalid Public Key";
+"processing.payment" = "Processing payment";
+"processing.payment.description" = "This process could take up to 60 seconds. You will be notified when completed";
 
 "people.save-profile" = "Save Profile from:";
 "people.delete-profile" = "Delete Profile from:";
@@ -555,6 +584,7 @@
 "invite.in.progress.message" = "%@ is signing on.";
 "invite.pmt.in.progress.title" = "Payment in progress";
 "invite.pmt.in.progress.message" = "Your payment is being processed.";
+"contact.pending" = "Waiting for approval";
 
 //PODCAST
 "episodes" = "episodes";
@@ -601,18 +631,21 @@
 "feed.recently-published" = "Recently Published";
 "feed.recently-read" = "Recently Read";
 "feed.play-now" = "Play Now";
-"feed.no-feed-found" = "No Feed Results Found";
-"feed.no-listen-found" = "No \"Listen\" Results Found";
-"feed.no-watch-found" = "No \"Watch\" Results Found";
-"feed.no-read-found" = "No \"Read\" Results Found";
-"feed.no-play-found" = "No \"Play\" Results Found";
+"feed.no-feed-found" = "No Feed results found";
+"feed.no-listen-found" = "No \"Listen\" results found";
+"feed.no-watch-found" = "No \"Watch\" results found";
+"feed.no-read-found" = "No \"Read\" results found";
+"feed.no-play-found" = "No \"Play\" results found";
 
 "feed.search-over" = "Search over";
+"feed.search-tracks-quantity" = "millions of tracks";
+"feed.search-torrent-source" = "on BitTorrent";
 "feed.search-podcast-quantity" = "4 000 000 podcasts";
 "feed.search-podcast-source" = "on the Podcast Index";
 "feed.search-video-quantity" = "thousands of videos";
 "feed.search-video-source" = "on Youtube";
-"feed.search-other-source" = "your subscribed feeds";
+"feed.search-other-source-rss" = "your feeds";
+"feed.search-other-source-bittorrent" = "bittorrent feeds";
 
 //TIME
 "time.in-the-future" = "in the future";

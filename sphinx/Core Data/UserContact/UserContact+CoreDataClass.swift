@@ -209,7 +209,7 @@ public class UserContact: NSManagedObject {
     }
     
     public static func getPrivateContacts() -> [UserContact] {
-        let predicate = NSPredicate(format: "pin != null")
+        let predicate = NSPredicate(format: "pin != nil")
         let contacts: [UserContact] = CoreDataManager.sharedManager.getObjectsOfTypeWith(predicate: predicate, sortDescriptors: [], entityName: "UserContact")
         return contacts
     }
@@ -255,48 +255,41 @@ public class UserContact: NSManagedObject {
         return false
     }
     
-    public static func getContactsWith(ids: [Int], includeOwner: Bool, ownerAtEnd: Bool) -> [UserContact] {
+    public static func getContactsWith(
+        ids: [Int],
+        includeOwner: Bool,
+        ownerAtEnd: Bool,
+        context: NSManagedObjectContext? = nil
+    ) -> [UserContact] {
         var predicate: NSPredicate! = nil
         if includeOwner {
             predicate = NSPredicate(format: "id IN %@", ids)
         } else {
             predicate = NSPredicate(format: "id IN %@ AND isOwner == %@", ids, NSNumber(value: false))
         }
-        let sortDescriptors = ownerAtEnd ? [NSSortDescriptor(key: "isOwner", ascending: false), NSSortDescriptor(key: "id", ascending: false)] : [NSSortDescriptor(key: "id", ascending: false)]
-        let contacts: [UserContact] = CoreDataManager.sharedManager.getObjectsOfTypeWith(predicate: predicate, sortDescriptors: sortDescriptors, entityName: "UserContact")
+        let sortDescriptors = ownerAtEnd ? [
+            NSSortDescriptor(key: "isOwner", ascending: false),
+            NSSortDescriptor(key: "id", ascending: false)
+        ] : [NSSortDescriptor(key: "id", ascending: false)]
+        
+        let contacts: [UserContact] = CoreDataManager.sharedManager.getObjectsOfTypeWith(
+            predicate: predicate,
+            sortDescriptors: sortDescriptors,
+            entityName: "UserContact",
+            context: context
+        )
         return contacts
     }
     
-    public static func getSelfContact()->UserContact?{
-        return self.getContactWith(indices: [0]).first
-    }
-    
-    
-    public static func getContactWith(indices: [Int],
-                                      managedContext: NSManagedObjectContext? = nil) -> [UserContact] {
+    public static func getContactWith(
+        indices: [Int],
+        managedContext: NSManagedObjectContext? = nil
+    ) -> [UserContact] {
         var predicate: NSPredicate! = nil
         predicate = NSPredicate(format: "index IN %@", indices)
         let sortDescriptors = [NSSortDescriptor(key: "index", ascending: false)]
         let contacts: [UserContact] = CoreDataManager.sharedManager.getObjectsOfTypeWith(predicate: predicate, sortDescriptors: sortDescriptors, entityName: "UserContact",context:managedContext)
         return contacts
-    }
-    
-    public static func getNextAvailableContactIndex() -> Int? {
-        let fetchRequest: NSFetchRequest<UserContact> = UserContact.fetchRequest()
-        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "index", ascending: false)]
-        fetchRequest.fetchLimit = 1
-        
-        do {
-            let contacts = try CoreDataManager.sharedManager.persistentContainer.viewContext.fetch(fetchRequest)
-            if let highestIndexAvailable = contacts.first as? UserContact {
-                return Int(highestIndexAvailable.index) + 1
-            } else {
-                return 1
-            }
-        } catch {
-            print("Error fetching contacts: \(error)")
-            return nil
-        }
     }
     
     public static func getContactWith(id: Int) -> UserContact? {
@@ -306,55 +299,73 @@ public class UserContact: NSManagedObject {
         return contact
     }
     
-    public static func getContactWithInvitCode(inviteCode: String,
-                                      managedContext: NSManagedObjectContext? = nil) -> UserContact? {
+    public static func getContactWithInviteCode(
+        inviteCode: String,
+        managedContext: NSManagedObjectContext? = nil
+    ) -> UserContact? {
         let predicate = NSPredicate(format: "sentInviteCode == %@", inviteCode)
         let sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]
         let contact:UserContact? = CoreDataManager.sharedManager.getObjectOfTypeWith(predicate: predicate, sortDescriptors: sortDescriptors, entityName: "UserContact",managedContext: managedContext)
         return contact
     }
     
-    public static func getContactWithDisregardStatus(pubkey: String,
-                                      managedContext: NSManagedObjectContext? = nil) -> UserContact? {
+    public static func getContactWithDisregardStatus(
+        pubkey: String,
+        managedContext: NSManagedObjectContext? = nil
+    ) -> UserContact? {
         let predicate = NSPredicate(format: "publicKey == %@", pubkey)
         let sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]
-        let contact:UserContact? = CoreDataManager.sharedManager.getObjectOfTypeWith(predicate: predicate, sortDescriptors: sortDescriptors, entityName: "UserContact",managedContext: managedContext)
+        let contact:UserContact? = CoreDataManager.sharedManager.getObjectOfTypeWith(
+            predicate: predicate,
+            sortDescriptors: sortDescriptors,
+            entityName: "UserContact",
+            managedContext: managedContext
+        )
         return contact
     }
     
-    public static func getContactWith(pubkey: String,
-                                      managedContext: NSManagedObjectContext? = nil) -> UserContact? {
+    public static func getContactWith(
+        pubkey: String,
+        managedContext: NSManagedObjectContext? = nil
+    ) -> UserContact? {
         let predicate = NSPredicate(format: "publicKey == %@ AND status == %d", pubkey, UserContact.Status.Confirmed.rawValue)
         let sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]
         let contact:UserContact? = CoreDataManager.sharedManager.getObjectOfTypeWith(predicate: predicate, sortDescriptors: sortDescriptors, entityName: "UserContact",managedContext: managedContext)
         return contact
     }
     
-    public static func getContactsWith(pubkeys: [String]) -> [UserContact] {
-        var predicate = NSPredicate(format: "publicKey IN %@ AND isOwner == %@", pubkeys, NSNumber(value: false))
+    public static func getContactsWith(
+        pubkeys: [String],
+        context: NSManagedObjectContext? = nil
+    ) -> [UserContact] {
+        let predicate = NSPredicate(format: "publicKey IN %@ AND isOwner == %@", pubkeys, NSNumber(value: false))
         let sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]
         
         let contacts: [UserContact] = CoreDataManager.sharedManager.getObjectsOfTypeWith(
             predicate: predicate,
             sortDescriptors: sortDescriptors,
-            entityName: "UserContact"
+            entityName: "UserContact",
+            context: context
         )
         
         return contacts
     }
     
-    public static func getOwner() -> UserContact? {
+    public static func getOwner(
+        context: NSManagedObjectContext? = nil
+    ) -> UserContact? {
         let predicate = NSPredicate(format: "isOwner == %@", NSNumber(value: true))
         let contact:UserContact? = CoreDataManager.sharedManager.getObjectOfTypeWith(
             predicate: predicate,
             sortDescriptors: [],
-            entityName: "UserContact"
+            entityName: "UserContact",
+            managedContext: context
         )
         return contact
     }
     
-    public static func updateOwnerAlias(newNickname:String){
-        if var owner = getOwner(){
+    public static func updateOwnerAlias(newNickname: String){
+        if let owner = getOwner(){
             owner.nickname = newNickname
             owner.managedObjectContext?.saveContext()
         }
@@ -362,7 +373,7 @@ public class UserContact: NSManagedObject {
     
     func getAddress() -> String? {
         if let address = self.publicKey, !address.isEmpty {
-            let delimiter = self.routeHint?.isV2RouteHint == false ? ":" : "_"
+            let delimiter = "_"
             let routeHint = (self.routeHint ?? "").isEmpty ? "" : "\(delimiter)\((self.routeHint ?? ""))"
             return "\(address)\(routeHint)"
         }
@@ -371,18 +382,35 @@ public class UserContact: NSManagedObject {
     
     var conversation: Chat? = nil
     
-    public func getChat() -> Chat? {
+    public func getContactChat(
+        context: NSManagedObjectContext? = nil
+    ) -> Chat? {
+        if conversation == nil {
+            setContactConversation(context: context)
+        }
+        return conversation
+    }
+    
+    public func getChat(
+    ) -> Chat? {
         if conversation == nil {
             setContactConversation()
         }
         return conversation
     }
     
-    public func setContactConversation() {
-        let userId = UserData.sharedInstance.getUserId()
+    public func setContactConversation(
+        context: NSManagedObjectContext? = nil
+    ) {
+        let userId = UserData.sharedInstance.getUserId(context: context)
         let predicate = NSPredicate(format: "(contactIds == %@ OR contactIds == %@) AND type = %d", [userId, self.id], [self.id, userId], Chat.ChatType.conversation.rawValue)
         let sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]
-        conversation = CoreDataManager.sharedManager.getObjectOfTypeWith(predicate: predicate, sortDescriptors: sortDescriptors, entityName: "Chat")
+        conversation = CoreDataManager.sharedManager.getObjectOfTypeWith(
+            predicate: predicate,
+            sortDescriptors: sortDescriptors,
+            entityName: "Chat",
+            managedContext: context
+        )
     }
     
     public func getChat(chats: [Chat]) -> Chat? {
@@ -405,14 +433,8 @@ public class UserContact: NSManagedObject {
         return getCurrentSubscription() != nil
     }
     
-    public func hasEncryptionKey() -> Bool {
-        if let contactK = self.contactKey, let _ = EncryptionManager.sharedInstance.getPublicKeyFromBase64String(base64String: contactK) {
-            return true
-        }
-        else if let _ = self.contactKey{
-            return true
-        }
-        return false
+    public func isEncrypted() -> Bool {
+        return isConfirmed()
     }
     
     public func isConfirmed() -> Bool {
@@ -467,42 +489,25 @@ public class UserContact: NSManagedObject {
         newDeviceId: String? = nil
     ) {
         if let currentDeviceId = newDeviceId ?? UserDefaults.Keys.deviceId.get(), !currentDeviceId.isEmpty {
-            
-            let parameters : [String: AnyObject] = ["device_id" : currentDeviceId as AnyObject]
-            let id = UserData.sharedInstance.getUserId()
-
-            API.sharedInstance.updateUser(id: id, params: parameters, callback: { contact in
-                UserDefaults.Keys.deviceId.set(contact["device_id"].string)
-            }, errorCallback: {
-                print("Error updating device id")
-            })
+            SphinxOnionManager.sharedInstance.registerDeviceID(id: currentDeviceId)
         }
     }
     
     public static func syncVoipDeviceId(
         pushKitToken: String? = nil
     ) {
-        if let currentVoipDeviceId = pushKitToken ?? UserDefaults.Keys.voipDeviceId.get(), !currentVoipDeviceId.isEmpty {
-            
-            let parameters : [String: AnyObject] = ["push_kit_token" : currentVoipDeviceId as AnyObject]
-            let id = UserData.sharedInstance.getUserId()
-
-            API.sharedInstance.updateUser(id: id, params: parameters, callback: { contact in
-                UserDefaults.Keys.voipDeviceId.set(contact["push_kit_token"].string)
-            }, errorCallback: {
-                print("Error updating device id")
-            })
-        }
+//        if let currentVoipDeviceId = pushKitToken ?? UserDefaults.Keys.voipDeviceId.get(), !currentVoipDeviceId.isEmpty {
+//            
+//            let parameters : [String: AnyObject] = ["push_kit_token" : currentVoipDeviceId as AnyObject]
+//            let id = UserData.sharedInstance.getUserId()
+//            
+//            //TODO: @Jim reimplement VoIP in V2
+//        }
     }
     
     public static func updateTipAmount(amount: Int) {
-        let parameters : [String: AnyObject] = ["tip_amount" : amount as AnyObject]
-        let id = UserData.sharedInstance.getUserId()
-
         if let owner = UserContact.getOwner() {
-            API.sharedInstance.updateUser(id: id, params: parameters, callback: { success in
-                owner.tipAmount = amount
-            }, errorCallback: { })
+            owner.tipAmount = amount
         }
     }
 }

@@ -46,10 +46,11 @@ extension DashboardRootViewController: UITextFieldDelegate {
             return FeedType.Podcast
         case DashboardFeedsContainerViewController.ContentFilterOption.watch.id:
             return FeedType.Video
+        case DashboardFeedsContainerViewController.ContentFilterOption.read.id:
+            return FeedType.Newsletter
         default:
-            break
+            return nil
         }
-        return nil
     }
     
     func textFieldShouldClear(_ textField: UITextField) -> Bool {
@@ -107,7 +108,7 @@ extension DashboardRootViewController: UITextFieldDelegate {
 
 extension DashboardRootViewController {
 
-    private func presentFeedSearchView() {
+    func presentFeedSearchView() {
         feedViewMode = .searching
         
         feedsContainerViewController.removeFromParent()

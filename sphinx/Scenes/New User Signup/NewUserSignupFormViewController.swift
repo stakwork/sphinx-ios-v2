@@ -17,7 +17,6 @@ class NewUserSignupFormViewController: UIViewController, ConnectionCodeSignupHan
     @IBOutlet weak var codeTextField: UITextField!
     @IBOutlet weak var codeTextFieldContainer: UIView!
     @IBOutlet weak var submitButton: UIButton!
-    @IBOutlet weak var connectToServerButton: UIButton!
     @IBOutlet weak var submitButtonContainer: UIView!
     @IBOutlet weak var submitButtonArrow: UILabel!
     @IBOutlet weak var importSeedContainer: UIView!
@@ -26,45 +25,53 @@ class NewUserSignupFormViewController: UIViewController, ConnectionCodeSignupHan
     let authenticationHelper = BiometricAuthenticationHelper()
     let newMessageBubbleHelper = NewMessageBubbleHelper()
     
-    var generateTokenRetries = 0
-    var generateTokenSuccess: Bool = false
-    var hasAdminRetries: Int = 0
-    
-    var isV2:Bool = false
+    var isProcessingCode = false
+    var isV2: Bool = false
+    var inviteCode: String? = nil
     var server : Server? = nil
     var balance : String? = nil
+    let som = SphinxOnionManager.sharedInstance
     var selfContactFetchListener: NSFetchedResultsController<UserContact>?
     var watchdogTimer: Timer?
     
-    static func instantiate() -> NewUserSignupFormViewController {
+    static func instantiate(
+        inviteCode: String? = nil
+    ) -> NewUserSignupFormViewController {
         let viewController = StoryboardScene.NewUserSignup.newUserSignupFormViewController.instantiate()
+        viewController.inviteCode = inviteCode
         return viewController
     }
-    
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
         newMessageBubbleHelper.genericMessageY = (
-            UIApplication.shared.windows.first?.safeAreaInsets.top ?? 60
+            (UIApplication.shared.connectedScenes.first as? UIWindowScene)?.windows.first?.safeAreaInsets.top ?? 60
         ) + 60
 
-        setupCodeField()
-        setupSubmitButton()
-        
         titleLabel.text = "new.user".localized.uppercased()
         addAccessibilityIdentifiers()
+        
+        setupCodeField()
+        setupSubmitButton()
+        setupDeepLinkCode()
+    }
+    
+    func setupDeepLinkCode() {
+        if let inviteCode = inviteCode, inviteCode.isNotEmpty {
+            codeTextField.text = inviteCode
+            enableSubmitButton()
+        }
     }
     
     
     @IBAction func backButtonTapped(_ sender: UIButton) {
-        SignupHelper.step = SignupHelper.SignupStep.Start.rawValue
+        UserData.sharedInstance.signupStep = SignupHelper.SignupStep.Start.rawValue
         
         navigationController?.popToRootViewController(animated: true)
     }
     
     func addAccessibilityIdentifiers(){
-        connectToServerButton.accessibilityIdentifier = connectToServerButton.titleLabel?.text
         submitButton.accessibilityIdentifier = "submit"
     }
 }
@@ -76,12 +83,6 @@ extension NewUserSignupFormViewController {
         submitButton.layer.cornerRadius = submitButton.frame.size.height / 2
         submitButton.clipsToBounds = true
         submitButton.setTitle("signup.submit".localized, for: .normal)
-        
-        connectToServerButton.layer.cornerRadius = submitButton.layer.cornerRadius
-        connectToServerButton.clipsToBounds = true
-        connectToServerButton.isEnabled = true
-        connectToServerButton.isUserInteractionEnabled = true
-        connectToServerButton.superview?.bringSubviewToFront(connectToServerButton)
         
         disableSubmitButton()
     }
@@ -207,22 +208,20 @@ extension NewUserSignupFormViewController : ImportSeedViewDelegate{
     }
     
     func didTapConfirm() {
-        if(importSeedView.context == .SphinxOnionPrototype){
+        if (importSeedView.context == .SphinxOnionPrototype) {
             importSeedContainer.isHidden = true
             UserData.sharedInstance.save(walletMnemonic: importSeedView.textView.text)
-            if let code = codeTextField.text,
-               validateCode(code){
-                handleInviteCodeV2SignUp(code: code)
+            
+            if let code = codeTextField.text, validateCode(code) {
+                handleInviteCode(code: code)
             }
-        }
-        else{
+        } else {
             let success = CrypterManager.sharedInstance.performWalletFinalization(
                 network: importSeedView.network,
                 host: importSeedView.host,
                 relay: importSeedView.relay,
                 enteredMnemonic: importSeedView.textView.text
             )
-            
             importSeedContainer.isHidden = !success
         }
     }

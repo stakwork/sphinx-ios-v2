@@ -36,12 +36,14 @@ struct MessageTableCellState {
     var contactImage: UIImage? = nil
     var replyingMessage: TransactionMessage? = nil
     var boostMessages: [TransactionMessage] = []
+    var memberRequestResponse: TransactionMessage? = nil
     var threadMessages: [TransactionMessage] = []
     var purchaseMessages: [Int: TransactionMessage] = [:]
     var linkContact: LinkContact? = nil
     var linkTribe: LinkTribe? = nil
     var linkWeb: LinkWeb? = nil
     var invoiceData: (Bool, Bool) = (false, false)
+    var timezoneData: [String: String] = [:]
     var isThreadHeaderMessage: Bool = false
     
     ///Generic rows Data
@@ -66,11 +68,13 @@ struct MessageTableCellState {
         replyingMessage: TransactionMessage? = nil,
         threadMessages:[TransactionMessage] = [],
         boostMessages: [TransactionMessage] = [],
+        memberRequestResponse: TransactionMessage? = nil,
         purchaseMessages: [Int: TransactionMessage] = [:],
         linkContact: LinkContact? = nil,
         linkTribe: LinkTribe? = nil,
         linkWeb: LinkWeb? = nil,
         invoiceData: (Bool, Bool) = (false, false),
+        timezoneData: [String: String] = [:],
         isThreadHeaderMessage: Bool = false
     ) {
         self.message = message
@@ -90,11 +94,13 @@ struct MessageTableCellState {
         self.replyingMessage = replyingMessage
         self.threadMessages = threadMessages
         self.boostMessages = boostMessages
+        self.memberRequestResponse = memberRequestResponse
         self.purchaseMessages = purchaseMessages
         self.linkContact = linkContact
         self.linkTribe = linkTribe
         self.linkWeb = linkWeb
         self.invoiceData = invoiceData
+        self.timezoneData = timezoneData
         
         self.isThreadHeaderMessage = isThreadHeaderMessage
     }
@@ -197,19 +203,44 @@ struct MessageTableCellState {
         let timestampFormat = isThread ? "EEE dd, hh:mm a" : "hh:mm a"
         let timestamp = (message.date ?? Date()).getStringDate(format: timestampFormat)
         
+        let showBoltIcon = message.isConfirmedAsReceived()
+        let showBoltGreyIcon = !message.isConfirmedAsReceived() && (message.isDirectPayment() || message.isPayment())
+        let showFailedContainer = isSent && message.failed()
+        
+        var timezoneString: String? = nil
+        var timezone: TimeZone? = nil
+        
+        if let timezoneIdentifier = chat.isGroup() ? message.remoteTimezoneIdentifier : nil {
+            timezone = TimeZone(abbreviation: timezoneIdentifier) ?? TimeZone(identifier: timezoneIdentifier)
+        } else if let senderAlias = message.senderAlias, let timezoneIdentifier = timezoneData[senderAlias] {
+            timezone = TimeZone(abbreviation: timezoneIdentifier) ?? TimeZone(identifier: timezoneIdentifier)
+        }
+        
+        if let timezone = timezone {
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "hh:mm a"
+            dateFormatter.timeZone = timezone
+
+            timezoneString = "\(dateFormatter.string(from: message.date ?? Date())) \(timezone.abbreviation() ?? timezone.identifier)"
+        }
+        
         var statusHeader = BubbleMessageLayoutState.StatusHeader(
             senderName: (chat.isConversation() ? nil : message.senderAlias),
             color: ChatHelper.getSenderColorFor(message: message),
             showSent: isSent,
             showSendingIcon: isSent && message.pending() && message.isProvisional(),
-            showBoltIcon: isSent && message.isConfirmedAsReceived(),
-            showFailedContainer: isSent && message.failed(),
+            showBoltIcon: showBoltIcon,
+            showBoltGreyIcon: showBoltGreyIcon,
+            showFailedContainer: showFailedContainer,
             errorMessage: message.errorMessage ?? "message.failed".localized,
             showLockIcon: true,
             showExpiredSent: message.isInvoice() && !message.isPaid() && !isSent,
             showExpiredReceived: message.isInvoice() && !message.isPaid() && isSent,
+            showScheduleIcon: !showBoltIcon && !showBoltGreyIcon && !showFailedContainer && isSent,
             expirationTimestamp: expirationTimestamp,
-            timestamp: timestamp
+            timestamp: timestamp,
+            messageDate: message.date ?? Date(),
+            timezoneString: timezoneString
         )
         
         return statusHeader
@@ -237,7 +268,7 @@ struct MessageTableCellState {
             messageId: replyingMessage.id,
             color: senderInfo.0,
             alias: senderInfo.1,
-            message: replyingMessage.bubbleMessageContentString,
+            message: replyingMessage.bubbleMessageContentString?.removingMarkdownDelimiters,
             mediaType: mediaType
         )
     }()
@@ -253,20 +284,20 @@ struct MessageTableCellState {
         
         if let messageContent = message.bubbleMessageContentString, messageContent.isNotEmpty {
             return BubbleMessageLayoutState.MessageContent(
-                text: messageContent.replacingHightlightedChars,
-                font: UIFont.getMessageFont(),
-                highlightedFont: UIFont.getHighlightedMessageFont(),
+                text: messageContent.removingMarkdownDelimiters,
                 linkMatches: messageContent.stringLinks + messageContent.pubKeyMatches + messageContent.mentionMatches,
                 highlightedMatches: messageContent.highlightedMatches,
+                boldMatches: messageContent.boldMatches,
+                linkMarkdownMatches: messageContent.linkMarkdownMatches,
                 shouldLoadPaidText: false
             )
         } else if message.isPaidMessage() {
             return BubbleMessageLayoutState.MessageContent(
                 text: paidMessageContent,
-                font: UIFont.getEncryptionErrorFont(),
-                highlightedFont: UIFont.getHighlightedMessageFont(),
                 linkMatches: [],
                 highlightedMatches: [],
+                boldMatches: [],
+                linkMarkdownMatches: [],
                 shouldLoadPaidText: message.messageContent == nil && (paidContent?.isPurchaseAccepted() == true || bubble?.direction.isOutgoing() == true)
             )
         }
@@ -321,7 +352,13 @@ struct MessageTableCellState {
     }()
     
     lazy var messageMedia: BubbleMessageLayoutState.MessageMedia? = {
-        guard let message = messageToShow, message.isMediaAttachment() || message.isDirectPayment() || message.isGiphy() else {
+        guard let message = messageToShow else {
+            return nil
+        }
+       
+        let hasMarkdownLinks = (message.messageContent?.linkMarkdownMatches.count ?? 0) > 0
+        
+        guard message.isMediaAttachment() || message.isDirectPayment() || message.isGiphy() || (message.isBotResponse() && hasMarkdownLinks) else {
             return nil
         }
         
@@ -339,6 +376,7 @@ struct MessageTableCellState {
             isGif: message.isGif(),
             isPdf: message.isPDF(),
             isGiphy: message.isGiphy(),
+            isImageLink: hasMarkdownLinks,
             isPaid: message.isPaidAttachment(),
             isPaymentTemplate: message.isDirectPayment()
         )
@@ -359,6 +397,7 @@ struct MessageTableCellState {
             isGif: message.isGif(),
             isPdf: message.isPDF(),
             isGiphy: message.isGiphy(),
+            isImageLink: false,
             isPaid: message.isPaidAttachment(),
             isPaymentTemplate: message.isDirectPayment()
         )
@@ -397,6 +436,8 @@ struct MessageTableCellState {
             urlAndKey = (message.getTemplateURL(), nil)
         } else if message.isGiphy() {
             urlAndKey = (message.getGiphyUrl(), nil)
+        } else if let imageLink = message.messageContent?.linkMarkdownMatches.first?.2, let url = URL(string: imageLink){
+            urlAndKey = (url, nil)
         }
         
         return urlAndKey
@@ -481,8 +522,7 @@ struct MessageTableCellState {
         
         let originalMessageSenderInfo: (UIColor, String, String?) = getSenderInfo(message: message)
         let originalThreadMessage = BubbleMessageLayoutState.ThreadMessage(
-            text: message.bubbleMessageContentString?.replacingHightlightedChars,
-            font: UIFont.getMessageFont(),
+            text: message.bubbleMessageContentString?.removingMarkdownDelimiters,
             senderPic: originalMessageSenderInfo.2,
             senderAlias: originalMessageSenderInfo.1,
             senderColor: originalMessageSenderInfo.0,
@@ -684,7 +724,6 @@ struct MessageTableCellState {
             date: date,
             amount: amount,
             memo: message.messageContent,
-            font: UIFont.getMessageFont(),
             isPaid: message.isPaid(),
             isExpired: message.isExpired(),
             bubbleWidth: bubbleWidth
@@ -746,7 +785,7 @@ struct MessageTableCellState {
         guard let message = message, 
                 let ownerPubKey = owner.publicKey,
                 message.isGroupLeaveOrJoinMessage() ||
-                (message.isApprovedRequest() && !chat.isMyPublicGroup(ownerPubKey: ownerPubKey)) else {
+                (message.isApprovedRequest() && !chat.isMyPublicGroup()) else {
             
             return nil
         }
@@ -756,11 +795,15 @@ struct MessageTableCellState {
         var messageString = ""
         
         if message.isGroupJoinMessage() {
-            messageString = message.getGroupJoinMessageText(senderAlias: senderInfo.1)
+            if bubble?.direction.isOutgoing() == true {
+                messageString = "you.joined.tribe".localized
+            } else {
+                messageString = message.getGroupJoinMessageText(senderAlias: senderInfo.1, ownerId: owner.id)
+            }
         } else if message.isGroupLeaveMessage() {
             messageString = message.getGroupLeaveMessageText(senderAlias: senderInfo.1)
         } else if message.isApprovedRequest() {
-            messageString = "member.request.approved".localized
+            messageString = message.getGroupJoinMessageText(senderAlias: senderInfo.1, ownerId: owner.id)
         }
         
         return NoBubbleMessageLayoutState.GroupMemberNotification(message: messageString)
@@ -771,7 +814,7 @@ struct MessageTableCellState {
         guard let message = message, let ownerPubKey = owner.publicKey,
                 message.isGroupKickMessage() && (message.chat?.isTribeICreated != true) ||
                 message.isGroupDeletedMessage() ||
-                (message.isDeclinedRequest() && !chat.isMyPublicGroup(ownerPubKey: ownerPubKey)) else {
+                (message.isDeclinedRequest() && !chat.isMyPublicGroup()) else {
             
             return nil
         }
@@ -788,18 +831,32 @@ struct MessageTableCellState {
         return NoBubbleMessageLayoutState.GroupKickRemovedOrDeclined(message: messageString)
     }()
     
-    lazy var groupMemberRequest: NoBubbleMessageLayoutState.GroupMemberRequest? = {
+    lazy var groupKickSent: NoBubbleMessageLayoutState.GroupKickSent? = {
         
         guard let message = message, let ownerPubKey = owner.publicKey,
-                chat.isMyPublicGroup(ownerPubKey: ownerPubKey),
-                message.isMemberRequest() || message.isApprovedRequest() || message.isDeclinedRequest() else {
+                message.isGroupKickMessage() && message.chat?.isTribeICreated == true else {
             return nil
         }
         
-        guard let memberRequestStatus = NoBubbleMessageLayoutState.GroupMemberRequest.MemberRequestStatus(rawValue: message.type) else {
+        return NoBubbleMessageLayoutState.GroupKickSent()
+    }()
+    
+    lazy var groupMemberRequest: NoBubbleMessageLayoutState.GroupMemberRequest? = {
+        
+        guard let message = message, chat.isMyPublicGroup(), message.isMemberRequest() else {
             return nil
         }
-
+        
+        var memberRequestStatus = NoBubbleMessageLayoutState.GroupMemberRequest.MemberRequestStatus.Pending
+        
+        if let requestResponseMessage = memberRequestResponse {
+            if requestResponseMessage.isApprovedRequest() {
+                memberRequestStatus = NoBubbleMessageLayoutState.GroupMemberRequest.MemberRequestStatus.Approved
+            } else if requestResponseMessage.isDeclinedRequest() {
+                memberRequestStatus = NoBubbleMessageLayoutState.GroupMemberRequest.MemberRequestStatus.Rejected
+            }
+        }
+        
         return NoBubbleMessageLayoutState.GroupMemberRequest(
             status: memberRequestStatus,
             isActiveMember: chat.isActiveMember(id: message.senderId),
@@ -815,17 +872,37 @@ struct MessageTableCellState {
         
         let senderInfo: (UIColor, String, String?) = getSenderInfo(message: message)
         let messageContent = message.bubbleMessageContentString ?? ""
+        let date = (message.date ?? Date())
+        var timestamp = "\(date.getStringDate(format: "MMMM dd", showToday: true)), \(date.getStringDate(format: "hh:mm a"))"
+        
+        var timezoneString: String? = nil
+        var timezone: TimeZone? = nil
+        
+        if let timezoneIdentifier = (message.chat?.isGroup() == true) ? message.remoteTimezoneIdentifier : nil {
+            timezone = TimeZone(abbreviation: timezoneIdentifier) ?? TimeZone(identifier: timezoneIdentifier)
+        } else if let senderAlias = message.senderAlias, let timezoneIdentifier = timezoneData[senderAlias] {
+            timezone = TimeZone(abbreviation: timezoneIdentifier) ?? TimeZone(identifier: timezoneIdentifier)
+        }
+        
+        if let timezone = timezone {
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "hh:mm a"
+            dateFormatter.timeZone = timezone
+
+            timezoneString = "\(dateFormatter.string(from: message.date ?? Date())) \(timezone.abbreviation() ?? timezone.identifier)"
+            timestamp = "\(timestamp) / \(timezoneString!)"
+        }
         
         return NoBubbleMessageLayoutState.ThreadOriginalMessage(
-            text: messageContent.replacingHightlightedChars,
-            font: UIFont.getThreadHeaderFont(),
-            highlightedFont: UIFont.getThreadHeaderHightlightedFont(),
+            text: messageContent.removingMarkdownDelimiters,
             linkMatches: messageContent.stringLinks + messageContent.pubKeyMatches + messageContent.mentionMatches,
             highlightedMatches: messageContent.highlightedMatches,
+            boldMatches: messageContent.boldMatches,
+            linkMarkdownMatches: messageContent.linkMarkdownMatches,
             senderPic: senderInfo.2,
             senderAlias: senderInfo.1,
             senderColor: senderInfo.0,
-            timestamp: (message.date ?? Date()).getStringDate(format: "MMM dd, hh:mm a")
+            timestamp: timestamp
         )
     }()
     
@@ -835,6 +912,15 @@ struct MessageTableCellState {
                 return threadMessages.last
             }
             return self.message
+        }
+    }
+    
+    var hashMessageId: Int? {
+        get {
+            if threadMessages.count > 1 {
+                return threadMessages.first?.id
+            }
+            return self.message?.id
         }
     }
     
@@ -860,7 +946,7 @@ struct MessageTableCellState {
                 (self.contactLink == nil) &&
                 (self.tribeLink == nil) &&
                 (self.messageMedia == nil) &&
-                (self.webLink == nil) &&
+                (self.audio == nil) &&
                 (self.botHTMLContent == nil) &&
                 (self.paidContent == nil) &&
                 (self.podcastComment == nil) &&
@@ -892,11 +978,19 @@ extension MessageTableCellState {
             nil
         )
         
+        let isSent = message.isOutgoing(ownerId: owner.id)
+        
         if chat.isPublicGroup() {
             senderInfo = (
-                ChatHelper.getSenderColorFor(message: message),
-                message.senderAlias ?? "Unknow",
-                message.senderPic
+                isSent ? owner.getColor() : ChatHelper.getSenderColorFor(message: message),
+                message.senderAlias ?? (isSent ? (owner.nickname ?? "Unknow") : "Unknow"),
+                message.senderPic ?? (isSent ? (owner.avatarUrl) : nil)
+            )
+        } else if isSent {
+            senderInfo = (
+                owner.getColor(),
+                owner.nickname ?? "Unknow",
+                owner.avatarUrl
             )
         } else if let contact = contact {
             senderInfo = (
@@ -917,20 +1011,34 @@ extension MessageTableCellState : Hashable {
         var mutableRhs = rhs
         
         return
-            mutableLhs.messageToShow?.id      == mutableRhs.messageToShow?.id &&
-            mutableLhs.messageStatus          == mutableRhs.messageStatus &&
-            mutableLhs.messageType            == mutableRhs.messageType &&
-            mutableLhs.bubbleState            == mutableRhs.bubbleState &&
-            mutableLhs.messageString          == mutableRhs.messageString &&
-            mutableLhs.boostMessages.count    == mutableRhs.boostMessages.count &&
-            mutableLhs.isTextOnlyMessage      == mutableRhs.isTextOnlyMessage &&
-            mutableLhs.separatorDate          == mutableRhs.separatorDate &&
-            mutableLhs.paidContent?.status    == mutableRhs.paidContent?.status &&
-            mutableLhs.threadMessages.count   == mutableRhs.threadMessages.count
+            mutableLhs.hashMessageId             == mutableRhs.hashMessageId &&
+            mutableLhs.messageToShow?.id         == mutableRhs.messageToShow?.id &&
+            mutableLhs.messageId                 == mutableRhs.messageId &&
+            mutableLhs.messageStatus             == mutableRhs.messageStatus &&
+            mutableLhs.messageType               == mutableRhs.messageType &&
+            mutableLhs.bubbleState               == mutableRhs.bubbleState &&
+            mutableLhs.messageString             == mutableRhs.messageString &&
+            mutableLhs.boostMessages.count       == mutableRhs.boostMessages.count &&
+            mutableLhs.isTextOnlyMessage         == mutableRhs.isTextOnlyMessage &&
+            mutableLhs.separatorDate             == mutableRhs.separatorDate &&
+            mutableLhs.paidContent?.status       == mutableRhs.paidContent?.status &&
+            mutableLhs.threadMessages.count      == mutableRhs.threadMessages.count &&
+            mutableLhs.memberRequestResponse?.id == mutableRhs.memberRequestResponse?.id
+
     }
 
     func hash(into hasher: inout Hasher) {
+        hasher.combine(self.hashMessageId)
         hasher.combine(self.messageToShow?.id)
+        hasher.combine(self.messageId)
+        hasher.combine(self.messageStatus)
+        hasher.combine(self.messageType)
+        hasher.combine(self.bubbleState)
+        hasher.combine(self.messageString)
+        hasher.combine(self.boostMessages.count)
+        hasher.combine(self.separatorDate)
+        hasher.combine(self.threadMessages.count)
+        hasher.combine(self.memberRequestResponse?.id)
     }
     
     func getUniqueIdentifier() -> Int {

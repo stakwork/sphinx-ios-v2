@@ -32,7 +32,7 @@ class PinTimeSlider: UIView {
         contentView.frame = self.bounds
         contentView.autoresizingMask = [.flexibleHeight, .flexibleWidth]
         
-        sliderControl.maximumValue = Float(UserData.kMaximumPINHoursValue)
+        sliderControl.maximumValue = Float(Constants.kMaxPinTimeoutValue)
         
         let hours = userData.getPINHours()
         sliderControl.value = Float(hours)

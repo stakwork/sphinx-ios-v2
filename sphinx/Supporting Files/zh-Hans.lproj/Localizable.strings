@@ -53,7 +53,9 @@
 "error.karma.receipt.validation.failed" = "Karma 收据验证失败。错误信息：";
 "error.app-store-purchase-receipt-not-found" = "未找到 AppStore 购买收据。";
 "error.app-store-receipt-validation-failed" = "AppStore 收据验证失败。";
-
+"error.rss.sync.failed.title" = "RSS Error";
+"error.rss.sync.failed.message" = "Sync to RSS Feed Failed. Please try again.";
+"admin" = "行政人员";
 
 // DASHBOARD
 "dashboard.tabs.feed" = "动态";
@@ -67,6 +69,10 @@
 "dashboard.feeds.section-headings.following" = "关注";
 "dashboard.feeds.section-headings.directory" = "目录";
 "dashboard.feeds.content.empty-state-message" = "未发现播客";
+"dashboard.feeds.section-headings.play.for.free" = "Play for Free";
+"dashboard.feeds.section-headings.download.to.play" = "Download to Play";
+"dashboard.feeds.content.download.torrent.started.title" = "Torrent download started";
+"dashboard.feeds.content.download.torrent.started.message" = "Check back in a bit to consume your content";
 
 
 // DASHBOARD FEED SEARCH
@@ -139,10 +145,12 @@
 "just.left.tribe" = "%@ 刚刚离开了部落";
 "has.joined.group" = "%@ 已加入群组";
 "has.joined.tribe" = "%@ 已加入部落";
+"you.joined.tribe" = "您已加入部落";
 "added.to.group" = "%@ 已被添加到群组";
 "new.public.group" = "新部落";
 "edit.public.group" = "编辑部落";
 "tribe.kick" = "管理员已将您从此部落中移除";
+"tribe.kick.as.admin" = "You've removed a member from this tribe";
 "tribe.deleted" = "管理员已删除此部落";
 "member.request" = "%@ 请求加入部落";
 "member.request.rejected" = "管理员拒绝了您的请求";
@@ -183,7 +191,7 @@
 "edit.contact.upper" = "编辑联系人";
 "subscribed.upper" = "已订阅";
 "subscribe.upper" = "订阅";
-"nickname.address.required" = "昵称和地址是必需的。";
+"nickname.address.required" = "昵称、地址、路线提示为必填项。";
 "new.contact" = "新联系人";
 "invalid.pubkey" = "无效的公钥";
 "invalid.route.hint" = "无效的路由提示";
@@ -193,6 +201,9 @@
 "address-boox.contact-block.alert-message" = "您确定要阻止此联系人吗？";
 "address-boox.contact-unblock.alert-title" = "解除阻止联系人";
 "address-boox.contact-unblock.alert-message" = "您确定要解除阻止此联系人吗？";
+"address-book.can-not-delete-contact-title" = "无法删除联系人";
+"address-book.can-not-delete-contact-message" = "已确认的联系人无法删除";
+"messages.encrypted.disclaimer" = "信息和通话均采用端到端加密保护";
 
 // WELCOME
 "welcome.initial.title" = "欢迎";
@@ -204,9 +215,9 @@
 // RESTORE EXISTING USER
 "restore.keychain" = "从钥匙串恢复";
 "restore.description.continue" = "继续";
-"restore.description.label" = "从您的桌面应用复制您的密钥并粘贴到这里。";
-"restore.copy.keys" = "复制您的密钥";
-"restore.form.paste.keys.placeholder" = "粘贴您的密钥...";
+"restore.description.label" = "从您的移动应用程序复制您的种子短语并将其粘贴到这里。";
+"restore.copy.keys" = "复制您的种子短语";
+"restore.form.paste.keys.placeholder" = "粘贴你的种子短语...";
 "submit" = "提交";
 "restore.invalid-code.relay-qr-code" = "这看起来像是Sphinx Relay应用的连接代码。要恢复现有帐户，您需要输入您的备份字符串。";
 "resume-restoring" = "恢复恢复...";
@@ -273,9 +284,9 @@
 //PROFILE
 "address.copied.clipboard" = "地址已复制到剪贴板";
 "route.hint.copied.clipboard" = "路由提示已复制到剪贴板";
-"pin.keys.encryption" = "输入您的PIN码以加密您的密钥。恢复账户到其他设备时将需要它。";
-"export.keys" = "导出密钥";
-"keys.will.copy.clipboard" = "您的密钥将被复制到剪贴板。删除应用前请保存此字符串并记住您的PIN码，否则所有数据都将丢失。";
+"pin.keys.encryption" = "输入你的 PIN 码以访问你的种子短语";
+"export.keys" = "导出种子短语";
+"keys.will.copy.clipboard" = "您的种子短语将被复制到剪贴板。请安全保存此字符串，否则所有数据将丢失。";
 "keys.copied.clipboard" = "导出的密钥已复制到剪贴板";
 "server.url.updated" = "服务器URL已成功更新";
 "hour" = "小时";
@@ -336,7 +347,7 @@
 "pin.doesnt.match" = "PIN码不匹配";
 "enter.old.pin" = "输入当前PIN码";
 "enter.new.pin" = "输入新PIN码";
-"pin.changed" = "您的PIN码已更新。请使用这个新PIN码重新导出您的密钥。";
+"pin.changed" = "您的 PIN 码已更新";
 "contact.pin.error" = "您不能使用您的主PIN码作为群组PIN码";
 "set.privacy.pin" = "设置隐私PIN码";
 "change.privacy.pin" = "更改隐私PIN码";
@@ -352,6 +363,7 @@
 "error.loading.transactions" = "加载交易列表时出错。请稍后再试。";
 "loading.more.transactions" = "正在加载更多交易...";
 "transactions.failure-reason" = "失败原因：";
+"failed.payment" = "付款失败";
 
 //QR CODE SCANNER
 "scan.qr.code.upper" = "扫描二维码";
@@ -389,6 +401,7 @@
 "media.terms.expired" = "媒体条款已过期";
 "message.failed" = "消息发送失败";
 "invite.name" = "邀请：%@";
+"add.name" = "添加: %@";
 "welcome.to.sphinx" = "欢迎来到Sphinx！";
 "loading.more.messages" = "正在加载更多消息...";
 "message.placeholder" = "消息...";
@@ -416,6 +429,10 @@
 "copy.text" = "复制文本";
 "mark.as.read" = "标记为已读";
 "mark.as.unread" = "标记为未读";
+"delete.contact" = "删除联系人";
+"delete.invite" = "删除邀请";
+"delete.contact.warning" = "您确定要删除此联系人吗？";
+"delete.invite.warning" = "您确定要删除此邀请吗？";
 "copy.link" = "复制链接";
 "copy.pub.key" = "复制公钥";
 "copy.call.link" = "复制通话链接";
@@ -455,7 +472,7 @@
 "amount.too.low" = "金额过低";
 "amount.too.high" = "金额过高";
 "onchain.amount.too.low" = "金额过低。最低250000 sats";
-"chat-header.balance.unit" = "karma";
+"chat-header.balance.unit" = "sats";
 "users" = "用户";
 "optional.message.placeholder" = "可选消息...";
 "price.required" = "需要价格";
@@ -490,6 +507,12 @@
 "see-all" = "查看全部";
 "only-mentions" = "仅提及";
 "mute-chat" = "静音聊天";
+"error.getting.token.title" = "获取令牌时出错";
+"error.getting.token.description" = "获取加入通话的令牌时出错。请稍后重试";
+"contact.info" = "联系方式";
+"contact.connected.since" = "%@日起连接";
+"timezone.changed" = "此聊天的时区设置仅保存在此设备上。\n如果您在其他设备上使用应用程序，\n则需要重新设置时区。";
+"message.limit.reached" = "已达字符上限。请编辑或发送您的消息。";
 
 //OTHER
 "create.call" = "创建通话";
@@ -519,6 +542,9 @@
 "authorization.failed" = "授权失败";
 "already.connected" = "您已与此人连接";
 "price.to.meet" = "见面的价格：";
+"invalid.public-key" = "无效公钥";
+"processing.payment" = "处理付款";
+"processing.payment.description" = "此过程可能需要 60 秒。完成后您将收到通知";
 
 "people.save-profile" = "从...保存资料";
 "people.delete-profile" = "从...删除资料";
@@ -555,6 +581,7 @@
 "invite.in.progress.message" = "%@ 正在登录。";
 "invite.pmt.in.progress.title" = "付款进行中";
 "invite.pmt.in.progress.message" = "您的付款正在处理中。";
+"contact.pending" = "等待批准";
 
 
 //PODCAST
@@ -610,11 +637,13 @@
 "feed.no-play-found" = "未找到“播放”结果";
 
 "feed.search-over" = "搜索超过";
+"feed.search-tracks-quantity" = "millions of tracks";
+"feed.search-torrent-source" = "on BitTorrent";
 "feed.search-podcast-quantity" = "400万播客";
 "feed.search-podcast-source" = "在播客索引上";
 "feed.search-video-quantity" = "数千个视频";
 "feed.search-video-source" = "在Youtube上";
-"feed.search-other-source" = "您订阅的feeds";
+"feed.search-other-source-rss" = "您订阅的feeds";
 
 //TIME
 "time.in-the-future" = "将来";

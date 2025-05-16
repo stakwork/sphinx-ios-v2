@@ -21,66 +21,74 @@ extension RestoreUserFormViewController {
 
         guard validateCode(code) else { return }
         
-        if(isMnemonic(code: code)){
-            goMnemonicRoute()
-            return
-        }
-
-        guard let encryptedKeys = encryptedKeysFromCode(code) else { return }
+        view.endEditing(true)
         
-        presentPINVC(using: encryptedKeys)
+//        askForEnvironmentWith(code: code)
+        
+        SphinxOnionManager.sharedInstance.isProductionEnv = true
+        getConfigData(code: code)
     }
     
+    func askForEnvironmentWith(code: String) {
+        AlertHelper.showOptionsPopup(
+            title: "Network",
+            message: "Please select the network to use",
+            options: ["Bitcoin","Regtest"],
+            callbacks: [
+                {
+                    SphinxOnionManager.sharedInstance.isProductionEnv = true
+                    self.getConfigData(code: code)
+                },
+                {
+                    SphinxOnionManager.sharedInstance.isProductionEnv = false
+                    self.continueWith(code: code)
+                }
+            ],
+            sourceView: self.codeTextField,
+            vc: self
+        )
+    }
+    
+    func getConfigData(code: String) {
+        loading = true
+        
+        API.sharedInstance.getServerConfig() { success in
+            if success {
+                self.continueWith(code: code)
+            } else {
+                self.loading = false
+                self.navigationController?.popViewController(animated: true)
+                AlertHelper.showAlert(title: "Error", message: "Unable to get config from Sphinx V2 Server")
+            }
+        }
+    }
+    
+    func continueWith(code: String) {
+        UserData.sharedInstance.save(walletMnemonic: code)
+        continueRestore()
+    }
     
     func validateCode(_ code: String) -> Bool {
         if isCodeValid(code) {
             return true
         } else {
-            handleInvalidCodeSubmission(code)
-            
             return false
         }
     }
     
-    
-    func connectTorIfNeededBeforeProceeding() -> Bool {
-        if onionConnector.usingTor() && !onionConnector.isReady() {
-            onionConnector.startTor(delegate: self)
-            return true
-        }
-        return false
-    }
-    
-    
-    func encryptedKeysFromCode(_ code: String) -> String? {
-        code.getRestoreKeys() ??
-        code.fixedRestoreCode.getRestoreKeys()
-    }
-    
-    func isMnemonic(code:String)->Bool{
-        let words = code.split(separator: " ").map { String($0).trim().lowercased() }
-        let (error, _) = CrypterManager.sharedInstance.validateSeed(words: words)
-        return error == nil
-    }
-
-    
     func isCodeValid(_ code: String) -> Bool {
-       return (code.isRestoreKeysString ||
-        code.fixedRestoreCode.isRestoreKeysString ||
-        isMnemonic(code: code))
+       return SphinxOnionManager.sharedInstance.isMnemonic(code: code)
     }
     
-    func goMnemonicRoute(){
-        if let code = codeTextField.text,
-           code.isEmpty == false,
-           isMnemonic(code: code){
-            UserData.sharedInstance.save(walletMnemonic: code)
-            if let mnemonic = UserData.sharedInstance.getMnemonic(),
-               SphinxOnionManager.sharedInstance.createMyAccount(mnemonic: mnemonic){
-                setupWatchdogTimer()
-                listenForSelfContactRegistration()//get callbacks ready for sign up
-                presentConnectingLoadingScreenVC()
-            }
+    func continueRestore() {
+        guard let mnemonic = UserData.sharedInstance.getMnemonic() else {
+            return
+        }
+        
+        if SphinxOnionManager.sharedInstance.createMyAccount(mnemonic: mnemonic) {
+            setupWatchdogTimer()
+            listenForSelfContactRegistration()
+            presentConnectingLoadingScreenVC()
         }
     }
     
@@ -90,60 +98,12 @@ extension RestoreUserFormViewController {
         
         let pinCodeVC = PinCodeViewController.instantiate()
         
-        pinCodeVC.doneCompletion = { pin in
-            pinCodeVC.dismiss(animated: true, completion: { [weak self] in
-                guard let self = self else { return }
-                self.connectRestoredUser(
-                    encryptedKeys: encryptedKeys,
-                    pin: pin
-                )
-            })
-        }
-        
         pinCodeVC.modalPresentationStyle = .overFullScreen
         
         present(pinCodeVC, animated: true)
         
         presentConnectingLoadingScreenVC()
     }
-
-
-    func connectRestoredUser(
-        encryptedKeys: String,
-        pin: String
-    ) {
-        guard
-            let keys = SymmetricEncryptionManager
-                .sharedInstance
-                .decryptRestoreKeys(
-                    encryptedKeys: encryptedKeys.fixedRestoreCode,
-                    pin: pin
-                ),
-            EncryptionManager.sharedInstance.insertKeys(privateKey: keys[0], publicKey: keys[1])
-        else {
-            errorRestoring(message: "invalid.pin".localized)
-            return
-        }
-
-        userData.save(ip: keys[2], token: keys[3], pin: pin)
-
-        userData.getAndSaveTransportKey(forceGet: true) { [weak self] _ in
-            guard let self = self else { return }
-            
-            self.userData.getOrCreateHMACKey(forceGet: true) { [weak self] in
-                API.sharedInstance.getWalletLocalAndRemote(callback: { local, remote in
-                    guard let self = self else { return }
-                    
-                    self.goToWelcomeCompleteScene()
-                }, errorCallback: {
-                    guard let self = self else { return }
-                    
-                    self.errorRestoring(message: "generic.error.message".localized)
-                })
-            }
-        }
-    }
-    
     
     func presentConnectingLoadingScreenVC() {
         let restoreExistingConnectingVC = RestoreUserConnectingViewController.instantiate()
@@ -154,12 +114,7 @@ extension RestoreUserFormViewController {
         )
     }
     
-    
     func goToWelcomeCompleteScene() {
-        if connectTorIfNeededBeforeProceeding() {
-            return
-        }
-        
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
             guard let self = self else { return }
             
@@ -172,52 +127,10 @@ extension RestoreUserFormViewController {
         }
     }
     
-    
     func errorRestoring(message: String) {
         navigationController?.popViewController(animated: true)
         
         newMessageBubbleHelper.showGenericMessageView(text: message)
-    }
-    
-    
-    func handleInvalidCodeSubmission(_ code: String) {
-        var errorMessage: String
-        
-        if code.isRelayQRCode {
-            errorMessage = "restore.invalid-code.relay-qr-code".localized
-        } else if code.isPubKey {
-            errorMessage = "invalid.code.pubkey".localized
-        } else if code.isLNDInvoice {
-            errorMessage = "invalid.code.invoice".localized
-        } else {
-            errorMessage = "invalid.code".localized
-        }
-        
-        newMessageBubbleHelper.genericMessageY = (
-            UIApplication.shared.keyWindow?.safeAreaInsets.top ?? 60
-        ) + 60
-        
-        newMessageBubbleHelper.showGenericMessageView(
-            text: errorMessage,
-            delay: 6,
-            textColor: UIColor.white,
-            backColor: UIColor.Sphinx.BadgeRed,
-            backAlpha: 1.0
-        )
-    }
-}
-
-
-
-extension RestoreUserFormViewController: SphinxOnionConnectorDelegate {
-    func onionConnecting() {}
-    
-    func onionConnectionFinished() {
-        goToWelcomeCompleteScene()
-    }
-    
-    func onionConnectionFailed() {
-        errorRestoring(message: "tor.connection.failed".localized)
     }
 }
 
@@ -225,7 +138,7 @@ extension RestoreUserFormViewController: SphinxOnionConnectorDelegate {
 extension RestoreUserFormViewController : NSFetchedResultsControllerDelegate{
     
     func proceedToNewUserWelcome() {
-        guard let inviter = SignupHelper.getInviter() else {
+        guard let _ = SignupHelper.getInviter() else {
             
             let defaultInviter = SignupHelper.getSupportContact(includePubKey: false)
             SignupHelper.saveInviterInfo(invite: defaultInviter)
@@ -234,91 +147,90 @@ extension RestoreUserFormViewController : NSFetchedResultsControllerDelegate{
             return
         }
         
-        SignupHelper.step = SignupHelper.SignupStep.IPAndTokenSet.rawValue
+        UserData.sharedInstance.signupStep = SignupHelper.SignupStep.OwnerCreated.rawValue
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
             guard let self = self else { return }
 
-            let inviteWelcomeVC = InviteWelcomeViewController.instantiate(
-                inviter: inviter
-            )
-            if let vc = self as? NewUserSignupFormViewController{
-                inviteWelcomeVC.isV2 = vc.isV2
-            }
-            self.navigationController?.pushViewController(inviteWelcomeVC, animated: true)
+            UserData.sharedInstance.signupStep = SignupHelper.SignupStep.InviterContactCreated.rawValue
+            
+            let setPinVC = SetPinCodeViewController.instantiate()
+            setPinVC.isRestoreFlow = true
+            self.navigationController?.pushViewController(setPinVC, animated: true)
         }
     }
     
     func finalizeSignup(){
         let som = SphinxOnionManager.sharedInstance
-        if //let _ = som.currentServer,
-           let contact = som.pendingContact,
-           contact.isOwner == true{
-            if let vc = self as? NewUserSignupFormViewController{
-                vc.isV2 = true
-            }
+
+        if let _ = UserContact.getOwner() {
             som.isV2InitialSetup = true
-            self.proceedToNewUserWelcome()
-        }
-        else{
-            self.navigationController?.popViewController(animated: true)
-            AlertHelper.showAlert(title: "Error", message: "Unable to connect to Sphinx V2 Test Server")
+            som.isV2Restore = true
+            
+            proceedToNewUserWelcome()
+        } else {
+            self.loading = false
+            navigationController?.popViewController(animated: true)
+            AlertHelper.showAlert(title: "Error", message: "Unable to connect to Sphinx V2 Server")
         }
     }
     
     
     private func listenForSelfContactRegistration() {
-            let managedContext = CoreDataManager.sharedManager.persistentContainer.viewContext
+        let managedContext = CoreDataManager.sharedManager.persistentContainer.viewContext
 
-            let fetchRequest: NSFetchRequest<UserContact> = UserContact.fetchRequest()
-            // Assuming 'isOwner' and 'routeHint' are attributes of your UserContact entity
-            fetchRequest.predicate = NSPredicate(format: "isOwner == true AND routeHint != nil")
-            fetchRequest.sortDescriptors = [NSSortDescriptor(key: "index", ascending: true)]
-            
-            selfContactFetchListener = NSFetchedResultsController(fetchRequest: fetchRequest,
-                                                                  managedObjectContext: managedContext,
-                                                                  sectionNameKeyPath: nil,
-                                                                  cacheName: nil)
-            selfContactFetchListener?.delegate = self
+        let fetchRequest: NSFetchRequest<UserContact> = UserContact.fetchRequest()
+        // Assuming 'isOwner' and 'routeHint' are attributes of your UserContact entity
+        fetchRequest.predicate = NSPredicate(format: "isOwner == true AND routeHint != nil")
+        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "index", ascending: true)]
+        
+        selfContactFetchListener = NSFetchedResultsController(
+            fetchRequest: fetchRequest,
+            managedObjectContext: managedContext,
+            sectionNameKeyPath: nil,
+            cacheName: nil
+        )
+        
+        selfContactFetchListener?.delegate = self
 
-            do {
-                try selfContactFetchListener?.performFetch()
-                // Check if we already have the desired data
-                if let _ = selfContactFetchListener?.fetchedObjects?.first {
-                    watchdogTimer?.invalidate()
-                    watchdogTimer = nil
-                    finalizeSignup()
-                    self.selfContactFetchListener = nil
-                }
-            } catch let error as NSError {
-                watchdogTimer?.invalidate()
-                self.selfContactFetchListener = nil
-                print("Could not fetch. \(error), \(error.userInfo)")
-            }
+        do {
+            try selfContactFetchListener?.performFetch()
+        } catch _ as NSError {
+            watchdogTimer?.invalidate()
+            selfContactFetchListener = nil
         }
+    }
     
-    func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
-            // Called when the content of the fetchedResultsController changes.
-            if let _ = controller.fetchedObjects?.first {
-                finalizeSignup()
-                self.selfContactFetchListener = nil
+    func controller(
+        _ controller: NSFetchedResultsController<NSFetchRequestResult>,
+        didChangeContentWith snapshot: NSDiffableDataSourceSnapshotReference
+    ) {
+        if let resultController = controller as? NSFetchedResultsController<NSManagedObject>,
+           let firstSection = resultController.sections?.first {
+            
+            if let _ = firstSection.objects?.first {
+                selfContactFetchListener = nil
+                
                 watchdogTimer?.invalidate()
                 watchdogTimer = nil
+                
+                finalizeSignup()
             }
         }
+    }
     
     private func setupWatchdogTimer() {
-            watchdogTimer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: false) { [weak self] _ in
-                guard let self = self else { return }
-                
-                // Check if the fetch result is still nil
-                if self.selfContactFetchListener?.fetchedObjects?.first == nil {
-                    // Perform the fallback action
-                    DispatchQueue.main.async {
-                        self.navigationController?.popViewController(animated: true)
-                        AlertHelper.showAlert(title: "Error", message: "Unable to connect to Sphinx V2 Test Server")
-                    }
+        watchdogTimer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: false) { [weak self] _ in
+            guard let self = self else { return }
+            
+            if self.selfContactFetchListener?.fetchedObjects?.first == nil {
+                DispatchQueue.main.async {
+                    self.loading = false
+                    self.navigationController?.popViewController(animated: true)
                 }
+            } else {
+                self.finalizeSignup()
             }
         }
+    }
 }

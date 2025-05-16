@@ -38,6 +38,7 @@ class ChatHeaderView: UIView {
     @IBOutlet weak var contributedSatsIcon: UILabel!
     @IBOutlet weak var lockSign: UILabel!
     @IBOutlet weak var boltSign: UILabel!
+    @IBOutlet weak var scheduleIcon: UILabel!
     @IBOutlet weak var keyLoadingWheel: UIActivityIndicatorView!
     @IBOutlet weak var volumeButton: UIButton!
     @IBOutlet weak var secondBrainButton: UIButton!
@@ -45,12 +46,10 @@ class ChatHeaderView: UIView {
     @IBOutlet weak var contributionsContainer: UIStackView!
     @IBOutlet weak var optionsButton: UIButton!
     @IBOutlet weak var showThreadsButton: UIButton!
-    
-    var keysLoading = false {
-        didSet {
-            LoadingWheelHelper.toggleLoadingWheel(loading: keysLoading, loadingWheel: keyLoadingWheel, loadingWheelColor: UIColor.Sphinx.Text)
-        }
-    }
+    @IBOutlet weak var pendingChatDashedOutline: UIView!
+    @IBOutlet weak var imageContainerWidth: NSLayoutConstraint!
+    @IBOutlet weak var imageWidthConstraint: NSLayoutConstraint!
+    @IBOutlet weak var remoteTimezoneIdentifier: UILabel!
     
     var chat: Chat? = nil
     var contact: UserContact? = nil
@@ -78,12 +77,6 @@ class ChatHeaderView: UIView {
         contentView.frame = self.bounds
         contentView.autoresizingMask = [.flexibleHeight, .flexibleWidth]
         
-        profileImageView.layer.cornerRadius = profileImageView.frame.size.height/2
-        profileImageView.clipsToBounds = true
-        
-        initialsLabel.layer.cornerRadius = initialsLabel.frame.size.height/2
-        initialsLabel.clipsToBounds = true
-        
         NotificationCenter.default.addObserver(forName: .onBalanceDidChange, object: nil, queue: OperationQueue.main) { (n: Notification) in
             self.updateSatsEarned()
         }
@@ -106,18 +99,70 @@ class ChatHeaderView: UIView {
         
         let isEncrypted = (contact?.status == UserContact.Status.Confirmed.rawValue) || (chat?.status == Chat.ChatStatus.approved.rawValue)
         lockSign.text = isEncrypted ? "lock" : "lock_open"
-        keysLoading = !isEncrypted
+        lockSign.isHidden = !isEncrypted
         
+        configureTimezoneInfo()
         configureWebAppButton()
         configureThreadsButton()
         configureSecondBrainButton()
         
         setVolumeState(muted: chat?.isMuted() ?? false)
         configureImageOrInitials()
+        setupPendingUI()
+    }
+    
+    func configureTimezoneInfo() {
+        remoteTimezoneIdentifier.isHidden = true
         
-        if let contact = contact, !contact.hasEncryptionKey() {
-            forceKeysExchange(contactId: contact.id)
+        if let timezoneString = chat?.remoteTimezoneIdentifier {
+            let timezone = TimeZone(abbreviation: timezoneString) ?? TimeZone(identifier: timezoneString)
+            
+            if let timezone = timezone {
+                let dateFormatter = DateFormatter()
+                dateFormatter.dateFormat = "hh:mm a"
+                dateFormatter.timeZone = timezone
+
+                remoteTimezoneIdentifier.text = "\(dateFormatter.string(from: Date())) \(timezone.abbreviation() ?? timezone.identifier)"
+                remoteTimezoneIdentifier.isHidden = false
+            }
         }
+    }
+    
+    func configureScheduleIcon(
+        lastMessage: TransactionMessage,
+        ownerId: Int
+    ) {
+        scheduleIcon.isHidden = true
+        
+        if lastMessage.isOutgoing(ownerId: ownerId), !lastMessage.isConfirmedAsReceived() && !lastMessage.failed() {
+            let thirtySecondsAgo = Date().addingTimeInterval(-30)
+            if lastMessage.messageDate < thirtySecondsAgo {
+                scheduleIcon.isHidden = false
+            }
+        }
+    }
+    
+    func setupPendingUI() {
+        if chat == nil {
+            imageWidthConstraint.constant = 35
+            imageContainer.layoutIfNeeded()
+            
+            pendingChatDashedOutline.addDottedCircularBorder(
+                lineWidth: 1.0,
+                dashPattern: [2,3],
+                color: UIColor.Sphinx.PlaceholderText
+            )
+            pendingChatDashedOutline.isHidden = false
+        } else {
+            imageWidthConstraint.constant = 45
+            imageContainer.layoutIfNeeded()
+            
+            pendingChatDashedOutline.removeDottedCircularBorder()
+            pendingChatDashedOutline.isHidden = true
+        }
+        
+        profileImageView.makeCircular()
+        initialsLabel.makeCircular()
     }
     
     func getHeaderName() -> String {
@@ -187,23 +232,23 @@ class ChatHeaderView: UIView {
     }
     
     func updateSatsEarned() {
-        if let feedID = chat?.contentFeed?.feedID {
-            let isMyTribe = (chat?.isMyPublicGroup() ?? false)
-            let label = isMyTribe ? "earned.sats".localized : "contributed.sats".localized
-            let sats = PodcastPaymentsHelper.getSatsEarnedFor(feedID)
-            contributedSatsLabel.text = String(format: label, sats)
-            contributionsContainer.isHidden = false
-        }
+//        if let feedID = chat?.contentFeed?.feedID {
+//            let isMyTribe = (chat?.isMyPublicGroup() ?? false)
+//            let label = isMyTribe ? "earned.sats".localized : "contributed.sats".localized
+//            let sats = PodcastPaymentsHelper.getSatsEarnedFor(feedID)
+//            contributedSatsLabel.text = String(format: label, sats)
+//            contributionsContainer.isHidden = false
+//        }
     }
     
     func configureWebAppButton() {
-        let hasWebAppUrl = chat?.getAppUrl() != nil
+        let hasWebAppUrl = chat?.hasWebApp() == true
         webAppButton.isHidden = !hasWebAppUrl
         webAppButton.setTitle("apps", for: .normal)
     }
     
     func configureSecondBrainButton() {
-        let hasSecondBrain = chat?.getSecondBrainAppUrl() != nil
+        let hasSecondBrain = chat?.hasSecondBrainApp() == true
         secondBrainButton.isHidden = !hasSecondBrain
     }
     
@@ -216,14 +261,11 @@ class ChatHeaderView: UIView {
         volumeButton.setImage(UIImage(named: muted ? "muteOnIcon" : "muteOffIcon"), for: .normal)
     }
     
-    func forceKeysExchange(contactId: Int) {
-        UserContactsHelper.exchangeKeys(id: contactId)
-    }
     
     func checkRoute() {
         let success = (contact?.status == UserContact.Status.Confirmed.rawValue) || (chat?.status == Chat.ChatStatus.approved.rawValue)
-        self.boltSign.textColor = success ? ChatListHeader.kConnectedColor : ChatListHeader.kNotConnectedColor
-        keysLoading = !success
+        boltSign.isHidden = !success
+        boltSign.textColor = success ? ChatListHeader.kConnectedColor : ChatListHeader.kNotConnectedColor
     }
     
     func toggleWebAppIcon(showChatIcon: Bool) {

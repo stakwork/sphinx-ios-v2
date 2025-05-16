@@ -183,7 +183,7 @@ class StakworkAuthorizeViewController: UIViewController {
             return
         }
         
-        var urlString = "https://auth.sphinx.chat/oauth_verify?id=\(id)&sig=\(sig)&pubkey=\(pubkey)"
+        var urlString = "https://auth.sphinx.chat/oauth_verify?id=\(id)&sig=\(sig.urlSafe)&pubkey=\(pubkey)"
         
         if let routeHint = authInfo.routeHint, !routeHint.isEmpty {
             urlString = urlString + "&route_hint=\(routeHint)"
@@ -236,12 +236,13 @@ class StakworkAuthorizeViewController: UIViewController {
             return
         }
         let params: [String: AnyObject] = ["token": token as AnyObject, "pubkey": pubkey as AnyObject]
-        API.sharedInstance.redeemSats(url: host, params: params, callback: {
-            NotificationCenter.default.post(name: .onBalanceDidChange, object: nil)
-            self.closeButtonTouched()
-        }, errorCallback: {
-            self.showErrorAlert()
-        })
+        //TODO: @Jim redo this in v2 or remove
+//        API.sharedInstance.redeemSats(url: host, params: params, callback: {
+//            NotificationCenter.default.post(name: .onBalanceDidChange, object: nil)
+//            self.closeButtonTouched()
+//        }, errorCallback: {
+//            self.showErrorAlert()
+//        })
     }
     
     @IBAction func closeButtonTouched() {

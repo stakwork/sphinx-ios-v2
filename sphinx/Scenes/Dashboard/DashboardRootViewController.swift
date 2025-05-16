@@ -18,12 +18,14 @@ class DashboardRootViewController: RootViewController {
     @IBOutlet weak var podcastSmallPlayer: PodcastSmallPlayer!
     @IBOutlet weak var headerView: ChatListHeader!
     @IBOutlet weak var searchBar: UIView!
-    @IBOutlet weak var searchTextField: UITextField!
+    @IBOutlet weak var searchTextField: ClearNonActiveTextField!
     @IBOutlet weak var searchBarContainer: UIView!
     @IBOutlet weak var mainContentContainerView: UIView!
     @IBOutlet weak var restoreProgressView: RestoreProgressView!
     @IBOutlet weak var addTribeTrailing: NSLayoutConstraint!
     @IBOutlet weak var addTribeButton: UIButton!
+    @IBOutlet weak var addTribeIconLabel: UILabel!
+    
     @IBOutlet weak var bottomBarBottomConstraint: NSLayoutConstraint!
     
     let buttonTitles : [String] = [
@@ -46,12 +48,9 @@ class DashboardRootViewController: RootViewController {
         }
     }
     
-    
     internal weak var leftMenuDelegate: LeftMenuDelegate?
     
     internal var managedObjectContext: NSManagedObjectContext!
-    internal let onionConnector = SphinxOnionConnector.sharedInstance
-    internal let socketManager = SphinxSocketManager.sharedInstance
     internal let actionsManager = ActionsManager.sharedInstance
     internal let contactsService = ContactsService.sharedInstance
     internal let refreshControl = UIRefreshControl()
@@ -59,7 +58,9 @@ class DashboardRootViewController: RootViewController {
     internal let newBubbleHelper = NewMessageBubbleHelper()
     
     internal let podcastPlayerController = PodcastPlayerController.sharedInstance
-
+    
+    let som = SphinxOnionManager.sharedInstance
+    
     internal lazy var chatsListViewModel: ChatListViewModel = {
         ChatListViewModel()
     }()
@@ -71,23 +72,21 @@ class DashboardRootViewController: RootViewController {
         )
     }()
     
-    
     internal lazy var feedSearchResultsContainerViewController = {
         FeedSearchContainerViewController.instantiate(
-            resultsDelegate: self
+            resultsDelegate: self,
+            onContentScrolled: viewControllerContentScrolled
         )
     }()
     
     internal lazy var contactChatsContainerViewController: ChatsContainerViewController = {
         ChatsContainerViewController.instantiate(
-            tab: ChatsContainerViewController.Tab.Friends,
             chatsListDelegate: self
         )
     }()
     
     internal lazy var tribeChatsContainerViewController: ChatsContainerViewController = {
         ChatsContainerViewController.instantiate(
-            tab: ChatsContainerViewController.Tab.Tribes,
             chatsListDelegate: self
         )
     }()
@@ -103,7 +102,6 @@ class DashboardRootViewController: RootViewController {
             )
             
             resetSearchField()
-            loadDataOnTabChange(to: activeTab)
             feedViewMode = .rootList
             
             if (activeTab == .tribes) {
@@ -149,7 +147,7 @@ class DashboardRootViewController: RootViewController {
     var isLoading = false {
         didSet {
             LoadingWheelHelper.toggleLoadingWheel(
-                loading: (isLoading && didFinishInitialLoading == false) || onionConnector.isConnecting(),
+                loading: (isLoading && didFinishInitialLoading == false),
                 loadingWheel: headerView.loadingWheel,
                 loadingWheelColor: UIColor.white,
                 views: [
@@ -190,7 +188,8 @@ extension DashboardRootViewController {
         let viewController = StoryboardScene.Dashboard.dashboardRootViewController.instantiate()
         
         viewController.leftMenuDelegate = leftMenuDelegate
-        viewController.managedObjectContext = managedObjectContext        
+        viewController.managedObjectContext = managedObjectContext   
+        
         return viewController
     }
 }
@@ -208,6 +207,7 @@ extension DashboardRootViewController {
         setupHeaderViews()
         listenForEvents()
         setupPlayerBar()
+        setupAddTribeButton()
         
         restoreProgressView.delegate = self
         
@@ -217,19 +217,11 @@ extension DashboardRootViewController {
         
         loadLastPlayedPod()
         
-        NotificationCenter.default.removeObserver(self, name: .onContactsAndChatsChanged, object: nil)
-        NotificationCenter.default.removeObserver(self, name: .onSizeConfigurationChanged, object: nil)
-        
-        NotificationCenter.default.addObserver(self, selector: #selector(dataDidChange), name: .onContactsAndChatsChanged, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(sizeDidChange), name: .onSizeConfigurationChanged, object: nil)
-        
         addAccessibilityIdentifiers()
         
-        SphinxOnionManager.sharedInstance.fetchMyAccountFromState()
+        connectToServer()
         
-        DelayPerformedHelper.performAfterDelay(seconds: 0.5, completion: {
-            self.connectToV2Server()
-        })
+        setupObservers()
     }
     
     func addAccessibilityIdentifiers(){
@@ -251,7 +243,7 @@ extension DashboardRootViewController {
         }
     }
     
-    func setupAddTribeButton(){
+    func setupAddTribeButton() {
         addTribeButton.layer.cornerRadius = 22.0
         addTribeButton.clipsToBounds = true
     }
@@ -316,53 +308,115 @@ extension DashboardRootViewController {
         headerView.showBalance()
         
         handleDeepLinksAndPush()
-        
-        if didFinishInitialLoading {
-            loadDataOnTabChange(to: activeTab)
+        Chat.processTimezoneChanges()
+    }
+    
+    func refreshUnreadStatus(){
+        som.getReads()
+        som.getMuteLevels()
+        som.getMessagesStatusForPendingMessages()
+    }
+    
+    func connectToServer() {
+        if !UserData.sharedInstance.isUserLogged() {
+            return
         }
         
-        setupAddTribeButton()
+        som.fetchMyAccountFromState()
+        som.deleteOwnerFromState()
         
+        som.connectToServer(
+            connectingCallback: {
+                self.shouldShowHeaderLoadingWheel = true
+            },
+            contactRestoreCallback: self.contactRestoreCallback(percentage:),
+            messageRestoreCallback: self.messageRestoreCallback(percentage:),
+            hideRestoreViewCallback: self.hideRestoreViewCallback
+        )
     }
     
-    func connectToV2Server(){
-        NotificationCenter.default.addObserver(self, selector: #selector(handleNewKeyExchangeReceived), name: .newContactKeyExchangeResponseWasReceived, object: nil)
-        SphinxOnionManager.sharedInstance.connectToV2Server(contactRestoreCallback: contactRestoreCallback(percentage:), messageRestoreCallback: messageRestoreCallback(percentage:), hideRestoreViewCallback: hideRestoreViewCallback)
+    func reconnectToServer() {
+        som.reconnectToServer(
+            hideRestoreViewCallback: self.hideRestoreViewCallback
+        )
     }
     
-    func hideRestoreViewCallback(){
-        self.restoreProgressView.hideViewAnimated()
+    private func setupObservers() {
+        NotificationCenter.default.removeObserver(self, name: .onContactsAndChatsChanged, object: nil)
+        NotificationCenter.default.removeObserver(self, name: .onSizeConfigurationChanged, object: nil)
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(dataDidChange), name: .onContactsAndChatsChanged, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(onMessagesStatusChangedWith(n:)), name: .onMessagesStatusChanged, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(sizeDidChange), name: .onSizeConfigurationChanged, object: nil)
+        
+        NotificationCenter.default.removeObserver(self, name: .connectedToInternet, object: nil)
+        NotificationCenter.default.removeObserver(self, name: .disconnectedFromInternet, object: nil)
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(didConnectToInternet), name: .connectedToInternet, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(didDisconnectFromInternet), name: .disconnectedFromInternet, object: nil)
+        
+        contactsService.forceUpdate()
     }
-    
-    func contactRestoreCallback(percentage:Int){
+
+    @objc private func didConnectToInternet() {
         DispatchQueue.main.async {
-            let value = min(percentage,100)
+            if (UIApplication.shared.delegate as? AppDelegate)?.isActive == false {
+                return
+            }
+            self.reconnectToServer()
+        }
+    }
+
+    @objc private func didDisconnectFromInternet() {
+        SphinxOnionManager.sharedInstance.isConnected = false
+    }
+    
+    func hideRestoreViewCallback(isRestore: Bool) {
+        DispatchQueue.main.async {
+            self.restoreProgressView.hideViewAnimated()
+            self.isLoading = false
+            self.shouldShowHeaderLoadingWheel = false
+            
+            self.refreshUnreadStatus()
+            
+            if isRestore {
+                self.finishUserInfoSetup()
+            }
+            
+            self.chatsListViewModel.askForNotificationPermissions()
+        }
+    }
+    
+    func finishUserInfoSetup() {
+        if let owner = UserContact.getOwner(), (owner.nickname ?? "").trim().isEmpty == true {
+            let setNickNameVC = SetNickNameViewController.instantiate()
+            setNickNameVC.isRestoreFlow = true
+            presentNavigationControllerWith(vc: setNickNameVC)
+        }
+    }
+    
+    func contactRestoreCallback(percentage: Int) {
+        DispatchQueue.main.async {
+            let value = min(percentage, 100)
+            
             self.restoreProgressView.showRestoreProgressView(
                 with: value,
                 label: "restoring-contacts".localized,
                 buttonEnabled: false
             )
-            if value >= 100 {self.restoreProgressView.hideViewAnimated()}
         }
     }
     
-    func messageRestoreCallback(percentage:Int){
-        let value = min(percentage,100)
-        
+    func messageRestoreCallback(percentage: Int) {
         DispatchQueue.main.async {
+            let value = min(percentage, 100)
+            
             self.restoreProgressView.showRestoreProgressView(
                 with: value,
                 label: "restoring-messages".localized,
                 buttonEnabled: true
             )
-            if value >= 100 {self.restoreProgressView.hideViewAnimated()}
         }
-    }
-    
-    @objc func handleNewKeyExchangeReceived(){
-        DelayPerformedHelper.performAfterDelay(seconds: 1.0, completion: {//slight delay to ensure new DB write goes through first
-            self.contactChatsContainerViewController.reloadCollectionView()
-        })
     }
 }
 
@@ -418,18 +472,19 @@ extension DashboardRootViewController {
         presentNavigationControllerWith(vc: viewController)
     }
     
-    func presentNewContactVC(pubkey:String){
+    func presentNewContactVC(pubkey: String) {
         let newContactVC = NewContactViewController.instantiate(pubkey: pubkey)
         newContactVC.delegate = self
         self.present(newContactVC, animated: true)
     }
     
     
-    func sendSatsButtonTouched(pubkey:String?=nil) {
+    func sendSatsButtonTouched(pubkey:String?=nil,zeroAmtInvoice:String?=nil) {
         let viewController = CreateInvoiceViewController.instantiate(
             delegate: self,
             paymentMode: PaymentsViewModel.PaymentMode.send,
-            preloadedPubkey: pubkey
+            preloadedPubkey: pubkey,
+            preloadedZeroAmountInvoice: zeroAmtInvoice
         )
         
         presentNavigationControllerWith(vc: viewController)
@@ -490,7 +545,7 @@ extension DashboardRootViewController {
                 object: nil,
                 queue: .main
             ) { [weak self] (_notification: Notification) in
-                self?.loadContactsAndSyncMessages()
+                ///Refresh with SphinxOnionManager refresh
             }
     }
     
@@ -508,111 +563,6 @@ extension DashboardRootViewController {
             delegate: self
         ) {
             isLoading = false
-        }
-    }
-    
-    
-    internal func loadContactsAndSyncMessages(
-        shouldShowHeaderLoadingWheel: Bool = false
-    ) {
-        self.shouldShowHeaderLoadingWheel = shouldShowHeaderLoadingWheel
-        
-        isLoading = true
-        headerView.updateBalance()
-        
-        if chatsListViewModel.isRestoring() {
-            DispatchQueue.main.async {
-                self.restoreProgressView.showRestoreProgressView(
-                    with: 1,
-                    label: "restoring-contacts".localized,
-                    buttonEnabled: false
-                )
-            }
-        }
-        
-        var contactsProgressShare : Float = 0.01
-        
-        chatsListViewModel.loadFriends(
-            progressCompletion: { restoring in
-                if restoring {
-                    
-                    contactsProgressShare += 0.01
-                    
-                    DispatchQueue.main.async {
-                        self.restoreProgressView.showRestoreProgressView(
-                            with: Int(contactsProgressShare * 100),
-                            label: "restoring-contacts".localized,
-                            buttonEnabled: false
-                        )
-                    }
-                }
-            }
-        ) { [weak self] restoring in
-            guard let self = self else { return }
-            
-            if restoring {
-                
-                DispatchQueue.main.async {
-                    self.restoreProgressView.showRestoreProgressView(
-                        with: Int(contactsProgressShare * 100),
-                        label: "restoring-contacts".localized,
-                        buttonEnabled: false
-                    )
-                }
-                
-                self.chatsListViewModel.askForNotificationPermissions()
-                self.contactsService.forceUpdate()
-            } else {
-                self.contactsService.configureFetchResultsController()
-            }
-            
-            var contentProgressShare : Float = 0.0
-            
-            self.syncContentFeedStatus(
-                restoring: restoring,
-                progressCallback:  { contentProgress in
-                    contentProgressShare = 0.1
-                    
-                    if (contentProgress >= 0 && restoring) {
-                        let contentProgress = Int(contentProgressShare * Float(contentProgress))
-                        
-                        DispatchQueue.main.async {
-                            self.restoreProgressView.showRestoreProgressView(
-                                with: contentProgress + Int(contactsProgressShare * 100),
-                                label: "restoring-content".localized,
-                                buttonEnabled: false
-                            )
-                        }
-                    }
-                },
-                completionCallback: {
-                    self.chatsListViewModel.syncMessages(
-                        progressCallback: { progress in
-                            if (restoring) {
-                                self.isLoading = false
-                                let messagesProgress : Int = Int(Float(progress) * (1.0 - contentProgressShare - contactsProgressShare))
-                                
-                                if (progress >= 0) {
-                                    DispatchQueue.main.async {
-                                        self.restoreProgressView.showRestoreProgressView(
-                                            with: messagesProgress + Int(contentProgressShare * 100) + Int(contactsProgressShare * 100),
-                                            label: "restoring-messages".localized,
-                                            buttonEnabled: true
-                                        )
-                                    }
-                                } else {
-                                    self.newBubbleHelper.showLoadingWheel(text: "fetching.old.messages".localized)
-                                }
-                                
-                                self.contactsService.forceUpdate()
-                            }
-                        },
-                        completion: { (_,_) in
-                            self.finishLoading()
-                        }
-                    )
-                }
-            )
         }
     }
     
@@ -655,18 +605,12 @@ extension DashboardRootViewController {
         )
     }
     
-    
-    internal func loadDataOnTabChange(to activeTab: DashboardTab) {
-        switch activeTab {
-        case .feed:
-            finishLoading()
-        case .friends:
-            loadContactsAndSyncMessages()
-        case .tribes:
-            loadContactsAndSyncMessages()
+    @objc func onMessagesStatusChangedWith(n: Notification) {
+        if let chatIds = n.userInfo?["chat-ids"] as? [Int] {
+            contactChatsContainerViewController.onMessagesStatusChangedFor(chatIds: chatIds)
+            tribeChatsContainerViewController.onMessagesStatusChangedFor(chatIds: chatIds)
         }
     }
-    
     
     internal func finishLoading() {
         newBubbleHelper.hideLoadingWheel()
@@ -708,18 +652,20 @@ extension DashboardRootViewController {
         let chatVC = NewChatViewController.instantiate(
             contactId: chatContact?.id,
             chatId: chat?.id,
-            chatListViewModel: chatsListViewModel
+            chatListViewModel: chatsListViewModel,
+            delegate: self
         )
         
         navigationController?.pushViewController(chatVC, animated: shouldAnimate)
     }
     
-    private func handleInvite(for contact: UserContact?) -> Bool {
+    
+    private func handleInvite(for contact: UserContact?) -> Bool {        
         if let invite = contact?.invite, (contact?.isPending() ?? false) {
             
             if invite.isPendingPayment() && !invite.isPaymentProcessed() {
-                
-                payInvite(invite: invite)
+                //@Tom I deleted most related functions & earmarked this for deletion but wondering if I might have missed something here that needs to be added for v2. Let me know.
+                //payInvite(invite: invite)
                 
             } else {
                 
@@ -747,17 +693,7 @@ extension DashboardRootViewController {
         confirmAddfriendVC.qrCodeString = inviteCode
         navigationController?.present(confirmAddfriendVC, animated: true, completion: nil)
     }
-    
-    private func payInvite(invite: UserInvite) {
-        AlertHelper.showTwoOptionsAlert(title: "pay.invitation".localized, message: "", confirm: {
-            self.chatsListViewModel.payInvite(invite: invite, completion: { contact in
-                if let _ = contact {
-                    return
-                }
-                AlertHelper.showAlert(title: "generic.error.title".localized, message: "payment.failed".localized)
-            })
-        })
-    }
+
 }
 
 
@@ -784,5 +720,22 @@ extension DashboardRootViewController {
         case transactionsHistory
         case scanQRCode
         case sendSats
+    }
+}
+
+class ClearNonActiveTextField: UITextField {
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        if let clearButton = self.value(forKey: "clearButton") as? UIView {
+            let convertedPoint = self.convert(point, to: clearButton)
+            if clearButton.point(inside: convertedPoint, with: event) {
+                if !self.isFirstResponder {
+                    text = ""
+                    sendActions(for: .editingChanged)
+                    let _ = delegate?.textFieldShouldClear?(self)
+                    return nil
+                }
+            }
+        }
+        return super.hitTest(point, with: event)
     }
 }

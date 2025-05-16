@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="21507" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="22155" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
     <device id="retina6_1" orientation="portrait" appearance="dark"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="21505"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="22131"/>
         <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
@@ -51,7 +51,7 @@
                                                 <color key="textColor" name="PlaceholderText"/>
                                                 <nil key="highlightedColor"/>
                                             </label>
-                                            <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="Search" textAlignment="natural" minimumFontSize="17" clearButtonMode="whileEditing" translatesAutoresizingMaskIntoConstraints="NO" id="ef7-It-4Rs">
+                                            <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="Search" textAlignment="natural" minimumFontSize="17" clearButtonMode="always" translatesAutoresizingMaskIntoConstraints="NO" id="ef7-It-4Rs" customClass="ClearNonActiveTextField" customModule="sphinx" customModuleProvider="target">
                                                 <rect key="frame" x="47" y="0.0" width="320" height="44"/>
                                                 <color key="textColor" name="Text"/>
                                                 <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="14"/>
@@ -248,6 +248,7 @@
                     </view>
                     <connections>
                         <outlet property="addTribeButton" destination="vfi-ch-n2c" id="CAi-3q-XqF"/>
+                        <outlet property="addTribeIconLabel" destination="3p2-Mz-7oz" id="6oh-1U-lIa"/>
                         <outlet property="addTribeTrailing" destination="E6K-br-Tql" id="Ygp-yP-aJG"/>
                         <outlet property="bottomBar" destination="U1o-Ky-NBS" id="UxE-QJ-Uwb"/>
                         <outlet property="bottomBarBottomConstraint" destination="Fri-9I-0El" id="60y-7V-V80"/>
@@ -279,11 +280,8 @@
                                 <rect key="frame" x="0.0" y="48" width="414" height="848"/>
                                 <subviews>
                                     <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="none" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="37K-dr-aGI">
-                                        <rect key="frame" x="0.0" y="0.0" width="414" height="520"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="414" height="684"/>
                                         <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                        <constraints>
-                                            <constraint firstAttribute="height" constant="520" id="wbB-x7-7kN"/>
-                                        </constraints>
                                         <color key="sectionIndexBackgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                     </tableView>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Re9-Eb-2Gh">
@@ -304,6 +302,7 @@
                                 <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <constraints>
                                     <constraint firstItem="Re9-Eb-2Gh" firstAttribute="leading" secondItem="7Et-PE-60b" secondAttribute="leading" id="AbN-MW-iSB"/>
+                                    <constraint firstItem="Re9-Eb-2Gh" firstAttribute="top" secondItem="37K-dr-aGI" secondAttribute="bottom" constant="32" id="Fqu-uC-s39"/>
                                     <constraint firstItem="37K-dr-aGI" firstAttribute="top" secondItem="7Et-PE-60b" secondAttribute="top" id="RCM-uy-qNK"/>
                                     <constraint firstAttribute="trailing" secondItem="37K-dr-aGI" secondAttribute="trailing" id="ikV-cV-HTz"/>
                                     <constraint firstItem="37K-dr-aGI" firstAttribute="leading" secondItem="7Et-PE-60b" secondAttribute="leading" id="tQ7-Kr-sH5"/>

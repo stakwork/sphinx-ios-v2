@@ -50,6 +50,14 @@ class TransactionTableViewCell: UITableViewCell {
         
         failedPaymentLabel.isHidden = !transaction.isFailed()
         
+        if transaction.isBountyPayment() {
+            failedPaymentLabel.lineBreakMode = .byWordWrapping
+        } else {
+            failedPaymentLabel.lineBreakMode = .byTruncatingTail
+        }
+        
+        failedPaymentLabel.text = "failed.payment".localized
+        
         let bottomViewVisible = transaction.isFailed() && transaction.expanded
         bottomView.isHidden = !bottomViewVisible
         errorMessageLabel.text = "\("transactions.failure-reason".localized) \(transaction.errorMessage ?? "-")"

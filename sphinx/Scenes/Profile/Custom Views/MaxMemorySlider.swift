@@ -8,8 +8,8 @@
 
 import UIKit
 
-protocol MaxMemorySliderDelegate:NSObject{
-    func sliderValueChanged(value:Int)
+protocol MaxMemorySliderDelegate: class {
+    func sliderValueChanged(value: Int)
 }
 
 class MaxMemorySlider: UIView {
@@ -19,7 +19,7 @@ class MaxMemorySlider: UIView {
     @IBOutlet weak var maxMemoryLabel: UILabel!
     
     let userData = UserData.sharedInstance
-    var delegate: MaxMemorySliderDelegate? = nil
+    weak var delegate: MaxMemorySliderDelegate? = nil
     
     override init(frame: CGRect) {
         super.init(frame: frame)

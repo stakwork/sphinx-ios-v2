@@ -34,7 +34,7 @@ class WelcomeCompleteViewController: UIViewController {
     
     
     @IBAction func continueButtonTapped(_ sender: UIButton) {
-        SignupHelper.completeSignup()
+        UserData.sharedInstance.completeSignup()
         UserDefaults.Keys.lastPinDate.set(Date())
         
         if let appDelegate = UIApplication.shared.delegate as? AppDelegate, let rootVC = appDelegate.getRootViewController() {

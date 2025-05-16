@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol DashboardNewsLetterItemCollectionViewCellDelegate{
+protocol DashboardNewsLetterItemCollectionViewCellDelegate: class {
     func handleShare(item:NewsletterItem)
 }
 
@@ -20,7 +20,8 @@ class DashboardNewsletterItemCollectionViewCell: UICollectionViewCell {
     @IBOutlet weak var itemDescriptionLabel: UILabel!
     @IBOutlet weak var itemIcon: UIImageView!
     @IBOutlet weak var itemDateLabel: UILabel!
-    var delegate : DashboardNewsLetterItemCollectionViewCellDelegate? = nil
+    
+    weak var delegate : DashboardNewsLetterItemCollectionViewCellDelegate? = nil
     
     var newsletterItem: NewsletterItem! {
         didSet {
