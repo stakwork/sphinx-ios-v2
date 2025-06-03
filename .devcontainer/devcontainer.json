@@ -1,0 +1,62 @@
+{
+  "name": "Sphinx Apps",
+  "service": "app",
+  "workspaceFolder": "/workspaces",
+  "forwardPorts": [
+    15552
+  ],
+  "postCreateCommand": "bash sphinx-ios-v2/.devcontainer/setup.sh",
+  "customizations": {
+    "codespaces": {
+      "repositories": {
+        "stakwork/sphinx-android-v2": {
+          "permissions": "write-all"
+        },
+        "stakwork/kotlin-android": {
+          "permissions": "write-all"
+        },
+        "stakwork/sphinx-mac-v2": {
+          "permissions": "write-all"
+        },
+        "stakwork/sphinx-kotlin-v2": {
+          "permissions": "write-all"
+        },
+        "stakwork/sphinx-kotlin-core": {
+          "permissions": "write-all"
+        }
+      }
+    },
+    "vscode": {
+      "settings": {
+        "git.autofetch": true,
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "staklink.port": 15552,
+        "staklink.repos": {
+          "sphinx-android-v2": {
+          },
+          "kotlin-android": {
+          },
+          "sphinx-mac-v2": {
+          },
+          "sphinx-kotlin-v2": {
+          },
+          "sphinx-kotlin-core": {
+          },
+          "sphinx-ios-v2": {
+          }
+        }
+      },
+      "extensions": [
+        "stakwork.staklink",
+        "golang.go",
+        "esbenp.prettier-vscode"
+      ]
+    }
+  },
+  "hostRequirements": {
+    "cpus": 4,
+    "memory": "8gb"
+  },
+  "remoteUser": "root"
+}
