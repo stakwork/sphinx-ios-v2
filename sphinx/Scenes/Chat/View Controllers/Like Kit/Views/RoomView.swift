@@ -583,8 +583,8 @@ struct RoomView: View {
                                 .background(
                                     Color(UIColor.Sphinx.BadgeRed)
                                         .opacity(1)
-                                        .cornerRadius(geometry.size.height / 2)
-                                        .frame(height: geometry.size.height)
+                                        .cornerRadius(min(geometry.size.width, roomCtx.isInPip ? 50 : 80) / 2)
+                                        .frame(height: min(geometry.size.width, roomCtx.isInPip ? 50 : 80))
                                         .frame(width: min(geometry.size.width, roomCtx.isInPip ? 50 : 80))
                                 )
                                 .frame(maxWidth: .infinity)
