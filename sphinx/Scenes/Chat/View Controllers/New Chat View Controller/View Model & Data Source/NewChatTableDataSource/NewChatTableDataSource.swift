@@ -127,6 +127,12 @@ class NewChatTableDataSource : NSObject {
     let dataSourceQueue = DispatchQueue(label: "chat.datasourceQueue", qos: .userInteractive)
     let mediaReloadQueue = DispatchQueue(label: "chat.media.datasourceQueue", qos: .userInteractive)
     
+    var isThread: Bool {
+        get {
+            return false
+        }
+    }
+    
     init(
         chat: Chat?,
         contact: UserContact?,
@@ -155,6 +161,9 @@ class NewChatTableDataSource : NSObject {
     }
     
     func processChatAliases() {
+        if isThread {
+            return
+        }
         DispatchQueue.global(qos: .background).async {
             self.chat?.processAliases()
         }

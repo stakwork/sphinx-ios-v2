@@ -200,7 +200,7 @@ extension SphinxOnionManager {
             )
             let _ = handleRunReturn(rr: rr)
             
-            let tag = getMessageTag(messages: rr.msgs, isSendingMessage: true)
+//            let tag = getMessageTag(messages: rr.msgs, isSendingMessage: true)
             
             callback?(true, nil)
         } catch let error {
