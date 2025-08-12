@@ -66,6 +66,8 @@ extension ThreadsListViewController : ThreadsListDataSourceDelegate {
     func didSelectThreadWith(uuid: String) {
         let chatVC = NewChatViewController.instantiate(
             chatId: self.chat?.id,
+            timezoneData: self.chat?.timezoneData,
+            aliasesAndPics: self.chat?.aliasesAndPics,
             threadUUID: uuid
         )
         

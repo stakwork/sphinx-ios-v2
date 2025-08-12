@@ -16,6 +16,12 @@ class ThreadTableDataSource : NewChatTableDataSource {
     var headerDifference: CGFloat = 0
     var numberOfRows: Int = 0
     
+    override var isThread: Bool {
+        get {
+            return true
+        }
+    }
+    
     init(
         chat: Chat?,
         contact: UserContact?,

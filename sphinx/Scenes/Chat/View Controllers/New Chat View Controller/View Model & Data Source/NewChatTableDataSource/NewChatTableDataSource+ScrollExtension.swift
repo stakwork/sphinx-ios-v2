@@ -25,7 +25,7 @@ extension NewChatTableDataSource: UITableViewDelegate {
         }
         
         let difference: CGFloat = 16
-        let scrolledToTop = tableView.contentOffset.y > tableView.contentSize.height - tableView.frame.size.height - difference
+        let scrolledToTop = tableView.contentOffset.y > tableView.contentSize.height - tableView.frame.size.height - difference - 500
         let scrolledToBottom = tableView.contentOffset.y < -10
         let didMoveOutOfBottom = tableView.contentOffset.y > -10
                 
@@ -71,10 +71,7 @@ extension NewChatTableDataSource: UITableViewDelegate {
     }
     
     @objc func loadMoreItems() {
-        DelayPerformedHelper.performAfterDelay(seconds: 0.5, completion: { [weak self] in
-            guard let self = self else { return }
-            self.configureResultsController(items: self.messagesCount + 50)
-        })
+        configureResultsController(items: messagesCount + 50)
     }
     
     @objc func shouldHideNewMsgsIndicator() -> Bool {

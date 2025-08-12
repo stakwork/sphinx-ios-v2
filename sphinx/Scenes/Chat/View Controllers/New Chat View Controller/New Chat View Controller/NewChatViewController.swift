@@ -79,6 +79,8 @@ class NewChatViewController: NewKeyboardHandlerViewController {
     static func instantiate(
         contactId: Int? = nil,
         chatId: Int? = nil,
+        timezoneData: [String: String]? = nil,
+        aliasesAndPics: [(String, String)]? = nil,
         chatListViewModel: ChatListViewModel? = nil,
         threadUUID: String? = nil,
         delegate: NewChatViewControllerDelegate? = nil
@@ -86,7 +88,11 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         let viewController = StoryboardScene.Chat.newChatViewController.instantiate()
         
         if let chatId = chatId {
-            viewController.chat = Chat.getChatWith(id: chatId)
+            let chat = Chat.getChatWith(id: chatId)
+            chat?.timezoneData = timezoneData ?? [:]
+            chat?.aliasesAndPics = aliasesAndPics ?? []
+
+            viewController.chat = chat
         }
         
         if let contactId = contactId {
@@ -192,6 +198,8 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         let chatVC = NewChatViewController.instantiate(
             contactId: self.contact?.id,
             chatId: self.chat?.id,
+            timezoneData: self.chat?.timezoneData,
+            aliasesAndPics: self.chat?.aliasesAndPics,
             chatListViewModel: chatListViewModel,
             threadUUID: threadID
         )
