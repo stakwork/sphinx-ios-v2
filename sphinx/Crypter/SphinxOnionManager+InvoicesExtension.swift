@@ -425,7 +425,7 @@ extension SphinxOnionManager {
                 seed: getAccountSeed()!,
                 uniqueTime: getTimeWithEntropy(),
                 state: loadOnionStateAsData(),
-                since: sinceTimestamp * 1000,
+                since: sinceTimestamp,
                 limit: itemsPerPage,
                 scid: nil,
                 remoteOnly: false,

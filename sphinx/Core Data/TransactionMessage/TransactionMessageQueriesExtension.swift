@@ -95,6 +95,19 @@ extension TransactionMessage {
         return message
     }
     
+    static func getMessageWith(paymentHash: String) -> TransactionMessage? {
+        let predicate = NSPredicate(format: "paymentHash == %@", paymentHash)
+        let sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]
+        
+        let message: TransactionMessage? = CoreDataManager.sharedManager.getObjectOfTypeWith(
+            predicate: predicate,
+            sortDescriptors: sortDescriptors,
+            entityName: "TransactionMessage"
+        )
+        
+        return message
+    }
+    
     static func getAttachmentMessageWith(muid: String, managedContext:NSManagedObjectContext?=nil) -> TransactionMessage? {
         let predicate = NSPredicate(
             format: "type == %d AND muid == %@",

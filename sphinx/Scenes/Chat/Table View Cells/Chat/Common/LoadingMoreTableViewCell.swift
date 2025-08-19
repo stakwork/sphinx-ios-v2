@@ -10,7 +10,7 @@ import UIKit
 
 class LoadingMoreTableViewCell: UITableViewCell {
     
-    public static let kLoadingHeight: CGFloat = 50.0
+    public static let kLoadingHeight: CGFloat = 200.0
     
     @IBOutlet weak var loadingWheel: UIActivityIndicatorView!
     @IBOutlet weak var loadingMoreLabel: UILabel!
