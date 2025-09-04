@@ -66,6 +66,26 @@ class RestoreUserFormViewController: UIViewController {
         
         self.navigationController?.popToRootViewController(animated: true)
     }
+    
+    @IBAction func qrCodeButtonTapped() {
+        let viewController = NewQRScannerViewController.instantiate(
+            currentMode: NewQRScannerViewController.Mode.ScanAndDismiss
+        )
+        viewController.delegate = self
+        
+        present(viewController, animated: true)
+    }
+}
+
+extension RestoreUserFormViewController: QRCodeScannerDelegate {
+    
+    func didScanQRCode(string: String) {
+        codeTextField.text = string
+        
+        textFieldDidEndEditing(codeTextField)
+        
+        handleSubmit()
+    }
 }
 
 
