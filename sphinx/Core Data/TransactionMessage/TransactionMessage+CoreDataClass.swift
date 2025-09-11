@@ -313,7 +313,7 @@ public class TransactionMessage: NSManagedObject {
         id: Int?,
         context: NSManagedObjectContext
     ) -> TransactionMessage {
-        if let id = id, let existingMessage = TransactionMessage.getMessageWith(id: id) {
+        if let id = id, let existingMessage = TransactionMessage.getMessageWith(id: id, context: context) {
             return existingMessage
         } else {
             return TransactionMessage(context: context)
@@ -326,7 +326,8 @@ public class TransactionMessage: NSManagedObject {
         date: Date,
         chat: Chat?,
         replyUUID: String? = nil,
-        threadUUID: String? = nil
+        threadUUID: String? = nil,
+        context: NSManagedObjectContext? = nil
     ) -> TransactionMessage? {
         
         let messageType = TransactionMessageType(fromRawValue: type)
@@ -337,7 +338,8 @@ public class TransactionMessage: NSManagedObject {
             chat: chat,
             replyUUID: replyUUID,
             threadUUID: threadUUID,
-            type: messageType
+            type: messageType,
+            context: context
         )
     }
     
@@ -383,10 +385,11 @@ public class TransactionMessage: NSManagedObject {
         replyUUID: String? = nil,
         threadUUID: String? = nil,
         type: TransactionMessageType,
-        attachmentObject: AttachmentObject? = nil
+        attachmentObject: AttachmentObject? = nil,
+        context: NSManagedObjectContext? = nil
     ) -> TransactionMessage? {
         
-        let managedContext = CoreDataManager.sharedManager.persistentContainer.viewContext
+        let managedContext = context ?? CoreDataManager.sharedManager.persistentContainer.viewContext
         
         let message = TransactionMessage(context: managedContext) as TransactionMessage
         message.id = SphinxOnionManager.sharedInstance.uniqueIntHashFromString(stringInput: UUID().uuidString)

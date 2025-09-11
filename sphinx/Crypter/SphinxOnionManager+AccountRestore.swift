@@ -293,6 +293,49 @@ extension SphinxOnionManager {
         }
     }
     
+    func startChatMsgBlockFetch(
+        startIndex: Int,
+        itemsPerPage: Int,
+        stopIndex: Int,
+        publicKey: String
+    ) {
+        guard let seed = getAccountSeed() else {
+            return
+        }
+        
+        firstSCIDMsgsCallback = nil
+        onMessageRestoredCallback = nil
+        
+        fetchMessagePerContactBlock(
+            seed: seed,
+            lastMessageIndex: startIndex,
+            msgCountLimit: itemsPerPage,
+            publicKey: publicKey
+        )
+    }
+    
+    func fetchMessagePerContactBlock(
+        seed: String,
+        lastMessageIndex: Int,
+        msgCountLimit: Int,
+        publicKey: String
+    ) {
+        do {
+            let rr = try fetchMsgsBatchPerContact(
+                seed: seed,
+                uniqueTime: getTimeWithEntropy(),
+                state: loadOnionStateAsData(),
+                lastMsgIdx: UInt64(lastMessageIndex),
+                limit: UInt32(msgCountLimit),
+                reverse: true,
+                contact: publicKey
+            )
+            let _ = handleRunReturn(rr: rr)
+        } catch let error {
+            print(error)
+        }
+    }
+    
     func fetchOkKeyMessages() {
         guard let seed = getAccountSeed() else {
             return
@@ -469,11 +512,64 @@ extension SphinxOnionManager {
         
         let filteredMsgs = messages.filter({ $0.type != nil && allowedTypes.contains($0.type!) })
         
+        let messageIndexes = filteredMsgs.compactMap({
+            if let index = $0.index, let indexInt = Int(index) {
+                return indexInt
+            }
+            return nil
+        })
+        
+        let existingIdMessages = TransactionMessage.getMessagesWith(ids: messageIndexes, context: backgroundContext)
+        var existingMessagesIdMap = Dictionary(uniqueKeysWithValues: existingIdMessages.map { ($0.id, $0) })
+        
+        ///Messages sender info Map
+        let senderInfoMessagesMap = Dictionary(uniqueKeysWithValues: filteredMsgs.compactMap {
+            if let type = $0.type,
+               let sender = $0.sender,
+               let index = $0.index,
+               let indexInt = Int(index),
+               let uuid = $0.uuid,
+               let date = $0.date,
+               let csr = ContactServerResponse(JSONString: sender)
+            {
+                return (indexInt, csr)
+            }
+            return nil
+        })
+        
+        ///Contacts Map per public key
+        let pubkeys = senderInfoMessagesMap.compactMap({ $0.value.pubkey })
+        let contactsByPubKeys = UserContact.getContactsWith(pubkeys: pubkeys, context: backgroundContext)
+        var contactsByPubKeyMap = Dictionary(uniqueKeysWithValues: contactsByPubKeys.compactMap {
+            $0.setContactConversation(context: backgroundContext)
+            
+            if let pubkey = $0.publicKey {
+                return (pubkey, $0)
+            }
+            return nil
+        })
+        
+        let codes = senderInfoMessagesMap.compactMap({ $0.value.code })
+        let contactsByInviteCode = UserContact.getContactsWithInviteCode(inviteCode: codes, managedContext: backgroundContext)
+        var contactsByInviteCodeMap = Dictionary(uniqueKeysWithValues: contactsByInviteCode.compactMap {
+            $0.setContactConversation(context: backgroundContext)
+            
+            if let code = $0.sentInviteCode {
+                return (code, $0)
+            }
+            return nil
+        })
+        
         for message in filteredMsgs {
+            
+            guard let index = message.index, let indexInt = Int(index) else {
+                continue
+            }
+            
             guard let sender = message.sender,
-               let csr =  ContactServerResponse(JSONString: sender),
-               let recipientPubkey = csr.pubkey
-            else {
+                  let csr =  senderInfoMessagesMap[indexInt],
+                  let recipientPubkey = csr.pubkey else
+            {
                 continue
             }
             
@@ -484,13 +580,14 @@ extension SphinxOnionManager {
             
             let routeHint: String? = csr.routeHint
                 
-            let contact = UserContact.getContactWithDisregardStatus(pubkey: recipientPubkey) ?? createNewContact(
+            let contact = contactsByPubKeyMap[recipientPubkey] ?? createNewContact(
                 pubkey: recipientPubkey,
                 routeHint: routeHint,
                 nickname: csr.alias,
                 photoUrl: csr.photoUrl,
                 code: csr.code,
-                date: message.date
+                date: message.date,
+                context: backgroundContext
             )
             
             if contact.isOwner {
@@ -508,10 +605,14 @@ extension SphinxOnionManager {
             }
             
             if contact.getChat() == nil && isConfirmed {
-                let _ = createChat(for: contact, with: message.date)
+                let _ = createChat(for: contact, with: message.date, context: backgroundContext)
             }
             
-            createKeyExchangeMsgFrom(msg: message)
+            createKeyExchangeMsgFrom(
+                msg: message,
+                existingContact: contact,
+                existingMessage: existingMessagesIdMap[indexInt]
+            )
         }
     }
     
@@ -542,11 +643,47 @@ extension SphinxOnionManager {
         let total = filteredMsgs.count
         var index = 0
         
+        let messagesInnerContentMap = Dictionary(uniqueKeysWithValues: filteredMsgs.compactMap {
+            if let message = $0.message,
+               let index = $0.index,
+               let indexInt = Int(index),
+               let innerContent = MessageInnerContent(JSONString: message)
+            {
+                return (indexInt, innerContent)
+            }
+            return nil
+        })
+
+        ///Messages sender info Map
+        let senderInfoMessagesMap = Dictionary(uniqueKeysWithValues: filteredMsgs.compactMap {
+            if let sender = $0.sender,
+               let index = $0.index,
+               let indexInt = Int(index),
+               let csr = ContactServerResponse(JSONString: sender)
+            {
+                return (indexInt, csr)
+            }
+            return nil
+        })
+        
+        ///Tribes Map per public key
+        let pubkeys = senderInfoMessagesMap.compactMap({ $0.value.pubkey })
+        let tribes = Chat.getChatTribesFor(ownerPubkeys: pubkeys, context: backgroundContext)
+        var tribesMap = Dictionary(uniqueKeysWithValues: tribes.compactMap {
+            if let ownerPubkey = $0.ownerPubkey {
+                return (ownerPubkey, $0)
+            }
+            return nil
+        })
+        
         for (i, message) in filteredMsgs.enumerated() {
             
+            guard let indx = message.index, let indexInt = Int(indx) else {
+                continue
+            }
+            
             ///Check for sender information
-            guard let sender = message.sender,
-                  let csr =  ContactServerResponse(JSONString: sender),
+            guard let csr = senderInfoMessagesMap[indexInt],
                   let tribePubkey = csr.pubkey else
             {
                 if index == total - 1 {
@@ -557,12 +694,16 @@ extension SphinxOnionManager {
                 continue
             }
             
-            if let chat = Chat.getTribeChatWithOwnerPubkey(ownerPubkey: tribePubkey) {
-                restoreGroupJoinMsg(
+            if let chat = tribesMap[tribePubkey] {
+                let _ = restoreGroupJoinMsg(
                     message: message,
+                    existingMessage: nil,
+                    senderInfo: csr,
+                    innerContent: messagesInnerContentMap[indexInt],
                     chat: chat,
                     didCreateTribe: false
                 )
+                
                 if index == total - 1 {
                     completion(rr, topic)
                 } else {
@@ -572,14 +713,18 @@ extension SphinxOnionManager {
                 fetchOrCreateChatWithTribe(
                     ownerPubkey: tribePubkey,
                     host: csr.host,
+                    existingTribe: tribesMap[tribePubkey],
                     index: i,
                     completion: { [weak self] chat, didCreateTribe, ind in
                         guard let self = self else {
                             return
                         }
                         if let chat = chat {
-                            self.restoreGroupJoinMsg(
+                            let _ = restoreGroupJoinMsg(
                                 message: message,
+                                existingMessage: nil,
+                                senderInfo: csr,
+                                innerContent: messagesInnerContentMap[indexInt],
                                 chat: chat,
                                 didCreateTribe: didCreateTribe
                             )
@@ -598,29 +743,27 @@ extension SphinxOnionManager {
     
     func restoreGroupJoinMsg(
         message: Msg,
+        existingMessage: TransactionMessage?,
+        senderInfo: ContactServerResponse?,
+        innerContent: MessageInnerContent?,
         chat: Chat,
         didCreateTribe: Bool
-    ) {
+    ) -> TransactionMessage? {
+        
         guard let uuid = message.uuid,
               let index = message.index,
               let timestamp = message.timestamp,
               let type = message.type,
               let date = timestampToDate(timestamp: timestamp) else
         {
-            return
+            return nil
         }
         
-        ///Check for sender information
-        guard let sender = message.sender,
-              let csr =  ContactServerResponse(JSONString: sender) else
-        {
-            return
+        guard let csr =  senderInfo else {
+            return nil
         }
         
-        let groupActionMessage = TransactionMessage.getMessageInstanceWith(
-            id: Int(index),
-            context: managedContext
-        )
+        let groupActionMessage = existingMessage ?? TransactionMessage(context: backgroundContext)
         groupActionMessage.uuid = uuid
         groupActionMessage.id = Int(index) ?? uniqueIntHashFromString(stringInput: UUID().uuidString)
         groupActionMessage.chat = chat
@@ -634,14 +777,10 @@ extension SphinxOnionManager {
         groupActionMessage.setAsLastMessage()
         groupActionMessage.senderAlias = csr.alias
         groupActionMessage.senderPic = csr.photoUrl
-        groupActionMessage.senderId = message.fromMe == true ? UserData.sharedInstance.getUserId() : chat.id
+        groupActionMessage.senderId = message.fromMe == true ? UserData.sharedInstance.getUserId(context: backgroundContext) : chat.id
         groupActionMessage.status = TransactionMessage.TransactionMessageStatus.confirmed.rawValue
         
-        if let message = message.message,
-           let innerContent = MessageInnerContent(JSONString: message)
-        {
-            groupActionMessage.replyUUID = innerContent.replyUuid
-        }
+        groupActionMessage.replyUUID = innerContent?.replyUuid
         
         chat.seen = false
         
@@ -654,6 +793,8 @@ extension SphinxOnionManager {
         if (type == TransactionMessage.TransactionMessageType.memberReject.rawValue) {
             chat.status = Chat.ChatStatus.rejected.rawValue
         }
+        
+        return groupActionMessage
     }
     
     func attempFinishResotoration() {

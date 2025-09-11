@@ -15,8 +15,11 @@ extension TransactionMessage {
         return messages
     }
     
-    static func getMessageWith(id: Int) -> TransactionMessage? {
-        let message: TransactionMessage? = CoreDataManager.sharedManager.getObjectOfTypeWith(id: id, entityName: "TransactionMessage")
+    static func getMessageWith(
+        id: Int,
+        context: NSManagedObjectContext? = nil
+    ) -> TransactionMessage? {
+        let message: TransactionMessage? = CoreDataManager.sharedManager.getObjectOfTypeWith(id: id, entityName: "TransactionMessage", context: context)
         return message
     }
     
@@ -82,14 +85,18 @@ extension TransactionMessage {
         return messages
     }
         
-    static func getMessageWith(uuid: String) -> TransactionMessage? {
+    static func getMessageWith(
+        uuid: String,
+        context: NSManagedObjectContext? = nil
+    ) -> TransactionMessage? {
         let predicate = NSPredicate(format: "uuid == %@", uuid)
         let sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]
         
         let message: TransactionMessage? = CoreDataManager.sharedManager.getObjectOfTypeWith(
             predicate: predicate,
             sortDescriptors: sortDescriptors,
-            entityName: "TransactionMessage"
+            entityName: "TransactionMessage",
+            managedContext: context
         )
         
         return message
@@ -108,7 +115,10 @@ extension TransactionMessage {
         return message
     }
     
-    static func getAttachmentMessageWith(muid: String, managedContext:NSManagedObjectContext?=nil) -> TransactionMessage? {
+    static func getAttachmentMessageWith(
+        muid: String,
+        managedContext: NSManagedObjectContext? = nil
+    ) -> TransactionMessage? {
         let predicate = NSPredicate(
             format: "type == %d AND muid == %@",
             TransactionMessage.TransactionMessageType.attachment.rawValue,
@@ -126,14 +136,18 @@ extension TransactionMessage {
         return message
     }
     
-    static func getMessagesWith(uuids: [String]) -> [TransactionMessage] {
+    static func getMessagesWith(
+        uuids: [String],
+        context: NSManagedObjectContext? = nil
+    ) -> [TransactionMessage] {
         let predicate = NSPredicate(format: "uuid IN %@", uuids)
         let sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]
         
         let messages: [TransactionMessage] = CoreDataManager.sharedManager.getObjectsOfTypeWith(
             predicate: predicate,
             sortDescriptors: sortDescriptors,
-            entityName: "TransactionMessage"
+            entityName: "TransactionMessage",
+            context: context
         )
         
         return messages
@@ -157,14 +171,18 @@ extension TransactionMessage {
         }
     }
     
-    static func getMessagesWith(ids: [Int]) -> [TransactionMessage] {
+    static func getMessagesWith(
+        ids: [Int],
+        context: NSManagedObjectContext? = nil
+    ) -> [TransactionMessage] {
         let predicate = NSPredicate(format: "id IN %@", ids)
         let sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]
         
         let messages: [TransactionMessage] = CoreDataManager.sharedManager.getObjectsOfTypeWith(
             predicate: predicate,
             sortDescriptors: sortDescriptors,
-            entityName: "TransactionMessage"
+            entityName: "TransactionMessage",
+            context: context
         )
         
         return messages
@@ -406,10 +424,13 @@ extension TransactionMessage {
         return fetchRequest
     }
     
-    static func getInvoiceWith(paymentHash: String) -> TransactionMessage? {
+    static func getInvoiceWith(
+        paymentHash: String,
+        context: NSManagedObjectContext? = nil
+    ) -> TransactionMessage? {
         let predicate = NSPredicate(format: "type == %d AND paymentHash == %@", TransactionMessageType.invoice.rawValue, paymentHash)
         let sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]
-        let invoice: TransactionMessage? = CoreDataManager.sharedManager.getObjectOfTypeWith(predicate: predicate, sortDescriptors: sortDescriptors, entityName: "TransactionMessage")
+        let invoice: TransactionMessage? = CoreDataManager.sharedManager.getObjectOfTypeWith(predicate: predicate, sortDescriptors: sortDescriptors, entityName: "TransactionMessage", managedContext: context)
         
         return invoice
     }
@@ -675,8 +696,6 @@ extension TransactionMessage {
         messageId: Int,
         on chat: Chat
     ) -> TransactionMessage? {
-        
-        let context = CoreDataManager.sharedManager.persistentContainer.viewContext
         
         var typesToExclude = typesToExcludeFromChat
         typesToExclude.append(TransactionMessageType.boost.rawValue)

@@ -359,12 +359,12 @@ extension DashboardRootViewController {
     }
 
     @objc private func didConnectToInternet() {
-        DispatchQueue.main.async {
-            if (UIApplication.shared.delegate as? AppDelegate)?.isActive == false {
-                return
-            }
-            self.reconnectToServer()
-        }
+//        DispatchQueue.main.async {
+//            if (UIApplication.shared.delegate as? AppDelegate)?.isActive == false {
+//                return
+//            }
+//            self.reconnectToServer()
+//        }
     }
 
     @objc private func didDisconnectFromInternet() {

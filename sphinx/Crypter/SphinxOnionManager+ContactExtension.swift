@@ -152,24 +152,74 @@ extension SphinxOnionManager {//contacts related
             return
         }
         
-        print("MSG COUNT: \(rr.msgs.count)")
-        
         let allowedTypes = [
             UInt8(TransactionMessage.TransactionMessageType.contactKey.rawValue),
             UInt8(TransactionMessage.TransactionMessageType.contactKeyConfirmation.rawValue)
         ]
         
-        for msg in rr.msgs.filter({ $0.type != nil && allowedTypes.contains($0.type!) }) {
+        let filteredMsgs = rr.msgs.filter({ $0.type != nil && allowedTypes.contains($0.type!) })
+        
+        let messageIndexes = filteredMsgs.compactMap({
+            if let index = $0.index, let indexInt = Int(index) {
+                return indexInt
+            }
+            return nil
+        })
+        
+        let existingIdMessages = TransactionMessage.getMessagesWith(ids: messageIndexes, context: backgroundContext)
+        var existingMessagesIdMap = Dictionary(uniqueKeysWithValues: existingIdMessages.map { ($0.id, $0) })
+        
+        ///Messages sender info Map
+        let senderInfoMessagesMap = Dictionary(uniqueKeysWithValues: filteredMsgs.compactMap {
+            if let type = $0.type,
+               let sender = $0.sender,
+               let index = $0.index,
+               let indexInt = Int(index),
+               let uuid = $0.uuid,
+               let date = $0.date,
+               let csr = ContactServerResponse(JSONString: sender)
+            {
+                return (indexInt, csr)
+            }
+            return nil
+        })
+        
+        ///Messages inner content Map
+        let messagesInnerContentMap = Dictionary(uniqueKeysWithValues: rr.msgs.compactMap {
+            if let message = $0.message,
+               let index = $0.index,
+               let indexInt = Int(index),
+               let innerContent = MessageInnerContent(JSONString: message)
+            {
+                return (indexInt, innerContent)
+            }
+            return nil
+        })
+        
+        ///Contacts Map per public key
+        let pubkeys = senderInfoMessagesMap.compactMap({ $0.value.pubkey })
+        let contactsByPubKeys = UserContact.getContactsWith(pubkeys: pubkeys, context: backgroundContext)
+        var contactsByPubKeyMap = Dictionary(uniqueKeysWithValues: contactsByPubKeys.compactMap {
+            $0.setContactConversation(context: backgroundContext)
             
-            print("KEY EXCHANGE MSG of Type \(String(describing: msg.type)) RECEIVED:\(msg)")
+            if let pubkey = $0.publicKey {
+                return (pubkey, $0)
+            }
+            return nil
+        })
+        
+        for msg in filteredMsgs {
             
-            if let sender = msg.sender,
-               let csr = ContactServerResponse(JSONString: sender),
+            guard let index = msg.index, let indexInt = Int(index) else {
+                continue
+            }
+            
+            if let csr = senderInfoMessagesMap[indexInt],
                let senderPubkey = csr.pubkey
             {
-                let routeHint: String? = msg.message?.toMessageInnerContent()?.getRouteHint()
+                let routeHint: String? = messagesInnerContentMap[indexInt]?.getRouteHint()
                 
-                if let contact = UserContact.getContactWithDisregardStatus(pubkey: senderPubkey) {
+                if let contact = contactsByPubKeyMap[senderPubkey] {
                     if contact.isOwner {
                         continue
                     }
@@ -188,32 +238,40 @@ extension SphinxOnionManager {//contacts related
                     
                     ///Create chat for contact and save
                     if contact.getChat() == nil {
-                        let _ = createChat(for: contact, with: msg.date)
+                        let _ = createChat(
+                            for: contact,
+                            with: msg.date,
+                            context: backgroundContext
+                        )
                     }
                     
                     continue
                 }
                 
-                let newContactRequest = createNewContact(
+                let newContact = createNewContact(
                     pubkey: senderPubkey,
                     routeHint: routeHint,
                     nickname: csr.alias,
                     photoUrl: csr.photoUrl,
                     code: csr.code,
                     status: UserContact.Status.Confirmed.rawValue,
-                    date: msg.date
+                    date: msg.date,
+                    context: backgroundContext
                 )
                 
-                ///Create chat for contact and save
-                if newContactRequest.getChat() == nil {
-                    let _ = createChat(for: newContactRequest, with: msg.date)
+                if newContact.getChat() == nil {
+                    let _ = createChat(for: newContact, with: msg.date)
                 }
                 
-                createKeyExchangeMsgFrom(msg: msg)
+                createKeyExchangeMsgFrom(
+                    msg: msg,
+                    existingContact: newContact,
+                    existingMessage: existingMessagesIdMap[indexInt]
+                )
             }
         }
         
-        managedContext.saveContext()
+//        managedContext.saveContext()
         
     }
     
@@ -249,9 +307,10 @@ extension SphinxOnionManager {//contacts related
         photoUrl: String? = nil,
         code: String? = nil,
         status: Int? = nil,
-        date: Date? = nil
+        date: Date? = nil,
+        context: NSManagedObjectContext? = nil
     ) -> UserContact {
-        let contact = UserContact.getContactWithInviteCode(inviteCode: code ?? "") ?? UserContact(context: managedContext)
+        let contact = UserContact(context: context ?? managedContext)
         contact.id = uniqueIntHashFromString(stringInput: UUID().uuidString)
         contact.publicKey = pubkey
         contact.routeHint = routeHint
@@ -307,11 +366,12 @@ extension SphinxOnionManager {//contacts related
     
     func createChat(
         for contact: UserContact,
-        with date: Date? = nil
+        with date: Date? = nil,
+        context: NSManagedObjectContext? = nil
     ) -> Chat? {
         let contactID = NSNumber(value: contact.id)
         
-        if let _ = Chat.getAll().filter({ $0.contactIds.contains(contactID) }).first {
+        if let _ = Chat.getAll(context: context).filter({ $0.contactIds.contains(contactID) }).first {
             return nil //don't make duplicates
         }
         
@@ -320,8 +380,9 @@ extension SphinxOnionManager {//contacts related
         }
         
         let selfContactId =  0
-        let chat = Chat(context: managedContext)
+        let chat = Chat(context: context ?? managedContext)
         let contactIDArray = [contactID,NSNumber(value: selfContactId)]
+        
         chat.id = contact.id
         chat.type = Chat.ChatType.conversation.rawValue
         chat.status = Chat.ChatStatus.approved.rawValue

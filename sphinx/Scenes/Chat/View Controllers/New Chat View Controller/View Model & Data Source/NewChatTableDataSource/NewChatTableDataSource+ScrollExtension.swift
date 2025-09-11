@@ -71,6 +71,17 @@ extension NewChatTableDataSource: UITableViewDelegate {
     }
     
     @objc func loadMoreItems() {
+//        if let publicKey = contact?.publicKey ?? chat?.ownerPubkey {
+//            if let minIndex = messagesArray.map({ $0.id }).min() {
+//                SphinxOnionManager.sharedInstance.startChatMsgBlockFetch(
+//                    startIndex: minIndex - 1,
+//                    itemsPerPage: 50,
+//                    stopIndex: 0,
+//                    publicKey: publicKey
+//                )
+//            }
+//        }
+        
         configureResultsController(items: messagesCount + 50)
     }
     

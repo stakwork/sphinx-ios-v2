@@ -18,32 +18,26 @@ extension SphinxOnionManager {
             
             let pubKeys = lastReadMap.compactMap({ $0.key })
             
-            backgroundContext.perform { [weak self] in
-                guard let self = self else {
-                    return
+            let tribes = Chat.getChatTribesFor(ownerPubkeys: pubKeys, context: self.backgroundContext)
+            let contacts = UserContact.getContactsWith(pubkeys: pubKeys, context: self.backgroundContext)
+            
+            for (pubKey, lastReadId) in lastReadMap {
+                guard let lastReadId = lastReadId as? Int else {
+                    continue
                 }
-                
-                let tribes = Chat.getChatTribesFor(ownerPubkeys: pubKeys, context: self.backgroundContext)
-                let contacts = UserContact.getContactsWith(pubkeys: pubKeys, context: self.backgroundContext)
-                
-                for (pubKey, lastReadId) in lastReadMap {
-                    guard let lastReadId = lastReadId as? Int else {
-                        continue
-                    }
-                    if let tribe = tribes.filter({ $0.ownerPubkey == pubKey }).first {
-                        updateLastReadIndex(
-                            chatId: tribe.id,
-                            lastReadId: lastReadId
-                        )
-                    } else if let contact = contacts.filter({ $0.publicKey == pubKey }).first, let chat = contact.getChat() {
-                        updateLastReadIndex(
-                            chatId: chat.id,
-                            lastReadId: lastReadId
-                        )
-                    }
+                if let tribe = tribes.filter({ $0.ownerPubkey == pubKey }).first {
+                    updateLastReadIndex(
+                        chatId: tribe.id,
+                        lastReadId: lastReadId
+                    )
+                } else if let contact = contacts.filter({ $0.publicKey == pubKey }).first, let chat = contact.getChat() {
+                    updateLastReadIndex(
+                        chatId: chat.id,
+                        lastReadId: lastReadId
+                    )
                 }
-                self.updateChatReadStatus(chatListUnreadDict: chatListUnreadDict)
             }
+            self.updateChatReadStatus(chatListUnreadDict: chatListUnreadDict)
         }
         
         func updateLastReadIndex(

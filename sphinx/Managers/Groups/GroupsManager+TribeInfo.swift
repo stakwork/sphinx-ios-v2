@@ -8,6 +8,7 @@
 
 import Foundation
 import SwiftyJSON
+import CoreData
 
 extension GroupsManager {
     
@@ -173,6 +174,7 @@ extension GroupsManager {
     func lookupAndRestoreTribe(
         pubkey: String,
         host: String,
+        context: NSManagedObjectContext? = nil,
         completion: @escaping (Chat?) -> ()
     ){
         let tribeInfo = GroupsManager.TribeInfo(ownerPubkey: pubkey, host: host, uuid: pubkey)
@@ -199,14 +201,13 @@ extension GroupsManager {
                 ]
                 
                 let chatJSON = JSON(chatDict)
-                let resultantChat = Chat.insertChat(chat: chatJSON)
+                let resultantChat = Chat.insertChat(chat: chatJSON, context: context)
                 resultantChat?.status = (chatDict["private"] as? Bool ?? false) ? Chat.ChatStatus.pending.rawValue : Chat.ChatStatus.approved.rawValue
                 resultantChat?.type = (chatDict["private"] as? Bool ?? false) ? Chat.ChatType.privateGroup.rawValue : Chat.ChatType.publicGroup.rawValue
-                resultantChat?.managedObjectContext?.saveContext()
                 completion(resultantChat)
-            },
-            errorCallback: {
+            }, errorCallback: {
                 completion(nil)
-        })
+            }
+        )
     }
 }
