@@ -627,7 +627,7 @@ extension SphinxOnionManager {
         rr: RunReturn,
         topic: String?,
         completion: @escaping (RunReturn, String?) -> ()
-    ) async {
+    ) {
         let messages = rr.msgs
         
         if messages.isEmpty {
@@ -733,41 +733,42 @@ extension SphinxOnionManager {
                     index = index + 1
                 }
             } else {
-                let result = await fetchOrCreateChatWithTribeAsync(
+                fetchOrCreateChatWithTribe(
                     ownerPubkey: tribePubkey,
                     host: csr.host,
                     existingTribe: tribesMap[tribePubkey],
-                    index: i
-                )
-                
-                guard let chat = result.chat else {
-                    return
-                }
-                
-                let newMessage = restoreGroupJoinMsg(
-                    message: message,
-                    existingMessage: existingMessagesIdMap[indexInt],
-                    senderInfo: csr,
-                    innerContent: messagesInnerContentMap[indexInt],
-                    chat: chat,
-                    didCreateTribe: result.didCreateTribe
-                )
-                
-                if let newMessage = newMessage {
-                    if !existingMessagesIdMap.keys.contains(newMessage.id) {
-                        existingMessagesIdMap[newMessage.id] = newMessage
+                    index: i,
+                    completion: { chat, didCreateTribe, i in
+                        guard let chat = chat else {
+                            return
+                        }
+                        
+                        let newMessage = self.restoreGroupJoinMsg(
+                            message: message,
+                            existingMessage: existingMessagesIdMap[indexInt],
+                            senderInfo: csr,
+                            innerContent: messagesInnerContentMap[indexInt],
+                            chat: chat,
+                            didCreateTribe: didCreateTribe
+                        )
+                        
+                        if let newMessage = newMessage {
+                            if !existingMessagesIdMap.keys.contains(newMessage.id) {
+                                existingMessagesIdMap[newMessage.id] = newMessage
+                            }
+                        }
+                        
+                        if let ownerPubKey = chat.ownerPubkey, !tribesMap.keys.contains(ownerPubKey) {
+                            tribesMap[ownerPubKey] = chat
+                        }
+                        
+                        if i == total - 1 {
+                            completion(rr, topic)
+                        } else {
+                            index = i + 1
+                        }
                     }
-                }
-                
-                if let ownerPubKey = chat.ownerPubkey, !tribesMap.keys.contains(ownerPubKey) {
-                    tribesMap[ownerPubKey] = chat
-                }
-                
-                if index == total - 1 {
-                    completion(rr, topic)
-                } else {
-                    index = index + 1
-                }
+                )
             }
         }
     }

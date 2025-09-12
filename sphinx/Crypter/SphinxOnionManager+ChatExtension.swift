@@ -583,7 +583,7 @@ extension SphinxOnionManager {
     //MARK: processes updates from general purpose messages like plaintext and attachments
     func processGenericMessages(
         rr: RunReturn
-    ) async {
+    ) {
         if rr.msgs.isEmpty {
             return
         }
@@ -635,7 +635,7 @@ extension SphinxOnionManager {
         })
         
         ///Tribes Map per public key
-        var tribePubkeys = senderInfoMessagesMap.compactMap({ $0.value.pubkey })
+        let tribePubkeys = senderInfoMessagesMap.compactMap({ $0.value.pubkey })
         let tribes = Chat.getChatTribesFor(ownerPubkeys: tribePubkeys, context: backgroundContext)
         var tribesMap = Dictionary(uniqueKeysWithValues: tribes.compactMap {
             if let ownerPubkey = $0.ownerPubkey {
@@ -757,6 +757,7 @@ extension SphinxOnionManager {
                 newMessage = processSentMessage(
                     message: message,
                     existingMessagesUUIDMap: existingMessagesUUIDMap,
+                    existingMessage: existingMessages,
                     senderInfo: senderInfo,
                     genericIncomingMessage: genericIncomingMsg,
                     contact: contactsMap[genericIncomingMsg?.senderPubkey ?? ""],
@@ -811,7 +812,7 @@ extension SphinxOnionManager {
                 }
                 
                 if isGroupAction(type: type) {
-                    newMessage = await processIncomingGroupJoinMsg(
+                    newMessage = processIncomingGroupJoinMsg(
                         message: message,
                         existingMessage: existingMessages,
                         senderInfo: senderInfo,
@@ -846,19 +847,19 @@ extension SphinxOnionManager {
                         owner: owner
                     )
                 }
+            }
+            
+            if let newMessage = newMessage {
+                if !existingMessagesIdMap.keys.contains(newMessage.id) {
+                    existingMessagesIdMap[newMessage.id] = newMessage
+                }
                 
-                if let newMessage = newMessage {
-                    if !existingMessagesIdMap.keys.contains(newMessage.id) {
-                        existingMessagesIdMap[newMessage.id] = newMessage
-                    }
-                    
-                    if let uuid = newMessage.uuid, !existingMessagesUUIDMap.keys.contains(uuid) {
-                        existingMessagesUUIDMap[uuid] = newMessage
-                    }
-                    
-                    if let chat = newMessage.chat, let ownerPubKey = chat.ownerPubkey, chat.isPublicGroup(), !tribesMap.keys.contains(ownerPubKey) {
-                        tribesMap[ownerPubKey] = chat
-                    }
+                if let uuid = newMessage.uuid, !existingMessagesUUIDMap.keys.contains(uuid) {
+                    existingMessagesUUIDMap[uuid] = newMessage
+                }
+                
+                if let chat = newMessage.chat, let ownerPubKey = chat.ownerPubkey, chat.isPublicGroup(), !tribesMap.keys.contains(ownerPubKey) {
+                    tribesMap[ownerPubKey] = chat
                 }
             }
             
@@ -944,6 +945,7 @@ extension SphinxOnionManager {
     func processSentMessage(
         message: Msg,
         existingMessagesUUIDMap: [String: TransactionMessage?],
+        existingMessage: TransactionMessage?,
         senderInfo: ContactServerResponse?,
         genericIncomingMessage: GenericIncomingMessage?,
         contact: UserContact?,
@@ -971,7 +973,7 @@ extension SphinxOnionManager {
         {
             guard let localMsg = processGenericIncomingMessage(
                 message: genericIncomingMessage,
-                existingMessage: nil,
+                existingMessage: existingMessage,
                 invoiceForPayment: nil,
                 csr: senderInfo,
                 contact: contact,
@@ -1139,7 +1141,7 @@ extension SphinxOnionManager {
         contact: UserContact?,
         tribe: Chat?,
         owner: UserContact? = nil
-    ) async -> TransactionMessage? {
+    ) -> TransactionMessage? {
         ///Check for sender information
         guard let csr =  senderInfo,
               let tribePubkey = csr.pubkey else
@@ -1157,48 +1159,51 @@ extension SphinxOnionManager {
                 didCreateTribe: false
             )
         } else {
-            let result = await fetchOrCreateChatWithTribeAsync(
+            fetchOrCreateChatWithTribe(
                 ownerPubkey: tribePubkey,
                 host: csr.host,
                 existingTribe: nil,
-                index: 0
-            )
-            
-            guard let chat = result.chat else {
-                return nil
-            }
-            
-            return restoreGroupJoinMsg(
-                message: message,
-                existingMessage: existingMessage,
-                senderInfo: senderInfo,
-                innerContent: innerContent,
-                chat: chat,
-                didCreateTribe: result.didCreateTribe
+                index: 0,
+                completion: { chat, didCreateTribe, index in
+                    guard let chat = chat else {
+                        return
+                    }
+                    
+                    let _ = self.restoreGroupJoinMsg(
+                        message: message,
+                        existingMessage: existingMessage,
+                        senderInfo: senderInfo,
+                        innerContent: innerContent,
+                        chat: chat,
+                        didCreateTribe: didCreateTribe
+                    )
+                }
             )
         }
+        
+        return nil
     }
     
-    func fetchOrCreateChatWithTribeAsync(
-        ownerPubkey: String,
-        host: String?,
-        existingTribe: Chat?,
-        index: Int
-    ) async -> (chat: Chat?, didCreateTribe: Bool, index: Int) {
-        return await withCheckedContinuation { continuation in
-            Task { @MainActor in
-                fetchOrCreateChatWithTribe(
-                    ownerPubkey: ownerPubkey,
-                    host: host,
-                    existingTribe: existingTribe,
-                    index: index,
-                    completion: { chat, didCreateTribe, index in
-                        continuation.resume(returning: (chat, didCreateTribe, index))
-                    }
-                )
-            }
-        }
-    }
+//    func fetchOrCreateChatWithTribeAsync(
+//        ownerPubkey: String,
+//        host: String?,
+//        existingTribe: Chat?,
+//        index: Int
+//    ) async -> (chat: Chat?, didCreateTribe: Bool, index: Int) {
+//        return await withCheckedContinuation { continuation in
+//            Task { @MainActor in
+//                fetchOrCreateChatWithTribe(
+//                    ownerPubkey: ownerPubkey,
+//                    host: host,
+//                    existingTribe: existingTribe,
+//                    index: index,
+//                    completion: { chat, didCreateTribe, index in
+//                        continuation.resume(returning: (chat, didCreateTribe, index))
+//                    }
+//                )
+//            }
+//        }
+//    }
     
     func processIncomingPaidMessageEvent(
         message: Msg,

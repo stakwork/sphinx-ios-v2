@@ -487,9 +487,8 @@ public class Chat: NSManagedObject {
     static func updateMessageReadStatus(
         chatId: Int,
         lastReadId: Int,
-        context: NSManagedObjectContext? = nil
+        context: NSManagedObjectContext
     ) {
-        let managedContext = context ?? CoreDataManager.sharedManager.persistentContainer.viewContext
         let fetchRequest: NSFetchRequest<TransactionMessage> = TransactionMessage.fetchRequest()
         
         fetchRequest.predicate = NSPredicate(
@@ -502,7 +501,7 @@ public class Chat: NSManagedObject {
         fetchRequest.sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]
 
         do {
-            let messages = try managedContext.fetch(fetchRequest)
+            let messages = try context.fetch(fetchRequest)
             for (index, message) in messages.enumerated() {
                 if message.id <= lastReadId {
                     if index == 0 {

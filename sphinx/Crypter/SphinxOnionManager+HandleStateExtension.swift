@@ -52,38 +52,43 @@ extension SphinxOnionManager {
                     return
                 }
                 
-                Task {
-                    await self.restoreTribesFrom(
-                        rr: rr,
-                        topic: topic
-                    ) { [weak self] rr, topic in
-                        Task {
-                            ///handling contacts restore
-                            self?.restoreContactsFrom(messages: rr.msgs)
-                            
-                            ///Handling key exchange msgs restore
-                            self?.processKeyExchangeMessages(rr: rr)
-                            
-                            ///Handling generic msgs restore
-                            await self?.processGenericMessages(rr: rr)
-                            
-                            ///Handling invoice paid
-                            self?.processInvoicePaid(rr: rr)
-                            
-                            ///Handling messages statused
-                            self?.handleMessagesStatus(tags: rr.tags)
-                            
-                            ///Handling incoming tags
-                            self?.handleMessageStatusByTag(rr: rr)
-                            
-                            ///Handling read status
-                            self?.handleReadStatus(rr: rr)
-                            
-                            ///Handling restore callbacks
-                            self?.handleRestoreCallbacks(topic: topic, messages: rr.msgs)
-                            
-                            self?.backgroundContext.saveContext()
+                self.restoreTribesFrom(
+                    rr: rr,
+                    topic: topic
+                ) { [weak self] rr, topic in
+                    guard let self = self else {
+                        return
+                    }
+                    
+                    self.backgroundContext.perform { [weak self] in
+                        guard let self = self else {
+                            return
                         }
+                        ///handling contacts restore
+                        self.restoreContactsFrom(messages: rr.msgs)
+                        
+                        ///Handling key exchange msgs restore
+                        self.processKeyExchangeMessages(rr: rr)
+                        
+                        ///Handling generic msgs restore
+                        self.processGenericMessages(rr: rr)
+                        
+                        ///Handling invoice paid
+                        self.processInvoicePaid(rr: rr)
+                        
+                        ///Handling messages statused
+                        self.handleMessagesStatus(tags: rr.tags)
+                        
+                        ///Handling incoming tags
+                        self.handleMessageStatusByTag(rr: rr)
+                        
+                        ///Handling read status
+                        self.handleReadStatus(rr: rr)
+                        
+                        ///Handling restore callbacks
+                        self.handleRestoreCallbacks(topic: topic, messages: rr.msgs)
+                        
+                        self.backgroundContext.saveContext()
                     }
                 }
             }

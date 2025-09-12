@@ -245,9 +245,113 @@ extension NSManagedObjectContext {
             do {
                 try self.save()
             } catch {
-                let nserror = error as NSError
-                print("Unresolved error \(nserror)")
+                let error = error as NSError
+                print("Unresolved error \(error)")
+                
+                print("❌ Core Data Save Error:")
+                print("   Domain: \(error.domain)")
+                print("   Code: \(error.code)")
+                print("   Description: \(error.localizedDescription)")
+                
+                // Check for validation errors
+                if let validationErrors = error.userInfo[NSDetailedErrorsKey] as? [NSError] {
+                    print("   Validation Errors:")
+                    for validationError in validationErrors {
+                        print("     - \(validationError.localizedDescription)")
+                        print("     - Object: \(validationError.userInfo[NSValidationObjectErrorKey] ?? "Unknown")")
+                        print("     - Property: \(validationError.userInfo[NSValidationKeyErrorKey] ?? "Unknown")")
+                        print("     - Value: \(validationError.userInfo[NSValidationValueErrorKey] ?? "Unknown")")
+                    }
+                }
+                
+                // Check affected objects
+                if let affectedObjects = error.userInfo[NSAffectedObjectsErrorKey] as? [NSManagedObject] {
+                    print("   Affected Objects: \(affectedObjects.count)")
+                    for object in affectedObjects {
+                        if let message = object as? TransactionMessage {
+                            debugTransactionMessage(message)
+                            validateTransactionMessage(message)
+                        }
+                    }
+                }
             }
+        }
+    }
+    
+    func validateTransactionMessage(_ message: TransactionMessage) {
+        print("🔍 Validating TransactionMessage \(message.id)")
+        
+        // ✅ Correct way to use validateValue
+        do {
+            var idValue: AnyObject? = NSNumber(value: message.id)
+            try message.validateValue(&idValue, forKey: "id")
+            print("✅ ID valid: \(message.id)")
+        } catch {
+            print("❌ ID validation failed: \(error)")
+        }
+        
+        do {
+            var senderIdValue: AnyObject? = NSNumber(value: message.senderId)
+            try message.validateValue(&senderIdValue, forKey: "senderId")
+            print("✅ SenderId valid: \(message.senderId)")
+        } catch {
+            print("❌ SenderId validation failed: \(error)")
+        }
+        
+        do {
+            var receiverIdValue: AnyObject? = NSNumber(value: message.receiverId)
+            try message.validateValue(&receiverIdValue, forKey: "receiverId")
+            print("✅ ReceiverId valid: \(message.receiverId)")
+        } catch {
+            print("❌ ReceiverId validation failed: \(error)")
+        }
+        
+        do {
+            var messageContentValue: AnyObject? = message.messageContent as NSString?
+            try message.validateValue(&messageContentValue, forKey: "messageContent")
+            print("✅ MessageContent valid")
+        } catch {
+            print("❌ MessageContent validation failed: \(error)")
+        }
+        
+        do {
+            var uuidValue: AnyObject? = message.uuid as NSString?
+            try message.validateValue(&uuidValue, forKey: "uuid")
+            print("✅ UUID valid: \(message.uuid ?? "nil")")
+        } catch {
+            print("❌ UUID validation failed: \(error)")
+        }
+        
+        do {
+            var chatValue: AnyObject? = message.chat
+            try message.validateValue(&chatValue, forKey: "chat")
+            print("✅ Chat relationship valid")
+        } catch {
+            print("❌ Chat relationship validation failed: \(error)")
+        }
+    }
+    
+    func debugTransactionMessage(_ message: TransactionMessage) {
+        print("🔍 Debugging TransactionMessage:")
+        print("   ID: \(message.id)")
+        print("   Chat: \(String(describing: message.chat))")
+        print("   Sender ID: \(message.senderId)")
+        print("   Receiver ID: \(message.receiverId)")
+        print("   Message Content: \(String(describing: message.messageContent))")
+        print("   UUID: \(String(describing: message.uuid))")
+        print("   Date: \(String(describing: message.date))")
+        print("   Status: \(message.status)")
+        print("   Type: \(message.type)")
+        
+        // Check for nil required fields
+        if message.chat == nil {
+            print("❌ Chat is nil!")
+        }
+        if message.uuid == nil {
+            print("❌ UUID is nil!")
+        }
+        if message.date == nil {
+            print("❌ Date is nil!")
         }
     }
 }

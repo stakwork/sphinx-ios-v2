@@ -11,43 +11,49 @@ import CoreData
 
 extension SphinxOnionManager {
     func handleReadStatus(rr: RunReturn) {
-        var chatListUnreadDict = [Int: Int]()
-        
-        if let lastRead = rr.lastRead {
-            let lastReadMap = parse(jsonString: lastRead)
-            
-            let pubKeys = lastReadMap.compactMap({ $0.key })
-            
-            let tribes = Chat.getChatTribesFor(ownerPubkeys: pubKeys, context: self.backgroundContext)
-            let contacts = UserContact.getContactsWith(pubkeys: pubKeys, context: self.backgroundContext)
-            
-            for (pubKey, lastReadId) in lastReadMap {
-                guard let lastReadId = lastReadId as? Int else {
-                    continue
-                }
-                if let tribe = tribes.filter({ $0.ownerPubkey == pubKey }).first {
-                    updateLastReadIndex(
-                        chatId: tribe.id,
-                        lastReadId: lastReadId
-                    )
-                } else if let contact = contacts.filter({ $0.publicKey == pubKey }).first, let chat = contact.getChat() {
-                    updateLastReadIndex(
-                        chatId: chat.id,
-                        lastReadId: lastReadId
-                    )
-                }
+        let context = backgroundContext
+        context.perform { [weak self] in
+            guard let self = self else {
+                return
             }
-            self.updateChatReadStatus(chatListUnreadDict: chatListUnreadDict)
-        }
-        
-        func updateLastReadIndex(
-            chatId: Int,
-            lastReadId: Int
-        ) {
-            if let existingLastReadForChat = chatListUnreadDict[chatId], lastReadId > existingLastReadForChat {
-                chatListUnreadDict[chatId] = lastReadId
-            } else if !chatListUnreadDict.keys.contains(chatId) {
-                chatListUnreadDict[chatId] = lastReadId
+            var chatListUnreadDict = [Int: Int]()
+            
+            if let lastRead = rr.lastRead {
+                let lastReadMap = parse(jsonString: lastRead)
+                
+                let pubKeys = lastReadMap.compactMap({ $0.key })
+                
+                let tribes = Chat.getChatTribesFor(ownerPubkeys: pubKeys, context: self.backgroundContext)
+                let contacts = UserContact.getContactsWith(pubkeys: pubKeys, context: self.backgroundContext)
+                
+                for (pubKey, lastReadId) in lastReadMap {
+                    guard let lastReadId = lastReadId as? Int else {
+                        continue
+                    }
+                    if let tribe = tribes.filter({ $0.ownerPubkey == pubKey }).first {
+                        updateLastReadIndex(
+                            chatId: tribe.id,
+                            lastReadId: lastReadId
+                        )
+                    } else if let contact = contacts.filter({ $0.publicKey == pubKey }).first, let chat = contact.getChat() {
+                        updateLastReadIndex(
+                            chatId: chat.id,
+                            lastReadId: lastReadId
+                        )
+                    }
+                }
+                self.updateChatReadStatus(chatListUnreadDict: chatListUnreadDict)
+            }
+            
+            func updateLastReadIndex(
+                chatId: Int,
+                lastReadId: Int
+            ) {
+                if let existingLastReadForChat = chatListUnreadDict[chatId], lastReadId > existingLastReadForChat {
+                    chatListUnreadDict[chatId] = lastReadId
+                } else if !chatListUnreadDict.keys.contains(chatId) {
+                    chatListUnreadDict[chatId] = lastReadId
+                }
             }
         }
     }
@@ -72,22 +78,35 @@ extension SphinxOnionManager {
     }
 
     func updateMuteLevels(pubkeyToMuteLevelDict: [String: Any]) {
-        backgroundContext.perform { [weak self] in
+        let context = backgroundContext
+        context.perform { [weak self] in
             guard let self = self else {
                 return
             }
-            for (pubkey, muteLevel) in pubkeyToMuteLevelDict {
-                let chat = UserContact.getContactWith(
-                    pubkey: pubkey,
-                    managedContext: self.backgroundContext
-                )?.getContactChat(context: self.backgroundContext) ?? Chat.getTribeChatWithOwnerPubkey(
-                    ownerPubkey: pubkey,
-                    context: self.backgroundContext
-                )
+            let pubKeys = pubkeyToMuteLevelDict.compactMap({ $0.key })
+            let contacts = UserContact.getContactsWith(pubkeys: pubKeys, context: context)
+            let contactsMap = Dictionary(uniqueKeysWithValues: contacts.compactMap {
+                $0.setContactConversation(context: context)
                 
-                if let level = muteLevel as? Int, (chat?.notify ?? -1) != level {
-                    chat?.notify = level
-                    self.backgroundContext.saveContext()
+                if let pubkey = $0.publicKey {
+                    return (pubkey, $0)
+                }
+                return nil
+            })
+            
+            let tribes = Chat.getChatTribesFor(ownerPubkeys: pubKeys, context: context)
+            let tribesMap = Dictionary(uniqueKeysWithValues: tribes.compactMap {
+                if let ownerPubkey = $0.ownerPubkey {
+                    return (ownerPubkey, $0)
+                }
+                return nil
+            })
+            
+            for (pubkey, muteLevel) in pubkeyToMuteLevelDict {
+                if let chat = contactsMap[pubkey]?.getContactChat(context: context) ?? tribesMap[pubkey] {
+                    if let level = muteLevel as? Int, chat.notify != level {
+                        chat.notify = level
+                    }
                 }
             }
         }
