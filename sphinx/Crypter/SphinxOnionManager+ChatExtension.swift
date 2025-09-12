@@ -635,8 +635,8 @@ extension SphinxOnionManager {
         })
         
         ///Tribes Map per public key
-        let pubkeys = senderInfoMessagesMap.compactMap({ $0.value.pubkey })
-        let tribes = Chat.getChatTribesFor(ownerPubkeys: pubkeys, context: backgroundContext)
+        var tribePubkeys = senderInfoMessagesMap.compactMap({ $0.value.pubkey })
+        let tribes = Chat.getChatTribesFor(ownerPubkeys: tribePubkeys, context: backgroundContext)
         var tribesMap = Dictionary(uniqueKeysWithValues: tribes.compactMap {
             if let ownerPubkey = $0.ownerPubkey {
                 return (ownerPubkey, $0)
@@ -644,21 +644,9 @@ extension SphinxOnionManager {
             return nil
         })
         
-        ///Contacts Map per public key
-        let contacts = UserContact.getContactsWith(pubkeys: pubkeys, context: backgroundContext)
-        let contactsMap = Dictionary(uniqueKeysWithValues: contacts.compactMap {
-            $0.setContactConversation(context: backgroundContext)
-            
-            if let pubkey = $0.publicKey {
-                return (pubkey, $0)
-            }
-            return nil
-        })
-        
         ///Generic incoming messages Map
         let genericIncomingMessagesMap = Dictionary(uniqueKeysWithValues: rr.msgs.compactMap {
-            let isIncoming = $0.fromMe == nil || $0.fromMe == false
-            if isIncoming, let index = $0.index, let indexInt = Int(index) {
+            if let index = $0.index, let indexInt = Int(index) {
                 let senderInfo = senderInfoMessagesMap[indexInt]
                 let innerContent = messagesInnerContentMap[indexInt]
                 
@@ -671,11 +659,28 @@ extension SphinxOnionManager {
                     isTribeMessage: tribe != nil
                 )
                 
-                genericIncomingMessage.senderPubkey = senderInfo?.pubkey
+                if let fromMe = $0.fromMe, fromMe == true, let sentTo = $0.sentTo {
+                    genericIncomingMessage.senderPubkey = sentTo
+                } else {
+                    genericIncomingMessage.senderPubkey = senderInfo?.pubkey
+                }
+                
                 genericIncomingMessage.uuid = $0.uuid
                 genericIncomingMessage.index = $0.index
                 
                 return (indexInt, genericIncomingMessage)
+            }
+            return nil
+        })
+        
+        ///Contacts Map per public key
+        let contactPubkeys = genericIncomingMessagesMap.values.compactMap({ $0.senderPubkey })
+        let contacts = UserContact.getContactsWith(pubkeys: contactPubkeys, context: backgroundContext)
+        let contactsMap = Dictionary(uniqueKeysWithValues: contacts.compactMap {
+            $0.setContactConversation(context: backgroundContext)
+            
+            if let pubkey = $0.publicKey {
+                return (pubkey, $0)
             }
             return nil
         })
@@ -713,23 +718,11 @@ extension SphinxOnionManager {
             return nil
         })
         
-        
-        
-//        let genericPmtMsgs = rr.msgs.filter({ $0.type == nil && $0.msat ?? 0 > 0 && $0.message?.isNotEmpty == true })
-//        restoreGenericPmts(pmts: genericPmtMsgs)
-        
         let notAllowedTypes = [
             UInt8(TransactionMessage.TransactionMessageType.contactKey.rawValue),
             UInt8(TransactionMessage.TransactionMessageType.contactKeyConfirmation.rawValue),
             UInt8(TransactionMessage.TransactionMessageType.unknown.rawValue)
         ]
-        
-//        let filteredMsgs = rr.msgs.filter({ $0.type != nil && !notAllowedTypes.contains($0.type!) })
-//        
-//        if filteredMsgs.isEmpty {
-//            return
-//        }
-        
         //GET MESSAGES TO DELETE
         
         let owner = UserContact.getOwner(context: backgroundContext)
@@ -760,20 +753,18 @@ extension SphinxOnionManager {
             }
             
             if let fromMe = message.fromMe, fromMe == true {
-                
                 ///New sent message
                 newMessage = processSentMessage(
                     message: message,
                     existingMessagesUUIDMap: existingMessagesUUIDMap,
                     senderInfo: senderInfo,
                     genericIncomingMessage: genericIncomingMsg,
-                    contact: contactsMap[senderInfo?.pubkey ?? ""],
+                    contact: contactsMap[genericIncomingMsg?.senderPubkey ?? ""],
                     tribe: tribesMap[senderInfo?.pubkey ?? ""],
                     owner: owner
                 )
                 
             } else if let uuid = message.uuid, existingMessagesUUIDMap[uuid] == nil {
-                
                 ///New Incoming message
                 guard let type = message.type else {
                     continue
@@ -785,7 +776,7 @@ extension SphinxOnionManager {
                         existingMessage: existingMessages,
                         senderInfo: senderInfo,
                         genericIncomingMessage: genericIncomingMsg,
-                        contact: contactsMap[senderInfo?.pubkey ?? ""],
+                        contact: contactsMap[genericIncomingMsg?.senderPubkey ?? ""],
                         tribe: tribesMap[senderInfo?.pubkey ?? ""],
                         owner: owner
                     )
@@ -800,7 +791,7 @@ extension SphinxOnionManager {
                         invoiceForPayment: invoiceForPayment,
                         senderInfo: senderInfo,
                         genericIncomingMessage: genericIncomingMsg,
-                        contact: contactsMap[senderInfo?.pubkey ?? ""],
+                        contact: contactsMap[genericIncomingMsg?.senderPubkey ?? ""],
                         tribe: tribesMap[senderInfo?.pubkey ?? ""],
                         owner: owner
                     )
@@ -810,9 +801,10 @@ extension SphinxOnionManager {
                     newMessage = processIncomingDeletion(
                         message: message,
                         existingMessage: existingMessages,
+                        messageToDelete: existingMessagesUUIDMap[genericIncomingMsg?.replyUuid ?? ""],
                         senderInfo: senderInfo,
                         genericIncomingMessage: genericIncomingMsg,
-                        contact: contactsMap[senderInfo?.pubkey ?? ""],
+                        contact: contactsMap[genericIncomingMsg?.senderPubkey ?? ""],
                         tribe: tribesMap[senderInfo?.pubkey ?? ""],
                         owner: owner
                     )
@@ -825,7 +817,7 @@ extension SphinxOnionManager {
                         senderInfo: senderInfo,
                         innerContent: messagesInnerContentMap[indexInt],
                         genericIncomingMessage: genericIncomingMsg,
-                        contact: contactsMap[senderInfo?.pubkey ?? ""],
+                        contact: contactsMap[genericIncomingMsg?.senderPubkey ?? ""],
                         tribe: tribesMap[senderInfo?.pubkey ?? ""],
                         owner: owner
                     )
@@ -837,7 +829,7 @@ extension SphinxOnionManager {
                         existingMessage: existingMessages,
                         senderInfo: senderInfo,
                         genericIncomingMessage: genericIncomingMsg,
-                        contact: contactsMap[senderInfo?.pubkey ?? ""],
+                        contact: contactsMap[genericIncomingMsg?.senderPubkey ?? ""],
                         tribe: tribesMap[senderInfo?.pubkey ?? ""],
                         owner: owner
                     )
@@ -849,7 +841,7 @@ extension SphinxOnionManager {
                         existingMessage: existingMessages,
                         senderInfo: senderInfo,
                         genericIncomingMessage: genericIncomingMsg,
-                        contact: contactsMap[senderInfo?.pubkey ?? ""],
+                        contact: contactsMap[genericIncomingMsg?.senderPubkey ?? ""],
                         tribe: tribesMap[senderInfo?.pubkey ?? ""],
                         owner: owner
                     )
@@ -872,8 +864,6 @@ extension SphinxOnionManager {
             
             processIndexUpdate(message: message, cachedMessage: existingMessages)
         }
-        
-        backgroundContext.saveContext()
     }
     
 //    func restoreGenericPmts(
@@ -1104,6 +1094,7 @@ extension SphinxOnionManager {
     func processIncomingDeletion(
         message: Msg,
         existingMessage: TransactionMessage?,
+        messageToDelete: TransactionMessage?,
         senderInfo: ContactServerResponse?,
         genericIncomingMessage: GenericIncomingMessage?,
         contact: UserContact?,
@@ -1119,7 +1110,7 @@ extension SphinxOnionManager {
             return nil
         }
     
-        if let messageToDeleteUUID = genericIncomingMessage.replyUuid, let messageToDelete = TransactionMessage.getMessageWith(uuid: messageToDeleteUUID) {
+        if let messageToDeleteUUID = genericIncomingMessage.replyUuid, let messageToDelete = messageToDelete {
             messageToDelete.status = TransactionMessage.TransactionMessageStatus.deleted.rawValue
         } else {
             return processGenericIncomingMessage(
@@ -1195,15 +1186,17 @@ extension SphinxOnionManager {
         index: Int
     ) async -> (chat: Chat?, didCreateTribe: Bool, index: Int) {
         return await withCheckedContinuation { continuation in
-            fetchOrCreateChatWithTribe(
-                ownerPubkey: ownerPubkey,
-                host: host,
-                existingTribe: existingTribe,
-                index: index,
-                completion: { chat, didCreateTribe, index in
-                    continuation.resume(returning: (chat, didCreateTribe, index))
-                }
-            )
+            Task { @MainActor in
+                fetchOrCreateChatWithTribe(
+                    ownerPubkey: ownerPubkey,
+                    host: host,
+                    existingTribe: existingTribe,
+                    index: index,
+                    completion: { chat, didCreateTribe, index in
+                        continuation.resume(returning: (chat, didCreateTribe, index))
+                    }
+                )
+            }
         }
     }
     

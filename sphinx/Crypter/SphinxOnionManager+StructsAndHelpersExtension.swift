@@ -173,7 +173,7 @@ struct GenericIncomingMessage: Mappable {
         csr: ContactServerResponse?,
         innerContent: MessageInnerContent?,
         isTribeMessage: Bool
-    ) {
+    ) {        
         if let csr = csr {
             if let fromMe = msg.fromMe, fromMe == true, let sentTo = msg.sentTo {
                 self.senderPubkey = sentTo

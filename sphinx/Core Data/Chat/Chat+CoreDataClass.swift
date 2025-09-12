@@ -514,7 +514,6 @@ public class Chat: NSManagedObject {
                     message.chat?.seen = false
                 }
             }
-            try managedContext.save()
         } catch let error as NSError {
             print("Error updating messages read status: \(error), \(error.userInfo)")
         }

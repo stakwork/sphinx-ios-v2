@@ -81,12 +81,12 @@ extension SphinxOnionManager {
                             
                             ///Handling restore callbacks
                             self?.handleRestoreCallbacks(topic: topic, messages: rr.msgs)
+                            
+                            self?.backgroundContext.saveContext()
                         }
                     }
                 }
             }
-            
-            self.backgroundContext.saveContext()
             
             ///Handling settle status
             handleSettledStatus(settledStatus: rr.settledStatus)
@@ -490,11 +490,13 @@ extension SphinxOnionManager {
         messages: [Msg]
     ) {
         ///Restore callbacks
-        if topic?.isMessagesFetchResponse == true {
-            if let firstSCIDMsgsCallback = firstSCIDMsgsCallback {
-                firstSCIDMsgsCallback(messages)
-            } else if let onMessageRestoredCallback = onMessageRestoredCallback {
-                onMessageRestoredCallback(messages)
+        DispatchQueue.main.async {
+            if topic?.isMessagesFetchResponse == true {
+                if let firstSCIDMsgsCallback = self.firstSCIDMsgsCallback {
+                    firstSCIDMsgsCallback(messages)
+                } else if let onMessageRestoredCallback = self.onMessageRestoredCallback {
+                    onMessageRestoredCallback(messages)
+                }
             }
         }
     }

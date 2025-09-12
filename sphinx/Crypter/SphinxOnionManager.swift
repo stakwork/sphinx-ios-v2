@@ -92,14 +92,14 @@ class SphinxOnionManager : NSObject {
     var defaultInitialSignupPin : String = "111111"
     
     public static let kContactsBatchSize = 100
-    public static let kMessageBatchSize = 100
+    public static let kMessageBatchSize = 150
 
     public static let kCompleteStatus = "COMPLETE"
     public static let kFailedStatus = "FAILED"
     
     let newMessageBubbleHelper = NewMessageBubbleHelper()
     let managedContext = CoreDataManager.sharedManager.persistentContainer.viewContext
-    let backgroundContext = CoreDataManager.sharedManager.getBackgroundContext()
+    var backgroundContext = CoreDataManager.sharedManager.getBackgroundContext()
     
     var notificationsResultsController: NSFetchedResultsController<NotificationData>!
     
