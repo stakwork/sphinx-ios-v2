@@ -309,7 +309,7 @@ extension SphinxOnionManager {
 //                assignReceiverId(localMsg: sentMessage)
 //            }
             
-            if let metaData = metaData {
+            if let _ = metaData {
                 chat.timezoneUpdated = false
 //                chat.managedObjectContext?.saveContext()
             }
@@ -583,7 +583,7 @@ extension SphinxOnionManager {
     //MARK: processes updates from general purpose messages like plaintext and attachments
     func processGenericMessages(
         rr: RunReturn
-    ) {
+    ) async {
         if rr.msgs.isEmpty {
             return
         }
@@ -621,12 +621,12 @@ extension SphinxOnionManager {
 
         ///Messages sender info Map
         let senderInfoMessagesMap = Dictionary(uniqueKeysWithValues: rr.msgs.compactMap {
-            if let type = $0.type,
+            if let _ = $0.type,
                let sender = $0.sender,
                let index = $0.index,
                let indexInt = Int(index),
-               let uuid = $0.uuid,
-               let date = $0.date,
+               let _ = $0.uuid,
+               let _ = $0.date,
                let csr = ContactServerResponse(JSONString: sender)
             {
                 return (indexInt, csr)
@@ -646,7 +646,7 @@ extension SphinxOnionManager {
         
         ///Contacts Map per public key
         let contacts = UserContact.getContactsWith(pubkeys: pubkeys, context: backgroundContext)
-        var contactsMap = Dictionary(uniqueKeysWithValues: contacts.compactMap {
+        let contactsMap = Dictionary(uniqueKeysWithValues: contacts.compactMap {
             $0.setContactConversation(context: backgroundContext)
             
             if let pubkey = $0.publicKey {
@@ -702,6 +702,18 @@ extension SphinxOnionManager {
             return nil
         })
         
+        let paymentHashes = rr.msgs.compactMap({
+            return $0.paymentHash
+        })
+        let invoices = TransactionMessage.getInvoicesWith(paymentHashes: paymentHashes, context: backgroundContext)
+        let invoicesByPaymentHashMap = Dictionary(uniqueKeysWithValues: invoices.compactMap{
+            if let paymentHash = $0.paymentHash {
+                return (paymentHash, $0)
+            }
+            return nil
+        })
+        
+        
         
 //        let genericPmtMsgs = rr.msgs.filter({ $0.type == nil && $0.msat ?? 0 > 0 && $0.message?.isNotEmpty == true })
 //        restoreGenericPmts(pmts: genericPmtMsgs)
@@ -718,13 +730,11 @@ extension SphinxOnionManager {
 //            return
 //        }
         
-        //GET INVOICES FROM PAYMENT HASHED
         //GET MESSAGES TO DELETE
         
         let owner = UserContact.getOwner(context: backgroundContext)
         
         for message in rr.msgs {
-            
             guard let index = message.index, let indexInt = Int(index) else {
                 continue
             }
@@ -782,9 +792,12 @@ extension SphinxOnionManager {
                 }
                 
                 if isBoostOrPayment(type: type) {
+                    let invoiceForPayment = (type == TransactionMessage.TransactionMessageType.payment.rawValue && message.paymentHash != nil) ? invoicesByPaymentHashMap[message.paymentHash!] : nil
+                    
                     newMessage = processIncomingPaymentsAndBoosts(
                         message: message,
                         existingMessage: existingMessages,
+                        invoiceForPayment: invoiceForPayment,
                         senderInfo: senderInfo,
                         genericIncomingMessage: genericIncomingMsg,
                         contact: contactsMap[senderInfo?.pubkey ?? ""],
@@ -806,7 +819,7 @@ extension SphinxOnionManager {
                 }
                 
                 if isGroupAction(type: type) {
-                    newMessage = processIncomingGroupJoinMsg(
+                    newMessage = await processIncomingGroupJoinMsg(
                         message: message,
                         existingMessage: existingMessages,
                         senderInfo: senderInfo,
@@ -843,13 +856,15 @@ extension SphinxOnionManager {
                 }
                 
                 if let newMessage = newMessage {
-                    existingMessagesIdMap[newMessage.id] = newMessage
+                    if !existingMessagesIdMap.keys.contains(newMessage.id) {
+                        existingMessagesIdMap[newMessage.id] = newMessage
+                    }
                     
-                    if let uuid = newMessage.uuid {
+                    if let uuid = newMessage.uuid, !existingMessagesUUIDMap.keys.contains(uuid) {
                         existingMessagesUUIDMap[uuid] = newMessage
                     }
                     
-                    if let chat = newMessage.chat, let ownerPubKey = chat.ownerPubkey, chat.isPublicGroup() {
+                    if let chat = newMessage.chat, let ownerPubKey = chat.ownerPubkey, chat.isPublicGroup(), !tribesMap.keys.contains(ownerPubKey) {
                         tribesMap[ownerPubKey] = chat
                     }
                 }
@@ -946,7 +961,7 @@ extension SphinxOnionManager {
         owner: UserContact? = nil
     ) -> TransactionMessage? {
         if let omuuid = genericIncomingMessage?.originalUuid, let newUUID = message.uuid,
-           let originalMessage = existingMessagesUUIDMap[omuuid], var originalMessage = originalMessage
+           let originalMessage = existingMessagesUUIDMap[omuuid], let originalMessage = originalMessage
         {
             originalMessage.uuid = newUUID
             
@@ -967,6 +982,7 @@ extension SphinxOnionManager {
             guard let localMsg = processGenericIncomingMessage(
                 message: genericIncomingMessage,
                 existingMessage: nil,
+                invoiceForPayment: nil,
                 csr: senderInfo,
                 contact: contact,
                 tribe: tribe,
@@ -1023,12 +1039,12 @@ extension SphinxOnionManager {
         tribe: Chat?,
         owner: UserContact? = nil
     ) -> TransactionMessage? {
-        guard let index = message.index,
-              let uuid = message.uuid,
-              let sender = message.sender,
+        guard let _ = message.index,
+              let _ = message.uuid,
+              let _ = message.sender,
               let date = message.date,
               let type = message.type,
-              let csr = senderInfo,
+              let _ = senderInfo,
               let genericIncomingMessage = genericIncomingMessage else
         {
             return nil
@@ -1037,6 +1053,7 @@ extension SphinxOnionManager {
         return processGenericIncomingMessage(
             message: genericIncomingMessage,
             existingMessage: existingMessage,
+            invoiceForPayment: nil,
             csr: senderInfo,
             contact: contact,
             tribe: tribe,
@@ -1050,6 +1067,7 @@ extension SphinxOnionManager {
     func processIncomingPaymentsAndBoosts(
         message: Msg,
         existingMessage: TransactionMessage?,
+        invoiceForPayment: TransactionMessage?,
         senderInfo: ContactServerResponse?,
         genericIncomingMessage: GenericIncomingMessage?,
         contact: UserContact?,
@@ -1057,12 +1075,12 @@ extension SphinxOnionManager {
         owner: UserContact? = nil
     ) -> TransactionMessage? {
         
-        guard let index = message.index,
-              let uuid = message.uuid,
-              let sender = message.sender,
+        guard let _ = message.index,
+              let _ = message.uuid,
+              let _ = message.sender,
               let date = message.date,
               let type = message.type,
-              let csr = senderInfo,
+              let _ = senderInfo,
               let genericIncomingMessage = genericIncomingMessage else
         {
             return nil
@@ -1071,6 +1089,7 @@ extension SphinxOnionManager {
         return processGenericIncomingMessage(
             message: genericIncomingMessage,
             existingMessage: existingMessage,
+            invoiceForPayment: invoiceForPayment,
             csr: senderInfo,
             contact: contact,
             tribe: tribe,
@@ -1094,7 +1113,7 @@ extension SphinxOnionManager {
 
         guard let date = message.date,
               let type = message.type,
-              let csr = senderInfo,
+              let _ = senderInfo,
               let genericIncomingMessage = genericIncomingMessage else
         {
             return nil
@@ -1106,6 +1125,7 @@ extension SphinxOnionManager {
             return processGenericIncomingMessage(
                 message: genericIncomingMessage,
                 existingMessage: existingMessage,
+                invoiceForPayment: nil,
                 csr: senderInfo,
                 contact: contact,
                 tribe: tribe,
@@ -1128,7 +1148,7 @@ extension SphinxOnionManager {
         contact: UserContact?,
         tribe: Chat?,
         owner: UserContact? = nil
-    ) -> TransactionMessage? {
+    ) async -> TransactionMessage? {
         ///Check for sender information
         guard let csr =  senderInfo,
               let tribePubkey = csr.pubkey else
@@ -1146,30 +1166,45 @@ extension SphinxOnionManager {
                 didCreateTribe: false
             )
         } else {
-            fetchOrCreateChatWithTribe(
+            let result = await fetchOrCreateChatWithTribeAsync(
                 ownerPubkey: tribePubkey,
                 host: csr.host,
                 existingTribe: nil,
-                index: 0,
-                completion: { [weak self] chat, didCreateTribe, ind in
-                    guard let self = self else {
-                        return
-                    }
-                    
-                    if let chat = chat {
-                        let _ = restoreGroupJoinMsg(
-                            message: message,
-                            existingMessage: existingMessage,
-                            senderInfo: senderInfo,
-                            innerContent: innerContent,
-                            chat: chat,
-                            didCreateTribe: didCreateTribe
-                        )
-                    }
+                index: 0
+            )
+            
+            guard let chat = result.chat else {
+                return nil
+            }
+            
+            return restoreGroupJoinMsg(
+                message: message,
+                existingMessage: existingMessage,
+                senderInfo: senderInfo,
+                innerContent: innerContent,
+                chat: chat,
+                didCreateTribe: result.didCreateTribe
+            )
+        }
+    }
+    
+    func fetchOrCreateChatWithTribeAsync(
+        ownerPubkey: String,
+        host: String?,
+        existingTribe: Chat?,
+        index: Int
+    ) async -> (chat: Chat?, didCreateTribe: Bool, index: Int) {
+        return await withCheckedContinuation { continuation in
+            fetchOrCreateChatWithTribe(
+                ownerPubkey: ownerPubkey,
+                host: host,
+                existingTribe: existingTribe,
+                index: index,
+                completion: { chat, didCreateTribe, index in
+                    continuation.resume(returning: (chat, didCreateTribe, index))
                 }
             )
         }
-        return nil
     }
     
     func processIncomingPaidMessageEvent(
@@ -1182,11 +1217,11 @@ extension SphinxOnionManager {
         owner: UserContact? = nil
     ) -> TransactionMessage? {
         guard let type = message.type,
-              let sender = message.sender,
+              let _ = message.sender,
               let _ = message.index,
               let _ = message.uuid,
               let date = message.date,
-              let csr = senderInfo,
+              let _ = senderInfo,
               let genericIncomingMessage = genericIncomingMessage else
         {
             return nil
@@ -1195,6 +1230,7 @@ extension SphinxOnionManager {
         guard let newMessage = processGenericIncomingMessage(
             message: genericIncomingMessage,
             existingMessage: existingMessage,
+            invoiceForPayment: nil,
             csr: senderInfo,
             contact: contact,
             tribe: tribe,
@@ -1268,11 +1304,11 @@ extension SphinxOnionManager {
         owner: UserContact? = nil
     ) -> TransactionMessage? {
         guard let type = message.type,
-              let sender = message.sender,
-              let index = message.index,
-              let uuid = message.uuid,
+              let _ = message.sender,
+              let _ = message.index,
+              let _ = message.uuid,
               let date = message.date,
-              let csr = senderInfo,
+              let _ = senderInfo,
               let genericIncomingMessage = genericIncomingMessage else
         {
             return nil
@@ -1290,6 +1326,7 @@ extension SphinxOnionManager {
                 if let newMessage = processGenericIncomingMessage(
                     message: genericIncomingMessage,
                     existingMessage: existingMessage,
+                    invoiceForPayment: nil,
                     csr: senderInfo,
                     contact: contact,
                     tribe: tribe,
@@ -1316,6 +1353,7 @@ extension SphinxOnionManager {
     func processGenericIncomingMessage(
         message: GenericIncomingMessage,
         existingMessage: TransactionMessage?,
+        invoiceForPayment: TransactionMessage?,
         csr: ContactServerResponse? = nil,
         contact: UserContact?,
         tribe: Chat?,
@@ -1432,11 +1470,8 @@ extension SphinxOnionManager {
         newMessage.amount = NSDecimalNumber(value: msgAmount / 1000)
         newMessage.amountMsat = NSDecimalNumber(value: msgAmount)
         
-        if type == TransactionMessage.TransactionMessageType.payment.rawValue,
-           let ph = message.paymentHash,
-           let _ = TransactionMessage.getInvoiceWith(paymentHash: ph, context: backgroundContext)
-        {
-            newMessage.setPaymentInvoiceAsPaid()
+        if let invoiceForPayment = invoiceForPayment {
+            invoiceForPayment.status = TransactionMessage.TransactionMessageStatus.confirmed.rawValue
         }
 
         if let timezone = message.tz {

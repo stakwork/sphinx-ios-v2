@@ -520,16 +520,16 @@ extension SphinxOnionManager {
         })
         
         let existingIdMessages = TransactionMessage.getMessagesWith(ids: messageIndexes, context: backgroundContext)
-        var existingMessagesIdMap = Dictionary(uniqueKeysWithValues: existingIdMessages.map { ($0.id, $0) })
+        let existingMessagesIdMap = Dictionary(uniqueKeysWithValues: existingIdMessages.map { ($0.id, $0) })
         
         ///Messages sender info Map
         let senderInfoMessagesMap = Dictionary(uniqueKeysWithValues: filteredMsgs.compactMap {
-            if let type = $0.type,
+            if let _ = $0.type,
                let sender = $0.sender,
                let index = $0.index,
                let indexInt = Int(index),
-               let uuid = $0.uuid,
-               let date = $0.date,
+               let _ = $0.uuid,
+               let _ = $0.date,
                let csr = ContactServerResponse(JSONString: sender)
             {
                 return (indexInt, csr)
@@ -566,8 +566,7 @@ extension SphinxOnionManager {
                 continue
             }
             
-            guard let sender = message.sender,
-                  let csr =  senderInfoMessagesMap[indexInt],
+            guard let csr =  senderInfoMessagesMap[indexInt],
                   let recipientPubkey = csr.pubkey else
             {
                 continue
@@ -589,6 +588,14 @@ extension SphinxOnionManager {
                 date: message.date,
                 context: backgroundContext
             )
+            
+            if !contactsByPubKeyMap.keys.contains(recipientPubkey) {
+                contactsByPubKeyMap[recipientPubkey] = contact
+            }
+            
+            if let inviteCode = csr.code, !contactsByInviteCodeMap.keys.contains(inviteCode) {
+                contactsByInviteCodeMap[inviteCode] = contact
+            }
             
             if contact.isOwner {
                 continue
@@ -620,7 +627,7 @@ extension SphinxOnionManager {
         rr: RunReturn,
         topic: String?,
         completion: @escaping (RunReturn, String?) -> ()
-    ) {
+    ) async {
         let messages = rr.msgs
         
         if messages.isEmpty {
@@ -642,6 +649,16 @@ extension SphinxOnionManager {
         
         let total = filteredMsgs.count
         var index = 0
+        
+        let messageIndexes = filteredMsgs.compactMap({
+            if let index = $0.index, let indexInt = Int(index) {
+                return indexInt
+            }
+            return nil
+        })
+        
+        let existingIdMessages = TransactionMessage.getMessagesWith(ids: messageIndexes, context: backgroundContext)
+        var existingMessagesIdMap = Dictionary(uniqueKeysWithValues: existingIdMessages.map { ($0.id, $0) })
         
         let messagesInnerContentMap = Dictionary(uniqueKeysWithValues: filteredMsgs.compactMap {
             if let message = $0.message,
@@ -695,14 +712,20 @@ extension SphinxOnionManager {
             }
             
             if let chat = tribesMap[tribePubkey] {
-                let _ = restoreGroupJoinMsg(
+                let newMessage = restoreGroupJoinMsg(
                     message: message,
-                    existingMessage: nil,
+                    existingMessage: existingMessagesIdMap[indexInt],
                     senderInfo: csr,
                     innerContent: messagesInnerContentMap[indexInt],
                     chat: chat,
                     didCreateTribe: false
                 )
+                
+                if let newMessage = newMessage {
+                    if !existingMessagesIdMap.keys.contains(newMessage.id) {
+                        existingMessagesIdMap[newMessage.id] = newMessage
+                    }
+                }
                 
                 if index == total - 1 {
                     completion(rr, topic)
@@ -710,33 +733,41 @@ extension SphinxOnionManager {
                     index = index + 1
                 }
             } else {
-                fetchOrCreateChatWithTribe(
+                let result = await fetchOrCreateChatWithTribeAsync(
                     ownerPubkey: tribePubkey,
                     host: csr.host,
                     existingTribe: tribesMap[tribePubkey],
-                    index: i,
-                    completion: { [weak self] chat, didCreateTribe, ind in
-                        guard let self = self else {
-                            return
-                        }
-                        if let chat = chat {
-                            let _ = restoreGroupJoinMsg(
-                                message: message,
-                                existingMessage: nil,
-                                senderInfo: csr,
-                                innerContent: messagesInnerContentMap[indexInt],
-                                chat: chat,
-                                didCreateTribe: didCreateTribe
-                            )
-                        }
-                        
-                        if index == total - 1 {
-                            completion(rr, topic)
-                        } else {
-                            index = index + 1
-                        }
-                    }
+                    index: i
                 )
+                
+                guard let chat = result.chat else {
+                    return
+                }
+                
+                let newMessage = restoreGroupJoinMsg(
+                    message: message,
+                    existingMessage: existingMessagesIdMap[indexInt],
+                    senderInfo: csr,
+                    innerContent: messagesInnerContentMap[indexInt],
+                    chat: chat,
+                    didCreateTribe: result.didCreateTribe
+                )
+                
+                if let newMessage = newMessage {
+                    if !existingMessagesIdMap.keys.contains(newMessage.id) {
+                        existingMessagesIdMap[newMessage.id] = newMessage
+                    }
+                }
+                
+                if let ownerPubKey = chat.ownerPubkey, !tribesMap.keys.contains(ownerPubKey) {
+                    tribesMap[ownerPubKey] = chat
+                }
+                
+                if index == total - 1 {
+                    completion(rr, topic)
+                } else {
+                    index = index + 1
+                }
             }
         }
     }

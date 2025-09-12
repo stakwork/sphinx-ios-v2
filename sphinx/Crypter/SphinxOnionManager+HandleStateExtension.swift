@@ -52,36 +52,41 @@ extension SphinxOnionManager {
                     return
                 }
                 
-                self.restoreTribesFrom(
-                    rr: rr,
-                    topic: topic
-                ) { [weak self] rr, topic in
-                    
-                    ///handling contacts restore
-                    self?.restoreContactsFrom(messages: rr.msgs)
-                    
-                    ///Handling key exchange msgs restore
-                    self?.processKeyExchangeMessages(rr: rr)
-                    
-                    ///Handling generic msgs restore
-                    self?.processGenericMessages(rr: rr)
-                    
-                    ///Handling invoice paid
-                    self?.processInvoicePaid(rr: rr)
-                    
-                    ///Handling messages statused
-                    self?.handleMessagesStatus(tags: rr.tags)
-                    
-                    ///Handling incoming tags
-                    self?.handleMessageStatusByTag(rr: rr)
-                    
-                    ///Handling read status
-                    self?.handleReadStatus(rr: rr)
-                    
-                    ///Handling restore callbacks
-                    self?.handleRestoreCallbacks(topic: topic, messages: rr.msgs)
+                Task {
+                    await self.restoreTribesFrom(
+                        rr: rr,
+                        topic: topic
+                    ) { [weak self] rr, topic in
+                        Task {
+                            ///handling contacts restore
+                            self?.restoreContactsFrom(messages: rr.msgs)
+                            
+                            ///Handling key exchange msgs restore
+                            self?.processKeyExchangeMessages(rr: rr)
+                            
+                            ///Handling generic msgs restore
+                            await self?.processGenericMessages(rr: rr)
+                            
+                            ///Handling invoice paid
+                            self?.processInvoicePaid(rr: rr)
+                            
+                            ///Handling messages statused
+                            self?.handleMessagesStatus(tags: rr.tags)
+                            
+                            ///Handling incoming tags
+                            self?.handleMessageStatusByTag(rr: rr)
+                            
+                            ///Handling read status
+                            self?.handleReadStatus(rr: rr)
+                            
+                            ///Handling restore callbacks
+                            self?.handleRestoreCallbacks(topic: topic, messages: rr.msgs)
+                        }
+                    }
                 }
             }
+            
+            self.backgroundContext.saveContext()
             
             ///Handling settle status
             handleSettledStatus(settledStatus: rr.settledStatus)

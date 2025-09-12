@@ -167,16 +167,16 @@ extension SphinxOnionManager {//contacts related
         })
         
         let existingIdMessages = TransactionMessage.getMessagesWith(ids: messageIndexes, context: backgroundContext)
-        var existingMessagesIdMap = Dictionary(uniqueKeysWithValues: existingIdMessages.map { ($0.id, $0) })
+        let existingMessagesIdMap = Dictionary(uniqueKeysWithValues: existingIdMessages.map { ($0.id, $0) })
         
         ///Messages sender info Map
         let senderInfoMessagesMap = Dictionary(uniqueKeysWithValues: filteredMsgs.compactMap {
-            if let type = $0.type,
+            if let _ = $0.type,
                let sender = $0.sender,
                let index = $0.index,
                let indexInt = Int(index),
-               let uuid = $0.uuid,
-               let date = $0.date,
+               let _ = $0.uuid,
+               let _ = $0.date,
                let csr = ContactServerResponse(JSONString: sender)
             {
                 return (indexInt, csr)
@@ -258,6 +258,10 @@ extension SphinxOnionManager {//contacts related
                     date: msg.date,
                     context: backgroundContext
                 )
+                
+                if !contactsByPubKeyMap.keys.contains(senderPubkey) {
+                    contactsByPubKeyMap[senderPubkey] = newContact
+                }
                 
                 if newContact.getChat() == nil {
                     let _ = createChat(for: newContact, with: msg.date)
