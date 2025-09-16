@@ -35,7 +35,6 @@ class GroupMembersDataSource: GroupAllContactsDataSource {
     }
     
     func loadTribeContacts() {
-        
         som.getTribeMembers(tribeChat: self.chat, completion: { [weak self] tribeMembers in
             guard let weakSelf = self else { return }
             

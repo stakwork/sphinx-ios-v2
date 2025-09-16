@@ -9,6 +9,7 @@
 import Foundation
 import CoreData
 import ObjectMapper
+import SwiftyJSON
 
 class ChatsFetchParams {
     var restoreInProgress: Bool
@@ -50,7 +51,6 @@ class MessageFetchParams {
     var restoredItems: Int
     var stopIndex: Int
     var direction: FetchDirection
-    var restoredTribesPubKeys: [String] = []
 
     enum FetchDirection {
         case forward, backward
@@ -68,7 +68,6 @@ class MessageFetchParams {
         self.restoredItems = restoredItems
         self.stopIndex = stopIndex
         self.direction = direction
-        self.restoredTribesPubKeys = []
     }
     
     var debugDescription: String {
@@ -623,6 +622,227 @@ extension SphinxOnionManager {
         }
     }
     
+    func fetchMissingTribesFor(
+        rr: RunReturn,
+        topic: String?,
+        completion: @escaping (RunReturn, [String: JSON], String?) -> ()
+    ) {
+        let messages = rr.msgs
+        
+        if messages.isEmpty {
+            completion(rr, [:], topic)
+            return
+        }
+
+        let allowedTypes = [
+            UInt8(TransactionMessage.TransactionMessageType.groupJoin.rawValue),
+            UInt8(TransactionMessage.TransactionMessageType.memberApprove.rawValue)
+        ]
+        
+        let filteredMsgs = messages.filter({ $0.type != nil && allowedTypes.contains($0.type!) })
+        
+        if filteredMsgs.isEmpty {
+            completion(rr, [:], topic)
+            return
+        }
+
+        ///Messages sender info Map
+        let senderInfoMessagesMap = Dictionary(uniqueKeysWithValues: filteredMsgs.compactMap {
+            if let sender = $0.sender,
+               let index = $0.index,
+               let indexInt = Int(index),
+               let csr = ContactServerResponse(JSONString: sender)
+            {
+                return (indexInt, csr)
+            }
+            return nil
+        })
+        
+        ///Tribes Map per public key
+        let pubkeys = senderInfoMessagesMap.compactMap({ $0.value.pubkey })
+        let tribes = Chat.getChatTribesFor(ownerPubkeys: pubkeys, context: backgroundContext)
+        let tribesMap = Dictionary(uniqueKeysWithValues: tribes.compactMap {
+            if let ownerPubkey = $0.ownerPubkey {
+                return (ownerPubkey, $0)
+            }
+            return nil
+        })
+        
+        Task {
+            // Process all tribes concurrently
+            let resultsDict = await withTaskGroup(
+                of: (String, JSON)?.self,
+                returning: [String: JSON].self
+            ) { group in
+                // Add async tasks
+                for message in filteredMsgs {
+                    
+                    guard let indx = message.index, let indexInt = Int(indx) else {
+                        continue
+                    }
+                    
+                    guard let csr = senderInfoMessagesMap[indexInt],
+                          let tribePubkey = csr.pubkey else
+                    {
+                        continue
+                    }
+                    
+                    if let _ = tribesMap[tribePubkey] {
+                        continue
+                    }
+                    
+                    group.addTask {
+                        let ((tuple), didCreate) = await self.fetchTribeInfo(
+                            ownerPubkey: tribePubkey,
+                            host: csr.host
+                        )
+                        return didCreate ? tuple : nil
+                    }
+                    
+                    try? await Task.sleep(nanoseconds: 100_000_000) // 100ms delay
+                }
+                
+                // Collect results
+                var dict: [String: JSON] = [:]
+                for await result in group {
+                    if let (pubkey, json) = result {
+                        dict[pubkey] = json
+                    }
+                }
+                return dict
+            }
+            
+            // Call completion on main queue
+            await MainActor.run {
+                completion(rr, resultsDict, topic)
+            }
+        }
+    }
+    
+    func restoreTribesFrom(
+        dictionary: [String: JSON],
+        rr: RunReturn
+    ) {
+        let messages = rr.msgs
+        
+        if messages.isEmpty {
+            return
+        }
+
+        let allowedTypes = [
+            UInt8(TransactionMessage.TransactionMessageType.groupJoin.rawValue),
+            UInt8(TransactionMessage.TransactionMessageType.memberApprove.rawValue)
+        ]
+        
+        let filteredMsgs = messages.filter({ $0.type != nil && allowedTypes.contains($0.type!) })
+        
+        if filteredMsgs.isEmpty {
+            return
+        }
+        
+        let messageIndexes = filteredMsgs.compactMap({
+            if let index = $0.index, let indexInt = Int(index) {
+                return indexInt
+            }
+            return nil
+        })
+        
+        let existingIdMessages = TransactionMessage.getMessagesWith(ids: messageIndexes, context: backgroundContext)
+        var existingMessagesIdMap = Dictionary(uniqueKeysWithValues: existingIdMessages.map { ($0.id, $0) })
+        
+        let messagesInnerContentMap = Dictionary(uniqueKeysWithValues: filteredMsgs.compactMap {
+            if let message = $0.message,
+               let index = $0.index,
+               let indexInt = Int(index),
+               let innerContent = MessageInnerContent(JSONString: message)
+            {
+                return (indexInt, innerContent)
+            }
+            return nil
+        })
+
+        ///Messages sender info Map
+        let senderInfoMessagesMap = Dictionary(uniqueKeysWithValues: filteredMsgs.compactMap {
+            if let sender = $0.sender,
+               let index = $0.index,
+               let indexInt = Int(index),
+               let csr = ContactServerResponse(JSONString: sender)
+            {
+                return (indexInt, csr)
+            }
+            return nil
+        })
+        
+        ///Tribes Map per public key
+        let pubkeys = senderInfoMessagesMap.compactMap({ $0.value.pubkey })
+        let tribes = Chat.getChatTribesFor(ownerPubkeys: pubkeys, context: backgroundContext)
+        var tribesMap = Dictionary(uniqueKeysWithValues: tribes.compactMap {
+            if let ownerPubkey = $0.ownerPubkey {
+                return (ownerPubkey, $0)
+            }
+            return nil
+        })
+        
+        for message in filteredMsgs {
+            
+            guard let indx = message.index, let indexInt = Int(indx) else {
+                continue
+            }
+            
+            ///Check for sender information
+            guard let csr = senderInfoMessagesMap[indexInt],
+                  let tribePubkey = csr.pubkey else
+            {
+                continue
+            }
+            
+            if let chat = tribesMap[tribePubkey] {
+                let newMessage = restoreGroupJoinMsg(
+                    message: message,
+                    existingMessage: existingMessagesIdMap[indexInt],
+                    senderInfo: csr,
+                    innerContent: messagesInnerContentMap[indexInt],
+                    chat: chat,
+                    didCreateTribe: false
+                )
+                
+                if let newMessage = newMessage {
+                    if !existingMessagesIdMap.keys.contains(newMessage.id) {
+                        existingMessagesIdMap[newMessage.id] = newMessage
+                    }
+                }
+            } else if let tribeInfo = dictionary[tribePubkey] {
+                
+                let chat = Chat.insertChat(chat: tribeInfo, context: backgroundContext)
+                chat?.status = (tribeInfo["private"].bool ?? false) ? Chat.ChatStatus.pending.rawValue : Chat.ChatStatus.approved.rawValue
+                chat?.type = Chat.ChatType.publicGroup.rawValue
+                
+                guard let chat = chat else {
+                    return
+                }
+                
+                let newMessage = restoreGroupJoinMsg(
+                    message: message,
+                    existingMessage: existingMessagesIdMap[indexInt],
+                    senderInfo: csr,
+                    innerContent: messagesInnerContentMap[indexInt],
+                    chat: chat,
+                    didCreateTribe: true
+                )
+                
+                if let newMessage = newMessage {
+                    if !existingMessagesIdMap.keys.contains(newMessage.id) {
+                        existingMessagesIdMap[newMessage.id] = newMessage
+                    }
+                }
+                
+                if let ownerPubKey = chat.ownerPubkey, !tribesMap.keys.contains(ownerPubKey) {
+                    tribesMap[ownerPubKey] = chat
+                }
+            }
+        }
+    }
+    
     func restoreTribesFrom(
         rr: RunReturn,
         topic: String?,
@@ -818,6 +1038,7 @@ extension SphinxOnionManager {
         
         if (didCreateTribe && csr.role != nil) {
             chat.isTribeICreated = csr.role == 0 && message.fromMe == true
+            chat.status = Chat.ChatStatus.approved.rawValue
         }
         if (type == TransactionMessage.TransactionMessageType.memberApprove.rawValue) {
             chat.status = Chat.ChatStatus.approved.rawValue

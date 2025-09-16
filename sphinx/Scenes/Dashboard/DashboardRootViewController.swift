@@ -314,7 +314,7 @@ extension DashboardRootViewController {
     func refreshUnreadStatus(){
         som.getReads()
         som.getMuteLevels()
-        som.getMessagesStatusForPendingMessages()
+        som.getMessagesStatusForPendingMessages()        
     }
     
     func connectToServer() {

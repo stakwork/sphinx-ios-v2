@@ -398,9 +398,7 @@ class SphinxOnionManager : NSObject {
             ///If already fetching content, then process is already running
             if !isFetchingContent() {
                 self.hideRestoreCallback = hideRestoreViewCallback
-                self.getReads()
-                self.getMuteLevels()
-                self.syncNewMessages()
+                self.startNewMsgsSync()
             } else {
                 errorCallback?()
             }
@@ -414,6 +412,12 @@ class SphinxOnionManager : NSObject {
             hideRestoreViewCallback: hideRestoreViewCallback,
             errorCallback: errorCallback
         )
+    }
+    
+    func startNewMsgsSync() {
+        self.getReads()
+        self.getMuteLevels()
+        self.syncNewMessages()
     }
     
     func syncNewMessages() {
@@ -486,9 +490,7 @@ class SphinxOnionManager : NSObject {
                 self.contactRestoreCallback = nil
                 self.messageRestoreCallback = nil
                 
-                self.getReads()
-                self.getMuteLevels()
-                self.syncNewMessages()
+                self.startNewMsgsSync()
             }
         }
         

@@ -12,7 +12,7 @@ import CoreData
 extension SphinxOnionManager {
     func handleReadStatus(rr: RunReturn) {
         let context = backgroundContext
-        context.perform { [weak self] in
+        context.performAndWait { [weak self] in
             guard let self = self else {
                 return
             }
@@ -55,6 +55,7 @@ extension SphinxOnionManager {
                     chatListUnreadDict[chatId] = lastReadId
                 }
             }
+            context.saveContext()
         }
     }
 
@@ -79,8 +80,8 @@ extension SphinxOnionManager {
 
     func updateMuteLevels(pubkeyToMuteLevelDict: [String: Any]) {
         let context = backgroundContext
-        context.perform { [weak self] in
-            guard let self = self else {
+        context.performAndWait { [weak self] in
+            guard let _ = self else {
                 return
             }
             let pubKeys = pubkeyToMuteLevelDict.compactMap({ $0.key })
@@ -109,6 +110,7 @@ extension SphinxOnionManager {
                     }
                 }
             }
+            context.saveContext()
         }
     }
 

@@ -25,6 +25,28 @@ extension SphinxOnionManager {
         return nil
     }
     
+    func fetchTribeInfo(
+        ownerPubkey: String,
+        host: String?
+    ) async -> ((String, JSON)?, Bool) {
+        if (chatsFetchParams?.restoredTribesPubKeys ?? []).contains(ownerPubkey) {
+            return (nil, false)
+        }
+        
+        if deletedTribesPubKeys.contains(ownerPubkey) {
+            return (nil, false)
+        }
+        
+        chatsFetchParams?.restoredTribesPubKeys.append(ownerPubkey)
+        
+        if let host = host {
+            if let tribeJson = await GroupsManager.sharedInstance.fetchTribeInfoAsync(pubkey: ownerPubkey, host: host) {
+                return ((ownerPubkey, tribeJson), true)
+            }
+        }
+        return (nil, false)
+    }
+    
     func fetchOrCreateChatWithTribe(
         ownerPubkey: String,
         host: String?,
@@ -38,14 +60,6 @@ extension SphinxOnionManager {
             return
         }
         
-        if (messageFetchParams?.restoredTribesPubKeys ?? []).contains(ownerPubkey) {
-            if let chat = existingTribe {
-                completion(chat, false, index)
-            } else {
-                completion(nil, false, index)
-            }
-            return
-        }
         
         if deletedTribesPubKeys.contains(ownerPubkey) {
             ///Tribe deleted
@@ -54,7 +68,6 @@ extension SphinxOnionManager {
         }
         
         chatsFetchParams?.restoredTribesPubKeys.append(ownerPubkey)
-        messageFetchParams?.restoredTribesPubKeys.append(ownerPubkey)
         
         if let chat = existingTribe {
             ///Tribe restore found, no need to restore
@@ -1159,51 +1172,11 @@ extension SphinxOnionManager {
                 didCreateTribe: false
             )
         } else {
-            fetchOrCreateChatWithTribe(
-                ownerPubkey: tribePubkey,
-                host: csr.host,
-                existingTribe: nil,
-                index: 0,
-                completion: { chat, didCreateTribe, index in
-                    guard let chat = chat else {
-                        return
-                    }
-                    
-                    let _ = self.restoreGroupJoinMsg(
-                        message: message,
-                        existingMessage: existingMessage,
-                        senderInfo: senderInfo,
-                        innerContent: innerContent,
-                        chat: chat,
-                        didCreateTribe: didCreateTribe
-                    )
-                }
-            )
+            print("Tribe not found")
         }
         
         return nil
     }
-    
-//    func fetchOrCreateChatWithTribeAsync(
-//        ownerPubkey: String,
-//        host: String?,
-//        existingTribe: Chat?,
-//        index: Int
-//    ) async -> (chat: Chat?, didCreateTribe: Bool, index: Int) {
-//        return await withCheckedContinuation { continuation in
-//            Task { @MainActor in
-//                fetchOrCreateChatWithTribe(
-//                    ownerPubkey: ownerPubkey,
-//                    host: host,
-//                    existingTribe: existingTribe,
-//                    index: index,
-//                    completion: { chat, didCreateTribe, index in
-//                        continuation.resume(returning: (chat, didCreateTribe, index))
-//                    }
-//                )
-//            }
-//        }
-//    }
     
     func processIncomingPaidMessageEvent(
         message: Msg,
@@ -1484,7 +1457,7 @@ extension SphinxOnionManager {
                 
         newMessage.setAsLastMessage()
         
-        if !fromMe {
+        if !fromMe && !isV2Restore {
             newMessageBubbleHelper.showMessageView(message: newMessage)
         }
         
@@ -2107,7 +2080,7 @@ extension SphinxOnionManager {
     func getMessagesStatusForPendingMessages() {
         let dispatchQueue = DispatchQueue.global(qos: .utility)
         dispatchQueue.async {
-            let backgroundContext = CoreDataManager.sharedManager.getBackgroundContext()
+            let backgroundContext = self.backgroundContext
             
             backgroundContext.performAndWait {
                 let messages = TransactionMessage.getAllNotConfirmed()
@@ -2128,6 +2101,8 @@ extension SphinxOnionManager {
                     }
                 }
             }
+            
+            backgroundContext.saveContext()
         }
     }
     
