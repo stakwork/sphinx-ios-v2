@@ -159,17 +159,22 @@ extension ThreadTableDataSource {
         
         messageTableCellStateArray = array
         
-        updateSnapshot()
-        
-//        delegate?.configureNewMessagesIndicatorWith(
-//            newMsgCount: sortedMessages.count
-//        )
-        
-        delegate?.configureNewMessagesIndicatorWith(
-            newMsgCount: 0
-        )
-        
-        delegate?.shouldReloadThreadHeaderView()
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else {
+                return
+            }
+            self.updateSnapshot()
+            
+            //        delegate?.configureNewMessagesIndicatorWith(
+            //            newMsgCount: sortedMessages.count
+            //        )
+            
+            self.delegate?.configureNewMessagesIndicatorWith(
+                newMsgCount: 0
+            )
+            
+            self.delegate?.shouldReloadThreadHeaderView()
+        }
     }
     
     override func getFetchRequestFor(

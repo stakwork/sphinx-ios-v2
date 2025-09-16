@@ -258,7 +258,10 @@ extension NewChatTableDataSource {
         
         messageTableCellStateArray = array
         
-        DispatchQueue.main.async {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else {
+                return
+            }
             self.updateSnapshot()
             
             self.delegate?.configureNewMessagesIndicatorWith(
@@ -791,7 +794,7 @@ extension NewChatTableDataSource : NSFetchedResultsControllerDelegate {
             
             if controller == messagesResultsController {
                 if let messages = firstSection.objects as? [TransactionMessage] {
-                    DispatchQueue.global(qos: .userInitiated).async {
+                    DispatchQueue.global(qos: .userInteractive).async {
                         if !self.isThread {
                             ///Do not processes aliases and timezone on thread since it came from chat
                             self.chat?.processAliasesFrom(messages: messages.reversed())
@@ -811,7 +814,7 @@ extension NewChatTableDataSource : NSFetchedResultsControllerDelegate {
                     }
                 }
             } else {
-                DispatchQueue.global(qos: .userInitiated).async {
+                DispatchQueue.global(qos: .userInteractive).async {
                     if !(self.delegate?.isOnStandardMode() ?? true) {
                         return
                     }

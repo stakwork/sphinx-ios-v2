@@ -79,6 +79,42 @@ class MessageFetchParams {
     }
 }
 
+class MessagePerContactFetchParams {
+    
+    var itemsPerPage: Int
+    var fetchStartIndex: Int
+    var index: Int
+    var direction: FetchDirection
+    var chatPubkeys: [String]
+
+    enum FetchDirection {
+        case forward, backward
+    }
+
+    init(
+        fetchStartIndex: Int,
+        itemsPerPage: Int,
+        index: Int,
+        direction: FetchDirection,
+        chatPubkeys: [String]
+    ) {
+        self.fetchStartIndex = fetchStartIndex
+        self.itemsPerPage = itemsPerPage
+        self.index = index
+        self.direction = direction
+        self.chatPubkeys = chatPubkeys
+    }
+    
+    var debugDescription: String {
+        return """
+        fetchStartIndex: \(fetchStartIndex)
+        itemsPerPage: \(itemsPerPage)
+        index: \(index)
+        chatPubkeys: \(chatPubkeys)
+        """
+    }
+}
+
 class MsgTotalCounts: Mappable {
     var totalMessageAvailableCount: Int?
     var okKeyMessageAvailableCount: Int?
@@ -225,11 +261,59 @@ extension SphinxOnionManager {
                 return
             }
             
-            startAllMsgBlockFetch(
+            startAllMsgPerContactFetch(
                 startIndex: startIndex,
                 itemsPerPage: firstBatchSize,
                 stopIndex: lastMessageIndex,
                 reverse: true
+            )
+        } else {
+            finishMessagesFetch(isRestore: true)
+        }
+    }
+    
+    func startAllMsgPerContactFetch(
+        startIndex: Int,
+        itemsPerPage: Int,
+        stopIndex: Int,
+        reverse: Bool
+    ) {
+        guard let seed = getAccountSeed() else {
+            finishMessagesFetch(isRestore: true)
+            return
+        }
+        
+        let chats = Chat.getAll()
+        let chatPubKeys = chats.compactMap({
+            if $0.isPublicGroup() {
+                return $0.ownerPubkey
+            } else {
+                return $0.getConversationContact()?.publicKey
+            }
+        })
+        
+        let currentIndex = 0
+        
+        if chatPubKeys.count > currentIndex {
+            chatsFetchParams = nil
+            
+            messagePerContactFetchParams = MessagePerContactFetchParams(
+                fetchStartIndex: startIndex,
+                itemsPerPage: itemsPerPage,
+                index: currentIndex,
+                direction: .backward,
+                chatPubkeys: chatPubKeys
+            )
+            
+            firstSCIDMsgsCallback = nil
+            onMessageRestoredCallback = handleFetchMessagesBatch
+            
+            fetchMessagePerContactBlock(
+                seed: seed,
+                lastMessageIndex: startIndex,
+                msgCountLimit: itemsPerPage,
+                publicKey: chatPubKeys[currentIndex],
+                reverse: reverse
             )
         } else {
             finishMessagesFetch(isRestore: true)
@@ -273,8 +357,6 @@ extension SphinxOnionManager {
         msgCountLimit: Int,
         reverse: Bool
     ) {
-//        startWatchdogTimer()
-        
         let safeLastMsgIndex = max(lastMessageIndex, 0)
         
         do {
@@ -309,7 +391,8 @@ extension SphinxOnionManager {
             seed: seed,
             lastMessageIndex: startIndex,
             msgCountLimit: itemsPerPage,
-            publicKey: publicKey
+            publicKey: publicKey,
+            reverse: true
         )
     }
     
@@ -317,7 +400,8 @@ extension SphinxOnionManager {
         seed: String,
         lastMessageIndex: Int,
         msgCountLimit: Int,
-        publicKey: String
+        publicKey: String,
+        reverse: Bool
     ) {
         do {
             let rr = try fetchMsgsBatchPerContact(
@@ -405,13 +489,13 @@ extension SphinxOnionManager {
     
     //MARK: Process all messages
     func handleFetchMessagesBatch(msgs: [Msg]) {
-        guard let params = messageFetchParams else {
-            finishMessagesFetch(isRestore: true)
+        if  let params = messageFetchParams, params.direction == .forward {
+            handleFetchMessagesBatchInForward(msgs: msgs)
             return
         }
         
-        if params.direction == .forward {
-            handleFetchMessagesBatchInForward(msgs: msgs)
+        guard let params = messagePerContactFetchParams else {
+            finishMessagesFetch(isRestore: true)
             return
         }
         
@@ -420,32 +504,17 @@ extension SphinxOnionManager {
             return
         }
         
-        let minRestoreIndex = msgs.min {
-            let firstIndex = Int($0.index ?? "0") ?? -1
-            let secondIndex = Int($1.index ?? "0") ?? -1
-            return firstIndex < secondIndex
-        }?.index ?? "0"
-        
-        if let minRestoredIndexInt = Int(minRestoreIndex), minRestoredIndexInt - 1 < params.stopIndex {
+        if params.index + 1 == params.chatPubkeys.count {
             finishMessagesFetch(isRestore: true)
             return
         }
         
-        if let totalMsgCount = msgTotalCounts?.totalMessageAvailableCount {
-            ///Contacts Restore progress
-            if let messageRestoreCallback = messageRestoreCallback, totalMsgCount > 0 {
-                params.restoredItems = params.restoredItems + msgs.count
-                let msgsCount = min(params.restoredItems, totalMsgCount)
-                let percentage = 20 + (Double(msgsCount) / Double(totalMsgCount)) * 80
-                let pctInt = Int(percentage.rounded())
-                messageRestoreCallback(pctInt)
-            }
-            
-            ///Restore finished
-            if msgs.count <= 0 {
-                finishMessagesFetch(isRestore: true)
-                return
-            }
+        ///Messages Restore progress
+        if let messageRestoreCallback = messageRestoreCallback {
+            let chatsCount = params.chatPubkeys.count
+            let percentage = 20 + (Double(params.index + 1) / Double(chatsCount)) * 80
+            let pctInt = Int(percentage.rounded())
+            messageRestoreCallback(pctInt)
         }
         
         guard let seed = getAccountSeed() else {
@@ -453,11 +522,14 @@ extension SphinxOnionManager {
             return
         }
         
-        fetchMessageBlock(
+        params.index = params.index + 1
+        
+        fetchMessagePerContactBlock(
             seed: seed,
-            lastMessageIndex: Int(minRestoreIndex)! - 1,
+            lastMessageIndex: params.fetchStartIndex,
             msgCountLimit: params.itemsPerPage,
-            reverse: true
+            publicKey: params.chatPubkeys[params.index],
+            reverse: params.direction == .backward
         )
     }
     

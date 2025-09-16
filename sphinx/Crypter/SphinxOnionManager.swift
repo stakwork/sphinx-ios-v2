@@ -43,6 +43,7 @@ class SphinxOnionManager : NSObject {
     
     var chatsFetchParams : ChatsFetchParams? = nil
     var messageFetchParams : MessageFetchParams? = nil
+    var messagePerContactFetchParams : MessagePerContactFetchParams? = nil
     
     var deletedTribesPubKeys: [String] {
         get {
