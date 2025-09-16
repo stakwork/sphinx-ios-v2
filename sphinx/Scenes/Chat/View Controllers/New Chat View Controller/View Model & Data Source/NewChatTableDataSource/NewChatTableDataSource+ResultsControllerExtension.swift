@@ -61,7 +61,10 @@ extension NewChatTableDataSource {
             self.saveSnapshotCurrentState()
             self.dataSource.apply(snapshot, animatingDifferences: false)
             self.restoreScrollLastPosition()
-            self.loadingMoreItems = false
+            
+            DelayPerformedHelper.performAfterDelay(seconds: 1.0, completion: {
+                self.loadingMoreItems = false
+            })
         }
     }    
     
@@ -249,15 +252,21 @@ extension NewChatTableDataSource {
             )
         }
         
+        if didLoadMore {
+            fetchMoreItems()
+        }
+        
         messageTableCellStateArray = array
         
-        updateSnapshot()
-        
-        delegate?.configureNewMessagesIndicatorWith(
-            newMsgCount: newMsgCount
-        )
-        
-        finishSearchProcess()
+        DispatchQueue.main.async {
+            self.updateSnapshot()
+            
+            self.delegate?.configureNewMessagesIndicatorWith(
+                newMsgCount: newMsgCount
+            )
+            
+            self.finishSearchProcess()
+        }
     }
     
     func filterThreadMessagesFrom(
@@ -782,26 +791,33 @@ extension NewChatTableDataSource : NSFetchedResultsControllerDelegate {
             
             if controller == messagesResultsController {
                 if let messages = firstSection.objects as? [TransactionMessage] {
-                    if !isThread {
-                        ///Do not processes aliases and timezone on thread since it came from chat
-                        self.chat?.processAliasesFrom(messages: messages.reversed())
+                    DispatchQueue.global(qos: .userInitiated).async {
+                        if !self.isThread {
+                            ///Do not processes aliases and timezone on thread since it came from chat
+                            self.chat?.processAliasesFrom(messages: messages.reversed())
+                        }
+                        let newMessages: [TransactionMessage] = messages.filter({ !$0.isApprovedRequest() && !$0.isDeclinedRequest() }).reversed()
+                        self.didLoadMore = self.messagesArray.count > 0 && newMessages.count > self.messagesArray.count
+                        self.minIndex = newMessages.map({ $0.id }).min()
+                        self.messagesArray = newMessages
+                        
+                        if !(self.delegate?.isOnStandardMode() ?? true) {
+                            return
+                        }
+                        self.updateMessagesStatusesFrom(messages: self.messagesArray)
+                        self.processMessages(messages: self.messagesArray)
+                        self.configureSecondaryMessagesResultsController()
+                        self.delegate?.shouldUpdateHeaderScheduleIcon(message: messages.first)
                     }
-                    self.messagesArray = messages.filter({ !$0.isApprovedRequest() && !$0.isDeclinedRequest() }).reversed()
-                    
+                }
+            } else {
+                DispatchQueue.global(qos: .userInitiated).async {
                     if !(self.delegate?.isOnStandardMode() ?? true) {
                         return
                     }
-                    self.updateMessagesStatusesFrom(messages: self.messagesArray)
+                    
                     self.processMessages(messages: self.messagesArray)
-                    self.configureSecondaryMessagesResultsController()
-                    self.delegate?.shouldUpdateHeaderScheduleIcon(message: messages.first)
                 }
-            } else {
-                if !(self.delegate?.isOnStandardMode() ?? true) {
-                    return
-                }
-                
-                self.processMessages(messages: self.messagesArray)
             }
         }
     }

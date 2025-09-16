@@ -47,41 +47,6 @@ extension SphinxOnionManager {
         return (nil, false)
     }
     
-    func fetchOrCreateChatWithTribe(
-        ownerPubkey: String,
-        host: String?,
-        existingTribe: Chat?,
-        index: Int,
-        completion: @escaping (Chat?, Bool, Int) -> ()
-    ) {
-        if (chatsFetchParams?.restoredTribesPubKeys ?? []).contains(ownerPubkey) {
-            ///Tribe restore in progress
-            completion(nil, false, index)
-            return
-        }
-        
-        
-        if deletedTribesPubKeys.contains(ownerPubkey) {
-            ///Tribe deleted
-            completion(nil, false, index)
-            return
-        }
-        
-        chatsFetchParams?.restoredTribesPubKeys.append(ownerPubkey)
-        
-        if let chat = existingTribe {
-            ///Tribe restore found, no need to restore
-            completion(chat, false, index)
-        } else if let host = host {
-            ///Tribe not found in the database, attempt to lookup and restore.
-            GroupsManager.sharedInstance.lookupAndRestoreTribe(pubkey: ownerPubkey, host: host, context: backgroundContext) { chat in
-                completion(chat, chat != nil, index)
-            }
-        } else {
-            completion(nil, false, index)
-        }
-    }
-    
     func loadMediaToken(
         recipPubkey: String?,
         muid: String?,
@@ -1458,7 +1423,9 @@ extension SphinxOnionManager {
         newMessage.setAsLastMessage()
         
         if !fromMe && !isV2Restore {
-            newMessageBubbleHelper.showMessageView(message: newMessage)
+            DispatchQueue.main.async {
+                self.newMessageBubbleHelper.showMessageView(message: newMessage)
+            }
         }
         
         return newMessage

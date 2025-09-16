@@ -171,46 +171,6 @@ extension GroupsManager {
         }
     }
     
-    func lookupAndRestoreTribe(
-        pubkey: String,
-        host: String,
-        context: NSManagedObjectContext? = nil,
-        completion: @escaping (Chat?) -> ()
-    ){
-        let tribeInfo = GroupsManager.TribeInfo(ownerPubkey: pubkey, host: host, uuid: pubkey)
-        
-        GroupsManager.sharedInstance.fetchTribeInfo(
-            host: tribeInfo.host,
-            uuid: tribeInfo.uuid,
-            useSSL: false,
-            completion: { groupInfo in
-                if groupInfo["deleted"].boolValue == true {
-                    completion(nil)
-                    return
-                }
-                
-                let chatDict : [String: Any] = [
-                    "id": SphinxOnionManager.sharedInstance.generateCryptographicallySecureRandomInt(upperBound: Int(1e5)) as Any,
-                    "owner_pubkey": groupInfo["pubkey"],
-                    "name" : groupInfo["name"],
-                    "private": groupInfo["private"],
-                    "photo_url": groupInfo["img"],
-                    "unlisted": groupInfo["unlisted"],
-                    "price_per_message": groupInfo["price_per_message"],
-                    "escrow_amount": max(groupInfo["escrow_amount"].int ?? 3, 3)
-                ]
-                
-                let chatJSON = JSON(chatDict)
-                let resultantChat = Chat.insertChat(chat: chatJSON, context: context)
-                resultantChat?.status = (chatDict["private"] as? Bool ?? false) ? Chat.ChatStatus.pending.rawValue : Chat.ChatStatus.approved.rawValue
-                resultantChat?.type = Chat.ChatType.publicGroup.rawValue
-                completion(resultantChat)
-            }, errorCallback: {
-                completion(nil)
-            }
-        )
-    }
-    
     func fetchTribeInfoAsync(
         pubkey: String,
         host: String,

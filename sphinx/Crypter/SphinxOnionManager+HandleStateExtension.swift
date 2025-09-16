@@ -495,6 +495,8 @@ extension SphinxOnionManager {
                     firstSCIDMsgsCallback(messages)
                 } else if let onMessageRestoredCallback = self.onMessageRestoredCallback {
                     onMessageRestoredCallback(messages)
+                } else {
+                    self.getReads()
                 }
             }
         }

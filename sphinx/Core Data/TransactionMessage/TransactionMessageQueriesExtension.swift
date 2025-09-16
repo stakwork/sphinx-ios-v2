@@ -424,6 +424,25 @@ extension TransactionMessage {
         return fetchRequest
     }
     
+    static func getChatMessagesTotalCount(
+        for chat: Chat,
+        threadUUID: String? = nil
+    ) -> Int {
+        
+        var typesToExclude = typesToExcludeFromChat
+        typesToExclude.append(TransactionMessageType.boost.rawValue)
+        typesToExclude.append(TransactionMessageType.memberApprove.rawValue)
+        typesToExclude.append(TransactionMessageType.memberReject.rawValue)
+        
+        let predicate = TransactionMessage.getPredicate(
+            chat: chat,
+            threadUUID: threadUUID,
+            typesToExclude: typesToExclude
+        )
+
+        return CoreDataManager.sharedManager.getObjectsCountOfTypeWith(predicate: predicate, entityName: "TransactionMessage")
+    }
+    
     static func getInvoiceWith(
         paymentHash: String,
         context: NSManagedObjectContext? = nil

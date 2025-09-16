@@ -25,7 +25,7 @@ extension NewChatTableDataSource: UITableViewDelegate {
         }
         
         let difference: CGFloat = 16
-        let scrolledToTop = tableView.contentOffset.y > tableView.contentSize.height - tableView.frame.size.height - difference - 500
+        let scrolledToTop = tableView.contentOffset.y > tableView.contentSize.height - tableView.frame.size.height - difference - 1500
         let scrolledToBottom = tableView.contentOffset.y < -10
         let didMoveOutOfBottom = tableView.contentOffset.y > -10
                 
@@ -71,18 +71,22 @@ extension NewChatTableDataSource: UITableViewDelegate {
     }
     
     @objc func loadMoreItems() {
-//        if let publicKey = contact?.publicKey ?? chat?.ownerPubkey {
-//            if let minIndex = messagesArray.map({ $0.id }).min() {
-//                SphinxOnionManager.sharedInstance.startChatMsgBlockFetch(
-//                    startIndex: minIndex - 1,
-//                    itemsPerPage: 50,
-//                    stopIndex: 0,
-//                    publicKey: publicKey
-//                )
+        configureResultsController(items: messagesCount + 50)
+    }
+    
+    func fetchMoreItems() {
+//        if messagesArray.count >= chatMessagesTotalCount {
+//            if let publicKey = contact?.publicKey ?? chat?.ownerPubkey {
+//                if let minIndex = self.minIndex {
+//                    SphinxOnionManager.sharedInstance.startChatMsgBlockFetch(
+//                        startIndex: minIndex - 1,
+//                        itemsPerPage: 50,
+//                        stopIndex: 0,
+//                        publicKey: publicKey
+//                    )
+//                }
 //            }
 //        }
-        
-        configureResultsController(items: messagesCount + 50)
     }
     
     @objc func shouldHideNewMsgsIndicator() -> Bool {
