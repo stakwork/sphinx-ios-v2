@@ -35,10 +35,8 @@ extension NewChatTableDataSource {
 
         restorePreloadedMessages()
         
-        DelayPerformedHelper.performAfterDelay(seconds: 0.1, completion: { [weak self] in
-            guard let self = self else { return }
-            self.configureResultsController(items: max(self.dataSource.snapshot().numberOfItems, 100))
-        })
+        self.configureResultsController(items: max(self.dataSource.snapshot().numberOfItems, 100))
+        self.fetchMoreItems()
     }
     
     func makeSnapshotForCurrentState() -> DataSourceSnapshot {
@@ -134,7 +132,7 @@ extension NewChatTableDataSource {
         }
         
         startSearchProcess()
-        
+                
         var newMsgCount = 0
         var array: [MessageTableCellState] = []
         
@@ -147,7 +145,7 @@ extension NewChatTableDataSource {
         let requestResponsesMap = getMemberRequestResponsesMapFor(messages: messages)
         let purchaseMessagesMap = getPurchaseMessagesMapFor(messages: messages)
         
-        let threadMessagesMap = getThreadMessagesFor(messages: messages)
+        let threadMessagesMap = isSearching ? [:] : getThreadMessagesFor(messages: messages)
         let linkContactsArray = getLinkContactsArrayFor(messages: messages)
         let linkTribesArray = getLinkTribesArrayFor(messages: messages)
         let webLinksArray = getWebLinksArrayFor(messages: messages)
@@ -155,7 +153,7 @@ extension NewChatTableDataSource {
         var groupingDate: Date? = nil
         var invoiceData: (Int, Int) = (0, 0)
         
-        let filteredThreadMessages: [TransactionMessage] = filterThreadMessagesFrom(
+        let filteredThreadMessages: [TransactionMessage] = isSearching ? sortedMessages : filterThreadMessagesFrom(
             messages: sortedMessages,
             threadMessagesMap: threadMessagesMap
         )
@@ -250,11 +248,7 @@ extension NewChatTableDataSource {
                 messageTableCellState: messageTableCellState,
                 index: array.count - 1
             )
-        }
-        
-        if didLoadMore {
-            fetchMoreItems()
-        }
+        }        
         
         messageTableCellStateArray = array
         
@@ -729,19 +723,60 @@ extension NewChatTableDataSource : NSFetchedResultsControllerDelegate {
         )
     }
     
+    func getFetchRequestFor(
+        chat: Chat,
+        with items: Int,
+        and minIndex: Int
+    ) -> NSFetchRequest<TransactionMessage> {
+        return TransactionMessage.getChatMessagesFetchRequest(
+            for: chat,
+            with: items,
+            and: minIndex,
+            pinnedMessageId: pinnedMessageId
+        )
+    }
+    
+    func getFetchMinIndex(
+        fetchRequest: NSFetchRequest<TransactionMessage>
+    ) -> Int? {
+        let managedContext = CoreDataManager.sharedManager.persistentContainer.viewContext
+        var objects: [TransactionMessage] = [TransactionMessage]()
+        
+        do {
+            try objects = managedContext.fetch(fetchRequest)
+        } catch let error as NSError {
+            print("Error: " + error.localizedDescription)
+        }
+        
+        return objects.last?.id
+    }
+    
     func configureResultsController(items: Int) {
         guard let chat = chat else {
             return
         }
         
-        if messagesArray.count < messagesCount {
+        if messagesCountFetched < messagesCountRequested {
             return
         }
         
-        messagesCount = items
+        messagesCountRequested = items
         
-        let fetchRequest = getFetchRequestFor(chat: chat, with: items)
-
+        var fetchRequest = getFetchRequestFor(
+            chat: chat,
+            with: items
+        )
+        
+        if let minIndex = getFetchMinIndex(fetchRequest: fetchRequest), !isThread {
+            fetchMinIndex = minIndex
+            
+            fetchRequest = getFetchRequestFor(
+                chat: chat,
+                with: items,
+                and: minIndex
+            )
+        }
+        
         messagesResultsController = NSFetchedResultsController(
             fetchRequest: fetchRequest,
             managedObjectContext: CoreDataManager.sharedManager.persistentContainer.viewContext,
@@ -767,7 +802,7 @@ extension NewChatTableDataSource : NSFetchedResultsControllerDelegate {
             return
         }
         
-        let fetchRequest = TransactionMessage.getSecondaryMessagesFetchRequestOn(chat: chat)
+        let fetchRequest = TransactionMessage.getSecondaryMessagesFetchRequestOn(chat: chat, minIndex: fetchMinIndex)
 
         additionMessagesResultsController = NSFetchedResultsController(
             fetchRequest: fetchRequest,
@@ -799,26 +834,27 @@ extension NewChatTableDataSource : NSFetchedResultsControllerDelegate {
                             ///Do not processes aliases and timezone on thread since it came from chat
                             self.chat?.processAliasesFrom(messages: messages.reversed())
                         }
+                        
+                        //Use min index for fetch results controller to avoid collecting on new items insert
+                        //Do a first request of 100 items and get min index, then use that index in the fetch results controller request
+                        //When loading more do the same. First request to get min index, then final request for results controller
+                        self.messagesCountFetched = messages.count
                         let newMessages: [TransactionMessage] = messages.filter({ !$0.isApprovedRequest() && !$0.isDeclinedRequest() }).reversed()
-                        self.didLoadMore = self.messagesArray.count > 0 && newMessages.count > self.messagesArray.count
-                        self.minIndex = newMessages.map({ $0.id }).min()
                         self.messagesArray = newMessages
                         
-                        if !(self.delegate?.isOnStandardMode() ?? true) {
-                            return
-                        }
+                        let minIndex = newMessages.map({ $0.id }).min()
+                        
                         self.updateMessagesStatusesFrom(messages: self.messagesArray)
                         self.processMessages(messages: self.messagesArray)
                         self.configureSecondaryMessagesResultsController()
-                        self.delegate?.shouldUpdateHeaderScheduleIcon(message: messages.first)
+                        
+                        DispatchQueue.main.async {
+                            self.delegate?.shouldUpdateHeaderScheduleIcon(message: messages.first)
+                        }
                     }
                 }
             } else {
                 DispatchQueue.global(qos: .userInteractive).async {
-                    if !(self.delegate?.isOnStandardMode() ?? true) {
-                        return
-                    }
-                    
                     self.processMessages(messages: self.messagesArray)
                 }
             }

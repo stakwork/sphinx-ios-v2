@@ -247,6 +247,9 @@ class SphinxOnionManager : NSObject {
     var firstSCIDMsgsCallback: (([Msg]) -> ())? = nil
     var onMessageRestoredCallback: (([Msg]) -> ())? = nil
     
+    var restoringMsgsForPublicKey: String? = nil
+    var onMessagePerPublicKeyRestoredCallback: ((Int) -> ())? = nil
+    
     var maxMessageIndex: Int? {
         get {
             if let maxMessageIndex: Int = UserDefaults.Keys.maxMessageIndex.get() {

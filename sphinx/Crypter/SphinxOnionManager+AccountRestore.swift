@@ -378,7 +378,8 @@ extension SphinxOnionManager {
         startIndex: Int,
         itemsPerPage: Int,
         stopIndex: Int,
-        publicKey: String
+        publicKey: String,
+        callback: @escaping (Int) -> ()
     ) {
         guard let seed = getAccountSeed() else {
             return
@@ -386,6 +387,9 @@ extension SphinxOnionManager {
         
         firstSCIDMsgsCallback = nil
         onMessageRestoredCallback = nil
+        
+        restoringMsgsForPublicKey = publicKey
+        onMessagePerPublicKeyRestoredCallback = callback
         
         fetchMessagePerContactBlock(
             seed: seed,
@@ -869,20 +873,12 @@ extension SphinxOnionManager {
             }
             
             if let chat = tribesMap[tribePubkey] {
-                let newMessage = restoreGroupJoinMsg(
+                restoreTribeStateFrom(
                     message: message,
-                    existingMessage: existingMessagesIdMap[indexInt],
                     senderInfo: csr,
-                    innerContent: messagesInnerContentMap[indexInt],
                     chat: chat,
                     didCreateTribe: false
                 )
-                
-                if let newMessage = newMessage {
-                    if !existingMessagesIdMap.keys.contains(newMessage.id) {
-                        existingMessagesIdMap[newMessage.id] = newMessage
-                    }
-                }
             } else if let tribeInfo = dictionary[tribePubkey] {
                 
                 let chat = Chat.insertChat(chat: tribeInfo, context: backgroundContext)
@@ -893,25 +889,43 @@ extension SphinxOnionManager {
                     return
                 }
                 
-                let newMessage = restoreGroupJoinMsg(
+                restoreTribeStateFrom(
                     message: message,
-                    existingMessage: existingMessagesIdMap[indexInt],
                     senderInfo: csr,
-                    innerContent: messagesInnerContentMap[indexInt],
                     chat: chat,
                     didCreateTribe: true
                 )
-                
-                if let newMessage = newMessage {
-                    if !existingMessagesIdMap.keys.contains(newMessage.id) {
-                        existingMessagesIdMap[newMessage.id] = newMessage
-                    }
-                }
                 
                 if let ownerPubKey = chat.ownerPubkey, !tribesMap.keys.contains(ownerPubKey) {
                     tribesMap[ownerPubKey] = chat
                 }
             }
+        }
+    }
+    
+    func restoreTribeStateFrom(
+        message: Msg,
+        senderInfo: ContactServerResponse?,
+        chat: Chat,
+        didCreateTribe: Bool
+    ) {
+        
+        guard let type = message.type else {
+            return
+        }
+        
+        guard let csr =  senderInfo else {
+            return
+        }
+        
+        if (didCreateTribe && csr.role != nil) {
+            chat.isTribeICreated = csr.role == 0 && message.fromMe == true
+        }
+        if (type == TransactionMessage.TransactionMessageType.memberApprove.rawValue || type == TransactionMessage.TransactionMessageType.groupJoin.rawValue) {
+            chat.status = Chat.ChatStatus.approved.rawValue
+        }
+        if (type == TransactionMessage.TransactionMessageType.memberReject.rawValue) {
+            chat.status = Chat.ChatStatus.rejected.rawValue
         }
     }
     

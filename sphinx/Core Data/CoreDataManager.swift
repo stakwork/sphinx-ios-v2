@@ -244,7 +244,6 @@ extension NSManagedObjectContext {
         if self.hasChanges {
             do {
                 try self.save()
-                print("V2 Received CoreData Context saved")
             } catch {
                 let error = error as NSError
                 print("Unresolved error \(error)")

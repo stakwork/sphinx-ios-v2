@@ -1090,7 +1090,7 @@ extension SphinxOnionManager {
             return nil
         }
     
-        if let messageToDeleteUUID = genericIncomingMessage.replyUuid, let messageToDelete = messageToDelete {
+        if let messageToDelete = messageToDelete {
             messageToDelete.status = TransactionMessage.TransactionMessageStatus.deleted.rawValue
         } else {
             return processGenericIncomingMessage(
@@ -1122,7 +1122,7 @@ extension SphinxOnionManager {
     ) -> TransactionMessage? {
         ///Check for sender information
         guard let csr =  senderInfo,
-              let tribePubkey = csr.pubkey else
+              let _ = csr.pubkey else
         {
             return nil
         }
@@ -2089,6 +2089,76 @@ extension SphinxOnionManager {
             let _ = handleRunReturn(rr: rr)
         } catch {
             print("Error getting read level")
+        }
+    }
+    
+    @objc func getFetchRequestFor(
+        chat: Chat,
+        with items: Int
+    ) -> NSFetchRequest<TransactionMessage> {
+        return TransactionMessage.getChatMessagesFetchRequest(
+            for: chat,
+            with: items
+        )
+    }
+    
+    func getFetchMinIndex(
+        fetchRequest: NSFetchRequest<TransactionMessage>,
+        context: NSManagedObjectContext
+    ) -> Int? {
+        var objects: [TransactionMessage] = [TransactionMessage]()
+        
+        do {
+            try objects = context.fetch(fetchRequest)
+        } catch let error as NSError {
+            print("Error: " + error.localizedDescription)
+        }
+        
+        return objects.last?.id
+    }
+    
+    func batchDeleteOldMessagesInBackground(
+        forChat chat: Chat,
+        keepingLatest count: Int = 100
+    ) {
+        DispatchQueue.global(qos: .utility).async {
+            let backgroundContext = CoreDataManager.sharedManager.getBackgroundContext()
+            
+            backgroundContext.perform {
+                do {
+                    let fetchRequest = self.getFetchRequestFor(
+                        chat: chat,
+                        with: count
+                    )
+                    
+                    if let thresholdId = self.getFetchMinIndex(fetchRequest: fetchRequest, context: backgroundContext) {
+                        print("🔍 Will delete messages with id < \(thresholdId) from chat \(chat.id)")
+                        
+                        // Step 2: Create fetch request for messages to delete
+                        let deleteRequest: NSFetchRequest<TransactionMessage> = TransactionMessage.fetchRequest()
+                        deleteRequest.predicate = NSPredicate(format: "chat.id == %d AND id < %d", chat.id, thresholdId)
+                        
+                        // Step 3: Create batch delete request with the fetch request
+                        let batchDelete = NSBatchDeleteRequest(fetchRequest: deleteRequest as! NSFetchRequest<NSFetchRequestResult>)
+                        batchDelete.resultType = .resultTypeCount // Get count of deleted objects
+                        
+                        let result = try backgroundContext.execute(batchDelete) as? NSBatchDeleteResult
+                        let deletedCount = result?.result as? Int ?? 0
+                        
+                        if deletedCount > 0 {
+                            print("✅ Successfully deleted \(deletedCount) old messages from chat \(chat.id) in background")
+                            
+                            // Step 4: Save the context - this will automatically merge to parent contexts
+                            try backgroundContext.save()
+                            print("💾 Saved deletion changes to persistent store")
+                        } else {
+                            print("ℹ️ No messages were deleted from chat \(chat.id)")
+                        }
+                    }
+                } catch {
+                    print("❌ Background batch delete failed for chat \(chat.id): \(error)")
+                }
+            }
         }
     }
 

@@ -27,7 +27,7 @@ extension SphinxOnionManager {
         if let topic = topic {
             print("V2 Received topic: \(topic)")
         }
-        
+
         ///If re-processing delayed RR Object then all inside this IF has been run already. Then skip
         if !skipSettleTopic && !skipAsyncTopic {
             ///Update state mape
@@ -496,6 +496,16 @@ extension SphinxOnionManager {
                 } else if let onMessageRestoredCallback = self.onMessageRestoredCallback {
                     onMessageRestoredCallback(messages)
                 } else {
+                    ///Callback to chat when restoring msgs for a specifc chat
+                    if let restoringMsgsForPublicKey = self.restoringMsgsForPublicKey,
+                        let onMessagePerPublicKeyRestoredCallback = self.onMessagePerPublicKeyRestoredCallback,
+                        messages.allSatisfy({ $0.isMsgInTribeWith(pubkey: restoringMsgsForPublicKey)  })
+                    {
+                        self.restoringMsgsForPublicKey = nil
+                        self.onMessagePerPublicKeyRestoredCallback = nil
+                        onMessagePerPublicKeyRestoredCallback(messages.count)
+                    }
+                    
                     self.getReads()
                 }
             }
@@ -715,4 +725,10 @@ extension SphinxOnionManager {
         }
     }
 
+}
+
+extension Msg {
+    func isMsgInTribeWith(pubkey: String) -> Bool {
+        return (self.sender?.contains(pubkey) ?? false) || self.sentTo == pubkey
+    }
 }

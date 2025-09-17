@@ -105,8 +105,6 @@ class NewChatTableDataSource : NSObject {
     
     ///Messages Data
     var messagesArray: [TransactionMessage] = []
-    var chatMessagesTotalCount = 0
-    var minIndex: Int? = nil
     var messageTableCellStateArray: [MessageTableCellState] = []
     var mediaCached: [Int: MessageTableCellState.MediaData] = [:]
     var uploadingProgress: [Int: MessageTableCellState.UploadProgressData] = [:]
@@ -116,11 +114,17 @@ class NewChatTableDataSource : NSObject {
     var searchMatches: [(Int, MessageTableCellState)] = []
     var currentSearchMatchIndex: Int = 0
     var isLastSearchPage = false
+    var isSearching: Bool {
+        get {
+            return searchingTerm != nil
+        }
+    }
     
     ///Scroll and pagination
-    var messagesCount = 0
+    var messagesCountRequested = 0
+    var messagesCountFetched = 0
+    var fetchMinIndex = 0
     var loadingMoreItems = false
-    var didLoadMore = false
     var scrolledAtBottom = false
     
     ///Messages statuses restore
@@ -161,7 +165,6 @@ class NewChatTableDataSource : NSObject {
         configureTableView()
         configureDataSource()
         processChatAliases()
-        getChatMessagesTotalCount()
     }
     
     func processChatAliases() {
@@ -170,15 +173,6 @@ class NewChatTableDataSource : NSObject {
         }
         DispatchQueue.global(qos: .background).async {
             self.chat?.processAliases()
-        }
-    }
-    
-    func getChatMessagesTotalCount() {
-        guard let chat = chat else {
-            return
-        }
-        DispatchQueue.global(qos: .userInitiated).async {
-            self.chatMessagesTotalCount = TransactionMessage.getChatMessagesTotalCount(for: chat)
         }
     }
     

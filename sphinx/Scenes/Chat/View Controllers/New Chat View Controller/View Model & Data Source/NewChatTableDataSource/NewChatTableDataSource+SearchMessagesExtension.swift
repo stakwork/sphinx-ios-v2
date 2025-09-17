@@ -31,7 +31,7 @@ extension NewChatTableDataSource {
         term: String,
         itemsCount: Int
     ) {
-        guard let chat = chat else {
+        guard let _ = chat else {
             return
         }
         
@@ -39,19 +39,10 @@ extension NewChatTableDataSource {
         
         searchingTerm = term
         
-        if (itemsCount > self.messagesArray.count) {
-            ///Start listening with this limit to prevent scroll jump on search cancel
-            ///If listening was set with lower count, then on cancel could jump since less items are available
-            self.configureResultsController(items: itemsCount)
-        }
-        if (itemsCount > self.messagesArray.count || isNewSearch) {
-            ///Process messages if loading more items or doing a new search
-            self.messagesArray = TransactionMessage.getAllMessagesFor(chat: chat, limit: itemsCount)
-                .filter({ !$0.isApprovedRequest() && !$0.isDeclinedRequest() })
-                .reversed()
-            
-            self.processMessages(messages: self.messagesArray)
-            self.isLastSearchPage = self.messagesArray.count < itemsCount
+        if isNewSearch {
+            processMessages(messages: messagesArray)
+        } else {
+            fetchMoreItems()
         }
     }
     
@@ -65,7 +56,11 @@ extension NewChatTableDataSource {
             index: currentSearchMatchIndex
         )
         
-        reloadAllVisibleRows()
+        processMessages(messages: messagesArray)
+        
+        DelayPerformedHelper.performAfterDelay(seconds: 1.0, completion: {
+            self.reloadAllVisibleRows()
+        })
     }
     
     func shouldEndSearch() {
@@ -117,9 +112,11 @@ extension NewChatTableDataSource {
         searchMatches = searchMatches.reversed()
         
         ///should scroll to first results after current scroll position
-        currentSearchMatchIndex = searchMatches.firstIndex(
+        let newIndex = searchMatches.firstIndex(
             where: { $0.0 >= (tableView.indexPathsForVisibleRows?.first?.row ?? 0) }
         ) ?? 0
+        let didChangeIndex = currentSearchMatchIndex == 0 || currentSearchMatchIndex != newIndex
+        currentSearchMatchIndex = newIndex
         
         ///Show search results
         DispatchQueue.main.async {
@@ -129,31 +126,36 @@ extension NewChatTableDataSource {
             )
             
             self.reloadAllVisibleRows()
-            self.scrollToSearchAt(index: self.currentSearchMatchIndex)
+            
+            self.scrollToSearchAt(
+                index: self.currentSearchMatchIndex,
+                shouldScroll: didChangeIndex
+            )
         }
     }
 
-    func scrollToSearchAt(index: Int) {
+    func scrollToSearchAt(
+        index: Int,
+        shouldScroll: Bool = true
+    ) {
         if searchMatches.count > index && index >= 0 {
-            let searchMatchIndex = searchMatches[index].0
+            if shouldScroll {
+                let searchMatchIndex = searchMatches[index].0
+                
+                tableView.scrollToRow(
+                    at: IndexPath(row: searchMatchIndex, section: 0),
+                    at: .none,
+                    animated: true
+                )
+            }
             
-            tableView.scrollToRow(
-                at: IndexPath(row: searchMatchIndex, section: 0),
-                at: .top,
-                animated: true
-            )
-            
-            if index + 1 == searchMatches.count {
-                loadMoreItemForSearch()
+            if index + 1 == self.searchMatches.count {
+                self.loadMoreItemForSearch()
             }
         }
     }
     
     func loadMoreItemForSearch() {
-        if isLastSearchPage {
-            return
-        }
-        
         delegate?.shouldToggleSearchLoadingWheel(active: true)
         
         DelayPerformedHelper.performAfterDelay(seconds: 1.0, completion: {

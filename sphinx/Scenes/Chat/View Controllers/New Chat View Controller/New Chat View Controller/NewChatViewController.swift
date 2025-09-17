@@ -158,6 +158,12 @@ class NewChatViewController: NewKeyboardHandlerViewController {
             chatTableDataSource?.stopListeningToResultsController()
 
             stopPlayingClip()
+            
+            if let chat = chat {
+                print("Messages total: \(TransactionMessage.getAll().count)")
+                
+                SphinxOnionManager.sharedInstance.batchDeleteOldMessagesInBackground(forChat: chat)
+            }
         }
     }
     

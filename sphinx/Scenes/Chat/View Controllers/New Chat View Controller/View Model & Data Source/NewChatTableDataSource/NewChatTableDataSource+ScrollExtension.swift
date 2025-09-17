@@ -25,7 +25,7 @@ extension NewChatTableDataSource: UITableViewDelegate {
         }
         
         let difference: CGFloat = 16
-        let scrolledToTop = tableView.contentOffset.y > tableView.contentSize.height - tableView.frame.size.height - difference - 1500
+        let scrolledToTop = tableView.contentOffset.y > tableView.contentSize.height - tableView.frame.size.height - difference - 5000
         let scrolledToBottom = tableView.contentOffset.y < -10
         let didMoveOutOfBottom = tableView.contentOffset.y > -10
                 
@@ -61,32 +61,58 @@ extension NewChatTableDataSource: UITableViewDelegate {
     }
     
     @objc func didScrollToTop() {
+        if isSearching {
+            return
+        }
+        
         if loadingMoreItems {
             return
         }
         
         loadingMoreItems = true
         
-        loadMoreItems()
+        fetchMoreItems()
     }
     
     @objc func loadMoreItems() {
-        configureResultsController(items: messagesCount + 50)
+        configureResultsController(items: messagesCountRequested + 50)
     }
     
     func fetchMoreItems() {
-//        if messagesArray.count >= chatMessagesTotalCount {
-//            if let publicKey = contact?.publicKey ?? chat?.ownerPubkey {
-//                if let minIndex = self.minIndex {
-//                    SphinxOnionManager.sharedInstance.startChatMsgBlockFetch(
-//                        startIndex: minIndex - 1,
-//                        itemsPerPage: 50,
-//                        stopIndex: 0,
-//                        publicKey: publicKey
-//                    )
-//                }
-//            }
-//        }
+        if isThread {
+            return
+        }
+        if let publicKey = contact?.publicKey ?? chat?.ownerPubkey {
+            if let chat = chat {
+                let backgroundContext = CoreDataManager.sharedManager.getBackgroundContext()
+                var minIndex: Int? = nil
+                let itemsPerPage = 100
+                
+                backgroundContext.perform {
+                    minIndex = TransactionMessage.getMinMessageIndex(for: chat, context: backgroundContext)
+                    
+                    if let minIndex = minIndex {
+                        if minIndex < itemsPerPage {
+                            return
+                        }
+                        DispatchQueue.global(qos: .background).async {
+                            SphinxOnionManager.sharedInstance.startChatMsgBlockFetch(
+                                startIndex: minIndex - 1,
+                                itemsPerPage: itemsPerPage,
+                                stopIndex: 0,
+                                publicKey: publicKey
+                            ) { messagesCount in
+                                self.loadMoreItems()
+                                
+                                if messagesCount <= 0 && self.isSearching {
+                                    self.delegate?.shouldToggleSearchLoadingWheel(active: false)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
     
     @objc func shouldHideNewMsgsIndicator() -> Bool {
