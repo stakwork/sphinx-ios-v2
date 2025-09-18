@@ -18,6 +18,7 @@ class MessageNoBubbleTableViewCell: UITableViewCell, ChatTableViewCellProtocol {
     @IBOutlet weak var dateSeparatorView: DateSeparatorView!
     @IBOutlet weak var deletedMessageView: DeletedMessageView!
     @IBOutlet weak var groupActionsView: GroupActionsView!
+    @IBOutlet weak var loadingMoreMessagesView: LoadingMoreMessagesView!
     
     @IBOutlet weak var leftLineContainer: UIView!
     @IBOutlet weak var rightLineContainer: UIView!
@@ -39,6 +40,7 @@ class MessageNoBubbleTableViewCell: UITableViewCell, ChatTableViewCellProtocol {
         groupActionsView.isHidden = true
         leftLineContainer.isHidden = true
         rightLineContainer.isHidden = true
+        loadingMoreMessagesView.isHidden = true
     }
     
     func setupViews() {
@@ -79,6 +81,9 @@ class MessageNoBubbleTableViewCell: UITableViewCell, ChatTableViewCellProtocol {
         ///Date separator
         configureWith(dateSeparator: mutableMessageCellState.dateSeparator)
         
+        ///Loading More
+        configureWith(loadingMore: mutableMessageCellState.loadingMore)
+        
         ///Group notifications
         configureWith(groupMemberNotification: mutableMessageCellState.groupMemberNotification)
         configureWith(groupKickRemovedOrDeclined: mutableMessageCellState.groupKickRemovedOrDeclined)
@@ -109,6 +114,15 @@ class MessageNoBubbleTableViewCell: UITableViewCell, ChatTableViewCellProtocol {
                 dateSeparator: dateSeparator
             )
             dateSeparatorView.isHidden = false
+        }
+    }
+    
+    func configureWith(
+        loadingMore: NoBubbleMessageLayoutState.LoadingMore?
+    ) {
+        if let _ = loadingMore {
+            loadingMoreMessagesView.isHidden = false
+            loadingMoreMessagesView.configure()
         }
     }
     

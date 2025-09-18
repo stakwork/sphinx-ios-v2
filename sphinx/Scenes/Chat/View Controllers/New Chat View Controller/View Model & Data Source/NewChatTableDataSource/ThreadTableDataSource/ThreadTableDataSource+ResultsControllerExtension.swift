@@ -45,7 +45,8 @@ extension ThreadTableDataSource {
     }
     
     override func processMessages(
-        messages: [TransactionMessage]
+        messages: [TransactionMessage],
+        showLoadingMore: Bool
     ) {
         let sortedMessages = messages//.sorted(by: {$0.id < $1.id})
         let chat = chat ?? contact?.getFakeChat()

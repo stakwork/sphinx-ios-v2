@@ -121,7 +121,8 @@ extension NewChatTableDataSource {
 extension NewChatTableDataSource {
     
     @objc func processMessages(
-        messages: [TransactionMessage]
+        messages: [TransactionMessage],
+        showLoadingMore: Bool
     ) {
         let sortedMessages = messages
         //let sortedMessages = messages.sorted(by: {$0.id < $1.id})
@@ -162,6 +163,19 @@ extension NewChatTableDataSource {
             threadMessages: filteredThreadMessages,
             threadMessagesMap: threadMessagesMap
         )
+        
+        if showLoadingMore {
+            array.insert(
+                MessageTableCellState(
+                    chat: chat,
+                    owner: owner,
+                    contact: contact,
+                    tribeAdmin: admin,
+                    isLoadingMoreMessages: true
+                ),
+                at: 0
+            )
+        }
 
         for (index, message) in filteredThreadMessages.enumerated() {
             
@@ -190,7 +204,8 @@ extension NewChatTableDataSource {
                 in: filteredThreadMessages,
                 and: originalMessagesMap,
                 groupingDate: &groupingDate,
-                isThreadRow: threadMessages.count > 1
+                isThreadRow: threadMessages.count > 1,
+                showLoadingMore: showLoadingMore
             )
             
             if let separatorDate = bubbleStateAndDate.1 {
@@ -258,8 +273,11 @@ extension NewChatTableDataSource {
             }
             self.updateSnapshot()
             
+//            self.delegate?.configureNewMessagesIndicatorWith(
+//                newMsgCount: newMsgCount
+//            )
             self.delegate?.configureNewMessagesIndicatorWith(
-                newMsgCount: newMsgCount
+                newMsgCount: 0
             )
             
             self.finishSearchProcess()
@@ -304,7 +322,7 @@ extension NewChatTableDataSource {
     }
     
     func forceReload() {
-        processMessages(messages: messagesArray)
+        processMessages(messages: messagesArray, showLoadingMore: true)
     }
     
     func getMessagesCount() -> Int {
@@ -353,7 +371,8 @@ extension NewChatTableDataSource {
         and originalMessagesMap: [String: TransactionMessage],
         groupingDate: inout Date?,
         isThreadRow: Bool = false,
-        threadHeaderMessage: TransactionMessage? = nil
+        threadHeaderMessage: TransactionMessage? = nil,
+        showLoadingMore: Bool = false
     ) -> (MessageTableCellState.BubbleState?, Date?) {
         
         var previousMessage = (index > 0) ? messages[index - 1] : nil
@@ -375,7 +394,7 @@ extension NewChatTableDataSource {
             if Date.isDifferentDay(firstDate: previousMessageDate, secondDate: date) {
                 separatorDate = date
             }
-        } else if previousMessage == nil {
+        } else if previousMessage == nil && !showLoadingMore {
             separatorDate = message.date
         }
         
@@ -842,10 +861,12 @@ extension NewChatTableDataSource : NSFetchedResultsControllerDelegate {
                         let newMessages: [TransactionMessage] = messages.filter({ !$0.isApprovedRequest() && !$0.isDeclinedRequest() }).reversed()
                         self.messagesArray = newMessages
                         
-                        let minIndex = newMessages.map({ $0.id }).min()
+//                        let minIndex = newMessages.map({ $0.id }).min()
+//                        print("V2 ==== COUNT \(newMessages.count)")
+//                        print("V2 ==== MIN INDEX \(minIndex)")
                         
                         self.updateMessagesStatusesFrom(messages: self.messagesArray)
-                        self.processMessages(messages: self.messagesArray)
+                        self.processMessages(messages: self.messagesArray, showLoadingMore: true)
                         self.configureSecondaryMessagesResultsController()
                         
                         DispatchQueue.main.async {
@@ -855,7 +876,7 @@ extension NewChatTableDataSource : NSFetchedResultsControllerDelegate {
                 }
             } else {
                 DispatchQueue.global(qos: .userInteractive).async {
-                    self.processMessages(messages: self.messagesArray)
+                    self.processMessages(messages: self.messagesArray, showLoadingMore: true)
                 }
             }
         }

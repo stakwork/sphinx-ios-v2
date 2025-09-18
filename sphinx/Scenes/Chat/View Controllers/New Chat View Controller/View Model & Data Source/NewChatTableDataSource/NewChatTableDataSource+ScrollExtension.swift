@@ -104,8 +104,15 @@ extension NewChatTableDataSource: UITableViewDelegate {
                             ) { messagesCount in
                                 self.loadMoreItems()
                                 
-                                if messagesCount <= 0 && self.isSearching {
-                                    self.delegate?.shouldToggleSearchLoadingWheel(active: false)
+                                if messagesCount <= 0 {
+                                    self.processMessages(
+                                        messages: self.messagesArray,
+                                        showLoadingMore: false
+                                    )
+                                    
+                                    if self.isSearching {
+                                        self.delegate?.shouldToggleSearchLoadingWheel(active: false)
+                                    }
                                 }
                             }
                         }

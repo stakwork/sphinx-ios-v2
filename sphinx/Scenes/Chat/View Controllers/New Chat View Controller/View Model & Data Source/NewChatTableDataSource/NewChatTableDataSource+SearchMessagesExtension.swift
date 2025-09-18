@@ -40,7 +40,7 @@ extension NewChatTableDataSource {
         searchingTerm = term
         
         if isNewSearch {
-            processMessages(messages: messagesArray)
+            processMessages(messages: messagesArray, showLoadingMore: false)
         } else {
             fetchMoreItems()
         }
@@ -56,7 +56,7 @@ extension NewChatTableDataSource {
             index: currentSearchMatchIndex
         )
         
-        processMessages(messages: messagesArray)
+        processMessages(messages: messagesArray, showLoadingMore: false)
         
         DelayPerformedHelper.performAfterDelay(seconds: 1.0, completion: {
             self.reloadAllVisibleRows()
