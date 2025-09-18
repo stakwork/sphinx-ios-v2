@@ -560,6 +560,7 @@ extension SphinxOnionManager {
     
     //MARK: processes updates from general purpose messages like plaintext and attachments
     func processGenericMessages(
+        topic: String?,
         rr: RunReturn
     ) {
         if rr.msgs.isEmpty {
@@ -838,6 +839,15 @@ extension SphinxOnionManager {
                 
                 if let chat = newMessage.chat, let ownerPubKey = chat.ownerPubkey, chat.isPublicGroup(), !tribesMap.keys.contains(ownerPubKey) {
                     tribesMap[ownerPubKey] = chat
+                }
+                
+                ///Show if is incoming, and topic is stream which means message coming in in real time
+                let shouldShowIncomingMsgNotification = !(message.fromMe ?? false) && topic?.isMessageInRealTimeTopic == true
+                
+                if shouldShowIncomingMsgNotification {
+                    DispatchQueue.main.async {
+                        self.newMessageBubbleHelper.showMessageView(message: newMessage)
+                    }
                 }
             }
             
@@ -1421,12 +1431,6 @@ extension SphinxOnionManager {
         }
                 
         newMessage.setAsLastMessage()
-        
-        if !fromMe && !isV2Restore {
-            DispatchQueue.main.async {
-                self.newMessageBubbleHelper.showMessageView(message: newMessage)
-            }
-        }
         
         return newMessage
     }

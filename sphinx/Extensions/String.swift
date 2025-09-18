@@ -128,8 +128,12 @@ extension String {
         return self.removingPercentEncoding
     }
     
-    var isMessagesFetchResponse : Bool {
+    var isMessagesFetchResponseTopic : Bool {
         return self.contains("/batch")
+    }
+    
+    var isMessageInRealTimeTopic : Bool {
+        return self.contains("/stream")
     }
     
     func trim() -> String {

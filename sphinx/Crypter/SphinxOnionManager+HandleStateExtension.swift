@@ -66,7 +66,7 @@ extension SphinxOnionManager {
                     self.processKeyExchangeMessages(rr: rr)
                     
                     ///Handling generic msgs restore
-                    self.processGenericMessages(rr: rr)
+                    self.processGenericMessages(topic: topic, rr: rr)
                     
                     context.saveContext()
                     
@@ -490,7 +490,7 @@ extension SphinxOnionManager {
     ) {
         ///Restore callbacks
         DispatchQueue.main.async {
-            if topic?.isMessagesFetchResponse == true {
+            if topic?.isMessagesFetchResponseTopic == true {
                 if let firstSCIDMsgsCallback = self.firstSCIDMsgsCallback {
                     firstSCIDMsgsCallback(messages)
                 } else if let onMessageRestoredCallback = self.onMessageRestoredCallback {
