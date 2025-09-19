@@ -284,13 +284,7 @@ extension SphinxOnionManager {
         }
         
         let chats = Chat.getAll()
-        let chatPubKeys = chats.compactMap({
-            if $0.isPublicGroup() {
-                return $0.ownerPubkey
-            } else {
-                return $0.getConversationContact()?.publicKey
-            }
-        })
+        let chatPubKeys = chats.compactMap({ $0.ownerPubkey })
         
         let currentIndex = 0
         

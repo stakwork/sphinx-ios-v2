@@ -32,10 +32,24 @@ class NewChatViewModel {
         self.chat = chat
         self.contact = contact
         self.threadUUID = threadUUID
+        
+        self.checkOwnerRole()
     }
     
     func setDataSource(_ dataSource: NewChatTableDataSource?) {
         self.chatDataSource = dataSource
+    }
+    
+    func setChat(_ chat: Chat?) {
+        if let chat = chat {
+            self.chat = chat
+        }
+    }
+    
+    func setContact(_ contact: UserContact?) {
+        if let contact = contact {
+            self.contact = contact
+        }
     }
     
     ///Volume
@@ -50,6 +64,21 @@ class NewChatViewModel {
         
         SphinxOnionManager.sharedInstance.toggleChatSound(chatId: chat.id, muted: !currentMode, completion: { chat in
             completion(chat)
+        })
+    }
+    
+    func checkOwnerRole() {
+        guard let chat = chat else {
+            return
+        }
+        
+        SphinxOnionManager.sharedInstance.getTribeMembers(tribeChat: chat, completion: { [weak self] tribeMembers in
+            guard let _ = self else { return }
+            
+            if let _ = tribeMembers["confirmedMembers"] as? [TribeMembersRRObject] {
+                chat.isTribeICreated = true
+                chat.managedObjectContext?.saveContext()
+            }
         })
     }
     
@@ -74,9 +103,9 @@ class NewChatViewModel {
     }
     
     func getChatBadges(){
-        if let chat = chat, let tribeInfo = chat.tribeInfo {
-            //@Tom do we plan on doing this in V2?
-        }
+//        if let chat = chat, let tribeInfo = chat.tribeInfo {
+//            //@Tom do we plan on doing this in V2?
+//        }
     }
     
     func getLeaderboardEntryFor(message: TransactionMessage) -> ChatLeaderboardEntry? {

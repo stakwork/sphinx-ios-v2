@@ -41,9 +41,6 @@ class GroupMembersDataSource: GroupAllContactsDataSource {
             if let tribeMemberArray = tribeMembers["confirmedMembers"] as? [TribeMembersRRObject],
                let pendingMembersArray = tribeMembers["pendingMembers"] as? [TribeMembersRRObject]
             {
-                self?.chat.isTribeICreated = true
-                self?.chat.managedObjectContext?.saveContext()
-                
                 let contactsMap = tribeMemberArray.map({
                     var contact = JSON($0.toJSON())
                     contact["pending"] = false

@@ -399,6 +399,7 @@ extension SphinxOnionManager {//contacts related
         chat.name = contact.nickname
         chat.photoUrl = contact.avatarUrl
         chat.createdAt = date ?? Date()
+        chat.ownerPubkey = contact.publicKey
         
         return chat
     }

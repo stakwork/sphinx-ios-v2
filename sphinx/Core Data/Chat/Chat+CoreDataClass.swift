@@ -909,7 +909,7 @@ public class Chat: NSManagedObject {
     }
     
     func isMyPublicGroup() -> Bool {
-        return isPublicGroup() && isTribeICreated == true
+        return isPublicGroup() && isTribeICreated
     }
     
     public static func processTimezoneChanges() {
