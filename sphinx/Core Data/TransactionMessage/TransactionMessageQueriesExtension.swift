@@ -309,7 +309,7 @@ extension TransactionMessage {
                 )
             } else if let minIndex = minIndex {
                 return NSPredicate(
-                    format: "chat == %@ AND (NOT (type IN %@) || (type == %d && replyUUID = nil)) AND id >= %d",
+                    format: "chat == %@ AND (NOT (type IN %@) || (type == %d && replyUUID = nil)) AND (id >= %d || id < 0)",
                     chat,
                     typesToExclude,
                     TransactionMessageType.boost.rawValue,
