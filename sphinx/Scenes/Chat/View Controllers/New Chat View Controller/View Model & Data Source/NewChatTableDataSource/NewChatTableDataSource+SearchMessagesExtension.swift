@@ -13,10 +13,7 @@ extension NewChatTableDataSource {
         let searchTerm = term.trim()
         
         if searchTerm.isNotEmpty && searchTerm.count > 2 {
-            performSearch(
-                term: searchTerm,
-                itemsCount: max(500, self.messagesArray.count)
-            )
+            performSearch(term: searchTerm)
         } else {
             
             if searchTerm.count > 0 {
@@ -28,8 +25,7 @@ extension NewChatTableDataSource {
     }
     
     func performSearch(
-        term: String,
-        itemsCount: Int
+        term: String
     ) {
         guard let _ = chat else {
             return
@@ -72,32 +68,33 @@ extension NewChatTableDataSource {
         message: TransactionMessage,
         messageTableCellState: MessageTableCellState,
         index: Int
-    ) {
+    ) -> (Int, MessageTableCellState)? {
         guard let searchingTerm = searchingTerm else {
-            return
+            return nil
         }
         
         if message.isBotHTMLResponse() || message.isPayment() || message.isInvoice() || message.isDeleted() || message.isFlagged() {
-            return
+            return nil
         }
         
         if let messageContent = message.bubbleMessageContentString, messageContent.isNotEmpty {
             if messageContent.lowercased().contains(searchingTerm.lowercased()) {
-                searchMatches.append(
-                    (index, messageTableCellState)
-                )
+                return (index, messageTableCellState)
             }
         }
+        return nil
     }
     
     func startSearchProcess() {
         searchMatches = []
     }
     
-    func finishSearchProcess() {
+    func finishSearchProcess(matches: [(Int, MessageTableCellState)]) {
         guard let _ = searchingTerm else {
             return
         }
+        
+        searchMatches = matches
         
         ///Invert indexes
         let itemsCount = messageTableCellStateArray.count
@@ -160,8 +157,7 @@ extension NewChatTableDataSource {
         
         DelayPerformedHelper.performAfterDelay(seconds: 1.0, completion: {
             self.performSearch(
-                term: self.searchingTerm ?? "",
-                itemsCount: self.messagesArray.count + 500
+                term: self.searchingTerm ?? ""
             )
         })
     }

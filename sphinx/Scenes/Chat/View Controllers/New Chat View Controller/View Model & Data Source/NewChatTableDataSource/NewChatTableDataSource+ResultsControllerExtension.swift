@@ -136,6 +136,7 @@ extension NewChatTableDataSource {
                 
         var newMsgCount = 0
         var array: [MessageTableCellState] = []
+        var searchM: [(Int, MessageTableCellState)] = []
         
         let admin = chat.getAdmin()
         let contact = chat.getConversationContact()
@@ -258,12 +259,14 @@ extension NewChatTableDataSource {
                 threadMessages: threadMessages
             )
             
-            processForSearch(
+             if let match = processForSearch(
                 message: message,
                 messageTableCellState: messageTableCellState,
                 index: array.count - 1
-            )
-        }        
+             ) {
+                 searchM.append(match)
+             }
+        }
         
         messageTableCellStateArray = array
         
@@ -280,7 +283,7 @@ extension NewChatTableDataSource {
                 newMsgCount: 0
             )
             
-            self.finishSearchProcess()
+            self.finishSearchProcess(matches: searchM)
         }
     }
     

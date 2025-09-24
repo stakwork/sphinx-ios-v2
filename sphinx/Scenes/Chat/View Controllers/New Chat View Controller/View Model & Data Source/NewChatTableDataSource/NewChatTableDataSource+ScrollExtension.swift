@@ -92,7 +92,7 @@ extension NewChatTableDataSource: UITableViewDelegate {
                     minIndex = TransactionMessage.getMinMessageIndex(for: chat, context: backgroundContext)
                     
                     if let minIndex = minIndex {
-                        if minIndex < itemsPerPage {
+                        if (minIndex - 1) <= 0 {
                             return
                         }
                         DispatchQueue.global(qos: .background).async {
