@@ -856,16 +856,10 @@ extension NewChatTableDataSource : NSFetchedResultsControllerDelegate {
                         self.chat?.processAliasesFrom(messages: messages.reversed())
                     }
                     
-                    //Use min index for fetch results controller to avoid collecting on new items insert
-                    //Do a first request of 100 items and get min index, then use that index in the fetch results controller request
-                    //When loading more do the same. First request to get min index, then final request for results controller
                     self.messagesCountFetched = messages.count
                     let newMessages: [TransactionMessage] = messages.filter({ !$0.isApprovedRequest() && !$0.isDeclinedRequest() }).reversed()
                     self.messagesArray = newMessages
-                    
-//                        let minIndex = newMessages.map({ $0.id }).min()
-//                        print("V2 ==== COUNT \(newMessages.count)")
-//                        print("V2 ==== MIN INDEX \(minIndex)")
+
                     
                     self.updateMessagesStatusesFrom(messages: self.messagesArray)
                     self.processMessages(messages: self.messagesArray, showLoadingMore: true)
