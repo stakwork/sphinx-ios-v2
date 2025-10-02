@@ -113,7 +113,6 @@ class NewChatTableDataSource : NSObject {
     var searchingTerm: String? = nil
     var searchMatches: [(Int, MessageTableCellState)] = []
     var currentSearchMatchIndex: Int = 0
-    var isLastSearchPage = false
     var isSearching: Bool {
         get {
             return searchingTerm != nil

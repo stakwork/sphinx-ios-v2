@@ -95,6 +95,7 @@ extension SphinxOnionManager {
         recipPubkey: String? = nil,
         mediaKey: String? = nil,
         mediaType: String? = "file",
+        mediaToken: String? = nil,
         threadUUID: String?,
         replyUUID: String?,
         invoiceString: String?,
@@ -129,7 +130,7 @@ extension SphinxOnionManager {
                 ///create a media token corresponding to attachment (paid or unpaid)
                 mt = loadMediaToken(recipPubkey: recipPubkey, muid: muid, price: purchaseItemAmount)
             }
-            msg["mediaToken"] = mt
+            msg["mediaToken"] = mt ?? mediaToken
             
             if let _ = purchaseItemAmount {
                 ///Remove content if it's a paid text message
@@ -854,46 +855,6 @@ extension SphinxOnionManager {
             processIndexUpdate(message: message, cachedMessage: existingMessages)
         }
     }
-    
-//    func restoreGenericPmts(
-//        pmts: [Msg],
-//        innerContentMap: [Int: MessageInnerContent],
-//        existingMessagesMap: [Int: TransactionMessage]
-//    ) {
-//        if pmts.isEmpty {
-//            return
-//        }
-//        
-//        for pmt in pmts {
-//            
-//            guard let index = pmt.index,
-//                  let indexInt = Int(index) else
-//            {
-//                return
-//            }
-//            
-//            let innerContent = innerContentMap[indexInt]
-//            let existingMessage = existingMessagesMap[indexInt]
-//            
-//            let newMessage = existingMessage ?? TransactionMessage(context: backgroundContext)
-//            
-//            newMessage.id = indexInt
-//            
-//            if let amount = pmt.msat {
-//                newMessage.amount = NSDecimalNumber(value: amount / 1000)
-//                newMessage.amountMsat = NSDecimalNumber(value: amount)
-//            }
-//            
-//            newMessage.messageContent = innerContent?.content
-//            newMessage.paymentHash = pmt.paymentHash
-//            
-//            if let timestamp = pmt.timestamp {
-//                newMessage.date = timestampToDate(timestamp: timestamp)
-//            }
-//        }
-//        
-////        managedContext.saveContext()
-//    }
     
     func restoreGenericPmt(
         pmt: Msg,
@@ -2002,7 +1963,9 @@ extension SphinxOnionManager {
         }
         
         if let metaDataBytes = metaDataString?.lengthOfBytes(using: .utf8) {
-            bytes += metaDataBytes
+            let metaDataJsonBytes: Int = 15
+            
+            bytes += metaDataBytes + metaDataJsonBytes
         }
         
         return bytes <= 869

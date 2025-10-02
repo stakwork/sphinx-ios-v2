@@ -851,36 +851,32 @@ extension NewChatTableDataSource : NSFetchedResultsControllerDelegate {
             
             if controller == messagesResultsController {
                 if let messages = firstSection.objects as? [TransactionMessage] {
-                    DispatchQueue.global(qos: .userInteractive).async {
-                        if !self.isThread {
-                            ///Do not processes aliases and timezone on thread since it came from chat
-                            self.chat?.processAliasesFrom(messages: messages.reversed())
-                        }
-                        
-                        //Use min index for fetch results controller to avoid collecting on new items insert
-                        //Do a first request of 100 items and get min index, then use that index in the fetch results controller request
-                        //When loading more do the same. First request to get min index, then final request for results controller
-                        self.messagesCountFetched = messages.count
-                        let newMessages: [TransactionMessage] = messages.filter({ !$0.isApprovedRequest() && !$0.isDeclinedRequest() }).reversed()
-                        self.messagesArray = newMessages
-                        
+                    if !self.isThread {
+                        ///Do not processes aliases and timezone on thread since it came from chat
+                        self.chat?.processAliasesFrom(messages: messages.reversed())
+                    }
+                    
+                    //Use min index for fetch results controller to avoid collecting on new items insert
+                    //Do a first request of 100 items and get min index, then use that index in the fetch results controller request
+                    //When loading more do the same. First request to get min index, then final request for results controller
+                    self.messagesCountFetched = messages.count
+                    let newMessages: [TransactionMessage] = messages.filter({ !$0.isApprovedRequest() && !$0.isDeclinedRequest() }).reversed()
+                    self.messagesArray = newMessages
+                    
 //                        let minIndex = newMessages.map({ $0.id }).min()
 //                        print("V2 ==== COUNT \(newMessages.count)")
 //                        print("V2 ==== MIN INDEX \(minIndex)")
-                        
-                        self.updateMessagesStatusesFrom(messages: self.messagesArray)
-                        self.processMessages(messages: self.messagesArray, showLoadingMore: true)
-                        self.configureSecondaryMessagesResultsController()
-                        
-                        DispatchQueue.main.async {
-                            self.delegate?.shouldUpdateHeaderScheduleIcon(message: messages.first)
-                        }
+                    
+                    self.updateMessagesStatusesFrom(messages: self.messagesArray)
+                    self.processMessages(messages: self.messagesArray, showLoadingMore: true)
+                    self.configureSecondaryMessagesResultsController()
+                    
+                    DispatchQueue.main.async {
+                        self.delegate?.shouldUpdateHeaderScheduleIcon(message: messages.first)
                     }
                 }
             } else {
-                DispatchQueue.global(qos: .userInteractive).async {
-                    self.processMessages(messages: self.messagesArray, showLoadingMore: true)
-                }
+                self.processMessages(messages: self.messagesArray, showLoadingMore: true)
             }
         }
     }

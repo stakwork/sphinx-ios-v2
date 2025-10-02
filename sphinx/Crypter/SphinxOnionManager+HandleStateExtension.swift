@@ -689,7 +689,7 @@ extension SphinxOnionManager {
                             
                             var chatIds: [Int] = []
                             
-                            for message in TransactionMessage.getMessagesWith(tags: tags, context: self.backgroundContext) {
+                            for message in TransactionMessage.getMessagesWith(tags: tags, context: context) {
                                 if let messageStatus = dictionary[message.tag ?? ""] {
                                     if messageStatus.isReceived() {
                                         if message.isInvoice() {
