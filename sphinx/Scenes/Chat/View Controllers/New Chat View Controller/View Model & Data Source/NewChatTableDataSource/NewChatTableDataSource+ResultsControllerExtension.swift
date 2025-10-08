@@ -860,9 +860,13 @@ extension NewChatTableDataSource : NSFetchedResultsControllerDelegate {
                     let newMessages: [TransactionMessage] = messages.filter({ !$0.isApprovedRequest() && !$0.isDeclinedRequest() }).reversed()
                     self.messagesArray = newMessages
 
-                    
                     self.updateMessagesStatusesFrom(messages: self.messagesArray)
-                    self.processMessages(messages: self.messagesArray, showLoadingMore: true)
+                    
+                    self.processMessages(
+                        messages: self.messagesArray,
+                        showLoadingMore: !self.allItemsLoaded && messages.count >= 100
+                    )
+                    
                     self.configureSecondaryMessagesResultsController()
                     
                     DispatchQueue.main.async {
@@ -870,7 +874,12 @@ extension NewChatTableDataSource : NSFetchedResultsControllerDelegate {
                     }
                 }
             } else {
-                self.processMessages(messages: self.messagesArray, showLoadingMore: true)
+                let messages = messagesResultsController.sections?.first?.objects as? [TransactionMessage] ?? []
+                
+                self.processMessages(
+                    messages: self.messagesArray,
+                    showLoadingMore: !self.allItemsLoaded && messages.count >= 100
+                )
             }
         }
     }

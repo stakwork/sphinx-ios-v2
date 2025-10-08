@@ -69,13 +69,21 @@ extension NewChatTableDataSource: UITableViewDelegate {
             return
         }
         
+        if allItemsLoaded {
+            return
+        }
+        
         loadingMoreItems = true
         
         fetchMoreItems()
     }
     
+    func loadMoreItems(itemsCount: Int) {
+        configureResultsController(items: messagesCountRequested + itemsCount)
+    }
+    
     @objc func loadMoreItems() {
-        configureResultsController(items: messagesCountRequested + 50)
+        loadMoreItems(itemsCount: 50)
     }
     
     func fetchMoreItems() {
@@ -102,9 +110,9 @@ extension NewChatTableDataSource: UITableViewDelegate {
                                 stopIndex: 0,
                                 publicKey: publicKey
                             ) { messagesCount in
-                                self.loadMoreItems()
-                                
-                                if messagesCount <= 0 {
+                                if messagesCount < itemsPerPage {
+                                    self.allItemsLoaded = true
+                                    
                                     self.processMessages(
                                         messages: self.messagesArray,
                                         showLoadingMore: false
@@ -113,6 +121,8 @@ extension NewChatTableDataSource: UITableViewDelegate {
                                     if self.isSearching {
                                         self.delegate?.shouldToggleSearchLoadingWheel(active: false)
                                     }
+                                } else {
+                                    self.loadMoreItems(itemsCount: messagesCount)
                                 }
                             }
                         }

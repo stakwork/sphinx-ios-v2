@@ -284,7 +284,10 @@ extension SphinxOnionManager {
         }
         
         let chats = Chat.getAll()
-        let chatPubKeys = chats.compactMap({ $0.ownerPubkey })
+        let contacts = UserContact.getPendingContacts()
+        
+        let allPubKeys = chats.compactMap({ $0.ownerPubkey }) + contacts.compactMap({ $0.publicKey })
+        let chatPubKeys = Array(Set(allPubKeys))
         
         let currentIndex = 0
         
@@ -408,7 +411,7 @@ extension SphinxOnionManager {
                 state: loadOnionStateAsData(),
                 lastMsgIdx: UInt64(lastMessageIndex),
                 limit: UInt32(msgCountLimit),
-                reverse: true,
+                reverse: reverse,
                 contact: publicKey
             )
             let _ = handleRunReturn(rr: rr)
@@ -1097,7 +1100,7 @@ extension SphinxOnionManager {
     ) {
         message.seen = true
         chat.seen = true
-        chat.lastMessage = shouldSetLastMessage ? message : nil
+        chat.lastMessage = shouldSetLastMessage ? message : chat.lastMessage
         
         if let maxMessageIndex = TransactionMessage.getMaxIndex() {
             let _  = SphinxOnionManager.sharedInstance.setReadLevel(

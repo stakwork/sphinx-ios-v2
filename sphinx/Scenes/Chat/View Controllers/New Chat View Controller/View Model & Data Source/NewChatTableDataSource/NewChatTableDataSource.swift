@@ -124,6 +124,7 @@ class NewChatTableDataSource : NSObject {
     var messagesCountFetched = 0
     var fetchMinIndex = 0
     var loadingMoreItems = false
+    var allItemsLoaded = false
     var scrolledAtBottom = false
     
     ///Messages statuses restore
