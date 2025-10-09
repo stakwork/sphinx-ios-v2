@@ -857,8 +857,7 @@ extension NewChatTableDataSource : NSFetchedResultsControllerDelegate {
                     }
                     
                     self.messagesCountFetched = messages.count
-                    let newMessages: [TransactionMessage] = messages.filter({ !$0.isApprovedRequest() && !$0.isDeclinedRequest() }).reversed()
-                    self.messagesArray = newMessages
+                    self.messagesArray = messages.filter({ !$0.isApprovedRequest() }).reversed()
 
                     self.updateMessagesStatusesFrom(messages: self.messagesArray)
                     

@@ -389,7 +389,7 @@ public class Chat: NSManagedObject {
     ) {
         let backgroundContext = CoreDataManager.sharedManager.getBackgroundContext()
         
-        backgroundContext.perform { [weak self] in
+        backgroundContext.performAndWait { [weak self] in
             guard let self = self else {
                 return
             }
