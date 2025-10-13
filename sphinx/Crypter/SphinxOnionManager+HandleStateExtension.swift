@@ -522,7 +522,7 @@ extension SphinxOnionManager {
                let sentStatus = SentStatus(JSONString: sentStatusJSON),
                let tag = sentStatus.tag
             {
-                if let cachedMessage = TransactionMessage.getMessageWith(tag: tag, context: self.backgroundContext) {
+                if let cachedMessage = TransactionMessage.getMessageWith(tag: tag, context: context) {
                     if (sentStatus.status == SphinxOnionManager.kCompleteStatus) {
                         cachedMessage.status = TransactionMessage.TransactionMessageStatus.received.rawValue
                     } else if (sentStatus.status == SphinxOnionManager.kFailedStatus) {
@@ -664,7 +664,7 @@ extension SphinxOnionManager {
     func handleMessagesStatus(tags: String?) {
         let context = backgroundContext
         context.performAndWait { [weak self] in
-            guard let self = self else {
+            guard let _ = self else {
                 return
             }
             if let tags = tags {

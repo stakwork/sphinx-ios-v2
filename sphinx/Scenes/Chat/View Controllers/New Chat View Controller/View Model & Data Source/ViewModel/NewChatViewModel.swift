@@ -131,6 +131,10 @@ class NewChatViewModel {
         return possibleMentions
     }
     
+    func wasTimezoneNotSentRecently() -> Bool {
+        return chatDataSource?.timezoneNotSentRecently ?? true
+    }
+    
     ///Reply view
     func resetReply() {
         podcastComment = nil

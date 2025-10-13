@@ -73,7 +73,8 @@ extension NewChatTableDataSource {
                     animated: true
                 )
             }
-        } else {
+        }
+//        else {
 //            if let scrollState = preloaderHelper.getScrollState(
 //                for: chat.id,
 //                with: dataSource.snapshot().itemIdentifiers
@@ -99,7 +100,7 @@ extension NewChatTableDataSource {
 //                    return
 //                }
 //            }
-        }
+//        }
         
         if tableView.contentOffset.y <= Constants.kChatTableContentInset {
             delegate?.didScrollToBottom()

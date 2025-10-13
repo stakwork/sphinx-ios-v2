@@ -88,6 +88,7 @@ class NewChatTableDataSource : NSObject {
     var contact: UserContact?
     var owner: UserContact? = nil
     var pinnedMessageId: Int? = nil
+    var timezoneNotSentRecently: Bool = true
     
     ///Data Source related
     var messagesResultsController: NSFetchedResultsController<TransactionMessage>!

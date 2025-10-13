@@ -858,6 +858,7 @@ extension NewChatTableDataSource : NSFetchedResultsControllerDelegate {
                     
                     self.messagesCountFetched = messages.count
                     self.messagesArray = messages.filter({ !$0.isApprovedRequest() }).reversed()
+                    self.processTimezoneNotSentRecently()
 
                     self.updateMessagesStatusesFrom(messages: self.messagesArray)
                     
@@ -914,6 +915,13 @@ extension NewChatTableDataSource : NSFetchedResultsControllerDelegate {
             SphinxOnionManager.sharedInstance.getMessagesStatusFor(tags: tags)
         }
     }
+    
+    func processTimezoneNotSentRecently() {
+        let ownerId = UserData.sharedInstance.getUserId()
+        let sentMessagesWithTimezone = messagesArray.filter({ $0.remoteTimezoneIdentifier != nil && $0.isOutgoing(ownerId: ownerId) })
+        timezoneNotSentRecently = sentMessagesWithTimezone.isEmpty
+    }
+
 }
 
 

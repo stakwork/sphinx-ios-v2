@@ -194,6 +194,7 @@ extension SphinxOnionManager {
         invoiceString: String? = nil,
         tribeKickMember: String? = nil,
         paidAttachmentMediaToken: String? = nil,
+        forceIncludeTimezone: Bool = false,
         context: NSManagedObjectContext? = nil
     ) -> (TransactionMessage?, String?) {
         
@@ -210,7 +211,7 @@ extension SphinxOnionManager {
             return (nil, "Owner not found")
         }
         
-        let metaData = chat.getMetaDataJsonStringValue()
+        let metaData = chat.getMetaDataJsonStringValue(forceIncludeTimezone: forceIncludeTimezone)
         
         guard let (contentJSONString, mediaToken) = formatMsg(
             content: content,
@@ -2021,7 +2022,7 @@ extension SphinxOnionManager {
             let backgroundContext = self.backgroundContext
             
             backgroundContext.performAndWait {
-                let messages = TransactionMessage.getAllNotConfirmed()
+                let messages = TransactionMessage.getAllNotConfirmed(context: backgroundContext)
                 
                 if messages.isEmpty {
                     return

@@ -53,7 +53,9 @@ extension TransactionMessage {
         return messages
     }
     
-    static func getAllNotConfirmed() -> [TransactionMessage] {
+    static func getAllNotConfirmed(
+        context: NSManagedObjectContext? = nil
+    ) -> [TransactionMessage] {
         let predicate = NSPredicate(
             format: "senderId == %d AND (status == %d OR status == %d)",
             UserData.sharedInstance.getUserId(),
@@ -66,7 +68,8 @@ extension TransactionMessage {
             predicate: predicate,
             sortDescriptors: sortDescriptors,
             entityName: "TransactionMessage",
-            fetchLimit: 1000
+            fetchLimit: 1000,
+            context: context
         )
         
         return messages

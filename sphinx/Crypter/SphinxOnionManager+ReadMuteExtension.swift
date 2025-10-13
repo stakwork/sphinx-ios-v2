@@ -23,8 +23,8 @@ extension SphinxOnionManager {
                 
                 let pubKeys = lastReadMap.compactMap({ $0.key })
                 
-                let tribes = Chat.getChatTribesFor(ownerPubkeys: pubKeys, context: self.backgroundContext)
-                let contacts = UserContact.getContactsWith(pubkeys: pubKeys, context: self.backgroundContext)
+                let tribes = Chat.getChatTribesFor(ownerPubkeys: pubKeys, context: context)
+                let contacts = UserContact.getContactsWith(pubkeys: pubKeys, context: context)
                 
                 for (pubKey, lastReadId) in lastReadMap {
                     guard let lastReadId = lastReadId as? Int else {

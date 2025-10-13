@@ -255,13 +255,13 @@ extension FeedSearchContainerViewController {
             .FetchRequests
             .matching(feedID: searchResult.feedId)
         
-        var fetchRequestResult: [ContentFeed] = []
+        var fetchRequestResult: [ContentFeed]? = nil
         
         managedObjectContext.performAndWait {
-            fetchRequestResult = try! self.managedObjectContext.fetch(existingFeedsFetchRequest)
+            fetchRequestResult = try? self.managedObjectContext.fetch(existingFeedsFetchRequest)
         }
             
-        if let existingFeed = fetchRequestResult.first {
+        if let existingFeed = fetchRequestResult?.first {
             resultsDelegate?.viewController(
                 self,
                 didSelectFeedSearchResult: existingFeed.feedID
