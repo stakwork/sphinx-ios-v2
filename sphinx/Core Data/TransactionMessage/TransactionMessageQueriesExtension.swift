@@ -54,6 +54,7 @@ extension TransactionMessage {
     }
     
     static func getAllNotConfirmed(
+        limit: Int? = nil,
         context: NSManagedObjectContext? = nil
     ) -> [TransactionMessage] {
         let predicate = NSPredicate(
@@ -68,7 +69,7 @@ extension TransactionMessage {
             predicate: predicate,
             sortDescriptors: sortDescriptors,
             entityName: "TransactionMessage",
-            fetchLimit: 1000,
+            fetchLimit: limit,
             context: context
         )
         

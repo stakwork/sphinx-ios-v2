@@ -681,12 +681,14 @@ extension SphinxOnionManager {
         var existingMessagesIdMap = Dictionary(uniqueKeysWithValues: existingIdMessages.map { ($0.id, $0) })
         
         let existingUUIDMessages = TransactionMessage.getMessagesWith(uuids: messageUUIDs, context: backgroundContext)
-        var existingMessagesUUIDMap = Dictionary(uniqueKeysWithValues: existingUUIDMessages.compactMap{
-            if let uuid = $0.uuid {
-                return (uuid, $0)
+        var existingMessagesUUIDMap = Dictionary(
+            existingUUIDMessages.compactMap { message in
+                message.uuid.map { ($0, message) }
+            },
+            uniquingKeysWith: { first, _ in
+                return first
             }
-            return nil
-        })
+        )
         
         let paymentHashes = rr.msgs.compactMap({
             return $0.paymentHash
@@ -713,7 +715,7 @@ extension SphinxOnionManager {
                 continue
             }
             
-            let existingMessages = existingMessagesIdMap[indexInt]
+            let existingMessage = existingMessagesIdMap[indexInt]
             let senderInfo = senderInfoMessagesMap[indexInt]
             let genericIncomingMsg = genericIncomingMessagesMap[indexInt]
             var newMessage: TransactionMessage? = nil
@@ -738,7 +740,7 @@ extension SphinxOnionManager {
                 newMessage = processSentMessage(
                     message: message,
                     existingMessagesUUIDMap: existingMessagesUUIDMap,
-                    existingMessage: existingMessages,
+                    existingMessage: existingMessage,
                     senderInfo: senderInfo,
                     genericIncomingMessage: genericIncomingMsg,
                     contact: contactsMap[genericIncomingMsg?.senderPubkey ?? ""],
@@ -755,7 +757,7 @@ extension SphinxOnionManager {
                 if isMessageWithText(type: type) {
                     newMessage = processIncomingMessagesAndAttachments(
                         message: message,
-                        existingMessage: existingMessages,
+                        existingMessage: existingMessage,
                         senderInfo: senderInfo,
                         genericIncomingMessage: genericIncomingMsg,
                         contact: contactsMap[genericIncomingMsg?.senderPubkey ?? ""],
@@ -769,7 +771,7 @@ extension SphinxOnionManager {
                     
                     newMessage = processIncomingPaymentsAndBoosts(
                         message: message,
-                        existingMessage: existingMessages,
+                        existingMessage: existingMessage,
                         invoiceForPayment: invoiceForPayment,
                         senderInfo: senderInfo,
                         genericIncomingMessage: genericIncomingMsg,
@@ -782,7 +784,7 @@ extension SphinxOnionManager {
                 if isDelete(type: type) {
                     newMessage = processIncomingDeletion(
                         message: message,
-                        existingMessage: existingMessages,
+                        existingMessage: existingMessage,
                         messageToDelete: existingMessagesUUIDMap[genericIncomingMsg?.replyUuid ?? ""],
                         senderInfo: senderInfo,
                         genericIncomingMessage: genericIncomingMsg,
@@ -795,7 +797,7 @@ extension SphinxOnionManager {
                 if isGroupAction(type: type) {
                     newMessage = processIncomingGroupJoinMsg(
                         message: message,
-                        existingMessage: existingMessages,
+                        existingMessage: existingMessage,
                         senderInfo: senderInfo,
                         innerContent: messagesInnerContentMap[indexInt],
                         genericIncomingMessage: genericIncomingMsg,
@@ -808,7 +810,7 @@ extension SphinxOnionManager {
                 if isInvoice(type: type) {
                     newMessage = processIncomingInvoice(
                         message: message,
-                        existingMessage: existingMessages,
+                        existingMessage: existingMessage,
                         senderInfo: senderInfo,
                         genericIncomingMessage: genericIncomingMsg,
                         contact: contactsMap[genericIncomingMsg?.senderPubkey ?? ""],
@@ -820,7 +822,7 @@ extension SphinxOnionManager {
                 if isPaidMessageRelated(type: type) {
                     newMessage = processIncomingPaidMessageEvent(
                         message: message,
-                        existingMessage: existingMessages,
+                        existingMessage: existingMessage,
                         senderInfo: senderInfo,
                         genericIncomingMessage: genericIncomingMsg,
                         contact: contactsMap[genericIncomingMsg?.senderPubkey ?? ""],
@@ -853,7 +855,7 @@ extension SphinxOnionManager {
                 }
             }
             
-            processIndexUpdate(message: message, cachedMessage: existingMessages)
+            processIndexUpdate(message: message, cachedMessage: existingMessage)
         }
     }
     
