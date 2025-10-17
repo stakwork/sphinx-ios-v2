@@ -129,8 +129,9 @@ extension VideoFeedEpisodePlayerContainerViewController {
         configureCollectionView()
         
         updateFeed()
+        
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.5, execute: {
-            if let timestamp = self.deeplinkedTimestamp{
+            if let _ = self.deeplinkedTimestamp{
                 self.youtubeVideoPlayerViewController.startPlay()
             }
         })
@@ -140,13 +141,24 @@ extension VideoFeedEpisodePlayerContainerViewController {
                 self.youtubeVideoPlayerViewController.seekTo(time: timestamp)
             }
         })
+        
+        NotificationCenter.default.removeObserver(self, name: .refreshFeedDataAndUI, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(refreshFeedInfo), name: .refreshFeedDataAndUI, object: nil)
+    }
+    
+    @objc func refreshFeedInfo() {
+        let videoId = videoPlayerEpisode.id
+        
+        if let feedId = videoPlayerEpisode.videoFeed?.feedID, let feed = ContentFeed.getFeedById(feedId: feedId) {
+            let videoFeed = VideoFeed.convertFrom(contentFeed: feed)
+            self.videoPlayerEpisode = videoFeed.videosArray.first(where: { $0.id == videoId })
+        }
     }
 }
 
 
 // MARK: -  Computeds
 extension VideoFeedEpisodePlayerContainerViewController {
-    
     
     private var videoFeedEpisodes: [Video] {
         videoPlayerEpisode.videoFeed?.videosArray ?? []

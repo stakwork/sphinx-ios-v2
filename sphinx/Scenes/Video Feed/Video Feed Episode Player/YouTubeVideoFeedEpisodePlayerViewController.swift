@@ -57,6 +57,7 @@ class YouTubeVideoFeedEpisodePlayerViewController: UIViewController, VideoFeedEp
     
     public func startPlay(){
         setupNativeVsYTPlayer()
+        
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: {
             (self.localVideoPlayerContainer.isHidden == true) ? (self.videoPlayerView.playVideo()) : ()
         })
@@ -305,6 +306,8 @@ extension YouTubeVideoFeedEpisodePlayerViewController: YTPlayerViewDelegate {
     }
     
     func playerView(_ playerView: YTPlayerView, didChangeTo state: YTPlayerState) {
+        let isPlayingNewEpisode = currentState == .unknown || currentState == .ended
+        
         currentState = state
         
         playerView.currentTime({ (time, error) in
@@ -333,6 +336,11 @@ extension YouTubeVideoFeedEpisodePlayerViewController: YTPlayerViewDelegate {
                     time,
                     shouldSaveAction: true
                 )
+                break
+            case .buffering:
+                if isPlayingNewEpisode {
+                    ChaptersManager.sharedInstance.processChaptersData(episodeId: self.videoPlayerEpisode.videoID, isYoutubeVideo: true)
+                }
                 break
             default:
                 break

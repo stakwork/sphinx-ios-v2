@@ -1235,4 +1235,16 @@ extension String {
     func urlEncode() -> String? {
         return addingPercentEncoding(withAllowedCharacters: .allowedURLCharacterSet)
     }
+    
+    var fixedYoutubeUrl : String {
+        get {
+            var url = self
+            
+            if var components = URLComponents(string: self) {
+                components.query = nil
+                url = components.url?.absoluteString ?? ""
+            }
+            return url.replacingOccurrences(of: "/v/", with: "/watch?v=")
+        }
+    }
 }

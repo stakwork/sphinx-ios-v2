@@ -30,21 +30,27 @@ class ChaptersManager : NSObject {
     }
     
     func processChaptersData(
-        episodeId: String
+        episodeId: String,
+        isYoutubeVideo: Bool = false
     ) {
-        processChaptersData(episodeId: episodeId, completion: { (success, chaptersData) in
-            if success && chaptersData.count > 0 {
-                DispatchQueue.main.async {
-                    if UIApplication.shared.applicationState == .active {
-                        NotificationCenter.default.post(name: .refreshFeedDataAndUI, object: nil)
+        processChaptersData(
+            episodeId: episodeId,
+            isYoutubeVideo: isYoutubeVideo,
+            completion: { (success, chaptersData) in
+                if success && chaptersData.count > 0 {
+                    DispatchQueue.main.async {
+                        if UIApplication.shared.applicationState == .active {
+                            NotificationCenter.default.post(name: .refreshFeedDataAndUI, object: nil)
+                        }
                     }
                 }
             }
-        })
+        )
     }
     
     func processChaptersData(
         episodeId: String,
+        isYoutubeVideo: Bool = false,
         completion: @escaping (Bool, [Chapter]) -> ()
     ) {
         if let processingDate = processingEpisodes[episodeId], isDateWithinLastHour(date: processingDate) {
@@ -65,7 +71,7 @@ class ChaptersManager : NSObject {
         let episode = PodcastEpisode.convertFrom(contentFeedItem: contentFeedItem, feed: podcast)
         
         if (episode.chapters?.count ?? 0) > 0 {
-            completion(false, [])
+            completion(false, episode.chapters ?? [])
             return
         }
         
@@ -80,7 +86,10 @@ class ChaptersManager : NSObject {
             )
         } else {
             ///ReferenceID not stored in Episode. Start process with checking if node exists
-            checkIfNodeExists(episode: episode) { (nodeExists, refId) in
+            checkIfNodeExists(
+                episode: episode,
+                isYoutubeVideo: isYoutubeVideo
+            ) { (nodeExists, refId) in
                 if let refId = refId {
                     contentFeedItem.referenceId = refId
                     contentFeedItem.managedObjectContext?.saveContext()
@@ -117,11 +126,14 @@ class ChaptersManager : NSObject {
         
         self.getChaptersData(referenceId: referenceId, completion: { (success, jsonString) in
             if success, let jsonString = jsonString {
-                let chapters = PodcastEpisode.getChaptersFrom(json: jsonString)
-                if chapters.count > 0 {
+                let mediaUrlAndChapters = ContentFeedItem.getChaptersFrom(json: jsonString)
+                if mediaUrlAndChapters.1.count > 0 {
                     ///Chapters data available. Store in episode and return them
                     contentFeedItem.chaptersData = jsonString
-                    episode.chapters = chapters
+                    contentFeedItem.downloadedItemURL = URL(string: mediaUrlAndChapters.0 ?? "")
+                    
+                    episode.chapters = mediaUrlAndChapters.1
+                    
                     contentFeedItem.managedObjectContext?.saveContext()
                     
                     self.processingEpisodes[episode.itemID] = nil
@@ -150,9 +162,12 @@ class ChaptersManager : NSObject {
                         ///Node created and workflow run. Try to fetch chapters data again
                         self.getChaptersData(referenceId: referenceId, completion: { (success, jsonString) in
                             if success, let jsonString = jsonString {
+                                let mediaUrlAndChapters = ContentFeedItem.getChaptersFrom(json: jsonString)
                                 contentFeedItem.chaptersData = jsonString
-                                let chapters = PodcastEpisode.getChaptersFrom(json: jsonString)
-                                episode.chapters = chapters
+                                contentFeedItem.downloadedItemURL = URL(string: mediaUrlAndChapters.0 ?? "")
+                                
+                                episode.chapters = mediaUrlAndChapters.1
+                                
                                 completion(true, episode.chapters ?? [])
                             }
                         })
@@ -167,6 +182,7 @@ class ChaptersManager : NSObject {
     
     func checkIfNodeExists(
         episode: PodcastEpisode,
+        isYoutubeVideo: Bool = false,
         completion: @escaping (Bool, String?) -> ()
     ) {
         if
@@ -175,11 +191,12 @@ class ChaptersManager : NSObject {
             let episodeTitle = episode.title
         {
             API.sharedInstance.checkEpisodeNodeExists(
-                mediaUrl: mediaUrl,
+                mediaUrl: mediaUrl.fixedYoutubeUrl,
                 publishDate: Int(date.timeIntervalSince1970),
                 title: episodeTitle,
                 thumbnailUrl: episode.imageToShow,
                 showTitle: episode.feedTitle ?? "Show Title",
+                isYoutubeVideo: isYoutubeVideo,
                 callback: { checkNodeResponse in
                     let refId = checkNodeResponse.refId
                     
@@ -191,7 +208,7 @@ class ChaptersManager : NSObject {
                         completion(true, refId)
                     }
                 },
-                errorCallback: { _ in
+                errorCallback: { error in
                     completion(false, nil)
                 }
             )

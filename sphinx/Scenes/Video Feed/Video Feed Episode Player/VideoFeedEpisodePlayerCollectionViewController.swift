@@ -15,6 +15,8 @@ class VideoFeedEpisodePlayerCollectionViewController: UICollectionViewController
     
     var videoPlayerEpisode: Video!
     var videoFeedEpisodes: [Video]!
+    
+    var videosExpanded: [Int: Bool] = [:]
 
     var onVideoEpisodeCellSelected: ((String) -> Void)!
     var onFeedSubscriptionSelected: (() -> Void)!
@@ -148,7 +150,7 @@ extension VideoFeedEpisodePlayerCollectionViewController {
     func makeVideoFeedEpisodesSection() -> NSCollectionLayoutSection {
         let itemSize = NSCollectionLayoutSize(
             widthDimension: .fractionalWidth(1.0),
-            heightDimension: .fractionalHeight(1.0)
+            heightDimension: .estimated(200.0)
         )
         let item = NSCollectionLayoutItem(layoutSize: itemSize)
         
@@ -328,7 +330,11 @@ extension VideoFeedEpisodePlayerCollectionViewController {
                     preconditionFailure("Failed to find expected data source item")
                 }
                 
-                episodeCell.configure(withVideoEpisode: videoEpisode, and: self)
+                episodeCell.configure(
+                    withVideoEpisode: videoEpisode,
+                    expanded: videosExpanded[indexPath.item] ?? false,
+                    and: self
+                )
                 
                 return episodeCell
             }
@@ -383,9 +389,31 @@ extension VideoFeedEpisodePlayerCollectionViewController {
 extension VideoFeedEpisodePlayerCollectionViewController: FeedItemRowDelegate, PodcastEpisodesDSDelegate {
     func shouldToggleChapters(episode: PodcastEpisode, cell: UITableViewCell) {}
     
-    func shouldToggleChapters(video: Video, cell: UITableViewCell) {}
+    func shouldToggleChapters(video: Video, cell: UICollectionViewCell) {
+        if let indexPath = collectionView.indexPath(for: cell) {
+            
+            for (index, _) in videosExpanded.enumerated() {
+                if index != indexPath.row {
+                    videosExpanded[index] = false
+                }
+            }
+            
+            videosExpanded[indexPath.row] = !(videosExpanded[indexPath.row] ?? false)
+            
+            refreshCellForVideo(video: video)
+        }
+    }
     
     func shouldPlayChapterWith(index: Int, on episode: PodcastEpisode) {}
+    
+    func shouldPlayChapterWith(index: Int, on video: Video) {
+        if let chapter = video.chapters?[index] {
+            var newTime = chapter.timestamp.toSeconds()
+            newTime = max(newTime, 0)
+            
+            print(newTime)
+        }
+    }
     
     func didDismiss() {}
     
@@ -536,16 +564,30 @@ extension VideoFeedEpisodePlayerCollectionViewController:ItemDescriptionViewCont
         refreshCellForVideo(video: video)
     }
 
-    func refreshCellForVideo(video:Video){
+    func refreshCellForVideo(video: Video){
         // Update the data source snapshot with the new state
         var snapshot = dataSource.snapshot()
-        if let _ = videoFeedEpisodes.firstIndex(of: video) {
+        if let index = videoFeedEpisodes.firstIndex(of: video) {
             let itemIdentifier = DataSourceItem.videoFeedEpisode(video)
             
             if snapshot.itemIdentifiers.contains(itemIdentifier) {
                 snapshot.reloadItems([itemIdentifier])
                 dataSource.apply(snapshot, animatingDifferences: true)
             }
+            
+            let context = UICollectionViewLayoutInvalidationContext()
+            context.invalidateItems(at: [IndexPath(row: index, section: 1)])
+            collectionView.collectionViewLayout.invalidateLayout(with: context)
+                
+            let isLastIndex = index == videoFeedEpisodes.count - 1
+            
+            collectionView.performBatchUpdates({
+                // Empty batch updates block triggers layout recalculation
+            }, completion: { _ in
+                if isLastIndex {
+                    self.collectionView.scrollToItem(at: IndexPath(row: index, section: 1), at: .bottom, animated: true)
+                }
+            })
         }
     }
     

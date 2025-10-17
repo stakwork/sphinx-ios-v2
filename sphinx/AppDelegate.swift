@@ -100,7 +100,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         SphinxOnionManager.sharedInstance.storeOnionStateInMemory()
         
         setInitialVC()
-
+        
         return true
     }
     

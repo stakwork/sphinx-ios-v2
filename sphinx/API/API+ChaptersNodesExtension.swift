@@ -67,21 +67,27 @@ extension API {
         title: String,
         thumbnailUrl: String?,
         showTitle: String,
+        isYoutubeVideo: Bool = false,
         callback: @escaping CheckNodeCallback,
         errorCallback: @escaping ErrorCallback
     ) {
         let url = "\(API.kGraphMindsetUrl)/add_node?sig=&msg="
-        
-        var nodeDataParams = [String: AnyObject]()
-        nodeDataParams["source_link"] = mediaUrl as AnyObject
-        nodeDataParams["date"] = publishDate as AnyObject
-        nodeDataParams["episode_title"] = title as AnyObject
-        nodeDataParams["image_url"] = thumbnailUrl as AnyObject
-        nodeDataParams["show_title"] = showTitle as AnyObject
-        
         var params = [String: AnyObject]()
-        params["node_type"] = "Episode" as AnyObject
-        params["node_data"] = nodeDataParams as AnyObject
+        
+        if isYoutubeVideo {
+            params["media_url"] = mediaUrl as AnyObject
+            params["content_type"] = "audio_video" as AnyObject
+        } else {
+            var nodeDataParams = [String: AnyObject]()
+            nodeDataParams["source_link"] = mediaUrl as AnyObject
+            nodeDataParams["date"] = publishDate as AnyObject
+            nodeDataParams["episode_title"] = title as AnyObject
+            nodeDataParams["image_url"] = thumbnailUrl as AnyObject
+            nodeDataParams["show_title"] = showTitle as AnyObject
+            
+            params["node_type"] = "Episode" as AnyObject
+            params["node_data"] = nodeDataParams as AnyObject
+        }
         
         let request : URLRequest? = createRequest(
             url,

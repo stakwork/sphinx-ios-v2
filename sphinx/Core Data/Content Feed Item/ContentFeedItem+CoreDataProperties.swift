@@ -57,6 +57,9 @@ extension ContentFeedItem {
     
     @NSManaged
     public var chaptersData: String?
+    
+    @NSManaged
+    public var downloadedItemURL: URL?
 }
 
 
@@ -87,6 +90,7 @@ extension ContentFeedItem {
         case enclosureKind = "enclosureType"
         case imageURL = "imageUrl"
         case linkURL = "link"
+        case downloadedItemURL = "downloadedItemURL"
     }
 }
 
