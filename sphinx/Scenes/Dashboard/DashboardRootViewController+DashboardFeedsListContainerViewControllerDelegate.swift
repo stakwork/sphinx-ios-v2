@@ -80,12 +80,12 @@ extension DashboardRootViewController: DashboardFeedsListContainerViewController
             let contentFeed = ContentFeed.getFeedById(feedId: videoFeedId),
             contentFeed.isVideo
         else {
-            preconditionFailure()
+            return
         }
         
         let videoFeed = VideoFeed.convertFrom(contentFeed: contentFeed)
 
-        if let latestEpisode = videoFeed.videosArray.first {
+        if let latestEpisode = videoFeed.currentItem {
             presentVideoPlayer(for: latestEpisode)
         } else {
             AlertHelper.showAlert(title: "Invalid channel or playlist", message: "No videos available")
@@ -101,7 +101,7 @@ extension DashboardRootViewController: DashboardFeedsListContainerViewController
             let contentFeedItem = ContentFeedItem.getItemWith(itemID: videoEpisodeID),
             contentFeedItem.contentFeed?.isVideo == true
         else {
-            preconditionFailure()
+            return
         }
         
         if let contentFeed = contentFeedItem.contentFeed {

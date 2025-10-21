@@ -174,6 +174,7 @@
 		47363CFA2A4B26A300C295D4 /* ChatSearchTextFieldView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 47363CF92A4B26A300C295D4 /* ChatSearchTextFieldView.xib */; };
 		47363D002A4B374600C295D4 /* ChatSearchResultsBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47363CFF2A4B374600C295D4 /* ChatSearchResultsBar.swift */; };
 		47363D022A4B375000C295D4 /* ChatSearchResultsBar.xib in Resources */ = {isa = PBXBuildFile; fileRef = 47363D012A4B375000C295D4 /* ChatSearchResultsBar.xib */; };
+		473829902EA68EEE007E045A /* FeedEpisodeVideoPlayerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4738298F2EA68EEE007E045A /* FeedEpisodeVideoPlayerViewController.swift */; };
 		473842F52391970B00AA640F /* FullScreenImageView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 473842F42391970B00AA640F /* FullScreenImageView.xib */; };
 		473842F7239197E700AA640F /* FullScreenImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 473842F6239197E700AA640F /* FullScreenImageView.swift */; };
 		473842F92391A9DF00AA640F /* KeyboardHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 473842F82391A9DF00AA640F /* KeyboardHelper.swift */; };
@@ -1297,6 +1298,7 @@
 		47363CFF2A4B374600C295D4 /* ChatSearchResultsBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatSearchResultsBar.swift; sourceTree = "<group>"; };
 		47363D012A4B375000C295D4 /* ChatSearchResultsBar.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ChatSearchResultsBar.xib; sourceTree = "<group>"; };
 		4738298C2EA15760007E045A /* sphinx 55.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 55.xcdatamodel"; sourceTree = "<group>"; };
+		4738298F2EA68EEE007E045A /* FeedEpisodeVideoPlayerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedEpisodeVideoPlayerViewController.swift; sourceTree = "<group>"; };
 		473842F42391970B00AA640F /* FullScreenImageView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = FullScreenImageView.xib; sourceTree = "<group>"; };
 		473842F6239197E700AA640F /* FullScreenImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullScreenImageView.swift; sourceTree = "<group>"; };
 		473842F82391A9DF00AA640F /* KeyboardHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardHelper.swift; sourceTree = "<group>"; };
@@ -4505,6 +4507,7 @@
 				F3188BA6271CF17800890DDD /* Video Player Episode Cell */,
 				F3188BA4271CF15C00890DDD /* VideoFeed Episodes Cell */,
 				F37D799C271E74DA00CAB15F /* VideoFeed Episodes Section Header */,
+				4738298F2EA68EEE007E045A /* FeedEpisodeVideoPlayerViewController.swift */,
 			);
 			path = "Video Feed Episode Player";
 			sourceTree = "<group>";
@@ -5656,6 +5659,7 @@
 				471161EA2915937A008EAFF2 /* Array.swift in Sources */,
 				47C3DB712A4B5CB400F0557A /* NewChatViewController+SearchMessagesExtension.swift in Sources */,
 				47FE9A3E23C381A20090913F /* UITapGestureRecognizer.swift in Sources */,
+				473829902EA68EEE007E045A /* FeedEpisodeVideoPlayerViewController.swift in Sources */,
 				477B319223B10FC30081413E /* NewMessageBubbleHelper.swift in Sources */,
 				475DD3102A13E21A00F92173 /* UserContact+FetchUtils.swift in Sources */,
 				47341E8428C79A8B00426055 /* CustomAlertController.swift in Sources */,

@@ -97,6 +97,7 @@ extension Video {
             
             if let downloadedItemUrl = chapters.0, downloadedItemUrl.isNotEmpty && video.downloadedVideoUrl == nil {
                 contentFeedItem.downloadedItemURL = URL(string: downloadedItemUrl)
+                video.downloadedVideoUrl = URL(string: downloadedItemUrl)
             }
         }
         

@@ -233,7 +233,6 @@ extension AllTribeFeedsCollectionViewController {
     }
     
     override func viewWillAppear(_ animated: Bool) {
-
         StorageManager.sharedManager.refreshAllStoredData(completion: {
             StorageManager.sharedManager.getSphinxCacheVideos(completion: {
                 _ in
@@ -567,6 +566,7 @@ extension AllTribeFeedsCollectionViewController {
                     }
                 }
                 guard let currentItem = feed.currentItem else { return nil }
+                
                 if feed.isVideo {
                     return DataSourceItem.recentVideoItem(feed, currentItem, CollectionViewSection.recentlyPlayed.rawValue)
                 } else if feed.isNewsletter {

@@ -44,6 +44,7 @@ class RecommendationItemWUnifiedViewCollectionViewCell: UICollectionViewCell {
     func configure(
         withVideoEpisode videoEpisode: Video,
         expanded: Bool = false,
+        playing: Bool,
         and delegate: FeedItemRowDelegate
     ) {
         self.delegate = delegate
@@ -52,6 +53,7 @@ class RecommendationItemWUnifiedViewCollectionViewCell: UICollectionViewCell {
             withVideoEpisode: videoEpisode,
             download: nil,
             expanded: expanded,
+            playing: playing,
             and: self
         )
         

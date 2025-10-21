@@ -2,6 +2,7 @@ import UIKit
 import MobileVLCKit
 
 class GeneralVideoFeedEpisodePlayerViewController: UIViewController, VideoFeedEpisodePlayerViewController {
+    
     @IBOutlet private weak var videoPlayerView: UIView!
     @IBOutlet private weak var episodeTitleLabel: UILabel!
     @IBOutlet private weak var episodeViewCountLabel: UILabel!
@@ -103,7 +104,7 @@ class GeneralVideoFeedEpisodePlayerViewController: UIViewController, VideoFeedEp
     }
     
     private func updateVideoPlayer(withNewEpisode video: Video) {
-        guard let mediaURL = video.mediaURL else { return }
+        guard let mediaURL = video.downloadedVideoUrl ?? video.mediaURL else { return }
         
         vlcPlayer.stop()
         addPlayerLoadingView()

@@ -232,6 +232,31 @@ extension VideoFeed: DashboardFeedSquaredThumbnailCollectionViewItem {
     }
 }
 
+extension Video: DashboardFeedSquaredThumbnailCollectionViewItem {
+    var typeIconImage: String? { get { nil }}
+    
+    
+    var imageToShow: String? {
+        self.thumbnailURL?.absoluteString
+    }
+    
+    var placeholderImageName: String? {
+        "videoPlaceholder"
+    }
+
+    var subtitle: String? {
+        videoDescription
+    }
+    
+    var titleLines: Int {
+        1
+    }
+    
+    var publishDate: Date? {
+        return datePublished
+    }
+}
+
 
 
 extension PodcastEpisode: DashboardFeedSquaredThumbnailCollectionViewItem {

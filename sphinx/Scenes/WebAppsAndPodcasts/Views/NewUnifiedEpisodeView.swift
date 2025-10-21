@@ -144,6 +144,7 @@ class NewUnifiedEpisodeView: UIView {
         withVideoEpisode videoEpisode: Video,
         download: VideoDownload?,
         expanded: Bool = false,
+        playing: Bool,
         and delegate: VideoRowDelegate
     ) {
         self.videoEpisode = videoEpisode
@@ -151,8 +152,9 @@ class NewUnifiedEpisodeView: UIView {
         
         let id = videoEpisode.videoID
         
-        if let _ = id.range(of: "yt:") {
+        if let _ = id.range(of: "yt:"), videoEpisode.downloadedVideoUrl == nil {
             mediaTypeImageView.image = UIImage(named: "youtubeVideoTypeIcon")
+            mediaTypeImageView.isHidden = false
         } else {
             mediaTypeImageView.isHidden = true
         }
@@ -167,7 +169,8 @@ class NewUnifiedEpisodeView: UIView {
         downloadButton.alpha = 0.5
         downloadButton.isEnabled = false
         
-        playArrow.isHidden = true
+        playArrow.text = !playing ? "play_arrow" : "pause"
+        playArrow.isHidden = false
         
         episodeImageView.sd_cancelCurrentImageLoad()
         
@@ -467,6 +470,8 @@ extension NewUnifiedEpisodeView : ChapterViewDelegate {
     func shouldPlayChapterWith(index: Int) {
         if let episode = episode {
             podcastDelegate?.shouldPlayChapterWith(index: index, on: episode)
+        } else if let video = videoEpisode {
+            videoDelegate?.shouldPlayChapterWith(index: index, on: video)
         }
     }
 }

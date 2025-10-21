@@ -83,41 +83,33 @@ extension DashboardVideoFeedCollectionViewController {
     
     
     enum DataSourceItem: Hashable {
-        case videoEpisode(Video)
-        case videoFeed(VideoFeed)
+        case releasedEpisode(Video)
+        case playedEpisode(Video)
         
         static func == (lhs: DataSourceItem, rhs: DataSourceItem) -> Bool {
-            if let lhsContentFeed = lhs.feedEntity,
-               let rhsContentFeed = rhs.feedEntity {
-                    
-                return
-                    lhsContentFeed.feedID == rhsContentFeed.feedID &&
-                    lhsContentFeed.title == rhsContentFeed.title &&
-                    lhsContentFeed.feedURL?.absoluteString == rhsContentFeed.feedURL?.absoluteString &&
-                    lhsContentFeed.dateLastConsumed == rhsContentFeed.dateLastConsumed &&
-                    lhsContentFeed.videosArray.count == rhsContentFeed.videosArray.count &&
-                    lhsContentFeed.videosArray.first?.id == rhsContentFeed.videosArray.first?.id &&
-                    lhsContentFeed.videosArray.first?.datePublished == rhsContentFeed.videosArray.first?.datePublished
+            switch (lhs, rhs) {
+            case (.releasedEpisode(let lhsVideo), .releasedEpisode(let rhsVideo)):
+                return lhsVideo.videoID == rhsVideo.videoID
+                
+            case (.playedEpisode(let lhsVideo), .playedEpisode(let rhsVideo)):
+                return lhsVideo.videoID == rhsVideo.videoID
+                
+            default:
+                return false
             }
-            
-            if let lhsEpisode = lhs.episodeEntity,
-               let rhsEpisode = rhs.episodeEntity {
-                    
-                return
-                    lhsEpisode.videoID == rhsEpisode.videoID &&
-                    lhsEpisode.title == rhsEpisode.title
-            }
-
-            return false
          }
 
         func hash(into hasher: inout Hasher) {
-            if let contentFeed = self.feedEntity {
-                hasher.combine(contentFeed.feedID)
-            }
-            
-            if let episode = self.episodeEntity {
-                hasher.combine(episode.videoID)
+            switch self {
+            case .releasedEpisode(let video):
+                hasher.combine("released")
+                hasher.combine(video.videoID)
+                hasher.combine(video.title)
+                
+            case .playedEpisode(let video):
+                hasher.combine("played")
+                hasher.combine(video.videoID)
+                hasher.combine(video.title)
             }
         }
     }
@@ -346,7 +338,8 @@ extension DashboardVideoFeedCollectionViewController {
                         withReuseIdentifier: DashboardVideoEpisodeCollectionViewCell.reuseID,
                         for: indexPath
                     ) as? DashboardVideoEpisodeCollectionViewCell,
-                    case .videoEpisode(let videoEpisode) = dataSourceItem
+                    
+                    case .releasedEpisode(let videoEpisode) = dataSourceItem
                 else {
                     preconditionFailure("Failed to dequeue expected reusable cell type")
                 }
@@ -360,12 +353,12 @@ extension DashboardVideoFeedCollectionViewController {
                         withReuseIdentifier: DashboardFeedSquaredThumbnailCollectionViewCell.reuseID,
                         for: indexPath
                     ) as? DashboardFeedSquaredThumbnailCollectionViewCell,
-                    case .videoFeed(let videoFeed) = dataSourceItem
+                    case .playedEpisode(let video) = dataSourceItem
                 else {
                     preconditionFailure("Failed to dequeue expected reusable cell type")
                 }
                 
-                feedCell.configure(withItem: videoFeed)
+                feedCell.configure(withItem: video)
                 
                 return feedCell
             }
@@ -415,13 +408,13 @@ extension DashboardVideoFeedCollectionViewController {
         snapshot.appendItems(
             followedVideoFeeds
                 .compactMap { $0.videosArray.first }
-                .map { DataSourceItem.videoEpisode( $0 ) },
+                .map { DataSourceItem.releasedEpisode($0) },
             toSection: .recentlyReleaseVideos
         )
         
-        let recentlyPlayedFeed = allVideoFeeds.filter { $0.dateLastConsumed != nil }.compactMap { contentFeed -> DataSourceItem? in
-            return DataSourceItem.videoFeed(contentFeed)
-        }
+        let recentlyPlayedFeed = allVideoFeeds.filter { $0.dateLastConsumed != nil }.compactMap {
+            $0.currentItem ?? $0.videosArray.first
+        }.map { DataSourceItem.playedEpisode($0) }
         
         if !recentlyPlayedFeed.isEmpty {
             snapshot.appendSections([CollectionViewSection.recentlyPlayedVideos])
@@ -529,21 +522,22 @@ extension DashboardVideoFeedCollectionViewController {
         switch section {
         case .recentlyReleaseVideos:
             guard
-                case let .videoEpisode(videoEpisode) = dataSourceItem
+                case let .releasedEpisode(videoEpisode) = dataSourceItem
             else {
-                preconditionFailure()
+                return
             }
             
-            onVideoEpisodeCellSelected?(videoEpisode.id)
+            onVideoEpisodeCellSelected?(videoEpisode.videoID)
+            
         case .recentlyPlayedVideos:
             guard
-                case let .videoFeed(videoFeed) = dataSourceItem
+                case let .playedEpisode(videoEpisode) = dataSourceItem
             else {
-                preconditionFailure()
+                return
             }
             
-            onVideoFeedCellSelected?(videoFeed.id)
-    }
+            onVideoEpisodeCellSelected?(videoEpisode.videoID)
+        }
     }
 }
 
@@ -581,21 +575,12 @@ extension DashboardVideoFeedCollectionViewController: NSFetchedResultsController
 
 extension DashboardVideoFeedCollectionViewController.DataSourceItem {
     
-    var feedEntity: VideoFeed? {
-        switch self {
-        case .videoFeed(let videoFeed):
-            return videoFeed
-        default:
-            return nil
-        }
-    }
-    
     var episodeEntity: Video? {
         switch self {
-        case .videoEpisode(let videoEpisode):
+        case .releasedEpisode(let videoEpisode):
             return videoEpisode
-        default:
-            return nil
+        case .playedEpisode(let videoEpisode):
+            return videoEpisode
         }
     }
 }
