@@ -28,6 +28,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var style : UIUserInterfaceStyle? = nil
     var notificationUserInfo : [String: AnyObject]? = nil
+    var notificationTimestamp: Date?
     var backgroundSessionCompletionHandler: (() -> Void)?
     
     let actionsManager = ActionsManager.sharedInstance
@@ -165,6 +166,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         _ application: UIApplication
     ) {
         isActive = false
+        notificationUserInfo = nil
         saveCurrentStyle()
         setBadge(application: application)
         
@@ -224,9 +226,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func handlePushAndFetchData() {
-        guard let notificationUserInfo = notificationUserInfo else {
+        guard let notificationUserInfo,
+              let timestamp = notificationTimestamp,
+              Date().timeIntervalSince(timestamp) < 3 else
+        {
             return
         }
+        
         if let chat = SphinxOnionManager.sharedInstance.mapNotificationToChat(notificationUserInfo: notificationUserInfo)?.0 {
             goTo(chat: chat)
         }
@@ -551,6 +557,7 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
     ) {
         if UIApplication.shared.applicationState == .inactive, response.actionIdentifier == UNNotificationDefaultActionIdentifier {
             notificationUserInfo = response.notification.request.content.userInfo as? [String: AnyObject]
+            notificationTimestamp = Date()
         }
         completionHandler()
     }
