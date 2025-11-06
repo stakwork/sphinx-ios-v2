@@ -176,7 +176,8 @@ class FeedEpisodeVideoPlayerViewController: UIViewController, VideoFeedEpisodePl
             
             let currentSeconds = CMTimeGetSeconds(time)
             
-            // Check for upcoming ads and skip current ads
+            videoPlayerEpisode.currentTime = Int(currentSeconds)
+            
             self.checkForAds(at: currentSeconds)
         }
     }
@@ -246,7 +247,9 @@ class FeedEpisodeVideoPlayerViewController: UIViewController, VideoFeedEpisodePl
             let newItem = AVPlayerItem(url: mediaURL)
             existingPlayer.replaceCurrentItem(with: newItem)
             
-            if let initialTimeToPlay = initialTimeToPlay {
+            let currentPlayingTime = (video.currentTime != nil) ? Double(video.currentTime!) : nil
+            
+            if let initialTimeToPlay = initialTimeToPlay ?? currentPlayingTime {
                 let targetTime = CMTime(seconds: initialTimeToPlay, preferredTimescale: 600)
                 
                 existingPlayer.seek(to: targetTime, toleranceBefore: .zero, toleranceAfter: .zero) { finished in
@@ -260,11 +263,14 @@ class FeedEpisodeVideoPlayerViewController: UIViewController, VideoFeedEpisodePl
                 existingPlayer.play()
             }
         } else {
-            setupNewPlayer(with: mediaURL)
+            setupNewPlayer(with: mediaURL, and: video)
         }
     }
     
-    private func setupNewPlayer(with url: URL) {
+    private func setupNewPlayer(
+        with url: URL,
+        and video: Video
+    ) {
         let newPlayer = AVPlayer(url: url)
         self.player = newPlayer
         
@@ -292,7 +298,9 @@ class FeedEpisodeVideoPlayerViewController: UIViewController, VideoFeedEpisodePl
         addTimeObserver()
         observePlayerStateWithCombine()
         
-        if let initialTimeToPlay = initialTimeToPlay {
+        let currentPlayingTime = (video.currentTime != nil) ? Double(video.currentTime!) : nil
+        
+        if let initialTimeToPlay = initialTimeToPlay ?? currentPlayingTime {
             let targetTime = CMTime(seconds: initialTimeToPlay, preferredTimescale: 600)
             
             newPlayer.seek(to: targetTime, toleranceBefore: .zero, toleranceAfter: .zero) { finished in

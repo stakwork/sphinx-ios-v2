@@ -28,6 +28,24 @@ public class Video: NSObject {
     ) {
         self.videoID = videoID
     }
+    
+    var currentTime: Int? {
+        get {
+            return UserDefaults.standard.value(forKey: "current-time-\(feedAndItemId)") as? Int
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: "current-time-\(feedAndItemId)")
+        }
+    }
+    
+    var feedAndItemId: String {
+        get {
+            if let feedID = videoFeed?.feedID {
+                return "\(feedID)-\(videoID)"
+            }
+            return "\(videoID)"
+        }
+    }
 }
 
 
