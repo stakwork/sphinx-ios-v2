@@ -127,7 +127,6 @@ class DashboardRootViewController: RootViewController {
                 loadingWheelColor: UIColor.white,
                 views: [
                     searchBarContainer,
-                    mainContentContainerView,
                     bottomBarContainer,
                 ]
             )
