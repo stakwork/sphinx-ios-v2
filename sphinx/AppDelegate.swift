@@ -354,7 +354,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                     }
                 }
             }
-            WindowsManager.sharedInstance.showConveringWindowWith(rootVC: pinVC)
+            WindowsManager.sharedInstance.showConveringWindowWith(
+                rootVC: pinVC,
+                passthroughWindow: false
+            )
         }
     }
 

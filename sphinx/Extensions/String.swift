@@ -257,6 +257,34 @@ extension String {
         return matches
     }
     
+    var stringMsgLinks: [(NSTextCheckingResult, String)] {
+        if !self.contains(".") {
+            return []
+        }
+        
+        var results: [(NSTextCheckingResult, String)] = []
+        
+        let textWithoutMarkdown = self.removingMarkdownDelimiters
+        let types: NSTextCheckingResult.CheckingType = [.link]
+        let detector = try? NSDataDetector(types: types.rawValue)
+        
+        let matches = detector!.matches(
+            in: textWithoutMarkdown,
+            options: .reportCompletion,
+            range: NSMakeRange(0, textWithoutMarkdown.utf16.count)
+        )
+        
+        for match in matches {
+            if let linkRange = Range(match.range, in: self) {
+                let linkText = String(self[linkRange])
+                
+                results.append((match, linkText))
+            }
+        }
+        
+        return results
+    }
+    
     var pubKeyMatches: [NSTextCheckingResult] {
         let textWithoutMarkdown = self.removingMarkdownDelimiters
         let pubkeyRegex = try? NSRegularExpression(pattern: "\\b[A-F0-9a-f]{66}\\b")
@@ -1238,13 +1266,7 @@ extension String {
     
     var fixedYoutubeUrl : String {
         get {
-            var url = self
-            
-            if var components = URLComponents(string: self) {
-                components.query = nil
-                url = components.url?.absoluteString ?? ""
-            }
-            return url.replacingOccurrences(of: "/v/", with: "/watch?v=")
+            return self.replacingOccurrences(of: "/v/", with: "/watch?v=")
         }
     }
 }
