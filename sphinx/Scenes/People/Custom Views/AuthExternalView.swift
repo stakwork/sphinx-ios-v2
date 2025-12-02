@@ -83,11 +83,20 @@ class AuthExternalView: CommonModalView {
     
     func authorizationDone(success: Bool, host: String) {
         if success {
+            messageBubbleHelper.showGenericMessageView(
+                text: "authorization.login".localized,
+                delay: 7,
+                textColor: UIColor.white,
+                backColor: UIColor.Sphinx.PrimaryGreen,
+                backAlpha: 1.0
+            )
+            
             if let callback = authInfo?.callback, let url = URL(string: "https://\(callback)") {
                 UIApplication.shared.open(url)
-            } else if let host = authInfo?.host, let challenge = authInfo?.challenge, let url = URL(string: "https://\(host)?challenge=\(challenge)") {
-                UIApplication.shared.open(url)
             }
+//            else if let host = authInfo?.host, let challenge = authInfo?.challenge, let url = URL(string: "https://\(host)?challenge=\(challenge)") {
+//                UIApplication.shared.open(url)
+//            }
         } else {
             messageBubbleHelper.showGenericMessageView(text: "authorization.failed".localized, delay: 5, textColor: UIColor.white, backColor: UIColor.Sphinx.BadgeRed, backAlpha: 1.0)
         }

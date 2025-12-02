@@ -543,6 +543,8 @@
 "already.connected" = "您已与此人连接";
 "price.to.meet" = "见面的价格：";
 "invalid.public-key" = "无效公钥";
+"authorization.login" = "您已成功登入";
+"authorization.login" = "您已成功登录";
 "processing.payment" = "处理付款";
 "processing.payment.description" = "此过程可能需要 60 秒。完成后您将收到通知";
 
