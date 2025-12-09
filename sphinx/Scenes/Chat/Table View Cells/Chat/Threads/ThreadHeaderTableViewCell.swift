@@ -17,6 +17,7 @@ protocol ThreadHeaderTableViewCellDelegate: class {
     func shouldLoadVideoDataFor(messageId: Int, and rowIndex: Int)
     func shouldLoadGiphyDataFor(messageId: Int, and rowIndex: Int)
     func shouldLoadAudioDataFor(messageId: Int, and rowIndex: Int)
+    func shouldLoadLinkImageDataFor(messageId: Int, and rowIndex: Int)
     
     func didTapMediaButtonFor(messageId: Int, and rowIndex: Int, isThreadOriginalMsg: Bool)
     func didTapFileDownloadButtonFor(messageId: Int, and rowIndex: Int)
@@ -322,15 +323,16 @@ class ThreadHeaderTableViewCell: UITableViewCell {
                         and: self
                     )
                     mediaMessageView.isHidden = false
-                } else if let messageId = messageId, mediaData == nil {
-                    let delayTime = DispatchTime.now() + Double(Int64(0.5 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
-                    DispatchQueue.global().asyncAfter(deadline: delayTime) {
-                        self.delegate?.shouldLoadImageDataFor(
-                            messageId: messageId,
-                            and: self.rowIndex
-                        )
-                    }
                 }
+//                else if let messageId = messageId, mediaData == nil {
+//                    let delayTime = DispatchTime.now() + Double(Int64(0.5 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
+//                    DispatchQueue.global().asyncAfter(deadline: delayTime) {
+//                        self.delegate?.shouldLoadLinkImageDataFor(
+//                            messageId: messageId,
+//                            and: self.rowIndex
+//                        )
+//                    }
+//                }
             } else {
                 mediaMessageView.configureWith(
                     messageMedia: messageMedia,

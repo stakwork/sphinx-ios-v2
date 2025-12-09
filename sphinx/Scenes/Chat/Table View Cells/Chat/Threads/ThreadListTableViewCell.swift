@@ -15,6 +15,7 @@ protocol ThreadListTableViewCellDelegate: class {
     func shouldLoadVideoDataFor(messageId: Int, and rowIndex: Int)
     func shouldLoadGiphyDataFor(messageId: Int, and rowIndex: Int)
     func shouldLoadAudioDataFor(messageId: Int, and rowIndex: Int)
+    func shouldLoadLinkImageDataFor(messageId: Int, and rowIndex: Int)
     
     func didTapMediaButtonFor(messageId: Int, and rowIndex: Int)
     func didTapFileDownloadButtonFor(messageId: Int, and rowIndex: Int)

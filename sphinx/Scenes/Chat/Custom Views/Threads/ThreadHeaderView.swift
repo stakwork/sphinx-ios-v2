@@ -20,6 +20,7 @@ import SDWebImage
     @objc optional func shouldLoadVideoDataFor(messageId: Int, and rowIndex: Int)
     @objc optional func shouldLoadGiphyDataFor(messageId: Int, and rowIndex: Int)
     @objc optional func shouldLoadAudioDataFor(messageId: Int, and rowIndex: Int)
+    @objc optional func shouldLoadLinkImageDataFor(messageId: Int, and rowIndex: Int)
 }
 
 class ThreadHeaderView : UIView {
@@ -267,15 +268,16 @@ class ThreadHeaderView : UIView {
                         mediaData: mediaData,
                         bubble: BubbleMessageLayoutState.Bubble(direction: .Incoming, grouping: .Isolated)
                     )
-                } else if let messageId = messageId, mediaData == nil {
-                    let delayTime = DispatchTime.now() + Double(Int64(0.5 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
-                    DispatchQueue.global().asyncAfter(deadline: delayTime) {
-                        self.delegate?.shouldLoadImageDataFor?(
-                            messageId: messageId,
-                            and: -1
-                        )
-                    }
                 }
+//                else if let messageId = messageId, mediaData == nil {
+//                    let delayTime = DispatchTime.now() + Double(Int64(0.5 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
+//                    DispatchQueue.global().asyncAfter(deadline: delayTime) {
+//                        self.delegate?.shouldLoadLinkImageDataFor?(
+//                            messageId: messageId,
+//                            and: -1
+//                        )
+//                    }
+//                }
             } else {
                 viewToShow = messageAndMediaContainer
                 
