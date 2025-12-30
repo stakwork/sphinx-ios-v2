@@ -435,6 +435,13 @@ extension GroupDetailsViewController : TribeMemberInfoDelegate {
         
         if didChangeAlias && self.chat.timezoneEnabled {
             self.chat.timezoneUpdated = true
+            
+            if let pubkey = chat.ownerPubkey {
+                DataSyncManager.sharedInstance.saveTimezoneFor(
+                    chatPubkey: "\(pubkey)",
+                    timezone: TimezoneSetting(timezoneEnabledString: "\(self.chat.timezoneEnabled)", timezoneIdentifier: self.chat.timezoneIdentifier ?? "")
+                )
+            }
         }
         
         self.chat.myAlias = alias
@@ -458,7 +465,10 @@ extension GroupDetailsViewController : TimezoneSharingViewDelegate {
         self.present(pickerVC, animated: false, completion: nil)
     }
     
-    func timezoneSharingSettingsChanged(enabled: Bool, identifier: String?) {
+    func timezoneSharingSettingsChanged(
+        enabled: Bool,
+        identifier: String?
+    ) {
         guard let chat = self.chat else { return }
         
         let timezoneEnabledChanged = chat.timezoneEnabled != enabled
@@ -466,11 +476,17 @@ extension GroupDetailsViewController : TimezoneSharingViewDelegate {
         
         if timezoneEnabledChanged || timezoneIdentifierChanged {
             chat.timezoneEnabled = enabled
-            
             chat.timezoneIdentifier = identifier
             
             if timezoneIdentifierChanged {
                 chat.timezoneUpdated = true
+            }
+            
+            if let pubkey = chat.ownerPubkey {
+                DataSyncManager.sharedInstance.saveTimezoneFor(
+                    chatPubkey: "\(pubkey)",
+                    timezone: TimezoneSetting(timezoneEnabledString: "\(enabled)", timezoneIdentifier: identifier ?? "")
+                )
             }
             
             CoreDataManager.sharedManager.saveContext()

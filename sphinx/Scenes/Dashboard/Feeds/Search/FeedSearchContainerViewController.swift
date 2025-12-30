@@ -276,9 +276,24 @@ extension FeedSearchContainerViewController {
                 searchResultImageUrl: searchResult.imageUrl,
                 persistingIn: managedObjectContext,
                 then: { result in
-                    
                     if case .success(let contentFeed) = result {
                         self.managedObjectContext.saveContext()
+                        
+                        let podcast = PodcastFeed.convertFrom(contentFeed: contentFeed)
+
+                        DataSyncManager.sharedInstance.saveFeedStatusFor(
+                            feedId: contentFeed.feedID,
+                            feedStatus: FeedStatus(
+                                chatPubkey: "",
+                                feedUrl: searchResult.feedURLPath,
+                                feedId: contentFeed.feedID,
+                                subscribed: true,
+                                satsPerMinute: podcast.satsPerMinute ?? 0,
+                                playerSpeed: Double(podcast.playerSpeed),
+                                itemId: podcast.currentEpisodeId
+                            )
+                        )
+
                         
                         self.newMessageBubbleHelper.hideLoadingWheel()
                         

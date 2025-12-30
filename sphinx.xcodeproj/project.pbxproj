@@ -430,6 +430,9 @@
 		47935FBE24A1070800B39ADB /* StakworkAuthorizeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47935FBD24A1070800B39ADB /* StakworkAuthorizeViewController.swift */; };
 		47949BD824AA168D000D697B /* Roboto-Italic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 47949BD724AA168D000D697B /* Roboto-Italic.ttf */; };
 		4794CA77252F5D66007C5022 /* API+PodcastExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4794CA76252F5D66007C5022 /* API+PodcastExtension.swift */; };
+		47978EF82F040CA40092B516 /* DataSync+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47978EF72F040C9B0092B516 /* DataSync+CoreDataClass.swift */; };
+		47978EFA2F040CB70092B516 /* DataSync+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47978EF92F040CA90092B516 /* DataSync+CoreDataProperties.swift */; };
+		47978EFD2F040D3D0092B516 /* DataSyncManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47978EFC2F040D390092B516 /* DataSyncManager.swift */; };
 		4797E74A24B89ECA00D13270 /* VideoCallHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4797E74924B89ECA00D13270 /* VideoCallHelper.swift */; };
 		4797E75E24B8DDE400D13270 /* LeftMenu.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4797E76024B8DDE400D13270 /* LeftMenu.storyboard */; };
 		4797E76724B8E12E00D13270 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 4797E76924B8E12E00D13270 /* Localizable.strings */; };
@@ -1601,6 +1604,10 @@
 		47935FBD24A1070800B39ADB /* StakworkAuthorizeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StakworkAuthorizeViewController.swift; sourceTree = "<group>"; };
 		47949BD724AA168D000D697B /* Roboto-Italic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Roboto-Italic.ttf"; sourceTree = "<group>"; };
 		4794CA76252F5D66007C5022 /* API+PodcastExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+PodcastExtension.swift"; sourceTree = "<group>"; };
+		47978EF52F040C2B0092B516 /* sphinx 56.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 56.xcdatamodel"; sourceTree = "<group>"; };
+		47978EF72F040C9B0092B516 /* DataSync+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DataSync+CoreDataClass.swift"; sourceTree = "<group>"; };
+		47978EF92F040CA90092B516 /* DataSync+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DataSync+CoreDataProperties.swift"; sourceTree = "<group>"; };
+		47978EFC2F040D390092B516 /* DataSyncManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataSyncManager.swift; sourceTree = "<group>"; };
 		4797E74924B89ECA00D13270 /* VideoCallHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoCallHelper.swift; sourceTree = "<group>"; };
 		4797E75D24B8DDBD00D13270 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
 		4797E75F24B8DDE400D13270 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LeftMenu.storyboard; sourceTree = "<group>"; };
@@ -2460,6 +2467,7 @@
 		471FACD623E89E19007DE1C8 /* Managers */ = {
 			isa = PBXGroup;
 			children = (
+				47978EFB2F040D300092B516 /* DataSyncManager */,
 				474DC4B82D942E5A00FB6087 /* ChaptersManager */,
 				4733ED2D2CB556E700078EF2 /* Colors Manager */,
 				471161E329156531008EAFF2 /* Actions Manager */,
@@ -3169,6 +3177,7 @@
 		475BDD4F232AE1C400C5BBD6 /* Core Data */ = {
 			isa = PBXGroup;
 			children = (
+				47978EF62F040C880092B516 /* Data Sync */,
 				CE6790262C74E42100BC2D38 /* NotificationData */,
 				472A4E1C2C4EB66C00B10934 /* LSat */,
 				CE80EF652A0D8131007ED3A3 /* CachedMedia */,
@@ -3714,6 +3723,23 @@
 				47935FBD24A1070800B39ADB /* StakworkAuthorizeViewController.swift */,
 			);
 			path = "Stakwork Login";
+			sourceTree = "<group>";
+		};
+		47978EF62F040C880092B516 /* Data Sync */ = {
+			isa = PBXGroup;
+			children = (
+				47978EF92F040CA90092B516 /* DataSync+CoreDataProperties.swift */,
+				47978EF72F040C9B0092B516 /* DataSync+CoreDataClass.swift */,
+			);
+			path = "Data Sync";
+			sourceTree = "<group>";
+		};
+		47978EFB2F040D300092B516 /* DataSyncManager */ = {
+			isa = PBXGroup;
+			children = (
+				47978EFC2F040D390092B516 /* DataSyncManager.swift */,
+			);
+			path = DataSyncManager;
 			sourceTree = "<group>";
 		};
 		4797E8B624BE26D600D13270 /* Sounds */ = {
@@ -5481,6 +5507,7 @@
 				47D46A34237C83900005A548 /* UserInvite+CoreDataProperties.swift in Sources */,
 				47352E4C2440FEB800E5CC7F /* WindowsManager.swift in Sources */,
 				47183CB22548AA4400E6FD19 /* PodcastPlayerView.swift in Sources */,
+				47978EFD2F040D3D0092B516 /* DataSyncManager.swift in Sources */,
 				F34BFED7267B350D003F6D55 /* RestoreUserDescriptionViewController.swift in Sources */,
 				472092C92A278B0400468796 /* NewMessageTableViewCell.swift in Sources */,
 				472092B92A24FF6100468796 /* NewChatHeaderView.swift in Sources */,
@@ -5540,6 +5567,7 @@
 				478B05C4297832FC00A1B254 /* PodcastPlayerController+Payments.swift in Sources */,
 				47651C3523DB4A4F00CBC605 /* TouchUpGestureRecognizer.swift in Sources */,
 				477C57E7234785ED00BB4E04 /* WalletBalanceService.swift in Sources */,
+				47978EFA2F040CB70092B516 /* DataSync+CoreDataProperties.swift in Sources */,
 				F3DC6B25273F60FF00458E09 /* ContentFeedPaymentModel+CoreDataClass.swift in Sources */,
 				471161CF2915633D008EAFF2 /* ContentConsumedAction.swift in Sources */,
 				F3D52187272A9F8500918267 /* Chat+FetchUtils.swift in Sources */,
@@ -5581,6 +5609,7 @@
 				472092C12A26516A00468796 /* NewChatViewController+WebAppExtension.swift in Sources */,
 				472782122729A547007D5F1F /* NewsletterFeed+FetchUtils.swift in Sources */,
 				F3446B9326BABAB400855516 /* ChatListCollectionViewCell.swift in Sources */,
+				47978EF82F040CA40092B516 /* DataSync+CoreDataClass.swift in Sources */,
 				475BDD34232ACC4800C5BBD6 /* UIView.swift in Sources */,
 				CEF821D62963B68600CBB28F /* DiscoverTribesWebViewController.swift in Sources */,
 				F3188B80271792CE00890DDD /* VideoFeed+Properties.swift in Sources */,
@@ -7197,6 +7226,7 @@
 		47F35D4A2373156A0042A58F /* sphinx.xcdatamodeld */ = {
 			isa = XCVersionGroup;
 			children = (
+				47978EF52F040C2B0092B516 /* sphinx 56.xcdatamodel */,
 				4738298C2EA15760007E045A /* sphinx 55.xcdatamodel */,
 				474DC4B52D9305E900FB6087 /* sphinx 54.xcdatamodel */,
 				7734ED4D2D66C733003276BA /* sphinx 53.xcdatamodel */,
@@ -7253,7 +7283,7 @@
 				475E4162238588A200928931 /* sphinx 2.xcdatamodel */,
 				47F35D4B2373156A0042A58F /* sphinx.xcdatamodel */,
 			);
-			currentVersion = 4738298C2EA15760007E045A /* sphinx 55.xcdatamodel */;
+			currentVersion = 47978EF52F040C2B0092B516 /* sphinx 56.xcdatamodel */;
 			path = sphinx.xcdatamodeld;
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;

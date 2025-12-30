@@ -48,6 +48,7 @@ extension ProfileViewController : UITextFieldDelegate {
             if textField.tag == ProfileFields.MeetingPmtAmt.rawValue {
                 if let value = Int(text) {
                     UserContact.kTipAmount = value
+                    DataSyncManager.sharedInstance.saveTipAmount(value: "\(value)")
                 }
                 setFieldsAfterEdit()
                 return true
@@ -87,12 +88,6 @@ extension ProfileViewController : UITextFieldDelegate {
     
     func updateProfile(photoUrl: String? = nil) {
         if let profile = UserContact.getOwner() {
-            let nickname = profile.nickname ?? ""
-            let privatePhoto = profile.privatePhoto
-            
-            let updatedName = nameTextField.text ?? nickname
-            let updatedPrivatePhoto = !sharePhotoSwitch.isOn
-            
             profile.avatarUrl = photoUrl ?? profile.avatarUrl
             
             self.configureProfile()
@@ -139,7 +134,7 @@ extension ProfileViewController : UIImagePickerControllerDelegate, UINavigationC
     }
     
     func uploadImageData(data: Data) {
-        if let profile = UserContact.getOwner() {
+        if let _ = UserContact.getOwner() {
             
             uploading = true
             

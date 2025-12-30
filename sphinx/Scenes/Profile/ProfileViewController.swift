@@ -320,7 +320,11 @@ class ProfileViewController: NewKeyboardHandlerViewController {
     }
     
     @IBAction func sharePhotoSwitchChanged(_ sender: UISwitch) {
-        updateProfile()
+        if let profile = UserContact.getOwner() {
+            profile.privatePhoto = !sender.isOn
+            profile.managedObjectContext?.saveContext()
+            DataSyncManager.sharedInstance.savePrivatePhoto(value: "\(!sender.isOn)")
+        }
     }
     
     @IBAction func trackRecommendationsSwitchChanged(_ sender: Any) {
@@ -362,7 +366,7 @@ class ProfileViewController: NewKeyboardHandlerViewController {
         setPinVC.doneCompletion = { pin in
             setPinVC.dismiss(animated: true, completion: {
                 if let mnemonic = UserData.sharedInstance.getMnemonic() {
-                    if let profile = UserContact.getOwner(), !mnemonic.isEmpty {
+                    if let _ = UserContact.getOwner(), !mnemonic.isEmpty {
                         self.goToQRDetails(qrCodeString: mnemonic, title: "Mnemonic words")
                     }
                 } else {
