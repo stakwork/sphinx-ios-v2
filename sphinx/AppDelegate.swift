@@ -210,6 +210,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         podcastPlayerController.finishAndSaveContentConsumed()
         
         getDashboardVC()?.reconnectToServer()
+        
+        DataSyncManager.sharedInstance.syncWithServerInBackground()
     }
     
     func applicationDidBecomeActive(
