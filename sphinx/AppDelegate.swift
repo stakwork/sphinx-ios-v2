@@ -276,9 +276,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
     
     func configureGiphy() {
-        if let GIPHY_API_KEY = Bundle.main.object(forInfoDictionaryKey: "GIPHY_API_KEY") as? String {
-            Giphy.configure(apiKey: GIPHY_API_KEY)
-        }
+        Giphy.configure(apiKey: Config.giphyApiKey)
     }
     
     func configureBugsnag() {

@@ -13,3 +13,9 @@ Private/
 .DS_Store
 .DS_Store
 .DS_Store
+
+# Sensitive configuration
+sphinx/Config.swift
+sphinx/Secrets.debug.xcconfig
+sphinx/Secrets.release.xcconfig
+
