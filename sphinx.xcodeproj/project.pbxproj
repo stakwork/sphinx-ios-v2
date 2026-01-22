@@ -430,6 +430,8 @@
 		47935FBE24A1070800B39ADB /* StakworkAuthorizeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47935FBD24A1070800B39ADB /* StakworkAuthorizeViewController.swift */; };
 		47949BD824AA168D000D697B /* Roboto-Italic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 47949BD724AA168D000D697B /* Roboto-Italic.ttf */; };
 		4794CA77252F5D66007C5022 /* API+PodcastExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4794CA76252F5D66007C5022 /* API+PodcastExtension.swift */; };
+		47978F012F2289260092B516 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47978F002F2289260092B516 /* Config.swift */; };
+		47978F0E2F228E450092B516 /* Secrets.debug.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 47978F0D2F228E3D0092B516 /* Secrets.debug.xcconfig */; };
 		4797E74A24B89ECA00D13270 /* VideoCallHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4797E74924B89ECA00D13270 /* VideoCallHelper.swift */; };
 		4797E75E24B8DDE400D13270 /* LeftMenu.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4797E76024B8DDE400D13270 /* LeftMenu.storyboard */; };
 		4797E76724B8E12E00D13270 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 4797E76924B8E12E00D13270 /* Localizable.strings */; };
@@ -1601,6 +1603,12 @@
 		47935FBD24A1070800B39ADB /* StakworkAuthorizeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StakworkAuthorizeViewController.swift; sourceTree = "<group>"; };
 		47949BD724AA168D000D697B /* Roboto-Italic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Roboto-Italic.ttf"; sourceTree = "<group>"; };
 		4794CA76252F5D66007C5022 /* API+PodcastExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+PodcastExtension.swift"; sourceTree = "<group>"; };
+		47978EFE2F2288800092B516 /* Config.template.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.template.swift; sourceTree = "<group>"; };
+		47978F002F2289260092B516 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
+		47978F0A2F228E360092B516 /* Secrets.release.template.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.release.template.xcconfig; sourceTree = "<group>"; };
+		47978F0B2F228E390092B516 /* Secrets.debug.template.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.debug.template.xcconfig; sourceTree = "<group>"; };
+		47978F0C2F228E3B0092B516 /* Secrets.release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.release.xcconfig; sourceTree = "<group>"; };
+		47978F0D2F228E3D0092B516 /* Secrets.debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.debug.xcconfig; sourceTree = "<group>"; };
 		4797E74924B89ECA00D13270 /* VideoCallHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoCallHelper.swift; sourceTree = "<group>"; };
 		4797E75D24B8DDBD00D13270 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
 		4797E75F24B8DDE400D13270 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LeftMenu.storyboard; sourceTree = "<group>"; };
@@ -3450,6 +3458,12 @@
 		4779F160232AA0F200D35E81 /* sphinx */ = {
 			isa = PBXGroup;
 			children = (
+				47978F0D2F228E3D0092B516 /* Secrets.debug.xcconfig */,
+				47978F0C2F228E3B0092B516 /* Secrets.release.xcconfig */,
+				47978F0B2F228E390092B516 /* Secrets.debug.template.xcconfig */,
+				47978F0A2F228E360092B516 /* Secrets.release.template.xcconfig */,
+				47978F002F2289260092B516 /* Config.swift */,
+				47978EFE2F2288800092B516 /* Config.template.swift */,
 				47E61581237DC7F400630FD1 /* sphinx.entitlements */,
 				4779F170232AA0F300D35E81 /* Info.plist */,
 				4779F161232AA0F200D35E81 /* AppDelegate.swift */,
@@ -5076,6 +5090,7 @@
 				4797E7F924B8F9C300D13270 /* SubscriptionTimeIntervalView.xib in Resources */,
 				4797E7CF24B8F4DC00D13270 /* AppAppearenceView.xib in Resources */,
 				CE3D8CAD29B1124E00EDB637 /* FeedItemDetailHeaderCell.xib in Resources */,
+				47978F0E2F228E450092B516 /* Secrets.debug.xcconfig in Resources */,
 				4709B1472C6BBA750077AA61 /* Roboto-Black.ttf in Resources */,
 				4797E76724B8E12E00D13270 /* Localizable.strings in Resources */,
 				CEF341532C407FD8007FC173 /* BTSearchResultTableViewCell.xib in Resources */,
@@ -5497,6 +5512,7 @@
 				CE51F3562988743E00ABBACB /* MemberDetailTableViewCell.swift in Sources */,
 				47935FB3249EC3BE00B39ADB /* OrientationHandlerViewController.swift in Sources */,
 				47357A192729A16C00A49EEE /* NewsletterItem+DisplayUtils.swift in Sources */,
+				47978F012F2289260092B516 /* Config.swift in Sources */,
 				F39F2C7C26E2363100D357F6 /* FeedSearchResultsCollectionViewController.swift in Sources */,
 				47BF27F32A3795CE00F15EE9 /* MessageTableCellState+DataTypeExtension.swift in Sources */,
 				475154BB2423FA4100477384 /* JoinVideoCallView.swift in Sources */,
@@ -6773,7 +6789,7 @@
 		};
 		4779F18A232AA0F300D35E81 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = FED99A42AA0C9CE8FD759E82 /* Pods-sphinx.debug.xcconfig */;
+			baseConfigurationReference = 47978F0D2F228E3D0092B516 /* Secrets.debug.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -6863,7 +6879,7 @@
 		};
 		4779F18B232AA0F300D35E81 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = FDF1E0A8EFE1D98BD5A99505 /* Pods-sphinx.release.xcconfig */;
+			baseConfigurationReference = 47978F0C2F228E3B0092B516 /* Secrets.release.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
