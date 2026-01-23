@@ -77,6 +77,7 @@ typealias SignChallengeCallback = ((String?) -> ())
 typealias VerifyAuthenticationCallback = ((String?) -> ())
 typealias UploadAttachmentCallback = ((Bool, NSDictionary?) -> ())
 typealias MediaInfoCallback = ((Int, String?, Int?) -> ())
+typealias PreferencesCallback = ((Data) -> ())
 
 //GraphMindset
 typealias CheckNodeCallback = ((API.CheckNodeResponse) -> ())

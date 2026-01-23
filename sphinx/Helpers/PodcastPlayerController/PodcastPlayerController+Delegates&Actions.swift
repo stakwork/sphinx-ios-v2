@@ -142,6 +142,21 @@ extension PodcastPlayerController {
             clipInfo: podcastData.clipInfo
         )
         
+        if let podcast = podcast, let feedUrl = podcast.feedURLPath {
+            DataSyncManager.sharedInstance.saveFeedStatusFor(
+                feedId: podcastData.podcastId,
+                feedStatus: FeedStatus(
+                    chatPubkey: podcast.chat?.ownerPubkey ?? "",
+                    feedUrl: feedUrl,
+                    feedId: podcastData.podcastId,
+                    subscribed: podcast.isSubscribedToFromSearch,
+                    satsPerMinute: podcast.satsPerMinute ?? 0,
+                    playerSpeed: Double(podcastData.speed),
+                    itemId: podcastData.episodeId
+                )
+            )
+        }
+        
         if !ConnectivityHelper.isConnectedToInternet && !podcastData.downloaded {
             self.runErrorStateUpdate()
             return

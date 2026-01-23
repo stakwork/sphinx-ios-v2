@@ -160,11 +160,17 @@ extension ContactDetailsViewController : TimezoneSharingViewDelegate {
         
         if timezoneEnabledChanged || timezoneIdentifierChanged {
             chat.timezoneEnabled = enabled
-            
             chat.timezoneIdentifier = identifier
             
             if timezoneIdentifierChanged {
                 chat.timezoneUpdated = true
+            }
+            
+            if let pubkey = chat.ownerPubkey {
+                DataSyncManager.sharedInstance.saveTimezoneFor(
+                    chatPubkey: "\(pubkey)",
+                    timezone: TimezoneSetting(timezoneEnabledString: "\(enabled)", timezoneIdentifier: identifier ?? "")
+                )
             }
             
             CoreDataManager.sharedManager.saveContext()

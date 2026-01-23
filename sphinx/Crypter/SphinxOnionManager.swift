@@ -853,5 +853,16 @@ extension SphinxOnionManager {//Sign Up UI Related:
         }
         return nil
     }
+    
+    func getPersonalKeys() -> Keys? {
+        if let mnemonic = UserData.sharedInstance.getMnemonic() {
+            if let seed = try? sphinx.mnemonicToSeed(mnemonic: mnemonic) {
+                if let keys = try? sphinx.nodeKeys(net: "bitcoin", seed: seed) {
+                    return keys
+                }
+            }
+        }
+        return nil
+    }
 }
 

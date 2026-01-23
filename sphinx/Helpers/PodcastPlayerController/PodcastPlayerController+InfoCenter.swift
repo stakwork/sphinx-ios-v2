@@ -20,7 +20,7 @@ extension PodcastPlayerController {
         DataSyncManager.sharedInstance.saveFeedItemStatusFor(
             feedId: podcastId,
             itemId: episodeId,
-            feedItemStatus: FeedItemStatus(duration: currentTime ?? 0, currentTime: duration ?? 0)
+            feedItemStatus: FeedItemStatus(duration: duration ?? 0, currentTime: currentTime ?? 0)
         )
     }
     

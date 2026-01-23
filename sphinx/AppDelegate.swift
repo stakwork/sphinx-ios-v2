@@ -173,7 +173,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         podcastPlayerController.finishAndSaveContentConsumed()
         
         actionsManager.syncActionsInBackground()
-        feedsManager.saveContentFeedStatus()
+//        feedsManager.saveContentFeedStatus()
         storageManager.processGarbageCleanup()
         
         CoreDataManager.sharedManager.saveContext()
