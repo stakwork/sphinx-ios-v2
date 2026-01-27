@@ -1611,8 +1611,8 @@
 		47978EF72F040C9B0092B516 /* DataSync+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DataSync+CoreDataClass.swift"; sourceTree = "<group>"; };
 		47978EF92F040CA90092B516 /* DataSync+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DataSync+CoreDataProperties.swift"; sourceTree = "<group>"; };
 		47978EFC2F040D390092B516 /* DataSyncManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataSyncManager.swift; sourceTree = "<group>"; };
-		47978EFF2F040D420092B516 /* DataSyncModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataSyncModels.swift; sourceTree = "<group>"; };
 		47978EFE2F2288800092B516 /* Config.template.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.template.swift; sourceTree = "<group>"; };
+		47978EFF2F040D420092B516 /* DataSyncModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataSyncModels.swift; sourceTree = "<group>"; };
 		47978F002F2289260092B516 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
 		47978F0A2F228E360092B516 /* Secrets.release.template.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.release.template.xcconfig; sourceTree = "<group>"; };
 		47978F0B2F228E390092B516 /* Secrets.debug.template.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.debug.template.xcconfig; sourceTree = "<group>"; };
@@ -6828,7 +6828,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sphinx/sphinx.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 230;
+				CURRENT_PROJECT_VERSION = 231;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 8297M44YTW;
 				ENABLE_BITCODE = NO;
@@ -6918,7 +6918,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sphinx/sphinx.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 230;
+				CURRENT_PROJECT_VERSION = 231;
 				DEVELOPMENT_TEAM = 8297M44YTW;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
