@@ -5,134 +5,63 @@
 //  Created by Tomas Timinskas on 30/12/2025.
 //  Copyright © 2025 sphinx. All rights reserved.
 //
+
 import Foundation
 import CoreData
 
-class DataSyncManager : NSObject {
-    
-    class var sharedInstance : DataSyncManager {
-        struct Static {
-            static let instance = DataSyncManager()
-        }
-        return Static.instance
+class DataSyncManager: NSObject {
+
+    // MARK: - Singleton
+
+    static let sharedInstance = DataSyncManager()
+
+    // MARK: - Properties
+
+    private let syncQueue = DispatchQueue(label: "com.sphinx.datasync.queue", qos: .utility)
+    private var syncWorkItem: DispatchWorkItem?
+    private var isSyncing = false
+    private let syncLock = NSLock()
+
+    /// Dedicated background context for all DataSync operations
+    private lazy var syncContext: NSManagedObjectContext = {
+        return CoreDataManager.sharedManager.getBackgroundContext()
+    }()
+
+    /// Debounce interval in seconds before triggering sync
+    private let syncDebounceInterval: TimeInterval = 2.0
+
+    // MARK: - Setting Keys
+
+    /// Typealias for backward compatibility
+    typealias SettingKey = DataSyncSettingKey
+
+    // MARK: - Private Init
+
+    private override init() {
+        super.init()
     }
-    
-    let backgroundContext = CoreDataManager.sharedManager.getBackgroundContext()
-    
-    enum SettingKey: String, CaseIterable {
-        case tipAmount = "tip_amount"
-        case privatePhoto = "private_photo"
-        case timezone = "timezone"
-        case feedStatus = "feed_status"
-        case feedItemStatus = "feed_item_status"
-    }
-    
-    func parseFileText(text: String) -> ItemsResponse? {
-        var response: ItemsResponse! = nil
-        
-        do {
-            let data = text.data(using: .utf8)!
-            let decoder = JSONDecoder()
-            response = try decoder.decode(ItemsResponse.self, from: data)
-            
-            print("✅ Successfully parsed \(response.items.count) items\n")
-            
-            for item in response.items {
-                print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-                print("📋 Key: \(item.key)")
-                print("🆔 Identifier: \(item.identifier)")
-                
-                let formatter = DateFormatter()
-                formatter.dateStyle = .medium
-                formatter.timeStyle = .medium
-                formatter.timeZone = TimeZone.current
-                print("📆 Date: \(formatter.string(from: item.date))")
-                
-                switch item.value {
-                case .string(let value):
-                    print("📝 Value (String): \(value)")
-                    
-                case .int(let value):
-                    print("🔢 Value (Int): \(value)")
-                    
-                case .bool(let value):
-                    print("✓ Value (Bool): \(value)")
-                    
-                case .timezone(let timezone):
-                    print("🌍 Value (Timezone):")
-                    print("   - Enabled: \(timezone.timezoneEnabled)")
-                    print("   - Identifier: \(timezone.timezoneIdentifier)")
-                    
-                case .feedStatus(let feedStatus):
-                    print("📻 Value (Feed Status):")
-                    print("   - Chat Pubkey: \(feedStatus.chatPubkey)")
-                    print("   - Feed URL: \(feedStatus.feedUrl)")
-                    print("   - Subscribed: \(feedStatus.subscribed)")
-                    print("   - Sats/Minute: \(feedStatus.satsPerMinute)")
-                    print("   - Player Speed: \(feedStatus.playerSpeed)x")
-                    print("   - Item ID: \(feedStatus.itemId)")
-                    
-                case .feedItemStatus(let itemStatus):
-                    print("▶️ Value (Feed Item Status):")
-                    print("   - Duration: \(itemStatus.duration)s")
-                    print("   - Current Time: \(itemStatus.currentTime)s")
-                    print("   - Progress: \(String(format: "%.1f", itemStatus.progressPercentage))%")
-                    print("   - Remaining: \(itemStatus.remainingTime)s")
-                    print("   - Completed: \(itemStatus.isCompleted ? "Yes" : "No")")
-                }
-                print()
-            }
-        } catch {
-            print("❌ Error parsing JSON: \(error)")
-            if let decodingError = error as? DecodingError {
-                switch decodingError {
-                case .dataCorrupted(let context):
-                    print("   Context: \(context.debugDescription)")
-                    print("   Path: \(context.codingPath.map { $0.stringValue }.joined(separator: " -> "))")
-                case .keyNotFound(let key, let context):
-                    print("   Key '\(key.stringValue)' not found")
-                    print("   Context: \(context.debugDescription)")
-                case .typeMismatch(let type, let context):
-                    print("   Type '\(type)' mismatch")
-                    print("   Context: \(context.debugDescription)")
-                case .valueNotFound(let type, let context):
-                    print("   Value '\(type)' not found")
-                    print("   Context: \(context.debugDescription)")
-                @unknown default:
-                    print("   Unknown decoding error")
-                }
-            }
-        }
-        
-        return response
-    }
-    
-    func saveTipAmount(
-        value: String,
-        context: NSManagedObjectContext? = nil
-    ) {
+
+    // MARK: - Public Save Methods
+
+    func saveTipAmount(value: String) {
         saveDataSyncItemWith(
             key: SettingKey.tipAmount.rawValue,
             identifier: "0",
             value: value
         )
     }
-    
-    func savePrivatePhoto(
-        value: String,
-        context: NSManagedObjectContext? = nil
-    ) {
+
+    func savePrivatePhoto(value: String) {
         saveDataSyncItemWith(
             key: SettingKey.privatePhoto.rawValue,
             identifier: "0",
             value: value
         )
     }
-    
+
     func saveTimezoneFor(
         chatPubkey: String,
-        timezone: TimezoneSetting,
-        context: NSManagedObjectContext? = nil
+        timezone: TimezoneSetting
     ) {
         if let jsonString = timezone.toJSONString() {
             saveDataSyncItemWith(
@@ -142,11 +71,10 @@ class DataSyncManager : NSObject {
             )
         }
     }
-    
+
     func saveFeedStatusFor(
         feedId: String,
-        feedStatus: FeedStatus,
-        context: NSManagedObjectContext? = nil
+        feedStatus: FeedStatus
     ) {
         if let stringValue = feedStatus.toJSONString() {
             saveDataSyncItemWith(
@@ -156,12 +84,11 @@ class DataSyncManager : NSObject {
             )
         }
     }
-    
+
     func saveFeedItemStatusFor(
         feedId: String,
         itemId: String,
-        feedItemStatus: FeedItemStatus,
-        context: NSManagedObjectContext? = nil
+        feedItemStatus: FeedItemStatus
     ) {
         if let jsonString = feedItemStatus.toJSONString() {
             saveDataSyncItemWith(
@@ -171,108 +98,230 @@ class DataSyncManager : NSObject {
             )
         }
     }
-    
-    func saveDataSyncItemWith(
+
+    // MARK: - Core Save Method
+
+    private func saveDataSyncItemWith(
         key: String,
         identifier: String,
-        value: String,
-        context: NSManagedObjectContext? = nil
+        value: String
     ) {
-        let managedContext = context ?? backgroundContext
-        let dataSyncItem = DataSync.getContentItemWith(key: key, identifier: identifier) ?? DataSync(context: managedContext) as DataSync
-        
-        dataSyncItem.key = key
-        dataSyncItem.identifier = identifier
-        dataSyncItem.value = value
-        dataSyncItem.date = Date()
-        
-        managedContext.saveContext()
-        
-        syncWithServer()
-    }
-    
-    func syncWithServerInBackground() {
-        DispatchQueue.global(qos: .background).async {
-            self.syncWithServer()
+        syncContext.perform { [weak self] in
+            guard let self = self else { return }
+
+            let dataSyncItem = DataSync.getContentItemWith(
+                key: key,
+                identifier: identifier,
+                context: self.syncContext
+            ) ?? DataSync(context: self.syncContext)
+
+            dataSyncItem.key = key
+            dataSyncItem.identifier = identifier
+            dataSyncItem.value = value
+            dataSyncItem.date = Date()
+
+            self.syncContext.saveContext()
+            self.scheduleSyncWithServer()
         }
     }
-    
-    func findMissingItems(firstArray: [DataSync], secondArray: [SettingItem]) -> [SettingItem] {
-        // Create a Set of combined key-identifier strings from the first array
-        let firstArraySet = Set(firstArray.map { "\($0.key)-\($0.identifier)" })
-        
-        // Filter items from second array that are not in first array
-        let missingItems = secondArray.filter { item in
-            let combinedKey = "\(item.key)-\(item.identifier)"
-            return !firstArraySet.contains(combinedKey)
-        }
-        
-        return missingItems
-    }
-    
-    func syncWithServer() {
-        Task {
-            let serverDataString = await getFileFromServer()
-            var itemsResponse = parseFileText(text: serverDataString ?? "") ?? ItemsResponse(items: [])
-            let dbItems = DataSync.getAllDataSync(context: backgroundContext)
-            let missingItems = findMissingItems(firstArray: dbItems, secondArray: itemsResponse.items)
-            
-            for item in missingItems {
-                restoreDataFrom(serverItem: item)
+
+    // MARK: - Sync Scheduling (Debouncing)
+
+    /// Schedules a sync with debouncing to prevent excessive server calls
+    private func scheduleSyncWithServer() {
+        syncQueue.async { [weak self] in
+            guard let self = self else { return }
+
+            // Cancel any pending sync
+            self.syncWorkItem?.cancel()
+
+            // Create new work item
+            let workItem = DispatchWorkItem { [weak self] in
+                self?.performSyncWithServer()
             }
-            
+            self.syncWorkItem = workItem
+
+            // Schedule with debounce delay
+            self.syncQueue.asyncAfter(
+                deadline: .now() + self.syncDebounceInterval,
+                execute: workItem
+            )
+        }
+    }
+
+    /// Called from AppDelegate when app comes to foreground
+    func syncWithServerInBackground() {
+        syncQueue.async { [weak self] in
+            self?.performSyncWithServer()
+        }
+    }
+
+    // MARK: - Sync Implementation
+
+    private func performSyncWithServer() {
+        // Prevent concurrent syncs
+        syncLock.lock()
+        guard !isSyncing else {
+            syncLock.unlock()
+            #if DEBUG
+            print("DataSync: Sync already in progress, skipping")
+            #endif
+            return
+        }
+        isSyncing = true
+        syncLock.unlock()
+
+        Task {
+            defer {
+                syncLock.lock()
+                isSyncing = false
+                syncLock.unlock()
+            }
+
+            await syncWithServer()
+        }
+    }
+
+    private func syncWithServer() async {
+        let serverDataString = await getFileFromServer()
+        var itemsResponse = parseFileText(text: serverDataString ?? "") ?? ItemsResponse(items: [])
+
+        // Fetch local items within sync context
+        var dbItems: [DataSync] = []
+        await syncContext.perform {
+            dbItems = DataSync.getAllDataSync(context: self.syncContext)
+        }
+
+        let missingItems = findMissingItems(localItems: dbItems, serverItems: itemsResponse.items)
+
+        // Restore items that exist on server but not locally
+        for item in missingItems {
+            await restoreDataFrom(serverItem: item)
+        }
+
+        // Track items to delete after successful upload
+        var itemsToDelete: [DataSync] = []
+
+        // Merge local items with server items
+        await syncContext.perform {
             for item in dbItems {
                 if let index = itemsResponse.getItemIndex(key: item.key, identifier: item.identifier) {
                     let serverItem = itemsResponse.items[index]
-                    
+
                     if serverItem.date.timeIntervalSince1970 < item.date.timeIntervalSince1970 {
-                        if let key = DataSyncManager.SettingKey(rawValue: item.key), let settingValue = SettingValue.from(string: item.value, forKey: key) {
-                            let newItem = SettingItem(key: item.key, identifier: item.identifier, dateString: "\(item.date.timeIntervalSince1970)", value: settingValue)
+                        // Local is newer - update server item
+                        if let key = SettingKey(rawValue: item.key),
+                           let settingValue = SettingValue.from(string: item.value, forKey: key) {
+                            let newItem = SettingItem(
+                                key: item.key,
+                                identifier: item.identifier,
+                                dateString: "\(item.date.timeIntervalSince1970)",
+                                value: settingValue
+                            )
                             itemsResponse.items[index] = newItem
-                            
-                            backgroundContext.delete(item)
                         }
                     } else {
-                        restoreDataFrom(serverItem: serverItem)
+                        // Server is newer - restore from server (already handled in missingItems loop for new items)
+                        // For existing items where server is newer, we need to restore
+                        Task {
+                            await self.restoreDataFrom(serverItem: serverItem)
+                        }
                     }
+                    itemsToDelete.append(item)
                 } else {
-                    if let key = DataSyncManager.SettingKey(rawValue: item.key), let settingValue = SettingValue.from(string: item.value, forKey: key) {
-                        let newItem = SettingItem(key: item.key, identifier: item.identifier, dateString: "\(item.date.timeIntervalSince1970)", value: settingValue)
+                    // Item doesn't exist on server - add it
+                    if let key = SettingKey(rawValue: item.key),
+                       let settingValue = SettingValue.from(string: item.value, forKey: key) {
+                        let newItem = SettingItem(
+                            key: item.key,
+                            identifier: item.identifier,
+                            dateString: "\(item.date.timeIntervalSince1970)",
+                            value: settingValue
+                        )
                         itemsResponse.items.append(newItem)
                     }
+                    itemsToDelete.append(item)
                 }
-                
-                backgroundContext.delete(item)
             }
-            
-            backgroundContext.saveContext()
-            
-            saveFileFrom(itemResponse: itemsResponse)
+        }
+
+        // Upload to server and only delete local items on success
+        let uploadSuccess = await saveFileToServer(itemResponse: itemsResponse)
+
+        if uploadSuccess {
+            await syncContext.perform {
+                for item in itemsToDelete {
+                    self.syncContext.delete(item)
+                }
+                self.syncContext.saveContext()
+            }
+            #if DEBUG
+            print("DataSync: Successfully synced \(itemsResponse.items.count) items")
+            #endif
+        } else {
+            #if DEBUG
+            print("DataSync: Upload failed, keeping local items for retry")
+            #endif
         }
     }
-    
-    func restoreDataFrom(serverItem: SettingItem) {
-        if let key = DataSyncManager.SettingKey(rawValue: serverItem.key) {
-            switch(key) {
+
+    // MARK: - Helper Methods
+
+    /// Finds items that exist on server but not in local database
+    private func findMissingItems(localItems: [DataSync], serverItems: [SettingItem]) -> [SettingItem] {
+        let localSet = Set(localItems.map { "\($0.key)-\($0.identifier)" })
+
+        return serverItems.filter { item in
+            let combinedKey = "\(item.key)-\(item.identifier)"
+            return !localSet.contains(combinedKey)
+        }
+    }
+
+    /// Parses the identifier for feedItemStatus which uses "feedId-itemId" format
+    /// Handles feedIds that may contain hyphens by splitting on the last hyphen
+    private func parseFeedItemIdentifier(_ identifier: String) -> (feedId: String, itemId: String)? {
+        guard let lastHyphenIndex = identifier.lastIndex(of: "-") else {
+            return nil
+        }
+
+        let feedId = String(identifier[..<lastHyphenIndex])
+        let itemId = String(identifier[identifier.index(after: lastHyphenIndex)...])
+
+        guard !feedId.isEmpty && !itemId.isEmpty else {
+            return nil
+        }
+
+        return (feedId, itemId)
+    }
+
+    // MARK: - Data Restoration
+
+    private func restoreDataFrom(serverItem: SettingItem) async {
+        guard let key = SettingKey(rawValue: serverItem.key) else { return }
+
+        await MainActor.run {
+            switch key {
             case .tipAmount:
                 if let intValue = serverItem.value.asInt {
                     UserContact.kTipAmount = intValue
                 }
-                break
+
             case .privatePhoto:
                 if let boolValue = serverItem.value.asBool {
                     if let owner = UserContact.getOwner() {
                         owner.privatePhoto = boolValue
+                        owner.managedObjectContext?.saveContext()
                     }
                 }
-                break
+
             case .timezone:
                 if let chat = Chat.getChatWithOwnerPubkey(ownerPubkey: serverItem.identifier) {
                     chat.timezoneEnabled = serverItem.value.asTimezone?.timezoneEnabled ?? chat.timezoneEnabled
                     chat.timezoneIdentifier = serverItem.value.asTimezone?.timezoneIdentifier
                     chat.timezoneUpdated = true
+                    chat.managedObjectContext?.saveContext()
                 }
-                break
+
             case .feedStatus:
                 if let feedStatus = serverItem.value.asFeedStatus {
                     if let feed = ContentFeed.getFeedById(feedId: serverItem.identifier) {
@@ -280,98 +329,131 @@ class DataSyncManager : NSObject {
                         feed.chat = Chat.getChatWithOwnerPubkey(ownerPubkey: feedStatus.chatPubkey)
                         feed.feedURL = URL(string: feedStatus.feedUrl)
                         feed.isSubscribedToFromSearch = feedStatus.subscribed
-                        
+
                         podFeed.satsPerMinute = feedStatus.satsPerMinute
                         podFeed.playerSpeed = Float(feedStatus.playerSpeed)
-                        
+
                         if feedStatus.itemId.isNotEmpty {
                             podFeed.currentEpisodeId = feedStatus.itemId
                             feed.dateLastConsumed = Date()
                         }
+                        feed.managedObjectContext?.saveContext()
                     } else {
                         FeedsManager.sharedInstance.getContentFeedFor(
                             feedId: feedStatus.feedId,
                             feedUrl: feedStatus.feedUrl,
                             chat: Chat.getChatWithOwnerPubkey(ownerPubkey: feedStatus.chatPubkey),
-                            context: backgroundContext,
+                            context: syncContext,
                             completion: { _ in }
                         )
                     }
                 }
-                break
+
             case .feedItemStatus:
-                let identifierComponents = serverItem.identifier.components(separatedBy: "-")
-                if
-                    let itemId = identifierComponents.last,
-                    let feedId = identifierComponents.first,
-                    let feedItem = ContentFeedItem.getItemWith(itemID: itemId)
-                {
-                    if let feedItemStatus = serverItem.value.asFeedItemStatus {
-                        let podEpisode = PodcastEpisode.convertFrom(contentFeedItem: feedItem)
-                        podEpisode.feedID = feedId
-                        podEpisode.duration = feedItemStatus.duration
-                        podEpisode.currentTime = feedItemStatus.currentTime
-                    }
+                guard let parsed = parseFeedItemIdentifier(serverItem.identifier),
+                      let feedItem = ContentFeedItem.getItemWith(itemID: parsed.itemId),
+                      let feedItemStatus = serverItem.value.asFeedItemStatus else {
+                    return
                 }
+
+                let podEpisode = PodcastEpisode.convertFrom(contentFeedItem: feedItem)
+                podEpisode.feedID = parsed.feedId
+                podEpisode.duration = feedItemStatus.duration
+                podEpisode.currentTime = feedItemStatus.currentTime
+                feedItem.managedObjectContext?.saveContext()
             }
         }
     }
-    
-    func deleteFile() {
-        let fileName = "datasync.txt"
-        let fileManager = FileManager.default
-        let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let fileURL = documentsURL.appendingPathComponent(fileName)
+
+    // MARK: - File Parsing
+
+    func parseFileText(text: String) -> ItemsResponse? {
+        guard let data = text.data(using: .utf8) else {
+            #if DEBUG
+            print("DataSync: Failed to convert text to UTF-8 data")
+            #endif
+            return nil
+        }
 
         do {
-            try fileManager.removeItem(at: fileURL)
-            print("✅ File deleted successfully")
+            let decoder = JSONDecoder()
+            let response = try decoder.decode(ItemsResponse.self, from: data)
+
+            #if DEBUG
+            printParsedItems(response)
+            #endif
+
+            return response
         } catch {
-            print("❌ Error deleting file: \(error)")
+            #if DEBUG
+            printDecodingError(error)
+            #endif
+            return nil
         }
     }
-    
-    func getFileFromServer() async -> String? {
+
+    #if DEBUG
+    private func printParsedItems(_ response: ItemsResponse) {
+        print("DataSync: Successfully parsed \(response.items.count) items")
+
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .medium
+        formatter.timeZone = TimeZone.current
+
+        for item in response.items {
+            print("  - Key: \(item.key), Identifier: \(item.identifier), Date: \(formatter.string(from: item.date))")
+        }
+    }
+
+    private func printDecodingError(_ error: Error) {
+        print("DataSync: Error parsing JSON: \(error)")
+        if let decodingError = error as? DecodingError {
+            switch decodingError {
+            case .dataCorrupted(let context):
+                print("  Context: \(context.debugDescription)")
+            case .keyNotFound(let key, let context):
+                print("  Key '\(key.stringValue)' not found: \(context.debugDescription)")
+            case .typeMismatch(let type, let context):
+                print("  Type '\(type)' mismatch: \(context.debugDescription)")
+            case .valueNotFound(let type, let context):
+                print("  Value '\(type)' not found: \(context.debugDescription)")
+            @unknown default:
+                print("  Unknown decoding error")
+            }
+        }
+    }
+    #endif
+
+    // MARK: - Server Communication
+
+    private func getFileFromServer() async -> String? {
         let attachmentsManager = AttachmentsManager.sharedInstance
         let isAuthenticated = attachmentsManager.isAuthenticated()
-        
-        // Handle authentication if needed
+
         if !isAuthenticated.0 {
-            let authSuccess = await withCheckedContinuation { continuation in
-                attachmentsManager.authenticate(
-                    completion: {
-                        continuation.resume(returning: true)
-                    },
-                    errorCompletion: {
-                        print("Error authenticating with memes server")
-                        continuation.resume(returning: false)
-                    }
-                )
-            }
-            
+            let authSuccess = await authenticateWithServer()
             if !authSuccess {
                 return nil
             }
-            
-            // Recursively call after authentication
             return await getFileFromServer()
         }
-        
+
         guard let token = isAuthenticated.1 else {
             return nil
         }
-        
-        // Call the API with continuation
+
         return await withCheckedContinuation { continuation in
             API.sharedInstance.getPersonalPreferencesFile(
                 token: token,
-                callback: { data in
-                    if let string = String(data: data, encoding: .utf8),
-                       let decrypted = self.decrypt(value: string) {
-                        continuation.resume(returning: decrypted)
-                    } else {
+                callback: { [weak self] data in
+                    guard let self = self,
+                          let string = String(data: data, encoding: .utf8),
+                          let decrypted = self.decrypt(value: string) else {
                         continuation.resume(returning: nil)
+                        return
                     }
+                    continuation.resume(returning: decrypted)
                 },
                 errorCallback: {
                     continuation.resume(returning: nil)
@@ -379,70 +461,105 @@ class DataSyncManager : NSObject {
             )
         }
     }
-    
-    func saveFileFrom(itemResponse: ItemsResponse) {
+
+    private func authenticateWithServer() async -> Bool {
+        return await withCheckedContinuation { continuation in
+            AttachmentsManager.sharedInstance.authenticate(
+                completion: {
+                    continuation.resume(returning: true)
+                },
+                errorCompletion: {
+                    #if DEBUG
+                    print("DataSync: Error authenticating with memes server")
+                    #endif
+                    continuation.resume(returning: false)
+                }
+            )
+        }
+    }
+
+    private func saveFileToServer(itemResponse: ItemsResponse) async -> Bool {
         if itemResponse.items.isEmpty {
-            return
+            return true // Nothing to save is considered success
         }
-        guard let text = itemResponse.toOriginalFormatJSON(), let encrypted = encrypt(value: text) else {
-            return
+
+        guard let text = itemResponse.toOriginalFormatJSON(),
+              let encrypted = encrypt(value: text) else {
+            #if DEBUG
+            print("DataSync: Failed to encrypt data for upload")
+            #endif
+            return false
         }
-        
-        guard let pubkey = UserContact.getOwner()?.publicKey, let base64URLPubkey = hexToBase64URL(pubkey) else {
-            return
+
+        guard let pubkey = UserContact.getOwner()?.publicKey,
+              let base64URLPubkey = hexToBase64URL(pubkey) else {
+            #if DEBUG
+            print("DataSync: Failed to get owner pubkey")
+            #endif
+            return false
         }
-        
+
         let attachmentsManager = AttachmentsManager.sharedInstance
         let isAuthenticated = attachmentsManager.isAuthenticated()
-        
+
         if !isAuthenticated.0 {
-            attachmentsManager.authenticate(completion: {
-                self.saveFileFrom(itemResponse: itemResponse)
-            }, errorCompletion: {
-                print("Error authenticating with memes server")
-            })
-            return
+            let authSuccess = await authenticateWithServer()
+            if !authSuccess {
+                return false
+            }
+            return await saveFileToServer(itemResponse: itemResponse)
         }
-        
-        guard let token = isAuthenticated.1 else {
-            return
+
+        guard let token = isAuthenticated.1,
+              let data = encrypted.data(using: .utf8) else {
+            return false
         }
-            
-        if let data = encrypted.data(using: .utf8) {
+
+        return await withCheckedContinuation { continuation in
             API.sharedInstance.uploadPersonalPreferences(
                 data: data,
                 pubkey: base64URLPubkey,
                 token: token,
                 progressCallback: { progress in
-                    print("Progress uploading personal preferences: \(progress)")
+                    #if DEBUG
+                    print("DataSync: Upload progress: \(progress)%")
+                    #endif
                 },
-                callback: { (success, json) in
-                    print(success)
+                callback: { success, _ in
+                    continuation.resume(returning: success)
                 },
                 errorCallback: { error in
-                    print(error)
+                    #if DEBUG
+                    print("DataSync: Upload error: \(error)")
+                    #endif
+                    continuation.resume(returning: false)
                 }
             )
         }
     }
-    
-    func encrypt(value: String) -> String? {
-        if let keys = SphinxOnionManager.sharedInstance.getPersonalKeys() {
-            return SymmetricEncryptionManager.sharedInstance.encryptString(text: value, key: keys.secret)
+
+    // MARK: - Encryption
+
+    private func encrypt(value: String) -> String? {
+        guard let keys = SphinxOnionManager.sharedInstance.getPersonalKeys() else {
+            return nil
         }
-        return nil
+        return SymmetricEncryptionManager.sharedInstance.encryptString(text: value, key: keys.secret)
     }
-    
-    func decrypt(value: String) -> String? {
-        if let keys = SphinxOnionManager.sharedInstance.getPersonalKeys() {
-            return SymmetricEncryptionManager.sharedInstance.decryptString(text: value, key: keys.secret)
+
+    private func decrypt(value: String) -> String? {
+        guard let keys = SphinxOnionManager.sharedInstance.getPersonalKeys() else {
+            return nil
         }
-        return nil
+        return SymmetricEncryptionManager.sharedInstance.decryptString(text: value, key: keys.secret)
     }
-    
-    func hexToBase64URL(_ hex: String) -> String? {
+
+    // MARK: - Utilities
+
+    private func hexToBase64URL(_ hex: String) -> String? {
         var data = Data()
         var hex = hex
+
         while hex.count > 0 {
             let index = hex.index(hex.startIndex, offsetBy: 2)
             let byteString = String(hex[..<index])
@@ -455,567 +572,30 @@ class DataSyncManager : NSObject {
         let base64 = data.base64EncodedString()
 
         let base64URL = base64
-          .replacingOccurrences(of: "+", with: "-")
-          .replacingOccurrences(of: "/", with: "_")
-          .replacingOccurrences(of: "=", with: "")
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
 
         return base64URL
     }
-}
 
-struct ItemsResponse: Codable {
-    var items: [SettingItem]
-    
-    func getItemIndex(key: String, identifier: String) -> Int? {
-        return items.firstIndex(where: { $0.key == key && $0.identifier == identifier })
-    }
-    
-    func toOriginalFormatJSON(prettyPrinted: Bool = false) -> String? {
-        var itemsArray: [[String: Any]] = []
-        
-        for item in items {
-            var itemDict: [String: Any] = [
-                "key": item.key,
-                "identifier": item.identifier,
-                "date": String(format: "%.0f", item.date.timeIntervalSince1970)
-            ]
-            
-            // Convert value based on type
-            switch item.value {
-            case .string(let value):
-                itemDict["value"] = value
-                
-            case .int(let value):
-                itemDict["value"] = String(value)
-                
-            case .bool(let value):
-                itemDict["value"] = value ? "true" : "false"
-                
-            case .timezone(let timezone):
-                itemDict["value"] = [
-                    "timezoneEnabled": timezone.timezoneEnabled ? "true" : "false",
-                    "timezoneIdentifier": timezone.timezoneIdentifier
-                ]
-                
-            case .feedStatus(let feedStatus):
-                itemDict["value"] = [
-                    "chat_pubkey": feedStatus.chatPubkey,
-                    "feed_url": feedStatus.feedUrl,
-                    "subscribed": feedStatus.subscribed ? "true" : "false",
-                    "sats_per_minute": String(feedStatus.satsPerMinute),
-                    "player_speed": String(feedStatus.playerSpeed),
-                    "item_id": feedStatus.itemId,
-                    "feed_id": feedStatus.feedId
-                ]
-                
-            case .feedItemStatus(let itemStatus):
-                itemDict["value"] = [
-                    "duration": String(itemStatus.duration),
-                    "current_time": String(itemStatus.currentTime)
-                ]
-            }
-            
-            itemsArray.append(itemDict)
-        }
-        
-        let jsonObject: [String: Any] = ["items": itemsArray]
-        
+    // MARK: - Debug Utilities
+
+    func deleteFile() {
+        let fileName = "datasync.txt"
+        let fileManager = FileManager.default
+        let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let fileURL = documentsURL.appendingPathComponent(fileName)
+
         do {
-            let jsonData = try JSONSerialization.data(
-                withJSONObject: jsonObject,
-                options: prettyPrinted ? [.prettyPrinted, .sortedKeys] : []
-            )
-            return String(data: jsonData, encoding: .utf8)
+            try fileManager.removeItem(at: fileURL)
+            #if DEBUG
+            print("DataSync: File deleted successfully")
+            #endif
         } catch {
-            print("❌ Serialization error: \(error)")
-            return nil
+            #if DEBUG
+            print("DataSync: Error deleting file: \(error)")
+            #endif
         }
     }
 }
-
-// MARK: - Setting Item
-
-struct SettingItem: Codable {
-    var key: String
-    var identifier: String
-    var dateString: String
-    var value: SettingValue
-    
-    // Date as actual Date object
-    var date: Date {
-        if let timestamp = TimeInterval(dateString) {
-            return Date(timeIntervalSince1970: timestamp)
-        }
-        return Date() // Fallback to current date
-    }
-    
-    // CodingKeys to map JSON to properties
-    enum CodingKeys: String, CodingKey {
-        case key
-        case identifier
-        case dateString = "date"
-        case value
-    }
-}
-
-// MARK: - Setting Value (Handles String, Bool, Int, and Object)
-
-enum SettingValue: Codable {
-    case string(String)
-    case int(Int)
-    case bool(Bool)
-    case timezone(TimezoneSetting)
-    case feedStatus(FeedStatus)
-    case feedItemStatus(FeedItemStatus)
-    
-    init(from decoder: Decoder) throws {
-        let container = try decoder.singleValueContainer()
-        
-        // Try FeedStatus first
-        if let feedStatus = try? container.decode(FeedStatus.self) {
-            self = .feedStatus(feedStatus)
-            return
-        }
-        
-        // Try FeedItemStatus
-        if let feedItemStatus = try? container.decode(FeedItemStatus.self) {
-            self = .feedItemStatus(feedItemStatus)
-            return
-        }
-        
-        // Try timezone object
-        if let timezone = try? container.decode(TimezoneSetting.self) {
-            self = .timezone(timezone)
-            return
-        }
-        
-        // Try string
-        if let string = try? container.decode(String.self) {
-            // Check if it's a boolean string
-            if string.lowercased() == "true" {
-                self = .bool(true)
-                return
-            } else if string.lowercased() == "false" {
-                self = .bool(false)
-                return
-            }
-            
-            // Check if it's an integer string
-            if let intValue = Int(string) {
-                self = .int(intValue)
-                return
-            }
-            
-            // Check if it's a double string
-            if let doubleValue = Double(string), !string.contains(".") {
-                self = .int(Int(doubleValue))
-                return
-            }
-            
-            // Otherwise it's just a string
-            self = .string(string)
-            return
-        }
-        
-        // Try direct int
-        if let int = try? container.decode(Int.self) {
-            self = .int(int)
-            return
-        }
-        
-        // Try direct bool
-        if let bool = try? container.decode(Bool.self) {
-            self = .bool(bool)
-            return
-        }
-        
-        throw DecodingError.dataCorruptedError(
-            in: container,
-            debugDescription: "Cannot decode value"
-        )
-    }
-    
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        switch self {
-        case .string(let value):
-            try container.encode(value)
-        case .int(let value):
-            try container.encode(value)
-        case .bool(let value):
-            try container.encode(value)
-        case .timezone(let setting):
-            try container.encode(setting)
-        case .feedStatus(let status):
-            try container.encode(status)
-        case .feedItemStatus(let status):
-            try container.encode(status)
-        }
-    }
-    
-    // Helper computed properties
-    var asString: String? {
-        switch self {
-        case .string(let value): return value
-        case .int(let value): return String(value)
-        case .bool(let value): return String(value)
-        default: return nil
-        }
-    }
-    
-    var asInt: Int? {
-        switch self {
-        case .int(let value): return value
-        case .string(let value): return Int(value)
-        case .bool(let value): return value ? 1 : 0
-        default: return nil
-        }
-    }
-    
-    var asBool: Bool? {
-        switch self {
-        case .bool(let value): return value
-        case .string(let value): return Bool(value)
-        case .int(let value): return value != 0
-        default: return nil
-        }
-    }
-    
-    var asTimezone: TimezoneSetting? {
-        if case .timezone(let setting) = self {
-            return setting
-        }
-        return nil
-    }
-    
-    var asFeedStatus: FeedStatus? {
-        if case .feedStatus(let status) = self {
-            return status
-        }
-        return nil
-    }
-    
-    var asFeedItemStatus: FeedItemStatus? {
-        if case .feedItemStatus(let status) = self {
-            return status
-        }
-        return nil
-    }
-    
-    static func from(string: String, forKey key: DataSyncManager.SettingKey) -> SettingValue? {
-        switch key {
-        case .tipAmount:
-            // tip_amount is always an Int
-            guard let intValue = Int(string) else {
-                print("❌ Failed to parse '\(string)' as Int for \(key.rawValue)")
-                return nil
-            }
-            return .int(intValue)
-            
-        case .privatePhoto:
-            // private_photo is always a Bool
-            guard let boolValue = parseBool(from: string) else {
-                print("❌ Failed to parse '\(string)' as Bool for \(key.rawValue)")
-                return nil
-            }
-            return .bool(boolValue)
-            
-        case .timezone:
-            // timezone is always a TimezoneSetting object
-            guard let timezone = parseTimezone(from: string) else {
-                print("❌ Failed to parse '\(string)' as TimezoneSetting for \(key.rawValue)")
-                return nil
-            }
-            return .timezone(timezone)
-            
-        case .feedStatus:
-            // feed_status is always a FeedStatus object
-            guard let feedStatus = parseFeedStatus(from: string) else {
-                print("❌ Failed to parse '\(string)' as FeedStatus for \(key.rawValue)")
-                return nil
-            }
-            return .feedStatus(feedStatus)
-            
-        case .feedItemStatus:
-            // feed_item_status is always a FeedItemStatus object
-            guard let feedItemStatus = parseFeedItemStatus(from: string) else {
-                print("❌ Failed to parse '\(string)' as FeedItemStatus for \(key.rawValue)")
-                return nil
-            }
-            return .feedItemStatus(feedItemStatus)
-        }
-    }
-    
-    // MARK: - Private Parsing Helpers
-    
-    private static func parseBool(from string: String) -> Bool? {
-        switch string.lowercased() {
-        case "true", "1", "yes":
-            return true
-        case "false", "0", "no":
-            return false
-        default:
-            return nil
-        }
-    }
-    
-    private static func parseTimezone(from string: String) -> TimezoneSetting? {
-        guard let data = string.data(using: .utf8),
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let enabled = json?["timezoneEnabled"] as? String,
-              let identifier = json?["timezoneIdentifier"] as? String else {
-            return nil
-        }
-        
-        return TimezoneSetting(
-            timezoneEnabledString: enabled,
-            timezoneIdentifier: identifier
-        )
-    }
-    
-    private static func parseFeedStatus(from string: String) -> FeedStatus? {
-        guard let data = string.data(using: .utf8),
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let chatPubkey = json?["chat_pubkey"] as? String,
-              let feedUrl = json?["feed_url"] as? String,
-              let feedId = json?["feed_id"] as? String,
-              let subscribed = json?["subscribed"] as? String,
-              let satsPerMinute = json?["sats_per_minute"] as? String,
-              let playerSpeed = json?["player_speed"] as? String,
-              let itemId = json?["item_id"] as? String else {
-            return nil
-        }
-        
-        return FeedStatus(
-            chatPubkey: chatPubkey,
-            feedUrl: feedUrl,
-            feedId: feedId,
-            subscribed: subscribed.lowercased() == "true",
-            satsPerMinute: Int(satsPerMinute) ?? 0,
-            playerSpeed: Double(playerSpeed) ?? 1.0,
-            itemId: itemId
-        )
-    }
-    
-    private static func parseFeedItemStatus(from string: String) -> FeedItemStatus? {
-        guard let data = string.data(using: .utf8),
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let duration = json?["duration"] as? String,
-              let currentTime = json?["current_time"] as? String else {
-            return nil
-        }
-        
-        return FeedItemStatus(
-            duration: Int(duration) ?? 0,
-            currentTime: Int(currentTime) ?? 0
-        )
-    }
-}
-
-// MARK: - Timezone Setting
-
-struct TimezoneSetting: Codable {
-    private let timezoneEnabledString: String
-    let timezoneIdentifier: String
-    
-    // Boolean property
-    var timezoneEnabled: Bool {
-        return timezoneEnabledString.lowercased() == "true"
-    }
-    
-    enum CodingKeys: String, CodingKey {
-        case timezoneEnabledString = "timezoneEnabled"
-        case timezoneIdentifier
-    }
-    
-    init(timezoneEnabledString: String, timezoneIdentifier: String) {
-        self.timezoneEnabledString = timezoneEnabledString
-        self.timezoneIdentifier = timezoneIdentifier
-    }
-    
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        timezoneEnabledString = try container.decode(String.self, forKey: .timezoneEnabledString)
-        timezoneIdentifier = try container.decode(String.self, forKey: .timezoneIdentifier)
-    }
-    
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        
-        // Encode values as strings
-        try container.encode(timezoneEnabledString, forKey: .timezoneEnabledString)
-        try container.encode(timezoneIdentifier, forKey: .timezoneIdentifier)
-    }
-    
-    func toJSONString() -> String? {
-        let encoder = JSONEncoder()
-        
-        do {
-            let jsonData = try encoder.encode(self)
-            return String(data: jsonData, encoding: .utf8)
-        } catch {
-            print("❌ Error encoding TimezoneSetting: \(error)")
-            return nil
-        }
-    }
-}
-
-// MARK: - Feed Status
-
-struct FeedStatus: Codable {
-    let chatPubkey: String
-    let feedUrl: String
-    let feedId: String
-    let subscribed: Bool
-    let satsPerMinute: Int
-    let playerSpeed: Double
-    let itemId: String
-    
-    enum CodingKeys: String, CodingKey {
-        case chatPubkey = "chat_pubkey"
-        case feedUrl = "feed_url"
-        case feedId = "feed_id"
-        case subscribed = "subscribed"
-        case satsPerMinute = "sats_per_minute"
-        case playerSpeed = "player_speed"
-        case itemId = "item_id"
-    }
-    
-    init(
-        chatPubkey: String,
-        feedUrl: String,
-        feedId: String,
-        subscribed: Bool,
-        satsPerMinute: Int,
-        playerSpeed: Double,
-        itemId: String
-    ) {
-        self.chatPubkey = chatPubkey
-        self.feedUrl = feedUrl
-        self.feedId = feedId
-        self.subscribed = subscribed
-        self.satsPerMinute = satsPerMinute
-        self.playerSpeed = playerSpeed
-        self.itemId = itemId
-    }
-    
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        
-        // Parse chat_pubkey
-        chatPubkey = try container.decode(String.self, forKey: .chatPubkey)
-        
-        // Parse feed_url
-        feedUrl = try container.decode(String.self, forKey: .feedUrl)
-        
-        // Parse feed_url
-        feedId = try container.decode(String.self, forKey: .feedId)
-        
-        // Parse subscribed
-        let subscribedString = try container.decode(String.self, forKey: .subscribed)
-        subscribed = subscribedString.lowercased() == "true"
-        
-        // Parse sats_per_minute
-        let satsString = try container.decode(String.self, forKey: .satsPerMinute)
-        satsPerMinute = Int(satsString) ?? 0
-        
-        // Parse player_speed
-        let speedString = try container.decode(String.self, forKey: .playerSpeed)
-        playerSpeed = Double(speedString) ?? 1.0
-        
-        // Parse item_id
-        let itemIdString = try container.decode(String.self, forKey: .itemId)
-        itemId = itemIdString
-    }
-    
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        
-        // Encode all values as strings
-        try container.encode(chatPubkey, forKey: .chatPubkey)
-        try container.encode(feedUrl, forKey: .feedUrl)
-        try container.encode(feedId, forKey: .feedId)
-        try container.encode(subscribed ? "true" : "false", forKey: .subscribed)
-        try container.encode(String(satsPerMinute), forKey: .satsPerMinute)
-        try container.encode(String(playerSpeed), forKey: .playerSpeed)
-        try container.encode(itemId, forKey: .itemId)
-    }
-    
-    func toJSONString() -> String? {
-        let encoder = JSONEncoder()
-        
-        do {
-            let jsonData = try encoder.encode(self)
-            return String(data: jsonData, encoding: .utf8)
-        } catch {
-            print("❌ Error encoding FeedStatus: \(error)")
-            return nil
-        }
-    }
-}
-
-// MARK: - Feed Item Status
-
-struct FeedItemStatus: Codable {
-    let duration: Int
-    let currentTime: Int
-    
-    enum CodingKeys: String, CodingKey {
-        case duration
-        case currentTime = "current_time"
-    }
-    
-    init(duration: Int, currentTime: Int) {
-        self.duration = duration
-        self.currentTime = currentTime
-    }
-    
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        
-        // Parse duration
-        let durationString = try container.decode(String.self, forKey: .duration)
-        duration = Int(durationString) ?? 0
-        
-        // Parse current_time
-        let currentTimeString = try container.decode(String.self, forKey: .currentTime)
-        currentTime = Int(currentTimeString) ?? 0
-    }
-    
-    // Computed property for progress percentage
-    var progressPercentage: Double {
-        guard duration > 0 else { return 0 }
-        return (Double(currentTime) / Double(duration)) * 100
-    }
-    
-    // Computed property for remaining time
-    var remainingTime: Int {
-        return max(0, duration - currentTime)
-    }
-    
-    // Is completed?
-    var isCompleted: Bool {
-        return currentTime >= duration
-    }
-    
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        
-        // Encode all values as strings
-        try container.encode(String(duration), forKey: .duration)
-        try container.encode(String(currentTime), forKey: .currentTime)
-    }
-    
-    func toJSONString() -> String? {
-        let encoder = JSONEncoder()
-        
-        do {
-            let jsonData = try encoder.encode(self)
-            return String(data: jsonData, encoding: .utf8)
-        } catch {
-            print("❌ Error encoding FeedItemStatus: \(error)")
-            return nil
-        }
-    }
-}
-

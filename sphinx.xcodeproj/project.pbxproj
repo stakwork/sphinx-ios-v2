@@ -433,6 +433,7 @@
 		47978EF82F040CA40092B516 /* DataSync+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47978EF72F040C9B0092B516 /* DataSync+CoreDataClass.swift */; };
 		47978EFA2F040CB70092B516 /* DataSync+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47978EF92F040CA90092B516 /* DataSync+CoreDataProperties.swift */; };
 		47978EFD2F040D3D0092B516 /* DataSyncManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47978EFC2F040D390092B516 /* DataSyncManager.swift */; };
+		47978EFE2F040D420092B516 /* DataSyncModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47978EFF2F040D420092B516 /* DataSyncModels.swift */; };
 		47978F012F2289260092B516 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47978F002F2289260092B516 /* Config.swift */; };
 		47978F0E2F228E450092B516 /* Secrets.debug.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 47978F0D2F228E3D0092B516 /* Secrets.debug.xcconfig */; };
 		4797E74A24B89ECA00D13270 /* VideoCallHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4797E74924B89ECA00D13270 /* VideoCallHelper.swift */; };
@@ -1610,6 +1611,7 @@
 		47978EF72F040C9B0092B516 /* DataSync+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DataSync+CoreDataClass.swift"; sourceTree = "<group>"; };
 		47978EF92F040CA90092B516 /* DataSync+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DataSync+CoreDataProperties.swift"; sourceTree = "<group>"; };
 		47978EFC2F040D390092B516 /* DataSyncManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataSyncManager.swift; sourceTree = "<group>"; };
+		47978EFF2F040D420092B516 /* DataSyncModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataSyncModels.swift; sourceTree = "<group>"; };
 		47978EFE2F2288800092B516 /* Config.template.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.template.swift; sourceTree = "<group>"; };
 		47978F002F2289260092B516 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
 		47978F0A2F228E360092B516 /* Secrets.release.template.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.release.template.xcconfig; sourceTree = "<group>"; };
@@ -3752,6 +3754,7 @@
 			isa = PBXGroup;
 			children = (
 				47978EFC2F040D390092B516 /* DataSyncManager.swift */,
+				47978EFF2F040D420092B516 /* DataSyncModels.swift */,
 			);
 			path = DataSyncManager;
 			sourceTree = "<group>";
@@ -5523,6 +5526,7 @@
 				47352E4C2440FEB800E5CC7F /* WindowsManager.swift in Sources */,
 				47183CB22548AA4400E6FD19 /* PodcastPlayerView.swift in Sources */,
 				47978EFD2F040D3D0092B516 /* DataSyncManager.swift in Sources */,
+				47978EFE2F040D420092B516 /* DataSyncModels.swift in Sources */,
 				F34BFED7267B350D003F6D55 /* RestoreUserDescriptionViewController.swift in Sources */,
 				472092C92A278B0400468796 /* NewMessageTableViewCell.swift in Sources */,
 				472092B92A24FF6100468796 /* NewChatHeaderView.swift in Sources */,
