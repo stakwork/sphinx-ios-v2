@@ -48,11 +48,159 @@ struct RoomView: View {
 
     @State private var showConnectionTime = true
     @State private var canSwitchCameraPosition = false
-    
+
     @State var isAnyParticipantAudioSubscribed = true
-    
+
+    // Call timer
+    @State private var callElapsedTime: TimeInterval = 0
+    @State private var callTimer: Timer? = nil
+
+    // Participant join alert
+    @State private var joinedParticipant: Participant? = nil
+    @State private var showJoinAlert: Bool = false
+    @State private var previousParticipantIds: Set<String> = []
+
     let newMessageBubbleHelper = NewMessageBubbleHelper()
-    
+
+    // MARK: - Call Timer
+
+    /// Returns the earliest joinedAt time from all participants as the room start time
+    private var roomStartTime: Date? {
+        let allJoinTimes = room.allParticipants.values.compactMap { $0.joinedAt }
+        return allJoinTimes.min()
+    }
+
+    /// Formats a TimeInterval as MM:SS or HH:MM:SS if over an hour
+    private func formatElapsedTime(_ interval: TimeInterval) -> String {
+        let totalSeconds = Int(interval)
+        let hours = totalSeconds / 3600
+        let minutes = (totalSeconds % 3600) / 60
+        let seconds = totalSeconds % 60
+
+        if hours > 0 {
+            return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
+        } else {
+            return String(format: "%02d:%02d", minutes, seconds)
+        }
+    }
+
+    /// Starts the call timer using the room start time
+    private func startCallTimer() {
+        // Invalidate any existing timer
+        callTimer?.invalidate()
+
+        // Update immediately
+        updateElapsedTime()
+
+        // Start periodic updates
+        callTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+            Task { @MainActor in
+                updateElapsedTime()
+            }
+        }
+    }
+
+    /// Updates the elapsed time based on room start time
+    private func updateElapsedTime() {
+        if let startTime = roomStartTime {
+            callElapsedTime = Date().timeIntervalSince(startTime)
+        }
+    }
+
+    /// Stops the call timer
+    private func stopCallTimer() {
+        callTimer?.invalidate()
+        callTimer = nil
+    }
+
+    // MARK: - Participant Join Alert
+
+    /// Checks for new participants and shows join alert
+    private func checkForNewParticipants() {
+        let currentIds = Set(room.allParticipants.values.compactMap { $0.sid?.stringValue })
+
+        // Find newly joined participants (excluding local participant)
+        let newIds = currentIds.subtracting(previousParticipantIds)
+
+        for newId in newIds {
+            if let participant = room.allParticipants.values.first(where: { $0.sid?.stringValue == newId }),
+               !(participant is LocalParticipant) {
+                showParticipantJoinAlert(participant)
+                break // Show one at a time
+            }
+        }
+
+        previousParticipantIds = currentIds
+    }
+
+    /// Shows the join alert for a participant
+    private func showParticipantJoinAlert(_ participant: Participant) {
+        joinedParticipant = participant
+
+        withAnimation(.easeOut(duration: 0.3)) {
+            showJoinAlert = true
+        }
+
+        // Auto-dismiss after 3 seconds
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+            withAnimation(.easeIn(duration: 0.3)) {
+                showJoinAlert = false
+            }
+            // Clear participant after animation
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                joinedParticipant = nil
+            }
+        }
+    }
+
+    /// The participant join alert view (full width on iOS)
+    private func participantJoinAlertView() -> some View {
+        Group {
+            if let participant = joinedParticipant {
+                HStack(spacing: 10) {
+                    // Participant image or initials
+                    if let profilePictureUrl = participant.profilePictureUrl,
+                       let url = URL(string: profilePictureUrl) {
+                        WebImage(url: url)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 32, height: 32)
+                            .clipShape(Circle())
+                    } else {
+                        ZStack {
+                            Circle()
+                                .fill(roomCtx.getColorForParticipan(participantId: participant.sid?.stringValue) ?? Color(UIColor.random()))
+                                .frame(width: 32, height: 32)
+
+                            Text((participant.name ?? "Unknown").getInitialsFromName())
+                                .font(Font(UIFont(name: "Roboto-Medium", size: 14.0)!))
+                                .foregroundColor(.white)
+                        }
+                    }
+
+                    // Join message
+                    Text("\(participant.name ?? "Someone") joined the call")
+                        .font(Font(UIFont(name: "Roboto-Medium", size: 13.0)!))
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+
+                    Spacer()
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(
+                    Color.black
+                        .opacity(0.85)
+                        .cornerRadius(10)
+                )
+                .padding(.horizontal, 16)
+                .padding(.top, 16)
+                .offset(y: showJoinAlert ? 0 : -100)
+                .opacity(showJoinAlert ? 1 : 0)
+            }
+        }
+    }
+
     private func toggleRecording() {
         guard let roomName = room.name else {
             return
@@ -149,13 +297,28 @@ struct RoomView: View {
                                     .renderingMode(.template)
                                     .foregroundColor(Color.white)
                                     .font(.system(size: 20))
-                                
+
                                 Text("Chat")
                                     .foregroundColor(.white)
                                     .font(Font(UIFont(name: "Roboto-Medium", size: 17.0)!))
                             }
                         })
-                        
+
+                        // Call duration timer
+                        if room.connectionState == .connected {
+                            Text(formatElapsedTime(callElapsedTime))
+                                .font(Font(UIFont(name: "Roboto-Regular", size: 14.0)!))
+                                .foregroundColor(Color(UIColor.Sphinx.SecondaryText))
+                                .monospacedDigit()
+                                .padding(.horizontal, 13)
+                                .padding(.vertical, 8)
+                                .background(
+                                    Color(UIColor.Sphinx.MainBottomIcons)
+                                        .opacity(0.1)
+                                        .cornerRadius(8.0)
+                                )
+                        }
+
                         Spacer()
                         
                         Button(action: {
@@ -270,110 +433,60 @@ struct RoomView: View {
                         ZStack(alignment: .center) {
                             let isCameraEnabled = room.localParticipant.isCameraEnabled()
                             
-                            Group {
-                                if isCameraEnabled, canSwitchCameraPosition {
-                                    GeometryReader { geometry in
-                                        let size = (geometry.size.width > geometry.size.height) ? geometry.size.height : geometry.size.width
-                                        
-                                        Menu {
-                                            Button("Switch position") {
-                                                Task {
-                                                    isCameraPublishingBusy = true
-                                                    defer { Task { @MainActor in isCameraPublishingBusy = false } }
-                                                    if let track = room.localParticipant.firstCameraVideoTrack as? LocalVideoTrack,
-                                                       let cameraCapturer = track.capturer as? CameraCapturer
-                                                    {
-                                                        try await cameraCapturer.switchCameraPosition()
-                                                    }
-                                                }
-                                            }
-                                            
-                                            Button("Disable") {
-                                                Task {
-                                                    isCameraPublishingBusy = true
-                                                    defer { Task { @MainActor in isCameraPublishingBusy = false } }
-                                                    try await room.localParticipant.setCamera(enabled: !isCameraEnabled)
-                                                }
-                                            }
-                                        } label: {
-                                            Image(systemSymbol: isCameraEnabled ? .videoFill : .videoSlashFill)
-                                                .renderingMode(.template)
-                                                .foregroundColor(isCameraEnabled ? Color.white : Color(UIColor(hex: "#FF6F6F")))
-                                                .font(.system(size: roomCtx.isInPip ? 18 : 24))
-                                                .frame(width: roomCtx.isInPip ? min(geometry.size.width, 50) : size)
-                                                .frame(height: size)
-                                                .aspectRatio(roomCtx.isInPip ? nil : 1, contentMode: .fill)
-                                        }
-                                        // disable while publishing/un-publishing
-                                        .disabled(isCameraPublishingBusy)
-                                        .background(
-                                            Color(isCameraEnabled ? UIColor.Sphinx.MainBottomIcons : UIColor.Sphinx.BadgeRed)
-                                                .opacity(isCameraEnabled ? 0.2 : 0.2)
-                                                .cornerRadius(size / 2)
-                                                .frame(width: roomCtx.isInPip ? min(geometry.size.width, 50) : size)
-                                                .frame(height: size)
-                                                .aspectRatio(roomCtx.isInPip ? nil : 1, contentMode: .fill)
-                                        )
-                                    }
-                                    .frame(maxWidth: .infinity)
-                                    .frame(maxHeight: .infinity)
-                                } else {
-                                    // Toggle camera enabled
-                                    GeometryReader { geometry in
-                                        let size = (geometry.size.width > geometry.size.height) ? geometry.size.height : geometry.size.width
-                                        let HPadding = (geometry.size.width - geometry.size.height)
-                                        
-                                        Button(action: {
-                                            if isCameraEnabled {
-                                                Task {
-                                                    isCameraPublishingBusy = true
-                                                    defer { Task { @MainActor in isCameraPublishingBusy = false } }
-                                                    try await room.localParticipant.setCamera(enabled: false)
-                                                }
-                                            } else {
-                                                publishOptionsPickerPresented = true
-                                            }
-                                        },
-                                        label: {
-                                            Image(systemSymbol: isCameraEnabled ? .videoFill : .videoSlashFill)
-                                                .renderingMode(.template)
-                                                .foregroundColor(isCameraEnabled ? Color.white : Color(UIColor(hex: "#FF6F6F")))
-                                                .font(.system(size: roomCtx.isInPip ? 18 : 20))
-                                                .frame(width: roomCtx.isInPip ? min(geometry.size.width, 50) : size)
-                                                .frame(height: size)
-                                                .aspectRatio(roomCtx.isInPip ? nil : 1, contentMode: .fill)
-                                                .padding(.leading, HPadding / 2)
-                                        })
-                                        // disable while publishing/un-publishing
-                                        .disabled(isCameraPublishingBusy)
-                                        .background(
-                                            Color(isCameraEnabled ? UIColor.Sphinx.MainBottomIcons : UIColor.Sphinx.BadgeRed)
-                                                .opacity(isCameraEnabled ? 0.2 : 0.2)
-                                                .cornerRadius(size / 2)
-                                                .frame(width: roomCtx.isInPip ? min(geometry.size.width, 50) : size)
-                                                .frame(height: size)
-                                                .aspectRatio(roomCtx.isInPip ? nil : 1, contentMode: .fill)
-                                                .padding(.leading, HPadding / 2)
-                                        )
-                                    }
-                                    .frame(maxWidth: .infinity)
-                                    .frame(maxHeight: .infinity)
-                                }
-                            }
-                            .popover(isPresented: $publishOptionsPickerPresented) {
-                                PublishOptionsView(publishOptions: cameraPublishOptions) { captureOptions, publishOptions in
-                                    publishOptionsPickerPresented = false
-                                    isCameraPublishingBusy = true
-                                    cameraPublishOptions = publishOptions
+                            // Toggle camera enabled
+                            GeometryReader { geometry in
+                                let size = (geometry.size.width > geometry.size.height) ? geometry.size.height : geometry.size.width
+                                let HPadding = (geometry.size.width - geometry.size.height)
+
+                                Button(action: {
                                     Task {
+                                        isCameraPublishingBusy = true
                                         defer { Task { @MainActor in isCameraPublishingBusy = false } }
-                                        try await room.localParticipant.setCamera(enabled: true,
-                                                                                  captureOptions: captureOptions,
-                                                                                  publishOptions: publishOptions)
+                                        try await room.localParticipant.setCamera(enabled: !isCameraEnabled)
                                     }
-                                }
-                                .padding()
+                                },
+                                label: {
+                                    Image(systemSymbol: isCameraEnabled ? .videoFill : .videoSlashFill)
+                                        .renderingMode(.template)
+                                        .foregroundColor(isCameraEnabled ? Color.white : Color(UIColor(hex: "#FF6F6F")))
+                                        .font(.system(size: roomCtx.isInPip ? 18 : 20))
+                                        .frame(width: roomCtx.isInPip ? min(geometry.size.width, 50) : size)
+                                        .frame(height: size)
+                                        .aspectRatio(roomCtx.isInPip ? nil : 1, contentMode: .fill)
+                                        .padding(.leading, HPadding / 2)
+                                })
+                                // disable while publishing/un-publishing
+                                .disabled(isCameraPublishingBusy)
+                                .background(
+                                    Color(isCameraEnabled ? UIColor.Sphinx.MainBottomIcons : UIColor.Sphinx.BadgeRed)
+                                        .opacity(isCameraEnabled ? 0.2 : 0.2)
+                                        .cornerRadius(size / 2)
+                                        .frame(width: roomCtx.isInPip ? min(geometry.size.width, 50) : size)
+                                        .frame(height: size)
+                                        .aspectRatio(roomCtx.isInPip ? nil : 1, contentMode: .fill)
+                                        .padding(.leading, HPadding / 2)
+                                )
                             }
+                            .frame(maxWidth: .infinity)
+                            .frame(maxHeight: .infinity)
+                            // MARK: - Commented out camera options menu/popover (kept for future use)
+                            // Original implementation had two paths:
+                            // 1. When camera enabled + canSwitchPosition: Menu with "Switch position" and "Disable"
+                            // 2. When camera disabled: Button that opens publishOptionsPickerPresented popover
+                            // .popover(isPresented: $publishOptionsPickerPresented) {
+                            //     PublishOptionsView(publishOptions: cameraPublishOptions) { captureOptions, publishOptions in
+                            //         publishOptionsPickerPresented = false
+                            //         isCameraPublishingBusy = true
+                            //         cameraPublishOptions = publishOptions
+                            //         Task {
+                            //             defer { Task { @MainActor in isCameraPublishingBusy = false } }
+                            //             try await room.localParticipant.setCamera(enabled: true,
+                            //                                                       captureOptions: captureOptions,
+                            //                                                       publishOptions: publishOptions)
+                            //         }
+                            //     }
+                            //     .padding()
+                            // }
                         }
                         .frame(maxWidth: .infinity)
                         .frame(height: roomCtx.isInPip ? 40 : 64)
@@ -856,11 +969,30 @@ struct RoomView: View {
     var body: some View {
         NavigationView {
             GeometryReader { geometry in
-                content(geometry: geometry)
+                ZStack(alignment: .top) {
+                    content(geometry: geometry)
+
+                    // Participant join alert (full width at top)
+                    if !roomCtx.isInPip {
+                        VStack {
+                            participantJoinAlertView()
+                                .padding(.top, 70)
+                            Spacer()
+                        }
+                    }
+                }
             }
         }.onAppear {
             Task { @MainActor in
                 canSwitchCameraPosition = try await CameraCapturer.canSwitchPosition()
+
+                // Start call timer if already connected
+                if room.connectionState == .connected {
+                    startCallTimer()
+                }
+
+                // Initialize participant tracking
+                previousParticipantIds = Set(room.allParticipants.values.compactMap { $0.sid?.stringValue })
             }
             Timer.scheduledTimer(withTimeInterval: 3, repeats: false) { _ in
                 Task { @MainActor in
@@ -889,11 +1021,26 @@ struct RoomView: View {
         }.onChange(of: room.connectionState) { newValue in
             if newValue == .connected {
                 Task { @MainActor in
+                    // Start call timer when connected
+                    startCallTimer()
+
+                    // Initialize participant tracking when connected
+                    previousParticipantIds = Set(room.allParticipants.values.compactMap { $0.sid?.stringValue })
+
                     if roomCtx.shouldStartRecording {
                         toggleRecording()
                     }
                 }
+            } else if newValue == .disconnected {
+                stopCallTimer()
             }
+        }
+        .onChange(of: room.remoteParticipants.count) { _ in
+            // Check for new participants when count changes
+            checkForNewParticipants()
+        }
+        .onDisappear {
+            stopCallTimer()
         }
     }
 }
