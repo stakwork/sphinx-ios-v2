@@ -89,7 +89,9 @@ extension SphinxOnionManager {//contacts related
                 pubkey: recipientPubkey,
                 nickname: nickname
             )
-            
+
+            managedContext.saveContext()
+
             let rr = try addContact(
                 seed: seed,
                 uniqueTime: getTimeWithEntropy(),
@@ -268,7 +270,7 @@ extension SphinxOnionManager {//contacts related
                 }
                 
                 if newContact.getChat() == nil {
-                    let _ = createChat(for: newContact, with: msg.date)
+                    let _ = createChat(for: newContact, with: msg.date, context: backgroundContext)
                 }
                 
                 createKeyExchangeMsgFrom(
