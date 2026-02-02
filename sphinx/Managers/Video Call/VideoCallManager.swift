@@ -78,9 +78,12 @@ class VideoCallManager : NSObject {
         guard let owner = UserContact.getOwner() else {
             return
         }
-        
+
+        // Dismiss keyboard before starting call
+        hideKeyboardOnCurrentVC()
+
         let linkUrl = VoIPRequestMessage.getFromString(link)?.link ?? link
-        
+
         if activeCall {
             return
         }

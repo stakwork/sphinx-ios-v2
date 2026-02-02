@@ -1083,7 +1083,10 @@ extension SphinxOnionManager {
         updateIsPaidAllMessages()
         
         CoreDataManager.sharedManager.saveContext()
-        
+
+        // Sync preferences with server after restore completes
+        DataSyncManager.sharedInstance.syncWithServerInBackground()
+
         isV2InitialSetup = false
         contactRestoreCallback = nil
         messageRestoreCallback = nil
