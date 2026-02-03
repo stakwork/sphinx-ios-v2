@@ -143,15 +143,9 @@ extension ChatsCollectionViewController {
          }
 
         func hash(into hasher: inout Hasher) {
+            // Only hash objectId for identity - other properties are for change detection in ==
+            // This prevents duplicates when the same chat has different states between updates
             hasher.combine(objectId)
-            hasher.combine(messageId)
-            hasher.combine(messageStatus)
-            hasher.combine(message30SecOld)
-            hasher.combine(messageSeen)
-            hasher.combine(unseenCount)
-            hasher.combine(contactStatus)
-            hasher.combine(inviteStatus)
-            hasher.combine(muted)
         }
     }
 
@@ -382,14 +376,14 @@ extension ChatsCollectionViewController {
 
     func updateSnapshot() {
         updateOwner()
-        
+
         dataSourceQueue.async {
-            
+
             self.updateWorkItem?.cancel()
-            
+
             let workItem = DispatchWorkItem {
                 var snapshot = DataSourceSnapshot()
-                
+
                 snapshot.appendSections(CollectionViewSection.allCases)
 
                 let items = self.chatListObjects.filter({ $0.getContact()?.isOwner != true }).map {
@@ -406,13 +400,23 @@ extension ChatsCollectionViewController {
                     )
                 }
 
-                snapshot.appendItems(items, toSection: .all)
-            
+                // Filter out duplicates by objectId to prevent diffable data source issues
+                var seenObjectIds = Set<String>()
+                let uniqueItems = items.filter { item in
+                    if seenObjectIds.contains(item.objectId) {
+                        return false
+                    }
+                    seenObjectIds.insert(item.objectId)
+                    return true
+                }
+
+                snapshot.appendItems(uniqueItems, toSection: .all)
+
                 DispatchQueue.main.async {
                     self.dataSource.apply(snapshot, animatingDifferences: true)
                 }
             }
-            
+
             self.updateWorkItem = workItem
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: workItem)
         }

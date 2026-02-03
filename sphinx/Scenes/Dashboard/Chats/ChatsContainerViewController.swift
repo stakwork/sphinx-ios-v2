@@ -102,13 +102,14 @@ extension ChatsContainerViewController {
                 onContentScrolled: handleChatsScroll(scrollView:),
                 onRefresh: handleChatsListRefresh(refreshControl:)
             )
-        
+
         addChildVC(
             child: chatsCollectionViewController,
             container: chatsListContainerView
         )
-        
-        chatsCollectionViewController?.updateSnapshot()
+
+        // Note: updateSnapshot() is already called in ChatsCollectionViewController.configureDataSource()
+        // during viewDidLoad(), so we don't need to call it again here
     }
     
     func reloadCollectionView() {
