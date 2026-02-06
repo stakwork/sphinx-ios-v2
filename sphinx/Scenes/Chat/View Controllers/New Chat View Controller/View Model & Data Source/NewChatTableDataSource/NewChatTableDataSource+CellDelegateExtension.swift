@@ -1200,15 +1200,20 @@ extension NewChatTableDataSource {
     
     func getTableCellStatesForVisibleRows() -> [MessageTableCellState] {
         let rowIndexes = (tableView.indexPathsForVisibleRows ?? []).map({ $0.row })
-        
+        let arrayCount = messageTableCellStateArray.count
+
         var tableCellStates: [MessageTableCellState] = []
-        
+
         for rowIndex in rowIndexes {
+            // Bounds checking to prevent crash
+            guard rowIndex >= 0, rowIndex < arrayCount else {
+                continue
+            }
             tableCellStates.append(
                 messageTableCellStateArray[rowIndex]
             )
         }
-        
+
         return tableCellStates
     }
 }

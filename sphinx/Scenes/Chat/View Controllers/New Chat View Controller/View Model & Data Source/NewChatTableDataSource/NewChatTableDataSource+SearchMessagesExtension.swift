@@ -135,20 +135,28 @@ extension NewChatTableDataSource {
         index: Int,
         shouldScroll: Bool = true
     ) {
-        if searchMatches.count > index && index >= 0 {
-            if shouldScroll {
-                let searchMatchIndex = searchMatches[index].0
-                
-                tableView.scrollToRow(
-                    at: IndexPath(row: searchMatchIndex, section: 0),
-                    at: .none,
-                    animated: true
-                )
-            }
-            
-            if index + 1 == self.searchMatches.count {
-                self.loadMoreItemForSearch()
-            }
+        // Bounds checking to prevent crashes
+        guard index >= 0, index < searchMatches.count else {
+            return
+        }
+
+        let searchMatchIndex = searchMatches[index].0
+
+        // Validate that the index is still valid in the current array
+        guard searchMatchIndex >= 0, searchMatchIndex < messageTableCellStateArray.count else {
+            return
+        }
+
+        if shouldScroll {
+            tableView.scrollToRow(
+                at: IndexPath(row: searchMatchIndex, section: 0),
+                at: .none,
+                animated: true
+            )
+        }
+
+        if index + 1 == self.searchMatches.count {
+            self.loadMoreItemForSearch()
         }
     }
     
@@ -164,11 +172,24 @@ extension NewChatTableDataSource {
     
     func reloadAllVisibleRows() {
         let tableCellStates = getTableCellStatesForVisibleRows()
-        
+
+        guard !tableCellStates.isEmpty else {
+            return
+        }
+
         self.dataSourceQueue.async {
             var snapshot = self.dataSource.snapshot()
-            snapshot.reloadItems(tableCellStates)
-            
+            let existingItems = Set(snapshot.itemIdentifiers)
+
+            // Only reload items that exist in the snapshot to prevent crashes
+            let validItems = tableCellStates.filter { existingItems.contains($0) }
+
+            guard !validItems.isEmpty else {
+                return
+            }
+
+            snapshot.reloadItems(validItems)
+
             DispatchQueue.main.async {
                 self.dataSource.apply(snapshot, animatingDifferences: false)
             }

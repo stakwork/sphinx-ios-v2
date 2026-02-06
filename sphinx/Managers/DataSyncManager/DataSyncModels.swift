@@ -37,6 +37,7 @@ struct ItemsResponse: Codable {
                 "date": String(format: "%.0f", item.date.timeIntervalSince1970)
             ]
 
+            // Convert value based on type
             switch item.value {
             case .string(let value):
                 itemDict["value"] = value
@@ -50,7 +51,7 @@ struct ItemsResponse: Codable {
             case .timezone(let timezone):
                 itemDict["value"] = [
                     "timezone_enabled": timezone.timezoneEnabled ? "true" : "false",
-                    "timezone_identifier": timezone.timezoneIdentifier
+                    "timezone_identifier": timezone.timezoneIdentifier ?? ""  // nil becomes empty string
                 ]
 
             case .feedStatus(let feedStatus):
@@ -84,7 +85,7 @@ struct ItemsResponse: Codable {
             return String(data: jsonData, encoding: .utf8)
         } catch {
             #if DEBUG
-            print("Serialization error: \(error)")
+            print("DataSync: Serialization error: \(error)")
             #endif
             return nil
         }
@@ -99,13 +100,15 @@ struct SettingItem: Codable {
     var dateString: String
     var value: SettingValue
 
+    // Date as actual Date object
     var date: Date {
         if let timestamp = TimeInterval(dateString) {
             return Date(timeIntervalSince1970: timestamp)
         }
-        return Date()
+        return Date() // Fallback to current date
     }
 
+    // CodingKeys to map JSON to properties
     enum CodingKeys: String, CodingKey {
         case key
         case identifier
@@ -114,7 +117,7 @@ struct SettingItem: Codable {
     }
 }
 
-// MARK: - Setting Value
+// MARK: - Setting Value (Handles String, Bool, Int, and Object)
 
 enum SettingValue: Codable {
     case string(String)
@@ -127,22 +130,27 @@ enum SettingValue: Codable {
     init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
 
+        // Try FeedStatus first
         if let feedStatus = try? container.decode(FeedStatus.self) {
             self = .feedStatus(feedStatus)
             return
         }
 
+        // Try FeedItemStatus
         if let feedItemStatus = try? container.decode(FeedItemStatus.self) {
             self = .feedItemStatus(feedItemStatus)
             return
         }
 
+        // Try timezone object
         if let timezone = try? container.decode(TimezoneSetting.self) {
             self = .timezone(timezone)
             return
         }
 
+        // Try string
         if let string = try? container.decode(String.self) {
+            // Check if it's a boolean string
             if string.lowercased() == "true" {
                 self = .bool(true)
                 return
@@ -151,25 +159,30 @@ enum SettingValue: Codable {
                 return
             }
 
+            // Check if it's an integer string
             if let intValue = Int(string) {
                 self = .int(intValue)
                 return
             }
 
+            // Check if it's a double string
             if let doubleValue = Double(string), !string.contains(".") {
                 self = .int(Int(doubleValue))
                 return
             }
 
+            // Otherwise it's just a string
             self = .string(string)
             return
         }
 
+        // Try direct int
         if let int = try? container.decode(Int.self) {
             self = .int(int)
             return
         }
 
+        // Try direct bool
         if let bool = try? container.decode(Bool.self) {
             self = .bool(bool)
             return
@@ -199,8 +212,7 @@ enum SettingValue: Codable {
         }
     }
 
-    // MARK: - Helper Properties
-
+    // Helper computed properties
     var asString: String? {
         switch self {
         case .string(let value): return value
@@ -252,45 +264,50 @@ enum SettingValue: Codable {
     static func from(string: String, forKey key: DataSyncSettingKey) -> SettingValue? {
         switch key {
         case .tipAmount:
+            // tip_amount is always an Int
             guard let intValue = Int(string) else {
                 #if DEBUG
-                print("Failed to parse '\(string)' as Int for \(key.rawValue)")
+                print("DataSync: Failed to parse '\(string)' as Int for \(key.rawValue)")
                 #endif
                 return nil
             }
             return .int(intValue)
 
         case .privatePhoto:
+            // private_photo is always a Bool
             guard let boolValue = parseBool(from: string) else {
                 #if DEBUG
-                print("Failed to parse '\(string)' as Bool for \(key.rawValue)")
+                print("DataSync: Failed to parse '\(string)' as Bool for \(key.rawValue)")
                 #endif
                 return nil
             }
             return .bool(boolValue)
 
         case .timezone:
+            // timezone is always a TimezoneSetting object
             guard let timezone = parseTimezone(from: string) else {
                 #if DEBUG
-                print("Failed to parse '\(string)' as TimezoneSetting for \(key.rawValue)")
+                print("DataSync: Failed to parse '\(string)' as TimezoneSetting for \(key.rawValue)")
                 #endif
                 return nil
             }
             return .timezone(timezone)
 
         case .feedStatus:
+            // feed_status is always a FeedStatus object
             guard let feedStatus = parseFeedStatus(from: string) else {
                 #if DEBUG
-                print("Failed to parse '\(string)' as FeedStatus for \(key.rawValue)")
+                print("DataSync: Failed to parse '\(string)' as FeedStatus for \(key.rawValue)")
                 #endif
                 return nil
             }
             return .feedStatus(feedStatus)
 
         case .feedItemStatus:
+            // feed_item_status is always a FeedItemStatus object
             guard let feedItemStatus = parseFeedItemStatus(from: string) else {
                 #if DEBUG
-                print("Failed to parse '\(string)' as FeedItemStatus for \(key.rawValue)")
+                print("DataSync: Failed to parse '\(string)' as FeedItemStatus for \(key.rawValue)")
                 #endif
                 return nil
             }
@@ -316,27 +333,28 @@ enum SettingValue: Codable {
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             return nil
         }
-        
+
         var timezoneEnabled: String? = nil
         var timezoneIdentifier: String? = nil
-        
+
         if let enabled = json?["timezoneEnabled"] as? String, enabled.isNotEmpty {
             timezoneEnabled = enabled
         } else if let enabled = json?["timezone_enabled"] as? String, enabled.isNotEmpty {
             timezoneEnabled = enabled
         }
-        
+
+        // Check for timezone identifier - empty string is valid and becomes nil (device timezone)
         if let identifier = json?["timezoneIdentifier"] as? String, identifier.isNotEmpty {
             timezoneIdentifier = identifier
         } else if let identifier = json?["timezone_identifier"] as? String, identifier.isNotEmpty {
             timezoneIdentifier = identifier
         }
-        
-        guard let timezoneEnabled = timezoneEnabled,
-              let timezoneIdentifier = timezoneIdentifier else {
+        // Note: timezoneIdentifier can be nil (empty string or missing), meaning use device timezone
+
+        // Only timezoneEnabled is required
+        guard let timezoneEnabled = timezoneEnabled else {
             return nil
         }
-        
 
         return TimezoneSetting(
             timezoneEnabledString: timezoneEnabled,
@@ -387,8 +405,9 @@ enum SettingValue: Codable {
 
 struct TimezoneSetting: Codable {
     private let timezoneEnabledString: String
-    let timezoneIdentifier: String
+    let timezoneIdentifier: String?  // nil means use device timezone
 
+    // Boolean property
     var timezoneEnabled: Bool {
         return timezoneEnabledString.lowercased() == "true"
     }
@@ -405,25 +424,36 @@ struct TimezoneSetting: Codable {
         case timezoneIdentifier = "timezoneIdentifier"
     }
 
-    init(timezoneEnabledString: String, timezoneIdentifier: String) {
+    init(timezoneEnabledString: String, timezoneIdentifier: String?) {
         self.timezoneEnabledString = timezoneEnabledString
         self.timezoneIdentifier = timezoneIdentifier
     }
 
     init(from decoder: Decoder) throws {
-        // Try underscore format first (new format)
+        // Try new underscore format first
         if let container = try? decoder.container(keyedBy: CodingKeys.self),
-           let enabled = try? container.decode(String.self, forKey: .timezoneEnabledString),
-           let identifier = try? container.decode(String.self, forKey: .timezoneIdentifier) {
+           let enabled = try? container.decode(String.self, forKey: .timezoneEnabledString) {
             timezoneEnabledString = enabled
-            timezoneIdentifier = identifier
+            // Decode identifier - empty string becomes nil
+            if let identifier = try? container.decode(String.self, forKey: .timezoneIdentifier),
+               !identifier.isEmpty {
+                timezoneIdentifier = identifier
+            } else {
+                timezoneIdentifier = nil
+            }
             return
         }
 
-        // Fall back to camelCase format (legacy)
+        // Try legacy camelCase format
         let container = try decoder.container(keyedBy: LegacyCodingKeys.self)
         timezoneEnabledString = try container.decode(String.self, forKey: .timezoneEnabledString)
-        timezoneIdentifier = try container.decode(String.self, forKey: .timezoneIdentifier)
+        // Decode identifier - empty string becomes nil
+        if let identifier = try? container.decode(String.self, forKey: .timezoneIdentifier),
+           !identifier.isEmpty {
+            timezoneIdentifier = identifier
+        } else {
+            timezoneIdentifier = nil
+        }
     }
 
     func encode(to encoder: Encoder) throws {
@@ -431,7 +461,8 @@ struct TimezoneSetting: Codable {
 
         // Encode with underscore format (new format)
         try container.encode(timezoneEnabledString, forKey: .timezoneEnabledString)
-        try container.encode(timezoneIdentifier, forKey: .timezoneIdentifier)
+        // Encode nil as empty string for consistency
+        try container.encode(timezoneIdentifier ?? "", forKey: .timezoneIdentifier)
     }
 
     func toJSONString() -> String? {
@@ -442,7 +473,7 @@ struct TimezoneSetting: Codable {
             return String(data: jsonData, encoding: .utf8)
         } catch {
             #if DEBUG
-            print("Error encoding TimezoneSetting: \(error)")
+            print("DataSync: Error encoding TimezoneSetting: \(error)")
             #endif
             return nil
         }
@@ -491,25 +522,36 @@ struct FeedStatus: Codable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
+        // Parse chat_pubkey
         chatPubkey = try container.decode(String.self, forKey: .chatPubkey)
+
+        // Parse feed_url
         feedUrl = try container.decode(String.self, forKey: .feedUrl)
+
+        // Parse feed_id
         feedId = try container.decode(String.self, forKey: .feedId)
 
+        // Parse subscribed
         let subscribedString = try container.decode(String.self, forKey: .subscribed)
         subscribed = subscribedString.lowercased() == "true"
 
+        // Parse sats_per_minute
         let satsString = try container.decode(String.self, forKey: .satsPerMinute)
         satsPerMinute = Int(satsString) ?? 0
 
+        // Parse player_speed
         let speedString = try container.decode(String.self, forKey: .playerSpeed)
         playerSpeed = Double(speedString) ?? 1.0
 
-        itemId = try container.decode(String.self, forKey: .itemId)
+        // Parse item_id
+        let itemIdString = try container.decode(String.self, forKey: .itemId)
+        itemId = itemIdString
     }
 
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
 
+        // Encode all values as strings
         try container.encode(chatPubkey, forKey: .chatPubkey)
         try container.encode(feedUrl, forKey: .feedUrl)
         try container.encode(feedId, forKey: .feedId)
@@ -527,7 +569,7 @@ struct FeedStatus: Codable {
             return String(data: jsonData, encoding: .utf8)
         } catch {
             #if DEBUG
-            print("Error encoding FeedStatus: \(error)")
+            print("DataSync: Error encoding FeedStatus: \(error)")
             #endif
             return nil
         }
@@ -553,28 +595,35 @@ struct FeedItemStatus: Codable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
+        // Parse duration
         let durationString = try container.decode(String.self, forKey: .duration)
         duration = Int(durationString) ?? 0
 
+        // Parse current_time
         let currentTimeString = try container.decode(String.self, forKey: .currentTime)
         currentTime = Int(currentTimeString) ?? 0
     }
 
+    // Computed property for progress percentage
     var progressPercentage: Double {
         guard duration > 0 else { return 0 }
         return (Double(currentTime) / Double(duration)) * 100
     }
 
+    // Computed property for remaining time
     var remainingTime: Int {
         return max(0, duration - currentTime)
     }
 
+    // Is completed?
     var isCompleted: Bool {
-        return currentTime >= duration && duration > 0
+        return currentTime >= duration
     }
 
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
+
+        // Encode all values as strings
         try container.encode(String(duration), forKey: .duration)
         try container.encode(String(currentTime), forKey: .currentTime)
     }
@@ -587,7 +636,7 @@ struct FeedItemStatus: Codable {
             return String(data: jsonData, encoding: .utf8)
         } catch {
             #if DEBUG
-            print("Error encoding FeedItemStatus: \(error)")
+            print("DataSync: Error encoding FeedItemStatus: \(error)")
             #endif
             return nil
         }
