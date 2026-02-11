@@ -45,6 +45,7 @@ extension Chat {
     @NSManaged public var secondBrainUrl: String?
 
     @NSManaged public var isTribeICreated: Bool
+    @NSManaged public var membersAliasesData: String?
     @NSManaged public var messages: NSSet?
     @NSManaged public var cachedMediaSet: NSSet?
     @NSManaged public var subscription: Subscription?
