@@ -341,9 +341,12 @@ extension SphinxOnionManager {
                     return nil
                 }
                 messageToDelete.status = TransactionMessage.TransactionMessageStatus.deleted.rawValue
-                messageToDelete.setAsLastMessage()
-//                messageToDelete.managedObjectContext?.saveContext()
-                
+
+                // Only update lastMessage if the deleted message is the current lastMessage
+                if chat.lastMessage?.uuid == replyUUID {
+                    messageToDelete.setAsLastMessage()
+                }
+
                 return messageToDelete
             }
             
@@ -1418,12 +1421,15 @@ extension SphinxOnionManager {
                 }
             }
         }
-                
-        newMessage.setAsLastMessage()
-        
+
+        // Don't set delete messages as lastMessage - the deleted message should remain as lastMessage if it was
+        if type != TransactionMessage.TransactionMessageType.delete.rawValue {
+            newMessage.setAsLastMessage()
+        }
+
         return newMessage
     }
-    
+
     func createKeyExchangeMsgFrom(
         msg: Msg,
         existingContact: UserContact?,
