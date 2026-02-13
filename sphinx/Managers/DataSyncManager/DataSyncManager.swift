@@ -184,7 +184,18 @@ class DataSyncManager: NSObject {
 
     private func syncWithServer() async {
         let serverDataString = await getFileFromServer()
-        var itemsResponse = parseFileText(text: serverDataString ?? "") ?? ItemsResponse(items: [])
+        let parsedResponse = parseFileText(text: serverDataString ?? "")
+
+        // CRITICAL: If we couldn't retrieve or parse server data, don't proceed with sync.
+        // Proceeding with an empty itemsResponse would overwrite server data and cause data loss.
+        guard serverDataString != nil || parsedResponse != nil else {
+            #if DEBUG
+            print("DataSync: Could not retrieve server data, skipping sync to prevent data loss")
+            #endif
+            return
+        }
+
+        var itemsResponse = parsedResponse ?? ItemsResponse(items: [])
 
         // Fetch local items within sync context
         var dbItems: [DataSync] = []
