@@ -132,35 +132,42 @@ extension NewChatTableDataSource : NewMessageTableViewCellDelegate {
             }
             
             if message.isDirectPayment() {
-                MediaLoader.loadPublicImage(url: imageUrl, messageId: message.id, completion: { messageId, image in
+                MediaLoader.loadPublicImage(url: imageUrl, messageId: message.id, completion: { [weak self] messageId, image in
                     let updatedMediaData = MessageTableCellState.MediaData(
                         image: image
                     )
-                    self.updateMessageTableCellStateFor(rowIndex: rowIndex, messageId: messageId, with: updatedMediaData)
-                }, errorCompletion: { messageId in
+                    self?.updateMessageTableCellStateFor(rowIndex: rowIndex, messageId: messageId, with: updatedMediaData)
+                }, errorCompletion: { [weak self] messageId in
                     let updatedMediaData = MessageTableCellState.MediaData(
                         failed: true
                     )
-                    self.updateMessageTableCellStateFor(rowIndex: rowIndex, messageId: messageId, with: updatedMediaData)
+                    self?.updateMessageTableCellStateFor(rowIndex: rowIndex, messageId: messageId, with: updatedMediaData)
                 })
             } else {
                 var mediaKey = tableCellState.1.messageMedia?.mediaKey
-                
+
                 if messageId == tableCellState.1.threadOriginalMessage?.id {
                     mediaKey = tableCellState.1.threadOriginalMessageMedia?.mediaKey
                 }
-                
-                MediaLoader.loadImage(url: imageUrl, message: message, mediaKey: mediaKey, completion: { messageId, image in
-                    let updatedMediaData = MessageTableCellState.MediaData(
-                        image: image
-                    )
-                    self.updateMessageTableCellStateFor(rowIndex: rowIndex, messageId: messageId, with: updatedMediaData)
-                }, errorCompletion: { messageId in
-                    let updatedMediaData = MessageTableCellState.MediaData(
-                        failed: true
-                    )
-                    self.updateMessageTableCellStateFor(rowIndex: rowIndex, messageId: messageId, with: updatedMediaData)
-                })
+
+                // Use MediaPreloadManager to ensure downloads continue even when view is deallocated
+                MediaPreloadManager.sharedInstance.loadImage(
+                    url: imageUrl,
+                    message: message,
+                    mediaKey: mediaKey,
+                    completion: { [weak self] messageId, image in
+                        let updatedMediaData = MessageTableCellState.MediaData(
+                            image: image
+                        )
+                        self?.updateMessageTableCellStateFor(rowIndex: rowIndex, messageId: messageId, with: updatedMediaData)
+                    },
+                    errorCompletion: { [weak self] messageId in
+                        let updatedMediaData = MessageTableCellState.MediaData(
+                            failed: true
+                        )
+                        self?.updateMessageTableCellStateFor(rowIndex: rowIndex, messageId: messageId, with: updatedMediaData)
+                    }
+                )
             }
         }
     }
@@ -294,24 +301,25 @@ extension NewChatTableDataSource : NewMessageTableViewCellDelegate {
         mediaKey: String?,
         isPdf: Bool
     ) {
-        MediaLoader.loadFileData(
+        // Use MediaPreloadManager to ensure downloads continue even when view is deallocated
+        MediaPreloadManager.sharedInstance.loadFile(
             url: url,
             isPdf: isPdf,
             message: message,
             mediaKey: mediaKey,
-            completion: { (messageId, data, fileInfo) in
+            completion: { [weak self] (messageId, data, fileInfo) in
                 let updatedMediaData = MessageTableCellState.MediaData(
                     image: fileInfo.previewImage,
                     data: data,
                     fileInfo: fileInfo
                 )
-                self.updateMessageTableCellStateFor(rowIndex: rowIndex, messageId: messageId, with: updatedMediaData)
+                self?.updateMessageTableCellStateFor(rowIndex: rowIndex, messageId: messageId, with: updatedMediaData)
             },
-            errorCompletion: { messageId in
+            errorCompletion: { [weak self] messageId in
                 let updatedMediaData = MessageTableCellState.MediaData(
                     failed: true
                 )
-                self.updateMessageTableCellStateFor(rowIndex: rowIndex, messageId: messageId, with: updatedMediaData)
+                self?.updateMessageTableCellStateFor(rowIndex: rowIndex, messageId: messageId, with: updatedMediaData)
             }
         )
     }
@@ -339,18 +347,25 @@ extension NewChatTableDataSource : NewMessageTableViewCellDelegate {
                 return
             }
             
-            MediaLoader.loadVideo(url: url, message: message, mediaKey: mediaKey, completion: { (messageId, data, image) in
-                let updatedMediaData = MessageTableCellState.MediaData(
-                    image: image,
-                    data: data
-                )
-                self.updateMessageTableCellStateFor(rowIndex: rowIndex, messageId: messageId, with: updatedMediaData)
-            }, errorCompletion: { messageId in
-                let updatedMediaData = MessageTableCellState.MediaData(
-                    failed: true
-                )
-                self.updateMessageTableCellStateFor(rowIndex: rowIndex, messageId: messageId, with: updatedMediaData)
-            })
+            // Use MediaPreloadManager to ensure downloads continue even when view is deallocated
+            MediaPreloadManager.sharedInstance.loadVideo(
+                url: url,
+                message: message,
+                mediaKey: mediaKey,
+                completion: { [weak self] (messageId, data, image) in
+                    let updatedMediaData = MessageTableCellState.MediaData(
+                        image: image,
+                        data: data
+                    )
+                    self?.updateMessageTableCellStateFor(rowIndex: rowIndex, messageId: messageId, with: updatedMediaData)
+                },
+                errorCompletion: { [weak self] messageId in
+                    let updatedMediaData = MessageTableCellState.MediaData(
+                        failed: true
+                    )
+                    self?.updateMessageTableCellStateFor(rowIndex: rowIndex, messageId: messageId, with: updatedMediaData)
+                }
+            )
         }
     }
     

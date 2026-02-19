@@ -133,7 +133,7 @@ extension NewMessageTableViewCell {
             urlRanges = ChatHelper.removeDuplicatedContainedFrom(urlRanges: urlRanges)
             
             if let messageId = messageId, messageContent.shouldLoadPaidText {
-                let delayTime = DispatchTime.now() + Double(Int64(0.5 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
+                let delayTime = DispatchTime.now() + Double(Int64(0.1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
                 DispatchQueue.global().asyncAfter(deadline: delayTime) {
                     self.delegate?.shouldLoadTextDataFor(
                         messageId: messageId,
@@ -257,7 +257,7 @@ extension NewMessageTableViewCell {
                     )
                     mediaContentView.isHidden = false
                 } else if let messageId = messageId, mediaData == nil {
-                    let delayTime = DispatchTime.now() + Double(Int64(0.5 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
+                    let delayTime = DispatchTime.now() + Double(Int64(0.1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
                     DispatchQueue.global().asyncAfter(deadline: delayTime) {
                         self.delegate?.shouldLoadLinkImageDataFor(
                             messageId: messageId,
@@ -277,7 +277,7 @@ extension NewMessageTableViewCell {
                 mediaContentView.isHidden = false
                 
                 if let messageId = messageId, mediaData == nil {
-                    let delayTime = DispatchTime.now() + Double(Int64(0.5 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
+                    let delayTime = DispatchTime.now() + Double(Int64(0.1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
                     DispatchQueue.global().asyncAfter(deadline: delayTime) {
                         if messageMedia.isImage {
                             self.delegate?.shouldLoadImageDataFor(
@@ -320,7 +320,7 @@ extension NewMessageTableViewCell {
             fileDetailsView.isHidden = false
             
             if let messageId = messageId, mediaData == nil {
-                let delayTime = DispatchTime.now() + Double(Int64(0.5 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
+                let delayTime = DispatchTime.now() + Double(Int64(0.1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
                 DispatchQueue.global().asyncAfter(deadline: delayTime) {
                     self.delegate?.shouldLoadFileDataFor(
                         messageId: messageId,
@@ -347,7 +347,7 @@ extension NewMessageTableViewCell {
             audioMessageView.isHidden = false
             
             if let messageId = messageId, mediaData == nil {
-                let delayTime = DispatchTime.now() + Double(Int64(0.5 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
+                let delayTime = DispatchTime.now() + Double(Int64(0.1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
                 DispatchQueue.global().asyncAfter(deadline: delayTime) {
                     self.delegate?.shouldLoadAudioDataFor(
                         messageId: messageId,
@@ -373,7 +373,7 @@ extension NewMessageTableViewCell {
             podcastAudioView.isHidden = false
             
             if let messageId = messageId, mediaData == nil {
-                let delayTime = DispatchTime.now() + Double(Int64(0.5 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
+                let delayTime = DispatchTime.now() + Double(Int64(0.1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
                 DispatchQueue.global().asyncAfter(deadline: delayTime) {
                     self.delegate?.shouldPodcastCommentDataFor(
                         messageId: messageId,
@@ -440,7 +440,7 @@ extension NewMessageTableViewCell {
                 tribeLinkPreviewView.configureWith(tribeData: tribeData, and: bubble, delegate: self)
                 tribeLinkPreviewView.isHidden = false
             } else if let messageId = messageId {
-                let delayTime = DispatchTime.now() + Double(Int64(0.5 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
+                let delayTime = DispatchTime.now() + Double(Int64(0.1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
                 DispatchQueue.global().asyncAfter(deadline: delayTime) {
                     self.delegate?.shouldLoadTribeInfoFor(
                         messageId: messageId,
@@ -462,7 +462,7 @@ extension NewMessageTableViewCell {
                     linkPreviewView.isHidden = false
                 }
             } else if let messageId = messageId {
-                let delayTime = DispatchTime.now() + Double(Int64(0.5 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
+                let delayTime = DispatchTime.now() + Double(Int64(0.1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
                 DispatchQueue.global().asyncAfter(deadline: delayTime) {
                     self.delegate?.shouldLoadLinkDataFor(
                         messageId: messageId,

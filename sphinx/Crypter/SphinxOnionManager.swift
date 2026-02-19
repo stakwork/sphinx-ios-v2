@@ -93,7 +93,7 @@ class SphinxOnionManager : NSObject {
     var defaultInitialSignupPin : String = "111111"
     
     public static let kContactsBatchSize = 100
-    public static let kMessageBatchSize = 100
+    public static let kMessageBatchSize = 200
 
     public static let kCompleteStatus = "COMPLETE"
     public static let kFailedStatus = "FAILED"
@@ -424,9 +424,27 @@ class SphinxOnionManager : NSObject {
     }
     
     func startNewMsgsSync() {
-        self.getReads()
-        self.getMuteLevels()
-        self.syncNewMessages()
+        // Run these operations in parallel for faster sync
+        let syncGroup = DispatchGroup()
+        let syncQueue = DispatchQueue(label: "com.sphinx.newMsgsSync", attributes: .concurrent)
+
+        syncGroup.enter()
+        syncQueue.async {
+            self.getReads()
+            syncGroup.leave()
+        }
+
+        syncGroup.enter()
+        syncQueue.async {
+            self.getMuteLevels()
+            syncGroup.leave()
+        }
+
+        syncGroup.enter()
+        syncQueue.async {
+            self.syncNewMessages()
+            syncGroup.leave()
+        }
     }
     
     func syncNewMessages() {
@@ -520,7 +538,7 @@ class SphinxOnionManager : NSObject {
     }
     
     func startReconnectionTimer(
-        delay: Double = 0.5
+        delay: Double = 0.0
     ) {
         if (UIApplication.shared.delegate as? AppDelegate)?.isActive == false {
             return

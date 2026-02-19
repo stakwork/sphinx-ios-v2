@@ -270,7 +270,7 @@ class ThreadHeaderView : UIView {
                     )
                 }
 //                else if let messageId = messageId, mediaData == nil {
-//                    let delayTime = DispatchTime.now() + Double(Int64(0.5 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
+//                    let delayTime = DispatchTime.now() + Double(Int64(0.1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
 //                    DispatchQueue.global().asyncAfter(deadline: delayTime) {
 //                        self.delegate?.shouldLoadLinkImageDataFor?(
 //                            messageId: messageId,
@@ -288,7 +288,7 @@ class ThreadHeaderView : UIView {
                 )
 
                 if let messageId = messageId, mediaData == nil {
-                    let delayTime = DispatchTime.now() + Double(Int64(0.5 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
+                    let delayTime = DispatchTime.now() + Double(Int64(0.1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
                     DispatchQueue.global().asyncAfter(deadline: delayTime) {
                         if messageMedia.isImage {
                             self.delegate?.shouldLoadImageDataFor?(
@@ -328,7 +328,7 @@ class ThreadHeaderView : UIView {
             mediaView.configureForGenericFile()
             
             if let messageId = messageId, mediaData == nil {
-                let delayTime = DispatchTime.now() + Double(Int64(0.5 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
+                let delayTime = DispatchTime.now() + Double(Int64(0.1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
                 DispatchQueue.global().asyncAfter(deadline: delayTime) {
                     self.delegate?.shouldLoadFileDataFor?(
                         messageId: messageId,
@@ -350,7 +350,7 @@ class ThreadHeaderView : UIView {
             mediaView.configureForAudio()
             
             if let messageId = messageId, mediaData == nil {
-                let delayTime = DispatchTime.now() + Double(Int64(0.5 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
+                let delayTime = DispatchTime.now() + Double(Int64(0.1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
                 DispatchQueue.global().asyncAfter(deadline: delayTime) {
                     self.delegate?.shouldLoadAudioDataFor?(
                         messageId: messageId,

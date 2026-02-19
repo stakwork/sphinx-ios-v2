@@ -28,7 +28,7 @@ class DataSyncManager: NSObject {
     }()
 
     /// Debounce interval in seconds before triggering sync
-    private let syncDebounceInterval: TimeInterval = 2.0
+    private let syncDebounceInterval: TimeInterval = 0.5
 
     // MARK: - Setting Keys
 
