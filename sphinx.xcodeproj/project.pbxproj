@@ -496,6 +496,11 @@
 		47B9A645233BB54B00D2B022 /* AddressBookDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47B9A644233BB54B00D2B022 /* AddressBookDataSource.swift */; };
 		47B9A648233BB6AE00D2B022 /* AddressBookHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47B9A647233BB6AE00D2B022 /* AddressBookHeaderView.swift */; };
 		47B9A64A233BB6BA00D2B022 /* AddressBookHeaderView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 47B9A649233BB6BA00D2B022 /* AddressBookHeaderView.xib */; };
+		47B9CBFE2F460C7B007527B4 /* WorkspaceTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 47B9CBFC2F460C7B007527B4 /* WorkspaceTableViewCell.xib */; };
+		47B9CBFF2F460C7B007527B4 /* Workspace.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47B9CBF92F460C7B007527B4 /* Workspace.swift */; };
+		47B9CC002F460C7B007527B4 /* WorkspaceTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47B9CBFB2F460C7B007527B4 /* WorkspaceTableViewCell.swift */; };
+		47B9CC012F460C7B007527B4 /* WorkspacesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47B9CBFA2F460C7B007527B4 /* WorkspacesViewController.swift */; };
+		47B9CC072F46291A007527B4 /* MediaPreloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47B9CC062F46291A007527B4 /* MediaPreloadManager.swift */; };
 		47BA317A2D15D8BB001AF7E5 /* ContactDetailsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47BA31792D15D8BB001AF7E5 /* ContactDetailsViewController.swift */; };
 		47BA317B2D355026001AF7E5 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEA6BC1F2C1794AD00494071 /* NetworkMonitor.swift */; };
 		47BA317C2D3550BD001AF7E5 /* Notification.Name.swift in Sources */ = {isa = PBXBuildFile; fileRef = 470F5CAA243E7D27007E054F /* Notification.Name.swift */; };
@@ -592,6 +597,7 @@
 		47E6A5022A30C68400A9509E /* ShimmeringTableView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 47E6A5012A30C68400A9509E /* ShimmeringTableView.xib */; };
 		47EB025B29BA343E0032CFB5 /* CircularProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47EB025A29BA343E0032CFB5 /* CircularProgressView.swift */; };
 		47EB025D29BA37D50032CFB5 /* CircularProgressView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 47EB025C29BA37D50032CFB5 /* CircularProgressView.xib */; };
+		47F1A1A22F065D0000000002 /* API+HiveExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47F1A1A12F065D0000000001 /* API+HiveExtension.swift */; };
 		47F2289E23672A5E001429A4 /* ImagePickerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47F2289D23672A5E001429A4 /* ImagePickerManager.swift */; };
 		47F228A0236872E8001429A4 /* SwipableCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47F2289F236872E8001429A4 /* SwipableCell.swift */; };
 		47F258CA253DD42500122A5A /* PinTimeSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47F258C9253DD42500122A5A /* PinTimeSlider.swift */; };
@@ -1722,6 +1728,11 @@
 		47B9A647233BB6AE00D2B022 /* AddressBookHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBookHeaderView.swift; sourceTree = "<group>"; };
 		47B9A649233BB6BA00D2B022 /* AddressBookHeaderView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = AddressBookHeaderView.xib; sourceTree = "<group>"; };
 		47B9CBF82F3D2D19007527B4 /* sphinx 57.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 57.xcdatamodel"; sourceTree = "<group>"; };
+		47B9CBF92F460C7B007527B4 /* Workspace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Workspace.swift; sourceTree = "<group>"; };
+		47B9CBFA2F460C7B007527B4 /* WorkspacesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspacesViewController.swift; sourceTree = "<group>"; };
+		47B9CBFB2F460C7B007527B4 /* WorkspaceTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceTableViewCell.swift; sourceTree = "<group>"; };
+		47B9CBFC2F460C7B007527B4 /* WorkspaceTableViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = WorkspaceTableViewCell.xib; sourceTree = "<group>"; };
+		47B9CC062F46291A007527B4 /* MediaPreloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaPreloadManager.swift; sourceTree = "<group>"; };
 		47BA31792D15D8BB001AF7E5 /* ContactDetailsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactDetailsViewController.swift; sourceTree = "<group>"; };
 		47BA7A9024118F6B0001773F /* CustomSwiftLinkPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomSwiftLinkPreview.swift; sourceTree = "<group>"; };
 		47BACB1A2D63AD52006A4879 /* TimezoneSharingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimezoneSharingView.swift; sourceTree = "<group>"; };
@@ -1839,6 +1850,7 @@
 		47E6A5012A30C68400A9509E /* ShimmeringTableView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ShimmeringTableView.xib; sourceTree = "<group>"; };
 		47EB025A29BA343E0032CFB5 /* CircularProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircularProgressView.swift; sourceTree = "<group>"; };
 		47EB025C29BA37D50032CFB5 /* CircularProgressView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = CircularProgressView.xib; sourceTree = "<group>"; };
+		47F1A1A12F065D0000000001 /* API+HiveExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+HiveExtension.swift"; sourceTree = "<group>"; };
 		47F2289D23672A5E001429A4 /* ImagePickerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImagePickerManager.swift; sourceTree = "<group>"; };
 		47F2289F236872E8001429A4 /* SwipableCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwipableCell.swift; sourceTree = "<group>"; };
 		47F258C9253DD42500122A5A /* PinTimeSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinTimeSlider.swift; sourceTree = "<group>"; };
@@ -3147,6 +3159,7 @@
 				474CCFA9291562180037E1D4 /* API+ActionsExtension.swift */,
 				473615F42C35920C00EE3334 /* API+V2Extension.swift */,
 				4730EF372CDA70A10014581F /* API+LiveKitExtension.swift */,
+				47F1A1A12F065D0000000001 /* API+HiveExtension.swift */,
 			);
 			path = API;
 			sourceTree = "<group>";
@@ -3328,6 +3341,7 @@
 				4705D39C2799B3B0009C0729 /* FeedBoostHelper.swift */,
 				475043C929719E3B00830E9E /* PodcastPlayerController */,
 				472BF0402B62BE89009D5E1B /* ChatTrackingHandler.swift */,
+				47B9CC062F46291A007527B4 /* MediaPreloadManager.swift */,
 			);
 			path = Helpers;
 			sourceTree = "<group>";
@@ -3924,6 +3938,17 @@
 				47B9A649233BB6BA00D2B022 /* AddressBookHeaderView.xib */,
 			);
 			path = "Custom Views";
+			sourceTree = "<group>";
+		};
+		47B9CBFD2F460C7B007527B4 /* Workspaces */ = {
+			isa = PBXGroup;
+			children = (
+				47B9CBF92F460C7B007527B4 /* Workspace.swift */,
+				47B9CBFA2F460C7B007527B4 /* WorkspacesViewController.swift */,
+				47B9CBFB2F460C7B007527B4 /* WorkspaceTableViewCell.swift */,
+				47B9CBFC2F460C7B007527B4 /* WorkspaceTableViewCell.xib */,
+			);
+			path = Workspaces;
 			sourceTree = "<group>";
 		};
 		47BB1D68239933B20049802B /* Messages Encryption */ = {
@@ -4679,6 +4704,7 @@
 				F3188B98271CD36C00890DDD /* DashboardRootViewController+VideoPlayerViewControllerDelegate.swift */,
 				473C315A2798982D007735CD /* DashboardRootViewController+RestoreProgressViewDelegate.swift */,
 				47018F9827D2673200797E0B /* DashboardRootViewController+PodcastPlayerDelegate.swift */,
+				47B9CBFD2F460C7B007527B4 /* Workspaces */,
 				F313024426BA628D00A1396E /* Chats */,
 				473C314E279869B8007735CD /* Custom Views */,
 				F373BF0A26AAFB6B0093C886 /* Custom Segmented Control */,
@@ -4993,6 +5019,7 @@
 				CEF88DD229B66B9200DC1C40 /* RecommendationItemWUnifiedViewCollectionViewCell.xib in Resources */,
 				473596882A70015700489606 /* ThreadsListHeaderView.xib in Resources */,
 				475BDD43232AD00D00C5BBD6 /* MaterialIcons-Regular.ttf in Resources */,
+				47B9CBFE2F460C7B007527B4 /* WorkspaceTableViewCell.xib in Resources */,
 				47904C0A24BF352300710E7A /* horn.caf in Resources */,
 				472092CA2A278B0400468796 /* NewMessageTableViewCell.xib in Resources */,
 				477924962A2914A600CD3CF1 /* FileDetailsView.xib in Resources */,
@@ -5327,6 +5354,9 @@
 				47FA18C02425381500469C8F /* CreateInvoiceDetailsViewController.swift in Sources */,
 				47669F3D23CF622000C17A77 /* API+GroupsExtension.swift in Sources */,
 				47468FEB233905AD0072124A /* NewContactViewController.swift in Sources */,
+				47B9CBFF2F460C7B007527B4 /* Workspace.swift in Sources */,
+				47B9CC002F460C7B007527B4 /* WorkspaceTableViewCell.swift in Sources */,
+				47B9CC012F460C7B007527B4 /* WorkspacesViewController.swift in Sources */,
 				47FA72792A30E19300FB4535 /* MessagesPreloaderHelper.swift in Sources */,
 				4707089624AE466D00A98DCA /* ChatChatListExtension.swift in Sources */,
 				477C57E5234545D700BB4E04 /* SetPinCodeViewController.swift in Sources */,
@@ -5688,6 +5718,7 @@
 				CEEDEA162A1E8273004DC536 /* ProfileManageStorageSpecificChatOrContentFeedItemVC.swift in Sources */,
 				F358212D2695D11500A314F1 /* ConnectionCodeSignupHandling.swift in Sources */,
 				475C56682A7AB8FE00E6F9A9 /* ThreadTableDataSource.swift in Sources */,
+				47B9CC072F46291A007527B4 /* MediaPreloadManager.swift in Sources */,
 				47F8266C2A0D2A0B002E81F0 /* NewChatAccessoryView.swift in Sources */,
 				4703CF97251D23E5007B685C /* LinkPreviewUIImage.swift in Sources */,
 				474CCFAA291562180037E1D4 /* API+ActionsExtension.swift in Sources */,
@@ -5832,6 +5863,7 @@
 				47E300E4234B83EC00DB56DB /* AddFriendRowButton.swift in Sources */,
 				4712BB4923D89A5100DDCC3B /* ClipboardHelper.swift in Sources */,
 				4730EF382CDA70A10014581F /* API+LiveKitExtension.swift in Sources */,
+				47F1A1A22F065D0000000002 /* API+HiveExtension.swift in Sources */,
 				F3B2519C26E118E700C96D42 /* DashboardRootViewController+UITextFieldDelegate.swift in Sources */,
 				477ADCC72A1BE2B1004E74CE /* PinnedMessageView.swift in Sources */,
 				F3D86DBE26B109FD00EB9711 /* DashboardFeedSquaredThumbnailCollectionViewCell.swift in Sources */,

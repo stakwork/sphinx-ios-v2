@@ -606,6 +606,36 @@
             </objects>
             <point key="canvasLocation" x="-1651" y="2550"/>
         </scene>
+        <!--Workspaces View Controller-->
+        <scene sceneID="wks-vc-001">
+            <objects>
+                <viewController storyboardIdentifier="WorkspacesViewController" id="wks-vc-002" customClass="WorkspacesViewController" customModule="sphinx" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="wks-vw-001">
+                        <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="none" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="wks-tv-001">
+                                <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
+                                <color key="backgroundColor" name="DashboardHeader"/>
+                            </tableView>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="wks-sa-001"/>
+                        <color key="backgroundColor" name="DashboardHeader"/>
+                        <constraints>
+                            <constraint firstItem="wks-tv-001" firstAttribute="top" secondItem="wks-vw-001" secondAttribute="top" id="wks-ct-001"/>
+                            <constraint firstItem="wks-tv-001" firstAttribute="leading" secondItem="wks-sa-001" secondAttribute="leading" id="wks-ct-002"/>
+                            <constraint firstItem="wks-sa-001" firstAttribute="trailing" secondItem="wks-tv-001" secondAttribute="trailing" id="wks-ct-003"/>
+                            <constraint firstAttribute="bottom" secondItem="wks-tv-001" secondAttribute="bottom" id="wks-ct-004"/>
+                        </constraints>
+                    </view>
+                    <connections>
+                        <outlet property="tableView" destination="wks-tv-001" id="wks-ol-001"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="wks-fr-001" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-900" y="1890"/>
+        </scene>
         <!--Feed Search Empty State View Controller-->
         <scene sceneID="xdh-VO-aTW">
             <objects>

@@ -52,6 +52,7 @@
 "dashboard.tabs.feed" = "Feed";
 "dashboard.tabs.friends" = "Kaibigan";
 "dashboard.tabs.tribes" = "Tribo";
+"dashboard.tabs.workspaces" = "Workspaces";
 "dashboard.feeds.filters.all" = "Lhat";
 "dashboard.feeds.filters.listen" = "Makinig";
 "dashboard.feeds.filters.watch" = "Manood";

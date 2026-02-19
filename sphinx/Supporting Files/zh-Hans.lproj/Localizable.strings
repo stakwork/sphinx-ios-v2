@@ -61,6 +61,7 @@
 "dashboard.tabs.feed" = "动态";
 "dashboard.tabs.friends" = "朋友";
 "dashboard.tabs.tribes" = "部落";
+"dashboard.tabs.workspaces" = "工作区";
 "dashboard.feeds.filters.all" = "全部";
 "dashboard.feeds.filters.listen" = "听";
 "dashboard.feeds.filters.watch" = "看";

@@ -31,7 +31,11 @@ class CustomSegmentedControl: UIView {
     )!
     
     public var selectorViewColor: UIColor = .Sphinx.PrimaryBlue
-    public var selectorWidthRatio: CGFloat = 0.667
+    public var selectorWidthRatio: CGFloat = 0.85
+
+    /// Custom width ratios for each button. If nil, buttons will be distributed equally.
+    /// Values should sum to 1.0 (e.g., [0.24, 0.24, 0.24, 0.28])
+    public var buttonWidthRatios: [CGFloat]? = nil
     
     
     /// Indices for tabs that should have a circular badge displayed next to their title.
@@ -132,39 +136,58 @@ extension CustomSegmentedControl {
     
     private func configureStackView() {
         let stackView = UIStackView(arrangedSubviews: buttons)
-        
+
         stackView.axis = .horizontal
         stackView.alignment = .fill
-        stackView.distribution = .fillEqually
-        
+
+        if let ratios = buttonWidthRatios, ratios.count == buttons.count {
+            stackView.distribution = .fill
+            let totalWidth = UIScreen.main.bounds.width
+
+            for (index, button) in buttons.enumerated() {
+                button.widthAnchor.constraint(equalToConstant: totalWidth * ratios[index]).isActive = true
+            }
+        } else {
+            stackView.distribution = .fillEqually
+        }
+
         addSubview(stackView)
-        
+
         stackView.translatesAutoresizingMaskIntoConstraints = false
         stackView.topAnchor.constraint(equalTo: self.topAnchor).isActive = true
         stackView.bottomAnchor.constraint(equalTo: self.bottomAnchor).isActive = true
         stackView.leftAnchor.constraint(equalTo: self.leftAnchor).isActive = true
         stackView.rightAnchor.constraint(equalTo: self.rightAnchor).isActive = true
     }
-    
-    
-    private var selectorWidth: CGFloat {
-        (
-            UIScreen.main.bounds.width / CGFloat(self.buttonTitles.count)
-        ) * selectorWidthRatio
-    }
-    
-    
-    private var selectorPosition: CGFloat {
-        let selectedTabStartX = (
-            UIScreen.main.bounds.width / CGFloat(buttonTitles.count)
-        ) * CGFloat(selectedIndex)
 
-        let offset = (
-            UIScreen.main.bounds.width / CGFloat(self.buttonTitles.count)
-            - selectorWidth
-        ) * 0.5
-        
-        return selectedTabStartX + offset
+
+    private func buttonWidth(at index: Int) -> CGFloat {
+        let totalWidth = UIScreen.main.bounds.width
+
+        if let ratios = buttonWidthRatios, ratios.count == buttonTitles.count {
+            return totalWidth * ratios[index]
+        } else {
+            return totalWidth / CGFloat(buttonTitles.count)
+        }
+    }
+
+
+    private var selectorWidth: CGFloat {
+        buttonWidth(at: selectedIndex) * selectorWidthRatio
+    }
+
+
+    private var selectorPosition: CGFloat {
+        var position: CGFloat = 0
+
+        for i in 0..<selectedIndex {
+            position += buttonWidth(at: i)
+        }
+
+        let currentButtonWidth = buttonWidth(at: selectedIndex)
+        let offset = (currentButtonWidth - selectorWidth) * 0.5
+
+        return position + offset
     }
     
     
@@ -216,6 +239,7 @@ extension CustomSegmentedControl {
         UIView.animate(withDuration: 0.3) {
             self.buttons[self.selectedIndex].setTitleColor(self.activeTextColor, for: .normal)
             self.selectorView.frame.origin.x = self.selectorPosition
+            self.selectorView.frame.size.width = self.selectorWidth
         }
     }
     

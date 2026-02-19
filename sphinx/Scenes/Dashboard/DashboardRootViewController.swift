@@ -32,15 +32,18 @@ class DashboardRootViewController: RootViewController {
         "dashboard.tabs.feed".localized,
         "dashboard.tabs.friends".localized,
         "dashboard.tabs.tribes".localized,
+        "dashboard.tabs.workspaces".localized,
     ]
     
     @IBOutlet weak var dashboardNavigationTabs: CustomSegmentedControl! {
         didSet {
+            dashboardNavigationTabs.buttonWidthRatios = [0.23, 0.23, 0.23, 0.31]
             dashboardNavigationTabs.configureFromOutlet(
                 buttonTitles: [
                     "dashboard.tabs.feed".localized,
                     "dashboard.tabs.friends".localized,
                     "dashboard.tabs.tribes".localized,
+                    "dashboard.tabs.workspaces".localized,
                 ],
                 initialIndex: 1,
                 delegate: self
@@ -88,6 +91,12 @@ class DashboardRootViewController: RootViewController {
     internal lazy var tribeChatsContainerViewController: ChatsContainerViewController = {
         ChatsContainerViewController.instantiate(
             chatsListDelegate: self
+        )
+    }()
+
+    internal lazy var workspacesViewController: WorkspacesViewController = {
+        WorkspacesViewController.instantiate(
+            delegate: self
         )
     }()
     
@@ -513,6 +522,8 @@ extension DashboardRootViewController {
             return contactChatsContainerViewController
         case .tribes:
             return tribeChatsContainerViewController
+        case .workspaces:
+            return workspacesViewController
         }
     }
     
@@ -701,6 +712,7 @@ extension DashboardRootViewController {
         case feed
         case friends
         case tribes
+        case workspaces
     }
 }
 

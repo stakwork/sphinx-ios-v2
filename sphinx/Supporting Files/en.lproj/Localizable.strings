@@ -62,6 +62,7 @@
 "dashboard.tabs.feed" = "Feed";
 "dashboard.tabs.friends" = "Friends";
 "dashboard.tabs.tribes" = "Tribes";
+"dashboard.tabs.workspaces" = "Workspaces";
 "dashboard.feeds.filters.all" = "All";
 "dashboard.feeds.filters.listen" = "Listen";
 "dashboard.feeds.filters.discover" = "Discover New";

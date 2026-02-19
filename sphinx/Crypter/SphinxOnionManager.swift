@@ -92,8 +92,8 @@ class SphinxOnionManager : NSObject {
     var appSessionPin : String? = nil
     var defaultInitialSignupPin : String = "111111"
     
-    public static let kContactsBatchSize = 100
-    public static let kMessageBatchSize = 200
+    public static let kContactsBatchSize = 150
+    public static let kMessageBatchSize = 150
 
     public static let kCompleteStatus = "COMPLETE"
     public static let kFailedStatus = "FAILED"

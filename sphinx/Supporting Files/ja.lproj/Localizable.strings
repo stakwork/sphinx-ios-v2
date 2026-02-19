@@ -60,6 +60,7 @@
 "dashboard.tabs.feed" = "フィード";
 "dashboard.tabs.friends" = "友達だち";
 "dashboard.tabs.tribes" = "部族 (トライブ)";
+"dashboard.tabs.workspaces" = "ワークスペース";
 "dashboard.feeds.filters.all" = "すべて";
 "dashboard.feeds.filters.listen" = "聴く";
 "dashboard.feeds.filters.watch" = "見る";

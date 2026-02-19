@@ -60,6 +60,7 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 "dashboard.tabs.feed" = "Feed";
 "dashboard.tabs.friends" = "朋友";
 "dashboard.tabs.tribes" = "部落";
+"dashboard.tabs.workspaces" = "工作區";
 "dashboard.feeds.filters.all" = "所有";
 "dashboard.feeds.filters.listen" = "聽";
 "dashboard.feeds.filters.watch" = "看";
