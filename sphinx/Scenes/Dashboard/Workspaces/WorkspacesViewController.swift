@@ -19,6 +19,7 @@ class WorkspacesViewController: UIViewController {
     weak var delegate: WorkspacesViewControllerDelegate?
 
     private var workspaces: [Workspace] = []
+    private var allWorkspaces: [Workspace] = []
 
     private let refreshControl = UIRefreshControl()
 
@@ -142,6 +143,7 @@ class WorkspacesViewController: UIViewController {
         API.sharedInstance.fetchWorkspacesWithAuth(
             callback: { [weak self] workspaces in
                 DispatchQueue.main.async {
+                    self?.allWorkspaces = workspaces
                     self?.workspaces = workspaces
                     self?.tableView.reloadData()
                     self?.refreshControl.endRefreshing()
@@ -150,6 +152,7 @@ class WorkspacesViewController: UIViewController {
             },
             errorCallback: { [weak self] in
                 DispatchQueue.main.async {
+                    self?.allWorkspaces = []
                     self?.workspaces = []
                     self?.tableView.reloadData()
                     self?.refreshControl.endRefreshing()
@@ -168,6 +171,14 @@ class WorkspacesViewController: UIViewController {
     func updateWorkspaces(_ newWorkspaces: [Workspace]) {
         workspaces = newWorkspaces
         tableView.reloadData()
+    }
+    
+    public func filterWorkspaces(term: String) {
+        workspaces = term.isEmpty
+            ? allWorkspaces
+            : allWorkspaces.filter { $0.name.localizedCaseInsensitiveContains(term) }
+        tableView.reloadData()
+        updateEmptyState()
     }
 }
 
