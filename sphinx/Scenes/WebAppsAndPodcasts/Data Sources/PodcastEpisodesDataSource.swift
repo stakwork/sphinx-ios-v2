@@ -157,9 +157,9 @@ extension PodcastEpisodesDataSource : UIScrollViewDelegate {
 }
 
 extension PodcastEpisodesDataSource : FeedItemRowDelegate {
-    func shouldToggleChapters(video: Video, cell: UITableViewCell) {
-        ///Implement for video chapters
-    }
+    func shouldToggleChapters(video: Video, cell: UICollectionViewCell) {}
+    
+    func shouldPlayChapterWith(index: Int, on video: Video) {}
     
     func shouldPlayChapterWith(index: Int, on episode: PodcastEpisode) {
         delegate?.shouldPlayChapterWith(index: index, on: episode)

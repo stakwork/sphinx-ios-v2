@@ -340,9 +340,11 @@ extension RecommendationFeedItemsCollectionViewController {
 extension RecommendationFeedItemsCollectionViewController : FeedItemRowDelegate {
     func shouldToggleChapters(episode: PodcastEpisode, cell: UITableViewCell) {}
     
-    func shouldToggleChapters(video: Video, cell: UITableViewCell) {}
+    func shouldToggleChapters(video: Video, cell: UICollectionViewCell) {}
     
     func shouldPlayChapterWith(index: Int, on episode: PodcastEpisode) {}
+    
+    func shouldPlayChapterWith(index: Int, on video: Video) {}
     
     func shouldShowDescription(episode: PodcastEpisode, cell:UITableViewCell) {
         if let feedID = episode.feedID, let contentFeed = ContentFeed.getFeedById(feedId: feedID) {

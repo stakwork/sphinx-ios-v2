@@ -297,7 +297,7 @@ class NewMessageBubbleHelper {
             return
         }
         
-        let chatName = message.chat?.name ?? ""
+        let chatName = message.chat?.isPublicGroup() == true ? message.chat?.name : nil
         let sender = contactsService.getContactWith(id: message.senderId)
         
         let text = message.getMessageContentPreview(
@@ -312,7 +312,7 @@ class NewMessageBubbleHelper {
             contact: sender
         )
         
-        let bubbleTitle = (chatName != "") ? "\(senderNickname) on \(chatName)" : senderNickname
+        let bubbleTitle = (chatName != nil) ? "\(senderNickname) on \(chatName!)" : senderNickname
         
         if let chat = message.chat {
             showMessageView(

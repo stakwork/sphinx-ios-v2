@@ -101,6 +101,21 @@ class PodcastSatsView: UIView {
         amountLabel.text = "\(realValue)"
 
         podcast.satsPerMinute = realValue
+        
+        if let feedUrl = podcast.feedURLPath {
+            DataSyncManager.sharedInstance.saveFeedStatusFor(
+                feedId: podcast.feedID,
+                feedStatus: FeedStatus(
+                    chatPubkey: podcast.chat?.ownerPubkey ?? "",
+                    feedUrl: feedUrl,
+                    feedId: podcast.feedID,
+                    subscribed: podcast.isSubscribedToFromSearch,
+                    satsPerMinute: realValue,
+                    playerSpeed: Double(podcast.playerSpeed),
+                    itemId: podcast.currentEpisodeId
+                )
+            )
+        }
 
         setOutOfRangeLabel(value: realValue)
     }

@@ -32,15 +32,18 @@ class DashboardRootViewController: RootViewController {
         "dashboard.tabs.feed".localized,
         "dashboard.tabs.friends".localized,
         "dashboard.tabs.tribes".localized,
+        "dashboard.tabs.workspaces".localized,
     ]
     
     @IBOutlet weak var dashboardNavigationTabs: CustomSegmentedControl! {
         didSet {
+            dashboardNavigationTabs.buttonWidthRatios = [0.23, 0.23, 0.23, 0.31]
             dashboardNavigationTabs.configureFromOutlet(
                 buttonTitles: [
                     "dashboard.tabs.feed".localized,
                     "dashboard.tabs.friends".localized,
                     "dashboard.tabs.tribes".localized,
+                    "dashboard.tabs.workspaces".localized,
                 ],
                 initialIndex: 1,
                 delegate: self
@@ -90,6 +93,12 @@ class DashboardRootViewController: RootViewController {
             chatsListDelegate: self
         )
     }()
+
+    internal lazy var workspacesViewController: WorkspacesViewController = {
+        WorkspacesViewController.instantiate(
+            delegate: self
+        )
+    }()
     
     
     internal var activeTab: DashboardTab = .friends {
@@ -127,7 +136,6 @@ class DashboardRootViewController: RootViewController {
                 loadingWheelColor: UIColor.white,
                 views: [
                     searchBarContainer,
-                    mainContentContainerView,
                     bottomBarContainer,
                 ]
             )
@@ -314,7 +322,7 @@ extension DashboardRootViewController {
     func refreshUnreadStatus(){
         som.getReads()
         som.getMuteLevels()
-        som.getMessagesStatusForPendingMessages()
+        som.getMessagesStatusForPendingMessages()        
     }
     
     func connectToServer() {
@@ -359,12 +367,12 @@ extension DashboardRootViewController {
     }
 
     @objc private func didConnectToInternet() {
-        DispatchQueue.main.async {
-            if (UIApplication.shared.delegate as? AppDelegate)?.isActive == false {
-                return
-            }
-            self.reconnectToServer()
-        }
+//        DispatchQueue.main.async {
+//            if (UIApplication.shared.delegate as? AppDelegate)?.isActive == false {
+//                return
+//            }
+//            self.reconnectToServer()
+//        }
     }
 
     @objc private func didDisconnectFromInternet() {
@@ -514,6 +522,8 @@ extension DashboardRootViewController {
             return contactChatsContainerViewController
         case .tribes:
             return tribeChatsContainerViewController
+        case .workspaces:
+            return workspacesViewController
         }
     }
     
@@ -702,6 +712,7 @@ extension DashboardRootViewController {
         case feed
         case friends
         case tribes
+        case workspaces
     }
 }
 

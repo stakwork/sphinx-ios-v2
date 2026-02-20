@@ -174,6 +174,13 @@ extension PodcastPlayerController {
             clipInfo: podcastData.clipInfo
         )
         
+        updateItemDataSync(
+            podcastId: podcastData.podcastId,
+            episodeId: podcastData.episodeId,
+            currentTime: 0,
+            duration: podcastData.duration
+        )
+        
         markEpisodeAsPlayed()
         runEndedStateUpdate()
     }

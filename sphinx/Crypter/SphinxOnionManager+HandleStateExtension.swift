@@ -27,7 +27,7 @@ extension SphinxOnionManager {
         if let topic = topic {
             print("V2 Received topic: \(topic)")
         }
-        
+
         ///If re-processing delayed RR Object then all inside this IF has been run already. Then skip
         if !skipSettleTopic && !skipAsyncTopic {
             ///Update state mape
@@ -45,36 +45,50 @@ extension SphinxOnionManager {
             ///Handling messages totals
             handleMessagesCount(msgsCounts: rr.msgsCounts)
             
-            ///Handling tribes restore before messages restore
-            restoreTribesFrom(
-                rr: rr,
-                topic: topic
-            ) { [weak self] rr, topic in
-                
-                ///handling contacts restore
-                self?.restoreContactsFrom(messages: rr.msgs)
-                
-                ///Handling key exchange msgs restore
-                self?.processKeyExchangeMessages(rr: rr)
-                
-                ///Handling generic msgs restore
-                self?.processGenericMessages(rr: rr)
-                
-                ///Handling invoice paid
-                self?.processInvoicePaid(rr: rr)
-                
-                ///Handling messages statused
-                self?.handleMessagesStatus(tags: rr.tags)
-                
-                ///Handling incoming tags
-                self?.handleMessageStatusByTag(rr: rr)
-                
-                ///Handling read status
-                self?.handleReadStatus(rr: rr)
-                
-                ///Handling restore callbacks
-                self?.handleRestoreCallbacks(topic: topic, messages: rr.msgs)
+            fetchMissingTribesFor(rr: rr, topic: topic) { [weak self] rr, dictionary, topic in
+                guard let self = self else {
+                    return
+                }
+            
+                let context = backgroundContext
+                context.perform { [weak self] in
+                    guard let self = self else {
+                        return
+                    }
+                    
+                    ///handling tribes restore
+                    self.restoreTribesFrom(dictionary: dictionary, rr: rr)
+                    
+                    ///handling contacts restore
+                    self.restoreContactsFrom(messages: rr.msgs)
+                    
+                    ///Handling key exchange msgs restore
+                    self.processKeyExchangeMessages(rr: rr)
+                    
+                    ///Handling generic msgs restore
+                    self.processGenericMessages(topic: topic, rr: rr)
+                    
+                    context.saveContext()
+                    
+                    ///Handling restore callbacks
+                    self.handleRestoreCallbacks(topic: topic, messages: rr.msgs)
+                }
             }
+            
+            ///Handling invoice paid
+            processInvoicePaid(rr: rr)
+            
+            ///Handling messages statused
+            handleMessagesStatus(tags: rr.tags)
+            
+            ///Handling incoming tags
+            handleMessageStatusByTag(rr: rr)
+            
+            ///Handling read status
+            handleReadStatus(rr: rr)
+            
+            ///Handling mute levels
+            handleMuteLevels(rr: rr)
             
             ///Handling settle status
             handleSettledStatus(settledStatus: rr.settledStatus)
@@ -87,9 +101,6 @@ extension SphinxOnionManager {
             
             ///Handling ping done
             handlePingDone(msgs: rr.msgs)
-
-            ///Handling mute levels
-            handleMuteLevels(rr: rr)
             
             ///Handling invoice paid status
             handleInvoiceSentStatus(sentStatus: rr.sentStatus)
@@ -478,40 +489,53 @@ extension SphinxOnionManager {
         messages: [Msg]
     ) {
         ///Restore callbacks
-        if topic?.isMessagesFetchResponse == true {
-            if let firstSCIDMsgsCallback = firstSCIDMsgsCallback {
-                firstSCIDMsgsCallback(messages)
-            } else if let onMessageRestoredCallback = onMessageRestoredCallback {
-                onMessageRestoredCallback(messages)
+        DispatchQueue.main.async {
+            if topic?.isMessagesFetchResponseTopic == true {
+                if let firstSCIDMsgsCallback = self.firstSCIDMsgsCallback {
+                    firstSCIDMsgsCallback(messages)
+                } else if let onMessageRestoredCallback = self.onMessageRestoredCallback {
+                    onMessageRestoredCallback(messages)
+                } else {
+                    ///Callback to chat when restoring msgs for a specifc chat
+                    if let restoringMsgsForPublicKey = self.restoringMsgsForPublicKey,
+                        let onMessagePerPublicKeyRestoredCallback = self.onMessagePerPublicKeyRestoredCallback,
+                        messages.allSatisfy({ $0.isMsgInTribeWith(pubkey: restoringMsgsForPublicKey)  })
+                    {
+                        self.restoringMsgsForPublicKey = nil
+                        self.onMessagePerPublicKeyRestoredCallback = nil
+                        onMessagePerPublicKeyRestoredCallback(messages.count)
+                    }
+                    
+                    self.getReads()
+                }
             }
         }
     }
     
     func handleMessageStatusByTag(rr: RunReturn) {
-        if let sentStatusJSON = rr.sentStatus,
-           let sentStatus = SentStatus(JSONString: sentStatusJSON),
-           let tag = sentStatus.tag
-        {
-            backgroundContext.perform { [weak self] in
-                guard let self = self else {
-                    return
-                }
-                if let cachedMessage = TransactionMessage.getMessageWith(tag: tag, context: self.backgroundContext) {
+        let context = backgroundContext
+        context.performAndWait { [weak self] in
+            guard let self = self else {
+                return
+            }
+            if let sentStatusJSON = rr.sentStatus,
+               let sentStatus = SentStatus(JSONString: sentStatusJSON),
+               let tag = sentStatus.tag
+            {
+                if let cachedMessage = TransactionMessage.getMessageWith(tag: tag, context: context) {
                     if (sentStatus.status == SphinxOnionManager.kCompleteStatus) {
                         cachedMessage.status = TransactionMessage.TransactionMessageStatus.received.rawValue
                     } else if (sentStatus.status == SphinxOnionManager.kFailedStatus) {
                         cachedMessage.status = TransactionMessage.TransactionMessageStatus.failed.rawValue
                     }
                     
-//                    if let uuid = cachedMessage.uuid {
-//                        self.receivedOMuuid(uuid)
-//                    }
+                    //                    if let uuid = cachedMessage.uuid {
+                    //                        self.receivedOMuuid(uuid)
+                    //                    }
                     
                     if cachedMessage.paymentHash == nil {
                         cachedMessage.paymentHash = sentStatus.paymentHash
                     }
-                    
-                    self.backgroundContext.saveContext()
                 } else {
                     NotificationCenter.default.post(
                         Notification(
@@ -527,6 +551,7 @@ extension SphinxOnionManager {
                     self.onPaymentStatusReceivedFor(tag: tag, status: sentStatus.status ?? SphinxOnionManager.kFailedStatus)
                 }
             }
+            context.saveContext()
         }
     }
     
@@ -637,34 +662,34 @@ extension SphinxOnionManager {
     }
     
     func handleMessagesStatus(tags: String?) {
-        if let tags = tags {
-            if let data = tags.data(using: .utf8) {
-                do {
-                    if let array = try JSON(data: data).array {
-                        var dictionary: [String: MessageStatusMap] = [:]
+        let context = backgroundContext
+        context.performAndWait { [weak self] in
+            guard let _ = self else {
+                return
+            }
+            if let tags = tags {
+                if let data = tags.data(using: .utf8) {
+                    do {
+                        if let array = try JSON(data: data).array {
+                            var dictionary: [String: MessageStatusMap] = [:]
 
-                        for message in array {
-                            if let dictionaryObject = message.dictionaryObject, let messageStatus = MessageStatusMap(JSON: dictionaryObject) {
-                                if let tag = messageStatus.tag {
-                                    dictionary[tag] = messageStatus
+                            for message in array {
+                                if let dictionaryObject = message.dictionaryObject, let messageStatus = MessageStatusMap(JSON: dictionaryObject) {
+                                    if let tag = messageStatus.tag {
+                                        dictionary[tag] = messageStatus
+                                    }
                                 }
                             }
-                        }
 
-                        let tags = array.compactMap({ $0["tag"].stringValue }).filter({ $0.isNotEmpty })
-                        
-                        if tags.isEmpty {
-                            return
-                        }
-
-                        backgroundContext.perform { [weak self] in
-                            guard let self = self else {
+                            let tags = array.compactMap({ $0["tag"].stringValue }).filter({ $0.isNotEmpty })
+                            
+                            if tags.isEmpty {
                                 return
                             }
                             
                             var chatIds: [Int] = []
                             
-                            for message in TransactionMessage.getMessagesWith(tags: tags, context: self.backgroundContext) {
+                            for message in TransactionMessage.getMessagesWith(tags: tags, context: context) {
                                 if let messageStatus = dictionary[message.tag ?? ""] {
                                     if messageStatus.isReceived() {
                                         if message.isInvoice() {
@@ -685,20 +710,25 @@ extension SphinxOnionManager {
                                 }
                             }
                             
-                            self.backgroundContext.saveContext()
-                            
                             
                             if !chatIds.isEmpty {
                                 let userInfo: [String: [Int]] = ["chat-ids" : chatIds]
                                 NotificationCenter.default.post(name: .onMessagesStatusChanged, object: nil, userInfo: userInfo)
                             }
                         }
+                    } catch {
+                        print("Error decoding JSON: \(error)")
                     }
-                } catch {
-                    print("Error decoding JSON: \(error)")
                 }
             }
+            context.saveContext()
         }
     }
 
+}
+
+extension Msg {
+    func isMsgInTribeWith(pubkey: String) -> Bool {
+        return (self.sender?.contains(pubkey) ?? false) || self.sentTo == pubkey
+    }
 }

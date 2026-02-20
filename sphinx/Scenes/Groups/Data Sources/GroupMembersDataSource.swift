@@ -35,16 +35,12 @@ class GroupMembersDataSource: GroupAllContactsDataSource {
     }
     
     func loadTribeContacts() {
-        
         som.getTribeMembers(tribeChat: self.chat, completion: { [weak self] tribeMembers in
             guard let weakSelf = self else { return }
             
             if let tribeMemberArray = tribeMembers["confirmedMembers"] as? [TribeMembersRRObject],
                let pendingMembersArray = tribeMembers["pendingMembers"] as? [TribeMembersRRObject]
             {
-                self?.chat.isTribeICreated = true
-                self?.chat.managedObjectContext?.saveContext()
-                
                 let contactsMap = tribeMemberArray.map({
                     var contact = JSON($0.toJSON())
                     contact["pending"] = false

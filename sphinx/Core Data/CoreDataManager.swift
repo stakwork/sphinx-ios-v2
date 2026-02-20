@@ -105,13 +105,23 @@ class CoreDataManager {
     }
     
     func deleteChatObjectsFor(_ chat: Chat) {
-        if let messagesSet = chat.messages, let groupMessages = Array<Any>(messagesSet) as? [TransactionMessage] {
-            for m in groupMessages {
-                MediaLoader.clearMessageMediaCache(message: m)
-                deleteObject(object: m)
+        let managedContext = persistentContainer.viewContext
+        managedContext.performAndWait {
+            // Check if chat is valid and belongs to this context
+            guard !chat.isDeleted, chat.managedObjectContext == managedContext else {
+                return
             }
+
+            if let messagesSet = chat.messages, let groupMessages = Array<Any>(messagesSet) as? [TransactionMessage] {
+                for m in groupMessages {
+                    if !m.isDeleted {
+                        MediaLoader.clearMessageMediaCache(message: m)
+                        managedContext.delete(m)
+                    }
+                }
+            }
+            managedContext.delete(chat)
         }
-        deleteObject(object: chat)
         saveContext()
     }
     
@@ -235,7 +245,21 @@ class CoreDataManager {
     
     func deleteObject(object: NSManagedObject, context: NSManagedObjectContext? = nil) {
         let managedContext = context ?? persistentContainer.viewContext
-        managedContext.delete(object)
+        managedContext.performAndWait {
+            // Check if object is valid and not already deleted
+            guard !object.isDeleted else {
+                return
+            }
+
+            // If object belongs to a different context, get it in this context
+            if object.managedObjectContext != managedContext {
+                if let objectInContext = try? managedContext.existingObject(with: object.objectID) {
+                    managedContext.delete(objectInContext)
+                }
+            } else {
+                managedContext.delete(object)
+            }
+        }
     }
 }
 
@@ -245,8 +269,8 @@ extension NSManagedObjectContext {
             do {
                 try self.save()
             } catch {
-                let nserror = error as NSError
-                print("Unresolved error \(nserror)")
+                let error = error as NSError
+                print("Unresolved error \(error)")
             }
         }
     }

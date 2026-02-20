@@ -15,6 +15,7 @@ class PaymentTransaction {
     var type : Int?
     var amount : Int?
     var date : Date?
+    var ts : Int64?
     var senderId : Int?
     var receiverId : Int?
     var chatId : Int?
@@ -25,7 +26,7 @@ class PaymentTransaction {
     var content : String?
     
     var expanded: Bool = false
-    
+
     public enum TransactionDirection: Int {
         case Incoming
         case Outgoing
@@ -33,13 +34,12 @@ class PaymentTransaction {
     
     init(
         fromTransactionMessage transactionMessage: TransactionMessage,
-        ts: Int64? = nil
+        transaction: PaymentTransactionFromServer
     ) {
         // Initialize properties using values from `TransactionMessage`
         self.type = transactionMessage.type
-        self.amount = transactionMessage.amount?.intValue
-        self.senderId = transactionMessage.senderId
-        self.receiverId = transactionMessage.receiverId
+        self.senderId = (transactionMessage.senderId != -1) ? transactionMessage.senderId : nil
+        self.receiverId = (transactionMessage.receiverId != -1) ? transactionMessage.receiverId : nil
         self.chatId = transactionMessage.chat?.id
         self.originalMessageUUID = transactionMessage.uuid
         self.paymentRequest = transactionMessage.invoice
@@ -47,10 +47,21 @@ class PaymentTransaction {
         self.errorMessage = transactionMessage.errorMessage
         self.content = transactionMessage.messageContent?.replacingOccurrences(of: "+", with: " ").removingPercentEncoding
         
-        if let ts = ts {
+        if let amount = transactionMessage.amount?.intValue, amount > 0 {
+            self.amount = transactionMessage.amount?.intValue
+        } else {
+            self.amount = (transaction.amt_msat ?? 0) / 1000
+        }
+        
+        if let ts = transaction.ts {
+            self.ts = ts
             self.date = Date(timeIntervalSince1970: TimeInterval(ts) / 1000)
         } else {
             self.date = transactionMessage.date ?? Date()
+                            
+            if let ts = (transactionMessage.date ?? Date())?.timeIntervalSince1970 {
+                self.ts = Int64(ts)
+            }
         }
     }
     
@@ -60,8 +71,11 @@ class PaymentTransaction {
         self.amount = (fetchedParams.amt_msat ?? 0) / 1000
         
         if let ts = fetchedParams.ts {
+            self.ts = ts
             self.date = Date(timeIntervalSince1970: TimeInterval(ts) / 1000)
         } else {
+            let date = Date()
+            self.ts = Int64(date.timeIntervalSince1970)
             self.date = Date()
         }
         
@@ -116,11 +130,10 @@ class PaymentTransaction {
             return nil
         }
         
-        if chat == nil && senderId == 0 && receiverId == 0 && (content ?? "").isNotEmpty {
+        if chat == nil && isBountyPayment() {
             ///Incoming bounty pmts
             return self.content
         }
-
         
         if let senderId = senderId, let sender = UserContact.getContactWith(id: senderId), isIncoming() {
             if let nickname = sender.nickname, !nickname.isEmpty {
@@ -133,52 +146,24 @@ class PaymentTransaction {
                 return "-"
             }
             if !chat.isGroup(), let nickname = receiver.nickname, !nickname.isEmpty {
-                return nickname
+            return nickname
             } else {
                 return "-"
             }
-        } 
+        }
         
-        if let chat = chat, chat.isGroup(), let message = TransactionMessage.getMessageWith(uuid: self.originalMessageUUID ?? "") {
-            if !self.isIncoming(),
-              let replyUUID = message.replyUUID,
+        if let message = TransactionMessage.getMessageWith(uuid: self.originalMessageUUID ?? "") {
+            if message.isIncoming() {
+                return message.senderAlias
+            } else if let replyUUID = message.replyUUID, message.isMessageBoost(),
               let replyMessage = TransactionMessage.getMessageWith(uuid: replyUUID),
-              let originalAlias = replyMessage.senderAlias
-            {
+              let originalAlias = replyMessage.senderAlias {
                 return originalAlias
             }
-            return message.senderAlias
         }
         return "-"
     }
-    
-    func printDetails() {
-        print("Transaction Details:")
-        print("Type: \(type ?? 0)")  // Assuming '0' as a default 'unknown' type
-        print("Amount: \(amount ?? 0)")  // Print default as '0' if nil
-        print("Date: \(date?.description ?? "N/A")")  // Print 'N/A' if date is nil
-        print("SenderId: \(senderId ?? 0)")  // Print '0' if nil
-        print("ReceiverId: \(receiverId ?? 0)")  // Print '0' if nil
-        print("ChatId: \(chatId ?? 0)")  // Print '0' if nil
-        print("OriginalMessageUUID: \(originalMessageUUID ?? "N/A")")  // Print 'N/A' if nil
-        print("PaymentRequest: \(paymentRequest ?? "N/A")")  // Print 'N/A' if nil
-        print("PaymentHash: \(paymentHash ?? "N/A")")  // Print 'N/A' if nil
-        print("ErrorMessage: \(errorMessage ?? "No error")")  // Print 'No error' if nil
-        
-        // Optionally, print the calculated properties or methods outputs
-        let direction = getDirection() == .Incoming ? "Incoming" : "Outgoing"
-        print("Transaction Direction: \(direction)")
-        print("Is Incoming: \(isIncoming())")
-        print("Is Failed: \(isFailed())")
-        
-        if let users = getUsers() {
-            print("Users: \(users)")
-        } else {
-            print("Users: Unable to determine users involved.")
-        }
-    }
 }
-
 
 class PaymentTransactionFromServer: Mappable {
     var scid: Int64?
@@ -188,10 +173,8 @@ class PaymentTransactionFromServer: Mappable {
     var remote: Bool?
     var msg_idx: Int?
     var error: String?
-    var data: String?
     
-    required init?(map: Map) {
-    }
+    required init?(map: Map) {}
     
     func isSucceeded() -> Bool {
         return (error ?? "").isEmpty
@@ -209,6 +192,5 @@ class PaymentTransactionFromServer: Mappable {
         remote   <- map["remote"]
         msg_idx  <- map["msg_idx"]
         error    <- map["error"]
-        data     <- map["data"]
     }
 }

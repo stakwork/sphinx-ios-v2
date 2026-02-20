@@ -60,6 +60,7 @@
 "dashboard.tabs.feed" = "フィード";
 "dashboard.tabs.friends" = "友達だち";
 "dashboard.tabs.tribes" = "部族 (トライブ)";
+"dashboard.tabs.workspaces" = "ワークスペース";
 "dashboard.feeds.filters.all" = "すべて";
 "dashboard.feeds.filters.listen" = "聴く";
 "dashboard.feeds.filters.watch" = "見る";
@@ -541,6 +542,7 @@
 "already.connected" = "既にこの人と繋がっています";
 "price.to.meet" = "会うための価格：";
 "invalid.public-key" = "無効な公開鍵";
+"authorization.login" = "ログインに成功しました";
 "processing.payment" = "支払い処理中";
 "processing.payment.description" = "この処理には最大60秒かかる場合があります。完了すると通知されます。";
 

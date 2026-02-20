@@ -35,10 +35,8 @@ extension NewChatTableDataSource {
 
         restorePreloadedMessages()
         
-        DelayPerformedHelper.performAfterDelay(seconds: 0.1, completion: { [weak self] in
-            guard let self = self else { return }
-            self.configureResultsController(items: max(self.dataSource.snapshot().numberOfItems, 100))
-        })
+        self.configureResultsController(items: max(self.dataSource.snapshot().numberOfItems, 100))
+        self.fetchMoreItems()
     }
     
     func makeSnapshotForCurrentState() -> DataSourceSnapshot {
@@ -46,8 +44,19 @@ extension NewChatTableDataSource {
 
         snapshot.appendSections([CollectionViewSection.messages])
 
+        // Filter out duplicates to prevent NSDiffableDataSourceSnapshot crashes
+        // Use Set which relies on Hashable conformance - same logic diffable data source uses
+        var seen = Set<MessageTableCellState>()
+        var uniqueItems: [MessageTableCellState] = []
+
+        for item in messageTableCellStateArray {
+            if seen.insert(item).inserted {
+                uniqueItems.append(item)
+            }
+        }
+
         snapshot.appendItems(
-            messageTableCellStateArray,
+            uniqueItems,
             toSection: .messages
         )
         return snapshot
@@ -61,7 +70,10 @@ extension NewChatTableDataSource {
             self.saveSnapshotCurrentState()
             self.dataSource.apply(snapshot, animatingDifferences: false)
             self.restoreScrollLastPosition()
-            self.loadingMoreItems = false
+            
+            DelayPerformedHelper.performAfterDelay(seconds: 1.0, completion: {
+                self.loadingMoreItems = false
+            })
         }
     }    
     
@@ -120,7 +132,8 @@ extension NewChatTableDataSource {
 extension NewChatTableDataSource {
     
     @objc func processMessages(
-        messages: [TransactionMessage]
+        messages: [TransactionMessage],
+        showLoadingMore: Bool
     ) {
         let sortedMessages = messages
         //let sortedMessages = messages.sorted(by: {$0.id < $1.id})
@@ -131,9 +144,10 @@ extension NewChatTableDataSource {
         }
         
         startSearchProcess()
-        
+                
         var newMsgCount = 0
         var array: [MessageTableCellState] = []
+        var searchM: [(Int, MessageTableCellState)] = []
         
         let admin = chat.getAdmin()
         let contact = chat.getConversationContact()
@@ -144,7 +158,7 @@ extension NewChatTableDataSource {
         let requestResponsesMap = getMemberRequestResponsesMapFor(messages: messages)
         let purchaseMessagesMap = getPurchaseMessagesMapFor(messages: messages)
         
-        let threadMessagesMap = getThreadMessagesFor(messages: messages)
+        let threadMessagesMap = isSearching ? [:] : getThreadMessagesFor(messages: messages)
         let linkContactsArray = getLinkContactsArrayFor(messages: messages)
         let linkTribesArray = getLinkTribesArrayFor(messages: messages)
         let webLinksArray = getWebLinksArrayFor(messages: messages)
@@ -152,7 +166,7 @@ extension NewChatTableDataSource {
         var groupingDate: Date? = nil
         var invoiceData: (Int, Int) = (0, 0)
         
-        let filteredThreadMessages: [TransactionMessage] = filterThreadMessagesFrom(
+        let filteredThreadMessages: [TransactionMessage] = isSearching ? sortedMessages : filterThreadMessagesFrom(
             messages: sortedMessages,
             threadMessagesMap: threadMessagesMap
         )
@@ -161,6 +175,19 @@ extension NewChatTableDataSource {
             threadMessages: filteredThreadMessages,
             threadMessagesMap: threadMessagesMap
         )
+        
+        if showLoadingMore {
+            array.insert(
+                MessageTableCellState(
+                    chat: chat,
+                    owner: owner,
+                    contact: contact,
+                    tribeAdmin: admin,
+                    isLoadingMoreMessages: true
+                ),
+                at: 0
+            )
+        }
 
         for (index, message) in filteredThreadMessages.enumerated() {
             
@@ -189,7 +216,8 @@ extension NewChatTableDataSource {
                 in: filteredThreadMessages,
                 and: originalMessagesMap,
                 groupingDate: &groupingDate,
-                isThreadRow: threadMessages.count > 1
+                isThreadRow: threadMessages.count > 1,
+                showLoadingMore: showLoadingMore
             )
             
             if let separatorDate = bubbleStateAndDate.1 {
@@ -242,22 +270,32 @@ extension NewChatTableDataSource {
                 threadMessages: threadMessages
             )
             
-            processForSearch(
+             if let match = processForSearch(
                 message: message,
                 messageTableCellState: messageTableCellState,
                 index: array.count - 1
-            )
+             ) {
+                 searchM.append(match)
+             }
         }
         
         messageTableCellStateArray = array
         
-        updateSnapshot()
-        
-        delegate?.configureNewMessagesIndicatorWith(
-            newMsgCount: newMsgCount
-        )
-        
-        finishSearchProcess()
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else {
+                return
+            }
+            self.updateSnapshot()
+            
+//            self.delegate?.configureNewMessagesIndicatorWith(
+//                newMsgCount: newMsgCount
+//            )
+            self.delegate?.configureNewMessagesIndicatorWith(
+                newMsgCount: 0
+            )
+            
+            self.finishSearchProcess(matches: searchM)
+        }
     }
     
     func filterThreadMessagesFrom(
@@ -298,7 +336,7 @@ extension NewChatTableDataSource {
     }
     
     func forceReload() {
-        processMessages(messages: messagesArray)
+        processMessages(messages: messagesArray, showLoadingMore: true)
     }
     
     func getMessagesCount() -> Int {
@@ -347,7 +385,8 @@ extension NewChatTableDataSource {
         and originalMessagesMap: [String: TransactionMessage],
         groupingDate: inout Date?,
         isThreadRow: Bool = false,
-        threadHeaderMessage: TransactionMessage? = nil
+        threadHeaderMessage: TransactionMessage? = nil,
+        showLoadingMore: Bool = false
     ) -> (MessageTableCellState.BubbleState?, Date?) {
         
         var previousMessage = (index > 0) ? messages[index - 1] : nil
@@ -369,7 +408,7 @@ extension NewChatTableDataSource {
             if Date.isDifferentDay(firstDate: previousMessageDate, secondDate: date) {
                 separatorDate = date
             }
-        } else if previousMessage == nil {
+        } else if previousMessage == nil && !showLoadingMore {
             separatorDate = message.date
         }
         
@@ -717,19 +756,60 @@ extension NewChatTableDataSource : NSFetchedResultsControllerDelegate {
         )
     }
     
+    func getFetchRequestFor(
+        chat: Chat,
+        with items: Int,
+        and minIndex: Int
+    ) -> NSFetchRequest<TransactionMessage> {
+        return TransactionMessage.getChatMessagesFetchRequest(
+            for: chat,
+            with: items,
+            and: minIndex,
+            pinnedMessageId: pinnedMessageId
+        )
+    }
+    
+    func getFetchMinIndex(
+        fetchRequest: NSFetchRequest<TransactionMessage>
+    ) -> Int? {
+        let managedContext = CoreDataManager.sharedManager.persistentContainer.viewContext
+        var objects: [TransactionMessage] = [TransactionMessage]()
+        
+        do {
+            try objects = managedContext.fetch(fetchRequest)
+        } catch let error as NSError {
+            print("Error: " + error.localizedDescription)
+        }
+        
+        return objects.last?.id
+    }
+    
     func configureResultsController(items: Int) {
         guard let chat = chat else {
             return
         }
         
-        if messagesArray.count < messagesCount {
+        if messagesCountFetched < messagesCountRequested {
             return
         }
         
-        messagesCount = items
+        messagesCountRequested = items
         
-        let fetchRequest = getFetchRequestFor(chat: chat, with: items)
-
+        var fetchRequest = getFetchRequestFor(
+            chat: chat,
+            with: items
+        )
+        
+        if let minIndex = getFetchMinIndex(fetchRequest: fetchRequest), !isThread {
+            fetchMinIndex = minIndex
+            
+            fetchRequest = getFetchRequestFor(
+                chat: chat,
+                with: items,
+                and: minIndex
+            )
+        }
+        
         messagesResultsController = NSFetchedResultsController(
             fetchRequest: fetchRequest,
             managedObjectContext: CoreDataManager.sharedManager.persistentContainer.viewContext,
@@ -755,7 +835,7 @@ extension NewChatTableDataSource : NSFetchedResultsControllerDelegate {
             return
         }
         
-        let fetchRequest = TransactionMessage.getSecondaryMessagesFetchRequestOn(chat: chat)
+        let fetchRequest = TransactionMessage.getSecondaryMessagesFetchRequestOn(chat: chat, minIndex: fetchMinIndex)
 
         additionMessagesResultsController = NSFetchedResultsController(
             fetchRequest: fetchRequest,
@@ -782,26 +862,35 @@ extension NewChatTableDataSource : NSFetchedResultsControllerDelegate {
             
             if controller == messagesResultsController {
                 if let messages = firstSection.objects as? [TransactionMessage] {
-                    if !isThread {
+                    if !self.isThread {
                         ///Do not processes aliases and timezone on thread since it came from chat
                         self.chat?.processAliasesFrom(messages: messages.reversed())
                     }
-                    self.messagesArray = messages.filter({ !$0.isApprovedRequest() && !$0.isDeclinedRequest() }).reversed()
                     
-                    if !(self.delegate?.isOnStandardMode() ?? true) {
-                        return
-                    }
+                    self.messagesCountFetched = messages.count
+                    self.messagesArray = messages.filter({ !$0.isApprovedRequest() }).reversed()
+                    self.processTimezoneNotSentRecently()
+
                     self.updateMessagesStatusesFrom(messages: self.messagesArray)
-                    self.processMessages(messages: self.messagesArray)
+                    
+                    self.processMessages(
+                        messages: self.messagesArray,
+                        showLoadingMore: !self.allItemsLoaded && messages.count >= 100
+                    )
+                    
                     self.configureSecondaryMessagesResultsController()
-                    self.delegate?.shouldUpdateHeaderScheduleIcon(message: messages.first)
+                    
+                    DispatchQueue.main.async {
+                        self.delegate?.shouldUpdateHeaderScheduleIcon(message: messages.first)
+                    }
                 }
             } else {
-                if !(self.delegate?.isOnStandardMode() ?? true) {
-                    return
-                }
+                let messages = messagesResultsController.sections?.first?.objects as? [TransactionMessage] ?? []
                 
-                self.processMessages(messages: self.messagesArray)
+                self.processMessages(
+                    messages: self.messagesArray,
+                    showLoadingMore: !self.allItemsLoaded && messages.count >= 100
+                )
             }
         }
     }
@@ -837,6 +926,13 @@ extension NewChatTableDataSource : NSFetchedResultsControllerDelegate {
             SphinxOnionManager.sharedInstance.getMessagesStatusFor(tags: tags)
         }
     }
+    
+    func processTimezoneNotSentRecently() {
+        let ownerId = UserData.sharedInstance.getUserId()
+        let sentMessagesWithTimezone = messagesArray.filter({ $0.remoteTimezoneIdentifier != nil && $0.isOutgoing(ownerId: ownerId) })
+        timezoneNotSentRecently = sentMessagesWithTimezone.isEmpty
+    }
+
 }
 
 

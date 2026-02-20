@@ -11,6 +11,18 @@
 import MediaPlayer
 
 extension PodcastPlayerController {
+    func updateItemDataSync(
+        podcastId: String,
+        episodeId: String,
+        currentTime: Int? = nil,
+        duration: Int? = nil
+    ) {
+        DataSyncManager.sharedInstance.saveFeedItemStatusFor(
+            feedId: podcastId,
+            itemId: episodeId,
+            feedItemStatus: FeedItemStatus(duration: duration ?? 0, currentTime: currentTime ?? 0)
+        )
+    }
     
     func loadEpisodeImage() {
         self.playingEpisodeImage = nil

@@ -65,12 +65,19 @@ extension UserContact : ChatListCommonObject {
     }
     
     public func getColor() -> UIColor {
-        let key = "\(self.id)-color"
+        if let chat = getChat() {
+            return chat.getColor()
+        }
+        let key = "\(self.publicKey ?? "\(self.id)")-color"
         return UIColor.getColorFor(key: key)
     }
     
     public func deleteColor() {
-        let key = "\(self.id)-color"
+        if let chat = getChat() {
+            chat.deleteColor()
+            return
+        }
+        let key = "\(self.publicKey ?? "\(self.id)")-color"
         UIColor.removeColorFor(key: key)
     }
     

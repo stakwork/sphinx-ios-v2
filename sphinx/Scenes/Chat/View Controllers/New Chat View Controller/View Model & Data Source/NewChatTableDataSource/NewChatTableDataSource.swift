@@ -88,6 +88,7 @@ class NewChatTableDataSource : NSObject {
     var contact: UserContact?
     var owner: UserContact? = nil
     var pinnedMessageId: Int? = nil
+    var timezoneNotSentRecently: Bool = true
     
     ///Data Source related
     var messagesResultsController: NSFetchedResultsController<TransactionMessage>!
@@ -113,11 +114,18 @@ class NewChatTableDataSource : NSObject {
     var searchingTerm: String? = nil
     var searchMatches: [(Int, MessageTableCellState)] = []
     var currentSearchMatchIndex: Int = 0
-    var isLastSearchPage = false
+    var isSearching: Bool {
+        get {
+            return searchingTerm != nil
+        }
+    }
     
     ///Scroll and pagination
-    var messagesCount = 0
+    var messagesCountRequested = 0
+    var messagesCountFetched = 0
+    var fetchMinIndex = 0
     var loadingMoreItems = false
+    var allItemsLoaded = false
     var scrolledAtBottom = false
     
     ///Messages statuses restore

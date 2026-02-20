@@ -53,7 +53,7 @@ extension NewMessageTableViewCell : MediaMessageViewDelegate {
         originalMessageMedia: BubbleMessageLayoutState.MessageMedia
     ) {
         if let originalMessageId = originalMessageId {
-            let delayTime = DispatchTime.now() + Double(Int64(0.5 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
+            let delayTime = DispatchTime.now() + Double(Int64(0.1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
             DispatchQueue.global().asyncAfter(deadline: delayTime) {
                 if originalMessageMedia.isImage {
                     self.delegate?.shouldLoadImageDataFor(
@@ -84,7 +84,7 @@ extension NewMessageTableViewCell : MediaMessageViewDelegate {
         originalMessageFile: BubbleMessageLayoutState.GenericFile
     ) {
         if let originalMessageId = originalMessageId {
-            let delayTime = DispatchTime.now() + Double(Int64(0.5 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
+            let delayTime = DispatchTime.now() + Double(Int64(0.1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
             DispatchQueue.global().asyncAfter(deadline: delayTime) {
                 self.delegate?.shouldLoadFileDataFor(
                     messageId: originalMessageId,
@@ -152,7 +152,7 @@ extension NewMessageTableViewCell : AudioMessageViewDelegate {
     
     func shouldLoadOriginalMessageAudioDataFrom(originalMessageAudio: BubbleMessageLayoutState.Audio) {
         if let originalMessageId = originalMessageId {
-            let delayTime = DispatchTime.now() + Double(Int64(0.5 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
+            let delayTime = DispatchTime.now() + Double(Int64(0.1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
             DispatchQueue.global().asyncAfter(deadline: delayTime) {
                 self.delegate?.shouldLoadAudioDataFor(
                     messageId: originalMessageId,

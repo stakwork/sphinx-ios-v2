@@ -128,8 +128,12 @@ extension String {
         return self.removingPercentEncoding
     }
     
-    var isMessagesFetchResponse : Bool {
+    var isMessagesFetchResponseTopic : Bool {
         return self.contains("/batch")
+    }
+    
+    var isMessageInRealTimeTopic : Bool {
+        return self.contains("/stream")
     }
     
     func trim() -> String {
@@ -251,6 +255,34 @@ extension String {
         )
         
         return matches
+    }
+    
+    var stringMsgLinks: [(NSTextCheckingResult, String)] {
+        if !self.contains(".") {
+            return []
+        }
+        
+        var results: [(NSTextCheckingResult, String)] = []
+        
+        let textWithoutMarkdown = self.removingMarkdownDelimiters
+        let types: NSTextCheckingResult.CheckingType = [.link]
+        let detector = try? NSDataDetector(types: types.rawValue)
+        
+        let matches = detector!.matches(
+            in: textWithoutMarkdown,
+            options: .reportCompletion,
+            range: NSMakeRange(0, textWithoutMarkdown.utf16.count)
+        )
+        
+        for match in matches {
+            if let linkRange = Range(match.range, in: self) {
+                let linkText = String(self[linkRange])
+                
+                results.append((match, linkText))
+            }
+        }
+        
+        return results
     }
     
     var pubKeyMatches: [NSTextCheckingResult] {
@@ -1230,5 +1262,11 @@ extension String {
 
     func urlEncode() -> String? {
         return addingPercentEncoding(withAllowedCharacters: .allowedURLCharacterSet)
+    }
+    
+    var fixedYoutubeUrl : String {
+        get {
+            return self.replacingOccurrences(of: "/v/", with: "/watch?v=")
+        }
     }
 }

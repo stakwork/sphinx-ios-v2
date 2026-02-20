@@ -1,0 +1,18 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "t0v-6T-stR.text" : {
+      "comment" : "Class = \"UILabel\"; text = \"Loading more messages...\"; ObjectID = \"t0v-6T-stR\";",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Loading more messages..."
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

@@ -24,6 +24,7 @@ public class VideoFeed: NSObject {
     public var generator: String?
     public var isSubscribedToFromSearch: Bool
     public var dateLastConsumed: Date?
+    public var currentItemId: String?
     
     public var chat: Chat?
     public var videos: Array<Video>?
@@ -37,6 +38,33 @@ public class VideoFeed: NSObject {
     }
     
     var sortedVideosArray: [Video] = []
+    
+    var skipAdsCache: Bool? = nil
+    public var skipAds : Bool {
+        get {
+            if let skipAdsCache = skipAdsCache {
+                return skipAdsCache
+            }
+            if let skipAds = UserDefaults.Keys.skipAds.get(defaultValue: true) {
+                skipAdsCache = skipAds
+                return skipAds
+            }
+            return false
+        }
+        set {
+            skipAdsCache = newValue
+            UserDefaults.Keys.skipAds.set(newValue)
+        }
+    }
+    
+    var currentItem: Video? {
+        get {
+            if let currentItemId = currentItemId {
+                return videosArray.first(where: { $0.videoID == currentItemId }) ?? videosArray.first
+            }
+            return videosArray.first
+        }
+    }
 }
 
 
@@ -76,6 +104,7 @@ extension VideoFeed {
         videoFeed.generator = contentFeed.generator
         videoFeed.chat = contentFeed.chat
         videoFeed.dateLastConsumed = contentFeed.dateLastConsumed
+        videoFeed.currentItemId = contentFeed.currentItem?.itemID
         
         videoFeed.videos = contentFeed
             .items?

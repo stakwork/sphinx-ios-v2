@@ -18,6 +18,8 @@ class VideoFeedEpisodesSectionHeaderView: UICollectionReusableView {
     @IBOutlet private weak var episodeCountNumberLabel: UILabel!
     @IBOutlet private weak var episodeCountTextLabel: UILabel!
     
+    @IBOutlet weak var skipAdsContainer: UIView!
+    @IBOutlet weak var skipAdsLabel: UILabel!    
     
     var videoFeedEpisode: Video! {
         didSet {
@@ -80,6 +82,20 @@ extension VideoFeedEpisodesSectionHeaderView {
         self.videoFeedEpisode = videoFeedEpisode
         self.onFeedSubscribed = onFeedSubscribed
         self.onFeedUnsubscribed = onFeedUnsubscribed
+        
+        configureSkipAdsButton(enable: videoFeed?.skipAds ?? false)
+    }
+    
+    func configureSkipAdsButton(enable: Bool) {
+        skipAdsContainer.backgroundColor = enable ? UIColor.Sphinx.PrimaryGreen : UIColor(hex: "#B0B7BC")
+        skipAdsLabel.textColor = enable ? UIColor.white : UIColor(hex: "#6B7A8D")
+        skipAdsLabel.text = enable ? "SKIP ADS ENABLED" : "SKIP ADS DISABLED"
+    }
+    
+    @IBAction func skipAdsButtonTouched() {
+        let newValue = !(videoFeed?.skipAds ?? false)
+        videoFeed?.skipAds = newValue
+        configureSkipAdsButton(enable: newValue)
     }
 }
 
@@ -108,6 +124,9 @@ extension VideoFeedEpisodesSectionHeaderView {
         )
         
         feedAvatarImage.makeCircular()
+        
+        skipAdsContainer.layer.cornerRadius = 15
+        skipAdsContainer.layer.borderWidth = 1
     }
     
     

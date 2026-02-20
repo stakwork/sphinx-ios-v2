@@ -11,6 +11,8 @@ import AVKit
 
 class YouTubeVideoFeedEpisodePlayerViewController: UIViewController, VideoFeedEpisodePlayerViewController {
     
+    weak var delegate: FeedEpisodeVideoPlayerDelegate?
+    
     @IBOutlet private weak var videoPlayerView: YTPlayerView!
     @IBOutlet private weak var dismissButton: UIButton!
     @IBOutlet private weak var episodeTitleLabel: UILabel!
@@ -27,11 +29,16 @@ class YouTubeVideoFeedEpisodePlayerViewController: UIViewController, VideoFeedEp
     let actionsManager = ActionsManager.sharedInstance
     let podcastPlayerController = PodcastPlayerController.sharedInstance
     
+    var contentFeed: ContentFeed? = nil
     var videoPlayerEpisode: Video! {
         didSet {
             DispatchQueue.main.async { [weak self] in
                 guard let self = self else { return }
                 self.updateVideoPlayer(withNewEpisode: self.videoPlayerEpisode, previousEpisode: oldValue)
+            }
+            
+            if videoPlayerEpisode.videoID != oldValue?.videoID {
+                ChaptersManager.sharedInstance.processChaptersData(episodeId: videoPlayerEpisode.videoID, isYoutubeVideo: true)
             }
         }
     }
@@ -42,25 +49,39 @@ class YouTubeVideoFeedEpisodePlayerViewController: UIViewController, VideoFeedEp
             UserDefaults.standard.setValue(Int(currentTime), forKey: "videoID-\(id)-currentTime")
         }
     }
-    var currentState: YTPlayerState = .unknown
+    var currentState: YTPlayerState = .unknown {
+        didSet {
+            if currentState != oldValue {
+                delegate?.didChangePlayingStateFor(videoID: videoPlayerEpisode.videoID)
+            }
+        }
+    }
     
     var dismissButtonStyle: ModalDismissButtonStyle = .downArrow
     var onDismiss: (() -> Void)?
     
-    public func seekTo(time:Int){
+    public func seekTo(time: Int) {
         videoPlayerView.seek(toSeconds: Float(time), allowSeekAhead: true)
     }
     
-    public func play(at:Int){
+    public func play(at: Int) {
         videoPlayerView.playVideo(at: Int32(at))
     }
     
-    public func startPlay(){
+    public func startPlay() {
         setupNativeVsYTPlayer()
+        
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: {
             (self.localVideoPlayerContainer.isHidden == true) ? (self.videoPlayerView.playVideo()) : ()
         })
-        
+    }
+    
+    func togglePlayVideo() {
+        if (currentState == .buffering || currentState == .playing) {
+            videoPlayerView.pauseVideo()
+        } else {
+            videoPlayerView.playVideo()
+        }
     }
 }
 
@@ -70,6 +91,7 @@ extension YouTubeVideoFeedEpisodePlayerViewController {
     
     static func instantiate(
         videoPlayerEpisode: Video,
+        delegate: FeedEpisodeVideoPlayerDelegate?,
         dismissButtonStyle: ModalDismissButtonStyle = .downArrow,
         onDismiss: (() -> Void)?
     ) -> YouTubeVideoFeedEpisodePlayerViewController {
@@ -79,6 +101,8 @@ extension YouTubeVideoFeedEpisodePlayerViewController {
             .instantiate()
         
         viewController.videoPlayerEpisode = videoPlayerEpisode
+        viewController.contentFeed = ContentFeed.getFeedById(feedId: videoPlayerEpisode.videoFeed?.feedID ?? "")
+        viewController.delegate = delegate
         viewController.dismissButtonStyle = dismissButtonStyle
         viewController.onDismiss = onDismiss
     
@@ -141,7 +165,7 @@ extension YouTubeVideoFeedEpisodePlayerViewController {
         episodePublishDateLabel.text = videoPlayerEpisode.publishDateText
         
         setupDismissButton()
-        setupNativeVsYTPlayer()
+//        setupNativeVsYTPlayer()
         
         loadingIndicator.style = .large
         loadingIndicator.color = .gray
@@ -173,7 +197,7 @@ extension YouTubeVideoFeedEpisodePlayerViewController {
                         self.avPlayer?.delegate = self
                     }
                 }
-                else{//cache the video for posterity
+                else {//cache the video for posterity
                     API.sharedInstance.requestToCacheVideoRemotely(
                         for: [(self.videoPlayerEpisode.youtubeVideoID)],
                         callback: {
@@ -334,10 +358,17 @@ extension YouTubeVideoFeedEpisodePlayerViewController: YTPlayerViewDelegate {
                     shouldSaveAction: true
                 )
                 break
+            case .buffering:
+                self.contentFeed?.updateLastPlayedItem(self.videoPlayerEpisode.videoID)
+                break
             default:
                 break
             }
         })
+    }
+    
+    func isPlayingVideo(with videoID: String) -> Bool {
+        return videoID == videoPlayerEpisode.videoID && (currentState == .buffering || currentState == .playing)
     }
     
     func trackItemStarted(

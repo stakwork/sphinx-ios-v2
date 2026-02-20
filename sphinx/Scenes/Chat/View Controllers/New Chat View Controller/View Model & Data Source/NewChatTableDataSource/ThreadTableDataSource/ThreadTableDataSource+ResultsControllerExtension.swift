@@ -45,7 +45,8 @@ extension ThreadTableDataSource {
     }
     
     override func processMessages(
-        messages: [TransactionMessage]
+        messages: [TransactionMessage],
+        showLoadingMore: Bool
     ) {
         let sortedMessages = messages//.sorted(by: {$0.id < $1.id})
         let chat = chat ?? contact?.getFakeChat()
@@ -159,17 +160,22 @@ extension ThreadTableDataSource {
         
         messageTableCellStateArray = array
         
-        updateSnapshot()
-        
-//        delegate?.configureNewMessagesIndicatorWith(
-//            newMsgCount: sortedMessages.count
-//        )
-        
-        delegate?.configureNewMessagesIndicatorWith(
-            newMsgCount: 0
-        )
-        
-        delegate?.shouldReloadThreadHeaderView()
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else {
+                return
+            }
+            self.updateSnapshot()
+            
+            //        delegate?.configureNewMessagesIndicatorWith(
+            //            newMsgCount: sortedMessages.count
+            //        )
+            
+            self.delegate?.configureNewMessagesIndicatorWith(
+                newMsgCount: 0
+            )
+            
+            self.delegate?.shouldReloadThreadHeaderView()
+        }
     }
     
     override func getFetchRequestFor(

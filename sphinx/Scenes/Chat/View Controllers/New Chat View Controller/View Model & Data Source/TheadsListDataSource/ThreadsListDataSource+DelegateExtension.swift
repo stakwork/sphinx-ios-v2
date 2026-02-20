@@ -9,6 +9,57 @@
 import Foundation
 
 extension ThreadsListDataSource : ThreadListTableViewCellDelegate {
+    func shouldLoadLinkImageDataFor(
+        messageId: Int,
+        and rowIndex: Int
+    ) {
+        if var tableCellState = getTableCellStateFor(
+            messageId: messageId,
+            and: rowIndex
+        ),
+           let message = tableCellState.1.originalMessage,
+           let imageUrl = tableCellState.1.messageMedia?.url
+        {
+            let mediaKey = tableCellState.1.messageMedia?.mediaKey
+            
+            self.isImageURL(imageUrl, completion: { isImage in
+                if !isImage {
+                    return
+                }
+                MediaLoader.loadImage(url: imageUrl, message: message, mediaKey: mediaKey, completion: { messageId, image in
+                    let updatedMediaData = MessageTableCellState.MediaData(
+                        image: image
+                    )
+                    self.updateMessageTableCellStateFor(rowIndex: rowIndex, messageId: messageId, with: updatedMediaData)
+                }, errorCompletion: { messageId in
+                    let updatedMediaData = MessageTableCellState.MediaData(
+                        failed: true
+                    )
+                    self.updateMessageTableCellStateFor(rowIndex: rowIndex, messageId: messageId, with: updatedMediaData)
+                })
+            })
+        }
+    }
+    
+    func isImageURL(_ url: URL, completion: @escaping (Bool) -> Void) {
+        var request = URLRequest(url: url)
+        request.httpMethod = "HEAD"
+
+        URLSession.shared.dataTask(with: request) { (_, response, error) in
+            guard error == nil, let httpResponse = response as? HTTPURLResponse else {
+                completion(false)
+                return
+            }
+
+            if let contentType = httpResponse.allHeaderFields["Content-Type"] as? String {
+                let imageTypes = ["image/jpeg", "image/png", "image/gif", "image/bmp", "image/tiff", "image/webp"]
+                completion(imageTypes.contains(contentType))
+            } else {
+                completion(false)
+            }
+        }.resume()
+    }
+    
     func shouldLoadImageDataFor(messageId: Int, and rowIndex: Int) {
         if var tableCellState = getTableCellStateFor(
             messageId: messageId,

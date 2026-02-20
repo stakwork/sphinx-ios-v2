@@ -43,6 +43,7 @@ class SphinxOnionManager : NSObject {
     
     var chatsFetchParams : ChatsFetchParams? = nil
     var messageFetchParams : MessageFetchParams? = nil
+    var messagePerContactFetchParams : MessagePerContactFetchParams? = nil
     
     var deletedTribesPubKeys: [String] {
         get {
@@ -91,15 +92,15 @@ class SphinxOnionManager : NSObject {
     var appSessionPin : String? = nil
     var defaultInitialSignupPin : String = "111111"
     
-    public static let kContactsBatchSize = 100
-    public static let kMessageBatchSize = 100
+    public static let kContactsBatchSize = 150
+    public static let kMessageBatchSize = 150
 
     public static let kCompleteStatus = "COMPLETE"
     public static let kFailedStatus = "FAILED"
     
     let newMessageBubbleHelper = NewMessageBubbleHelper()
     let managedContext = CoreDataManager.sharedManager.persistentContainer.viewContext
-    let backgroundContext = CoreDataManager.sharedManager.getBackgroundContext()
+    var backgroundContext = CoreDataManager.sharedManager.getBackgroundContext()
     
     var notificationsResultsController: NSFetchedResultsController<NotificationData>!
     
@@ -245,6 +246,9 @@ class SphinxOnionManager : NSObject {
     var totalMsgsCountCallback: (() -> ())? = nil
     var firstSCIDMsgsCallback: (([Msg]) -> ())? = nil
     var onMessageRestoredCallback: (([Msg]) -> ())? = nil
+    
+    var restoringMsgsForPublicKey: String? = nil
+    var onMessagePerPublicKeyRestoredCallback: ((Int) -> ())? = nil
     
     var maxMessageIndex: Int? {
         get {
@@ -394,18 +398,21 @@ class SphinxOnionManager : NSObject {
         hideRestoreViewCallback: ((Bool)->())? = nil,
         errorCallback: (()->())? = nil
     ) {
-        if let mqtt = self.mqtt, mqtt.connState == .connected && isConnected {
-            ///If already fetching content, then process is already running
-            if !isFetchingContent() {
-                self.hideRestoreCallback = hideRestoreViewCallback
-                self.getReads()
-                self.getMuteLevels()
-                self.syncNewMessages()
-            } else {
-                errorCallback?()
+        if let mqtt = self.mqtt {
+            if mqtt.connState == .connecting {
+                return
             }
-            listAndUpdateContacts()
-            return
+            if mqtt.connState == .connected && isConnected {
+                ///If already fetching content, then process is already running
+                if !isFetchingContent() {
+                    hideRestoreCallback = hideRestoreViewCallback
+                    startNewMsgsSync()
+                    listAndUpdateContacts()
+                } else {
+                    errorCallback?()
+                }
+                return
+            }
         }
         connectToServer(
             connectingCallback: connectingCallback,
@@ -414,6 +421,30 @@ class SphinxOnionManager : NSObject {
             hideRestoreViewCallback: hideRestoreViewCallback,
             errorCallback: errorCallback
         )
+    }
+    
+    func startNewMsgsSync() {
+        // Run these operations in parallel for faster sync
+        let syncGroup = DispatchGroup()
+        let syncQueue = DispatchQueue(label: "com.sphinx.newMsgsSync", attributes: .concurrent)
+
+        syncGroup.enter()
+        syncQueue.async {
+            self.getReads()
+            syncGroup.leave()
+        }
+
+        syncGroup.enter()
+        syncQueue.async {
+            self.getMuteLevels()
+            syncGroup.leave()
+        }
+
+        syncGroup.enter()
+        syncQueue.async {
+            self.syncNewMessages()
+            syncGroup.leave()
+        }
     }
     
     func syncNewMessages() {
@@ -486,9 +517,7 @@ class SphinxOnionManager : NSObject {
                 self.contactRestoreCallback = nil
                 self.messageRestoreCallback = nil
                 
-                self.getReads()
-                self.getMuteLevels()
-                self.syncNewMessages()
+                self.startNewMsgsSync()
             }
         }
         
@@ -509,7 +538,7 @@ class SphinxOnionManager : NSObject {
     }
     
     func startReconnectionTimer(
-        delay: Double = 0.5
+        delay: Double = 0.0
     ) {
         if (UIApplication.shared.delegate as? AppDelegate)?.isActive == false {
             return
@@ -838,6 +867,17 @@ extension SphinxOnionManager {//Sign Up UI Related:
         {
             if let chatId = customData["child"] as? String {
                 return chatId
+            }
+        }
+        return nil
+    }
+    
+    func getPersonalKeys() -> Keys? {
+        if let mnemonic = UserData.sharedInstance.getMnemonic() {
+            if let seed = try? sphinx.mnemonicToSeed(mnemonic: mnemonic) {
+                if let keys = try? sphinx.nodeKeys(net: "bitcoin", seed: seed) {
+                    return keys
+                }
             }
         }
         return nil

@@ -52,6 +52,7 @@
 "dashboard.tabs.feed" = "Feed";
 "dashboard.tabs.friends" = "Kaibigan";
 "dashboard.tabs.tribes" = "Tribo";
+"dashboard.tabs.workspaces" = "Workspaces";
 "dashboard.feeds.filters.all" = "Lhat";
 "dashboard.feeds.filters.listen" = "Makinig";
 "dashboard.feeds.filters.watch" = "Manood";
@@ -528,6 +529,7 @@
 "already.connected" = "Naka konekta ka na sa taong ito";
 "price.to.meet" = "Presyo dapat matugunan: ";
 "invalid.public-key" = "Di-wastong Public Key";
+"authorization.login" = "Matagumpay kang naka-log in";
 "processing.payment" = "Pinoproseso ang pagbabayad";
 "processing.payment.description" = "Maaaring tumagal ng hanggang 60 segundo ang prosesong ito. Aabisuhan ka kapag nakumpleto na";
 

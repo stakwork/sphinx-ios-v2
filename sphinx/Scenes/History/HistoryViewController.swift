@@ -28,8 +28,6 @@ class HistoryViewController: UIViewController {
     var didReachLimit = false
     let itemsPerPage : UInt32 = 50
     
-    var succeededPaymentHashes: [String] = []
-    
     static func instantiate() -> HistoryViewController {
         let viewController = StoryboardScene.History.historyViewController.instantiate()
         return viewController
@@ -64,7 +62,7 @@ class HistoryViewController: UIViewController {
         SphinxOnionManager.sharedInstance.getTransactionsHistory(
             paymentsHistoryCallback: handlePaymentHistoryCompletion,
             itemsPerPage: itemsPerPage,
-            sinceTimestamp: UInt64(Date().timeIntervalSince1970)
+            sinceTimestamp: UInt64(Date().timeIntervalSince1970) * 1000
         )
         
     }
@@ -89,34 +87,33 @@ class HistoryViewController: UIViewController {
         if let jsonString = jsonString,
            let results = Mapper<PaymentTransactionFromServer>().mapArray(JSONString: jsonString) {
             
-            succeededPaymentHashes += (results.filter({ $0.isSucceeded() })).compactMap({ $0.rhash })
-            
             let msgIndexes = results.compactMap({ $0.msg_idx })
             let msgPmtHashes = results.compactMap({ $0.rhash })
             var messages = TransactionMessage.fetchTransactionMessagesForHistory()
             let messagesMatching = TransactionMessage.fetchTransactionMessagesForHistoryWith(msgIndexes: msgIndexes, msgPmtHashes: msgPmtHashes)
             messages.append(contentsOf: messagesMatching)
             
+            checkResultsLimit(count: results.count)
+            
             for result in results {
                 
-                if let rHash = result.rhash, result.isFailed() && succeededPaymentHashes.contains(rHash) {
-                    continue
-                }
-                
                 if let localHistoryMessage = messages.filter({ $0.id == result.msg_idx ?? -1 }).first {
-                    let paymentTransaction = PaymentTransaction(fromTransactionMessage: localHistoryMessage, ts: result.ts)
+                    let paymentTransaction = PaymentTransaction(fromTransactionMessage: localHistoryMessage, transaction: result)
                     history.append(paymentTransaction)
                     continue
                 }
                 
                 if let localHistoryMessage = messages.filter({ $0.paymentHash == result.rhash ?? "" }).first {
-                    let paymentTransaction = PaymentTransaction(fromTransactionMessage: localHistoryMessage, ts: result.ts)
+                    let paymentTransaction = PaymentTransaction(fromTransactionMessage: localHistoryMessage, transaction: result)
+                    if localHistoryMessage.id == 48379 {
+                        print("test")
+                    }
                     history.append(paymentTransaction)
                     continue
                 }
                 
-                let amountThreshold = 5000 // msats
-                let timestampThreshold: TimeInterval = 10 // seconds
+                let amountThreshold = 3000 // msats
+                let timestampThreshold: TimeInterval = 3 // seconds
                 
                 if let localHistoryMessage = messages.filter({
                     guard let messageAmountSats = $0.amount?.intValue,
@@ -131,7 +128,7 @@ class HistoryViewController: UIViewController {
                            resultAmountMsats == messageAmountMsats &&
                            abs(resultTimestamp - messageTimestamp) <= timestampThreshold
                 }).first {
-                    let paymentTransaction = PaymentTransaction(fromTransactionMessage: localHistoryMessage, ts: result.ts)
+                    let paymentTransaction = PaymentTransaction(fromTransactionMessage: localHistoryMessage, transaction: result)
                     history.append(paymentTransaction)
                     continue
                 }
@@ -141,11 +138,9 @@ class HistoryViewController: UIViewController {
             }
         }
         
-        history = history.filter({ ($0.amount ?? 0) >= 1 })
         history = history.sorted { $0.getDate() > $1.getDate() }
         
         setNoResultsLabel(count: history.count)
-        checkResultsLimit(count: history.count)
         historyDataSource.loadTransactions(transactions: history)
         loading = false
     }
@@ -174,12 +169,17 @@ extension HistoryViewController : HistoryDataSourceDelegate {
             return
         }
         
-        let oldestTimestamp = UInt64(oldestTransaction.getDate().timeIntervalSince1970)
+        var oldestTimestamp = UInt64(oldestTransaction.getDate().timeIntervalSince1970)
+        
+        if let ts = oldestTransaction.ts {
+            oldestTimestamp = UInt64(ts)
+        }
         
         SphinxOnionManager.sharedInstance.getTransactionsHistory(
             paymentsHistoryCallback: handlePaymentHistoryCompletion,
             itemsPerPage: itemsPerPage,
-            sinceTimestamp: oldestTimestamp
+            sinceTimestamp: oldestTimestamp - 1
+
         )
     }
 }

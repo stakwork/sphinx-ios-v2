@@ -67,11 +67,13 @@ extension NewChatViewController: NSFetchedResultsControllerDelegate {
         
             if let contacts = firstSection.objects as? [UserContact], let contact = contacts.first {
                 self.contact = contact
+                self.chatViewModel.setContact(contact)
                 shouldReloadView = true
             }
             
             if let chats = firstSection.objects as? [Chat], let chat = chats.first {
                 self.chat = chat
+                self.chatViewModel.setChat(chat)
                 shouldReloadView = true
             }
         

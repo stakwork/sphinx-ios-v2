@@ -61,6 +61,7 @@
 "dashboard.tabs.feed" = "动态";
 "dashboard.tabs.friends" = "朋友";
 "dashboard.tabs.tribes" = "部落";
+"dashboard.tabs.workspaces" = "工作区";
 "dashboard.feeds.filters.all" = "全部";
 "dashboard.feeds.filters.listen" = "听";
 "dashboard.feeds.filters.watch" = "看";
@@ -543,6 +544,8 @@
 "already.connected" = "您已与此人连接";
 "price.to.meet" = "见面的价格：";
 "invalid.public-key" = "无效公钥";
+"authorization.login" = "您已成功登入";
+"authorization.login" = "您已成功登录";
 "processing.payment" = "处理付款";
 "processing.payment.description" = "此过程可能需要 60 秒。完成后您将收到通知";
 

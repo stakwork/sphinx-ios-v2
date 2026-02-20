@@ -67,21 +67,27 @@ extension API {
         title: String,
         thumbnailUrl: String?,
         showTitle: String,
+        isYoutubeVideo: Bool = false,
         callback: @escaping CheckNodeCallback,
         errorCallback: @escaping ErrorCallback
     ) {
         let url = "\(API.kGraphMindsetUrl)/add_node?sig=&msg="
-        
-        var nodeDataParams = [String: AnyObject]()
-        nodeDataParams["source_link"] = mediaUrl as AnyObject
-        nodeDataParams["date"] = publishDate as AnyObject
-        nodeDataParams["episode_title"] = title as AnyObject
-        nodeDataParams["image_url"] = thumbnailUrl as AnyObject
-        nodeDataParams["show_title"] = showTitle as AnyObject
-        
         var params = [String: AnyObject]()
-        params["node_type"] = "Episode" as AnyObject
-        params["node_data"] = nodeDataParams as AnyObject
+        
+        if isYoutubeVideo {
+            params["media_url"] = mediaUrl as AnyObject
+            params["content_type"] = "audio_video" as AnyObject
+        } else {
+            var nodeDataParams = [String: AnyObject]()
+            nodeDataParams["source_link"] = mediaUrl as AnyObject
+            nodeDataParams["date"] = publishDate as AnyObject
+            nodeDataParams["episode_title"] = title as AnyObject
+            nodeDataParams["image_url"] = thumbnailUrl as AnyObject
+            nodeDataParams["show_title"] = showTitle as AnyObject
+            
+            params["node_type"] = "Episode" as AnyObject
+            params["node_data"] = nodeDataParams as AnyObject
+        }
         
         let request : URLRequest? = createRequest(
             url,
@@ -261,14 +267,14 @@ extension API {
         
         var params = [String: AnyObject]()
         params["name"] = mediaUrl as AnyObject
-        params["workflow_id"] = 43837 as AnyObject
+        params["workflow_id"] = Config.workflowId as AnyObject
         params["workflow_params"] = workflowParams as AnyObject
 
         let request : URLRequest? = createRequest(
             url,
             bodyParams: params as NSDictionary,
             method: "POST",
-            token: "REPLACE_WITH_TOKEN"
+            token: Config.workflowToken
         )
         
         guard let request = request else {
@@ -309,7 +315,7 @@ extension API {
             url,
             bodyParams: nil,
             method: "GET",
-            token: "REPLACE_WITH_TOKEN"
+            token: Config.workflowToken
         )
         
         guard let request = request else {

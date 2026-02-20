@@ -261,6 +261,25 @@ extension NewPodcastPlayerViewController : PodcastEpisodesDSDelegate {
         let contentFeed: ContentFeed? = ContentFeed.getFeedById(feedId: podcast.feedID)
         contentFeed?.isSubscribedToFromSearch.toggle()
         contentFeed?.managedObjectContext?.saveContext()
+        
+        guard let contentFeed = contentFeed, let contentFeedUrl = contentFeed.feedURL else {
+            return
+        }
+        
+        let podcast = PodcastFeed.convertFrom(contentFeed: contentFeed)
+        
+        DataSyncManager.sharedInstance.saveFeedStatusFor(
+            feedId: contentFeed.feedID,
+            feedStatus: FeedStatus(
+                chatPubkey: contentFeed.chat?.ownerPubkey ?? "",
+                feedUrl: contentFeedUrl.absoluteString,
+                feedId: contentFeed.feedID,
+                subscribed: contentFeed.isSubscribedToFromSearch == true,
+                satsPerMinute: podcast.satsPerMinute ?? 0,
+                playerSpeed: Double(podcast.playerSpeed),
+                itemId: podcast.currentEpisodeId
+            )
+        )
     }
     
     func didFailPlayingPodcast() {

@@ -82,7 +82,7 @@ extension NewChatViewController : ChatMessageTextFieldViewDelegate {
             sendingAttachment: sendingAttachment,
             threadUUID: self.chatViewModel.replyingTo?.uuid,
             replyUUID: self.threadUUID ?? self.chatViewModel.replyingTo?.replyUUID,
-            metaDataString: chat?.getMetaDataJsonStringValue()
+            metaDataString: chat?.getMetaDataJsonStringValue(forceIncludeTimezone: self.chatViewModel.wasTimezoneNotSentRecently())
         )
         
         if !messageLengthValid {

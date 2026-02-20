@@ -19,12 +19,32 @@ public class Video: NSObject {
     public var itemURL: URL?
     public var mediaURL: URL?
     public var thumbnailURL: URL?
+    public var downloadedVideoUrl: URL?
     public var videoFeed: VideoFeed?
+    public var chapters: Array<Chapter>? = nil
     
     init(
         _ videoID: String
     ) {
         self.videoID = videoID
+    }
+    
+    var currentTime: Int? {
+        get {
+            return UserDefaults.standard.value(forKey: "current-time-\(feedAndItemId)") as? Int
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: "current-time-\(feedAndItemId)")
+        }
+    }
+    
+    var feedAndItemId: String {
+        get {
+            if let feedID = videoFeed?.feedID {
+                return "\(feedID)-\(videoID)"
+            }
+            return "\(videoID)"
+        }
     }
 }
 
@@ -84,6 +104,20 @@ extension Video {
         video.thumbnailURL = contentFeedItem.imageURL
         video.title = contentFeedItem.title
         video.videoFeed = videoFeed
+        
+        if let downloadedItemUrl = contentFeedItem.downloadedItemURL {
+            video.downloadedVideoUrl = downloadedItemUrl
+        }
+        
+        if let chaptersData = contentFeedItem.chaptersData {
+            let chapters = ContentFeedItem.getChaptersFrom(json: chaptersData)
+            video.chapters = chapters.1
+            
+            if let downloadedItemUrl = chapters.0, downloadedItemUrl.isNotEmpty && video.downloadedVideoUrl == nil {
+                contentFeedItem.downloadedItemURL = URL(string: downloadedItemUrl)
+                video.downloadedVideoUrl = URL(string: downloadedItemUrl)
+            }
+        }
         
         return video
     }

@@ -121,15 +121,12 @@ extension Chat: ChatListCommonObject {
     }
     
     public func getColor() -> UIColor {
-        if let contact = self.getContact() {
-            return contact.getColor()
-        }
-        let key = "chat-\(self.id)-color"
+        let key = "chat-\(self.ownerPubkey ?? "\(self.id)")-color"
         return UIColor.getColorFor(key: key)
     }
     
     public func deleteColor() {
-        let key = "chat-\(self.id)-color"
+        let key = "chat-\(self.ownerPubkey ?? "\(self.id)")-color"
         UIColor.removeColorFor(key: key)
     }
     

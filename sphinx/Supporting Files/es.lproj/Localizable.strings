@@ -61,6 +61,7 @@
 "dashboard.tabs.feed" = "Feed";
 "dashboard.tabs.friends" = "Friends";
 "dashboard.tabs.tribes" = "Tribes";
+"dashboard.tabs.workspaces" = "Workspaces";
 "dashboard.feeds.filters.all" = "All";
 "dashboard.feeds.filters.listen" = "Listen";
 "dashboard.feeds.filters.discover" = "Discover";
@@ -547,6 +548,7 @@
 "already.connected" = "Ya estas conectado con esta persona";
 "price.to.meet" = "Precio para conectar: ";
 "invalid.public-key" = "Clave pública Inválida";
+"authorization.login" = "Felicitaciones! Has iniciado sesión";
 "processing.payment" = "Procesando pago";
 "processing.payment.description" = "Este proceso puede tardar hasta 60 segundos. Se le notificará cuando finalice";
 

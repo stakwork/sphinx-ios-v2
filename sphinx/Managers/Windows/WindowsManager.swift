@@ -35,22 +35,31 @@ class WindowsManager {
         WindowsManager.getWindowSize().height
     }
     
-    var coveringWindow : PassthroughWindow?
+    var coveringWindow : UIWindow?
     
-    func getCoveringWindow() -> UIWindow? {
+    func getCoveringWindow(
+        passthroughWindow: Bool = true
+    ) -> UIWindow? {
         guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene, let windowFrame = windowScene.windows.first?.frame else {
             return nil
         }
         
         if coveringWindow == nil {
-            coveringWindow = PassthroughWindow(frame: windowFrame)
+            if passthroughWindow {
+                coveringWindow = PassthroughWindow(frame: windowFrame)
+            } else {
+                coveringWindow = UIWindow(frame: windowFrame)
+            }
         }
         coveringWindow?.windowLevel = UIWindow.Level.alert + 1
         return coveringWindow
     }
     
-    func getCoveringWindowWith(rootVC: UIViewController) -> UIWindow? {
-        let window = getCoveringWindow()
+    func getCoveringWindowWith(
+        rootVC: UIViewController,
+        passthroughWindow: Bool = true
+    ) -> UIWindow? {
+        let window = getCoveringWindow(passthroughWindow: passthroughWindow)
         window?.rootViewController = rootVC
         window?.setStyle()
         return window
@@ -121,12 +130,18 @@ class WindowsManager {
         return false
     }
     
-    func showConveringWindowWith(rootVC: UIViewController) {
+    func showConveringWindowWith(
+        rootVC: UIViewController,
+        passthroughWindow: Bool = true
+    ) {
         if let rootVController = rootVC as? RootViewController, let currentVC = rootVController.getLastCenterViewController() {
             currentVC.view.endEditing(true)
         }
         
-        let coveringWindow = getCoveringWindowWith(rootVC: rootVC)
+        let coveringWindow = getCoveringWindowWith(
+            rootVC: rootVC,
+            passthroughWindow: passthroughWindow
+        )
         coveringWindow?.isHidden = false
     }
     

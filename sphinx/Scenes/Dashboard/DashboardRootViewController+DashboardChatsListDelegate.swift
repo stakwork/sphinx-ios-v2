@@ -2,7 +2,7 @@ import UIKit
 import CoreData
 
 
-extension DashboardRootViewController: DashboardChatsListDelegate {
+extension DashboardRootViewController: DashboardChatsListDelegate, WorkspacesViewControllerDelegate {
     
     func viewController(
         _ viewController: UIViewController,

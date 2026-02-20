@@ -158,6 +158,14 @@ class NewChatViewController: NewKeyboardHandlerViewController {
             chatTableDataSource?.stopListeningToResultsController()
 
             stopPlayingClip()
+            
+            if isThread {
+                return
+            }
+            
+            if let chat = chat {
+                SphinxOnionManager.sharedInstance.batchDeleteOldMessagesInBackground(forChat: chat)
+            }
         }
     }
     

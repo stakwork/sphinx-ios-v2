@@ -111,7 +111,11 @@ extension ContentFeed {
     }
     
     func updateLastPlayedItem(_ item: ContentFeedItem) {
-        lastConsumedItemId = item.id
+        updateLastPlayedItem(item.id)
+    }
+    
+    func updateLastPlayedItem(_ id: String) {
+        lastConsumedItemId = id
         dateLastConsumed = Date()
     }
 }

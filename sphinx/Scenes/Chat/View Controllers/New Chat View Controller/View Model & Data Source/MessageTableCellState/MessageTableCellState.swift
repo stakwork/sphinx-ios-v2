@@ -9,7 +9,7 @@
 import UIKit
 
 struct MessageTableCellState {
-    
+
     ///Constants
     static let kBubbleCornerRadius: CGFloat = 8.0
     static let kRowLeftMargin: CGFloat = 15
@@ -20,7 +20,10 @@ struct MessageTableCellState {
     static let kLabelMargin: CGFloat = 16.0
     static let kSmallBubbleDesiredWidth: CGFloat = 200
     static let kSendPaidContentButtonHeight: CGFloat = 50.0
-    
+
+    ///Unique identifier for diffable data source
+    let uniqueID = UUID()
+
     ///Messages Data
     var message: TransactionMessage? = nil
     var threadOriginalMessage: TransactionMessage? = nil
@@ -45,6 +48,7 @@ struct MessageTableCellState {
     var invoiceData: (Bool, Bool) = (false, false)
     var timezoneData: [String: String] = [:]
     var isThreadHeaderMessage: Bool = false
+    var isLoadingMoreMessages: Bool = false
     
     ///Generic rows Data
     var separatorDate: Date? = nil
@@ -75,7 +79,8 @@ struct MessageTableCellState {
         linkWeb: LinkWeb? = nil,
         invoiceData: (Bool, Bool) = (false, false),
         timezoneData: [String: String] = [:],
-        isThreadHeaderMessage: Bool = false
+        isThreadHeaderMessage: Bool = false,
+        isLoadingMoreMessages: Bool = false
     ) {
         self.message = message
         self.threadOriginalMessage = threadOriginalMessage
@@ -103,6 +108,7 @@ struct MessageTableCellState {
         self.timezoneData = timezoneData
         
         self.isThreadHeaderMessage = isThreadHeaderMessage
+        self.isLoadingMoreMessages = isLoadingMoreMessages
     }
     
     ///Reply
@@ -357,8 +363,9 @@ struct MessageTableCellState {
         }
        
         let hasMarkdownLinks = (message.messageContent?.linkMarkdownMatches.count ?? 0) > 0
+        let hasStandardLinks = (message.messageContent?.stringMsgLinks.count ?? 0) > 0
         
-        guard message.isMediaAttachment() || message.isDirectPayment() || message.isGiphy() || (message.isBotResponse() && hasMarkdownLinks) else {
+        guard message.isMediaAttachment() || message.isDirectPayment() || message.isGiphy() || hasMarkdownLinks || hasStandardLinks else {
             return nil
         }
         
@@ -376,7 +383,7 @@ struct MessageTableCellState {
             isGif: message.isGif(),
             isPdf: message.isPDF(),
             isGiphy: message.isGiphy(),
-            isImageLink: hasMarkdownLinks,
+            isImageLink: (hasMarkdownLinks || hasStandardLinks) && (!message.isImage() && !message.isDirectPayment()),
             isPaid: message.isPaidAttachment(),
             isPaymentTemplate: message.isDirectPayment()
         )
@@ -437,6 +444,8 @@ struct MessageTableCellState {
         } else if message.isGiphy() {
             urlAndKey = (message.getGiphyUrl(), nil)
         } else if let imageLink = message.messageContent?.linkMarkdownMatches.first?.2, let url = URL(string: imageLink){
+            urlAndKey = (url, nil)
+        } else if let imageLink = message.messageContent?.stringMsgLinks.first?.1, let url = URL(string: imageLink) {
             urlAndKey = (url, nil)
         }
         
@@ -775,6 +784,15 @@ struct MessageTableCellState {
         )
     }()
     
+    lazy var loadingMore: NoBubbleMessageLayoutState.LoadingMore? = {
+    
+        guard isLoadingMoreMessages else {
+            return nil
+        }
+        
+        return NoBubbleMessageLayoutState.LoadingMore()
+    }()
+    
     lazy var groupMemberNotification: NoBubbleMessageLayoutState.GroupMemberNotification? = {
         
         guard let message = message, 
@@ -1004,7 +1022,7 @@ extension MessageTableCellState : Hashable {
     static func == (lhs: MessageTableCellState, rhs: MessageTableCellState) -> Bool {
         var mutableLhs = lhs
         var mutableRhs = rhs
-        
+
         return
             mutableLhs.hashMessageId             == mutableRhs.hashMessageId &&
             mutableLhs.messageToShow?.id         == mutableRhs.messageToShow?.id &&
@@ -1018,8 +1036,8 @@ extension MessageTableCellState : Hashable {
             mutableLhs.separatorDate             == mutableRhs.separatorDate &&
             mutableLhs.paidContent?.status       == mutableRhs.paidContent?.status &&
             mutableLhs.threadMessages.count      == mutableRhs.threadMessages.count &&
-            mutableLhs.memberRequestResponse?.id == mutableRhs.memberRequestResponse?.id
-
+            mutableLhs.memberRequestResponse?.id == mutableRhs.memberRequestResponse?.id &&
+            mutableLhs.isLoadingMoreMessages     == mutableRhs.isLoadingMoreMessages
     }
 
     func hash(into hasher: inout Hasher) {
@@ -1034,16 +1052,20 @@ extension MessageTableCellState : Hashable {
         hasher.combine(self.separatorDate)
         hasher.combine(self.threadMessages.count)
         hasher.combine(self.memberRequestResponse?.id)
+        hasher.combine(self.isLoadingMoreMessages)
     }
-    
+
     func getUniqueIdentifier() -> Int {
         if let message = message {
             return message.id
         } else if let separatorDate = separatorDate {
             return Int(separatorDate.timeIntervalSince1970)
+        } else if isLoadingMoreMessages {
+            return Int.max
         }
         return 0
     }
+
 }
 
 extension MessageTableCellState {

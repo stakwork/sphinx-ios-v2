@@ -20,6 +20,7 @@ import SDWebImage
     @objc optional func shouldLoadVideoDataFor(messageId: Int, and rowIndex: Int)
     @objc optional func shouldLoadGiphyDataFor(messageId: Int, and rowIndex: Int)
     @objc optional func shouldLoadAudioDataFor(messageId: Int, and rowIndex: Int)
+    @objc optional func shouldLoadLinkImageDataFor(messageId: Int, and rowIndex: Int)
 }
 
 class ThreadHeaderView : UIView {
@@ -258,38 +259,58 @@ class ThreadHeaderView : UIView {
         mediaData: MessageTableCellState.MediaData?
     ) {
         if let messageMedia = messageMedia {
-            
-            viewToShow = messageAndMediaContainer
-            
-            mediaView.configureWith(
-                messageMedia: messageMedia,
-                mediaData: mediaData,
-                bubble: BubbleMessageLayoutState.Bubble(direction: .Incoming, grouping: .Isolated)
-            )
+            if messageMedia.isImageLink {
+                if let mediaData = mediaData {
+                    viewToShow = messageAndMediaContainer
+                    
+                    mediaView.configureWith(
+                        messageMedia: messageMedia,
+                        mediaData: mediaData,
+                        bubble: BubbleMessageLayoutState.Bubble(direction: .Incoming, grouping: .Isolated)
+                    )
+                }
+//                else if let messageId = messageId, mediaData == nil {
+//                    let delayTime = DispatchTime.now() + Double(Int64(0.1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
+//                    DispatchQueue.global().asyncAfter(deadline: delayTime) {
+//                        self.delegate?.shouldLoadLinkImageDataFor?(
+//                            messageId: messageId,
+//                            and: -1
+//                        )
+//                    }
+//                }
+            } else {
+                viewToShow = messageAndMediaContainer
+                
+                mediaView.configureWith(
+                    messageMedia: messageMedia,
+                    mediaData: mediaData,
+                    bubble: BubbleMessageLayoutState.Bubble(direction: .Incoming, grouping: .Isolated)
+                )
 
-            if let messageId = messageId, mediaData == nil {
-                let delayTime = DispatchTime.now() + Double(Int64(0.5 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
-                DispatchQueue.global().asyncAfter(deadline: delayTime) {
-                    if messageMedia.isImage {
-                        self.delegate?.shouldLoadImageDataFor?(
-                            messageId: messageId,
-                            and: -1
-                        )
-                    } else if messageMedia.isPdf {
-                        self.delegate?.shouldLoadPdfDataFor?(
-                            messageId: messageId,
-                            and: -1
-                        )
-                    } else if messageMedia.isVideo {
-                        self.delegate?.shouldLoadVideoDataFor?(
-                            messageId: messageId,
-                            and: -1
-                        )
-                    } else if messageMedia.isGiphy {
-                        self.delegate?.shouldLoadGiphyDataFor?(
-                            messageId: messageId,
-                            and: -1
-                        )
+                if let messageId = messageId, mediaData == nil {
+                    let delayTime = DispatchTime.now() + Double(Int64(0.1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
+                    DispatchQueue.global().asyncAfter(deadline: delayTime) {
+                        if messageMedia.isImage {
+                            self.delegate?.shouldLoadImageDataFor?(
+                                messageId: messageId,
+                                and: -1
+                            )
+                        } else if messageMedia.isPdf {
+                            self.delegate?.shouldLoadPdfDataFor?(
+                                messageId: messageId,
+                                and: -1
+                            )
+                        } else if messageMedia.isVideo {
+                            self.delegate?.shouldLoadVideoDataFor?(
+                                messageId: messageId,
+                                and: -1
+                            )
+                        } else if messageMedia.isGiphy {
+                            self.delegate?.shouldLoadGiphyDataFor?(
+                                messageId: messageId,
+                                and: -1
+                            )
+                        }
                     }
                 }
             }
@@ -307,7 +328,7 @@ class ThreadHeaderView : UIView {
             mediaView.configureForGenericFile()
             
             if let messageId = messageId, mediaData == nil {
-                let delayTime = DispatchTime.now() + Double(Int64(0.5 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
+                let delayTime = DispatchTime.now() + Double(Int64(0.1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
                 DispatchQueue.global().asyncAfter(deadline: delayTime) {
                     self.delegate?.shouldLoadFileDataFor?(
                         messageId: messageId,
@@ -329,7 +350,7 @@ class ThreadHeaderView : UIView {
             mediaView.configureForAudio()
             
             if let messageId = messageId, mediaData == nil {
-                let delayTime = DispatchTime.now() + Double(Int64(0.5 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
+                let delayTime = DispatchTime.now() + Double(Int64(0.1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
                 DispatchQueue.global().asyncAfter(deadline: delayTime) {
                     self.delegate?.shouldLoadAudioDataFor?(
                         messageId: messageId,

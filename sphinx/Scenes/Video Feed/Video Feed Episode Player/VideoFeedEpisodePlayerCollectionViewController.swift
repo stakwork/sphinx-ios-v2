@@ -9,14 +9,18 @@ import UIKit
 
 protocol VideoFeedEpisodePlayerCollectionViewControllerDelegate: class {
     func requestPlay()
+    func isPlayingVideo(with videoID: String) -> Bool
 }
 
 class VideoFeedEpisodePlayerCollectionViewController: UICollectionViewController {
     
     var videoPlayerEpisode: Video!
     var videoFeedEpisodes: [Video]!
+    
+    var videosExpanded: [Int: Bool] = [:]
 
     var onVideoEpisodeCellSelected: ((String) -> Void)!
+    var onVideoChapterSelected: ((String, Int) -> Void)!
     var onFeedSubscriptionSelected: (() -> Void)!
     var onFeedSubscriptionCancellationSelected: (() -> Void)!
     
@@ -25,7 +29,7 @@ class VideoFeedEpisodePlayerCollectionViewController: UICollectionViewController
     let downloadService : DownloadService = DownloadService.sharedInstance
     
     weak var boostDelegate: CustomBoostDelegate?
-    weak var delegate:VideoFeedEpisodePlayerCollectionViewControllerDelegate? = nil
+    weak var delegate: VideoFeedEpisodePlayerCollectionViewControllerDelegate? = nil
 }
 
 
@@ -37,6 +41,7 @@ extension VideoFeedEpisodePlayerCollectionViewController {
         videoFeedEpisodes: [Video],
         boostDelegate: CustomBoostDelegate?,
         onVideoEpisodeCellSelected: @escaping ((String) -> Void) = { _ in },
+        onVideoChapterSelected: @escaping ((String, Int) -> Void) = { (_, _) in },
         onFeedSubscriptionSelected: @escaping (() -> Void) = {},
         onFeedSubscriptionCancellationSelected: @escaping (() -> Void) = {}
     ) -> VideoFeedEpisodePlayerCollectionViewController {
@@ -51,6 +56,7 @@ extension VideoFeedEpisodePlayerCollectionViewController {
         viewController.boostDelegate = boostDelegate
         
         viewController.onVideoEpisodeCellSelected = onVideoEpisodeCellSelected
+        viewController.onVideoChapterSelected = onVideoChapterSelected
         viewController.onFeedSubscriptionSelected = onFeedSubscriptionSelected
         viewController.onFeedSubscriptionCancellationSelected = onFeedSubscriptionCancellationSelected
     
@@ -103,7 +109,7 @@ extension VideoFeedEpisodePlayerCollectionViewController {
     func makeVideoFeedEpisodesSectionHeader() -> NSCollectionLayoutBoundarySupplementaryItem {
         let headerSize = NSCollectionLayoutSize(
             widthDimension: .fractionalWidth(1),
-            heightDimension: .estimated(100)
+            heightDimension: .estimated(110)
         )
         
         let headerItem = NSCollectionLayoutBoundarySupplementaryItem(
@@ -148,7 +154,7 @@ extension VideoFeedEpisodePlayerCollectionViewController {
     func makeVideoFeedEpisodesSection() -> NSCollectionLayoutSection {
         let itemSize = NSCollectionLayoutSize(
             widthDimension: .fractionalWidth(1.0),
-            heightDimension: .fractionalHeight(1.0)
+            heightDimension: .estimated(200.0)
         )
         let item = NSCollectionLayoutItem(layoutSize: itemSize)
         
@@ -328,7 +334,12 @@ extension VideoFeedEpisodePlayerCollectionViewController {
                     preconditionFailure("Failed to find expected data source item")
                 }
                 
-                episodeCell.configure(withVideoEpisode: videoEpisode, and: self)
+                episodeCell.configure(
+                    withVideoEpisode: videoEpisode,
+                    expanded: videosExpanded[indexPath.item] ?? false,
+                    playing: delegate?.isPlayingVideo(with: videoEpisode.videoID) ?? false,
+                    and: self
+                )
                 
                 return episodeCell
             }
@@ -383,16 +394,38 @@ extension VideoFeedEpisodePlayerCollectionViewController {
 extension VideoFeedEpisodePlayerCollectionViewController: FeedItemRowDelegate, PodcastEpisodesDSDelegate {
     func shouldToggleChapters(episode: PodcastEpisode, cell: UITableViewCell) {}
     
-    func shouldToggleChapters(video: Video, cell: UITableViewCell) {}
+    func shouldToggleChapters(video: Video, cell: UICollectionViewCell) {
+        if let indexPath = collectionView.indexPath(for: cell) {
+            
+            for (index, _) in videosExpanded.enumerated() {
+                if index != indexPath.row {
+                    videosExpanded[index] = false
+                }
+            }
+            
+            videosExpanded[indexPath.row] = !(videosExpanded[indexPath.row] ?? false)
+            
+            refreshCellForVideo(video: video)
+        }
+    }
     
     func shouldPlayChapterWith(index: Int, on episode: PodcastEpisode) {}
+    
+    func shouldPlayChapterWith(index: Int, on video: Video) {
+        if let chapter = video.chapters?[index] {
+            var newTime = chapter.timestamp.toSeconds()
+            newTime = max(newTime, 0)
+            
+            onVideoChapterSelected(video.videoID, newTime)
+        }
+    }
     
     func didDismiss() {}
     
     func shouldShowDescription(episode: PodcastEpisode,cell:UITableViewCell) {}
     
     func shouldShowDescription(video: Video) {
-        if let feed = video.videoFeed{
+        if let feed = video.videoFeed {
             let vc = ItemDescriptionViewController.instantiate(videoFeed: feed, video: video, index: 0)
             vc.delegate = self
             self.navigationController?.pushViewController(vc, animated: true)
@@ -535,17 +568,46 @@ extension VideoFeedEpisodePlayerCollectionViewController:ItemDescriptionViewCont
         downloadService.startDownload(video: video)
         refreshCellForVideo(video: video)
     }
+    
+    func refreshVideos() {
+        if let feedId = videoPlayerEpisode.videoFeed?.feedID {
+            guard let contentFeed = ContentFeed.getFeedById(feedId: feedId) else {
+                return
+            }
+            
+            let videoFeed = VideoFeed.convertFrom(contentFeed: contentFeed)
+            
+            videoFeedEpisodes = videoFeed.videosArray
+            videoPlayerEpisode = videoFeedEpisodes.first(where: { $0.videoID == videoPlayerEpisode.videoID })
+        }
+    }
 
-    func refreshCellForVideo(video:Video){
+    func refreshCellForVideo(video: Video){
         // Update the data source snapshot with the new state
         var snapshot = dataSource.snapshot()
-        if let _ = videoFeedEpisodes.firstIndex(of: video) {
+        
+        if let index = videoFeedEpisodes.firstIndex(where: { $0.videoID == video.videoID }) {
+            let video = videoFeedEpisodes[index]
             let itemIdentifier = DataSourceItem.videoFeedEpisode(video)
             
             if snapshot.itemIdentifiers.contains(itemIdentifier) {
                 snapshot.reloadItems([itemIdentifier])
                 dataSource.apply(snapshot, animatingDifferences: true)
             }
+            
+            let context = UICollectionViewLayoutInvalidationContext()
+            context.invalidateItems(at: [IndexPath(row: index, section: 1)])
+            collectionView.collectionViewLayout.invalidateLayout(with: context)
+                
+            let isLastIndex = index == videoFeedEpisodes.count - 1
+            
+            collectionView.performBatchUpdates({
+                // Empty batch updates block triggers layout recalculation
+            }, completion: { _ in
+                if isLastIndex {
+                    self.collectionView.scrollToItem(at: IndexPath(row: index, section: 1), at: .bottom, animated: true)
+                }
+            })
         }
     }
     
@@ -554,8 +616,6 @@ extension VideoFeedEpisodePlayerCollectionViewController:ItemDescriptionViewCont
 
 extension VideoFeedEpisodePlayerCollectionViewController : DownloadServiceDelegate{
     func shouldReloadRowFor(video: VideoDownload) {
-        //TODO: reload row
-        print("shouldReloadRowFor from VideoFeedEpisodePlayerCollectionViewController")
         refreshCellForVideo(video: video.video)
     }
 }

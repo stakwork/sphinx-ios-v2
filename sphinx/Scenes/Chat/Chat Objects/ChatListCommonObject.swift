@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import CoreData
 
 public protocol ChatListCommonObject: class {
     

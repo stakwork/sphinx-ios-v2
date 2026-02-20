@@ -11,8 +11,12 @@ import UIKit
 class RecommendationItemWUnifiedViewCollectionViewCell: UICollectionViewCell {
     
     @IBOutlet weak var unifiedEpisodeView: NewUnifiedEpisodeView!
+    @IBOutlet weak var unifiedEpisodeViewHeightConstraint: NSLayoutConstraint!
     
     weak var delegate : FeedItemRowDelegate?
+    
+    let kViewHeight: CGFloat = 200
+    let kChapterHeight: CGFloat = 40
     
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -39,18 +43,27 @@ class RecommendationItemWUnifiedViewCollectionViewCell: UICollectionViewCell {
     
     func configure(
         withVideoEpisode videoEpisode: Video,
+        expanded: Bool = false,
+        playing: Bool,
         and delegate: FeedItemRowDelegate
     ) {
         self.delegate = delegate
         
-        let url = URL(string: "https://s3.amazonaws.com/stakwork-uploads/uploads/customers/4291/media_to_local/cd7cae99-bb29-4f40-b050-4ade06b2fbf7/_-9RGlBIma8.mp4")
-        let download = DownloadService.sharedInstance.activeVideoDownloads[url!.absoluteString]
-        
         unifiedEpisodeView.configure(
             withVideoEpisode: videoEpisode,
-            download: download,
+            download: nil,
+            expanded: expanded,
+            playing: playing,
             and: self
         )
+        
+        if expanded {
+            unifiedEpisodeViewHeightConstraint.constant = kViewHeight + (CGFloat((videoEpisode.chapters?.count ?? 0)) * kChapterHeight)
+        } else {
+            unifiedEpisodeViewHeightConstraint.constant = kViewHeight
+        }
+        
+        unifiedEpisodeView.layoutIfNeeded()
     }
     
 }
@@ -81,6 +94,14 @@ extension RecommendationItemWUnifiedViewCollectionViewCell : PodcastEpisodeRowDe
 }
 
 extension RecommendationItemWUnifiedViewCollectionViewCell : VideoRowDelegate {
+    func shouldToggleChapters(video: Video) {
+        delegate?.shouldToggleChapters(video: video, cell: self)
+    }
+    
+    func shouldPlayChapterWith(index: Int, on video: Video) {
+        delegate?.shouldPlayChapterWith(index: index, on: video)
+    }
+    
     func shouldStartDownloading(video: Video) {
         if let delegate = delegate as? VideoFeedEpisodePlayerCollectionViewController{
             delegate.shouldDownloadVideo(video: video)

@@ -25,8 +25,9 @@ protocol FeedItemRowDelegate : class {
     func shouldShowDescription(video: Video)
     
     func shouldToggleChapters(episode: PodcastEpisode, cell: UITableViewCell)
-    func shouldToggleChapters(video: Video, cell: UITableViewCell)
+    func shouldToggleChapters(video: Video, cell: UICollectionViewCell)
     func shouldPlayChapterWith(index: Int, on episode: PodcastEpisode)
+    func shouldPlayChapterWith(index: Int, on video: Video)
 }
 
 protocol PodcastEpisodeRowDelegate : class {
@@ -44,7 +45,8 @@ protocol VideoRowDelegate : class {
     func shouldShare(video: Video)
     func shouldShowDescription(video:Video)
     func shouldStartDownloading(video:Video)
-//    func shouldToggleChapters(video: Video)
+    func shouldToggleChapters(video: Video)
+    func shouldPlayChapterWith(index: Int, on video: Video)
 }
 
 class NewUnifiedEpisodeView: UIView {
@@ -141,6 +143,8 @@ class NewUnifiedEpisodeView: UIView {
     func configure(
         withVideoEpisode videoEpisode: Video,
         download: VideoDownload?,
+        expanded: Bool = false,
+        playing: Bool,
         and delegate: VideoRowDelegate
     ) {
         self.videoEpisode = videoEpisode
@@ -148,8 +152,9 @@ class NewUnifiedEpisodeView: UIView {
         
         let id = videoEpisode.videoID
         
-        if let _ = id.range(of: "yt:") {
+        if let _ = id.range(of: "yt:"), videoEpisode.downloadedVideoUrl == nil {
             mediaTypeImageView.image = UIImage(named: "youtubeVideoTypeIcon")
+            mediaTypeImageView.isHidden = false
         } else {
             mediaTypeImageView.isHidden = true
         }
@@ -164,7 +169,8 @@ class NewUnifiedEpisodeView: UIView {
         downloadButton.alpha = 0.5
         downloadButton.isEnabled = false
         
-        playArrow.isHidden = true
+        playArrow.text = !playing ? "play_arrow" : "pause"
+        playArrow.isHidden = false
         
         episodeImageView.sd_cancelCurrentImageLoad()
         
@@ -179,10 +185,11 @@ class NewUnifiedEpisodeView: UIView {
             episodeImageView.image = UIImage(named: "videoPlaceholder")
         }
         
-        downloadButton.isEnabled = true
-        downloadButton.isHidden = false
+        chaptersButton.isHidden = (videoEpisode.chapters?.count ?? 0) == 0
+        chaptersButton.setTitleColor(expanded ? UIColor.Sphinx.Text : UIColor.Sphinx.Text.withAlphaComponent(0.5), for: .normal)
         
         configureDownload(video: videoEpisode, download: download)
+        configureWithChapters(videoEpisode.chapters ?? [])
         
         descriptionLabel.text = videoEpisode.videoDescription
         episodeLabel.text = videoEpisode.titleForDisplay
@@ -380,23 +387,25 @@ class NewUnifiedEpisodeView: UIView {
     }
     
     func configureDownload(video: Video, download: VideoDownload?) {
-        downloadButtonImage.isHidden = true
+        downloadButton.isEnabled = false
+        downloadButtonImage.isHidden = false
         downloadProgressBar.isHidden = true
+        downloadButtonImage.alpha = 0.5
         
-        if video.isDownloaded {
-            downloadButtonImage.isHidden = false
-            downloadButtonImage.image = UIImage(named: "playerListDownloaded")
-            downloadButtonImage.tintColor = UIColor.Sphinx.ReceivedIcon
-        } else if let download = download {
-            downloadProgressBar.isHidden = false
-            updateDownloadState(download)
-        } else {
-            downloadButtonImage.isHidden = false
-            downloadButtonImage.image = UIImage(named: "playerListDownload")
-            downloadButtonImage.tintColor = UIColor.Sphinx.Text.withAlphaComponent(0.5)
-        }
-        
-        downloadButton.tintColorDidChange()
+//        if video.isDownloaded {
+//            downloadButtonImage.isHidden = false
+//            downloadButtonImage.image = UIImage(named: "playerListDownloaded")
+//            downloadButtonImage.tintColor = UIColor.Sphinx.ReceivedIcon
+//        } else if let download = download {
+//            downloadProgressBar.isHidden = false
+//            updateDownloadState(download)
+//        } else {
+//            downloadButtonImage.isHidden = false
+//            downloadButtonImage.image = UIImage(named: "playerListDownload")
+//            downloadButtonImage.tintColor = UIColor.Sphinx.Text.withAlphaComponent(0.5)
+//        }
+//        
+//        downloadButton.tintColorDidChange()
     }
     
     //End Networking
@@ -449,8 +458,8 @@ class NewUnifiedEpisodeView: UIView {
     }
 
     @IBAction func chaptersButtonTouched() {
-        if let _ = videoEpisode {
-//            videoDelegate?.shouldToggleChapters(video: video)
+        if let video = videoEpisode {
+            videoDelegate?.shouldToggleChapters(video: video)
         } else if let episode = episode {
             podcastDelegate?.shouldToggleChapters(episode: episode)
         }
@@ -461,6 +470,8 @@ extension NewUnifiedEpisodeView : ChapterViewDelegate {
     func shouldPlayChapterWith(index: Int) {
         if let episode = episode {
             podcastDelegate?.shouldPlayChapterWith(index: index, on: episode)
+        } else if let video = videoEpisode {
+            videoDelegate?.shouldPlayChapterWith(index: index, on: video)
         }
     }
 }

@@ -66,15 +66,16 @@ class VideoFeedEpisodePlayerContainerViewController: UIViewController {
     lazy var youtubeVideoPlayerViewController: YouTubeVideoFeedEpisodePlayerViewController = {
         YouTubeVideoFeedEpisodePlayerViewController.instantiate(
             videoPlayerEpisode: videoPlayerEpisode,
+            delegate: self,
             dismissButtonStyle: dismissButtonStyle,
             onDismiss: { self.delegate?.viewControllerShouldDismiss(self) }
         )
     }()
     
-    
-    internal lazy var generalVideoPlayerViewController: GeneralVideoFeedEpisodePlayerViewController = {
-        GeneralVideoFeedEpisodePlayerViewController.instantiate(
-            videoPlayerEpisode: videoPlayerEpisode
+    internal lazy var generalVideoPlayerViewController: FeedEpisodeVideoPlayerViewController = {
+        FeedEpisodeVideoPlayerViewController.instantiate(
+            videoPlayerEpisode: videoPlayerEpisode,
+            delegate: self
         )
     }()
     
@@ -84,7 +85,8 @@ class VideoFeedEpisodePlayerContainerViewController: UIViewController {
             videoPlayerEpisode: videoPlayerEpisode,
             videoFeedEpisodes: videoFeedEpisodes,
             boostDelegate: boostDelegate,
-            onVideoEpisodeCellSelected: handleVideoEpisodeCellSelection(_:)
+            onVideoEpisodeCellSelected: handleVideoEpisodeCellSelection(_:),
+            onVideoChapterSelected: handleVideoChapterSelection(_:timeInSeconds:)
         )
         vc.delegate = self
         return vc
@@ -129,8 +131,9 @@ extension VideoFeedEpisodePlayerContainerViewController {
         configureCollectionView()
         
         updateFeed()
+        
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.5, execute: {
-            if let timestamp = self.deeplinkedTimestamp{
+            if let _ = self.deeplinkedTimestamp{
                 self.youtubeVideoPlayerViewController.startPlay()
             }
         })
@@ -140,6 +143,27 @@ extension VideoFeedEpisodePlayerContainerViewController {
                 self.youtubeVideoPlayerViewController.seekTo(time: timestamp)
             }
         })
+        
+        NotificationCenter.default.removeObserver(self, name: .refreshFeedDataAndUI, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(refreshFeedInfo), name: .refreshFeedDataAndUI, object: nil)
+    }
+    
+    @objc func refreshFeedInfo() {
+        let videoId = videoPlayerEpisode.id
+        
+        if let feedId = videoPlayerEpisode.videoFeed?.feedID, let feed = ContentFeed.getFeedById(feedId: feedId) {
+            let videoFeed = VideoFeed.convertFrom(contentFeed: feed)
+            self.videoPlayerEpisode = videoFeed.videosArray.first(where: { $0.id == videoId })
+            
+            if let downloadedVideoUrl = videoPlayerEpisode.downloadedVideoUrl, downloadedVideoUrl.absoluteString.isNotEmpty {
+                configurePlayerView()
+                
+                collectionViewController.refreshVideos()
+                collectionViewController.refreshCellForVideo(video: videoPlayerEpisode)
+                
+                currentVideoPlayerViewController.videoPlayerEpisode = videoPlayerEpisode
+            }
+        }
     }
 }
 
@@ -147,12 +171,15 @@ extension VideoFeedEpisodePlayerContainerViewController {
 // MARK: -  Computeds
 extension VideoFeedEpisodePlayerContainerViewController {
     
-    
     private var videoFeedEpisodes: [Video] {
         videoPlayerEpisode.videoFeed?.videosArray ?? []
     }
     
     private var isVideoFromYouTubeFeed: Bool {
+        if videoPlayerEpisode.downloadedVideoUrl != nil {
+            return false
+        }
+        
         guard let videoFeed = videoPlayerEpisode.videoFeed else { return false }
         
         return videoFeed.isYouTubeFeed
@@ -170,6 +197,12 @@ extension VideoFeedEpisodePlayerContainerViewController {
 extension VideoFeedEpisodePlayerContainerViewController {
     
     private func configurePlayerView() {
+        for vc in self.children {
+            if !vc.isKind(of: VideoFeedEpisodePlayerCollectionViewController.self) {
+                removeChildVC(child: vc)
+            }
+        }
+        
         addChildVC(
             child: currentVideoPlayerViewController,
             container: playerViewContainer
@@ -177,6 +210,12 @@ extension VideoFeedEpisodePlayerContainerViewController {
     }
 
     private func configureCollectionView() {
+        for vc in self.children {
+            if vc.isKind(of: VideoFeedEpisodePlayerCollectionViewController.self) {
+                removeChildVC(child: vc)
+            }
+        }
+        
         addChildVC(
             child: collectionViewController,
             container: collectionViewContainer
@@ -191,10 +230,20 @@ extension VideoFeedEpisodePlayerContainerViewController {
     private func handleVideoEpisodeCellSelection(
         _ feeditemId: String
     ) {
+        handleVideoEpisodeCellSelection(
+            feeditemId,
+            initialTimeToPlay: nil
+        )
+    }
+    
+    private func handleVideoEpisodeCellSelection(
+        _ feeditemId: String,
+        initialTimeToPlay: Double? = nil
+    ) {
         guard
             let selectedFeedItem = ContentFeedItem.getItemWith(itemID: feeditemId)
         else {
-            preconditionFailure()
+            return
         }
         
         if let contentFeed = selectedFeedItem.contentFeed {
@@ -202,16 +251,42 @@ extension VideoFeedEpisodePlayerContainerViewController {
             let videoFeed = VideoFeed.convertFrom(contentFeed:  contentFeed)
             let selectedEpisode = Video.convertFrom(contentFeedItem: selectedFeedItem, videoFeed: videoFeed)
             
-            if selectedEpisode != videoPlayerEpisode {
+            if selectedEpisode.videoID != videoPlayerEpisode.videoID {
                 videoPlayerEpisode = selectedEpisode
+                
+                configurePlayerView()
+                
+                (currentVideoPlayerViewController as? FeedEpisodeVideoPlayerViewController)?.initialTimeToPlay = initialTimeToPlay
                 currentVideoPlayerViewController.videoPlayerEpisode = videoPlayerEpisode
                 
                 delegate?.viewController(
                     self,
                     didSelectVideoEpisodeWithID: feeditemId
                 )
+            } else {
+                (currentVideoPlayerViewController as? FeedEpisodeVideoPlayerViewController)?.togglePlayVideo()
+                (currentVideoPlayerViewController as? YouTubeVideoFeedEpisodePlayerViewController)?.togglePlayVideo()
             }
         }
+    }
+    
+    private func handleVideoChapterSelection(
+        _ feeditemId: String,
+        timeInSeconds: Int
+    ) {
+        guard
+            let _ = ContentFeedItem.getItemWith(itemID: feeditemId)
+        else {
+            return
+        }
+        
+        if let genericPlayerVC = currentVideoPlayerViewController as? FeedEpisodeVideoPlayerViewController {
+            if feeditemId == genericPlayerVC.videoPlayerEpisode.videoID {
+                genericPlayerVC.seekToTime(Double(timeInSeconds))
+                return
+            }
+        }
+        handleVideoEpisodeCellSelection(feeditemId, initialTimeToPlay: Double(timeInSeconds))
     }
     
     
@@ -224,10 +299,27 @@ extension VideoFeedEpisodePlayerContainerViewController {
     }
 }
 
-extension VideoFeedEpisodePlayerContainerViewController:VideoFeedEpisodePlayerCollectionViewControllerDelegate{
+extension VideoFeedEpisodePlayerContainerViewController: VideoFeedEpisodePlayerCollectionViewControllerDelegate{
     func requestPlay() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.25, execute: {
             self.youtubeVideoPlayerViewController.startPlay()
         })
+    }
+    
+    func isPlayingVideo(with videoID: String) -> Bool {
+        if let genericPlayerVC = currentVideoPlayerViewController as? FeedEpisodeVideoPlayerViewController {
+            return genericPlayerVC.isPlayingVideo(with: videoID)
+        } else if let youtubePlayerVC = currentVideoPlayerViewController as? YouTubeVideoFeedEpisodePlayerViewController {
+            return youtubePlayerVC.isPlayingVideo(with: videoID)
+        }
+        return false
+    }
+}
+
+extension VideoFeedEpisodePlayerContainerViewController : FeedEpisodeVideoPlayerDelegate {
+    func didChangePlayingStateFor(videoID: String) {
+        if let video = videoFeedEpisodes.first(where: { $0.videoID == videoID }) {
+            self.collectionViewController.refreshCellForVideo(video: video)
+        }
     }
 }
