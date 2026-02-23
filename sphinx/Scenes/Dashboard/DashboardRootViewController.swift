@@ -566,17 +566,10 @@ extension DashboardRootViewController {
     }
     
     
-    private func applySearchTerm(_ term: String, for tab: DashboardTab) {
-        switch tab {
-        case .friends:
-            contactsService.updateContactsSearchQuery(term: term)
-        case .tribes:
-            contactsService.updateChatsSearchQuery(term: term)
-        case .workspaces:
-            workspacesViewController.filterWorkspaces(term: term)
-        default:
-            break
-        }
+    func applySearchTerm(_ term: String) {
+        contactsService.updateContactsSearchQuery(term: term)
+        contactsService.updateChatsSearchQuery(term: term)
+        workspacesViewController.filterWorkspaces(term: term)
     }
     
     

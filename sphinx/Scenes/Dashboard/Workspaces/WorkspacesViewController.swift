@@ -20,6 +20,7 @@ class WorkspacesViewController: UIViewController {
 
     private var workspaces: [Workspace] = []
     private var allWorkspaces: [Workspace] = []
+    private var searchTerm: String? = nil
 
     private let refreshControl = UIRefreshControl()
 
@@ -143,20 +144,12 @@ class WorkspacesViewController: UIViewController {
         API.sharedInstance.fetchWorkspacesWithAuth(
             callback: { [weak self] workspaces in
                 DispatchQueue.main.async {
-                    self?.allWorkspaces = workspaces
-                    self?.workspaces = workspaces
-                    self?.tableView.reloadData()
-                    self?.refreshControl.endRefreshing()
-                    self?.isLoading = false
+                    self?.updateWorkspaces(workspaces)
                 }
             },
             errorCallback: { [weak self] in
                 DispatchQueue.main.async {
-                    self?.allWorkspaces = []
-                    self?.workspaces = []
-                    self?.tableView.reloadData()
-                    self?.refreshControl.endRefreshing()
-                    self?.isLoading = false
+                    self?.updateWorkspaces([])
                 }
             }
         )
@@ -169,15 +162,19 @@ class WorkspacesViewController: UIViewController {
     // MARK: - Public Methods
 
     func updateWorkspaces(_ newWorkspaces: [Workspace]) {
+        allWorkspaces = newWorkspaces
         workspaces = newWorkspaces
-        tableView.reloadData()
+        filterWorkspaces(term: searchTerm ?? "")
+        refreshControl.endRefreshing()
+        isLoading = false
     }
     
     public func filterWorkspaces(term: String) {
+        searchTerm = term
         workspaces = term.isEmpty
             ? allWorkspaces
             : allWorkspaces.filter { $0.name.localizedCaseInsensitiveContains(term) }
-        tableView.reloadData()
+        tableView?.reloadData()
         updateEmptyState()
     }
 }

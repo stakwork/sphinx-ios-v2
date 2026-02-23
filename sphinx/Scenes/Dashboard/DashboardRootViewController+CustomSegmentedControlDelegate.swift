@@ -18,8 +18,8 @@ extension DashboardRootViewController: CustomSegmentedControlDelegate {
         
         if isLeavingOrEnteringFeed {
             resetSearchField()
-        } else if let term = searchTextField.text, !term.isEmpty {
-            applySearchTerm(term, for: newTab)
+        } else if let term = searchTextField.text {
+            applySearchTerm(term)
         }
         
         activeTab = newTab
