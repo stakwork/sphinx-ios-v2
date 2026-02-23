@@ -380,6 +380,9 @@ class SphinxOnionManager : NSObject {
     func disconnectMqtt(
         callback: ((Double) -> ())? = nil
     ) {
+        // Cancel reconnection timer to prevent background reconnection attempts
+        endReconnectionTimer()
+
         if let mqtt = self.mqtt, mqtt.connState == .connected {
             mqtt.disconnect()
         } else {
