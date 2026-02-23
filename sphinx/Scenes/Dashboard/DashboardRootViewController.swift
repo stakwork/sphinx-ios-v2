@@ -110,7 +110,6 @@ class DashboardRootViewController: RootViewController {
                 container: mainContentContainerView
             )
             
-            resetSearchField()
             feedViewMode = .rootList
             
             if (activeTab == .tribes) {
@@ -564,6 +563,13 @@ extension DashboardRootViewController {
         searchTextField?.text = ""
         view.endEditing(true)
         contactsService.resetSearches()
+    }
+    
+    
+    func applySearchTerm(_ term: String) {
+        contactsService.updateContactsSearchQuery(term: term)
+        contactsService.updateChatsSearchQuery(term: term)
+        workspacesViewController.filterWorkspaces(term: term)
     }
     
     

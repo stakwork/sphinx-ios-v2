@@ -67,6 +67,8 @@ extension DashboardRootViewController: UITextFieldDelegate {
             contactsService.updateContactsSearchQuery(term: "")
         case .tribes:
             contactsService.updateChatsSearchQuery(term: "")
+        case .workspaces:
+            workspacesViewController.filterWorkspaces(term: "")
         default:
             break
         }
@@ -101,6 +103,8 @@ extension DashboardRootViewController: UITextFieldDelegate {
             contactsService.updateContactsSearchQuery(term: queryString)
         case .tribes:
             contactsService.updateChatsSearchQuery(term: queryString)
+        case .workspaces:
+            workspacesViewController.filterWorkspaces(term: queryString)
         default:
             break
         }
