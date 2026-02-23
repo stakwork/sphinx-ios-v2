@@ -25,6 +25,7 @@ extension UserDefaults {
         public static let callLinkUrl = DefaultKey<String>("callLinkUrl")
         public static let attachmentsToken = DefaultKey<String>("attachmentsToken")
         public static let attachmentsTokenExpDate = DefaultKey<Date>("attachmentsTokenExpDate")
+        public static let hiveToken = DefaultKey<String>("hiveToken")
         public static let inviterNickname = DefaultKey<String>("inviterNickname")
         public static let inviterPubkey = DefaultKey<String>("inviterPubkey")
         public static let inviterRouteHint = DefaultKey<String>("inviterRouteHint")
