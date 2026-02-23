@@ -63,14 +63,34 @@ extension NewChatTableDataSource {
     }
     
     func updateSnapshot() {
-        let snapshot = makeSnapshotForCurrentState()
+        let newSnapshot = makeSnapshotForCurrentState()
+
         DispatchQueue.main.async {
             CoreDataManager.sharedManager.saveContext()
-            
+
             self.saveSnapshotCurrentState()
-            self.dataSource.apply(snapshot, animatingDifferences: false)
+
+            // Get the current snapshot to find items that need reconfiguration
+            let currentSnapshot = self.dataSource.snapshot()
+
+            // Find items that exist in both snapshots (for reconfiguration)
+            let currentItems = Set(currentSnapshot.itemIdentifiers)
+            let newItems = Set(newSnapshot.itemIdentifiers)
+            let itemsToReconfigure = currentItems.intersection(newItems)
+
+            // Apply the new snapshot without animation
+            self.dataSource.apply(newSnapshot, animatingDifferences: false)
+
+            // Reconfigure existing items that may have visual changes
+            // This is more efficient than delete+insert for status updates
+            if !itemsToReconfigure.isEmpty {
+                var reconfigureSnapshot = self.dataSource.snapshot()
+                reconfigureSnapshot.reconfigureItems(Array(itemsToReconfigure))
+                self.dataSource.apply(reconfigureSnapshot, animatingDifferences: false)
+            }
+
             self.restoreScrollLastPosition()
-            
+
             DelayPerformedHelper.performAfterDelay(seconds: 1.0, completion: {
                 self.loadingMoreItems = false
             })
@@ -859,35 +879,38 @@ extension NewChatTableDataSource : NSFetchedResultsControllerDelegate {
     ) {
         if let resultController = controller as? NSFetchedResultsController<NSManagedObject>,
             let firstSection = resultController.sections?.first {
-            
+
             if controller == messagesResultsController {
                 if let messages = firstSection.objects as? [TransactionMessage] {
                     if !self.isThread {
                         ///Do not processes aliases and timezone on thread since it came from chat
                         self.chat?.processAliasesFrom(messages: messages.reversed())
                     }
-                    
+
                     self.messagesCountFetched = messages.count
                     self.messagesArray = messages.filter({ !$0.isApprovedRequest() }).reversed()
                     self.processTimezoneNotSentRecently()
 
                     self.updateMessagesStatusesFrom(messages: self.messagesArray)
-                    
-                    self.processMessages(
+
+                    // Use debounced version to prevent rapid-fire updates
+                    // when status changes arrive in quick succession
+                    self.scheduleProcessMessages(
                         messages: self.messagesArray,
                         showLoadingMore: !self.allItemsLoaded && messages.count >= 100
                     )
-                    
+
                     self.configureSecondaryMessagesResultsController()
-                    
+
                     DispatchQueue.main.async {
                         self.delegate?.shouldUpdateHeaderScheduleIcon(message: messages.first)
                     }
                 }
             } else {
                 let messages = messagesResultsController.sections?.first?.objects as? [TransactionMessage] ?? []
-                
-                self.processMessages(
+
+                // Use debounced version for secondary controller updates as well
+                self.scheduleProcessMessages(
                     messages: self.messagesArray,
                     showLoadingMore: !self.allItemsLoaded && messages.count >= 100
                 )

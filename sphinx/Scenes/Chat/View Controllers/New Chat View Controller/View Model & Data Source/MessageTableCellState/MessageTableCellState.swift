@@ -1019,40 +1019,45 @@ extension MessageTableCellState {
 
 extension MessageTableCellState : Hashable {
 
+    /// Equality check uses only stable identifiers to ensure diffable data source
+    /// treats items with the same identity as equal, allowing cell reconfiguration
+    /// instead of delete+insert when mutable properties (like status) change.
     static func == (lhs: MessageTableCellState, rhs: MessageTableCellState) -> Bool {
-        var mutableLhs = lhs
-        var mutableRhs = rhs
-
-        return
-            mutableLhs.hashMessageId             == mutableRhs.hashMessageId &&
-            mutableLhs.messageToShow?.id         == mutableRhs.messageToShow?.id &&
-            mutableLhs.messageId                 == mutableRhs.messageId &&
-            mutableLhs.messageStatus             == mutableRhs.messageStatus &&
-            mutableLhs.messageType               == mutableRhs.messageType &&
-            mutableLhs.bubbleState               == mutableRhs.bubbleState &&
-            mutableLhs.messageString             == mutableRhs.messageString &&
-            mutableLhs.boostMessages.count       == mutableRhs.boostMessages.count &&
-            mutableLhs.isTextOnlyMessage         == mutableRhs.isTextOnlyMessage &&
-            mutableLhs.separatorDate             == mutableRhs.separatorDate &&
-            mutableLhs.paidContent?.status       == mutableRhs.paidContent?.status &&
-            mutableLhs.threadMessages.count      == mutableRhs.threadMessages.count &&
-            mutableLhs.memberRequestResponse?.id == mutableRhs.memberRequestResponse?.id &&
-            mutableLhs.isLoadingMoreMessages     == mutableRhs.isLoadingMoreMessages
+        // Use stable identifiers only - this ensures that when mutable properties
+        // like messageStatus change, the diffable data source will reconfigure
+        // the existing cell rather than deleting and inserting a new one.
+        return lhs.stableIdentifier == rhs.stableIdentifier
     }
 
     func hash(into hasher: inout Hasher) {
-        hasher.combine(self.hashMessageId)
-        hasher.combine(self.messageToShow?.id)
-        hasher.combine(self.messageId)
-        hasher.combine(self.messageStatus)
-        hasher.combine(self.messageType)
-        hasher.combine(self.bubbleState)
-        hasher.combine(self.messageString)
-        hasher.combine(self.boostMessages.count)
-        hasher.combine(self.separatorDate)
-        hasher.combine(self.threadMessages.count)
-        hasher.combine(self.memberRequestResponse?.id)
-        hasher.combine(self.isLoadingMoreMessages)
+        // Hash only stable identifiers that don't change after creation.
+        // This prevents unnecessary row deletions/insertions when mutable
+        // properties like messageStatus are updated.
+        hasher.combine(stableIdentifier)
+    }
+
+    /// A stable identifier that doesn't change when mutable properties update.
+    /// Used for hash and equality to ensure smooth table updates.
+    private var stableIdentifier: String {
+        if let messageId = messageId {
+            // For message rows, use message ID as the stable identifier
+            // Include threadMessages first ID if this is a thread row
+            if threadMessages.count > 1, let firstThreadId = threadMessages.first?.id {
+                return "thread_\(firstThreadId)_\(messageId)"
+            }
+            return "msg_\(messageId)"
+        } else if let separatorDate = separatorDate {
+            // For date separator rows
+            return "sep_\(Int(separatorDate.timeIntervalSince1970))"
+        } else if isLoadingMoreMessages {
+            // For loading indicator row
+            return "loading"
+        } else if isThreadHeaderMessage, let msgId = message?.id {
+            // For thread header message
+            return "thread_header_\(msgId)"
+        }
+        // Fallback - use unique ID for any unhandled cases
+        return "unknown_\(uniqueID.uuidString)"
     }
 
     func getUniqueIdentifier() -> Int {

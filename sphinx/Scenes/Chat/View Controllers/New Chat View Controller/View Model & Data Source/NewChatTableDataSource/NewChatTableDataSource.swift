@@ -130,10 +130,16 @@ class NewChatTableDataSource : NSObject {
     
     ///Messages statuses restore
     var lastMessageTagRestored = ""
-    
+
     ///Data source updates queue
     let dataSourceQueue = DispatchQueue(label: "chat.datasourceQueue", qos: .userInteractive)
     let mediaReloadQueue = DispatchQueue(label: "chat.media.datasourceQueue", qos: .userInteractive)
+
+    ///Debouncing for rapid updates
+    private var pendingProcessMessagesWorkItem: DispatchWorkItem?
+    private var lastProcessMessagesTime: Date?
+    private let processMessagesDebounceInterval: TimeInterval = 0.3
+    private var isInitialLoad: Bool = true
     
     var isThread: Bool {
         get {
@@ -219,5 +225,52 @@ class NewChatTableDataSource : NSObject {
                 indexPath: indexPath
             )
         }
+    }
+
+    /// Schedules processMessages with debouncing to prevent rapid-fire updates
+    /// when multiple Core Data changes arrive in quick succession (e.g., status updates).
+    /// Initial loads bypass debouncing for immediate display.
+    func scheduleProcessMessages(
+        messages: [TransactionMessage],
+        showLoadingMore: Bool
+    ) {
+        // Cancel any pending work
+        pendingProcessMessagesWorkItem?.cancel()
+
+        // On initial load, process immediately without debouncing
+        if isInitialLoad {
+            isInitialLoad = false
+            lastProcessMessagesTime = Date()
+            processMessages(messages: messages, showLoadingMore: showLoadingMore)
+            return
+        }
+
+        // Check if we processed recently
+        let now = Date()
+        let timeSinceLastProcess = lastProcessMessagesTime.map { now.timeIntervalSince($0) } ?? .infinity
+
+        if timeSinceLastProcess >= processMessagesDebounceInterval {
+            // Enough time has passed, process immediately
+            lastProcessMessagesTime = now
+            processMessages(messages: messages, showLoadingMore: showLoadingMore)
+        } else {
+            // Debounce: schedule for later
+            let workItem = DispatchWorkItem { [weak self] in
+                guard let self = self else { return }
+                self.lastProcessMessagesTime = Date()
+                self.processMessages(messages: messages, showLoadingMore: showLoadingMore)
+            }
+            pendingProcessMessagesWorkItem = workItem
+
+            let delay = processMessagesDebounceInterval - timeSinceLastProcess
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: workItem)
+        }
+    }
+
+    /// Resets the initial load flag (call when re-entering chat)
+    func resetInitialLoadState() {
+        isInitialLoad = true
+        pendingProcessMessagesWorkItem?.cancel()
+        pendingProcessMessagesWorkItem = nil
     }
 }
