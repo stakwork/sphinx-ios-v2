@@ -12,6 +12,7 @@ import SwiftyJSON
 
 typealias HiveAuthTokenCallback = ((String?) -> ())
 typealias HiveWorkspacesCallback = (([Workspace]) -> ())
+typealias HiveTasksCallback = (([WorkspaceTask]) -> ())
 
 extension API {
 
@@ -138,6 +139,84 @@ extension API {
 
                 self?.fetchWorkspaces(
                     authToken: token,
+                    callback: callback,
+                    errorCallback: errorCallback
+                )
+            },
+            errorCallback: errorCallback
+        )
+    }
+
+    func fetchTasks(
+        workspaceId: String,
+        authToken: String,
+        includeArchived: Bool = false,
+        callback: @escaping HiveTasksCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        var urlString = "\(API.kHiveBaseUrl)/tasks?workspaceId=\(workspaceId)&limit=100"
+        if includeArchived { urlString += "&includeArchived=true" }
+        guard let request = createRequest(urlString, bodyParams: nil, method: "GET", token: authToken) else {
+            errorCallback()
+            return
+        }
+        session()?.request(request).responseData { response in
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+                let tasks: [WorkspaceTask] = (json["data"].array ?? []).compactMap { WorkspaceTask(json: $0) }
+                callback(tasks)
+            case .failure:
+                errorCallback()
+            }
+        }
+    }
+
+    func fetchTasksWithAuth(
+        workspaceId: String,
+        includeArchived: Bool = false,
+        callback: @escaping HiveTasksCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
+            fetchTasks(
+                workspaceId: workspaceId,
+                authToken: storedToken,
+                includeArchived: includeArchived,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateAndFetchTasks(
+                        workspaceId: workspaceId,
+                        includeArchived: includeArchived,
+                        callback: callback,
+                        errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateAndFetchTasks(
+                workspaceId: workspaceId,
+                includeArchived: includeArchived,
+                callback: callback,
+                errorCallback: errorCallback
+            )
+        }
+    }
+
+    private func authenticateAndFetchTasks(
+        workspaceId: String,
+        includeArchived: Bool,
+        callback: @escaping HiveTasksCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback(); return }
+                UserDefaults.Keys.hiveToken.set(token)
+                self?.fetchTasks(
+                    workspaceId: workspaceId,
+                    authToken: token,
+                    includeArchived: includeArchived,
                     callback: callback,
                     errorCallback: errorCallback
                 )
