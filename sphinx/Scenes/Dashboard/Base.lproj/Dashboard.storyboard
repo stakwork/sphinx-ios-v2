@@ -724,6 +724,83 @@
             </objects>
             <point key="canvasLocation" x="-6358" y="2638"/>
         </scene>
+        <!--Workspace Tasks View Controller-->
+        <scene sceneID="wtv-sc-001">
+            <objects>
+                <viewController storyboardIdentifier="WorkspaceTasksViewController" id="wtv-vc-001" customClass="WorkspaceTasksViewController" customModule="sphinx" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="wtv-vw-001">
+                        <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="wtv-hv-001">
+                                <rect key="frame" x="0.0" y="0.0" width="414" height="50"/>
+                                <subviews>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="wtv-bb-001">
+                                        <rect key="frame" x="8" y="13" width="24" height="24"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="24" id="wtv-bb-w"/>
+                                            <constraint firstAttribute="height" constant="24" id="wtv-bb-h"/>
+                                        </constraints>
+                                        <state key="normal" title=""/>
+                                        <connections>
+                                            <action selector="backButtonTouched" destination="wtv-vc-001" eventType="touchUpInside" id="wtv-bb-ac"/>
+                                        </connections>
+                                    </button>
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="WORKSPACE" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="wtv-tl-001">
+                                        <rect key="frame" x="50" y="15" width="314" height="20"/>
+                                        <fontDescription key="fontDescription" type="system" weight="medium" pointSize="14"/>
+                                        <color key="textColor" name="Text"/>
+                                        <nil key="highlightedColor"/>
+                                    </label>
+                                </subviews>
+                                <color key="backgroundColor" name="Body"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="50" id="wtv-hv-h"/>
+                                    <constraint firstItem="wtv-bb-001" firstAttribute="leading" secondItem="wtv-hv-001" secondAttribute="leading" constant="8" id="wtv-bb-l"/>
+                                    <constraint firstItem="wtv-bb-001" firstAttribute="centerY" secondItem="wtv-hv-001" secondAttribute="centerY" id="wtv-bb-cy"/>
+                                    <constraint firstItem="wtv-tl-001" firstAttribute="leading" secondItem="wtv-bb-001" secondAttribute="trailing" constant="18" id="wtv-tl-l"/>
+                                    <constraint firstAttribute="trailing" secondItem="wtv-tl-001" secondAttribute="trailing" constant="50" id="wtv-tl-r"/>
+                                    <constraint firstItem="wtv-tl-001" firstAttribute="centerY" secondItem="wtv-hv-001" secondAttribute="centerY" id="wtv-tl-cy"/>
+                                </constraints>
+                            </view>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="wtv-sc-001">
+                                <rect key="frame" x="0.0" y="50" width="414" height="50"/>
+                                <color key="backgroundColor" name="DashboardHeader"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="50" id="wtv-sc-h"/>
+                                </constraints>
+                            </view>
+                            <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="none" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="wtv-tv-001">
+                                <rect key="frame" x="0.0" y="100" width="414" height="762"/>
+                                <color key="backgroundColor" name="DashboardHeader"/>
+                            </tableView>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="wtv-sa-001"/>
+                        <color key="backgroundColor" name="DashboardHeader"/>
+                        <constraints>
+                            <constraint firstItem="wtv-hv-001" firstAttribute="top" secondItem="wtv-vw-001" secondAttribute="top" id="wtv-hv-t"/>
+                            <constraint firstItem="wtv-hv-001" firstAttribute="leading" secondItem="wtv-sa-001" secondAttribute="leading" id="wtv-hv-l"/>
+                            <constraint firstItem="wtv-hv-001" firstAttribute="trailing" secondItem="wtv-sa-001" secondAttribute="trailing" id="wtv-hv-r"/>
+                            <constraint firstItem="wtv-sc-001" firstAttribute="top" secondItem="wtv-hv-001" secondAttribute="bottom" id="wtv-sc-t"/>
+                            <constraint firstItem="wtv-sc-001" firstAttribute="leading" secondItem="wtv-sa-001" secondAttribute="leading" id="wtv-sc-l"/>
+                            <constraint firstItem="wtv-sc-001" firstAttribute="trailing" secondItem="wtv-sa-001" secondAttribute="trailing" id="wtv-sc-r"/>
+                            <constraint firstItem="wtv-tv-001" firstAttribute="top" secondItem="wtv-sc-001" secondAttribute="bottom" id="wtv-tv-t"/>
+                            <constraint firstItem="wtv-tv-001" firstAttribute="leading" secondItem="wtv-sa-001" secondAttribute="leading" id="wtv-tv-l"/>
+                            <constraint firstItem="wtv-tv-001" firstAttribute="trailing" secondItem="wtv-sa-001" secondAttribute="trailing" id="wtv-tv-r"/>
+                            <constraint firstItem="wtv-tv-001" firstAttribute="bottom" secondItem="wtv-sa-001" secondAttribute="bottom" id="wtv-tv-b"/>
+                        </constraints>
+                    </view>
+                    <connections>
+                        <outlet property="headerView" destination="wtv-hv-001" id="wtv-hv-out"/>
+                        <outlet property="segmentedControlContainer" destination="wtv-sc-001" id="wtv-sc-out"/>
+                        <outlet property="tableView" destination="wtv-tv-001" id="wtv-tv-out"/>
+                        <outlet property="viewTitle" destination="wtv-tl-001" id="wtv-tl-out"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="wtv-fr-001" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-5500" y="1800"/>
+        </scene>
     </scenes>
     <resources>
         <image name="bottomBar1" width="25" height="25"/>

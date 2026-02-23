@@ -501,6 +501,7 @@
 		47B9CC002F460C7B007527B4 /* WorkspaceTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47B9CBFB2F460C7B007527B4 /* WorkspaceTableViewCell.swift */; };
 		47B9CC012F460C7B007527B4 /* WorkspacesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47B9CBFA2F460C7B007527B4 /* WorkspacesViewController.swift */; };
 		47E34ED775B54D3F8EA5912D /* WorkspaceTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4732E34ED775B54D3F8EA591 /* WorkspaceTask.swift */; };
+		20AB4F9E1FAE42F4B1F33489 /* WorkspaceTasksViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E83B28E7233A4D0D9AE288E2 /* WorkspaceTasksViewController.swift */; };
 		47B9CC072F46291A007527B4 /* MediaPreloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47B9CC062F46291A007527B4 /* MediaPreloadManager.swift */; };
 		47BA317A2D15D8BB001AF7E5 /* ContactDetailsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47BA31792D15D8BB001AF7E5 /* ContactDetailsViewController.swift */; };
 		47BA317B2D355026001AF7E5 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEA6BC1F2C1794AD00494071 /* NetworkMonitor.swift */; };
@@ -1731,6 +1732,7 @@
 		47B9CBF82F3D2D19007527B4 /* sphinx 57.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 57.xcdatamodel"; sourceTree = "<group>"; };
 		47B9CBF92F460C7B007527B4 /* Workspace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Workspace.swift; sourceTree = "<group>"; };
 		47B9CBFA2F460C7B007527B4 /* WorkspacesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspacesViewController.swift; sourceTree = "<group>"; };
+		E83B28E7233A4D0D9AE288E2 /* WorkspaceTasksViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceTasksViewController.swift; sourceTree = "<group>"; };
 		4732E34ED775B54D3F8EA591 /* WorkspaceTask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceTask.swift; sourceTree = "<group>"; };
 		47B9CBFB2F460C7B007527B4 /* WorkspaceTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceTableViewCell.swift; sourceTree = "<group>"; };
 		47B9CBFC2F460C7B007527B4 /* WorkspaceTableViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = WorkspaceTableViewCell.xib; sourceTree = "<group>"; };
@@ -3948,6 +3950,7 @@
 				47B9CBF92F460C7B007527B4 /* Workspace.swift */,
 				4732E34ED775B54D3F8EA591 /* WorkspaceTask.swift */,
 				47B9CBFA2F460C7B007527B4 /* WorkspacesViewController.swift */,
+				E83B28E7233A4D0D9AE288E2 /* WorkspaceTasksViewController.swift */,
 				47B9CBFB2F460C7B007527B4 /* WorkspaceTableViewCell.swift */,
 				47B9CBFC2F460C7B007527B4 /* WorkspaceTableViewCell.xib */,
 			);
@@ -5361,6 +5364,7 @@
 				47B9CBFF2F460C7B007527B4 /* Workspace.swift in Sources */,
 				47B9CC002F460C7B007527B4 /* WorkspaceTableViewCell.swift in Sources */,
 				47B9CC012F460C7B007527B4 /* WorkspacesViewController.swift in Sources */,
+				20AB4F9E1FAE42F4B1F33489 /* WorkspaceTasksViewController.swift in Sources */,
 				47FA72792A30E19300FB4535 /* MessagesPreloaderHelper.swift in Sources */,
 				4707089624AE466D00A98DCA /* ChatChatListExtension.swift in Sources */,
 				477C57E5234545D700BB4E04 /* SetPinCodeViewController.swift in Sources */,

@@ -10,6 +10,7 @@ import UIKit
 
 protocol WorkspacesViewControllerDelegate: AnyObject {
     func viewControllerContentScrolled(scrollView: UIScrollView)
+    func didSelectWorkspace(_ workspace: Workspace)
 }
 
 class WorkspacesViewController: UIViewController {
@@ -209,10 +210,8 @@ extension WorkspacesViewController: UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-
         let workspace = workspaces[indexPath.row]
-        // TODO: Handle workspace selection - navigate to workspace detail
-        print("Selected workspace: \(workspace.name)")
+        delegate?.didSelectWorkspace(workspace)
     }
 
     func scrollViewDidScroll(_ scrollView: UIScrollView) {

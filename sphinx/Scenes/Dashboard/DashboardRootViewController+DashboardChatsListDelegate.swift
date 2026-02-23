@@ -40,6 +40,11 @@ extension DashboardRootViewController: DashboardChatsListDelegate, WorkspacesVie
         self.lastContentOffset = scrollView.contentOffset.y
     }
     
+    func didSelectWorkspace(_ workspace: Workspace) {
+        let vc = WorkspaceTasksViewController.instantiate(workspace: workspace)
+        navigationController?.pushViewController(vc, animated: true)
+    }
+    
     func shouldToggleBottomBar(_ show: Bool) {
         let destinationBottomBarBottomConstraint:CGFloat = show ? 0 : -58
         let destinationBottomBarAlpha:CGFloat = show ? 1.0 : 0.0
