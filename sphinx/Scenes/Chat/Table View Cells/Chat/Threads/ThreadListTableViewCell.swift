@@ -64,8 +64,21 @@ class ThreadListTableViewCell: UITableViewCell {
     
     override func awakeFromNib() {
         super.awakeFromNib()
-        
+
         setupViews()
+    }
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+
+        // Cancel pending image loads to prevent wrong avatar appearing after cell reuse
+        originalMessageAvatarView.resetView()
+        reply1AvatarView.resetView()
+        reply2AvatarView.resetView()
+        reply3AvatarView.resetView()
+        reply4AvatarView.resetView()
+        reply5AvatarView.resetView()
+        reply6AvatarView.resetView()
     }
     
     func setupViews() {
