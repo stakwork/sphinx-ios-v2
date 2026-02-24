@@ -16,46 +16,40 @@
                 <rect key="frame" x="0.0" y="0.0" width="393" height="75"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
-                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Task Title" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="title-lbl-01">
-                        <rect key="frame" x="16" y="8" width="220" height="20"/>
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Task Title" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="2" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="title-lbl-01">
+                        <rect key="frame" x="16" y="8" width="240" height="38"/>
                         <fontDescription key="fontDescription" type="system" weight="medium" pointSize="16"/>
                         <color key="textColor" name="Text"/>
                         <nil key="highlightedColor"/>
                     </label>
-                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="DONE" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="status-badge-01">
-                        <rect key="frame" x="244" y="8" width="60" height="20"/>
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="IN_PROGRESS" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="status-badge-01">
+                        <rect key="frame" x="277" y="8" width="100" height="20"/>
                         <constraints>
-                            <constraint firstAttribute="width" constant="60" id="status-width-01"/>
+                            <constraint firstAttribute="width" constant="100" id="status-width-01"/>
                             <constraint firstAttribute="height" constant="20" id="status-height-01"/>
                         </constraints>
-                        <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="11"/>
+                        <fontDescription key="fontDescription" name="Roboto-Medium" family="Roboto" pointSize="11"/>
                         <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <nil key="highlightedColor"/>
                     </label>
-                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="HIGH" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="priority-badge-01">
-                        <rect key="frame" x="312" y="8" width="65" height="20"/>
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="CRITICAL" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="priority-badge-01">
+                        <rect key="frame" x="277" y="32" width="100" height="20"/>
                         <constraints>
-                            <constraint firstAttribute="width" constant="65" id="priority-width-01"/>
+                            <constraint firstAttribute="width" constant="100" id="priority-width-01"/>
                             <constraint firstAttribute="height" constant="20" id="priority-height-01"/>
                         </constraints>
-                        <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="11"/>
+                        <fontDescription key="fontDescription" name="Roboto-Medium" family="Roboto" pointSize="11"/>
                         <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                        <nil key="highlightedColor"/>
-                    </label>
-                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Task description goes here and can span two lines" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="2" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="desc-lbl-01">
-                        <rect key="frame" x="16" y="32" width="361" height="16"/>
-                        <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="13"/>
-                        <color key="textColor" name="SecondaryText"/>
                         <nil key="highlightedColor"/>
                     </label>
                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Repository" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="repo-lbl-01">
-                        <rect key="frame" x="16" y="52" width="180" height="16"/>
+                        <rect key="frame" x="16" y="54" width="180" height="16"/>
                         <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="13"/>
                         <color key="textColor" name="SecondaryText"/>
                         <nil key="highlightedColor"/>
                     </label>
                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="252" verticalHuggingPriority="251" text="Updated: 2 days ago" textAlignment="right" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="updated-lbl-01">
-                        <rect key="frame" x="204" y="52" width="173" height="16"/>
+                        <rect key="frame" x="204" y="54" width="173" height="16"/>
                         <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="13"/>
                         <color key="textColor" name="SecondaryText"/>
                         <nil key="highlightedColor"/>
@@ -71,26 +65,22 @@
                 <constraints>
                     <constraint firstItem="title-lbl-01" firstAttribute="leading" secondItem="content-view-01" secondAttribute="leading" constant="16" id="title-lead-01"/>
                     <constraint firstItem="title-lbl-01" firstAttribute="top" secondItem="content-view-01" secondAttribute="top" constant="8" id="title-top-01"/>
-                    <constraint firstItem="status-badge-01" firstAttribute="leading" secondItem="title-lbl-01" secondAttribute="trailing" constant="8" id="status-lead-01"/>
                     <constraint firstItem="status-badge-01" firstAttribute="top" secondItem="content-view-01" secondAttribute="top" constant="8" id="status-top-01"/>
-                    <constraint firstItem="priority-badge-01" firstAttribute="leading" secondItem="status-badge-01" secondAttribute="trailing" constant="8" id="priority-lead-01"/>
-                    <constraint firstItem="priority-badge-01" firstAttribute="top" secondItem="content-view-01" secondAttribute="top" constant="8" id="priority-top-01"/>
+                    <constraint firstAttribute="trailing" secondItem="status-badge-01" secondAttribute="trailing" constant="16" id="status-trail-01"/>
+                    <constraint firstItem="priority-badge-01" firstAttribute="top" secondItem="status-badge-01" secondAttribute="bottom" constant="4" id="priority-top-01"/>
                     <constraint firstAttribute="trailing" secondItem="priority-badge-01" secondAttribute="trailing" constant="16" id="priority-trail-01"/>
-                    <constraint firstItem="desc-lbl-01" firstAttribute="leading" secondItem="content-view-01" secondAttribute="leading" constant="16" id="desc-lead-01"/>
-                    <constraint firstAttribute="trailing" secondItem="desc-lbl-01" secondAttribute="trailing" constant="16" id="desc-trail-01"/>
-                    <constraint firstItem="desc-lbl-01" firstAttribute="top" secondItem="title-lbl-01" secondAttribute="bottom" constant="4" id="desc-top-01"/>
+                    <constraint firstItem="status-badge-01" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="title-lbl-01" secondAttribute="trailing" constant="8" id="status-lead-01"/>
                     <constraint firstItem="repo-lbl-01" firstAttribute="leading" secondItem="content-view-01" secondAttribute="leading" constant="16" id="repo-lead-01"/>
-                    <constraint firstItem="repo-lbl-01" firstAttribute="top" secondItem="desc-lbl-01" secondAttribute="bottom" constant="4" id="repo-top-01"/>
+                    <constraint firstItem="repo-lbl-01" firstAttribute="top" secondItem="title-lbl-01" secondAttribute="bottom" constant="4" id="repo-top-01"/>
                     <constraint firstItem="updated-lbl-01" firstAttribute="leading" secondItem="repo-lbl-01" secondAttribute="trailing" constant="8" id="updated-lead-01"/>
                     <constraint firstAttribute="trailing" secondItem="updated-lbl-01" secondAttribute="trailing" constant="16" id="updated-trail-01"/>
-                    <constraint firstItem="updated-lbl-01" firstAttribute="top" secondItem="desc-lbl-01" secondAttribute="bottom" constant="4" id="updated-top-01"/>
+                    <constraint firstItem="updated-lbl-01" firstAttribute="top" secondItem="title-lbl-01" secondAttribute="bottom" constant="4" id="updated-top-01"/>
                     <constraint firstItem="sep-view-01" firstAttribute="leading" secondItem="content-view-01" secondAttribute="leading" constant="16" id="sep-lead-01"/>
                     <constraint firstAttribute="trailing" secondItem="sep-view-01" secondAttribute="trailing" id="sep-trail-01"/>
                     <constraint firstAttribute="bottom" secondItem="sep-view-01" secondAttribute="bottom" id="sep-bot-01"/>
                 </constraints>
             </tableViewCellContentView>
             <connections>
-                <outlet property="descriptionLabel" destination="desc-lbl-01" id="desc-out-01"/>
                 <outlet property="priorityBadge" destination="priority-badge-01" id="priority-out-01"/>
                 <outlet property="repositoryLabel" destination="repo-lbl-01" id="repo-out-01"/>
                 <outlet property="separatorView" destination="sep-view-01" id="sep-out-01"/>

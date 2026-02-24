@@ -111,7 +111,7 @@ class WorkspaceTaskTableViewCellTests: XCTestCase {
         cell.configure(with: task, isLastRow: false)
         
         XCTAssertEqual(cell.titleLabel.text, "Test Task")
-        XCTAssertEqual(cell.descriptionLabel.text, "Test Description")
+        // descriptionLabel was removed from the cell UI
         XCTAssertEqual(cell.repositoryLabel.text, "test-repo")
         XCTAssertEqual(cell.updatedAtLabel.text, "2 days ago")
     }
