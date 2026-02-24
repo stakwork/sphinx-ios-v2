@@ -169,23 +169,39 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         notificationUserInfo = nil
         saveCurrentStyle()
         setBadge(application: application)
-        
+
+        // Cancel MQTT reconnection timer before disconnecting to prevent
+        // background reconnection attempts that cause iOS to kill the app
+        som.endReconnectionTimer()
+        som.disconnectMqtt()
+        NetworkMonitor.shared.stopMonitoring()
+
+        // Use background task to ensure critical operations complete
+        var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
+        backgroundTaskID = application.beginBackgroundTask(withName: "BackgroundCleanup") {
+            // Expiration handler - cleanup if we run out of time
+            application.endBackgroundTask(backgroundTaskID)
+            backgroundTaskID = .invalid
+        }
+
+        // Perform quick, essential background operations only
         podcastPlayerController.finishAndSaveContentConsumed()
-        
         actionsManager.syncActionsInBackground()
-//        feedsManager.saveContentFeedStatus()
-        storageManager.processGarbageCleanup()
-        
         CoreDataManager.sharedManager.saveContext()
-        
+
+        // Clear memory caches
         SDImageCache.shared.clearMemory()
         SDWebImageManager.shared.cancelAll()
-        URLSession.shared.invalidateAndCancel()
-        
-//        scheduleAppRefresh()
-        
-        NetworkMonitor.shared.stopMonitoring()
-        som.disconnectMqtt()
+
+        // Don't run garbage cleanup on background - it takes too long
+        // and causes iOS to kill the app. Schedule it for next foreground instead.
+        // storageManager.processGarbageCleanup()
+
+        // End background task
+        if backgroundTaskID != .invalid {
+            application.endBackgroundTask(backgroundTaskID)
+            backgroundTaskID = .invalid
+        }
     }
     
     func applicationDidReceiveMemoryWarning(_ application: UIApplication) {
@@ -202,16 +218,20 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         if !UserData.sharedInstance.isUserLogged() {
             return
         }
-        
+
         Chat.processTimezoneChanges()
         presentPINIfNeeded()
-        
+
         feedsManager.restoreContentFeedStatusInBackground()
         podcastPlayerController.finishAndSaveContentConsumed()
-        
+
         getDashboardVC()?.reconnectToServer()
-        
+
         DataSyncManager.sharedInstance.syncWithServerInBackground()
+
+        // Run garbage cleanup in foreground where we have plenty of time
+        // instead of in background where iOS kills apps that take too long
+        storageManager.processGarbageCleanup()
     }
     
     func applicationDidBecomeActive(
