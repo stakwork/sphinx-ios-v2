@@ -29,8 +29,6 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
     }
 
     private func setupCell() {
-        backgroundColor = .Sphinx.DashboardHeader
-        contentView.backgroundColor = .Sphinx.DashboardHeader
         selectionStyle = .none
 
         titleLabel.textColor = .Sphinx.Text
@@ -51,7 +49,7 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
             $0?.textAlignment = .center
         }
 
-        separatorView.backgroundColor = .Sphinx.Divider
+        separatorView.backgroundColor = .Sphinx.HeaderBG
     }
 
     func configure(with task: WorkspaceTask, isLastRow: Bool) {

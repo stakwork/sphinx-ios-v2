@@ -74,7 +74,7 @@ class WorkspaceTasksViewController: PopHandlerViewController {
         tableView.dataSource = self
         tableView.backgroundColor = .Sphinx.Body
         tableView.separatorStyle = .none
-        tableView.rowHeight = 75
+        tableView.rowHeight = 110
         
         tableView.register(
             WorkspaceTaskTableViewCell.nib,
