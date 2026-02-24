@@ -9,7 +9,14 @@
 import UIKit
 
 extension NewMessageTableViewCell {
-    
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+
+        // Cancel pending image loads to prevent wrong avatar appearing after cell reuse
+        chatAvatarView.resetView()
+    }
+
     func setupViews() {
         tap = UITapGestureRecognizer(target: self, action: #selector(labelTapped(gesture:)))
         

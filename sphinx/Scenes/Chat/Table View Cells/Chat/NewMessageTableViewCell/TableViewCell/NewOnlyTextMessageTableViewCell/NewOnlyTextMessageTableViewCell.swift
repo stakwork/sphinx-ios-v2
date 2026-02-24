@@ -39,9 +39,16 @@ class NewOnlyTextMessageTableViewCell: CommonNewMessageTableViewCell, ChatTableV
     
     override func awakeFromNib() {
         super.awakeFromNib()
-        
+
         hideAllSubviews()
         setupViews()
+    }
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+
+        // Cancel pending image loads to prevent wrong avatar appearing after cell reuse
+        chatAvatarView.resetView()
     }
 
     override func setSelected(_ selected: Bool, animated: Bool) {

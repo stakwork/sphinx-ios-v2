@@ -49,9 +49,12 @@ class ChatAvatarView: UIView {
     }
     
     func resetView() {
+        profileImageView.sd_cancelCurrentImageLoad()
+        imageUrl = nil
+
         profileImageView.isHidden = false
         profileImageView.image = UIImage(named: "profile_avatar")
-        
+
         profileInitialContainer.isHidden = true
     }
     
@@ -111,16 +114,20 @@ class ChatAvatarView: UIView {
     ) {
         self.profileInitialContainer.isHidden = true
         self.profileImageView.isHidden = false
-        
+
         if let imageUrl = imageUrl, imageUrl == url.absoluteString {
             return
         }
-        
+
         let transformer = SDImageResizingTransformer(
             size: CGSize(width: bounds.size.width * 3, height: bounds.size.height * 3),
             scaleMode: .aspectFill
         )
-        
+
+        // Store the URL we're requesting to verify in completion handler
+        let requestedUrl = url.absoluteString
+        self.imageUrl = requestedUrl
+
         profileImageView.sd_cancelCurrentImageLoad()
         profileImageView.sd_setImage(
             with: url,
@@ -128,9 +135,13 @@ class ChatAvatarView: UIView {
             options: [.scaleDownLargeImages, .decodeFirstFrameOnly, .progressiveLoad],
             context: [.imageTransformer: transformer],
             progress: nil,
-            completed: { (image, error, _, _) in
+            completed: { [weak self] (image, error, _, _) in
+                guard let self = self else { return }
+
+                // Verify the cell still wants this image (hasn't been reused)
+                guard self.imageUrl == requestedUrl else { return }
+
                 if (error == nil) {
-                    self.imageUrl = url.absoluteString
                     self.profileInitialContainer.isHidden = true
                     self.profileImageView.isHidden = false
                     self.profileImageView.image = image
