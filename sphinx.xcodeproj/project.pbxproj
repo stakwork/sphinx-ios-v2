@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		12075275C652A9404FC48EBC /* Pods_sphinx.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 487E10CEB3D07B0840A84681 /* Pods_sphinx.framework */; };
+		20AB4F9E1FAE42F4B1F33489 /* WorkspaceTasksViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E83B28E7233A4D0D9AE288E2 /* WorkspaceTasksViewController.swift */; };
 		470125C02373255C0013C57B /* TransactionMessage+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 470125BF2373255C0013C57B /* TransactionMessage+CoreDataProperties.swift */; };
 		4701460A2A3B3F3700A00DF8 /* MessageNoBubbleTableViewCell+DelegateExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 470146092A3B3F3700A00DF8 /* MessageNoBubbleTableViewCell+DelegateExtension.swift */; };
 		4701460C2A3B787300A00DF8 /* CommonNewMessageTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4701460B2A3B787300A00DF8 /* CommonNewMessageTableViewCell.swift */; };
@@ -500,8 +501,6 @@
 		47B9CBFF2F460C7B007527B4 /* Workspace.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47B9CBF92F460C7B007527B4 /* Workspace.swift */; };
 		47B9CC002F460C7B007527B4 /* WorkspaceTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47B9CBFB2F460C7B007527B4 /* WorkspaceTableViewCell.swift */; };
 		47B9CC012F460C7B007527B4 /* WorkspacesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47B9CBFA2F460C7B007527B4 /* WorkspacesViewController.swift */; };
-		47E34ED775B54D3F8EA5912D /* WorkspaceTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4732E34ED775B54D3F8EA591 /* WorkspaceTask.swift */; };
-		20AB4F9E1FAE42F4B1F33489 /* WorkspaceTasksViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E83B28E7233A4D0D9AE288E2 /* WorkspaceTasksViewController.swift */; };
 		47B9CC072F46291A007527B4 /* MediaPreloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47B9CC062F46291A007527B4 /* MediaPreloadManager.swift */; };
 		47BA317A2D15D8BB001AF7E5 /* ContactDetailsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47BA31792D15D8BB001AF7E5 /* ContactDetailsViewController.swift */; };
 		47BA317B2D355026001AF7E5 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEA6BC1F2C1794AD00494071 /* NetworkMonitor.swift */; };
@@ -566,6 +565,7 @@
 		47E300E4234B83EC00DB56DB /* AddFriendRowButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47E300E3234B83EC00DB56DB /* AddFriendRowButton.swift */; };
 		47E30E5E2E7C6A7A009D1F5A /* LoadingMoreMessagesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47E30E5D2E7C6A7A009D1F5A /* LoadingMoreMessagesView.swift */; };
 		47E30E632E7C74F5009D1F5A /* LoadingMoreMessagesView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 47E30E622E7C74F5009D1F5A /* LoadingMoreMessagesView.xib */; };
+		47E34ED775B54D3F8EA5912D /* WorkspaceTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4732E34ED775B54D3F8EA591 /* WorkspaceTask.swift */; };
 		47E6A4AC2A2E237400A9509E /* PodcastBoostView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47E6A4AB2A2E237400A9509E /* PodcastBoostView.swift */; };
 		47E6A4AE2A2E237F00A9509E /* PodcastBoostView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 47E6A4AD2A2E237F00A9509E /* PodcastBoostView.xib */; };
 		47E6A4B42A2E39BF00A9509E /* NewLinkPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47E6A4B32A2E39BF00A9509E /* NewLinkPreviewView.swift */; };
@@ -642,6 +642,7 @@
 		47FCE2C02CD903B6005DB8AF /* LiveKitCallViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47FCE2BF2CD903B6005DB8AF /* LiveKitCallViewController.swift */; };
 		47FDDB1C2562D77200BBF15F /* boost_animation.json in Resources */ = {isa = PBXBuildFile; fileRef = 47FDDB1B2562D77100BBF15F /* boost_animation.json */; };
 		47FE9A3E23C381A20090913F /* UITapGestureRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47FE9A3D23C381A20090913F /* UITapGestureRecognizer.swift */; };
+		731EF373B8FBD726748501FC /* WorkspaceTaskTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = E6E60B7E071F2F4E54B84E16 /* WorkspaceTaskTableViewCell.xib */; };
 		9344269DACF491E8A3F8651C /* Pods_SphinxNotificationExtensionService.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3867EC056CA5757264104904 /* Pods_SphinxNotificationExtensionService.framework */; };
 		9386C2892BB25C2200ABDEF3 /* AddTagsButtonCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9386C2882BB25C2200ABDEF3 /* AddTagsButtonCell.xib */; };
 		9386C28B2BB25EDC00ABDEF3 /* AddedTagsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9386C28A2BB25EDC00ABDEF3 /* AddedTagsView.swift */; };
@@ -766,6 +767,7 @@
 		CEF821D62963B68600CBB28F /* DiscoverTribesWebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF821D52963B68600CBB28F /* DiscoverTribesWebViewController.swift */; };
 		CEF88DD129B66B9200DC1C40 /* RecommendationItemWUnifiedViewCollectionViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF88DCF29B66B9200DC1C40 /* RecommendationItemWUnifiedViewCollectionViewCell.swift */; };
 		CEF88DD229B66B9200DC1C40 /* RecommendationItemWUnifiedViewCollectionViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = CEF88DD029B66B9200DC1C40 /* RecommendationItemWUnifiedViewCollectionViewCell.xib */; };
+		E63B82C04D5080098BD7DDBA /* WorkspaceTaskTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB71680A85C46EAF9E7DD25B /* WorkspaceTaskTableViewCell.swift */; };
 		F30884A72699123600CADDEB /* LeftMenuViewController+KarmaPurchaseUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = F30884A62699123600CADDEB /* LeftMenuViewController+KarmaPurchaseUtils.swift */; };
 		F30884A92699181200CADDEB /* API+KarmaPurchaseUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = F30884A82699181200CADDEB /* API+KarmaPurchaseUtils.swift */; };
 		F313024626BA62B300A1396E /* ChatsCollectionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F313024526BA62B200A1396E /* ChatsCollectionViewController.swift */; };
@@ -1267,6 +1269,7 @@
 		4730EF4A2CDA94E70014581F /* PublishOptionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublishOptionsView.swift; sourceTree = "<group>"; };
 		4730EF4C2CDA95B20014581F /* Participant+Helper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Participant+Helper.swift"; sourceTree = "<group>"; };
 		473258AB241BD700006E6602 /* CommonPaymentViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommonPaymentViewController.swift; sourceTree = "<group>"; };
+		4732E34ED775B54D3F8EA591 /* WorkspaceTask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceTask.swift; sourceTree = "<group>"; };
 		4733C7E423C4DF4C006A2C51 /* GroupContactsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupContactsViewController.swift; sourceTree = "<group>"; };
 		4733ED202CA4888E00078EF2 /* NewUnifiedEpisodeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewUnifiedEpisodeView.swift; sourceTree = "<group>"; };
 		4733ED222CA4889600078EF2 /* NewUnifiedEpisodeView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = NewUnifiedEpisodeView.xib; sourceTree = "<group>"; };
@@ -1732,8 +1735,6 @@
 		47B9CBF82F3D2D19007527B4 /* sphinx 57.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 57.xcdatamodel"; sourceTree = "<group>"; };
 		47B9CBF92F460C7B007527B4 /* Workspace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Workspace.swift; sourceTree = "<group>"; };
 		47B9CBFA2F460C7B007527B4 /* WorkspacesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspacesViewController.swift; sourceTree = "<group>"; };
-		E83B28E7233A4D0D9AE288E2 /* WorkspaceTasksViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceTasksViewController.swift; sourceTree = "<group>"; };
-		4732E34ED775B54D3F8EA591 /* WorkspaceTask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceTask.swift; sourceTree = "<group>"; };
 		47B9CBFB2F460C7B007527B4 /* WorkspaceTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceTableViewCell.swift; sourceTree = "<group>"; };
 		47B9CBFC2F460C7B007527B4 /* WorkspaceTableViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = WorkspaceTableViewCell.xib; sourceTree = "<group>"; };
 		47B9CC062F46291A007527B4 /* MediaPreloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaPreloadManager.swift; sourceTree = "<group>"; };
@@ -2070,6 +2071,9 @@
 		CEF821D52963B68600CBB28F /* DiscoverTribesWebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverTribesWebViewController.swift; sourceTree = "<group>"; };
 		CEF88DCF29B66B9200DC1C40 /* RecommendationItemWUnifiedViewCollectionViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendationItemWUnifiedViewCollectionViewCell.swift; sourceTree = "<group>"; };
 		CEF88DD029B66B9200DC1C40 /* RecommendationItemWUnifiedViewCollectionViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = RecommendationItemWUnifiedViewCollectionViewCell.xib; sourceTree = "<group>"; };
+		E6E60B7E071F2F4E54B84E16 /* WorkspaceTaskTableViewCell.xib */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = file.xib; path = WorkspaceTaskTableViewCell.xib; sourceTree = "<group>"; };
+		E83B28E7233A4D0D9AE288E2 /* WorkspaceTasksViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceTasksViewController.swift; sourceTree = "<group>"; };
+		EB71680A85C46EAF9E7DD25B /* WorkspaceTaskTableViewCell.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkspaceTaskTableViewCell.swift; sourceTree = "<group>"; };
 		F30884A62699123600CADDEB /* LeftMenuViewController+KarmaPurchaseUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LeftMenuViewController+KarmaPurchaseUtils.swift"; sourceTree = "<group>"; };
 		F30884A82699181200CADDEB /* API+KarmaPurchaseUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+KarmaPurchaseUtils.swift"; sourceTree = "<group>"; };
 		F313024526BA62B200A1396E /* ChatsCollectionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatsCollectionViewController.swift; sourceTree = "<group>"; };
@@ -3953,6 +3957,8 @@
 				E83B28E7233A4D0D9AE288E2 /* WorkspaceTasksViewController.swift */,
 				47B9CBFB2F460C7B007527B4 /* WorkspaceTableViewCell.swift */,
 				47B9CBFC2F460C7B007527B4 /* WorkspaceTableViewCell.xib */,
+				EB71680A85C46EAF9E7DD25B /* WorkspaceTaskTableViewCell.swift */,
+				E6E60B7E071F2F4E54B84E16 /* WorkspaceTaskTableViewCell.xib */,
 			);
 			path = Workspaces;
 			sourceTree = "<group>";
@@ -5228,6 +5234,7 @@
 				47E6A4AE2A2E237F00A9509E /* PodcastBoostView.xib in Resources */,
 				4797E7E424B8F7E100D13270 /* QRCodeDetail.storyboard in Resources */,
 				F3197C0C267FA2C200330F79 /* connecting.gif in Resources */,
+				731EF373B8FBD726748501FC /* WorkspaceTaskTableViewCell.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -5956,6 +5963,7 @@
 				F331199B268E375B005082EB /* NewUserSignupOptionsViewController.swift in Sources */,
 				47DAABCB24913E6E00EF38B0 /* SwipableReplyCell.swift in Sources */,
 				475BDCB7232AC1E800C5BBD6 /* PaymentInvoiceView.swift in Sources */,
+				E63B82C04D5080098BD7DDBA /* WorkspaceTaskTableViewCell.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

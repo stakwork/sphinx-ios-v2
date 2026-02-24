@@ -195,7 +195,7 @@ extension CustomSegmentedControl {
         selectorView = UIView(
             frame: CGRect(
                 x: selectorPosition,
-                y: self.frame.height,
+                y: self.frame.height - 2,
                 width: selectorWidth,
                 height: 2
             )

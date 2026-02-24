@@ -13,13 +13,12 @@ class WorkspaceTasksViewController: PopHandlerViewController {
     @IBOutlet weak var headerView: UIView!
     @IBOutlet weak var viewTitle: UILabel!
     @IBOutlet weak var segmentedControlContainer: UIView!
+    @IBOutlet weak var segmentedControl: CustomSegmentedControl!
     @IBOutlet weak var tableView: UITableView!
 
     private var workspace: Workspace!
     private var tasks: [WorkspaceTask] = []
     private var includeArchived = false
-
-    private lazy var segmentedControl = CustomSegmentedControl()
 
     private lazy var loadingWheel: UIActivityIndicatorView = {
         let iv = UIActivityIndicatorView(style: .medium)
@@ -48,7 +47,6 @@ class WorkspaceTasksViewController: PopHandlerViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .Sphinx.DashboardHeader
         setupHeader()
         setupSegmentedControl()
         setupTableView()
@@ -63,15 +61,7 @@ class WorkspaceTasksViewController: PopHandlerViewController {
         viewTitle.text = workspace.name.uppercased()
     }
 
-    private func setupSegmentedControl() {
-        segmentedControl.translatesAutoresizingMaskIntoConstraints = false
-        segmentedControlContainer.addSubview(segmentedControl)
-        NSLayoutConstraint.activate([
-            segmentedControl.topAnchor.constraint(equalTo: segmentedControlContainer.topAnchor),
-            segmentedControl.bottomAnchor.constraint(equalTo: segmentedControlContainer.bottomAnchor),
-            segmentedControl.leadingAnchor.constraint(equalTo: segmentedControlContainer.leadingAnchor),
-            segmentedControl.trailingAnchor.constraint(equalTo: segmentedControlContainer.trailingAnchor),
-        ])
+    private func setupSegmentedControl() {        
         segmentedControl.configureFromOutlet(
             buttonTitles: ["ACTIVE", "ARCHIVED"],
             initialIndex: 0,
@@ -82,9 +72,10 @@ class WorkspaceTasksViewController: PopHandlerViewController {
     private func setupTableView() {
         tableView.delegate = self
         tableView.dataSource = self
-        tableView.backgroundColor = .Sphinx.DashboardHeader
+        tableView.backgroundColor = .Sphinx.Body
         tableView.separatorStyle = .none
         tableView.rowHeight = 75
+        
         tableView.register(
             WorkspaceTaskTableViewCell.nib,
             forCellReuseIdentifier: WorkspaceTaskTableViewCell.reuseID
@@ -94,6 +85,7 @@ class WorkspaceTasksViewController: PopHandlerViewController {
     private func setupLoadingAndEmpty() {
         view.addSubview(loadingWheel)
         view.addSubview(emptyStateLabel)
+        
         NSLayoutConstraint.activate([
             loadingWheel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             loadingWheel.centerYAnchor.constraint(equalTo: view.centerYAnchor),

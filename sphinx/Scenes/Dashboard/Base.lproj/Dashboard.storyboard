@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="22155" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="23504" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
     <device id="retina6_1" orientation="portrait" appearance="dark"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="22131"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23506"/>
         <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
@@ -725,7 +725,7 @@
             <point key="canvasLocation" x="-6358" y="2638"/>
         </scene>
         <!--Workspace Tasks View Controller-->
-        <scene sceneID="wtv-sc-001">
+        <scene sceneID="wtv-scene-001">
             <objects>
                 <viewController storyboardIdentifier="WorkspaceTasksViewController" id="wtv-vc-001" customClass="WorkspaceTasksViewController" customModule="sphinx" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="wtv-vw-001">
@@ -733,21 +733,23 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="wtv-hv-001">
-                                <rect key="frame" x="0.0" y="0.0" width="414" height="50"/>
+                                <rect key="frame" x="0.0" y="48" width="414" height="50"/>
                                 <subviews>
-                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="wtv-bb-001">
-                                        <rect key="frame" x="8" y="13" width="24" height="24"/>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="0yl-wO-M3M">
+                                        <rect key="frame" x="0.0" y="8.5" width="50" height="33"/>
                                         <constraints>
-                                            <constraint firstAttribute="width" constant="24" id="wtv-bb-w"/>
-                                            <constraint firstAttribute="height" constant="24" id="wtv-bb-h"/>
+                                            <constraint firstAttribute="width" constant="50" id="Rd7-Ed-mxn"/>
                                         </constraints>
-                                        <state key="normal" title=""/>
+                                        <fontDescription key="fontDescription" name="MaterialIcons-Regular" family="Material Icons" pointSize="21"/>
+                                        <state key="normal" title="">
+                                            <color key="titleColor" name="WashedOutReceivedText"/>
+                                        </state>
                                         <connections>
-                                            <action selector="backButtonTouched" destination="wtv-vc-001" eventType="touchUpInside" id="wtv-bb-ac"/>
+                                            <action selector="backButtonTouched" destination="wtv-vc-001" eventType="touchUpInside" id="IRw-l2-zVa"/>
                                         </connections>
                                     </button>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="WORKSPACE" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="wtv-tl-001">
-                                        <rect key="frame" x="50" y="15" width="314" height="20"/>
+                                        <rect key="frame" x="50" y="16.5" width="314" height="17"/>
                                         <fontDescription key="fontDescription" type="system" weight="medium" pointSize="14"/>
                                         <color key="textColor" name="Text"/>
                                         <nil key="highlightedColor"/>
@@ -755,43 +757,54 @@
                                 </subviews>
                                 <color key="backgroundColor" name="Body"/>
                                 <constraints>
+                                    <constraint firstItem="0yl-wO-M3M" firstAttribute="centerY" secondItem="wtv-hv-001" secondAttribute="centerY" id="fJH-tB-haF"/>
+                                    <constraint firstItem="0yl-wO-M3M" firstAttribute="leading" secondItem="wtv-hv-001" secondAttribute="leading" id="jxT-UA-de6"/>
+                                    <constraint firstItem="wtv-tl-001" firstAttribute="centerX" secondItem="wtv-hv-001" secondAttribute="centerX" id="riX-eK-kKd"/>
                                     <constraint firstAttribute="height" constant="50" id="wtv-hv-h"/>
-                                    <constraint firstItem="wtv-bb-001" firstAttribute="leading" secondItem="wtv-hv-001" secondAttribute="leading" constant="8" id="wtv-bb-l"/>
-                                    <constraint firstItem="wtv-bb-001" firstAttribute="centerY" secondItem="wtv-hv-001" secondAttribute="centerY" id="wtv-bb-cy"/>
-                                    <constraint firstItem="wtv-tl-001" firstAttribute="leading" secondItem="wtv-bb-001" secondAttribute="trailing" constant="18" id="wtv-tl-l"/>
-                                    <constraint firstAttribute="trailing" secondItem="wtv-tl-001" secondAttribute="trailing" constant="50" id="wtv-tl-r"/>
                                     <constraint firstItem="wtv-tl-001" firstAttribute="centerY" secondItem="wtv-hv-001" secondAttribute="centerY" id="wtv-tl-cy"/>
+                                    <constraint firstAttribute="trailing" secondItem="wtv-tl-001" secondAttribute="trailing" constant="50" id="wtv-tl-r"/>
                                 </constraints>
                             </view>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="wtv-sc-001">
-                                <rect key="frame" x="0.0" y="50" width="414" height="50"/>
+                                <rect key="frame" x="0.0" y="98" width="414" height="50"/>
+                                <subviews>
+                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="gGK-8f-sNS" customClass="CustomSegmentedControl" customModule="sphinx" customModuleProvider="target">
+                                        <rect key="frame" x="0.0" y="0.0" width="414" height="50"/>
+                                        <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                    </view>
+                                </subviews>
                                 <color key="backgroundColor" name="DashboardHeader"/>
                                 <constraints>
+                                    <constraint firstAttribute="trailing" secondItem="gGK-8f-sNS" secondAttribute="trailing" id="DYL-8h-N45"/>
+                                    <constraint firstItem="gGK-8f-sNS" firstAttribute="top" secondItem="wtv-sc-001" secondAttribute="top" id="Fz2-HW-jit"/>
+                                    <constraint firstItem="gGK-8f-sNS" firstAttribute="leading" secondItem="wtv-sc-001" secondAttribute="leading" id="YdA-sT-dZP"/>
+                                    <constraint firstAttribute="bottom" secondItem="gGK-8f-sNS" secondAttribute="bottom" id="sck-If-x4Q"/>
                                     <constraint firstAttribute="height" constant="50" id="wtv-sc-h"/>
                                 </constraints>
                             </view>
                             <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="none" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="wtv-tv-001">
-                                <rect key="frame" x="0.0" y="100" width="414" height="762"/>
+                                <rect key="frame" x="0.0" y="148" width="414" height="714"/>
                                 <color key="backgroundColor" name="DashboardHeader"/>
                             </tableView>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="wtv-sa-001"/>
-                        <color key="backgroundColor" name="DashboardHeader"/>
+                        <color key="backgroundColor" name="Body"/>
                         <constraints>
-                            <constraint firstItem="wtv-hv-001" firstAttribute="top" secondItem="wtv-vw-001" secondAttribute="top" id="wtv-hv-t"/>
                             <constraint firstItem="wtv-hv-001" firstAttribute="leading" secondItem="wtv-sa-001" secondAttribute="leading" id="wtv-hv-l"/>
                             <constraint firstItem="wtv-hv-001" firstAttribute="trailing" secondItem="wtv-sa-001" secondAttribute="trailing" id="wtv-hv-r"/>
-                            <constraint firstItem="wtv-sc-001" firstAttribute="top" secondItem="wtv-hv-001" secondAttribute="bottom" id="wtv-sc-t"/>
+                            <constraint firstItem="wtv-hv-001" firstAttribute="top" secondItem="wtv-sa-001" secondAttribute="top" id="wtv-hv-t"/>
                             <constraint firstItem="wtv-sc-001" firstAttribute="leading" secondItem="wtv-sa-001" secondAttribute="leading" id="wtv-sc-l"/>
                             <constraint firstItem="wtv-sc-001" firstAttribute="trailing" secondItem="wtv-sa-001" secondAttribute="trailing" id="wtv-sc-r"/>
-                            <constraint firstItem="wtv-tv-001" firstAttribute="top" secondItem="wtv-sc-001" secondAttribute="bottom" id="wtv-tv-t"/>
+                            <constraint firstItem="wtv-sc-001" firstAttribute="top" secondItem="wtv-hv-001" secondAttribute="bottom" id="wtv-sc-t"/>
+                            <constraint firstItem="wtv-tv-001" firstAttribute="bottom" secondItem="wtv-sa-001" secondAttribute="bottom" id="wtv-tv-b"/>
                             <constraint firstItem="wtv-tv-001" firstAttribute="leading" secondItem="wtv-sa-001" secondAttribute="leading" id="wtv-tv-l"/>
                             <constraint firstItem="wtv-tv-001" firstAttribute="trailing" secondItem="wtv-sa-001" secondAttribute="trailing" id="wtv-tv-r"/>
-                            <constraint firstItem="wtv-tv-001" firstAttribute="bottom" secondItem="wtv-sa-001" secondAttribute="bottom" id="wtv-tv-b"/>
+                            <constraint firstItem="wtv-tv-001" firstAttribute="top" secondItem="wtv-sc-001" secondAttribute="bottom" id="wtv-tv-t"/>
                         </constraints>
                     </view>
                     <connections>
                         <outlet property="headerView" destination="wtv-hv-001" id="wtv-hv-out"/>
+                        <outlet property="segmentedControl" destination="gGK-8f-sNS" id="bil-IQ-PKM"/>
                         <outlet property="segmentedControlContainer" destination="wtv-sc-001" id="wtv-sc-out"/>
                         <outlet property="tableView" destination="wtv-tv-001" id="wtv-tv-out"/>
                         <outlet property="viewTitle" destination="wtv-tl-001" id="wtv-tl-out"/>
@@ -840,6 +853,9 @@
         </namedColor>
         <namedColor name="Text">
             <color red="0.23529411764705882" green="0.24705882352941178" blue="0.25490196078431371" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+        <namedColor name="WashedOutReceivedText">
+            <color red="0.69019607843137254" green="0.71764705882352942" blue="0.73725490196078436" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
