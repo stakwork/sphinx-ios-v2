@@ -57,7 +57,7 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
     func configure(with task: WorkspaceTask, isLastRow: Bool) {
         titleLabel.text = task.title
         repositoryLabel.text = task.repositoryName
-        updatedAtLabel.text = task.updatedAt
+        updatedAtLabel.text = formatDate(task.updatedAt)
         separatorView.isHidden = isLastRow
 
         statusBadge.text = "  \(task.status)  "
@@ -66,11 +66,34 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         priorityBadge.text = "  \(task.priority)  "
         priorityBadge.backgroundColor = priorityColor(for: task.priority)
     }
+    
+    private func formatDate(_ dateString: String?) -> String {
+        guard let dateString = dateString else { return "" }
+        
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        
+        if let date = isoFormatter.date(from: dateString) {
+            let displayFormatter = DateFormatter()
+            displayFormatter.dateFormat = "MMM dd, yyyy"
+            return displayFormatter.string(from: date)
+        }
+        
+        // Fallback: try without fractional seconds
+        isoFormatter.formatOptions = [.withInternetDateTime]
+        if let date = isoFormatter.date(from: dateString) {
+            let displayFormatter = DateFormatter()
+            displayFormatter.dateFormat = "MMM dd, yyyy"
+            return displayFormatter.string(from: date)
+        }
+        
+        return dateString
+    }
 
     private func statusColor(for status: String) -> UIColor {
         switch status {
         case "DONE":
-            return .systemGreen
+            return .Sphinx.PrimaryGreen
         case "IN_PROGRESS":
             return .Sphinx.PrimaryBlue
         case "BLOCKED":
