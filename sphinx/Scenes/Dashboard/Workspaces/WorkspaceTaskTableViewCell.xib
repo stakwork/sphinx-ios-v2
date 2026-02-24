@@ -71,7 +71,7 @@
                         </constraints>
                     </view>
                 </subviews>
-                <color key="backgroundColor" name="Body"/>
+                <color key="backgroundColor" name="HeaderBG"/>
                 <constraints>
                     <constraint firstItem="sep-view-01" firstAttribute="top" secondItem="repo-lbl-01" secondAttribute="bottom" constant="12" id="0Qw-aZ-bza"/>
                     <constraint firstItem="priority-badge-01" firstAttribute="top" secondItem="status-badge-01" secondAttribute="bottom" constant="8" id="priority-top-01"/>
@@ -102,11 +102,11 @@
         </tableViewCell>
     </objects>
     <resources>
-        <namedColor name="Body">
-            <color red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-        </namedColor>
         <namedColor name="Divider">
             <color red="0.86274509803921573" green="0.8784313725490196" blue="0.8901960784313725" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+        <namedColor name="HeaderBG">
+            <color red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>
         <namedColor name="SecondaryText">
             <color red="0.55686274509803924" green="0.58823529411764708" blue="0.61176470588235299" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>

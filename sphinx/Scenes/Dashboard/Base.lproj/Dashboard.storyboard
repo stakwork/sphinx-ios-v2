@@ -773,7 +773,7 @@
                                         <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                     </view>
                                 </subviews>
-                                <color key="backgroundColor" name="DashboardHeader"/>
+                                <color key="backgroundColor" name="Body"/>
                                 <constraints>
                                     <constraint firstAttribute="trailing" secondItem="gGK-8f-sNS" secondAttribute="trailing" id="DYL-8h-N45"/>
                                     <constraint firstItem="gGK-8f-sNS" firstAttribute="top" secondItem="wtv-sc-001" secondAttribute="top" id="Fz2-HW-jit"/>

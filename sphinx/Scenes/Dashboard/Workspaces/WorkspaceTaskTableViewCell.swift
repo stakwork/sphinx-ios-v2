@@ -49,7 +49,7 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
             $0?.textAlignment = .center
         }
 
-        separatorView.backgroundColor = .Sphinx.HeaderBG
+        separatorView.backgroundColor = .Sphinx.Divider
     }
 
     func configure(with task: WorkspaceTask, isLastRow: Bool) {
