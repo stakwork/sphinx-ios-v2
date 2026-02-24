@@ -92,8 +92,8 @@ class SphinxOnionManager : NSObject {
     var appSessionPin : String? = nil
     var defaultInitialSignupPin : String = "111111"
     
-    public static let kContactsBatchSize = 150
-    public static let kMessageBatchSize = 150
+    public static let kContactsBatchSize = 100
+    public static let kMessageBatchSize = 100
 
     public static let kCompleteStatus = "COMPLETE"
     public static let kFailedStatus = "FAILED"
@@ -424,27 +424,30 @@ class SphinxOnionManager : NSObject {
     }
     
     func startNewMsgsSync() {
-        // Run these operations in parallel for faster sync
-        let syncGroup = DispatchGroup()
-        let syncQueue = DispatchQueue(label: "com.sphinx.newMsgsSync", attributes: .concurrent)
-
-        syncGroup.enter()
-        syncQueue.async {
-            self.getReads()
-            syncGroup.leave()
-        }
-
-        syncGroup.enter()
-        syncQueue.async {
-            self.getMuteLevels()
-            syncGroup.leave()
-        }
-
-        syncGroup.enter()
-        syncQueue.async {
-            self.syncNewMessages()
-            syncGroup.leave()
-        }
+        self.syncNewMessages()
+        self.getReads()
+        self.getMuteLevels()
+//        // Run these operations in parallel for faster sync
+//        let syncGroup = DispatchGroup()
+//        let syncQueue = DispatchQueue(label: "com.sphinx.newMsgsSync", attributes: .concurrent)
+//
+//        syncGroup.enter()
+//        syncQueue.async {
+//            self.getReads()
+//            syncGroup.leave()
+//        }
+//
+//        syncGroup.enter()
+//        syncQueue.async {
+//            self.getMuteLevels()
+//            syncGroup.leave()
+//        }
+//
+//        syncGroup.enter()
+//        syncQueue.async {
+//            self.syncNewMessages()
+//            syncGroup.leave()
+//        }
     }
     
     func syncNewMessages() {

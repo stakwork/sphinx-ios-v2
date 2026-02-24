@@ -144,6 +144,11 @@ internal enum StoryboardScene {
             identifier: "WorkspacesViewController"
         )
 
+        internal static let workspaceTasksViewController = SceneType<WorkspaceTasksViewController>(
+            storyboard: Dashboard.self,
+            identifier: "WorkspaceTasksViewController"
+        )
+
     }
     
     internal enum LeftMenu: StoryboardType {

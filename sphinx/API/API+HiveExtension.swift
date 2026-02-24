@@ -154,19 +154,43 @@ extension API {
         callback: @escaping HiveTasksCallback,
         errorCallback: @escaping EmptyCallback
     ) {
-        var urlString = "\(API.kHiveBaseUrl)/tasks?workspaceId=\(workspaceId)&limit=100"
+        // URL-encode the workspaceId to handle special characters
+        guard let encodedWorkspaceId = workspaceId.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
+            errorCallback()
+            return
+        }
+
+        var urlString = "\(API.kHiveBaseUrl)/tasks?workspaceId=\(encodedWorkspaceId)&limit=100"
         if includeArchived { urlString += "&includeArchived=true" }
+
         guard let request = createRequest(urlString, bodyParams: nil, method: "GET", token: authToken) else {
             errorCallback()
             return
         }
+
         session()?.request(request).responseData { response in
+            // Check HTTP status code for unauthorized
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                print("[HiveAPI] Tasks fetch unauthorized (401) - token may be expired")
+                errorCallback()
+                return
+            }
+
             switch response.result {
             case .success(let data):
                 let json = JSON(data)
+
+                // Check if the response contains an error
+                if let error = json["error"].string {
+                    print("[HiveAPI] Tasks fetch error: \(error)")
+                    errorCallback()
+                    return
+                }
+
                 let tasks: [WorkspaceTask] = (json["data"].array ?? []).compactMap { WorkspaceTask(json: $0) }
                 callback(tasks)
-            case .failure:
+            case .failure(let error):
+                print("[HiveAPI] Tasks fetch failed: \(error.localizedDescription)")
                 errorCallback()
             }
         }

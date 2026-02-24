@@ -19,4 +19,6 @@ protocol DashboardChatsListDelegate: AnyObject {
     )
     
     func shouldGetChatsContainerYOffset() -> CGFloat
+    
+    func didSelectWorkspace(_ workspace: Workspace)
 }

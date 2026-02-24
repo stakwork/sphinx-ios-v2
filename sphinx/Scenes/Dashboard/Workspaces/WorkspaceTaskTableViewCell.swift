@@ -17,7 +17,6 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
     }
 
     @IBOutlet weak var titleLabel: UILabel!
-    @IBOutlet weak var descriptionLabel: UILabel!
     @IBOutlet weak var repositoryLabel: UILabel!
     @IBOutlet weak var updatedAtLabel: UILabel!
     @IBOutlet weak var statusBadge: UILabel!
@@ -30,16 +29,11 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
     }
 
     private func setupCell() {
-        backgroundColor = .Sphinx.DashboardHeader
-        contentView.backgroundColor = .Sphinx.DashboardHeader
         selectionStyle = .none
 
         titleLabel.textColor = .Sphinx.Text
         titleLabel.font = UIFont.systemFont(ofSize: 16, weight: .medium)
-
-        descriptionLabel.textColor = .Sphinx.SecondaryText
-        descriptionLabel.font = UIFont(name: "Roboto-Regular", size: 13)
-        descriptionLabel.numberOfLines = 2
+        titleLabel.numberOfLines = 2
 
         repositoryLabel.textColor = .Sphinx.SecondaryText
         repositoryLabel.font = UIFont(name: "Roboto-Regular", size: 13)
@@ -48,34 +42,56 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         updatedAtLabel.font = UIFont(name: "Roboto-Regular", size: 13)
 
         [statusBadge, priorityBadge].forEach {
-            $0?.layer.cornerRadius = 8
+            $0?.layer.cornerRadius = 10
             $0?.clipsToBounds = true
             $0?.textColor = .white
-            $0?.font = UIFont(name: "Roboto-Regular", size: 11)
+            $0?.font = UIFont(name: "Roboto-Medium", size: 11)
             $0?.textAlignment = .center
         }
 
-        separatorView.backgroundColor = .Sphinx.Divider
+        separatorView.backgroundColor = .Sphinx.HeaderBG
     }
 
     func configure(with task: WorkspaceTask, isLastRow: Bool) {
         titleLabel.text = task.title
-        descriptionLabel.text = task.description
         repositoryLabel.text = task.repositoryName
-        updatedAtLabel.text = task.updatedAt
+        updatedAtLabel.text = formatDate(task.updatedAt)
         separatorView.isHidden = isLastRow
 
-        statusBadge.text = " \(task.status) "
+        statusBadge.text = "  \(task.status)  "
         statusBadge.backgroundColor = statusColor(for: task.status)
 
-        priorityBadge.text = " \(task.priority) "
+        priorityBadge.text = "  \(task.priority)  "
         priorityBadge.backgroundColor = priorityColor(for: task.priority)
+    }
+    
+    private func formatDate(_ dateString: String?) -> String {
+        guard let dateString = dateString else { return "" }
+        
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        
+        if let date = isoFormatter.date(from: dateString) {
+            let displayFormatter = DateFormatter()
+            displayFormatter.dateFormat = "MMM dd, yyyy"
+            return displayFormatter.string(from: date)
+        }
+        
+        // Fallback: try without fractional seconds
+        isoFormatter.formatOptions = [.withInternetDateTime]
+        if let date = isoFormatter.date(from: dateString) {
+            let displayFormatter = DateFormatter()
+            displayFormatter.dateFormat = "MMM dd, yyyy"
+            return displayFormatter.string(from: date)
+        }
+        
+        return dateString
     }
 
     private func statusColor(for status: String) -> UIColor {
         switch status {
         case "DONE":
-            return .systemGreen
+            return .Sphinx.PrimaryGreen
         case "IN_PROGRESS":
             return .Sphinx.PrimaryBlue
         case "BLOCKED":
