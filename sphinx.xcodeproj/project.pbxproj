@@ -501,8 +501,8 @@
 		47B9CBFF2F460C7B007527B4 /* Workspace.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47B9CBF92F460C7B007527B4 /* Workspace.swift */; };
 		47B9CC002F460C7B007527B4 /* WorkspaceTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47B9CBFB2F460C7B007527B4 /* WorkspaceTableViewCell.swift */; };
 		47B9CC012F460C7B007527B4 /* WorkspacesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47B9CBFA2F460C7B007527B4 /* WorkspacesViewController.swift */; };
-		47B9CC0A2F4E0C7B007527B4 /* HiveConfigurationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47B9CC092F4E0C7B007527B4 /* HiveConfigurationViewController.swift */; };
 		47B9CC072F46291A007527B4 /* MediaPreloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47B9CC062F46291A007527B4 /* MediaPreloadManager.swift */; };
+		47B9CC0A2F4E0C7B007527B4 /* HiveConfigurationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47B9CC092F4E0C7B007527B4 /* HiveConfigurationViewController.swift */; };
 		47BA317A2D15D8BB001AF7E5 /* ContactDetailsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47BA31792D15D8BB001AF7E5 /* ContactDetailsViewController.swift */; };
 		47BA317B2D355026001AF7E5 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEA6BC1F2C1794AD00494071 /* NetworkMonitor.swift */; };
 		47BA317C2D3550BD001AF7E5 /* Notification.Name.swift in Sources */ = {isa = PBXBuildFile; fileRef = 470F5CAA243E7D27007E054F /* Notification.Name.swift */; };
@@ -1738,8 +1738,8 @@
 		47B9CBFA2F460C7B007527B4 /* WorkspacesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspacesViewController.swift; sourceTree = "<group>"; };
 		47B9CBFB2F460C7B007527B4 /* WorkspaceTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceTableViewCell.swift; sourceTree = "<group>"; };
 		47B9CBFC2F460C7B007527B4 /* WorkspaceTableViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = WorkspaceTableViewCell.xib; sourceTree = "<group>"; };
-		47B9CC092F4E0C7B007527B4 /* HiveConfigurationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveConfigurationViewController.swift; sourceTree = "<group>"; };
 		47B9CC062F46291A007527B4 /* MediaPreloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaPreloadManager.swift; sourceTree = "<group>"; };
+		47B9CC092F4E0C7B007527B4 /* HiveConfigurationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveConfigurationViewController.swift; sourceTree = "<group>"; };
 		47BA31792D15D8BB001AF7E5 /* ContactDetailsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactDetailsViewController.swift; sourceTree = "<group>"; };
 		47BA7A9024118F6B0001773F /* CustomSwiftLinkPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomSwiftLinkPreview.swift; sourceTree = "<group>"; };
 		47BACB1A2D63AD52006A4879 /* TimezoneSharingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimezoneSharingView.swift; sourceTree = "<group>"; };
@@ -6881,7 +6881,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sphinx/sphinx.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 244;
+				CURRENT_PROJECT_VERSION = 245;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 8297M44YTW;
 				ENABLE_BITCODE = NO;
@@ -6971,7 +6971,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sphinx/sphinx.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 244;
+				CURRENT_PROJECT_VERSION = 245;
 				DEVELOPMENT_TEAM = 8297M44YTW;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
