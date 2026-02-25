@@ -17,13 +17,13 @@
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Workspace Name" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Ufb-sT-7Zy">
-                        <rect key="frame" x="16" y="18" width="261" height="20"/>
+                        <rect key="frame" x="68" y="18" width="209" height="20"/>
                         <fontDescription key="fontDescription" type="system" weight="medium" pointSize="16"/>
                         <color key="textColor" name="Text"/>
                         <nil key="highlightedColor"/>
                     </label>
                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Owner" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="role-lbl-01">
-                        <rect key="frame" x="16" y="42" width="261" height="16"/>
+                        <rect key="frame" x="68" y="42" width="209" height="16"/>
                         <fontDescription key="fontDescription" type="system" pointSize="13"/>
                         <color key="textColor" name="SecondaryText"/>
                         <nil key="highlightedColor"/>
@@ -43,10 +43,10 @@
                     </view>
                 </subviews>
                 <constraints>
-                    <constraint firstItem="Ufb-sT-7Zy" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leading" constant="16" id="lbl-lead-01"/>
+                    <constraint firstItem="Ufb-sT-7Zy" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leading" constant="68" id="lbl-lead-01"/>
                     <constraint firstItem="Ufb-sT-7Zy" firstAttribute="trailing" secondItem="members-lbl-01" secondAttribute="leading" constant="-8" id="lbl-trail-01"/>
                     <constraint firstItem="Ufb-sT-7Zy" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" constant="18" id="lbl-top-01"/>
-                    <constraint firstItem="role-lbl-01" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leading" constant="16" id="role-lead-01"/>
+                    <constraint firstItem="role-lbl-01" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leading" constant="68" id="role-lead-01"/>
                     <constraint firstItem="role-lbl-01" firstAttribute="trailing" secondItem="members-lbl-01" secondAttribute="leading" constant="-8" id="role-trail-01"/>
                     <constraint firstItem="role-lbl-01" firstAttribute="top" secondItem="Ufb-sT-7Zy" secondAttribute="bottom" constant="4" id="role-top-01"/>
                     <constraint firstAttribute="trailing" secondItem="members-lbl-01" secondAttribute="trailing" constant="16" id="members-trail-01"/>

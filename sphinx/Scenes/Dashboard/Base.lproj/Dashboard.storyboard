@@ -98,6 +98,18 @@
                                         <color key="textColor" name="MainBottomIcons"/>
                                         <nil key="highlightedColor"/>
                                     </label>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="wks-set-btn">
+                                        <rect key="frame" x="414" y="16" width="44" height="44"/>
+                                        <color key="backgroundColor" name="ReceivedMsgBG"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="44" id="wks-wid-001"/>
+                                            <constraint firstAttribute="height" constant="44" id="wks-hgt-001"/>
+                                        </constraints>
+                                        <state key="normal" image="gearshape.fill" catalog="system"/>
+                                        <connections>
+                                            <action selector="didTapWorkspaceSettingsButton" destination="28a-MN-hzt" eventType="touchUpInside" id="wks-act-001"/>
+                                        </connections>
+                                    </button>
                                 </subviews>
                                 <color key="backgroundColor" name="DashboardHeader"/>
                                 <constraints>
@@ -108,10 +120,12 @@
                                     <constraint firstItem="52N-Az-4on" firstAttribute="leading" secondItem="Yxo-is-Yxg" secondAttribute="leading" constant="16" id="JK9-te-pp2"/>
                                     <constraint firstItem="vfi-ch-n2c" firstAttribute="bottom" secondItem="52N-Az-4on" secondAttribute="bottom" id="OWx-7K-jgE"/>
                                     <constraint firstItem="vfi-ch-n2c" firstAttribute="top" secondItem="52N-Az-4on" secondAttribute="top" id="RvB-6E-hAr"/>
-                                    <constraint firstItem="vfi-ch-n2c" firstAttribute="leading" secondItem="52N-Az-4on" secondAttribute="trailing" constant="15" id="WkA-cH-VWC"/>
+                                    <constraint firstAttribute="trailing" secondItem="52N-Az-4on" secondAttribute="trailing" constant="16" id="searchBar-trail-001"/>
                                     <constraint firstItem="3p2-Mz-7oz" firstAttribute="height" secondItem="vfi-ch-n2c" secondAttribute="height" multiplier="0.477273" id="cnc-qt-Pie"/>
                                     <constraint firstItem="52N-Az-4on" firstAttribute="top" secondItem="Yxo-is-Yxg" secondAttribute="top" constant="16" id="lJj-Qu-n2t"/>
                                     <constraint firstItem="3p2-Mz-7oz" firstAttribute="centerY" secondItem="vfi-ch-n2c" secondAttribute="centerY" id="p6w-0c-DT2"/>
+                                    <constraint firstAttribute="trailing" secondItem="wks-set-btn" secondAttribute="trailing" constant="-60" id="wks-trail-001"/>
+                                    <constraint firstItem="wks-set-btn" firstAttribute="centerY" secondItem="52N-Az-4on" secondAttribute="centerY" id="wks-centy-001"/>
                                 </constraints>
                             </view>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="875-dS-sJM" customClass="CustomSegmentedControl" customModule="sphinx" customModuleProvider="target">
@@ -250,6 +264,8 @@
                         <outlet property="addTribeButton" destination="vfi-ch-n2c" id="CAi-3q-XqF"/>
                         <outlet property="addTribeIconLabel" destination="3p2-Mz-7oz" id="6oh-1U-lIa"/>
                         <outlet property="addTribeTrailing" destination="E6K-br-Tql" id="Ygp-yP-aJG"/>
+                        <outlet property="workspaceSettingsButton" destination="wks-set-btn" id="wks-out-001"/>
+                        <outlet property="workspaceSettingsTrailing" destination="wks-trail-001" id="wks-out-002"/>
                         <outlet property="bottomBar" destination="U1o-Ky-NBS" id="UxE-QJ-Uwb"/>
                         <outlet property="bottomBarBottomConstraint" destination="Fri-9I-0El" id="60y-7V-V80"/>
                         <outlet property="bottomBarContainer" destination="4KI-Xy-2nt" id="kAP-kX-3sc"/>
@@ -261,6 +277,7 @@
                         <outlet property="restoreProgressView" destination="SpQ-1c-t1N" id="AoU-hB-n7m"/>
                         <outlet property="searchBar" destination="52N-Az-4on" id="tUt-tA-AbQ"/>
                         <outlet property="searchBarContainer" destination="Yxo-is-Yxg" id="jGg-w4-PSq"/>
+                        <outlet property="searchBarTrailing" destination="searchBar-trail-001" id="sbt-out-001"/>
                         <outlet property="searchTextField" destination="ef7-It-4Rs" id="JSC-Ke-GdI"/>
                     </connections>
                 </viewController>

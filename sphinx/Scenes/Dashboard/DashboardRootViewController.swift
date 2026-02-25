@@ -20,11 +20,15 @@ class DashboardRootViewController: RootViewController {
     @IBOutlet weak var searchBar: UIView!
     @IBOutlet weak var searchTextField: ClearNonActiveTextField!
     @IBOutlet weak var searchBarContainer: UIView!
+    @IBOutlet weak var searchBarTrailing: NSLayoutConstraint!
     @IBOutlet weak var mainContentContainerView: UIView!
     @IBOutlet weak var restoreProgressView: RestoreProgressView!
     @IBOutlet weak var addTribeTrailing: NSLayoutConstraint!
     @IBOutlet weak var addTribeButton: UIButton!
     @IBOutlet weak var addTribeIconLabel: UILabel!
+
+    @IBOutlet weak var workspaceSettingsTrailing: NSLayoutConstraint!
+    @IBOutlet weak var workspaceSettingsButton: UIButton!
     
     @IBOutlet weak var bottomBarBottomConstraint: NSLayoutConstraint!
     
@@ -104,20 +108,28 @@ class DashboardRootViewController: RootViewController {
     internal var activeTab: DashboardTab = .friends {
         didSet {
             let newViewController = mainContentViewController(forActiveTab: activeTab)
-            
+
             addChildVC(
                 child: newViewController,
                 container: mainContentContainerView
             )
-            
+
             feedViewMode = .rootList
-            
+
             if (activeTab == .tribes) {
                 addTribeTrailing.constant = 16
+                workspaceSettingsTrailing.constant = -60
+                searchBarTrailing.constant = 135 + 16  // ADD TRIBE button width (120) + gap (15) + trailing (16)
+            } else if (activeTab == .workspaces) {
+                addTribeTrailing.constant = -120
+                workspaceSettingsTrailing.constant = 16
+                searchBarTrailing.constant = 44 + 12 + 16  // Settings button width (44) + gap (12) + trailing (16)
             } else {
                 addTribeTrailing.constant = -120
+                workspaceSettingsTrailing.constant = -60
+                searchBarTrailing.constant = 16  // Just margin
             }
-            
+
             UIView.animate(withDuration: 0.10) {
                 self.searchBarContainer.layoutIfNeeded()
             }
@@ -253,11 +265,24 @@ extension DashboardRootViewController {
     func setupAddTribeButton() {
         addTribeButton.layer.cornerRadius = 22.0
         addTribeButton.clipsToBounds = true
+
+        workspaceSettingsButton.layer.cornerRadius = 22.0
+        workspaceSettingsButton.clipsToBounds = true
+        workspaceSettingsButton.tintColor = UIColor.Sphinx.MainBottomIcons
+
+        let config = UIImage.SymbolConfiguration(pointSize: 18, weight: .medium)
+        let gearImage = UIImage(systemName: "gearshape.fill", withConfiguration: config)
+        workspaceSettingsButton.setImage(gearImage, for: .normal)
     }
-    
+
     @IBAction func didTapAddTribeButton() {
         let discoverVC = DiscoverTribesWebViewController.instantiate()
         navigationController?.pushViewController(discoverVC, animated: true)
+    }
+
+    @IBAction func didTapWorkspaceSettingsButton() {
+        let hiveConfigVC = HiveConfigurationViewController.instantiate()
+        present(hiveConfigVC, animated: true)
     }
     
     func setupPlayerBar() {
