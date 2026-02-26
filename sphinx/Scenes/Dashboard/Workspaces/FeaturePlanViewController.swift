@@ -183,16 +183,18 @@ class FeaturePlanViewController: UIViewController {
         chatInputTextView.backgroundColor = UIColor.Sphinx.Body
         chatInputTextView.textColor = UIColor.Sphinx.Text
         chatInputTextView.font = UIFont(name: "Roboto-Regular", size: 16)
-        chatInputTextView.layer.cornerRadius = 8
-        chatInputTextView.textContainerInset = UIEdgeInsets(top: 8, left: 8, bottom: 8, right: 8)
+        chatInputTextView.layer.cornerRadius = 20
+        chatInputTextView.layer.borderWidth = 1
+        chatInputTextView.layer.borderColor = UIColor.Sphinx.LightDivider.cgColor
+        chatInputTextView.textContainerInset = UIEdgeInsets(top: 10, left: 12, bottom: 10, right: 12)
         chatInputContainer.addSubview(chatInputTextView)
         
         // Send Button
         sendButton = UIButton()
         sendButton.translatesAutoresizingMaskIntoConstraints = false
-        sendButton.setTitle("SEND", for: .normal)
+        sendButton.setTitle("➤", for: .normal)
         sendButton.setTitleColor(.white, for: .normal)
-        sendButton.titleLabel?.font = UIFont(name: "Roboto-Medium", size: 14)
+        sendButton.titleLabel?.font = UIFont.systemFont(ofSize: 18, weight: .medium)
         sendButton.backgroundColor = UIColor.Sphinx.PrimaryBlue
         sendButton.layer.cornerRadius = 20
         sendButton.addTarget(self, action: #selector(sendButtonTouched), for: .touchUpInside)

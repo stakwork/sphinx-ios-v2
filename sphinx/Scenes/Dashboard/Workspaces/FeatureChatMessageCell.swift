@@ -14,7 +14,8 @@ class FeatureChatMessageCell: UITableViewCell {
     private let bubbleView: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.layer.cornerRadius = 12
+        view.layer.cornerRadius = 18
+        view.clipsToBounds = true
         return view
     }()
     
@@ -86,9 +87,10 @@ class FeatureChatMessageCell: UITableViewCell {
         }
         
         if message.role == "user" {
-            // User message: right-aligned, blue background, white text
-            bubbleView.backgroundColor = UIColor.Sphinx.PrimaryBlue
-            messageLabel.textColor = .white
+            // User message: right-aligned, sent message styling
+            bubbleView.backgroundColor = UIColor.Sphinx.SentMsgBG
+            messageLabel.textColor = UIColor.Sphinx.TextMessages
+            timestampLabel.textColor = UIColor.Sphinx.SecondaryTextSent
             
             bubbleLeadingConstraint.isActive = false
             bubbleTrailingConstraint.isActive = true
@@ -96,9 +98,10 @@ class FeatureChatMessageCell: UITableViewCell {
             timestampLabel.textAlignment = .right
             timestampLabel.trailingAnchor.constraint(equalTo: bubbleView.trailingAnchor).isActive = true
         } else {
-            // Assistant message: left-aligned, gray background, text color
-            bubbleView.backgroundColor = UIColor.Sphinx.HeaderBG
-            messageLabel.textColor = UIColor.Sphinx.Text
+            // Assistant message: left-aligned, received message styling
+            bubbleView.backgroundColor = UIColor.Sphinx.ReceivedMsgBG
+            messageLabel.textColor = UIColor.Sphinx.TextMessages
+            timestampLabel.textColor = UIColor.Sphinx.SecondaryText
             
             bubbleTrailingConstraint.isActive = false
             bubbleLeadingConstraint.isActive = true
