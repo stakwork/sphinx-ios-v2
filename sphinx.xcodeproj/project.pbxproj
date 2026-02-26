@@ -883,6 +883,11 @@
 		F3E9C02026FB76A100718942 /* DashboardFeedsEmptyStateViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3E9C01E26FB76A100718942 /* DashboardFeedsEmptyStateViewController.swift */; };
 		F3EF52C526B2823700F06668 /* FeedFilterChipsCollectionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3EF52C426B2823700F06668 /* FeedFilterChipsCollectionViewController.swift */; };
 		F3EF52C726B28DBE00F06668 /* PodcastFeedCollectionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3EF52C626B28DBD00F06668 /* PodcastFeedCollectionViewController.swift */; };
+		D2789CFCCA3E453295F15A2E /* HiveFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44EC6EC0EE1C4D6B8B5FADB2 /* HiveFeature.swift */; };
+		A748D979E2F14560BF39E4A7 /* HiveChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8ABF62A347844ECEB2FC60A4 /* HiveChatMessage.swift */; };
+		8C7BF32FE7754411BC77D39D /* HiveFeatureMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2BA36BB571A4DCAA10EAFBB /* HiveFeatureMocks.swift */; };
+		8A76E71FD2044567BAC32D0D /* HiveFeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B5504520C1B4722A0EBFA00 /* HiveFeatureTests.swift */; };
+		5010E69969BC4B008CB1B8DB /* HiveChatMessageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F4B101D1E0946E1A2ED0FCA /* HiveChatMessageTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -2199,6 +2204,11 @@
 		F3EF52C626B28DBD00F06668 /* PodcastFeedCollectionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastFeedCollectionViewController.swift; sourceTree = "<group>"; };
 		FDF1E0A8EFE1D98BD5A99505 /* Pods-sphinx.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-sphinx.release.xcconfig"; path = "Target Support Files/Pods-sphinx/Pods-sphinx.release.xcconfig"; sourceTree = "<group>"; };
 		FED99A42AA0C9CE8FD759E82 /* Pods-sphinx.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-sphinx.debug.xcconfig"; path = "Target Support Files/Pods-sphinx/Pods-sphinx.debug.xcconfig"; sourceTree = "<group>"; };
+		44EC6EC0EE1C4D6B8B5FADB2 /* HiveFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveFeature.swift; sourceTree = "<group>"; };
+		8ABF62A347844ECEB2FC60A4 /* HiveChatMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveChatMessage.swift; sourceTree = "<group>"; };
+		E2BA36BB571A4DCAA10EAFBB /* HiveFeatureMocks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveFeatureMocks.swift; sourceTree = "<group>"; };
+		9B5504520C1B4722A0EBFA00 /* HiveFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveFeatureTests.swift; sourceTree = "<group>"; };
+		9F4B101D1E0946E1A2ED0FCA /* HiveChatMessageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveChatMessageTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -3530,6 +3540,8 @@
 		4779F178232AA0F300D35E81 /* sphinxTests */ = {
 			isa = PBXGroup;
 			children = (
+				9B5504520C1B4722A0EBFA00 /* HiveFeatureTests.swift */,
+				9F4B101D1E0946E1A2ED0FCA /* HiveChatMessageTests.swift */,
 				4779F179232AA0F300D35E81 /* sphinxOnionAddContactTests.swift */,
 				CE8161382B21124D00600C81 /* sphinxOnionPlaintextMessagesTests.swift */,
 				CE167B562B0BAF6A00A9238E /* sphinxOnionAccountCreateUnitTests.swift */,
@@ -3955,6 +3967,8 @@
 			children = (
 				47B9CBF92F460C7B007527B4 /* Workspace.swift */,
 				4732E34ED775B54D3F8EA591 /* WorkspaceTask.swift */,
+				44EC6EC0EE1C4D6B8B5FADB2 /* HiveFeature.swift */,
+				8ABF62A347844ECEB2FC60A4 /* HiveChatMessage.swift */,
 				47B9CBFA2F460C7B007527B4 /* WorkspacesViewController.swift */,
 				E83B28E7233A4D0D9AE288E2 /* WorkspaceTasksViewController.swift */,
 				47B9CBFB2F460C7B007527B4 /* WorkspaceTableViewCell.swift */,
@@ -5334,6 +5348,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D2789CFCCA3E453295F15A2E /* HiveFeature.swift in Sources */,
+				A748D979E2F14560BF39E4A7 /* HiveChatMessage.swift in Sources */,
+				8C7BF32FE7754411BC77D39D /* HiveFeatureMocks.swift in Sources */,
 				CECFBF062965C8E600BAD935 /* DiscoverTribeData.swift in Sources */,
 				475C566D2A7BEC5F00E6F9A9 /* ThreadTableDataSource+ResultsControllerExtension.swift in Sources */,
 				47E6A4D02A2E6F8500A9509E /* GroupActionsView.swift in Sources */,
@@ -5975,6 +5992,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8A76E71FD2044567BAC32D0D /* HiveFeatureTests.swift in Sources */,
+				5010E69969BC4B008CB1B8DB /* HiveChatMessageTests.swift in Sources */,
 				4779F17A232AA0F300D35E81 /* sphinxOnionAddContactTests.swift in Sources */,
 				CE8161392B21124D00600C81 /* sphinxOnionPlaintextMessagesTests.swift in Sources */,
 				CE167B572B0BAF6A00A9238E /* sphinxOnionAccountCreateUnitTests.swift in Sources */,
