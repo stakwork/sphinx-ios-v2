@@ -223,42 +223,21 @@ class HivePusherManager: NSObject {
     }
 }
 
-// MARK: - WebSocketDelegate
+// MARK: - WebSocketDelegate (Starscream 3.x API)
 extension HivePusherManager: WebSocketDelegate {
-    func didReceive(event: WebSocketEvent, client: WebSocket) {
-        switch event {
-        case .connected(let headers):
-            print("[HivePusher] WebSocket connected with headers: \(headers)")
-            
-        case .disconnected(let reason, let code):
-            print("[HivePusher] WebSocket disconnected: \(reason) with code: \(code)")
-            
-        case .text(let string):
-            handleMessage(string)
-            
-        case .binary(let data):
-            print("[HivePusher] Received binary data: \(data.count) bytes")
-            
-        case .ping(_):
-            break
-            
-        case .pong(_):
-            break
-            
-        case .viabilityChanged(let isViable):
-            print("[HivePusher] WebSocket viability changed: \(isViable)")
-            
-        case .reconnectSuggested(let shouldReconnect):
-            print("[HivePusher] WebSocket reconnect suggested: \(shouldReconnect)")
-            if shouldReconnect, let featureId = featureId, let authToken = authToken {
-                connect(featureId: featureId, authToken: authToken)
-            }
-            
-        case .cancelled:
-            print("[HivePusher] WebSocket cancelled")
-            
-        case .error(let error):
-            print("[HivePusher] WebSocket error: \(error?.localizedDescription ?? "unknown error")")
-        }
+    func websocketDidConnect(socket: WebSocketClient) {
+        print("[HivePusher] WebSocket connected")
+    }
+
+    func websocketDidDisconnect(socket: WebSocketClient, error: Error?) {
+        print("[HivePusher] WebSocket disconnected: \(error?.localizedDescription ?? "no error")")
+    }
+
+    func websocketDidReceiveMessage(socket: WebSocketClient, text: String) {
+        handleMessage(text)
+    }
+
+    func websocketDidReceiveData(socket: WebSocketClient, data: Data) {
+        print("[HivePusher] Received binary data: \(data.count) bytes")
     }
 }

@@ -103,7 +103,7 @@ extension CustomSegmentedControl {
                 selectedIndex = buttonIndex
 
                 // Call new optional method first, then fall back to old method
-                if let delegate = delegate, delegate.responds(to: #selector(CustomSegmentedControlDelegate.segmentedControl(_:didSwitchTo:))) {
+                if let delegate = delegate, (delegate as AnyObject).responds(to: #selector(CustomSegmentedControlDelegate.segmentedControl(_:didSwitchTo:))) {
                     delegate.segmentedControl?(self, didSwitchTo: selectedIndex)
                 } else {
                     delegate?.segmentedControlDidSwitch(to: selectedIndex)

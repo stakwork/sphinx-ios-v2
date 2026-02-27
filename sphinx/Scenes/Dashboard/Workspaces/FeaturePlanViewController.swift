@@ -138,11 +138,14 @@ class FeaturePlanViewController: UIViewController {
     private func setupTopSegmentedControl() {
         topSegmentedControl = CustomSegmentedControl(
             frame: .zero,
-            buttonTitles: ["CHAT", "PLAN"],
-            initialIndex: 0
+            buttonTitles: ["CHAT", "PLAN"]
         )
         topSegmentedControl.translatesAutoresizingMaskIntoConstraints = false
-        topSegmentedControl.delegate = self
+        topSegmentedControl.configureFromOutlet(
+            buttonTitles: ["CHAT", "PLAN"],
+            initialIndex: 0,
+            delegate: self
+        )
         topSegmentedControl.backgroundColor = UIColor.Sphinx.Body
         view.addSubview(topSegmentedControl)
         
@@ -240,11 +243,14 @@ class FeaturePlanViewController: UIViewController {
         // Plan Segmented Control
         planSegmentedControl = CustomSegmentedControl(
             frame: .zero,
-            buttonTitles: ["BRIEF", "USER STORIES", "REQUIREMENTS", "ARCHITECTURE"],
-            initialIndex: 0
+            buttonTitles: ["BRIEF", "USER STORIES", "REQUIREMENTS", "ARCHITECTURE"]
         )
         planSegmentedControl.translatesAutoresizingMaskIntoConstraints = false
-        planSegmentedControl.delegate = self
+        planSegmentedControl.configureFromOutlet(
+            buttonTitles: ["BRIEF", "USER STORIES", "REQUIREMENTS", "ARCHITECTURE"],
+            initialIndex: 0,
+            delegate: self
+        )
         planSegmentedControl.backgroundColor = UIColor.Sphinx.Body
         planContainerView.addSubview(planSegmentedControl)
         
@@ -466,7 +472,7 @@ class FeaturePlanViewController: UIViewController {
     
     // MARK: - WebSocket
     private func connectWebSocket() {
-        guard let token = UserDefaults.Keys.hiveToken.get() as? String else {
+        guard let token: String = UserDefaults.Keys.hiveToken.get() else {
             print("No Hive auth token found")
             return
         }
