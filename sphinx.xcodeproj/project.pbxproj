@@ -7,9 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		1DE27838450795B0E4120261 /* FeaturePlanViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C31187BFB7EDD28A632A1FD /* FeaturePlanViewController.swift */; };
-		D73D867700EC14B82A3814D7 /* FeatureChatMessageCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE30E2541BF20361DA34D7C4 /* FeatureChatMessageCell.swift */; };
-		F90D11768794DA0FC5BCE0C5 /* HivePusherManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D57927D5D5F362BAE723C33 /* HivePusherManager.swift */; };
 		12075275C652A9404FC48EBC /* Pods_sphinx.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 487E10CEB3D07B0840A84681 /* Pods_sphinx.framework */; };
 		20AB4F9E1FAE42F4B1F33489 /* WorkspaceTasksViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E83B28E7233A4D0D9AE288E2 /* WorkspaceTasksViewController.swift */; };
 		470125C02373255C0013C57B /* TransactionMessage+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 470125BF2373255C0013C57B /* TransactionMessage+CoreDataProperties.swift */; };
@@ -254,6 +251,9 @@
 		475799FA23F1AA4F00507E68 /* SymmetricEncryptionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 475799F923F1AA4F00507E68 /* SymmetricEncryptionManager.swift */; };
 		475922F923E0B4EE00B73626 /* DelayPerformertHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 475922F823E0B4EE00B73626 /* DelayPerformertHelper.swift */; };
 		4759621B2F50CCF000564B7F /* HiveFeatureMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4759621A2F50CCF000564B7F /* HiveFeatureMocks.swift */; };
+		4759621D2F520FD300564B7F /* FeaturePlanViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C31187BFB7EDD28A632A1FD /* FeaturePlanViewController.swift */; };
+		4759621E2F520FD300564B7F /* FeatureChatMessageCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE30E2541BF20361DA34D7C4 /* FeatureChatMessageCell.swift */; };
+		475962212F5210E500564B7F /* HivePusherManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 475962202F5210E500564B7F /* HivePusherManager.swift */; };
 		475BDCA1232AC1CF00C5BBD6 /* ChatListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 475BDC9F232AC1CE00C5BBD6 /* ChatListViewModel.swift */; };
 		475BDCB2232AC1E800C5BBD6 /* NewKeyPadView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 475BDCA9232AC1E800C5BBD6 /* NewKeyPadView.xib */; };
 		475BDCB3232AC1E800C5BBD6 /* NewKeyPadView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 475BDCAA232AC1E800C5BBD6 /* NewKeyPadView.swift */; };
@@ -648,7 +648,11 @@
 		47FDDB1C2562D77200BBF15F /* boost_animation.json in Resources */ = {isa = PBXBuildFile; fileRef = 47FDDB1B2562D77100BBF15F /* boost_animation.json */; };
 		47FE9A3E23C381A20090913F /* UITapGestureRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47FE9A3D23C381A20090913F /* UITapGestureRecognizer.swift */; };
 		5010E69969BC4B008CB1B8DB /* HiveChatMessageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F4B101D1E0946E1A2ED0FCA /* HiveChatMessageTests.swift */; };
+		597F4B2E1EBF4D0895A683FF /* WorkspaceFeaturesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BF56C5719164A1E858E15AA /* WorkspaceFeaturesViewController.swift */; };
+		5C4CD33514044245AA1118AE /* WorkspaceFeatureTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65CCA59A46E54A47BF7232FC /* WorkspaceFeatureTableViewCell.swift */; };
+		6C2EB62CC9284A8B9B5B320D /* WorkspaceFeatureTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = D11C49EF137D47F1BCA5623D /* WorkspaceFeatureTableViewCell.xib */; };
 		731EF373B8FBD726748501FC /* WorkspaceTaskTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = E6E60B7E071F2F4E54B84E16 /* WorkspaceTaskTableViewCell.xib */; };
+		81D6970D2A7742A888F18562 /* WorkspaceFeatureTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6957C94054A8404294F1E644 /* WorkspaceFeatureTableViewCell.swift */; };
 		8A76E71FD2044567BAC32D0D /* HiveFeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B5504520C1B4722A0EBFA00 /* HiveFeatureTests.swift */; };
 		9344269DACF491E8A3F8651C /* Pods_SphinxNotificationExtensionService.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3867EC056CA5757264104904 /* Pods_SphinxNotificationExtensionService.framework */; };
 		9386C2892BB25C2200ABDEF3 /* AddTagsButtonCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9386C2882BB25C2200ABDEF3 /* AddTagsButtonCell.xib */; };
@@ -656,6 +660,7 @@
 		9386C28D2BB25F2700ABDEF3 /* AddedTagsView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9386C28C2BB25F2700ABDEF3 /* AddedTagsView.xib */; };
 		93D7B5472BAE0FEA007C53A9 /* AddTagsButtonCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93D7B5462BAE0FEA007C53A9 /* AddTagsButtonCell.swift */; };
 		93FCEA782B91AF3B0069B344 /* DashboardUITest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93FCEA772B91AF3B0069B344 /* DashboardUITest.swift */; };
+		A5F3D5A533984995ADE1BADF /* WorkspaceFeatureTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = C638608884A0403797B98830 /* WorkspaceFeatureTableViewCell.xib */; };
 		A748D979E2F14560BF39E4A7 /* HiveChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8ABF62A347844ECEB2FC60A4 /* HiveChatMessage.swift */; };
 		CE030A6B2B97C0860067F9F1 /* SphinxOnionManager+InvoicesExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE030A6A2B97C0860067F9F1 /* SphinxOnionManager+InvoicesExtension.swift */; };
 		CE07B83629DC92F900A02652 /* ItemDescriptionTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE07B83429DC92F900A02652 /* ItemDescriptionTableViewCell.swift */; };
@@ -891,6 +896,7 @@
 		F3E9C02026FB76A100718942 /* DashboardFeedsEmptyStateViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3E9C01E26FB76A100718942 /* DashboardFeedsEmptyStateViewController.swift */; };
 		F3EF52C526B2823700F06668 /* FeedFilterChipsCollectionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3EF52C426B2823700F06668 /* FeedFilterChipsCollectionViewController.swift */; };
 		F3EF52C726B28DBE00F06668 /* PodcastFeedCollectionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3EF52C626B28DBD00F06668 /* PodcastFeedCollectionViewController.swift */; };
+		FB7B4B3C5CD24D0BB8695C8C /* WorkspaceFeaturesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9873D4D024464CBDA0398164 /* WorkspaceFeaturesViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -932,9 +938,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		4C31187BFB7EDD28A632A1FD /* FeaturePlanViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeaturePlanViewController.swift; sourceTree = "<group>"; };
-		FE30E2541BF20361DA34D7C4 /* FeatureChatMessageCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureChatMessageCell.swift; sourceTree = "<group>"; };
-		3D57927D5D5F362BAE723C33 /* HivePusherManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HivePusherManager.swift; sourceTree = "<group>"; };
 		334B3B522B8268CD0003EA63 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
 		334B3B532B8268CD0003EA63 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/RecommendationsHeaderCollectionReusableView.strings; sourceTree = "<group>"; };
 		334B3B542B8268CD0003EA63 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/Chat.strings; sourceTree = "<group>"; };
@@ -1424,6 +1427,7 @@
 		475799F923F1AA4F00507E68 /* SymmetricEncryptionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymmetricEncryptionManager.swift; sourceTree = "<group>"; };
 		475922F823E0B4EE00B73626 /* DelayPerformertHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DelayPerformertHelper.swift; sourceTree = "<group>"; };
 		4759621A2F50CCF000564B7F /* HiveFeatureMocks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveFeatureMocks.swift; sourceTree = "<group>"; };
+		475962202F5210E500564B7F /* HivePusherManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HivePusherManager.swift; sourceTree = "<group>"; };
 		475BDC9F232AC1CE00C5BBD6 /* ChatListViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChatListViewModel.swift; sourceTree = "<group>"; };
 		475BDCA9232AC1E800C5BBD6 /* NewKeyPadView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = NewKeyPadView.xib; sourceTree = "<group>"; };
 		475BDCAA232AC1E800C5BBD6 /* NewKeyPadView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NewKeyPadView.swift; sourceTree = "<group>"; };
@@ -1916,6 +1920,9 @@
 		47FDDB1B2562D77100BBF15F /* boost_animation.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = boost_animation.json; sourceTree = "<group>"; };
 		47FE9A3D23C381A20090913F /* UITapGestureRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITapGestureRecognizer.swift; sourceTree = "<group>"; };
 		487E10CEB3D07B0840A84681 /* Pods_sphinx.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_sphinx.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		4C31187BFB7EDD28A632A1FD /* FeaturePlanViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeaturePlanViewController.swift; sourceTree = "<group>"; };
+		65CCA59A46E54A47BF7232FC /* WorkspaceFeatureTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceFeatureTableViewCell.swift; sourceTree = "<group>"; };
+		6957C94054A8404294F1E644 /* WorkspaceFeatureTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceFeatureTableViewCell.swift; sourceTree = "<group>"; };
 		7734ED4D2D66C733003276BA /* sphinx 53.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 53.xcdatamodel"; sourceTree = "<group>"; };
 		8ABF62A347844ECEB2FC60A4 /* HiveChatMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveChatMessage.swift; sourceTree = "<group>"; };
 		9386C2882BB25C2200ABDEF3 /* AddTagsButtonCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = AddTagsButtonCell.xib; sourceTree = "<group>"; };
@@ -1923,8 +1930,11 @@
 		9386C28C2BB25F2700ABDEF3 /* AddedTagsView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = AddedTagsView.xib; sourceTree = "<group>"; };
 		93D7B5462BAE0FEA007C53A9 /* AddTagsButtonCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTagsButtonCell.swift; sourceTree = "<group>"; };
 		93FCEA772B91AF3B0069B344 /* DashboardUITest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardUITest.swift; sourceTree = "<group>"; };
+		9873D4D024464CBDA0398164 /* WorkspaceFeaturesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceFeaturesViewController.swift; sourceTree = "<group>"; };
 		9B5504520C1B4722A0EBFA00 /* HiveFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveFeatureTests.swift; sourceTree = "<group>"; };
+		9BF56C5719164A1E858E15AA /* WorkspaceFeaturesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceFeaturesViewController.swift; sourceTree = "<group>"; };
 		9F4B101D1E0946E1A2ED0FCA /* HiveChatMessageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveChatMessageTests.swift; sourceTree = "<group>"; };
+		C638608884A0403797B98830 /* WorkspaceFeatureTableViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = WorkspaceFeatureTableViewCell.xib; sourceTree = "<group>"; };
 		CE030A6A2B97C0860067F9F1 /* SphinxOnionManager+InvoicesExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "SphinxOnionManager+InvoicesExtension.swift"; sourceTree = "<group>"; };
 		CE07B83429DC92F900A02652 /* ItemDescriptionTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDescriptionTableViewCell.swift; sourceTree = "<group>"; };
 		CE07B83529DC92F900A02652 /* ItemDescriptionTableViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ItemDescriptionTableViewCell.xib; sourceTree = "<group>"; };
@@ -2089,6 +2099,7 @@
 		CEF821D52963B68600CBB28F /* DiscoverTribesWebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverTribesWebViewController.swift; sourceTree = "<group>"; };
 		CEF88DCF29B66B9200DC1C40 /* RecommendationItemWUnifiedViewCollectionViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendationItemWUnifiedViewCollectionViewCell.swift; sourceTree = "<group>"; };
 		CEF88DD029B66B9200DC1C40 /* RecommendationItemWUnifiedViewCollectionViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = RecommendationItemWUnifiedViewCollectionViewCell.xib; sourceTree = "<group>"; };
+		D11C49EF137D47F1BCA5623D /* WorkspaceFeatureTableViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = WorkspaceFeatureTableViewCell.xib; sourceTree = "<group>"; };
 		E2BA36BB571A4DCAA10EAFBB /* HiveFeatureMocks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveFeatureMocks.swift; sourceTree = "<group>"; };
 		E6E60B7E071F2F4E54B84E16 /* WorkspaceTaskTableViewCell.xib */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = file.xib; path = WorkspaceTaskTableViewCell.xib; sourceTree = "<group>"; };
 		E83B28E7233A4D0D9AE288E2 /* WorkspaceTasksViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceTasksViewController.swift; sourceTree = "<group>"; };
@@ -2215,6 +2226,7 @@
 		F3EF52C426B2823700F06668 /* FeedFilterChipsCollectionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedFilterChipsCollectionViewController.swift; sourceTree = "<group>"; };
 		F3EF52C626B28DBD00F06668 /* PodcastFeedCollectionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastFeedCollectionViewController.swift; sourceTree = "<group>"; };
 		FDF1E0A8EFE1D98BD5A99505 /* Pods-sphinx.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-sphinx.release.xcconfig"; path = "Target Support Files/Pods-sphinx/Pods-sphinx.release.xcconfig"; sourceTree = "<group>"; };
+		FE30E2541BF20361DA34D7C4 /* FeatureChatMessageCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureChatMessageCell.swift; sourceTree = "<group>"; };
 		FED99A42AA0C9CE8FD759E82 /* Pods-sphinx.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-sphinx.debug.xcconfig"; path = "Target Support Files/Pods-sphinx/Pods-sphinx.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -2517,6 +2529,7 @@
 		471FACD623E89E19007DE1C8 /* Managers */ = {
 			isa = PBXGroup;
 			children = (
+				4759621F2F5210D700564B7F /* HivePusher */,
 				47978EFB2F040D300092B516 /* DataSyncManager */,
 				474DC4B82D942E5A00FB6087 /* ChaptersManager */,
 				4733ED2D2CB556E700078EF2 /* Colors Manager */,
@@ -3060,6 +3073,14 @@
 				4759621A2F50CCF000564B7F /* HiveFeatureMocks.swift */,
 			);
 			path = Mocks;
+			sourceTree = "<group>";
+		};
+		4759621F2F5210D700564B7F /* HivePusher */ = {
+			isa = PBXGroup;
+			children = (
+				475962202F5210E500564B7F /* HivePusherManager.swift */,
+			);
+			path = HivePusher;
 			sourceTree = "<group>";
 		};
 		475BDC93232AC15200C5BBD6 /* View Controllers */ = {
@@ -3989,6 +4010,12 @@
 		47B9CBFD2F460C7B007527B4 /* Workspaces */ = {
 			isa = PBXGroup;
 			children = (
+				9BF56C5719164A1E858E15AA /* WorkspaceFeaturesViewController.swift */,
+				6957C94054A8404294F1E644 /* WorkspaceFeatureTableViewCell.swift */,
+				C638608884A0403797B98830 /* WorkspaceFeatureTableViewCell.xib */,
+				9873D4D024464CBDA0398164 /* WorkspaceFeaturesViewController.swift */,
+				65CCA59A46E54A47BF7232FC /* WorkspaceFeatureTableViewCell.swift */,
+				D11C49EF137D47F1BCA5623D /* WorkspaceFeatureTableViewCell.xib */,
 				475962172F50CC6700564B7F /* Mocks */,
 				47B9CBF92F460C7B007527B4 /* Workspace.swift */,
 				4732E34ED775B54D3F8EA591 /* WorkspaceTask.swift */,
@@ -4311,7 +4338,6 @@
 				CE2349842B8E749F00A708CB /* SphinxOnionManager+InvitesExtension.swift */,
 				CE4A85922B5F051600813B59 /* SphinxOnionManager+TribesExtension.swift */,
 				CE4B53FC2AFC389C00708A0C /* SphinxOnionManager.swift */,
-				3D57927D5D5F362BAE723C33 /* HivePusherManager.swift */,
 				CE887EF92B1E5C7B00DBA670 /* SphinxOnionManager+ContactExtension.swift */,
 				CEAAE28A2B31F119009B283B /* SphinxOnionManager+HandleStateExtension.swift */,
 				4741EBE82BFF6DCB00EFF49E /* SphinxOnionManager+StructsAndHelpersExtension.swift */,
@@ -5063,6 +5089,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A5F3D5A533984995ADE1BADF /* WorkspaceFeatureTableViewCell.xib in Resources */,
+				6C2EB62CC9284A8B9B5B320D /* WorkspaceFeatureTableViewCell.xib in Resources */,
 				47018F9227CFEEAF00797E0B /* skip30v1.caf in Resources */,
 				CE9A18582A1D6AC900F176DE /* MediaStorageSourceTableViewCell.xib in Resources */,
 				47018F9327CFEEAF00797E0B /* skip30v2.caf in Resources */,
@@ -5376,6 +5404,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4759621D2F520FD300564B7F /* FeaturePlanViewController.swift in Sources */,
+				4759621E2F520FD300564B7F /* FeatureChatMessageCell.swift in Sources */,
+				597F4B2E1EBF4D0895A683FF /* WorkspaceFeaturesViewController.swift in Sources */,
+				81D6970D2A7742A888F18562 /* WorkspaceFeatureTableViewCell.swift in Sources */,
+				FB7B4B3C5CD24D0BB8695C8C /* WorkspaceFeaturesViewController.swift in Sources */,
+				5C4CD33514044245AA1118AE /* WorkspaceFeatureTableViewCell.swift in Sources */,
 				D2789CFCCA3E453295F15A2E /* HiveFeature.swift in Sources */,
 				A748D979E2F14560BF39E4A7 /* HiveChatMessage.swift in Sources */,
 				CECFBF062965C8E600BAD935 /* DiscoverTribeData.swift in Sources */,
@@ -5478,6 +5512,7 @@
 				F358212F2698BE6800A314F1 /* API+HubError.swift in Sources */,
 				4733ED2F2CB556F500078EF2 /* ColorsManager.swift in Sources */,
 				472161CD293A67A50088B87B /* YoutubeRecommendationFeedPlayerViewController.swift in Sources */,
+				475962212F5210E500564B7F /* HivePusherManager.swift in Sources */,
 				47A79D3A2444A15C005CD72F /* MessageOptionsView.swift in Sources */,
 				47E6A4CC2A2E68A700A9509E /* DeletedMessageView.swift in Sources */,
 				47C45E012D806E0A007A9BD7 /* EpisodeChapterView.swift in Sources */,

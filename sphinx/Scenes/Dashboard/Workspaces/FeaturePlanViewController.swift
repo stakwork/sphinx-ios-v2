@@ -138,11 +138,14 @@ class FeaturePlanViewController: UIViewController {
     private func setupTopSegmentedControl() {
         topSegmentedControl = CustomSegmentedControl(
             frame: .zero,
-            buttonTitles: ["CHAT", "PLAN"],
-            initialIndex: 0
+            buttonTitles: ["CHAT", "PLAN"]
         )
         topSegmentedControl.translatesAutoresizingMaskIntoConstraints = false
-        topSegmentedControl.delegate = self
+        topSegmentedControl.configureFromOutlet(
+            buttonTitles: ["CHAT", "PLAN"],
+            initialIndex: 0,
+            delegate: self
+        )
         topSegmentedControl.backgroundColor = UIColor.Sphinx.Body
         view.addSubview(topSegmentedControl)
         
@@ -240,11 +243,14 @@ class FeaturePlanViewController: UIViewController {
         // Plan Segmented Control
         planSegmentedControl = CustomSegmentedControl(
             frame: .zero,
-            buttonTitles: ["BRIEF", "USER STORIES", "REQUIREMENTS", "ARCHITECTURE"],
-            initialIndex: 0
+            buttonTitles: ["BRIEF", "USER STORIES", "REQUIREMENTS", "ARCHITECTURE"]
         )
         planSegmentedControl.translatesAutoresizingMaskIntoConstraints = false
-        planSegmentedControl.delegate = self
+        planSegmentedControl.configureFromOutlet(
+            buttonTitles: ["BRIEF", "USER STORIES", "REQUIREMENTS", "ARCHITECTURE"],
+            initialIndex: 0,
+            delegate: self
+        )
         planSegmentedControl.backgroundColor = UIColor.Sphinx.Body
         planContainerView.addSubview(planSegmentedControl)
         
@@ -407,7 +413,7 @@ class FeaturePlanViewController: UIViewController {
         case 0: // BRIEF
             planTextView.text = feature.brief ?? "No brief available yet."
         case 1: // USER STORIES
-            planTextView.text = feature.userStories ?? "No user stories available yet."
+            planTextView.text = (feature.userStories ?? ["No user stories available yet."]).joined(separator: "\n")
         case 2: // REQUIREMENTS
             planTextView.text = feature.requirements ?? "No requirements available yet."
         case 3: // ARCHITECTURE
@@ -466,7 +472,7 @@ class FeaturePlanViewController: UIViewController {
     
     // MARK: - WebSocket
     private func connectWebSocket() {
-        guard let token = UserDefaults.Keys.hiveToken.get() as? String else {
+        guard let token: String = UserDefaults.Keys.hiveToken.get() else {
             print("No Hive auth token found")
             return
         }
@@ -518,15 +524,19 @@ class FeaturePlanViewController: UIViewController {
 
 // MARK: - CustomSegmentedControlDelegate
 extension FeaturePlanViewController: CustomSegmentedControlDelegate {
-    func segmentedControl(_ segmentedControl: CustomSegmentedControl, didSelectSegmentAt index: Int, sender: Any?) {
-        if segmentedControl == topSegmentedControl {
+    func segmentedControlDidSwitch(to index: Int) {
+        // Legacy method - kept for compatibility
+    }
+    
+    func segmentedControl(_ control: CustomSegmentedControl, didSwitchTo index: Int) {
+        if control == topSegmentedControl {
             // Top level segmented control (CHAT / PLAN)
             if index == 0 {
                 showChatPanel()
             } else {
                 showPlanPanel()
             }
-        } else if segmentedControl == planSegmentedControl {
+        } else if control == planSegmentedControl {
             // Plan sub-tabs
             updatePlanText()
         }

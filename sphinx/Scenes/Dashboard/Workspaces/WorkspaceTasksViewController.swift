@@ -15,9 +15,33 @@ class WorkspaceTasksViewController: PopHandlerViewController {
     @IBOutlet weak var segmentedControlContainer: UIView!
     @IBOutlet weak var segmentedControl: CustomSegmentedControl!
     @IBOutlet weak var tableView: UITableView!
+    
+    // Programmatically created views
+    private lazy var topTabContainer: UIView = {
+        let v = UIView()
+        v.backgroundColor = .Sphinx.Body
+        v.translatesAutoresizingMaskIntoConstraints = false
+        return v
+    }()
+    
+    private lazy var topTabSegmentedControl: CustomSegmentedControl = {
+        let control = CustomSegmentedControl()
+        control.translatesAutoresizingMaskIntoConstraints = false
+        return control
+    }()
+    
+    private lazy var featuresContainerView: UIView = {
+        let v = UIView()
+        v.backgroundColor = .Sphinx.Body
+        v.isHidden = true
+        v.translatesAutoresizingMaskIntoConstraints = false
+        return v
+    }()
 
     private var workspace: Workspace!
     private var tasks: [WorkspaceTask] = []
+    private var activeFeaturesVC: WorkspaceFeaturesViewController?
+    private var currentTab: Int = 0 // 0 = Tasks, 1 = Features
     private var includeArchived = false
 
     private lazy var loadingWheel: UIActivityIndicatorView = {
@@ -48,10 +72,48 @@ class WorkspaceTasksViewController: PopHandlerViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupHeader()
+        setupTopTabUI()
         setupSegmentedControl()
         setupTableView()
         setupLoadingAndEmpty()
         loadTasks()
+    }
+    
+    private func setupTopTabUI() {
+        // Add topTabContainer below the header
+        view.addSubview(topTabContainer)
+        topTabContainer.addSubview(topTabSegmentedControl)
+        view.addSubview(featuresContainerView)
+        
+        NSLayoutConstraint.activate([
+            // Top tab container - below header
+            topTabContainer.topAnchor.constraint(equalTo: headerView.bottomAnchor),
+            topTabContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            topTabContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            topTabContainer.heightAnchor.constraint(equalToConstant: 50),
+            
+            // Segmented control inside container
+            topTabSegmentedControl.topAnchor.constraint(equalTo: topTabContainer.topAnchor),
+            topTabSegmentedControl.leadingAnchor.constraint(equalTo: topTabContainer.leadingAnchor),
+            topTabSegmentedControl.trailingAnchor.constraint(equalTo: topTabContainer.trailingAnchor),
+            topTabSegmentedControl.bottomAnchor.constraint(equalTo: topTabContainer.bottomAnchor),
+            
+            // Features container - same position as tableView
+            featuresContainerView.topAnchor.constraint(equalTo: segmentedControlContainer.bottomAnchor),
+            featuresContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            featuresContainerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            featuresContainerView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ])
+        
+        // Update segmentedControlContainer constraint to be below topTabContainer
+        // (This assumes the storyboard constraint exists - we're replacing its reference)
+        segmentedControlContainer.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            segmentedControlContainer.topAnchor.constraint(equalTo: topTabContainer.bottomAnchor),
+            segmentedControlContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            segmentedControlContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            segmentedControlContainer.heightAnchor.constraint(equalToConstant: 50),
+        ])
     }
 
     private func setupHeader() {
@@ -61,12 +123,22 @@ class WorkspaceTasksViewController: PopHandlerViewController {
         viewTitle.text = workspace.name.uppercased()
     }
 
-    private func setupSegmentedControl() {        
+    private func setupSegmentedControl() {
+        // Configure top-level TASKS/FEATURES tab
+        topTabSegmentedControl.configureFromOutlet(
+            buttonTitles: ["TASKS", "FEATURES"],
+            initialIndex: 0,
+            delegate: self
+        )
+        topTabSegmentedControl.tag = 100
+        
+        // Configure ACTIVE/ARCHIVED tab (for tasks)
         segmentedControl.configureFromOutlet(
             buttonTitles: ["ACTIVE", "ARCHIVED"],
             initialIndex: 0,
             delegate: self
         )
+        segmentedControl.tag = 200
     }
 
     private func setupTableView() {
@@ -147,7 +219,47 @@ extension WorkspaceTasksViewController: UITableViewDataSource, UITableViewDelega
 
 extension WorkspaceTasksViewController: CustomSegmentedControlDelegate {
     func segmentedControlDidSwitch(to index: Int) {
-        includeArchived = (index == 1)
-        loadTasks()
+        // Legacy method - kept for compatibility
+        // Will be called by other segmented controls that don't use the new method
+    }
+    
+    func segmentedControl(_ control: CustomSegmentedControl, didSwitchTo index: Int) {
+        if control == topTabSegmentedControl {
+            // Top-level TASKS/FEATURES switch
+            switchToTab(index)
+        } else if control == segmentedControl {
+            // ACTIVE/ARCHIVED switch for tasks
+            includeArchived = (index == 1)
+            loadTasks()
+        }
+    }
+    
+    private func switchToTab(_ index: Int) {
+        currentTab = index
+        
+        if index == 0 {
+            // Show Tasks
+            tableView.isHidden = false
+            segmentedControlContainer.isHidden = false
+            featuresContainerView.isHidden = true
+            loadTasks()
+        } else {
+            // Show Features
+            tableView.isHidden = true
+            segmentedControlContainer.isHidden = true
+            
+                featuresContainerView.isHidden = false
+                
+                // Lazy-load features VC
+                if activeFeaturesVC == nil {
+                    let featuresVC = WorkspaceFeaturesViewController.instantiate(workspace: workspace)
+                    addChild(featuresVC)
+                    featuresContainerView.addSubview(featuresVC.view)
+                    featuresVC.view.frame = featuresContainerView.bounds
+                    featuresVC.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+                    featuresVC.didMove(toParent: self)
+                    activeFeaturesVC = featuresVC
+                }
+        }
     }
 }
