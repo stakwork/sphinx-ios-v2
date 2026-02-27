@@ -7,6 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		597F4B2E1EBF4D0895A683FF /* WorkspaceFeaturesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BF56C5719164A1E858E15AA /* WorkspaceFeaturesViewController.swift */; };
+		81D6970D2A7742A888F18562 /* WorkspaceFeatureTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6957C94054A8404294F1E644 /* WorkspaceFeatureTableViewCell.swift */; };
+		A5F3D5A533984995ADE1BADF /* WorkspaceFeatureTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = C638608884A0403797B98830 /* WorkspaceFeatureTableViewCell.xib */; };
+		FB7B4B3C5CD24D0BB8695C8C /* WorkspaceFeaturesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9873D4D024464CBDA0398164 /* WorkspaceFeaturesViewController.swift */; };
+		5C4CD33514044245AA1118AE /* WorkspaceFeatureTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65CCA59A46E54A47BF7232FC /* WorkspaceFeatureTableViewCell.swift */; };
+		6C2EB62CC9284A8B9B5B320D /* WorkspaceFeatureTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = D11C49EF137D47F1BCA5623D /* WorkspaceFeatureTableViewCell.xib */; };
 		1DE27838450795B0E4120261 /* FeaturePlanViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C31187BFB7EDD28A632A1FD /* FeaturePlanViewController.swift */; };
 		D73D867700EC14B82A3814D7 /* FeatureChatMessageCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE30E2541BF20361DA34D7C4 /* FeatureChatMessageCell.swift */; };
 		F90D11768794DA0FC5BCE0C5 /* HivePusherManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D57927D5D5F362BAE723C33 /* HivePusherManager.swift */; };
@@ -932,6 +938,12 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		9BF56C5719164A1E858E15AA /* WorkspaceFeaturesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceFeaturesViewController.swift; sourceTree = "<group>"; };
+		6957C94054A8404294F1E644 /* WorkspaceFeatureTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceFeatureTableViewCell.swift; sourceTree = "<group>"; };
+		C638608884A0403797B98830 /* WorkspaceFeatureTableViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = WorkspaceFeatureTableViewCell.xib; sourceTree = "<group>"; };
+		9873D4D024464CBDA0398164 /* WorkspaceFeaturesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceFeaturesViewController.swift; sourceTree = "<group>"; };
+		65CCA59A46E54A47BF7232FC /* WorkspaceFeatureTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceFeatureTableViewCell.swift; sourceTree = "<group>"; };
+		D11C49EF137D47F1BCA5623D /* WorkspaceFeatureTableViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = WorkspaceFeatureTableViewCell.xib; sourceTree = "<group>"; };
 		4C31187BFB7EDD28A632A1FD /* FeaturePlanViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeaturePlanViewController.swift; sourceTree = "<group>"; };
 		FE30E2541BF20361DA34D7C4 /* FeatureChatMessageCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureChatMessageCell.swift; sourceTree = "<group>"; };
 		3D57927D5D5F362BAE723C33 /* HivePusherManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HivePusherManager.swift; sourceTree = "<group>"; };
@@ -3989,6 +4001,12 @@
 		47B9CBFD2F460C7B007527B4 /* Workspaces */ = {
 			isa = PBXGroup;
 			children = (
+				9BF56C5719164A1E858E15AA /* WorkspaceFeaturesViewController.swift */,
+				6957C94054A8404294F1E644 /* WorkspaceFeatureTableViewCell.swift */,
+				C638608884A0403797B98830 /* WorkspaceFeatureTableViewCell.xib */,
+				9873D4D024464CBDA0398164 /* WorkspaceFeaturesViewController.swift */,
+				65CCA59A46E54A47BF7232FC /* WorkspaceFeatureTableViewCell.swift */,
+				D11C49EF137D47F1BCA5623D /* WorkspaceFeatureTableViewCell.xib */,
 				475962172F50CC6700564B7F /* Mocks */,
 				47B9CBF92F460C7B007527B4 /* Workspace.swift */,
 				4732E34ED775B54D3F8EA591 /* WorkspaceTask.swift */,
@@ -5063,6 +5081,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A5F3D5A533984995ADE1BADF /* WorkspaceFeatureTableViewCell.xib in Resources */,
+				6C2EB62CC9284A8B9B5B320D /* WorkspaceFeatureTableViewCell.xib in Resources */,
 				47018F9227CFEEAF00797E0B /* skip30v1.caf in Resources */,
 				CE9A18582A1D6AC900F176DE /* MediaStorageSourceTableViewCell.xib in Resources */,
 				47018F9327CFEEAF00797E0B /* skip30v2.caf in Resources */,
@@ -5376,6 +5396,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				597F4B2E1EBF4D0895A683FF /* WorkspaceFeaturesViewController.swift in Sources */,
+				81D6970D2A7742A888F18562 /* WorkspaceFeatureTableViewCell.swift in Sources */,
+				FB7B4B3C5CD24D0BB8695C8C /* WorkspaceFeaturesViewController.swift in Sources */,
+				5C4CD33514044245AA1118AE /* WorkspaceFeatureTableViewCell.swift in Sources */,
 				D2789CFCCA3E453295F15A2E /* HiveFeature.swift in Sources */,
 				A748D979E2F14560BF39E4A7 /* HiveChatMessage.swift in Sources */,
 				CECFBF062965C8E600BAD935 /* DiscoverTribeData.swift in Sources */,

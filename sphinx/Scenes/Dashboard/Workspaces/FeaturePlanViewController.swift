@@ -518,15 +518,19 @@ class FeaturePlanViewController: UIViewController {
 
 // MARK: - CustomSegmentedControlDelegate
 extension FeaturePlanViewController: CustomSegmentedControlDelegate {
-    func segmentedControl(_ segmentedControl: CustomSegmentedControl, didSelectSegmentAt index: Int, sender: Any?) {
-        if segmentedControl == topSegmentedControl {
+    func segmentedControlDidSwitch(to index: Int) {
+        // Legacy method - kept for compatibility
+    }
+    
+    func segmentedControl(_ control: CustomSegmentedControl, didSwitchTo index: Int) {
+        if control == topSegmentedControl {
             // Top level segmented control (CHAT / PLAN)
             if index == 0 {
                 showChatPanel()
             } else {
                 showPlanPanel()
             }
-        } else if segmentedControl == planSegmentedControl {
+        } else if control == planSegmentedControl {
             // Plan sub-tabs
             updatePlanText()
         }

@@ -12,6 +12,12 @@ protocol CustomSegmentedControlDelegate: AnyObject {
     func segmentedControlDidSwitch(
         to index: Int
     )
+    
+    // Optional method that includes sender - new controllers should use this
+    @objc optional func segmentedControl(
+        _ control: CustomSegmentedControl,
+        didSwitchTo index: Int
+    )
 }
 
 
@@ -96,7 +102,12 @@ extension CustomSegmentedControl {
             if button == sender {
                 selectedIndex = buttonIndex
 
-                delegate?.segmentedControlDidSwitch(to: selectedIndex)
+                // Call new optional method first, then fall back to old method
+                if let delegate = delegate, delegate.responds(to: #selector(CustomSegmentedControlDelegate.segmentedControl(_:didSwitchTo:))) {
+                    delegate.segmentedControl?(self, didSwitchTo: selectedIndex)
+                } else {
+                    delegate?.segmentedControlDidSwitch(to: selectedIndex)
+                }
                 
                 updateButtonsOnIndexChange()
             }

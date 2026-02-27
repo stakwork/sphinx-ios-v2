@@ -219,16 +219,15 @@ extension WorkspaceTasksViewController: UITableViewDataSource, UITableViewDelega
 
 extension WorkspaceTasksViewController: CustomSegmentedControlDelegate {
     func segmentedControlDidSwitch(to index: Int) {
-        // Determine which segmented control triggered this by checking current state
-        // If tableView is visible and we're switching to index 1, it's likely the top tab
-        // If tableView is hidden and we switch to 0, it's also the top tab
-        
-        let isTopTabSwitch = (tableView.isHidden && index == 0) || (!tableView.isHidden && index == 1)
-        
-        if isTopTabSwitch {
+        // Legacy method - kept for compatibility
+        // Will be called by other segmented controls that don't use the new method
+    }
+    
+    func segmentedControl(_ control: CustomSegmentedControl, didSwitchTo index: Int) {
+        if control == topTabSegmentedControl {
             // Top-level TASKS/FEATURES switch
             switchToTab(index)
-        } else {
+        } else if control == segmentedControl {
             // ACTIVE/ARCHIVED switch for tasks
             includeArchived = (index == 1)
             loadTasks()
