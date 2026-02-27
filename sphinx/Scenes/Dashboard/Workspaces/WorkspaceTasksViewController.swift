@@ -12,12 +12,31 @@ class WorkspaceTasksViewController: PopHandlerViewController {
 
     @IBOutlet weak var headerView: UIView!
     @IBOutlet weak var viewTitle: UILabel!
-    @IBOutlet weak var topTabContainer: UIView!
-    @IBOutlet weak var topTabSegmentedControl: CustomSegmentedControl!
     @IBOutlet weak var segmentedControlContainer: UIView!
     @IBOutlet weak var segmentedControl: CustomSegmentedControl!
     @IBOutlet weak var tableView: UITableView!
-    @IBOutlet weak var featuresContainerView: UIView!
+    
+    // Programmatically created views
+    private lazy var topTabContainer: UIView = {
+        let v = UIView()
+        v.backgroundColor = .Sphinx.Body
+        v.translatesAutoresizingMaskIntoConstraints = false
+        return v
+    }()
+    
+    private lazy var topTabSegmentedControl: CustomSegmentedControl = {
+        let control = CustomSegmentedControl()
+        control.translatesAutoresizingMaskIntoConstraints = false
+        return control
+    }()
+    
+    private lazy var featuresContainerView: UIView = {
+        let v = UIView()
+        v.backgroundColor = .Sphinx.Body
+        v.isHidden = true
+        v.translatesAutoresizingMaskIntoConstraints = false
+        return v
+    }()
 
     private var workspace: Workspace!
     private var tasks: [WorkspaceTask] = []
@@ -53,10 +72,48 @@ class WorkspaceTasksViewController: PopHandlerViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupHeader()
+        setupTopTabUI()
         setupSegmentedControl()
         setupTableView()
         setupLoadingAndEmpty()
         loadTasks()
+    }
+    
+    private func setupTopTabUI() {
+        // Add topTabContainer below the header
+        view.addSubview(topTabContainer)
+        topTabContainer.addSubview(topTabSegmentedControl)
+        view.addSubview(featuresContainerView)
+        
+        NSLayoutConstraint.activate([
+            // Top tab container - below header
+            topTabContainer.topAnchor.constraint(equalTo: headerView.bottomAnchor),
+            topTabContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            topTabContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            topTabContainer.heightAnchor.constraint(equalToConstant: 50),
+            
+            // Segmented control inside container
+            topTabSegmentedControl.topAnchor.constraint(equalTo: topTabContainer.topAnchor),
+            topTabSegmentedControl.leadingAnchor.constraint(equalTo: topTabContainer.leadingAnchor),
+            topTabSegmentedControl.trailingAnchor.constraint(equalTo: topTabContainer.trailingAnchor),
+            topTabSegmentedControl.bottomAnchor.constraint(equalTo: topTabContainer.bottomAnchor),
+            
+            // Features container - same position as tableView
+            featuresContainerView.topAnchor.constraint(equalTo: segmentedControlContainer.bottomAnchor),
+            featuresContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            featuresContainerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            featuresContainerView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ])
+        
+        // Update segmentedControlContainer constraint to be below topTabContainer
+        // (This assumes the storyboard constraint exists - we're replacing its reference)
+        segmentedControlContainer.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            segmentedControlContainer.topAnchor.constraint(equalTo: topTabContainer.bottomAnchor),
+            segmentedControlContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            segmentedControlContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            segmentedControlContainer.heightAnchor.constraint(equalToConstant: 50),
+        ])
     }
 
     private func setupHeader() {
@@ -68,11 +125,12 @@ class WorkspaceTasksViewController: PopHandlerViewController {
 
     private func setupSegmentedControl() {
         // Configure top-level TASKS/FEATURES tab
-        if topTabSegmentedControl != nil {
-            topTabSegmentedControl.buttonTitles = ["TASKS", "FEATURES"]
-            topTabSegmentedControl.delegate = self
-            topTabSegmentedControl.tag = 100 // Tag to identify which control sent event
-        }
+        topTabSegmentedControl.configureFromOutlet(
+            buttonTitles: ["TASKS", "FEATURES"],
+            initialIndex: 0,
+            delegate: self
+        )
+        topTabSegmentedControl.tag = 100
         
         // Configure ACTIVE/ARCHIVED tab (for tasks)
         segmentedControl.configureFromOutlet(
@@ -80,12 +138,7 @@ class WorkspaceTasksViewController: PopHandlerViewController {
             initialIndex: 0,
             delegate: self
         )
-        segmentedControl.tag = 200 // Tag to identify which control sent event
-        
-        // Initially hide features container
-        if featuresContainerView != nil {
-            featuresContainerView.isHidden = true
-        }
+        segmentedControl.tag = 200
     }
 
     private func setupTableView() {
@@ -166,23 +219,20 @@ extension WorkspaceTasksViewController: UITableViewDataSource, UITableViewDelega
 
 extension WorkspaceTasksViewController: CustomSegmentedControlDelegate {
     func segmentedControlDidSwitch(to index: Int) {
-        // We have two segmented controls - need to handle both
-        // Since we can't identify sender, use currentTab state
+        // Determine which segmented control triggered this by checking current state
+        // If tableView is visible and we're switching to index 1, it's likely the top tab
+        // If tableView is hidden and we switch to 0, it's also the top tab
         
-        // Check if we have the top tab control (TASKS/FEATURES)
-        if topTabSegmentedControl != nil && featuresContainerView != nil {
-            // First check if this is switching the top-level tab
-            // If index matches our current displayed state, it's the sub-tab
-            if (index == 0 || index == 1) && (tableView.isHidden == (index == 0)) {
-                // This is the top-level TASKS/FEATURES switch
-                switchToTab(index)
-                return
-            }
+        let isTopTabSwitch = (tableView.isHidden && index == 0) || (!tableView.isHidden && index == 1)
+        
+        if isTopTabSwitch {
+            // Top-level TASKS/FEATURES switch
+            switchToTab(index)
+        } else {
+            // ACTIVE/ARCHIVED switch for tasks
+            includeArchived = (index == 1)
+            loadTasks()
         }
-        
-        // Otherwise it's the ACTIVE/ARCHIVED switch for tasks
-        includeArchived = (index == 1)
-        loadTasks()
     }
     
     private func switchToTab(_ index: Int) {
