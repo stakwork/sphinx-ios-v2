@@ -152,8 +152,12 @@ public class ContentFeed: NSManagedObject {
                     searchResultImageUrl: searchResultImageUrl,
                     context: managedObjectContext
                 ) {
-                    chat?.contentFeed = contentFeed
-                    
+                    // Fetch chat in the same context to avoid cross-context relationship error
+                    if let chat = chat {
+                        let chatInContext = managedObjectContext.object(with: chat.objectID) as? Chat
+                        chatInContext?.contentFeed = contentFeed
+                    }
+
                     completionHandler?(.success(contentFeed))
                 } else {
                     completionHandler?(.failure((API.RequestError.failedToFetchContentFeed)))
