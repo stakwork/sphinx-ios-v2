@@ -27,7 +27,7 @@ class WorkspaceFeatureTableViewCell: UITableViewCell {
         statusBadge.layer.masksToBounds = true
         statusBadge.textAlignment = .center
         
-        separatorView.backgroundColor = .Sphinx.DividerLight
+        separatorView.backgroundColor = .Sphinx.LightDivider
     }
     
     func configure(with feature: HiveFeature, isLastRow: Bool) {

@@ -1,18 +1,11 @@
 import UIKit
 
-protocol WorkspaceFeaturesViewControllerDelegate: AnyObject {
-    func didSelectFeature(_ feature: HiveFeature)
-}
-
 class WorkspaceFeaturesViewController: UIViewController {
     
     // MARK: - Properties
     
-    private let workspace: Workspace
-    private weak var navigationController: UINavigationController?
+    var workspace: Workspace!
     private var features: [HiveFeature] = []
-    
-    weak var delegate: WorkspaceFeaturesViewControllerDelegate?
     
     // MARK: - UI Components
     
@@ -51,27 +44,10 @@ class WorkspaceFeaturesViewController: UIViewController {
     
     // MARK: - Instantiation
     
-    static func instantiate(
-        workspace: Workspace,
-        navigationController: UINavigationController?
-    ) -> WorkspaceFeaturesViewController {
-        let viewController = WorkspaceFeaturesViewController(
-            workspace: workspace,
-            navigationController: navigationController
-        )
+    static func instantiate(workspace: Workspace) -> WorkspaceFeaturesViewController {
+        let viewController = WorkspaceFeaturesViewController()
+        viewController.workspace = workspace
         return viewController
-    }
-    
-    // MARK: - Init
-    
-    private init(workspace: Workspace, navigationController: UINavigationController?) {
-        self.workspace = workspace
-        self.navigationController = navigationController
-        super.init(nibName: nil, bundle: nil)
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
     }
     
     // MARK: - Lifecycle

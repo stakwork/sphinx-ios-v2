@@ -7,7 +7,7 @@
 import UIKit
 
 
-protocol CustomSegmentedControlDelegate: AnyObject {
+@objc protocol CustomSegmentedControlDelegate: AnyObject {
     
     func segmentedControlDidSwitch(
         to index: Int

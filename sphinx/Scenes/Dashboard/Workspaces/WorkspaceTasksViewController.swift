@@ -241,32 +241,25 @@ extension WorkspaceTasksViewController: CustomSegmentedControlDelegate {
             // Show Tasks
             tableView.isHidden = false
             segmentedControlContainer.isHidden = false
-            if featuresContainerView != nil {
-                featuresContainerView.isHidden = true
-            }
+            featuresContainerView.isHidden = true
             loadTasks()
         } else {
             // Show Features
             tableView.isHidden = true
             segmentedControlContainer.isHidden = true
             
-            if let containerView = featuresContainerView {
-                containerView.isHidden = false
+                featuresContainerView.isHidden = false
                 
                 // Lazy-load features VC
                 if activeFeaturesVC == nil {
-                    let featuresVC = WorkspaceFeaturesViewController.instantiate(
-                        workspace: workspace,
-                        navigationController: navigationController
-                    )
+                    let featuresVC = WorkspaceFeaturesViewController.instantiate(workspace: workspace)
                     addChild(featuresVC)
-                    containerView.addSubview(featuresVC.view)
-                    featuresVC.view.frame = containerView.bounds
+                    featuresContainerView.addSubview(featuresVC.view)
+                    featuresVC.view.frame = featuresContainerView.bounds
                     featuresVC.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
                     featuresVC.didMove(toParent: self)
                     activeFeaturesVC = featuresVC
                 }
-            }
         }
     }
 }
