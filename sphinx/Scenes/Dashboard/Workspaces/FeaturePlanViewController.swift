@@ -413,7 +413,7 @@ class FeaturePlanViewController: UIViewController {
         case 0: // BRIEF
             planTextView.text = feature.brief ?? "No brief available yet."
         case 1: // USER STORIES
-            planTextView.text = feature.userStories ?? "No user stories available yet."
+            planTextView.text = (feature.userStories ?? ["No user stories available yet."]).joined(separator: "\n")
         case 2: // REQUIREMENTS
             planTextView.text = feature.requirements ?? "No requirements available yet."
         case 3: // ARCHITECTURE
