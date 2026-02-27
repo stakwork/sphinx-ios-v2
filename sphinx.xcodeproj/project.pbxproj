@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1DE27838450795B0E4120261 /* FeaturePlanViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C31187BFB7EDD28A632A1FD /* FeaturePlanViewController.swift */; };
+		D73D867700EC14B82A3814D7 /* FeatureChatMessageCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE30E2541BF20361DA34D7C4 /* FeatureChatMessageCell.swift */; };
+		F90D11768794DA0FC5BCE0C5 /* HivePusherManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D57927D5D5F362BAE723C33 /* HivePusherManager.swift */; };
 		12075275C652A9404FC48EBC /* Pods_sphinx.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 487E10CEB3D07B0840A84681 /* Pods_sphinx.framework */; };
 		20AB4F9E1FAE42F4B1F33489 /* WorkspaceTasksViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E83B28E7233A4D0D9AE288E2 /* WorkspaceTasksViewController.swift */; };
 		470125C02373255C0013C57B /* TransactionMessage+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 470125BF2373255C0013C57B /* TransactionMessage+CoreDataProperties.swift */; };
@@ -929,6 +932,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		4C31187BFB7EDD28A632A1FD /* FeaturePlanViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeaturePlanViewController.swift; sourceTree = "<group>"; };
+		FE30E2541BF20361DA34D7C4 /* FeatureChatMessageCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureChatMessageCell.swift; sourceTree = "<group>"; };
+		3D57927D5D5F362BAE723C33 /* HivePusherManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HivePusherManager.swift; sourceTree = "<group>"; };
 		334B3B522B8268CD0003EA63 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
 		334B3B532B8268CD0003EA63 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/RecommendationsHeaderCollectionReusableView.strings; sourceTree = "<group>"; };
 		334B3B542B8268CD0003EA63 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/Chat.strings; sourceTree = "<group>"; };
@@ -3971,6 +3977,8 @@
 				8ABF62A347844ECEB2FC60A4 /* HiveChatMessage.swift */,
 				47B9CBFA2F460C7B007527B4 /* WorkspacesViewController.swift */,
 				E83B28E7233A4D0D9AE288E2 /* WorkspaceTasksViewController.swift */,
+				4C31187BFB7EDD28A632A1FD /* FeaturePlanViewController.swift */,
+				FE30E2541BF20361DA34D7C4 /* FeatureChatMessageCell.swift */,
 				47B9CBFB2F460C7B007527B4 /* WorkspaceTableViewCell.swift */,
 				47B9CBFC2F460C7B007527B4 /* WorkspaceTableViewCell.xib */,
 				EB71680A85C46EAF9E7DD25B /* WorkspaceTaskTableViewCell.swift */,
@@ -4284,6 +4292,7 @@
 				CE2349842B8E749F00A708CB /* SphinxOnionManager+InvitesExtension.swift */,
 				CE4A85922B5F051600813B59 /* SphinxOnionManager+TribesExtension.swift */,
 				CE4B53FC2AFC389C00708A0C /* SphinxOnionManager.swift */,
+				3D57927D5D5F362BAE723C33 /* HivePusherManager.swift */,
 				CE887EF92B1E5C7B00DBA670 /* SphinxOnionManager+ContactExtension.swift */,
 				CEAAE28A2B31F119009B283B /* SphinxOnionManager+HandleStateExtension.swift */,
 				4741EBE82BFF6DCB00EFF49E /* SphinxOnionManager+StructsAndHelpersExtension.swift */,
