@@ -191,9 +191,12 @@ class WorkspaceFeaturesViewController: UIViewController {
         
         isLoading = true
         
+        print("[WorkspaceFeaturesVC] Loading features for workspace: \(workspace.id)")
+        
         API.sharedInstance.fetchFeaturesWithAuth(
             workspaceId: workspace.id,
             callback: { [weak self] features in
+                print("[WorkspaceFeaturesVC] Features loaded: \(features.count)")
                 DispatchQueue.main.async {
                     self?.features = features
                     self?.tableView.reloadData()
@@ -202,6 +205,7 @@ class WorkspaceFeaturesViewController: UIViewController {
                 }
             },
             errorCallback: { [weak self] in
+                print("[WorkspaceFeaturesVC] Failed to load features")
                 DispatchQueue.main.async {
                     self?.features = []
                     self?.tableView.reloadData()

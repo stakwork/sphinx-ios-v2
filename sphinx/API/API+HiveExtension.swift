@@ -363,28 +363,31 @@ extension API {
         callback: @escaping HiveFeaturesCallback,
         errorCallback: @escaping EmptyCallback
     ) {
-        guard let encodedWorkspaceId = workspaceId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
-            errorCallback()
-            return
-        }
-
-        let urlString = "\(API.kHiveBaseUrl)/workspaces/\(encodedWorkspaceId)/features"
+        // Use the new endpoint: /api/features with workspaceId as query param
+        let urlString = "\(API.kHiveBaseUrl)/features?workspaceId=\(workspaceId)"
+        
+        print("[HiveAPI] Fetching features from: \(urlString)")
 
         guard let request = createRequest(urlString, bodyParams: nil, method: "GET", token: authToken) else {
+            print("[HiveAPI] Features fetch - failed to create request")
             errorCallback()
             return
         }
 
         session()?.request(request).responseData { response in
-            if let statusCode = response.response?.statusCode, statusCode == 401 {
-                print("[HiveAPI] Features fetch unauthorized (401) - token may be expired")
-                errorCallback()
-                return
+            if let statusCode = response.response?.statusCode {
+                print("[HiveAPI] Features fetch response status: \(statusCode)")
+                if statusCode == 401 {
+                    print("[HiveAPI] Features fetch unauthorized (401) - token may be expired")
+                    errorCallback()
+                    return
+                }
             }
 
             switch response.result {
             case .success(let data):
                 let json = JSON(data)
+                print("[HiveAPI] Features fetch raw response: \(json)")
 
                 if let error = json["error"].string {
                     print("[HiveAPI] Features fetch error: \(error)")
@@ -392,7 +395,18 @@ extension API {
                     return
                 }
 
-                let features: [HiveFeature] = (json["features"].array ?? []).compactMap { HiveFeature(json: $0) }
+                // Parse the new response structure: { success: true, data: [...] }
+                let featuresArray = json["data"].array ?? []
+                print("[HiveAPI] Features fetch - found \(featuresArray.count) features in response")
+                
+                let features: [HiveFeature] = featuresArray.compactMap { 
+                    let feature = HiveFeature(json: $0)
+                    if feature == nil {
+                        print("[HiveAPI] Failed to parse feature: \($0)")
+                    }
+                    return feature
+                }
+                print("[HiveAPI] Features fetch - successfully parsed \(features.count) features")
                 callback(features)
             case .failure(let error):
                 print("[HiveAPI] Features fetch failed: \(error.localizedDescription)")
