@@ -596,7 +596,13 @@ extension API {
                     return
                 }
 
-                let messages: [HiveChatMessage] = (json["messages"].array ?? []).compactMap { HiveChatMessage(json: $0) }
+                guard json["success"].bool == true else {
+                    print("[HiveAPI] Feature chat fetch returned success=false")
+                    errorCallback()
+                    return
+                }
+
+                let messages: [HiveChatMessage] = (json["data"].array ?? []).compactMap { HiveChatMessage(json: $0) }
                 callback(messages)
             case .failure(let error):
                 print("[HiveAPI] Feature chat fetch failed: \(error.localizedDescription)")
@@ -665,7 +671,12 @@ extension API {
         }
 
         let urlString = "\(API.kHiveBaseUrl)/features/\(encodedFeatureId)/chat"
-        let params: [String: AnyObject] = ["message": message as AnyObject]
+        let params: [String: AnyObject] = [
+            "message": message as AnyObject,
+            "contextTags": [] as AnyObject,
+            "sourceWebsocketID": NSNull(),
+            "replyId": NSNull()
+        ]
 
         guard let request = createRequest(urlString, bodyParams: params as NSDictionary, method: "POST", token: authToken) else {
             errorCallback()
@@ -685,6 +696,12 @@ extension API {
 
                 if let error = json["error"].string {
                     print("[HiveAPI] Send chat message error: \(error)")
+                    errorCallback()
+                    return
+                }
+
+                guard json["success"].bool == true else {
+                    print("[HiveAPI] Send chat message returned success=false")
                     errorCallback()
                     return
                 }
