@@ -149,6 +149,7 @@ class TaskChatViewController: UIViewController {
         chatInputContainer.translatesAutoresizingMaskIntoConstraints = false
         chatInputContainer.backgroundColor = UIColor.Sphinx.HeaderBG
         view.addSubview(chatInputContainer)
+        chatInputContainer.isHidden = true
 
         // Text view
         chatInputTextView = UITextView()

@@ -189,6 +189,7 @@ class FeaturePlanViewController: UIViewController {
         chatInputContainer.translatesAutoresizingMaskIntoConstraints = false
         chatInputContainer.backgroundColor = UIColor.Sphinx.HeaderBG
         chatContainerView.addSubview(chatInputContainer)
+        chatInputContainer.isHidden = true
         
         // Chat Input Text View
         chatInputTextView = UITextView()
