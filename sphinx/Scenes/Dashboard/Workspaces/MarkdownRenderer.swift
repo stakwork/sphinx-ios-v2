@@ -371,7 +371,7 @@ final class MarkdownRenderer {
     // MARK: - Helpers
 
     private func firstRange(in string: String, pattern: String) -> Range<String.Index>? {
-        return try? string.range(of: pattern, options: .regularExpression)
+        return try! string.range(of: pattern, options: .regularExpression)
     }
 
     private func appendLiteral(_ sub: Substring, attrs: [NSAttributedString.Key: Any], to result: NSMutableAttributedString) {
