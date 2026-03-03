@@ -12,7 +12,8 @@ import UIKit
 struct MarkdownStyle {
     var textColor: UIColor       = .Sphinx.Text
     var secondaryColor: UIColor  = .Sphinx.SecondaryText
-    var codeBackground: UIColor  = .Sphinx.HeaderBG
+    var codeBackground: UIColor  = UIColor(red: 0.13, green: 0.14, blue: 0.16, alpha: 1.0)
+    var codeForeground: UIColor  = UIColor(red: 0.85, green: 0.90, blue: 0.95, alpha: 1.0)
     var linkColor: UIColor       = .Sphinx.PrimaryBlue
     var quoteColor: UIColor      = .Sphinx.SecondaryText
     var quoteBarColor: UIColor   = .Sphinx.LightDivider
@@ -207,10 +208,12 @@ final class MarkdownRenderer {
     private func renderCodeBlock(_ code: String) -> NSAttributedString {
         let attrs: [NSAttributedString.Key: Any] = [
             .font: style.codeFont,
-            .foregroundColor: style.textColor,
+            .foregroundColor: style.codeForeground,
             .backgroundColor: style.codeBackground
         ]
-        let padded = "  " + code.replacingOccurrences(of: "\n", with: "\n  ")
+        // Pad each line with spaces so background covers the full block width
+        let paddedLines = code.components(separatedBy: "\n").map { "  \($0)  " }
+        let padded = "\n" + paddedLines.joined(separator: "\n") + "\n"
         return NSAttributedString(string: padded, attributes: attrs)
     }
 
@@ -240,6 +243,8 @@ final class MarkdownRenderer {
         let content = renderInline(text, font: style.baseFont, color: style.textColor)
         let result = NSMutableAttributedString(attributedString: prefix)
         result.append(content)
+        // Extra spacing below each list item
+        result.append(NSAttributedString(string: "\n", attributes: [.font: style.baseFont]))
         return result
     }
 
@@ -249,17 +254,23 @@ final class MarkdownRenderer {
             .font: style.baseFont,
             .foregroundColor: checked ? style.linkColor : style.textColor
         ])
-        var attrs: [NSAttributedString.Key: Any] = [
-            .font: style.baseFont,
-            .foregroundColor: style.textColor
-        ]
+        // Use renderInline so bold/italic/code inside task items are handled
+        let contentColor = checked ? style.secondaryColor : style.textColor
+        let content = renderInline(text, font: style.baseFont, color: contentColor)
         if checked {
-            attrs[.strikethroughStyle] = NSUnderlineStyle.single.rawValue
-            attrs[.foregroundColor] = style.secondaryColor
+            let mutable = NSMutableAttributedString(attributedString: content)
+            mutable.addAttribute(.strikethroughStyle, value: NSUnderlineStyle.single.rawValue,
+                                 range: NSRange(location: 0, length: mutable.length))
+            let result = NSMutableAttributedString(attributedString: prefix)
+            result.append(mutable)
+            // Extra spacing below each task item
+            result.append(NSAttributedString(string: "\n", attributes: [.font: style.baseFont]))
+            return result
         }
-        let content = NSAttributedString(string: text, attributes: attrs)
         let result = NSMutableAttributedString(attributedString: prefix)
         result.append(content)
+        // Extra spacing below each task item
+        result.append(NSAttributedString(string: "\n", attributes: [.font: style.baseFont]))
         return result
     }
 
@@ -322,9 +333,9 @@ final class MarkdownRenderer {
             if let range = firstRange(in: s, pattern: #"`(.+?)`"#) {
                 appendLiteral(s[s.startIndex..<range.lowerBound], attrs: base, to: result)
                 let inner = String(s[range].dropFirst(1).dropLast(1))
-                result.append(NSAttributedString(string: inner, attributes: [
+                result.append(NSAttributedString(string: " \(inner) ", attributes: [
                     .font: style.codeFont,
-                    .foregroundColor: color,
+                    .foregroundColor: style.codeForeground,
                     .backgroundColor: style.codeBackground
                 ]))
                 s = String(s[range.upperBound...])

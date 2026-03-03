@@ -254,7 +254,7 @@ extension CustomSegmentedControl {
 
             if let symbols = symbols, index < symbols.count {
                 // SF Symbol mode
-                let config = UIImage.SymbolConfiguration(pointSize: 18, weight: .medium)
+                let config = UIImage.SymbolConfiguration(pointSize: 14, weight: .medium)
                 let image = UIImage(systemName: symbols[index], withConfiguration: config)
                 button.setImage(image, for: .normal)
                 button.tintColor = buttonTextColor
