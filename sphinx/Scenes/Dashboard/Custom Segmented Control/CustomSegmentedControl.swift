@@ -1,7 +1,6 @@
 //
 // CustomSegmentedControl.swift
 // sphinx
-//
 
 
 import UIKit
@@ -10,19 +9,15 @@ import UIKit
 @objc protocol CustomSegmentedControlDelegate: AnyObject {
     
     func segmentedControlDidSwitch(
-        to index: Int
-    )
-    
-    // Optional method that includes sender - new controllers should use this
-    @objc optional func segmentedControl(
         _ control: CustomSegmentedControl,
-        didSwitchTo index: Int
+        to index: Int
     )
 }
 
 
 class CustomSegmentedControl: UIView {
     private var buttonTitles: [String]!
+    private var buttonSymbols: [String]?      // SF Symbol names, parallel to buttonTitles
     private var buttons: [UIButton]!
     private var buttonTitleBadges: [UIView]!
     private var selectorView: UIView!
@@ -40,7 +35,6 @@ class CustomSegmentedControl: UIView {
     public var selectorWidthRatio: CGFloat = 0.85
 
     /// Custom width ratios for each button. If nil, buttons will be distributed equally.
-    /// Values should sum to 1.0 (e.g., [0.24, 0.24, 0.24, 0.28])
     public var buttonWidthRatios: [CGFloat]? = nil
     
     
@@ -49,7 +43,6 @@ class CustomSegmentedControl: UIView {
         didSet {
             DispatchQueue.main.async { [weak self] in
                 guard let self = self else { return }
-                
                 self.updateTitleBadges()
             }
         }
@@ -97,17 +90,16 @@ extension CustomSegmentedControl {
     
     @objc func buttonAction(sender: UIButton) {
         for (buttonIndex, button) in buttons.enumerated() {
-            button.setTitleColor(buttonTextColor, for: .normal)
+            if buttonSymbols != nil {
+                button.tintColor = buttonTextColor
+            } else {
+                button.setTitleColor(buttonTextColor, for: .normal)
+            }
             
             if button == sender {
                 selectedIndex = buttonIndex
 
-                // Call new optional method first, then fall back to old method
-                if let delegate = delegate, (delegate as AnyObject).responds(to: #selector(CustomSegmentedControlDelegate.segmentedControl(_:didSwitchTo:))) {
-                    delegate.segmentedControl?(self, didSwitchTo: selectedIndex)
-                } else {
-                    delegate?.segmentedControlDidSwitch(to: selectedIndex)
-                }
+                delegate?.segmentedControlDidSwitch(self, to: selectedIndex)
                 
                 updateButtonsOnIndexChange()
             }
@@ -126,9 +118,26 @@ extension CustomSegmentedControl {
         delegate: CustomSegmentedControlDelegate?
     ) {
         self.buttonTitles = buttonTitles
+        self.buttonSymbols = nil
         self.selectedIndex = initialIndex
         self.delegate = delegate
         
+        setupInitialViews()
+        updateButtonsOnIndexChange()
+    }
+
+    /// Configure with SF Symbol names instead of text labels.
+    public func configureWithSymbols(
+        symbolNames: [String],
+        placeholderTitles: [String],
+        initialIndex: Int = 0,
+        delegate: CustomSegmentedControlDelegate?
+    ) {
+        self.buttonTitles = placeholderTitles
+        self.buttonSymbols = symbolNames
+        self.selectedIndex = initialIndex
+        self.delegate = delegate
+
         setupInitialViews()
         updateButtonsOnIndexChange()
     }
@@ -203,6 +212,7 @@ extension CustomSegmentedControl {
     
     
     private func configureSelectorView() {
+        // Always place selector at the BOTTOM of the control
         selectorView = UIView(
             frame: CGRect(
                 x: selectorPosition,
@@ -223,13 +233,25 @@ extension CustomSegmentedControl {
         buttons.removeAll()
         
         subviews.forEach({ $0.removeFromSuperview() })
-        
-        for buttonTitle in buttonTitles {
+
+        let symbols = buttonSymbols
+
+        for (index, buttonTitle) in buttonTitles.enumerated() {
             let button = UIButton(type: .system)
-            
-            button.setTitle(buttonTitle, for: .normal)
-            button.setTitleColor(buttonTextColor, for: .normal)
-            button.titleLabel?.font = buttonTitleFont
+
+            if let symbols = symbols, index < symbols.count {
+                // SF Symbol mode
+                let config = UIImage.SymbolConfiguration(pointSize: 18, weight: .medium)
+                let image = UIImage(systemName: symbols[index], withConfiguration: config)
+                button.setImage(image, for: .normal)
+                button.tintColor = buttonTextColor
+                button.accessibilityLabel = buttonTitle
+            } else {
+                // Text mode
+                button.setTitle(buttonTitle, for: .normal)
+                button.setTitleColor(buttonTextColor, for: .normal)
+                button.titleLabel?.font = buttonTitleFont
+            }
             
             button.addTarget(
                 self,
@@ -239,8 +261,12 @@ extension CustomSegmentedControl {
             
             buttons.append(button)
         }
-        
-        buttons[selectedIndex].setTitleColor(activeTextColor, for: .normal)
+
+        if symbols != nil {
+            buttons[selectedIndex].tintColor = activeTextColor
+        } else {
+            buttons[selectedIndex].setTitleColor(activeTextColor, for: .normal)
+        }
         
         createButtonTitleBadges()
     }
@@ -248,7 +274,13 @@ extension CustomSegmentedControl {
     
     func updateButtonsOnIndexChange() {
         UIView.animate(withDuration: 0.3) {
-            self.buttons[self.selectedIndex].setTitleColor(self.activeTextColor, for: .normal)
+            if self.buttonSymbols != nil {
+                for (i, btn) in self.buttons.enumerated() {
+                    btn.tintColor = i == self.selectedIndex ? self.activeTextColor : self.buttonTextColor
+                }
+            } else {
+                self.buttons[self.selectedIndex].setTitleColor(self.activeTextColor, for: .normal)
+            }
             self.selectorView.frame.origin.x = self.selectorPosition
             self.selectorView.frame.size.width = self.selectorWidth
         }

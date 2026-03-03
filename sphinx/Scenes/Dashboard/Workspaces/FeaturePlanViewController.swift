@@ -136,10 +136,7 @@ class FeaturePlanViewController: UIViewController {
     }
     
     private func setupTopSegmentedControl() {
-        topSegmentedControl = CustomSegmentedControl(
-            frame: .zero,
-            buttonTitles: ["CHAT", "PLAN"]
-        )
+        topSegmentedControl = CustomSegmentedControl(frame: .zero, buttonTitles: ["CHAT", "PLAN"])
         topSegmentedControl.translatesAutoresizingMaskIntoConstraints = false
         topSegmentedControl.configureFromOutlet(
             buttonTitles: ["CHAT", "PLAN"],
@@ -240,14 +237,15 @@ class FeaturePlanViewController: UIViewController {
         planContainerView.isHidden = true
         view.addSubview(planContainerView)
         
-        // Plan Segmented Control
+        // Plan Segmented Control — SF Symbol icons
         planSegmentedControl = CustomSegmentedControl(
             frame: .zero,
-            buttonTitles: ["BRIEF", "USER STORIES", "REQUIREMENTS", "ARCHITECTURE"]
+            buttonTitles: ["Brief", "User Stories", "Requirements", "Architecture"]
         )
         planSegmentedControl.translatesAutoresizingMaskIntoConstraints = false
-        planSegmentedControl.configureFromOutlet(
-            buttonTitles: ["BRIEF", "USER STORIES", "REQUIREMENTS", "ARCHITECTURE"],
+        planSegmentedControl.configureWithSymbols(
+            symbolNames: ["doc.plaintext", "person.2", "checklist", "cpu"],
+            placeholderTitles: ["Brief", "User Stories", "Requirements", "Architecture"],
             initialIndex: 0,
             delegate: self
         )
@@ -524,20 +522,14 @@ class FeaturePlanViewController: UIViewController {
 
 // MARK: - CustomSegmentedControlDelegate
 extension FeaturePlanViewController: CustomSegmentedControlDelegate {
-    func segmentedControlDidSwitch(to index: Int) {
-        // Legacy method - kept for compatibility
-    }
-    
-    func segmentedControl(_ control: CustomSegmentedControl, didSwitchTo index: Int) {
-        if control == topSegmentedControl {
-            // Top level segmented control (CHAT / PLAN)
+    func segmentedControlDidSwitch(_ control: CustomSegmentedControl, to index: Int) {
+        if control === topSegmentedControl {
             if index == 0 {
                 showChatPanel()
             } else {
                 showPlanPanel()
             }
-        } else if control == planSegmentedControl {
-            // Plan sub-tabs
+        } else if control === planSegmentedControl {
             updatePlanText()
         }
     }

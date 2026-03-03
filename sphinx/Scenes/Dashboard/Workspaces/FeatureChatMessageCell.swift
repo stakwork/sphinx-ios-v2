@@ -53,7 +53,8 @@ class FeatureChatMessageCell: UITableViewCell {
 
     // MARK: - Setup
     private func setupUI() {
-        backgroundColor = .clear
+        backgroundColor = .Sphinx.Body
+        contentView.backgroundColor = .Sphinx.Body
         selectionStyle = .none
 
         contentView.addSubview(bubbleView)

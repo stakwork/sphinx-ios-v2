@@ -110,12 +110,7 @@ extension WorkspaceTasksViewController: UITableViewDataSource, UITableViewDelega
 }
 
 extension WorkspaceTasksViewController: CustomSegmentedControlDelegate {
-    func segmentedControlDidSwitch(to index: Int) {
-        // Legacy method - kept for compatibility
-        // Will be called by other segmented controls that don't use the new method
-    }
-    
-    func segmentedControl(_ control: CustomSegmentedControl, didSwitchTo index: Int) {
+    func segmentedControlDidSwitch(_ control: CustomSegmentedControl, to index: Int) {
         includeArchived = (index == 1)
         loadTasks()
     }

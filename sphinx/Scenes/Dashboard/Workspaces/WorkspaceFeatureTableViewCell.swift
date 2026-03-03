@@ -39,7 +39,7 @@ class WorkspaceFeatureTableViewCell: UITableViewCell {
             $0?.textAlignment = .center
         }
         
-        separatorView.backgroundColor = .Sphinx.Divider
+        separatorView.backgroundColor = .Sphinx.LightDivider
     }
     
     func configure(with feature: HiveFeature, isLastRow: Bool) {
