@@ -43,6 +43,11 @@ struct PRContent {
     let progress: PRProgress?
 }
 
+struct LongformContent {
+    let title: String?
+    let text: String?
+}
+
 struct HiveChatMessageArtifact {
     let id: String?
     let type: String?
@@ -50,8 +55,11 @@ struct HiveChatMessageArtifact {
     let content: String?
     /// Parsed PR content when type == "PULL_REQUEST"
     let prContent: PRContent?
+    /// Parsed longform content when type == "LONGFORM"
+    let longformContent: LongformContent?
 
     var isPullRequest: Bool { type == "PULL_REQUEST" }
+    var isLongform: Bool { type == "LONGFORM" }
 
     init(json: JSON) {
         self.id   = json["id"].string
@@ -77,8 +85,15 @@ struct HiveChatMessageArtifact {
                 )
             )
             self.content = nil
+            self.longformContent = nil
+        } else if json["type"].string == "LONGFORM" {
+            let c = json["content"]
+            self.longformContent = LongformContent(title: c["title"].string, text: c["text"].string)
+            self.content = nil
+            self.prContent = nil
         } else {
             self.prContent = nil
+            self.longformContent = nil
             self.content = json["content"].string
         }
     }
@@ -129,5 +144,24 @@ struct HiveChatMessage {
     /// Returns true if the message was sent by the user (role == "USER")
     var isUserMessage: Bool {
         return role.uppercased() == "USER"
+    }
+
+    /// Returns `message` if non-empty; otherwise composes text from the first LONGFORM artifact.
+    var resolvedDisplayText: String {
+        if !message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return message
+        }
+        if let lf = artifacts.first(where: { $0.isLongform })?.longformContent {
+            let title = lf.title ?? ""
+            let text  = lf.text  ?? ""
+            return title.isEmpty ? text : "**\(title)**\n\n\(text)"
+        }
+        return message
+    }
+
+    /// Returns true when the message text is empty and a LONGFORM artifact carries the content.
+    var isLongformMessage: Bool {
+        return message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && artifacts.contains(where: { $0.isLongform })
     }
 }
