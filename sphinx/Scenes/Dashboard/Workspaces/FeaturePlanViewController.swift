@@ -95,6 +95,8 @@ class FeaturePlanViewController: UIViewController {
         
         // Initially show chat panel
         showPanel(at: 0)
+        // Set initial generate button visibility
+        updateGenerateTasksButton()
     }
     
     private func setupHeader() {
@@ -142,14 +144,15 @@ class FeaturePlanViewController: UIViewController {
     private func setupTopSegmentedControl() {
         topSegmentedControl = CustomSegmentedControl(frame: .zero, buttonTitles: ["CHAT", "PLAN", "TASKS"])
         topSegmentedControl.translatesAutoresizingMaskIntoConstraints = false
+        // Set colors BEFORE configure so configureSelectorView picks up the right color
+        topSegmentedControl.buttonBackgroundColor = UIColor.Sphinx.HeaderBG
+        topSegmentedControl.backgroundColor = UIColor.Sphinx.HeaderBG
+        topSegmentedControl.selectorViewColor = UIColor.Sphinx.PrimaryGreen
         topSegmentedControl.configureFromOutlet(
             buttonTitles: ["CHAT", "PLAN", "TASKS"],
             initialIndex: 0,
             delegate: self
         )
-        topSegmentedControl.buttonBackgroundColor = UIColor.Sphinx.HeaderBG
-        topSegmentedControl.backgroundColor = UIColor.Sphinx.HeaderBG
-        topSegmentedControl.selectorViewColor = UIColor.Sphinx.PrimaryGreen
         view.addSubview(topSegmentedControl)
         
         NSLayoutConstraint.activate([
@@ -249,14 +252,15 @@ class FeaturePlanViewController: UIViewController {
             buttonTitles: ["Brief", "User Stories", "Requirements", "Architecture"]
         )
         planSegmentedControl.translatesAutoresizingMaskIntoConstraints = false
+        // Set colors BEFORE configure so configureSelectorView picks up the right color
+        planSegmentedControl.buttonBackgroundColor = UIColor.Sphinx.HeaderBG
+        planSegmentedControl.backgroundColor = UIColor.Sphinx.HeaderBG
         planSegmentedControl.configureWithSymbols(
             symbolNames: ["doc.plaintext", "person.2", "checklist", "cpu"],
             placeholderTitles: ["Brief", "User Stories", "Requirements", "Architecture"],
             initialIndex: 0,
             delegate: self
         )
-        planSegmentedControl.buttonBackgroundColor = UIColor.Sphinx.HeaderBG
-        planSegmentedControl.backgroundColor = UIColor.Sphinx.HeaderBG
         planContainerView.addSubview(planSegmentedControl)
         
         // Plan Text View — displays rendered markdown
@@ -388,9 +392,10 @@ class FeaturePlanViewController: UIViewController {
             featureId: feature.id,
             callback: { [weak self] in
                 DispatchQueue.main.async {
-                    self?.generateTasksButton.isEnabled = true
                     self?.generateLoadingWheel.stopAnimating()
                     self?.showGenerateTasksSuccess()
+                    // Re-fetch feature so tasks list populates and button hides
+                    self?.fetchFeatureDetail()
                 }
             },
             errorCallback: { [weak self] in
@@ -445,6 +450,11 @@ class FeaturePlanViewController: UIViewController {
         planContainerView.isHidden  = (index != 1)
         tasksContainerView.isHidden = (index != 2)
         if index == 1 { updatePlanText() }
+        if index == 2 { tasksTableView.reloadData() }
+    }
+
+    private func updateGenerateTasksButton() {
+        generateTasksButton.isHidden = feature.hasTasks
     }
     
     private func updatePlanText() {
@@ -489,6 +499,12 @@ class FeaturePlanViewController: UIViewController {
                     if !self.planContainerView.isHidden {
                         self.updatePlanText()
                     }
+                    // Refresh tasks panel if currently visible
+                    if !self.tasksContainerView.isHidden {
+                        self.tasksTableView.reloadData()
+                    }
+                    // Show/hide generate button based on whether tasks exist
+                    self.updateGenerateTasksButton()
                 }
             },
             errorCallback: {
@@ -604,7 +620,7 @@ extension FeaturePlanViewController: CustomSegmentedControlDelegate {
 extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if tableView === tasksTableView {
-            return 0 // Tasks loading not yet implemented
+            return feature.allTasks.count
         }
         return messages.count
     }
@@ -617,6 +633,10 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
             ) as? WorkspaceTaskTableViewCell else {
                 return UITableViewCell()
             }
+            let tasks = feature.allTasks
+            let task = tasks[indexPath.row]
+            let isLast = indexPath.row == tasks.count - 1
+            cell.configure(with: task, isLastRow: isLast)
             return cell
         }
 

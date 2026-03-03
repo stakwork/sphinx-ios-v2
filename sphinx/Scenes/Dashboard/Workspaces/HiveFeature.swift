@@ -24,6 +24,22 @@ struct HiveAssignee {
     }
 }
 
+/// A phase groups tasks together under a named milestone.
+struct HivePhase {
+    let id: String
+    let name: String
+    let order: Int
+    let tasks: [WorkspaceTask]
+
+    init?(json: JSON) {
+        guard let id = json["id"].string else { return nil }
+        self.id = id
+        self.name = json["name"].string ?? ""
+        self.order = json["order"].int ?? 0
+        self.tasks = json["tasks"].arrayValue.compactMap { WorkspaceTask(json: $0) }
+    }
+}
+
 struct HiveFeature {
     let id: String
     let title: String
@@ -42,6 +58,19 @@ struct HiveFeature {
     let deploymentUrl: String?
     let userStoriesCount: Int?
     let stakworkRunsCount: Int?
+
+    /// Phases with their tasks (from the detail endpoint)
+    let phases: [HivePhase]
+    /// Top-level tasks not assigned to any phase (from the detail endpoint)
+    let looseTasks: [WorkspaceTask]
+
+    /// Flattened list of all tasks across phases + loose tasks, sorted by phase order then task order.
+    var allTasks: [WorkspaceTask] {
+        let phaseTasks = phases.sorted { $0.order < $1.order }.flatMap { $0.tasks }
+        return phaseTasks + looseTasks
+    }
+
+    var hasTasks: Bool { !allTasks.isEmpty }
     
     // Computed property to get name (backwards compatibility)
     var name: String { return title }
@@ -87,5 +116,11 @@ struct HiveFeature {
         // Parse _count object
         self.userStoriesCount = json["_count"]["userStories"].int
         self.stakworkRunsCount = json["_count"]["stakworkRuns"].int
+
+        // Parse phases (detail endpoint only)
+        self.phases = json["phases"].arrayValue.compactMap { HivePhase(json: $0) }
+
+        // Parse top-level tasks not inside a phase
+        self.looseTasks = json["tasks"].arrayValue.compactMap { WorkspaceTask(json: $0) }
     }
 }

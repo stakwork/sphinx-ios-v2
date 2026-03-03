@@ -57,7 +57,8 @@ struct WorkspaceTask {
         self.assigneeImage = json["assignee"]["image"].string
         self.repositoryId = json["repository"]["id"].string
         self.repositoryName = json["repository"]["name"].string
-        self.repositoryUrl = json["repository"]["url"].string
+        // Detail endpoint uses "repositoryUrl", workspace tasks endpoint uses "url"
+        self.repositoryUrl = json["repository"]["repositoryUrl"].string ?? json["repository"]["url"].string
         self.createdById = json["createdBy"]["id"].string
         self.createdByName = json["createdBy"]["name"].string
         self.createdByImage = json["createdBy"]["image"].string
