@@ -108,6 +108,13 @@ extension WorkspaceTasksViewController: UITableViewDataSource, UITableViewDelega
         cell.configure(with: tasks[indexPath.row], isLastRow: indexPath.row == tasks.count - 1)
         return cell
     }
+
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        let task = tasks[indexPath.row]
+        let chatVC = TaskChatViewController.instantiate(task: task)
+        navigationController?.pushViewController(chatVC, animated: true)
+    }
 }
 
 extension WorkspaceTasksViewController: CustomSegmentedControlDelegate {

@@ -650,6 +650,14 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
         cell.configure(with: message)
         return cell
     }
+
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        guard tableView === tasksTableView else { return }
+        let task = feature.allTasks[indexPath.row]
+        let chatVC = TaskChatViewController.instantiate(task: task)
+        navigationController?.pushViewController(chatVC, animated: true)
+    }
 }
 
 // MARK: - HivePusherDelegate

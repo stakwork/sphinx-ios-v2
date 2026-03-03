@@ -1,0 +1,301 @@
+//
+//  TaskChatViewController.swift
+//  sphinx
+//
+//  Full-screen task chat: header (back + task title) + chat messages + input bar.
+//  No CHAT/PLAN/TASKS tabs — this is purely the chat for a single task.
+//
+
+import UIKit
+
+class TaskChatViewController: UIViewController {
+
+    // MARK: - Properties
+    private var task: WorkspaceTask
+    private var messages: [HiveChatMessage] = []
+
+    // MARK: - Header
+    private var headerView: UIView!
+    private var backButton: UIButton!
+    private var titleLabel: UILabel!
+
+    // MARK: - Chat
+    private var chatTableView: UITableView!
+    private var chatInputContainer: UIView!
+    private var chatInputTextView: UITextView!
+    private var sendButton: UIButton!
+    private var chatInputBottomConstraint: NSLayoutConstraint!
+
+    private var loadingWheel: UIActivityIndicatorView!
+    private var emptyLabel: UILabel!
+
+    // MARK: - Init
+    static func instantiate(task: WorkspaceTask) -> TaskChatViewController {
+        return TaskChatViewController(task: task)
+    }
+
+    private init(task: WorkspaceTask) {
+        self.task = task
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    // MARK: - Lifecycle
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupUI()
+        setupKeyboardObservers()
+        fetchMessages()
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    // MARK: - UI Setup
+    private func setupUI() {
+        view.backgroundColor = UIColor.Sphinx.Body
+        setupHeader()
+        setupChatArea()
+    }
+
+    private func setupHeader() {
+        headerView = UIView()
+        headerView.translatesAutoresizingMaskIntoConstraints = false
+        headerView.backgroundColor = UIColor.Sphinx.Body
+        view.addSubview(headerView)
+
+        // Bottom divider line
+        let divider = UIView()
+        divider.translatesAutoresizingMaskIntoConstraints = false
+        divider.backgroundColor = UIColor.Sphinx.LightDivider
+        headerView.addSubview(divider)
+
+        backButton = UIButton(type: .custom)
+        backButton.translatesAutoresizingMaskIntoConstraints = false
+        backButton.titleLabel?.font = UIFont(name: "MaterialIcons-Regular", size: 21)
+        backButton.setTitle("\u{E5C4}", for: .normal)
+        backButton.setTitleColor(UIColor.Sphinx.WashedOutReceivedText, for: .normal)
+        backButton.addTarget(self, action: #selector(backTapped), for: .touchUpInside)
+        headerView.addSubview(backButton)
+
+        titleLabel = UILabel()
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        titleLabel.text = task.title
+        titleLabel.font = UIFont(name: "Roboto-Medium", size: 14)
+        titleLabel.textColor = UIColor.Sphinx.Text
+        titleLabel.textAlignment = .center
+        titleLabel.numberOfLines = 1
+        titleLabel.lineBreakMode = .byTruncatingTail
+        headerView.addSubview(titleLabel)
+
+        NSLayoutConstraint.activate([
+            headerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            headerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            headerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            headerView.heightAnchor.constraint(equalToConstant: 50),
+
+            backButton.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
+            backButton.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
+            backButton.widthAnchor.constraint(equalToConstant: 50),
+            backButton.heightAnchor.constraint(equalToConstant: 50),
+
+            titleLabel.centerXAnchor.constraint(equalTo: headerView.centerXAnchor),
+            titleLabel.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
+            titleLabel.leadingAnchor.constraint(greaterThanOrEqualTo: backButton.trailingAnchor, constant: 8),
+            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: headerView.trailingAnchor, constant: -58),
+
+            divider.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
+            divider.trailingAnchor.constraint(equalTo: headerView.trailingAnchor),
+            divider.bottomAnchor.constraint(equalTo: headerView.bottomAnchor),
+            divider.heightAnchor.constraint(equalToConstant: 1)
+        ])
+    }
+
+    private func setupChatArea() {
+        // Loading wheel (while fetching)
+        loadingWheel = UIActivityIndicatorView(style: .medium)
+        loadingWheel.translatesAutoresizingMaskIntoConstraints = false
+        loadingWheel.hidesWhenStopped = true
+        loadingWheel.color = UIColor.Sphinx.Text
+        view.addSubview(loadingWheel)
+
+        // Empty state label
+        emptyLabel = UILabel()
+        emptyLabel.translatesAutoresizingMaskIntoConstraints = false
+        emptyLabel.text = "No messages yet"
+        emptyLabel.textColor = UIColor.Sphinx.SecondaryText
+        emptyLabel.font = UIFont(name: "Roboto-Regular", size: 15)
+        emptyLabel.textAlignment = .center
+        emptyLabel.isHidden = true
+        view.addSubview(emptyLabel)
+
+        // Chat table view
+        chatTableView = UITableView()
+        chatTableView.translatesAutoresizingMaskIntoConstraints = false
+        chatTableView.backgroundColor = .clear
+        chatTableView.separatorStyle = .none
+        chatTableView.delegate = self
+        chatTableView.dataSource = self
+        chatTableView.contentInset = UIEdgeInsets(top: 16, left: 0, bottom: 16, right: 0)
+        chatTableView.register(FeatureChatMessageCell.self, forCellReuseIdentifier: "FeatureChatMessageCell")
+        view.addSubview(chatTableView)
+
+        // Input container
+        chatInputContainer = UIView()
+        chatInputContainer.translatesAutoresizingMaskIntoConstraints = false
+        chatInputContainer.backgroundColor = UIColor.Sphinx.HeaderBG
+        view.addSubview(chatInputContainer)
+
+        // Text view
+        chatInputTextView = UITextView()
+        chatInputTextView.translatesAutoresizingMaskIntoConstraints = false
+        chatInputTextView.backgroundColor = UIColor.Sphinx.Body
+        chatInputTextView.textColor = UIColor.Sphinx.Text
+        chatInputTextView.font = UIFont(name: "Roboto-Regular", size: 16)
+        chatInputTextView.layer.cornerRadius = 20
+        chatInputTextView.layer.borderWidth = 1
+        chatInputTextView.layer.borderColor = UIColor.Sphinx.LightDivider.cgColor
+        chatInputTextView.textContainerInset = UIEdgeInsets(top: 10, left: 12, bottom: 10, right: 12)
+        chatInputContainer.addSubview(chatInputTextView)
+
+        // Send button
+        sendButton = UIButton()
+        sendButton.translatesAutoresizingMaskIntoConstraints = false
+        sendButton.setTitle("➤", for: .normal)
+        sendButton.setTitleColor(.white, for: .normal)
+        sendButton.titleLabel?.font = UIFont.systemFont(ofSize: 18, weight: .medium)
+        sendButton.backgroundColor = UIColor.Sphinx.PrimaryBlue
+        sendButton.layer.cornerRadius = 20
+        sendButton.addTarget(self, action: #selector(sendTapped), for: .touchUpInside)
+        chatInputContainer.addSubview(sendButton)
+
+        chatInputBottomConstraint = chatInputContainer.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+
+        NSLayoutConstraint.activate([
+            loadingWheel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            loadingWheel.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+
+            emptyLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            emptyLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+
+            chatTableView.topAnchor.constraint(equalTo: headerView.bottomAnchor),
+            chatTableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            chatTableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            chatTableView.bottomAnchor.constraint(equalTo: chatInputContainer.topAnchor),
+
+            chatInputContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            chatInputContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            chatInputBottomConstraint,
+            chatInputContainer.heightAnchor.constraint(equalToConstant: 80),
+
+            chatInputTextView.topAnchor.constraint(equalTo: chatInputContainer.topAnchor, constant: 12),
+            chatInputTextView.leadingAnchor.constraint(equalTo: chatInputContainer.leadingAnchor, constant: 16),
+            chatInputTextView.bottomAnchor.constraint(equalTo: chatInputContainer.bottomAnchor, constant: -12),
+            chatInputTextView.trailingAnchor.constraint(equalTo: sendButton.leadingAnchor, constant: -12),
+
+            sendButton.centerYAnchor.constraint(equalTo: chatInputContainer.centerYAnchor),
+            sendButton.trailingAnchor.constraint(equalTo: chatInputContainer.trailingAnchor, constant: -16),
+            sendButton.widthAnchor.constraint(equalToConstant: 80),
+            sendButton.heightAnchor.constraint(equalToConstant: 40)
+        ])
+    }
+
+    // MARK: - Keyboard
+    private func setupKeyboardObservers() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(keyboardWillShow),
+            name: UIResponder.keyboardWillShowNotification,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(keyboardWillHide),
+            name: UIResponder.keyboardWillHideNotification,
+            object: nil
+        )
+    }
+
+    @objc private func keyboardWillShow(notification: NSNotification) {
+        guard let info = notification.userInfo,
+              let frame = info[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect,
+              let duration = info[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double else { return }
+        chatInputBottomConstraint.constant = -frame.height
+        UIView.animate(withDuration: duration) { self.view.layoutIfNeeded() }
+        scrollToBottom(animated: true)
+    }
+
+    @objc private func keyboardWillHide(notification: NSNotification) {
+        guard let info = notification.userInfo,
+              let duration = info[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double else { return }
+        chatInputBottomConstraint.constant = 0
+        UIView.animate(withDuration: duration) { self.view.layoutIfNeeded() }
+    }
+
+    // MARK: - Actions
+    @objc private func backTapped() {
+        navigationController?.popViewController(animated: true)
+    }
+
+    @objc private func sendTapped() {
+        // Read-only for now — task chat is view-only (no send endpoint defined)
+        chatInputTextView.resignFirstResponder()
+    }
+
+    // MARK: - Data
+    private func fetchMessages() {
+        loadingWheel.startAnimating()
+        chatTableView.isHidden = true
+        emptyLabel.isHidden = true
+
+        API.sharedInstance.fetchTaskMessagesWithAuth(
+            taskId: task.id,
+            callback: { [weak self] messages in
+                DispatchQueue.main.async {
+                    guard let self = self else { return }
+                    self.loadingWheel.stopAnimating()
+                    self.messages = messages
+                    self.chatTableView.isHidden = false
+                    self.emptyLabel.isHidden = !messages.isEmpty
+                    self.chatTableView.reloadData()
+                    if !messages.isEmpty { self.scrollToBottom(animated: false) }
+                }
+            },
+            errorCallback: { [weak self] in
+                DispatchQueue.main.async {
+                    guard let self = self else { return }
+                    self.loadingWheel.stopAnimating()
+                    self.chatTableView.isHidden = false
+                    self.emptyLabel.isHidden = false
+                    self.emptyLabel.text = "Could not load messages"
+                }
+            }
+        )
+    }
+
+    private func scrollToBottom(animated: Bool = true) {
+        guard messages.count > 0 else { return }
+        let indexPath = IndexPath(row: messages.count - 1, section: 0)
+        chatTableView.scrollToRow(at: indexPath, at: .bottom, animated: animated)
+    }
+}
+
+// MARK: - UITableView
+extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        messages.count
+    }
+
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        guard let cell = tableView.dequeueReusableCell(
+            withIdentifier: "FeatureChatMessageCell",
+            for: indexPath
+        ) as? FeatureChatMessageCell else { return UITableViewCell() }
+        cell.configure(with: messages[indexPath.row])
+        return cell
+    }
+}
