@@ -42,6 +42,11 @@ class FeaturePlanViewController: UIViewController {
     private var planTextView: UITextView!
     private var generateTasksButton: UIButton!
     private var generateLoadingWheel: UIActivityIndicatorView!
+    private lazy var markdownRenderer: MarkdownRenderer = {
+        var style = MarkdownStyle()
+        style.baseFontSize = 15
+        return MarkdownRenderer(style: style)
+    }()
     
     // MARK: - Initialization
     static func instantiate(feature: HiveFeature) -> FeaturePlanViewController {
@@ -99,11 +104,12 @@ class FeaturePlanViewController: UIViewController {
         view.addSubview(headerView)
 
         // Back button — matches WorkspaceViewController storyboard style:
-        // MaterialIcons-Regular 21pt, WashedOutReceivedText color, width 50
-        backButton = UIButton(type: .system)
+        // UIButton(.custom) so setTitleColor is respected, MaterialIcons-Regular 21pt
+        // U+E5C4 = arrow_back in Material Icons font
+        backButton = UIButton(type: .custom)
         backButton.translatesAutoresizingMaskIntoConstraints = false
         backButton.titleLabel?.font = UIFont(name: "MaterialIcons-Regular", size: 21)
-        backButton.setTitle("", for: .normal)   // arrow_back glyph
+        backButton.setTitle("\u{E5C4}", for: .normal)
         backButton.setTitleColor(UIColor.Sphinx.WashedOutReceivedText, for: .normal)
         backButton.addTarget(self, action: #selector(backButtonTouched), for: .touchUpInside)
         headerView.addSubview(backButton)
@@ -253,14 +259,18 @@ class FeaturePlanViewController: UIViewController {
         planSegmentedControl.backgroundColor = UIColor.Sphinx.HeaderBG
         planContainerView.addSubview(planSegmentedControl)
         
-        // Plan Text View
+        // Plan Text View — displays rendered markdown
         planTextView = UITextView()
         planTextView.translatesAutoresizingMaskIntoConstraints = false
         planTextView.backgroundColor = UIColor.Sphinx.Body
-        planTextView.textColor = UIColor.Sphinx.Text
-        planTextView.font = UIFont(name: "Roboto-Regular", size: 15)
         planTextView.isEditable = false
+        planTextView.isSelectable = true
+        planTextView.dataDetectorTypes = [.link]
         planTextView.textContainerInset = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
+        planTextView.linkTextAttributes = [
+            .foregroundColor: UIColor.Sphinx.PrimaryBlue,
+            .underlineStyle: NSUnderlineStyle.single.rawValue
+        ]
         planContainerView.addSubview(planTextView)
         
         // Generate Tasks Button
@@ -439,19 +449,26 @@ class FeaturePlanViewController: UIViewController {
     
     private func updatePlanText() {
         let selectedIndex = planSegmentedControl.selectedIndex
-        
+        let raw: String
+
         switch selectedIndex {
         case 0: // BRIEF
-            planTextView.text = feature.brief ?? "No brief available yet."
+            raw = feature.brief ?? "*No brief available yet.*"
         case 1: // USER STORIES
-            planTextView.text = (feature.userStories ?? ["No user stories available yet."]).joined(separator: "\n")
+            if let stories = feature.userStories, !stories.isEmpty {
+                raw = stories.enumerated().map { "- [ ] \($0.element)" }.joined(separator: "\n")
+            } else {
+                raw = "*No user stories available yet.*"
+            }
         case 2: // REQUIREMENTS
-            planTextView.text = feature.requirements ?? "No requirements available yet."
+            raw = feature.requirements ?? "*No requirements available yet.*"
         case 3: // ARCHITECTURE
-            planTextView.text = feature.architecture ?? "No architecture available yet."
+            raw = feature.architecture ?? "*No architecture available yet.*"
         default:
-            planTextView.text = ""
+            raw = ""
         }
+
+        planTextView.attributedText = markdownRenderer.render(raw)
     }
     
     private func updateAIWorkingState() {

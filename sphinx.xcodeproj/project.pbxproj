@@ -251,6 +251,7 @@
 		475922F923E0B4EE00B73626 /* DelayPerformertHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 475922F823E0B4EE00B73626 /* DelayPerformertHelper.swift */; };
 		4759621B2F50CCF000564B7F /* HiveFeatureMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4759621A2F50CCF000564B7F /* HiveFeatureMocks.swift */; };
 		4759621D2F520FD300564B7F /* FeaturePlanViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C31187BFB7EDD28A632A1FD /* FeaturePlanViewController.swift */; };
+		4AC66B19341A44DA8F5A0F1E /* MarkdownRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5D5C9BE1416497D9EEB9877 /* MarkdownRenderer.swift */; };
 		4759621E2F520FD300564B7F /* FeatureChatMessageCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE30E2541BF20361DA34D7C4 /* FeatureChatMessageCell.swift */; };
 		475962212F5210E500564B7F /* HivePusherManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 475962202F5210E500564B7F /* HivePusherManager.swift */; };
 		475962232F5714D100564B7F /* WorkspaceTasksViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 475962222F5714C800564B7F /* WorkspaceTasksViewController.swift */; };
@@ -1922,6 +1923,7 @@
 		47FE9A3D23C381A20090913F /* UITapGestureRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITapGestureRecognizer.swift; sourceTree = "<group>"; };
 		487E10CEB3D07B0840A84681 /* Pods_sphinx.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_sphinx.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C31187BFB7EDD28A632A1FD /* FeaturePlanViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeaturePlanViewController.swift; sourceTree = "<group>"; };
+		D5D5C9BE1416497D9EEB9877 /* MarkdownRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownRenderer.swift; sourceTree = "<group>"; };
 		65CCA59A46E54A47BF7232FC /* WorkspaceFeatureTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceFeatureTableViewCell.swift; sourceTree = "<group>"; };
 		6957C94054A8404294F1E644 /* WorkspaceFeatureTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceFeatureTableViewCell.swift; sourceTree = "<group>"; };
 		7734ED4D2D66C733003276BA /* sphinx 53.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 53.xcdatamodel"; sourceTree = "<group>"; };
@@ -4024,6 +4026,7 @@
 				47B9CBFA2F460C7B007527B4 /* WorkspacesViewController.swift */,
 				E83B28E7233A4D0D9AE288E2 /* WorkspaceViewController.swift */,
 				4C31187BFB7EDD28A632A1FD /* FeaturePlanViewController.swift */,
+				D5D5C9BE1416497D9EEB9877 /* MarkdownRenderer.swift */,
 				FE30E2541BF20361DA34D7C4 /* FeatureChatMessageCell.swift */,
 				47B9CBFB2F460C7B007527B4 /* WorkspaceTableViewCell.swift */,
 				47B9CBFC2F460C7B007527B4 /* WorkspaceTableViewCell.xib */,
@@ -5407,6 +5410,7 @@
 				475962242F571D4000564B7F /* WorkspaceFeaturesViewController.swift in Sources */,
 				475962252F571D4000564B7F /* WorkspaceViewController.swift in Sources */,
 				4759621D2F520FD300564B7F /* FeaturePlanViewController.swift in Sources */,
+				4AC66B19341A44DA8F5A0F1E /* MarkdownRenderer.swift in Sources */,
 				4759621E2F520FD300564B7F /* FeatureChatMessageCell.swift in Sources */,
 				81D6970D2A7742A888F18562 /* WorkspaceFeatureTableViewCell.swift in Sources */,
 				5C4CD33514044245AA1118AE /* WorkspaceFeatureTableViewCell.swift in Sources */,
