@@ -23,7 +23,7 @@ class FeatureChatMessageCell: UITableViewCell {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
         view.layer.cornerRadius = 18
-        view.clipsToBounds = true
+        view.layer.masksToBounds = true
         return view
     }()
 
@@ -93,12 +93,10 @@ class FeatureChatMessageCell: UITableViewCell {
         NSLayoutConstraint.activate([
             bubbleView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 4),
             bubbleView.widthAnchor.constraint(lessThanOrEqualTo: contentView.widthAnchor, multiplier: 0.85),
-
             bubbleStack.topAnchor.constraint(equalTo: bubbleView.topAnchor),
             bubbleStack.leadingAnchor.constraint(equalTo: bubbleView.leadingAnchor),
             bubbleStack.trailingAnchor.constraint(equalTo: bubbleView.trailingAnchor),
             bubbleStack.bottomAnchor.constraint(equalTo: bubbleView.bottomAnchor),
-
             timestampLabel.topAnchor.constraint(equalTo: bubbleView.bottomAnchor, constant: 4),
             timestampLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -4),
         ])
@@ -119,6 +117,7 @@ class FeatureChatMessageCell: UITableViewCell {
             timestampLabel.textColor        = UIColor.Sphinx.SecondaryTextSent
             timestampLabel.textAlignment    = .right
             bubbleLeadingConstraint.isActive  = false
+
             bubbleTrailingConstraint.isActive = true
             timestampLeadingConstraint.isActive  = false
             timestampTrailingConstraint.isActive = true

@@ -538,7 +538,8 @@ class FeaturePlanViewController: UIViewController {
             featureId: feature.id,
             callback: { [weak self] messages in
                 DispatchQueue.main.async {
-                    self?.messages = messages
+                    // Filter out empty messages
+                    self?.messages = messages.filter { !$0.message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
                     self?.chatTableView.reloadData()
                     self?.scrollToBottom()
                 }
