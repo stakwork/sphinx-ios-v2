@@ -77,7 +77,7 @@
                         </constraints>
                     </view>
                 </subviews>
-                <color key="backgroundColor" name="HeaderBG"/>
+                <color key="backgroundColor" name="Body"/>
                 <constraints>
                     <!-- Title: leading 16, top 12 -->
                     <constraint firstItem="title-lbl-01" firstAttribute="leading" secondItem="content-view-01" secondAttribute="leading" constant="16" id="title-lead-01"/>
@@ -106,7 +106,7 @@
                     <constraint firstItem="createdby-lbl-01" firstAttribute="top" secondItem="content-view-01" secondAttribute="top" constant="81" id="createdby-top-01"/>
                 </constraints>
             </tableViewCellContentView>
-            <color key="backgroundColor" name="HeaderBG"/>
+            <color key="backgroundColor" name="Body"/>
             <connections>
                 <outlet property="titleLabel" destination="title-lbl-01" id="title-outlet-01"/>
                 <outlet property="statusBadge" destination="status-badge-01" id="status-outlet-01"/>

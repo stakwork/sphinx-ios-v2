@@ -70,22 +70,36 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         
         let isoFormatter = ISO8601DateFormatter()
         isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        var date = isoFormatter.date(from: dateString)
         
-        if let date = isoFormatter.date(from: dateString) {
-            let displayFormatter = DateFormatter()
-            displayFormatter.dateFormat = "MMM dd, yyyy"
-            return displayFormatter.string(from: date)
+        if date == nil {
+            isoFormatter.formatOptions = [.withInternetDateTime]
+            date = isoFormatter.date(from: dateString)
         }
         
-        // Fallback: try without fractional seconds
-        isoFormatter.formatOptions = [.withInternetDateTime]
-        if let date = isoFormatter.date(from: dateString) {
+        guard let date = date else { return dateString }
+        
+        let now = Date()
+        let seconds = now.timeIntervalSince(date)
+        let minutes = seconds / 60
+        let hours = seconds / 3600
+        let days = seconds / 86400
+        
+        if seconds < 60 {
+            return "Just now"
+        } else if minutes < 60 {
+            let m = Int(minutes)
+            return "\(m) \(m == 1 ? "min" : "mins") ago"
+        } else if hours < 24 {
+            let h = Int(hours)
+            return "\(h) \(h == 1 ? "hr" : "hrs") ago"
+        } else if days < 2 {
+            return "Yesterday"
+        } else {
             let displayFormatter = DateFormatter()
-            displayFormatter.dateFormat = "MMM dd, yyyy"
+            displayFormatter.dateFormat = "MMM d, yyyy"
             return displayFormatter.string(from: date)
         }
-        
-        return dateString
     }
 
     private func statusColor(for status: String) -> UIColor {
