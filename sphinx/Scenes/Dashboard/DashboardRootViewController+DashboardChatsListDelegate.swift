@@ -41,7 +41,7 @@ extension DashboardRootViewController: DashboardChatsListDelegate, WorkspacesVie
     }
     
     func didSelectWorkspace(_ workspace: Workspace) {
-        let vc = WorkspaceTasksViewController.instantiate(workspace: workspace)
+        let vc = WorkspaceViewController.instantiate(workspace: workspace)
         navigationController?.pushViewController(vc, animated: true)
     }
     

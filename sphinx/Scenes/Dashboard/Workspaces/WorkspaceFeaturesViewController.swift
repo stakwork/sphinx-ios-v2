@@ -4,37 +4,14 @@ class WorkspaceFeaturesViewController: UIViewController {
     
     // MARK: - Properties
     
+    @IBOutlet weak var tableView: UITableView!
+    @IBOutlet weak var loadingWheel: UIActivityIndicatorView!
+    @IBOutlet weak var emptyStateLabel: UILabel!
+    @IBOutlet weak var createButton: UIButton!
+    
     var workspace: Workspace!
     private var features: [HiveFeature] = []
-    
-    // MARK: - UI Components
-    
-    private lazy var tableView: UITableView = {
-        let table = UITableView()
-        table.backgroundColor = .Sphinx.Body
-        table.separatorStyle = .none
-        table.rowHeight = 75
-        table.translatesAutoresizingMaskIntoConstraints = false
-        return table
-    }()
-    
-    private lazy var loadingWheel: UIActivityIndicatorView = {
-        let indicator = UIActivityIndicatorView(style: .large)
-        indicator.translatesAutoresizingMaskIntoConstraints = false
-        indicator.hidesWhenStopped = true
-        return indicator
-    }()
-    
-    private lazy var emptyStateLabel: UILabel = {
-        let label = UILabel()
-        label.text = "NO FEATURES FOUND"
-        label.textColor = .Sphinx.SecondaryText
-        label.font = UIFont(name: "Roboto-Regular", size: 16)
-        label.textAlignment = .center
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.isHidden = true
-        return label
-    }()
+    private var hasLoadedInitially = false
     
     private lazy var refreshControl: UIRefreshControl = {
         let control = UIRefreshControl()
@@ -43,40 +20,67 @@ class WorkspaceFeaturesViewController: UIViewController {
     }()
     
     // MARK: - Instantiation
-    
+
     static func instantiate(workspace: Workspace) -> WorkspaceFeaturesViewController {
-        let viewController = WorkspaceFeaturesViewController()
-        viewController.workspace = workspace
-        return viewController
+        let vc = StoryboardScene.Dashboard.workspaceFeaturesViewController.instantiate()
+        vc.workspace = workspace
+        return vc
     }
     
     // MARK: - Lifecycle
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+
         setupUI()
         setupTableView()
-        setupLoadingAndEmpty()
-        addCreateButton()
         loadFeatures()
+        hasLoadedInitially = true
     }
-    
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        // Reload features when returning from detail view
-        loadFeatures()
+        // Only reload when returning from detail view, not on initial load
+        if hasLoadedInitially {
+            loadFeatures()
+        }
     }
     
     // MARK: - Setup
     
     private func setupUI() {
         view.backgroundColor = .Sphinx.Body
+        
+        tableView.backgroundColor = .Sphinx.Body
+        tableView.separatorStyle = .none
+        tableView.rowHeight = 75
+        tableView.contentInset = UIEdgeInsets(top: 12, left: 0, bottom: 0, right: 0)
+        tableView.translatesAutoresizingMaskIntoConstraints = false
+        
+        loadingWheel.translatesAutoresizingMaskIntoConstraints = false
+        loadingWheel.hidesWhenStopped = true
+        
+        emptyStateLabel.text = "NO FEATURES FOUND"
+        emptyStateLabel.textColor = .Sphinx.SecondaryText
+        emptyStateLabel.font = UIFont(name: "Roboto-Regular", size: 16)
+        emptyStateLabel.textAlignment = .center
+        emptyStateLabel.translatesAutoresizingMaskIntoConstraints = false
+        emptyStateLabel.isHidden = true
+        
+        createButton.backgroundColor = .Sphinx.PrimaryBlue
+//        createButton.setTitle("+", for: .normal)
+//        createButton.titleLabel?.font = UIFont.systemFont(ofSize: 32, weight: .medium)
+//        createButton.setTitleColor(.white, for: .normal)
+        createButton.layer.cornerRadius = 28
+        createButton.layer.shadowColor = UIColor.black.cgColor
+        createButton.layer.shadowOffset = CGSize(width: 0, height: 2)
+        createButton.layer.shadowRadius = 4
+        createButton.layer.shadowOpacity = 0.3
+//        createButton.translatesAutoresizingMaskIntoConstraints = false
+        createButton.addTarget(self, action: #selector(createButtonTapped), for: .touchUpInside)
     }
     
     private func setupTableView() {
-        view.addSubview(tableView)
-        
         tableView.delegate = self
         tableView.dataSource = self
         
@@ -91,50 +95,6 @@ class WorkspaceFeaturesViewController: UIViewController {
             for: .valueChanged
         )
         tableView.refreshControl = refreshControl
-        
-        NSLayoutConstraint.activate([
-            tableView.topAnchor.constraint(equalTo: view.topAnchor),
-            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        ])
-    }
-    
-    private func setupLoadingAndEmpty() {
-        view.addSubview(loadingWheel)
-        view.addSubview(emptyStateLabel)
-        
-        NSLayoutConstraint.activate([
-            loadingWheel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            loadingWheel.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            emptyStateLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            emptyStateLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor)
-        ])
-    }
-    
-    private func addCreateButton() {
-        // Floating action button - bottom right
-        let createButton = UIButton(type: .custom)
-        createButton.backgroundColor = .Sphinx.PrimaryBlue
-        createButton.setTitle("+", for: .normal)
-        createButton.titleLabel?.font = UIFont.systemFont(ofSize: 32, weight: .medium)
-        createButton.setTitleColor(.white, for: .normal)
-        createButton.layer.cornerRadius = 28
-        createButton.layer.shadowColor = UIColor.black.cgColor
-        createButton.layer.shadowOffset = CGSize(width: 0, height: 2)
-        createButton.layer.shadowRadius = 4
-        createButton.layer.shadowOpacity = 0.3
-        createButton.translatesAutoresizingMaskIntoConstraints = false
-        createButton.addTarget(self, action: #selector(createButtonTapped), for: .touchUpInside)
-        
-        view.addSubview(createButton)
-        
-        NSLayoutConstraint.activate([
-            createButton.widthAnchor.constraint(equalToConstant: 56),
-            createButton.heightAnchor.constraint(equalToConstant: 56),
-            createButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            createButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16)
-        ])
     }
     
     // MARK: - Actions
@@ -173,7 +133,6 @@ class WorkspaceFeaturesViewController: UIViewController {
     }
     
     // MARK: - Data Loading
-    
     private var isLoading = false {
         didSet {
             LoadingWheelHelper.toggleLoadingWheel(
@@ -277,7 +236,6 @@ class WorkspaceFeaturesViewController: UIViewController {
 // MARK: - UITableView DataSource & Delegate
 
 extension WorkspaceFeaturesViewController: UITableViewDataSource, UITableViewDelegate {
-    
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return features.count
     }
