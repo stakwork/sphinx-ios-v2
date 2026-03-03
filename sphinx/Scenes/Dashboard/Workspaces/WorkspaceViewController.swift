@@ -46,7 +46,8 @@ class WorkspaceViewController: PopHandlerViewController {
     }
 
     private func setupSegmentedControls() {
-        // Configure top-level TASKS/FEATURES tab
+        topTabContainer.backgroundColor = .Sphinx.HeaderBG
+        topTabSegmentedControl.buttonBackgroundColor = .Sphinx.HeaderBG
         topTabSegmentedControl.selectorViewColor = .Sphinx.PrimaryGreen
         topTabSegmentedControl.configureFromOutlet(
             buttonTitles: ["TASKS", "FEATURES"],

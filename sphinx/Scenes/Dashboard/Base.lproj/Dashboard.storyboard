@@ -926,7 +926,7 @@
                         <subviews>
                             <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="none" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="87y-oc-SDI">
                                 <rect key="frame" x="0.0" y="48" width="414" height="848"/>
-                                <color key="backgroundColor" name="DashboardHeader"/>
+                                <color key="backgroundColor" name="Body"/>
                             </tableView>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="4kw-DI-9wh" customClass="UIActivityIndicatorView">
                                 <rect key="frame" x="182" y="430" width="50" height="50"/>

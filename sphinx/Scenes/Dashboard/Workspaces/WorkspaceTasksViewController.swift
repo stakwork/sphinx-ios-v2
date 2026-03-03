@@ -37,7 +37,8 @@ class WorkspaceTasksViewController: UIViewController {
     }
     
     private func setupSegmentedControls() {
-        // Configure ACTIVE/ARCHIVED tab (for tasks)
+        segmentedControlContainer.backgroundColor = .Sphinx.HeaderBG
+        segmentedControl.buttonBackgroundColor = .Sphinx.HeaderBG
         segmentedControl.configureFromOutlet(
             buttonTitles: ["Active", "Archived"],
             initialIndex: 0,
@@ -49,7 +50,7 @@ class WorkspaceTasksViewController: UIViewController {
     private func setupTableView() {
         tableView.delegate = self
         tableView.dataSource = self
-        tableView.backgroundColor = .Sphinx.HeaderBG
+        tableView.backgroundColor = .Sphinx.Body
         tableView.separatorStyle = .none
         tableView.rowHeight = 110
         tableView.contentInset = UIEdgeInsets(top: 12, left: 0, bottom: 0, right: 0)

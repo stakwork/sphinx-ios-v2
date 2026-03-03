@@ -75,6 +75,19 @@ extension CustomSegmentedControl {
         
         backgroundColor = buttonBackgroundColor
     }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+
+        // Keep selector pinned to the bottom whenever the view is laid out
+        guard selectorView != nil else { return }
+        selectorView.frame = CGRect(
+            x: selectorPosition,
+            y: bounds.height - 2,
+            width: selectorWidth,
+            height: 2
+        )
+    }
 }
 
 
@@ -281,8 +294,13 @@ extension CustomSegmentedControl {
             } else {
                 self.buttons[self.selectedIndex].setTitleColor(self.activeTextColor, for: .normal)
             }
-            self.selectorView.frame.origin.x = self.selectorPosition
-            self.selectorView.frame.size.width = self.selectorWidth
+            // Only animate x/width — y is managed by layoutSubviews (always bottom)
+            self.selectorView.frame = CGRect(
+                x: self.selectorPosition,
+                y: self.bounds.height - 2,
+                width: self.selectorWidth,
+                height: 2
+            )
         }
     }
     

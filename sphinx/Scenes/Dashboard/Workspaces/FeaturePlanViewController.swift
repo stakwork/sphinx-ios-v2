@@ -27,6 +27,8 @@ class FeaturePlanViewController: UIViewController {
     private var topSegmentedControl: CustomSegmentedControl!
     private var chatContainerView: UIView!
     private var planContainerView: UIView!
+    private var tasksContainerView: UIView!
+    private var tasksTableView: UITableView!
     
     // Chat Panel Components
     private var chatTableView: UITableView!
@@ -83,9 +85,10 @@ class FeaturePlanViewController: UIViewController {
         setupTopSegmentedControl()
         setupChatPanel()
         setupPlanPanel()
+        setupTasksPanel()
         
         // Initially show chat panel
-        showChatPanel()
+        showPanel(at: 0)
     }
     
     private func setupHeader() {
@@ -136,14 +139,15 @@ class FeaturePlanViewController: UIViewController {
     }
     
     private func setupTopSegmentedControl() {
-        topSegmentedControl = CustomSegmentedControl(frame: .zero, buttonTitles: ["CHAT", "PLAN"])
+        topSegmentedControl = CustomSegmentedControl(frame: .zero, buttonTitles: ["CHAT", "PLAN", "TASKS"])
         topSegmentedControl.translatesAutoresizingMaskIntoConstraints = false
         topSegmentedControl.configureFromOutlet(
-            buttonTitles: ["CHAT", "PLAN"],
+            buttonTitles: ["CHAT", "PLAN", "TASKS"],
             initialIndex: 0,
             delegate: self
         )
-        topSegmentedControl.backgroundColor = UIColor.Sphinx.Body
+        topSegmentedControl.buttonBackgroundColor = UIColor.Sphinx.HeaderBG
+        topSegmentedControl.backgroundColor = UIColor.Sphinx.HeaderBG
         view.addSubview(topSegmentedControl)
         
         NSLayoutConstraint.activate([
@@ -249,7 +253,8 @@ class FeaturePlanViewController: UIViewController {
             initialIndex: 0,
             delegate: self
         )
-        planSegmentedControl.backgroundColor = UIColor.Sphinx.Body
+        planSegmentedControl.buttonBackgroundColor = UIColor.Sphinx.HeaderBG
+        planSegmentedControl.backgroundColor = UIColor.Sphinx.HeaderBG
         planContainerView.addSubview(planSegmentedControl)
         
         // Plan Text View
@@ -392,16 +397,48 @@ class FeaturePlanViewController: UIViewController {
         )
     }
     
-    // MARK: - Panel Management
-    private func showChatPanel() {
-        chatContainerView.isHidden = false
-        planContainerView.isHidden = true
+    // MARK: - Tasks Panel Setup
+    private func setupTasksPanel() {
+        tasksContainerView = UIView()
+        tasksContainerView.translatesAutoresizingMaskIntoConstraints = false
+        tasksContainerView.backgroundColor = UIColor.Sphinx.Body
+        tasksContainerView.isHidden = true
+        view.addSubview(tasksContainerView)
+
+        tasksTableView = UITableView()
+        tasksTableView.translatesAutoresizingMaskIntoConstraints = false
+        tasksTableView.backgroundColor = UIColor.Sphinx.Body
+        tasksTableView.separatorStyle = .none
+        tasksTableView.rowHeight = 110
+        tasksTableView.contentInset = UIEdgeInsets(top: 12, left: 0, bottom: 0, right: 0)
+        tasksTableView.register(
+            WorkspaceTaskTableViewCell.nib,
+            forCellReuseIdentifier: WorkspaceTaskTableViewCell.reuseID
+        )
+        // Delegate/dataSource wired in extension below
+        tasksTableView.delegate = self
+        tasksTableView.dataSource = self
+        tasksContainerView.addSubview(tasksTableView)
+
+        NSLayoutConstraint.activate([
+            tasksContainerView.topAnchor.constraint(equalTo: topSegmentedControl.bottomAnchor),
+            tasksContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            tasksContainerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            tasksContainerView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            tasksTableView.topAnchor.constraint(equalTo: tasksContainerView.topAnchor),
+            tasksTableView.leadingAnchor.constraint(equalTo: tasksContainerView.leadingAnchor),
+            tasksTableView.trailingAnchor.constraint(equalTo: tasksContainerView.trailingAnchor),
+            tasksTableView.bottomAnchor.constraint(equalTo: tasksContainerView.bottomAnchor)
+        ])
     }
-    
-    private func showPlanPanel() {
-        chatContainerView.isHidden = true
-        planContainerView.isHidden = false
-        updatePlanText()
+
+    // MARK: - Panel Management
+    private func showPanel(at index: Int) {
+        chatContainerView.isHidden  = (index != 0)
+        planContainerView.isHidden  = (index != 1)
+        tasksContainerView.isHidden = (index != 2)
+        if index == 1 { updatePlanText() }
     }
     
     private func updatePlanText() {
@@ -524,11 +561,7 @@ class FeaturePlanViewController: UIViewController {
 extension FeaturePlanViewController: CustomSegmentedControlDelegate {
     func segmentedControlDidSwitch(_ control: CustomSegmentedControl, to index: Int) {
         if control === topSegmentedControl {
-            if index == 0 {
-                showChatPanel()
-            } else {
-                showPlanPanel()
-            }
+            showPanel(at: index)
         } else if control === planSegmentedControl {
             updatePlanText()
         }
@@ -538,20 +571,31 @@ extension FeaturePlanViewController: CustomSegmentedControlDelegate {
 // MARK: - UITableViewDelegate, UITableViewDataSource
 extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        if tableView === tasksTableView {
+            return 0 // Tasks loading not yet implemented
+        }
         return messages.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        if tableView === tasksTableView {
+            guard let cell = tableView.dequeueReusableCell(
+                withIdentifier: WorkspaceTaskTableViewCell.reuseID,
+                for: indexPath
+            ) as? WorkspaceTaskTableViewCell else {
+                return UITableViewCell()
+            }
+            return cell
+        }
+
         guard let cell = tableView.dequeueReusableCell(
             withIdentifier: "FeatureChatMessageCell",
             for: indexPath
         ) as? FeatureChatMessageCell else {
             return UITableViewCell()
         }
-        
         let message = messages[indexPath.row]
         cell.configure(with: message)
-        
         return cell
     }
 }
