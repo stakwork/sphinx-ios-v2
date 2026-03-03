@@ -43,6 +43,12 @@ struct PRContent {
     let progress: PRProgress?
 }
 
+struct ClarifyingQuestion {
+    let question: String
+    let options: [String]
+    let type: String // "single_choice" or "multiple_choice"
+}
+
 struct HiveChatMessageArtifact {
     let id: String?
     let type: String?
@@ -50,8 +56,16 @@ struct HiveChatMessageArtifact {
     let content: String?
     /// Parsed PR content when type == "PULL_REQUEST"
     let prContent: PRContent?
+    /// Raw JSON content for PLAN artifacts
+    let contentJSON: JSON?
+    /// Parsed clarifying questions when type == "PLAN" and tool_use == "ask_clarifying_questions"
+    let clarifyingQuestions: [ClarifyingQuestion]?
 
     var isPullRequest: Bool { type == "PULL_REQUEST" }
+
+    var isClarifyingQuestions: Bool {
+        return type == "PLAN" && contentJSON?["tool_use"].string == "ask_clarifying_questions"
+    }
 
     init(json: JSON) {
         self.id   = json["id"].string
@@ -77,8 +91,27 @@ struct HiveChatMessageArtifact {
                 )
             )
             self.content = nil
+            self.contentJSON = nil
+            self.clarifyingQuestions = nil
+        } else if json["type"].string == "PLAN" {
+            self.prContent = nil
+            self.content = nil
+            let planContent = json["content"]
+            self.contentJSON = planContent
+            if planContent["tool_use"].string == "ask_clarifying_questions" {
+                self.clarifyingQuestions = planContent["content"].arrayValue.compactMap { item in
+                    guard let question = item["question"].string,
+                          let type = item["type"].string else { return nil }
+                    let options = item["options"].arrayValue.compactMap { $0.string }
+                    return ClarifyingQuestion(question: question, options: options, type: type)
+                }
+            } else {
+                self.clarifyingQuestions = nil
+            }
         } else {
             self.prContent = nil
+            self.contentJSON = nil
+            self.clarifyingQuestions = nil
             self.content = json["content"].string
         }
     }
