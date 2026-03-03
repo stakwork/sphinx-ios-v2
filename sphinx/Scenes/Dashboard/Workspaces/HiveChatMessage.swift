@@ -24,13 +24,63 @@ struct HiveChatMessageCreatedBy {
     }
 }
 
+struct PRProgress {
+    let state: String?
+    let mergeable: Bool?
+    let ciStatus: String?
+    let ciSummary: String?
+}
+
+struct PRContent {
+    let repo: String?
+    let url: String?
+    let status: String?
+    let number: Int?
+    let title: String?
+    let additions: Int?
+    let deletions: Int?
+    let changedFiles: Int?
+    let progress: PRProgress?
+}
+
 struct HiveChatMessageArtifact {
+    let id: String?
     let type: String?
+    /// Plain string content (for CODE, DIFF, etc.)
     let content: String?
+    /// Parsed PR content when type == "PULL_REQUEST"
+    let prContent: PRContent?
+
+    var isPullRequest: Bool { type == "PULL_REQUEST" }
 
     init(json: JSON) {
+        self.id   = json["id"].string
         self.type = json["type"].string
-        self.content = json["content"].string
+
+        if json["type"].string == "PULL_REQUEST" {
+            let c = json["content"]
+            let progress = c["progress"]
+            self.prContent = PRContent(
+                repo:         c["repo"].string,
+                url:          c["url"].string,
+                status:       c["status"].string,
+                number:       c["number"].int,
+                title:        c["title"].string,
+                additions:    c["additions"].int,
+                deletions:    c["deletions"].int,
+                changedFiles: c["changedFiles"].int,
+                progress: PRProgress(
+                    state:      progress["state"].string,
+                    mergeable:  progress["mergeable"].bool,
+                    ciStatus:   progress["ciStatus"].string,
+                    ciSummary:  progress["ciSummary"].string
+                )
+            )
+            self.content = nil
+        } else {
+            self.prContent = nil
+            self.content = json["content"].string
+        }
     }
 }
 

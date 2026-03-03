@@ -18,6 +18,7 @@ class FeatureChatMessageCell: UITableViewCell {
     }()
 
     // MARK: - UI Components
+
     private let bubbleView: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
@@ -26,8 +27,7 @@ class FeatureChatMessageCell: UITableViewCell {
         return view
     }()
 
-    /// UITextView replaces UILabel so NSAttributedString (markdown) renders correctly,
-    /// including code blocks with background colour, bold, italic, links, etc.
+    /// Non-scrolling UITextView so NSAttributedString (markdown) renders properly.
     private let messageTextView: UITextView = {
         let tv = UITextView()
         tv.translatesAutoresizingMaskIntoConstraints = false
@@ -39,6 +39,13 @@ class FeatureChatMessageCell: UITableViewCell {
         return tv
     }()
 
+    /// PR artifact card — only shown when a PULL_REQUEST artifact is present.
+    private let prCardView: PRArtifactCardView = {
+        let v = PRArtifactCardView()
+        v.isHidden = true
+        return v
+    }()
+
     private let timestampLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -47,30 +54,34 @@ class FeatureChatMessageCell: UITableViewCell {
         return label
     }()
 
-    // MARK: - Constraints (toggled per alignment)
+    // MARK: - Alignment constraints (toggled per message role)
     private var bubbleLeadingConstraint: NSLayoutConstraint!
     private var bubbleTrailingConstraint: NSLayoutConstraint!
     private var timestampLeadingConstraint: NSLayoutConstraint!
     private var timestampTrailingConstraint: NSLayoutConstraint!
 
-    // MARK: - Initialization
+    // MARK: - Init
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         setupUI()
     }
+    required init?(coder: NSCoder) { fatalError() }
 
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
-    // MARK: - Setup
+    // MARK: - Layout
     private func setupUI() {
         backgroundColor = .Sphinx.Body
         contentView.backgroundColor = .Sphinx.Body
         selectionStyle = .none
 
+        // Vertical stack inside bubble: text + optional PR card
+        let bubbleStack = UIStackView(arrangedSubviews: [messageTextView, prCardView])
+        bubbleStack.translatesAutoresizingMaskIntoConstraints = false
+        bubbleStack.axis = .vertical
+        bubbleStack.spacing = 0
+        bubbleStack.isLayoutMarginsRelativeArrangement = true
+
         contentView.addSubview(bubbleView)
-        bubbleView.addSubview(messageTextView)
+        bubbleView.addSubview(bubbleStack)
         contentView.addSubview(timestampLabel)
 
         bubbleLeadingConstraint  = bubbleView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16)
@@ -81,65 +92,69 @@ class FeatureChatMessageCell: UITableViewCell {
 
         NSLayoutConstraint.activate([
             bubbleView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 4),
-            bubbleView.widthAnchor.constraint(lessThanOrEqualTo: contentView.widthAnchor, multiplier: 0.80),
+            bubbleView.widthAnchor.constraint(lessThanOrEqualTo: contentView.widthAnchor, multiplier: 0.85),
 
-            messageTextView.topAnchor.constraint(equalTo: bubbleView.topAnchor),
-            messageTextView.leadingAnchor.constraint(equalTo: bubbleView.leadingAnchor, constant: 4),
-            messageTextView.trailingAnchor.constraint(equalTo: bubbleView.trailingAnchor, constant: -4),
-            messageTextView.bottomAnchor.constraint(equalTo: bubbleView.bottomAnchor),
+            bubbleStack.topAnchor.constraint(equalTo: bubbleView.topAnchor),
+            bubbleStack.leadingAnchor.constraint(equalTo: bubbleView.leadingAnchor),
+            bubbleStack.trailingAnchor.constraint(equalTo: bubbleView.trailingAnchor),
+            bubbleStack.bottomAnchor.constraint(equalTo: bubbleView.bottomAnchor),
 
             timestampLabel.topAnchor.constraint(equalTo: bubbleView.bottomAnchor, constant: 4),
             timestampLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -4),
         ])
     }
 
-    // MARK: - Configuration
+    // MARK: - Configure
     func configure(with message: HiveChatMessage) {
         let isUser = message.isUserMessage
 
+        // --- Text content ---
         if isUser {
-            // User messages: plain text (no markdown needed), white text on blue bubble
             let font = UIFont(name: "Roboto-Regular", size: 15) ?? UIFont.systemFont(ofSize: 15)
             messageTextView.attributedText = NSAttributedString(
                 string: message.message,
-                attributes: [
-                    .font: font,
-                    .foregroundColor: UIColor.Sphinx.TextMessages
-                ]
+                attributes: [.font: font, .foregroundColor: UIColor.Sphinx.TextMessages]
             )
-            bubbleView.backgroundColor = UIColor.Sphinx.SentMsgBG
-            timestampLabel.textColor    = UIColor.Sphinx.SecondaryTextSent
-            timestampLabel.textAlignment = .right
-
+            bubbleView.backgroundColor      = UIColor.Sphinx.SentMsgBG
+            timestampLabel.textColor        = UIColor.Sphinx.SecondaryTextSent
+            timestampLabel.textAlignment    = .right
             bubbleLeadingConstraint.isActive  = false
             bubbleTrailingConstraint.isActive = true
             timestampLeadingConstraint.isActive  = false
             timestampTrailingConstraint.isActive = true
         } else {
-            // Assistant / Agent messages: render markdown
             let rendered = FeatureChatMessageCell.markdownRenderer.render(message.message)
-            // Override foreground colour so it matches bubble text colour
-            let mutable = NSMutableAttributedString(attributedString: rendered)
+            let mutable  = NSMutableAttributedString(attributedString: rendered)
+            // Swap base text colour to match the bubble's text style
             mutable.enumerateAttribute(.foregroundColor, in: NSRange(location: 0, length: mutable.length)) { value, range, _ in
-                // Only replace the base text colour (leave code-block colours untouched)
                 if let color = value as? UIColor, color == UIColor.Sphinx.Text {
                     mutable.addAttribute(.foregroundColor, value: UIColor.Sphinx.TextMessages, range: range)
                 }
             }
             messageTextView.attributedText = mutable
-            bubbleView.backgroundColor = UIColor.Sphinx.ReceivedMsgBG
-            timestampLabel.textColor    = UIColor.Sphinx.SecondaryText
-            timestampLabel.textAlignment = .left
-
+            bubbleView.backgroundColor      = UIColor.Sphinx.ReceivedMsgBG
+            timestampLabel.textColor        = UIColor.Sphinx.SecondaryText
+            timestampLabel.textAlignment    = .left
             bubbleTrailingConstraint.isActive = false
             bubbleLeadingConstraint.isActive  = true
             timestampTrailingConstraint.isActive = false
             timestampLeadingConstraint.isActive  = true
         }
 
-        // Timestamp
-        if let createdAt = message.createdAt {
-            timestampLabel.text = formatTimestamp(createdAt)
+        // --- PR artifact card ---
+        if let prArtifact = message.artifacts.first(where: { $0.isPullRequest }),
+           let prContent = prArtifact.prContent {
+            prCardView.configure(with: prContent)
+            prCardView.isHidden = false
+            // Round only top corners of bubble when card is appended at bottom
+            bubbleView.layer.cornerRadius = 18
+        } else {
+            prCardView.isHidden = true
+        }
+
+        // --- Timestamp ---
+        if let ts = message.createdAt {
+            timestampLabel.text    = formatTimestamp(ts)
             timestampLabel.isHidden = false
         } else {
             timestampLabel.isHidden = true
@@ -164,7 +179,8 @@ class FeatureChatMessageCell: UITableViewCell {
     override func prepareForReuse() {
         super.prepareForReuse()
         messageTextView.attributedText = nil
-        timestampLabel.text = nil
+        prCardView.isHidden = true
+        timestampLabel.text    = nil
         timestampLabel.isHidden = false
         bubbleLeadingConstraint.isActive  = false
         bubbleTrailingConstraint.isActive = false
