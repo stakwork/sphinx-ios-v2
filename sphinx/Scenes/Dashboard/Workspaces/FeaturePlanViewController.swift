@@ -42,6 +42,10 @@ class FeaturePlanViewController: UIViewController {
     private var planTextView: UITextView!
     private var generateTasksButton: UIButton!
     private var generateLoadingWheel: UIActivityIndicatorView!
+    /// Switches between pinning planTextView bottom to the button (button visible)
+    /// or to the container bottom (button hidden).
+    private var planTextViewBottomToButton: NSLayoutConstraint!
+    private var planTextViewBottomToContainer: NSLayoutConstraint!
     private lazy var markdownRenderer: MarkdownRenderer = {
         var style = MarkdownStyle()
         style.baseFontSize = 15
@@ -295,27 +299,33 @@ class FeaturePlanViewController: UIViewController {
         generateLoadingWheel.color = UIColor.Sphinx.Text
         planContainerView.addSubview(generateLoadingWheel)
         
+        planTextViewBottomToButton = planTextView.bottomAnchor.constraint(
+            equalTo: generateTasksButton.topAnchor, constant: -16
+        )
+        planTextViewBottomToContainer = planTextView.bottomAnchor.constraint(
+            equalTo: planContainerView.safeAreaLayoutGuide.bottomAnchor
+        )
+
         NSLayoutConstraint.activate([
             planContainerView.topAnchor.constraint(equalTo: topSegmentedControl.bottomAnchor),
             planContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             planContainerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             planContainerView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            
+
             planSegmentedControl.topAnchor.constraint(equalTo: planContainerView.topAnchor),
             planSegmentedControl.leadingAnchor.constraint(equalTo: planContainerView.leadingAnchor),
             planSegmentedControl.trailingAnchor.constraint(equalTo: planContainerView.trailingAnchor),
             planSegmentedControl.heightAnchor.constraint(equalToConstant: 44),
-            
+
             planTextView.topAnchor.constraint(equalTo: planSegmentedControl.bottomAnchor),
             planTextView.leadingAnchor.constraint(equalTo: planContainerView.leadingAnchor),
             planTextView.trailingAnchor.constraint(equalTo: planContainerView.trailingAnchor),
-            planTextView.bottomAnchor.constraint(equalTo: generateTasksButton.topAnchor, constant: -16),
-            
+
             generateTasksButton.leadingAnchor.constraint(equalTo: planContainerView.leadingAnchor, constant: 32),
             generateTasksButton.trailingAnchor.constraint(equalTo: planContainerView.trailingAnchor, constant: -32),
             generateTasksButton.bottomAnchor.constraint(equalTo: planContainerView.safeAreaLayoutGuide.bottomAnchor, constant: -16),
             generateTasksButton.heightAnchor.constraint(equalToConstant: 50),
-            
+
             generateLoadingWheel.centerYAnchor.constraint(equalTo: generateTasksButton.centerYAnchor),
             generateLoadingWheel.trailingAnchor.constraint(equalTo: generateTasksButton.leadingAnchor, constant: -20)
         ])
@@ -454,7 +464,16 @@ class FeaturePlanViewController: UIViewController {
     }
 
     private func updateGenerateTasksButton() {
-        generateTasksButton.isHidden = feature.hasTasks
+        let hasTasks = feature.hasTasks
+        generateTasksButton.isHidden = hasTasks
+        generateLoadingWheel.isHidden = hasTasks
+        if hasTasks {
+            planTextViewBottomToButton.isActive = false
+            planTextViewBottomToContainer.isActive = true
+        } else {
+            planTextViewBottomToContainer.isActive = false
+            planTextViewBottomToButton.isActive = true
+        }
     }
     
     private func updatePlanText() {
