@@ -856,6 +856,99 @@ extension API {
             errorCallback: errorCallback
         )
     }
+
+    // MARK: - Feature Detail (GET /api/features/{featureId})
+
+    func fetchFeatureDetail(
+        featureId: String,
+        authToken: String,
+        callback: @escaping HiveFeatureCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        guard let encodedId = featureId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+            errorCallback()
+            return
+        }
+
+        let urlString = "\(API.kHiveBaseUrl)/features/\(encodedId)"
+
+        guard let request = createRequest(urlString, bodyParams: nil, method: "GET", token: authToken) else {
+            errorCallback()
+            return
+        }
+
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                print("[HiveAPI] Feature detail fetch unauthorized (401)")
+                errorCallback()
+                return
+            }
+
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+
+                guard json["success"].bool == true,
+                      let feature = HiveFeature(json: json["data"]) else {
+                    print("[HiveAPI] Feature detail parse failed: \(json)")
+                    errorCallback()
+                    return
+                }
+
+                callback(feature)
+            case .failure(let error):
+                print("[HiveAPI] Feature detail fetch failed: \(error.localizedDescription)")
+                errorCallback()
+            }
+        }
+    }
+
+    func fetchFeatureDetailWithAuth(
+        featureId: String,
+        callback: @escaping HiveFeatureCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
+            fetchFeatureDetail(
+                featureId: featureId,
+                authToken: storedToken,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateAndFetchFeatureDetail(
+                        featureId: featureId,
+                        callback: callback,
+                        errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateAndFetchFeatureDetail(
+                featureId: featureId,
+                callback: callback,
+                errorCallback: errorCallback
+            )
+        }
+    }
+
+    private func authenticateAndFetchFeatureDetail(
+        featureId: String,
+        callback: @escaping HiveFeatureCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback(); return }
+                UserDefaults.Keys.hiveToken.set(token)
+                self?.fetchFeatureDetail(
+                    featureId: featureId,
+                    authToken: token,
+                    callback: callback,
+                    errorCallback: errorCallback
+                )
+            },
+            errorCallback: errorCallback
+        )
+    }
 }
 
 // MARK: - Workspace Image Cache

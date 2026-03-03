@@ -57,9 +57,16 @@ struct HiveFeature {
         self.description = json["description"].string
         self.brief = json["brief"].string
         
-        // Parse userStories - can be array of strings or string
+        // Parse userStories — may be:
+        //   - Array of objects: [{ id, title, order, completed }]  (detail endpoint)
+        //   - Array of strings                                      (older format)
+        //   - A single string
         if let storiesArray = json["userStories"].array {
-            self.userStories = storiesArray.compactMap { $0.string }
+            let titles = storiesArray.compactMap { item -> String? in
+                if let title = item["title"].string { return title }
+                return item.string
+            }
+            self.userStories = titles.isEmpty ? nil : titles
         } else if let storiesString = json["userStories"].string {
             self.userStories = [storiesString]
         } else {

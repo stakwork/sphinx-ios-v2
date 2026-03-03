@@ -62,6 +62,7 @@ class FeaturePlanViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         setupKeyboardObservers()
+        fetchFeatureDetail()
         fetchChatHistory()
         connectWebSocket()
     }
@@ -96,41 +97,35 @@ class FeaturePlanViewController: UIViewController {
         headerView.translatesAutoresizingMaskIntoConstraints = false
         headerView.backgroundColor = UIColor.Sphinx.Body
         view.addSubview(headerView)
-        
-        backButton = UIButton()
+
+        // Back button — matches WorkspaceViewController storyboard style:
+        // MaterialIcons-Regular 21pt, WashedOutReceivedText color, width 50
+        backButton = UIButton(type: .system)
         backButton.translatesAutoresizingMaskIntoConstraints = false
+        backButton.titleLabel?.font = UIFont(name: "MaterialIcons-Regular", size: 21)
+        backButton.setTitle("", for: .normal)   // arrow_back glyph
+        backButton.setTitleColor(UIColor.Sphinx.WashedOutReceivedText, for: .normal)
         backButton.addTarget(self, action: #selector(backButtonTouched), for: .touchUpInside)
         headerView.addSubview(backButton)
-        
-        let backIconLabel = UILabel()
-        backIconLabel.translatesAutoresizingMaskIntoConstraints = false
-        backIconLabel.text = "arrow_back"
-        backIconLabel.font = UIFont(name: "MaterialIcons-Regular", size: 24)
-        backIconLabel.textColor = UIColor.Sphinx.Text
-        backButton.addSubview(backIconLabel)
-        
+
         titleLabel = UILabel()
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.text = feature.name
-        titleLabel.font = UIFont(name: "Roboto-Medium", size: 17)
+        titleLabel.font = UIFont(name: "Roboto-Medium", size: 14)
         titleLabel.textColor = UIColor.Sphinx.Text
         titleLabel.textAlignment = .center
         headerView.addSubview(titleLabel)
-        
+
         NSLayoutConstraint.activate([
             headerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             headerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             headerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             headerView.heightAnchor.constraint(equalToConstant: 50),
-            
+
             backButton.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
-            backButton.topAnchor.constraint(equalTo: headerView.topAnchor),
-            backButton.bottomAnchor.constraint(equalTo: headerView.bottomAnchor),
+            backButton.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
             backButton.widthAnchor.constraint(equalToConstant: 50),
-            
-            backIconLabel.centerXAnchor.constraint(equalTo: backButton.centerXAnchor),
-            backIconLabel.centerYAnchor.constraint(equalTo: backButton.centerYAnchor),
-            
+
             titleLabel.centerXAnchor.constraint(equalTo: headerView.centerXAnchor),
             titleLabel.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
             titleLabel.leadingAnchor.constraint(greaterThanOrEqualTo: backButton.trailingAnchor, constant: 8),
@@ -148,6 +143,7 @@ class FeaturePlanViewController: UIViewController {
         )
         topSegmentedControl.buttonBackgroundColor = UIColor.Sphinx.HeaderBG
         topSegmentedControl.backgroundColor = UIColor.Sphinx.HeaderBG
+        topSegmentedControl.selectorViewColor = UIColor.Sphinx.PrimaryGreen
         view.addSubview(topSegmentedControl)
         
         NSLayoutConstraint.activate([
@@ -465,6 +461,25 @@ class FeaturePlanViewController: UIViewController {
     }
     
     // MARK: - API Methods
+    private func fetchFeatureDetail() {
+        API.sharedInstance.fetchFeatureDetailWithAuth(
+            featureId: feature.id,
+            callback: { [weak self] updatedFeature in
+                guard let self = self, let updatedFeature = updatedFeature else { return }
+                DispatchQueue.main.async {
+                    self.feature = updatedFeature
+                    // Refresh plan panel if currently visible
+                    if !self.planContainerView.isHidden {
+                        self.updatePlanText()
+                    }
+                }
+            },
+            errorCallback: {
+                print("[FeaturePlanVC] Failed to fetch feature detail")
+            }
+        )
+    }
+
     private func fetchChatHistory() {
         API.sharedInstance.fetchFeatureChatWithAuth(
             featureId: feature.id,
