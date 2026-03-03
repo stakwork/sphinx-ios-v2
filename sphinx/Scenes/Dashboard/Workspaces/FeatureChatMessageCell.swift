@@ -15,7 +15,7 @@ class FeatureChatMessageCell: UITableViewCell {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
         view.layer.cornerRadius = 18
-        view.clipsToBounds = true
+        view.layer.masksToBounds = true
         return view
     }()
     
@@ -63,7 +63,7 @@ class FeatureChatMessageCell: UITableViewCell {
         
         NSLayoutConstraint.activate([
             bubbleView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 4),
-            bubbleView.widthAnchor.constraint(lessThanOrEqualTo: contentView.widthAnchor, multiplier: 0.75),
+            bubbleView.widthAnchor.constraint(lessThanOrEqualTo: contentView.widthAnchor, multiplier: 0.85),
             
             messageLabel.topAnchor.constraint(equalTo: bubbleView.topAnchor, constant: 10),
             messageLabel.leadingAnchor.constraint(equalTo: bubbleView.leadingAnchor, constant: 12),
@@ -79,14 +79,14 @@ class FeatureChatMessageCell: UITableViewCell {
     func configure(with message: HiveChatMessage) {
         messageLabel.text = message.message
         
-        if let timestamp = message.timestamp {
-            timestampLabel.text = formatTimestamp(timestamp)
+        if let createdAt = message.timestamp {
+            timestampLabel.text = formatTimestamp(createdAt)
             timestampLabel.isHidden = false
         } else {
             timestampLabel.isHidden = true
         }
         
-        if message.role == "user" {
+        if message.role.uppercased() == "USER" {
             // User message: right-aligned, sent message styling
             bubbleView.backgroundColor = UIColor.Sphinx.SentMsgBG
             messageLabel.textColor = UIColor.Sphinx.TextMessages
