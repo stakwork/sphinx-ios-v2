@@ -1,15 +1,15 @@
 //
 // CustomSegmentedControl.swift
 // sphinx
-//
 
 
 import UIKit
 
 
-protocol CustomSegmentedControlDelegate: AnyObject {
+@objc protocol CustomSegmentedControlDelegate: AnyObject {
     
     func segmentedControlDidSwitch(
+        _ control: CustomSegmentedControl,
         to index: Int
     )
 }
@@ -17,6 +17,7 @@ protocol CustomSegmentedControlDelegate: AnyObject {
 
 class CustomSegmentedControl: UIView {
     private var buttonTitles: [String]!
+    private var buttonSymbols: [String]?      // SF Symbol names, parallel to buttonTitles
     private var buttons: [UIButton]!
     private var buttonTitleBadges: [UIView]!
     private var selectorView: UIView!
@@ -34,7 +35,6 @@ class CustomSegmentedControl: UIView {
     public var selectorWidthRatio: CGFloat = 0.85
 
     /// Custom width ratios for each button. If nil, buttons will be distributed equally.
-    /// Values should sum to 1.0 (e.g., [0.24, 0.24, 0.24, 0.28])
     public var buttonWidthRatios: [CGFloat]? = nil
     
     
@@ -43,7 +43,6 @@ class CustomSegmentedControl: UIView {
         didSet {
             DispatchQueue.main.async { [weak self] in
                 guard let self = self else { return }
-                
                 self.updateTitleBadges()
             }
         }
@@ -76,6 +75,19 @@ extension CustomSegmentedControl {
         
         backgroundColor = buttonBackgroundColor
     }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+
+        // Keep selector pinned to the bottom whenever the view is laid out
+        guard selectorView != nil else { return }
+        selectorView.frame = CGRect(
+            x: selectorPosition,
+            y: bounds.height - 2,
+            width: selectorWidth,
+            height: 2
+        )
+    }
 }
 
 
@@ -91,12 +103,16 @@ extension CustomSegmentedControl {
     
     @objc func buttonAction(sender: UIButton) {
         for (buttonIndex, button) in buttons.enumerated() {
-            button.setTitleColor(buttonTextColor, for: .normal)
+            if buttonSymbols != nil {
+                button.tintColor = buttonTextColor
+            } else {
+                button.setTitleColor(buttonTextColor, for: .normal)
+            }
             
             if button == sender {
                 selectedIndex = buttonIndex
 
-                delegate?.segmentedControlDidSwitch(to: selectedIndex)
+                delegate?.segmentedControlDidSwitch(self, to: selectedIndex)
                 
                 updateButtonsOnIndexChange()
             }
@@ -115,9 +131,26 @@ extension CustomSegmentedControl {
         delegate: CustomSegmentedControlDelegate?
     ) {
         self.buttonTitles = buttonTitles
+        self.buttonSymbols = nil
         self.selectedIndex = initialIndex
         self.delegate = delegate
         
+        setupInitialViews()
+        updateButtonsOnIndexChange()
+    }
+
+    /// Configure with SF Symbol names instead of text labels.
+    public func configureWithSymbols(
+        symbolNames: [String],
+        placeholderTitles: [String],
+        initialIndex: Int = 0,
+        delegate: CustomSegmentedControlDelegate?
+    ) {
+        self.buttonTitles = placeholderTitles
+        self.buttonSymbols = symbolNames
+        self.selectedIndex = initialIndex
+        self.delegate = delegate
+
         setupInitialViews()
         updateButtonsOnIndexChange()
     }
@@ -192,6 +225,7 @@ extension CustomSegmentedControl {
     
     
     private func configureSelectorView() {
+        // Always place selector at the BOTTOM of the control
         selectorView = UIView(
             frame: CGRect(
                 x: selectorPosition,
@@ -212,13 +246,25 @@ extension CustomSegmentedControl {
         buttons.removeAll()
         
         subviews.forEach({ $0.removeFromSuperview() })
-        
-        for buttonTitle in buttonTitles {
+
+        let symbols = buttonSymbols
+
+        for (index, buttonTitle) in buttonTitles.enumerated() {
             let button = UIButton(type: .system)
-            
-            button.setTitle(buttonTitle, for: .normal)
-            button.setTitleColor(buttonTextColor, for: .normal)
-            button.titleLabel?.font = buttonTitleFont
+
+            if let symbols = symbols, index < symbols.count {
+                // SF Symbol mode
+                let config = UIImage.SymbolConfiguration(pointSize: 14, weight: .medium)
+                let image = UIImage(systemName: symbols[index], withConfiguration: config)
+                button.setImage(image, for: .normal)
+                button.tintColor = buttonTextColor
+                button.accessibilityLabel = buttonTitle
+            } else {
+                // Text mode
+                button.setTitle(buttonTitle, for: .normal)
+                button.setTitleColor(buttonTextColor, for: .normal)
+                button.titleLabel?.font = buttonTitleFont
+            }
             
             button.addTarget(
                 self,
@@ -228,8 +274,12 @@ extension CustomSegmentedControl {
             
             buttons.append(button)
         }
-        
-        buttons[selectedIndex].setTitleColor(activeTextColor, for: .normal)
+
+        if symbols != nil {
+            buttons[selectedIndex].tintColor = activeTextColor
+        } else {
+            buttons[selectedIndex].setTitleColor(activeTextColor, for: .normal)
+        }
         
         createButtonTitleBadges()
     }
@@ -237,9 +287,20 @@ extension CustomSegmentedControl {
     
     func updateButtonsOnIndexChange() {
         UIView.animate(withDuration: 0.3) {
-            self.buttons[self.selectedIndex].setTitleColor(self.activeTextColor, for: .normal)
-            self.selectorView.frame.origin.x = self.selectorPosition
-            self.selectorView.frame.size.width = self.selectorWidth
+            if self.buttonSymbols != nil {
+                for (i, btn) in self.buttons.enumerated() {
+                    btn.tintColor = i == self.selectedIndex ? self.activeTextColor : self.buttonTextColor
+                }
+            } else {
+                self.buttons[self.selectedIndex].setTitleColor(self.activeTextColor, for: .normal)
+            }
+            // Only animate x/width — y is managed by layoutSubviews (always bottom)
+            self.selectorView.frame = CGRect(
+                x: self.selectorPosition,
+                y: self.bounds.height - 2,
+                width: self.selectorWidth,
+                height: 2
+            )
         }
     }
     

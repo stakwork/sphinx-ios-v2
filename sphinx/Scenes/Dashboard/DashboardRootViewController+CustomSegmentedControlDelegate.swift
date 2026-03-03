@@ -10,6 +10,7 @@ import UIKit
 extension DashboardRootViewController: CustomSegmentedControlDelegate {
     
     func segmentedControlDidSwitch(
+        _ control: CustomSegmentedControl,
         to index: Int
     ) {
         let newTab = DashboardTab(rawValue: index)!

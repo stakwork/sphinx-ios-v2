@@ -17,6 +17,7 @@ typealias HiveWorkspaceImageCallback = ((String?) -> ())
 typealias HiveFeaturesCallback = (([HiveFeature]) -> ())
 typealias HiveFeatureCallback = ((HiveFeature?) -> ())
 typealias HiveChatMessagesCallback = (([HiveChatMessage]) -> ())
+typealias HiveTaskMessagesCallback = (([HiveChatMessage]) -> ())
 
 extension API {
 
@@ -363,28 +364,31 @@ extension API {
         callback: @escaping HiveFeaturesCallback,
         errorCallback: @escaping EmptyCallback
     ) {
-        guard let encodedWorkspaceId = workspaceId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
-            errorCallback()
-            return
-        }
-
-        let urlString = "\(API.kHiveBaseUrl)/workspaces/\(encodedWorkspaceId)/features"
+        // Use the new endpoint: /api/features with workspaceId as query param
+        let urlString = "\(API.kHiveBaseUrl)/features?workspaceId=\(workspaceId)"
+        
+        print("[HiveAPI] Fetching features from: \(urlString)")
 
         guard let request = createRequest(urlString, bodyParams: nil, method: "GET", token: authToken) else {
+            print("[HiveAPI] Features fetch - failed to create request")
             errorCallback()
             return
         }
 
         session()?.request(request).responseData { response in
-            if let statusCode = response.response?.statusCode, statusCode == 401 {
-                print("[HiveAPI] Features fetch unauthorized (401) - token may be expired")
-                errorCallback()
-                return
+            if let statusCode = response.response?.statusCode {
+                print("[HiveAPI] Features fetch response status: \(statusCode)")
+                if statusCode == 401 {
+                    print("[HiveAPI] Features fetch unauthorized (401) - token may be expired")
+                    errorCallback()
+                    return
+                }
             }
 
             switch response.result {
             case .success(let data):
                 let json = JSON(data)
+                print("[HiveAPI] Features fetch raw response: \(json)")
 
                 if let error = json["error"].string {
                     print("[HiveAPI] Features fetch error: \(error)")
@@ -392,7 +396,18 @@ extension API {
                     return
                 }
 
-                let features: [HiveFeature] = (json["features"].array ?? []).compactMap { HiveFeature(json: $0) }
+                // Parse the new response structure: { success: true, data: [...] }
+                let featuresArray = json["data"].array ?? []
+                print("[HiveAPI] Features fetch - found \(featuresArray.count) features in response")
+                
+                let features: [HiveFeature] = featuresArray.compactMap { 
+                    let feature = HiveFeature(json: $0)
+                    if feature == nil {
+                        print("[HiveAPI] Failed to parse feature: \($0)")
+                    }
+                    return feature
+                }
+                print("[HiveAPI] Features fetch - successfully parsed \(features.count) features")
                 callback(features)
             case .failure(let error):
                 print("[HiveAPI] Features fetch failed: \(error.localizedDescription)")
@@ -582,7 +597,13 @@ extension API {
                     return
                 }
 
-                let messages: [HiveChatMessage] = (json["messages"].array ?? []).compactMap { HiveChatMessage(json: $0) }
+                guard json["success"].bool == true else {
+                    print("[HiveAPI] Feature chat fetch returned success=false")
+                    errorCallback()
+                    return
+                }
+
+                let messages: [HiveChatMessage] = (json["data"].array ?? []).compactMap { HiveChatMessage(json: $0) }
                 callback(messages)
             case .failure(let error):
                 print("[HiveAPI] Feature chat fetch failed: \(error.localizedDescription)")
@@ -651,7 +672,12 @@ extension API {
         }
 
         let urlString = "\(API.kHiveBaseUrl)/features/\(encodedFeatureId)/chat"
-        let params: [String: AnyObject] = ["message": message as AnyObject]
+        let params: [String: AnyObject] = [
+            "message": message as AnyObject,
+            "contextTags": [] as AnyObject,
+            "sourceWebsocketID": NSNull(),
+            "replyId": NSNull()
+        ]
 
         guard let request = createRequest(urlString, bodyParams: params as NSDictionary, method: "POST", token: authToken) else {
             errorCallback()
@@ -671,6 +697,12 @@ extension API {
 
                 if let error = json["error"].string {
                     print("[HiveAPI] Send chat message error: \(error)")
+                    errorCallback()
+                    return
+                }
+
+                guard json["success"].bool == true else {
+                    print("[HiveAPI] Send chat message returned success=false")
                     errorCallback()
                     return
                 }
@@ -817,6 +849,172 @@ extension API {
                 UserDefaults.Keys.hiveToken.set(token)
                 self?.generateFeatureTasks(
                     featureId: featureId,
+                    authToken: token,
+                    callback: callback,
+                    errorCallback: errorCallback
+                )
+            },
+            errorCallback: errorCallback
+        )
+    }
+
+    // MARK: - Feature Detail (GET /api/features/{featureId})
+
+    func fetchFeatureDetail(
+        featureId: String,
+        authToken: String,
+        callback: @escaping HiveFeatureCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        guard let encodedId = featureId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+            errorCallback()
+            return
+        }
+
+        let urlString = "\(API.kHiveBaseUrl)/features/\(encodedId)"
+
+        guard let request = createRequest(urlString, bodyParams: nil, method: "GET", token: authToken) else {
+            errorCallback()
+            return
+        }
+
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                print("[HiveAPI] Feature detail fetch unauthorized (401)")
+                errorCallback()
+                return
+            }
+
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+
+                guard json["success"].bool == true,
+                      let feature = HiveFeature(json: json["data"]) else {
+                    print("[HiveAPI] Feature detail parse failed: \(json)")
+                    errorCallback()
+                    return
+                }
+
+                callback(feature)
+            case .failure(let error):
+                print("[HiveAPI] Feature detail fetch failed: \(error.localizedDescription)")
+                errorCallback()
+            }
+        }
+    }
+
+    func fetchFeatureDetailWithAuth(
+        featureId: String,
+        callback: @escaping HiveFeatureCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
+            fetchFeatureDetail(
+                featureId: featureId,
+                authToken: storedToken,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateAndFetchFeatureDetail(
+                        featureId: featureId,
+                        callback: callback,
+                        errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateAndFetchFeatureDetail(
+                featureId: featureId,
+                callback: callback,
+                errorCallback: errorCallback
+            )
+        }
+    }
+
+    private func authenticateAndFetchFeatureDetail(
+        featureId: String,
+        callback: @escaping HiveFeatureCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback(); return }
+                UserDefaults.Keys.hiveToken.set(token)
+                self?.fetchFeatureDetail(
+                    featureId: featureId,
+                    authToken: token,
+                    callback: callback,
+                    errorCallback: errorCallback
+                )
+            },
+            errorCallback: errorCallback
+        )
+    }
+    // MARK: - Task Messages
+
+    func fetchTaskMessages(
+        taskId: String,
+        authToken: String,
+        callback: @escaping HiveTaskMessagesCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        guard let encodedId = taskId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+            errorCallback(); return
+        }
+        let urlString = "\(API.kHiveBaseUrl)/tasks/\(encodedId)/messages"
+        guard let request = createRequest(urlString, bodyParams: nil, method: "GET", token: authToken) else {
+            errorCallback(); return
+        }
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                errorCallback(); return
+            }
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+                guard json["success"].bool == true else { errorCallback(); return }
+                let messages = json["data"]["messages"].arrayValue.compactMap { HiveChatMessage(json: $0) }
+                callback(messages)
+            case .failure:
+                errorCallback()
+            }
+        }
+    }
+
+    func fetchTaskMessagesWithAuth(
+        taskId: String,
+        callback: @escaping HiveTaskMessagesCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let token: String = UserDefaults.Keys.hiveToken.get() {
+            fetchTaskMessages(
+                taskId: taskId,
+                authToken: token,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateAndFetchTaskMessages(
+                        taskId: taskId,
+                        callback: callback,
+                        errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateAndFetchTaskMessages(taskId: taskId, callback: callback, errorCallback: errorCallback)
+        }
+    }
+
+    private func authenticateAndFetchTaskMessages(
+        taskId: String,
+        callback: @escaping HiveTaskMessagesCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback(); return }
+                UserDefaults.Keys.hiveToken.set(token)
+                self?.fetchTaskMessages(
+                    taskId: taskId,
                     authToken: token,
                     callback: callback,
                     errorCallback: errorCallback

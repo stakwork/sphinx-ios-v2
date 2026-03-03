@@ -9,8 +9,16 @@
 import UIKit
 
 class FeatureChatMessageCell: UITableViewCell {
-    
+
+    // MARK: - Shared markdown renderer
+    private static let markdownRenderer: MarkdownRenderer = {
+        var style = MarkdownStyle()
+        style.baseFontSize = 15
+        return MarkdownRenderer(style: style)
+    }()
+
     // MARK: - UI Components
+
     private let bubbleView: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
@@ -18,15 +26,26 @@ class FeatureChatMessageCell: UITableViewCell {
         view.layer.masksToBounds = true
         return view
     }()
-    
-    private let messageLabel: UILabel = {
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.numberOfLines = 0
-        label.font = UIFont(name: "Roboto-Regular", size: 15)
-        return label
+
+    /// Non-scrolling UITextView so NSAttributedString (markdown) renders properly.
+    private let messageTextView: UITextView = {
+        let tv = UITextView()
+        tv.translatesAutoresizingMaskIntoConstraints = false
+        tv.isEditable = false
+        tv.isScrollEnabled = false
+        tv.backgroundColor = .clear
+        tv.textContainerInset = UIEdgeInsets(top: 10, left: 8, bottom: 10, right: 8)
+        tv.textContainer.lineFragmentPadding = 0
+        return tv
     }()
-    
+
+    /// PR artifact card — only shown when a PULL_REQUEST artifact is present.
+    private let prCardView: PRArtifactCardView = {
+        let v = PRArtifactCardView()
+        v.isHidden = true
+        return v
+    }()
+
     private let timestampLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -34,104 +53,137 @@ class FeatureChatMessageCell: UITableViewCell {
         label.textColor = UIColor.Sphinx.SecondaryText
         return label
     }()
-    
-    // MARK: - Constraints
+
+    // MARK: - Alignment constraints (toggled per message role)
     private var bubbleLeadingConstraint: NSLayoutConstraint!
     private var bubbleTrailingConstraint: NSLayoutConstraint!
-    
-    // MARK: - Initialization
+    private var timestampLeadingConstraint: NSLayoutConstraint!
+    private var timestampTrailingConstraint: NSLayoutConstraint!
+
+    // MARK: - Init
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         setupUI()
     }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    // MARK: - Setup
+    required init?(coder: NSCoder) { fatalError() }
+
+    // MARK: - Layout
     private func setupUI() {
-        backgroundColor = .clear
+        backgroundColor = .Sphinx.Body
+        contentView.backgroundColor = .Sphinx.Body
         selectionStyle = .none
-        
+
+        // Vertical stack inside bubble: text + optional PR card
+        let bubbleStack = UIStackView(arrangedSubviews: [messageTextView, prCardView])
+        bubbleStack.translatesAutoresizingMaskIntoConstraints = false
+        bubbleStack.axis = .vertical
+        bubbleStack.spacing = 0
+        bubbleStack.isLayoutMarginsRelativeArrangement = true
+
         contentView.addSubview(bubbleView)
-        bubbleView.addSubview(messageLabel)
+        bubbleView.addSubview(bubbleStack)
         contentView.addSubview(timestampLabel)
-        
-        bubbleLeadingConstraint = bubbleView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16)
+
+        bubbleLeadingConstraint  = bubbleView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16)
         bubbleTrailingConstraint = bubbleView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16)
-        
+
+        timestampLeadingConstraint  = timestampLabel.leadingAnchor.constraint(equalTo: bubbleView.leadingAnchor)
+        timestampTrailingConstraint = timestampLabel.trailingAnchor.constraint(equalTo: bubbleView.trailingAnchor)
+
         NSLayoutConstraint.activate([
             bubbleView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 4),
             bubbleView.widthAnchor.constraint(lessThanOrEqualTo: contentView.widthAnchor, multiplier: 0.85),
-            
-            messageLabel.topAnchor.constraint(equalTo: bubbleView.topAnchor, constant: 10),
-            messageLabel.leadingAnchor.constraint(equalTo: bubbleView.leadingAnchor, constant: 12),
-            messageLabel.trailingAnchor.constraint(equalTo: bubbleView.trailingAnchor, constant: -12),
-            messageLabel.bottomAnchor.constraint(equalTo: bubbleView.bottomAnchor, constant: -10),
-            
+            bubbleStack.topAnchor.constraint(equalTo: bubbleView.topAnchor),
+            bubbleStack.leadingAnchor.constraint(equalTo: bubbleView.leadingAnchor),
+            bubbleStack.trailingAnchor.constraint(equalTo: bubbleView.trailingAnchor),
+            bubbleStack.bottomAnchor.constraint(equalTo: bubbleView.bottomAnchor),
             timestampLabel.topAnchor.constraint(equalTo: bubbleView.bottomAnchor, constant: 4),
-            timestampLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -4)
+            timestampLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -4),
         ])
     }
-    
-    // MARK: - Configuration
+
+    // MARK: - Configure
     func configure(with message: HiveChatMessage) {
-        messageLabel.text = message.message
-        
-        if let createdAt = message.timestamp {
-            timestampLabel.text = formatTimestamp(createdAt)
+        let isUser = message.isUserMessage
+
+        // --- Text content ---
+        if isUser {
+            let font = UIFont(name: "Roboto-Regular", size: 15) ?? UIFont.systemFont(ofSize: 15)
+            messageTextView.attributedText = NSAttributedString(
+                string: message.message,
+                attributes: [.font: font, .foregroundColor: UIColor.Sphinx.TextMessages]
+            )
+            bubbleView.backgroundColor      = UIColor.Sphinx.SentMsgBG
+            timestampLabel.textColor        = UIColor.Sphinx.SecondaryTextSent
+            timestampLabel.textAlignment    = .right
+            bubbleLeadingConstraint.isActive  = false
+
+            bubbleTrailingConstraint.isActive = true
+            timestampLeadingConstraint.isActive  = false
+            timestampTrailingConstraint.isActive = true
+        } else {
+            let rendered = FeatureChatMessageCell.markdownRenderer.render(message.message)
+            let mutable  = NSMutableAttributedString(attributedString: rendered)
+            // Swap base text colour to match the bubble's text style
+            mutable.enumerateAttribute(.foregroundColor, in: NSRange(location: 0, length: mutable.length)) { value, range, _ in
+                if let color = value as? UIColor, color == UIColor.Sphinx.Text {
+                    mutable.addAttribute(.foregroundColor, value: UIColor.Sphinx.TextMessages, range: range)
+                }
+            }
+            messageTextView.attributedText = mutable
+            bubbleView.backgroundColor      = UIColor.Sphinx.ReceivedMsgBG
+            timestampLabel.textColor        = UIColor.Sphinx.SecondaryText
+            timestampLabel.textAlignment    = .left
+            bubbleTrailingConstraint.isActive = false
+            bubbleLeadingConstraint.isActive  = true
+            timestampTrailingConstraint.isActive = false
+            timestampLeadingConstraint.isActive  = true
+        }
+
+        // --- PR artifact card ---
+        if let prArtifact = message.artifacts.first(where: { $0.isPullRequest }),
+           let prContent = prArtifact.prContent {
+            prCardView.configure(with: prContent)
+            prCardView.isHidden = false
+            // Round only top corners of bubble when card is appended at bottom
+            bubbleView.layer.cornerRadius = 18
+        } else {
+            prCardView.isHidden = true
+        }
+
+        // --- Timestamp ---
+        if let ts = message.createdAt {
+            timestampLabel.text    = formatTimestamp(ts)
             timestampLabel.isHidden = false
         } else {
             timestampLabel.isHidden = true
         }
-        
-        if message.role.uppercased() == "USER" {
-            // User message: right-aligned, sent message styling
-            bubbleView.backgroundColor = UIColor.Sphinx.SentMsgBG
-            messageLabel.textColor = UIColor.Sphinx.TextMessages
-            timestampLabel.textColor = UIColor.Sphinx.SecondaryTextSent
-            
-            bubbleLeadingConstraint.isActive = false
-            bubbleTrailingConstraint.isActive = true
-            
-            timestampLabel.textAlignment = .right
-            timestampLabel.trailingAnchor.constraint(equalTo: bubbleView.trailingAnchor).isActive = true
-        } else {
-            // Assistant message: left-aligned, received message styling
-            bubbleView.backgroundColor = UIColor.Sphinx.ReceivedMsgBG
-            messageLabel.textColor = UIColor.Sphinx.TextMessages
-            timestampLabel.textColor = UIColor.Sphinx.SecondaryText
-            
-            bubbleTrailingConstraint.isActive = false
-            bubbleLeadingConstraint.isActive = true
-            
-            timestampLabel.textAlignment = .left
-            timestampLabel.leadingAnchor.constraint(equalTo: bubbleView.leadingAnchor).isActive = true
-        }
     }
-    
-    // MARK: - Helper Methods
+
+    // MARK: - Helpers
     private func formatTimestamp(_ timestamp: String) -> String {
-        // Simple timestamp formatting
-        // Expected format: ISO8601 string
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
-        
-        guard let date = dateFormatter.date(from: timestamp) else {
-            return timestamp
+        let iso = ISO8601DateFormatter()
+        iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        var date = iso.date(from: timestamp)
+        if date == nil {
+            iso.formatOptions = [.withInternetDateTime]
+            date = iso.date(from: timestamp)
         }
-        
-        let outputFormatter = DateFormatter()
-        outputFormatter.dateFormat = "h:mm a"
-        
-        return outputFormatter.string(from: date)
+        guard let d = date else { return timestamp }
+        let fmt = DateFormatter()
+        fmt.dateFormat = "h:mm a"
+        return fmt.string(from: d)
     }
-    
+
     override func prepareForReuse() {
         super.prepareForReuse()
-        messageLabel.text = nil
-        timestampLabel.text = nil
+        messageTextView.attributedText = nil
+        prCardView.isHidden = true
+        timestampLabel.text    = nil
         timestampLabel.isHidden = false
+        bubbleLeadingConstraint.isActive  = false
+        bubbleTrailingConstraint.isActive = false
+        timestampLeadingConstraint.isActive  = false
+        timestampTrailingConstraint.isActive = false
     }
 }

@@ -2,71 +2,49 @@
 //  WorkspaceTasksViewController.swift
 //  sphinx
 //
-//  Created on 2/23/26.
+//  Created by Tomas Timinskas on 03/03/2026.
 //  Copyright © 2026 sphinx. All rights reserved.
 //
-
 import UIKit
 
-class WorkspaceTasksViewController: PopHandlerViewController {
-
-    @IBOutlet weak var headerView: UIView!
-    @IBOutlet weak var viewTitle: UILabel!
+class WorkspaceTasksViewController: UIViewController {
+    
     @IBOutlet weak var segmentedControlContainer: UIView!
     @IBOutlet weak var segmentedControl: CustomSegmentedControl!
+    
     @IBOutlet weak var tableView: UITableView!
-
+    
+    @IBOutlet weak var loadingWheel: UIActivityIndicatorView!
+    
+    @IBOutlet weak var emptyStateLabel: UILabel!
+    
     private var workspace: Workspace!
     private var tasks: [WorkspaceTask] = []
+    private var currentTab: Int = 0 // 0 = Active, 1 = Archived
     private var includeArchived = false
-
-    private lazy var loadingWheel: UIActivityIndicatorView = {
-        let iv = UIActivityIndicatorView(style: .medium)
-        iv.hidesWhenStopped = true
-        iv.translatesAutoresizingMaskIntoConstraints = false
-        return iv
-    }()
-
-    private lazy var emptyStateLabel: UILabel = {
-        let l = UILabel()
-        l.text = "NO RESULTS FOUND"
-        l.textColor = .Sphinx.SecondaryText
-        l.font = UIFont(name: "Roboto-Regular", size: 16)
-        l.textAlignment = .center
-        l.isHidden = true
-        l.translatesAutoresizingMaskIntoConstraints = false
-        return l
-    }()
-
+    
     static func instantiate(workspace: Workspace) -> WorkspaceTasksViewController {
         let vc = StoryboardScene.Dashboard.workspaceTasksViewController.instantiate()
         vc.workspace = workspace
-        vc.popOnSwipeEnabled = true
         return vc
     }
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupHeader()
-        setupSegmentedControl()
+        setupSegmentedControls()
         setupTableView()
-        setupLoadingAndEmpty()
         loadTasks()
     }
-
-    private func setupHeader() {
-        headerView.backgroundColor = .Sphinx.Body
-        viewTitle.font = UIFont(name: "Roboto-Medium", size: 14)
-        viewTitle.textColor = .Sphinx.Text
-        viewTitle.text = workspace.name.uppercased()
-    }
-
-    private func setupSegmentedControl() {        
+    
+    private func setupSegmentedControls() {
+        segmentedControlContainer.backgroundColor = .Sphinx.HeaderBG
+        segmentedControl.buttonBackgroundColor = .Sphinx.HeaderBG
         segmentedControl.configureFromOutlet(
-            buttonTitles: ["ACTIVE", "ARCHIVED"],
+            buttonTitles: ["Active", "Archived"],
             initialIndex: 0,
             delegate: self
         )
+        segmentedControl.tag = 200
     }
 
     private func setupTableView() {
@@ -75,29 +53,14 @@ class WorkspaceTasksViewController: PopHandlerViewController {
         tableView.backgroundColor = .Sphinx.Body
         tableView.separatorStyle = .none
         tableView.rowHeight = 110
-        
+        tableView.contentInset = UIEdgeInsets(top: 12, left: 0, bottom: 0, right: 0)
+
         tableView.register(
             WorkspaceTaskTableViewCell.nib,
             forCellReuseIdentifier: WorkspaceTaskTableViewCell.reuseID
         )
     }
-
-    private func setupLoadingAndEmpty() {
-        view.addSubview(loadingWheel)
-        view.addSubview(emptyStateLabel)
-        
-        NSLayoutConstraint.activate([
-            loadingWheel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            loadingWheel.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            emptyStateLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            emptyStateLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-        ])
-    }
-
-    @IBAction func backButtonTouched() {
-        navigationController?.popViewController(animated: true)
-    }
-
+    
     private var isLoading = false {
         didSet {
             LoadingWheelHelper.toggleLoadingWheel(
@@ -113,6 +76,7 @@ class WorkspaceTasksViewController: PopHandlerViewController {
     func loadTasks() {
         guard !isLoading else { return }
         isLoading = true
+        
         API.sharedInstance.fetchTasksWithAuth(
             workspaceId: workspace.id,
             includeArchived: includeArchived,
@@ -136,6 +100,7 @@ class WorkspaceTasksViewController: PopHandlerViewController {
 
 extension WorkspaceTasksViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int { tasks.count }
+    
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(
             withIdentifier: WorkspaceTaskTableViewCell.reuseID, for: indexPath
@@ -143,10 +108,17 @@ extension WorkspaceTasksViewController: UITableViewDataSource, UITableViewDelega
         cell.configure(with: tasks[indexPath.row], isLastRow: indexPath.row == tasks.count - 1)
         return cell
     }
+
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        let task = tasks[indexPath.row]
+        let chatVC = TaskChatViewController.instantiate(task: task)
+        navigationController?.pushViewController(chatVC, animated: true)
+    }
 }
 
 extension WorkspaceTasksViewController: CustomSegmentedControlDelegate {
-    func segmentedControlDidSwitch(to index: Int) {
+    func segmentedControlDidSwitch(_ control: CustomSegmentedControl, to index: Int) {
         includeArchived = (index == 1)
         loadTasks()
     }

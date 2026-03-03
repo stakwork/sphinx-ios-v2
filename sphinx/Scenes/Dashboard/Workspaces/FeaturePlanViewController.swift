@@ -27,6 +27,8 @@ class FeaturePlanViewController: UIViewController {
     private var topSegmentedControl: CustomSegmentedControl!
     private var chatContainerView: UIView!
     private var planContainerView: UIView!
+    private var tasksContainerView: UIView!
+    private var tasksTableView: UITableView!
     
     // Chat Panel Components
     private var chatTableView: UITableView!
@@ -40,6 +42,15 @@ class FeaturePlanViewController: UIViewController {
     private var planTextView: UITextView!
     private var generateTasksButton: UIButton!
     private var generateLoadingWheel: UIActivityIndicatorView!
+    /// Switches between pinning planTextView bottom to the button (button visible)
+    /// or to the container bottom (button hidden).
+    private var planTextViewBottomToButton: NSLayoutConstraint!
+    private var planTextViewBottomToContainer: NSLayoutConstraint!
+    private lazy var markdownRenderer: MarkdownRenderer = {
+        var style = MarkdownStyle()
+        style.baseFontSize = 15
+        return MarkdownRenderer(style: style)
+    }()
     
     // MARK: - Initialization
     static func instantiate(feature: HiveFeature) -> FeaturePlanViewController {
@@ -60,6 +71,7 @@ class FeaturePlanViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         setupKeyboardObservers()
+        fetchFeatureDetail()
         fetchChatHistory()
         connectWebSocket()
     }
@@ -83,9 +95,12 @@ class FeaturePlanViewController: UIViewController {
         setupTopSegmentedControl()
         setupChatPanel()
         setupPlanPanel()
+        setupTasksPanel()
         
         // Initially show chat panel
-        showChatPanel()
+        showPanel(at: 0)
+        // Set initial generate button visibility
+        updateGenerateTasksButton()
     }
     
     private func setupHeader() {
@@ -93,41 +108,36 @@ class FeaturePlanViewController: UIViewController {
         headerView.translatesAutoresizingMaskIntoConstraints = false
         headerView.backgroundColor = UIColor.Sphinx.Body
         view.addSubview(headerView)
-        
-        backButton = UIButton()
+
+        // Back button — matches WorkspaceViewController storyboard style:
+        // UIButton(.custom) so setTitleColor is respected, MaterialIcons-Regular 21pt
+        // U+E5C4 = arrow_back in Material Icons font
+        backButton = UIButton(type: .custom)
         backButton.translatesAutoresizingMaskIntoConstraints = false
+        backButton.titleLabel?.font = UIFont(name: "MaterialIcons-Regular", size: 21)
+        backButton.setTitle("\u{E5C4}", for: .normal)
+        backButton.setTitleColor(UIColor.Sphinx.WashedOutReceivedText, for: .normal)
         backButton.addTarget(self, action: #selector(backButtonTouched), for: .touchUpInside)
         headerView.addSubview(backButton)
-        
-        let backIconLabel = UILabel()
-        backIconLabel.translatesAutoresizingMaskIntoConstraints = false
-        backIconLabel.text = "arrow_back"
-        backIconLabel.font = UIFont(name: "MaterialIcons-Regular", size: 24)
-        backIconLabel.textColor = UIColor.Sphinx.Text
-        backButton.addSubview(backIconLabel)
-        
+
         titleLabel = UILabel()
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.text = feature.name
-        titleLabel.font = UIFont(name: "Roboto-Medium", size: 17)
+        titleLabel.font = UIFont(name: "Roboto-Medium", size: 14)
         titleLabel.textColor = UIColor.Sphinx.Text
         titleLabel.textAlignment = .center
         headerView.addSubview(titleLabel)
-        
+
         NSLayoutConstraint.activate([
             headerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             headerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             headerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             headerView.heightAnchor.constraint(equalToConstant: 50),
-            
+
             backButton.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
-            backButton.topAnchor.constraint(equalTo: headerView.topAnchor),
-            backButton.bottomAnchor.constraint(equalTo: headerView.bottomAnchor),
+            backButton.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
             backButton.widthAnchor.constraint(equalToConstant: 50),
-            
-            backIconLabel.centerXAnchor.constraint(equalTo: backButton.centerXAnchor),
-            backIconLabel.centerYAnchor.constraint(equalTo: backButton.centerYAnchor),
-            
+
             titleLabel.centerXAnchor.constraint(equalTo: headerView.centerXAnchor),
             titleLabel.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
             titleLabel.leadingAnchor.constraint(greaterThanOrEqualTo: backButton.trailingAnchor, constant: 8),
@@ -136,14 +146,17 @@ class FeaturePlanViewController: UIViewController {
     }
     
     private func setupTopSegmentedControl() {
-        topSegmentedControl = CustomSegmentedControl(
-            frame: .zero,
-            buttonTitles: ["CHAT", "PLAN"],
-            initialIndex: 0
-        )
+        topSegmentedControl = CustomSegmentedControl(frame: .zero, buttonTitles: ["CHAT", "PLAN", "TASKS"])
         topSegmentedControl.translatesAutoresizingMaskIntoConstraints = false
-        topSegmentedControl.delegate = self
-        topSegmentedControl.backgroundColor = UIColor.Sphinx.Body
+        // Set colors BEFORE configure so configureSelectorView picks up the right color
+        topSegmentedControl.buttonBackgroundColor = UIColor.Sphinx.HeaderBG
+        topSegmentedControl.backgroundColor = UIColor.Sphinx.HeaderBG
+        topSegmentedControl.selectorViewColor = UIColor.Sphinx.PrimaryGreen
+        topSegmentedControl.configureFromOutlet(
+            buttonTitles: ["CHAT", "PLAN", "TASKS"],
+            initialIndex: 0,
+            delegate: self
+        )
         view.addSubview(topSegmentedControl)
         
         NSLayoutConstraint.activate([
@@ -176,6 +189,7 @@ class FeaturePlanViewController: UIViewController {
         chatInputContainer.translatesAutoresizingMaskIntoConstraints = false
         chatInputContainer.backgroundColor = UIColor.Sphinx.HeaderBG
         chatContainerView.addSubview(chatInputContainer)
+        chatInputContainer.isHidden = true
         
         // Chat Input Text View
         chatInputTextView = UITextView()
@@ -237,25 +251,35 @@ class FeaturePlanViewController: UIViewController {
         planContainerView.isHidden = true
         view.addSubview(planContainerView)
         
-        // Plan Segmented Control
+        // Plan Segmented Control — SF Symbol icons
         planSegmentedControl = CustomSegmentedControl(
             frame: .zero,
-            buttonTitles: ["BRIEF", "USER STORIES", "REQUIREMENTS", "ARCHITECTURE"],
-            initialIndex: 0
+            buttonTitles: ["Brief", "User Stories", "Requirements", "Architecture"]
         )
         planSegmentedControl.translatesAutoresizingMaskIntoConstraints = false
-        planSegmentedControl.delegate = self
-        planSegmentedControl.backgroundColor = UIColor.Sphinx.Body
+        // Set colors BEFORE configure so configureSelectorView picks up the right color
+        planSegmentedControl.buttonBackgroundColor = UIColor.Sphinx.HeaderBG
+        planSegmentedControl.backgroundColor = UIColor.Sphinx.HeaderBG
+        planSegmentedControl.configureWithSymbols(
+            symbolNames: ["doc.plaintext", "person.2", "checklist", "cpu"],
+            placeholderTitles: ["Brief", "User Stories", "Requirements", "Architecture"],
+            initialIndex: 0,
+            delegate: self
+        )
         planContainerView.addSubview(planSegmentedControl)
         
-        // Plan Text View
+        // Plan Text View — displays rendered markdown
         planTextView = UITextView()
         planTextView.translatesAutoresizingMaskIntoConstraints = false
         planTextView.backgroundColor = UIColor.Sphinx.Body
-        planTextView.textColor = UIColor.Sphinx.Text
-        planTextView.font = UIFont(name: "Roboto-Regular", size: 15)
         planTextView.isEditable = false
+        planTextView.isSelectable = true
+        planTextView.dataDetectorTypes = [.link]
         planTextView.textContainerInset = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
+        planTextView.linkTextAttributes = [
+            .foregroundColor: UIColor.Sphinx.PrimaryBlue,
+            .underlineStyle: NSUnderlineStyle.single.rawValue
+        ]
         planContainerView.addSubview(planTextView)
         
         // Generate Tasks Button
@@ -276,27 +300,33 @@ class FeaturePlanViewController: UIViewController {
         generateLoadingWheel.color = UIColor.Sphinx.Text
         planContainerView.addSubview(generateLoadingWheel)
         
+        planTextViewBottomToButton = planTextView.bottomAnchor.constraint(
+            equalTo: generateTasksButton.topAnchor, constant: -16
+        )
+        planTextViewBottomToContainer = planTextView.bottomAnchor.constraint(
+            equalTo: planContainerView.safeAreaLayoutGuide.bottomAnchor
+        )
+
         NSLayoutConstraint.activate([
             planContainerView.topAnchor.constraint(equalTo: topSegmentedControl.bottomAnchor),
             planContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             planContainerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             planContainerView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            
+
             planSegmentedControl.topAnchor.constraint(equalTo: planContainerView.topAnchor),
             planSegmentedControl.leadingAnchor.constraint(equalTo: planContainerView.leadingAnchor),
             planSegmentedControl.trailingAnchor.constraint(equalTo: planContainerView.trailingAnchor),
             planSegmentedControl.heightAnchor.constraint(equalToConstant: 44),
-            
+
             planTextView.topAnchor.constraint(equalTo: planSegmentedControl.bottomAnchor),
             planTextView.leadingAnchor.constraint(equalTo: planContainerView.leadingAnchor),
             planTextView.trailingAnchor.constraint(equalTo: planContainerView.trailingAnchor),
-            planTextView.bottomAnchor.constraint(equalTo: generateTasksButton.topAnchor, constant: -16),
-            
+
             generateTasksButton.leadingAnchor.constraint(equalTo: planContainerView.leadingAnchor, constant: 32),
             generateTasksButton.trailingAnchor.constraint(equalTo: planContainerView.trailingAnchor, constant: -32),
             generateTasksButton.bottomAnchor.constraint(equalTo: planContainerView.safeAreaLayoutGuide.bottomAnchor, constant: -16),
             generateTasksButton.heightAnchor.constraint(equalToConstant: 50),
-            
+
             generateLoadingWheel.centerYAnchor.constraint(equalTo: generateTasksButton.centerYAnchor),
             generateLoadingWheel.trailingAnchor.constraint(equalTo: generateTasksButton.leadingAnchor, constant: -20)
         ])
@@ -373,9 +403,10 @@ class FeaturePlanViewController: UIViewController {
             featureId: feature.id,
             callback: { [weak self] in
                 DispatchQueue.main.async {
-                    self?.generateTasksButton.isEnabled = true
                     self?.generateLoadingWheel.stopAnimating()
                     self?.showGenerateTasksSuccess()
+                    // Re-fetch feature so tasks list populates and button hides
+                    self?.fetchFeatureDetail()
                 }
             },
             errorCallback: { [weak self] in
@@ -388,33 +419,86 @@ class FeaturePlanViewController: UIViewController {
         )
     }
     
-    // MARK: - Panel Management
-    private func showChatPanel() {
-        chatContainerView.isHidden = false
-        planContainerView.isHidden = true
+    // MARK: - Tasks Panel Setup
+    private func setupTasksPanel() {
+        tasksContainerView = UIView()
+        tasksContainerView.translatesAutoresizingMaskIntoConstraints = false
+        tasksContainerView.backgroundColor = UIColor.Sphinx.Body
+        tasksContainerView.isHidden = true
+        view.addSubview(tasksContainerView)
+
+        tasksTableView = UITableView()
+        tasksTableView.translatesAutoresizingMaskIntoConstraints = false
+        tasksTableView.backgroundColor = UIColor.Sphinx.Body
+        tasksTableView.separatorStyle = .none
+        tasksTableView.rowHeight = 110
+        tasksTableView.contentInset = UIEdgeInsets(top: 12, left: 0, bottom: 0, right: 0)
+        tasksTableView.register(
+            WorkspaceTaskTableViewCell.nib,
+            forCellReuseIdentifier: WorkspaceTaskTableViewCell.reuseID
+        )
+        // Delegate/dataSource wired in extension below
+        tasksTableView.delegate = self
+        tasksTableView.dataSource = self
+        tasksContainerView.addSubview(tasksTableView)
+
+        NSLayoutConstraint.activate([
+            tasksContainerView.topAnchor.constraint(equalTo: topSegmentedControl.bottomAnchor),
+            tasksContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            tasksContainerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            tasksContainerView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            tasksTableView.topAnchor.constraint(equalTo: tasksContainerView.topAnchor),
+            tasksTableView.leadingAnchor.constraint(equalTo: tasksContainerView.leadingAnchor),
+            tasksTableView.trailingAnchor.constraint(equalTo: tasksContainerView.trailingAnchor),
+            tasksTableView.bottomAnchor.constraint(equalTo: tasksContainerView.bottomAnchor)
+        ])
     }
-    
-    private func showPlanPanel() {
-        chatContainerView.isHidden = true
-        planContainerView.isHidden = false
-        updatePlanText()
+
+    // MARK: - Panel Management
+    private func showPanel(at index: Int) {
+        chatContainerView.isHidden  = (index != 0)
+        planContainerView.isHidden  = (index != 1)
+        tasksContainerView.isHidden = (index != 2)
+        if index == 1 { updatePlanText() }
+        if index == 2 { tasksTableView.reloadData() }
+    }
+
+    private func updateGenerateTasksButton() {
+        let hasTasks = feature.hasTasks
+        generateTasksButton.isHidden = hasTasks
+        generateLoadingWheel.isHidden = hasTasks
+        if hasTasks {
+            planTextViewBottomToButton.isActive = false
+            planTextViewBottomToContainer.isActive = true
+        } else {
+            planTextViewBottomToContainer.isActive = false
+            planTextViewBottomToButton.isActive = true
+        }
     }
     
     private func updatePlanText() {
         let selectedIndex = planSegmentedControl.selectedIndex
-        
+        let raw: String
+
         switch selectedIndex {
         case 0: // BRIEF
-            planTextView.text = feature.brief ?? "No brief available yet."
+            raw = feature.brief ?? "*No brief available yet.*"
         case 1: // USER STORIES
-            planTextView.text = feature.userStories ?? "No user stories available yet."
+            if let stories = feature.userStories, !stories.isEmpty {
+                raw = stories.enumerated().map { "- [ ] \($0.element)" }.joined(separator: "\n")
+            } else {
+                raw = "*No user stories available yet.*"
+            }
         case 2: // REQUIREMENTS
-            planTextView.text = feature.requirements ?? "No requirements available yet."
+            raw = feature.requirements ?? "*No requirements available yet.*"
         case 3: // ARCHITECTURE
-            planTextView.text = feature.architecture ?? "No architecture available yet."
+            raw = feature.architecture ?? "*No architecture available yet.*"
         default:
-            planTextView.text = ""
+            raw = ""
         }
+
+        planTextView.attributedText = markdownRenderer.render(raw)
     }
     
     private func updateAIWorkingState() {
@@ -424,6 +508,31 @@ class FeaturePlanViewController: UIViewController {
     }
     
     // MARK: - API Methods
+    private func fetchFeatureDetail() {
+        API.sharedInstance.fetchFeatureDetailWithAuth(
+            featureId: feature.id,
+            callback: { [weak self] updatedFeature in
+                guard let self = self, let updatedFeature = updatedFeature else { return }
+                DispatchQueue.main.async {
+                    self.feature = updatedFeature
+                    // Refresh plan panel if currently visible
+                    if !self.planContainerView.isHidden {
+                        self.updatePlanText()
+                    }
+                    // Refresh tasks panel if currently visible
+                    if !self.tasksContainerView.isHidden {
+                        self.tasksTableView.reloadData()
+                    }
+                    // Show/hide generate button based on whether tasks exist
+                    self.updateGenerateTasksButton()
+                }
+            },
+            errorCallback: {
+                print("[FeaturePlanVC] Failed to fetch feature detail")
+            }
+        )
+    }
+
     private func fetchChatHistory() {
         API.sharedInstance.fetchFeatureChatWithAuth(
             featureId: feature.id,
@@ -467,7 +576,7 @@ class FeaturePlanViewController: UIViewController {
     
     // MARK: - WebSocket
     private func connectWebSocket() {
-        guard let token = UserDefaults.Keys.hiveToken.get() as? String else {
+        guard let token: String = UserDefaults.Keys.hiveToken.get() else {
             print("No Hive auth token found")
             return
         }
@@ -519,16 +628,10 @@ class FeaturePlanViewController: UIViewController {
 
 // MARK: - CustomSegmentedControlDelegate
 extension FeaturePlanViewController: CustomSegmentedControlDelegate {
-    func segmentedControl(_ segmentedControl: CustomSegmentedControl, didSelectSegmentAt index: Int, sender: Any?) {
-        if segmentedControl == topSegmentedControl {
-            // Top level segmented control (CHAT / PLAN)
-            if index == 0 {
-                showChatPanel()
-            } else {
-                showPlanPanel()
-            }
-        } else if segmentedControl == planSegmentedControl {
-            // Plan sub-tabs
+    func segmentedControlDidSwitch(_ control: CustomSegmentedControl, to index: Int) {
+        if control === topSegmentedControl {
+            showPanel(at: index)
+        } else if control === planSegmentedControl {
             updatePlanText()
         }
     }
@@ -537,21 +640,44 @@ extension FeaturePlanViewController: CustomSegmentedControlDelegate {
 // MARK: - UITableViewDelegate, UITableViewDataSource
 extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        if tableView === tasksTableView {
+            return feature.allTasks.count
+        }
         return messages.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        if tableView === tasksTableView {
+            guard let cell = tableView.dequeueReusableCell(
+                withIdentifier: WorkspaceTaskTableViewCell.reuseID,
+                for: indexPath
+            ) as? WorkspaceTaskTableViewCell else {
+                return UITableViewCell()
+            }
+            let tasks = feature.allTasks
+            let task = tasks[indexPath.row]
+            let isLast = indexPath.row == tasks.count - 1
+            cell.configure(with: task, isLastRow: isLast)
+            return cell
+        }
+
         guard let cell = tableView.dequeueReusableCell(
             withIdentifier: "FeatureChatMessageCell",
             for: indexPath
         ) as? FeatureChatMessageCell else {
             return UITableViewCell()
         }
-        
         let message = messages[indexPath.row]
         cell.configure(with: message)
-        
         return cell
+    }
+
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        guard tableView === tasksTableView else { return }
+        let task = feature.allTasks[indexPath.row]
+        let chatVC = TaskChatViewController.instantiate(task: task)
+        navigationController?.pushViewController(chatVC, animated: true)
     }
 }
 

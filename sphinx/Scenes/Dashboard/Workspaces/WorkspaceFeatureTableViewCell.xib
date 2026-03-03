@@ -18,19 +18,21 @@
     <objects>
         <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner"/>
         <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
-        <tableViewCell contentMode="scaleToFill" selectionStyle="none" indentationWidth="10" rowHeight="110" id="task-cell-01" customClass="WorkspaceTaskTableViewCell" customModule="sphinx" customModuleProvider="target">
+        <tableViewCell contentMode="scaleToFill" selectionStyle="none" indentationWidth="10" rowHeight="110" id="feature-cell-01" customClass="WorkspaceFeatureTableViewCell" customModule="sphinx" customModuleProvider="target">
             <rect key="frame" x="0.0" y="0.0" width="393" height="110"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-            <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="task-cell-01" id="content-view-01">
+            <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="feature-cell-01" id="content-view-01">
                 <rect key="frame" x="0.0" y="0.0" width="393" height="110"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
-                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Task Title" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="2" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="title-lbl-01">
-                        <rect key="frame" x="16" y="11.999999999999998" width="71" height="19.333333333333329"/>
+                    <!-- Title label - matches tasks: top-left, 16pt system medium -->
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Feature Title" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="2" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="title-lbl-01">
+                        <rect key="frame" x="16" y="12" width="71" height="19.333333333333329"/>
                         <fontDescription key="fontDescription" type="system" weight="medium" pointSize="16"/>
                         <color key="textColor" name="Text"/>
                         <nil key="highlightedColor"/>
                     </label>
+                    <!-- Status badge - top-right, same as tasks -->
                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="IN_PROGRESS" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="status-badge-01">
                         <rect key="frame" x="277" y="12" width="100" height="20"/>
                         <constraints>
@@ -41,7 +43,8 @@
                         <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <nil key="highlightedColor"/>
                     </label>
-                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="CRITICAL" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="priority-badge-01">
+                    <!-- Priority badge - right side, below status -->
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="HIGH" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="priority-badge-01">
                         <rect key="frame" x="277" y="40" width="100" height="20"/>
                         <constraints>
                             <constraint firstAttribute="height" constant="20" id="priority-height-01"/>
@@ -51,18 +54,21 @@
                         <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <nil key="highlightedColor"/>
                     </label>
-                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Repository" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="repo-lbl-01">
-                        <rect key="frame" x="15.999999999999986" y="81" width="233.66666666666663" height="16"/>
+                    <!-- Created by label - bottom left, like repo label on tasks -->
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Created by" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="createdby-lbl-01">
+                        <rect key="frame" x="16" y="81" width="233.666" height="16"/>
                         <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="13"/>
                         <color key="textColor" name="SecondaryText"/>
                         <nil key="highlightedColor"/>
                     </label>
+                    <!-- Updated at label - bottom right, like tasks -->
                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="252" verticalHuggingPriority="251" text="Updated: 2 days ago" textAlignment="right" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="updated-lbl-01">
-                        <rect key="frame" x="257.66666666666669" y="81" width="119.33333333333331" height="16"/>
+                        <rect key="frame" x="257.666" y="81" width="119.333" height="16"/>
                         <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="13"/>
                         <color key="textColor" name="SecondaryText"/>
                         <nil key="highlightedColor"/>
                     </label>
+                    <!-- Separator view -->
                     <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="sep-view-01">
                         <rect key="frame" x="16" y="109" width="377" height="1"/>
                         <color key="backgroundColor" name="Divider"/>
@@ -73,46 +79,57 @@
                 </subviews>
                 <color key="backgroundColor" name="Body"/>
                 <constraints>
-                    <constraint firstItem="sep-view-01" firstAttribute="top" secondItem="repo-lbl-01" secondAttribute="bottom" constant="12" id="0Qw-aZ-bza"/>
-                    <constraint firstItem="priority-badge-01" firstAttribute="top" secondItem="status-badge-01" secondAttribute="bottom" constant="8" id="priority-top-01"/>
-                    <constraint firstAttribute="trailing" secondItem="priority-badge-01" secondAttribute="trailing" constant="16" id="priority-trail-01"/>
-                    <constraint firstItem="repo-lbl-01" firstAttribute="leading" secondItem="content-view-01" secondAttribute="leading" constant="16" id="repo-lead-01"/>
-                    <constraint firstAttribute="bottom" secondItem="sep-view-01" secondAttribute="bottom" id="sep-bot-01"/>
-                    <constraint firstItem="sep-view-01" firstAttribute="leading" secondItem="content-view-01" secondAttribute="leading" constant="16" id="sep-lead-01"/>
-                    <constraint firstAttribute="trailing" secondItem="sep-view-01" secondAttribute="trailing" id="sep-trail-01"/>
+                    <!-- Title: leading 16, top 12 -->
+                    <constraint firstItem="title-lbl-01" firstAttribute="leading" secondItem="content-view-01" secondAttribute="leading" constant="16" id="title-lead-01"/>
+                    <constraint firstItem="title-lbl-01" firstAttribute="top" secondItem="content-view-01" secondAttribute="top" constant="12" id="title-top-01"/>
+                    <!-- Status badge: trailing 16, top 12, leading >= title trailing + 8 -->
                     <constraint firstItem="status-badge-01" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="title-lbl-01" secondAttribute="trailing" constant="8" id="status-lead-01"/>
                     <constraint firstItem="status-badge-01" firstAttribute="top" secondItem="content-view-01" secondAttribute="top" constant="12" id="status-top-01"/>
                     <constraint firstAttribute="trailing" secondItem="status-badge-01" secondAttribute="trailing" constant="16" id="status-trail-01"/>
-                    <constraint firstItem="title-lbl-01" firstAttribute="leading" secondItem="content-view-01" secondAttribute="leading" constant="16" id="title-lead-01"/>
-                    <constraint firstItem="title-lbl-01" firstAttribute="top" secondItem="content-view-01" secondAttribute="top" constant="12" id="title-top-01"/>
-                    <constraint firstItem="updated-lbl-01" firstAttribute="leading" secondItem="repo-lbl-01" secondAttribute="trailing" constant="8" id="updated-lead-01"/>
+                    <!-- Priority badge: trailing 16, top = status bottom + 8 -->
+                    <constraint firstItem="priority-badge-01" firstAttribute="top" secondItem="status-badge-01" secondAttribute="bottom" constant="8" id="priority-top-01"/>
+                    <constraint firstAttribute="trailing" secondItem="priority-badge-01" secondAttribute="trailing" constant="16" id="priority-trail-01"/>
+                    <!-- Created by: leading 16, top = priority badge top (align with priority row) - same y as repo in tasks -->
+                    <constraint firstItem="createdby-lbl-01" firstAttribute="leading" secondItem="content-view-01" secondAttribute="leading" constant="16" id="createdby-lead-01"/>
+                    <!-- Updated at: trailing 16, leading = createdby trailing + 8 -->
+                    <constraint firstItem="updated-lbl-01" firstAttribute="leading" secondItem="createdby-lbl-01" secondAttribute="trailing" constant="8" id="updated-lead-01"/>
                     <constraint firstAttribute="trailing" secondItem="updated-lbl-01" secondAttribute="trailing" constant="16" id="updated-trail-01"/>
-                    <constraint firstItem="sep-view-01" firstAttribute="top" secondItem="updated-lbl-01" secondAttribute="bottom" constant="12" id="wHJ-Yu-aBJ"/>
+                    <!-- Align createdBy and updatedAt vertically -->
+                    <constraint firstItem="updated-lbl-01" firstAttribute="centerY" secondItem="createdby-lbl-01" secondAttribute="centerY" id="updated-centery-01"/>
+                    <!-- Separator: leading 16, trailing 0, bottom = content bottom -->
+                    <constraint firstItem="sep-view-01" firstAttribute="leading" secondItem="content-view-01" secondAttribute="leading" constant="16" id="sep-lead-01"/>
+                    <constraint firstAttribute="trailing" secondItem="sep-view-01" secondAttribute="trailing" id="sep-trail-01"/>
+                    <constraint firstAttribute="bottom" secondItem="sep-view-01" secondAttribute="bottom" id="sep-bot-01"/>
+                    <!-- Separator top = createdBy bottom + 12 -->
+                    <constraint firstItem="sep-view-01" firstAttribute="top" secondItem="createdby-lbl-01" secondAttribute="bottom" constant="12" id="sep-top-01"/>
+                    <!-- CreatedBy bottom drives the row height via separator -->
+                    <constraint firstItem="createdby-lbl-01" firstAttribute="top" secondItem="content-view-01" secondAttribute="top" constant="81" id="createdby-top-01"/>
                 </constraints>
             </tableViewCellContentView>
+            <color key="backgroundColor" name="Body"/>
             <connections>
-                <outlet property="priorityBadge" destination="priority-badge-01" id="priority-out-01"/>
-                <outlet property="repositoryLabel" destination="repo-lbl-01" id="repo-out-01"/>
-                <outlet property="separatorView" destination="sep-view-01" id="sep-out-01"/>
-                <outlet property="statusBadge" destination="status-badge-01" id="status-out-01"/>
-                <outlet property="titleLabel" destination="title-lbl-01" id="title-out-01"/>
-                <outlet property="updatedAtLabel" destination="updated-lbl-01" id="updated-out-01"/>
+                <outlet property="titleLabel" destination="title-lbl-01" id="title-outlet-01"/>
+                <outlet property="statusBadge" destination="status-badge-01" id="status-outlet-01"/>
+                <outlet property="priorityBadge" destination="priority-badge-01" id="priority-outlet-01"/>
+                <outlet property="createdByLabel" destination="createdby-lbl-01" id="createdby-outlet-01"/>
+                <outlet property="updatedAtLabel" destination="updated-lbl-01" id="updated-outlet-01"/>
+                <outlet property="separatorView" destination="sep-view-01" id="sep-outlet-01"/>
             </connections>
-            <point key="canvasLocation" x="131.29771" y="73.239436999999995"/>
+            <point key="canvasLocation" x="85" y="21"/>
         </tableViewCell>
     </objects>
     <resources>
-        <namedColor name="Body">
-            <color red="0.1137254902" green="0.12156862745098039" blue="0.16078431372549021" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-        </namedColor>
         <namedColor name="Divider">
-            <color red="0.86274509803921573" green="0.8784313725490196" blue="0.8901960784313725" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+            <color red="0.21176470588235294" green="0.22745098039215686" blue="0.29019607843137257" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+        <namedColor name="HeaderBG">
+            <color red="0.1137254902" green="0.12156862745098039" blue="0.16078431372549021" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>
         <namedColor name="SecondaryText">
             <color red="0.55686274509803924" green="0.58823529411764708" blue="0.61176470588235299" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>
         <namedColor name="Text">
-            <color red="0.23529411764705882" green="0.24705882352941178" blue="0.25490196078431371" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+            <color red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>
     </resources>
 </document>

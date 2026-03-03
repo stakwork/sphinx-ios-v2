@@ -144,9 +144,19 @@ internal enum StoryboardScene {
             identifier: "WorkspacesViewController"
         )
 
+        internal static let workspaceViewController = SceneType<WorkspaceViewController>(
+            storyboard: Dashboard.self,
+            identifier: "WorkspaceViewController"
+        )
+        
         internal static let workspaceTasksViewController = SceneType<WorkspaceTasksViewController>(
             storyboard: Dashboard.self,
             identifier: "WorkspaceTasksViewController"
+        )
+        
+        internal static let workspaceFeaturesViewController = SceneType<WorkspaceFeaturesViewController>(
+            storyboard: Dashboard.self,
+            identifier: "WorkspaceFeaturesViewController"
         )
 
     }
