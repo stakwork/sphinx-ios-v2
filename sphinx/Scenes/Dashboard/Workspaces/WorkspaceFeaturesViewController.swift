@@ -53,7 +53,7 @@ class WorkspaceFeaturesViewController: UIViewController {
         
         tableView.backgroundColor = .Sphinx.Body
         tableView.separatorStyle = .none
-        tableView.rowHeight = 75
+        tableView.rowHeight = 110
         tableView.contentInset = UIEdgeInsets(top: 12, left: 0, bottom: 0, right: 0)
         tableView.translatesAutoresizingMaskIntoConstraints = false
         
