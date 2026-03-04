@@ -36,6 +36,7 @@ class FeaturePlanViewController: UIViewController {
     private var chatInputTextView: UITextView!
     private var sendButton: UIButton!
     private var chatInputContainerBottomConstraint: NSLayoutConstraint!
+    private var workflowStatusView: WorkflowStatusView!
     
     // Plan Panel Components
     private var planSegmentedControl: CustomSegmentedControl!
@@ -213,6 +214,11 @@ class FeaturePlanViewController: UIViewController {
         sendButton.addTarget(self, action: #selector(sendButtonTouched), for: .touchUpInside)
         chatInputContainer.addSubview(sendButton)
         
+        // Workflow Status View
+        workflowStatusView = WorkflowStatusView()
+        workflowStatusView.translatesAutoresizingMaskIntoConstraints = false
+        chatContainerView.addSubview(workflowStatusView)
+
         chatInputContainerBottomConstraint = chatInputContainer.bottomAnchor.constraint(equalTo: chatContainerView.bottomAnchor)
         
         NSLayoutConstraint.activate([
@@ -224,7 +230,12 @@ class FeaturePlanViewController: UIViewController {
             chatTableView.topAnchor.constraint(equalTo: chatContainerView.topAnchor),
             chatTableView.leadingAnchor.constraint(equalTo: chatContainerView.leadingAnchor),
             chatTableView.trailingAnchor.constraint(equalTo: chatContainerView.trailingAnchor),
-            chatTableView.bottomAnchor.constraint(equalTo: chatInputContainer.topAnchor),
+            chatTableView.bottomAnchor.constraint(equalTo: workflowStatusView.topAnchor),
+
+            workflowStatusView.leadingAnchor.constraint(equalTo: chatContainerView.leadingAnchor),
+            workflowStatusView.trailingAnchor.constraint(equalTo: chatContainerView.trailingAnchor),
+            workflowStatusView.bottomAnchor.constraint(equalTo: chatInputContainer.topAnchor),
+            workflowStatusView.heightAnchor.constraint(equalToConstant: 32),
             
             chatInputContainer.leadingAnchor.constraint(equalTo: chatContainerView.leadingAnchor),
             chatInputContainer.trailingAnchor.constraint(equalTo: chatContainerView.trailingAnchor),
@@ -505,6 +516,17 @@ class FeaturePlanViewController: UIViewController {
         sendButton.alpha = isAIWorking ? 0.5 : 1.0
         chatInputTextView.isEditable = !isAIWorking
     }
+
+    private func applyWorkflowStatus(_ status: WorkflowStatus) {
+        workflowStatusView.status = status
+        switch status {
+        case .IN_PROGRESS, .PENDING:
+            workflowStatusView.show(animated: true)
+        case .COMPLETED, .ERROR, .HALTED, .FAILED:
+            workflowStatusView.hide(animated: true)
+        }
+        isAIWorking = (status == .IN_PROGRESS)
+    }
     
     // MARK: - API Methods
     private func fetchFeatureDetail() {
@@ -724,6 +746,8 @@ extension FeaturePlanViewController: HivePusherDelegate {
     }
     
     func workflowStatusChanged(status: WorkflowStatus) {
-        self.isAIWorking = (status == .IN_PROGRESS)
+        DispatchQueue.main.async {
+            self.applyWorkflowStatus(status)
+        }
     }
 }
