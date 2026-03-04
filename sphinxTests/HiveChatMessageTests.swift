@@ -11,7 +11,7 @@ class HiveChatMessageTests: XCTestCase {
             "id": "msg-123",
             "message": "Let's build a chat feature with WebSocket support",
             "role": "user",
-            "timestamp": "2024-01-20T15:30:00Z"
+            "createdAt": "2024-01-20T15:30:00Z"
         ]
         
         let json = JSON(jsonDict)
@@ -21,7 +21,7 @@ class HiveChatMessageTests: XCTestCase {
         XCTAssertEqual(chatMessage?.id, "msg-123")
         XCTAssertEqual(chatMessage?.message, "Let's build a chat feature with WebSocket support")
         XCTAssertEqual(chatMessage?.role, "user")
-        XCTAssertEqual(chatMessage?.timestamp, "2024-01-20T15:30:00Z")
+        XCTAssertEqual(chatMessage?.createdAt, "2024-01-20T15:30:00Z")
     }
     
     func testHiveChatMessage_InitWithMinimalJSON() {
@@ -38,7 +38,7 @@ class HiveChatMessageTests: XCTestCase {
         XCTAssertEqual(chatMessage?.id, "msg-456")
         XCTAssertEqual(chatMessage?.message, "Great idea! Here's the architecture...")
         XCTAssertEqual(chatMessage?.role, "assistant")
-        XCTAssertNil(chatMessage?.timestamp)
+        XCTAssertNil(chatMessage?.createdAt)
     }
     
     func testHiveChatMessage_InitWithMissingId_ReturnsNil() {

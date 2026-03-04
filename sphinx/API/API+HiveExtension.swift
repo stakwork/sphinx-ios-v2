@@ -662,6 +662,7 @@ extension API {
     func sendFeatureChatMessage(
         featureId: String,
         message: String,
+        replyId: String? = nil,
         authToken: String,
         callback: @escaping EmptyCallback,
         errorCallback: @escaping EmptyCallback
@@ -676,7 +677,7 @@ extension API {
             "message": message as AnyObject,
             "contextTags": [] as AnyObject,
             "sourceWebsocketID": NSNull(),
-            "replyId": NSNull()
+            "replyId": (replyId as AnyObject? ?? NSNull() as AnyObject)
         ]
 
         guard let request = createRequest(urlString, bodyParams: params as NSDictionary, method: "POST", token: authToken) else {
@@ -718,6 +719,7 @@ extension API {
     func sendFeatureChatMessageWithAuth(
         featureId: String,
         message: String,
+        replyId: String? = nil,
         callback: @escaping EmptyCallback,
         errorCallback: @escaping EmptyCallback
     ) {
@@ -725,12 +727,14 @@ extension API {
             sendFeatureChatMessage(
                 featureId: featureId,
                 message: message,
+                replyId: replyId,
                 authToken: storedToken,
                 callback: callback,
                 errorCallback: { [weak self] in
                     self?.authenticateAndSendFeatureChatMessage(
                         featureId: featureId,
                         message: message,
+                        replyId: replyId,
                         callback: callback,
                         errorCallback: errorCallback
                     )
@@ -740,6 +744,7 @@ extension API {
             authenticateAndSendFeatureChatMessage(
                 featureId: featureId,
                 message: message,
+                replyId: replyId,
                 callback: callback,
                 errorCallback: errorCallback
             )
@@ -749,6 +754,7 @@ extension API {
     private func authenticateAndSendFeatureChatMessage(
         featureId: String,
         message: String,
+        replyId: String? = nil,
         callback: @escaping EmptyCallback,
         errorCallback: @escaping EmptyCallback
     ) {
@@ -759,6 +765,123 @@ extension API {
                 self?.sendFeatureChatMessage(
                     featureId: featureId,
                     message: message,
+                    replyId: replyId,
+                    authToken: token,
+                    callback: callback,
+                    errorCallback: errorCallback
+                )
+            },
+            errorCallback: errorCallback
+        )
+    }
+
+    func sendTaskChatMessage(
+        taskId: String,
+        message: String,
+        replyId: String? = nil,
+        authToken: String,
+        callback: @escaping EmptyCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        guard let encodedTaskId = taskId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+            errorCallback()
+            return
+        }
+
+        let urlString = "\(API.kHiveBaseUrl)/tasks/\(encodedTaskId)/chat"
+        let params: [String: AnyObject] = [
+            "message": message as AnyObject,
+            "contextTags": [] as AnyObject,
+            "sourceWebsocketID": NSNull(),
+            "replyId": (replyId as AnyObject? ?? NSNull() as AnyObject)
+        ]
+
+        guard let request = createRequest(urlString, bodyParams: params as NSDictionary, method: "POST", token: authToken) else {
+            errorCallback()
+            return
+        }
+
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                print("[HiveAPI] Send task chat message unauthorized (401) - token may be expired")
+                errorCallback()
+                return
+            }
+
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+
+                if let error = json["error"].string {
+                    print("[HiveAPI] Send task chat message error: \(error)")
+                    errorCallback()
+                    return
+                }
+
+                guard json["success"].bool == true else {
+                    print("[HiveAPI] Send task chat message returned success=false")
+                    errorCallback()
+                    return
+                }
+
+                callback()
+            case .failure(let error):
+                print("[HiveAPI] Send task chat message failed: \(error.localizedDescription)")
+                errorCallback()
+            }
+        }
+    }
+
+    func sendTaskChatMessageWithAuth(
+        taskId: String,
+        message: String,
+        replyId: String? = nil,
+        callback: @escaping EmptyCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
+            sendTaskChatMessage(
+                taskId: taskId,
+                message: message,
+                replyId: replyId,
+                authToken: storedToken,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateAndSendTaskChatMessage(
+                        taskId: taskId,
+                        message: message,
+                        replyId: replyId,
+                        callback: callback,
+                        errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateAndSendTaskChatMessage(
+                taskId: taskId,
+                message: message,
+                replyId: replyId,
+                callback: callback,
+                errorCallback: errorCallback
+            )
+        }
+    }
+
+    private func authenticateAndSendTaskChatMessage(
+        taskId: String,
+        message: String,
+        replyId: String? = nil,
+        callback: @escaping EmptyCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback(); return }
+                UserDefaults.Keys.hiveToken.set(token)
+                self?.sendTaskChatMessage(
+                    taskId: taskId,
+                    message: message,
+                    replyId: replyId,
                     authToken: token,
                     callback: callback,
                     errorCallback: errorCallback

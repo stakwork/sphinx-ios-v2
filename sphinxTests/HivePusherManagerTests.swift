@@ -37,12 +37,12 @@ class HivePusherManagerTests: XCTestCase {
         let featureJSON = """
         {
             "id": "feature-123",
-            "name": "Test Feature",
+            "title": "Test Feature",
             "brief": "This is a test brief",
             "userStories": "As a user, I want to test",
             "requirements": "Must have tests",
             "architecture": "Clean architecture",
-            "workflowStatus": "IN_PROGRESS",
+            "status": "IN_PROGRESS",
             "createdAt": "2026-02-27T10:00:00Z",
             "updatedAt": "2026-02-27T14:00:00Z"
         }
@@ -61,7 +61,7 @@ class HivePusherManagerTests: XCTestCase {
             XCTAssertEqual(feature.id, "feature-123")
             XCTAssertEqual(feature.name, "Test Feature")
             XCTAssertEqual(feature.brief, "This is a test brief")
-            XCTAssertEqual(feature.userStories, "As a user, I want to test")
+            XCTAssertEqual(feature.userStories, ["As a user, I want to test"])
             XCTAssertEqual(feature.requirements, "Must have tests")
             XCTAssertEqual(feature.architecture, "Clean architecture")
             XCTAssertEqual(feature.workflowStatus, "IN_PROGRESS")
@@ -80,7 +80,7 @@ class HivePusherManagerTests: XCTestCase {
         let featureJSON = """
         {
             "id": "feature-456",
-            "name": "Minimal Feature"
+            "title": "Minimal Feature"
         }
         """
         
@@ -145,7 +145,7 @@ class HivePusherManagerTests: XCTestCase {
             "id": "msg-789",
             "message": "Hello, can you help me?",
             "role": "user",
-            "timestamp": "2026-02-27T14:30:00Z"
+            "createdAt": "2026-02-27T14:30:00Z"
         }
         """
         
@@ -162,7 +162,7 @@ class HivePusherManagerTests: XCTestCase {
             XCTAssertEqual(message.id, "msg-789")
             XCTAssertEqual(message.message, "Hello, can you help me?")
             XCTAssertEqual(message.role, "user")
-            XCTAssertEqual(message.timestamp, "2026-02-27T14:30:00Z")
+            XCTAssertEqual(message.createdAt, "2026-02-27T14:30:00Z")
             expectation.fulfill()
         }
         
@@ -180,7 +180,7 @@ class HivePusherManagerTests: XCTestCase {
             "id": "msg-790",
             "message": "Sure! I can help you with that.",
             "role": "assistant",
-            "timestamp": "2026-02-27T14:31:00Z"
+            "createdAt": "2026-02-27T14:31:00Z"
         }
         """
         
@@ -230,7 +230,7 @@ class HivePusherManagerTests: XCTestCase {
             XCTAssertEqual(message.id, "msg-791")
             XCTAssertEqual(message.message, "Short message")
             XCTAssertEqual(message.role, "user")
-            XCTAssertNil(message.timestamp)
+            XCTAssertNil(message.createdAt)
             expectation.fulfill()
         }
         
