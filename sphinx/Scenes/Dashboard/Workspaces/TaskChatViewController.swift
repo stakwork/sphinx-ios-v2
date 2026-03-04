@@ -25,6 +25,7 @@ class TaskChatViewController: UIViewController {
     private var chatInputTextView: UITextView!
     private var sendButton: UIButton!
     private var chatInputBottomConstraint: NSLayoutConstraint!
+    private var workflowStatusView: WorkflowStatusView!
 
     private var loadingWheel: UIActivityIndicatorView!
     private var emptyLabel: UILabel!
@@ -49,6 +50,14 @@ class TaskChatViewController: UIViewController {
         setupUI()
         setupKeyboardObservers()
         fetchMessages()
+        connectWebSocket()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        if isMovingFromParent {
+            HivePusherManager.shared.disconnect()
+        }
     }
 
     deinit {
@@ -173,6 +182,11 @@ class TaskChatViewController: UIViewController {
         sendButton.addTarget(self, action: #selector(sendTapped), for: .touchUpInside)
         chatInputContainer.addSubview(sendButton)
 
+        // Workflow Status View
+        workflowStatusView = WorkflowStatusView()
+        workflowStatusView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(workflowStatusView)
+
         chatInputBottomConstraint = chatInputContainer.bottomAnchor.constraint(equalTo: view.bottomAnchor)
 
         NSLayoutConstraint.activate([
@@ -185,7 +199,12 @@ class TaskChatViewController: UIViewController {
             chatTableView.topAnchor.constraint(equalTo: headerView.bottomAnchor),
             chatTableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             chatTableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            chatTableView.bottomAnchor.constraint(equalTo: chatInputContainer.topAnchor),
+            chatTableView.bottomAnchor.constraint(equalTo: workflowStatusView.topAnchor),
+
+            workflowStatusView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            workflowStatusView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            workflowStatusView.bottomAnchor.constraint(equalTo: chatInputContainer.topAnchor),
+            workflowStatusView.heightAnchor.constraint(equalToConstant: 32),
 
             chatInputContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             chatInputContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
@@ -332,6 +351,36 @@ class TaskChatViewController: UIViewController {
         guard messages.count > 0 else { return }
         let indexPath = IndexPath(row: messages.count - 1, section: 0)
         chatTableView.scrollToRow(at: indexPath, at: .bottom, animated: animated)
+    }
+
+    // MARK: - WebSocket
+    private func connectWebSocket() {
+        guard let token: String = UserDefaults.Keys.hiveToken.get() else { return }
+        HivePusherManager.shared.delegate = self
+        HivePusherManager.shared.connect(taskId: task.id, authToken: token)
+    }
+}
+
+// MARK: - HivePusherDelegate
+extension TaskChatViewController: HivePusherDelegate {
+    func workflowStatusChanged(status: WorkflowStatus) {
+        DispatchQueue.main.async {
+            self.workflowStatusView.status = status
+            switch status {
+            case .IN_PROGRESS, .PENDING:
+                self.workflowStatusView.show(animated: true)
+            case .COMPLETED, .ERROR, .HALTED, .FAILED:
+                self.workflowStatusView.hide(animated: true)
+            }
+        }
+    }
+
+    func featureUpdated(_ updatedFeature: HiveFeature) {
+        // no-op: TaskChatViewController does not display feature-level updates
+    }
+
+    func newMessageReceived(_ message: HiveChatMessage) {
+        // no-op: TaskChatViewController fetches messages on load; push-based refresh not required here
     }
 }
 
