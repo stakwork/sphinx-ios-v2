@@ -71,6 +71,7 @@ class FeatureChatMessageCell: UITableViewCell {
     private var bubbleTrailingConstraint: NSLayoutConstraint!
     private var timestampLeadingConstraint: NSLayoutConstraint!
     private var timestampTrailingConstraint: NSLayoutConstraint!
+    private var bubbleWidthConstraint: NSLayoutConstraint!
 
     // MARK: - Init
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
@@ -102,9 +103,11 @@ class FeatureChatMessageCell: UITableViewCell {
         timestampLeadingConstraint  = timestampLabel.leadingAnchor.constraint(equalTo: bubbleView.leadingAnchor)
         timestampTrailingConstraint = timestampLabel.trailingAnchor.constraint(equalTo: bubbleView.trailingAnchor)
 
+        bubbleWidthConstraint = bubbleView.widthAnchor.constraint(lessThanOrEqualTo: contentView.widthAnchor, multiplier: 0.85)
+
         NSLayoutConstraint.activate([
             bubbleView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 4),
-            bubbleView.widthAnchor.constraint(lessThanOrEqualTo: contentView.widthAnchor, multiplier: 0.85),
+            bubbleWidthConstraint,
             bubbleStack.topAnchor.constraint(equalTo: bubbleView.topAnchor),
             bubbleStack.leadingAnchor.constraint(equalTo: bubbleView.leadingAnchor),
             bubbleStack.trailingAnchor.constraint(equalTo: bubbleView.trailingAnchor),
@@ -122,9 +125,12 @@ class FeatureChatMessageCell: UITableViewCell {
         if isUser {
             let font = UIFont(name: "Roboto-Regular", size: 15) ?? UIFont.systemFont(ofSize: 15)
             messageTextView.attributedText = NSAttributedString(
-                string: message.message,
+                string: message.resolvedDisplayText,
                 attributes: [.font: font, .foregroundColor: UIColor.Sphinx.TextMessages]
             )
+            // Fix 3: hide text view when message body is blank
+            let hasText = !message.message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            messageTextView.isHidden = !hasText
             bubbleView.backgroundColor      = UIColor.Sphinx.SentMsgBG
             timestampLabel.textColor        = UIColor.Sphinx.SecondaryTextSent
             timestampLabel.textAlignment    = .right
@@ -134,7 +140,7 @@ class FeatureChatMessageCell: UITableViewCell {
             timestampLeadingConstraint.isActive  = false
             timestampTrailingConstraint.isActive = true
         } else {
-            let rendered = FeatureChatMessageCell.markdownRenderer.render(message.message)
+            let rendered = FeatureChatMessageCell.markdownRenderer.render(message.resolvedDisplayText)
             let mutable  = NSMutableAttributedString(attributedString: rendered)
             // Swap base text colour to match the bubble's text style
             mutable.enumerateAttribute(.foregroundColor, in: NSRange(location: 0, length: mutable.length)) { value, range, _ in
@@ -143,6 +149,9 @@ class FeatureChatMessageCell: UITableViewCell {
                 }
             }
             messageTextView.attributedText = mutable
+            // Fix 3: hide text view when message body is blank
+            let hasText = !message.resolvedDisplayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            messageTextView.isHidden = !hasText
             bubbleView.backgroundColor      = UIColor.Sphinx.ReceivedMsgBG
             timestampLabel.textColor        = UIColor.Sphinx.SecondaryText
             timestampLabel.textAlignment    = .left
@@ -157,10 +166,35 @@ class FeatureChatMessageCell: UITableViewCell {
            let prContent = prArtifact.prContent {
             prCardView.configure(with: prContent)
             prCardView.isHidden = false
-            // Round only top corners of bubble when card is appended at bottom
+            // Fix 1: expand bubble to 60% fixed width for PR card
+            bubbleWidthConstraint.isActive = false
+            bubbleWidthConstraint = bubbleView.widthAnchor.constraint(equalTo: contentView.widthAnchor, multiplier: 0.60)
+            bubbleWidthConstraint.isActive = true
+            // Fix 2: only round top corners; disable masksToBounds so card's own corners/border show
             bubbleView.layer.cornerRadius = 18
+            bubbleView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+            bubbleView.layer.masksToBounds = false
         } else {
             prCardView.isHidden = true
+            // Restore default width constraint
+            bubbleWidthConstraint.isActive = false
+            bubbleWidthConstraint = bubbleView.widthAnchor.constraint(lessThanOrEqualTo: contentView.widthAnchor, multiplier: 0.85)
+            bubbleWidthConstraint.isActive = true
+            // Restore full corner masking
+            bubbleView.layer.maskedCorners = [
+                .layerMinXMinYCorner, .layerMaxXMinYCorner,
+                .layerMinXMaxYCorner, .layerMaxXMaxYCorner
+            ]
+            bubbleView.layer.masksToBounds = true
+        }
+
+        // --- LONGFORM border ---
+        if message.isLongformMessage {
+            bubbleView.layer.borderWidth = 1
+            bubbleView.layer.borderColor = UIColor.Sphinx.LightDivider.cgColor
+        } else {
+            bubbleView.layer.borderWidth = 0
+            bubbleView.layer.borderColor = UIColor.clear.cgColor
         }
 
         // --- Clarifying questions ---
@@ -206,7 +240,9 @@ class FeatureChatMessageCell: UITableViewCell {
 
     override func prepareForReuse() {
         super.prepareForReuse()
+        
         messageTextView.attributedText = nil
+        messageTextView.isHidden = false
         prCardView.isHidden = true
         clarifyingQuestionsView.reset()
         clarifyingQuestionsView.isHidden = true
@@ -217,5 +253,17 @@ class FeatureChatMessageCell: UITableViewCell {
         bubbleTrailingConstraint.isActive = false
         timestampLeadingConstraint.isActive  = false
         timestampTrailingConstraint.isActive = false
+        // Reset bubble width to default
+        bubbleWidthConstraint.isActive = false
+        bubbleWidthConstraint = bubbleView.widthAnchor.constraint(lessThanOrEqualTo: contentView.widthAnchor, multiplier: 0.85)
+        bubbleWidthConstraint.isActive = true
+        // Reset corner masking to full
+        bubbleView.layer.maskedCorners = [
+            .layerMinXMinYCorner, .layerMaxXMinYCorner,
+            .layerMinXMaxYCorner, .layerMaxXMaxYCorner
+        ]
+        bubbleView.layer.masksToBounds = true
+        bubbleView.layer.borderWidth = 0
+        bubbleView.layer.borderColor = UIColor.clear.cgColor
     }
 }

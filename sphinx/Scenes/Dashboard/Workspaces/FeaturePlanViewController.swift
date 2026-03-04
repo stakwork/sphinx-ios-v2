@@ -189,7 +189,6 @@ class FeaturePlanViewController: UIViewController {
         chatInputContainer.translatesAutoresizingMaskIntoConstraints = false
         chatInputContainer.backgroundColor = UIColor.Sphinx.HeaderBG
         chatContainerView.addSubview(chatInputContainer)
-        chatInputContainer.isHidden = true
         
         // Chat Input Text View
         chatInputTextView = UITextView()
@@ -538,7 +537,6 @@ class FeaturePlanViewController: UIViewController {
             featureId: feature.id,
             callback: { [weak self] messages in
                 DispatchQueue.main.async {
-                    // Filter out empty messages
                     self?.messages = messages.filter {
                         !$0.message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !$0.artifacts.isEmpty
                     }

@@ -139,7 +139,7 @@ extension HiveChatMessage {
         ]
         let json9 = JSON([
             "id": "msg-009",
-            "message": "",
+            "message": "I have a few clarifying questions about your requirements:",
             "role": "ASSISTANT",
             "createdAt": "2025-02-22T09:19:00Z",
             "artifacts": [
@@ -150,7 +150,24 @@ extension HiveChatMessage {
                 ]
             ] as [[String: Any]]
         ])
+        
+        let jsonLongform = JSON([
+            "id": "msg-longform-001",
+            "message": "",
+            "role": "ASSISTANT",
+            "createdAt": "2025-02-22T09:20:00Z",
+            "artifacts": [
+                [
+                    "id": "artifact-001",
+                    "type": "LONGFORM",
+                    "content": [
+                        "title": "Agent",
+                        "text": "There was an error creating pull request.\r\n\r\nCannot create PR - currently on base branch (master). Commit changes to a feature branch first."
+                    ] as [String: Any]
+                ] as [String: Any]
+            ] as [Any]
+        ])
 
-        return [json1, json2, json3, json4, json5, json6, json7, json8, json9].compactMap { HiveChatMessage(json: $0) }
+        return [json1, json2, json3, json4, json5, json6, json7, json8, json9, jsonLongform].compactMap { HiveChatMessage(json: $0) }
     }
 }
