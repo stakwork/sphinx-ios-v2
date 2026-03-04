@@ -723,7 +723,7 @@ extension FeaturePlanViewController: HivePusherDelegate {
         scrollToBottom()
     }
     
-    func workflowStatusChanged(isWorking: Bool) {
-        self.isAIWorking = isWorking
+    func workflowStatusChanged(status: WorkflowStatus) {
+        self.isAIWorking = (status == .IN_PROGRESS)
     }
 }
