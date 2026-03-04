@@ -48,6 +48,12 @@ struct LongformContent {
     let text: String?
 }
 
+struct ClarifyingQuestion {
+    let question: String
+    let options: [String]
+    let type: String // "single_choice" or "multiple_choice"
+}
+
 struct HiveChatMessageArtifact {
     let id: String?
     let type: String?
@@ -57,9 +63,17 @@ struct HiveChatMessageArtifact {
     let prContent: PRContent?
     /// Parsed longform content when type == "LONGFORM"
     let longformContent: LongformContent?
+    /// Raw JSON content for PLAN artifacts
+    let contentJSON: JSON?
+    /// Parsed clarifying questions when type == "PLAN" and tool_use == "ask_clarifying_questions"
+    let clarifyingQuestions: [ClarifyingQuestion]?
 
     var isPullRequest: Bool { type == "PULL_REQUEST" }
     var isLongform: Bool { type == "LONGFORM" }
+
+    var isClarifyingQuestions: Bool {
+        return type == "PLAN" && contentJSON?["tool_use"].string == "ask_clarifying_questions"
+    }
 
     init(json: JSON) {
         self.id   = json["id"].string
@@ -86,13 +100,35 @@ struct HiveChatMessageArtifact {
             )
             self.content = nil
             self.longformContent = nil
+            self.contentJSON = nil
+            self.clarifyingQuestions = nil
         } else if json["type"].string == "LONGFORM" {
             let c = json["content"]
             self.longformContent = LongformContent(title: c["title"].string, text: c["text"].string)
             self.content = nil
             self.prContent = nil
+            self.contentJSON = nil
+            self.clarifyingQuestions = nil
+        } else if json["type"].string == "PLAN" {
+            self.prContent = nil
+            self.content = nil
+            self.longformContent = nil
+            let planContent = json["content"]
+            self.contentJSON = planContent
+            if planContent["tool_use"].string == "ask_clarifying_questions" {
+                self.clarifyingQuestions = planContent["content"].arrayValue.compactMap { item in
+                    guard let question = item["question"].string,
+                          let type = item["type"].string else { return nil }
+                    let options = item["options"].arrayValue.compactMap { $0.string }
+                    return ClarifyingQuestion(question: question, options: options, type: type)
+                }
+            } else {
+                self.clarifyingQuestions = nil
+            }
         } else {
             self.prContent = nil
+            self.contentJSON = nil
+            self.clarifyingQuestions = nil
             self.longformContent = nil
             self.content = json["content"].string
         }
