@@ -33,14 +33,15 @@ struct PRProgress {
 
 struct PRContent {
     let repo: String?
-    let url: String?
-    let status: String?
+    var url: String?
+    var status: String?
     let number: Int?
     let title: String?
     let additions: Int?
     let deletions: Int?
     let changedFiles: Int?
     let progress: PRProgress?
+    var state: String?
 }
 
 struct LongformContent {
@@ -60,7 +61,7 @@ struct HiveChatMessageArtifact {
     /// Plain string content (for CODE, DIFF, etc.)
     let content: String?
     /// Parsed PR content when type == "PULL_REQUEST"
-    let prContent: PRContent?
+    var prContent: PRContent?
     /// Parsed longform content when type == "LONGFORM"
     let longformContent: LongformContent?
     /// Raw JSON content for PLAN artifacts
@@ -155,7 +156,7 @@ struct HiveChatMessage {
     let status: String?
     let userId: String?
     let createdAt: String?
-    let artifacts: [HiveChatMessageArtifact]
+    var artifacts: [HiveChatMessageArtifact]
     let attachments: [HiveChatMessageAttachment]
     let createdBy: HiveChatMessageCreatedBy?
     let replyId: String?

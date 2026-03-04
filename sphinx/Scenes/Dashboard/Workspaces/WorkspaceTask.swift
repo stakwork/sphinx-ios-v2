@@ -11,7 +11,7 @@ import SwiftyJSON
 
 struct WorkspaceTask {
     let id: String
-    let title: String
+    var title: String
     let description: String?
     let status: String          // "TODO|IN_PROGRESS|DONE|CANCELLED|BLOCKED"
     let priority: String        // "LOW|MEDIUM|HIGH|CRITICAL"
