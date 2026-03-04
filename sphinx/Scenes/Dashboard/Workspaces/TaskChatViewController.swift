@@ -356,20 +356,7 @@ class TaskChatViewController: UIViewController {
     // MARK: - WebSocket
     private func connectWebSocket() {
         HivePusherManager.shared.delegate = self
-        if let token: String = UserDefaults.Keys.hiveToken.get() {
-            HivePusherManager.shared.connect(taskId: task.id, authToken: token)
-        } else {
-            API.sharedInstance.authenticateWithHive(
-                callback: { [weak self] token in
-                    guard let self = self, let token = token else { return }
-                    UserDefaults.Keys.hiveToken.set(token)
-                    HivePusherManager.shared.connect(taskId: self.task.id, authToken: token)
-                },
-                errorCallback: {
-                    print("[TaskChat] Hive authentication failed — WebSocket not connected")
-                }
-            )
-        }
+        HivePusherManager.shared.connect(taskId: task.id)
     }
 }
 

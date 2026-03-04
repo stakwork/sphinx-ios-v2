@@ -1147,39 +1147,6 @@ extension API {
         )
     }
 
-    // MARK: - Pusher Channel Auth
-
-    func authenticatePusherChannel(
-        socketId: String,
-        channelName: String,
-        authToken: String,
-        completion: @escaping (String) -> Void
-    ) {
-        let params: [String: AnyObject] = [
-            "socket_id": socketId as AnyObject,
-            "channel_name": channelName as AnyObject
-        ]
-
-        guard let request = createRequest(
-            "\(API.kHiveBaseUrl)/pusher/auth",
-            bodyParams: params as NSDictionary,
-            method: "POST",
-            token: authToken
-        ) else {
-            print("[HiveAPI] Pusher channel auth - failed to create request")
-            return
-        }
-
-        session()?.request(request).responseData { response in
-            if case .success(let data) = response.result,
-               let json = try? JSON(data: data),
-               let auth = json["auth"].string {
-                completion(auth)
-            } else {
-                print("[HiveAPI] Pusher channel auth failed")
-            }
-        }
-    }
 }
 
 // MARK: - Workspace Image Cache
