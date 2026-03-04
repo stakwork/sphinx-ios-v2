@@ -115,6 +115,41 @@ extension HiveChatMessage {
             "role": "assistant",
             "createdAt": "2025-02-22T09:18:30Z"
         ])
+
+        // Mock clarifying questions artifact
+        let clarifyingContentJSON: [String: Any] = [
+            "tool_use": "ask_clarifying_questions",
+            "content": [
+                [
+                    "question": "Where does the clarifying question data come from?",
+                    "options": ["Option A", "Option B", "Option C"],
+                    "type": "single_choice"
+                ],
+                [
+                    "question": "Which chat views should show this?",
+                    "options": ["Feature chat", "Task chat", "Both"],
+                    "type": "multiple_choice"
+                ],
+                [
+                    "question": "How should answers be submitted?",
+                    "options": ["Plain text message", "Dedicated endpoint"],
+                    "type": "single_choice"
+                ]
+            ] as [[String: Any]]
+        ]
+        let json9 = JSON([
+            "id": "msg-009",
+            "message": "I have a few clarifying questions about your requirements:",
+            "role": "ASSISTANT",
+            "createdAt": "2025-02-22T09:19:00Z",
+            "artifacts": [
+                [
+                    "id": "artifact-001",
+                    "type": "PLAN",
+                    "content": clarifyingContentJSON
+                ]
+            ] as [[String: Any]]
+        ])
         
         let jsonLongform = JSON([
             "id": "msg-longform-001",
@@ -133,6 +168,6 @@ extension HiveChatMessage {
             ] as [Any]
         ])
 
-        return [json1, json2, json3, json4, json5, json6, json7, json8, jsonLongform].compactMap { HiveChatMessage(json: $0) }
+        return [json1, json2, json3, json4, json5, json6, json7, json8, json9, jsonLongform].compactMap { HiveChatMessage(json: $0) }
     }
 }

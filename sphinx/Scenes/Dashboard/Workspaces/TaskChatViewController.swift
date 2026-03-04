@@ -242,8 +242,59 @@ class TaskChatViewController: UIViewController {
     }
 
     @objc private func sendTapped() {
-        // Read-only for now — task chat is view-only (no send endpoint defined)
+        guard let message = chatInputTextView.text?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !message.isEmpty else {
+            chatInputTextView.resignFirstResponder()
+            return
+        }
+        chatInputTextView.text = ""
         chatInputTextView.resignFirstResponder()
+
+        API.sharedInstance.sendTaskChatMessageWithAuth(
+            taskId: task.id,
+            message: message,
+            callback: { [weak self] in
+                DispatchQueue.main.async {
+                    print("[TaskChatVC] Message sent successfully")
+                }
+            },
+            errorCallback: { [weak self] in
+                DispatchQueue.main.async {
+                    self?.showSendMessageError()
+                }
+            }
+        )
+    }
+
+    private func sendClarifyingAnswers(answers: [String], replyId: String) {
+        let joined = answers.joined(separator: "\n\n")
+        API.sharedInstance.sendTaskChatMessageWithAuth(
+            taskId: task.id,
+            message: joined,
+            replyId: replyId,
+            callback: { [weak self] in
+                DispatchQueue.main.async {
+                    guard let self = self else { return }
+                    if let idx = self.messages.firstIndex(where: { $0.id == replyId }),
+                       let cell = self.chatTableView.cellForRow(at: IndexPath(row: idx, section: 0)) as? FeatureChatMessageCell {
+                        cell.lockClarifyingQuestionsView()
+                    }
+                }
+            },
+            errorCallback: { [weak self] in
+                DispatchQueue.main.async {
+                    self?.showSendMessageError()
+                }
+            }
+        )
+    }
+
+    private func showSendMessageError() {
+        AlertHelper.showAlert(
+            title: "generic.error.title".localized,
+            message: "Failed to send message",
+            on: self
+        )
     }
 
     // MARK: - Data
@@ -296,6 +347,9 @@ extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
             for: indexPath
         ) as? FeatureChatMessageCell else { return UITableViewCell() }
         cell.configure(with: messages[indexPath.row])
+        cell.onClarifyingAnswerSubmit = { [weak self] answers, replyId in
+            self?.sendClarifyingAnswers(answers: answers, replyId: replyId)
+        }
         return cell
     }
 }

@@ -170,6 +170,11 @@ class HiveChatMessageTests: XCTestCase {
     func testHiveChatMessage_MockConversation_ContainsBothRoles() {
         let mockMessages = HiveChatMessage.mockConversation()
         
+        let rolesLowercased = mockMessages.map { $0.role.lowercased() }
+        
+        XCTAssertTrue(rolesLowercased.contains("user"), "Mock conversation should contain user messages")
+        XCTAssertTrue(rolesLowercased.contains("assistant"), "Mock conversation should contain assistant messages")
+        
         let roles = mockMessages.map { $0.role.uppercased() }
         
         XCTAssertTrue(roles.contains("USER"), "Mock conversation should contain user messages")
@@ -182,6 +187,14 @@ class HiveChatMessageTests: XCTestCase {
         for message in mockMessages {
             XCTAssertFalse(message.id.isEmpty, "Mock message should have non-empty id")
             XCTAssertFalse(message.role.isEmpty, "Mock message should have non-empty role")
+
+            let roleLower = message.role.lowercased()
+            XCTAssertTrue(roleLower == "user" || roleLower == "assistant",
+                          "Mock message role should be either 'user' or 'assistant' (case-insensitive), got: \(message.role)")
+            // Messages may have empty text if they carry artifacts (e.g. clarifying questions)
+            if message.artifacts.isEmpty {
+                XCTAssertFalse(message.message.isEmpty, "Mock message with no artifacts should have non-empty message text")
+            }
             // resolvedDisplayText must be non-empty for every mock message
             XCTAssertFalse(
                 message.resolvedDisplayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,

@@ -537,8 +537,9 @@ class FeaturePlanViewController: UIViewController {
             featureId: feature.id,
             callback: { [weak self] messages in
                 DispatchQueue.main.async {
-                    // Filter out messages with no displayable content (including LONGFORM)
-                    self?.messages = messages.filter { !$0.resolvedDisplayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+                    self?.messages = messages.filter {
+                        !$0.message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !$0.artifacts.isEmpty
+                    }
                     self?.chatTableView.reloadData()
                     self?.scrollToBottom()
                 }
@@ -567,6 +568,30 @@ class FeaturePlanViewController: UIViewController {
             errorCallback: { [weak self] in
                 DispatchQueue.main.async {
                     self?.isAIWorking = false
+                    self?.showSendMessageError()
+                }
+            }
+        )
+    }
+
+    private func sendClarifyingAnswers(answers: [String], replyId: String) {
+        let joined = answers.joined(separator: "\n\n")
+        API.sharedInstance.sendFeatureChatMessageWithAuth(
+            featureId: feature.id,
+            message: joined,
+            replyId: replyId,
+            callback: { [weak self] in
+                DispatchQueue.main.async {
+                    // Lock the cell that triggered the submit
+                    guard let self = self else { return }
+                    if let idx = self.messages.firstIndex(where: { $0.id == replyId }),
+                       let cell = self.chatTableView.cellForRow(at: IndexPath(row: idx, section: 0)) as? FeatureChatMessageCell {
+                        cell.lockClarifyingQuestionsView()
+                    }
+                }
+            },
+            errorCallback: { [weak self] in
+                DispatchQueue.main.async {
                     self?.showSendMessageError()
                 }
             }
@@ -668,6 +693,9 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
         }
         let message = messages[indexPath.row]
         cell.configure(with: message)
+        cell.onClarifyingAnswerSubmit = { [weak self] answers, replyId in
+            self?.sendClarifyingAnswers(answers: answers, replyId: replyId)
+        }
         return cell
     }
 

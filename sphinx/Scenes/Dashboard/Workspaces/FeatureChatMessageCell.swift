@@ -46,6 +46,18 @@ class FeatureChatMessageCell: UITableViewCell {
         return v
     }()
 
+    /// Clarifying questions view — only shown when a PLAN/ask_clarifying_questions artifact is present.
+    private let clarifyingQuestionsView: ClarifyingQuestionsView = {
+        let v = ClarifyingQuestionsView()
+        v.isHidden = true
+        return v
+    }()
+
+    // MARK: - Callbacks
+
+    /// Set by the view controller; called when the user submits clarifying answers.
+    var onClarifyingAnswerSubmit: ((_ answers: [String], _ replyId: String) -> Void)?
+
     private let timestampLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -74,8 +86,8 @@ class FeatureChatMessageCell: UITableViewCell {
         contentView.backgroundColor = .Sphinx.Body
         selectionStyle = .none
 
-        // Vertical stack inside bubble: text + optional PR card
-        let bubbleStack = UIStackView(arrangedSubviews: [messageTextView, prCardView])
+        // Vertical stack inside bubble: text + optional PR card + optional clarifying questions
+        let bubbleStack = UIStackView(arrangedSubviews: [messageTextView, prCardView, clarifyingQuestionsView])
         bubbleStack.translatesAutoresizingMaskIntoConstraints = false
         bubbleStack.axis = .vertical
         bubbleStack.spacing = 0
@@ -185,6 +197,26 @@ class FeatureChatMessageCell: UITableViewCell {
             bubbleView.layer.borderColor = UIColor.clear.cgColor
         }
 
+        // --- Clarifying questions ---
+        if let cqArtifact = message.artifacts.first(where: { $0.isClarifyingQuestions }),
+           let questions = cqArtifact.clarifyingQuestions, !questions.isEmpty {
+            clarifyingQuestionsView.configure(with: questions)
+            clarifyingQuestionsView.isHidden = false
+            clarifyingQuestionsView.onSubmit = { [weak self] answers in
+                self?.onClarifyingAnswerSubmit?(answers, message.id)
+            }
+            // Hide the text bubble entirely — no text to show, and we don't want
+            // its top/bottom insets bleeding as empty space above/below the card.
+            messageTextView.isHidden = true
+            messageTextView.textContainerInset = .zero
+            bubbleView.backgroundColor = .clear
+            bubbleView.layer.cornerRadius = 0
+        } else {
+            clarifyingQuestionsView.isHidden = true
+            messageTextView.isHidden = false
+            messageTextView.textContainerInset = UIEdgeInsets(top: 10, left: 8, bottom: 10, right: 8)
+        }
+
         // --- Timestamp ---
         if let ts = message.createdAt {
             timestampLabel.text    = formatTimestamp(ts)
@@ -209,12 +241,22 @@ class FeatureChatMessageCell: UITableViewCell {
         return fmt.string(from: d)
     }
 
+    /// Lock the clarifying questions view after successful submission.
+    func lockClarifyingQuestionsView() {
+        clarifyingQuestionsView.lock()
+    }
+
     override func prepareForReuse() {
         super.prepareForReuse()
         
         messageTextView.attributedText = nil
         messageTextView.isHidden = false
+        messageTextView.textContainerInset = UIEdgeInsets(top: 10, left: 8, bottom: 10, right: 8)
         prCardView.isHidden = true
+        clarifyingQuestionsView.reset()
+        clarifyingQuestionsView.isHidden = true
+        onClarifyingAnswerSubmit = nil
+        bubbleView.layer.cornerRadius = 18
         timestampLabel.text    = nil
         timestampLabel.isHidden = false
         bubbleLeadingConstraint.isActive  = false
