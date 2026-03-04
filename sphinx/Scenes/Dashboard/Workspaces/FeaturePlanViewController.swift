@@ -738,6 +738,7 @@ extension FeaturePlanViewController: HivePusherDelegate {
     }
     
     func newMessageReceived(_ message: HiveChatMessage) {
+        guard !messages.contains(where: { $0.id == message.id }) else { return }
         messages.append(message)
         
         let indexPath = IndexPath(row: messages.count - 1, section: 0)
@@ -749,5 +750,28 @@ extension FeaturePlanViewController: HivePusherDelegate {
         DispatchQueue.main.async {
             self.applyWorkflowStatus(status)
         }
+    }
+
+    func prStatusChanged(prNumber: Int, state: String, artifactStatus: String, prUrl: String?, problemDetails: String?) {
+        guard let idx = messages.firstIndex(where: {
+            $0.artifacts.first(where: { $0.isPullRequest })?.prContent?.number == prNumber
+        }) else { return }
+        guard let artifactIdx = messages[idx].artifacts.firstIndex(where: { $0.isPullRequest }) else { return }
+        messages[idx].artifacts[artifactIdx].prContent?.state = state
+        messages[idx].artifacts[artifactIdx].prContent?.status = artifactStatus
+        if let url = prUrl { messages[idx].artifacts[artifactIdx].prContent?.url = url }
+        DispatchQueue.main.async {
+            self.chatTableView.reloadRows(at: [IndexPath(row: idx, section: 0)], with: .none)
+        }
+    }
+
+    func featureTitleUpdated(featureId: String, newTitle: String) {
+        guard featureId == feature.id else { return }
+        feature.title = newTitle
+        DispatchQueue.main.async { self.titleLabel.text = newTitle }
+    }
+
+    func taskTitleUpdated(taskId: String, newTitle: String) {
+        // no-op: FeaturePlanViewController is not scoped to a single task
     }
 }

@@ -14,6 +14,9 @@ protocol HivePusherDelegate: AnyObject {
     func featureUpdateReceived(featureId: String)
     func newMessageReceived(_ message: HiveChatMessage)
     func workflowStatusChanged(status: WorkflowStatus)
+    func prStatusChanged(prNumber: Int, state: String, artifactStatus: String, prUrl: String?, problemDetails: String?)
+    func featureTitleUpdated(featureId: String, newTitle: String)
+    func taskTitleUpdated(taskId: String, newTitle: String)
 }
 
 class HivePusherManager: NSObject {
@@ -84,6 +87,12 @@ class HivePusherManager: NSObject {
         channel.bind(eventName: "workflow-status-update") { [weak self] event in
             self?.handleWorkflowStatusChanged(event.data ?? "")
         }
+        channel.bind(eventName: "feature-title-update") { [weak self] event in
+            self?.handleFeatureTitleUpdate(event.data ?? "")
+        }
+        channel.bind(eventName: "pr-status-change") { [weak self] event in
+            self?.handlePRStatusChange(event.data ?? "")
+        }
         print("[HivePusher] Subscribed to feature channel: feature-\(featureId)")
     }
 
@@ -94,6 +103,12 @@ class HivePusherManager: NSObject {
         }
         channel.bind(eventName: "workflow-status-update") { [weak self] event in
             self?.handleWorkflowStatusChanged(event.data ?? "")
+        }
+        channel.bind(eventName: "task-title-update") { [weak self] event in
+            self?.handleTaskTitleUpdate(event.data ?? "")
+        }
+        channel.bind(eventName: "pr-status-change") { [weak self] event in
+            self?.handlePRStatusChange(event.data ?? "")
         }
         print("[HivePusher] Subscribed to task channel: task-\(taskId)")
     }
@@ -110,6 +125,12 @@ class HivePusherManager: NSObject {
             handleNewMessage(data)
         case "workflow-status-update":
             handleWorkflowStatusChanged(data)
+        case "pr-status-change":
+            handlePRStatusChange(data)
+        case "feature-title-update":
+            handleFeatureTitleUpdate(data)
+        case "task-title-update":
+            handleTaskTitleUpdate(data)
         default:
             print("[HivePusher] Unhandled event: \(name)")
         }
@@ -174,6 +195,71 @@ class HivePusherManager: NSObject {
 
         DispatchQueue.main.async { [weak self] in
             self?.delegate?.workflowStatusChanged(status: status)
+        }
+    }
+
+    private func handlePRStatusChange(_ dataString: String) {
+        guard let dataJSON = try? JSON(data: dataString.data(using: .utf8) ?? Data()) else {
+            print("[HivePusher] Failed to parse pr-status-change data as JSON")
+            return
+        }
+
+        guard let prNumber = dataJSON["prNumber"].int else {
+            print("[HivePusher] Missing prNumber in pr-status-change payload")
+            return
+        }
+
+        guard let state = dataJSON["state"].string,
+              let artifactStatus = dataJSON["artifactStatus"].string else {
+            print("[HivePusher] Missing state or artifactStatus in pr-status-change payload")
+            return
+        }
+
+        let prUrl = dataJSON["prUrl"].string
+        let problemDetails = dataJSON["problemDetails"].string
+
+        DispatchQueue.main.async { [weak self] in
+            self?.delegate?.prStatusChanged(
+                prNumber: prNumber,
+                state: state,
+                artifactStatus: artifactStatus,
+                prUrl: prUrl,
+                problemDetails: problemDetails
+            )
+        }
+    }
+
+    private func handleFeatureTitleUpdate(_ dataString: String) {
+        guard let dataJSON = try? JSON(data: dataString.data(using: .utf8) ?? Data()) else {
+            print("[HivePusher] Failed to parse feature-title-update data as JSON")
+            return
+        }
+
+        guard let featureId = dataJSON["featureId"].string,
+              let newTitle = dataJSON["newTitle"].string else {
+            print("[HivePusher] Missing featureId or newTitle in feature-title-update payload")
+            return
+        }
+
+        DispatchQueue.main.async { [weak self] in
+            self?.delegate?.featureTitleUpdated(featureId: featureId, newTitle: newTitle)
+        }
+    }
+
+    private func handleTaskTitleUpdate(_ dataString: String) {
+        guard let dataJSON = try? JSON(data: dataString.data(using: .utf8) ?? Data()) else {
+            print("[HivePusher] Failed to parse task-title-update data as JSON")
+            return
+        }
+
+        guard let taskId = dataJSON["taskId"].string,
+              let newTitle = dataJSON["newTitle"].string else {
+            print("[HivePusher] Missing taskId or newTitle in task-title-update payload")
+            return
+        }
+
+        DispatchQueue.main.async { [weak self] in
+            self?.delegate?.taskTitleUpdated(taskId: taskId, newTitle: newTitle)
         }
     }
 }

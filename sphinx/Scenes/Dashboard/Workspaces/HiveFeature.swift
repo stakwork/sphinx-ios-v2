@@ -42,7 +42,7 @@ struct HivePhase {
 
 struct HiveFeature {
     let id: String
-    let title: String
+    var title: String
     let description: String?
     let brief: String?
     let userStories: [String]?  // Can be array or string

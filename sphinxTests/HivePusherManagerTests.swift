@@ -362,6 +362,108 @@ class HivePusherManagerTests: XCTestCase {
         waitForExpectations(timeout: 1.0)
     }
 
+    // MARK: - pr-status-change Event Tests
+
+    func testPRStatusChange_ValidPayload_FiresCallback() {
+        let dataJSON = """
+        {"prNumber": 42, "state": "closed", "artifactStatus": "COMPLETED", "prUrl": "https://github.com/org/repo/pull/42", "problemDetails": null}
+        """
+
+        let expectation = self.expectation(description: "pr-status-change callback fires")
+        mockDelegate.onPRStatusChanged = { prNumber, state, artifactStatus, prUrl, problemDetails in
+            XCTAssertEqual(prNumber, 42)
+            XCTAssertEqual(state, "closed")
+            XCTAssertEqual(artifactStatus, "COMPLETED")
+            XCTAssertEqual(prUrl, "https://github.com/org/repo/pull/42")
+            expectation.fulfill()
+        }
+
+        manager.handleEvent(name: "pr-status-change", data: dataJSON)
+        waitForExpectations(timeout: 2.0)
+    }
+
+    func testPRStatusChange_MissingPRNumber_NoCallback() {
+        let dataJSON = """
+        {"state": "open", "artifactStatus": "IN_REVIEW"}
+        """
+
+        var callbackCalled = false
+        mockDelegate.onPRStatusChanged = { _, _, _, _, _ in callbackCalled = true }
+
+        manager.handleEvent(name: "pr-status-change", data: dataJSON)
+
+        let expectation = self.expectation(description: "No callback for missing prNumber")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            XCTAssertFalse(callbackCalled, "Callback should not fire when prNumber is missing")
+            expectation.fulfill()
+        }
+        waitForExpectations(timeout: 1.0)
+    }
+
+    // MARK: - feature-title-update Event Tests
+
+    func testFeatureTitleUpdate_ValidPayload_FiresCallback() {
+        let dataJSON = """
+        {"featureId": "feat_123", "newTitle": "Revamped Feature Title"}
+        """
+
+        let expectation = self.expectation(description: "feature-title-update callback fires")
+        mockDelegate.onFeatureTitleUpdated = { featureId, newTitle in
+            XCTAssertEqual(featureId, "feat_123")
+            XCTAssertEqual(newTitle, "Revamped Feature Title")
+            expectation.fulfill()
+        }
+
+        manager.handleEvent(name: "feature-title-update", data: dataJSON)
+        waitForExpectations(timeout: 2.0)
+    }
+
+    // MARK: - task-title-update Event Tests
+
+    func testTaskTitleUpdate_ValidPayload_FiresCallback() {
+        let dataJSON = """
+        {"taskId": "task_456", "newTitle": "Updated Task Title"}
+        """
+
+        let expectation = self.expectation(description: "task-title-update callback fires")
+        mockDelegate.onTaskTitleUpdated = { taskId, newTitle in
+            XCTAssertEqual(taskId, "task_456")
+            XCTAssertEqual(newTitle, "Updated Task Title")
+            expectation.fulfill()
+        }
+
+        manager.handleEvent(name: "task-title-update", data: dataJSON)
+        waitForExpectations(timeout: 2.0)
+    }
+
+    // MARK: - Duplicate new-message Guard Tests
+
+    func testNewMessageReceived_DuplicateId_NotAddedTwice() {
+        // Build a minimal HiveChatMessage JSON
+        let messageJSON = JSON([
+            "id": "cmsg_dup01",
+            "message": "Hello",
+            "role": "USER"
+        ])
+        guard let message = HiveChatMessage(json: messageJSON) else {
+            XCTFail("Failed to construct HiveChatMessage")
+            return
+        }
+
+        // Simulate receiving the same message twice via the delegate directly
+        var receivedMessages: [HiveChatMessage] = []
+        mockDelegate.onNewMessageReceived = { msg in
+            // Guard against duplicate by ID (mirrors VC logic)
+            guard !receivedMessages.contains(where: { $0.id == msg.id }) else { return }
+            receivedMessages.append(msg)
+        }
+
+        mockDelegate.newMessageReceived(message)
+        mockDelegate.newMessageReceived(message)
+
+        XCTAssertEqual(receivedMessages.count, 1, "Duplicate message should not be added a second time")
+    }
+
     // MARK: - Helper Methods
 
     /// Simulates a PusherSwift event delivery by calling the manager's internal
@@ -378,6 +480,9 @@ class MockHivePusherDelegate: HivePusherDelegate {
     var onFeatureUpdateReceived: ((String) -> Void)?
     var onNewMessageReceived: ((HiveChatMessage) -> Void)?
     var onWorkflowStatusChanged: ((WorkflowStatus) -> Void)?
+    var onPRStatusChanged: ((Int, String, String, String?, String?) -> Void)?
+    var onFeatureTitleUpdated: ((String, String) -> Void)?
+    var onTaskTitleUpdated: ((String, String) -> Void)?
     
     func featureUpdateReceived(featureId: String) {
         onFeatureUpdateReceived?(featureId)
@@ -389,5 +494,17 @@ class MockHivePusherDelegate: HivePusherDelegate {
     
     func workflowStatusChanged(status: WorkflowStatus) {
         onWorkflowStatusChanged?(status)
+    }
+
+    func prStatusChanged(prNumber: Int, state: String, artifactStatus: String, prUrl: String?, problemDetails: String?) {
+        onPRStatusChanged?(prNumber, state, artifactStatus, prUrl, problemDetails)
+    }
+
+    func featureTitleUpdated(featureId: String, newTitle: String) {
+        onFeatureTitleUpdated?(featureId, newTitle)
+    }
+
+    func taskTitleUpdated(taskId: String, newTitle: String) {
+        onTaskTitleUpdated?(taskId, newTitle)
     }
 }

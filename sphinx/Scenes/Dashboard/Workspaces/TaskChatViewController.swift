@@ -379,7 +379,34 @@ extension TaskChatViewController: HivePusherDelegate {
     }
 
     func newMessageReceived(_ message: HiveChatMessage) {
-        // no-op: TaskChatViewController fetches messages on load; push-based refresh not required here
+        guard !messages.contains(where: { $0.id == message.id }) else { return }
+        messages.append(message)
+        let indexPath = IndexPath(row: messages.count - 1, section: 0)
+        chatTableView.insertRows(at: [indexPath], with: .automatic)
+        scrollToBottom()
+    }
+
+    func prStatusChanged(prNumber: Int, state: String, artifactStatus: String, prUrl: String?, problemDetails: String?) {
+        guard let idx = messages.firstIndex(where: {
+            $0.artifacts.first(where: { $0.isPullRequest })?.prContent?.number == prNumber
+        }) else { return }
+        guard let artifactIdx = messages[idx].artifacts.firstIndex(where: { $0.isPullRequest }) else { return }
+        messages[idx].artifacts[artifactIdx].prContent?.state = state
+        messages[idx].artifacts[artifactIdx].prContent?.status = artifactStatus
+        if let url = prUrl { messages[idx].artifacts[artifactIdx].prContent?.url = url }
+        DispatchQueue.main.async {
+            self.chatTableView.reloadRows(at: [IndexPath(row: idx, section: 0)], with: .none)
+        }
+    }
+
+    func featureTitleUpdated(featureId: String, newTitle: String) {
+        // no-op: TaskChatViewController is not scoped to a feature
+    }
+
+    func taskTitleUpdated(taskId: String, newTitle: String) {
+        guard taskId == task.id else { return }
+        task.title = newTitle
+        DispatchQueue.main.async { self.titleLabel.text = newTitle }
     }
 }
 
