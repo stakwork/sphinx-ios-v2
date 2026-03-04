@@ -110,7 +110,7 @@ class FeatureChatMessageCell: UITableViewCell {
         if isUser {
             let font = UIFont(name: "Roboto-Regular", size: 15) ?? UIFont.systemFont(ofSize: 15)
             messageTextView.attributedText = NSAttributedString(
-                string: message.message,
+                string: message.resolvedDisplayText,
                 attributes: [.font: font, .foregroundColor: UIColor.Sphinx.TextMessages]
             )
             bubbleView.backgroundColor      = UIColor.Sphinx.SentMsgBG
@@ -122,7 +122,7 @@ class FeatureChatMessageCell: UITableViewCell {
             timestampLeadingConstraint.isActive  = false
             timestampTrailingConstraint.isActive = true
         } else {
-            let rendered = FeatureChatMessageCell.markdownRenderer.render(message.message)
+            let rendered = FeatureChatMessageCell.markdownRenderer.render(message.resolvedDisplayText)
             let mutable  = NSMutableAttributedString(attributedString: rendered)
             // Swap base text colour to match the bubble's text style
             mutable.enumerateAttribute(.foregroundColor, in: NSRange(location: 0, length: mutable.length)) { value, range, _ in
@@ -149,6 +149,15 @@ class FeatureChatMessageCell: UITableViewCell {
             bubbleView.layer.cornerRadius = 18
         } else {
             prCardView.isHidden = true
+        }
+
+        // --- LONGFORM border ---
+        if message.isLongformMessage {
+            bubbleView.layer.borderWidth = 1
+            bubbleView.layer.borderColor = UIColor.Sphinx.LightDivider.cgColor
+        } else {
+            bubbleView.layer.borderWidth = 0
+            bubbleView.layer.borderColor = UIColor.clear.cgColor
         }
 
         // --- Timestamp ---
@@ -185,5 +194,7 @@ class FeatureChatMessageCell: UITableViewCell {
         bubbleTrailingConstraint.isActive = false
         timestampLeadingConstraint.isActive  = false
         timestampTrailingConstraint.isActive = false
+        bubbleView.layer.borderWidth = 0
+        bubbleView.layer.borderColor = UIColor.clear.cgColor
     }
 }

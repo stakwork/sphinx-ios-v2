@@ -116,6 +116,23 @@ extension HiveChatMessage {
             "createdAt": "2025-02-22T09:18:30Z"
         ])
         
-        return [json1, json2, json3, json4, json5, json6, json7, json8].compactMap { HiveChatMessage(json: $0) }
+        let jsonLongform = JSON([
+            "id": "msg-longform-001",
+            "message": "",
+            "role": "ASSISTANT",
+            "createdAt": "2025-02-22T09:20:00Z",
+            "artifacts": [
+                [
+                    "id": "artifact-001",
+                    "type": "LONGFORM",
+                    "content": [
+                        "title": "Agent",
+                        "text": "There was an error creating pull request.\r\n\r\nCannot create PR - currently on base branch (master). Commit changes to a feature branch first."
+                    ] as [String: Any]
+                ] as [String: Any]
+            ] as [Any]
+        ])
+
+        return [json1, json2, json3, json4, json5, json6, json7, json8, jsonLongform].compactMap { HiveChatMessage(json: $0) }
     }
 }

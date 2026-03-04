@@ -538,8 +538,8 @@ class FeaturePlanViewController: UIViewController {
             featureId: feature.id,
             callback: { [weak self] messages in
                 DispatchQueue.main.async {
-                    // Filter out empty messages
-                    self?.messages = messages.filter { !$0.message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+                    // Filter out messages with no displayable content (including LONGFORM)
+                    self?.messages = messages.filter { !$0.resolvedDisplayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
                     self?.chatTableView.reloadData()
                     self?.scrollToBottom()
                 }
