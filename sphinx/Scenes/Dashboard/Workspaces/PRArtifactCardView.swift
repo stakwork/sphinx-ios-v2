@@ -203,6 +203,11 @@ class PRArtifactCardView: UIView {
         if let urlStr = pr.url, let url = URL(string: urlStr) {
             prURL = url
             openButton.isHidden = false
+            let isMerged = status == "MERGED" || status == "DONE"
+            openButton.setTitle(isMerged ? "Merged  ↗" : "Open PR  ↗", for: .normal)
+            openButton.backgroundColor = isMerged
+                ? UIColor(hex: "#8B5CF6")
+                : UIColor.Sphinx.PrimaryBlue
         } else {
             openButton.isHidden = true
         }

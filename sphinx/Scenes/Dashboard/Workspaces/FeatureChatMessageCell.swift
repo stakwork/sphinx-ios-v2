@@ -213,8 +213,17 @@ class FeatureChatMessageCell: UITableViewCell {
             bubbleView.layer.cornerRadius = 0
         } else {
             clarifyingQuestionsView.isHidden = true
-            messageTextView.isHidden = false
-            messageTextView.textContainerInset = UIEdgeInsets(top: 10, left: 8, bottom: 10, right: 8)
+            // Derive hasText the same way Fix 3 does — don't override its decision
+            let hasText: Bool
+            if isUser {
+                hasText = !message.message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            } else {
+                hasText = !message.resolvedDisplayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            }
+            messageTextView.isHidden = !hasText
+            messageTextView.textContainerInset = hasText
+                ? UIEdgeInsets(top: 10, left: 8, bottom: 10, right: 8)
+                : .zero
         }
 
         // --- Timestamp ---
