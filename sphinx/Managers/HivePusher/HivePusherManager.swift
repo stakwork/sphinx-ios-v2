@@ -27,6 +27,7 @@ class HivePusherManager: NSObject {
     private var featureId: String?
     private var taskId: String?
     private var authToken: String?
+    private var socketId: String?
     private let pusherKey = "sphinx-hive-key"
 
     private override init() {
@@ -41,7 +42,7 @@ class HivePusherManager: NSObject {
         self.featureId = featureId
         self.authToken = authToken
 
-        setupSocket(authToken: authToken)
+        setupSocket()
         print("[HivePusher] Connecting to WebSocket for feature: \(featureId)")
     }
 
@@ -51,7 +52,7 @@ class HivePusherManager: NSObject {
         self.taskId = taskId
         self.authToken = authToken
 
-        setupSocket(authToken: authToken)
+        setupSocket()
         print("[HivePusher] Connecting to WebSocket for task: \(taskId)")
     }
 
@@ -69,13 +70,14 @@ class HivePusherManager: NSObject {
         self.socket = nil
         self.featureId = nil
         self.taskId = nil
+        self.socketId = nil
 
         print("[HivePusher] Disconnected from WebSocket")
     }
 
     // MARK: - Private Setup
 
-    private func setupSocket(authToken: String) {
+    private func setupSocket() {
         guard let url = URL(string: "wss://hive.sphinx.chat/app/\(pusherKey)?protocol=7&client=sphinx-ios&version=1.0") else {
             print("[HivePusher] Invalid WebSocket URL")
             return
@@ -83,7 +85,7 @@ class HivePusherManager: NSObject {
 
         var request = URLRequest(url: url)
         request.timeoutInterval = 30
-        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        // No Authorization header — Pusher auth is per-channel via HTTP
 
         socket = WebSocket(request: request)
         socket?.delegate = self
@@ -92,36 +94,48 @@ class HivePusherManager: NSObject {
 
     // MARK: - Private Channel Methods
 
-    private func subscribeToChannel(_ channel: String) {
-        guard let socket = socket, socket.isConnected else {
-            print("[HivePusher] Cannot subscribe - socket not connected")
+    private func subscribeToPrivateChannel(_ channelName: String) {
+        guard let socketId = socketId else {
+            print("[HivePusher] Cannot subscribe - no socket ID yet")
+            return
+        }
+        guard let authToken = authToken else {
+            print("[HivePusher] Cannot subscribe - no auth token")
             return
         }
 
-        let subscribeMessage: [String: Any] = [
-            "event": "pusher:subscribe",
-            "data": ["channel": channel]
-        ]
-
-        if let jsonData = try? JSONSerialization.data(withJSONObject: subscribeMessage, options: []),
-           let jsonString = String(data: jsonData, encoding: .utf8) {
-            socket.write(string: jsonString)
-            print("[HivePusher] Subscribed to channel: \(channel)")
+        API.sharedInstance.authenticatePusherChannel(
+            socketId: socketId,
+            channelName: channelName,
+            authToken: authToken
+        ) { [weak self] authSignature in
+            guard let self = self else { return }
+            let message: [String: Any] = [
+                "event": "pusher:subscribe",
+                "data": [
+                    "channel": channelName,
+                    "auth": authSignature
+                ]
+            ]
+            self.sendJSON(message)
+            print("[HivePusher] Subscribed to private channel: \(channelName)")
         }
     }
 
     private func unsubscribeFromChannel(_ channel: String) {
-        guard let socket = socket, socket.isConnected else { return }
-
-        let unsubscribeMessage: [String: Any] = [
+        let message: [String: Any] = [
             "event": "pusher:unsubscribe",
             "data": ["channel": channel]
         ]
+        sendJSON(message)
+        print("[HivePusher] Unsubscribed from channel: \(channel)")
+    }
 
-        if let jsonData = try? JSONSerialization.data(withJSONObject: unsubscribeMessage, options: []),
-           let jsonString = String(data: jsonData, encoding: .utf8) {
-            socket.write(string: jsonString)
-            print("[HivePusher] Unsubscribed from channel: \(channel)")
+    private func sendJSON(_ payload: [String: Any]) {
+        guard let socket = socket, socket.isConnected else { return }
+        if let data = try? JSONSerialization.data(withJSONObject: payload),
+           let string = String(data: data, encoding: .utf8) {
+            socket.write(string: string)
         }
     }
 
@@ -165,11 +179,15 @@ class HivePusherManager: NSObject {
 
     private func handleConnectionEstablished(_ json: JSON) {
         print("[HivePusher] Connection established")
+        let dataString = json["data"].stringValue
+        let dataJSON = JSON(dataString.data(using: .utf8) ?? Data())
+        self.socketId = dataJSON["socket_id"].string
+        print("[HivePusher] Socket ID: \(self.socketId ?? "nil")")
 
         if let taskId = taskId {
-            subscribeToChannel("task-\(taskId)")
+            subscribeToPrivateChannel("task-\(taskId)")
         } else if let featureId = featureId {
-            subscribeToChannel("feature-\(featureId)")
+            subscribeToPrivateChannel("feature-\(featureId)")
         }
     }
 
