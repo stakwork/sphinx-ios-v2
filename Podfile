@@ -37,6 +37,7 @@ target 'sphinx' do
     pod 'KeychainAccess'
     pod 'Giphy', '2.2.12'
     pod 'Starscream', '~> 3.1'
+    pod 'PusherSwift', '~> 10.0'
     pod 'lottie-ios'
     pod "SwiftyXMLParser", :git => 'https://github.com/yahoojapan/SwiftyXMLParser.git'
     pod "youtube-ios-player-helper", "~> 1.0.3"

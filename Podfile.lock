@@ -35,6 +35,7 @@ PODS:
   - MessagePack.swift (4.0.0)
   - MobileVLCKit (3.6.0)
   - MqttCocoaAsyncSocket (1.0.8)
+  - NWWebSocket (0.5.9)
   - ObjectMapper (4.2.0)
   - PINCache (3.0.3):
     - PINCache/Arc-exception-safe (= 3.0.3)
@@ -44,6 +45,10 @@ PODS:
   - PINCache/Core (3.0.3):
     - PINOperation (~> 1.2.1)
   - PINOperation (1.2.2)
+  - PusherSwift (10.1.9):
+    - NWWebSocket (~> 0.5.9)
+    - PusherTweetNacl (~> 1.2.0)
+  - PusherTweetNacl (1.2.0)
   - ReachabilitySwift (5.0.0)
   - RNCryptor (5.1.0)
   - SDWebImage (5.12.5):
@@ -82,6 +87,7 @@ DEPENDENCIES:
   - MobileVLCKit
   - ObjectMapper
   - PINCache
+  - PusherSwift (~> 10.0)
   - ReachabilitySwift
   - RNCryptor (~> 5.0)
   - SDWebImage (~> 5.12)
@@ -114,9 +120,12 @@ SPEC REPOS:
     - MessagePack.swift
     - MobileVLCKit
     - MqttCocoaAsyncSocket
+    - NWWebSocket
     - ObjectMapper
     - PINCache
     - PINOperation
+    - PusherSwift
+    - PusherTweetNacl
     - ReachabilitySwift
     - RNCryptor
     - SDWebImage
@@ -163,9 +172,12 @@ SPEC CHECKSUMS:
   MessagePack.swift: 417f6b6e27a86ad4f19a0ee47093b3985cd77323
   MobileVLCKit: 8fe98ae53b7464f32e4bdf527cc7d53053e4d3a5
   MqttCocoaAsyncSocket: 77d3b74f76228dd5a05d1f9526eab101d415b30c
+  NWWebSocket: 01dead025db38f26693d4fa0b4d5869c8013eae0
   ObjectMapper: 1eb41f610210777375fa806bf161dc39fb832b81
   PINCache: 7a8fc1a691173d21dbddbf86cd515de6efa55086
   PINOperation: daa34d4aa1d8449089be7d405b9d974abc4724c6
+  PusherSwift: 84a45a6b62c137c52ca948626817989d3127c022
+  PusherTweetNacl: 015f56f2cf010e718703f2bd9bca66fdcc91b208
   ReachabilitySwift: 985039c6f7b23a1da463388634119492ff86c825
   RNCryptor: a369134686cd2ad391323cc856b62e591193ba79
   SDWebImage: 0905f1b7760fc8ac4198cae0036600d67478751e
@@ -181,6 +193,6 @@ SPEC CHECKSUMS:
   youtube-ios-player-helper: 0185c57db23c80d63d6ca11251d110abb8a4ca61
   Zip: b3fef584b147b6e582b2256a9815c897d60ddc67
 
-PODFILE CHECKSUM: cdd341935f4ff343bf861752259e88b5c3ff6519
+PODFILE CHECKSUM: 5bcd5b4effd2dc7fbabcf75c6a73ff8a7577ebab
 
 COCOAPODS: 1.16.2
