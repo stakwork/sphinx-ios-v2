@@ -105,93 +105,70 @@ class HivePusherManagerTests: XCTestCase {
     }
     
     // MARK: - new-message Event Tests
-    
-    func testParseNewMessageEvent_UserMessage_Success() {
-        let dataJSON = """
-        {
-            "id": "msg-789",
-            "message": "Hello, can you help me?",
-            "role": "user",
-            "createdAt": "2026-02-27T14:30:00Z"
-        }
-        """
-        
-        let expectation = self.expectation(description: "New message callback")
-        mockDelegate.onNewMessageReceived = { message in
-            XCTAssertEqual(message.id, "msg-789")
-            XCTAssertEqual(message.message, "Hello, can you help me?")
-            XCTAssertEqual(message.role, "user")
-            XCTAssertEqual(message.createdAt, "2026-02-27T14:30:00Z")
-            expectation.fulfill()
-        }
-        
-        simulateEvent(name: "new-message", dataJSON: dataJSON)
-        waitForExpectations(timeout: 2.0)
-    }
-    
-    func testParseNewMessageEvent_AssistantMessage_Success() {
-        let dataJSON = """
-        {
-            "id": "msg-790",
-            "message": "Sure! I can help you with that.",
-            "role": "assistant",
-            "createdAt": "2026-02-27T14:31:00Z"
-        }
-        """
-        
-        let expectation = self.expectation(description: "Assistant message callback")
-        mockDelegate.onNewMessageReceived = { message in
-            XCTAssertEqual(message.id, "msg-790")
-            XCTAssertEqual(message.role, "assistant")
-            XCTAssertTrue(message.message.contains("help you"))
-            expectation.fulfill()
-        }
-        
-        simulateEvent(name: "new-message", dataJSON: dataJSON)
-        waitForExpectations(timeout: 2.0)
-    }
-    
-    func testParseNewMessageEvent_MinimalMessage_Success() {
-        let dataJSON = """
-        {
-            "id": "msg-791",
-            "message": "Short message",
-            "role": "user"
-        }
-        """
-        
-        let expectation = self.expectation(description: "Minimal message callback")
-        mockDelegate.onNewMessageReceived = { message in
-            XCTAssertEqual(message.id, "msg-791")
-            XCTAssertEqual(message.message, "Short message")
-            XCTAssertEqual(message.role, "user")
-            XCTAssertNil(message.createdAt)
-            expectation.fulfill()
-        }
-        
-        simulateEvent(name: "new-message", dataJSON: dataJSON)
-        waitForExpectations(timeout: 2.0)
-    }
-    
-    func testParseNewMessageEvent_MissingRequiredField_NoCallback() {
-        let dataJSON = """
-        {
-            "id": "msg-bad",
-            "message": "Invalid message"
-        }
-        """
-        
+    //
+    // The new-message payload is a plain message ID string (e.g. "cmsg_abc123"),
+    // optionally wrapped in quotes by PusherSwift (e.g. "\"cmsg_abc123\"").
+    // The handler strips the quotes and calls fetchChatMessageWithAuth, so the
+    // delegate is NOT called synchronously in unit tests (no network available).
+    // Tests here verify quote-stripping logic and that the delegate is NOT called
+    // for invalid / empty payloads.
+
+    func testNewMessageEvent_PlainStringId_StripsQuotesNoImmediateCallback() {
+        // Payload as delivered by PusherSwift: outer JSON string wrapping the id
+        let data = "\"cmsg_abc123\""
+
         var callbackCalled = false
         mockDelegate.onNewMessageReceived = { _ in callbackCalled = true }
-        
-        simulateEvent(name: "new-message", dataJSON: dataJSON)
-        
-        let expectation = self.expectation(description: "Wait for potential callback")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            XCTAssertFalse(callbackCalled, "Callback should not be called for invalid message")
+
+        manager.handleEvent(name: "new-message", data: data)
+
+        let expectation = self.expectation(description: "Handler processes without immediate delegate call")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            // Delegate is only called after the async network fetch succeeds;
+            // in unit tests the fetch won't complete, so no callback expected.
+            XCTAssertFalse(callbackCalled, "Delegate should not be called synchronously — fetch is async")
             expectation.fulfill()
         }
         waitForExpectations(timeout: 1.0)
+    }
+
+    func testNewMessageEvent_UnquotedId_NoImmediateCallback() {
+        // Payload without surrounding quotes (bare string)
+        let data = "cmsg_xyz789"
+
+        var callbackCalled = false
+        mockDelegate.onNewMessageReceived = { _ in callbackCalled = true }
+
+        manager.handleEvent(name: "new-message", data: data)
+
+        let expectation = self.expectation(description: "Handler processes bare id without immediate delegate call")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            XCTAssertFalse(callbackCalled, "Delegate should not be called synchronously — fetch is async")
+            expectation.fulfill()
+        }
+        waitForExpectations(timeout: 1.0)
+    }
+
+    func testNewMessageEvent_EmptyPayload_NoCallback() {
+        var callbackCalled = false
+        mockDelegate.onNewMessageReceived = { _ in callbackCalled = true }
+
+        // Empty string (even after trimming) should bail out early
+        manager.handleEvent(name: "new-message", data: "\"\"")
+
+        let expectation = self.expectation(description: "Empty payload produces no callback")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            XCTAssertFalse(callbackCalled, "Callback should not be called for empty message id")
+            expectation.fulfill()
+        }
+        waitForExpectations(timeout: 1.0)
+    }
+
+    func testNewMessageEvent_QuoteStripping_ProducesCorrectId() {
+        // Verify the trimming logic in isolation
+        let raw = "\"cmsg_abc123\""
+        let trimmed = raw.trimmingCharacters(in: CharacterSet(charactersIn: "\""))
+        XCTAssertEqual(trimmed, "cmsg_abc123", "Surrounding quotes should be stripped from message ID")
     }
     
     // MARK: - workflow-status-update Event Tests

@@ -135,21 +135,32 @@ class HivePusherManager: NSObject {
     }
 
     private func handleNewMessage(_ dataString: String) {
-        guard let dataJSON = try? JSON(data: dataString.data(using: .utf8) ?? Data()) else {
-            print("[HivePusher] Failed to parse new-message data as JSON")
+        // The payload is a plain message ID string, possibly wrapped in quotes
+        // by PusherSwift JSON serialisation (e.g. "\"cmsg_abc123\""). Strip them.
+        let trimmedId = dataString.trimmingCharacters(in: CharacterSet(charactersIn: "\""))
+
+        guard !trimmedId.isEmpty else {
+            print("[HivePusher] new-message payload is empty after trimming quotes")
             return
         }
 
-        let messageJSON = dataJSON["message"].exists() ? dataJSON["message"] : dataJSON
+        print("[HivePusher] Fetching chat message with id: \(trimmedId)")
 
-        guard let message = HiveChatMessage(json: messageJSON) else {
-            print("[HivePusher] Failed to parse HiveChatMessage from new-message")
-            return
-        }
-
-        DispatchQueue.main.async { [weak self] in
-            self?.delegate?.newMessageReceived(message)
-        }
+        API.sharedInstance.fetchChatMessageWithAuth(
+            messageId: trimmedId,
+            callback: { [weak self] message in
+                guard let message = message else {
+                    print("[HivePusher] fetchChatMessage returned nil for id: \(trimmedId)")
+                    return
+                }
+                DispatchQueue.main.async {
+                    self?.delegate?.newMessageReceived(message)
+                }
+            },
+            errorCallback: {
+                print("[HivePusher] fetchChatMessage failed for id: \(trimmedId)")
+            }
+        )
     }
 
     private func handleWorkflowStatusChanged(_ dataString: String) {
