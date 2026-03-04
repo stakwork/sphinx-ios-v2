@@ -470,7 +470,10 @@ class FeaturePlanViewController: UIViewController {
         chatContainerView.isHidden  = (index != 0)
         planContainerView.isHidden  = (index != 1)
         tasksContainerView.isHidden = (index != 2)
-        if index == 1 { updatePlanText() }
+        if index == 1 {
+            topSegmentedControl.indicesOfTitlesWithBadge = []
+            updatePlanText()
+        }
         if index == 2 { tasksTableView.reloadData() }
     }
 
@@ -732,9 +735,11 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
 
 // MARK: - HivePusherDelegate
 extension FeaturePlanViewController: HivePusherDelegate {
-    func featureUpdated(_ updatedFeature: HiveFeature) {
-        self.feature = updatedFeature
-        updatePlanText()
+    func featureUpdateReceived(featureId: String) {
+        fetchFeatureDetail()
+        if planContainerView.isHidden {
+            topSegmentedControl.indicesOfTitlesWithBadge = [1]
+        }
     }
     
     func newMessageReceived(_ message: HiveChatMessage) {

@@ -11,7 +11,7 @@ import Starscream
 import SwiftyJSON
 
 protocol HivePusherDelegate: AnyObject {
-    func featureUpdated(_ feature: HiveFeature)
+    func featureUpdateReceived(featureId: String)
     func newMessageReceived(_ message: HiveChatMessage)
     func workflowStatusChanged(status: WorkflowStatus)
 }
@@ -20,6 +20,8 @@ class HivePusherManager: NSObject {
     static let shared = HivePusherManager()
 
     weak var delegate: HivePusherDelegate?
+
+    private var fetchWorkItem: DispatchWorkItem?
 
     private var socket: WebSocket?
     private var featureId: String?
@@ -147,7 +149,7 @@ class HivePusherManager: NSObject {
         case "pusher_internal:subscription_succeeded":
             print("[HivePusher] Successfully subscribed to channel")
 
-        case "FEATURE_UPDATED":
+        case "feature-updated":
             handleFeatureUpdated(json)
 
         case "NEW_MESSAGE":
@@ -173,25 +175,26 @@ class HivePusherManager: NSObject {
 
     private func handleFeatureUpdated(_ json: JSON) {
         guard let dataString = json["data"].string ?? json["data"].rawString() else {
-            print("[HivePusher] No data in FEATURE_UPDATED event")
+            print("[HivePusher] No data in feature-updated event")
             return
         }
 
         guard let dataJSON = try? JSON(data: dataString.data(using: .utf8) ?? Data()) else {
-            print("[HivePusher] Failed to parse FEATURE_UPDATED data as JSON")
+            print("[HivePusher] Failed to parse feature-updated data as JSON")
             return
         }
 
-        let featureJSON = dataJSON["feature"].exists() ? dataJSON["feature"] : dataJSON
-
-        guard let feature = HiveFeature(json: featureJSON) else {
-            print("[HivePusher] Failed to parse HiveFeature from FEATURE_UPDATED")
+        guard let featureId = dataJSON["featureId"].string else {
+            print("[HivePusher] Missing featureId in feature-updated payload")
             return
         }
 
-        DispatchQueue.main.async { [weak self] in
-            self?.delegate?.featureUpdated(feature)
+        fetchWorkItem?.cancel()
+        let workItem = DispatchWorkItem { [weak self] in
+            self?.delegate?.featureUpdateReceived(featureId: featureId)
         }
+        fetchWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: workItem)
     }
 
     private func handleNewMessage(_ json: JSON) {

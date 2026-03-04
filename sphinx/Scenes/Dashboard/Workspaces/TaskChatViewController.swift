@@ -375,7 +375,7 @@ extension TaskChatViewController: HivePusherDelegate {
         }
     }
 
-    func featureUpdated(_ updatedFeature: HiveFeature) {
+    func featureUpdateReceived(featureId: String) {
         // no-op: TaskChatViewController does not display feature-level updates
     }
 
