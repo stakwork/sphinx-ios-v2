@@ -171,8 +171,16 @@ class FeatureChatMessageCell: UITableViewCell {
             clarifyingQuestionsView.onSubmit = { [weak self] answers in
                 self?.onClarifyingAnswerSubmit?(answers, message.id)
             }
+            // Hide the text bubble entirely — no text to show, and we don't want
+            // its top/bottom insets bleeding as empty space above/below the card.
+            messageTextView.isHidden = true
+            messageTextView.textContainerInset = .zero
+            bubbleView.backgroundColor = .clear
+            bubbleView.layer.cornerRadius = 0
         } else {
             clarifyingQuestionsView.isHidden = true
+            messageTextView.isHidden = false
+            messageTextView.textContainerInset = UIEdgeInsets(top: 10, left: 8, bottom: 10, right: 8)
         }
 
         // --- Timestamp ---
@@ -207,10 +215,13 @@ class FeatureChatMessageCell: UITableViewCell {
     override func prepareForReuse() {
         super.prepareForReuse()
         messageTextView.attributedText = nil
+        messageTextView.isHidden = false
+        messageTextView.textContainerInset = UIEdgeInsets(top: 10, left: 8, bottom: 10, right: 8)
         prCardView.isHidden = true
         clarifyingQuestionsView.reset()
         clarifyingQuestionsView.isHidden = true
         onClarifyingAnswerSubmit = nil
+        bubbleView.layer.cornerRadius = 18
         timestampLabel.text    = nil
         timestampLabel.isHidden = false
         bubbleLeadingConstraint.isActive  = false
