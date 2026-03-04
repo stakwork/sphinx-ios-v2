@@ -78,7 +78,6 @@ class WorkspaceFeaturesViewController: UIViewController {
         createButton.layer.shadowOpacity = 0.3
 //        createButton.translatesAutoresizingMaskIntoConstraints = false
         createButton.addTarget(self, action: #selector(createButtonTapped), for: .touchUpInside)
-        createButton.isHidden = true
     }
     
     private func setupTableView() {

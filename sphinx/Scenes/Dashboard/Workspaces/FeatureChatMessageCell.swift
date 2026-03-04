@@ -138,7 +138,7 @@ class FeatureChatMessageCell: UITableViewCell {
             }
             messageTextView.attributedText = mutable
             // Fix 3: hide text view when message body is blank
-            let hasText = !message.message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            let hasText = !message.resolvedDisplayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             messageTextView.isHidden = !hasText
             bubbleView.backgroundColor      = UIColor.Sphinx.ReceivedMsgBG
             timestampLabel.textColor        = UIColor.Sphinx.SecondaryText
