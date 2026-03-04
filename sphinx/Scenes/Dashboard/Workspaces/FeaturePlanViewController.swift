@@ -626,20 +626,7 @@ class FeaturePlanViewController: UIViewController {
     // MARK: - WebSocket
     private func connectWebSocket() {
         HivePusherManager.shared.delegate = self
-        if let token: String = UserDefaults.Keys.hiveToken.get() {
-            HivePusherManager.shared.connect(featureId: feature.id, authToken: token)
-        } else {
-            API.sharedInstance.authenticateWithHive(
-                callback: { [weak self] token in
-                    guard let self = self, let token = token else { return }
-                    UserDefaults.Keys.hiveToken.set(token)
-                    HivePusherManager.shared.connect(featureId: self.feature.id, authToken: token)
-                },
-                errorCallback: {
-                    print("[FeaturePlan] Hive authentication failed — WebSocket not connected")
-                }
-            )
-        }
+        HivePusherManager.shared.connect(featureId: feature.id)
     }
     
     // MARK: - Helper Methods
