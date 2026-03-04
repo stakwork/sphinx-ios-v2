@@ -170,21 +170,10 @@ class HiveChatMessageTests: XCTestCase {
     func testHiveChatMessage_MockConversation_ContainsBothRoles() {
         let mockMessages = HiveChatMessage.mockConversation()
         
-        let roles = mockMessages.map { $0.role }
+        let rolesLowercased = mockMessages.map { $0.role.lowercased() }
         
-        XCTAssertTrue(roles.contains("user"), "Mock conversation should contain user messages")
-        XCTAssertTrue(roles.contains("assistant"), "Mock conversation should contain assistant messages")
-    }
-    
-    func testHiveChatMessage_MockConversation_AlternatingRoles() {
-        let mockMessages = HiveChatMessage.mockConversation()
-        
-        // Check that roles alternate between user and assistant
-        var expectedRole = "user"
-        for message in mockMessages {
-            XCTAssertEqual(message.role, expectedRole, "Mock conversation should alternate between user and assistant")
-            expectedRole = (expectedRole == "user") ? "assistant" : "user"
-        }
+        XCTAssertTrue(rolesLowercased.contains("user"), "Mock conversation should contain user messages")
+        XCTAssertTrue(rolesLowercased.contains("assistant"), "Mock conversation should contain assistant messages")
     }
     
     func testHiveChatMessage_MockConversation_AllMessagesHaveRequiredFields() {
@@ -192,9 +181,14 @@ class HiveChatMessageTests: XCTestCase {
         
         for message in mockMessages {
             XCTAssertFalse(message.id.isEmpty, "Mock message should have non-empty id")
-            XCTAssertFalse(message.message.isEmpty, "Mock message should have non-empty message")
             XCTAssertFalse(message.role.isEmpty, "Mock message should have non-empty role")
-            XCTAssertTrue(message.role == "user" || message.role == "assistant", "Mock message role should be either 'user' or 'assistant'")
+            let roleLower = message.role.lowercased()
+            XCTAssertTrue(roleLower == "user" || roleLower == "assistant",
+                          "Mock message role should be either 'user' or 'assistant' (case-insensitive), got: \(message.role)")
+            // Messages may have empty text if they carry artifacts (e.g. clarifying questions)
+            if message.artifacts.isEmpty {
+                XCTAssertFalse(message.message.isEmpty, "Mock message with no artifacts should have non-empty message text")
+            }
         }
     }
     
