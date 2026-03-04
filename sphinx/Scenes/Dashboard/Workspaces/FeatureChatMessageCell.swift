@@ -113,7 +113,7 @@ class FeatureChatMessageCell: UITableViewCell {
         if isUser {
             let font = UIFont(name: "Roboto-Regular", size: 15) ?? UIFont.systemFont(ofSize: 15)
             messageTextView.attributedText = NSAttributedString(
-                string: message.message,
+                string: message.resolvedDisplayText,
                 attributes: [.font: font, .foregroundColor: UIColor.Sphinx.TextMessages]
             )
             // Fix 3: hide text view when message body is blank
@@ -128,7 +128,7 @@ class FeatureChatMessageCell: UITableViewCell {
             timestampLeadingConstraint.isActive  = false
             timestampTrailingConstraint.isActive = true
         } else {
-            let rendered = FeatureChatMessageCell.markdownRenderer.render(message.message)
+            let rendered = FeatureChatMessageCell.markdownRenderer.render(message.resolvedDisplayText)
             let mutable  = NSMutableAttributedString(attributedString: rendered)
             // Swap base text colour to match the bubble's text style
             mutable.enumerateAttribute(.foregroundColor, in: NSRange(location: 0, length: mutable.length)) { value, range, _ in
@@ -176,6 +176,15 @@ class FeatureChatMessageCell: UITableViewCell {
             bubbleView.layer.masksToBounds = true
         }
 
+        // --- LONGFORM border ---
+        if message.isLongformMessage {
+            bubbleView.layer.borderWidth = 1
+            bubbleView.layer.borderColor = UIColor.Sphinx.LightDivider.cgColor
+        } else {
+            bubbleView.layer.borderWidth = 0
+            bubbleView.layer.borderColor = UIColor.clear.cgColor
+        }
+
         // --- Timestamp ---
         if let ts = message.createdAt {
             timestampLabel.text    = formatTimestamp(ts)
@@ -202,6 +211,7 @@ class FeatureChatMessageCell: UITableViewCell {
 
     override func prepareForReuse() {
         super.prepareForReuse()
+        
         messageTextView.attributedText = nil
         messageTextView.isHidden = false
         prCardView.isHidden = true
@@ -221,5 +231,7 @@ class FeatureChatMessageCell: UITableViewCell {
             .layerMinXMaxYCorner, .layerMaxXMaxYCorner
         ]
         bubbleView.layer.masksToBounds = true
+        bubbleView.layer.borderWidth = 0
+        bubbleView.layer.borderColor = UIColor.clear.cgColor
     }
 }

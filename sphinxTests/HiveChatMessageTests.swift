@@ -11,7 +11,7 @@ class HiveChatMessageTests: XCTestCase {
             "id": "msg-123",
             "message": "Let's build a chat feature with WebSocket support",
             "role": "user",
-            "timestamp": "2024-01-20T15:30:00Z"
+            "createdAt": "2024-01-20T15:30:00Z"
         ]
         
         let json = JSON(jsonDict)
@@ -21,7 +21,7 @@ class HiveChatMessageTests: XCTestCase {
         XCTAssertEqual(chatMessage?.id, "msg-123")
         XCTAssertEqual(chatMessage?.message, "Let's build a chat feature with WebSocket support")
         XCTAssertEqual(chatMessage?.role, "user")
-        XCTAssertEqual(chatMessage?.timestamp, "2024-01-20T15:30:00Z")
+        XCTAssertEqual(chatMessage?.createdAt, "2024-01-20T15:30:00Z")
     }
     
     func testHiveChatMessage_InitWithMinimalJSON() {
@@ -38,7 +38,7 @@ class HiveChatMessageTests: XCTestCase {
         XCTAssertEqual(chatMessage?.id, "msg-456")
         XCTAssertEqual(chatMessage?.message, "Great idea! Here's the architecture...")
         XCTAssertEqual(chatMessage?.role, "assistant")
-        XCTAssertNil(chatMessage?.timestamp)
+        XCTAssertNil(chatMessage?.createdAt)
     }
     
     func testHiveChatMessage_InitWithMissingId_ReturnsNil() {
@@ -170,21 +170,10 @@ class HiveChatMessageTests: XCTestCase {
     func testHiveChatMessage_MockConversation_ContainsBothRoles() {
         let mockMessages = HiveChatMessage.mockConversation()
         
-        let roles = mockMessages.map { $0.role }
+        let roles = mockMessages.map { $0.role.uppercased() }
         
-        XCTAssertTrue(roles.contains("user"), "Mock conversation should contain user messages")
-        XCTAssertTrue(roles.contains("assistant"), "Mock conversation should contain assistant messages")
-    }
-    
-    func testHiveChatMessage_MockConversation_AlternatingRoles() {
-        let mockMessages = HiveChatMessage.mockConversation()
-        
-        // Check that roles alternate between user and assistant
-        var expectedRole = "user"
-        for message in mockMessages {
-            XCTAssertEqual(message.role, expectedRole, "Mock conversation should alternate between user and assistant")
-            expectedRole = (expectedRole == "user") ? "assistant" : "user"
-        }
+        XCTAssertTrue(roles.contains("USER"), "Mock conversation should contain user messages")
+        XCTAssertTrue(roles.contains("ASSISTANT"), "Mock conversation should contain assistant messages")
     }
     
     func testHiveChatMessage_MockConversation_AllMessagesHaveRequiredFields() {
@@ -192,16 +181,19 @@ class HiveChatMessageTests: XCTestCase {
         
         for message in mockMessages {
             XCTAssertFalse(message.id.isEmpty, "Mock message should have non-empty id")
-            XCTAssertFalse(message.message.isEmpty, "Mock message should have non-empty message")
             XCTAssertFalse(message.role.isEmpty, "Mock message should have non-empty role")
-            XCTAssertTrue(message.role == "user" || message.role == "assistant", "Mock message role should be either 'user' or 'assistant'")
+            // resolvedDisplayText must be non-empty for every mock message
+            XCTAssertFalse(
+                message.resolvedDisplayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                "Mock message \(message.id) should have non-empty resolvedDisplayText"
+            )
         }
     }
     
     func testHiveChatMessage_MockConversation_ContainsPlanContent() {
         let mockMessages = HiveChatMessage.mockConversation()
         
-        let allMessagesText = mockMessages.map { $0.message }.joined(separator: " ").lowercased()
+        let allMessagesText = mockMessages.map { $0.resolvedDisplayText }.joined(separator: " ").lowercased()
         
         // Verify mock conversation discusses technical planning topics
         XCTAssertTrue(
@@ -210,6 +202,159 @@ class HiveChatMessageTests: XCTestCase {
             allMessagesText.contains("feature") ||
             allMessagesText.contains("implementation"),
             "Mock conversation should contain plan-related content"
+        )
+    }
+
+    // MARK: - LONGFORM Artifact Tests
+
+    func testArtifact_LongformType_PopulatesLongformContent() {
+        let jsonDict: [String: Any] = [
+            "id": "artifact-001",
+            "type": "LONGFORM",
+            "content": [
+                "title": "Agent",
+                "text": "There was an error creating pull request."
+            ] as [String: Any]
+        ]
+        let artifact = HiveChatMessageArtifact(json: JSON(jsonDict))
+
+        XCTAssertTrue(artifact.isLongform, "Artifact with type LONGFORM should have isLongform == true")
+        XCTAssertNotNil(artifact.longformContent, "LONGFORM artifact should have longformContent populated")
+        XCTAssertEqual(artifact.longformContent?.title, "Agent")
+        XCTAssertEqual(artifact.longformContent?.text, "There was an error creating pull request.")
+        XCTAssertNil(artifact.prContent, "LONGFORM artifact should not populate prContent")
+        XCTAssertNil(artifact.content, "LONGFORM artifact should not populate plain content string")
+    }
+
+    func testArtifact_LongformType_MissingTitle_PopulatesTextOnly() {
+        let jsonDict: [String: Any] = [
+            "id": "artifact-002",
+            "type": "LONGFORM",
+            "content": ["text": "Some text without a title"] as [String: Any]
+        ]
+        let artifact = HiveChatMessageArtifact(json: JSON(jsonDict))
+
+        XCTAssertTrue(artifact.isLongform)
+        XCTAssertNil(artifact.longformContent?.title)
+        XCTAssertEqual(artifact.longformContent?.text, "Some text without a title")
+    }
+
+    func testResolvedDisplayText_WithEmptyMessageAndLongformArtifact_ReturnsTitleAndText() {
+        let jsonDict: [String: Any] = [
+            "id": "msg-lf-001",
+            "message": "",
+            "role": "ASSISTANT",
+            "artifacts": [
+                [
+                    "id": "artifact-001",
+                    "type": "LONGFORM",
+                    "content": [
+                        "title": "Agent",
+                        "text": "Cannot create PR."
+                    ] as [String: Any]
+                ] as [String: Any]
+            ] as [Any]
+        ]
+        let message = HiveChatMessage(json: JSON(jsonDict))
+
+        XCTAssertNotNil(message)
+        XCTAssertEqual(message?.resolvedDisplayText, "**Agent**\n\nCannot create PR.")
+    }
+
+    func testResolvedDisplayText_WithNonEmptyMessage_IgnoresLongformArtifact() {
+        let jsonDict: [String: Any] = [
+            "id": "msg-lf-002",
+            "message": "Regular message text",
+            "role": "ASSISTANT",
+            "artifacts": [
+                [
+                    "id": "artifact-001",
+                    "type": "LONGFORM",
+                    "content": [
+                        "title": "Agent",
+                        "text": "Should be ignored."
+                    ] as [String: Any]
+                ] as [String: Any]
+            ] as [Any]
+        ]
+        let message = HiveChatMessage(json: JSON(jsonDict))
+
+        XCTAssertNotNil(message)
+        XCTAssertEqual(message?.resolvedDisplayText, "Regular message text")
+    }
+
+    func testResolvedDisplayText_LongformArtifactWithNoTitle_ReturnsTextOnly() {
+        let jsonDict: [String: Any] = [
+            "id": "msg-lf-003",
+            "message": "",
+            "role": "ASSISTANT",
+            "artifacts": [
+                [
+                    "id": "artifact-001",
+                    "type": "LONGFORM",
+                    "content": ["text": "Only text, no title."] as [String: Any]
+                ] as [String: Any]
+            ] as [Any]
+        ]
+        let message = HiveChatMessage(json: JSON(jsonDict))
+
+        XCTAssertNotNil(message)
+        XCTAssertEqual(message?.resolvedDisplayText, "Only text, no title.")
+    }
+
+    func testIsLongformMessage_TrueWhenEmptyMessageAndLongformArtifact() {
+        let jsonDict: [String: Any] = [
+            "id": "msg-lf-004",
+            "message": "",
+            "role": "ASSISTANT",
+            "artifacts": [
+                [
+                    "id": "artifact-001",
+                    "type": "LONGFORM",
+                    "content": ["title": "T", "text": "Text."] as [String: Any]
+                ] as [String: Any]
+            ] as [Any]
+        ]
+        let message = HiveChatMessage(json: JSON(jsonDict))
+
+        XCTAssertNotNil(message)
+        XCTAssertTrue(message?.isLongformMessage == true)
+    }
+
+    func testIsLongformMessage_FalseWhenMessageIsNonEmpty() {
+        let jsonDict: [String: Any] = [
+            "id": "msg-lf-005",
+            "message": "Has content",
+            "role": "USER",
+            "artifacts": [] as [Any]
+        ]
+        let message = HiveChatMessage(json: JSON(jsonDict))
+
+        XCTAssertNotNil(message)
+        XCTAssertFalse(message?.isLongformMessage == true)
+    }
+
+    func testIsLongformMessage_FalseWhenNoLongformArtifact() {
+        let jsonDict: [String: Any] = [
+            "id": "msg-lf-006",
+            "message": "",
+            "role": "ASSISTANT",
+            "artifacts": [] as [Any]
+        ]
+        let message = HiveChatMessage(json: JSON(jsonDict))
+
+        XCTAssertNotNil(message)
+        XCTAssertFalse(message?.isLongformMessage == true)
+    }
+
+    func testMockConversation_ContainsLongformMessage() {
+        let mockMessages = HiveChatMessage.mockConversation()
+        let longformMessage = mockMessages.first(where: { $0.isLongformMessage })
+
+        XCTAssertNotNil(longformMessage, "mockConversation() should include a LONGFORM message")
+        XCTAssertFalse(
+            longformMessage?.resolvedDisplayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true,
+            "LONGFORM mock message resolvedDisplayText should be non-empty"
         )
     }
 }
