@@ -15,6 +15,9 @@ class HivePusherManagerTests: XCTestCase {
     var manager: HivePusherManager!
     var mockDelegate: MockHivePusherDelegate!
     
+    // Mirrors the debounce work-item in HivePusherManager.handleFeatureUpdated
+    private var fetchWorkItem: DispatchWorkItem?
+    
     override func setUp() {
         super.setUp()
         manager = HivePusherManager.shared
@@ -23,6 +26,8 @@ class HivePusherManagerTests: XCTestCase {
     }
     
     override func tearDown() {
+        fetchWorkItem?.cancel()
+        fetchWorkItem = nil
         manager.delegate = nil
         manager.disconnect()
         mockDelegate = nil
@@ -30,41 +35,27 @@ class HivePusherManagerTests: XCTestCase {
         super.tearDown()
     }
     
-    // MARK: - FEATURE_UPDATED Event Tests
+    // MARK: - feature-updated Event Tests
     
     func testParseFeatureUpdatedEvent_ValidJSON_Success() {
         // Given
-        let featureJSON = """
+        let dataJSON = """
         {
-            "id": "feature-123",
-            "title": "Test Feature",
-            "brief": "This is a test brief",
-            "userStories": "As a user, I want to test",
-            "requirements": "Must have tests",
-            "architecture": "Clean architecture",
-            "status": "IN_PROGRESS",
-            "createdAt": "2026-02-27T10:00:00Z",
-            "updatedAt": "2026-02-27T14:00:00Z"
+            "featureId": "feature-123"
         }
         """
         
         let pusherMessage = """
         {
-            "event": "FEATURE_UPDATED",
+            "event": "feature-updated",
             "channel": "feature-feature-123",
-            "data": "\(featureJSON.replacingOccurrences(of: "\"", with: "\\\""))"
+            "data": "\(dataJSON.replacingOccurrences(of: "\"", with: "\\\""))"
         }
         """
         
         let expectation = self.expectation(description: "Feature updated callback")
-        mockDelegate.onFeatureUpdated = { feature in
-            XCTAssertEqual(feature.id, "feature-123")
-            XCTAssertEqual(feature.name, "Test Feature")
-            XCTAssertEqual(feature.brief, "This is a test brief")
-            XCTAssertEqual(feature.userStories, ["As a user, I want to test"])
-            XCTAssertEqual(feature.requirements, "Must have tests")
-            XCTAssertEqual(feature.architecture, "Clean architecture")
-            XCTAssertEqual(feature.workflowStatus, "IN_PROGRESS")
+        mockDelegate.onFeatureUpdateReceived = { featureId in
+            XCTAssertEqual(featureId, "feature-123")
             expectation.fulfill()
         }
         
@@ -76,28 +67,24 @@ class HivePusherManagerTests: XCTestCase {
     }
     
     func testParseFeatureUpdatedEvent_MinimalJSON_Success() {
-        // Given - feature with only required fields
-        let featureJSON = """
+        // Given - payload with only featureId
+        let dataJSON = """
         {
-            "id": "feature-456",
-            "title": "Minimal Feature"
+            "featureId": "feature-456"
         }
         """
         
         let pusherMessage = """
         {
-            "event": "FEATURE_UPDATED",
+            "event": "feature-updated",
             "channel": "feature-feature-456",
-            "data": "\(featureJSON.replacingOccurrences(of: "\"", with: "\\\""))"
+            "data": "\(dataJSON.replacingOccurrences(of: "\"", with: "\\\""))"
         }
         """
         
         let expectation = self.expectation(description: "Minimal feature updated callback")
-        mockDelegate.onFeatureUpdated = { feature in
-            XCTAssertEqual(feature.id, "feature-456")
-            XCTAssertEqual(feature.name, "Minimal Feature")
-            XCTAssertNil(feature.brief)
-            XCTAssertNil(feature.userStories)
+        mockDelegate.onFeatureUpdateReceived = { featureId in
+            XCTAssertEqual(featureId, "feature-456")
             expectation.fulfill()
         }
         
@@ -109,17 +96,17 @@ class HivePusherManagerTests: XCTestCase {
     }
     
     func testParseFeatureUpdatedEvent_InvalidJSON_NoCallback() {
-        // Given
+        // Given - payload missing featureId
         let pusherMessage = """
         {
-            "event": "FEATURE_UPDATED",
+            "event": "feature-updated",
             "channel": "feature-test",
-            "data": "invalid json"
+            "data": "{\\"notFeatureId\\": \\"oops\\"}"
         }
         """
         
         var callbackCalled = false
-        mockDelegate.onFeatureUpdated = { _ in
+        mockDelegate.onFeatureUpdateReceived = { _ in
             callbackCalled = true
         }
         
@@ -129,11 +116,51 @@ class HivePusherManagerTests: XCTestCase {
         // Then - wait briefly to ensure callback is not called
         let expectation = self.expectation(description: "Wait for potential callback")
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            XCTAssertFalse(callbackCalled, "Callback should not be called for invalid JSON")
+            XCTAssertFalse(callbackCalled, "Callback should not be called when featureId is missing")
             expectation.fulfill()
         }
         
         waitForExpectations(timeout: 1.0)
+    }
+    
+    func testFeatureUpdatedDebounce_RapidEvents_OnlyOneCallback() {
+        // Given - three rapid feature-updated events within 200ms
+        let dataJSON = """
+        {
+            "featureId": "feature-debounce"
+        }
+        """
+        
+        let pusherMessage = """
+        {
+            "event": "feature-updated",
+            "channel": "feature-feature-debounce",
+            "data": "\(dataJSON.replacingOccurrences(of: "\"", with: "\\\""))"
+        }
+        """
+        
+        var callbackCount = 0
+        mockDelegate.onFeatureUpdateReceived = { _ in
+            callbackCount += 1
+        }
+        
+        // When - send three events within 200ms
+        simulateWebSocketMessage(pusherMessage)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            self.simulateWebSocketMessage(pusherMessage)
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.10) {
+            self.simulateWebSocketMessage(pusherMessage)
+        }
+        
+        // Then - after 1.5s only one callback should have fired
+        let expectation = self.expectation(description: "Debounce produces single callback")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            XCTAssertEqual(callbackCount, 1, "Rapid events should be debounced into a single callback")
+            expectation.fulfill()
+        }
+        
+        waitForExpectations(timeout: 2.5)
     }
     
     // MARK: - NEW_MESSAGE Event Tests
@@ -604,7 +631,7 @@ class HivePusherManagerTests: XCTestCase {
         """
         
         var anyCallbackCalled = false
-        mockDelegate.onFeatureUpdated = { _ in anyCallbackCalled = true }
+        mockDelegate.onFeatureUpdateReceived = { _ in anyCallbackCalled = true }
         mockDelegate.onNewMessageReceived = { _ in anyCallbackCalled = true }
         mockDelegate.onWorkflowStatusChanged = { _ in anyCallbackCalled = true }
         
@@ -641,11 +668,14 @@ class HivePusherManagerTests: XCTestCase {
         }
         
         switch event {
-        case "FEATURE_UPDATED":
-            if let feature = HiveFeature(json: JSON(dataJson)) {
-                DispatchQueue.main.async {
-                    self.mockDelegate.featureUpdated(feature)
+        case "feature-updated":
+            if let featureId = dataJson["featureId"] as? String {
+                fetchWorkItem?.cancel()
+                let workItem = DispatchWorkItem {
+                    self.mockDelegate.featureUpdateReceived(featureId: featureId)
                 }
+                fetchWorkItem = workItem
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: workItem)
             }
             
         case "NEW_MESSAGE":
@@ -671,12 +701,12 @@ class HivePusherManagerTests: XCTestCase {
 // MARK: - Mock Delegate
 
 class MockHivePusherDelegate: HivePusherDelegate {
-    var onFeatureUpdated: ((HiveFeature) -> Void)?
+    var onFeatureUpdateReceived: ((String) -> Void)?
     var onNewMessageReceived: ((HiveChatMessage) -> Void)?
     var onWorkflowStatusChanged: ((WorkflowStatus) -> Void)?
     
-    func featureUpdated(_ feature: HiveFeature) {
-        onFeatureUpdated?(feature)
+    func featureUpdateReceived(featureId: String) {
+        onFeatureUpdateReceived?(featureId)
     }
     
     func newMessageReceived(_ message: HiveChatMessage) {
