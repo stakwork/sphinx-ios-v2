@@ -27,6 +27,9 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
     private(set) var prBadgeButton: UIButton!
     private var prBadgeURL: URL?
 
+    private var updatedAtLabelTrailingToPR: NSLayoutConstraint!
+    private var updatedAtLabelTrailingToEdge: NSLayoutConstraint!
+
     override func awakeFromNib() {
         super.awakeFromNib()
         setupCell()
@@ -76,6 +79,14 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
             prBadgeButton.bottomAnchor.constraint(equalTo: separatorView.topAnchor, constant: -12),
             prBadgeButton.heightAnchor.constraint(equalToConstant: 22)
         ])
+
+        updatedAtLabelTrailingToPR = updatedAtLabel.trailingAnchor.constraint(
+            lessThanOrEqualTo: prBadgeButton.leadingAnchor, constant: -8
+        )
+        updatedAtLabelTrailingToEdge = updatedAtLabel.trailingAnchor.constraint(
+            equalTo: contentView.trailingAnchor, constant: -16
+        )
+        updatedAtLabelTrailingToEdge.isActive = true
     }
 
     @objc private func prBadgeTapped() {
@@ -101,9 +112,13 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
             let isMerged = task.prStatus == "MERGED" || task.prStatus == "DONE"
             prBadgeButton.setTitle(isMerged ? "  MERGED  " : "  OPEN  ", for: .normal)
             prBadgeButton.backgroundColor = isMerged ? UIColor(hex: "#8B5CF6") : UIColor.Sphinx.PrimaryBlue
+            updatedAtLabelTrailingToEdge.isActive = false
+            updatedAtLabelTrailingToPR.isActive = true
         } else {
             prBadgeURL = nil
             prBadgeButton.isHidden = true
+            updatedAtLabelTrailingToPR.isActive = false
+            updatedAtLabelTrailingToEdge.isActive = true
         }
     }
     
