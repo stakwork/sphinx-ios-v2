@@ -18,6 +18,7 @@ protocol HivePusherDelegate: AnyObject {
     func featureTitleUpdated(featureId: String, newTitle: String)
     func taskTitleUpdated(taskId: String, newTitle: String)
     func taskGenerationStatusChanged(status: String, featureId: String)
+    func taskStatusUpdated(taskId: String, status: String, workflowStatus: String?, archived: Bool)
 
     // Connection state callbacks (optional)
     func pusherConnectionStateChanged(from old: ConnectionState, to new: ConnectionState)
@@ -28,6 +29,7 @@ protocol HivePusherDelegate: AnyObject {
 extension HivePusherDelegate {
     func pusherConnectionStateChanged(from old: ConnectionState, to new: ConnectionState) {}
     func pusherConnectionError(_ error: Error?) {}
+    func taskStatusUpdated(taskId: String, status: String, workflowStatus: String?, archived: Bool) {}
 }
 
 class HivePusherManager: NSObject {
@@ -41,6 +43,7 @@ class HivePusherManager: NSObject {
     private var featureId: String?
     private var taskId: String?
     private var workspaceSlug: String?
+    private var workspaceId: String?
 
     private override init() {
         super.init()
@@ -68,6 +71,14 @@ class HivePusherManager: NSObject {
         print("[HivePusher] Connecting to Pusher for task: \(taskId)")
     }
 
+    func connect(workspaceId: String) {
+        disconnect()
+        self.workspaceId = workspaceId
+        setupPusher()
+        subscribeToWorkspaceTaskChannel(workspaceId)
+        print("[HivePusher] Connecting to Pusher for workspaceId: \(workspaceId)")
+    }
+
     func disconnect() {
         if let featureId = featureId {
             pusher?.unsubscribe("feature-\(featureId)")
@@ -78,11 +89,15 @@ class HivePusherManager: NSObject {
         if let slug = workspaceSlug {
             pusher?.unsubscribe("workspace-\(slug)")
         }
+        if let wsId = workspaceId {
+            pusher?.unsubscribe("workspace-\(wsId)")
+        }
         pusher?.disconnect()
         pusher = nil
         featureId = nil
         taskId = nil
         workspaceSlug = nil
+        workspaceId = nil
         print("[HivePusher] Disconnected from Pusher")
     }
 
@@ -152,6 +167,31 @@ class HivePusherManager: NSObject {
         print("[HivePusher] Subscribed to workspace channel: workspace-\(slug)")
     }
 
+    private func subscribeToWorkspaceTaskChannel(_ workspaceId: String) {
+        guard let channel = pusher?.subscribe("workspace-\(workspaceId)") else { return }
+        channel.bind(eventName: "workspace-task-title-update") { [weak self] event in
+            self?.handleWorkspaceTaskUpdate(event.data ?? "")
+        }
+        print("[HivePusher] Subscribed to workspace task channel: workspace-\(workspaceId)")
+    }
+
+    private func handleWorkspaceTaskUpdate(_ dataString: String) {
+        guard let dataJSON = try? JSON(data: dataString.data(using: .utf8) ?? Data()) else {
+            print("[HivePusher] Failed to parse workspace-task-title-update data")
+            return
+        }
+        guard let taskId = dataJSON["taskId"].string,
+              let status = dataJSON["status"].string else {
+            print("[HivePusher] Missing taskId or status in workspace-task-title-update payload")
+            return
+        }
+        let workflowStatus = dataJSON["workflowStatus"].string
+        let archived = dataJSON["archived"].bool ?? false
+        DispatchQueue.main.async { [weak self] in
+            self?.delegate?.taskStatusUpdated(taskId: taskId, status: status, workflowStatus: workflowStatus, archived: archived)
+        }
+    }
+
     private func handleStakworkRunUpdate(_ dataString: String) {
         guard let dataJSON = try? JSON(data: dataString.data(using: .utf8) ?? Data()) else {
             print("[HivePusher] Failed to parse stakwork-run-update data")
@@ -188,6 +228,8 @@ class HivePusherManager: NSObject {
             handleTaskTitleUpdate(data)
         case "stakwork-run-update":
             handleStakworkRunUpdate(data)
+        case "workspace-task-title-update":
+            handleWorkspaceTaskUpdate(data)
         default:
             print("[HivePusher] Unhandled event: \(name)")
         }
