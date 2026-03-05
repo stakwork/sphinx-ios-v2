@@ -103,7 +103,11 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
             archiveButton.leadingAnchor.constraint(equalTo: repositoryLabel.trailingAnchor, constant: 8),
             archiveButton.centerYAnchor.constraint(equalTo: repositoryLabel.centerYAnchor),
             archiveButton.widthAnchor.constraint(equalToConstant: 20),
-            archiveButton.heightAnchor.constraint(equalToConstant: 20)
+            archiveButton.heightAnchor.constraint(equalToConstant: 20),
+            // Guard: date label must never overlap the archive button
+            updatedAtLabel.leadingAnchor.constraint(
+                greaterThanOrEqualTo: archiveButton.trailingAnchor, constant: 8
+            )
         ])
         archiveButton.addTarget(self, action: #selector(archiveButtonTapped), for: .touchUpInside)
     }

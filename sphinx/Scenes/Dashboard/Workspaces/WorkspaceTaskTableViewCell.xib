@@ -85,7 +85,6 @@
                     <constraint firstAttribute="trailing" secondItem="status-badge-01" secondAttribute="trailing" constant="16" id="status-trail-01"/>
                     <constraint firstItem="title-lbl-01" firstAttribute="leading" secondItem="content-view-01" secondAttribute="leading" constant="16" id="title-lead-01"/>
                     <constraint firstItem="title-lbl-01" firstAttribute="top" secondItem="content-view-01" secondAttribute="top" constant="12" id="title-top-01"/>
-                    <constraint firstItem="updated-lbl-01" firstAttribute="leading" secondItem="repo-lbl-01" secondAttribute="trailing" constant="8" id="updated-lead-01"/>
                     <constraint firstItem="sep-view-01" firstAttribute="top" secondItem="updated-lbl-01" secondAttribute="bottom" constant="12" id="wHJ-Yu-aBJ"/>
                 </constraints>
             </tableViewCellContentView>
