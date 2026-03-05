@@ -89,8 +89,8 @@ extension WorkspaceViewController: HivePusherDelegate {
     func taskStatusUpdated(taskId: String, status: String, workflowStatus: String?, archived: Bool) {
         activeTasksVC?.handleTaskStatusUpdated(taskId: taskId, status: status, workflowStatus: workflowStatus, archived: archived)
     }
-    func prStatusChanged(prNumber: Int, state: String, artifactStatus: String, prUrl: String?, problemDetails: String?) {
-        activeTasksVC?.handlePRStatusChanged(prNumber: prNumber, state: state, artifactStatus: artifactStatus, prUrl: prUrl, problemDetails: problemDetails)
+    func prStatusChanged(taskId: String?, prNumber: Int, state: String, artifactStatus: String, prUrl: String?, problemDetails: String?) {
+        activeTasksVC?.handlePRStatusChanged(taskId: taskId, prNumber: prNumber, state: state, artifactStatus: artifactStatus, prUrl: prUrl, problemDetails: problemDetails)
     }
     func featureUpdateReceived(featureId: String) {}
     func newMessageReceived(_ message: HiveChatMessage) {}

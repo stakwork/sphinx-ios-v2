@@ -815,7 +815,7 @@ class FeaturePlanViewController: UIViewController {
     // MARK: - WebSocket
     private func connectWebSocket() {
         HivePusherManager.shared.delegate = self
-        HivePusherManager.shared.connect(featureId: feature.id, workspaceSlug: workspace.slug ?? "")
+        HivePusherManager.shared.connect(featureId: feature.id, workspaceId: workspace.id, workspaceSlug: workspace.slug ?? "")
     }
     
     // MARK: - Processing Bubble
@@ -976,17 +976,41 @@ extension FeaturePlanViewController: HivePusherDelegate {
         }
     }
 
-    func prStatusChanged(prNumber: Int, state: String, artifactStatus: String, prUrl: String?, problemDetails: String?) {
-        guard let idx = messages.firstIndex(where: {
-            $0.artifacts.first(where: { $0.isPullRequest })?.prContent?.number == prNumber
+    func taskStatusUpdated(taskId: String, status: String, workflowStatus: String?, archived: Bool) {
+        guard let flatIndex = feature.updateTask(taskId, apply: {
+            $0.status = status
+            $0.workflowStatus = workflowStatus
+            $0.archived = archived
         }) else { return }
-        guard let artifactIdx = messages[idx].artifacts.firstIndex(where: { $0.isPullRequest }) else { return }
-        messages[idx].artifacts[artifactIdx].prContent?.state = state
-        messages[idx].artifacts[artifactIdx].prContent?.status = artifactStatus
-        if let url = prUrl { messages[idx].artifacts[artifactIdx].prContent?.url = url }
-        DispatchQueue.main.async {
-            self.chatTableView.reloadRows(at: [IndexPath(row: idx, section: 0)], with: .none)
+        tasksTableView.reloadRows(at: [IndexPath(row: flatIndex, section: 0)], with: .none)
+        updateProgressBar()
+        updateTasksEmptyState()
+    }
+
+    func prStatusChanged(taskId: String?, prNumber: Int, state: String, artifactStatus: String, prUrl: String?, problemDetails: String?) {
+        // Update chat message artifact if matched
+        if let idx = messages.firstIndex(where: {
+            $0.artifacts.first(where: { $0.isPullRequest })?.prContent?.number == prNumber
+        }), let artifactIdx = messages[idx].artifacts.firstIndex(where: { $0.isPullRequest }) {
+            messages[idx].artifacts[artifactIdx].prContent?.state = state
+            messages[idx].artifacts[artifactIdx].prContent?.status = artifactStatus
+            if let url = prUrl { messages[idx].artifacts[artifactIdx].prContent?.url = url }
+            chatTableView.reloadRows(at: [IndexPath(row: idx, section: 0)], with: .none)
         }
+
+        // Update task row in tasks table
+        let resolvedId: String?
+        if let tid = taskId, feature.allTasks.contains(where: { $0.id == tid }) {
+            resolvedId = tid
+        } else {
+            resolvedId = feature.allTasks.first(where: { $0.prNumber == prNumber })?.id
+        }
+        guard let id = resolvedId,
+              let flatIndex = feature.updateTask(id, apply: {
+                  $0.prStatus = artifactStatus
+                  $0.prUrl = prUrl
+              }) else { return }
+        tasksTableView.reloadRows(at: [IndexPath(row: flatIndex, section: 0)], with: .none)
     }
 
     func featureTitleUpdated(featureId: String, newTitle: String) {

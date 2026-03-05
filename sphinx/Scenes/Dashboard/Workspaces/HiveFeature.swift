@@ -29,7 +29,7 @@ struct HivePhase {
     let id: String
     let name: String
     let order: Int
-    let tasks: [WorkspaceTask]
+    var tasks: [WorkspaceTask]
 
     init?(json: JSON) {
         guard let id = json["id"].string else { return nil }
@@ -61,9 +61,9 @@ struct HiveFeature {
     let stakworkRunsCount: Int?
 
     /// Phases with their tasks (from the detail endpoint)
-    let phases: [HivePhase]
+    var phases: [HivePhase]
     /// Top-level tasks not assigned to any phase (from the detail endpoint)
-    let looseTasks: [WorkspaceTask]
+    var looseTasks: [WorkspaceTask]
 
     /// Flattened list of all tasks across phases + loose tasks, sorted by phase order then task order.
     var allTasks: [WorkspaceTask] {
@@ -75,6 +75,30 @@ struct HiveFeature {
     
     // Computed property to get name (backwards compatibility)
     var name: String { return title }
+
+    /// Finds the task with `taskId`, applies `apply` in place, and returns the flat index into `allTasks`.
+    /// Returns `nil` if no task with that id belongs to this feature.
+    @discardableResult
+    mutating func updateTask(_ taskId: String, apply: (inout WorkspaceTask) -> Void) -> Int? {
+        let sortedPhaseIndices = phases.indices.sorted { phases[$0].order < phases[$1].order }
+        var flatOffset = 0
+        for pi in sortedPhaseIndices {
+            for ti in phases[pi].tasks.indices {
+                if phases[pi].tasks[ti].id == taskId {
+                    apply(&phases[pi].tasks[ti])
+                    return flatOffset + ti
+                }
+            }
+            flatOffset += phases[pi].tasks.count
+        }
+        for i in looseTasks.indices {
+            if looseTasks[i].id == taskId {
+                apply(&looseTasks[i])
+                return flatOffset + i
+            }
+        }
+        return nil
+    }
     
     init?(json: JSON) {
         guard let id = json["id"].string,

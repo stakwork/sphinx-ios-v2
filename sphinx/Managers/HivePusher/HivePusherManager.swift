@@ -14,7 +14,7 @@ protocol HivePusherDelegate: AnyObject {
     func featureUpdateReceived(featureId: String)
     func newMessageReceived(_ message: HiveChatMessage)
     func workflowStatusChanged(status: WorkflowStatus)
-    func prStatusChanged(prNumber: Int, state: String, artifactStatus: String, prUrl: String?, problemDetails: String?)
+    func prStatusChanged(taskId: String?, prNumber: Int, state: String, artifactStatus: String, prUrl: String?, problemDetails: String?)
     func featureTitleUpdated(featureId: String, newTitle: String)
     func taskTitleUpdated(taskId: String, newTitle: String)
     func taskGenerationStatusChanged(status: String, featureId: String)
@@ -32,6 +32,7 @@ extension HivePusherDelegate {
     func pusherConnectionError(_ error: Error?) {}
     func taskStatusUpdated(taskId: String, status: String, workflowStatus: String?, archived: Bool) {}
     func processingStepReceived(message: String) {}
+    func prStatusChanged(taskId: String?, prNumber: Int, state: String, artifactStatus: String, prUrl: String?, problemDetails: String?) {}
 }
 
 class HivePusherManager: NSObject {
@@ -46,6 +47,7 @@ class HivePusherManager: NSObject {
     private var taskId: String?
     private var workspaceSlug: String?
     private var workspaceId: String?
+    private var featureWorkspaceId: String?
 
     private override init() {
         super.init()
@@ -63,6 +65,20 @@ class HivePusherManager: NSObject {
             subscribeToWorkspaceChannel(workspaceSlug)
         }
         print("[HivePusher] Connecting for feature: \(featureId), workspace: \(workspaceSlug)")
+    }
+
+    func connect(featureId: String, workspaceId: String, workspaceSlug: String) {
+        disconnect()
+        self.featureId = featureId
+        self.featureWorkspaceId = workspaceId
+        self.workspaceSlug = workspaceSlug.isEmpty ? nil : workspaceSlug
+        setupPusher()
+        subscribeToFeatureChannel(featureId)
+        subscribeToWorkspaceTaskChannel(workspaceId)
+        if !workspaceSlug.isEmpty {
+            subscribeToWorkspaceChannel(workspaceSlug)
+        }
+        print("[HivePusher] Connecting for feature: \(featureId), workspaceId: \(workspaceId), workspaceSlug: \(workspaceSlug)")
     }
 
     func connect(taskId: String) {
@@ -106,12 +122,16 @@ class HivePusherManager: NSObject {
         if let wsId = workspaceId {
             pusher?.unsubscribe("workspace-\(wsId)")
         }
+        if let fwId = featureWorkspaceId {
+            pusher?.unsubscribe("workspace-\(fwId)")
+        }
         pusher?.disconnect()
         pusher = nil
         featureId = nil
         taskId = nil
         workspaceSlug = nil
         workspaceId = nil
+        featureWorkspaceId = nil
         print("[HivePusher] Disconnected from Pusher")
     }
 
@@ -363,11 +383,13 @@ class HivePusherManager: NSObject {
             return
         }
 
+        let taskId = dataJSON["taskId"].string
         let prUrl = dataJSON["prUrl"].string
         let problemDetails = dataJSON["problemDetails"].string
 
         DispatchQueue.main.async { [weak self] in
             self?.delegate?.prStatusChanged(
+                taskId: taskId,
                 prNumber: prNumber,
                 state: state,
                 artifactStatus: artifactStatus,
