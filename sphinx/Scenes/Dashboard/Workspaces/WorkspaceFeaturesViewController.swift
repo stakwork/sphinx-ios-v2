@@ -203,6 +203,26 @@ extension WorkspaceFeaturesViewController: UITableViewDataSource, UITableViewDel
         let isLastRow = indexPath.row == features.count - 1
         cell.configure(with: feature, isLastRow: isLastRow)
         
+        cell.onDeleteTapped = { [weak self] in
+            guard let self else { return }
+            let feature = self.features[indexPath.row]
+            AlertHelper.showTwoOptionsAlert(
+                title: "Delete Feature",
+                message: "Are you sure you want to delete \"\(feature.title)\"? This cannot be undone.",
+                confirmButtonTitle: "Delete",
+                confirmStyle: .destructive,
+                confirm: {
+                    self.features.remove(at: indexPath.row)
+                    self.tableView.deleteRows(at: [indexPath], with: .automatic)
+                    API.sharedInstance.deleteFeatureWithAuth(featureId: feature.id) {
+                        DispatchQueue.main.async { self.loadFeatures() }
+                    } errorCallback: {
+                        DispatchQueue.main.async { self.loadFeatures() }
+                    }
+                }
+            )
+        }
+        
         return cell
     }
     
