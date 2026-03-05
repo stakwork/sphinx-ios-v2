@@ -532,7 +532,7 @@ class FeaturePlanViewController: UIViewController {
             tasksContainerView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
             // Progress bar — pinned to top with 8pt horizontal padding
-            taskProgressBarView.topAnchor.constraint(equalTo: tasksContainerView.topAnchor, constant: 8),
+            taskProgressBarView.topAnchor.constraint(equalTo: tasksContainerView.topAnchor, constant: 16),
             taskProgressBarView.leadingAnchor.constraint(equalTo: tasksContainerView.leadingAnchor, constant: 16),
             taskProgressBarView.trailingAnchor.constraint(equalTo: tasksContainerView.trailingAnchor, constant: -16),
             taskProgressBarView.heightAnchor.constraint(equalToConstant: 36),
