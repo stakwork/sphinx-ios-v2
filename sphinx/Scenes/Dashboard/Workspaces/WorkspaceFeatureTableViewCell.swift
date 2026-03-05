@@ -14,6 +14,9 @@ class WorkspaceFeatureTableViewCell: UITableViewCell {
     @IBOutlet weak var updatedAtLabel: UILabel!
     @IBOutlet weak var separatorView: UIView!
     
+    var onDeleteTapped: (() -> Void)?
+    private let deleteButton = UIButton(type: .system)
+    
     override func awakeFromNib() {
         super.awakeFromNib()
         
@@ -40,6 +43,23 @@ class WorkspaceFeatureTableViewCell: UITableViewCell {
         }
         
         separatorView.backgroundColor = .Sphinx.LightDivider
+        
+        let config = UIImage.SymbolConfiguration(pointSize: 14, weight: .regular)
+        deleteButton.setImage(UIImage(systemName: "trash", withConfiguration: config), for: .normal)
+        deleteButton.tintColor = .Sphinx.PrimaryRed
+        deleteButton.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(deleteButton)
+        NSLayoutConstraint.activate([
+            deleteButton.leadingAnchor.constraint(equalTo: createdByLabel.trailingAnchor, constant: 8),
+            deleteButton.centerYAnchor.constraint(equalTo: createdByLabel.centerYAnchor),
+            deleteButton.widthAnchor.constraint(equalToConstant: 20),
+            deleteButton.heightAnchor.constraint(equalToConstant: 20)
+        ])
+        deleteButton.addTarget(self, action: #selector(deleteButtonTapped), for: .touchUpInside)
+    }
+    
+    @objc private func deleteButtonTapped() {
+        onDeleteTapped?()
     }
     
     func configure(with feature: HiveFeature, isLastRow: Bool) {
