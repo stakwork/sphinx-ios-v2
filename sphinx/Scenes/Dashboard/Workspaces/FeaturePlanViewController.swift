@@ -1045,6 +1045,11 @@ extension FeaturePlanViewController: HivePusherDelegate {
     }
 
     func processingStepReceived(message: String) {
-        updateProcessingBubble(stepText: message)
+        DispatchQueue.main.async {
+            if self.processingStepText == nil {
+                self.showProcessingBubble()
+            }
+            self.updateProcessingBubble(stepText: message)
+        }
     }
 }
