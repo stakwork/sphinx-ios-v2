@@ -107,6 +107,24 @@ extension WorkspaceTasksViewController: UITableViewDataSource, UITableViewDelega
         ) as? WorkspaceTaskTableViewCell else { return UITableViewCell() }
         cell.configure(with: tasks[indexPath.row], isLastRow: indexPath.row == tasks.count - 1)
         cell.onPRBadgeTapped = { url in UIApplication.shared.open(url) }
+        cell.onArchiveTapped = { [weak self] in
+            guard let self else { return }
+            let task = self.tasks[indexPath.row]
+            AlertHelper.showTwoOptionsAlert(
+                title: "Archive Task",
+                message: "Archive \"\(task.title)\"?",
+                confirmButtonTitle: "Archive",
+                confirm: {
+                    self.tasks.remove(at: indexPath.row)
+                    self.tableView.deleteRows(at: [indexPath], with: .automatic)
+                    API.sharedInstance.archiveTaskWithAuth(taskId: task.id) {
+                        DispatchQueue.main.async { self.loadTasks() }
+                    } errorCallback: {
+                        DispatchQueue.main.async { self.loadTasks() }
+                    }
+                }
+            )
+        }
         return cell
     }
 

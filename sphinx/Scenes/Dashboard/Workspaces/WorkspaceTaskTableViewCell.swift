@@ -24,7 +24,9 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
     @IBOutlet weak var separatorView: UIView!
 
     var onPRBadgeTapped: ((URL) -> Void)?
+    var onArchiveTapped: (() -> Void)?
     private(set) var prBadgeButton: UIButton!
+    private(set) var archiveButton: UIButton!
     private var prBadgeURL: URL?
 
     private var updatedAtLabelTrailingToPR: NSLayoutConstraint!
@@ -61,6 +63,7 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         separatorView.backgroundColor = .Sphinx.LightDivider
 
         setupPRBadgeButton()
+        setupArchiveButton()
     }
 
     private func setupPRBadgeButton() {
@@ -89,6 +92,26 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         updatedAtLabelTrailingToEdge.isActive = true
     }
 
+    private func setupArchiveButton() {
+        archiveButton = UIButton(type: .system)
+        let config = UIImage.SymbolConfiguration(pointSize: 14, weight: .regular)
+        archiveButton.setImage(UIImage(systemName: "archivebox", withConfiguration: config), for: .normal)
+        archiveButton.tintColor = .Sphinx.SecondaryText
+        archiveButton.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(archiveButton)
+        NSLayoutConstraint.activate([
+            archiveButton.leadingAnchor.constraint(equalTo: repositoryLabel.trailingAnchor, constant: 8),
+            archiveButton.centerYAnchor.constraint(equalTo: repositoryLabel.centerYAnchor),
+            archiveButton.widthAnchor.constraint(equalToConstant: 20),
+            archiveButton.heightAnchor.constraint(equalToConstant: 20)
+        ])
+        archiveButton.addTarget(self, action: #selector(archiveButtonTapped), for: .touchUpInside)
+    }
+
+    @objc private func archiveButtonTapped() {
+        onArchiveTapped?()
+    }
+
     @objc private func prBadgeTapped() {
         guard let url = prBadgeURL else { return }
         onPRBadgeTapped?(url)
@@ -99,6 +122,7 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         repositoryLabel.text = task.repositoryName
         updatedAtLabel.text = formatDate(task.updatedAt)
         separatorView.isHidden = isLastRow
+        archiveButton.isHidden = task.archived
 
         statusBadge.text = "  \(task.status)  "
         statusBadge.backgroundColor = statusColor(for: task.status)
