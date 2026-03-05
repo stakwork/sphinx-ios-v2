@@ -458,7 +458,7 @@ extension TaskChatViewController: HivePusherDelegate {
         scrollToBottom()
     }
 
-    func prStatusChanged(prNumber: Int, state: String, artifactStatus: String, prUrl: String?, problemDetails: String?) {
+    func prStatusChanged(taskId: String?, prNumber: Int, state: String, artifactStatus: String, prUrl: String?, problemDetails: String?) {
         guard let idx = messages.firstIndex(where: {
             $0.artifacts.first(where: { $0.isPullRequest })?.prContent?.number == prNumber
         }) else { return }

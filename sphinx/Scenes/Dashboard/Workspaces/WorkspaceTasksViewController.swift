@@ -161,11 +161,16 @@ extension WorkspaceTasksViewController {
         }
     }
 
-    func handlePRStatusChanged(prNumber: Int, state: String, artifactStatus: String, prUrl: String?, problemDetails: String?) {
-        guard let index = tasks.firstIndex(where: { $0.prNumber == prNumber }) else { return }
-        tasks[index].prStatus = artifactStatus
-        tasks[index].prUrl = prUrl
-        let indexPath = IndexPath(row: index, section: 0)
-        tableView.reloadRows(at: [indexPath], with: .none)
+    func handlePRStatusChanged(taskId: String?, prNumber: Int, state: String, artifactStatus: String, prUrl: String?, problemDetails: String?) {
+        let index: Int?
+        if let tid = taskId {
+            index = tasks.firstIndex(where: { $0.id == tid }) ?? tasks.firstIndex(where: { $0.prNumber == prNumber })
+        } else {
+            index = tasks.firstIndex(where: { $0.prNumber == prNumber })
+        }
+        guard let idx = index else { return }
+        tasks[idx].prStatus = artifactStatus
+        tasks[idx].prUrl = prUrl
+        tableView.reloadRows(at: [IndexPath(row: idx, section: 0)], with: .none)
     }
 }
