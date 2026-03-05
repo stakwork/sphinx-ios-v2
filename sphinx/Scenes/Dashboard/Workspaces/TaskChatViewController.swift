@@ -13,6 +13,7 @@ class TaskChatViewController: UIViewController {
     // MARK: - Properties
     private var task: WorkspaceTask
     private var messages: [HiveChatMessage] = []
+    private var processingStepText: String? = nil
 
     // MARK: - Header
     private var headerView: UIView!
@@ -154,6 +155,7 @@ class TaskChatViewController: UIViewController {
         chatTableView.dataSource = self
         chatTableView.contentInset = UIEdgeInsets(top: 16, left: 0, bottom: 16, right: 0)
         chatTableView.register(FeatureChatMessageCell.self, forCellReuseIdentifier: "FeatureChatMessageCell")
+        chatTableView.register(HiveProcessingBubbleCell.self, forCellReuseIdentifier: "HiveProcessingBubbleCell")
         view.addSubview(chatTableView)
 
         // Bottom Fill View — covers the gap between chatInputContainer and the physical screen bottom
@@ -285,6 +287,7 @@ class TaskChatViewController: UIViewController {
         }
         chatInputTextView.text = ""
         chatInputTextView.resignFirstResponder()
+        showProcessingBubble()
 
         API.sharedInstance.sendTaskChatMessageWithAuth(
             taskId: task.id,
@@ -305,6 +308,7 @@ class TaskChatViewController: UIViewController {
     }
 
     private func sendClarifyingAnswers(answers: [String], replyId: String) {
+        showProcessingBubble()
         let joined = answers.joined(separator: "\n\n")
         API.sharedInstance.sendTaskChatMessageWithAuth(
             taskId: task.id,
@@ -369,9 +373,33 @@ class TaskChatViewController: UIViewController {
         )
     }
 
+    // MARK: - Processing Bubble
+    private func showProcessingBubble() {
+        guard processingStepText == nil else { return }
+        processingStepText = "Communicating with workflow"
+        let indexPath = IndexPath(row: messages.count, section: 0)
+        chatTableView.insertRows(at: [indexPath], with: .automatic)
+        scrollToBottom(animated: true)
+    }
+
+    private func hideProcessingBubble() {
+        guard processingStepText != nil else { return }
+        let indexPath = IndexPath(row: messages.count, section: 0)
+        processingStepText = nil
+        chatTableView.deleteRows(at: [indexPath], with: .automatic)
+    }
+
+    private func updateProcessingBubble(stepText: String) {
+        guard processingStepText != nil else { return }
+        processingStepText = stepText
+        let indexPath = IndexPath(row: messages.count, section: 0)
+        chatTableView.reloadRows(at: [indexPath], with: .none)
+    }
+
     private func scrollToBottom(animated: Bool = true) {
-        guard messages.count > 0 else { return }
-        let indexPath = IndexPath(row: messages.count - 1, section: 0)
+        let totalRows = messages.count + (processingStepText != nil ? 1 : 0)
+        guard totalRows > 0 else { return }
+        let indexPath = IndexPath(row: totalRows - 1, section: 0)
         chatTableView.scrollToRow(at: indexPath, at: .bottom, animated: animated)
     }
 
@@ -393,6 +421,7 @@ class TaskChatViewController: UIViewController {
             workflowStatusHeightConstraint.constant = 0
             workflowStatusView.hide(animated: true)
             UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
+            hideProcessingBubble()
         }
     }
 
@@ -422,6 +451,7 @@ extension TaskChatViewController: HivePusherDelegate {
 
     func newMessageReceived(_ message: HiveChatMessage) {
         guard !messages.contains(where: { $0.id == message.id }) else { return }
+        hideProcessingBubble()
         messages.append(message)
         let indexPath = IndexPath(row: messages.count - 1, section: 0)
         chatTableView.insertRows(at: [indexPath], with: .automatic)
@@ -450,15 +480,28 @@ extension TaskChatViewController: HivePusherDelegate {
         task.title = newTitle
         DispatchQueue.main.async { self.titleLabel.text = newTitle }
     }
+
+    func processingStepReceived(message: String) {
+        updateProcessingBubble(stepText: message)
+    }
 }
 
 // MARK: - UITableView
 extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        messages.count
+        messages.count + (processingStepText != nil ? 1 : 0)
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        if processingStepText != nil && indexPath.row == messages.count {
+            let cell = tableView.dequeueReusableCell(
+                withIdentifier: "HiveProcessingBubbleCell",
+                for: indexPath
+            ) as! HiveProcessingBubbleCell
+            cell.configure(stepText: processingStepText ?? "Communicating with workflow")
+            return cell
+        }
+
         guard let cell = tableView.dequeueReusableCell(
             withIdentifier: "FeatureChatMessageCell",
             for: indexPath

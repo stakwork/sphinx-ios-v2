@@ -14,6 +14,7 @@ class FeaturePlanViewController: UIViewController {
     private var feature: HiveFeature
     private var workspace: Workspace
     private var messages: [HiveChatMessage] = []
+    private var processingStepText: String? = nil
     private var isAIWorking: Bool = false {
         didSet {
             updateAIWorkingState()
@@ -194,6 +195,7 @@ class FeaturePlanViewController: UIViewController {
         chatTableView.delegate = self
         chatTableView.dataSource = self
         chatTableView.register(FeatureChatMessageCell.self, forCellReuseIdentifier: "FeatureChatMessageCell")
+        chatTableView.register(HiveProcessingBubbleCell.self, forCellReuseIdentifier: "HiveProcessingBubbleCell")
         chatTableView.contentInset = UIEdgeInsets(top: 16, left: 0, bottom: 16, right: 0)
         chatContainerView.addSubview(chatTableView)
         
@@ -687,6 +689,7 @@ class FeaturePlanViewController: UIViewController {
             workflowStatusHeightConstraint.constant = 0
             workflowStatusView.hide(animated: true)
             UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
+            hideProcessingBubble()
         }
         isAIWorking = (status == .IN_PROGRESS)
     }
@@ -761,7 +764,8 @@ class FeaturePlanViewController: UIViewController {
     private func sendChatMessage(_ message: String) {
         chatInputTextView.text = ""
         isAIWorking = true
-        
+        showProcessingBubble()
+
         API.sharedInstance.sendFeatureChatMessageWithAuth(
             featureId: feature.id,
             message: message,
@@ -782,6 +786,7 @@ class FeaturePlanViewController: UIViewController {
     }
 
     private func sendClarifyingAnswers(answers: [String], replyId: String) {
+        showProcessingBubble()
         let joined = answers.joined(separator: "\n\n")
         API.sharedInstance.sendFeatureChatMessageWithAuth(
             featureId: feature.id,
@@ -813,11 +818,34 @@ class FeaturePlanViewController: UIViewController {
         HivePusherManager.shared.connect(featureId: feature.id, workspaceSlug: workspace.slug ?? "")
     }
     
+    // MARK: - Processing Bubble
+    private func showProcessingBubble() {
+        guard processingStepText == nil else { return }
+        processingStepText = "Communicating with workflow"
+        let indexPath = IndexPath(row: messages.count, section: 0)
+        chatTableView.insertRows(at: [indexPath], with: .automatic)
+        scrollToBottom()
+    }
+
+    private func hideProcessingBubble() {
+        guard processingStepText != nil else { return }
+        let indexPath = IndexPath(row: messages.count, section: 0)
+        processingStepText = nil
+        chatTableView.deleteRows(at: [indexPath], with: .automatic)
+    }
+
+    private func updateProcessingBubble(stepText: String) {
+        guard processingStepText != nil else { return }
+        processingStepText = stepText
+        let indexPath = IndexPath(row: messages.count, section: 0)
+        chatTableView.reloadRows(at: [indexPath], with: .none)
+    }
+
     // MARK: - Helper Methods
     private func scrollToBottom() {
-        guard !messages.isEmpty else { return }
-        
-        let lastIndexPath = IndexPath(row: messages.count - 1, section: 0)
+        let totalRows = messages.count + (processingStepText != nil ? 1 : 0)
+        guard totalRows > 0 else { return }
+        let lastIndexPath = IndexPath(row: totalRows - 1, section: 0)
         chatTableView.scrollToRow(at: lastIndexPath, at: .bottom, animated: true)
     }
     
@@ -871,7 +899,7 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
         if tableView === tasksTableView {
             return feature.allTasks.count
         }
-        return messages.count
+        return messages.count + (processingStepText != nil ? 1 : 0)
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -886,6 +914,15 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
             let task = tasks[indexPath.row]
             let isLast = indexPath.row == tasks.count - 1
             cell.configure(with: task, isLastRow: isLast)
+            return cell
+        }
+
+        if processingStepText != nil && indexPath.row == messages.count {
+            let cell = tableView.dequeueReusableCell(
+                withIdentifier: "HiveProcessingBubbleCell",
+                for: indexPath
+            ) as! HiveProcessingBubbleCell
+            cell.configure(stepText: processingStepText ?? "Communicating with workflow")
             return cell
         }
 
@@ -924,6 +961,7 @@ extension FeaturePlanViewController: HivePusherDelegate {
     
     func newMessageReceived(_ message: HiveChatMessage) {
         guard !messages.contains(where: { $0.id == message.id }) else { return }
+        hideProcessingBubble()
         messages.append(message)
         
         let indexPath = IndexPath(row: messages.count - 1, section: 0)
@@ -979,5 +1017,9 @@ extension FeaturePlanViewController: HivePusherDelegate {
                 break
             }
         }
+    }
+
+    func processingStepReceived(message: String) {
+        updateProcessingBubble(stepText: message)
     }
 }
