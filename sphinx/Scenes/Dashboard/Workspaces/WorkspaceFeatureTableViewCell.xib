@@ -91,8 +91,8 @@
                     <constraint firstAttribute="trailing" secondItem="priority-badge-01" secondAttribute="trailing" constant="16" id="priority-trail-01"/>
                     <!-- Created by: leading 16, top = priority badge top (align with priority row) - same y as repo in tasks -->
                     <constraint firstItem="createdby-lbl-01" firstAttribute="leading" secondItem="content-view-01" secondAttribute="leading" constant="16" id="createdby-lead-01"/>
-                    <!-- Updated at: trailing 16, leading = createdby trailing + 8 -->
-                    <constraint firstItem="updated-lbl-01" firstAttribute="leading" secondItem="createdby-lbl-01" secondAttribute="trailing" constant="8" id="updated-lead-01"/>
+                    <!-- Updated at: trailing 16, min-leading = createdby trailing + 36 (8 gap + 20 button + 8 breathing room) -->
+                    <constraint firstItem="updated-lbl-01" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="createdby-lbl-01" secondAttribute="trailing" constant="36" id="updated-min-lead-01"/>
                     <constraint firstAttribute="trailing" secondItem="updated-lbl-01" secondAttribute="trailing" constant="16" id="updated-trail-01"/>
                     <!-- Align createdBy and updatedAt vertically -->
                     <constraint firstItem="updated-lbl-01" firstAttribute="centerY" secondItem="createdby-lbl-01" secondAttribute="centerY" id="updated-centery-01"/>
