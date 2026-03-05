@@ -32,8 +32,6 @@ class CreateFeatureViewController: UIViewController {
     private var sendButton: UIButton!
     private var loadingWheel: UIActivityIndicatorView!
 
-    private var promptFieldViewTopConstraint: NSLayoutConstraint!
-
     // MARK: - Instantiation
 
     static func instantiate(workspaceId: String) -> CreateFeatureViewController {
@@ -49,11 +47,6 @@ class CreateFeatureViewController: UIViewController {
         super.viewDidLoad()
         setupViews()
         configureView()
-        setupKeyboardObservers()
-    }
-
-    deinit {
-        NotificationCenter.default.removeObserver(self)
     }
 
     // MARK: - View Setup
@@ -128,11 +121,6 @@ class CreateFeatureViewController: UIViewController {
         loadingWheel.hidesWhenStopped = true
         bottomContainer.addSubview(loadingWheel)
 
-        // Store the top constraint so we can adjust for keyboard
-        promptFieldViewTopConstraint = promptFieldView.topAnchor.constraint(
-            equalTo: promptLabel.bottomAnchor, constant: 16
-        )
-
         // Layout Constraints
         NSLayoutConstraint.activate([
             // Header View
@@ -158,7 +146,7 @@ class CreateFeatureViewController: UIViewController {
             promptLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
 
             // Prompt Field View
-            promptFieldViewTopConstraint,
+            promptFieldView.topAnchor.constraint(equalTo: promptLabel.bottomAnchor, constant: 16),
             promptFieldView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
             promptFieldView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
             promptFieldView.heightAnchor.constraint(lessThanOrEqualTo: view.heightAnchor, multiplier: 0.5),
@@ -202,51 +190,6 @@ class CreateFeatureViewController: UIViewController {
             radius: 0.5,
             bottomhHeight: 1.5
         )
-    }
-
-    // MARK: - Keyboard Handling
-
-    private func setupKeyboardObservers() {
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(keyboardWillShow),
-            name: UIResponder.keyboardWillShowNotification,
-            object: nil
-        )
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(keyboardWillHide),
-            name: UIResponder.keyboardWillHideNotification,
-            object: nil
-        )
-    }
-
-    @objc private func keyboardWillShow(notification: NSNotification) {
-        guard let userInfo = notification.userInfo,
-              let keyboardFrame = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect,
-              let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double else {
-            return
-        }
-
-        let keyboardHeight = keyboardFrame.height - view.safeAreaInsets.bottom
-        promptFieldViewTopConstraint.constant = max(16 - keyboardHeight, -(keyboardHeight - 20))
-
-        UIView.animate(withDuration: duration) {
-            self.view.layoutIfNeeded()
-        }
-    }
-
-    @objc private func keyboardWillHide(notification: NSNotification) {
-        guard let userInfo = notification.userInfo,
-              let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double else {
-            return
-        }
-
-        promptFieldViewTopConstraint.constant = 16
-
-        UIView.animate(withDuration: duration) {
-            self.view.layoutIfNeeded()
-        }
     }
 
     // MARK: - Actions
