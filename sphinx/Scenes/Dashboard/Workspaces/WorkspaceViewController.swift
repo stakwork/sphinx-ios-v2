@@ -19,7 +19,7 @@ class WorkspaceViewController: PopHandlerViewController {
     @IBOutlet weak var containerView: UIView!
 
     private var workspace: Workspace!
-    private var currentTab: Int = 0 // 0 = Tasks, 1 = Features
+    private var currentTab: Int = 0 // 0 = Features, 1 = Tasks
     
     private var activeFeaturesVC: WorkspaceFeaturesViewController!
     private var activeTasksVC: WorkspaceTasksViewController!
@@ -50,7 +50,7 @@ class WorkspaceViewController: PopHandlerViewController {
         topTabSegmentedControl.buttonBackgroundColor = .Sphinx.HeaderBG
         topTabSegmentedControl.selectorViewColor = .Sphinx.PrimaryGreen
         topTabSegmentedControl.configureFromOutlet(
-            buttonTitles: ["TASKS", "FEATURES"],
+            buttonTitles: ["FEATURES", "TASKS"],
             initialIndex: 0,
             delegate: self
         )
@@ -75,17 +75,17 @@ extension WorkspaceViewController: CustomSegmentedControlDelegate {
         activeFeaturesVC?.view.isHidden = true
 
         if index == 0 {
-            if activeTasksVC == nil {
-                activeTasksVC = WorkspaceTasksViewController.instantiate(workspace: workspace)
-                addChildVC(activeTasksVC)
-            }
-            activeTasksVC.view.isHidden = false
-        } else {
             if activeFeaturesVC == nil {
                 activeFeaturesVC = WorkspaceFeaturesViewController.instantiate(workspace: workspace)
                 addChildVC(activeFeaturesVC)
             }
             activeFeaturesVC.view.isHidden = false
+        } else {
+            if activeTasksVC == nil {
+                activeTasksVC = WorkspaceTasksViewController.instantiate(workspace: workspace)
+                addChildVC(activeTasksVC)
+            }
+            activeTasksVC.view.isHidden = false
         }
     }
 
