@@ -61,6 +61,68 @@ extension HiveFeature {
     }
 }
 
+extension WorkspaceTask {
+    static func mockList() -> [WorkspaceTask] {
+        let json1 = JSON([
+            "id": "task-001",
+            "title": "Set up CI/CD pipeline",
+            "status": "DONE",
+            "priority": "HIGH",
+            "chatMessageCount": 3,
+            "repository": ["name": "sphinx-ios-v2"],
+            "updatedAt": "2026-03-01T08:00:00Z",
+            "prArtifact": [
+                "id": "pr-artifact-done-001",
+                "content": [
+                    "url": "https://github.com/stakwork/sphinx-ios-v2/pull/10",
+                    "status": "MERGED",
+                    "number": 10
+                ] as [String: Any]
+            ] as [String: Any]
+        ] as [String: Any])
+
+        let json2 = JSON([
+            "id": "task-pr-001",
+            "title": "Add WebSocket reconnection logic",
+            "status": "IN_PROGRESS",
+            "priority": "HIGH",
+            "chatMessageCount": 0,
+            "repository": ["name": "sphinx-ios-v2"],
+            "updatedAt": "2026-03-01T10:00:00Z",
+            "prArtifact": [
+                "id": "pr-artifact-001",
+                "content": [
+                    "url": "https://github.com/stakwork/sphinx-ios-v2/pull/42",
+                    "status": "open",
+                    "number": 42
+                ] as [String: Any]
+            ] as [String: Any]
+        ] as [String: Any])
+
+        let json3 = JSON([
+            "id": "task-003",
+            "title": "Write unit tests for auth module",
+            "status": "IN_PROGRESS",
+            "priority": "MEDIUM",
+            "chatMessageCount": 1,
+            "repository": ["name": "sphinx-ios-v2"],
+            "updatedAt": "2026-03-02T12:00:00Z"
+        ] as [String: Any])
+
+        let json4 = JSON([
+            "id": "task-004",
+            "title": "Investigate memory leak in chat view",
+            "status": "BLOCKED",
+            "priority": "CRITICAL",
+            "chatMessageCount": 5,
+            "repository": ["name": "sphinx-ios-v2"],
+            "updatedAt": "2026-03-03T09:00:00Z"
+        ] as [String: Any])
+
+        return [json1, json2, json3, json4].compactMap { WorkspaceTask(json: $0) }
+    }
+}
+
 extension HiveChatMessage {
     static func mockConversation() -> [HiveChatMessage] {
         let json1 = JSON([
