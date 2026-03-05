@@ -51,7 +51,6 @@ class FeaturePlanViewController: UIViewController {
     private var planTextView: UITextView!
     private var generateTasksButton: UIButton!
     private var retryButton: UIButton!
-    private var generateLoadingWheel: UIActivityIndicatorView!
     /// Switches between pinning planTextView bottom to the button (button visible)
     /// or to the container bottom (button hidden).
     private var planTextViewBottomToButton: NSLayoutConstraint!
@@ -85,6 +84,7 @@ class FeaturePlanViewController: UIViewController {
         applyInitialWorkflowStatus()
         setupKeyboardObservers()
         fetchFeatureDetail()
+        checkForActiveTaskGeneration()
         fetchChatHistory()
         connectWebSocket()
     }
@@ -322,19 +322,14 @@ class FeaturePlanViewController: UIViewController {
         generateTasksButton = UIButton()
         generateTasksButton.translatesAutoresizingMaskIntoConstraints = false
         generateTasksButton.setTitle("GENERATE TASKS", for: .normal)
+        generateTasksButton.setTitle("GENERATING TASKS…", for: .disabled)
         generateTasksButton.setTitleColor(.white, for: .normal)
+        generateTasksButton.setTitleColor(UIColor.white.withAlphaComponent(0.7), for: .disabled)
         generateTasksButton.titleLabel?.font = UIFont(name: "Roboto-Medium", size: 16)
         generateTasksButton.backgroundColor = UIColor.Sphinx.PrimaryGreen
         generateTasksButton.layer.cornerRadius = 25
         generateTasksButton.addTarget(self, action: #selector(generateTasksButtonTouched), for: .touchUpInside)
         planContainerView.addSubview(generateTasksButton)
-        
-        // Loading Wheel
-        generateLoadingWheel = UIActivityIndicatorView(style: .medium)
-        generateLoadingWheel.translatesAutoresizingMaskIntoConstraints = false
-        generateLoadingWheel.hidesWhenStopped = true
-        generateLoadingWheel.color = UIColor.Sphinx.Text
-        planContainerView.addSubview(generateLoadingWheel)
 
         // Retry Button
         retryButton = UIButton()
@@ -381,10 +376,7 @@ class FeaturePlanViewController: UIViewController {
             retryButton.leadingAnchor.constraint(equalTo: planContainerView.leadingAnchor, constant: 32),
             retryButton.trailingAnchor.constraint(equalTo: planContainerView.trailingAnchor, constant: -32),
             retryButton.bottomAnchor.constraint(equalTo: planContainerView.safeAreaLayoutGuide.bottomAnchor, constant: -16),
-            retryButton.heightAnchor.constraint(equalToConstant: 50),
-
-            generateLoadingWheel.centerYAnchor.constraint(equalTo: generateTasksButton.centerYAnchor),
-            generateLoadingWheel.trailingAnchor.constraint(equalTo: generateTasksButton.trailingAnchor, constant: -16)
+            retryButton.heightAnchor.constraint(equalToConstant: 50)
         ])
         
         updatePlanText()
@@ -625,28 +617,23 @@ class FeaturePlanViewController: UIViewController {
         if hasTasks {
             generateTasksButton.isHidden = true
             retryButton.isHidden = true
-            generateLoadingWheel.stopAnimating()
-            generateLoadingWheel.isHidden = true
             planTextViewBottomToContainer.isActive = true
         } else if isGeneratingTasks {
-            generateTasksButton.isHidden = true
+            generateTasksButton.isHidden = false
+            generateTasksButton.isEnabled = false
+            generateTasksButton.alpha = 0.5
             retryButton.isHidden = true
-            generateLoadingWheel.isHidden = false
-            generateLoadingWheel.startAnimating()
             planTextViewBottomToButton.isActive = true
         } else if lastGenerationFailed {
             generateTasksButton.isHidden = true
             retryButton.isHidden = false
-            generateLoadingWheel.stopAnimating()
-            generateLoadingWheel.isHidden = true
             planTextViewBottomToRetry.isActive = true
         } else {
             let hasArchitecture = !(feature.architecture ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             generateTasksButton.isHidden = !hasArchitecture
             generateTasksButton.isEnabled = hasArchitecture
+            generateTasksButton.alpha = 1.0
             retryButton.isHidden = true
-            generateLoadingWheel.stopAnimating()
-            generateLoadingWheel.isHidden = true
             planTextViewBottomToButton.isActive = hasArchitecture
             planTextViewBottomToContainer.isActive = !hasArchitecture
         }
@@ -727,6 +714,25 @@ class FeaturePlanViewController: UIViewController {
             errorCallback: {
                 print("[FeaturePlanVC] Failed to fetch feature detail")
             }
+        )
+    }
+
+    private func checkForActiveTaskGeneration() {
+        API.sharedInstance.fetchTaskGenerationRunsWithAuth(
+            workspaceId: workspace.id,
+            featureId: feature.id,
+            callback: { [weak self] runs in
+                DispatchQueue.main.async {
+                    let isActive = runs.contains {
+                        $0.status == "PENDING" || $0.status == "IN_PROGRESS"
+                    }
+                    if isActive {
+                        self?.isGeneratingTasks = true
+                        self?.applyGenerationState()
+                    }
+                }
+            },
+            errorCallback: { /* silent — non-critical on load */ }
         )
     }
 

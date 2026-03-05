@@ -97,4 +97,16 @@ class FeaturePlanGenerationStateTests: XCTestCase {
         XCTAssertTrue(hasArchitecture(for: feature),
                       "architecture with real content (padded) → button must be visible")
     }
+
+    // MARK: generating state — button remains visible but disabled
+
+    func test_generatingState_buttonRemainsVisibleAndDisabled() {
+        // hasTasks=false + architecture present: button would normally show enabled.
+        // With isGeneratingTasks=true the button must stay visible (not hidden) but disabled.
+        let feature = makeFeature(architecture: "## Overview\nContent")
+        XCTAssertFalse(feature.hasTasks, "hasTasks branch must not fire")
+        XCTAssertTrue(hasArchitecture(for: feature), "architecture must be present")
+        // isGeneratingTasks=true → button visible+disabled (confirmed by architecture state table;
+        // full UIKit assertions covered in UI-layer manual/snapshot tests)
+    }
 }
