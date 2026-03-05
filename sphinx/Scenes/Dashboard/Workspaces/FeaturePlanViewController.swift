@@ -37,6 +37,8 @@ class FeaturePlanViewController: UIViewController {
     private var sendButton: UIButton!
     private var chatInputContainerBottomConstraint: NSLayoutConstraint!
     private var workflowStatusView: WorkflowStatusView!
+    private var workflowStatusHeightConstraint: NSLayoutConstraint!
+    private var tasksEmptyLabel: UILabel!
     
     // Plan Panel Components
     private var planSegmentedControl: CustomSegmentedControl!
@@ -219,8 +221,11 @@ class FeaturePlanViewController: UIViewController {
         workflowStatusView.translatesAutoresizingMaskIntoConstraints = false
         chatContainerView.addSubview(workflowStatusView)
 
-        chatInputContainerBottomConstraint = chatInputContainer.bottomAnchor.constraint(equalTo: chatContainerView.bottomAnchor)
-        
+        chatTableView.keyboardDismissMode = .interactive
+
+        chatInputContainerBottomConstraint = chatInputContainer.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+        workflowStatusHeightConstraint = workflowStatusView.heightAnchor.constraint(equalToConstant: 0)
+
         NSLayoutConstraint.activate([
             chatContainerView.topAnchor.constraint(equalTo: topSegmentedControl.bottomAnchor),
             chatContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -235,7 +240,7 @@ class FeaturePlanViewController: UIViewController {
             workflowStatusView.leadingAnchor.constraint(equalTo: chatContainerView.leadingAnchor),
             workflowStatusView.trailingAnchor.constraint(equalTo: chatContainerView.trailingAnchor),
             workflowStatusView.bottomAnchor.constraint(equalTo: chatInputContainer.topAnchor),
-            workflowStatusView.heightAnchor.constraint(equalToConstant: 32),
+            workflowStatusHeightConstraint,
             
             chatInputContainer.leadingAnchor.constraint(equalTo: chatContainerView.leadingAnchor),
             chatInputContainer.trailingAnchor.constraint(equalTo: chatContainerView.trailingAnchor),
@@ -338,7 +343,7 @@ class FeaturePlanViewController: UIViewController {
             generateTasksButton.heightAnchor.constraint(equalToConstant: 50),
 
             generateLoadingWheel.centerYAnchor.constraint(equalTo: generateTasksButton.centerYAnchor),
-            generateLoadingWheel.trailingAnchor.constraint(equalTo: generateTasksButton.leadingAnchor, constant: -20)
+            generateLoadingWheel.trailingAnchor.constraint(equalTo: generateTasksButton.trailingAnchor, constant: -16)
         ])
         
         updatePlanText()
@@ -369,7 +374,7 @@ class FeaturePlanViewController: UIViewController {
         }
         
         let keyboardHeight = keyboardFrame.height
-        chatInputContainerBottomConstraint.constant = -keyboardHeight
+        chatInputContainerBottomConstraint.constant = -(keyboardHeight - view.safeAreaInsets.bottom)
         
         UIView.animate(withDuration: duration) {
             self.view.layoutIfNeeded()
@@ -452,6 +457,16 @@ class FeaturePlanViewController: UIViewController {
         tasksTableView.dataSource = self
         tasksContainerView.addSubview(tasksTableView)
 
+        // Empty state label
+        tasksEmptyLabel = UILabel()
+        tasksEmptyLabel.translatesAutoresizingMaskIntoConstraints = false
+        tasksEmptyLabel.text = "No tasks found"
+        tasksEmptyLabel.textColor = UIColor.Sphinx.SecondaryText
+        tasksEmptyLabel.font = UIFont(name: "Roboto-Regular", size: 15)
+        tasksEmptyLabel.textAlignment = .center
+        tasksEmptyLabel.isHidden = true
+        tasksContainerView.addSubview(tasksEmptyLabel)
+
         NSLayoutConstraint.activate([
             tasksContainerView.topAnchor.constraint(equalTo: topSegmentedControl.bottomAnchor),
             tasksContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -461,8 +476,15 @@ class FeaturePlanViewController: UIViewController {
             tasksTableView.topAnchor.constraint(equalTo: tasksContainerView.topAnchor),
             tasksTableView.leadingAnchor.constraint(equalTo: tasksContainerView.leadingAnchor),
             tasksTableView.trailingAnchor.constraint(equalTo: tasksContainerView.trailingAnchor),
-            tasksTableView.bottomAnchor.constraint(equalTo: tasksContainerView.bottomAnchor)
+            tasksTableView.bottomAnchor.constraint(equalTo: tasksContainerView.bottomAnchor),
+
+            tasksEmptyLabel.centerXAnchor.constraint(equalTo: tasksContainerView.centerXAnchor),
+            tasksEmptyLabel.centerYAnchor.constraint(equalTo: tasksContainerView.centerYAnchor)
         ])
+    }
+
+    private func updateTasksEmptyState() {
+        tasksEmptyLabel.isHidden = !feature.allTasks.isEmpty
     }
 
     // MARK: - Panel Management
@@ -474,13 +496,15 @@ class FeaturePlanViewController: UIViewController {
             topSegmentedControl.indicesOfTitlesWithBadge = []
             updatePlanText()
         }
-        if index == 2 { tasksTableView.reloadData() }
+        if index == 2 {
+            tasksTableView.reloadData()
+            updateTasksEmptyState()
+        }
     }
 
     private func updateGenerateTasksButton() {
         let hasTasks = feature.hasTasks
         generateTasksButton.isHidden = hasTasks
-        generateLoadingWheel.isHidden = hasTasks
         if hasTasks {
             planTextViewBottomToButton.isActive = false
             planTextViewBottomToContainer.isActive = true
@@ -524,9 +548,13 @@ class FeaturePlanViewController: UIViewController {
         workflowStatusView.status = status
         switch status {
         case .IN_PROGRESS, .PENDING:
+            workflowStatusHeightConstraint.constant = 32
             workflowStatusView.show(animated: true)
+            UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
         case .COMPLETED, .ERROR, .HALTED, .FAILED:
+            workflowStatusHeightConstraint.constant = 0
             workflowStatusView.hide(animated: true)
+            UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
         }
         isAIWorking = (status == .IN_PROGRESS)
     }
@@ -546,6 +574,7 @@ class FeaturePlanViewController: UIViewController {
                     // Refresh tasks panel if currently visible
                     if !self.tasksContainerView.isHidden {
                         self.tasksTableView.reloadData()
+                        self.updateTasksEmptyState()
                     }
                     // Show/hide generate button based on whether tasks exist
                     self.updateGenerateTasksButton()

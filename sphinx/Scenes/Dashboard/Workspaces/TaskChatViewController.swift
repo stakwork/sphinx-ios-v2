@@ -26,6 +26,7 @@ class TaskChatViewController: UIViewController {
     private var sendButton: UIButton!
     private var chatInputBottomConstraint: NSLayoutConstraint!
     private var workflowStatusView: WorkflowStatusView!
+    private var workflowStatusHeightConstraint: NSLayoutConstraint!
 
     private var loadingWheel: UIActivityIndicatorView!
     private var emptyLabel: UILabel!
@@ -187,7 +188,10 @@ class TaskChatViewController: UIViewController {
         workflowStatusView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(workflowStatusView)
 
-        chatInputBottomConstraint = chatInputContainer.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        chatTableView.keyboardDismissMode = .interactive
+
+        chatInputBottomConstraint = chatInputContainer.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+        workflowStatusHeightConstraint = workflowStatusView.heightAnchor.constraint(equalToConstant: 0)
 
         NSLayoutConstraint.activate([
             loadingWheel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
@@ -204,7 +208,7 @@ class TaskChatViewController: UIViewController {
             workflowStatusView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             workflowStatusView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             workflowStatusView.bottomAnchor.constraint(equalTo: chatInputContainer.topAnchor),
-            workflowStatusView.heightAnchor.constraint(equalToConstant: 32),
+            workflowStatusHeightConstraint,
 
             chatInputContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             chatInputContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
@@ -243,7 +247,7 @@ class TaskChatViewController: UIViewController {
         guard let info = notification.userInfo,
               let frame = info[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect,
               let duration = info[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double else { return }
-        chatInputBottomConstraint.constant = -frame.height
+        chatInputBottomConstraint.constant = -(frame.height - view.safeAreaInsets.bottom)
         UIView.animate(withDuration: duration) { self.view.layoutIfNeeded() }
         scrollToBottom(animated: true)
     }
@@ -367,9 +371,13 @@ extension TaskChatViewController: HivePusherDelegate {
             self.workflowStatusView.status = status
             switch status {
             case .IN_PROGRESS, .PENDING:
+                self.workflowStatusHeightConstraint.constant = 32
                 self.workflowStatusView.show(animated: true)
+                UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
             case .COMPLETED, .ERROR, .HALTED, .FAILED:
+                self.workflowStatusHeightConstraint.constant = 0
                 self.workflowStatusView.hide(animated: true)
+                UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
             }
         }
     }
