@@ -58,7 +58,7 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
             $0?.textAlignment = .center
         }
 
-        separatorView.backgroundColor = .Sphinx.Divider
+        separatorView.backgroundColor = .Sphinx.LightDivider
 
         setupPRBadgeButton()
     }
