@@ -1238,6 +1238,81 @@ extension API {
         )
     }
 
+    // MARK: - Assign All Feature Tasks (POST /api/features/{featureId}/tasks/assign-all)
+
+    func assignAllFeatureTasks(
+        featureId: String,
+        authToken: String,
+        callback: @escaping EmptyCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        guard let encodedFeatureId = featureId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+            errorCallback(); return
+        }
+        let urlString = "\(API.kHiveBaseUrl)/features/\(encodedFeatureId)/tasks/assign-all"
+        guard let request = createRequest(urlString, bodyParams: nil, method: "POST", token: authToken) else {
+            errorCallback(); return
+        }
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                errorCallback(); return
+            }
+            switch response.result {
+            case .success:
+                callback()
+            case .failure(let error):
+                print("[HiveAPI] assignAllFeatureTasks failed: \(error.localizedDescription)")
+                errorCallback()
+            }
+        }
+    }
+
+    func assignAllFeatureTasksWithAuth(
+        featureId: String,
+        callback: @escaping EmptyCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
+            assignAllFeatureTasks(
+                featureId: featureId,
+                authToken: storedToken,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateAndAssignAllFeatureTasks(
+                        featureId: featureId,
+                        callback: callback,
+                        errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateAndAssignAllFeatureTasks(
+                featureId: featureId,
+                callback: callback,
+                errorCallback: errorCallback
+            )
+        }
+    }
+
+    private func authenticateAndAssignAllFeatureTasks(
+        featureId: String,
+        callback: @escaping EmptyCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback(); return }
+                UserDefaults.Keys.hiveToken.set(token)
+                self?.assignAllFeatureTasks(
+                    featureId: featureId,
+                    authToken: token,
+                    callback: callback,
+                    errorCallback: errorCallback
+                )
+            },
+            errorCallback: errorCallback
+        )
+    }
 }
 
 // MARK: - Workspace Image Cache
