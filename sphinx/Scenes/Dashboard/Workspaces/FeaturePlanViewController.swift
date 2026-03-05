@@ -41,6 +41,7 @@ class FeaturePlanViewController: UIViewController {
     private var chatInputContainerBottomConstraint: NSLayoutConstraint!
     private var workflowStatusView: WorkflowStatusView!
     private var workflowStatusHeightConstraint: NSLayoutConstraint!
+    private var bottomFillView: UIView!
     private var tasksEmptyLabel: UILabel!
     
     // Plan Panel Components
@@ -193,6 +194,12 @@ class FeaturePlanViewController: UIViewController {
         chatTableView.contentInset = UIEdgeInsets(top: 16, left: 0, bottom: 16, right: 0)
         chatContainerView.addSubview(chatTableView)
         
+        // Bottom Fill View — covers the gap between chatInputContainer and the physical screen bottom
+        bottomFillView = UIView()
+        bottomFillView.translatesAutoresizingMaskIntoConstraints = false
+        bottomFillView.backgroundColor = UIColor.Sphinx.HeaderBG
+        chatContainerView.addSubview(bottomFillView)
+
         // Chat Input Container
         chatInputContainer = UIView()
         chatInputContainer.translatesAutoresizingMaskIntoConstraints = false
@@ -229,7 +236,7 @@ class FeaturePlanViewController: UIViewController {
 
         chatTableView.keyboardDismissMode = .interactive
 
-        chatInputContainerBottomConstraint = chatInputContainer.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+        chatInputContainerBottomConstraint = chatInputContainer.bottomAnchor.constraint(equalTo: chatContainerView.safeAreaLayoutGuide.bottomAnchor)
         workflowStatusHeightConstraint = workflowStatusView.heightAnchor.constraint(equalToConstant: 0)
 
         NSLayoutConstraint.activate([
@@ -252,6 +259,11 @@ class FeaturePlanViewController: UIViewController {
             chatInputContainer.trailingAnchor.constraint(equalTo: chatContainerView.trailingAnchor),
             chatInputContainerBottomConstraint,
             chatInputContainer.heightAnchor.constraint(equalToConstant: 80),
+
+            bottomFillView.topAnchor.constraint(equalTo: chatInputContainer.bottomAnchor),
+            bottomFillView.leadingAnchor.constraint(equalTo: chatContainerView.leadingAnchor),
+            bottomFillView.trailingAnchor.constraint(equalTo: chatContainerView.trailingAnchor),
+            bottomFillView.bottomAnchor.constraint(equalTo: chatContainerView.bottomAnchor),
             
             chatInputTextView.topAnchor.constraint(equalTo: chatInputContainer.topAnchor, constant: 12),
             chatInputTextView.leadingAnchor.constraint(equalTo: chatInputContainer.leadingAnchor, constant: 16),

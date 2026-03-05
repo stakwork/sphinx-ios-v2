@@ -27,6 +27,7 @@ class TaskChatViewController: UIViewController {
     private var chatInputBottomConstraint: NSLayoutConstraint!
     private var workflowStatusView: WorkflowStatusView!
     private var workflowStatusHeightConstraint: NSLayoutConstraint!
+    private var bottomFillView: UIView!
 
     private var loadingWheel: UIActivityIndicatorView!
     private var emptyLabel: UILabel!
@@ -154,6 +155,12 @@ class TaskChatViewController: UIViewController {
         chatTableView.register(FeatureChatMessageCell.self, forCellReuseIdentifier: "FeatureChatMessageCell")
         view.addSubview(chatTableView)
 
+        // Bottom Fill View — covers the gap between chatInputContainer and the physical screen bottom
+        bottomFillView = UIView()
+        bottomFillView.translatesAutoresizingMaskIntoConstraints = false
+        bottomFillView.backgroundColor = UIColor.Sphinx.HeaderBG
+        view.addSubview(bottomFillView)
+
         // Input container
         chatInputContainer = UIView()
         chatInputContainer.translatesAutoresizingMaskIntoConstraints = false
@@ -214,6 +221,11 @@ class TaskChatViewController: UIViewController {
             chatInputContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             chatInputBottomConstraint,
             chatInputContainer.heightAnchor.constraint(equalToConstant: 80),
+
+            bottomFillView.topAnchor.constraint(equalTo: chatInputContainer.bottomAnchor),
+            bottomFillView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            bottomFillView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            bottomFillView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
             chatInputTextView.topAnchor.constraint(equalTo: chatInputContainer.topAnchor, constant: 12),
             chatInputTextView.leadingAnchor.constraint(equalTo: chatInputContainer.leadingAnchor, constant: 16),
