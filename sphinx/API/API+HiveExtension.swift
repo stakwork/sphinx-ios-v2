@@ -666,8 +666,9 @@ extension API {
         featureId: String,
         message: String,
         replyId: String? = nil,
+        socketId: String? = nil,
         authToken: String,
-        callback: @escaping EmptyCallback,
+        callback: @escaping HiveChatMessageCallback,
         errorCallback: @escaping EmptyCallback
     ) {
         guard let encodedFeatureId = featureId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
@@ -679,7 +680,7 @@ extension API {
         let params: [String: AnyObject] = [
             "message": message as AnyObject,
             "contextTags": [] as AnyObject,
-            "sourceWebsocketID": NSNull(),
+            "sourceWebsocketID": (socketId as AnyObject? ?? NSNull() as AnyObject),
             "replyId": (replyId as AnyObject? ?? NSNull() as AnyObject)
         ]
 
@@ -711,7 +712,13 @@ extension API {
                     return
                 }
 
-                callback()
+                guard let sentMessage = HiveChatMessage(json: json["message"]) else {
+                    print("[HiveAPI] Send chat message - failed to parse returned message")
+                    errorCallback()
+                    return
+                }
+
+                callback(sentMessage)
             case .failure(let error):
                 print("[HiveAPI] Send chat message failed: \(error.localizedDescription)")
                 errorCallback()
@@ -723,7 +730,8 @@ extension API {
         featureId: String,
         message: String,
         replyId: String? = nil,
-        callback: @escaping EmptyCallback,
+        socketId: String? = nil,
+        callback: @escaping HiveChatMessageCallback,
         errorCallback: @escaping EmptyCallback
     ) {
         if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
@@ -731,6 +739,7 @@ extension API {
                 featureId: featureId,
                 message: message,
                 replyId: replyId,
+                socketId: socketId,
                 authToken: storedToken,
                 callback: callback,
                 errorCallback: { [weak self] in
@@ -738,6 +747,7 @@ extension API {
                         featureId: featureId,
                         message: message,
                         replyId: replyId,
+                        socketId: socketId,
                         callback: callback,
                         errorCallback: errorCallback
                     )
@@ -748,6 +758,7 @@ extension API {
                 featureId: featureId,
                 message: message,
                 replyId: replyId,
+                socketId: socketId,
                 callback: callback,
                 errorCallback: errorCallback
             )
@@ -758,7 +769,8 @@ extension API {
         featureId: String,
         message: String,
         replyId: String? = nil,
-        callback: @escaping EmptyCallback,
+        socketId: String? = nil,
+        callback: @escaping HiveChatMessageCallback,
         errorCallback: @escaping EmptyCallback
     ) {
         authenticateWithHive(
@@ -769,6 +781,7 @@ extension API {
                     featureId: featureId,
                     message: message,
                     replyId: replyId,
+                    socketId: socketId,
                     authToken: token,
                     callback: callback,
                     errorCallback: errorCallback
@@ -782,20 +795,17 @@ extension API {
         taskId: String,
         message: String,
         replyId: String? = nil,
+        socketId: String? = nil,
         authToken: String,
-        callback: @escaping EmptyCallback,
+        callback: @escaping HiveChatMessageCallback,
         errorCallback: @escaping EmptyCallback
     ) {
-        guard let encodedTaskId = taskId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
-            errorCallback()
-            return
-        }
-
-        let urlString = "\(API.kHiveBaseUrl)/tasks/\(encodedTaskId)/chat"
+        let urlString = "\(API.kHiveBaseUrl)/chat/message"
         let params: [String: AnyObject] = [
+            "taskId": taskId as AnyObject,
             "message": message as AnyObject,
             "contextTags": [] as AnyObject,
-            "sourceWebsocketID": NSNull(),
+            "sourceWebsocketID": (socketId as AnyObject? ?? NSNull() as AnyObject),
             "replyId": (replyId as AnyObject? ?? NSNull() as AnyObject)
         ]
 
@@ -827,7 +837,13 @@ extension API {
                     return
                 }
 
-                callback()
+                guard let sentMessage = HiveChatMessage(json: json["message"]) else {
+                    print("[HiveAPI] Send task chat message - failed to parse returned message")
+                    errorCallback()
+                    return
+                }
+
+                callback(sentMessage)
             case .failure(let error):
                 print("[HiveAPI] Send task chat message failed: \(error.localizedDescription)")
                 errorCallback()
@@ -839,7 +855,8 @@ extension API {
         taskId: String,
         message: String,
         replyId: String? = nil,
-        callback: @escaping EmptyCallback,
+        socketId: String? = nil,
+        callback: @escaping HiveChatMessageCallback,
         errorCallback: @escaping EmptyCallback
     ) {
         if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
@@ -847,6 +864,7 @@ extension API {
                 taskId: taskId,
                 message: message,
                 replyId: replyId,
+                socketId: socketId,
                 authToken: storedToken,
                 callback: callback,
                 errorCallback: { [weak self] in
@@ -854,6 +872,7 @@ extension API {
                         taskId: taskId,
                         message: message,
                         replyId: replyId,
+                        socketId: socketId,
                         callback: callback,
                         errorCallback: errorCallback
                     )
@@ -864,6 +883,7 @@ extension API {
                 taskId: taskId,
                 message: message,
                 replyId: replyId,
+                socketId: socketId,
                 callback: callback,
                 errorCallback: errorCallback
             )
@@ -874,7 +894,8 @@ extension API {
         taskId: String,
         message: String,
         replyId: String? = nil,
-        callback: @escaping EmptyCallback,
+        socketId: String? = nil,
+        callback: @escaping HiveChatMessageCallback,
         errorCallback: @escaping EmptyCallback
     ) {
         authenticateWithHive(
@@ -885,6 +906,7 @@ extension API {
                     taskId: taskId,
                     message: message,
                     replyId: replyId,
+                    socketId: socketId,
                     authToken: token,
                     callback: callback,
                     errorCallback: errorCallback

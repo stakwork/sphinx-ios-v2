@@ -765,10 +765,11 @@ class FeaturePlanViewController: UIViewController {
         API.sharedInstance.sendFeatureChatMessageWithAuth(
             featureId: feature.id,
             message: message,
-            callback: { [weak self] in
+            socketId: HivePusherManager.shared.socketId,
+            callback: { [weak self] sentMessage in
                 DispatchQueue.main.async {
-                    // Message will be added via WebSocket
-                    print("Message sent successfully")
+                    guard let self = self, let sentMessage = sentMessage else { return }
+                    self.newMessageReceived(sentMessage)
                 }
             },
             errorCallback: { [weak self] in
@@ -786,10 +787,12 @@ class FeaturePlanViewController: UIViewController {
             featureId: feature.id,
             message: joined,
             replyId: replyId,
-            callback: { [weak self] in
+            socketId: HivePusherManager.shared.socketId,
+            callback: { [weak self] sentMessage in
                 DispatchQueue.main.async {
+                    guard let self = self, let sentMessage = sentMessage else { return }
+                    self.newMessageReceived(sentMessage)
                     // Lock the cell that triggered the submit
-                    guard let self = self else { return }
                     if let idx = self.messages.firstIndex(where: { $0.id == replyId }),
                        let cell = self.chatTableView.cellForRow(at: IndexPath(row: idx, section: 0)) as? FeatureChatMessageCell {
                         cell.lockClarifyingQuestionsView()
