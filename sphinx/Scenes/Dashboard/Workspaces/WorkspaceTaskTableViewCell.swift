@@ -148,8 +148,7 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         priorityBadge.text = "  \(task.priority)  "
         priorityBadge.backgroundColor = priorityColor(for: task.priority)
 
-        let isComplete = task.status == "DONE" || task.status == "CANCELLED"
-        if isComplete, let urlStr = task.prUrl, let url = URL(string: urlStr) {
+        if let urlStr = task.prUrl, let url = URL(string: urlStr) {
             prBadgeURL = url
             prBadgeButton.isHidden = false
             let prIsMerged = task.prStatus == "MERGED" || task.prStatus == "DONE"
