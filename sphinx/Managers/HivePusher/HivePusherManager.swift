@@ -172,6 +172,9 @@ class HivePusherManager: NSObject {
         channel.bind(eventName: "workspace-task-title-update") { [weak self] event in
             self?.handleWorkspaceTaskUpdate(event.data ?? "")
         }
+        channel.bind(eventName: "pr-status-change") { [weak self] event in
+            self?.handlePRStatusChange(event.data ?? "")
+        }
         print("[HivePusher] Subscribed to workspace task channel: workspace-\(workspaceId)")
     }
 

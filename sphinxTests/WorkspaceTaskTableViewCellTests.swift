@@ -135,6 +135,62 @@ class WorkspaceTaskTableViewCellTests: XCTestCase {
         XCTAssertEqual(cell.priorityBadge.textAlignment, .center, "Priority badge text should be centered")
     }
     
+    // MARK: - PR Badge Tests
+
+    func testPRBadge_HiddenWhenNoPRUrl() {
+        let task = createMockTask()
+        cell.configure(with: task, isLastRow: false)
+        XCTAssertTrue(cell.prBadgeButton.isHidden, "PR badge should be hidden when task has no prUrl")
+    }
+
+    func testPRBadge_ShowsOpenWhenStatusIsNotMerged() {
+        let task = createMockTask(prUrl: "https://github.com/org/repo/pull/1", prStatus: "IN_REVIEW")
+        cell.configure(with: task, isLastRow: false)
+        XCTAssertFalse(cell.prBadgeButton.isHidden, "PR badge should be visible when prUrl is set")
+        XCTAssertEqual(cell.prBadgeButton.title(for: .normal), "  OPEN  ")
+        XCTAssertEqual(cell.prBadgeButton.backgroundColor, UIColor.Sphinx.PrimaryBlue)
+    }
+
+    func testPRBadge_ShowsMergedWhenStatusIsMerged() {
+        let task = createMockTask(prUrl: "https://github.com/org/repo/pull/2", prStatus: "MERGED")
+        cell.configure(with: task, isLastRow: false)
+        XCTAssertFalse(cell.prBadgeButton.isHidden, "PR badge should be visible for MERGED status")
+        XCTAssertEqual(cell.prBadgeButton.title(for: .normal), "  MERGED  ")
+        XCTAssertEqual(cell.prBadgeButton.backgroundColor, UIColor(hex: "#8B5CF6"))
+    }
+
+    func testPRBadge_ShowsMergedWhenStatusIsDone() {
+        let task = createMockTask(prUrl: "https://github.com/org/repo/pull/3", prStatus: "DONE")
+        cell.configure(with: task, isLastRow: false)
+        XCTAssertEqual(cell.prBadgeButton.title(for: .normal), "  MERGED  ")
+        XCTAssertEqual(cell.prBadgeButton.backgroundColor, UIColor(hex: "#8B5CF6"))
+    }
+
+    func testPRBadge_CallsClosureOnTap() {
+        let expectedURL = URL(string: "https://github.com/org/repo/pull/99")!
+        let task = createMockTask(prUrl: expectedURL.absoluteString, prStatus: "OPEN")
+        cell.configure(with: task, isLastRow: false)
+
+        var tappedURL: URL?
+        cell.onPRBadgeTapped = { url in tappedURL = url }
+
+        // Simulate tap by invoking the action directly
+        cell.prBadgeButton.sendActions(for: .touchUpInside)
+
+        XCTAssertEqual(tappedURL, expectedURL, "onPRBadgeTapped closure should be called with the correct URL")
+    }
+
+    func testPRBadge_HiddenAfterReconfigureWithNoURL() {
+        var task = createMockTask(prUrl: "https://github.com/org/repo/pull/5", prStatus: "OPEN")
+        cell.configure(with: task, isLastRow: false)
+        XCTAssertFalse(cell.prBadgeButton.isHidden)
+
+        // Reconfigure with no PR
+        let taskNoPR = createMockTask()
+        cell.configure(with: taskNoPR, isLastRow: false)
+        XCTAssertTrue(cell.prBadgeButton.isHidden, "PR badge should hide after reconfiguring with no prUrl")
+    }
+
     // MARK: - Helper Methods
     
     private func createMockTask(
@@ -143,24 +199,21 @@ class WorkspaceTaskTableViewCellTests: XCTestCase {
         title: String = "Mock Task",
         description: String? = "Mock Description",
         repositoryName: String? = "mock-repo",
-        updatedAt: String? = "1 day ago"
+        updatedAt: String? = "1 day ago",
+        prUrl: String? = nil,
+        prStatus: String? = nil,
+        prNumber: Int? = nil
     ) -> WorkspaceTask {
-        let jsonDict: [String: Any] = [
-            "id": "mock-id",
-            "title": title,
-            "description": description as Any,
-            "status": status,
-            "priority": priority,
-            "repositoryName": repositoryName as Any,
-            "updatedAt": updatedAt as Any,
-            "chatMessageCount": 0
-        ]
-        
-        // Create a mock WorkspaceTask by constructing JSON
-        let json = JSON(jsonDict)
-        
-        // Since WorkspaceTask expects nested objects, we need to create a proper structure
-        let fullJsonDict: [String: Any] = [
+        var prArtifactDict: [String: Any] = [:]
+        if prUrl != nil || prStatus != nil || prNumber != nil {
+            var contentDict: [String: Any] = [:]
+            if let prUrl = prUrl { contentDict["url"] = prUrl }
+            if let prStatus = prStatus { contentDict["status"] = prStatus }
+            if let prNumber = prNumber { contentDict["number"] = prNumber }
+            prArtifactDict = ["id": "pr-artifact-id", "content": contentDict]
+        }
+
+        var fullJsonDict: [String: Any] = [
             "id": "mock-id",
             "title": title,
             "description": description as Any,
@@ -172,6 +225,9 @@ class WorkspaceTaskTableViewCellTests: XCTestCase {
             ],
             "updatedAt": updatedAt as Any
         ]
+        if !prArtifactDict.isEmpty {
+            fullJsonDict["prArtifact"] = prArtifactDict
+        }
         
         return WorkspaceTask(json: JSON(fullJsonDict))!
     }

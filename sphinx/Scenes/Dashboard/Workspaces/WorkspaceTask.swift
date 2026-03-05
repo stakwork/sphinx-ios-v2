@@ -35,6 +35,10 @@ struct WorkspaceTask {
     let createdByName: String?
     let createdByImage: String?
     let chatMessageCount: Int
+    var prArtifactId: String?
+    var prUrl: String?
+    var prStatus: String?
+    var prNumber: Int?
 
     init?(json: JSON) {
         guard let id = json["id"].string,
@@ -65,5 +69,9 @@ struct WorkspaceTask {
         self.createdByImage = json["createdBy"]["image"].string
         self.chatMessageCount = json["chatMessageCount"].int ?? 0
         self.archived = json["archived"].bool ?? false
+        self.prArtifactId = json["prArtifact"]["id"].string
+        self.prUrl = json["prArtifact"]["content"]["url"].string
+        self.prStatus = json["prArtifact"]["content"]["status"].string
+        self.prNumber = json["prArtifact"]["content"]["number"].int
     }
 }

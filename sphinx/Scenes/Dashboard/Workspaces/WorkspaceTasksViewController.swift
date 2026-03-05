@@ -115,6 +115,7 @@ extension WorkspaceTasksViewController: UITableViewDataSource, UITableViewDelega
             withIdentifier: WorkspaceTaskTableViewCell.reuseID, for: indexPath
         ) as? WorkspaceTaskTableViewCell else { return UITableViewCell() }
         cell.configure(with: tasks[indexPath.row], isLastRow: indexPath.row == tasks.count - 1)
+        cell.onPRBadgeTapped = { url in UIApplication.shared.open(url) }
         return cell
     }
 
@@ -154,7 +155,13 @@ extension WorkspaceTasksViewController: HivePusherDelegate {
     func featureUpdateReceived(featureId: String) {}
     func newMessageReceived(_ message: HiveChatMessage) {}
     func workflowStatusChanged(status: WorkflowStatus) {}
-    func prStatusChanged(prNumber: Int, state: String, artifactStatus: String, prUrl: String?, problemDetails: String?) {}
+    func prStatusChanged(prNumber: Int, state: String, artifactStatus: String, prUrl: String?, problemDetails: String?) {
+        guard let index = tasks.firstIndex(where: { $0.prNumber == prNumber }) else { return }
+        tasks[index].prStatus = artifactStatus
+        tasks[index].prUrl = prUrl
+        let indexPath = IndexPath(row: index, section: 0)
+        tableView.reloadRows(at: [indexPath], with: .none)
+    }
     func featureTitleUpdated(featureId: String, newTitle: String) {}
     func taskTitleUpdated(taskId: String, newTitle: String) {}
     func taskGenerationStatusChanged(status: String, featureId: String) {}
