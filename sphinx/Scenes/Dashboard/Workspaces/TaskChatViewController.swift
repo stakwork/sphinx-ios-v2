@@ -366,6 +366,10 @@ class TaskChatViewController: UIViewController {
 
 // MARK: - HivePusherDelegate
 extension TaskChatViewController: HivePusherDelegate {
+    func taskGenerationStatusChanged(status: String, featureId: String) {
+        
+    }
+    
     func workflowStatusChanged(status: WorkflowStatus) {
         DispatchQueue.main.async {
             self.workflowStatusView.status = status

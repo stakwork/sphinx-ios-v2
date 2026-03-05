@@ -362,6 +362,113 @@ class HivePusherManagerTests: XCTestCase {
         waitForExpectations(timeout: 1.0)
     }
 
+    // MARK: - stakwork-run-update Event Tests
+
+    func testStakworkRunUpdate_ValidTaskGeneration_FiresCallback() {
+        let dataJSON = """
+        {"runId": "run_001", "type": "TASK_GENERATION", "status": "IN_PROGRESS", "featureId": "feat_abc"}
+        """
+
+        let expectation = self.expectation(description: "taskGenerationStatusChanged callback fires")
+        mockDelegate.onTaskGenerationStatusChanged = { status, featureId in
+            XCTAssertEqual(status, "IN_PROGRESS")
+            XCTAssertEqual(featureId, "feat_abc")
+            expectation.fulfill()
+        }
+
+        simulateEvent(name: "stakwork-run-update", dataJSON: dataJSON)
+        waitForExpectations(timeout: 2.0)
+    }
+
+    func testStakworkRunUpdate_NonTaskGenerationType_DoesNotFireCallback() {
+        let dataJSON = """
+        {"runId": "run_002", "type": "PLAN_GENERATION", "status": "COMPLETED", "featureId": "feat_abc"}
+        """
+
+        var callbackCalled = false
+        mockDelegate.onTaskGenerationStatusChanged = { _, _ in callbackCalled = true }
+
+        simulateEvent(name: "stakwork-run-update", dataJSON: dataJSON)
+
+        let expectation = self.expectation(description: "No callback for non-TASK_GENERATION type")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            XCTAssertFalse(callbackCalled, "Callback should not fire for non-TASK_GENERATION type")
+            expectation.fulfill()
+        }
+        waitForExpectations(timeout: 1.0)
+    }
+
+    func testStakworkRunUpdate_MissingFeatureId_DoesNotFireCallback() {
+        let dataJSON = """
+        {"runId": "run_003", "type": "TASK_GENERATION", "status": "COMPLETED"}
+        """
+
+        var callbackCalled = false
+        mockDelegate.onTaskGenerationStatusChanged = { _, _ in callbackCalled = true }
+
+        simulateEvent(name: "stakwork-run-update", dataJSON: dataJSON)
+
+        let expectation = self.expectation(description: "No callback when featureId is missing")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            XCTAssertFalse(callbackCalled, "Callback should not fire when featureId is missing")
+            expectation.fulfill()
+        }
+        waitForExpectations(timeout: 1.0)
+    }
+
+    func testStakworkRunUpdate_MissingStatus_DoesNotFireCallback() {
+        let dataJSON = """
+        {"runId": "run_004", "type": "TASK_GENERATION", "featureId": "feat_abc"}
+        """
+
+        var callbackCalled = false
+        mockDelegate.onTaskGenerationStatusChanged = { _, _ in callbackCalled = true }
+
+        simulateEvent(name: "stakwork-run-update", dataJSON: dataJSON)
+
+        let expectation = self.expectation(description: "No callback when status is missing")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            XCTAssertFalse(callbackCalled, "Callback should not fire when status is missing")
+            expectation.fulfill()
+        }
+        waitForExpectations(timeout: 1.0)
+    }
+
+    func testStakworkRunUpdate_AllStatusValues_DispatchedCorrectly() {
+        let statuses = ["PENDING", "IN_PROGRESS", "COMPLETED", "FAILED", "HALTED"]
+
+        for status in statuses {
+            let dataJSON = """
+            {"runId": "run_\(status)", "type": "TASK_GENERATION", "status": "\(status)", "featureId": "feat_status_test"}
+            """
+
+            let expectation = self.expectation(description: "Status \(status) dispatched correctly")
+            mockDelegate.onTaskGenerationStatusChanged = { receivedStatus, featureId in
+                XCTAssertEqual(receivedStatus, status)
+                XCTAssertEqual(featureId, "feat_status_test")
+                expectation.fulfill()
+            }
+
+            simulateEvent(name: "stakwork-run-update", dataJSON: dataJSON)
+            waitForExpectations(timeout: 2.0)
+        }
+    }
+
+    func testStakworkRunUpdate_EmptyPayload_NoCrash() {
+        // Should not crash and should not fire delegate
+        var callbackCalled = false
+        mockDelegate.onTaskGenerationStatusChanged = { _, _ in callbackCalled = true }
+
+        simulateEvent(name: "stakwork-run-update", dataJSON: "{}")
+
+        let expectation = self.expectation(description: "No crash and no callback for empty payload")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            XCTAssertFalse(callbackCalled, "Callback should not fire for empty payload")
+            expectation.fulfill()
+        }
+        waitForExpectations(timeout: 1.0)
+    }
+
     // MARK: - pr-status-change Event Tests
 
     func testPRStatusChange_ValidPayload_FiresCallback() {
@@ -483,6 +590,7 @@ class MockHivePusherDelegate: HivePusherDelegate {
     var onPRStatusChanged: ((Int, String, String, String?, String?) -> Void)?
     var onFeatureTitleUpdated: ((String, String) -> Void)?
     var onTaskTitleUpdated: ((String, String) -> Void)?
+    var onTaskGenerationStatusChanged: ((String, String) -> Void)?
     
     func featureUpdateReceived(featureId: String) {
         onFeatureUpdateReceived?(featureId)
@@ -506,5 +614,9 @@ class MockHivePusherDelegate: HivePusherDelegate {
 
     func taskTitleUpdated(taskId: String, newTitle: String) {
         onTaskTitleUpdated?(taskId, newTitle)
+    }
+
+    func taskGenerationStatusChanged(status: String, featureId: String) {
+        onTaskGenerationStatusChanged?(status, featureId)
     }
 }
