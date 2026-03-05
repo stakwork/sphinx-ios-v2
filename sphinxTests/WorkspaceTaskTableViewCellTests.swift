@@ -147,7 +147,7 @@ class WorkspaceTaskTableViewCellTests: XCTestCase {
         let task = createMockTask(prUrl: "https://github.com/org/repo/pull/1", prStatus: "IN_REVIEW")
         cell.configure(with: task, isLastRow: false)
         XCTAssertFalse(cell.prBadgeButton.isHidden, "PR badge should be visible when prUrl is set")
-        XCTAssertEqual(cell.prBadgeButton.title(for: .normal), "  OPEN  ")
+        XCTAssertEqual(cell.prBadgeButton.title(for: .normal), "  OPEN PR  ")
         XCTAssertEqual(cell.prBadgeButton.backgroundColor, UIColor.Sphinx.PrimaryBlue)
     }
 
