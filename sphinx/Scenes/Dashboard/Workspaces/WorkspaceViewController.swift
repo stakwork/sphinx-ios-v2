@@ -23,6 +23,7 @@ class WorkspaceViewController: PopHandlerViewController {
     
     private var activeFeaturesVC: WorkspaceFeaturesViewController!
     private var activeTasksVC: WorkspaceTasksViewController!
+    private var hasAppeared = false
 
     static func instantiate(workspace: Workspace) -> WorkspaceViewController {
         let vc = StoryboardScene.Dashboard.workspaceViewController.instantiate()
@@ -44,6 +45,15 @@ class WorkspaceViewController: PopHandlerViewController {
         super.viewWillAppear(animated)
         HivePusherManager.shared.delegate = self
         HivePusherManager.shared.connect(workspaceId: workspace.id, workspaceSlug: workspace.slug)
+        if hasAppeared {
+            if currentTab == 0 {
+                activeFeaturesVC?.loadFeatures()
+            } else {
+                activeTasksVC?.loadTasks()
+            }
+        } else {
+            hasAppeared = true
+        }
     }
 
     override func viewWillDisappear(_ animated: Bool) {
