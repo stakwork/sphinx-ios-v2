@@ -20,6 +20,7 @@ typealias HiveChatMessagesCallback = (([HiveChatMessage]) -> ())
 typealias HiveTaskMessagesCallback = (([HiveChatMessage]) -> ())
 typealias HiveChatMessageCallback = ((HiveChatMessage?) -> ())
 typealias HiveStakworkRunCallback = ((StakworkRun?) -> ())
+typealias HiveStakworkRunsCallback = (([StakworkRun]) -> ())
 
 extension API {
 
@@ -973,6 +974,78 @@ extension API {
                 self?.triggerTaskGeneration(
                     workspaceId: workspaceId, featureId: featureId, includeHistory: includeHistory,
                     authToken: token, callback: callback, errorCallback: errorCallback
+                )
+            },
+            errorCallback: errorCallback
+        )
+    }
+
+    // MARK: - Task Generation Runs
+
+    func fetchTaskGenerationRuns(
+        workspaceId: String,
+        featureId: String,
+        authToken: String,
+        callback: @escaping HiveStakworkRunsCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        let urlString = "\(API.kHiveBaseUrl)/stakwork/runs?workspaceId=\(workspaceId)&featureId=\(featureId)&type=TASK_GENERATION"
+        guard let request = createRequest(urlString, bodyParams: nil, method: "GET", token: authToken) else {
+            errorCallback(); return
+        }
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                errorCallback(); return
+            }
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+                let runs = json["runs"].arrayValue.compactMap { StakworkRun(json: $0) }
+                callback(runs)
+            case .failure:
+                errorCallback()
+            }
+        }
+    }
+
+    func fetchTaskGenerationRunsWithAuth(
+        workspaceId: String,
+        featureId: String,
+        callback: @escaping HiveStakworkRunsCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
+            fetchTaskGenerationRuns(
+                workspaceId: workspaceId, featureId: featureId, authToken: storedToken,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateAndFetchTaskGenerationRuns(
+                        workspaceId: workspaceId, featureId: featureId,
+                        callback: callback, errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateAndFetchTaskGenerationRuns(
+                workspaceId: workspaceId, featureId: featureId,
+                callback: callback, errorCallback: errorCallback
+            )
+        }
+    }
+
+    private func authenticateAndFetchTaskGenerationRuns(
+        workspaceId: String,
+        featureId: String,
+        callback: @escaping HiveStakworkRunsCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback(); return }
+                UserDefaults.Keys.hiveToken.set(token)
+                self?.fetchTaskGenerationRuns(
+                    workspaceId: workspaceId, featureId: featureId, authToken: token,
+                    callback: callback, errorCallback: errorCallback
                 )
             },
             errorCallback: errorCallback
