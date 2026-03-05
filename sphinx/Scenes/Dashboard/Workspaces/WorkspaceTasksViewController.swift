@@ -34,6 +34,15 @@ class WorkspaceTasksViewController: UIViewController {
         setupSegmentedControls()
         setupTableView()
         loadTasks()
+        HivePusherManager.shared.delegate = self
+        HivePusherManager.shared.connect(workspaceId: workspace.id)
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        if isMovingFromParent {
+            HivePusherManager.shared.disconnect()
+        }
     }
     
     private func setupSegmentedControls() {
@@ -122,4 +131,31 @@ extension WorkspaceTasksViewController: CustomSegmentedControlDelegate {
         includeArchived = (index == 1)
         loadTasks()
     }
+}
+
+extension WorkspaceTasksViewController: HivePusherDelegate {
+    func taskStatusUpdated(taskId: String, status: String, workflowStatus: String?, archived: Bool) {
+        guard let index = tasks.firstIndex(where: { $0.id == taskId }) else { return }
+
+        tasks[index].status = status
+        tasks[index].workflowStatus = workflowStatus
+
+        let indexPath = IndexPath(row: index, section: 0)
+        let shouldRemove = (!includeArchived && archived) || (includeArchived && !archived)
+
+        if shouldRemove {
+            tasks.remove(at: index)
+            tableView.deleteRows(at: [indexPath], with: .automatic)
+        } else {
+            tableView.reloadRows(at: [indexPath], with: .none)
+        }
+    }
+
+    func featureUpdateReceived(featureId: String) {}
+    func newMessageReceived(_ message: HiveChatMessage) {}
+    func workflowStatusChanged(status: WorkflowStatus) {}
+    func prStatusChanged(prNumber: Int, state: String, artifactStatus: String, prUrl: String?, problemDetails: String?) {}
+    func featureTitleUpdated(featureId: String, newTitle: String) {}
+    func taskTitleUpdated(taskId: String, newTitle: String) {}
+    func taskGenerationStatusChanged(status: String, featureId: String) {}
 }

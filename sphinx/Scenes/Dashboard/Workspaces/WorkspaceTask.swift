@@ -13,9 +13,10 @@ struct WorkspaceTask {
     let id: String
     var title: String
     let description: String?
-    let status: String          // "TODO|IN_PROGRESS|DONE|CANCELLED|BLOCKED"
+    var status: String          // "TODO|IN_PROGRESS|DONE|CANCELLED|BLOCKED"
     let priority: String        // "LOW|MEDIUM|HIGH|CRITICAL"
-    let workflowStatus: String?
+    var workflowStatus: String?
+    var archived: Bool
     let sourceType: String?
     let mode: String?
     let podId: String?
@@ -63,5 +64,6 @@ struct WorkspaceTask {
         self.createdByName = json["createdBy"]["name"].string
         self.createdByImage = json["createdBy"]["image"].string
         self.chatMessageCount = json["chatMessageCount"].int ?? 0
+        self.archived = json["archived"].bool ?? false
     }
 }
