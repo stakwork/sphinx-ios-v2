@@ -441,7 +441,7 @@ class FeaturePlanViewController: UIViewController {
               !message.isEmpty else {
             return
         }
-        
+        chatInputTextView.resignFirstResponder()
         sendChatMessage(message)
     }
     
@@ -914,6 +914,7 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
             let task = tasks[indexPath.row]
             let isLast = indexPath.row == tasks.count - 1
             cell.configure(with: task, isLastRow: isLast)
+            cell.onPRBadgeTapped = { url in UIApplication.shared.open(url) }
             return cell
         }
 
