@@ -1571,6 +1571,82 @@ extension API {
             errorCallback: errorCallback
         )
     }
+
+    // MARK: - Get Task by ID
+
+    func fetchTaskById(
+        taskId: String,
+        authToken: String,
+        callback: @escaping (WorkspaceTask?) -> Void,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        guard let encodedId = taskId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+            errorCallback(); return
+        }
+        let urlString = "\(API.kHiveBaseUrl)/tasks/\(encodedId)"
+        guard let request = createRequest(urlString, bodyParams: nil, method: "GET", token: authToken) else {
+            errorCallback(); return
+        }
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                errorCallback(); return
+            }
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+                guard json["success"].bool == true,
+                      let task = WorkspaceTask(json: json["data"]) else {
+                    errorCallback(); return
+                }
+                callback(task)
+            case .failure:
+                errorCallback()
+            }
+        }
+    }
+
+    func fetchTaskByIdWithAuth(
+        taskId: String,
+        callback: @escaping (WorkspaceTask?) -> Void,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let token: String = UserDefaults.Keys.hiveToken.get() {
+            fetchTaskById(
+                taskId: taskId,
+                authToken: token,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateAndFetchTaskById(
+                        taskId: taskId,
+                        callback: callback,
+                        errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateAndFetchTaskById(taskId: taskId, callback: callback, errorCallback: errorCallback)
+        }
+    }
+
+    private func authenticateAndFetchTaskById(
+        taskId: String,
+        callback: @escaping (WorkspaceTask?) -> Void,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback(); return }
+                UserDefaults.Keys.hiveToken.set(token)
+                self?.fetchTaskById(
+                    taskId: taskId,
+                    authToken: token,
+                    callback: callback,
+                    errorCallback: errorCallback
+                )
+            },
+            errorCallback: errorCallback
+        )
+    }
 }
 
 // MARK: - Workspace Image Cache

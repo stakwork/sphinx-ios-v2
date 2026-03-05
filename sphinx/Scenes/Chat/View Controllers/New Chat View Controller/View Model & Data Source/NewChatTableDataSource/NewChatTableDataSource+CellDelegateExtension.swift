@@ -864,6 +864,9 @@ extension NewChatTableDataSource {
                     delegate?.didTapOnTribeWith(joinLink: link)
                 } else if link.isJitsiCallLink || link.isLiveKitCallLink {
                     VideoCallManager.sharedInstance.startVideoCall(link: link)
+                } else if (link.isHivePlanLink || link.isHiveTaskLink),
+                          let vc = delegate as? UIViewController {
+                    HiveLinkNavigator.navigate(hiveLink: link, from: vc)
                 } else if let url = URL(string: link.withProtocol(protocolString: "http")) {
                     UIApplication.shared.open(
                         url,
