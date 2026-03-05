@@ -468,18 +468,16 @@ extension API {
 
     func createFeature(
         workspaceId: String,
-        name: String,
+        title: String,
         authToken: String,
         callback: @escaping HiveFeatureCallback,
         errorCallback: @escaping EmptyCallback
     ) {
-        guard let encodedWorkspaceId = workspaceId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
-            errorCallback()
-            return
-        }
-
-        let urlString = "\(API.kHiveBaseUrl)/workspaces/\(encodedWorkspaceId)/features"
-        let params: [String: AnyObject] = ["name": name as AnyObject]
+        let urlString = "\(API.kHiveBaseUrl)/features"
+        let params: [String: AnyObject] = [
+            "title": title as AnyObject,
+            "workspaceId": workspaceId as AnyObject
+        ]
 
         guard let request = createRequest(urlString, bodyParams: params as NSDictionary, method: "POST", token: authToken) else {
             errorCallback()
@@ -503,7 +501,7 @@ extension API {
                     return
                 }
 
-                let feature = HiveFeature(json: json)
+                let feature = HiveFeature(json: json["data"])
                 callback(feature)
             case .failure(let error):
                 print("[HiveAPI] Create feature failed: \(error.localizedDescription)")
@@ -514,20 +512,20 @@ extension API {
 
     func createFeatureWithAuth(
         workspaceId: String,
-        name: String,
+        title: String,
         callback: @escaping HiveFeatureCallback,
         errorCallback: @escaping EmptyCallback
     ) {
         if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
             createFeature(
                 workspaceId: workspaceId,
-                name: name,
+                title: title,
                 authToken: storedToken,
                 callback: callback,
                 errorCallback: { [weak self] in
                     self?.authenticateAndCreateFeature(
                         workspaceId: workspaceId,
-                        name: name,
+                        title: title,
                         callback: callback,
                         errorCallback: errorCallback
                     )
@@ -536,7 +534,7 @@ extension API {
         } else {
             authenticateAndCreateFeature(
                 workspaceId: workspaceId,
-                name: name,
+                title: title,
                 callback: callback,
                 errorCallback: errorCallback
             )
@@ -545,7 +543,7 @@ extension API {
 
     private func authenticateAndCreateFeature(
         workspaceId: String,
-        name: String,
+        title: String,
         callback: @escaping HiveFeatureCallback,
         errorCallback: @escaping EmptyCallback
     ) {
@@ -555,7 +553,7 @@ extension API {
                 UserDefaults.Keys.hiveToken.set(token)
                 self?.createFeature(
                     workspaceId: workspaceId,
-                    name: name,
+                    title: title,
                     authToken: token,
                     callback: callback,
                     errorCallback: errorCallback

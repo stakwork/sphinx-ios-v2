@@ -917,6 +917,20 @@
             <point key="canvasLocation" x="-4804" y="1800"/>
         </scene>
         <!--Workspace Features View Controller-->
+        <!--Create Feature View Controller-->
+        <scene sceneID="cFV-sc-001">
+            <objects>
+                <viewController storyboardIdentifier="CreateFeatureViewController" id="cFV-vc-001" customClass="CreateFeatureViewController" customModule="sphinx" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="cFV-vw-001">
+                        <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <color key="backgroundColor" name="Body"/>
+                    </view>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="cFV-fr-001" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-4139" y="2000"/>
+        </scene>
         <scene sceneID="lU4-Hh-qs6">
             <objects>
                 <viewController storyboardIdentifier="WorkspaceFeaturesViewController" id="iPA-5t-j1F" customClass="WorkspaceFeaturesViewController" customModule="sphinx" customModuleProvider="target" sceneMemberID="viewController">

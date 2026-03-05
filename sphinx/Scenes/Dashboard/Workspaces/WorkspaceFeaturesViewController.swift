@@ -88,34 +88,11 @@ class WorkspaceFeaturesViewController: UIViewController {
     }
     
     // MARK: - Actions
-    
+
     @objc private func createButtonTapped() {
-        let alert = UIAlertController(
-            title: "New Feature",
-            message: "Enter a name for the new feature",
-            preferredStyle: .alert
-        )
-        
-        alert.addTextField { textField in
-            textField.placeholder = "Feature name"
-            textField.autocapitalizationType = .sentences
-        }
-        
-        let createAction = UIAlertAction(title: "Create", style: .default) { [weak self, weak alert] _ in
-            guard let self = self,
-                  let textField = alert?.textFields?.first,
-                  let name = textField.text?.trimmingCharacters(in: .whitespacesAndNewlines),
-                  !name.isEmpty else { return }
-            
-            self.createFeature(name: name)
-        }
-        
-        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
-        
-        alert.addAction(createAction)
-        alert.addAction(cancelAction)
-        
-        present(alert, animated: true)
+        let vc = CreateFeatureViewController.instantiate(workspaceId: workspace.id)
+        vc.delegate = self
+        present(vc, animated: true)
     }
     
     @objc private func handleRefresh() {
@@ -183,56 +160,18 @@ class WorkspaceFeaturesViewController: UIViewController {
         )
     }
     
-    private func createFeature(name: String) {
-        LoadingWheelHelper.toggleLoadingWheel(
-            loading: true,
-            loadingWheel: loadingWheel,
-            loadingWheelColor: .Sphinx.Text
-        )
-        
-        API.sharedInstance.createFeatureWithAuth(
-            workspaceId: workspace.id,
-            name: name,
-            callback: { [weak self] feature in
-                DispatchQueue.main.async {
-                    LoadingWheelHelper.toggleLoadingWheel(
-                        loading: false,
-                        loadingWheel: self?.loadingWheel ?? UIActivityIndicatorView(),
-                        loadingWheelColor: .Sphinx.Text
-                    )
-                    
-                    guard let feature = feature else {
-                        AlertHelper.showAlert(
-                            title: "Error",
-                            message: "Failed to create feature."
-                        )
-                        return
-                    }
-                    
-                    // Navigate to feature plan view
-                    self?.openFeaturePlan(feature: feature)
-                }
-            },
-            errorCallback: { [weak self] in
-                DispatchQueue.main.async {
-                    LoadingWheelHelper.toggleLoadingWheel(
-                        loading: false,
-                        loadingWheel: self?.loadingWheel ?? UIActivityIndicatorView(),
-                        loadingWheelColor: .Sphinx.Text
-                    )
-                    
-                    AlertHelper.showAlert(
-                        title: "Error",
-                        message: "Failed to create feature. Please try again."
-                    )
-                }
-            }
-        )
-    }
-    
     private func openFeaturePlan(feature: HiveFeature) {
         let planVC = FeaturePlanViewController.instantiate(feature: feature, workspace: workspace)
         navigationController?.pushViewController(planVC, animated: true)
+    }
+}
+
+// MARK: - CreateFeatureViewControllerDelegate
+
+extension WorkspaceFeaturesViewController: CreateFeatureViewControllerDelegate {
+    func didCreateFeature(_ feature: HiveFeature) {
+        loadFeatures()                     // fire-and-forget background refresh
+        openFeaturePlan(feature: feature)  // navigate immediately, no waiting
     }
 }
 
