@@ -24,7 +24,7 @@ class CreateFeatureViewController: UIViewController {
 
     private var workspaceId: String = ""
 
-    private var titleLabel: UILabel!
+    private var promptLabel: UILabel!
     private var closeIconLabel: UILabel!
     private var closeButton: UIButton!
     private var promptFieldView: UIView!
@@ -32,7 +32,7 @@ class CreateFeatureViewController: UIViewController {
     private var sendButton: UIButton!
     private var loadingWheel: UIActivityIndicatorView!
 
-    private var promptFieldViewBottomConstraint: NSLayoutConstraint!
+    private var promptFieldViewTopConstraint: NSLayoutConstraint!
 
     // MARK: - Instantiation
 
@@ -67,18 +67,6 @@ class CreateFeatureViewController: UIViewController {
         headerView.backgroundColor = .clear
         view.addSubview(headerView)
 
-        // Title Label
-        titleLabel = UILabel()
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        titleLabel.text = "WHAT JOB ARE YOU TRYING TO SOLVE?"
-        titleLabel.textAlignment = .center
-        titleLabel.font = UIFont(name: "Montserrat-SemiBold", size: 14)
-        titleLabel.textColor = UIColor.Sphinx.Text
-        titleLabel.numberOfLines = 1
-        titleLabel.adjustsFontSizeToFitWidth = true
-        titleLabel.minimumScaleFactor = 0.8
-        headerView.addSubview(titleLabel)
-
         // Close Icon Label (Material Icons)
         closeIconLabel = UILabel()
         closeIconLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -92,6 +80,16 @@ class CreateFeatureViewController: UIViewController {
         closeButton.translatesAutoresizingMaskIntoConstraints = false
         closeButton.addTarget(self, action: #selector(closeButtonTouched), for: .touchUpInside)
         headerView.addSubview(closeButton)
+
+        // Prompt Label
+        promptLabel = UILabel()
+        promptLabel.translatesAutoresizingMaskIntoConstraints = false
+        promptLabel.text = "What job are you trying to solve?"
+        promptLabel.textAlignment = .center
+        promptLabel.font = UIFont(name: "Roboto-Regular", size: 16)
+        promptLabel.textColor = UIColor.Sphinx.Text
+        promptLabel.numberOfLines = 0
+        view.addSubview(promptLabel)
 
         // Prompt Field View (bordered container)
         promptFieldView = UIView()
@@ -130,9 +128,9 @@ class CreateFeatureViewController: UIViewController {
         loadingWheel.hidesWhenStopped = true
         bottomContainer.addSubview(loadingWheel)
 
-        // Store the bottom constraint so we can adjust for keyboard
-        promptFieldViewBottomConstraint = promptFieldView.bottomAnchor.constraint(
-            equalTo: bottomContainer.topAnchor
+        // Store the top constraint so we can adjust for keyboard
+        promptFieldViewTopConstraint = promptFieldView.topAnchor.constraint(
+            equalTo: promptLabel.bottomAnchor, constant: 16
         )
 
         // Layout Constraints
@@ -142,12 +140,6 @@ class CreateFeatureViewController: UIViewController {
             headerView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
             headerView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
             headerView.heightAnchor.constraint(equalToConstant: 50),
-
-            // Title Label
-            titleLabel.centerXAnchor.constraint(equalTo: headerView.centerXAnchor),
-            titleLabel.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
-            titleLabel.leadingAnchor.constraint(greaterThanOrEqualTo: headerView.leadingAnchor, constant: 16),
-            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: closeButton.leadingAnchor, constant: -8),
 
             // Close Button (50×50 tap target, top-right)
             closeButton.trailingAnchor.constraint(equalTo: headerView.trailingAnchor),
@@ -159,23 +151,29 @@ class CreateFeatureViewController: UIViewController {
             closeIconLabel.centerXAnchor.constraint(equalTo: closeButton.centerXAnchor),
             closeIconLabel.centerYAnchor.constraint(equalTo: closeButton.centerYAnchor),
 
+            // Prompt Label
+            promptLabel.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 20),
+            promptLabel.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
+            promptLabel.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
+            promptLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+
             // Prompt Field View
-            promptFieldView.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 20),
-            promptFieldView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 15),
-            promptFieldView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -15),
-            promptFieldViewBottomConstraint,
+            promptFieldViewTopConstraint,
+            promptFieldView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
+            promptFieldView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
+            promptFieldView.heightAnchor.constraint(lessThanOrEqualTo: view.heightAnchor, multiplier: 0.5),
 
             // Message Text View inside Prompt Field View
             messageTextView.topAnchor.constraint(equalTo: promptFieldView.topAnchor, constant: 8),
-            messageTextView.leadingAnchor.constraint(equalTo: promptFieldView.leadingAnchor, constant: 8),
-            messageTextView.trailingAnchor.constraint(equalTo: promptFieldView.trailingAnchor, constant: -8),
+            messageTextView.leadingAnchor.constraint(equalTo: promptFieldView.leadingAnchor, constant: 16),
+            messageTextView.trailingAnchor.constraint(equalTo: promptFieldView.trailingAnchor, constant: -16),
             messageTextView.bottomAnchor.constraint(equalTo: promptFieldView.bottomAnchor, constant: -8),
             messageTextView.heightAnchor.constraint(greaterThanOrEqualToConstant: 120),
 
             // Bottom Container
-            bottomContainer.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 15),
-            bottomContainer.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -15),
-            bottomContainer.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            bottomContainer.topAnchor.constraint(equalTo: promptFieldView.bottomAnchor),
+            bottomContainer.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
+            bottomContainer.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
             bottomContainer.heightAnchor.constraint(equalToConstant: 100),
 
             // Send Button — right-aligned, 175×50
@@ -191,8 +189,6 @@ class CreateFeatureViewController: UIViewController {
     }
 
     private func configureView() {
-        titleLabel.addTextSpacing(value: 2)
-
         promptFieldView.layer.cornerRadius = 5
         promptFieldView.layer.borderWidth = 1
         promptFieldView.layer.borderColor = UIColor.Sphinx.LightDivider.resolvedCGColor(with: self.view)
@@ -233,7 +229,7 @@ class CreateFeatureViewController: UIViewController {
         }
 
         let keyboardHeight = keyboardFrame.height - view.safeAreaInsets.bottom
-        promptFieldViewBottomConstraint.constant = -keyboardHeight
+        promptFieldViewTopConstraint.constant = max(16 - keyboardHeight, -(keyboardHeight - 20))
 
         UIView.animate(withDuration: duration) {
             self.view.layoutIfNeeded()
@@ -246,7 +242,7 @@ class CreateFeatureViewController: UIViewController {
             return
         }
 
-        promptFieldViewBottomConstraint.constant = 0
+        promptFieldViewTopConstraint.constant = 16
 
         UIView.animate(withDuration: duration) {
             self.view.layoutIfNeeded()
