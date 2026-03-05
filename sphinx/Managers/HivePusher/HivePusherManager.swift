@@ -111,6 +111,10 @@ class HivePusherManager: NSObject {
         return pusher?.connection.connectionState
     }
 
+    var socketId: String? {
+        return pusher?.connection.socketId
+    }
+
     // MARK: - Private Setup
 
     private func setupPusher() {
