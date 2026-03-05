@@ -118,7 +118,21 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
     }
 
     func configure(with task: WorkspaceTask, isLastRow: Bool) {
-        titleLabel.text = task.title
+        let isMerged = task.prStatus == "MERGED" || task.prStatus == "DONE"
+
+        if isMerged {
+            let attrs: [NSAttributedString.Key: Any] = [
+                .strikethroughStyle: NSUnderlineStyle.single.rawValue,
+                .foregroundColor: UIColor.Sphinx.SecondaryText,
+                .font: UIFont.systemFont(ofSize: 16, weight: .medium)
+            ]
+            titleLabel.attributedText = NSAttributedString(string: task.title ?? "", attributes: attrs)
+        } else {
+            titleLabel.attributedText = nil
+            titleLabel.text = task.title
+            titleLabel.textColor = .Sphinx.Text
+        }
+
         repositoryLabel.text = task.repositoryName
         updatedAtLabel.text = formatDate(task.updatedAt)
         separatorView.isHidden = isLastRow
@@ -130,12 +144,13 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         priorityBadge.text = "  \(task.priority)  "
         priorityBadge.backgroundColor = priorityColor(for: task.priority)
 
-        if let urlStr = task.prUrl, let url = URL(string: urlStr) {
+        let isComplete = task.status == "DONE" || task.status == "CANCELLED"
+        if isComplete, let urlStr = task.prUrl, let url = URL(string: urlStr) {
             prBadgeURL = url
             prBadgeButton.isHidden = false
-            let isMerged = task.prStatus == "MERGED" || task.prStatus == "DONE"
-            prBadgeButton.setTitle(isMerged ? "  MERGED  " : "  OPEN  ", for: .normal)
-            prBadgeButton.backgroundColor = isMerged ? UIColor(hex: "#8B5CF6") : UIColor.Sphinx.PrimaryBlue
+            let prIsMerged = task.prStatus == "MERGED" || task.prStatus == "DONE"
+            prBadgeButton.setTitle(prIsMerged ? "  MERGED  " : "  OPEN  ", for: .normal)
+            prBadgeButton.backgroundColor = prIsMerged ? UIColor(hex: "#8B5CF6") : UIColor.Sphinx.PrimaryBlue
             updatedAtLabelTrailingToEdge.isActive = false
             updatedAtLabelTrailingToPR.isActive = true
         } else {
