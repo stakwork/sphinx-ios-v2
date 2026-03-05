@@ -571,6 +571,65 @@ class HivePusherManagerTests: XCTestCase {
         XCTAssertEqual(receivedMessages.count, 1, "Duplicate message should not be added a second time")
     }
 
+    // MARK: - pr-status-change on workspace channel Tests
+
+    /// Verifies that a `pr-status-change` event delivered via the workspace channel
+    /// (i.e. dispatched through `handleEvent`) fires the delegate callback with the
+    /// correct parsed values — mirroring the existing feature/task channel behaviour.
+    func testPRStatusChange_ViaWorkspaceChannel_FiresCallback() {
+        let dataJSON = """
+        {"prNumber": 77, "state": "open", "artifactStatus": "OPEN", "prUrl": "https://github.com/org/repo/pull/77"}
+        """
+
+        let expectation = self.expectation(description: "pr-status-change workspace channel callback fires")
+        mockDelegate.onPRStatusChanged = { prNumber, state, artifactStatus, prUrl, _ in
+            XCTAssertEqual(prNumber, 77)
+            XCTAssertEqual(state, "open")
+            XCTAssertEqual(artifactStatus, "OPEN")
+            XCTAssertEqual(prUrl, "https://github.com/org/repo/pull/77")
+            expectation.fulfill()
+        }
+
+        // handleEvent routes "pr-status-change" to handlePRStatusChange, which is the
+        // same handler bound to both feature, task, and workspace-task channels.
+        manager.handleEvent(name: "pr-status-change", data: dataJSON)
+        waitForExpectations(timeout: 2.0)
+    }
+
+    func testPRStatusChange_ViaWorkspaceChannel_MergedStatus_FiresCallback() {
+        let dataJSON = """
+        {"prNumber": 101, "state": "closed", "artifactStatus": "MERGED", "prUrl": "https://github.com/org/repo/pull/101"}
+        """
+
+        let expectation = self.expectation(description: "pr-status-change MERGED workspace callback fires")
+        mockDelegate.onPRStatusChanged = { prNumber, state, artifactStatus, prUrl, _ in
+            XCTAssertEqual(prNumber, 101)
+            XCTAssertEqual(state, "closed")
+            XCTAssertEqual(artifactStatus, "MERGED")
+            expectation.fulfill()
+        }
+
+        manager.handleEvent(name: "pr-status-change", data: dataJSON)
+        waitForExpectations(timeout: 2.0)
+    }
+
+    func testPRStatusChange_ViaWorkspaceChannel_NilUrl_FiresCallback() {
+        let dataJSON = """
+        {"prNumber": 5, "state": "closed", "artifactStatus": "DONE"}
+        """
+
+        let expectation = self.expectation(description: "pr-status-change nil URL callback fires")
+        mockDelegate.onPRStatusChanged = { prNumber, _, artifactStatus, prUrl, _ in
+            XCTAssertEqual(prNumber, 5)
+            XCTAssertEqual(artifactStatus, "DONE")
+            XCTAssertNil(prUrl, "prUrl should be nil when omitted from payload")
+            expectation.fulfill()
+        }
+
+        manager.handleEvent(name: "pr-status-change", data: dataJSON)
+        waitForExpectations(timeout: 2.0)
+    }
+
     // MARK: - workspace-task-title-update Event Tests
 
     func testWorkspaceTaskUpdate_ValidPayload_FiresCallbackWithCorrectValues() {

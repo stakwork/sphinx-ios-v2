@@ -23,6 +23,10 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
     @IBOutlet weak var priorityBadge: UILabel!
     @IBOutlet weak var separatorView: UIView!
 
+    var onPRBadgeTapped: ((URL) -> Void)?
+    private(set) var prBadgeButton: UIButton!
+    private var prBadgeURL: URL?
+
     override func awakeFromNib() {
         super.awakeFromNib()
         setupCell()
@@ -52,6 +56,31 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         }
 
         separatorView.backgroundColor = .Sphinx.Divider
+
+        setupPRBadgeButton()
+    }
+
+    private func setupPRBadgeButton() {
+        prBadgeButton = UIButton(type: .system)
+        prBadgeButton.layer.cornerRadius = 10
+        prBadgeButton.clipsToBounds = true
+        prBadgeButton.titleLabel?.font = UIFont(name: "Roboto-Medium", size: 11)
+        prBadgeButton.setTitleColor(.white, for: .normal)
+        prBadgeButton.isHidden = true
+        prBadgeButton.translatesAutoresizingMaskIntoConstraints = false
+        prBadgeButton.addTarget(self, action: #selector(prBadgeTapped), for: .touchUpInside)
+        contentView.addSubview(prBadgeButton)
+
+        NSLayoutConstraint.activate([
+            prBadgeButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            prBadgeButton.bottomAnchor.constraint(equalTo: separatorView.topAnchor, constant: -12),
+            prBadgeButton.heightAnchor.constraint(equalToConstant: 22)
+        ])
+    }
+
+    @objc private func prBadgeTapped() {
+        guard let url = prBadgeURL else { return }
+        onPRBadgeTapped?(url)
     }
 
     func configure(with task: WorkspaceTask, isLastRow: Bool) {
@@ -65,6 +94,17 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
 
         priorityBadge.text = "  \(task.priority)  "
         priorityBadge.backgroundColor = priorityColor(for: task.priority)
+
+        if let urlStr = task.prUrl, let url = URL(string: urlStr) {
+            prBadgeURL = url
+            prBadgeButton.isHidden = false
+            let isMerged = task.prStatus == "MERGED" || task.prStatus == "DONE"
+            prBadgeButton.setTitle(isMerged ? "  MERGED  " : "  OPEN  ", for: .normal)
+            prBadgeButton.backgroundColor = isMerged ? UIColor(hex: "#8B5CF6") : UIColor.Sphinx.PrimaryBlue
+        } else {
+            prBadgeURL = nil
+            prBadgeButton.isHidden = true
+        }
     }
     
     private func formatDate(_ dateString: String?) -> String {

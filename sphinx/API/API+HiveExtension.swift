@@ -168,7 +168,7 @@ extension API {
             return
         }
 
-        var urlString = "\(API.kHiveBaseUrl)/tasks?workspaceId=\(encodedWorkspaceId)&limit=100"
+        var urlString = "\(API.kHiveBaseUrl)/tasks?workspaceId=\(encodedWorkspaceId)&limit=100&includeLatestMessage=true"
         if includeArchived { urlString += "&includeArchived=true" }
 
         guard let request = createRequest(urlString, bodyParams: nil, method: "GET", token: authToken) else {
