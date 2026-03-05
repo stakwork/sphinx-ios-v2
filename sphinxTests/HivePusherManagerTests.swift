@@ -571,6 +571,62 @@ class HivePusherManagerTests: XCTestCase {
         XCTAssertEqual(receivedMessages.count, 1, "Duplicate message should not be added a second time")
     }
 
+    // MARK: - workspace-task-title-update Event Tests
+
+    func testWorkspaceTaskUpdate_ValidPayload_FiresCallbackWithCorrectValues() {
+        let dataJSON = """
+        {"taskId":"t1","status":"IN_PROGRESS","workflowStatus":"IN_PROGRESS","archived":false}
+        """
+
+        let expectation = self.expectation(description: "taskStatusUpdated callback fires with correct values")
+        mockDelegate.onTaskStatusUpdated = { taskId, status, workflowStatus, archived in
+            XCTAssertEqual(taskId, "t1")
+            XCTAssertEqual(status, "IN_PROGRESS")
+            XCTAssertEqual(workflowStatus, "IN_PROGRESS")
+            XCTAssertFalse(archived)
+            expectation.fulfill()
+        }
+
+        manager.handleEvent(name: "workspace-task-title-update", data: dataJSON)
+        waitForExpectations(timeout: 2.0)
+    }
+
+    func testWorkspaceTaskUpdate_MissingTaskId_DoesNotFireCallback() {
+        let dataJSON = """
+        {"status":"IN_PROGRESS","workflowStatus":"IN_PROGRESS","archived":false}
+        """
+
+        var callbackCalled = false
+        mockDelegate.onTaskStatusUpdated = { _, _, _, _ in callbackCalled = true }
+
+        manager.handleEvent(name: "workspace-task-title-update", data: dataJSON)
+
+        let expectation = self.expectation(description: "No callback when taskId is missing")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            XCTAssertFalse(callbackCalled, "Callback should not fire when taskId is missing")
+            expectation.fulfill()
+        }
+        waitForExpectations(timeout: 1.0)
+    }
+
+    func testWorkspaceTaskUpdate_ArchivedTrue_PassesArchivedCorrectly() {
+        let dataJSON = """
+        {"taskId":"t2","status":"DONE","archived":true}
+        """
+
+        let expectation = self.expectation(description: "taskStatusUpdated fires with archived: true")
+        mockDelegate.onTaskStatusUpdated = { taskId, status, workflowStatus, archived in
+            XCTAssertEqual(taskId, "t2")
+            XCTAssertEqual(status, "DONE")
+            XCTAssertNil(workflowStatus)
+            XCTAssertTrue(archived)
+            expectation.fulfill()
+        }
+
+        manager.handleEvent(name: "workspace-task-title-update", data: dataJSON)
+        waitForExpectations(timeout: 2.0)
+    }
+
     // MARK: - Helper Methods
 
     /// Simulates a PusherSwift event delivery by calling the manager's internal
@@ -591,7 +647,8 @@ class MockHivePusherDelegate: HivePusherDelegate {
     var onFeatureTitleUpdated: ((String, String) -> Void)?
     var onTaskTitleUpdated: ((String, String) -> Void)?
     var onTaskGenerationStatusChanged: ((String, String) -> Void)?
-    
+    var onTaskStatusUpdated: ((String, String, String?, Bool) -> Void)?
+
     func featureUpdateReceived(featureId: String) {
         onFeatureUpdateReceived?(featureId)
     }
@@ -618,5 +675,9 @@ class MockHivePusherDelegate: HivePusherDelegate {
 
     func taskGenerationStatusChanged(status: String, featureId: String) {
         onTaskGenerationStatusChanged?(status, featureId)
+    }
+
+    func taskStatusUpdated(taskId: String, status: String, workflowStatus: String?, archived: Bool) {
+        onTaskStatusUpdated?(taskId, status, workflowStatus, archived)
     }
 }
