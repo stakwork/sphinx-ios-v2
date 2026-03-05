@@ -517,6 +517,9 @@
 		0DB22AE0228D44FDB51A2A11 /* WorkflowStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8F00239BAA5413399F184E6 /* WorkflowStatus.swift */; };
 		911C33D7996D4895912C076E /* WorkflowStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5BD9804E22A4372A9E191D5 /* WorkflowStatusView.swift */; };
 		E7F8A9B0C1D2E3F4A5B6C7D8 /* StakworkRun.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A9B0C1D2E3F4A5B6C7D8E9 /* StakworkRun.swift */; };
+		A1B2C3D4E5F6A7B8C9D0E1F2 /* TaskProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6A7B8C9D0E1F2A3 /* TaskProgress.swift */; };
+		C3D4E5F6A7B8C9D0E1F2A3B4 /* TaskProgressBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9D0E1F2A3B4C5 /* TaskProgressBarView.swift */; };
+		E5F6A7B8C9D0E1F2A3B4C5D6 /* TaskProgressTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6A7B8C9D0E1F2A3B4C5D6E7 /* TaskProgressTests.swift */; };
 		AE87DA2C30C34E7BBDFDBA56 /* HivePusherManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4D0E0284E4B436180B0BAAF /* HivePusherManagerTests.swift */; };
 		47BA317A2D15D8BB001AF7E5 /* ContactDetailsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47BA31792D15D8BB001AF7E5 /* ContactDetailsViewController.swift */; };
 		47BA317B2D355026001AF7E5 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEA6BC1F2C1794AD00494071 /* NetworkMonitor.swift */; };
@@ -1771,6 +1774,9 @@
 		A8F00239BAA5413399F184E6 /* WorkflowStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkflowStatus.swift; sourceTree = "<group>"; };
 		E5BD9804E22A4372A9E191D5 /* WorkflowStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkflowStatusView.swift; sourceTree = "<group>"; };
 		F8A9B0C1D2E3F4A5B6C7D8E9 /* StakworkRun.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StakworkRun.swift; sourceTree = "<group>"; };
+		B2C3D4E5F6A7B8C9D0E1F2A3 /* TaskProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskProgress.swift; sourceTree = "<group>"; };
+		D4E5F6A7B8C9D0E1F2A3B4C5 /* TaskProgressBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskProgressBarView.swift; sourceTree = "<group>"; };
+		F6A7B8C9D0E1F2A3B4C5D6E7 /* TaskProgressTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskProgressTests.swift; sourceTree = "<group>"; };
 		B4D0E0284E4B436180B0BAAF /* HivePusherManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HivePusherManagerTests.swift; sourceTree = "<group>"; };
 		47BA31792D15D8BB001AF7E5 /* ContactDetailsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactDetailsViewController.swift; sourceTree = "<group>"; };
 		47BA7A9024118F6B0001773F /* CustomSwiftLinkPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomSwiftLinkPreview.swift; sourceTree = "<group>"; };
@@ -3610,6 +3616,7 @@
 				AA001CQ22F9A0001000CQ001 /* ClarifyingQuestionsTests.swift */,
 				B4D0E0284E4B436180B0BAAF /* HivePusherManagerTests.swift */,
 				D5E6F7A8B9CA4A01E2F3A4B5 /* WorkspaceTaskTableViewCellTests.swift */,
+				F6A7B8C9D0E1F2A3B4C5D6E7 /* TaskProgressTests.swift */,
 				4779F179232AA0F300D35E81 /* sphinxOnionAddContactTests.swift */,
 				CE8161382B21124D00600C81 /* sphinxOnionPlaintextMessagesTests.swift */,
 				CE167B562B0BAF6A00A9238E /* sphinxOnionAccountCreateUnitTests.swift */,
@@ -4060,6 +4067,8 @@
 				A8F00239BAA5413399F184E6 /* WorkflowStatus.swift */,
 				E5BD9804E22A4372A9E191D5 /* WorkflowStatusView.swift */,
 				F8A9B0C1D2E3F4A5B6C7D8E9 /* StakworkRun.swift */,
+				B2C3D4E5F6A7B8C9D0E1F2A3 /* TaskProgress.swift */,
+				D4E5F6A7B8C9D0E1F2A3B4C5 /* TaskProgressBarView.swift */,
 			);
 			path = Workspaces;
 			sourceTree = "<group>";
@@ -5489,6 +5498,8 @@
 				0DB22AE0228D44FDB51A2A11 /* WorkflowStatus.swift in Sources */,
 				911C33D7996D4895912C076E /* WorkflowStatusView.swift in Sources */,
 				E7F8A9B0C1D2E3F4A5B6C7D8 /* StakworkRun.swift in Sources */,
+				A1B2C3D4E5F6A7B8C9D0E1F2 /* TaskProgress.swift in Sources */,
+				C3D4E5F6A7B8C9D0E1F2A3B4 /* TaskProgressBarView.swift in Sources */,
 				47FA72792A30E19300FB4535 /* MessagesPreloaderHelper.swift in Sources */,
 				4707089624AE466D00A98DCA /* ChatChatListExtension.swift in Sources */,
 				477C57E5234545D700BB4E04 /* SetPinCodeViewController.swift in Sources */,
@@ -6100,6 +6111,7 @@
 				CE167B572B0BAF6A00A9238E /* sphinxOnionAccountCreateUnitTests.swift in Sources */,
 				AE87DA2C30C34E7BBDFDBA56 /* HivePusherManagerTests.swift in Sources */,
 				C4D5E6F7A8B949C0D1E2F3A4 /* WorkspaceTaskTableViewCellTests.swift in Sources */,
+				E5F6A7B8C9D0E1F2A3B4C5D6 /* TaskProgressTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
