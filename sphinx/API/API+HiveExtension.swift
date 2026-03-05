@@ -368,7 +368,7 @@ extension API {
         errorCallback: @escaping EmptyCallback
     ) {
         // Use the new endpoint: /api/features with workspaceId as query param
-        let urlString = "\(API.kHiveBaseUrl)/features?workspaceId=\(workspaceId)"
+        let urlString = "\(API.kHiveBaseUrl)/features?workspaceId=\(workspaceId)&limit=100"
         
         print("[HiveAPI] Fetching features from: \(urlString)")
 

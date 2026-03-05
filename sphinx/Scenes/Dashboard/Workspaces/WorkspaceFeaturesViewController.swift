@@ -102,12 +102,13 @@ class WorkspaceFeaturesViewController: UIViewController {
     // MARK: - Data Loading
     private var isLoading = false {
         didSet {
+            let showLoadingUI = isLoading && features.isEmpty
             LoadingWheelHelper.toggleLoadingWheel(
-                loading: isLoading,
+                loading: showLoadingUI,
                 loadingWheel: loadingWheel,
                 loadingWheelColor: .Sphinx.Text
             )
-            tableView.isHidden = isLoading
+            tableView.isHidden = showLoadingUI
             emptyStateLabel.isHidden = !features.isEmpty || isLoading
         }
     }
@@ -138,7 +139,11 @@ class WorkspaceFeaturesViewController: UIViewController {
                 print("[WorkspaceFeaturesVC] Features loaded: \(features.count)")
                 DispatchQueue.main.async {
                     self?.features = features
+                    let offset = self?.tableView.contentOffset
                     self?.tableView.reloadData()
+                    if let offset = offset {
+                        self?.tableView.setContentOffset(offset, animated: false)
+                    }
                     self?.isLoading = false
                     self?.refreshControl.endRefreshing()
                 }
@@ -147,7 +152,11 @@ class WorkspaceFeaturesViewController: UIViewController {
                 print("[WorkspaceFeaturesVC] Failed to load features")
                 DispatchQueue.main.async {
                     self?.features = []
+                    let offset = self?.tableView.contentOffset
                     self?.tableView.reloadData()
+                    if let offset = offset {
+                        self?.tableView.setContentOffset(offset, animated: false)
+                    }
                     self?.isLoading = false
                     self?.refreshControl.endRefreshing()
                     
