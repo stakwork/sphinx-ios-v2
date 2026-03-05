@@ -601,6 +601,7 @@ class FeaturePlanViewController: UIViewController {
             updatePlanText()
         }
         if index == 2 {
+            topSegmentedControl.indicesOfTitlesWithBadge = []
             updateTasksPanel()
         }
     }
@@ -701,12 +702,7 @@ class FeaturePlanViewController: UIViewController {
             callback: { [weak self] updatedFeature in
                 guard let self = self, let updatedFeature = updatedFeature else { return }
                 DispatchQueue.main.async {
-                    let architectureWasEmpty = (self.feature.architecture ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                     self.feature = updatedFeature
-                    let architectureIsNowFilled = !(updatedFeature.architecture ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                    if architectureWasEmpty && architectureIsNowFilled {
-                        self.switchToPlanArchitectureTabIfNeeded()
-                    }
                     HivePusherManager.shared.subscribeToFeatureTasks(updatedFeature.allTasks.map { $0.id })
                     // Apply workflow status from freshly fetched feature data
                     self.applyInitialWorkflowStatus()
@@ -726,24 +722,6 @@ class FeaturePlanViewController: UIViewController {
                 print("[FeaturePlanVC] Failed to fetch feature detail")
             }
         )
-    }
-
-    // MARK: - Auto Tab-Switch Helpers
-
-    /// Switches to PLAN > Architecture sub-tab only when the user is currently on the CHAT tab.
-    private func switchToPlanArchitectureTabIfNeeded() {
-        guard topSegmentedControl.selectedIndex == 0 else { return }
-        topSegmentedControl.selectTabWith(index: 1)   // → PLAN
-        showPanel(at: 1)
-        planSegmentedControl.selectTabWith(index: 3)  // → Architecture sub-tab
-        updatePlanText()
-    }
-
-    /// Switches to the TASKS tab unless the user is already there.
-    private func switchToTasksTabIfNeeded() {
-        guard topSegmentedControl.selectedIndex != 2 else { return }
-        topSegmentedControl.selectTabWith(index: 2)   // → TASKS
-        showPanel(at: 2)
     }
 
     private func checkForActiveTaskGeneration() {
@@ -1061,7 +1039,9 @@ extension FeaturePlanViewController: HivePusherDelegate {
             case "COMPLETED":
                 self.isGeneratingTasks = false
                 self.applyGenerationState()
-                self.switchToTasksTabIfNeeded()
+                if self.topSegmentedControl.selectedIndex != 2 {
+                    self.topSegmentedControl.indicesOfTitlesWithBadge = [2]
+                }
                 // feature-updated Pusher event will still call fetchFeatureDetail() to refresh task list
             case "FAILED", "HALTED", "ERROR":
                 self.isGeneratingTasks = false
