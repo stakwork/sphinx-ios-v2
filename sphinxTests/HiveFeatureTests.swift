@@ -14,7 +14,8 @@ class HiveFeatureTests: XCTestCase {
             "userStories": "As a user, I want to log in securely",
             "requirements": "- JWT tokens\n- Password hashing",
             "architecture": "Use OAuth 2.0 with refresh tokens",
-            "status": "IN_PROGRESS",
+            "status": "TODO",
+            "workflowStatus": "IN_PROGRESS",
             "createdAt": "2024-01-15T10:30:00Z",
             "updatedAt": "2024-01-20T14:45:00Z"
         ]
@@ -29,9 +30,25 @@ class HiveFeatureTests: XCTestCase {
         XCTAssertEqual(feature?.userStories, ["As a user, I want to log in securely"])
         XCTAssertEqual(feature?.requirements, "- JWT tokens\n- Password hashing")
         XCTAssertEqual(feature?.architecture, "Use OAuth 2.0 with refresh tokens")
-        XCTAssertEqual(feature?.workflowStatus, "IN_PROGRESS")
+        XCTAssertEqual(feature?.status, "TODO")
+        XCTAssertEqual(feature?.workflowStatus, "IN_PROGRESS", "workflowStatus should be parsed from its own dedicated JSON field, independent of status")
         XCTAssertEqual(feature?.createdAt, "2024-01-15T10:30:00Z")
         XCTAssertEqual(feature?.updatedAt, "2024-01-20T14:45:00Z")
+    }
+    
+    func testHiveFeature_WorkflowStatus_IndependentFromStatus() {
+        let jsonDict: [String: Any] = [
+            "id": "feature-independent",
+            "title": "Independent Status Feature",
+            "status": "TODO",
+            "workflowStatus": "IN_PROGRESS"
+        ]
+        
+        let json = JSON(jsonDict)
+        let feature = HiveFeature(json: json)
+        
+        XCTAssertEqual(feature?.status, "TODO", "status should reflect the feature plan state")
+        XCTAssertEqual(feature?.workflowStatus, "IN_PROGRESS", "workflowStatus should reflect the stakwork run state, independent of status")
     }
     
     func testHiveFeature_InitWithMinimalJSON() {
@@ -90,7 +107,8 @@ class HiveFeatureTests: XCTestCase {
         let jsonDict: [String: Any] = [
             "id": "feature-completed",
             "title": "Completed Feature",
-            "status": "COMPLETED"
+            "status": "TODO",
+            "workflowStatus": "COMPLETED"
         ]
         
         let json = JSON(jsonDict)
@@ -103,7 +121,8 @@ class HiveFeatureTests: XCTestCase {
         let jsonDict: [String: Any] = [
             "id": "feature-in-progress",
             "title": "In Progress Feature",
-            "status": "IN_PROGRESS"
+            "status": "TODO",
+            "workflowStatus": "IN_PROGRESS"
         ]
         
         let json = JSON(jsonDict)
@@ -116,13 +135,27 @@ class HiveFeatureTests: XCTestCase {
         let jsonDict: [String: Any] = [
             "id": "feature-todo",
             "title": "TODO Feature",
-            "status": "TODO"
+            "status": "IN_PROGRESS",
+            "workflowStatus": "TODO"
         ]
         
         let json = JSON(jsonDict)
         let feature = HiveFeature(json: json)
         
         XCTAssertEqual(feature?.workflowStatus, "TODO")
+    }
+    
+    func testHiveFeature_WorkflowStatus_NilWhenAbsent() {
+        let jsonDict: [String: Any] = [
+            "id": "feature-no-workflow",
+            "title": "No Workflow Feature",
+            "status": "IN_PROGRESS"
+        ]
+        
+        let json = JSON(jsonDict)
+        let feature = HiveFeature(json: json)
+        
+        XCTAssertNil(feature?.workflowStatus, "workflowStatus should be nil when not present in JSON")
     }
     
     // MARK: - Mock Data Tests

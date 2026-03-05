@@ -49,6 +49,7 @@ struct HiveFeature {
     let requirements: String?
     let architecture: String?
     let status: String?
+    let workflowStatus: String?
     let priority: String?
     let createdAt: String?
     let updatedAt: String?
@@ -74,9 +75,6 @@ struct HiveFeature {
     
     // Computed property to get name (backwards compatibility)
     var name: String { return title }
-    
-    // Computed property to get workflow status (backwards compatibility)
-    var workflowStatus: String? { return status }
     
     init?(json: JSON) {
         guard let id = json["id"].string,
@@ -105,6 +103,7 @@ struct HiveFeature {
         self.requirements = json["requirements"].string
         self.architecture = json["architecture"].string
         self.status = json["status"].string
+        self.workflowStatus = json["workflowStatus"].string
         self.priority = json["priority"].string
         self.createdAt = json["createdAt"].string
         self.updatedAt = json["updatedAt"].string
