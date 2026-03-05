@@ -819,6 +819,47 @@ class HivePusherManagerTests: XCTestCase {
         waitForExpectations(timeout: 2.0)
     }
 
+    // MARK: - subscribeToFeatureTasks Tests
+
+    func testSubscribeToFeatureTasks_subscribesAllNewChannels() {
+        manager.subscribeToFeatureTasks(["t1", "t2"])
+        XCTAssertEqual(manager.featureTaskIds, Set(["t1", "t2"]))
+    }
+
+    func testSubscribeToFeatureTasks_unsubscribesRemovedAndAddsNew() {
+        manager.subscribeToFeatureTasks(["t1", "t2"])
+        manager.subscribeToFeatureTasks(["t2", "t3"])
+        XCTAssertEqual(manager.featureTaskIds, Set(["t2", "t3"]))
+    }
+
+    func testSubscribeToFeatureTasks_emptyList_clearsAll() {
+        manager.subscribeToFeatureTasks(["t1", "t2"])
+        manager.subscribeToFeatureTasks([])
+        XCTAssertTrue(manager.featureTaskIds.isEmpty)
+    }
+
+    func testDisconnect_clearsFeatureTaskIds() {
+        manager.subscribeToFeatureTasks(["t1", "t2", "t3"])
+        manager.disconnect()
+        XCTAssertTrue(manager.featureTaskIds.isEmpty)
+    }
+
+    func testTaskTitleUpdate_viaHandleEvent_delegateFires() {
+        let dataJSON = """
+        {"taskId": "t1", "newTitle": "Updated Name"}
+        """
+
+        let expectation = self.expectation(description: "taskTitleUpdated callback fires")
+        mockDelegate.onTaskTitleUpdated = { taskId, newTitle in
+            XCTAssertEqual(taskId, "t1")
+            XCTAssertEqual(newTitle, "Updated Name")
+            expectation.fulfill()
+        }
+
+        manager.handleEvent(name: "task-title-update", data: dataJSON)
+        waitForExpectations(timeout: 2.0)
+    }
+
     // MARK: - Helper Methods
 
     /// Simulates a PusherSwift event delivery by calling the manager's internal
@@ -853,7 +894,7 @@ class MockHivePusherDelegate: HivePusherDelegate {
         onWorkflowStatusChanged?(status)
     }
 
-    func prStatusChanged(prNumber: Int, state: String, artifactStatus: String, prUrl: String?, problemDetails: String?) {
+    func prStatusChanged(taskId: String?, prNumber: Int, state: String, artifactStatus: String, prUrl: String?, problemDetails: String?) {
         onPRStatusChanged?(prNumber, state, artifactStatus, prUrl, problemDetails)
     }
 

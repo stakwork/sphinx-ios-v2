@@ -702,6 +702,7 @@ class FeaturePlanViewController: UIViewController {
                 guard let self = self, let updatedFeature = updatedFeature else { return }
                 DispatchQueue.main.async {
                     self.feature = updatedFeature
+                    HivePusherManager.shared.subscribeToFeatureTasks(updatedFeature.allTasks.map { $0.id })
                     // Apply workflow status from freshly fetched feature data
                     self.applyInitialWorkflowStatus()
                     // Refresh plan panel if currently visible
@@ -1020,7 +1021,8 @@ extension FeaturePlanViewController: HivePusherDelegate {
     }
 
     func taskTitleUpdated(taskId: String, newTitle: String) {
-        // no-op: FeaturePlanViewController is not scoped to a single task
+        guard let flatIndex = feature.updateTask(taskId, apply: { $0.title = newTitle }) else { return }
+        tasksTableView.reloadRows(at: [IndexPath(row: flatIndex, section: 0)], with: .none)
     }
 
     func taskGenerationStatusChanged(status: String, featureId: String) {

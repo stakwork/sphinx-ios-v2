@@ -48,6 +48,7 @@ class HivePusherManager: NSObject {
     private var workspaceSlug: String?
     private var workspaceId: String?
     private var featureWorkspaceId: String?
+    var featureTaskIds: Set<String> = []
 
     private override init() {
         super.init()
@@ -125,6 +126,10 @@ class HivePusherManager: NSObject {
         if let fwId = featureWorkspaceId {
             pusher?.unsubscribe("workspace-\(fwId)")
         }
+        for id in featureTaskIds {
+            pusher?.unsubscribe("task-\(id)")
+        }
+        featureTaskIds = []
         pusher?.disconnect()
         pusher = nil
         featureId = nil
@@ -133,6 +138,18 @@ class HivePusherManager: NSObject {
         workspaceId = nil
         featureWorkspaceId = nil
         print("[HivePusher] Disconnected from Pusher")
+    }
+
+    func subscribeToFeatureTasks(_ taskIds: [String]) {
+        let newIds = Set(taskIds)
+        for id in featureTaskIds.subtracting(newIds) {
+            pusher?.unsubscribe("task-\(id)")
+            print("[HivePusher] Unsubscribed from stale task channel: task-\(id)")
+        }
+        for id in newIds.subtracting(featureTaskIds) {
+            subscribeToTaskChannel(id)
+        }
+        featureTaskIds = newIds
     }
 
     // MARK: - Public Connection State
