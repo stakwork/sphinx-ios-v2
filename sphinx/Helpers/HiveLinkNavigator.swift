@@ -1,0 +1,84 @@
+import UIKit
+
+class HiveLinkNavigator {
+
+    static func navigate(hiveLink: String, from vc: UIViewController) {
+        guard let slug = hiveLink.hiveWorkspaceSlug,
+              let entityId = hiveLink.hiveEntityId else {
+            fallback(url: hiveLink)
+            return
+        }
+
+        let bubbleHelper = NewMessageBubbleHelper()
+        bubbleHelper.showLoadingWheel()
+
+        API.sharedInstance.fetchWorkspacesWithAuth(
+            callback: { workspaces in
+                guard let workspace = workspaces.first(where: { $0.slug == slug }) else {
+                    DispatchQueue.main.async {
+                        bubbleHelper.hideLoadingWheel()
+                        fallback(url: hiveLink)
+                    }
+                    return
+                }
+
+                if hiveLink.isHivePlanLink {
+                    API.sharedInstance.fetchFeatureDetailWithAuth(
+                        featureId: entityId,
+                        callback: { feature in
+                            DispatchQueue.main.async {
+                                bubbleHelper.hideLoadingWheel()
+                                guard let feature = feature else {
+                                    fallback(url: hiveLink); return
+                                }
+                                let workspaceVC = WorkspaceViewController.instantiate(workspace: workspace)
+                                let planVC = FeaturePlanViewController.instantiate(feature: feature, workspace: workspace)
+                                vc.navigationController?.pushViewController(workspaceVC, animated: false)
+                                vc.navigationController?.pushViewController(planVC, animated: true)
+                            }
+                        },
+                        errorCallback: {
+                            DispatchQueue.main.async {
+                                bubbleHelper.hideLoadingWheel()
+                                fallback(url: hiveLink)
+                            }
+                        }
+                    )
+                } else if hiveLink.isHiveTaskLink {
+                    API.sharedInstance.fetchTaskByIdWithAuth(
+                        taskId: entityId,
+                        callback: { task in
+                            DispatchQueue.main.async {
+                                bubbleHelper.hideLoadingWheel()
+                                guard let task = task else {
+                                    fallback(url: hiveLink); return
+                                }
+                                let workspaceVC = WorkspaceViewController.instantiate(workspace: workspace)
+                                let taskChatVC = TaskChatViewController.instantiate(task: task)
+                                vc.navigationController?.pushViewController(workspaceVC, animated: false)
+                                vc.navigationController?.pushViewController(taskChatVC, animated: true)
+                            }
+                        },
+                        errorCallback: {
+                            DispatchQueue.main.async {
+                                bubbleHelper.hideLoadingWheel()
+                                fallback(url: hiveLink)
+                            }
+                        }
+                    )
+                }
+            },
+            errorCallback: {
+                DispatchQueue.main.async {
+                    bubbleHelper.hideLoadingWheel()
+                    fallback(url: hiveLink)
+                }
+            }
+        )
+    }
+
+    private static func fallback(url: String) {
+        guard let url = URL(string: url) else { return }
+        UIApplication.shared.open(url, options: [:], completionHandler: nil)
+    }
+}

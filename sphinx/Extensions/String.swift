@@ -746,6 +746,44 @@ extension String {
             return self.lowerClean.starts(with: "http") && self.lowerClean.contains(TransactionMessage.kCallRoomName)
         }
     }
+
+    // MARK: - Hive Link Helpers
+
+    var isHivePlanLink: Bool {
+        guard let url = URL(string: self),
+              let host = url.host else { return false }
+        let components = url.pathComponents // ["/", "w", slug, "plan", id]
+        return host == "hive.sphinx.chat"
+            && components.count == 5
+            && components[1] == "w"
+            && components[3] == "plan"
+    }
+
+    var isHiveTaskLink: Bool {
+        guard let url = URL(string: self),
+              let host = url.host else { return false }
+        let components = url.pathComponents
+        return host == "hive.sphinx.chat"
+            && components.count == 5
+            && components[1] == "w"
+            && components[3] == "task"
+    }
+
+    /// Returns the workspace slug segment from a hive.sphinx.chat/w/{slug}/... URL
+    var hiveWorkspaceSlug: String? {
+        guard let url = URL(string: self) else { return nil }
+        let parts = url.pathComponents
+        guard parts.count >= 3, parts[1] == "w" else { return nil }
+        return parts[2]
+    }
+
+    /// Returns the trailing entity ID (feature-id or task-id) from a hive.sphinx.chat/w/.../plan/{id} or .../task/{id} URL
+    var hiveEntityId: String? {
+        guard let url = URL(string: self) else { return nil }
+        let parts = url.pathComponents
+        guard parts.count == 5 else { return nil }
+        return parts[4]
+    }
     
     var isGiphy: Bool {
         get {
