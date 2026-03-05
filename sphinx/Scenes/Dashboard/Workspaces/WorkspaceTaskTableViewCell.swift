@@ -152,7 +152,7 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
             prBadgeURL = url
             prBadgeButton.isHidden = false
             let prIsMerged = task.prStatus == "MERGED" || task.prStatus == "DONE"
-            prBadgeButton.setTitle(prIsMerged ? "  MERGED  " : "  OPEN  ", for: .normal)
+            prBadgeButton.setTitle(prIsMerged ? "  MERGED  " : "  OPEN PR  ", for: .normal)
             prBadgeButton.backgroundColor = prIsMerged ? UIColor(hex: "#8B5CF6") : UIColor.Sphinx.PrimaryBlue
             updatedAtLabelTrailingToEdge.isActive = false
             updatedAtLabelTrailingToPR.isActive = true
