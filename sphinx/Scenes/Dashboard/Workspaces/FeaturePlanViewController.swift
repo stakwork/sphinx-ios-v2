@@ -821,11 +821,11 @@ class FeaturePlanViewController: UIViewController {
     
     // MARK: - Processing Bubble
     private func showProcessingBubble() {
-        guard processingStepText == nil else { return }
-        processingStepText = "Communicating with workflow"
-        let indexPath = IndexPath(row: messages.count, section: 0)
-        chatTableView.insertRows(at: [indexPath], with: .automatic)
-        scrollToBottom()
+//        guard processingStepText == nil else { return }
+//        processingStepText = "Communicating with workflow"
+//        let indexPath = IndexPath(row: messages.count, section: 0)
+//        chatTableView.insertRows(at: [indexPath], with: .automatic)
+//        scrollToBottom()
     }
 
     private func hideProcessingBubble() {
@@ -956,6 +956,7 @@ extension FeaturePlanViewController: HivePusherDelegate {
     func featureUpdateReceived(featureId: String) {
         fetchFeatureDetail()
         updateTasksPanel()
+        
         if planContainerView.isHidden {
             topSegmentedControl.indicesOfTitlesWithBadge = [1]
         }
@@ -973,6 +974,7 @@ extension FeaturePlanViewController: HivePusherDelegate {
     
     func workflowStatusChanged(status: WorkflowStatus) {
         DispatchQueue.main.async {
+            self.fetchFeatureDetail()
             self.applyWorkflowStatus(status)
         }
     }

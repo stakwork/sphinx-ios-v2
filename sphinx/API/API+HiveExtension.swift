@@ -928,8 +928,8 @@ extension API {
             "workspaceId": workspaceId,
             "featureId": featureId,
             "params": ["skipClarifyingQuestions": true],
-            "includeHistory": includeHistory,
-            "autoAccept": false
+//            "includeHistory": includeHistory,
+            "autoAccept": true
         ]
         guard let request = createRequest(urlString, bodyParams: body, method: "POST", token: authToken) else {
             errorCallback(); return
