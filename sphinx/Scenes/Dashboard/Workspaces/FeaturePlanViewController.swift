@@ -579,12 +579,14 @@ class FeaturePlanViewController: UIViewController {
             generateLoadingWheel.isHidden = true
             planTextViewBottomToRetry.isActive = true
         } else {
-            generateTasksButton.isHidden = false
-            generateTasksButton.isEnabled = true
+            let hasArchitecture = !(feature.architecture ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            generateTasksButton.isHidden = !hasArchitecture
+            generateTasksButton.isEnabled = hasArchitecture
             retryButton.isHidden = true
             generateLoadingWheel.stopAnimating()
             generateLoadingWheel.isHidden = true
-            planTextViewBottomToButton.isActive = true
+            planTextViewBottomToButton.isActive = hasArchitecture
+            planTextViewBottomToContainer.isActive = !hasArchitecture
         }
     }
     
