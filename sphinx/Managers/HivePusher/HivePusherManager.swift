@@ -17,6 +17,16 @@ protocol HivePusherDelegate: AnyObject {
     func prStatusChanged(prNumber: Int, state: String, artifactStatus: String, prUrl: String?, problemDetails: String?)
     func featureTitleUpdated(featureId: String, newTitle: String)
     func taskTitleUpdated(taskId: String, newTitle: String)
+
+    // Connection state callbacks (optional)
+    func pusherConnectionStateChanged(from old: ConnectionState, to new: ConnectionState)
+    func pusherConnectionError(_ error: Error?)
+}
+
+// Default implementations for optional methods
+extension HivePusherDelegate {
+    func pusherConnectionStateChanged(from old: ConnectionState, to new: ConnectionState) {}
+    func pusherConnectionError(_ error: Error?) {}
 }
 
 class HivePusherManager: NSObject {
@@ -66,11 +76,22 @@ class HivePusherManager: NSObject {
         print("[HivePusher] Disconnected from Pusher")
     }
 
+    // MARK: - Public Connection State
+
+    var isConnected: Bool {
+        return pusher?.connection.connectionState == .connected
+    }
+
+    var connectionState: ConnectionState? {
+        return pusher?.connection.connectionState
+    }
+
     // MARK: - Private Setup
 
     private func setupPusher() {
         let options = PusherClientOptions(host: .cluster(Config.pusherCluster))
         pusher = Pusher(key: Config.pusherKey, options: options)
+        pusher?.delegate = self
         pusher?.connect()
     }
 
@@ -260,6 +281,62 @@ class HivePusherManager: NSObject {
 
         DispatchQueue.main.async { [weak self] in
             self?.delegate?.taskTitleUpdated(taskId: taskId, newTitle: newTitle)
+        }
+    }
+}
+
+// MARK: - PusherDelegate
+
+extension HivePusherManager: PusherDelegate {
+    func changedConnectionState(from old: ConnectionState, to new: ConnectionState) {
+        print("[HivePusher] Connection state changed: \(old) -> \(new)")
+
+        DispatchQueue.main.async { [weak self] in
+            self?.delegate?.pusherConnectionStateChanged(from: old, to: new)
+        }
+
+        switch new {
+        case .connected:
+            print("[HivePusher] Successfully connected to Pusher")
+        case .disconnected:
+            print("[HivePusher] Disconnected from Pusher")
+        case .connecting:
+            print("[HivePusher] Connecting to Pusher...")
+        case .reconnecting:
+            print("[HivePusher] Reconnecting to Pusher...")
+        case .disconnecting:
+            print("[HivePusher] Disconnecting to Pusher...")
+        @unknown default:
+            print("[HivePusher] Unknown connection state: \(new)")
+        }
+    }
+
+    func subscribedToChannel(name: String) {
+        print("[HivePusher] Successfully subscribed to channel: \(name)")
+    }
+
+    func failedToSubscribeToChannel(name: String, response: URLResponse?, data: String?, error: NSError?) {
+        print("[HivePusher] Failed to subscribe to channel \(name): \(error?.localizedDescription ?? "unknown error")")
+        DispatchQueue.main.async { [weak self] in
+            self?.delegate?.pusherConnectionError(error)
+        }
+    }
+
+    func debugLog(message: String) {
+        #if DEBUG
+        print("[HivePusher DEBUG] \(message)")
+        #endif
+    }
+
+    func receivedError(error: PusherError) {
+        print("[HivePusher] Received error: \(error.message) (code: \(error.code ?? 0))")
+        let nsError = NSError(
+            domain: "HivePusher",
+            code: error.code ?? -1,
+            userInfo: [NSLocalizedDescriptionKey: error.message]
+        )
+        DispatchQueue.main.async { [weak self] in
+            self?.delegate?.pusherConnectionError(nsError)
         }
     }
 }
