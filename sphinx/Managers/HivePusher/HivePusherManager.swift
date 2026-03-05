@@ -79,6 +79,18 @@ class HivePusherManager: NSObject {
         print("[HivePusher] Connecting to Pusher for workspaceId: \(workspaceId)")
     }
 
+    func connect(workspaceId: String, workspaceSlug: String?) {
+        disconnect()
+        self.workspaceId = workspaceId
+        self.workspaceSlug = workspaceSlug
+        setupPusher()
+        subscribeToWorkspaceTaskChannel(workspaceId)
+        if let slug = workspaceSlug {
+            subscribeToWorkspaceChannel(slug)
+        }
+        print("[HivePusher] Connecting for workspaceId: \(workspaceId), slug: \(workspaceSlug ?? "nil")")
+    }
+
     func disconnect() {
         if let featureId = featureId {
             pusher?.unsubscribe("feature-\(featureId)")
@@ -168,6 +180,9 @@ class HivePusherManager: NSObject {
         channel.bind(eventName: "stakwork-run-update") { [weak self] event in
             self?.handleStakworkRunUpdate(event.data ?? "")
         }
+        channel.bind(eventName: "stakwork-run-decision") { [weak self] event in
+            self?.handleStakworkRunDecision(event.data ?? "")
+        }
         print("[HivePusher] Subscribed to workspace channel: workspace-\(slug)")
     }
 
@@ -196,6 +211,21 @@ class HivePusherManager: NSObject {
         let archived = dataJSON["archived"].bool ?? false
         DispatchQueue.main.async { [weak self] in
             self?.delegate?.taskStatusUpdated(taskId: taskId, status: status, workflowStatus: workflowStatus, archived: archived)
+        }
+    }
+
+    private func handleStakworkRunDecision(_ dataString: String) {
+        guard let dataJSON = try? JSON(data: dataString.data(using: .utf8) ?? Data()) else {
+            print("[HivePusher] Failed to parse stakwork-run-decision data")
+            return
+        }
+        guard let decision = dataJSON["decision"].string,
+              let featureId = dataJSON["featureId"].string else {
+            print("[HivePusher] Missing decision or featureId in stakwork-run-decision payload")
+            return
+        }
+        DispatchQueue.main.async { [weak self] in
+            self?.delegate?.taskGenerationStatusChanged(status: decision, featureId: featureId)
         }
     }
 
@@ -235,6 +265,8 @@ class HivePusherManager: NSObject {
             handleTaskTitleUpdate(data)
         case "stakwork-run-update":
             handleStakworkRunUpdate(data)
+        case "stakwork-run-decision":
+            handleStakworkRunDecision(data)
         case "workspace-task-title-update":
             handleWorkspaceTaskUpdate(data)
         default:

@@ -36,6 +36,21 @@ class WorkspaceViewController: PopHandlerViewController {
         setupHeader()
         setupSegmentedControls()
         switchToTab(0)
+        HivePusherManager.shared.delegate = self
+        HivePusherManager.shared.connect(workspaceId: workspace.id, workspaceSlug: workspace.slug)
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        HivePusherManager.shared.delegate = self
+        HivePusherManager.shared.connect(workspaceId: workspace.id, workspaceSlug: workspace.slug)
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        if isMovingFromParent {
+            HivePusherManager.shared.disconnect()
+        }
     }
 
     private func setupHeader() {
@@ -60,6 +75,27 @@ class WorkspaceViewController: PopHandlerViewController {
     @IBAction func backButtonTouched() {
         navigationController?.popViewController(animated: true)
     }
+}
+
+extension WorkspaceViewController: HivePusherDelegate {
+    func featureTitleUpdated(featureId: String, newTitle: String) {
+        activeFeaturesVC?.handleFeatureTitleUpdated(featureId: featureId, newTitle: newTitle)
+    }
+    func taskGenerationStatusChanged(status: String, featureId: String) {
+        if status == "COMPLETED" {
+            activeFeaturesVC?.handleFeatureListShouldRefresh()
+        }
+    }
+    func taskStatusUpdated(taskId: String, status: String, workflowStatus: String?, archived: Bool) {
+        activeTasksVC?.handleTaskStatusUpdated(taskId: taskId, status: status, workflowStatus: workflowStatus, archived: archived)
+    }
+    func prStatusChanged(prNumber: Int, state: String, artifactStatus: String, prUrl: String?, problemDetails: String?) {
+        activeTasksVC?.handlePRStatusChanged(prNumber: prNumber, state: state, artifactStatus: artifactStatus, prUrl: prUrl, problemDetails: problemDetails)
+    }
+    func featureUpdateReceived(featureId: String) {}
+    func newMessageReceived(_ message: HiveChatMessage) {}
+    func workflowStatusChanged(status: WorkflowStatus) {}
+    func taskTitleUpdated(taskId: String, newTitle: String) {}
 }
 
 extension WorkspaceViewController: CustomSegmentedControlDelegate {
