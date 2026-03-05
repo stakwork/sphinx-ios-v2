@@ -12,12 +12,15 @@ class FeaturePlanViewController: UIViewController {
     
     // MARK: - Properties
     private var feature: HiveFeature
+    private var workspace: Workspace
     private var messages: [HiveChatMessage] = []
     private var isAIWorking: Bool = false {
         didSet {
             updateAIWorkingState()
         }
     }
+    private var isGeneratingTasks: Bool = false
+    private var lastGenerationFailed: Bool = false
     
     // MARK: - UI Components
     private var headerView: UIView!
@@ -44,10 +47,12 @@ class FeaturePlanViewController: UIViewController {
     private var planSegmentedControl: CustomSegmentedControl!
     private var planTextView: UITextView!
     private var generateTasksButton: UIButton!
+    private var retryButton: UIButton!
     private var generateLoadingWheel: UIActivityIndicatorView!
     /// Switches between pinning planTextView bottom to the button (button visible)
     /// or to the container bottom (button hidden).
     private var planTextViewBottomToButton: NSLayoutConstraint!
+    private var planTextViewBottomToRetry: NSLayoutConstraint!
     private var planTextViewBottomToContainer: NSLayoutConstraint!
     private lazy var markdownRenderer: MarkdownRenderer = {
         var style = MarkdownStyle()
@@ -56,12 +61,13 @@ class FeaturePlanViewController: UIViewController {
     }()
     
     // MARK: - Initialization
-    static func instantiate(feature: HiveFeature) -> FeaturePlanViewController {
-        return FeaturePlanViewController(feature: feature)
+    static func instantiate(feature: HiveFeature, workspace: Workspace) -> FeaturePlanViewController {
+        return FeaturePlanViewController(feature: feature, workspace: workspace)
     }
     
-    private init(feature: HiveFeature) {
+    private init(feature: HiveFeature, workspace: Workspace) {
         self.feature = feature
+        self.workspace = workspace
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -314,9 +320,24 @@ class FeaturePlanViewController: UIViewController {
         generateLoadingWheel.hidesWhenStopped = true
         generateLoadingWheel.color = UIColor.Sphinx.Text
         planContainerView.addSubview(generateLoadingWheel)
-        
+
+        // Retry Button
+        retryButton = UIButton()
+        retryButton.translatesAutoresizingMaskIntoConstraints = false
+        retryButton.setTitle("RETRY", for: .normal)
+        retryButton.setTitleColor(.white, for: .normal)
+        retryButton.titleLabel?.font = UIFont(name: "Roboto-Medium", size: 16)
+        retryButton.backgroundColor = UIColor.Sphinx.SphinxOrange
+        retryButton.layer.cornerRadius = 25
+        retryButton.addTarget(self, action: #selector(retryButtonTouched), for: .touchUpInside)
+        retryButton.isHidden = true
+        planContainerView.addSubview(retryButton)
+
         planTextViewBottomToButton = planTextView.bottomAnchor.constraint(
             equalTo: generateTasksButton.topAnchor, constant: -16
+        )
+        planTextViewBottomToRetry = planTextView.bottomAnchor.constraint(
+            equalTo: retryButton.topAnchor, constant: -16
         )
         planTextViewBottomToContainer = planTextView.bottomAnchor.constraint(
             equalTo: planContainerView.safeAreaLayoutGuide.bottomAnchor
@@ -341,6 +362,11 @@ class FeaturePlanViewController: UIViewController {
             generateTasksButton.trailingAnchor.constraint(equalTo: planContainerView.trailingAnchor, constant: -32),
             generateTasksButton.bottomAnchor.constraint(equalTo: planContainerView.safeAreaLayoutGuide.bottomAnchor, constant: -16),
             generateTasksButton.heightAnchor.constraint(equalToConstant: 50),
+
+            retryButton.leadingAnchor.constraint(equalTo: planContainerView.leadingAnchor, constant: 32),
+            retryButton.trailingAnchor.constraint(equalTo: planContainerView.trailingAnchor, constant: -32),
+            retryButton.bottomAnchor.constraint(equalTo: planContainerView.safeAreaLayoutGuide.bottomAnchor, constant: -16),
+            retryButton.heightAnchor.constraint(equalToConstant: 50),
 
             generateLoadingWheel.centerYAnchor.constraint(equalTo: generateTasksButton.centerYAnchor),
             generateLoadingWheel.trailingAnchor.constraint(equalTo: generateTasksButton.trailingAnchor, constant: -16)
@@ -411,14 +437,36 @@ class FeaturePlanViewController: UIViewController {
     }
     
     @objc private func generateTasksButtonTouched() {
-        generateTasksButton.isEnabled = false
-        generateLoadingWheel.startAnimating()
+        triggerGeneration(includeHistory: false)
+    }
 
-        // NOTE: workspaceId will be wired in Ticket 2 when workspace is passed to this VC.
-        // For now, log a warning and re-enable on error — task generation requires workspace context.
-        print("[FeaturePlanVC] generateTasksButtonTouched — workspace not yet available; skipping API call until Ticket 2 wires workspace parameter.")
-        generateTasksButton.isEnabled = true
-        generateLoadingWheel.stopAnimating()
+    @objc private func retryButtonTouched() {
+        triggerGeneration(includeHistory: true)
+    }
+
+    private func triggerGeneration(includeHistory: Bool) {
+        isGeneratingTasks = true
+        lastGenerationFailed = false
+        applyGenerationState()
+
+        API.sharedInstance.triggerTaskGenerationWithAuth(
+            workspaceId: workspace.id,
+            featureId: feature.id,
+            includeHistory: includeHistory,
+            callback: { [weak self] run in
+                DispatchQueue.main.async {
+                    print("[FeaturePlanVC] Task generation run started: \(run?.id ?? "unknown")")
+                    // No alert, no re-fetch — Pusher drives completion
+                }
+            },
+            errorCallback: { [weak self] in
+                DispatchQueue.main.async {
+                    self?.isGeneratingTasks = false
+                    self?.applyGenerationState()
+                    self?.showGenerateTasksError()
+                }
+            }
+        )
     }
     
     // MARK: - Tasks Panel Setup
@@ -490,13 +538,40 @@ class FeaturePlanViewController: UIViewController {
     }
 
     private func updateGenerateTasksButton() {
+        applyGenerationState()
+    }
+
+    private func applyGenerationState() {
         let hasTasks = feature.hasTasks
-        generateTasksButton.isHidden = hasTasks
+
+        planTextViewBottomToButton.isActive = false
+        planTextViewBottomToRetry.isActive = false
+        planTextViewBottomToContainer.isActive = false
+
         if hasTasks {
-            planTextViewBottomToButton.isActive = false
+            generateTasksButton.isHidden = true
+            retryButton.isHidden = true
+            generateLoadingWheel.stopAnimating()
+            generateLoadingWheel.isHidden = true
             planTextViewBottomToContainer.isActive = true
+        } else if isGeneratingTasks {
+            generateTasksButton.isHidden = true
+            retryButton.isHidden = true
+            generateLoadingWheel.isHidden = false
+            generateLoadingWheel.startAnimating()
+            planTextViewBottomToButton.isActive = true
+        } else if lastGenerationFailed {
+            generateTasksButton.isHidden = true
+            retryButton.isHidden = false
+            generateLoadingWheel.stopAnimating()
+            generateLoadingWheel.isHidden = true
+            planTextViewBottomToRetry.isActive = true
         } else {
-            planTextViewBottomToContainer.isActive = false
+            generateTasksButton.isHidden = false
+            generateTasksButton.isEnabled = true
+            retryButton.isHidden = true
+            generateLoadingWheel.stopAnimating()
+            generateLoadingWheel.isHidden = true
             planTextViewBottomToButton.isActive = true
         }
     }
@@ -642,7 +717,7 @@ class FeaturePlanViewController: UIViewController {
     // MARK: - WebSocket
     private func connectWebSocket() {
         HivePusherManager.shared.delegate = self
-        HivePusherManager.shared.connect(featureId: feature.id)
+        HivePusherManager.shared.connect(featureId: feature.id, workspaceSlug: workspace.slug ?? "")
     }
     
     // MARK: - Helper Methods
@@ -792,9 +867,23 @@ extension FeaturePlanViewController: HivePusherDelegate {
     }
 
     func taskGenerationStatusChanged(status: String, featureId: String) {
-        // Full state machine wired in Ticket 2 when workspace context is available.
-        // Guard ensures we only react to events for this feature.
         guard featureId == feature.id else { return }
-        print("[FeaturePlanVC] taskGenerationStatusChanged: \(status) for feature \(featureId)")
+        DispatchQueue.main.async {
+            switch status {
+            case "PENDING", "IN_PROGRESS":
+                self.isGeneratingTasks = true
+                self.lastGenerationFailed = false
+                self.applyGenerationState()
+            case "COMPLETED":
+                self.isGeneratingTasks = false
+                // feature-updated Pusher event will call fetchFeatureDetail() -> applyGenerationState()
+            case "FAILED", "HALTED", "ERROR":
+                self.isGeneratingTasks = false
+                self.lastGenerationFailed = true
+                self.applyGenerationState()
+            default:
+                break
+            }
+        }
     }
 }

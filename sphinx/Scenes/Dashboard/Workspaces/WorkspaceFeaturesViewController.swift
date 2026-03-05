@@ -228,7 +228,7 @@ class WorkspaceFeaturesViewController: UIViewController {
     }
     
     private func openFeaturePlan(feature: HiveFeature) {
-        let planVC = FeaturePlanViewController.instantiate(feature: feature)
+        let planVC = FeaturePlanViewController.instantiate(feature: feature, workspace: workspace)
         navigationController?.pushViewController(planVC, animated: true)
     }
 }
