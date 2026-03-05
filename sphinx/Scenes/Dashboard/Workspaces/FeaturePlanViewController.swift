@@ -43,7 +43,9 @@ class FeaturePlanViewController: UIViewController {
     private var workflowStatusHeightConstraint: NSLayoutConstraint!
     private var bottomFillView: UIView!
     private var tasksEmptyLabel: UILabel!
-    
+    private var taskProgressBarView: TaskProgressBarView!
+    private var startTasksButton: UIButton!
+
     // Plan Panel Components
     private var planSegmentedControl: CustomSegmentedControl!
     private var planTextView: UITextView!
@@ -489,6 +491,11 @@ class FeaturePlanViewController: UIViewController {
         tasksContainerView.isHidden = true
         view.addSubview(tasksContainerView)
 
+        // Progress bar
+        taskProgressBarView = TaskProgressBarView()
+        taskProgressBarView.isHidden = true
+        tasksContainerView.addSubview(taskProgressBarView)
+
         tasksTableView = UITableView()
         tasksTableView.translatesAutoresizingMaskIntoConstraints = false
         tasksTableView.backgroundColor = UIColor.Sphinx.Body
@@ -514,16 +521,40 @@ class FeaturePlanViewController: UIViewController {
         tasksEmptyLabel.isHidden = true
         tasksContainerView.addSubview(tasksEmptyLabel)
 
+        // Start Tasks button
+        startTasksButton = UIButton()
+        startTasksButton.translatesAutoresizingMaskIntoConstraints = false
+        startTasksButton.setTitleColor(.white, for: .normal)
+        startTasksButton.titleLabel?.font = UIFont(name: "Roboto-Medium", size: 16)
+        startTasksButton.backgroundColor = UIColor.Sphinx.PrimaryGreen
+        startTasksButton.layer.cornerRadius = 25
+        startTasksButton.isHidden = true
+        startTasksButton.addTarget(self, action: #selector(startTasksButtonTouched), for: .touchUpInside)
+        tasksContainerView.addSubview(startTasksButton)
+
         NSLayoutConstraint.activate([
             tasksContainerView.topAnchor.constraint(equalTo: topSegmentedControl.bottomAnchor),
             tasksContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tasksContainerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             tasksContainerView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
-            tasksTableView.topAnchor.constraint(equalTo: tasksContainerView.topAnchor),
+            // Progress bar — pinned to top with 8pt horizontal padding
+            taskProgressBarView.topAnchor.constraint(equalTo: tasksContainerView.topAnchor, constant: 8),
+            taskProgressBarView.leadingAnchor.constraint(equalTo: tasksContainerView.leadingAnchor, constant: 16),
+            taskProgressBarView.trailingAnchor.constraint(equalTo: tasksContainerView.trailingAnchor, constant: -16),
+            taskProgressBarView.heightAnchor.constraint(equalToConstant: 36),
+
+            // Table view below progress bar, above start tasks button
+            tasksTableView.topAnchor.constraint(equalTo: taskProgressBarView.bottomAnchor),
             tasksTableView.leadingAnchor.constraint(equalTo: tasksContainerView.leadingAnchor),
             tasksTableView.trailingAnchor.constraint(equalTo: tasksContainerView.trailingAnchor),
-            tasksTableView.bottomAnchor.constraint(equalTo: tasksContainerView.bottomAnchor),
+            tasksTableView.bottomAnchor.constraint(equalTo: startTasksButton.topAnchor, constant: -8),
+
+            // Start Tasks button pinned to bottom
+            startTasksButton.leadingAnchor.constraint(equalTo: tasksContainerView.leadingAnchor, constant: 32),
+            startTasksButton.trailingAnchor.constraint(equalTo: tasksContainerView.trailingAnchor, constant: -32),
+            startTasksButton.bottomAnchor.constraint(equalTo: tasksContainerView.safeAreaLayoutGuide.bottomAnchor, constant: -16),
+            startTasksButton.heightAnchor.constraint(equalToConstant: 50),
 
             tasksEmptyLabel.centerXAnchor.constraint(equalTo: tasksContainerView.centerXAnchor),
             tasksEmptyLabel.centerYAnchor.constraint(equalTo: tasksContainerView.centerYAnchor)
@@ -532,6 +563,37 @@ class FeaturePlanViewController: UIViewController {
 
     private func updateTasksEmptyState() {
         tasksEmptyLabel.isHidden = !feature.allTasks.isEmpty
+    }
+
+    private func updateProgressBar() {
+        let progress = TaskProgress(tasks: feature.allTasks)
+        taskProgressBarView.configure(with: progress)
+        taskProgressBarView.isHidden = feature.allTasks.isEmpty
+    }
+
+    private func updateStartTasksButton() {
+        let startable = feature.allTasks.filter { $0.assigneeId == nil && $0.status == "TODO" }
+        startTasksButton.isHidden = startable.isEmpty
+        let n = startable.count
+        startTasksButton.setTitle("Start \(n) task\(n == 1 ? "" : "s")", for: .normal)
+    }
+
+    private func updateTasksPanel() {
+        tasksTableView.reloadData()
+        updateProgressBar()
+        updateStartTasksButton()
+        updateTasksEmptyState()
+    }
+
+    @objc private func startTasksButtonTouched() {
+        startTasksButton.isHidden = true
+        API.sharedInstance.assignAllFeatureTasksWithAuth(
+            featureId: feature.id,
+            callback: { /* stay hidden — Pusher will refresh */ },
+            errorCallback: { [weak self] in
+                DispatchQueue.main.async { self?.startTasksButton.isHidden = false }
+            }
+        )
     }
 
     // MARK: - Panel Management
@@ -544,8 +606,7 @@ class FeaturePlanViewController: UIViewController {
             updatePlanText()
         }
         if index == 2 {
-            tasksTableView.reloadData()
-            updateTasksEmptyState()
+            updateTasksPanel()
         }
     }
 
@@ -649,8 +710,7 @@ class FeaturePlanViewController: UIViewController {
                     }
                     // Refresh tasks panel if currently visible
                     if !self.tasksContainerView.isHidden {
-                        self.tasksTableView.reloadData()
-                        self.updateTasksEmptyState()
+                        self.updateTasksPanel()
                     }
                     // Show/hide generate button based on whether tasks exist
                     self.updateGenerateTasksButton()
@@ -837,6 +897,7 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
 extension FeaturePlanViewController: HivePusherDelegate {
     func featureUpdateReceived(featureId: String) {
         fetchFeatureDetail()
+        updateTasksPanel()
         if planContainerView.isHidden {
             topSegmentedControl.indicesOfTitlesWithBadge = [1]
         }
