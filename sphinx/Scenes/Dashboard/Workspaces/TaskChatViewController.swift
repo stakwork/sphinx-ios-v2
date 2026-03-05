@@ -50,6 +50,7 @@ class TaskChatViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        applyInitialWorkflowStatus()
         setupKeyboardObservers()
         fetchMessages()
         connectWebSocket()
@@ -374,6 +375,28 @@ class TaskChatViewController: UIViewController {
         HivePusherManager.shared.delegate = self
         HivePusherManager.shared.connect(taskId: task.id)
     }
+
+    // MARK: - Workflow Status
+    private func applyWorkflowStatus(_ status: WorkflowStatus) {
+        workflowStatusView.status = status
+        switch status {
+        case .IN_PROGRESS, .PENDING:
+            workflowStatusHeightConstraint.constant = 32
+            workflowStatusView.show(animated: true)
+            UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
+        case .COMPLETED, .ERROR, .HALTED, .FAILED:
+            workflowStatusHeightConstraint.constant = 0
+            workflowStatusView.hide(animated: true)
+            UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
+        }
+    }
+
+    private func applyInitialWorkflowStatus() {
+        guard let raw = task.workflowStatus,
+              let status = WorkflowStatus(rawValue: raw),
+              status == .IN_PROGRESS || status == .PENDING else { return }
+        applyWorkflowStatus(status)
+    }
 }
 
 // MARK: - HivePusherDelegate
@@ -384,17 +407,7 @@ extension TaskChatViewController: HivePusherDelegate {
     
     func workflowStatusChanged(status: WorkflowStatus) {
         DispatchQueue.main.async {
-            self.workflowStatusView.status = status
-            switch status {
-            case .IN_PROGRESS, .PENDING:
-                self.workflowStatusHeightConstraint.constant = 32
-                self.workflowStatusView.show(animated: true)
-                UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
-            case .COMPLETED, .ERROR, .HALTED, .FAILED:
-                self.workflowStatusHeightConstraint.constant = 0
-                self.workflowStatusView.hide(animated: true)
-                UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
-            }
+            self.applyWorkflowStatus(status)
         }
     }
 

@@ -82,6 +82,7 @@ class FeaturePlanViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        applyInitialWorkflowStatus()
         setupKeyboardObservers()
         fetchFeatureDetail()
         fetchChatHistory()
@@ -679,6 +680,13 @@ class FeaturePlanViewController: UIViewController {
         sendButton.isEnabled = !isAIWorking
         sendButton.alpha = isAIWorking ? 0.5 : 1.0
         chatInputTextView.isEditable = !isAIWorking
+    }
+
+    private func applyInitialWorkflowStatus() {
+        guard let raw = feature.workflowStatus,
+              let status = WorkflowStatus(rawValue: raw),
+              status == .IN_PROGRESS || status == .PENDING else { return }
+        applyWorkflowStatus(status)
     }
 
     private func applyWorkflowStatus(_ status: WorkflowStatus) {
