@@ -593,6 +593,7 @@ class FeaturePlanViewController: UIViewController {
 
     // MARK: - Panel Management
     private func showPanel(at index: Int) {
+        view.endEditing(true) // dismiss keyboard whenever tab changes
         chatContainerView.isHidden  = (index != 0)
         planContainerView.isHidden  = (index != 1)
         tasksContainerView.isHidden = (index != 2)
