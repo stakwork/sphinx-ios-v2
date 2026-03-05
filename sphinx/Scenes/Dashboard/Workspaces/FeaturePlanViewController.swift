@@ -1033,7 +1033,8 @@ extension FeaturePlanViewController: HivePusherDelegate {
                 self.applyGenerationState()
             case "COMPLETED":
                 self.isGeneratingTasks = false
-                // feature-updated Pusher event will call fetchFeatureDetail() -> applyGenerationState()
+                self.applyGenerationState()
+                // feature-updated Pusher event will still call fetchFeatureDetail() to refresh task list
             case "FAILED", "HALTED", "ERROR":
                 self.isGeneratingTasks = false
                 self.lastGenerationFailed = true

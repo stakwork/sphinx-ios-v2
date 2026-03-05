@@ -222,6 +222,13 @@ class HivePusherManager: NSObject {
         channel.bind(eventName: "pr-status-change") { [weak self] event in
             self?.handlePRStatusChange(event.data ?? "")
         }
+        // Fallback bindings so task-generation events are received even when workspace slug is nil/empty
+        channel.bind(eventName: "stakwork-run-update") { [weak self] event in
+            self?.handleStakworkRunUpdate(event.data ?? "")
+        }
+        channel.bind(eventName: "stakwork-run-decision") { [weak self] event in
+            self?.handleStakworkRunDecision(event.data ?? "")
+        }
         print("[HivePusher] Subscribed to workspace task channel: workspace-\(workspaceId)")
     }
 

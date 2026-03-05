@@ -754,6 +754,71 @@ class HivePusherManagerTests: XCTestCase {
         waitForExpectations(timeout: 1.0)
     }
 
+    // MARK: - stakwork-run-update COMPLETED status tests
+
+    /// Bug fix regression: COMPLETED status must fire the delegate immediately
+    /// (not be silently swallowed). This mirrors what the VC now expects so it can
+    /// call applyGenerationState() synchronously on receipt.
+    func testStakworkRunUpdate_CompletedStatus_DelegateCalledImmediately() {
+        let dataJSON = """
+        {"runId": "run_cmp", "type": "TASK_GENERATION", "status": "COMPLETED", "featureId": "feat_cmp"}
+        """
+
+        let expectation = self.expectation(description: "taskGenerationStatusChanged fires with COMPLETED")
+        mockDelegate.onTaskGenerationStatusChanged = { status, featureId in
+            XCTAssertEqual(status, "COMPLETED")
+            XCTAssertEqual(featureId, "feat_cmp")
+            expectation.fulfill()
+        }
+
+        simulateEvent(name: "stakwork-run-update", dataJSON: dataJSON)
+        waitForExpectations(timeout: 2.0)
+    }
+
+    // MARK: - workspaceId-only channel fallback tests (Bug fix: slug nil/empty)
+
+    /// Verifies that `stakwork-run-update` fires the delegate when the event is
+    /// routed through handleEvent (the same path used by the workspaceId channel
+    /// bindings added to subscribeToWorkspaceTaskChannel). This confirms the
+    /// fallback bindings work when workspace slug is nil or empty.
+    func testSubscribeToWorkspaceTaskChannel_ReceivesStakworkRunUpdate() {
+        let dataJSON = """
+        {"runId": "run_ws1", "type": "TASK_GENERATION", "status": "IN_PROGRESS", "featureId": "feat_ws1"}
+        """
+
+        let expectation = self.expectation(description: "stakwork-run-update handled via workspaceId channel path")
+        mockDelegate.onTaskGenerationStatusChanged = { status, featureId in
+            XCTAssertEqual(status, "IN_PROGRESS")
+            XCTAssertEqual(featureId, "feat_ws1")
+            expectation.fulfill()
+        }
+
+        // handleEvent routes to handleStakworkRunUpdate — same handler now also bound
+        // on the workspace-{id} channel in subscribeToWorkspaceTaskChannel.
+        manager.handleEvent(name: "stakwork-run-update", data: dataJSON)
+        waitForExpectations(timeout: 2.0)
+    }
+
+    /// Verifies that `stakwork-run-decision` fires the delegate when routed through
+    /// the workspaceId channel path (fallback binding added to subscribeToWorkspaceTaskChannel).
+    func testSubscribeToWorkspaceTaskChannel_ReceivesStakworkRunDecision() {
+        let dataJSON = """
+        {"decision": "REJECTED", "featureId": "feat_ws2"}
+        """
+
+        let expectation = self.expectation(description: "stakwork-run-decision handled via workspaceId channel path")
+        mockDelegate.onTaskGenerationStatusChanged = { status, featureId in
+            XCTAssertEqual(status, "REJECTED")
+            XCTAssertEqual(featureId, "feat_ws2")
+            expectation.fulfill()
+        }
+
+        // handleEvent routes to handleStakworkRunDecision — same handler now also bound
+        // on the workspace-{id} channel in subscribeToWorkspaceTaskChannel.
+        manager.handleEvent(name: "stakwork-run-decision", data: dataJSON)
+        waitForExpectations(timeout: 2.0)
+    }
+
     // MARK: - Helper Methods
 
     /// Simulates a PusherSwift event delivery by calling the manager's internal
