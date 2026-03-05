@@ -37,7 +37,7 @@ class CreateFeatureViewController: UIViewController {
     // MARK: - Instantiation
 
     static func instantiate(workspaceId: String) -> CreateFeatureViewController {
-        let vc = CreateFeatureViewController()
+        let vc = StoryboardScene.Dashboard.createFeatureViewController.instantiate()
         vc.workspaceId = workspaceId
         vc.modalPresentationStyle = .automatic
         return vc

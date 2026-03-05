@@ -159,6 +159,11 @@ internal enum StoryboardScene {
             identifier: "WorkspaceFeaturesViewController"
         )
 
+        internal static let createFeatureViewController = SceneType<CreateFeatureViewController>(
+            storyboard: Dashboard.self,
+            identifier: "CreateFeatureViewController"
+        )
+
     }
     
     internal enum LeftMenu: StoryboardType {
