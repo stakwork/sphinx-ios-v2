@@ -19,6 +19,7 @@ typealias HiveFeatureCallback = ((HiveFeature?) -> ())
 typealias HiveChatMessagesCallback = (([HiveChatMessage]) -> ())
 typealias HiveTaskMessagesCallback = (([HiveChatMessage]) -> ())
 typealias HiveChatMessageCallback = ((HiveChatMessage?) -> ())
+typealias HiveStakworkRunCallback = ((StakworkRun?) -> ())
 
 extension API {
 
@@ -892,90 +893,86 @@ extension API {
         )
     }
 
-    func generateFeatureTasks(
+    func triggerTaskGeneration(
+        workspaceId: String,
         featureId: String,
+        includeHistory: Bool,
         authToken: String,
-        callback: @escaping EmptyCallback,
+        callback: @escaping HiveStakworkRunCallback,
         errorCallback: @escaping EmptyCallback
     ) {
-        guard let encodedFeatureId = featureId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
-            errorCallback()
-            return
+        let urlString = "\(API.kHiveBaseUrl)/stakwork/ai/generate"
+        let body: NSDictionary = [
+            "type": "TASK_GENERATION",
+            "workspaceId": workspaceId,
+            "featureId": featureId,
+            "params": ["skipClarifyingQuestions": true],
+            "includeHistory": includeHistory,
+            "autoAccept": false
+        ]
+        guard let request = createRequest(urlString, bodyParams: body, method: "POST", token: authToken) else {
+            errorCallback(); return
         }
-
-        let urlString = "\(API.kHiveBaseUrl)/features/\(encodedFeatureId)/generate-tasks"
-
-        guard let request = createRequest(urlString, bodyParams: nil, method: "POST", token: authToken) else {
-            errorCallback()
-            return
-        }
-
         session()?.request(request).responseData { response in
             if let statusCode = response.response?.statusCode, statusCode == 401 {
-                print("[HiveAPI] Generate tasks unauthorized (401) - token may be expired")
-                errorCallback()
-                return
+                errorCallback(); return
             }
-
             switch response.result {
             case .success(let data):
                 let json = JSON(data)
-
                 if let error = json["error"].string {
-                    print("[HiveAPI] Generate tasks error: \(error)")
-                    errorCallback()
-                    return
+                    print("[HiveAPI] Trigger task generation error: \(error)")
+                    errorCallback(); return
                 }
-
-                callback()
+                let run = StakworkRun(json: json["run"])
+                callback(run)
             case .failure(let error):
-                print("[HiveAPI] Generate tasks failed: \(error.localizedDescription)")
+                print("[HiveAPI] Trigger task generation failed: \(error.localizedDescription)")
                 errorCallback()
             }
         }
     }
 
-    func generateFeatureTasksWithAuth(
+    func triggerTaskGenerationWithAuth(
+        workspaceId: String,
         featureId: String,
-        callback: @escaping EmptyCallback,
+        includeHistory: Bool,
+        callback: @escaping HiveStakworkRunCallback,
         errorCallback: @escaping EmptyCallback
     ) {
         if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
-            generateFeatureTasks(
-                featureId: featureId,
-                authToken: storedToken,
-                callback: callback,
+            triggerTaskGeneration(
+                workspaceId: workspaceId, featureId: featureId, includeHistory: includeHistory,
+                authToken: storedToken, callback: callback,
                 errorCallback: { [weak self] in
-                    self?.authenticateAndGenerateFeatureTasks(
-                        featureId: featureId,
-                        callback: callback,
-                        errorCallback: errorCallback
+                    self?.authenticateAndTriggerTaskGeneration(
+                        workspaceId: workspaceId, featureId: featureId,
+                        includeHistory: includeHistory, callback: callback, errorCallback: errorCallback
                     )
                 }
             )
         } else {
-            authenticateAndGenerateFeatureTasks(
-                featureId: featureId,
-                callback: callback,
-                errorCallback: errorCallback
+            authenticateAndTriggerTaskGeneration(
+                workspaceId: workspaceId, featureId: featureId,
+                includeHistory: includeHistory, callback: callback, errorCallback: errorCallback
             )
         }
     }
 
-    private func authenticateAndGenerateFeatureTasks(
+    private func authenticateAndTriggerTaskGeneration(
+        workspaceId: String,
         featureId: String,
-        callback: @escaping EmptyCallback,
+        includeHistory: Bool,
+        callback: @escaping HiveStakworkRunCallback,
         errorCallback: @escaping EmptyCallback
     ) {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
                 UserDefaults.Keys.hiveToken.set(token)
-                self?.generateFeatureTasks(
-                    featureId: featureId,
-                    authToken: token,
-                    callback: callback,
-                    errorCallback: errorCallback
+                self?.triggerTaskGeneration(
+                    workspaceId: workspaceId, featureId: featureId, includeHistory: includeHistory,
+                    authToken: token, callback: callback, errorCallback: errorCallback
                 )
             },
             errorCallback: errorCallback

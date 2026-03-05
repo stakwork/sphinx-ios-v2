@@ -413,25 +413,12 @@ class FeaturePlanViewController: UIViewController {
     @objc private func generateTasksButtonTouched() {
         generateTasksButton.isEnabled = false
         generateLoadingWheel.startAnimating()
-        
-        API.sharedInstance.generateFeatureTasksWithAuth(
-            featureId: feature.id,
-            callback: { [weak self] in
-                DispatchQueue.main.async {
-                    self?.generateLoadingWheel.stopAnimating()
-                    self?.showGenerateTasksSuccess()
-                    // Re-fetch feature so tasks list populates and button hides
-                    self?.fetchFeatureDetail()
-                }
-            },
-            errorCallback: { [weak self] in
-                DispatchQueue.main.async {
-                    self?.generateTasksButton.isEnabled = true
-                    self?.generateLoadingWheel.stopAnimating()
-                    self?.showGenerateTasksError()
-                }
-            }
-        )
+
+        // NOTE: workspaceId will be wired in Ticket 2 when workspace is passed to this VC.
+        // For now, log a warning and re-enable on error — task generation requires workspace context.
+        print("[FeaturePlanVC] generateTasksButtonTouched — workspace not yet available; skipping API call until Ticket 2 wires workspace parameter.")
+        generateTasksButton.isEnabled = true
+        generateLoadingWheel.stopAnimating()
     }
     
     // MARK: - Tasks Panel Setup
@@ -802,5 +789,12 @@ extension FeaturePlanViewController: HivePusherDelegate {
 
     func taskTitleUpdated(taskId: String, newTitle: String) {
         // no-op: FeaturePlanViewController is not scoped to a single task
+    }
+
+    func taskGenerationStatusChanged(status: String, featureId: String) {
+        // Full state machine wired in Ticket 2 when workspace context is available.
+        // Guard ensures we only react to events for this feature.
+        guard featureId == feature.id else { return }
+        print("[FeaturePlanVC] taskGenerationStatusChanged: \(status) for feature \(featureId)")
     }
 }

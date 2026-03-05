@@ -17,6 +17,7 @@ protocol HivePusherDelegate: AnyObject {
     func prStatusChanged(prNumber: Int, state: String, artifactStatus: String, prUrl: String?, problemDetails: String?)
     func featureTitleUpdated(featureId: String, newTitle: String)
     func taskTitleUpdated(taskId: String, newTitle: String)
+    func taskGenerationStatusChanged(status: String, featureId: String)
 
     // Connection state callbacks (optional)
     func pusherConnectionStateChanged(from old: ConnectionState, to new: ConnectionState)
@@ -39,6 +40,7 @@ class HivePusherManager: NSObject {
     private var pusher: Pusher?
     private var featureId: String?
     private var taskId: String?
+    private var workspaceSlug: String?
 
     private override init() {
         super.init()
@@ -46,12 +48,16 @@ class HivePusherManager: NSObject {
 
     // MARK: - Public Methods
 
-    func connect(featureId: String) {
+    func connect(featureId: String, workspaceSlug: String = "") {
         disconnect()
         self.featureId = featureId
+        self.workspaceSlug = workspaceSlug.isEmpty ? nil : workspaceSlug
         setupPusher()
         subscribeToFeatureChannel(featureId)
-        print("[HivePusher] Connecting to Pusher for feature: \(featureId)")
+        if !workspaceSlug.isEmpty {
+            subscribeToWorkspaceChannel(workspaceSlug)
+        }
+        print("[HivePusher] Connecting for feature: \(featureId), workspace: \(workspaceSlug)")
     }
 
     func connect(taskId: String) {
@@ -69,10 +75,14 @@ class HivePusherManager: NSObject {
         if let taskId = taskId {
             pusher?.unsubscribe("task-\(taskId)")
         }
+        if let slug = workspaceSlug {
+            pusher?.unsubscribe("workspace-\(slug)")
+        }
         pusher?.disconnect()
         pusher = nil
         featureId = nil
         taskId = nil
+        workspaceSlug = nil
         print("[HivePusher] Disconnected from Pusher")
     }
 
@@ -134,6 +144,30 @@ class HivePusherManager: NSObject {
         print("[HivePusher] Subscribed to task channel: task-\(taskId)")
     }
 
+    private func subscribeToWorkspaceChannel(_ slug: String) {
+        guard let channel = pusher?.subscribe("workspace-\(slug)") else { return }
+        channel.bind(eventName: "stakwork-run-update") { [weak self] event in
+            self?.handleStakworkRunUpdate(event.data ?? "")
+        }
+        print("[HivePusher] Subscribed to workspace channel: workspace-\(slug)")
+    }
+
+    private func handleStakworkRunUpdate(_ dataString: String) {
+        guard let dataJSON = try? JSON(data: dataString.data(using: .utf8) ?? Data()) else {
+            print("[HivePusher] Failed to parse stakwork-run-update data")
+            return
+        }
+        guard dataJSON["type"].string == "TASK_GENERATION",
+              let status = dataJSON["status"].string,
+              let featureId = dataJSON["featureId"].string else {
+            print("[HivePusher] stakwork-run-update ignored: not TASK_GENERATION or missing fields")
+            return
+        }
+        DispatchQueue.main.async { [weak self] in
+            self?.delegate?.taskGenerationStatusChanged(status: status, featureId: featureId)
+        }
+    }
+
     // MARK: - Event Handlers
 
     /// Exposed internally for unit testing — callers pass the inner JSON data string
@@ -152,6 +186,8 @@ class HivePusherManager: NSObject {
             handleFeatureTitleUpdate(data)
         case "task-title-update":
             handleTaskTitleUpdate(data)
+        case "stakwork-run-update":
+            handleStakworkRunUpdate(data)
         default:
             print("[HivePusher] Unhandled event: \(name)")
         }
