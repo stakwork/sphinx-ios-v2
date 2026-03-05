@@ -686,6 +686,74 @@ class HivePusherManagerTests: XCTestCase {
         waitForExpectations(timeout: 2.0)
     }
 
+    // MARK: - stakwork-run-decision Event Tests
+
+    func testStakworkRunDecision_ValidPayload_FiresCallback() {
+        let dataJSON = """
+        {"decision": "ACCEPTED", "featureId": "feat_123"}
+        """
+
+        let expectation = self.expectation(description: "taskGenerationStatusChanged fires for stakwork-run-decision")
+        mockDelegate.onTaskGenerationStatusChanged = { status, featureId in
+            XCTAssertEqual(status, "ACCEPTED")
+            XCTAssertEqual(featureId, "feat_123")
+            expectation.fulfill()
+        }
+
+        manager.handleEvent(name: "stakwork-run-decision", data: dataJSON)
+        waitForExpectations(timeout: 2.0)
+    }
+
+    func testStakworkRunDecision_MissingDecision_DoesNotFireCallback() {
+        let dataJSON = """
+        {"featureId": "feat_123"}
+        """
+
+        var callbackCalled = false
+        mockDelegate.onTaskGenerationStatusChanged = { _, _ in callbackCalled = true }
+
+        manager.handleEvent(name: "stakwork-run-decision", data: dataJSON)
+
+        let expectation = self.expectation(description: "No callback when decision is missing")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            XCTAssertFalse(callbackCalled, "Callback should not fire when decision is missing")
+            expectation.fulfill()
+        }
+        waitForExpectations(timeout: 1.0)
+    }
+
+    func testStakworkRunDecision_MissingFeatureId_DoesNotFireCallback() {
+        let dataJSON = """
+        {"decision": "ACCEPTED"}
+        """
+
+        var callbackCalled = false
+        mockDelegate.onTaskGenerationStatusChanged = { _, _ in callbackCalled = true }
+
+        manager.handleEvent(name: "stakwork-run-decision", data: dataJSON)
+
+        let expectation = self.expectation(description: "No callback when featureId is missing")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            XCTAssertFalse(callbackCalled, "Callback should not fire when featureId is missing")
+            expectation.fulfill()
+        }
+        waitForExpectations(timeout: 1.0)
+    }
+
+    func testStakworkRunDecision_EmptyPayload_NoCallback() {
+        var callbackCalled = false
+        mockDelegate.onTaskGenerationStatusChanged = { _, _ in callbackCalled = true }
+
+        manager.handleEvent(name: "stakwork-run-decision", data: "{}")
+
+        let expectation = self.expectation(description: "No callback for empty payload")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            XCTAssertFalse(callbackCalled, "Callback should not fire for empty payload")
+            expectation.fulfill()
+        }
+        waitForExpectations(timeout: 1.0)
+    }
+
     // MARK: - Helper Methods
 
     /// Simulates a PusherSwift event delivery by calling the manager's internal

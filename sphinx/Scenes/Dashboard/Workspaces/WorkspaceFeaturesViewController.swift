@@ -11,7 +11,6 @@ class WorkspaceFeaturesViewController: UIViewController {
     
     var workspace: Workspace!
     private var features: [HiveFeature] = []
-    private var hasLoadedInitially = false
     
     private lazy var refreshControl: UIRefreshControl = {
         let control = UIRefreshControl()
@@ -35,17 +34,8 @@ class WorkspaceFeaturesViewController: UIViewController {
         setupUI()
         setupTableView()
         loadFeatures()
-        hasLoadedInitially = true
     }
 
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        // Only reload when returning from detail view, not on initial load
-        if hasLoadedInitially {
-            loadFeatures()
-        }
-    }
-    
     // MARK: - Setup
     
     private func setupUI() {
@@ -145,7 +135,20 @@ class WorkspaceFeaturesViewController: UIViewController {
         }
     }
     
-    private func loadFeatures() {
+    // MARK: - Pusher Handler Methods
+
+    func handleFeatureTitleUpdated(featureId: String, newTitle: String) {
+        guard let index = features.firstIndex(where: { $0.id == featureId }) else { return }
+        features[index].title = newTitle
+        let indexPath = IndexPath(row: index, section: 0)
+        tableView.reloadRows(at: [indexPath], with: .none)
+    }
+
+    func handleFeatureListShouldRefresh() {
+        loadFeatures()
+    }
+
+    func loadFeatures() {
         guard !isLoading else { return }
         
         isLoading = true
