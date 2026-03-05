@@ -19,6 +19,7 @@ extension HiveFeature {
             "requirements": "Must support OAuth2, JWT tokens, refresh token rotation",
             "architecture": "Use passport.js with JWT strategy, Redis for session store",
             "status": "COMPLETED",
+            "workflowStatus": "COMPLETED",
             "createdAt": "2025-02-20T10:00:00Z",
             "updatedAt": "2025-02-25T14:30:00Z"
         ])
@@ -31,6 +32,7 @@ extension HiveFeature {
             "requirements": "WebSocket connection, message queue, offline support",
             "architecture": "Socket.io for WebSocket, MongoDB for message persistence",
             "status": "IN_PROGRESS",
+            "workflowStatus": "IN_PROGRESS",
             "createdAt": "2025-02-22T09:15:00Z",
             "updatedAt": "2025-02-26T11:20:00Z"
         ])
@@ -43,6 +45,7 @@ extension HiveFeature {
             "requirements": "Real-time metrics, exportable charts, role-based access",
             "architecture": "Chart.js for visualization, PostgreSQL for aggregations",
             "status": "TODO",
+            "workflowStatus": "TODO",
             "createdAt": "2025-02-23T08:00:00Z",
             "updatedAt": "2025-02-23T08:00:00Z"
         ])

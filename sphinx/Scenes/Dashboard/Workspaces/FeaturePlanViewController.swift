@@ -699,6 +699,8 @@ class FeaturePlanViewController: UIViewController {
                 guard let self = self, let updatedFeature = updatedFeature else { return }
                 DispatchQueue.main.async {
                     self.feature = updatedFeature
+                    // Apply workflow status from freshly fetched feature data
+                    self.applyInitialWorkflowStatus()
                     // Refresh plan panel if currently visible
                     if !self.planContainerView.isHidden {
                         self.updatePlanText()
