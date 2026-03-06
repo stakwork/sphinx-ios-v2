@@ -70,7 +70,7 @@ class WorkspaceTasksViewController: UIViewController {
             }
             .forEach { view.removeConstraint($0) }
 
-        tableView.bottomAnchor.constraint(equalTo: pagination.topAnchor).isActive = true
+        tableView.bottomAnchor.constraint(equalTo: pagination.topAnchor, constant: -8).isActive = true
 
         paginationView = pagination
     }
@@ -109,6 +109,7 @@ class WorkspaceTasksViewController: UIViewController {
                 loadingWheelColor: .Sphinx.Text
             )
             tableView.isHidden = isLoading
+            paginationView?.isHidden = isLoading
             emptyStateLabel.isHidden = !tasks.isEmpty || isLoading
         }
     }

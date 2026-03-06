@@ -108,7 +108,7 @@ class WorkspaceFeaturesViewController: UIViewController {
             }
         }
         
-        tableView.bottomAnchor.constraint(equalTo: pagination.topAnchor).isActive = true
+        tableView.bottomAnchor.constraint(equalTo: pagination.topAnchor, constant: -8).isActive = true
         
         paginationView = pagination
     }
@@ -129,13 +129,13 @@ class WorkspaceFeaturesViewController: UIViewController {
     // MARK: - Data Loading
     private var isLoading = false {
         didSet {
-            let showLoadingUI = isLoading && features.isEmpty
             LoadingWheelHelper.toggleLoadingWheel(
-                loading: showLoadingUI,
+                loading: isLoading,
                 loadingWheel: loadingWheel,
                 loadingWheelColor: .Sphinx.Text
             )
-            tableView.isHidden = showLoadingUI
+            tableView.isHidden = isLoading
+            paginationView?.isHidden = isLoading
             emptyStateLabel.isHidden = !features.isEmpty || isLoading
         }
     }
