@@ -25,8 +25,11 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
 
     var onPRBadgeTapped: ((URL) -> Void)?
     var onArchiveTapped: (() -> Void)?
+    var onRetryWorkflowTapped: (() -> Void)?
     private(set) var prBadgeButton: UIButton!
     private(set) var archiveButton: UIButton!
+    private(set) var haltedWorkflowBadge: UILabel!
+    private(set) var retryWorkflowButton: UIButton!
     private var prBadgeURL: URL?
 
     private var updatedAtLabelTrailingToPR: NSLayoutConstraint!
@@ -64,6 +67,8 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
 
         setupPRBadgeButton()
         setupArchiveButton()
+        setupHaltedWorkflowBadge()
+        setupRetryWorkflowButton()
     }
 
     private func setupPRBadgeButton() {
@@ -112,8 +117,51 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         archiveButton.addTarget(self, action: #selector(archiveButtonTapped), for: .touchUpInside)
     }
 
+    private func setupHaltedWorkflowBadge() {
+        haltedWorkflowBadge = UILabel()
+        haltedWorkflowBadge.layer.cornerRadius = 10
+        haltedWorkflowBadge.clipsToBounds = true
+        haltedWorkflowBadge.textColor = .white
+        haltedWorkflowBadge.font = UIFont(name: "Roboto-Medium", size: 11)
+        haltedWorkflowBadge.textAlignment = .center
+        haltedWorkflowBadge.backgroundColor = .Sphinx.SphinxOrange
+        haltedWorkflowBadge.text = "  HALTED  "
+        haltedWorkflowBadge.translatesAutoresizingMaskIntoConstraints = false
+        haltedWorkflowBadge.isHidden = true
+        contentView.addSubview(haltedWorkflowBadge)
+
+        NSLayoutConstraint.activate([
+            haltedWorkflowBadge.trailingAnchor.constraint(equalTo: statusBadge.trailingAnchor),
+            haltedWorkflowBadge.topAnchor.constraint(equalTo: statusBadge.bottomAnchor, constant: 4),
+            haltedWorkflowBadge.heightAnchor.constraint(equalToConstant: 22)
+        ])
+    }
+
+    private func setupRetryWorkflowButton() {
+        retryWorkflowButton = UIButton(type: .system)
+        let config = UIImage.SymbolConfiguration(pointSize: 14, weight: .regular)
+        retryWorkflowButton.setImage(UIImage(systemName: "arrow.counterclockwise", withConfiguration: config), for: .normal)
+        retryWorkflowButton.tintColor = .Sphinx.SphinxOrange
+        retryWorkflowButton.translatesAutoresizingMaskIntoConstraints = false
+        retryWorkflowButton.isHidden = true
+        contentView.addSubview(retryWorkflowButton)
+
+        NSLayoutConstraint.activate([
+            retryWorkflowButton.leadingAnchor.constraint(equalTo: archiveButton.trailingAnchor, constant: 8),
+            retryWorkflowButton.centerYAnchor.constraint(equalTo: archiveButton.centerYAnchor),
+            retryWorkflowButton.widthAnchor.constraint(equalToConstant: 20),
+            retryWorkflowButton.heightAnchor.constraint(equalToConstant: 20)
+        ])
+
+        retryWorkflowButton.addTarget(self, action: #selector(retryWorkflowButtonTapped), for: .touchUpInside)
+    }
+
     @objc private func archiveButtonTapped() {
         onArchiveTapped?()
+    }
+
+    @objc private func retryWorkflowButtonTapped() {
+        onRetryWorkflowTapped?()
     }
 
     @objc private func prBadgeTapped() {
@@ -147,6 +195,10 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
 
         priorityBadge.text = "  \(task.priority)  "
         priorityBadge.backgroundColor = priorityColor(for: task.priority)
+
+        let isHalted = task.workflowStatus == "HALTED"
+        haltedWorkflowBadge.isHidden = !isHalted
+        retryWorkflowButton.isHidden = !isHalted
 
         if let urlStr = task.prUrl, let url = URL(string: urlStr) {
             prBadgeURL = url
