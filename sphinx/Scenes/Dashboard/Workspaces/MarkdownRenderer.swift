@@ -12,7 +12,7 @@ import UIKit
 struct MarkdownStyle {
     var textColor: UIColor       = .Sphinx.Text
     var secondaryColor: UIColor  = .Sphinx.SecondaryText
-    var codeBackground: UIColor  = UIColor(red: 0.13, green: 0.14, blue: 0.16, alpha: 1.0)
+    var codeBackground: UIColor  = UIColor(red: 0, green: 0, blue: 0, alpha: 0.25)
     var codeForeground: UIColor  = UIColor(red: 0.85, green: 0.90, blue: 0.95, alpha: 1.0)
     var linkColor: UIColor       = .Sphinx.PrimaryBlue
     var quoteColor: UIColor      = .Sphinx.SecondaryText
