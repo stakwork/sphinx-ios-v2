@@ -1608,6 +1608,70 @@ extension API {
         )
     }
 
+    // MARK: - Unarchive Task (PATCH /api/tasks/{taskId})
+
+    private func unarchiveTask(
+        taskId: String,
+        authToken: String,
+        callback: @escaping EmptyCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        guard let encodedTaskId = taskId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+            errorCallback(); return
+        }
+        let urlString = "\(API.kHiveBaseUrl)/tasks/\(encodedTaskId)"
+        let body: NSDictionary = ["archived": false]
+        guard let request = createRequest(urlString, bodyParams: body, method: "PATCH", token: authToken) else {
+            errorCallback(); return
+        }
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                errorCallback(); return
+            }
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+                if json["success"].bool == true { callback() } else { errorCallback() }
+            case .failure:
+                errorCallback()
+            }
+        }
+    }
+
+    func unarchiveTaskWithAuth(
+        taskId: String,
+        callback: @escaping EmptyCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
+            unarchiveTask(
+                taskId: taskId,
+                authToken: storedToken,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateAndUnarchiveTask(taskId: taskId, callback: callback, errorCallback: errorCallback)
+                }
+            )
+        } else {
+            authenticateAndUnarchiveTask(taskId: taskId, callback: callback, errorCallback: errorCallback)
+        }
+    }
+
+    private func authenticateAndUnarchiveTask(
+        taskId: String,
+        callback: @escaping EmptyCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback(); return }
+                UserDefaults.Keys.hiveToken.set(token)
+                self?.unarchiveTask(taskId: taskId, authToken: token, callback: callback, errorCallback: errorCallback)
+            },
+            errorCallback: errorCallback
+        )
+    }
+
     // MARK: - Retry Task Workflow (PATCH /api/tasks/{taskId})
 
     func retryTaskWorkflow(

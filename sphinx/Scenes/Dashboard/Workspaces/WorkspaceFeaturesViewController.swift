@@ -235,10 +235,19 @@ extension WorkspaceFeaturesViewController: UITableViewDataSource, UITableViewDel
         let feature = features[indexPath.row]
         let isLastRow = indexPath.row == features.count - 1
         cell.configure(with: feature, isLastRow: isLastRow)
-        
-        cell.onDeleteTapped = { [weak self] in
-            guard let self else { return }
-            let feature = self.features[indexPath.row]
+        return cell
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        let feature = features[indexPath.row]
+        openFeaturePlan(feature: feature)
+    }
+
+    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        let feature = features[indexPath.row]
+        let deleteAction = UIContextualAction(style: .destructive, title: "Delete") { [weak self] _, _, completionHandler in
+            guard let self else { completionHandler(false); return }
             AlertHelper.showTwoOptionsAlert(
                 title: "Delete Feature",
                 message: "Are you sure you want to delete \"\(feature.title)\"? This cannot be undone.",
@@ -254,14 +263,9 @@ extension WorkspaceFeaturesViewController: UITableViewDataSource, UITableViewDel
                     }
                 }
             )
+            completionHandler(true)
         }
-        
-        return cell
-    }
-    
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
-        let feature = features[indexPath.row]
-        openFeaturePlan(feature: feature)
+        deleteAction.image = UIImage(systemName: "trash")
+        return UISwipeActionsConfiguration(actions: [deleteAction])
     }
 }

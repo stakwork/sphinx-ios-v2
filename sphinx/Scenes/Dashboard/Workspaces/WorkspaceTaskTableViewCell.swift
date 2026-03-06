@@ -32,10 +32,8 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
     }()
 
     var onPRBadgeTapped: ((URL) -> Void)?
-    var onArchiveTapped: (() -> Void)?
     var onRetryWorkflowTapped: (() -> Void)?
     private(set) var prBadgeButton: UIButton!
-    private(set) var archiveButton: UIButton!
     private(set) var haltedWorkflowBadge: UILabel!
     private(set) var retryWorkflowButton: UIButton!
     private(set) var rightPillStack: UIStackView!
@@ -72,7 +70,6 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         separatorView.backgroundColor = .Sphinx.LightDivider
 
         setupPRBadgeButton()
-        setupArchiveButton()
         setupHaltedWorkflowBadge()
         setupRetryWorkflowButton()
         setupRightPillStack()
@@ -89,22 +86,6 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         prBadgeButton.addTarget(self, action: #selector(prBadgeTapped), for: .touchUpInside)
         // Height constraint only — stack handles trailing/bottom positioning
         prBadgeButton.heightAnchor.constraint(equalToConstant: 22).isActive = true
-    }
-
-    private func setupArchiveButton() {
-        archiveButton = UIButton(type: .system)
-        let config = UIImage.SymbolConfiguration(pointSize: 14, weight: .regular)
-        archiveButton.setImage(UIImage(systemName: "archivebox", withConfiguration: config), for: .normal)
-        archiveButton.tintColor = .Sphinx.SecondaryText
-        archiveButton.translatesAutoresizingMaskIntoConstraints = false
-        contentView.addSubview(archiveButton)
-        NSLayoutConstraint.activate([
-            archiveButton.leadingAnchor.constraint(equalTo: repositoryLabel.trailingAnchor, constant: 8),
-            archiveButton.centerYAnchor.constraint(equalTo: repositoryLabel.centerYAnchor),
-            archiveButton.widthAnchor.constraint(equalToConstant: 20),
-            archiveButton.heightAnchor.constraint(equalToConstant: 20)
-        ])
-        archiveButton.addTarget(self, action: #selector(archiveButtonTapped), for: .touchUpInside)
     }
 
     private func setupHaltedWorkflowBadge() {
@@ -132,8 +113,8 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         contentView.addSubview(retryWorkflowButton)
 
         NSLayoutConstraint.activate([
-            retryWorkflowButton.leadingAnchor.constraint(equalTo: archiveButton.trailingAnchor, constant: 8),
-            retryWorkflowButton.centerYAnchor.constraint(equalTo: archiveButton.centerYAnchor),
+            retryWorkflowButton.leadingAnchor.constraint(equalTo: repositoryLabel.trailingAnchor, constant: 8),
+            retryWorkflowButton.centerYAnchor.constraint(equalTo: repositoryLabel.centerYAnchor),
             retryWorkflowButton.widthAnchor.constraint(equalToConstant: 20),
             retryWorkflowButton.heightAnchor.constraint(equalToConstant: 20)
         ])
@@ -153,13 +134,8 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         NSLayoutConstraint.activate([
             rightPillStack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             rightPillStack.bottomAnchor.constraint(equalTo: separatorView.topAnchor, constant: -12),
-            // Guard: stack must never overlap the archive button
-            rightPillStack.leadingAnchor.constraint(greaterThanOrEqualTo: archiveButton.trailingAnchor, constant: 8)
+            rightPillStack.leadingAnchor.constraint(greaterThanOrEqualTo: repositoryLabel.trailingAnchor, constant: 8)
         ])
-    }
-
-    @objc private func archiveButtonTapped() {
-        onArchiveTapped?()
     }
 
     @objc private func retryWorkflowButtonTapped() {
@@ -190,7 +166,6 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         repositoryLabel.text = task.repositoryName
         updatedAtLabel.text = formatDate(task.updatedAt)
         separatorView.isHidden = isLastRow
-        archiveButton.isHidden = task.archived
 
         let hasOpenPR = task.prUrl != nil && !(task.prStatus == "MERGED" || task.prStatus == "DONE")
         if hasOpenPR {
