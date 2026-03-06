@@ -123,13 +123,16 @@ class FeatureChatMessageCell: UITableViewCell {
 
         // --- Text content ---
         if isUser {
-            let font = UIFont(name: "Roboto-Regular", size: 15) ?? UIFont.systemFont(ofSize: 15)
-            messageTextView.attributedText = NSAttributedString(
-                string: message.resolvedDisplayText,
-                attributes: [.font: font, .foregroundColor: UIColor.Sphinx.TextMessages]
-            )
+            let rendered = FeatureChatMessageCell.markdownRenderer.render(message.resolvedDisplayText)
+            let mutable  = NSMutableAttributedString(attributedString: rendered)
+            mutable.enumerateAttribute(.foregroundColor, in: NSRange(location: 0, length: mutable.length)) { value, range, _ in
+                if let color = value as? UIColor, color == UIColor.Sphinx.Text {
+                    mutable.addAttribute(.foregroundColor, value: UIColor.Sphinx.TextMessages, range: range)
+                }
+            }
+            messageTextView.attributedText = mutable
             // Fix 3: hide text view when message body is blank
-            let hasText = !message.message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            let hasText = !message.resolvedDisplayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             messageTextView.isHidden = !hasText
             bubbleView.backgroundColor      = UIColor.Sphinx.SentMsgBG
             timestampLabel.textColor        = UIColor.Sphinx.SecondaryTextSent
@@ -216,7 +219,7 @@ class FeatureChatMessageCell: UITableViewCell {
             // Derive hasText the same way Fix 3 does — don't override its decision
             let hasText: Bool
             if isUser {
-                hasText = !message.message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                hasText = !message.resolvedDisplayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             } else {
                 hasText = !message.resolvedDisplayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             }
