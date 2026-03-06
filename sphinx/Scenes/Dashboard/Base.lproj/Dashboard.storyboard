@@ -893,7 +893,7 @@
                         <constraints>
                             <constraint firstItem="2oL-fV-0G6" firstAttribute="trailing" secondItem="46c-NE-1TO" secondAttribute="trailing" id="71j-Ki-twj"/>
                             <constraint firstItem="maQ-Se-F9E" firstAttribute="centerX" secondItem="46c-NE-1TO" secondAttribute="centerX" id="9qS-xb-fl2"/>
-                            <constraint firstAttribute="bottom" secondItem="n2I-6v-3OQ" secondAttribute="bottom" id="Dw1-O0-VFs"/>
+
                             <constraint firstItem="2oL-fV-0G6" firstAttribute="leading" secondItem="46c-NE-1TO" secondAttribute="leading" id="JVd-IV-95X"/>
                             <constraint firstItem="n2I-6v-3OQ" firstAttribute="leading" secondItem="46c-NE-1TO" secondAttribute="leading" id="Klu-yi-ml0"/>
                             <constraint firstItem="qNo-LU-o5Z" firstAttribute="centerX" secondItem="46c-NE-1TO" secondAttribute="centerX" id="YA8-8Q-jVX"/>
