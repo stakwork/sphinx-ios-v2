@@ -1606,6 +1606,89 @@ extension API {
         )
     }
 
+    // MARK: - Retry Task Workflow (PATCH /api/tasks/{taskId})
+
+    func retryTaskWorkflow(
+        taskId: String,
+        authToken: String,
+        callback: @escaping EmptyCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        guard let encodedTaskId = taskId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+            errorCallback(); return
+        }
+        let urlString = "\(API.kHiveBaseUrl)/tasks/\(encodedTaskId)"
+        let body: NSDictionary = ["retryWorkflow": true]
+        guard let request = createRequest(urlString, bodyParams: body, method: "PATCH", token: authToken) else {
+            errorCallback(); return
+        }
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                errorCallback(); return
+            }
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+                if json["success"].bool == true {
+                    callback()
+                } else {
+                    print("[HiveAPI] retryTaskWorkflow returned success=false: \(json)")
+                    errorCallback()
+                }
+            case .failure(let error):
+                print("[HiveAPI] retryTaskWorkflow failed: \(error.localizedDescription)")
+                errorCallback()
+            }
+        }
+    }
+
+    func retryTaskWorkflowWithAuth(
+        taskId: String,
+        callback: @escaping EmptyCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
+            retryTaskWorkflow(
+                taskId: taskId,
+                authToken: storedToken,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateAndRetryTaskWorkflow(
+                        taskId: taskId,
+                        callback: callback,
+                        errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateAndRetryTaskWorkflow(
+                taskId: taskId,
+                callback: callback,
+                errorCallback: errorCallback
+            )
+        }
+    }
+
+    private func authenticateAndRetryTaskWorkflow(
+        taskId: String,
+        callback: @escaping EmptyCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback(); return }
+                UserDefaults.Keys.hiveToken.set(token)
+                self?.retryTaskWorkflow(
+                    taskId: taskId,
+                    authToken: token,
+                    callback: callback,
+                    errorCallback: errorCallback
+                )
+            },
+            errorCallback: errorCallback
+        )
+    }
+
 }
 
 // MARK: - Workspace Image Cache

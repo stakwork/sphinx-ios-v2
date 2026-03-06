@@ -51,6 +51,22 @@ class WorkflowStatusView: UIView {
         return lbl
     }()
 
+    private let retryButton: UIButton = {
+        let btn = UIButton(type: .system)
+        let config = UIImage.SymbolConfiguration(pointSize: 16, weight: .medium)
+        btn.setImage(UIImage(systemName: "arrow.counterclockwise.circle.fill", withConfiguration: config), for: .normal)
+        btn.tintColor = UIColor.Sphinx.SphinxOrange
+        btn.translatesAutoresizingMaskIntoConstraints = false
+        btn.widthAnchor.constraint(equalToConstant: 20).isActive = true
+        btn.heightAnchor.constraint(equalToConstant: 20).isActive = true
+        btn.isHidden = true
+        return btn
+    }()
+
+    // MARK: - Callbacks
+
+    var onRetryTapped: (() -> Void)?
+
     // MARK: - State
 
     var status: WorkflowStatus = .PENDING {
@@ -92,6 +108,9 @@ class WorkflowStatusView: UIView {
         stackView.addArrangedSubview(circleView)
         stackView.addArrangedSubview(iconView)
         stackView.addArrangedSubview(statusLabel)
+        stackView.addArrangedSubview(retryButton)
+
+        retryButton.addTarget(self, action: #selector(retryButtonTapped), for: .touchUpInside)
 
         updateAppearance()
     }
@@ -100,6 +119,8 @@ class WorkflowStatusView: UIView {
 
     private func updateAppearance() {
         removePulseAnimation()
+
+        retryButton.isHidden = (status != .HALTED)
 
         switch status {
         case .PENDING:
@@ -139,6 +160,10 @@ class WorkflowStatusView: UIView {
             statusLabel.text = "Failed"
             statusLabel.isHidden = false
         }
+    }
+
+    @objc private func retryButtonTapped() {
+        onRetryTapped?()
     }
 
     private func showCircle(color: UIColor) {
