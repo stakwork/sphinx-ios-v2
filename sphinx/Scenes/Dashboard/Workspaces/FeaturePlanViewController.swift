@@ -15,6 +15,7 @@ class FeaturePlanViewController: UIViewController {
     private var workspace: Workspace
     private var messages: [HiveChatMessage] = []
     private var processingStepText: String? = nil
+    private var cachedStakworkProjectId: Int?
     private var isAIWorking: Bool = false {
         didSet {
             updateAIWorkingState()
@@ -85,6 +86,7 @@ class FeaturePlanViewController: UIViewController {
         setupUI()
         applyInitialWorkflowStatus()
         setupKeyboardObservers()
+        cachedStakworkProjectId = feature.stakworkProjectId
         fetchFeatureDetail()
         checkForActiveTaskGeneration()
         fetchChatHistory()
@@ -730,6 +732,7 @@ class FeaturePlanViewController: UIViewController {
                 guard let self = self, let updatedFeature = updatedFeature else { return }
                 DispatchQueue.main.async {
                     self.feature = updatedFeature
+                    self.cachedStakworkProjectId = updatedFeature.stakworkProjectId
                     HivePusherManager.shared.subscribeToFeatureTasks(updatedFeature.allTasks.map { $0.id })
                     // Apply workflow status from freshly fetched feature data
                     self.applyInitialWorkflowStatus()
@@ -743,6 +746,10 @@ class FeaturePlanViewController: UIViewController {
                     }
                     // Show/hide generate button based on whether tasks exist
                     self.updateGenerateTasksButton()
+                    // If fetched as fallback for workflow step, update bubble text
+                    if let projectId = updatedFeature.stakworkProjectId {
+                        self.fetchStepText(projectId: projectId)
+                    }
                 }
             },
             errorCallback: {
@@ -849,11 +856,11 @@ class FeaturePlanViewController: UIViewController {
     
     // MARK: - Processing Bubble
     private func showProcessingBubble() {
-//        guard processingStepText == nil else { return }
-//        processingStepText = "Communicating with workflow"
-//        let indexPath = IndexPath(row: messages.count, section: 0)
-//        chatTableView.insertRows(at: [indexPath], with: .automatic)
-//        scrollToBottom()
+        guard processingStepText == nil else { return }
+        processingStepText = "Communicating with Workflow"
+        let indexPath = IndexPath(row: messages.count, section: 0)
+        chatTableView.insertRows(at: [indexPath], with: .automatic)
+        scrollToBottom()
     }
 
     private func hideProcessingBubble() {
@@ -1007,9 +1014,36 @@ extension FeaturePlanViewController: HivePusherDelegate {
     
     func workflowStatusChanged(status: WorkflowStatus) {
         DispatchQueue.main.async {
-            self.fetchFeatureDetail()
             self.applyWorkflowStatus(status)
+            if status == .IN_PROGRESS || status == .PENDING {
+                self.showProcessingBubble()
+                self.fetchAndUpdateWorkflowStep()
+            }
         }
+    }
+
+    private func fetchAndUpdateWorkflowStep() {
+        if let projectId = cachedStakworkProjectId {
+            fetchStepText(projectId: projectId)
+        } else {
+            // fetchFeatureDetail callback sets cachedStakworkProjectId then calls fetchStepText
+            fetchFeatureDetail()
+        }
+    }
+
+    private func fetchStepText(projectId: Int) {
+        API.sharedInstance.fetchStakworkWorkflowWithAuth(
+            projectId: projectId,
+            callback: { [weak self] workflowData in
+                guard let self = self, let title = workflowData?.inProgressTitle else { return }
+                DispatchQueue.main.async {
+                    self.updateProcessingBubble(stepText: title)
+                }
+            },
+            errorCallback: {
+                print("[FeaturePlanVC] Failed to fetch stakwork workflow step")
+            }
+        )
     }
 
     func taskStatusUpdated(taskId: String, status: String, workflowStatus: String?, archived: Bool) {
