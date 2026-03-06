@@ -239,6 +239,12 @@ class FeaturePlanViewController: UIViewController {
         workflowStatusView.translatesAutoresizingMaskIntoConstraints = false
         chatContainerView.addSubview(workflowStatusView)
 
+        workflowStatusView.onRetryTapped = { [weak self] in
+            guard let self else { return }
+            guard let lastUserMsg = self.messages.last(where: { $0.isUserMessage }) else { return }
+            self.sendChatMessage(lastUserMsg.message)
+        }
+
         chatTableView.keyboardDismissMode = .interactive
 
         chatInputContainerBottomConstraint = chatInputContainer.bottomAnchor.constraint(equalTo: chatContainerView.safeAreaLayoutGuide.bottomAnchor)
@@ -676,18 +682,18 @@ class FeaturePlanViewController: UIViewController {
     private func applyInitialWorkflowStatus() {
         guard let raw = feature.workflowStatus,
               let status = WorkflowStatus(rawValue: raw),
-              status == .IN_PROGRESS || status == .PENDING else { return }
+              status == .IN_PROGRESS || status == .PENDING || status == .HALTED else { return }
         applyWorkflowStatus(status)
     }
 
     private func applyWorkflowStatus(_ status: WorkflowStatus) {
         workflowStatusView.status = status
         switch status {
-        case .IN_PROGRESS, .PENDING:
+        case .IN_PROGRESS, .PENDING, .HALTED:
             workflowStatusHeightConstraint.constant = 32
             workflowStatusView.show(animated: true)
             UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
-        case .COMPLETED, .ERROR, .HALTED, .FAILED:
+        case .COMPLETED, .ERROR, .FAILED:
             workflowStatusHeightConstraint.constant = 0
             workflowStatusView.hide(animated: true)
             UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
@@ -918,6 +924,11 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
             let isLast = indexPath.row == tasks.count - 1
             cell.configure(with: task, isLastRow: isLast)
             cell.onPRBadgeTapped = { url in UIApplication.shared.open(url) }
+            cell.onRetryWorkflowTapped = { [weak self] in
+                guard let self else { return }
+                let t = self.feature.allTasks[indexPath.row]
+                API.sharedInstance.retryTaskWorkflowWithAuth(taskId: t.id, callback: {}, errorCallback: {})
+            }
             return cell
         }
 
