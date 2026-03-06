@@ -210,27 +210,31 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         priorityBadge.text = "  \(task.priority)  "
         priorityBadge.backgroundColor = priorityColor(for: task.priority)
 
-        let isHalted = task.workflowStatus == "HALTED"
-        haltedWorkflowBadge.isHidden = !isHalted
-        retryWorkflowButton.isHidden = !isHalted
+        // ── Baseline reset (prevents cell-reuse bleed) ──────────────────
+        prBadgeButton.isHidden = true
+        haltedWorkflowBadge.isHidden = true
+        retryWorkflowButton.isHidden = true
+        prBadgeURL = nil
 
-        updatedAtLabelTrailingToHalted.isActive = isHalted
-        if isHalted {
-            updatedAtLabelTrailingToEdge.isActive = false
-        }
+        updatedAtLabelTrailingToEdge.isActive = false
+        updatedAtLabelTrailingToPR.isActive = false
+        updatedAtLabelTrailingToHalted.isActive = false
+
+        // ── Exclusive pill logic: PR wins, then HALTED, then neither ─────
+        let prIsMerged = task.prStatus == "MERGED" || task.prStatus == "DONE"
+        let isHalted = task.workflowStatus == "HALTED"
 
         if let urlStr = task.prUrl, let url = URL(string: urlStr) {
             prBadgeURL = url
             prBadgeButton.isHidden = false
-            let prIsMerged = task.prStatus == "MERGED" || task.prStatus == "DONE"
             prBadgeButton.setTitle(prIsMerged ? "  MERGED  " : "  OPEN PR  ", for: .normal)
             prBadgeButton.backgroundColor = prIsMerged ? UIColor(hex: "#8B5CF6") : UIColor.Sphinx.PrimaryBlue
-            updatedAtLabelTrailingToEdge.isActive = false
             updatedAtLabelTrailingToPR.isActive = true
+        } else if isHalted {
+            haltedWorkflowBadge.isHidden = false
+            retryWorkflowButton.isHidden = false
+            updatedAtLabelTrailingToHalted.isActive = true
         } else {
-            prBadgeURL = nil
-            prBadgeButton.isHidden = true
-            updatedAtLabelTrailingToPR.isActive = false
             updatedAtLabelTrailingToEdge.isActive = true
         }
     }
