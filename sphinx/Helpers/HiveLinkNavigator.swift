@@ -47,7 +47,7 @@ class HiveLinkNavigator {
                 } else if hiveLink.isHiveTaskLink {
                     API.sharedInstance.fetchTasksWithAuth(
                         workspaceId: workspace.id,
-                        callback: { tasks in
+                        callback: { tasks, _ in
                             DispatchQueue.main.async {
                                 bubbleHelper.hideLoadingWheel()
                                 guard let task = tasks.first(where: { $0.id == entityId }) else {
