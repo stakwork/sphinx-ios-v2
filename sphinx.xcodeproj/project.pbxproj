@@ -4091,11 +4091,8 @@
 				D4E5F6A7B8C9D0E1F2A3B4C5 /* TaskProgressBarView.swift */,
 				L2M3N4O5P6Q7R8S9T0U1V2W3 /* CreateFeatureViewController.swift */,
 				N4O5P6Q7R8S9T0U1V2W3X4Y5 /* HiveProcessingBubbleCell.swift */,
-<<<<<<< HEAD
 				P6Q7R8S9T0U1V2W3X4Y5Z6A7 /* HiveShareViewController.swift */,
-=======
 				Q2R3S4T5U6V7W8X9Y0Z1A2B3 /* PaginationControlView.swift */,
->>>>>>> master
 			);
 			path = Workspaces;
 			sourceTree = "<group>";
