@@ -234,11 +234,6 @@ class HiveShareViewController: UIViewController {
         closeButton.addTarget(self, action: #selector(closeTapped), for: .touchUpInside)
         headerView.addSubview(closeButton)
 
-        let divider = UIView()
-        divider.translatesAutoresizingMaskIntoConstraints = false
-        divider.backgroundColor = UIColor.Sphinx.LightDivider
-        headerView.addSubview(divider)
-
         NSLayoutConstraint.activate([
             headerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             headerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -251,12 +246,7 @@ class HiveShareViewController: UIViewController {
             closeButton.trailingAnchor.constraint(equalTo: headerView.trailingAnchor),
             closeButton.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
             closeButton.widthAnchor.constraint(equalToConstant: 50),
-            closeButton.heightAnchor.constraint(equalToConstant: 50),
-
-            divider.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
-            divider.trailingAnchor.constraint(equalTo: headerView.trailingAnchor),
-            divider.bottomAnchor.constraint(equalTo: headerView.bottomAnchor),
-            divider.heightAnchor.constraint(equalToConstant: 1)
+            closeButton.heightAnchor.constraint(equalToConstant: 50)
         ])
     }
 
@@ -267,13 +257,16 @@ class HiveShareViewController: UIViewController {
 
         searchTextField = UITextField()
         searchTextField.translatesAutoresizingMaskIntoConstraints = false
-        searchTextField.placeholder = "Search tribes & contacts"
         searchTextField.clearButtonMode = .whileEditing
         searchTextField.font = UIFont(name: "Roboto-Regular", size: 14)
         searchTextField.textColor = UIColor.Sphinx.Text
         searchTextField.layer.cornerRadius = 8
         searchTextField.layer.borderWidth = 1
-        searchTextField.layer.borderColor = UIColor.Sphinx.LightDivider.cgColor
+        searchTextField.layer.borderColor = UIColor.Sphinx.SecondaryText.cgColor
+        searchTextField.attributedPlaceholder = NSAttributedString(
+            string: "Search tribes & contacts",
+            attributes: [.foregroundColor: UIColor.Sphinx.SecondaryText]
+        )
         searchTextField.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 10, height: 0))
         searchTextField.leftViewMode = .always
         searchTextField.returnKeyType = .done
