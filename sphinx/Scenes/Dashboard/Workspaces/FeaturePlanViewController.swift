@@ -35,6 +35,11 @@ class FeaturePlanViewController: UIViewController {
     private var planContainerView: UIView!
     private var tasksContainerView: UIView!
     private var tasksTableView: UITableView!
+    private lazy var tasksRefreshControl: UIRefreshControl = {
+        let control = UIRefreshControl()
+        control.tintColor = .Sphinx.Text
+        return control
+    }()
     
     // Chat Panel Components
     private var chatTableView: UITableView!
@@ -539,6 +544,8 @@ class FeaturePlanViewController: UIViewController {
         // Delegate/dataSource wired in extension below
         tasksTableView.delegate = self
         tasksTableView.dataSource = self
+        tasksRefreshControl.addTarget(self, action: #selector(handleTasksRefresh), for: .valueChanged)
+        tasksTableView.refreshControl = tasksRefreshControl
         tasksContainerView.addSubview(tasksTableView)
 
         // Empty state label
@@ -613,6 +620,10 @@ class FeaturePlanViewController: UIViewController {
         updateProgressBar()
         updateStartTasksButton()
         updateTasksEmptyState()
+    }
+
+    @objc private func handleTasksRefresh() {
+        fetchFeatureDetail()
     }
 
     @objc private func startTasksButtonTouched() {
@@ -757,9 +768,13 @@ class FeaturePlanViewController: UIViewController {
                     if let projectId = updatedFeature.stakworkProjectId {
                         self.fetchStepText(projectId: projectId)
                     }
+                    self.tasksRefreshControl.endRefreshing()
                 }
             },
-            errorCallback: {
+            errorCallback: { [weak self] in
+                DispatchQueue.main.async {
+                    self?.tasksRefreshControl.endRefreshing()
+                }
                 print("[FeaturePlanVC] Failed to fetch feature detail")
             }
         )
