@@ -18,10 +18,18 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
 
     @IBOutlet weak var titleLabel: UILabel!
     @IBOutlet weak var repositoryLabel: UILabel!
-    @IBOutlet weak var updatedAtLabel: UILabel!
     @IBOutlet weak var statusBadge: UILabel!
     @IBOutlet weak var priorityBadge: UILabel!
     @IBOutlet weak var separatorView: UIView!
+
+    // Programmatic — no longer an @IBOutlet (removed from XIB)
+    var updatedAtLabel: UILabel = {
+        let label = UILabel()
+        label.textAlignment = .right
+        label.lineBreakMode = .byTruncatingTail
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
 
     var onPRBadgeTapped: ((URL) -> Void)?
     var onArchiveTapped: (() -> Void)?
@@ -30,11 +38,8 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
     private(set) var archiveButton: UIButton!
     private(set) var haltedWorkflowBadge: UILabel!
     private(set) var retryWorkflowButton: UIButton!
+    private(set) var rightPillStack: UIStackView!
     private var prBadgeURL: URL?
-
-    private(set) var updatedAtLabelTrailingToPR: NSLayoutConstraint!
-    private(set) var updatedAtLabelTrailingToEdge: NSLayoutConstraint!
-    private(set) var updatedAtLabelTrailingToHalted: NSLayoutConstraint!
 
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -70,6 +75,7 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         setupArchiveButton()
         setupHaltedWorkflowBadge()
         setupRetryWorkflowButton()
+        setupRightPillStack()
     }
 
     private func setupPRBadgeButton() {
@@ -81,21 +87,8 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         prBadgeButton.isHidden = true
         prBadgeButton.translatesAutoresizingMaskIntoConstraints = false
         prBadgeButton.addTarget(self, action: #selector(prBadgeTapped), for: .touchUpInside)
-        contentView.addSubview(prBadgeButton)
-
-        NSLayoutConstraint.activate([
-            prBadgeButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            prBadgeButton.bottomAnchor.constraint(equalTo: separatorView.topAnchor, constant: -12),
-            prBadgeButton.heightAnchor.constraint(equalToConstant: 22)
-        ])
-
-        updatedAtLabelTrailingToPR = updatedAtLabel.trailingAnchor.constraint(
-            lessThanOrEqualTo: prBadgeButton.leadingAnchor, constant: -8
-        )
-        updatedAtLabelTrailingToEdge = updatedAtLabel.trailingAnchor.constraint(
-            equalTo: contentView.trailingAnchor, constant: -16
-        )
-        updatedAtLabelTrailingToEdge.isActive = true
+        // Height constraint only — stack handles trailing/bottom positioning
+        prBadgeButton.heightAnchor.constraint(equalToConstant: 22).isActive = true
     }
 
     private func setupArchiveButton() {
@@ -109,11 +102,7 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
             archiveButton.leadingAnchor.constraint(equalTo: repositoryLabel.trailingAnchor, constant: 8),
             archiveButton.centerYAnchor.constraint(equalTo: repositoryLabel.centerYAnchor),
             archiveButton.widthAnchor.constraint(equalToConstant: 20),
-            archiveButton.heightAnchor.constraint(equalToConstant: 20),
-            // Guard: date label must never overlap the archive button
-            updatedAtLabel.leadingAnchor.constraint(
-                greaterThanOrEqualTo: archiveButton.trailingAnchor, constant: 8
-            )
+            archiveButton.heightAnchor.constraint(equalToConstant: 20)
         ])
         archiveButton.addTarget(self, action: #selector(archiveButtonTapped), for: .touchUpInside)
     }
@@ -129,17 +118,8 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         haltedWorkflowBadge.text = "  HALTED  "
         haltedWorkflowBadge.translatesAutoresizingMaskIntoConstraints = false
         haltedWorkflowBadge.isHidden = true
-        contentView.addSubview(haltedWorkflowBadge)
-
-        NSLayoutConstraint.activate([
-            haltedWorkflowBadge.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            haltedWorkflowBadge.bottomAnchor.constraint(equalTo: separatorView.topAnchor, constant: -12),
-            haltedWorkflowBadge.heightAnchor.constraint(equalToConstant: 22)
-        ])
-
-        updatedAtLabelTrailingToHalted = updatedAtLabel.trailingAnchor.constraint(
-            lessThanOrEqualTo: haltedWorkflowBadge.leadingAnchor, constant: -8
-        )
+        // Height constraint only — stack handles trailing/bottom positioning
+        haltedWorkflowBadge.heightAnchor.constraint(equalToConstant: 22).isActive = true
     }
 
     private func setupRetryWorkflowButton() {
@@ -159,6 +139,23 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         ])
 
         retryWorkflowButton.addTarget(self, action: #selector(retryWorkflowButtonTapped), for: .touchUpInside)
+    }
+
+    private func setupRightPillStack() {
+        rightPillStack = UIStackView(arrangedSubviews: [updatedAtLabel, prBadgeButton, haltedWorkflowBadge])
+        rightPillStack.axis = .horizontal
+        rightPillStack.alignment = .center
+        rightPillStack.distribution = .fill
+        rightPillStack.spacing = 8
+        rightPillStack.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(rightPillStack)
+
+        NSLayoutConstraint.activate([
+            rightPillStack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            rightPillStack.bottomAnchor.constraint(equalTo: separatorView.topAnchor, constant: -12),
+            // Guard: stack must never overlap the archive button
+            rightPillStack.leadingAnchor.constraint(greaterThanOrEqualTo: archiveButton.trailingAnchor, constant: 8)
+        ])
     }
 
     @objc private func archiveButtonTapped() {
@@ -216,10 +213,6 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         retryWorkflowButton.isHidden = true
         prBadgeURL = nil
 
-        updatedAtLabelTrailingToEdge.isActive = false
-        updatedAtLabelTrailingToPR.isActive = false
-        updatedAtLabelTrailingToHalted.isActive = false
-
         // ── Exclusive pill logic: PR wins, then HALTED, then neither ─────
         let prIsMerged = task.prStatus == "MERGED" || task.prStatus == "DONE"
         let isHalted = task.workflowStatus == "HALTED"
@@ -229,14 +222,11 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
             prBadgeButton.isHidden = false
             prBadgeButton.setTitle(prIsMerged ? "  MERGED  " : "  OPEN PR  ", for: .normal)
             prBadgeButton.backgroundColor = prIsMerged ? UIColor(hex: "#8B5CF6") : UIColor.Sphinx.PrimaryBlue
-            updatedAtLabelTrailingToPR.isActive = true
         } else if isHalted {
             haltedWorkflowBadge.isHidden = false
             retryWorkflowButton.isHidden = false
-            updatedAtLabelTrailingToHalted.isActive = true
-        } else {
-            updatedAtLabelTrailingToEdge.isActive = true
         }
+        // UIStackView collapses hidden arranged subviews — no constraint toggling needed
     }
     
     private func formatDate(_ dateString: String?) -> String {
