@@ -481,15 +481,11 @@ extension HiveShareViewController: UITableViewDataSource, UITableViewDelegate {
             selectedItems.removeAll(where: { $0.getObjectId() == tapped.getObjectId() })
         } else {
             // Select up to maxSelections
-            if selectedItems.count < maxSelections {
-                selectedItems.append(tapped)
-            } else {
-                // Already at max — optionally show a brief hint
-                return
-            }
+            guard selectedItems.count < maxSelections else { return }
+            selectedItems.append(tapped)
         }
 
-        tableView.reloadData()
+        tableView.reloadRows(at: [indexPath], with: .none)
         updateConfirmButton()
     }
 }
