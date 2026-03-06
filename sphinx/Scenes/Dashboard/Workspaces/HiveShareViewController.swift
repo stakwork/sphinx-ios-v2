@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import SDWebImage
 
 // MARK: - HiveShareContactTableViewCell
 
@@ -21,6 +22,18 @@ class HiveShareContactTableViewCell: UITableViewCell {
         iv.layer.cornerRadius = 20
         iv.backgroundColor = UIColor.Sphinx.LightDivider
         return iv
+    }()
+
+    private let initialsLabel: UILabel = {
+        let lbl = UILabel()
+        lbl.translatesAutoresizingMaskIntoConstraints = false
+        lbl.font = UIFont(name: "Roboto-Bold", size: 14)
+        lbl.textColor = .white
+        lbl.textAlignment = .center
+        lbl.clipsToBounds = true
+        lbl.layer.cornerRadius = 20
+        lbl.isHidden = true
+        return lbl
     }()
 
     private let nameLabel: UILabel = {
@@ -47,6 +60,7 @@ class HiveShareContactTableViewCell: UITableViewCell {
         selectionStyle = .none
 
         contentView.addSubview(avatarImageView)
+        contentView.addSubview(initialsLabel)
         contentView.addSubview(nameLabel)
         contentView.addSubview(checkmarkImageView)
 
@@ -55,6 +69,11 @@ class HiveShareContactTableViewCell: UITableViewCell {
             avatarImageView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
             avatarImageView.widthAnchor.constraint(equalToConstant: 40),
             avatarImageView.heightAnchor.constraint(equalToConstant: 40),
+
+            initialsLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            initialsLabel.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            initialsLabel.widthAnchor.constraint(equalToConstant: 40),
+            initialsLabel.heightAnchor.constraint(equalToConstant: 40),
 
             nameLabel.leadingAnchor.constraint(equalTo: avatarImageView.trailingAnchor, constant: 12),
             nameLabel.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
@@ -71,19 +90,62 @@ class HiveShareContactTableViewCell: UITableViewCell {
         fatalError("init(coder:) has not been implemented")
     }
 
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        avatarImageView.sd_cancelCurrentImageLoad()
+        avatarImageView.image = nil
+        initialsLabel.isHidden = true
+        avatarImageView.isHidden = false
+    }
+
     func configure(with item: ChatListCommonObject, isSelected: Bool) {
         nameLabel.text = item.getName()
         checkmarkImageView.isHidden = !isSelected
 
-        avatarImageView.image = UIImage(systemName: "person.circle.fill")
-        avatarImageView.tintColor = UIColor.Sphinx.WashedOutReceivedText
+        // Choose correct placeholder based on type
+        let isTribe = !item.isConversation()
+        let placeholder = UIImage(named: isTribe ? "tribePlaceholder" : "profile_avatar")
 
-        if let urlStr = item.getPhotoUrl(), let url = URL(string: urlStr) {
-            URLSession.shared.dataTask(with: url) { [weak self] data, _, _ in
-                guard let data = data, let img = UIImage(data: data) else { return }
-                DispatchQueue.main.async { self?.avatarImageView.image = img }
-            }.resume()
+        // Cancel any previous load to avoid image bleed-over
+        avatarImageView.sd_cancelCurrentImageLoad()
+
+        if let urlStr = item.getPhotoUrl()?.removeDuplicatedProtocol(),
+           !urlStr.isEmpty,
+           let url = URL(string: urlStr) {
+            // Show initials while loading
+            showInitials(for: item)
+            avatarImageView.sd_setImage(
+                with: url,
+                placeholderImage: placeholder,
+                options: .lowPriority,
+                progress: nil
+            ) { [weak self] image, error, _, _ in
+                guard let self = self else { return }
+                if error == nil, let image = image {
+                    self.initialsLabel.isHidden = true
+                    self.avatarImageView.isHidden = false
+                    self.avatarImageView.image = image
+                }
+            }
+        } else {
+            // No URL — show initials or placeholder
+            if item.isConversation() {
+                showInitials(for: item)
+            } else {
+                initialsLabel.isHidden = true
+                avatarImageView.isHidden = false
+                avatarImageView.image = placeholder
+            }
         }
+    }
+
+    private func showInitials(for item: ChatListCommonObject) {
+        let initials = item.getName().getInitialsFromName()
+        let color = item.getColor()
+        initialsLabel.text = initials
+        initialsLabel.backgroundColor = color
+        initialsLabel.isHidden = false
+        avatarImageView.isHidden = true
     }
 }
 
@@ -97,7 +159,11 @@ class HiveShareViewController: UIViewController {
 
     private var allItems: [ChatListCommonObject] = []
     private var filteredItems: [ChatListCommonObject] = []
-    private var selectedItem: ChatListCommonObject? = nil
+
+    /// Up to 3 selected items, keyed by getObjectId()
+    private var selectedItems: [ChatListCommonObject] = []
+
+    private let maxSelections = 3
 
     // MARK: - UI
     private var headerView: UIView!
@@ -156,8 +222,7 @@ class HiveShareViewController: UIViewController {
 
         closeButton = UIButton(type: .system)
         closeButton.translatesAutoresizingMaskIntoConstraints = false
-        let xmarkImg = UIImage(systemName: "xmark")
-        closeButton.setImage(xmarkImg, for: .normal)
+        closeButton.setImage(UIImage(systemName: "xmark"), for: .normal)
         closeButton.tintColor = UIColor.Sphinx.WashedOutReceivedText
         closeButton.addTarget(self, action: #selector(closeTapped), for: .touchUpInside)
         headerView.addSubview(closeButton)
@@ -203,7 +268,18 @@ class HiveShareViewController: UIViewController {
         searchTextField.layer.borderColor = UIColor.Sphinx.LightDivider.cgColor
         searchTextField.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 10, height: 0))
         searchTextField.leftViewMode = .always
+        searchTextField.returnKeyType = .done
+        searchTextField.delegate = self
         searchTextField.addTarget(self, action: #selector(searchTextChanged), for: .editingChanged)
+
+        // Add Done toolbar to keyboard
+        let toolbar = UIToolbar()
+        toolbar.sizeToFit()
+        let flexSpace = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
+        let doneBtn = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(dismissKeyboard))
+        toolbar.items = [flexSpace, doneBtn]
+        searchTextField.inputAccessoryView = toolbar
+
         searchContainer.addSubview(searchTextField)
 
         copyButton = UIButton(type: .system)
@@ -241,6 +317,7 @@ class HiveShareViewController: UIViewController {
         tableView.rowHeight = 60
         tableView.delegate = self
         tableView.dataSource = self
+        tableView.keyboardDismissMode = .onDrag
         tableView.register(HiveShareContactTableViewCell.self, forCellReuseIdentifier: HiveShareContactTableViewCell.reuseID)
         view.addSubview(tableView)
 
@@ -285,6 +362,10 @@ class HiveShareViewController: UIViewController {
         dismiss(animated: true)
     }
 
+    @objc private func dismissKeyboard() {
+        searchTextField.resignFirstResponder()
+    }
+
     @objc private func copyTapped() {
         ClipboardHelper.copyToClipboard(text: shareURL, message: "link.copied.clipboard".localized)
     }
@@ -302,42 +383,47 @@ class HiveShareViewController: UIViewController {
     }
 
     @objc private func confirmTapped() {
-        guard let selected = selectedItem else { return }
+        guard !selectedItems.isEmpty else { return }
 
-        let chat: Chat?
-        let contact: UserContact?
+        var sendFailures = 0
 
-        if let c = selected as? Chat {
-            chat = c
-            contact = nil
-        } else if let uc = selected as? UserContact {
-            contact = uc
-            chat = uc.getChat()
-        } else {
-            chat = nil
-            contact = nil
-        }
+        for selected in selectedItems {
+            let chat: Chat?
+            let contact: UserContact?
 
-        guard let resolvedChat = chat else {
-            AlertHelper.showAlert(
-                title: "generic.error.title".localized,
-                message: "generic.error.message".localized
+            if let c = selected as? Chat {
+                chat = c
+                contact = nil
+            } else if let uc = selected as? UserContact {
+                contact = uc
+                chat = uc.getChat()
+            } else {
+                chat = nil
+                contact = nil
+            }
+
+            guard let resolvedChat = chat else {
+                sendFailures += 1
+                continue
+            }
+
+            let (validMessage, _) = SphinxOnionManager.sharedInstance.sendMessage(
+                to: contact,
+                content: shareLabel,
+                chat: resolvedChat,
+                provisionalMessage: nil,
+                msgType: 0,
+                threadUUID: nil,
+                replyUUID: nil,
+                forceIncludeTimezone: false
             )
-            return
+
+            if validMessage == nil {
+                sendFailures += 1
+            }
         }
 
-        let (validMessage, _) = SphinxOnionManager.sharedInstance.sendMessage(
-            to: contact,
-            content: shareLabel,
-            chat: resolvedChat,
-            provisionalMessage: nil,
-            msgType: 0,
-            threadUUID: nil,
-            replyUUID: nil,
-            forceIncludeTimezone: false
-        )
-
-        if validMessage != nil {
+        if sendFailures == 0 {
             dismiss(animated: true)
         } else {
             AlertHelper.showAlert(
@@ -348,9 +434,22 @@ class HiveShareViewController: UIViewController {
     }
 
     private func updateConfirmButton() {
-        let enabled = selectedItem != nil
+        let enabled = !selectedItems.isEmpty
         confirmButton.alpha = enabled ? 1.0 : 0.4
         confirmButton.isUserInteractionEnabled = enabled
+    }
+
+    private func isItemSelected(_ item: ChatListCommonObject) -> Bool {
+        return selectedItems.contains(where: { $0.getObjectId() == item.getObjectId() })
+    }
+}
+
+// MARK: - UITextFieldDelegate
+
+extension HiveShareViewController: UITextFieldDelegate {
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        textField.resignFirstResponder()
+        return true
     }
 }
 
@@ -370,18 +469,26 @@ extension HiveShareViewController: UITableViewDataSource, UITableViewDelegate {
             return UITableViewCell()
         }
         let item = filteredItems[indexPath.row]
-        let isSelected = (selectedItem?.getName() == item.getName())
-        cell.configure(with: item, isSelected: isSelected)
+        cell.configure(with: item, isSelected: isItemSelected(item))
         return cell
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let tapped = filteredItems[indexPath.row]
-        if selectedItem?.getName() == tapped.getName() {
-            selectedItem = nil
+
+        if isItemSelected(tapped) {
+            // Deselect
+            selectedItems.removeAll(where: { $0.getObjectId() == tapped.getObjectId() })
         } else {
-            selectedItem = tapped
+            // Select up to maxSelections
+            if selectedItems.count < maxSelections {
+                selectedItems.append(tapped)
+            } else {
+                // Already at max — optionally show a brief hint
+                return
+            }
         }
+
         tableView.reloadData()
         updateConfirmButton()
     }
