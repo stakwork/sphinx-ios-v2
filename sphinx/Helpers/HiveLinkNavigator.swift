@@ -54,7 +54,7 @@ class HiveLinkNavigator {
                                     fallback(url: hiveLink); return
                                 }
                                 let workspaceVC = WorkspaceViewController.instantiate(workspace: workspace)
-                                let taskChatVC = TaskChatViewController.instantiate(task: task)
+                                let taskChatVC = TaskChatViewController.instantiate(task: task, workspaceSlug: workspace.slug ?? "")
                                 vc.navigationController?.pushViewController(workspaceVC, animated: false)
                                 vc.navigationController?.pushViewController(taskChatVC, animated: true)
                             }

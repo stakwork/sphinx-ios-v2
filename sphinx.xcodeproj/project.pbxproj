@@ -915,6 +915,7 @@
 		I9J0K1L2M3N4O5P6Q7R8S9T0 /* WorkspaceTasksViewControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = J0K1L2M3N4O5P6Q7R8S9T0U1 /* WorkspaceTasksViewControllerTests.swift */; };
 		K1L2M3N4O5P6Q7R8S9T0U1V2 /* CreateFeatureViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = L2M3N4O5P6Q7R8S9T0U1V2W3 /* CreateFeatureViewController.swift */; };
 		M3N4O5P6Q7R8S9T0U1V2W3X4 /* HiveProcessingBubbleCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = N4O5P6Q7R8S9T0U1V2W3X4Y5 /* HiveProcessingBubbleCell.swift */; };
+		O5P6Q7R8S9T0U1V2W3X4Y5Z6 /* HiveShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = P6Q7R8S9T0U1V2W3X4Y5Z6A7 /* HiveShareViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -2264,6 +2265,7 @@
 		J0K1L2M3N4O5P6Q7R8S9T0U1 /* WorkspaceTasksViewControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceTasksViewControllerTests.swift; sourceTree = "<group>"; };
 		L2M3N4O5P6Q7R8S9T0U1V2W3 /* CreateFeatureViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateFeatureViewController.swift; sourceTree = "<group>"; };
 		N4O5P6Q7R8S9T0U1V2W3X4Y5 /* HiveProcessingBubbleCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveProcessingBubbleCell.swift; sourceTree = "<group>"; };
+		P6Q7R8S9T0U1V2W3X4Y5Z6A7 /* HiveShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveShareViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -4084,6 +4086,7 @@
 				D4E5F6A7B8C9D0E1F2A3B4C5 /* TaskProgressBarView.swift */,
 				L2M3N4O5P6Q7R8S9T0U1V2W3 /* CreateFeatureViewController.swift */,
 				N4O5P6Q7R8S9T0U1V2W3X4Y5 /* HiveProcessingBubbleCell.swift */,
+				P6Q7R8S9T0U1V2W3X4Y5Z6A7 /* HiveShareViewController.swift */,
 			);
 			path = Workspaces;
 			sourceTree = "<group>";
@@ -5518,6 +5521,7 @@
 				C3D4E5F6A7B8C9D0E1F2A3B4 /* TaskProgressBarView.swift in Sources */,
 				K1L2M3N4O5P6Q7R8S9T0U1V2 /* CreateFeatureViewController.swift in Sources */,
 				M3N4O5P6Q7R8S9T0U1V2W3X4 /* HiveProcessingBubbleCell.swift in Sources */,
+				O5P6Q7R8S9T0U1V2W3X4Y5Z6 /* HiveShareViewController.swift in Sources */,
 				47FA72792A30E19300FB4535 /* MessagesPreloaderHelper.swift in Sources */,
 				4707089624AE466D00A98DCA /* ChatChatListExtension.swift in Sources */,
 				477C57E5234545D700BB4E04 /* SetPinCodeViewController.swift in Sources */,

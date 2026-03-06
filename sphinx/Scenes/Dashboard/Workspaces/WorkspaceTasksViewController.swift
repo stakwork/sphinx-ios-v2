@@ -131,7 +131,7 @@ extension WorkspaceTasksViewController: UITableViewDataSource, UITableViewDelega
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         let task = tasks[indexPath.row]
-        let chatVC = TaskChatViewController.instantiate(task: task)
+        let chatVC = TaskChatViewController.instantiate(task: task, workspaceSlug: workspace.slug ?? "")
         navigationController?.pushViewController(chatVC, animated: true)
     }
 }
