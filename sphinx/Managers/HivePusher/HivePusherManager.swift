@@ -158,6 +158,10 @@ class HivePusherManager: NSObject {
         return pusher?.connection.connectionState == .connected
     }
 
+    func isConnectedToWorkspace(id: String) -> Bool {
+        return isConnected && workspaceId == id
+    }
+
     var connectionState: ConnectionState? {
         return pusher?.connection.connectionState
     }

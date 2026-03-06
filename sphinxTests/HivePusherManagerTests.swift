@@ -860,6 +860,49 @@ class HivePusherManagerTests: XCTestCase {
         waitForExpectations(timeout: 2.0)
     }
 
+    // MARK: - isConnectedToWorkspace Tests
+
+    /// Without a live Pusher socket the manager is not connected, so
+    /// `isConnectedToWorkspace` must return `false` regardless of which id is
+    /// passed.  This mirrors the guard condition in `WorkspaceViewController`
+    /// which calls `connect` only when the method returns `false`.
+    func testIsConnectedToWorkspace_WhenNotConnected_ReturnsFalse() {
+        // setUp calls disconnect(), so pusher == nil → isConnected == false
+        XCTAssertFalse(manager.isConnected,
+                       "Precondition: manager must not be connected in test environment")
+        XCTAssertFalse(manager.isConnectedToWorkspace(id: "workspace-123"),
+                       "Should return false when not connected at all")
+    }
+
+    /// After an explicit `disconnect()` call the manager stores no workspaceId
+    /// and has no live socket, so the method must return `false`.
+    func testIsConnectedToWorkspace_AfterDisconnect_ReturnsFalse() {
+        // Simulate the state the VC would leave behind
+        manager.disconnect()
+        XCTAssertFalse(manager.isConnectedToWorkspace(id: "ws-abc"),
+                       "Should return false after explicit disconnect")
+    }
+
+    /// Passing an empty string for the id must not accidentally match a nil
+    /// workspaceId (nil != "").
+    func testIsConnectedToWorkspace_EmptyId_ReturnsFalse() {
+        manager.disconnect()
+        XCTAssertFalse(manager.isConnectedToWorkspace(id: ""),
+                       "Empty id must not match nil workspaceId")
+    }
+
+    /// `isConnectedToWorkspace` must return `false` when disconnected regardless
+    /// of how many different ids are queried — covering the case where the VC
+    /// receives a different workspace object on re-appearance.
+    func testIsConnectedToWorkspace_MultipleIds_AllReturnFalseWhenDisconnected() {
+        manager.disconnect()
+        let ids = ["ws-1", "ws-2", "workspace-abc", "00000000-0000-0000-0000-000000000000"]
+        for id in ids {
+            XCTAssertFalse(manager.isConnectedToWorkspace(id: id),
+                           "Expected false for id '\(id)' when disconnected")
+        }
+    }
+
     // MARK: - Helper Methods
 
     /// Simulates a PusherSwift event delivery by calling the manager's internal

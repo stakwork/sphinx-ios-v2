@@ -46,14 +46,16 @@ class WorkspaceViewController: PopHandlerViewController {
         setupHeader()
         setupSegmentedControls()
         switchToTab(0)
-        HivePusherManager.shared.delegate = self
-        HivePusherManager.shared.connect(workspaceId: workspace.id, workspaceSlug: workspace.slug)
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        // Always re-assert delegate (corrects pointer after returning from FeaturePlanVC)
         HivePusherManager.shared.delegate = self
-        HivePusherManager.shared.connect(workspaceId: workspace.id, workspaceSlug: workspace.slug)
+        // Only reconnect if the session is gone or pointing at a different workspace
+        if !HivePusherManager.shared.isConnectedToWorkspace(id: workspace.id) {
+            HivePusherManager.shared.connect(workspaceId: workspace.id, workspaceSlug: workspace.slug)
+        }
         if hasAppeared {
             if currentTab == 0 {
                 activeFeaturesVC?.loadFeatures()
