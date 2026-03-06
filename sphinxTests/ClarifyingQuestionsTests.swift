@@ -202,6 +202,74 @@ class ClarifyingQuestionsViewTests: XCTestCase {
         XCTAssertEqual(capturedAnswers[0], "Q1: B")
     }
 
+    // MARK: - single_choice deselection (toggle)
+
+    func testSingleChoice_TappingSameOptionDeselects() {
+        let view = ClarifyingQuestionsView()
+        let q = singleChoiceQuestion(options: ["A", "B", "C"])
+        view.configure(with: [q])
+
+        // Select option 0, then tap it again — should deselect
+        view.simulateTapOption(at: 0)
+        view.simulateTapOption(at: 0)
+
+        // Action button should be disabled (no selection) — verify by checking selectedIndices is empty
+        // We do this indirectly: simulateTapActionButton with no selection should not fire onSubmit
+        var submitFired = false
+        view.onSubmit = { _ in submitFired = true }
+        view.simulateTapActionButton()
+        XCTAssertFalse(submitFired, "Action button should be disabled when no option is selected after deselect")
+    }
+
+    func testSingleChoice_SelectingOptionSetsSelection() {
+        var capturedAnswers: [String] = []
+        let view = ClarifyingQuestionsView()
+        view.onSubmit = { capturedAnswers = $0 }
+
+        let q = singleChoiceQuestion(options: ["A", "B", "C"])
+        view.configure(with: [q])
+
+        // Tap option 1 once — should be selected
+        view.simulateTapOption(at: 1)
+        view.simulateTapActionButton()
+
+        XCTAssertEqual(capturedAnswers.count, 1)
+        XCTAssertEqual(capturedAnswers[0], "Q1: B")
+    }
+
+    func testSingleChoice_TappingDifferentOptionReplacesSelection() {
+        var capturedAnswers: [String] = []
+        let view = ClarifyingQuestionsView()
+        view.onSubmit = { capturedAnswers = $0 }
+
+        let q = singleChoiceQuestion(options: ["A", "B", "C"])
+        view.configure(with: [q])
+
+        // Tap A, then C — C should be the final selection
+        view.simulateTapOption(at: 0)
+        view.simulateTapOption(at: 2)
+        view.simulateTapActionButton()
+
+        XCTAssertEqual(capturedAnswers[0], "Q1: C")
+    }
+
+    func testSingleChoice_DeselectThenReselectWorks() {
+        var capturedAnswers: [String] = []
+        let view = ClarifyingQuestionsView()
+        view.onSubmit = { capturedAnswers = $0 }
+
+        let q = singleChoiceQuestion(options: ["A", "B", "C"])
+        view.configure(with: [q])
+
+        // Select A, deselect A, select B — B should be submitted
+        view.simulateTapOption(at: 0) // select A
+        view.simulateTapOption(at: 0) // deselect A
+        view.simulateTapOption(at: 1) // select B
+        view.simulateTapActionButton()
+
+        XCTAssertEqual(capturedAnswers[0], "Q1: B")
+    }
+
     func testAnswerFormat_MultipleChoice_CanSelectSeveral() {
         var capturedAnswers: [String] = []
         let view = ClarifyingQuestionsView()
