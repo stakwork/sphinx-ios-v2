@@ -190,8 +190,17 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         separatorView.isHidden = isLastRow
         archiveButton.isHidden = task.archived
 
-        statusBadge.text = "  \(task.status)  "
-        statusBadge.backgroundColor = statusColor(for: task.status)
+        let hasOpenPR = task.prUrl != nil && !(task.prStatus == "MERGED" || task.prStatus == "DONE")
+        if hasOpenPR {
+            statusBadge.text = "  READY  "
+            statusBadge.backgroundColor = .Sphinx.PrimaryGreen
+        } else {
+            let displayStatus = task.status
+                .replacingOccurrences(of: "_", with: " ")
+                .replacingOccurrences(of: "-", with: " ")
+            statusBadge.text = "  \(displayStatus)  "
+            statusBadge.backgroundColor = statusColor(for: task.status)
+        }
 
         priorityBadge.text = "  \(task.priority)  "
         priorityBadge.backgroundColor = priorityColor(for: task.priority)
@@ -256,7 +265,7 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
     private func statusColor(for status: String) -> UIColor {
         switch status {
         case "DONE":
-            return .Sphinx.PrimaryGreen
+            return .Sphinx.GreenBorder
         case "IN_PROGRESS":
             return .Sphinx.PrimaryBlue
         case "BLOCKED":
