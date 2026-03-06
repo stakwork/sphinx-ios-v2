@@ -258,6 +258,7 @@ class HiveShareViewController: UIViewController {
         searchTextField = UITextField()
         searchTextField.translatesAutoresizingMaskIntoConstraints = false
         searchTextField.clearButtonMode = .whileEditing
+        searchTextField.tintColor = UIColor.Sphinx.SecondaryText
         searchTextField.font = UIFont(name: "Roboto-Regular", size: 14)
         searchTextField.textColor = UIColor.Sphinx.Text
         searchTextField.layer.cornerRadius = 8
@@ -352,12 +353,30 @@ class HiveShareViewController: UIViewController {
     }
 
     private func loadItems() {
-        allItems = (ContactsService.sharedInstance.contactListObjects + ContactsService.sharedInstance.chatListObjects)
-            .sorted { $0.getName().lowercased() < $1.getName().lowercased() }
+        let combined = ContactsService.sharedInstance.contactListObjects + ContactsService.sharedInstance.chatListObjects
+
+        // Separate items with lastMessage from those without
+        let withMessage = combined.filter { $0.lastMessage != nil }
+        let withoutMessage = combined.filter { $0.lastMessage == nil }
+
+        // Sort items with lastMessage by date descending (most recent first)
+        let sortedWithMessage = withMessage.sorted { first, second in
+            let date1 = first.lastMessage?.date ?? Date.distantPast
+            let date2 = second.lastMessage?.date ?? Date.distantPast
+            return date1 > date2
+        }
+
+        // Sort items without lastMessage alphabetically
+        let sortedWithoutMessage = withoutMessage.sorted {
+            $0.getName().lowercased() < $1.getName().lowercased()
+        }
+
+        // Items with messages come first, then alphabetically sorted ones
+        allItems = sortedWithMessage + sortedWithoutMessage
         applyFilter(searchText: "")
     }
 
-    /// Rebuilds filteredItems: selected items first, then the rest alphabetically.
+    /// Rebuilds filteredItems: selected items first, then the rest in their sorted order.
     private func applyFilter(searchText: String) {
         let base: [ChatListCommonObject]
         if searchText.isEmpty {
@@ -403,7 +422,7 @@ class HiveShareViewController: UIViewController {
 
             if let c = selected as? Chat {
                 chat = c
-                contact = nil
+                contact = c.getContact()
             } else if let uc = selected as? UserContact {
                 contact = uc
                 chat = uc.getChat()
@@ -428,7 +447,10 @@ class HiveShareViewController: UIViewController {
                 forceIncludeTimezone: false
             )
 
-            if validMessage == nil {
+            if let message = validMessage {
+                // Save the context so the message can be found when confirmation arrives
+                message.managedObjectContext?.saveContext()
+            } else {
                 sendFailures += 1
             }
         }

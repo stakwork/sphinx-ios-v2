@@ -147,7 +147,7 @@ class FeaturePlanViewController: UIViewController {
         shareButton.translatesAutoresizingMaskIntoConstraints = false
         shareButton.setImage(UIImage(systemName: "square.and.arrow.up"), for: .normal)
         shareButton.tintColor = UIColor.Sphinx.WashedOutReceivedText
-        shareButton.addTarget(self, action: #selector(shareTapped), for: .touchUpInside)
+        shareButton.addTarget(self, action: #selector(shareTappedAction), for: .touchUpInside)
         headerView.addSubview(shareButton)
 
         NSLayoutConstraint.activate([
@@ -445,7 +445,7 @@ class FeaturePlanViewController: UIViewController {
     }
     
     // MARK: - Actions
-    @objc private func shareTapped() {
+    @objc private func shareTappedAction() {
         let url = "https://hive.sphinx.chat/w/\(workspace.slug ?? "")/plan/\(feature.id)"
         let label = "Check out this feature: \(feature.title) — \(url)"
         let shareVC = HiveShareViewController.instantiate(url: url, label: label)
