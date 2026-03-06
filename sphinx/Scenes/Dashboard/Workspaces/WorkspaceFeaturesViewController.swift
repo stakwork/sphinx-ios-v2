@@ -135,7 +135,7 @@ class WorkspaceFeaturesViewController: UIViewController {
         
         API.sharedInstance.fetchFeaturesWithAuth(
             workspaceId: workspace.id,
-            callback: { [weak self] features in
+            callback: { [weak self] features, _ in
                 print("[WorkspaceFeaturesVC] Features loaded: \(features.count)")
                 DispatchQueue.main.async {
                     self?.features = features

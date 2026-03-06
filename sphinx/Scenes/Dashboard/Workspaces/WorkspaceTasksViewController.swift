@@ -80,7 +80,7 @@ class WorkspaceTasksViewController: UIViewController {
         API.sharedInstance.fetchTasksWithAuth(
             workspaceId: workspace.id,
             includeArchived: includeArchived,
-            callback: { [weak self] tasks in
+            callback: { [weak self] tasks, _ in
                 DispatchQueue.main.async {
                     self?.tasks = tasks
                     self?.tableView.reloadData()
