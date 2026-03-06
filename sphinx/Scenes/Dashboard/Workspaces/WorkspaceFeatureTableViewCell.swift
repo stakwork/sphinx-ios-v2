@@ -78,7 +78,11 @@ class WorkspaceFeatureTableViewCell: UITableViewCell {
         // Status badge
         if let status = feature.status, !status.isEmpty {
             statusBadge.isHidden = false
-            statusBadge.text = "  \(status.uppercased())  "
+            let displayStatus = status
+                .replacingOccurrences(of: "_", with: " ")
+                .replacingOccurrences(of: "-", with: " ")
+                .uppercased()
+            statusBadge.text = "  \(displayStatus)  "
             statusBadge.backgroundColor = statusColor(for: status)
         } else {
             statusBadge.isHidden = true
@@ -136,7 +140,7 @@ class WorkspaceFeatureTableViewCell: UITableViewCell {
     private func statusColor(for status: String) -> UIColor {
         switch status.uppercased() {
         case "COMPLETED", "DONE":
-            return .Sphinx.PrimaryGreen
+            return .Sphinx.GreenBorder
         case "IN_PROGRESS":
             return .Sphinx.PrimaryBlue
         case "BLOCKED":
