@@ -57,12 +57,6 @@
                         <color key="textColor" name="SecondaryText"/>
                         <nil key="highlightedColor"/>
                     </label>
-                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="252" verticalHuggingPriority="251" text="Updated: 2 days ago" textAlignment="right" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="updated-lbl-01">
-                        <rect key="frame" x="257.66666666666669" y="81" width="119.33333333333331" height="16"/>
-                        <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="13"/>
-                        <color key="textColor" name="SecondaryText"/>
-                        <nil key="highlightedColor"/>
-                    </label>
                     <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="sep-view-01">
                         <rect key="frame" x="16" y="109" width="377" height="1"/>
                         <color key="backgroundColor" name="Divider"/>
@@ -85,7 +79,6 @@
                     <constraint firstAttribute="trailing" secondItem="status-badge-01" secondAttribute="trailing" constant="16" id="status-trail-01"/>
                     <constraint firstItem="title-lbl-01" firstAttribute="leading" secondItem="content-view-01" secondAttribute="leading" constant="16" id="title-lead-01"/>
                     <constraint firstItem="title-lbl-01" firstAttribute="top" secondItem="content-view-01" secondAttribute="top" constant="12" id="title-top-01"/>
-                    <constraint firstItem="sep-view-01" firstAttribute="top" secondItem="updated-lbl-01" secondAttribute="bottom" constant="12" id="wHJ-Yu-aBJ"/>
                 </constraints>
             </tableViewCellContentView>
             <connections>
@@ -94,7 +87,6 @@
                 <outlet property="separatorView" destination="sep-view-01" id="sep-out-01"/>
                 <outlet property="statusBadge" destination="status-badge-01" id="status-out-01"/>
                 <outlet property="titleLabel" destination="title-lbl-01" id="title-out-01"/>
-                <outlet property="updatedAtLabel" destination="updated-lbl-01" id="updated-out-01"/>
             </connections>
             <point key="canvasLocation" x="131.29771" y="73.239436999999995"/>
         </tableViewCell>

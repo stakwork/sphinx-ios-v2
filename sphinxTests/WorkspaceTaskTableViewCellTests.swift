@@ -217,19 +217,45 @@ class WorkspaceTaskTableViewCellTests: XCTestCase {
         XCTAssertGreaterThan(haltedFrame.minY, priorityFrame.maxY, "haltedWorkflowBadge should be below priorityBadge, not overlapping it")
     }
 
-    func testHaltedWorkflowBadge_TrailingConstraintActiveWhenHalted() {
-        let task = createMockTask(workflowStatus: "HALTED")
+    func testRightPillStack_NoPillVisible_DateAtTrailingEdge() {
+        let task = createMockTask(prUrl: nil, workflowStatus: nil)
         cell.configure(with: task, isLastRow: false)
-        XCTAssertTrue(cell.updatedAtLabelTrailingToHalted.isActive, "updatedAtLabelTrailingToHalted should be active when workflowStatus is HALTED")
-        XCTAssertFalse(cell.updatedAtLabelTrailingToEdge.isActive, "updatedAtLabelTrailingToEdge should be inactive when workflowStatus is HALTED")
+        XCTAssertTrue(cell.prBadgeButton.isHidden)
+        XCTAssertTrue(cell.haltedWorkflowBadge.isHidden)
+        XCTAssertNotNil(cell.rightPillStack)
+        XCTAssertTrue(cell.rightPillStack.arrangedSubviews.contains(cell.updatedAtLabel))
     }
 
-    func testUpdatedAtLabelTrailingToEdge_ActiveWhenNeitherHaltedNorPR() {
-        let task = createMockTask(workflowStatus: nil, prUrl: nil)
+    func testRightPillStack_PRVisible_DateLeftOfPR() {
+        let task = createMockTask(prUrl: "https://github.com/org/repo/pull/1", prStatus: "OPEN")
         cell.configure(with: task, isLastRow: false)
-        XCTAssertTrue(cell.updatedAtLabelTrailingToEdge.isActive, "updatedAtLabelTrailingToEdge should be active when neither HALTED nor PR is present")
-        XCTAssertFalse(cell.updatedAtLabelTrailingToHalted.isActive, "updatedAtLabelTrailingToHalted should be inactive when workflowStatus is nil")
-        XCTAssertFalse(cell.updatedAtLabelTrailingToPR.isActive, "updatedAtLabelTrailingToPR should be inactive when no PR URL")
+        XCTAssertFalse(cell.prBadgeButton.isHidden)
+        XCTAssertTrue(cell.haltedWorkflowBadge.isHidden)
+        let subviews = cell.rightPillStack.arrangedSubviews
+        XCTAssertEqual(subviews.firstIndex(of: cell.updatedAtLabel), 0)
+        XCTAssertGreaterThan(subviews.firstIndex(of: cell.prBadgeButton)!, 0)
+    }
+
+    func testRightPillStack_HaltedVisible_DateLeftOfHalted() {
+        let task = createMockTask(workflowStatus: "HALTED")
+        cell.configure(with: task, isLastRow: false)
+        XCTAssertTrue(cell.prBadgeButton.isHidden)
+        XCTAssertFalse(cell.haltedWorkflowBadge.isHidden)
+        XCTAssertFalse(cell.retryWorkflowButton.isHidden)
+    }
+
+    func testRightPillStack_NoLayoutBleed_OnCellReuse() {
+        cell.configure(with: createMockTask(prUrl: "https://github.com/org/repo/pull/1", prStatus: "OPEN"), isLastRow: false)
+        XCTAssertFalse(cell.prBadgeButton.isHidden)
+
+        cell.configure(with: createMockTask(workflowStatus: "HALTED"), isLastRow: false)
+        XCTAssertTrue(cell.prBadgeButton.isHidden)
+        XCTAssertFalse(cell.haltedWorkflowBadge.isHidden)
+
+        cell.configure(with: createMockTask(), isLastRow: false)
+        XCTAssertTrue(cell.prBadgeButton.isHidden)
+        XCTAssertTrue(cell.haltedWorkflowBadge.isHidden)
+        XCTAssertTrue(cell.retryWorkflowButton.isHidden)
     }
 
     func testRetryWorkflowButton_HiddenWhenWorkflowStatusIsNotHalted() {
