@@ -39,6 +39,7 @@ struct WorkspaceTask {
     var prUrl: String?
     var prStatus: String?
     var prNumber: Int?
+    var stakworkProjectId: Int?
 
     init?(json: JSON) {
         guard let id = json["id"].string,
@@ -73,5 +74,6 @@ struct WorkspaceTask {
         self.prUrl = json["prArtifact"]["content"]["url"].string
         self.prStatus = json["prArtifact"]["content"]["status"].string
         self.prNumber = json["prArtifact"]["content"]["number"].int
+        self.stakworkProjectId = json["stakworkProjectId"].int
     }
 }

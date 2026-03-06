@@ -15,6 +15,8 @@ class TaskChatViewController: UIViewController {
     private var workspaceSlug: String
     private var messages: [HiveChatMessage] = []
     private var processingStepText: String? = nil
+    private var cachedStakworkProjectId: Int?
+    private var hasFetchedTaskDetail: Bool = false
 
     // MARK: - Header
     private var headerView: UIView!
@@ -56,6 +58,7 @@ class TaskChatViewController: UIViewController {
         setupUI()
         applyInitialWorkflowStatus()
         setupKeyboardObservers()
+        cachedStakworkProjectId = task.stakworkProjectId
         fetchMessages()
         connectWebSocket()
     }
@@ -469,7 +472,47 @@ extension TaskChatViewController: HivePusherDelegate {
     func workflowStatusChanged(status: WorkflowStatus) {
         DispatchQueue.main.async {
             self.applyWorkflowStatus(status)
+            if status == .IN_PROGRESS || status == .PENDING {
+                self.showProcessingBubble()
+                self.fetchAndUpdateWorkflowStep()
+            }
         }
+    }
+
+    private func fetchAndUpdateWorkflowStep() {
+        if let projectId = cachedStakworkProjectId {
+            fetchStepText(projectId: projectId)
+        } else if !hasFetchedTaskDetail {
+            hasFetchedTaskDetail = true
+            API.sharedInstance.fetchTaskDetailWithAuth(
+                taskId: task.id,
+                callback: { [weak self] updatedTask in
+                    guard let self = self else { return }
+                    if let projectId = updatedTask?.stakworkProjectId {
+                        self.cachedStakworkProjectId = projectId
+                        self.fetchStepText(projectId: projectId)
+                    }
+                },
+                errorCallback: {
+                    print("[TaskChatVC] Failed to fetch task detail for stakworkProjectId")
+                }
+            )
+        }
+    }
+
+    private func fetchStepText(projectId: Int) {
+        API.sharedInstance.fetchStakworkWorkflowWithAuth(
+            projectId: projectId,
+            callback: { [weak self] workflowData in
+                guard let self = self, let title = workflowData?.inProgressTitle else { return }
+                DispatchQueue.main.async {
+                    self.updateProcessingBubble(stepText: title)
+                }
+            },
+            errorCallback: {
+                print("[TaskChatVC] Failed to fetch stakwork workflow step")
+            }
+        )
     }
 
     func featureUpdateReceived(featureId: String) {

@@ -59,6 +59,7 @@ struct HiveFeature {
     let deploymentUrl: String?
     let userStoriesCount: Int?
     let stakworkRunsCount: Int?
+    var stakworkProjectId: Int?
 
     /// Phases with their tasks (from the detail endpoint)
     var phases: [HivePhase]
@@ -139,6 +140,7 @@ struct HiveFeature {
         // Parse _count object
         self.userStoriesCount = json["_count"]["userStories"].int
         self.stakworkRunsCount = json["_count"]["stakworkRuns"].int
+        self.stakworkProjectId = json["stakworkProjectId"].int
 
         // Parse phases (detail endpoint only)
         self.phases = json["phases"].arrayValue.compactMap { HivePhase(json: $0) }
