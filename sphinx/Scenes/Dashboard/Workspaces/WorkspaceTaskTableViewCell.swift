@@ -32,8 +32,9 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
     private(set) var retryWorkflowButton: UIButton!
     private var prBadgeURL: URL?
 
-    private var updatedAtLabelTrailingToPR: NSLayoutConstraint!
-    private var updatedAtLabelTrailingToEdge: NSLayoutConstraint!
+    private(set) var updatedAtLabelTrailingToPR: NSLayoutConstraint!
+    private(set) var updatedAtLabelTrailingToEdge: NSLayoutConstraint!
+    private(set) var updatedAtLabelTrailingToHalted: NSLayoutConstraint!
 
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -131,10 +132,14 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         contentView.addSubview(haltedWorkflowBadge)
 
         NSLayoutConstraint.activate([
-            haltedWorkflowBadge.trailingAnchor.constraint(equalTo: statusBadge.trailingAnchor),
-            haltedWorkflowBadge.topAnchor.constraint(equalTo: statusBadge.bottomAnchor, constant: 4),
+            haltedWorkflowBadge.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            haltedWorkflowBadge.bottomAnchor.constraint(equalTo: separatorView.topAnchor, constant: -12),
             haltedWorkflowBadge.heightAnchor.constraint(equalToConstant: 22)
         ])
+
+        updatedAtLabelTrailingToHalted = updatedAtLabel.trailingAnchor.constraint(
+            lessThanOrEqualTo: haltedWorkflowBadge.leadingAnchor, constant: -8
+        )
     }
 
     private func setupRetryWorkflowButton() {
@@ -208,6 +213,11 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         let isHalted = task.workflowStatus == "HALTED"
         haltedWorkflowBadge.isHidden = !isHalted
         retryWorkflowButton.isHidden = !isHalted
+
+        updatedAtLabelTrailingToHalted.isActive = isHalted
+        if isHalted {
+            updatedAtLabelTrailingToEdge.isActive = false
+        }
 
         if let urlStr = task.prUrl, let url = URL(string: urlStr) {
             prBadgeURL = url

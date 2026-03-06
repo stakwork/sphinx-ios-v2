@@ -209,6 +209,27 @@ class WorkspaceTaskTableViewCellTests: XCTestCase {
         let task = createMockTask(workflowStatus: "HALTED")
         cell.configure(with: task, isLastRow: false)
         XCTAssertFalse(cell.haltedWorkflowBadge.isHidden, "haltedWorkflowBadge should be visible when workflowStatus is HALTED")
+
+        // Verify the badge is in the bottom row (not overlapping priorityBadge in the top area)
+        cell.layoutIfNeeded()
+        let haltedFrame = cell.haltedWorkflowBadge.frame
+        let priorityFrame = cell.priorityBadge.frame
+        XCTAssertGreaterThan(haltedFrame.minY, priorityFrame.maxY, "haltedWorkflowBadge should be below priorityBadge, not overlapping it")
+    }
+
+    func testHaltedWorkflowBadge_TrailingConstraintActiveWhenHalted() {
+        let task = createMockTask(workflowStatus: "HALTED")
+        cell.configure(with: task, isLastRow: false)
+        XCTAssertTrue(cell.updatedAtLabelTrailingToHalted.isActive, "updatedAtLabelTrailingToHalted should be active when workflowStatus is HALTED")
+        XCTAssertFalse(cell.updatedAtLabelTrailingToEdge.isActive, "updatedAtLabelTrailingToEdge should be inactive when workflowStatus is HALTED")
+    }
+
+    func testUpdatedAtLabelTrailingToEdge_ActiveWhenNeitherHaltedNorPR() {
+        let task = createMockTask(workflowStatus: nil, prUrl: nil)
+        cell.configure(with: task, isLastRow: false)
+        XCTAssertTrue(cell.updatedAtLabelTrailingToEdge.isActive, "updatedAtLabelTrailingToEdge should be active when neither HALTED nor PR is present")
+        XCTAssertFalse(cell.updatedAtLabelTrailingToHalted.isActive, "updatedAtLabelTrailingToHalted should be inactive when workflowStatus is nil")
+        XCTAssertFalse(cell.updatedAtLabelTrailingToPR.isActive, "updatedAtLabelTrailingToPR should be inactive when no PR URL")
     }
 
     func testRetryWorkflowButton_HiddenWhenWorkflowStatusIsNotHalted() {
