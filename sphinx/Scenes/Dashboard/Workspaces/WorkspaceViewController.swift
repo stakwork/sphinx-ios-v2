@@ -25,6 +25,15 @@ class WorkspaceViewController: PopHandlerViewController {
     private var activeTasksVC: WorkspaceTasksViewController!
     private var hasAppeared = false
 
+    private lazy var createFeatureButton: UIButton = {
+        let btn = UIButton(type: .system)
+        let config = UIImage.SymbolConfiguration(pointSize: 18, weight: .medium)
+        btn.setImage(UIImage(systemName: "plus", withConfiguration: config), for: .normal)
+        btn.tintColor = .Sphinx.PrimaryBlue
+        btn.translatesAutoresizingMaskIntoConstraints = false
+        return btn
+    }()
+
     static func instantiate(workspace: Workspace) -> WorkspaceViewController {
         let vc = StoryboardScene.Dashboard.workspaceViewController.instantiate()
         vc.workspace = workspace
@@ -68,6 +77,19 @@ class WorkspaceViewController: PopHandlerViewController {
         viewTitle.font = UIFont(name: "Roboto-Medium", size: 14)
         viewTitle.textColor = .Sphinx.Text
         viewTitle.text = workspace.name.uppercased()
+        
+        headerView.addSubview(createFeatureButton)
+        NSLayoutConstraint.activate([
+            createFeatureButton.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -16),
+            createFeatureButton.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
+            createFeatureButton.widthAnchor.constraint(equalToConstant: 32),
+            createFeatureButton.heightAnchor.constraint(equalToConstant: 32)
+        ])
+        createFeatureButton.addTarget(self, action: #selector(createFeatureButtonTapped), for: .touchUpInside)
+    }
+
+    @objc private func createFeatureButtonTapped() {
+        activeFeaturesVC?.createButtonTapped()
     }
 
     private func setupSegmentedControls() {
@@ -115,6 +137,7 @@ extension WorkspaceViewController: CustomSegmentedControlDelegate {
     
     private func switchToTab(_ index: Int) {
         currentTab = index
+        createFeatureButton.isHidden = (index != 0)
 
         // Hide all children instead of removing
         activeTasksVC?.view.isHidden = true
