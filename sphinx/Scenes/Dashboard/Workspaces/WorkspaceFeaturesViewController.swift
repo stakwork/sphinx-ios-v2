@@ -150,13 +150,12 @@ class WorkspaceFeaturesViewController: UIViewController {
     }
 
     func handleFeatureListShouldRefresh() {
-        loadFeatures()
+        loadFeatures(showLoading: false)
     }
 
-    func loadFeatures() {
+    func loadFeatures(showLoading: Bool = true) {
         guard !isLoading else { return }
-        
-        isLoading = true
+        if showLoading { isLoading = true }
         
         print("[WorkspaceFeaturesVC] Loading features for workspace: \(workspace.id), page: \(currentPage)")
         
@@ -213,7 +212,7 @@ extension WorkspaceFeaturesViewController: PaginationControlViewDelegate {
 
 extension WorkspaceFeaturesViewController: CreateFeatureViewControllerDelegate {
     func didCreateFeature(_ feature: HiveFeature) {
-        loadFeatures()                     // fire-and-forget background refresh
+        loadFeatures(showLoading: false)   // fire-and-forget background refresh
         openFeaturePlan(feature: feature)  // navigate immediately, no waiting
     }
 }
@@ -249,9 +248,9 @@ extension WorkspaceFeaturesViewController: UITableViewDataSource, UITableViewDel
                     self.features.remove(at: indexPath.row)
                     self.tableView.deleteRows(at: [indexPath], with: .automatic)
                     API.sharedInstance.deleteFeatureWithAuth(featureId: feature.id) {
-                        DispatchQueue.main.async { self.loadFeatures() }
+                        DispatchQueue.main.async { self.loadFeatures(showLoading: false) }
                     } errorCallback: {
-                        DispatchQueue.main.async { self.loadFeatures() }
+                        DispatchQueue.main.async { self.loadFeatures(showLoading: false) }
                     }
                 }
             )

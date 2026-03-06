@@ -114,9 +114,9 @@ class WorkspaceTasksViewController: UIViewController {
         }
     }
 
-    func loadTasks() {
+    func loadTasks(showLoading: Bool = true) {
         guard !isLoading else { return }
-        isLoading = true
+        if showLoading { isLoading = true }
         
         API.sharedInstance.fetchTasksWithAuth(
             workspaceId: workspace.id,
@@ -163,9 +163,9 @@ extension WorkspaceTasksViewController: UITableViewDataSource, UITableViewDelega
                     self.tasks.remove(at: indexPath.row)
                     self.tableView.deleteRows(at: [indexPath], with: .automatic)
                     API.sharedInstance.archiveTaskWithAuth(taskId: task.id) {
-                        DispatchQueue.main.async { self.loadTasks() }
+                        DispatchQueue.main.async { self.loadTasks(showLoading: false) }
                     } errorCallback: {
-                        DispatchQueue.main.async { self.loadTasks() }
+                        DispatchQueue.main.async { self.loadTasks(showLoading: false) }
                     }
                 }
             )
