@@ -17,6 +17,7 @@ class TaskChatViewController: UIViewController {
     private var processingStepText: String? = nil
     private var cachedStakworkProjectId: Int?
     private var hasFetchedTaskDetail: Bool = false
+    private var anyCableManager: HiveAnyCableManager?
 
     // MARK: - Header
     private var headerView: UIView!
@@ -67,6 +68,7 @@ class TaskChatViewController: UIViewController {
         super.viewWillDisappear(animated)
         if isMovingFromParent {
             HivePusherManager.shared.disconnect()
+            anyCableManager?.disconnect()
         }
     }
 
@@ -437,6 +439,14 @@ class TaskChatViewController: UIViewController {
     private func connectWebSocket() {
         HivePusherManager.shared.delegate = self
         HivePusherManager.shared.connect(taskId: task.id)
+        connectAnyCable()
+    }
+
+    private func connectAnyCable() {
+        guard let projectId = cachedStakworkProjectId else { return }
+        anyCableManager = HiveAnyCableManager()
+        anyCableManager?.delegate = self
+        anyCableManager?.connect(projectId: projectId)
     }
 
     // MARK: - Workflow Status
@@ -482,6 +492,7 @@ extension TaskChatViewController: HivePusherDelegate {
     private func fetchAndUpdateWorkflowStep() {
         if let projectId = cachedStakworkProjectId {
             fetchStepText(projectId: projectId)
+            connectAnyCable()
         } else if !hasFetchedTaskDetail {
             hasFetchedTaskDetail = true
             API.sharedInstance.fetchTaskDetailWithAuth(
@@ -491,6 +502,7 @@ extension TaskChatViewController: HivePusherDelegate {
                     if let projectId = updatedTask?.stakworkProjectId {
                         self.cachedStakworkProjectId = projectId
                         self.fetchStepText(projectId: projectId)
+                        self.connectAnyCable()
                     }
                 },
                 errorCallback: {
@@ -551,13 +563,12 @@ extension TaskChatViewController: HivePusherDelegate {
         DispatchQueue.main.async { self.titleLabel.text = newTitle }
     }
 
-    func processingStepReceived(message: String) {
-        DispatchQueue.main.async {
-            if self.processingStepText == nil {
-                self.showProcessingBubble()
-            }
-            self.updateProcessingBubble(stepText: message)
-        }
+}
+
+// MARK: - HiveAnyCableDelegate
+extension TaskChatViewController: HiveAnyCableDelegate {
+    func workflowStepUpdateReceived(projectId: Int) {
+        fetchStepText(projectId: projectId)
     }
 }
 

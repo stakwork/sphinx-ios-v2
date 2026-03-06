@@ -23,6 +23,7 @@ class FeaturePlanViewController: UIViewController {
     }
     private var isGeneratingTasks: Bool = false
     private var lastGenerationFailed: Bool = false
+    private var anyCableManager: HiveAnyCableManager?
     
     // MARK: - UI Components
     private var headerView: UIView!
@@ -97,6 +98,7 @@ class FeaturePlanViewController: UIViewController {
         super.viewWillDisappear(animated)
         if isMovingFromParent {
             HivePusherManager.shared.disconnect()
+            anyCableManager?.disconnect()
         }
     }
     
@@ -852,6 +854,14 @@ class FeaturePlanViewController: UIViewController {
     private func connectWebSocket() {
         HivePusherManager.shared.delegate = self
         HivePusherManager.shared.connect(featureId: feature.id, workspaceId: workspace.id, workspaceSlug: workspace.slug ?? "")
+        connectAnyCable()
+    }
+
+    private func connectAnyCable() {
+        guard let projectId = cachedStakworkProjectId else { return }
+        anyCableManager = HiveAnyCableManager()
+        anyCableManager?.delegate = self
+        anyCableManager?.connect(projectId: projectId)
     }
     
     // MARK: - Processing Bubble
@@ -1119,12 +1129,11 @@ extension FeaturePlanViewController: HivePusherDelegate {
         }
     }
 
-    func processingStepReceived(message: String) {
-        DispatchQueue.main.async {
-            if self.processingStepText == nil {
-                self.showProcessingBubble()
-            }
-            self.updateProcessingBubble(stepText: message)
-        }
+}
+
+// MARK: - HiveAnyCableDelegate
+extension FeaturePlanViewController: HiveAnyCableDelegate {
+    func workflowStepUpdateReceived(projectId: Int) {
+        fetchStepText(projectId: projectId)
     }
 }
