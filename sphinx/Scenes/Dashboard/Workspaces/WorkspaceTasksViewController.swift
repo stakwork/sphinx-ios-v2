@@ -119,8 +119,8 @@ class WorkspaceTasksViewController: UIViewController {
         
         API.sharedInstance.fetchTasksWithAuth(
             workspaceId: workspace.id,
-            page: currentPage,
             includeArchived: includeArchived,
+            page: currentPage,
             callback: { [weak self] tasks, info in
                 DispatchQueue.main.async {
                     guard let self else { return }
