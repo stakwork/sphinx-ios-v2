@@ -21,6 +21,8 @@ typealias HiveTaskMessagesCallback = (([HiveChatMessage]) -> ())
 typealias HiveChatMessageCallback = ((HiveChatMessage?) -> ())
 typealias HiveStakworkRunCallback = ((StakworkRun?) -> ())
 typealias HiveStakworkRunsCallback = (([StakworkRun]) -> ())
+typealias HiveTaskCallback = ((WorkspaceTask?) -> ())
+typealias StakworkWorkflowCallback = ((StakworkWorkflowData?) -> ())
 
 // MARK: - PaginationInfo
 
@@ -1680,6 +1682,156 @@ extension API {
                 UserDefaults.Keys.hiveToken.set(token)
                 self?.retryTaskWorkflow(
                     taskId: taskId,
+                    authToken: token,
+                    callback: callback,
+                    errorCallback: errorCallback
+                )
+            },
+            errorCallback: errorCallback
+        )
+    }
+
+    // MARK: - Fetch Task Detail
+
+    func fetchTaskDetail(
+        taskId: String,
+        authToken: String,
+        callback: @escaping HiveTaskCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        guard let encodedId = taskId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+            errorCallback(); return
+        }
+        let urlString = "\(API.kHiveBaseUrl)/tasks/\(encodedId)"
+        guard let request = createRequest(urlString, bodyParams: nil, method: "GET", token: authToken) else {
+            errorCallback(); return
+        }
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                errorCallback(); return
+            }
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+                guard json["success"].bool == true else { errorCallback(); return }
+                if let task = WorkspaceTask(json: json["data"]) {
+                    callback(task)
+                } else {
+                    errorCallback()
+                }
+            case .failure:
+                errorCallback()
+            }
+        }
+    }
+
+    func fetchTaskDetailWithAuth(
+        taskId: String,
+        callback: @escaping HiveTaskCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let token: String = UserDefaults.Keys.hiveToken.get() {
+            fetchTaskDetail(
+                taskId: taskId,
+                authToken: token,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateAndFetchTaskDetail(
+                        taskId: taskId,
+                        callback: callback,
+                        errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateAndFetchTaskDetail(taskId: taskId, callback: callback, errorCallback: errorCallback)
+        }
+    }
+
+    private func authenticateAndFetchTaskDetail(
+        taskId: String,
+        callback: @escaping HiveTaskCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback(); return }
+                UserDefaults.Keys.hiveToken.set(token)
+                self?.fetchTaskDetail(
+                    taskId: taskId,
+                    authToken: token,
+                    callback: callback,
+                    errorCallback: errorCallback
+                )
+            },
+            errorCallback: errorCallback
+        )
+    }
+
+    // MARK: - Fetch Stakwork Workflow
+
+    func fetchStakworkWorkflow(
+        projectId: Int,
+        authToken: String,
+        callback: @escaping StakworkWorkflowCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        let urlString = "\(API.kHiveBaseUrl)/stakwork/workflow/\(projectId)"
+        guard let request = createRequest(urlString, bodyParams: nil, method: "GET", token: authToken) else {
+            errorCallback(); return
+        }
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                errorCallback(); return
+            }
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+                if let workflowData = StakworkWorkflowData(json: json) {
+                    callback(workflowData)
+                } else {
+                    errorCallback()
+                }
+            case .failure:
+                errorCallback()
+            }
+        }
+    }
+
+    func fetchStakworkWorkflowWithAuth(
+        projectId: Int,
+        callback: @escaping StakworkWorkflowCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let token: String = UserDefaults.Keys.hiveToken.get() {
+            fetchStakworkWorkflow(
+                projectId: projectId,
+                authToken: token,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateAndFetchStakworkWorkflow(
+                        projectId: projectId,
+                        callback: callback,
+                        errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateAndFetchStakworkWorkflow(projectId: projectId, callback: callback, errorCallback: errorCallback)
+        }
+    }
+
+    private func authenticateAndFetchStakworkWorkflow(
+        projectId: Int,
+        callback: @escaping StakworkWorkflowCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback(); return }
+                UserDefaults.Keys.hiveToken.set(token)
+                self?.fetchStakworkWorkflow(
+                    projectId: projectId,
                     authToken: token,
                     callback: callback,
                     errorCallback: errorCallback
