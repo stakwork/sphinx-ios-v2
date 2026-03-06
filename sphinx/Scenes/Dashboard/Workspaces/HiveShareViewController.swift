@@ -102,9 +102,7 @@ class HiveShareContactTableViewCell: UITableViewCell {
         nameLabel.text = item.getName()
         checkmarkImageView.isHidden = !isSelected
 
-        // Choose correct placeholder based on type
         let isTribe = !item.isConversation()
-        let placeholder = UIImage(named: isTribe ? "tribePlaceholder" : "profile_avatar")
 
         // Cancel any previous load to avoid image bleed-over
         avatarImageView.sd_cancelCurrentImageLoad()
@@ -112,11 +110,15 @@ class HiveShareContactTableViewCell: UITableViewCell {
         if let urlStr = item.getPhotoUrl()?.removeDuplicatedProtocol(),
            !urlStr.isEmpty,
            let url = URL(string: urlStr) {
-            // Show initials while loading
-            showInitials(for: item)
+            // Show initials/placeholder while loading
+            if isTribe {
+                showTribePlaceholder()
+            } else {
+                showInitials(for: item)
+            }
             avatarImageView.sd_setImage(
                 with: url,
-                placeholderImage: placeholder,
+                placeholderImage: nil,
                 options: .lowPriority,
                 progress: nil
             ) { [weak self] image, error, _, _ in
@@ -125,18 +127,23 @@ class HiveShareContactTableViewCell: UITableViewCell {
                     self.initialsLabel.isHidden = true
                     self.avatarImageView.isHidden = false
                     self.avatarImageView.image = image
+                    self.avatarImageView.tintColor = nil
                 }
             }
         } else {
-            // No URL — show initials or placeholder
-            if item.isConversation() {
-                showInitials(for: item)
+            if isTribe {
+                showTribePlaceholder()
             } else {
-                initialsLabel.isHidden = true
-                avatarImageView.isHidden = false
-                avatarImageView.image = placeholder
+                showInitials(for: item)
             }
         }
+    }
+
+    private func showTribePlaceholder() {
+        initialsLabel.isHidden = true
+        avatarImageView.isHidden = false
+        avatarImageView.image = UIImage(named: "tribePlaceholder")
+        avatarImageView.tintColor = UIColor.Sphinx.SecondaryText
     }
 
     private func showInitials(for item: ChatListCommonObject) {
@@ -260,7 +267,8 @@ class HiveShareViewController: UIViewController {
 
         searchTextField = UITextField()
         searchTextField.translatesAutoresizingMaskIntoConstraints = false
-        searchTextField.placeholder = "Search chats & contacts"
+        searchTextField.placeholder = "Search tribes & contacts"
+        searchTextField.clearButtonMode = .whileEditing
         searchTextField.font = UIFont(name: "Roboto-Regular", size: 14)
         searchTextField.textColor = UIColor.Sphinx.Text
         searchTextField.layer.cornerRadius = 8
@@ -351,8 +359,25 @@ class HiveShareViewController: UIViewController {
     }
 
     private func loadItems() {
-        allItems = ContactsService.sharedInstance.contactListObjects + ContactsService.sharedInstance.chatListObjects
-        filteredItems = allItems
+        allItems = (ContactsService.sharedInstance.contactListObjects + ContactsService.sharedInstance.chatListObjects)
+            .sorted { $0.getName().lowercased() < $1.getName().lowercased() }
+        applyFilter(searchText: "")
+    }
+
+    /// Rebuilds filteredItems: selected items first, then the rest alphabetically.
+    private func applyFilter(searchText: String) {
+        let base: [ChatListCommonObject]
+        if searchText.isEmpty {
+            base = allItems
+        } else {
+            base = allItems.filter {
+                $0.getName().lowercased().contains(searchText.lowercased())
+            }
+        }
+
+        let selected = base.filter { isItemSelected($0) }
+        let unselected = base.filter { !isItemSelected($0) }
+        filteredItems = selected + unselected
         tableView.reloadData()
     }
 
@@ -371,15 +396,7 @@ class HiveShareViewController: UIViewController {
     }
 
     @objc private func searchTextChanged(_ textField: UITextField) {
-        let searchText = textField.text ?? ""
-        if searchText.isEmpty {
-            filteredItems = allItems
-        } else {
-            filteredItems = allItems.filter {
-                $0.getName().lowercased().contains(searchText.lowercased())
-            }
-        }
-        tableView.reloadData()
+        applyFilter(searchText: textField.text ?? "")
     }
 
     @objc private func confirmTapped() {
@@ -477,15 +494,15 @@ extension HiveShareViewController: UITableViewDataSource, UITableViewDelegate {
         let tapped = filteredItems[indexPath.row]
 
         if isItemSelected(tapped) {
-            // Deselect
             selectedItems.removeAll(where: { $0.getObjectId() == tapped.getObjectId() })
         } else {
-            // Select up to maxSelections
             guard selectedItems.count < maxSelections else { return }
             selectedItems.append(tapped)
         }
 
-        tableView.reloadRows(at: [indexPath], with: .none)
+        // Items move to/from top, so animate the full reorder
+        let currentSearchText = searchTextField.text ?? ""
+        applyFilter(searchText: currentSearchText)
         updateConfirmButton()
     }
 }
