@@ -22,6 +22,10 @@ class WorkspaceTasksViewController: UIViewController {
     private var tasks: [WorkspaceTask] = []
     private var currentTab: Int = 0 // 0 = Active, 1 = Archived
     private var includeArchived = false
+
+    private var currentPage = 1
+    private var totalPages = 1
+    private weak var paginationView: PaginationControlView?
     
     static func instantiate(workspace: Workspace) -> WorkspaceTasksViewController {
         let vc = StoryboardScene.Dashboard.workspaceTasksViewController.instantiate()
@@ -33,7 +37,42 @@ class WorkspaceTasksViewController: UIViewController {
         super.viewDidLoad()
         setupSegmentedControls()
         setupTableView()
+        setupPaginationView()
         loadTasks()
+    }
+
+    private func setupPaginationView() {
+        let pagination = PaginationControlView()
+        pagination.delegate = self
+        pagination.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(pagination)
+
+        NSLayoutConstraint.activate([
+            pagination.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+            pagination.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
+            pagination.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            pagination.heightAnchor.constraint(equalToConstant: 56)
+        ])
+
+        // Re-pin tableView bottom to pagination view top (storyboard bottom-to-safeArea removed)
+        tableView.translatesAutoresizingMaskIntoConstraints = false
+        // Remove any existing bottom constraint from storyboard
+        if let existing = tableView.constraints.first(where: {
+            $0.firstAttribute == .bottom || $0.secondAttribute == .bottom
+        }) {
+            tableView.removeConstraint(existing)
+        }
+        // Also check superview constraints
+        view.constraints
+            .filter { c in
+                (c.firstItem === tableView && c.firstAttribute == .bottom) ||
+                (c.secondItem === tableView && c.secondAttribute == .bottom)
+            }
+            .forEach { view.removeConstraint($0) }
+
+        tableView.bottomAnchor.constraint(equalTo: pagination.topAnchor, constant: -8).isActive = true
+
+        paginationView = pagination
     }
     
     private func setupSegmentedControls() {
@@ -54,6 +93,7 @@ class WorkspaceTasksViewController: UIViewController {
         tableView.separatorStyle = .none
         tableView.rowHeight = 110
         tableView.contentInset = UIEdgeInsets(top: 12, left: 0, bottom: 0, right: 0)
+        tableView.tableFooterView = UIView(frame: CGRect(x: 0, y: 0, width: 0, height: 8))
 
         tableView.register(
             WorkspaceTaskTableViewCell.nib,
@@ -69,6 +109,7 @@ class WorkspaceTasksViewController: UIViewController {
                 loadingWheelColor: .Sphinx.Text
             )
             tableView.isHidden = isLoading
+            paginationView?.isHidden = isLoading
             emptyStateLabel.isHidden = !tasks.isEmpty || isLoading
         }
     }
@@ -80,11 +121,15 @@ class WorkspaceTasksViewController: UIViewController {
         API.sharedInstance.fetchTasksWithAuth(
             workspaceId: workspace.id,
             includeArchived: includeArchived,
-            callback: { [weak self] tasks in
+            page: currentPage,
+            callback: { [weak self] tasks, info in
                 DispatchQueue.main.async {
-                    self?.tasks = tasks
-                    self?.tableView.reloadData()
-                    self?.isLoading = false
+                    guard let self else { return }
+                    self.tasks = tasks
+                    self.totalPages = info.totalPages
+                    self.tableView.reloadData()
+                    self.paginationView?.configure(currentPage: self.currentPage, totalPages: info.totalPages)
+                    self.isLoading = false
                 }
             },
             errorCallback: { [weak self] in
@@ -139,7 +184,16 @@ extension WorkspaceTasksViewController: UITableViewDataSource, UITableViewDelega
 extension WorkspaceTasksViewController: CustomSegmentedControlDelegate {
     func segmentedControlDidSwitch(_ control: CustomSegmentedControl, to index: Int) {
         includeArchived = (index == 1)
+        currentPage = 1
         loadTasks()
+    }
+}
+
+extension WorkspaceTasksViewController: PaginationControlViewDelegate {
+    func paginationControlView(_ view: PaginationControlView, didSelectPage page: Int) {
+        currentPage = page
+        loadTasks()
+        tableView.setContentOffset(.zero, animated: false)
     }
 }
 

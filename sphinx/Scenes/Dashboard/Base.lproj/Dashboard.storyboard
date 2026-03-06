@@ -893,7 +893,7 @@
                         <constraints>
                             <constraint firstItem="2oL-fV-0G6" firstAttribute="trailing" secondItem="46c-NE-1TO" secondAttribute="trailing" id="71j-Ki-twj"/>
                             <constraint firstItem="maQ-Se-F9E" firstAttribute="centerX" secondItem="46c-NE-1TO" secondAttribute="centerX" id="9qS-xb-fl2"/>
-                            <constraint firstAttribute="bottom" secondItem="n2I-6v-3OQ" secondAttribute="bottom" id="Dw1-O0-VFs"/>
+
                             <constraint firstItem="2oL-fV-0G6" firstAttribute="leading" secondItem="46c-NE-1TO" secondAttribute="leading" id="JVd-IV-95X"/>
                             <constraint firstItem="n2I-6v-3OQ" firstAttribute="leading" secondItem="46c-NE-1TO" secondAttribute="leading" id="Klu-yi-ml0"/>
                             <constraint firstItem="qNo-LU-o5Z" firstAttribute="centerX" secondItem="46c-NE-1TO" secondAttribute="centerX" id="YA8-8Q-jVX"/>
@@ -956,38 +956,21 @@
                                 <color key="textColor" name="SecondaryText"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="jgF-2g-9KQ">
-                                <rect key="frame" x="342" y="790" width="56" height="56"/>
-                                <color key="backgroundColor" name="PrimaryBlue"/>
-                                <constraints>
-                                    <constraint firstAttribute="height" constant="56" id="FhR-Ky-Pbh"/>
-                                    <constraint firstAttribute="width" constant="56" id="nE3-Ms-XYb"/>
-                                </constraints>
-                                <state key="normal" title="Button"/>
-                                <buttonConfiguration key="configuration" style="plain" title="+">
-                                    <fontDescription key="titleFontDescription" type="system" pointSize="32"/>
-                                    <color key="baseForegroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                </buttonConfiguration>
-                            </button>
+
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="dub-Pn-bYx"/>
                         <color key="backgroundColor" name="Body"/>
                         <constraints>
-                            <constraint firstAttribute="bottom" secondItem="87y-oc-SDI" secondAttribute="bottom" id="0aJ-WY-stW"/>
                             <constraint firstItem="87y-oc-SDI" firstAttribute="top" secondItem="dub-Pn-bYx" secondAttribute="top" id="3Gn-Gk-T9H"/>
                             <constraint firstItem="4kw-DI-9wh" firstAttribute="centerX" secondItem="dub-Pn-bYx" secondAttribute="centerX" id="Fbo-p1-PVk"/>
                             <constraint firstItem="87y-oc-SDI" firstAttribute="leading" secondItem="dub-Pn-bYx" secondAttribute="leading" id="Mve-v2-q83"/>
                             <constraint firstItem="j9m-Ru-NhQ" firstAttribute="centerY" secondItem="dub-Pn-bYx" secondAttribute="centerY" id="UAS-ee-36e"/>
                             <constraint firstItem="87y-oc-SDI" firstAttribute="trailing" secondItem="dub-Pn-bYx" secondAttribute="trailing" id="URk-rw-1x1"/>
-                            <constraint firstItem="jgF-2g-9KQ" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="dub-Pn-bYx" secondAttribute="leading" symbolic="YES" id="XKZ-Xl-w9A"/>
                             <constraint firstItem="4kw-DI-9wh" firstAttribute="centerY" secondItem="dub-Pn-bYx" secondAttribute="centerY" id="alN-YG-8GH"/>
-                            <constraint firstItem="dub-Pn-bYx" firstAttribute="bottom" secondItem="jgF-2g-9KQ" secondAttribute="bottom" constant="16" id="bN5-Bl-GnY"/>
-                            <constraint firstItem="jgF-2g-9KQ" firstAttribute="trailing" secondItem="dub-Pn-bYx" secondAttribute="trailing" constant="-16" id="bmD-u7-tci"/>
                             <constraint firstItem="j9m-Ru-NhQ" firstAttribute="centerX" secondItem="dub-Pn-bYx" secondAttribute="centerX" id="foU-Rb-wQD"/>
                         </constraints>
                     </view>
                     <connections>
-                        <outlet property="createButton" destination="jgF-2g-9KQ" id="ZPX-g3-3Gb"/>
                         <outlet property="emptyStateLabel" destination="j9m-Ru-NhQ" id="vPi-Ud-9mI"/>
                         <outlet property="loadingWheel" destination="4kw-DI-9wh" id="sHq-PS-tTq"/>
                         <outlet property="tableView" destination="87y-oc-SDI" id="RXY-S6-F0V"/>

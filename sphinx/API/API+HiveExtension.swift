@@ -12,15 +12,33 @@ import SwiftyJSON
 
 typealias HiveAuthTokenCallback = ((String?) -> ())
 typealias HiveWorkspacesCallback = (([Workspace]) -> ())
-typealias HiveTasksCallback = (([WorkspaceTask]) -> ())
+typealias HiveTasksCallback = (([WorkspaceTask], PaginationInfo) -> ())
 typealias HiveWorkspaceImageCallback = ((String?) -> ())
-typealias HiveFeaturesCallback = (([HiveFeature]) -> ())
+typealias HiveFeaturesCallback = (([HiveFeature], PaginationInfo) -> ())
 typealias HiveFeatureCallback = ((HiveFeature?) -> ())
 typealias HiveChatMessagesCallback = (([HiveChatMessage]) -> ())
 typealias HiveTaskMessagesCallback = (([HiveChatMessage]) -> ())
 typealias HiveChatMessageCallback = ((HiveChatMessage?) -> ())
 typealias HiveStakworkRunCallback = ((StakworkRun?) -> ())
 typealias HiveStakworkRunsCallback = (([StakworkRun]) -> ())
+
+// MARK: - PaginationInfo
+
+struct PaginationInfo {
+    let page: Int
+    let totalPages: Int
+    let totalCount: Int
+    let hasMore: Bool
+
+    init(json: JSON) {
+        self.page       = json["page"].int       ?? 1
+        self.totalPages = json["totalPages"].int  ?? 1
+        self.totalCount = json["totalCount"].int  ?? 0
+        self.hasMore    = json["hasMore"].bool    ?? false
+    }
+
+    static let empty = PaginationInfo(json: JSON([:]))
+}
 
 extension API {
 
@@ -159,6 +177,7 @@ extension API {
         workspaceId: String,
         authToken: String,
         includeArchived: Bool = false,
+        page: Int = 1,
         callback: @escaping HiveTasksCallback,
         errorCallback: @escaping EmptyCallback
     ) {
@@ -168,7 +187,7 @@ extension API {
             return
         }
 
-        var urlString = "\(API.kHiveBaseUrl)/tasks?workspaceId=\(encodedWorkspaceId)&limit=100&includeLatestMessage=true"
+        var urlString = "\(API.kHiveBaseUrl)/tasks?workspaceId=\(encodedWorkspaceId)&limit=20&page=\(page)&includeLatestMessage=true"
         if includeArchived { urlString += "&includeArchived=true" }
 
         guard let request = createRequest(urlString, bodyParams: nil, method: "GET", token: authToken) else {
@@ -196,7 +215,8 @@ extension API {
                 }
 
                 let tasks: [WorkspaceTask] = (json["data"].array ?? []).compactMap { WorkspaceTask(json: $0) }
-                callback(tasks)
+                let pagination = PaginationInfo(json: json["pagination"])
+                callback(tasks, pagination)
             case .failure(let error):
                 print("[HiveAPI] Tasks fetch failed: \(error.localizedDescription)")
                 errorCallback()
@@ -207,6 +227,7 @@ extension API {
     func fetchTasksWithAuth(
         workspaceId: String,
         includeArchived: Bool = false,
+        page: Int = 1,
         callback: @escaping HiveTasksCallback,
         errorCallback: @escaping EmptyCallback
     ) {
@@ -215,11 +236,13 @@ extension API {
                 workspaceId: workspaceId,
                 authToken: storedToken,
                 includeArchived: includeArchived,
+                page: page,
                 callback: callback,
                 errorCallback: { [weak self] in
                     self?.authenticateAndFetchTasks(
                         workspaceId: workspaceId,
                         includeArchived: includeArchived,
+                        page: page,
                         callback: callback,
                         errorCallback: errorCallback
                     )
@@ -229,6 +252,7 @@ extension API {
             authenticateAndFetchTasks(
                 workspaceId: workspaceId,
                 includeArchived: includeArchived,
+                page: page,
                 callback: callback,
                 errorCallback: errorCallback
             )
@@ -238,6 +262,7 @@ extension API {
     private func authenticateAndFetchTasks(
         workspaceId: String,
         includeArchived: Bool,
+        page: Int = 1,
         callback: @escaping HiveTasksCallback,
         errorCallback: @escaping EmptyCallback
     ) {
@@ -249,6 +274,7 @@ extension API {
                     workspaceId: workspaceId,
                     authToken: token,
                     includeArchived: includeArchived,
+                    page: page,
                     callback: callback,
                     errorCallback: errorCallback
                 )
@@ -364,11 +390,12 @@ extension API {
     func fetchFeatures(
         workspaceId: String,
         authToken: String,
+        page: Int = 1,
         callback: @escaping HiveFeaturesCallback,
         errorCallback: @escaping EmptyCallback
     ) {
         // Use the new endpoint: /api/features with workspaceId as query param
-        let urlString = "\(API.kHiveBaseUrl)/features?workspaceId=\(workspaceId)&limit=100"
+        let urlString = "\(API.kHiveBaseUrl)/features?workspaceId=\(workspaceId)&limit=20&page=\(page)"
         
         print("[HiveAPI] Fetching features from: \(urlString)")
 
@@ -411,7 +438,8 @@ extension API {
                     return feature
                 }
                 print("[HiveAPI] Features fetch - successfully parsed \(features.count) features")
-                callback(features)
+                let pagination = PaginationInfo(json: json["pagination"])
+                callback(features, pagination)
             case .failure(let error):
                 print("[HiveAPI] Features fetch failed: \(error.localizedDescription)")
                 errorCallback()
@@ -421,6 +449,7 @@ extension API {
 
     func fetchFeaturesWithAuth(
         workspaceId: String,
+        page: Int = 1,
         callback: @escaping HiveFeaturesCallback,
         errorCallback: @escaping EmptyCallback
     ) {
@@ -428,10 +457,12 @@ extension API {
             fetchFeatures(
                 workspaceId: workspaceId,
                 authToken: storedToken,
+                page: page,
                 callback: callback,
                 errorCallback: { [weak self] in
                     self?.authenticateAndFetchFeatures(
                         workspaceId: workspaceId,
+                        page: page,
                         callback: callback,
                         errorCallback: errorCallback
                     )
@@ -440,6 +471,7 @@ extension API {
         } else {
             authenticateAndFetchFeatures(
                 workspaceId: workspaceId,
+                page: page,
                 callback: callback,
                 errorCallback: errorCallback
             )
@@ -448,6 +480,7 @@ extension API {
 
     private func authenticateAndFetchFeatures(
         workspaceId: String,
+        page: Int = 1,
         callback: @escaping HiveFeaturesCallback,
         errorCallback: @escaping EmptyCallback
     ) {
@@ -458,6 +491,7 @@ extension API {
                 self?.fetchFeatures(
                     workspaceId: workspaceId,
                     authToken: token,
+                    page: page,
                     callback: callback,
                     errorCallback: errorCallback
                 )

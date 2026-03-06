@@ -270,10 +270,11 @@ final class ClarifyingQuestionsView: UIView {
         let tappedIndex = sender.tag
 
         if q.type == "single_choice" {
-            // Deselect all, then select tapped
-            selectedIndices = [tappedIndex]
+            // Toggle: deselect if already selected, otherwise select tapped
+            let alreadySelected = selectedIndices.contains(tappedIndex)
+            selectedIndices = alreadySelected ? [] : [tappedIndex]
             optionsStackView.arrangedSubviews.compactMap { $0 as? UIButton }.forEach { btn in
-                if btn.tag == tappedIndex {
+                if !alreadySelected && btn.tag == tappedIndex {
                     applySelectedStyle(to: btn)
                 } else {
                     applyUnselectedStyle(to: btn)

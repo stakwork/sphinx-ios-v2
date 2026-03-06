@@ -7,10 +7,12 @@ class WorkspaceFeaturesViewController: UIViewController {
     @IBOutlet weak var tableView: UITableView!
     @IBOutlet weak var loadingWheel: UIActivityIndicatorView!
     @IBOutlet weak var emptyStateLabel: UILabel!
-    @IBOutlet weak var createButton: UIButton!
     
     var workspace: Workspace!
     private var features: [HiveFeature] = []
+    private var currentPage = 1
+    private var totalPages = 1
+    private weak var paginationView: PaginationControlView?
     
     private lazy var refreshControl: UIRefreshControl = {
         let control = UIRefreshControl()
@@ -33,6 +35,7 @@ class WorkspaceFeaturesViewController: UIViewController {
 
         setupUI()
         setupTableView()
+        setupPaginationView()
         loadFeatures()
     }
 
@@ -56,18 +59,6 @@ class WorkspaceFeaturesViewController: UIViewController {
         emptyStateLabel.textAlignment = .center
         emptyStateLabel.translatesAutoresizingMaskIntoConstraints = false
         emptyStateLabel.isHidden = true
-        
-        createButton.backgroundColor = .Sphinx.PrimaryBlue
-//        createButton.setTitle("+", for: .normal)
-//        createButton.titleLabel?.font = UIFont.systemFont(ofSize: 32, weight: .medium)
-//        createButton.setTitleColor(.white, for: .normal)
-        createButton.layer.cornerRadius = 28
-        createButton.layer.shadowColor = UIColor.black.cgColor
-        createButton.layer.shadowOffset = CGSize(width: 0, height: 2)
-        createButton.layer.shadowRadius = 4
-        createButton.layer.shadowOpacity = 0.3
-//        createButton.translatesAutoresizingMaskIntoConstraints = false
-        createButton.addTarget(self, action: #selector(createButtonTapped), for: .touchUpInside)
     }
     
     private func setupTableView() {
@@ -85,30 +76,66 @@ class WorkspaceFeaturesViewController: UIViewController {
             for: .valueChanged
         )
         tableView.refreshControl = refreshControl
+        tableView.tableFooterView = UIView(frame: CGRect(x: 0, y: 0, width: 0, height: 8))
+    }
+    
+    private func setupPaginationView() {
+        let pagination = PaginationControlView()
+        pagination.delegate = self
+        pagination.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(pagination)
+        
+        NSLayoutConstraint.activate([
+            pagination.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+            pagination.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
+            pagination.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            pagination.heightAnchor.constraint(equalToConstant: 56)
+        ])
+        
+        // Re-pin tableView bottom to pagination top instead of safe area bottom
+        if let existingBottom = tableView.constraints.first(where: {
+            ($0.firstItem as? UIView == tableView && $0.firstAttribute == .bottom) ||
+            ($0.secondItem as? UIView == tableView && $0.secondAttribute == .bottom)
+        }) {
+            existingBottom.isActive = false
+        }
+        // Also check view's constraints for tableView bottom
+        for constraint in view.constraints {
+            let isTableBottom = (constraint.firstItem as? UITableView == tableView && constraint.firstAttribute == .bottom)
+                || (constraint.secondItem as? UITableView == tableView && constraint.secondAttribute == .bottom)
+            if isTableBottom {
+                constraint.isActive = false
+            }
+        }
+        
+        tableView.bottomAnchor.constraint(equalTo: pagination.topAnchor, constant: -8).isActive = true
+        
+        paginationView = pagination
     }
     
     // MARK: - Actions
 
-    @objc private func createButtonTapped() {
+    func createButtonTapped() {
         let vc = CreateFeatureViewController.instantiate(workspaceId: workspace.id)
         vc.delegate = self
         present(vc, animated: true)
     }
     
     @objc private func handleRefresh() {
+        currentPage = 1
         loadFeatures()
     }
     
     // MARK: - Data Loading
     private var isLoading = false {
         didSet {
-            let showLoadingUI = isLoading && features.isEmpty
             LoadingWheelHelper.toggleLoadingWheel(
-                loading: showLoadingUI,
+                loading: isLoading,
                 loadingWheel: loadingWheel,
                 loadingWheelColor: .Sphinx.Text
             )
-            tableView.isHidden = showLoadingUI
+            tableView.isHidden = isLoading
+            paginationView?.isHidden = isLoading
             emptyStateLabel.isHidden = !features.isEmpty || isLoading
         }
     }
@@ -131,34 +158,31 @@ class WorkspaceFeaturesViewController: UIViewController {
         
         isLoading = true
         
-        print("[WorkspaceFeaturesVC] Loading features for workspace: \(workspace.id)")
+        print("[WorkspaceFeaturesVC] Loading features for workspace: \(workspace.id), page: \(currentPage)")
         
         API.sharedInstance.fetchFeaturesWithAuth(
             workspaceId: workspace.id,
-            callback: { [weak self] features in
-                print("[WorkspaceFeaturesVC] Features loaded: \(features.count)")
+            page: currentPage,
+            callback: { [weak self] features, info in
+                guard let self else { return }
+                print("[WorkspaceFeaturesVC] Features loaded: \(features.count), totalPages: \(info.totalPages)")
                 DispatchQueue.main.async {
-                    self?.features = features
-                    let offset = self?.tableView.contentOffset
-                    self?.tableView.reloadData()
-                    if let offset = offset {
-                        self?.tableView.setContentOffset(offset, animated: false)
-                    }
-                    self?.isLoading = false
-                    self?.refreshControl.endRefreshing()
+                    self.totalPages = info.totalPages
+                    self.features = features
+                    self.tableView.reloadData()
+                    self.paginationView?.configure(currentPage: self.currentPage, totalPages: info.totalPages)
+                    self.isLoading = false
+                    self.refreshControl.endRefreshing()
                 }
             },
             errorCallback: { [weak self] in
+                guard let self else { return }
                 print("[WorkspaceFeaturesVC] Failed to load features")
                 DispatchQueue.main.async {
-                    self?.features = []
-                    let offset = self?.tableView.contentOffset
-                    self?.tableView.reloadData()
-                    if let offset = offset {
-                        self?.tableView.setContentOffset(offset, animated: false)
-                    }
-                    self?.isLoading = false
-                    self?.refreshControl.endRefreshing()
+                    self.features = []
+                    self.tableView.reloadData()
+                    self.isLoading = false
+                    self.refreshControl.endRefreshing()
                     
                     AlertHelper.showAlert(
                         title: "Error",
@@ -172,6 +196,16 @@ class WorkspaceFeaturesViewController: UIViewController {
     private func openFeaturePlan(feature: HiveFeature) {
         let planVC = FeaturePlanViewController.instantiate(feature: feature, workspace: workspace)
         navigationController?.pushViewController(planVC, animated: true)
+    }
+}
+
+// MARK: - PaginationControlViewDelegate
+
+extension WorkspaceFeaturesViewController: PaginationControlViewDelegate {
+    func paginationControlView(_ view: PaginationControlView, didSelectPage page: Int) {
+        currentPage = page
+        loadFeatures()
+        tableView.setContentOffset(.zero, animated: false)
     }
 }
 
