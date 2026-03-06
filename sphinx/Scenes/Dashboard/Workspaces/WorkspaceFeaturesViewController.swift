@@ -13,6 +13,7 @@ class WorkspaceFeaturesViewController: UIViewController {
     private var currentPage = 1
     private var totalPages = 1
     private weak var paginationView: PaginationControlView?
+    private var paginationHasBeenBuilt = false
     
     private lazy var refreshControl: UIRefreshControl = {
         let control = UIRefreshControl()
@@ -123,6 +124,7 @@ class WorkspaceFeaturesViewController: UIViewController {
     
     @objc private func handleRefresh() {
         currentPage = 1
+        paginationHasBeenBuilt = false
         loadFeatures()
     }
     
@@ -135,7 +137,9 @@ class WorkspaceFeaturesViewController: UIViewController {
                 loadingWheelColor: .Sphinx.Text
             )
             tableView.isHidden = isLoading
-            paginationView?.isHidden = isLoading
+            if !paginationHasBeenBuilt {
+                paginationView?.isHidden = isLoading
+            }
             emptyStateLabel.isHidden = !features.isEmpty || isLoading
         }
     }
@@ -170,6 +174,7 @@ class WorkspaceFeaturesViewController: UIViewController {
                     self.features = features
                     self.tableView.reloadData()
                     self.paginationView?.configure(currentPage: self.currentPage, totalPages: info.totalPages)
+                    self.paginationHasBeenBuilt = true
                     self.isLoading = false
                     self.refreshControl.endRefreshing()
                 }
