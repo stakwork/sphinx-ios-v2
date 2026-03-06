@@ -191,6 +191,67 @@ class WorkspaceTaskTableViewCellTests: XCTestCase {
         XCTAssertTrue(cell.prBadgeButton.isHidden, "PR badge should hide after reconfiguring with no prUrl")
     }
 
+    // MARK: - HALTED Workflow Badge & Retry Button Tests
+
+    func testHaltedWorkflowBadge_HiddenWhenWorkflowStatusIsNotHalted() {
+        let task = createMockTask(workflowStatus: "IN_PROGRESS")
+        cell.configure(with: task, isLastRow: false)
+        XCTAssertTrue(cell.haltedWorkflowBadge.isHidden, "haltedWorkflowBadge should be hidden when workflowStatus is not HALTED")
+    }
+
+    func testHaltedWorkflowBadge_HiddenWhenWorkflowStatusIsNil() {
+        let task = createMockTask(workflowStatus: nil)
+        cell.configure(with: task, isLastRow: false)
+        XCTAssertTrue(cell.haltedWorkflowBadge.isHidden, "haltedWorkflowBadge should be hidden when workflowStatus is nil")
+    }
+
+    func testHaltedWorkflowBadge_VisibleWhenWorkflowStatusIsHalted() {
+        let task = createMockTask(workflowStatus: "HALTED")
+        cell.configure(with: task, isLastRow: false)
+        XCTAssertFalse(cell.haltedWorkflowBadge.isHidden, "haltedWorkflowBadge should be visible when workflowStatus is HALTED")
+    }
+
+    func testRetryWorkflowButton_HiddenWhenWorkflowStatusIsNotHalted() {
+        let task = createMockTask(workflowStatus: "COMPLETED")
+        cell.configure(with: task, isLastRow: false)
+        XCTAssertTrue(cell.retryWorkflowButton.isHidden, "retryWorkflowButton should be hidden when workflowStatus is not HALTED")
+    }
+
+    func testRetryWorkflowButton_HiddenWhenWorkflowStatusIsNil() {
+        let task = createMockTask(workflowStatus: nil)
+        cell.configure(with: task, isLastRow: false)
+        XCTAssertTrue(cell.retryWorkflowButton.isHidden, "retryWorkflowButton should be hidden when workflowStatus is nil")
+    }
+
+    func testRetryWorkflowButton_VisibleWhenWorkflowStatusIsHalted() {
+        let task = createMockTask(workflowStatus: "HALTED")
+        cell.configure(with: task, isLastRow: false)
+        XCTAssertFalse(cell.retryWorkflowButton.isHidden, "retryWorkflowButton should be visible when workflowStatus is HALTED")
+    }
+
+    func testRetryWorkflowButton_CallsClosureOnTap() {
+        let task = createMockTask(workflowStatus: "HALTED")
+        cell.configure(with: task, isLastRow: false)
+
+        var tapped = false
+        cell.onRetryWorkflowTapped = { tapped = true }
+        cell.retryWorkflowButton.sendActions(for: .touchUpInside)
+
+        XCTAssertTrue(tapped, "onRetryWorkflowTapped closure should be called when retry button is tapped")
+    }
+
+    func testHaltedBadgeAndRetryButton_HideAfterReconfigureWithNonHaltedStatus() {
+        let haltedTask = createMockTask(workflowStatus: "HALTED")
+        cell.configure(with: haltedTask, isLastRow: false)
+        XCTAssertFalse(cell.haltedWorkflowBadge.isHidden)
+        XCTAssertFalse(cell.retryWorkflowButton.isHidden)
+
+        let normalTask = createMockTask(workflowStatus: "IN_PROGRESS")
+        cell.configure(with: normalTask, isLastRow: false)
+        XCTAssertTrue(cell.haltedWorkflowBadge.isHidden, "haltedWorkflowBadge should hide after reconfiguring with non-HALTED status")
+        XCTAssertTrue(cell.retryWorkflowButton.isHidden, "retryWorkflowButton should hide after reconfiguring with non-HALTED status")
+    }
+
     // MARK: - Helper Methods
     
     private func createMockTask(
@@ -202,7 +263,8 @@ class WorkspaceTaskTableViewCellTests: XCTestCase {
         updatedAt: String? = "1 day ago",
         prUrl: String? = nil,
         prStatus: String? = nil,
-        prNumber: Int? = nil
+        prNumber: Int? = nil,
+        workflowStatus: String? = nil
     ) -> WorkspaceTask {
         var prArtifactDict: [String: Any] = [:]
         if prUrl != nil || prStatus != nil || prNumber != nil {
@@ -223,7 +285,8 @@ class WorkspaceTaskTableViewCellTests: XCTestCase {
             "repository": [
                 "name": repositoryName as Any
             ],
-            "updatedAt": updatedAt as Any
+            "updatedAt": updatedAt as Any,
+            "workflowStatus": workflowStatus as Any
         ]
         if !prArtifactDict.isEmpty {
             fullJsonDict["prArtifact"] = prArtifactDict

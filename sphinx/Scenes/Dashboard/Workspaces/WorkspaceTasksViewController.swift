@@ -170,6 +170,11 @@ extension WorkspaceTasksViewController: UITableViewDataSource, UITableViewDelega
                 }
             )
         }
+        cell.onRetryWorkflowTapped = { [weak self] in
+            guard let self else { return }
+            let task = self.tasks[indexPath.row]
+            API.sharedInstance.retryTaskWorkflowWithAuth(taskId: task.id, callback: {}, errorCallback: {})
+        }
         return cell
     }
 

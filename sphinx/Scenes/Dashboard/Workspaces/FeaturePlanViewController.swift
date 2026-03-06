@@ -918,6 +918,11 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
             let isLast = indexPath.row == tasks.count - 1
             cell.configure(with: task, isLastRow: isLast)
             cell.onPRBadgeTapped = { url in UIApplication.shared.open(url) }
+            cell.onRetryWorkflowTapped = { [weak self] in
+                guard let self else { return }
+                let t = self.feature.allTasks[indexPath.row]
+                API.sharedInstance.retryTaskWorkflowWithAuth(taskId: t.id, callback: {}, errorCallback: {})
+            }
             return cell
         }
 
