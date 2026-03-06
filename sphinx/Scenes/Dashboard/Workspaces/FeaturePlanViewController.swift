@@ -27,6 +27,7 @@ class FeaturePlanViewController: UIViewController {
     private var headerView: UIView!
     private var backButton: UIButton!
     private var titleLabel: UILabel!
+    private var shareButton: UIButton!
     
     private var topSegmentedControl: CustomSegmentedControl!
     private var chatContainerView: UIView!
@@ -142,6 +143,13 @@ class FeaturePlanViewController: UIViewController {
         titleLabel.textAlignment = .center
         headerView.addSubview(titleLabel)
 
+        shareButton = UIButton(type: .system)
+        shareButton.translatesAutoresizingMaskIntoConstraints = false
+        shareButton.setImage(UIImage(systemName: "square.and.arrow.up"), for: .normal)
+        shareButton.tintColor = UIColor.Sphinx.WashedOutReceivedText
+        shareButton.addTarget(self, action: #selector(shareTappedAction), for: .touchUpInside)
+        headerView.addSubview(shareButton)
+
         NSLayoutConstraint.activate([
             headerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             headerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -152,10 +160,15 @@ class FeaturePlanViewController: UIViewController {
             backButton.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
             backButton.widthAnchor.constraint(equalToConstant: 50),
 
+            shareButton.trailingAnchor.constraint(equalTo: headerView.trailingAnchor),
+            shareButton.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
+            shareButton.widthAnchor.constraint(equalToConstant: 50),
+            shareButton.heightAnchor.constraint(equalToConstant: 50),
+
             titleLabel.centerXAnchor.constraint(equalTo: headerView.centerXAnchor),
             titleLabel.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
             titleLabel.leadingAnchor.constraint(greaterThanOrEqualTo: backButton.trailingAnchor, constant: 8),
-            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: headerView.trailingAnchor, constant: -58)
+            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: shareButton.leadingAnchor, constant: -8)
         ])
     }
     
@@ -432,6 +445,13 @@ class FeaturePlanViewController: UIViewController {
     }
     
     // MARK: - Actions
+    @objc private func shareTappedAction() {
+        let url = "https://hive.sphinx.chat/w/\(workspace.slug ?? "")/plan/\(feature.id)"
+        let label = "Check out this feature: \(feature.title) — \(url)"
+        let shareVC = HiveShareViewController.instantiate(url: url, label: label)
+        present(shareVC, animated: true)
+    }
+
     @objc private func backButtonTouched() {
         navigationController?.popViewController(animated: true)
     }
@@ -948,7 +968,7 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
         tableView.deselectRow(at: indexPath, animated: true)
         guard tableView === tasksTableView else { return }
         let task = feature.allTasks[indexPath.row]
-        let chatVC = TaskChatViewController.instantiate(task: task)
+        let chatVC = TaskChatViewController.instantiate(task: task, workspaceSlug: workspace.slug ?? "")
         navigationController?.pushViewController(chatVC, animated: true)
     }
 }

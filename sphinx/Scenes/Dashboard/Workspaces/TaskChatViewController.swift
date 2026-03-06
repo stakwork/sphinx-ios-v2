@@ -12,6 +12,7 @@ class TaskChatViewController: UIViewController {
 
     // MARK: - Properties
     private var task: WorkspaceTask
+    private var workspaceSlug: String
     private var messages: [HiveChatMessage] = []
     private var processingStepText: String? = nil
 
@@ -19,6 +20,7 @@ class TaskChatViewController: UIViewController {
     private var headerView: UIView!
     private var backButton: UIButton!
     private var titleLabel: UILabel!
+    private var shareButton: UIButton!
 
     // MARK: - Chat
     private var chatTableView: UITableView!
@@ -34,12 +36,13 @@ class TaskChatViewController: UIViewController {
     private var emptyLabel: UILabel!
 
     // MARK: - Init
-    static func instantiate(task: WorkspaceTask) -> TaskChatViewController {
-        return TaskChatViewController(task: task)
+    static func instantiate(task: WorkspaceTask, workspaceSlug: String) -> TaskChatViewController {
+        return TaskChatViewController(task: task, workspaceSlug: workspaceSlug)
     }
 
-    private init(task: WorkspaceTask) {
+    private init(task: WorkspaceTask, workspaceSlug: String) {
         self.task = task
+        self.workspaceSlug = workspaceSlug
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -105,6 +108,13 @@ class TaskChatViewController: UIViewController {
         titleLabel.lineBreakMode = .byTruncatingTail
         headerView.addSubview(titleLabel)
 
+        shareButton = UIButton(type: .system)
+        shareButton.translatesAutoresizingMaskIntoConstraints = false
+        shareButton.setImage(UIImage(systemName: "square.and.arrow.up"), for: .normal)
+        shareButton.tintColor = UIColor.Sphinx.WashedOutReceivedText
+        shareButton.addTarget(self, action: #selector(shareTappedAction), for: .touchUpInside)
+        headerView.addSubview(shareButton)
+
         NSLayoutConstraint.activate([
             headerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             headerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -116,10 +126,15 @@ class TaskChatViewController: UIViewController {
             backButton.widthAnchor.constraint(equalToConstant: 50),
             backButton.heightAnchor.constraint(equalToConstant: 50),
 
+            shareButton.trailingAnchor.constraint(equalTo: headerView.trailingAnchor),
+            shareButton.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
+            shareButton.widthAnchor.constraint(equalToConstant: 50),
+            shareButton.heightAnchor.constraint(equalToConstant: 50),
+
             titleLabel.centerXAnchor.constraint(equalTo: headerView.centerXAnchor),
             titleLabel.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
             titleLabel.leadingAnchor.constraint(greaterThanOrEqualTo: backButton.trailingAnchor, constant: 8),
-            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: headerView.trailingAnchor, constant: -58),
+            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: shareButton.leadingAnchor, constant: -8),
 
             divider.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
             divider.trailingAnchor.constraint(equalTo: headerView.trailingAnchor),
@@ -275,6 +290,13 @@ class TaskChatViewController: UIViewController {
     }
 
     // MARK: - Actions
+    @objc private func shareTappedAction() {
+        let url = "https://hive.sphinx.chat/w/\(workspaceSlug)/task/\(task.id)"
+        let label = "Check out this task: \(task.title) — \(url)"
+        let shareVC = HiveShareViewController.instantiate(url: url, label: label)
+        present(shareVC, animated: true)
+    }
+
     @objc private func backTapped() {
         navigationController?.popViewController(animated: true)
     }
