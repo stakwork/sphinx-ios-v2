@@ -93,6 +93,13 @@ class FeaturePlanViewController: UIViewController {
         connectWebSocket()
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        guard !HivePusherManager.shared.isConnected else { return }
+        connectWebSocket()
+        fetchFeatureDetail()
+    }
+    
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         if isMovingFromParent {
