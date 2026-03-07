@@ -1263,7 +1263,11 @@ extension FeaturePlanViewController: HivePusherDelegate {
     
     func newMessageReceived(_ message: HiveChatMessage) {
         guard !messages.contains(where: { $0.id == message.id }) else { return }
-        hideProcessingBubble()
+        // Only hide the processing bubble when an AI (non-user) reply arrives,
+        // not when the echo of the sent user message comes back.
+        if !message.isUserMessage {
+            hideProcessingBubble()
+        }
         messages.append(message)
         
         let indexPath = IndexPath(row: messages.count - 1, section: 0)
