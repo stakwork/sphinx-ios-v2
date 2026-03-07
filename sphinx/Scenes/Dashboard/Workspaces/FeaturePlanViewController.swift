@@ -1071,7 +1071,8 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
             return UITableViewCell()
         }
         let message = messages[indexPath.row]
-        cell.configure(with: message)
+        let isLast = indexPath.row == messages.count - 1
+        cell.configure(with: message, isLastMessage: isLast)
         cell.onClarifyingAnswerSubmit = { [weak self] answers, replyId in
             self?.sendClarifyingAnswers(answers: answers, replyId: replyId)
         }
