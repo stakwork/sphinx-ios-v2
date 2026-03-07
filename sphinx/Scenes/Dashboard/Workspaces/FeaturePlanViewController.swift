@@ -292,13 +292,13 @@ class FeaturePlanViewController: UIViewController {
         autocompleteTableView = UITableView()
         autocompleteTableView.translatesAutoresizingMaskIntoConstraints = false
         autocompleteTableView.backgroundColor = UIColor.Sphinx.HeaderBG
-        autocompleteTableView.layer.cornerRadius = 12
         autocompleteTableView.layer.borderWidth = 1
         autocompleteTableView.layer.borderColor = UIColor.Sphinx.LightDivider.cgColor
-        autocompleteTableView.clipsToBounds = true
         autocompleteTableView.isHidden = true
         autocompleteTableView.rowHeight = 52
-        autocompleteTableView.separatorStyle = .none
+        autocompleteTableView.separatorStyle = .singleLine
+        autocompleteTableView.separatorColor = UIColor.Sphinx.LightDivider
+        autocompleteTableView.separatorInset = .zero
         autocompleteTableView.delegate = self
         autocompleteTableView.dataSource = self
         autocompleteTableView.register(UITableViewCell.self, forCellReuseIdentifier: "WorkspaceAutocompleteCell")
