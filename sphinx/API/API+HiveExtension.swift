@@ -23,6 +23,7 @@ typealias HiveStakworkRunCallback = ((StakworkRun?) -> ())
 typealias HiveStakworkRunsCallback = (([StakworkRun]) -> ())
 typealias HiveTaskCallback = ((WorkspaceTask?) -> ())
 typealias StakworkWorkflowCallback = ((StakworkWorkflowData?) -> ())
+typealias HiveSearchResultsCallback = ((HiveSearchResults) -> ())
 
 // MARK: - PaginationInfo
 
@@ -1823,6 +1824,86 @@ extension API {
                 UserDefaults.Keys.hiveToken.set(token)
                 self?.fetchTaskDetail(
                     taskId: taskId,
+                    authToken: token,
+                    callback: callback,
+                    errorCallback: errorCallback
+                )
+            },
+            errorCallback: errorCallback
+        )
+    }
+
+    // MARK: - Workspace Search
+
+    func searchWorkspace(
+        slug: String,
+        query: String,
+        authToken: String,
+        callback: @escaping HiveSearchResultsCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        guard let encodedSlug = slug.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
+              let encodedQuery = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
+            errorCallback(); return
+        }
+        let urlString = "\(API.kHiveBaseUrl)/workspaces/\(encodedSlug)/search?q=\(encodedQuery)"
+        guard let request = createRequest(urlString, bodyParams: nil, method: "GET", token: authToken) else {
+            errorCallback(); return
+        }
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                errorCallback(); return
+            }
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+                guard json["success"].bool == true else { errorCallback(); return }
+                callback(HiveSearchResults(json: json))
+            case .failure:
+                errorCallback()
+            }
+        }
+    }
+
+    func searchWorkspaceWithAuth(
+        slug: String,
+        query: String,
+        callback: @escaping HiveSearchResultsCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let token: String = UserDefaults.Keys.hiveToken.get() {
+            searchWorkspace(
+                slug: slug,
+                query: query,
+                authToken: token,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateAndSearchWorkspace(
+                        slug: slug,
+                        query: query,
+                        callback: callback,
+                        errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateAndSearchWorkspace(slug: slug, query: query, callback: callback, errorCallback: errorCallback)
+        }
+    }
+
+    private func authenticateAndSearchWorkspace(
+        slug: String,
+        query: String,
+        callback: @escaping HiveSearchResultsCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback(); return }
+                UserDefaults.Keys.hiveToken.set(token)
+                self?.searchWorkspace(
+                    slug: slug,
+                    query: query,
                     authToken: token,
                     callback: callback,
                     errorCallback: errorCallback
