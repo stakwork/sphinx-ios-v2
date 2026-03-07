@@ -71,9 +71,7 @@ class WorkspaceViewController: PopHandlerViewController {
             } else {
                 activeTasksVC?.loadTasks()
             }
-            if searchVC != nil {
-                searchTextField.becomeFirstResponder()
-            }
+
         } else {
             hasAppeared = true
         }
@@ -119,7 +117,7 @@ class WorkspaceViewController: PopHandlerViewController {
         )
         searchTextField.clearButtonMode = .whileEditing
         searchTextField.tintColor = .Sphinx.SecondaryText   // cursor + clear button
-        searchTextField.backgroundColor = .Sphinx.HeaderBG
+        searchTextField.backgroundColor = .Sphinx.ProfileBG
         searchTextField.layer.cornerRadius = 10
         searchTextField.clipsToBounds = true
         searchTextField.font = UIFont(name: "Roboto-Regular", size: 15) ?? UIFont.systemFont(ofSize: 15)
