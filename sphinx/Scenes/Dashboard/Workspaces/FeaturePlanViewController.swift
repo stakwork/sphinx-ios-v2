@@ -1086,7 +1086,12 @@ extension FeaturePlanViewController: UITextViewDelegate {
     func textViewDidChange(_ textView: UITextView) {
         guard textView == chatInputTextView else { return }
         let text = textView.text ?? ""
-        let cursorPos = textView.selectedRange.location
+        let cursor = textView.selectedRange
+
+        // Recolor the whole text: @word = blue, everything else = white
+        applyMentionColoring(to: textView, preservingCursor: cursor)
+
+        let cursorPos = cursor.location
         guard cursorPos <= (text as NSString).length else { hideAutocomplete(); return }
         let upToCursor = (text as NSString).substring(to: cursorPos)
         if let atRange = upToCursor.range(of: "@", options: .backwards),
@@ -1097,7 +1102,6 @@ extension FeaturePlanViewController: UITextViewDelegate {
                 hideAutocomplete()
                 return
             }
-            // Store the NSRange of "@query" so we can replace it even after focus is lost
             let atNSIdx = upToCursor.distance(from: upToCursor.startIndex, to: atRange.lowerBound)
             atTriggerNSRange = NSRange(location: atNSIdx, length: cursorPos - atNSIdx)
             filteredWorkspaces = availableWorkspaces.filter {
@@ -1109,6 +1113,28 @@ extension FeaturePlanViewController: UITextViewDelegate {
         } else {
             hideAutocomplete()
         }
+    }
+
+    /// Recolors the text view: `@word` (@ + non-whitespace) = blue, all else = default text color.
+    /// Restores cursor position after updating attributedText.
+    private static let mentionRegex = try? NSRegularExpression(pattern: "@\\S+")
+
+    private func applyMentionColoring(to textView: UITextView, preservingCursor cursor: NSRange) {
+        let text = textView.text ?? ""
+        let defaultFont = UIFont(name: "Roboto-Regular", size: 16) ?? UIFont.systemFont(ofSize: 16)
+        let attr = NSMutableAttributedString(
+            string: text,
+            attributes: [.foregroundColor: UIColor.Sphinx.Text, .font: defaultFont]
+        )
+        if let regex = FeaturePlanViewController.mentionRegex {
+            let matches = regex.matches(in: text, range: NSRange(text.startIndex..., in: text))
+            for match in matches {
+                attr.addAttribute(.foregroundColor, value: UIColor.Sphinx.PrimaryBlue, range: match.range)
+            }
+        }
+        textView.attributedText = attr
+        textView.selectedRange = cursor
+        textView.typingAttributes = [.foregroundColor: UIColor.Sphinx.Text, .font: defaultFont]
     }
 
     private func showAutocomplete() {
@@ -1175,28 +1201,28 @@ extension FeaturePlanViewController: UITextViewDelegate {
 
     @objc private func autocompleteRowTapped(_ sender: UIButton) {
         guard sender.tag < filteredWorkspaces.count,
-              let triggerRange = atTriggerNSRange else { hideAutocomplete(); return }
+              let triggerRange = atTriggerNSRange,
+              let currentText = chatInputTextView.text else { hideAutocomplete(); return }
         let ws = filteredWorkspaces[sender.tag]
         let slug = ws.slug ?? ws.name
         let insertText = "@\(slug) "
-        let defaultFont = UIFont(name: "Roboto-Regular", size: 16) ?? UIFont.systemFont(ofSize: 16)
-
-        // Preserve existing attributed text (keeps previous blue mentions intact)
-        let existing = chatInputTextView.attributedText ?? NSAttributedString(string: chatInputTextView.text ?? "")
-        let attr = NSMutableAttributedString(attributedString: existing)
-        // Ensure the replacement range is within bounds
-        let safeLength = min(triggerRange.length, attr.length - triggerRange.location)
-        guard triggerRange.location >= 0, triggerRange.location + safeLength <= attr.length else {
+        let nsText = currentText as NSString
+        let safeLength = min(triggerRange.length, nsText.length - triggerRange.location)
+        guard triggerRange.location >= 0, triggerRange.location + safeLength <= nsText.length else {
             hideAutocomplete(); return
         }
-        let replaceRange = NSRange(location: triggerRange.location, length: safeLength)
-        let mentionAttr = NSAttributedString(
-            string: insertText,
-            attributes: [.foregroundColor: UIColor.Sphinx.PrimaryBlue, .font: defaultFont]
-        )
-        attr.replaceCharacters(in: replaceRange, with: mentionAttr)
+        let newText = nsText.replacingCharacters(in: NSRange(location: triggerRange.location, length: safeLength), with: insertText)
+        let newCursor = NSRange(location: triggerRange.location + insertText.count, length: 0)
+        let defaultFont = UIFont(name: "Roboto-Regular", size: 16) ?? UIFont.systemFont(ofSize: 16)
+        let attr = NSMutableAttributedString(string: newText, attributes: [.foregroundColor: UIColor.Sphinx.Text, .font: defaultFont])
+        if let regex = FeaturePlanViewController.mentionRegex {
+            let matches = regex.matches(in: newText, range: NSRange(newText.startIndex..., in: newText))
+            for match in matches {
+                attr.addAttribute(.foregroundColor, value: UIColor.Sphinx.PrimaryBlue, range: match.range)
+            }
+        }
         chatInputTextView.attributedText = attr
-        chatInputTextView.selectedRange = NSRange(location: triggerRange.location + insertText.count, length: 0)
+        chatInputTextView.selectedRange = newCursor
         chatInputTextView.typingAttributes = [.foregroundColor: UIColor.Sphinx.Text, .font: defaultFont]
         hideAutocomplete()
         chatInputTextView.becomeFirstResponder()
