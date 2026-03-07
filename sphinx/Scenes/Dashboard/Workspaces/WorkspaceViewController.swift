@@ -96,6 +96,13 @@ class WorkspaceViewController: PopHandlerViewController {
         createFeatureButton.addTarget(self, action: #selector(createFeatureButtonTapped), for: .touchUpInside)
     }
 
+    // Width constraint on the cancel button — 0 when hidden, intrinsic when shown.
+    // The text field's trailing is chained: tf.trailing + 8 = cb.leading (set programmatically),
+    // and cb.trailing = container.trailing - 8 (storyboard). Animating cancelWidthConstraint
+    // causes the text field to grow/shrink automatically.
+    private var cancelWidthConstraint: NSLayoutConstraint?
+    private var textFieldTrailingToCancelConstraint: NSLayoutConstraint?
+
     private func setupSearchBar() {
         searchBarContainerView.backgroundColor = .Sphinx.Body
 
@@ -114,17 +121,46 @@ class WorkspaceViewController: PopHandlerViewController {
         searchTextField.leftView = paddingView
         searchTextField.leftViewMode = .always
 
-        // Cancel button
+        // Build the constraint chain: tf.trailing + 8 = cb.leading, cb.width = 0 initially.
+        // The storyboard already sets tf.leading=8 and cb.trailing=container.trailing-8.
+        let tfToCb = searchTextField.trailingAnchor.constraint(
+            equalTo: searchCancelButton.leadingAnchor, constant: -8
+        )
+        tfToCb.isActive = true
+        textFieldTrailingToCancelConstraint = tfToCb
+
+        let cbWidth = searchCancelButton.widthAnchor.constraint(equalToConstant: 0)
+        cbWidth.isActive = true
+        cancelWidthConstraint = cbWidth
+
+        // Cancel button styling — keep in layout tree, hidden via width=0
         searchCancelButton.setTitle("Cancel", for: .normal)
         searchCancelButton.setTitleColor(.Sphinx.PrimaryBlue, for: .normal)
         searchCancelButton.titleLabel?.font = UIFont(name: "Roboto-Regular", size: 15) ?? UIFont.systemFont(ofSize: 15)
-        searchCancelButton.isHidden = true
+        searchCancelButton.isHidden = false
+        searchCancelButton.clipsToBounds = true   // clips title text when width=0
         searchCancelButton.addTarget(self, action: #selector(cancelSearchTapped), for: .touchUpInside)
 
         // Disable if no slug
         if workspace.slug == nil {
             searchTextField.isEnabled = false
             searchTextField.placeholder = "Search unavailable"
+        }
+    }
+
+    /// Animates the cancel button sliding in and the text field shrinking.
+    private func showCancelButton() {
+        cancelWidthConstraint?.constant = 70   // wide enough for "Cancel"
+        UIView.animate(withDuration: 0.25) {
+            self.searchBarContainerView.layoutIfNeeded()
+        }
+    }
+
+    /// Animates the cancel button sliding out and the text field expanding back.
+    private func hideCancelButton() {
+        cancelWidthConstraint?.constant = 0
+        UIView.animate(withDuration: 0.25) {
+            self.searchBarContainerView.layoutIfNeeded()
         }
     }
 
@@ -135,6 +171,7 @@ class WorkspaceViewController: PopHandlerViewController {
     @objc private func cancelSearchTapped() {
         searchTextField.text = ""
         searchTextField.resignFirstResponder()
+        hideCancelButton()
         dismissSearchOverlay()
     }
 
@@ -177,7 +214,6 @@ class WorkspaceViewController: PopHandlerViewController {
         searchVC?.view.removeFromSuperview()
         searchVC?.removeFromParent()
         searchVC = nil
-        searchCancelButton.isHidden = true
     }
 }
 
@@ -188,7 +224,7 @@ extension WorkspaceViewController: UITextFieldDelegate {
     func textFieldDidBeginEditing(_ textField: UITextField) {
         guard textField == searchTextField else { return }
         showSearchOverlay()
-        searchCancelButton.isHidden = false
+        showCancelButton()
     }
 
     func textField(
@@ -203,6 +239,8 @@ extension WorkspaceViewController: UITextFieldDelegate {
     }
 
     func textFieldShouldClear(_ textField: UITextField) -> Bool {
+        searchTextField.resignFirstResponder()
+        hideCancelButton()
         dismissSearchOverlay()
         return true
     }
@@ -213,6 +251,10 @@ extension WorkspaceViewController: UITextFieldDelegate {
 extension WorkspaceViewController: WorkspaceSearchViewControllerDelegate {
 
     func didSelectSearchResult(_ result: HiveSearchResultItem) {
+        // Resign keyboard immediately so tabs are visible on return
+        searchTextField.resignFirstResponder()
+        hideCancelButton()
+
         // Show a loading spinner on the nav bar while fetching detail
         let spinner = UIActivityIndicatorView(style: .medium)
         spinner.startAnimating()

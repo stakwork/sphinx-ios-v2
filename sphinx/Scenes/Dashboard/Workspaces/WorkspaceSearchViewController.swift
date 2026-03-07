@@ -96,10 +96,10 @@ class WorkspaceSearchViewController: UIViewController {
         view.addSubview(loadingIndicator)
 
         NSLayoutConstraint.activate([
-            // Prompt label — vertically centred
+            // Prompt label — near the top so it clears the keyboard
             promptLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 32),
             promptLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -32),
-            promptLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            promptLabel.topAnchor.constraint(equalTo: view.topAnchor, constant: 36),
 
             // Results table — full coverage
             resultsTableView.topAnchor.constraint(equalTo: view.topAnchor),
