@@ -34,6 +34,12 @@ class TaskChatViewController: UIViewController {
     private var workflowStatusHeightConstraint: NSLayoutConstraint!
     private var bottomFillView: UIView!
 
+    // Autocomplete
+    private var availableWorkspaces: [Workspace] = []
+    private var filteredWorkspaces: [Workspace] = []
+    private var autocompleteTableView: UITableView!
+    private var autocompleteHeightConstraint: NSLayoutConstraint!
+
     private var loadingWheel: UIActivityIndicatorView!
     private var emptyLabel: UILabel!
 
@@ -61,6 +67,12 @@ class TaskChatViewController: UIViewController {
         cachedStakworkProjectId = task.stakworkProjectId
         fetchMessages()
         connectWebSocket()
+        API.sharedInstance.fetchWorkspacesWithAuth(
+            callback: { [weak self] workspaces in
+                DispatchQueue.main.async { self?.availableWorkspaces = workspaces }
+            },
+            errorCallback: { /* silent fail — autocomplete just won't show */ }
+        )
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -225,8 +237,32 @@ class TaskChatViewController: UIViewController {
 
         chatTableView.keyboardDismissMode = .interactive
 
+        // Autocomplete table view
+        autocompleteTableView = UITableView()
+        autocompleteTableView.translatesAutoresizingMaskIntoConstraints = false
+        autocompleteTableView.backgroundColor = UIColor.Sphinx.HeaderBG
+        autocompleteTableView.layer.cornerRadius = 12
+        autocompleteTableView.layer.borderWidth = 1
+        autocompleteTableView.layer.borderColor = UIColor.Sphinx.LightDivider.cgColor
+        autocompleteTableView.clipsToBounds = true
+        autocompleteTableView.isHidden = true
+        autocompleteTableView.rowHeight = 52
+        autocompleteTableView.separatorStyle = .none
+        autocompleteTableView.delegate = self
+        autocompleteTableView.dataSource = self
+        autocompleteTableView.register(UITableViewCell.self, forCellReuseIdentifier: "WorkspaceAutocompleteCell")
+        view.addSubview(autocompleteTableView)
+
+        // Tap-to-dismiss autocomplete gesture on chat table
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleChatTableTap))
+        tapGesture.cancelsTouchesInView = false
+        chatTableView.addGestureRecognizer(tapGesture)
+
+        chatInputTextView.delegate = self
+
         chatInputBottomConstraint = chatInputContainer.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
         workflowStatusHeightConstraint = workflowStatusView.heightAnchor.constraint(equalToConstant: 0)
+        autocompleteHeightConstraint = autocompleteTableView.heightAnchor.constraint(equalToConstant: 0)
 
         NSLayoutConstraint.activate([
             loadingWheel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
@@ -263,7 +299,12 @@ class TaskChatViewController: UIViewController {
             sendButton.centerYAnchor.constraint(equalTo: chatInputContainer.centerYAnchor),
             sendButton.trailingAnchor.constraint(equalTo: chatInputContainer.trailingAnchor, constant: -16),
             sendButton.widthAnchor.constraint(equalToConstant: 80),
-            sendButton.heightAnchor.constraint(equalToConstant: 40)
+            sendButton.heightAnchor.constraint(equalToConstant: 40),
+
+            autocompleteTableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            autocompleteTableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            autocompleteTableView.bottomAnchor.constraint(equalTo: chatInputContainer.topAnchor),
+            autocompleteHeightConstraint
         ])
     }
 
@@ -567,10 +608,25 @@ extension TaskChatViewController: HivePusherDelegate {
 // MARK: - UITableView
 extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        messages.count + (processingStepText != nil ? 1 : 0)
+        if tableView === autocompleteTableView { return filteredWorkspaces.count }
+        return messages.count + (processingStepText != nil ? 1 : 0)
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        if tableView === autocompleteTableView {
+            let cell = tableView.dequeueReusableCell(withIdentifier: "WorkspaceAutocompleteCell", for: indexPath)
+            let ws = filteredWorkspaces[indexPath.row]
+            var content = cell.defaultContentConfiguration()
+            content.text = ws.name
+            content.secondaryText = ws.slug
+            content.textProperties.color = UIColor.Sphinx.Text
+            content.secondaryTextProperties.color = UIColor.Sphinx.SecondaryText
+            content.textProperties.font = UIFont(name: "Roboto-Medium", size: 14) ?? .systemFont(ofSize: 14, weight: .medium)
+            cell.contentConfiguration = content
+            cell.backgroundColor = UIColor.Sphinx.HeaderBG
+            return cell
+        }
+
         if processingStepText != nil && indexPath.row == messages.count {
             let cell = tableView.dequeueReusableCell(
                 withIdentifier: "HiveProcessingBubbleCell",
@@ -593,5 +649,81 @@ extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
             tableView?.endUpdates()
         }
         return cell
+    }
+
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        guard tableView === autocompleteTableView else { return }
+        let workspace = filteredWorkspaces[indexPath.row]
+        let slug = workspace.slug ?? workspace.name
+        guard let currentText = chatInputTextView.text else { hideAutocomplete(); return }
+        let cursorPos = chatInputTextView.selectedRange.location
+        let nsText = currentText as NSString
+        let upToCursor = nsText.substring(to: cursorPos)
+        if let atIdx = upToCursor.lastIndex(of: "@") {
+            let atNSIdx = upToCursor.distance(from: upToCursor.startIndex, to: atIdx)
+            let insertText = "@\(slug) "
+            let newText = nsText.replacingCharacters(
+                in: NSRange(location: atNSIdx, length: cursorPos - atNSIdx),
+                with: insertText
+            )
+            let attr = NSMutableAttributedString(
+                string: newText,
+                attributes: [
+                    .foregroundColor: UIColor.Sphinx.Text,
+                    .font: UIFont(name: "Roboto-Regular", size: 16) ?? UIFont.systemFont(ofSize: 16)
+                ]
+            )
+            let mentionRange = NSRange(location: atNSIdx, length: insertText.count)
+            attr.addAttribute(.foregroundColor, value: UIColor.Sphinx.PrimaryBlue, range: mentionRange)
+            chatInputTextView.attributedText = attr
+            chatInputTextView.selectedRange = NSRange(location: atNSIdx + insertText.count, length: 0)
+        }
+        hideAutocomplete()
+    }
+}
+
+// MARK: - UITextViewDelegate (autocomplete)
+extension TaskChatViewController: UITextViewDelegate {
+    func textViewDidChange(_ textView: UITextView) {
+        guard textView == chatInputTextView else { return }
+        let text = textView.text ?? ""
+        let cursorPos = textView.selectedRange.location
+        guard cursorPos <= (text as NSString).length else { hideAutocomplete(); return }
+        let upToCursor = (text as NSString).substring(to: cursorPos)
+        if let atRange = upToCursor.range(of: "@", options: .backwards),
+           (atRange.lowerBound == upToCursor.startIndex ||
+            upToCursor[upToCursor.index(before: atRange.lowerBound)].isWhitespace) {
+            let query = String(upToCursor[atRange.upperBound...])
+            if query.contains(" ") || query.contains("\n") {
+                hideAutocomplete()
+                return
+            }
+            filteredWorkspaces = availableWorkspaces.filter {
+                query.isEmpty ||
+                $0.name.localizedCaseInsensitiveContains(query) ||
+                ($0.slug ?? "").localizedCaseInsensitiveContains(query)
+            }
+            showAutocomplete()
+        } else {
+            hideAutocomplete()
+        }
+    }
+
+    private func showAutocomplete() {
+        guard !filteredWorkspaces.isEmpty else { hideAutocomplete(); return }
+        autocompleteTableView.isHidden = false
+        autocompleteHeightConstraint.constant = CGFloat(min(filteredWorkspaces.count, 4)) * 52
+        autocompleteTableView.reloadData()
+        UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
+    }
+
+    private func hideAutocomplete() {
+        autocompleteTableView.isHidden = true
+        autocompleteHeightConstraint.constant = 0
+    }
+
+    @objc private func handleChatTableTap() {
+        hideAutocomplete()
     }
 }
