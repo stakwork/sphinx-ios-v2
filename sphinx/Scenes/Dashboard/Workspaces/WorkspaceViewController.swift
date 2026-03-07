@@ -29,6 +29,7 @@ class WorkspaceViewController: PopHandlerViewController {
     private var activeTasksVC: WorkspaceTasksViewController!
     private var hasAppeared = false
     private var searchVC: WorkspaceSearchViewController?
+    private let newBubbleHelper = NewMessageBubbleHelper()
 
     private lazy var createFeatureButton: UIButton = {
         let btn = UIButton(type: .system)
@@ -69,6 +70,9 @@ class WorkspaceViewController: PopHandlerViewController {
                 activeFeaturesVC?.loadFeatures()
             } else {
                 activeTasksVC?.loadTasks()
+            }
+            if searchVC != nil {
+                searchTextField.becomeFirstResponder()
             }
         } else {
             hasAppeared = true
@@ -264,14 +268,8 @@ extension WorkspaceViewController: UITextFieldDelegate {
 extension WorkspaceViewController: WorkspaceSearchViewControllerDelegate {
 
     func didSelectSearchResult(_ result: HiveSearchResultItem) {
-        // Resign keyboard immediately so tabs are visible on return
         searchTextField.resignFirstResponder()
-        hideCancelButton()
-
-        // Show a loading spinner on the nav bar while fetching detail
-        let spinner = UIActivityIndicatorView(style: .medium)
-        spinner.startAnimating()
-        navigationItem.rightBarButtonItem = UIBarButtonItem(customView: spinner)
+        newBubbleHelper.showLoadingWheel()
 
         if result.type == "feature" {
             API.sharedInstance.fetchFeatureDetailWithAuth(
@@ -279,16 +277,14 @@ extension WorkspaceViewController: WorkspaceSearchViewControllerDelegate {
                 callback: { [weak self] feature in
                     guard let self = self, let feature = feature else { return }
                     DispatchQueue.main.async {
-                        self.navigationItem.rightBarButtonItem = nil
-                        self.dismissSearchOverlay()
-                        self.searchTextField.text = ""
+                        self.newBubbleHelper.hideLoadingWheel()
                         let planVC = FeaturePlanViewController.instantiate(feature: feature, workspace: self.workspace)
                         self.navigationController?.pushViewController(planVC, animated: true)
                     }
                 },
                 errorCallback: { [weak self] in
                     DispatchQueue.main.async {
-                        self?.navigationItem.rightBarButtonItem = nil
+                        self?.newBubbleHelper.hideLoadingWheel()
                     }
                 }
             )
@@ -298,16 +294,14 @@ extension WorkspaceViewController: WorkspaceSearchViewControllerDelegate {
                 callback: { [weak self] task in
                     guard let self = self, let task = task else { return }
                     DispatchQueue.main.async {
-                        self.navigationItem.rightBarButtonItem = nil
-                        self.dismissSearchOverlay()
-                        self.searchTextField.text = ""
+                        self.newBubbleHelper.hideLoadingWheel()
                         let chatVC = TaskChatViewController.instantiate(task: task, workspaceSlug: self.workspace.slug ?? "")
                         self.navigationController?.pushViewController(chatVC, animated: true)
                     }
                 },
                 errorCallback: { [weak self] in
                     DispatchQueue.main.async {
-                        self?.navigationItem.rightBarButtonItem = nil
+                        self?.newBubbleHelper.hideLoadingWheel()
                     }
                 }
             )
