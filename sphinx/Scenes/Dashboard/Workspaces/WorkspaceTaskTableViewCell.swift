@@ -45,7 +45,6 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
     }
 
     private func setupCell() {
-        selectionStyle = .none
         backgroundColor = .Sphinx.Body
         contentView.backgroundColor = .Sphinx.Body
 

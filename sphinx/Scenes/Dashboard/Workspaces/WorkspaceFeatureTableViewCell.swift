@@ -17,7 +17,6 @@ class WorkspaceFeatureTableViewCell: UITableViewCell {
     override func awakeFromNib() {
         super.awakeFromNib()
         
-        selectionStyle = .none
         backgroundColor = .Sphinx.Body
         contentView.backgroundColor = .Sphinx.Body
         
