@@ -71,9 +71,7 @@ class WorkspaceViewController: PopHandlerViewController {
             } else {
                 activeTasksVC?.loadTasks()
             }
-            if searchVC != nil {
-                searchTextField.becomeFirstResponder()
-            }
+
         } else {
             hasAppeared = true
         }
