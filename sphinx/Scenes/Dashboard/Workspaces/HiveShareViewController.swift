@@ -261,7 +261,7 @@ class HiveShareViewController: UIViewController {
         searchTextField.tintColor = UIColor.Sphinx.SecondaryText
         searchTextField.font = UIFont(name: "Roboto-Regular", size: 14)
         searchTextField.textColor = UIColor.Sphinx.Text
-        searchTextField.backgroundColor = UIColor.Sphinx.HeaderBG
+        searchTextField.backgroundColor = UIColor.Sphinx.ProfileBG
         searchTextField.layer.cornerRadius = 10
         searchTextField.layer.masksToBounds = true
         searchTextField.layer.borderWidth = 0
