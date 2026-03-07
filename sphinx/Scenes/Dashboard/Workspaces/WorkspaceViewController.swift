@@ -63,6 +63,8 @@ class WorkspaceViewController: PopHandlerViewController {
             HivePusherManager.shared.connect(workspaceId: workspace.id, workspaceSlug: workspace.slug)
         }
         if hasAppeared {
+            // Only reload data; never touch visibility — the search overlay (if active)
+            // already covers the tab/content stack, so its isHidden state must not change.
             if currentTab == 0 {
                 activeFeaturesVC?.loadFeatures()
             } else {
@@ -218,6 +220,13 @@ class WorkspaceViewController: PopHandlerViewController {
         searchVC?.view.removeFromSuperview()
         searchVC?.removeFromParent()
         searchVC = nil
+
+        // Re-show whichever tab child was active while search covered the screen
+        if currentTab == 0 {
+            activeFeaturesVC?.view.isHidden = false
+        } else {
+            activeTasksVC?.view.isHidden = false
+        }
     }
 }
 
@@ -340,7 +349,9 @@ extension WorkspaceViewController: CustomSegmentedControlDelegate {
         currentTab = index
         createFeatureButton.isHidden = (index != 0)
 
-        // Hide all children instead of removing
+        // Instantiate children lazily, but only make them visible when search is inactive
+        let searchActive = searchVC != nil
+
         activeTasksVC?.view.isHidden = true
         activeFeaturesVC?.view.isHidden = true
 
@@ -349,13 +360,18 @@ extension WorkspaceViewController: CustomSegmentedControlDelegate {
                 activeFeaturesVC = WorkspaceFeaturesViewController.instantiate(workspace: workspace)
                 addChildVC(activeFeaturesVC)
             }
-            activeFeaturesVC.view.isHidden = false
+            // Only reveal if search overlay is not covering the stack
+            if !searchActive {
+                activeFeaturesVC.view.isHidden = false
+            }
         } else {
             if activeTasksVC == nil {
                 activeTasksVC = WorkspaceTasksViewController.instantiate(workspace: workspace)
                 addChildVC(activeTasksVC)
             }
-            activeTasksVC.view.isHidden = false
+            if !searchActive {
+                activeTasksVC.view.isHidden = false
+            }
         }
     }
 
