@@ -68,8 +68,9 @@ class TaskChatViewController: UIViewController {
         applyInitialWorkflowStatus()
         setupKeyboardObservers()
         cachedStakworkProjectId = task.stakworkProjectId
+        connectWebSocket()         // connect Pusher immediately with known taskId
         fetchMessages()
-        fetchTaskDetailAndConnect()
+        fetchTaskDetailAndConnect() // will call connectAnyCable() once projectId is known
         API.sharedInstance.fetchWorkspacesWithAuth(
             callback: { [weak self] workspaces in
                 DispatchQueue.main.async { self?.availableWorkspaces = workspaces }
@@ -506,9 +507,9 @@ class TaskChatViewController: UIViewController {
     }
 
     // MARK: - WebSocket
+
+    /// Fetches task detail to resolve cachedStakworkProjectId, then connects AnyCable.
     private func fetchTaskDetailAndConnect() {
-        // Always fetch task detail to ensure cachedStakworkProjectId is populated,
-        // then connect WebSocket (Pusher + AnyCable) once the projectId is known.
         API.sharedInstance.fetchTaskDetailWithAuth(
             taskId: task.id,
             callback: { [weak self] updatedTask in
@@ -518,17 +519,16 @@ class TaskChatViewController: UIViewController {
                         self.task = updated
                         self.cachedStakworkProjectId = updated.stakworkProjectId
                     }
-                    self.connectWebSocket()
+                    self.connectAnyCable()
                 }
             },
             errorCallback: { [weak self] in
-                // Fall back to connecting with whatever we already have
-                DispatchQueue.main.async { self?.connectWebSocket() }
                 print("[TaskChatVC] Failed to fetch task detail for stakworkProjectId")
             }
         )
     }
 
+    /// Connects (or re-points) Pusher only. Safe to call any time — no projectId needed.
     private func connectWebSocket() {
         // Always re-point delegate so this VC receives events even if another VC
         // previously took ownership of the shared Pusher instance.
@@ -536,9 +536,9 @@ class TaskChatViewController: UIViewController {
         if !HivePusherManager.shared.isConnected {
             HivePusherManager.shared.connect(taskId: task.id)
         }
-        connectAnyCable()
     }
 
+    /// Connects AnyCable. Only called after cachedStakworkProjectId is populated.
     private func connectAnyCable() {
         guard let projectId = cachedStakworkProjectId else { return }
         guard anyCableManager == nil else { return }

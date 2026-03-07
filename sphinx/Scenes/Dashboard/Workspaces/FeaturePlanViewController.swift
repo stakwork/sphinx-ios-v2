@@ -815,7 +815,7 @@ class FeaturePlanViewController: UIViewController {
                 DispatchQueue.main.async {
                     self.feature = updatedFeature
                     self.cachedStakworkProjectId = updatedFeature.stakworkProjectId
-                    self.connectWebSocket()
+                    self.connectAnyCable()
                     HivePusherManager.shared.subscribeToFeatureTasks(updatedFeature.allTasks.map { $0.id })
                     // Apply workflow status from freshly fetched feature data
                     self.applyInitialWorkflowStatus()
@@ -936,6 +936,8 @@ class FeaturePlanViewController: UIViewController {
     }
     
     // MARK: - WebSocket
+
+    /// Connects (or re-points) Pusher only. Safe to call any time — no projectId needed.
     private func connectWebSocket() {
         // Always re-point delegate so this VC receives events even if another VC
         // previously took ownership of the shared Pusher instance.
@@ -947,9 +949,9 @@ class FeaturePlanViewController: UIViewController {
                 workspaceSlug: workspace.slug ?? ""
             )
         }
-        connectAnyCable()
     }
 
+    /// Connects AnyCable. Only called after cachedStakworkProjectId is populated.
     private func connectAnyCable() {
         guard let projectId = cachedStakworkProjectId else { return }
         guard anyCableManager == nil else { return }
