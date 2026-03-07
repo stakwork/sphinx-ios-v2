@@ -253,6 +253,7 @@ class HiveShareViewController: UIViewController {
     private func setupSearchRow() {
         searchContainer = UIView()
         searchContainer.translatesAutoresizingMaskIntoConstraints = false
+        searchContainer.backgroundColor = UIColor.Sphinx.HeaderBG
         view.addSubview(searchContainer)
 
         searchTextField = UITextField()
@@ -261,14 +262,15 @@ class HiveShareViewController: UIViewController {
         searchTextField.tintColor = UIColor.Sphinx.SecondaryText
         searchTextField.font = UIFont(name: "Roboto-Regular", size: 14)
         searchTextField.textColor = UIColor.Sphinx.Text
-        searchTextField.layer.cornerRadius = 8
+        searchTextField.backgroundColor = UIColor.Sphinx.Body
+        searchTextField.layer.cornerRadius = 20
         searchTextField.layer.borderWidth = 1
-        searchTextField.layer.borderColor = UIColor.Sphinx.SecondaryText.cgColor
+        searchTextField.layer.borderColor = UIColor.Sphinx.LightDivider.cgColor
         searchTextField.attributedPlaceholder = NSAttributedString(
             string: "Search tribes & contacts",
             attributes: [.foregroundColor: UIColor.Sphinx.SecondaryText]
         )
-        searchTextField.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 10, height: 0))
+        searchTextField.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: 0))
         searchTextField.leftViewMode = .always
         searchTextField.returnKeyType = .done
         searchTextField.delegate = self
@@ -304,8 +306,8 @@ class HiveShareViewController: UIViewController {
 
             searchTextField.leadingAnchor.constraint(equalTo: searchContainer.leadingAnchor),
             searchTextField.trailingAnchor.constraint(equalTo: copyButton.leadingAnchor, constant: -8),
-            searchTextField.topAnchor.constraint(equalTo: searchContainer.topAnchor),
-            searchTextField.bottomAnchor.constraint(equalTo: searchContainer.bottomAnchor)
+            searchTextField.topAnchor.constraint(equalTo: searchContainer.topAnchor, constant: 4),
+            searchTextField.bottomAnchor.constraint(equalTo: searchContainer.bottomAnchor, constant: -4)
         ])
     }
 
