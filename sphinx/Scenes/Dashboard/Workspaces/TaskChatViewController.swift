@@ -359,6 +359,10 @@ class TaskChatViewController: UIViewController {
             return
         }
         chatInputTextView.text = ""
+        chatInputTextView.typingAttributes = [
+            .foregroundColor: UIColor.Sphinx.Text,
+            .font: UIFont(name: "Roboto-Regular", size: 16) ?? UIFont.systemFont(ofSize: 16)
+        ]
         chatInputTextView.resignFirstResponder()
         showProcessingBubble()
 
@@ -678,6 +682,10 @@ extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
             attr.addAttribute(.foregroundColor, value: UIColor.Sphinx.PrimaryBlue, range: mentionRange)
             chatInputTextView.attributedText = attr
             chatInputTextView.selectedRange = NSRange(location: atNSIdx + insertText.count, length: 0)
+            chatInputTextView.typingAttributes = [
+                .foregroundColor: UIColor.Sphinx.Text,
+                .font: UIFont(name: "Roboto-Regular", size: 16) ?? UIFont.systemFont(ofSize: 16)
+            ]
         }
         hideAutocomplete()
     }
