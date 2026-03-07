@@ -102,7 +102,8 @@ class FeaturePlanViewController: UIViewController {
         applyInitialWorkflowStatus()
         setupKeyboardObservers()
         cachedStakworkProjectId = feature.stakworkProjectId
-        fetchFeatureDetail()
+        connectWebSocket()   // connect Pusher immediately with known featureId
+        fetchFeatureDetail() // will also call connectAnyCable() once projectId is known
         checkForActiveTaskGeneration()
         fetchChatHistory()
         API.sharedInstance.fetchWorkspacesWithAuth(
@@ -115,8 +116,12 @@ class FeaturePlanViewController: UIViewController {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        guard !HivePusherManager.shared.isConnected else { return }
-        fetchFeatureDetail()
+        // Always re-point the shared Pusher delegate at self (TaskChatVC may have stolen it)
+        // and reconnect if the session was torn down.
+        connectWebSocket()
+        if !HivePusherManager.shared.isConnected {
+            fetchFeatureDetail()
+        }
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -932,9 +937,15 @@ class FeaturePlanViewController: UIViewController {
     
     // MARK: - WebSocket
     private func connectWebSocket() {
+        // Always re-point delegate so this VC receives events even if another VC
+        // previously took ownership of the shared Pusher instance.
         HivePusherManager.shared.delegate = self
         if !HivePusherManager.shared.isConnected {
-            HivePusherManager.shared.connect(featureId: feature.id, workspaceId: workspace.id, workspaceSlug: workspace.slug ?? "")
+            HivePusherManager.shared.connect(
+                featureId: feature.id,
+                workspaceId: workspace.id,
+                workspaceSlug: workspace.slug ?? ""
+            )
         }
         connectAnyCable()
     }

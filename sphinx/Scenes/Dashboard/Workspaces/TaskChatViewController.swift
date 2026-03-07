@@ -78,6 +78,13 @@ class TaskChatViewController: UIViewController {
         )
     }
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        // Always re-point delegate so this VC receives events even if another VC
+        // previously took ownership of the shared Pusher instance.
+        HivePusherManager.shared.delegate = self
+    }
+
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         if isMovingFromParent {
@@ -523,6 +530,8 @@ class TaskChatViewController: UIViewController {
     }
 
     private func connectWebSocket() {
+        // Always re-point delegate so this VC receives events even if another VC
+        // previously took ownership of the shared Pusher instance.
         HivePusherManager.shared.delegate = self
         if !HivePusherManager.shared.isConnected {
             HivePusherManager.shared.connect(taskId: task.id)
