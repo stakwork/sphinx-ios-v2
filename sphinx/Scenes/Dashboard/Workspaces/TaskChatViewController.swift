@@ -174,6 +174,8 @@ class TaskChatViewController: UIViewController {
         chatTableView.contentInset = UIEdgeInsets(top: 16, left: 0, bottom: 16, right: 0)
         chatTableView.register(FeatureChatMessageCell.self, forCellReuseIdentifier: "FeatureChatMessageCell")
         chatTableView.register(HiveProcessingBubbleCell.self, forCellReuseIdentifier: "HiveProcessingBubbleCell")
+        chatTableView.rowHeight = UITableView.automaticDimension
+        chatTableView.estimatedRowHeight = 200
         view.addSubview(chatTableView)
 
         // Bottom Fill View — covers the gap between chatInputContainer and the physical screen bottom
@@ -472,10 +474,11 @@ extension TaskChatViewController: HivePusherDelegate {
     func workflowStatusChanged(status: WorkflowStatus) {
         DispatchQueue.main.async {
             self.applyWorkflowStatus(status)
-//            if status == .IN_PROGRESS || status == .PENDING {
-//                self.showProcessingBubble()
-//                self.fetchAndUpdateWorkflowStep()
-//            }
+            
+            if status == .IN_PROGRESS || status == .PENDING {
+                self.showProcessingBubble()
+                self.fetchAndUpdateWorkflowStep()
+            }
         }
     }
 
@@ -584,6 +587,10 @@ extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
         cell.configure(with: messages[indexPath.row])
         cell.onClarifyingAnswerSubmit = { [weak self] answers, replyId in
             self?.sendClarifyingAnswers(answers: answers, replyId: replyId)
+        }
+        cell.onHeightChanged = { [weak tableView] in
+            tableView?.beginUpdates()
+            tableView?.endUpdates()
         }
         return cell
     }
