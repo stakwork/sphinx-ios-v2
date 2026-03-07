@@ -23,6 +23,7 @@ typealias HiveStakworkRunCallback = ((StakworkRun?) -> ())
 typealias HiveStakworkRunsCallback = (([StakworkRun]) -> ())
 typealias HiveTaskCallback = ((WorkspaceTask?) -> ())
 typealias StakworkWorkflowCallback = ((StakworkWorkflowData?) -> ())
+typealias HiveSearchResultsCallback = ((HiveSearchResults) -> ())
 
 // MARK: - PaginationInfo
 
@@ -1608,6 +1609,70 @@ extension API {
         )
     }
 
+    // MARK: - Unarchive Task (PATCH /api/tasks/{taskId})
+
+    private func unarchiveTask(
+        taskId: String,
+        authToken: String,
+        callback: @escaping EmptyCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        guard let encodedTaskId = taskId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+            errorCallback(); return
+        }
+        let urlString = "\(API.kHiveBaseUrl)/tasks/\(encodedTaskId)"
+        let body: NSDictionary = ["archived": false]
+        guard let request = createRequest(urlString, bodyParams: body, method: "PATCH", token: authToken) else {
+            errorCallback(); return
+        }
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                errorCallback(); return
+            }
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+                if json["success"].bool == true { callback() } else { errorCallback() }
+            case .failure:
+                errorCallback()
+            }
+        }
+    }
+
+    func unarchiveTaskWithAuth(
+        taskId: String,
+        callback: @escaping EmptyCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
+            unarchiveTask(
+                taskId: taskId,
+                authToken: storedToken,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateAndUnarchiveTask(taskId: taskId, callback: callback, errorCallback: errorCallback)
+                }
+            )
+        } else {
+            authenticateAndUnarchiveTask(taskId: taskId, callback: callback, errorCallback: errorCallback)
+        }
+    }
+
+    private func authenticateAndUnarchiveTask(
+        taskId: String,
+        callback: @escaping EmptyCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback(); return }
+                UserDefaults.Keys.hiveToken.set(token)
+                self?.unarchiveTask(taskId: taskId, authToken: token, callback: callback, errorCallback: errorCallback)
+            },
+            errorCallback: errorCallback
+        )
+    }
+
     // MARK: - Retry Task Workflow (PATCH /api/tasks/{taskId})
 
     func retryTaskWorkflow(
@@ -1702,7 +1767,7 @@ extension API {
         guard let encodedId = taskId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
             errorCallback(); return
         }
-        let urlString = "\(API.kHiveBaseUrl)/tasks/\(encodedId)"
+        let urlString = "\(API.kHiveBaseUrl)/task/\(encodedId)"
         guard let request = createRequest(urlString, bodyParams: nil, method: "GET", token: authToken) else {
             errorCallback(); return
         }
@@ -1759,6 +1824,86 @@ extension API {
                 UserDefaults.Keys.hiveToken.set(token)
                 self?.fetchTaskDetail(
                     taskId: taskId,
+                    authToken: token,
+                    callback: callback,
+                    errorCallback: errorCallback
+                )
+            },
+            errorCallback: errorCallback
+        )
+    }
+
+    // MARK: - Workspace Search
+
+    func searchWorkspace(
+        slug: String,
+        query: String,
+        authToken: String,
+        callback: @escaping HiveSearchResultsCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        guard let encodedSlug = slug.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
+              let encodedQuery = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
+            errorCallback(); return
+        }
+        let urlString = "\(API.kHiveBaseUrl)/workspaces/\(encodedSlug)/search?q=\(encodedQuery)"
+        guard let request = createRequest(urlString, bodyParams: nil, method: "GET", token: authToken) else {
+            errorCallback(); return
+        }
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                errorCallback(); return
+            }
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+                guard json["success"].bool == true else { errorCallback(); return }
+                callback(HiveSearchResults(json: json))
+            case .failure:
+                errorCallback()
+            }
+        }
+    }
+
+    func searchWorkspaceWithAuth(
+        slug: String,
+        query: String,
+        callback: @escaping HiveSearchResultsCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let token: String = UserDefaults.Keys.hiveToken.get() {
+            searchWorkspace(
+                slug: slug,
+                query: query,
+                authToken: token,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateAndSearchWorkspace(
+                        slug: slug,
+                        query: query,
+                        callback: callback,
+                        errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateAndSearchWorkspace(slug: slug, query: query, callback: callback, errorCallback: errorCallback)
+        }
+    }
+
+    private func authenticateAndSearchWorkspace(
+        slug: String,
+        query: String,
+        callback: @escaping HiveSearchResultsCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback(); return }
+                UserDefaults.Keys.hiveToken.set(token)
+                self?.searchWorkspace(
+                    slug: slug,
+                    query: query,
                     authToken: token,
                     callback: callback,
                     errorCallback: errorCallback

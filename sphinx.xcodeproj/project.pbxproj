@@ -667,16 +667,17 @@
 		93D7B5472BAE0FEA007C53A9 /* AddTagsButtonCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93D7B5462BAE0FEA007C53A9 /* AddTagsButtonCell.swift */; };
 		93FCEA782B91AF3B0069B344 /* DashboardUITest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93FCEA772B91AF3B0069B344 /* DashboardUITest.swift */; };
 		A1B2C3D4E5F60001I9J0K1L2 /* HiveLinkNavigator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F60002I9J0K1L2M3 /* HiveLinkNavigator.swift */; };
-		P1Q2R3S4T5U6V7W8X9Y0Z1A2 /* PaginationControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = Q2R3S4T5U6V7W8X9Y0Z1A2B3 /* PaginationControlView.swift */; };
-		R3S4T5U6V7W8X9Y0Z1A2B3C4 /* PaginationControlViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = S4T5U6V7W8X9Y0Z1A2B3C4D5 /* PaginationControlViewTests.swift */; };
-		T4U5V6W7X8Y9Z0A1B2C3D4E5 /* StakworkWorkflowData.swift in Sources */ = {isa = PBXBuildFile; fileRef = U5V6W7X8Y9Z0A1B2C3D4E5F6 /* StakworkWorkflowData.swift */; };
 		A1B2C3D4E5F6A7B8C9D0E1F2 /* TaskProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6A7B8C9D0E1F2A3 /* TaskProgress.swift */; };
 		A5F3D5A533984995ADE1BADF /* WorkspaceFeatureTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = C638608884A0403797B98830 /* WorkspaceFeatureTableViewCell.xib */; };
 		A748D979E2F14560BF39E4A7 /* HiveChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8ABF62A347844ECEB2FC60A4 /* HiveChatMessage.swift */; };
 		AA001CQ12F9A0001000CQ001 /* ClarifyingQuestionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA001CQ02F9A0001000CQ001 /* ClarifyingQuestionsView.swift */; };
 		AA001CQ32F9A0001000CQ001 /* ClarifyingQuestionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA001CQ22F9A0001000CQ001 /* ClarifyingQuestionsTests.swift */; };
+		AA11BB22CC33DD44EE55FF67 /* HiveSearchResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11BB22CC33DD44EE55FF66 /* HiveSearchResult.swift */; };
 		AE87DA2C30C34E7BBDFDBA56 /* HivePusherManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4D0E0284E4B436180B0BAAF /* HivePusherManagerTests.swift */; };
 		8846460B606C49A09D11D185 /* HiveAnyCableManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 667BC9B05F7A484EB3EE6CB7 /* HiveAnyCableManagerTests.swift */; };
+		BB22CC33DD44EE55FF667788 /* HiveSearchResultCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB22CC33DD44EE55FF667799 /* HiveSearchResultCell.swift */; };
+		BB22CC33DD44EE55FF6677AA /* HiveSearchResultCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = BB22CC33DD44EE55FF6677BB /* HiveSearchResultCell.xib */; };
+		BB22CC33DD44EE55FF6677CC /* WorkspaceSearchViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB22CC33DD44EE55FF6677DD /* WorkspaceSearchViewController.swift */; };
 		BC229678E479BF4D62942DCD /* TaskChatViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD09FC96699AA4977BB011A /* TaskChatViewController.swift */; };
 		BE880A27BE0E704666995737 /* PRArtifactCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD1BE98930F1EB41308524E1 /* PRArtifactCardView.swift */; };
 		C3D4E5F6A7B8C9D0E1F2A3B4 /* TaskProgressBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9D0E1F2A3B4C5 /* TaskProgressBarView.swift */; };
@@ -922,6 +923,9 @@
 		K1L2M3N4O5P6Q7R8S9T0U1V2 /* CreateFeatureViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = L2M3N4O5P6Q7R8S9T0U1V2W3 /* CreateFeatureViewController.swift */; };
 		M3N4O5P6Q7R8S9T0U1V2W3X4 /* HiveProcessingBubbleCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = N4O5P6Q7R8S9T0U1V2W3X4Y5 /* HiveProcessingBubbleCell.swift */; };
 		O5P6Q7R8S9T0U1V2W3X4Y5Z6 /* HiveShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = P6Q7R8S9T0U1V2W3X4Y5Z6A7 /* HiveShareViewController.swift */; };
+		P1Q2R3S4T5U6V7W8X9Y0Z1A2 /* PaginationControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = Q2R3S4T5U6V7W8X9Y0Z1A2B3 /* PaginationControlView.swift */; };
+		R3S4T5U6V7W8X9Y0Z1A2B3C4 /* PaginationControlViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = S4T5U6V7W8X9Y0Z1A2B3C4D5 /* PaginationControlViewTests.swift */; };
+		T4U5V6W7X8Y9Z0A1B2C3D4E5 /* StakworkWorkflowData.swift in Sources */ = {isa = PBXBuildFile; fileRef = U5V6W7X8Y9Z0A1B2C3D4E5F6 /* StakworkWorkflowData.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1964,13 +1968,14 @@
 		A8F00239BAA5413399F184E6 /* WorkflowStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkflowStatus.swift; sourceTree = "<group>"; };
 		AA001CQ02F9A0001000CQ001 /* ClarifyingQuestionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClarifyingQuestionsView.swift; sourceTree = "<group>"; };
 		AA001CQ22F9A0001000CQ001 /* ClarifyingQuestionsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClarifyingQuestionsTests.swift; sourceTree = "<group>"; };
+		AA11BB22CC33DD44EE55FF66 /* HiveSearchResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveSearchResult.swift; sourceTree = "<group>"; };
 		B2C3D4E5F60002I9J0K1L2M3 /* HiveLinkNavigator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveLinkNavigator.swift; sourceTree = "<group>"; };
-		Q2R3S4T5U6V7W8X9Y0Z1A2B3 /* PaginationControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaginationControlView.swift; sourceTree = "<group>"; };
-		S4T5U6V7W8X9Y0Z1A2B3C4D5 /* PaginationControlViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaginationControlViewTests.swift; sourceTree = "<group>"; };
-		U5V6W7X8Y9Z0A1B2C3D4E5F6 /* StakworkWorkflowData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StakworkWorkflowData.swift; sourceTree = "<group>"; };
 		B2C3D4E5F6A7B8C9D0E1F2A3 /* TaskProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskProgress.swift; sourceTree = "<group>"; };
 		B4D0E0284E4B436180B0BAAF /* HivePusherManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HivePusherManagerTests.swift; sourceTree = "<group>"; };
 		667BC9B05F7A484EB3EE6CB7 /* HiveAnyCableManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveAnyCableManagerTests.swift; sourceTree = "<group>"; };
+		BB22CC33DD44EE55FF667799 /* HiveSearchResultCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveSearchResultCell.swift; sourceTree = "<group>"; };
+		BB22CC33DD44EE55FF6677BB /* HiveSearchResultCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = HiveSearchResultCell.xib; sourceTree = "<group>"; };
+		BB22CC33DD44EE55FF6677DD /* WorkspaceSearchViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceSearchViewController.swift; sourceTree = "<group>"; };
 		BBD09FC96699AA4977BB011A /* TaskChatViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskChatViewController.swift; sourceTree = "<group>"; };
 		BD1BE98930F1EB41308524E1 /* PRArtifactCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PRArtifactCardView.swift; sourceTree = "<group>"; };
 		C638608884A0403797B98830 /* WorkspaceFeatureTableViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = WorkspaceFeatureTableViewCell.xib; sourceTree = "<group>"; };
@@ -2278,6 +2283,9 @@
 		L2M3N4O5P6Q7R8S9T0U1V2W3 /* CreateFeatureViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateFeatureViewController.swift; sourceTree = "<group>"; };
 		N4O5P6Q7R8S9T0U1V2W3X4Y5 /* HiveProcessingBubbleCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveProcessingBubbleCell.swift; sourceTree = "<group>"; };
 		P6Q7R8S9T0U1V2W3X4Y5Z6A7 /* HiveShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveShareViewController.swift; sourceTree = "<group>"; };
+		Q2R3S4T5U6V7W8X9Y0Z1A2B3 /* PaginationControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaginationControlView.swift; sourceTree = "<group>"; };
+		S4T5U6V7W8X9Y0Z1A2B3C4D5 /* PaginationControlViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaginationControlViewTests.swift; sourceTree = "<group>"; };
+		U5V6W7X8Y9Z0A1B2C3D4E5F6 /* StakworkWorkflowData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StakworkWorkflowData.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -4089,6 +4097,10 @@
 				47B9CBF92F460C7B007527B4 /* Workspace.swift */,
 				4732E34ED775B54D3F8EA591 /* WorkspaceTask.swift */,
 				44EC6EC0EE1C4D6B8B5FADB2 /* HiveFeature.swift */,
+				AA11BB22CC33DD44EE55FF66 /* HiveSearchResult.swift */,
+				BB22CC33DD44EE55FF667799 /* HiveSearchResultCell.swift */,
+				BB22CC33DD44EE55FF6677BB /* HiveSearchResultCell.xib */,
+				BB22CC33DD44EE55FF6677DD /* WorkspaceSearchViewController.swift */,
 				8ABF62A347844ECEB2FC60A4 /* HiveChatMessage.swift */,
 				47B9CBFA2F460C7B007527B4 /* WorkspacesViewController.swift */,
 				E83B28E7233A4D0D9AE288E2 /* WorkspaceViewController.swift */,
@@ -5391,6 +5403,7 @@
 				4797E7E424B8F7E100D13270 /* QRCodeDetail.storyboard in Resources */,
 				F3197C0C267FA2C200330F79 /* connecting.gif in Resources */,
 				731EF373B8FBD726748501FC /* WorkspaceTaskTableViewCell.xib in Resources */,
+				BB22CC33DD44EE55FF6677AA /* HiveSearchResultCell.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -5500,6 +5513,9 @@
 				81D6970D2A7742A888F18562 /* WorkspaceFeatureTableViewCell.swift in Sources */,
 				5C4CD33514044245AA1118AE /* WorkspaceFeatureTableViewCell.swift in Sources */,
 				D2789CFCCA3E453295F15A2E /* HiveFeature.swift in Sources */,
+				AA11BB22CC33DD44EE55FF67 /* HiveSearchResult.swift in Sources */,
+				BB22CC33DD44EE55FF667788 /* HiveSearchResultCell.swift in Sources */,
+				BB22CC33DD44EE55FF6677CC /* WorkspaceSearchViewController.swift in Sources */,
 				A748D979E2F14560BF39E4A7 /* HiveChatMessage.swift in Sources */,
 				CECFBF062965C8E600BAD935 /* DiscoverTribeData.swift in Sources */,
 				475C566D2A7BEC5F00E6F9A9 /* ThreadTableDataSource+ResultsControllerExtension.swift in Sources */,
@@ -7071,7 +7087,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sphinx/sphinx.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 247;
+				CURRENT_PROJECT_VERSION = 249;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 8297M44YTW;
 				ENABLE_BITCODE = NO;
@@ -7161,7 +7177,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sphinx/sphinx.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 247;
+				CURRENT_PROJECT_VERSION = 249;
 				DEVELOPMENT_TEAM = 8297M44YTW;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";

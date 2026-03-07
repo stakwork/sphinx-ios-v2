@@ -13,6 +13,7 @@ class WorkspaceFeaturesViewController: UIViewController {
     private var currentPage = 1
     private var totalPages = 1
     private weak var paginationView: PaginationControlView?
+    private var paginationHasBeenBuilt = false
     
     private lazy var refreshControl: UIRefreshControl = {
         let control = UIRefreshControl()
@@ -123,6 +124,7 @@ class WorkspaceFeaturesViewController: UIViewController {
     
     @objc private func handleRefresh() {
         currentPage = 1
+        paginationHasBeenBuilt = false
         loadFeatures()
     }
     
@@ -135,7 +137,9 @@ class WorkspaceFeaturesViewController: UIViewController {
                 loadingWheelColor: .Sphinx.Text
             )
             tableView.isHidden = isLoading
-            paginationView?.isHidden = isLoading
+            if !paginationHasBeenBuilt {
+                paginationView?.isHidden = isLoading
+            }
             emptyStateLabel.isHidden = !features.isEmpty || isLoading
         }
     }
@@ -170,6 +174,7 @@ class WorkspaceFeaturesViewController: UIViewController {
                     self.features = features
                     self.tableView.reloadData()
                     self.paginationView?.configure(currentPage: self.currentPage, totalPages: info.totalPages)
+                    self.paginationHasBeenBuilt = true
                     self.isLoading = false
                     self.refreshControl.endRefreshing()
                 }
@@ -235,10 +240,19 @@ extension WorkspaceFeaturesViewController: UITableViewDataSource, UITableViewDel
         let feature = features[indexPath.row]
         let isLastRow = indexPath.row == features.count - 1
         cell.configure(with: feature, isLastRow: isLastRow)
-        
-        cell.onDeleteTapped = { [weak self] in
-            guard let self else { return }
-            let feature = self.features[indexPath.row]
+        return cell
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        let feature = features[indexPath.row]
+        openFeaturePlan(feature: feature)
+    }
+
+    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        let feature = features[indexPath.row]
+        let deleteAction = UIContextualAction(style: .destructive, title: "Delete") { [weak self] _, _, completionHandler in
+            guard let self else { completionHandler(false); return }
             AlertHelper.showTwoOptionsAlert(
                 title: "Delete Feature",
                 message: "Are you sure you want to delete \"\(feature.title)\"? This cannot be undone.",
@@ -254,14 +268,9 @@ extension WorkspaceFeaturesViewController: UITableViewDataSource, UITableViewDel
                     }
                 }
             )
+            completionHandler(true)
         }
-        
-        return cell
-    }
-    
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
-        let feature = features[indexPath.row]
-        openFeaturePlan(feature: feature)
+        deleteAction.image = UIImage(systemName: "trash")
+        return UISwipeActionsConfiguration(actions: [deleteAction])
     }
 }

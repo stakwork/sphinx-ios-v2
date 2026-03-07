@@ -36,6 +36,11 @@ class FeaturePlanViewController: UIViewController {
     private var planContainerView: UIView!
     private var tasksContainerView: UIView!
     private var tasksTableView: UITableView!
+    private lazy var tasksRefreshControl: UIRefreshControl = {
+        let control = UIRefreshControl()
+        control.tintColor = .Sphinx.Text
+        return control
+    }()
     
     // Chat Panel Components
     private var chatTableView: UITableView!
@@ -47,6 +52,15 @@ class FeaturePlanViewController: UIViewController {
     private var workflowStatusHeightConstraint: NSLayoutConstraint!
     private var bottomFillView: UIView!
     private var tasksEmptyLabel: UILabel!
+
+    // Autocomplete
+    private var availableWorkspaces: [Workspace] = []
+    private var filteredWorkspaces: [Workspace] = []
+    private var autocompleteContainer: UIView!
+    private var autocompleteStack: UIStackView!
+    private var autocompleteHeightConstraint: NSLayoutConstraint!
+    /// NSRange of "@query" in chatInputTextView at the moment the popup is shown/updated
+    private var atTriggerNSRange: NSRange?
     private var taskProgressBarView: TaskProgressBarView!
     private var startTasksButton: UIButton!
 
@@ -92,6 +106,19 @@ class FeaturePlanViewController: UIViewController {
         checkForActiveTaskGeneration()
         fetchChatHistory()
         connectWebSocket()
+        API.sharedInstance.fetchWorkspacesWithAuth(
+            callback: { [weak self] workspaces in
+                DispatchQueue.main.async { self?.availableWorkspaces = workspaces }
+            },
+            errorCallback: { /* silent fail — autocomplete just won't show */ }
+        )
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        guard !HivePusherManager.shared.isConnected else { return }
+        connectWebSocket()
+        fetchFeatureDetail()
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -213,6 +240,8 @@ class FeaturePlanViewController: UIViewController {
         chatTableView.dataSource = self
         chatTableView.register(FeatureChatMessageCell.self, forCellReuseIdentifier: "FeatureChatMessageCell")
         chatTableView.register(HiveProcessingBubbleCell.self, forCellReuseIdentifier: "HiveProcessingBubbleCell")
+        chatTableView.rowHeight = UITableView.automaticDimension
+        chatTableView.estimatedRowHeight = 200
         chatTableView.contentInset = UIEdgeInsets(top: 16, left: 0, bottom: 16, right: 0)
         chatContainerView.addSubview(chatTableView)
         
@@ -264,8 +293,45 @@ class FeaturePlanViewController: UIViewController {
 
         chatTableView.keyboardDismissMode = .interactive
 
+        // Autocomplete popup (scroll view + stack of buttons — avoids UITableView delegate timing issues)
+        autocompleteContainer = UIView()
+        autocompleteContainer.translatesAutoresizingMaskIntoConstraints = false
+        autocompleteContainer.backgroundColor = UIColor.Sphinx.HeaderBG
+        autocompleteContainer.isHidden = true
+        autocompleteContainer.clipsToBounds = true
+        chatContainerView.addSubview(autocompleteContainer)
+
+        let autocompleteScrollView = UIScrollView()
+        autocompleteScrollView.translatesAutoresizingMaskIntoConstraints = false
+        autocompleteScrollView.showsVerticalScrollIndicator = true
+        autocompleteScrollView.bounces = true
+        autocompleteContainer.addSubview(autocompleteScrollView)
+
+        autocompleteStack = UIStackView()
+        autocompleteStack.translatesAutoresizingMaskIntoConstraints = false
+        autocompleteStack.axis = .vertical
+        autocompleteStack.spacing = 0
+        autocompleteStack.distribution = .fill
+        autocompleteScrollView.addSubview(autocompleteStack)
+
+        NSLayoutConstraint.activate([
+            autocompleteScrollView.topAnchor.constraint(equalTo: autocompleteContainer.topAnchor),
+            autocompleteScrollView.leadingAnchor.constraint(equalTo: autocompleteContainer.leadingAnchor),
+            autocompleteScrollView.trailingAnchor.constraint(equalTo: autocompleteContainer.trailingAnchor),
+            autocompleteScrollView.bottomAnchor.constraint(equalTo: autocompleteContainer.bottomAnchor),
+
+            autocompleteStack.topAnchor.constraint(equalTo: autocompleteScrollView.topAnchor),
+            autocompleteStack.leadingAnchor.constraint(equalTo: autocompleteScrollView.leadingAnchor),
+            autocompleteStack.trailingAnchor.constraint(equalTo: autocompleteScrollView.trailingAnchor),
+            autocompleteStack.bottomAnchor.constraint(equalTo: autocompleteScrollView.bottomAnchor),
+            autocompleteStack.widthAnchor.constraint(equalTo: autocompleteScrollView.widthAnchor)
+        ])
+
+        chatInputTextView.delegate = self
+
         chatInputContainerBottomConstraint = chatInputContainer.bottomAnchor.constraint(equalTo: chatContainerView.safeAreaLayoutGuide.bottomAnchor)
         workflowStatusHeightConstraint = workflowStatusView.heightAnchor.constraint(equalToConstant: 0)
+        autocompleteHeightConstraint = autocompleteContainer.heightAnchor.constraint(equalToConstant: 0)
 
         NSLayoutConstraint.activate([
             chatContainerView.topAnchor.constraint(equalTo: topSegmentedControl.bottomAnchor),
@@ -301,10 +367,15 @@ class FeaturePlanViewController: UIViewController {
             sendButton.centerYAnchor.constraint(equalTo: chatInputContainer.centerYAnchor),
             sendButton.trailingAnchor.constraint(equalTo: chatInputContainer.trailingAnchor, constant: -16),
             sendButton.widthAnchor.constraint(equalToConstant: 80),
-            sendButton.heightAnchor.constraint(equalToConstant: 40)
+            sendButton.heightAnchor.constraint(equalToConstant: 40),
+
+            autocompleteContainer.leadingAnchor.constraint(equalTo: chatContainerView.leadingAnchor),
+            autocompleteContainer.trailingAnchor.constraint(equalTo: chatContainerView.trailingAnchor),
+            autocompleteContainer.bottomAnchor.constraint(equalTo: chatInputContainer.topAnchor),
+            autocompleteHeightConstraint
         ])
     }
-    
+
     private func setupPlanPanel() {
         planContainerView = UIView()
         planContainerView.translatesAutoresizingMaskIntoConstraints = false
@@ -534,6 +605,8 @@ class FeaturePlanViewController: UIViewController {
         // Delegate/dataSource wired in extension below
         tasksTableView.delegate = self
         tasksTableView.dataSource = self
+        tasksRefreshControl.addTarget(self, action: #selector(handleTasksRefresh), for: .valueChanged)
+        tasksTableView.refreshControl = tasksRefreshControl
         tasksContainerView.addSubview(tasksTableView)
 
         // Empty state label
@@ -608,6 +681,10 @@ class FeaturePlanViewController: UIViewController {
         updateProgressBar()
         updateStartTasksButton()
         updateTasksEmptyState()
+    }
+
+    @objc private func handleTasksRefresh() {
+        fetchFeatureDetail()
     }
 
     @objc private func startTasksButtonTouched() {
@@ -752,9 +829,13 @@ class FeaturePlanViewController: UIViewController {
                     if let projectId = updatedFeature.stakworkProjectId {
                         self.fetchStepText(projectId: projectId)
                     }
+                    self.tasksRefreshControl.endRefreshing()
                 }
             },
-            errorCallback: {
+            errorCallback: { [weak self] in
+                DispatchQueue.main.async {
+                    self?.tasksRefreshControl.endRefreshing()
+                }
                 print("[FeaturePlanVC] Failed to fetch feature detail")
             }
         )
@@ -801,6 +882,10 @@ class FeaturePlanViewController: UIViewController {
     
     private func sendChatMessage(_ message: String) {
         chatInputTextView.text = ""
+        chatInputTextView.typingAttributes = [
+            .foregroundColor: UIColor.Sphinx.Text,
+            .font: UIFont(name: "Roboto-Regular", size: 16) ?? UIFont.systemFont(ofSize: 16)
+        ]
         isAIWorking = true
         showProcessingBubble()
 
@@ -989,16 +1074,182 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
         cell.onClarifyingAnswerSubmit = { [weak self] answers, replyId in
             self?.sendClarifyingAnswers(answers: answers, replyId: replyId)
         }
+        cell.onHeightChanged = { [weak tableView] in
+            tableView?.beginUpdates()
+            tableView?.endUpdates()
+        }
         return cell
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
+
         guard tableView === tasksTableView else { return }
         let task = feature.allTasks[indexPath.row]
         let chatVC = TaskChatViewController.instantiate(task: task, workspaceSlug: workspace.slug ?? "")
         navigationController?.pushViewController(chatVC, animated: true)
     }
+}
+
+// MARK: - UITextViewDelegate (autocomplete)
+extension FeaturePlanViewController: UITextViewDelegate {
+    func textViewDidChange(_ textView: UITextView) {
+        guard textView == chatInputTextView else { return }
+        let text = textView.text ?? ""
+        let cursor = textView.selectedRange
+
+        // Recolor the whole text: @word = blue, everything else = white
+        applyMentionColoring(to: textView, preservingCursor: cursor)
+
+        let cursorPos = cursor.location
+        guard cursorPos <= (text as NSString).length else { hideAutocomplete(); return }
+        let upToCursor = (text as NSString).substring(to: cursorPos)
+        if let atRange = upToCursor.range(of: "@", options: .backwards),
+           (atRange.lowerBound == upToCursor.startIndex ||
+            upToCursor[upToCursor.index(before: atRange.lowerBound)].isWhitespace) {
+            let query = String(upToCursor[atRange.upperBound...])
+            if query.contains(" ") || query.contains("\n") {
+                hideAutocomplete()
+                return
+            }
+            let atNSIdx = upToCursor.distance(from: upToCursor.startIndex, to: atRange.lowerBound)
+            atTriggerNSRange = NSRange(location: atNSIdx, length: cursorPos - atNSIdx)
+            filteredWorkspaces = availableWorkspaces.filter {
+                query.isEmpty ||
+                $0.name.localizedCaseInsensitiveContains(query) ||
+                ($0.slug ?? "").localizedCaseInsensitiveContains(query)
+            }
+            showAutocomplete()
+        } else {
+            hideAutocomplete()
+        }
+    }
+
+    /// Recolors the text view: `@word` (@ + non-whitespace) = blue, all else = default text color.
+    /// Restores cursor position after updating attributedText.
+    private static let mentionRegex = try? NSRegularExpression(pattern: "@\\S+")
+
+    private func applyMentionColoring(to textView: UITextView, preservingCursor cursor: NSRange) {
+        let text = textView.text ?? ""
+        let defaultFont = UIFont(name: "Roboto-Regular", size: 16) ?? UIFont.systemFont(ofSize: 16)
+        let attr = NSMutableAttributedString(
+            string: text,
+            attributes: [.foregroundColor: UIColor.Sphinx.Text, .font: defaultFont]
+        )
+        if let regex = FeaturePlanViewController.mentionRegex {
+            let matches = regex.matches(in: text, range: NSRange(text.startIndex..., in: text))
+            for match in matches {
+                attr.addAttribute(.foregroundColor, value: UIColor.Sphinx.PrimaryBlue, range: match.range)
+            }
+        }
+        textView.attributedText = attr
+        textView.selectedRange = cursor
+        textView.typingAttributes = [.foregroundColor: UIColor.Sphinx.Text, .font: defaultFont]
+    }
+
+    private func showAutocomplete() {
+        guard !filteredWorkspaces.isEmpty else { hideAutocomplete(); return }
+
+        autocompleteStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        for (i, ws) in filteredWorkspaces.enumerated() {
+            let row = UIView()
+            row.backgroundColor = UIColor.Sphinx.HeaderBG
+
+            let nameLabel = UILabel()
+            nameLabel.text = ws.name
+            nameLabel.textColor = UIColor.Sphinx.Text
+            nameLabel.font = UIFont(name: "Roboto-Medium", size: 14) ?? .systemFont(ofSize: 14, weight: .medium)
+
+            let slugLabel = UILabel()
+            slugLabel.text = ws.slug
+            slugLabel.textColor = UIColor.Sphinx.SecondaryText
+            slugLabel.font = UIFont(name: "Roboto-Regular", size: 12) ?? .systemFont(ofSize: 12)
+
+            let labelStack = UIStackView(arrangedSubviews: [nameLabel, slugLabel])
+            labelStack.axis = .vertical
+            labelStack.spacing = 2
+            labelStack.translatesAutoresizingMaskIntoConstraints = false
+            row.addSubview(labelStack)
+            NSLayoutConstraint.activate([
+                labelStack.leadingAnchor.constraint(equalTo: row.leadingAnchor, constant: 16),
+                labelStack.trailingAnchor.constraint(equalTo: row.trailingAnchor, constant: -16),
+                labelStack.centerYAnchor.constraint(equalTo: row.centerYAnchor)
+            ])
+
+            let btn = UIButton(type: .system)
+            btn.translatesAutoresizingMaskIntoConstraints = false
+            btn.backgroundColor = .clear
+            btn.tag = i
+            btn.addTarget(self, action: #selector(autocompleteRowTapped(_:)), for: .touchUpInside)
+            row.addSubview(btn)
+            NSLayoutConstraint.activate([
+                btn.topAnchor.constraint(equalTo: row.topAnchor),
+                btn.leadingAnchor.constraint(equalTo: row.leadingAnchor),
+                btn.trailingAnchor.constraint(equalTo: row.trailingAnchor),
+                btn.bottomAnchor.constraint(equalTo: row.bottomAnchor)
+            ])
+
+            row.heightAnchor.constraint(equalToConstant: 52).isActive = true
+            autocompleteStack.addArrangedSubview(row)
+
+            if i < filteredWorkspaces.count - 1 {
+                let divider = UIView()
+                divider.backgroundColor = UIColor.Sphinx.LightDivider
+                divider.translatesAutoresizingMaskIntoConstraints = false
+                divider.heightAnchor.constraint(equalToConstant: 1).isActive = true
+                autocompleteStack.addArrangedSubview(divider)
+            }
+        }
+
+        let maxRows = min(filteredWorkspaces.count, 4)
+        let dividerCount = max(0, maxRows - 1)
+        let visibleHeight = CGFloat(maxRows) * 52 + CGFloat(dividerCount)
+        autocompleteHeightConstraint.constant = visibleHeight
+        autocompleteContainer.isHidden = false
+        view.layoutIfNeeded()
+    }
+
+    @objc private func autocompleteRowTapped(_ sender: UIButton) {
+        guard sender.tag < filteredWorkspaces.count,
+              let triggerRange = atTriggerNSRange,
+              let currentText = chatInputTextView.text else { hideAutocomplete(); return }
+        let ws = filteredWorkspaces[sender.tag]
+        let slug = ws.slug ?? ws.name
+        let insertText = "@\(slug) "
+        let nsText = currentText as NSString
+        let safeLength = min(triggerRange.length, nsText.length - triggerRange.location)
+        guard triggerRange.location >= 0, triggerRange.location + safeLength <= nsText.length else {
+            hideAutocomplete(); return
+        }
+        let newText = nsText.replacingCharacters(in: NSRange(location: triggerRange.location, length: safeLength), with: insertText)
+        let newCursor = NSRange(location: triggerRange.location + insertText.count, length: 0)
+        let defaultFont = UIFont(name: "Roboto-Regular", size: 16) ?? UIFont.systemFont(ofSize: 16)
+        let attr = NSMutableAttributedString(string: newText, attributes: [.foregroundColor: UIColor.Sphinx.Text, .font: defaultFont])
+        if let regex = FeaturePlanViewController.mentionRegex {
+            let matches = regex.matches(in: newText, range: NSRange(newText.startIndex..., in: newText))
+            for match in matches {
+                attr.addAttribute(.foregroundColor, value: UIColor.Sphinx.PrimaryBlue, range: match.range)
+            }
+        }
+        chatInputTextView.attributedText = attr
+        chatInputTextView.selectedRange = newCursor
+        chatInputTextView.typingAttributes = [.foregroundColor: UIColor.Sphinx.Text, .font: defaultFont]
+        hideAutocomplete()
+        chatInputTextView.becomeFirstResponder()
+    }
+
+    private func hideAutocomplete() {
+        autocompleteContainer.isHidden = true
+        autocompleteHeightConstraint.constant = 0
+        atTriggerNSRange = nil
+    }
+
+    // Dismiss when user scrolls the chat table
+    func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
+        guard scrollView === chatTableView else { return }
+        hideAutocomplete()
+    }
+
 }
 
 // MARK: - HivePusherDelegate
@@ -1025,6 +1276,7 @@ extension FeaturePlanViewController: HivePusherDelegate {
     func workflowStatusChanged(status: WorkflowStatus) {
         DispatchQueue.main.async {
             self.applyWorkflowStatus(status)
+            self.fetchFeatureDetail()
 //            if status == .IN_PROGRESS || status == .PENDING {
 //                self.showProcessingBubble()
 //                self.fetchAndUpdateWorkflowStep()

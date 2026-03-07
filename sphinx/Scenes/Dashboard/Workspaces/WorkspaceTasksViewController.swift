@@ -26,6 +26,7 @@ class WorkspaceTasksViewController: UIViewController {
     private var currentPage = 1
     private var totalPages = 1
     private weak var paginationView: PaginationControlView?
+    private var paginationHasBeenBuilt = false
     
     static func instantiate(workspace: Workspace) -> WorkspaceTasksViewController {
         let vc = StoryboardScene.Dashboard.workspaceTasksViewController.instantiate()
@@ -109,7 +110,9 @@ class WorkspaceTasksViewController: UIViewController {
                 loadingWheelColor: .Sphinx.Text
             )
             tableView.isHidden = isLoading
-            paginationView?.isHidden = isLoading
+            if !paginationHasBeenBuilt {
+                paginationView?.isHidden = isLoading
+            }
             emptyStateLabel.isHidden = !tasks.isEmpty || isLoading
         }
     }
@@ -129,6 +132,7 @@ class WorkspaceTasksViewController: UIViewController {
                     self.totalPages = info.totalPages
                     self.tableView.reloadData()
                     self.paginationView?.configure(currentPage: self.currentPage, totalPages: info.totalPages)
+                    self.paginationHasBeenBuilt = true
                     self.isLoading = false
                 }
             },
@@ -152,24 +156,6 @@ extension WorkspaceTasksViewController: UITableViewDataSource, UITableViewDelega
         ) as? WorkspaceTaskTableViewCell else { return UITableViewCell() }
         cell.configure(with: tasks[indexPath.row], isLastRow: indexPath.row == tasks.count - 1)
         cell.onPRBadgeTapped = { url in UIApplication.shared.open(url) }
-        cell.onArchiveTapped = { [weak self] in
-            guard let self else { return }
-            let task = self.tasks[indexPath.row]
-            AlertHelper.showTwoOptionsAlert(
-                title: "Archive Task",
-                message: "Archive \"\(task.title)\"?",
-                confirmButtonTitle: "Archive",
-                confirm: {
-                    self.tasks.remove(at: indexPath.row)
-                    self.tableView.deleteRows(at: [indexPath], with: .automatic)
-                    API.sharedInstance.archiveTaskWithAuth(taskId: task.id) {
-                        DispatchQueue.main.async { self.loadTasks(showLoading: false) }
-                    } errorCallback: {
-                        DispatchQueue.main.async { self.loadTasks(showLoading: false) }
-                    }
-                }
-            )
-        }
         cell.onRetryWorkflowTapped = { [weak self] in
             guard let self else { return }
             let task = self.tasks[indexPath.row]
@@ -184,12 +170,55 @@ extension WorkspaceTasksViewController: UITableViewDataSource, UITableViewDelega
         let chatVC = TaskChatViewController.instantiate(task: task, workspaceSlug: workspace.slug ?? "")
         navigationController?.pushViewController(chatVC, animated: true)
     }
+
+    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        let task = tasks[indexPath.row]
+        if includeArchived {
+            let unarchiveAction = UIContextualAction(style: .normal, title: "Unarchive") { [weak self] _, _, completionHandler in
+                guard let self else { completionHandler(false); return }
+                self.tasks.remove(at: indexPath.row)
+                self.tableView.deleteRows(at: [indexPath], with: .automatic)
+                API.sharedInstance.unarchiveTaskWithAuth(taskId: task.id) {
+                    DispatchQueue.main.async { self.loadTasks(showLoading: false) }
+                } errorCallback: {
+                    DispatchQueue.main.async { self.loadTasks(showLoading: false) }
+                }
+                completionHandler(true)
+            }
+            unarchiveAction.image = UIImage(systemName: "arrow.uturn.left")
+            unarchiveAction.backgroundColor = UIColor.Sphinx.PrimaryBlue
+            return UISwipeActionsConfiguration(actions: [unarchiveAction])
+        } else {
+            let archiveAction = UIContextualAction(style: .normal, title: "Archive") { [weak self] _, _, completionHandler in
+                guard let self else { completionHandler(false); return }
+                AlertHelper.showTwoOptionsAlert(
+                    title: "Archive Task",
+                    message: "Archive \"\(task.title)\"?",
+                    confirmButtonTitle: "Archive",
+                    confirm: {
+                        self.tasks.remove(at: indexPath.row)
+                        self.tableView.deleteRows(at: [indexPath], with: .automatic)
+                        API.sharedInstance.archiveTaskWithAuth(taskId: task.id) {
+                            DispatchQueue.main.async { self.loadTasks(showLoading: false) }
+                        } errorCallback: {
+                            DispatchQueue.main.async { self.loadTasks(showLoading: false) }
+                        }
+                    }
+                )
+                completionHandler(true)
+            }
+            archiveAction.image = UIImage(systemName: "archivebox")
+            archiveAction.backgroundColor = UIColor.Sphinx.SphinxOrange
+            return UISwipeActionsConfiguration(actions: [archiveAction])
+        }
+    }
 }
 
 extension WorkspaceTasksViewController: CustomSegmentedControlDelegate {
     func segmentedControlDidSwitch(_ control: CustomSegmentedControl, to index: Int) {
         includeArchived = (index == 1)
         currentPage = 1
+        paginationHasBeenBuilt = false
         loadTasks()
     }
 }
