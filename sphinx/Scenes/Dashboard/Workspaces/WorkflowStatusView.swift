@@ -198,8 +198,9 @@ class WorkflowStatusView: UIView {
         ring.fillColor = UIColor.Sphinx.PrimaryBlue.cgColor
         ring.opacity = 1
 
-        // Centre the ring on the circleView
-        ring.frame = circleView.bounds
+        // Centre the ring on the circleView using the fixed known size
+        let dotSize: CGFloat = 8
+        ring.frame = CGRect(x: 0, y: 0, width: dotSize, height: dotSize)
         circleView.layer.addSublayer(ring)
         pulseLayer = ring
 
@@ -224,6 +225,16 @@ class WorkflowStatusView: UIView {
         pulseLayer?.removeAllAnimations()
         pulseLayer?.removeFromSuperlayer()
         pulseLayer = nil
+    }
+
+    // MARK: - Layout
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        if let pulseLayer = pulseLayer {
+            let dotSize: CGFloat = 8
+            pulseLayer.frame = CGRect(x: 0, y: 0, width: dotSize, height: dotSize)
+        }
     }
 
     // MARK: - Show / Hide
