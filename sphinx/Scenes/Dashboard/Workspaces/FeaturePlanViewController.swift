@@ -291,7 +291,7 @@ class FeaturePlanViewController: UIViewController {
 
         chatTableView.keyboardDismissMode = .interactive
 
-        // Autocomplete popup (stack of buttons — avoids UITableView delegate timing issues)
+        // Autocomplete popup (scroll view + stack of buttons — avoids UITableView delegate timing issues)
         autocompleteContainer = UIView()
         autocompleteContainer.translatesAutoresizingMaskIntoConstraints = false
         autocompleteContainer.backgroundColor = UIColor.Sphinx.HeaderBG
@@ -299,18 +299,30 @@ class FeaturePlanViewController: UIViewController {
         autocompleteContainer.clipsToBounds = true
         chatContainerView.addSubview(autocompleteContainer)
 
+        let autocompleteScrollView = UIScrollView()
+        autocompleteScrollView.translatesAutoresizingMaskIntoConstraints = false
+        autocompleteScrollView.showsVerticalScrollIndicator = true
+        autocompleteScrollView.bounces = true
+        autocompleteContainer.addSubview(autocompleteScrollView)
+
         autocompleteStack = UIStackView()
         autocompleteStack.translatesAutoresizingMaskIntoConstraints = false
         autocompleteStack.axis = .vertical
         autocompleteStack.spacing = 0
         autocompleteStack.distribution = .fill
-        autocompleteContainer.addSubview(autocompleteStack)
+        autocompleteScrollView.addSubview(autocompleteStack)
 
         NSLayoutConstraint.activate([
-            autocompleteStack.topAnchor.constraint(equalTo: autocompleteContainer.topAnchor),
-            autocompleteStack.leadingAnchor.constraint(equalTo: autocompleteContainer.leadingAnchor),
-            autocompleteStack.trailingAnchor.constraint(equalTo: autocompleteContainer.trailingAnchor),
-            autocompleteStack.bottomAnchor.constraint(equalTo: autocompleteContainer.bottomAnchor)
+            autocompleteScrollView.topAnchor.constraint(equalTo: autocompleteContainer.topAnchor),
+            autocompleteScrollView.leadingAnchor.constraint(equalTo: autocompleteContainer.leadingAnchor),
+            autocompleteScrollView.trailingAnchor.constraint(equalTo: autocompleteContainer.trailingAnchor),
+            autocompleteScrollView.bottomAnchor.constraint(equalTo: autocompleteContainer.bottomAnchor),
+
+            autocompleteStack.topAnchor.constraint(equalTo: autocompleteScrollView.topAnchor),
+            autocompleteStack.leadingAnchor.constraint(equalTo: autocompleteScrollView.leadingAnchor),
+            autocompleteStack.trailingAnchor.constraint(equalTo: autocompleteScrollView.trailingAnchor),
+            autocompleteStack.bottomAnchor.constraint(equalTo: autocompleteScrollView.bottomAnchor),
+            autocompleteStack.widthAnchor.constraint(equalTo: autocompleteScrollView.widthAnchor)
         ])
 
         chatInputTextView.delegate = self
@@ -1102,10 +1114,8 @@ extension FeaturePlanViewController: UITextViewDelegate {
     private func showAutocomplete() {
         guard !filteredWorkspaces.isEmpty else { hideAutocomplete(); return }
 
-        // Rebuild stack rows as buttons — button action fires before any text view delegate
         autocompleteStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        let capped = Array(filteredWorkspaces.prefix(4))
-        for (i, ws) in capped.enumerated() {
+        for (i, ws) in filteredWorkspaces.enumerated() {
             let row = UIView()
             row.backgroundColor = UIColor.Sphinx.HeaderBG
 
@@ -1123,7 +1133,6 @@ extension FeaturePlanViewController: UITextViewDelegate {
             labelStack.axis = .vertical
             labelStack.spacing = 2
             labelStack.translatesAutoresizingMaskIntoConstraints = false
-
             row.addSubview(labelStack)
             NSLayoutConstraint.activate([
                 labelStack.leadingAnchor.constraint(equalTo: row.leadingAnchor, constant: 16),
@@ -1131,7 +1140,6 @@ extension FeaturePlanViewController: UITextViewDelegate {
                 labelStack.centerYAnchor.constraint(equalTo: row.centerYAnchor)
             ])
 
-            // Full-width transparent button overlay for reliable tap handling
             let btn = UIButton(type: .system)
             btn.translatesAutoresizingMaskIntoConstraints = false
             btn.backgroundColor = .clear
@@ -1148,8 +1156,7 @@ extension FeaturePlanViewController: UITextViewDelegate {
             row.heightAnchor.constraint(equalToConstant: 52).isActive = true
             autocompleteStack.addArrangedSubview(row)
 
-            // Divider between rows
-            if i < capped.count - 1 {
+            if i < filteredWorkspaces.count - 1 {
                 let divider = UIView()
                 divider.backgroundColor = UIColor.Sphinx.LightDivider
                 divider.translatesAutoresizingMaskIntoConstraints = false
@@ -1158,29 +1165,36 @@ extension FeaturePlanViewController: UITextViewDelegate {
             }
         }
 
+        let maxRows = min(filteredWorkspaces.count, 4)
+        let dividerCount = max(0, maxRows - 1)
+        let visibleHeight = CGFloat(maxRows) * 52 + CGFloat(dividerCount)
+        autocompleteHeightConstraint.constant = visibleHeight
         autocompleteContainer.isHidden = false
-        // Total height = rows × 52 + dividers × 1
-        let dividerCount = max(0, capped.count - 1)
-        autocompleteHeightConstraint.constant = CGFloat(capped.count) * 52 + CGFloat(dividerCount)
-        UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
+        view.layoutIfNeeded()
     }
 
     @objc private func autocompleteRowTapped(_ sender: UIButton) {
         guard sender.tag < filteredWorkspaces.count,
-              let triggerRange = atTriggerNSRange,
-              let currentText = chatInputTextView.text else { hideAutocomplete(); return }
+              let triggerRange = atTriggerNSRange else { hideAutocomplete(); return }
         let ws = filteredWorkspaces[sender.tag]
         let slug = ws.slug ?? ws.name
-        let nsText = currentText as NSString
         let insertText = "@\(slug) "
-        let newText = nsText.replacingCharacters(in: triggerRange, with: insertText)
         let defaultFont = UIFont(name: "Roboto-Regular", size: 16) ?? UIFont.systemFont(ofSize: 16)
-        let attr = NSMutableAttributedString(
-            string: newText,
-            attributes: [.foregroundColor: UIColor.Sphinx.Text, .font: defaultFont]
+
+        // Preserve existing attributed text (keeps previous blue mentions intact)
+        let existing = chatInputTextView.attributedText ?? NSAttributedString(string: chatInputTextView.text ?? "")
+        let attr = NSMutableAttributedString(attributedString: existing)
+        // Ensure the replacement range is within bounds
+        let safeLength = min(triggerRange.length, attr.length - triggerRange.location)
+        guard triggerRange.location >= 0, triggerRange.location + safeLength <= attr.length else {
+            hideAutocomplete(); return
+        }
+        let replaceRange = NSRange(location: triggerRange.location, length: safeLength)
+        let mentionAttr = NSAttributedString(
+            string: insertText,
+            attributes: [.foregroundColor: UIColor.Sphinx.PrimaryBlue, .font: defaultFont]
         )
-        let mentionRange = NSRange(location: triggerRange.location, length: insertText.count)
-        attr.addAttribute(.foregroundColor, value: UIColor.Sphinx.PrimaryBlue, range: mentionRange)
+        attr.replaceCharacters(in: replaceRange, with: mentionAttr)
         chatInputTextView.attributedText = attr
         chatInputTextView.selectedRange = NSRange(location: triggerRange.location + insertText.count, length: 0)
         chatInputTextView.typingAttributes = [.foregroundColor: UIColor.Sphinx.Text, .font: defaultFont]
