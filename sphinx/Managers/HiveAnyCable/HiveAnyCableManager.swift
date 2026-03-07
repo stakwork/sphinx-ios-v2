@@ -21,6 +21,39 @@ class HiveAnyCableManager: NSObject {
 
     // MARK: - Public API
 
+    /// Preferred entry point: establishes a session cookie via an authenticated HTTP request,
+    /// then opens the WebSocket with that cookie attached.
+    func establishSessionThenConnect(projectId: Int) {
+        guard let token: String = UserDefaults.Keys.hiveToken.get(), !token.isEmpty else {
+            print("[HiveAnyCable] No token available")
+            return
+        }
+
+        let url = URL(string: "https://hive.sphinx.chat/api/workspaces")!
+        var request = URLRequest(url: url)
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.httpShouldHandleCookies = true
+
+        URLSession.shared.dataTask(with: request) { [weak self] _, response, error in
+            if let error = error {
+                print("[HiveAnyCable] Failed to establish session: \(error.localizedDescription)")
+                // Fall back to direct connect
+                DispatchQueue.main.async { self?.connect(projectId: projectId) }
+                return
+            }
+
+            if let httpResponse = response as? HTTPURLResponse,
+               let headerFields = httpResponse.allHeaderFields as? [String: String],
+               let responseURL = response?.url {
+                let cookies = HTTPCookie.cookies(withResponseHeaders: headerFields, for: responseURL)
+                print("[HiveAnyCable] Received cookies: \(cookies.map { $0.name })")
+                HTTPCookieStorage.shared.setCookies(cookies, for: responseURL, mainDocumentURL: nil)
+            }
+
+            DispatchQueue.main.async { self?.connect(projectId: projectId) }
+        }.resume()
+    }
+
     func connect(projectId: Int) {
         guard let token: String = UserDefaults.Keys.hiveToken.get(), !token.isEmpty else {
             print("[HiveAnyCable] No hive token stored — skipping connect")
@@ -32,6 +65,18 @@ class HiveAnyCableManager: NSObject {
 
         var request = URLRequest(url: URL(string: "wss://hive.sphinx.chat/cable")!)
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+        // Attach any stored session cookies
+        if let cookieURL = URL(string: "https://hive.sphinx.chat"),
+           let cookies = HTTPCookieStorage.shared.cookies(for: cookieURL), !cookies.isEmpty {
+            let cookieHeader = HTTPCookie.requestHeaderFields(with: cookies)
+            if let cookieValue = cookieHeader["Cookie"] {
+                request.setValue(cookieValue, forHTTPHeaderField: "Cookie")
+                print("[HiveAnyCable] Cookie header set: \(cookies.map { $0.name })")
+            }
+        } else {
+            print("[HiveAnyCable] ⚠️ No cookies found in storage")
+        }
 
         let ws = WebSocket(request: request)
         ws.delegate = self

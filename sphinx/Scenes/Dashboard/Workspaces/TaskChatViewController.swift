@@ -535,7 +535,7 @@ class TaskChatViewController: UIViewController {
         guard anyCableManager == nil else { return }
         anyCableManager = HiveAnyCableManager()
         anyCableManager?.delegate = self
-        anyCableManager?.connect(projectId: projectId)
+        anyCableManager?.establishSessionThenConnect(projectId: projectId)
     }
 
     // MARK: - Workflow Status
