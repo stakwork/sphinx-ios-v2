@@ -325,6 +325,53 @@ class ClarifyingQuestionsViewTests: XCTestCase {
         XCTAssertEqual(capturedAnswers[1], "Q2: X, Z")
     }
 
+    // MARK: - Additional context capture
+
+    func testAdditionalContext_NonFinalQuestion_IncludedInAnswerString() {
+        // Bug 3 fix: context typed on a non-final question must be embedded in
+        // that question's answer string, not silently dropped.
+        var capturedAnswers: [String] = []
+        let view = ClarifyingQuestionsView()
+        view.onSubmit = { capturedAnswers = $0 }
+
+        let q1 = ClarifyingQuestion(question: "Q1", options: ["A", "B"], type: "single_choice")
+        let q2 = ClarifyingQuestion(question: "Q2", options: ["X", "Y"], type: "single_choice")
+        view.configure(with: [q1, q2])
+
+        // Select an option on Q1, type context, then advance
+        view.simulateTapOption(at: 0) // A
+        view.simulateTypeAdditionalContext("some extra info")
+        view.simulateTapActionButton() // Next
+
+        // Answer Q2 and submit (no extra context)
+        view.simulateTapOption(at: 1) // Y
+        view.simulateTapActionButton() // Submit
+
+        XCTAssertEqual(capturedAnswers.count, 2)
+        XCTAssertEqual(capturedAnswers[0], "Q1: A | Additional: some extra info",
+                       "Context on a non-final question must be in that question's answer string")
+        XCTAssertEqual(capturedAnswers[1], "Q2: Y")
+    }
+
+    func testAdditionalContext_FinalQuestion_IncludedInAnswerString() {
+        // Bug 3 fix: context on the final (submit) question must also be embedded
+        // in the answer string (not appended as a separate entry).
+        var capturedAnswers: [String] = []
+        let view = ClarifyingQuestionsView()
+        view.onSubmit = { capturedAnswers = $0 }
+
+        let q = ClarifyingQuestion(question: "Platform?", options: ["iOS", "Android"], type: "single_choice")
+        view.configure(with: [q])
+
+        view.simulateTapOption(at: 0) // iOS
+        view.simulateTypeAdditionalContext("prefer SwiftUI")
+        view.simulateTapActionButton() // Submit
+
+        XCTAssertEqual(capturedAnswers.count, 1)
+        XCTAssertEqual(capturedAnswers[0], "Q1: iOS | Additional: prefer SwiftUI",
+                       "Context on the final question must be embedded in the answer string")
+    }
+
     // MARK: - onSubmit callback
 
     func testOnSubmit_NotFiredOnNext() {
@@ -408,5 +455,14 @@ extension ClarifyingQuestionsView {
             return actionTitles.contains(title)
         }) else { return }
         btn.sendActions(for: .touchUpInside)
+    }
+
+    /// Simulate typing text into the additional context text view (test-only).
+    func simulateTypeAdditionalContext(_ text: String) {
+        let textViews = allSubviews(ofType: UITextView.self, in: self)
+        guard let tv = textViews.first else { return }
+        tv.text = text
+        // Manually invoke the delegate so internal state (placeholder, button enable) updates
+        tv.delegate?.textViewDidChange?(tv)
     }
 }

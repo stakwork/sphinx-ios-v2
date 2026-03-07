@@ -223,6 +223,8 @@ class FeaturePlanViewController: UIViewController {
         chatTableView.dataSource = self
         chatTableView.register(FeatureChatMessageCell.self, forCellReuseIdentifier: "FeatureChatMessageCell")
         chatTableView.register(HiveProcessingBubbleCell.self, forCellReuseIdentifier: "HiveProcessingBubbleCell")
+        chatTableView.rowHeight = UITableView.automaticDimension
+        chatTableView.estimatedRowHeight = 200
         chatTableView.contentInset = UIEdgeInsets(top: 16, left: 0, bottom: 16, right: 0)
         chatContainerView.addSubview(chatTableView)
         
@@ -1000,6 +1002,10 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
         cell.configure(with: message)
         cell.onClarifyingAnswerSubmit = { [weak self] answers, replyId in
             self?.sendClarifyingAnswers(answers: answers, replyId: replyId)
+        }
+        cell.onHeightChanged = { [weak tableView] in
+            tableView?.beginUpdates()
+            tableView?.endUpdates()
         }
         return cell
     }
