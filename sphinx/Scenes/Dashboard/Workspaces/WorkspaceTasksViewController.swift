@@ -26,6 +26,7 @@ class WorkspaceTasksViewController: UIViewController {
     private var currentPage = 1
     private var totalPages = 1
     private weak var paginationView: PaginationControlView?
+    private var paginationHasBeenBuilt = false
     
     static func instantiate(workspace: Workspace) -> WorkspaceTasksViewController {
         let vc = StoryboardScene.Dashboard.workspaceTasksViewController.instantiate()
@@ -109,7 +110,9 @@ class WorkspaceTasksViewController: UIViewController {
                 loadingWheelColor: .Sphinx.Text
             )
             tableView.isHidden = isLoading
-            paginationView?.isHidden = isLoading
+            if !paginationHasBeenBuilt {
+                paginationView?.isHidden = isLoading
+            }
             emptyStateLabel.isHidden = !tasks.isEmpty || isLoading
         }
     }
@@ -129,6 +132,7 @@ class WorkspaceTasksViewController: UIViewController {
                     self.totalPages = info.totalPages
                     self.tableView.reloadData()
                     self.paginationView?.configure(currentPage: self.currentPage, totalPages: info.totalPages)
+                    self.paginationHasBeenBuilt = true
                     self.isLoading = false
                 }
             },
@@ -190,6 +194,7 @@ extension WorkspaceTasksViewController: CustomSegmentedControlDelegate {
     func segmentedControlDidSwitch(_ control: CustomSegmentedControl, to index: Int) {
         includeArchived = (index == 1)
         currentPage = 1
+        paginationHasBeenBuilt = false
         loadTasks()
     }
 }
