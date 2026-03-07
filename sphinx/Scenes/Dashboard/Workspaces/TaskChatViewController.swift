@@ -475,10 +475,10 @@ extension TaskChatViewController: HivePusherDelegate {
         DispatchQueue.main.async {
             self.applyWorkflowStatus(status)
             
-            if status == .IN_PROGRESS || status == .PENDING {
-                self.showProcessingBubble()
-                self.fetchAndUpdateWorkflowStep()
-            }
+//            if status == .IN_PROGRESS || status == .PENDING {
+//                self.showProcessingBubble()
+//                self.fetchAndUpdateWorkflowStep()
+//            }
         }
     }
 
