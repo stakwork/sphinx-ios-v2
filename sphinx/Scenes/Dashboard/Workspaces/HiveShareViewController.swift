@@ -253,7 +253,6 @@ class HiveShareViewController: UIViewController {
     private func setupSearchRow() {
         searchContainer = UIView()
         searchContainer.translatesAutoresizingMaskIntoConstraints = false
-        searchContainer.backgroundColor = UIColor.Sphinx.HeaderBG
         view.addSubview(searchContainer)
 
         searchTextField = UITextField()
@@ -264,6 +263,7 @@ class HiveShareViewController: UIViewController {
         searchTextField.textColor = UIColor.Sphinx.Text
         searchTextField.backgroundColor = UIColor.Sphinx.Body
         searchTextField.layer.cornerRadius = 20
+        searchTextField.layer.masksToBounds = true
         searchTextField.layer.borderWidth = 1
         searchTextField.layer.borderColor = UIColor.Sphinx.LightDivider.cgColor
         searchTextField.attributedPlaceholder = NSAttributedString(
