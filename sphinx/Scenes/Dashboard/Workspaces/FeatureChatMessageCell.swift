@@ -58,6 +58,10 @@ class FeatureChatMessageCell: UITableViewCell {
     /// Set by the view controller; called when the user submits clarifying answers.
     var onClarifyingAnswerSubmit: ((_ answers: [String], _ replyId: String) -> Void)?
 
+    /// Called when the clarifying questions view changes its content height
+    /// (e.g. navigating between questions) so the host table view can recalculate row height.
+    var onHeightChanged: (() -> Void)?
+
     private let timestampLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -208,6 +212,9 @@ class FeatureChatMessageCell: UITableViewCell {
             clarifyingQuestionsView.onSubmit = { [weak self] answers in
                 self?.onClarifyingAnswerSubmit?(answers, message.id)
             }
+            clarifyingQuestionsView.onHeightChanged = { [weak self] in
+                self?.onHeightChanged?()
+            }
             // Hide the text bubble entirely — no text to show, and we don't want
             // its top/bottom insets bleeding as empty space above/below the card.
             messageTextView.isHidden = true
@@ -268,6 +275,7 @@ class FeatureChatMessageCell: UITableViewCell {
         clarifyingQuestionsView.reset()
         clarifyingQuestionsView.isHidden = true
         onClarifyingAnswerSubmit = nil
+        onHeightChanged = nil
         bubbleView.layer.cornerRadius = 18
         timestampLabel.text    = nil
         timestampLabel.isHidden = false

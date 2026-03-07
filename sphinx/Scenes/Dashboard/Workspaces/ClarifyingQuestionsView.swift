@@ -17,6 +17,10 @@ final class ClarifyingQuestionsView: UIView {
     /// Called with all collected answer strings when the user taps Submit on the final question.
     var onSubmit: (([String]) -> Void)?
 
+    /// Called after `showQuestion(at:)` rebuilds the options stack so the host cell
+    /// can ask the table view to recalculate its row height.
+    var onHeightChanged: (() -> Void)?
+
     // MARK: - Private State
 
     private var questions: [ClarifyingQuestion] = []
@@ -72,7 +76,7 @@ final class ClarifyingQuestionsView: UIView {
         tv.layer.borderWidth = 1
         tv.layer.borderColor = UIColor.Sphinx.LightDivider.cgColor
         tv.textContainerInset = UIEdgeInsets(top: 8, left: 8, bottom: 8, right: 8)
-        tv.isScrollEnabled = false
+        tv.isScrollEnabled = true
         return tv
     }()
 
@@ -149,6 +153,7 @@ final class ClarifyingQuestionsView: UIView {
             additionalContextTextView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
             additionalContextTextView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
             additionalContextTextView.heightAnchor.constraint(greaterThanOrEqualToConstant: 60),
+            additionalContextTextView.heightAnchor.constraint(lessThanOrEqualToConstant: 100),
 
             placeholderLabel.topAnchor.constraint(equalTo: additionalContextTextView.topAnchor, constant: 8),
             placeholderLabel.leadingAnchor.constraint(equalTo: additionalContextTextView.leadingAnchor, constant: 12),
@@ -219,6 +224,8 @@ final class ClarifyingQuestionsView: UIView {
         }
 
         updateActionButton()
+        invalidateIntrinsicContentSize()
+        onHeightChanged?()
     }
 
     private func makeOptionButton(title: String, tag: Int) -> UIButton {
@@ -303,15 +310,17 @@ final class ClarifyingQuestionsView: UIView {
             .filter { selectedIndices.contains($0.offset) }
             .map { $0.element }
 
-        let answerString = "Q\(currentIndex + 1): \(selectedLabels.joined(separator: ", "))"
+        // Capture context BEFORE showQuestion(at:) clears the text view
+        let contextText = additionalContextTextView.text
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        var answerString = "Q\(currentIndex + 1): \(selectedLabels.joined(separator: ", "))"
+        if !contextText.isEmpty {
+            answerString += " | Additional: \(contextText)"
+        }
         collectedAnswers.append(answerString)
 
-        // If last question, also append additional context if present
         if currentIndex == questions.count - 1 {
-            let contextText = additionalContextTextView.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            if !contextText.isEmpty {
-                collectedAnswers.append("Additional context: \(contextText)")
-            }
             onSubmit?(collectedAnswers)
         } else {
             currentIndex += 1
