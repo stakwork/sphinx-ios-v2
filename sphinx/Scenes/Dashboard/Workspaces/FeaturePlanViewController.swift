@@ -105,7 +105,6 @@ class FeaturePlanViewController: UIViewController {
         fetchFeatureDetail()
         checkForActiveTaskGeneration()
         fetchChatHistory()
-        connectWebSocket()
         API.sharedInstance.fetchWorkspacesWithAuth(
             callback: { [weak self] workspaces in
                 DispatchQueue.main.async { self?.availableWorkspaces = workspaces }
@@ -117,7 +116,6 @@ class FeaturePlanViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         guard !HivePusherManager.shared.isConnected else { return }
-        connectWebSocket()
         fetchFeatureDetail()
     }
     
@@ -812,6 +810,7 @@ class FeaturePlanViewController: UIViewController {
                 DispatchQueue.main.async {
                     self.feature = updatedFeature
                     self.cachedStakworkProjectId = updatedFeature.stakworkProjectId
+                    self.connectWebSocket()
                     HivePusherManager.shared.subscribeToFeatureTasks(updatedFeature.allTasks.map { $0.id })
                     // Apply workflow status from freshly fetched feature data
                     self.applyInitialWorkflowStatus()
@@ -938,12 +937,15 @@ class FeaturePlanViewController: UIViewController {
     // MARK: - WebSocket
     private func connectWebSocket() {
         HivePusherManager.shared.delegate = self
-        HivePusherManager.shared.connect(featureId: feature.id, workspaceId: workspace.id, workspaceSlug: workspace.slug ?? "")
+        if !HivePusherManager.shared.isConnected {
+            HivePusherManager.shared.connect(featureId: feature.id, workspaceId: workspace.id, workspaceSlug: workspace.slug ?? "")
+        }
         connectAnyCable()
     }
 
     private func connectAnyCable() {
         guard let projectId = cachedStakworkProjectId else { return }
+        guard anyCableManager == nil else { return }
         anyCableManager = HiveAnyCableManager()
         anyCableManager?.delegate = self
         anyCableManager?.connect(projectId: projectId)

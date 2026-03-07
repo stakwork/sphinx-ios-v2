@@ -16,7 +16,6 @@ class TaskChatViewController: UIViewController {
     private var messages: [HiveChatMessage] = []
     private var processingStepText: String? = nil
     private var cachedStakworkProjectId: Int?
-    private var hasFetchedTaskDetail: Bool = false
     private var anyCableManager: HiveAnyCableManager?
 
     // MARK: - Header
@@ -70,7 +69,7 @@ class TaskChatViewController: UIViewController {
         setupKeyboardObservers()
         cachedStakworkProjectId = task.stakworkProjectId
         fetchMessages()
-        connectWebSocket()
+        fetchTaskDetailAndConnect()
         API.sharedInstance.fetchWorkspacesWithAuth(
             callback: { [weak self] workspaces in
                 DispatchQueue.main.async { self?.availableWorkspaces = workspaces }
@@ -500,14 +499,40 @@ class TaskChatViewController: UIViewController {
     }
 
     // MARK: - WebSocket
+    private func fetchTaskDetailAndConnect() {
+        // Always fetch task detail to ensure cachedStakworkProjectId is populated,
+        // then connect WebSocket (Pusher + AnyCable) once the projectId is known.
+        API.sharedInstance.fetchTaskDetailWithAuth(
+            taskId: task.id,
+            callback: { [weak self] updatedTask in
+                guard let self = self else { return }
+                DispatchQueue.main.async {
+                    if let updated = updatedTask {
+                        self.task = updated
+                        self.cachedStakworkProjectId = updated.stakworkProjectId
+                    }
+                    self.connectWebSocket()
+                }
+            },
+            errorCallback: { [weak self] in
+                // Fall back to connecting with whatever we already have
+                DispatchQueue.main.async { self?.connectWebSocket() }
+                print("[TaskChatVC] Failed to fetch task detail for stakworkProjectId")
+            }
+        )
+    }
+
     private func connectWebSocket() {
         HivePusherManager.shared.delegate = self
-        HivePusherManager.shared.connect(taskId: task.id)
+        if !HivePusherManager.shared.isConnected {
+            HivePusherManager.shared.connect(taskId: task.id)
+        }
         connectAnyCable()
     }
 
     private func connectAnyCable() {
         guard let projectId = cachedStakworkProjectId else { return }
+        guard anyCableManager == nil else { return }
         anyCableManager = HiveAnyCableManager()
         anyCableManager?.delegate = self
         anyCableManager?.connect(projectId: projectId)
@@ -551,29 +576,6 @@ extension TaskChatViewController: HivePusherDelegate {
 //                self.showProcessingBubble()
 //                self.fetchAndUpdateWorkflowStep()
 //            }
-        }
-    }
-
-    private func fetchAndUpdateWorkflowStep() {
-        if let projectId = cachedStakworkProjectId {
-            fetchStepText(projectId: projectId)
-            connectAnyCable()
-        } else if !hasFetchedTaskDetail {
-            hasFetchedTaskDetail = true
-            API.sharedInstance.fetchTaskDetailWithAuth(
-                taskId: task.id,
-                callback: { [weak self] updatedTask in
-                    guard let self = self else { return }
-                    if let projectId = updatedTask?.stakworkProjectId {
-                        self.cachedStakworkProjectId = projectId
-                        self.fetchStepText(projectId: projectId)
-                        self.connectAnyCable()
-                    }
-                },
-                errorCallback: {
-                    print("[TaskChatVC] Failed to fetch task detail for stakworkProjectId")
-                }
-            )
         }
     }
 
