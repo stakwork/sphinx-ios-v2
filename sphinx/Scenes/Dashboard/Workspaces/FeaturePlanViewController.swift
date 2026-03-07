@@ -824,10 +824,6 @@ class FeaturePlanViewController: UIViewController {
                     }
                     // Show/hide generate button based on whether tasks exist
                     self.updateGenerateTasksButton()
-                    // If fetched as fallback for workflow step, update bubble text
-                    if let projectId = updatedFeature.stakworkProjectId {
-                        self.fetchStepText(projectId: projectId)
-                    }
                     self.tasksRefreshControl.endRefreshing()
                 }
             },
@@ -948,7 +944,7 @@ class FeaturePlanViewController: UIViewController {
         guard anyCableManager == nil else { return }
         anyCableManager = HiveAnyCableManager()
         anyCableManager?.delegate = self
-        anyCableManager?.establishSessionThenConnect(projectId: projectId)
+        anyCableManager?.connect(projectId: projectId)
     }
     
     // MARK: - Processing Bubble
@@ -1286,30 +1282,6 @@ extension FeaturePlanViewController: HivePusherDelegate {
         }
     }
 
-    private func fetchAndUpdateWorkflowStep() {
-        if let projectId = cachedStakworkProjectId {
-            fetchStepText(projectId: projectId)
-        } else {
-            // fetchFeatureDetail callback sets cachedStakworkProjectId then calls fetchStepText
-            fetchFeatureDetail()
-        }
-    }
-
-    private func fetchStepText(projectId: Int) {
-        API.sharedInstance.fetchStakworkWorkflowWithAuth(
-            projectId: projectId,
-            callback: { [weak self] workflowData in
-                guard let self = self, let title = workflowData?.inProgressTitle else { return }
-                DispatchQueue.main.async {
-                    self.updateProcessingBubble(stepText: title)
-                }
-            },
-            errorCallback: {
-                print("[FeaturePlanVC] Failed to fetch stakwork workflow step")
-            }
-        )
-    }
-
     func taskStatusUpdated(taskId: String, status: String, workflowStatus: String?, archived: Bool) {
         guard let flatIndex = feature.updateTask(taskId, apply: {
             $0.status = status
@@ -1387,7 +1359,7 @@ extension FeaturePlanViewController: HivePusherDelegate {
 
 // MARK: - HiveAnyCableDelegate
 extension FeaturePlanViewController: HiveAnyCableDelegate {
-    func workflowStepUpdateReceived(projectId: Int) {
-        fetchStepText(projectId: projectId)
+    func workflowStepTextReceived(stepText: String) {
+        updateProcessingBubble(stepText: stepText)
     }
 }

@@ -7,5 +7,5 @@
 //
 
 protocol HiveAnyCableDelegate: AnyObject {
-    func workflowStepUpdateReceived(projectId: Int)
+    func workflowStepTextReceived(stepText: String)
 }

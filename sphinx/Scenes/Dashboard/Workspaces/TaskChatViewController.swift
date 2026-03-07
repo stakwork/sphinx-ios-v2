@@ -535,7 +535,7 @@ class TaskChatViewController: UIViewController {
         guard anyCableManager == nil else { return }
         anyCableManager = HiveAnyCableManager()
         anyCableManager?.delegate = self
-        anyCableManager?.establishSessionThenConnect(projectId: projectId)
+        anyCableManager?.connect(projectId: projectId)
     }
 
     // MARK: - Workflow Status
@@ -579,21 +579,6 @@ extension TaskChatViewController: HivePusherDelegate {
         }
     }
 
-    private func fetchStepText(projectId: Int) {
-        API.sharedInstance.fetchStakworkWorkflowWithAuth(
-            projectId: projectId,
-            callback: { [weak self] workflowData in
-                guard let self = self, let title = workflowData?.inProgressTitle else { return }
-                DispatchQueue.main.async {
-                    self.updateProcessingBubble(stepText: title)
-                }
-            },
-            errorCallback: {
-                print("[TaskChatVC] Failed to fetch stakwork workflow step")
-            }
-        )
-    }
-
     func featureUpdateReceived(featureId: String) {
         // no-op: TaskChatViewController does not display feature-level updates
     }
@@ -634,8 +619,8 @@ extension TaskChatViewController: HivePusherDelegate {
 
 // MARK: - HiveAnyCableDelegate
 extension TaskChatViewController: HiveAnyCableDelegate {
-    func workflowStepUpdateReceived(projectId: Int) {
-        fetchStepText(projectId: projectId)
+    func workflowStepTextReceived(stepText: String) {
+        updateProcessingBubble(stepText: stepText)
     }
 }
 
