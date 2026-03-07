@@ -261,7 +261,7 @@ class HiveShareViewController: UIViewController {
         searchTextField.tintColor = UIColor.Sphinx.SecondaryText
         searchTextField.font = UIFont(name: "Roboto-Regular", size: 14)
         searchTextField.textColor = UIColor.Sphinx.Text
-        searchTextField.backgroundColor = UIColor.Sphinx.LightDivider
+        searchTextField.backgroundColor = UIColor.Sphinx.HeaderBG
         searchTextField.layer.cornerRadius = 10
         searchTextField.layer.masksToBounds = true
         searchTextField.layer.borderWidth = 0
@@ -289,24 +289,24 @@ class HiveShareViewController: UIViewController {
         copyButton.translatesAutoresizingMaskIntoConstraints = false
         copyButton.setTitle("Copy", for: .normal)
         copyButton.setTitleColor(UIColor.Sphinx.PrimaryBlue, for: .normal)
-        copyButton.titleLabel?.font = UIFont(name: "Roboto-Medium", size: 14)
+        copyButton.titleLabel?.font = UIFont(name: "Roboto-Regular", size: 15)
         copyButton.addTarget(self, action: #selector(copyTapped), for: .touchUpInside)
         searchContainer.addSubview(copyButton)
 
         NSLayoutConstraint.activate([
-            searchContainer.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 8),
-            searchContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            searchContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            searchContainer.heightAnchor.constraint(equalToConstant: 44),
+            searchContainer.topAnchor.constraint(equalTo: headerView.bottomAnchor),
+            searchContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            searchContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            searchContainer.heightAnchor.constraint(equalToConstant: 60),
 
-            copyButton.trailingAnchor.constraint(equalTo: searchContainer.trailingAnchor),
+            copyButton.trailingAnchor.constraint(equalTo: searchContainer.trailingAnchor, constant: -8),
             copyButton.centerYAnchor.constraint(equalTo: searchContainer.centerYAnchor),
-            copyButton.widthAnchor.constraint(equalToConstant: 50),
+            copyButton.widthAnchor.constraint(equalToConstant: 70),
 
-            searchTextField.leadingAnchor.constraint(equalTo: searchContainer.leadingAnchor),
+            searchTextField.leadingAnchor.constraint(equalTo: searchContainer.leadingAnchor, constant: 8),
             searchTextField.trailingAnchor.constraint(equalTo: copyButton.leadingAnchor, constant: -8),
-            searchTextField.topAnchor.constraint(equalTo: searchContainer.topAnchor, constant: 4),
-            searchTextField.bottomAnchor.constraint(equalTo: searchContainer.bottomAnchor, constant: -4)
+            searchTextField.centerYAnchor.constraint(equalTo: searchContainer.centerYAnchor),
+            searchTextField.heightAnchor.constraint(equalToConstant: 44)
         ])
     }
 
