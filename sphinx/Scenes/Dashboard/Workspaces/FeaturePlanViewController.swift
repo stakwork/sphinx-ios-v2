@@ -57,6 +57,8 @@ class FeaturePlanViewController: UIViewController {
     private var filteredWorkspaces: [Workspace] = []
     private var autocompleteTableView: UITableView!
     private var autocompleteHeightConstraint: NSLayoutConstraint!
+    /// NSRange of "@query" in chatInputTextView at the moment the popup is shown/updated
+    private var atTriggerNSRange: NSRange?
     private var taskProgressBarView: TaskProgressBarView!
     private var startTasksButton: UIButton!
 
@@ -292,8 +294,6 @@ class FeaturePlanViewController: UIViewController {
         autocompleteTableView = UITableView()
         autocompleteTableView.translatesAutoresizingMaskIntoConstraints = false
         autocompleteTableView.backgroundColor = UIColor.Sphinx.HeaderBG
-        autocompleteTableView.layer.borderWidth = 1
-        autocompleteTableView.layer.borderColor = UIColor.Sphinx.LightDivider.cgColor
         autocompleteTableView.isHidden = true
         autocompleteTableView.rowHeight = 52
         autocompleteTableView.separatorStyle = .singleLine
@@ -1076,33 +1076,22 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
         if tableView === autocompleteTableView {
             let workspace = filteredWorkspaces[indexPath.row]
             let slug = workspace.slug ?? workspace.name
-            guard let currentText = chatInputTextView.text else { hideAutocomplete(); return }
-            let cursorPos = chatInputTextView.selectedRange.location
+            guard let triggerRange = atTriggerNSRange,
+                  let currentText = chatInputTextView.text else { hideAutocomplete(); return }
             let nsText = currentText as NSString
-            let upToCursor = nsText.substring(to: cursorPos)
-            if let atIdx = upToCursor.lastIndex(of: "@") {
-                let atNSIdx = upToCursor.distance(from: upToCursor.startIndex, to: atIdx)
-                let insertText = "@\(slug) "
-                let newText = nsText.replacingCharacters(
-                    in: NSRange(location: atNSIdx, length: cursorPos - atNSIdx),
-                    with: insertText
-                )
-                let attr = NSMutableAttributedString(
-                    string: newText,
-                    attributes: [
-                        .foregroundColor: UIColor.Sphinx.Text,
-                        .font: UIFont(name: "Roboto-Regular", size: 16) ?? UIFont.systemFont(ofSize: 16)
-                    ]
-                )
-                let mentionRange = NSRange(location: atNSIdx, length: insertText.count)
-                attr.addAttribute(.foregroundColor, value: UIColor.Sphinx.PrimaryBlue, range: mentionRange)
-                chatInputTextView.attributedText = attr
-                chatInputTextView.selectedRange = NSRange(location: atNSIdx + insertText.count, length: 0)
-                chatInputTextView.typingAttributes = [
-                    .foregroundColor: UIColor.Sphinx.Text,
-                    .font: UIFont(name: "Roboto-Regular", size: 16) ?? UIFont.systemFont(ofSize: 16)
-                ]
-            }
+            let insertText = "@\(slug) "
+            let newText = nsText.replacingCharacters(in: triggerRange, with: insertText)
+            let defaultFont = UIFont(name: "Roboto-Regular", size: 16) ?? UIFont.systemFont(ofSize: 16)
+            let attr = NSMutableAttributedString(
+                string: newText,
+                attributes: [.foregroundColor: UIColor.Sphinx.Text, .font: defaultFont]
+            )
+            let mentionRange = NSRange(location: triggerRange.location, length: insertText.count)
+            attr.addAttribute(.foregroundColor, value: UIColor.Sphinx.PrimaryBlue, range: mentionRange)
+            chatInputTextView.attributedText = attr
+            let newCursor = triggerRange.location + insertText.count
+            chatInputTextView.selectedRange = NSRange(location: newCursor, length: 0)
+            chatInputTextView.typingAttributes = [.foregroundColor: UIColor.Sphinx.Text, .font: defaultFont]
             hideAutocomplete()
             return
         }
@@ -1130,6 +1119,9 @@ extension FeaturePlanViewController: UITextViewDelegate {
                 hideAutocomplete()
                 return
             }
+            // Store the NSRange of "@query" so we can replace it even after focus is lost
+            let atNSIdx = upToCursor.distance(from: upToCursor.startIndex, to: atRange.lowerBound)
+            atTriggerNSRange = NSRange(location: atNSIdx, length: cursorPos - atNSIdx)
             filteredWorkspaces = availableWorkspaces.filter {
                 query.isEmpty ||
                 $0.name.localizedCaseInsensitiveContains(query) ||
@@ -1152,6 +1144,7 @@ extension FeaturePlanViewController: UITextViewDelegate {
     private func hideAutocomplete() {
         autocompleteTableView.isHidden = true
         autocompleteHeightConstraint.constant = 0
+        atTriggerNSRange = nil
     }
 
     @objc private func handleChatContainerTap() {
