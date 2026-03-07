@@ -390,7 +390,6 @@ class TaskChatViewController: UIViewController {
             .font: UIFont(name: "Roboto-Regular", size: 16) ?? UIFont.systemFont(ofSize: 16)
         ]
         chatInputTextView.resignFirstResponder()
-        showProcessingBubble()
 
         API.sharedInstance.sendTaskChatMessageWithAuth(
             taskId: task.id,
@@ -411,7 +410,6 @@ class TaskChatViewController: UIViewController {
     }
 
     private func sendClarifyingAnswers(answers: [String], replyId: String) {
-        showProcessingBubble()
         let joined = answers.joined(separator: "\n\n")
         API.sharedInstance.sendTaskChatMessageWithAuth(
             taskId: task.id,
@@ -477,13 +475,6 @@ class TaskChatViewController: UIViewController {
     }
 
     // MARK: - Processing Bubble
-    private func showProcessingBubble() {
-        guard processingStepText == nil else { return }
-        processingStepText = "Communicating with workflow"
-        let indexPath = IndexPath(row: messages.count, section: 0)
-        chatTableView.insertRows(at: [indexPath], with: .automatic)
-        scrollToBottom(animated: true)
-    }
 
     private func hideProcessingBubble() {
         guard processingStepText != nil else { return }
@@ -492,11 +483,19 @@ class TaskChatViewController: UIViewController {
         chatTableView.deleteRows(at: [indexPath], with: .automatic)
     }
 
+    /// Shows the bubble if not yet visible, or updates its text if already shown.
+    /// Called only when a real socket event (on_step_start / on_step_complete) arrives.
     private func updateProcessingBubble(stepText: String) {
-        guard processingStepText != nil else { return }
-        processingStepText = stepText
-        let indexPath = IndexPath(row: messages.count, section: 0)
-        chatTableView.reloadRows(at: [indexPath], with: .none)
+        if processingStepText == nil {
+            processingStepText = stepText
+            let indexPath = IndexPath(row: messages.count, section: 0)
+            chatTableView.insertRows(at: [indexPath], with: .automatic)
+            scrollToBottom(animated: true)
+        } else {
+            processingStepText = stepText
+            let indexPath = IndexPath(row: messages.count, section: 0)
+            chatTableView.reloadRows(at: [indexPath], with: .none)
+        }
     }
 
     private func scrollToBottom(animated: Bool = true) {
