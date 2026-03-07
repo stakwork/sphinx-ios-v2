@@ -652,7 +652,8 @@ extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
             withIdentifier: "FeatureChatMessageCell",
             for: indexPath
         ) as? FeatureChatMessageCell else { return UITableViewCell() }
-        cell.configure(with: messages[indexPath.row])
+        let isLast = indexPath.row == messages.count - 1
+        cell.configure(with: messages[indexPath.row], isLastMessage: isLast)
         cell.onClarifyingAnswerSubmit = { [weak self] answers, replyId in
             self?.sendClarifyingAnswers(answers: answers, replyId: replyId)
         }

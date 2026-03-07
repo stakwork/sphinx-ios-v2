@@ -122,7 +122,7 @@ class FeatureChatMessageCell: UITableViewCell {
     }
 
     // MARK: - Configure
-    func configure(with message: HiveChatMessage) {
+    func configure(with message: HiveChatMessage, isLastMessage: Bool = false) {
         let isUser = message.isUserMessage
 
         // --- Text content ---
@@ -208,6 +208,12 @@ class FeatureChatMessageCell: UITableViewCell {
         if let cqArtifact = message.artifacts.first(where: { $0.isClarifyingQuestions }),
            let questions = cqArtifact.clarifyingQuestions, !questions.isEmpty {
             clarifyingQuestionsView.configure(with: questions)
+            if isLastMessage {
+                clarifyingQuestionsView.isUserInteractionEnabled = true
+                clarifyingQuestionsView.alpha = 1.0
+            } else {
+                clarifyingQuestionsView.lock()
+            }
             clarifyingQuestionsView.isHidden = false
             clarifyingQuestionsView.onSubmit = { [weak self] answers in
                 self?.onClarifyingAnswerSubmit?(answers, message.id)
