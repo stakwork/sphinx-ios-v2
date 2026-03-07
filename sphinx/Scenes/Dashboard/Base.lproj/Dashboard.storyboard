@@ -782,6 +782,36 @@
                                     <constraint firstAttribute="trailing" secondItem="wtv-tl-001" secondAttribute="trailing" constant="50" id="wtv-tl-r"/>
                                 </constraints>
                             </view>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="wtv-sb-001">
+                                <rect key="frame" x="0.0" y="98" width="414" height="50"/>
+                                <subviews>
+                                    <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="Search…" textAlignment="natural" minimumFontSize="17" clearButtonMode="whileEditing" translatesAutoresizingMaskIntoConstraints="NO" id="wtv-tf-001">
+                                        <rect key="frame" x="8" y="9" width="310" height="32"/>
+                                        <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="15"/>
+                                        <textInputTraits key="textInputTraits" autocorrectionType="no"/>
+                                    </textField>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="wtv-cb-001">
+                                        <rect key="frame" x="322" y="10" width="60" height="30"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="60" id="wtv-cb-w"/>
+                                        </constraints>
+                                        <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="15"/>
+                                        <state key="normal" title="Cancel">
+                                            <color key="titleColor" name="PrimaryBlue"/>
+                                        </state>
+                                    </button>
+                                </subviews>
+                                <color key="backgroundColor" name="Body"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="50" id="wtv-sb-h"/>
+                                    <constraint firstItem="wtv-tf-001" firstAttribute="leading" secondItem="wtv-sb-001" secondAttribute="leading" constant="8" id="wtv-tf-lead"/>
+                                    <constraint firstItem="wtv-tf-001" firstAttribute="centerY" secondItem="wtv-sb-001" secondAttribute="centerY" id="wtv-tf-cy"/>
+                                    <constraint firstItem="wtv-tf-001" firstAttribute="height" constant="32" id="wtv-tf-h"/>
+                                    <constraint firstItem="wtv-cb-001" firstAttribute="leading" secondItem="wtv-tf-001" secondAttribute="trailing" constant="8" id="wtv-cb-lead"/>
+                                    <constraint firstItem="wtv-cb-001" firstAttribute="centerY" secondItem="wtv-sb-001" secondAttribute="centerY" id="wtv-cb-cy"/>
+                                    <constraint firstAttribute="trailing" secondItem="wtv-cb-001" secondAttribute="trailing" constant="8" id="wtv-cb-trail"/>
+                                </constraints>
+                            </view>
                             <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" translatesAutoresizingMaskIntoConstraints="NO" id="rfY-dS-h8C">
                                 <rect key="frame" x="0.0" y="98" width="414" height="798"/>
                                 <subviews>
@@ -823,18 +853,24 @@
                         <viewLayoutGuide key="safeArea" id="wtv-sa-001"/>
                         <color key="backgroundColor" name="Body"/>
                         <constraints>
-                            <constraint firstItem="rfY-dS-h8C" firstAttribute="top" secondItem="wtv-hv-001" secondAttribute="bottom" id="7lO-q9-Ish"/>
+                            <constraint firstItem="wtv-sb-001" firstAttribute="top" secondItem="wtv-hv-001" secondAttribute="bottom" id="7lO-q9-Ish"/>
+                            <constraint firstItem="rfY-dS-h8C" firstAttribute="top" secondItem="wtv-sb-001" secondAttribute="bottom" id="wtv-sb-stack-top"/>
                             <constraint firstItem="wtv-sa-001" firstAttribute="trailing" secondItem="rfY-dS-h8C" secondAttribute="trailing" id="ixp-aI-ih7"/>
                             <constraint firstAttribute="bottom" secondItem="rfY-dS-h8C" secondAttribute="bottom" id="qoo-4u-wTF"/>
                             <constraint firstItem="rfY-dS-h8C" firstAttribute="leading" secondItem="wtv-sa-001" secondAttribute="leading" id="sy7-i3-vSe"/>
                             <constraint firstItem="wtv-hv-001" firstAttribute="leading" secondItem="wtv-sa-001" secondAttribute="leading" id="wtv-hv-l"/>
                             <constraint firstItem="wtv-hv-001" firstAttribute="trailing" secondItem="wtv-sa-001" secondAttribute="trailing" id="wtv-hv-r"/>
                             <constraint firstItem="wtv-hv-001" firstAttribute="top" secondItem="wtv-sa-001" secondAttribute="top" id="wtv-hv-t"/>
+                            <constraint firstItem="wtv-sb-001" firstAttribute="leading" secondItem="wtv-sa-001" secondAttribute="leading" id="wtv-sb-lead"/>
+                            <constraint firstItem="wtv-sa-001" firstAttribute="trailing" secondItem="wtv-sb-001" secondAttribute="trailing" id="wtv-sb-trail"/>
                         </constraints>
                     </view>
                     <connections>
                         <outlet property="containerView" destination="iM8-jT-sEQ" id="yJE-fj-r0t"/>
                         <outlet property="headerView" destination="wtv-hv-001" id="wtv-hv-out"/>
+                        <outlet property="searchBarContainerView" destination="wtv-sb-001" id="wtv-sb-out"/>
+                        <outlet property="searchTextField" destination="wtv-tf-001" id="wtv-tf-out"/>
+                        <outlet property="searchCancelButton" destination="wtv-cb-001" id="wtv-cb-out"/>
                         <outlet property="topTabContainer" destination="J54-Xg-xHV" id="Tad-ge-7Xi"/>
                         <outlet property="topTabSegmentedControl" destination="ORM-yH-mEJ" id="Ign-YT-5Mh"/>
                         <outlet property="viewTitle" destination="wtv-tl-001" id="wtv-tl-out"/>

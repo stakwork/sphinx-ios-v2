@@ -12,18 +12,23 @@ class WorkspaceViewController: PopHandlerViewController {
 
     @IBOutlet weak var headerView: UIView!
     @IBOutlet weak var viewTitle: UILabel!
-    
+
+    @IBOutlet weak var searchBarContainerView: UIView!
+    @IBOutlet weak var searchTextField: UITextField!
+    @IBOutlet weak var searchCancelButton: UIButton!
+
     @IBOutlet weak var topTabContainer: UIView!
     @IBOutlet weak var topTabSegmentedControl: CustomSegmentedControl!
-    
+
     @IBOutlet weak var containerView: UIView!
 
     private var workspace: Workspace!
     private var currentTab: Int = 0 // 0 = Features, 1 = Tasks
-    
+
     private var activeFeaturesVC: WorkspaceFeaturesViewController!
     private var activeTasksVC: WorkspaceTasksViewController!
     private var hasAppeared = false
+    private var searchVC: WorkspaceSearchViewController?
 
     private lazy var createFeatureButton: UIButton = {
         let btn = UIButton(type: .system)
@@ -44,6 +49,7 @@ class WorkspaceViewController: PopHandlerViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupHeader()
+        setupSearchBar()
         setupSegmentedControls()
         switchToTab(0)
     }
@@ -79,7 +85,7 @@ class WorkspaceViewController: PopHandlerViewController {
         viewTitle.font = UIFont(name: "Roboto-Medium", size: 14)
         viewTitle.textColor = .Sphinx.Text
         viewTitle.text = workspace.name.uppercased()
-        
+
         headerView.addSubview(createFeatureButton)
         NSLayoutConstraint.activate([
             createFeatureButton.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -16),
@@ -90,8 +96,46 @@ class WorkspaceViewController: PopHandlerViewController {
         createFeatureButton.addTarget(self, action: #selector(createFeatureButtonTapped), for: .touchUpInside)
     }
 
+    private func setupSearchBar() {
+        searchBarContainerView.backgroundColor = .Sphinx.Body
+
+        // Style the text field
+        searchTextField.placeholder = "Search…"
+        searchTextField.clearButtonMode = .whileEditing
+        searchTextField.backgroundColor = .Sphinx.HeaderBG
+        searchTextField.layer.cornerRadius = 10
+        searchTextField.clipsToBounds = true
+        searchTextField.font = UIFont(name: "Roboto-Regular", size: 15) ?? UIFont.systemFont(ofSize: 15)
+        searchTextField.textColor = .Sphinx.Text
+        searchTextField.delegate = self
+
+        // Left padding
+        let paddingView = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: 1))
+        searchTextField.leftView = paddingView
+        searchTextField.leftViewMode = .always
+
+        // Cancel button
+        searchCancelButton.setTitle("Cancel", for: .normal)
+        searchCancelButton.setTitleColor(.Sphinx.PrimaryBlue, for: .normal)
+        searchCancelButton.titleLabel?.font = UIFont(name: "Roboto-Regular", size: 15) ?? UIFont.systemFont(ofSize: 15)
+        searchCancelButton.isHidden = true
+        searchCancelButton.addTarget(self, action: #selector(cancelSearchTapped), for: .touchUpInside)
+
+        // Disable if no slug
+        if workspace.slug == nil {
+            searchTextField.isEnabled = false
+            searchTextField.placeholder = "Search unavailable"
+        }
+    }
+
     @objc private func createFeatureButtonTapped() {
         activeFeaturesVC?.createButtonTapped()
+    }
+
+    @objc private func cancelSearchTapped() {
+        searchTextField.text = ""
+        searchTextField.resignFirstResponder()
+        dismissSearchOverlay()
     }
 
     private func setupSegmentedControls() {
@@ -109,7 +153,114 @@ class WorkspaceViewController: PopHandlerViewController {
     @IBAction func backButtonTouched() {
         navigationController?.popViewController(animated: true)
     }
+
+    // MARK: - Search Overlay
+
+    private func showSearchOverlay() {
+        guard searchVC == nil else { return }
+        let vc = WorkspaceSearchViewController(workspace: workspace)
+        vc.delegate = self
+        searchVC = vc
+        addChild(vc)
+        // Cover the stack view that contains topTabContainer + containerView
+        if let parentView = topTabContainer.superview {
+            parentView.addSubview(vc.view)
+            vc.view.frame = parentView.bounds
+            vc.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        }
+        vc.didMove(toParent: self)
+    }
+
+    private func dismissSearchOverlay() {
+        searchVC?.updateQuery("")
+        searchVC?.willMove(toParent: nil)
+        searchVC?.view.removeFromSuperview()
+        searchVC?.removeFromParent()
+        searchVC = nil
+        searchCancelButton.isHidden = true
+    }
 }
+
+// MARK: - UITextFieldDelegate
+
+extension WorkspaceViewController: UITextFieldDelegate {
+
+    func textFieldDidBeginEditing(_ textField: UITextField) {
+        guard textField == searchTextField else { return }
+        showSearchOverlay()
+        searchCancelButton.isHidden = false
+    }
+
+    func textField(
+        _ textField: UITextField,
+        shouldChangeCharactersIn range: NSRange,
+        replacementString string: String
+    ) -> Bool {
+        let current = (textField.text ?? "") as NSString
+        let newQuery = current.replacingCharacters(in: range, with: string)
+        searchVC?.updateQuery(newQuery)
+        return true
+    }
+
+    func textFieldShouldClear(_ textField: UITextField) -> Bool {
+        dismissSearchOverlay()
+        return true
+    }
+}
+
+// MARK: - WorkspaceSearchViewControllerDelegate
+
+extension WorkspaceViewController: WorkspaceSearchViewControllerDelegate {
+
+    func didSelectSearchResult(_ result: HiveSearchResultItem) {
+        // Show a loading spinner on the nav bar while fetching detail
+        let spinner = UIActivityIndicatorView(style: .medium)
+        spinner.startAnimating()
+        navigationItem.rightBarButtonItem = UIBarButtonItem(customView: spinner)
+
+        if result.type == "feature" {
+            API.sharedInstance.fetchFeatureDetailWithAuth(
+                featureId: result.id,
+                callback: { [weak self] feature in
+                    guard let self = self, let feature = feature else { return }
+                    DispatchQueue.main.async {
+                        self.navigationItem.rightBarButtonItem = nil
+                        self.dismissSearchOverlay()
+                        self.searchTextField.text = ""
+                        let planVC = FeaturePlanViewController.instantiate(feature: feature, workspace: self.workspace)
+                        self.navigationController?.pushViewController(planVC, animated: true)
+                    }
+                },
+                errorCallback: { [weak self] in
+                    DispatchQueue.main.async {
+                        self?.navigationItem.rightBarButtonItem = nil
+                    }
+                }
+            )
+        } else if result.type == "task" {
+            API.sharedInstance.fetchTaskDetailWithAuth(
+                taskId: result.id,
+                callback: { [weak self] task in
+                    guard let self = self, let task = task else { return }
+                    DispatchQueue.main.async {
+                        self.navigationItem.rightBarButtonItem = nil
+                        self.dismissSearchOverlay()
+                        self.searchTextField.text = ""
+                        let chatVC = TaskChatViewController.instantiate(task: task, workspaceSlug: self.workspace.slug ?? "")
+                        self.navigationController?.pushViewController(chatVC, animated: true)
+                    }
+                },
+                errorCallback: { [weak self] in
+                    DispatchQueue.main.async {
+                        self?.navigationItem.rightBarButtonItem = nil
+                    }
+                }
+            )
+        }
+    }
+}
+
+// MARK: - HivePusherDelegate
 
 extension WorkspaceViewController: HivePusherDelegate {
     func featureTitleUpdated(featureId: String, newTitle: String) {
@@ -132,11 +283,13 @@ extension WorkspaceViewController: HivePusherDelegate {
     func taskTitleUpdated(taskId: String, newTitle: String) {}
 }
 
+// MARK: - CustomSegmentedControlDelegate
+
 extension WorkspaceViewController: CustomSegmentedControlDelegate {
     func segmentedControlDidSwitch(_ control: CustomSegmentedControl, to index: Int) {
         switchToTab(index)
     }
-    
+
     private func switchToTab(_ index: Int) {
         currentTab = index
         createFeatureButton.isHidden = (index != 0)

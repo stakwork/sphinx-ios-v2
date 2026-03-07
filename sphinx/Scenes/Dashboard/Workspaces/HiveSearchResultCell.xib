@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="23504" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+    <device id="retina6_12" orientation="portrait" appearance="dark"/>
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23506"/>
+        <capability name="Named colors" minToolsVersion="9.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <customFonts key="customFonts">
+        <array key="Roboto-Medium.ttf">
+            <string>Roboto-Medium</string>
+        </array>
+        <array key="Roboto-Regular.ttf">
+            <string>Roboto-Regular</string>
+        </array>
+    </customFonts>
+    <objects>
+        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner"/>
+        <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
+        <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="none" indentationWidth="10" reuseIdentifier="HiveSearchResultCell" id="hsr-cell-001" customClass="HiveSearchResultCell" customModule="sphinx" customModuleProvider="target">
+            <rect key="frame" x="0.0" y="0.0" width="375" height="68"/>
+            <autoresizingMask key="autoresizingMask"/>
+            <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="hsr-cell-001" id="hsr-cv-001">
+                <rect key="frame" x="0.0" y="0.0" width="375" height="68"/>
+                <autoresizingMask key="autoresizingMask"/>
+                <subviews>
+                    <!-- Title label -->
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Feature or Task Title" textAlignment="natural" lineBreakMode="wordWrap" numberOfLines="2" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="hsr-title-001">
+                        <rect key="frame" x="16" y="12" width="343" height="18"/>
+                        <fontDescription key="fontDescription" name="Roboto-Medium" family="Roboto" pointSize="15"/>
+                        <color key="textColor" name="Text"/>
+                        <nil key="highlightedColor"/>
+                    </label>
+                    <!-- Subtitle label (feature title for tasks) -->
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Parent Feature" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="hsr-sub-001">
+                        <rect key="frame" x="16" y="36" width="343" height="16"/>
+                        <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="13"/>
+                        <color key="textColor" name="SecondaryText"/>
+                        <nil key="highlightedColor"/>
+                    </label>
+                    <!-- Separator view -->
+                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="hsr-sep-001">
+                        <rect key="frame" x="16" y="67" width="359" height="1"/>
+                        <color key="backgroundColor" name="LightDivider"/>
+                        <constraints>
+                            <constraint firstAttribute="height" constant="1" id="hsr-sep-h"/>
+                        </constraints>
+                    </view>
+                </subviews>
+                <color key="backgroundColor" name="Body"/>
+                <constraints>
+                    <!-- Title: leading 16, trailing 16, top 12 -->
+                    <constraint firstItem="hsr-title-001" firstAttribute="leading" secondItem="hsr-cv-001" secondAttribute="leading" constant="16" id="hsr-title-lead"/>
+                    <constraint firstAttribute="trailing" secondItem="hsr-title-001" secondAttribute="trailing" constant="16" id="hsr-title-trail"/>
+                    <constraint firstItem="hsr-title-001" firstAttribute="top" secondItem="hsr-cv-001" secondAttribute="top" constant="12" id="hsr-title-top"/>
+                    <!-- Subtitle: leading 16, trailing 16, top = title bottom + 6 -->
+                    <constraint firstItem="hsr-sub-001" firstAttribute="leading" secondItem="hsr-cv-001" secondAttribute="leading" constant="16" id="hsr-sub-lead"/>
+                    <constraint firstAttribute="trailing" secondItem="hsr-sub-001" secondAttribute="trailing" constant="16" id="hsr-sub-trail"/>
+                    <constraint firstItem="hsr-sub-001" firstAttribute="top" secondItem="hsr-title-001" secondAttribute="bottom" constant="6" id="hsr-sub-top"/>
+                    <!-- Separator: leading 16, trailing 0, bottom = content bottom -->
+                    <constraint firstItem="hsr-sep-001" firstAttribute="leading" secondItem="hsr-cv-001" secondAttribute="leading" constant="16" id="hsr-sep-lead"/>
+                    <constraint firstAttribute="trailing" secondItem="hsr-sep-001" secondAttribute="trailing" id="hsr-sep-trail"/>
+                    <constraint firstAttribute="bottom" secondItem="hsr-sep-001" secondAttribute="bottom" id="hsr-sep-bot"/>
+                </constraints>
+            </tableViewCellContentView>
+            <color key="backgroundColor" name="Body"/>
+            <connections>
+                <outlet property="titleLabel" destination="hsr-title-001" id="hsr-title-out"/>
+                <outlet property="subtitleLabel" destination="hsr-sub-001" id="hsr-sub-out"/>
+                <outlet property="separatorView" destination="hsr-sep-001" id="hsr-sep-out"/>
+            </connections>
+            <point key="canvasLocation" x="85" y="21"/>
+        </tableViewCell>
+    </objects>
+    <resources>
+        <namedColor name="Body">
+            <color red="0.09803921568627451" green="0.10588235294117647" blue="0.13725490196078433" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+        <namedColor name="LightDivider">
+            <color red="0.21176470588235294" green="0.22745098039215686" blue="0.29019607843137257" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+        <namedColor name="SecondaryText">
+            <color red="0.55686274509803924" green="0.58823529411764708" blue="0.61176470588235299" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+        <namedColor name="Text">
+            <color red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+    </resources>
+</document>
