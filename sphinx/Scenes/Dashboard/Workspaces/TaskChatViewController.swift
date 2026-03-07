@@ -16,7 +16,7 @@ class TaskChatViewController: UIViewController {
     private var messages: [HiveChatMessage] = []
     private var processingStepText: String? = nil
     private var cachedStakworkProjectId: Int?
-    private var hasFetchedTaskDetail: Bool = false
+    private var anyCableManager: HiveAnyCableManager?
 
     // MARK: - Header
     private var headerView: UIView!
@@ -68,8 +68,9 @@ class TaskChatViewController: UIViewController {
         applyInitialWorkflowStatus()
         setupKeyboardObservers()
         cachedStakworkProjectId = task.stakworkProjectId
+        connectWebSocket()         // connect Pusher immediately with known taskId
         fetchMessages()
-        connectWebSocket()
+        fetchTaskDetailAndConnect() // will call connectAnyCable() once projectId is known
         API.sharedInstance.fetchWorkspacesWithAuth(
             callback: { [weak self] workspaces in
                 DispatchQueue.main.async { self?.availableWorkspaces = workspaces }
@@ -78,10 +79,18 @@ class TaskChatViewController: UIViewController {
         )
     }
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        // Always re-point delegate so this VC receives events even if another VC
+        // previously took ownership of the shared Pusher instance.
+        HivePusherManager.shared.delegate = self
+    }
+
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         if isMovingFromParent {
             HivePusherManager.shared.disconnect()
+            anyCableManager?.disconnect()
         }
     }
 
@@ -381,7 +390,6 @@ class TaskChatViewController: UIViewController {
             .font: UIFont(name: "Roboto-Regular", size: 16) ?? UIFont.systemFont(ofSize: 16)
         ]
         chatInputTextView.resignFirstResponder()
-        showProcessingBubble()
 
         API.sharedInstance.sendTaskChatMessageWithAuth(
             taskId: task.id,
@@ -402,7 +410,6 @@ class TaskChatViewController: UIViewController {
     }
 
     private func sendClarifyingAnswers(answers: [String], replyId: String) {
-        showProcessingBubble()
         let joined = answers.joined(separator: "\n\n")
         API.sharedInstance.sendTaskChatMessageWithAuth(
             taskId: task.id,
@@ -468,13 +475,6 @@ class TaskChatViewController: UIViewController {
     }
 
     // MARK: - Processing Bubble
-    private func showProcessingBubble() {
-        guard processingStepText == nil else { return }
-        processingStepText = "Communicating with workflow"
-        let indexPath = IndexPath(row: messages.count, section: 0)
-        chatTableView.insertRows(at: [indexPath], with: .automatic)
-        scrollToBottom(animated: true)
-    }
 
     private func hideProcessingBubble() {
         guard processingStepText != nil else { return }
@@ -483,11 +483,19 @@ class TaskChatViewController: UIViewController {
         chatTableView.deleteRows(at: [indexPath], with: .automatic)
     }
 
+    /// Shows the bubble if not yet visible, or updates its text if already shown.
+    /// Called only when a real socket event (on_step_start / on_step_complete) arrives.
     private func updateProcessingBubble(stepText: String) {
-        guard processingStepText != nil else { return }
-        processingStepText = stepText
-        let indexPath = IndexPath(row: messages.count, section: 0)
-        chatTableView.reloadRows(at: [indexPath], with: .none)
+        if processingStepText == nil {
+            processingStepText = stepText
+            let indexPath = IndexPath(row: messages.count, section: 0)
+            chatTableView.insertRows(at: [indexPath], with: .automatic)
+            scrollToBottom(animated: true)
+        } else {
+            processingStepText = stepText
+            let indexPath = IndexPath(row: messages.count, section: 0)
+            chatTableView.reloadRows(at: [indexPath], with: .none)
+        }
     }
 
     private func scrollToBottom(animated: Bool = true) {
@@ -498,9 +506,40 @@ class TaskChatViewController: UIViewController {
     }
 
     // MARK: - WebSocket
+
+    /// Fetches task detail to resolve cachedStakworkProjectId, then connects AnyCable.
+    private func fetchTaskDetailAndConnect() {
+        API.sharedInstance.fetchTaskDetailWithAuth(
+            taskId: task.id,
+            callback: { [weak self] updatedTask in
+                guard let self = self else { return }
+                DispatchQueue.main.async {
+                    if let updated = updatedTask {
+                        self.task = updated
+                        self.cachedStakworkProjectId = updated.stakworkProjectId
+                    }
+                    self.connectAnyCable()
+                }
+            },
+            errorCallback: { [weak self] in
+                print("[TaskChatVC] Failed to fetch task detail for stakworkProjectId")
+            }
+        )
+    }
+
+    /// Connects (or re-points) Pusher only. Safe to call any time — no projectId needed.
     private func connectWebSocket() {
         HivePusherManager.shared.delegate = self
         HivePusherManager.shared.connect(taskId: task.id)
+    }
+
+    /// Connects AnyCable. Only called after cachedStakworkProjectId is populated.
+    private func connectAnyCable() {
+        guard let projectId = cachedStakworkProjectId else { return }
+        guard anyCableManager == nil else { return }
+        anyCableManager = HiveAnyCableManager()
+        anyCableManager?.delegate = self
+        anyCableManager?.connect(projectId: projectId)
     }
 
     // MARK: - Workflow Status
@@ -544,49 +583,17 @@ extension TaskChatViewController: HivePusherDelegate {
         }
     }
 
-    private func fetchAndUpdateWorkflowStep() {
-        if let projectId = cachedStakworkProjectId {
-            fetchStepText(projectId: projectId)
-        } else if !hasFetchedTaskDetail {
-            hasFetchedTaskDetail = true
-            API.sharedInstance.fetchTaskDetailWithAuth(
-                taskId: task.id,
-                callback: { [weak self] updatedTask in
-                    guard let self = self else { return }
-                    if let projectId = updatedTask?.stakworkProjectId {
-                        self.cachedStakworkProjectId = projectId
-                        self.fetchStepText(projectId: projectId)
-                    }
-                },
-                errorCallback: {
-                    print("[TaskChatVC] Failed to fetch task detail for stakworkProjectId")
-                }
-            )
-        }
-    }
-
-    private func fetchStepText(projectId: Int) {
-        API.sharedInstance.fetchStakworkWorkflowWithAuth(
-            projectId: projectId,
-            callback: { [weak self] workflowData in
-                guard let self = self, let title = workflowData?.inProgressTitle else { return }
-                DispatchQueue.main.async {
-                    self.updateProcessingBubble(stepText: title)
-                }
-            },
-            errorCallback: {
-                print("[TaskChatVC] Failed to fetch stakwork workflow step")
-            }
-        )
-    }
-
     func featureUpdateReceived(featureId: String) {
         // no-op: TaskChatViewController does not display feature-level updates
     }
 
     func newMessageReceived(_ message: HiveChatMessage) {
         guard !messages.contains(where: { $0.id == message.id }) else { return }
-        hideProcessingBubble()
+        // Only hide the processing bubble when an AI (non-user) reply arrives,
+        // not when the echo of the sent user message comes back.
+        if !message.isUserMessage {
+            hideProcessingBubble()
+        }
         messages.append(message)
         let indexPath = IndexPath(row: messages.count - 1, section: 0)
         chatTableView.insertRows(at: [indexPath], with: .automatic)
@@ -616,13 +623,12 @@ extension TaskChatViewController: HivePusherDelegate {
         DispatchQueue.main.async { self.titleLabel.text = newTitle }
     }
 
-    func processingStepReceived(message: String) {
-        DispatchQueue.main.async {
-            if self.processingStepText == nil {
-                self.showProcessingBubble()
-            }
-            self.updateProcessingBubble(stepText: message)
-        }
+}
+
+// MARK: - HiveAnyCableDelegate
+extension TaskChatViewController: HiveAnyCableDelegate {
+    func workflowStepTextReceived(stepText: String) {
+        updateProcessingBubble(stepText: stepText)
     }
 }
 

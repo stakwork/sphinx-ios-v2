@@ -23,6 +23,7 @@ class FeaturePlanViewController: UIViewController {
     }
     private var isGeneratingTasks: Bool = false
     private var lastGenerationFailed: Bool = false
+    private var anyCableManager: HiveAnyCableManager?
     
     // MARK: - UI Components
     private var headerView: UIView!
@@ -101,10 +102,10 @@ class FeaturePlanViewController: UIViewController {
         applyInitialWorkflowStatus()
         setupKeyboardObservers()
         cachedStakworkProjectId = feature.stakworkProjectId
-        fetchFeatureDetail()
+        connectWebSocket()   // connect Pusher immediately with known featureId
+        fetchFeatureDetail() // will also call connectAnyCable() once projectId is known
         checkForActiveTaskGeneration()
         fetchChatHistory()
-        connectWebSocket()
         API.sharedInstance.fetchWorkspacesWithAuth(
             callback: { [weak self] workspaces in
                 DispatchQueue.main.async { self?.availableWorkspaces = workspaces }
@@ -115,15 +116,14 @@ class FeaturePlanViewController: UIViewController {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        guard !HivePusherManager.shared.isConnected else { return }
         connectWebSocket()
-        fetchFeatureDetail()
     }
     
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         if isMovingFromParent {
             HivePusherManager.shared.disconnect()
+            anyCableManager?.disconnect()
         }
     }
     
@@ -810,6 +810,7 @@ class FeaturePlanViewController: UIViewController {
                 DispatchQueue.main.async {
                     self.feature = updatedFeature
                     self.cachedStakworkProjectId = updatedFeature.stakworkProjectId
+                    self.connectAnyCable()
                     HivePusherManager.shared.subscribeToFeatureTasks(updatedFeature.allTasks.map { $0.id })
                     // Apply workflow status from freshly fetched feature data
                     self.applyInitialWorkflowStatus()
@@ -823,10 +824,6 @@ class FeaturePlanViewController: UIViewController {
                     }
                     // Show/hide generate button based on whether tasks exist
                     self.updateGenerateTasksButton()
-                    // If fetched as fallback for workflow step, update bubble text
-                    if let projectId = updatedFeature.stakworkProjectId {
-                        self.fetchStepText(projectId: projectId)
-                    }
                     self.tasksRefreshControl.endRefreshing()
                 }
             },
@@ -885,7 +882,6 @@ class FeaturePlanViewController: UIViewController {
             .font: UIFont(name: "Roboto-Regular", size: 16) ?? UIFont.systemFont(ofSize: 16)
         ]
         isAIWorking = true
-        showProcessingBubble()
 
         API.sharedInstance.sendFeatureChatMessageWithAuth(
             featureId: feature.id,
@@ -907,7 +903,6 @@ class FeaturePlanViewController: UIViewController {
     }
 
     private func sendClarifyingAnswers(answers: [String], replyId: String) {
-        showProcessingBubble()
         let joined = answers.joined(separator: "\n\n")
         API.sharedInstance.sendFeatureChatMessageWithAuth(
             featureId: feature.id,
@@ -934,19 +929,27 @@ class FeaturePlanViewController: UIViewController {
     }
     
     // MARK: - WebSocket
+
+    /// Connects (or re-points) Pusher only. Safe to call any time — no projectId needed.
     private func connectWebSocket() {
         HivePusherManager.shared.delegate = self
-        HivePusherManager.shared.connect(featureId: feature.id, workspaceId: workspace.id, workspaceSlug: workspace.slug ?? "")
+        HivePusherManager.shared.connect(
+            featureId: feature.id,
+            workspaceId: workspace.id,
+            workspaceSlug: workspace.slug ?? ""
+        )
+    }
+
+    /// Connects AnyCable. Only called after cachedStakworkProjectId is populated.
+    private func connectAnyCable() {
+        guard let projectId = cachedStakworkProjectId else { return }
+        guard anyCableManager == nil else { return }
+        anyCableManager = HiveAnyCableManager()
+        anyCableManager?.delegate = self
+        anyCableManager?.connect(projectId: projectId)
     }
     
     // MARK: - Processing Bubble
-    private func showProcessingBubble() {
-        guard processingStepText == nil else { return }
-        processingStepText = "Communicating with Workflow"
-        let indexPath = IndexPath(row: messages.count, section: 0)
-        chatTableView.insertRows(at: [indexPath], with: .automatic)
-        scrollToBottom()
-    }
 
     private func hideProcessingBubble() {
         guard processingStepText != nil else { return }
@@ -955,11 +958,19 @@ class FeaturePlanViewController: UIViewController {
         chatTableView.deleteRows(at: [indexPath], with: .automatic)
     }
 
+    /// Shows the bubble if not yet visible, or updates its text if already shown.
+    /// Called only when a real socket event (on_step_start / on_step_complete) arrives.
     private func updateProcessingBubble(stepText: String) {
-        guard processingStepText != nil else { return }
-        processingStepText = stepText
-        let indexPath = IndexPath(row: messages.count, section: 0)
-        chatTableView.reloadRows(at: [indexPath], with: .none)
+        if processingStepText == nil {
+            processingStepText = stepText
+            let indexPath = IndexPath(row: messages.count, section: 0)
+            chatTableView.insertRows(at: [indexPath], with: .automatic)
+            scrollToBottom()
+        } else {
+            processingStepText = stepText
+            let indexPath = IndexPath(row: messages.count, section: 0)
+            chatTableView.reloadRows(at: [indexPath], with: .none)
+        }
     }
 
     // MARK: - Helper Methods
@@ -1255,7 +1266,11 @@ extension FeaturePlanViewController: HivePusherDelegate {
     
     func newMessageReceived(_ message: HiveChatMessage) {
         guard !messages.contains(where: { $0.id == message.id }) else { return }
-        hideProcessingBubble()
+        // Only hide the processing bubble when an AI (non-user) reply arrives,
+        // not when the echo of the sent user message comes back.
+        if !message.isUserMessage {
+            hideProcessingBubble()
+        }
         messages.append(message)
         
         let indexPath = IndexPath(row: messages.count - 1, section: 0)
@@ -1272,30 +1287,6 @@ extension FeaturePlanViewController: HivePusherDelegate {
 //                self.fetchAndUpdateWorkflowStep()
 //            }
         }
-    }
-
-    private func fetchAndUpdateWorkflowStep() {
-        if let projectId = cachedStakworkProjectId {
-            fetchStepText(projectId: projectId)
-        } else {
-            // fetchFeatureDetail callback sets cachedStakworkProjectId then calls fetchStepText
-            fetchFeatureDetail()
-        }
-    }
-
-    private func fetchStepText(projectId: Int) {
-        API.sharedInstance.fetchStakworkWorkflowWithAuth(
-            projectId: projectId,
-            callback: { [weak self] workflowData in
-                guard let self = self, let title = workflowData?.inProgressTitle else { return }
-                DispatchQueue.main.async {
-                    self.updateProcessingBubble(stepText: title)
-                }
-            },
-            errorCallback: {
-                print("[FeaturePlanVC] Failed to fetch stakwork workflow step")
-            }
-        )
     }
 
     func taskStatusUpdated(taskId: String, status: String, workflowStatus: String?, archived: Bool) {
@@ -1371,12 +1362,11 @@ extension FeaturePlanViewController: HivePusherDelegate {
         }
     }
 
-    func processingStepReceived(message: String) {
-        DispatchQueue.main.async {
-            if self.processingStepText == nil {
-                self.showProcessingBubble()
-            }
-            self.updateProcessingBubble(stepText: message)
-        }
+}
+
+// MARK: - HiveAnyCableDelegate
+extension FeaturePlanViewController: HiveAnyCableDelegate {
+    func workflowStepTextReceived(stepText: String) {
+        updateProcessingBubble(stepText: stepText)
     }
 }
