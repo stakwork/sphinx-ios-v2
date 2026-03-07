@@ -34,7 +34,7 @@ class HiveSearchResultCell: UITableViewCell {
 
         titleLabel.font = UIFont(name: "Roboto-Medium", size: 15)
         titleLabel.textColor = .Sphinx.Text
-        titleLabel.numberOfLines = 2
+        titleLabel.numberOfLines = 1
         titleLabel.lineBreakMode = .byTruncatingTail
 
         subtitleLabel.font = UIFont(name: "Roboto-Regular", size: 13)

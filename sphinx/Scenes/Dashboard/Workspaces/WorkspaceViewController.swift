@@ -107,8 +107,12 @@ class WorkspaceViewController: PopHandlerViewController {
         searchBarContainerView.backgroundColor = .Sphinx.Body
 
         // Style the text field
-        searchTextField.placeholder = "Search…"
+        searchTextField.attributedPlaceholder = NSAttributedString(
+            string: "Search…",
+            attributes: [.foregroundColor: UIColor.Sphinx.SecondaryText]
+        )
         searchTextField.clearButtonMode = .whileEditing
+        searchTextField.tintColor = .Sphinx.SecondaryText   // cursor + clear button
         searchTextField.backgroundColor = .Sphinx.HeaderBG
         searchTextField.layer.cornerRadius = 10
         searchTextField.clipsToBounds = true
