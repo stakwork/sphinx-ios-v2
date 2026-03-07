@@ -303,7 +303,7 @@ class HiveShareViewController: UIViewController {
             copyButton.centerYAnchor.constraint(equalTo: searchContainer.centerYAnchor),
             copyButton.widthAnchor.constraint(equalToConstant: 70),
 
-            searchTextField.leadingAnchor.constraint(equalTo: searchContainer.leadingAnchor, constant: 8),
+            searchTextField.leadingAnchor.constraint(equalTo: searchContainer.leadingAnchor, constant: 16),
             searchTextField.trailingAnchor.constraint(equalTo: copyButton.leadingAnchor, constant: -8),
             searchTextField.centerYAnchor.constraint(equalTo: searchContainer.centerYAnchor),
             searchTextField.heightAnchor.constraint(equalToConstant: 44)
