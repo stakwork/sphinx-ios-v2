@@ -1767,7 +1767,7 @@ extension API {
         guard let encodedId = taskId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
             errorCallback(); return
         }
-        let urlString = "\(API.kHiveBaseUrl)/tasks/\(encodedId)"
+        let urlString = "\(API.kHiveBaseUrl)/task/\(encodedId)"
         guard let request = createRequest(urlString, bodyParams: nil, method: "GET", token: authToken) else {
             errorCallback(); return
         }
