@@ -529,12 +529,8 @@ class TaskChatViewController: UIViewController {
 
     /// Connects (or re-points) Pusher only. Safe to call any time — no projectId needed.
     private func connectWebSocket() {
-        // Always re-point delegate so this VC receives events even if another VC
-        // previously took ownership of the shared Pusher instance.
         HivePusherManager.shared.delegate = self
-        if !HivePusherManager.shared.isConnected {
-            HivePusherManager.shared.connect(taskId: task.id)
-        }
+        HivePusherManager.shared.connect(taskId: task.id)
     }
 
     /// Connects AnyCable. Only called after cachedStakworkProjectId is populated.

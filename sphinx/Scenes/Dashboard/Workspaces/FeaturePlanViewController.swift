@@ -116,12 +116,7 @@ class FeaturePlanViewController: UIViewController {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        // Always re-point the shared Pusher delegate at self (TaskChatVC may have stolen it)
-        // and reconnect if the session was torn down.
         connectWebSocket()
-        if !HivePusherManager.shared.isConnected {
-            fetchFeatureDetail()
-        }
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -937,16 +932,12 @@ class FeaturePlanViewController: UIViewController {
 
     /// Connects (or re-points) Pusher only. Safe to call any time — no projectId needed.
     private func connectWebSocket() {
-        // Always re-point delegate so this VC receives events even if another VC
-        // previously took ownership of the shared Pusher instance.
         HivePusherManager.shared.delegate = self
-        if !HivePusherManager.shared.isConnected {
-            HivePusherManager.shared.connect(
-                featureId: feature.id,
-                workspaceId: workspace.id,
-                workspaceSlug: workspace.slug ?? ""
-            )
-        }
+        HivePusherManager.shared.connect(
+            featureId: feature.id,
+            workspaceId: workspace.id,
+            workspaceSlug: workspace.slug ?? ""
+        )
     }
 
     /// Connects AnyCable. Only called after cachedStakworkProjectId is populated.
