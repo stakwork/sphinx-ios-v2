@@ -27,6 +27,17 @@ class FeatureChatMessageCell: UITableViewCell {
         return view
     }()
 
+    /// Dedicated background view that carries the bubble colour when a PR card is present.
+    /// This lets `bubbleView` stay unclipped (for the card's border) while still showing
+    /// properly-rounded corners on the text section.
+    private let textBackgroundView: UIView = {
+        let v = UIView()
+        v.translatesAutoresizingMaskIntoConstraints = false
+        v.layer.cornerRadius = 18
+        v.layer.masksToBounds = true
+        return v
+    }()
+
     /// Non-scrolling UITextView so NSAttributedString (markdown) renders properly.
     private let messageTextView: UITextView = {
         let tv = UITextView()
@@ -98,6 +109,7 @@ class FeatureChatMessageCell: UITableViewCell {
         bubbleStack.isLayoutMarginsRelativeArrangement = true
 
         contentView.addSubview(bubbleView)
+        bubbleView.insertSubview(textBackgroundView, belowSubview: bubbleStack)
         bubbleView.addSubview(bubbleStack)
         contentView.addSubview(timestampLabel)
 
@@ -118,6 +130,11 @@ class FeatureChatMessageCell: UITableViewCell {
             bubbleStack.bottomAnchor.constraint(equalTo: bubbleView.bottomAnchor),
             timestampLabel.topAnchor.constraint(equalTo: bubbleView.bottomAnchor, constant: 4),
             timestampLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -4),
+            // textBackgroundView covers only the text area (top of bubble → bottom of text view)
+            textBackgroundView.topAnchor.constraint(equalTo: bubbleView.topAnchor),
+            textBackgroundView.leadingAnchor.constraint(equalTo: bubbleView.leadingAnchor),
+            textBackgroundView.trailingAnchor.constraint(equalTo: bubbleView.trailingAnchor),
+            textBackgroundView.bottomAnchor.constraint(equalTo: messageTextView.bottomAnchor),
         ])
     }
 
@@ -181,6 +198,15 @@ class FeatureChatMessageCell: UITableViewCell {
             bubbleView.layer.cornerRadius = 18
             bubbleView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
             bubbleView.layer.masksToBounds = false
+            // Move bubble colour onto textBackgroundView so the bottom corners clip correctly
+            bubbleView.backgroundColor = .clear
+            let roleColour: UIColor = isUser ? UIColor.Sphinx.SentMsgBG : UIColor.Sphinx.ReceivedMsgBG
+            textBackgroundView.backgroundColor = roleColour
+            textBackgroundView.layer.maskedCorners = [
+                .layerMinXMinYCorner, .layerMaxXMinYCorner,
+                .layerMinXMaxYCorner, .layerMaxXMaxYCorner
+            ]
+            textBackgroundView.layer.masksToBounds = true
         } else {
             prCardView.isHidden = true
             // Restore default width constraint
@@ -193,6 +219,8 @@ class FeatureChatMessageCell: UITableViewCell {
                 .layerMinXMaxYCorner, .layerMaxXMaxYCorner
             ]
             bubbleView.layer.masksToBounds = true
+            // textBackgroundView not needed — clear it
+            textBackgroundView.backgroundColor = .clear
         }
 
         // --- LONGFORM border ---
@@ -301,5 +329,6 @@ class FeatureChatMessageCell: UITableViewCell {
         bubbleView.layer.masksToBounds = true
         bubbleView.layer.borderWidth = 0
         bubbleView.layer.borderColor = UIColor.clear.cgColor
+        textBackgroundView.backgroundColor = .clear
     }
 }
