@@ -147,7 +147,7 @@ class TaskChatViewController: UIViewController {
 
         releasePodButton = UIButton(type: .system)
         releasePodButton.translatesAutoresizingMaskIntoConstraints = false
-        releasePodButton.setImage(UIImage(systemName: "eject.fill"), for: .normal)
+        releasePodButton.setImage(UIImage(systemName: "server.rack"), for: .normal)
         releasePodButton.tintColor = UIColor.Sphinx.WashedOutReceivedText
         releasePodButton.addTarget(self, action: #selector(releasePodTapped), for: .touchUpInside)
         releasePodButton.isHidden = true
@@ -164,15 +164,15 @@ class TaskChatViewController: UIViewController {
             backButton.widthAnchor.constraint(equalToConstant: 50),
             backButton.heightAnchor.constraint(equalToConstant: 50),
 
-            shareButton.trailingAnchor.constraint(equalTo: headerView.trailingAnchor),
+            shareButton.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -8),
             shareButton.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
-            shareButton.widthAnchor.constraint(equalToConstant: 50),
-            shareButton.heightAnchor.constraint(equalToConstant: 50),
+            shareButton.widthAnchor.constraint(equalToConstant: 35),
+            shareButton.heightAnchor.constraint(equalToConstant: 35),
 
             releasePodButton.trailingAnchor.constraint(equalTo: shareButton.leadingAnchor),
             releasePodButton.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
-            releasePodButton.widthAnchor.constraint(equalToConstant: 50),
-            releasePodButton.heightAnchor.constraint(equalToConstant: 50),
+            releasePodButton.widthAnchor.constraint(equalToConstant: 35),
+            releasePodButton.heightAnchor.constraint(equalToConstant: 35),
 
             titleLabel.centerXAnchor.constraint(equalTo: headerView.centerXAnchor),
             titleLabel.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
@@ -566,7 +566,9 @@ class TaskChatViewController: UIViewController {
                 guard let self = self else { return }
                 DispatchQueue.main.async {
                     if let updated = updatedTask {
+                        let podId = self.task.podId ?? updated.podId
                         self.task = updated
+                        self.task.podId = podId
                         self.cachedStakworkProjectId = updated.stakworkProjectId
                     }
                     self.connectAnyCable()

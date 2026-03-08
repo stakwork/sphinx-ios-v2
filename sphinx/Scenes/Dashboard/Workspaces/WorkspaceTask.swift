@@ -52,7 +52,6 @@ struct WorkspaceTask {
         self.workflowStatus = json["workflowStatus"].string
         self.sourceType = json["sourceType"].string
         self.mode = json["mode"].string
-        self.podId = json["podId"].string
         self.createdAt = json["createdAt"].string
         self.updatedAt = json["updatedAt"].string
         self.featureId = json["feature"]["id"].string
