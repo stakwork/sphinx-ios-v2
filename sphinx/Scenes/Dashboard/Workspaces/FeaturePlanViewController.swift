@@ -40,12 +40,8 @@ class FeaturePlanViewController: UIViewController {
     private var planContainerView: UIView!
     private var tasksContainerView: UIView!
     private var tasksTableView: UITableView!
+    
     private lazy var tasksRefreshControl: UIRefreshControl = {
-        let control = UIRefreshControl()
-        control.tintColor = .Sphinx.Text
-        return control
-    }()
-    private lazy var planRefreshControl: UIRefreshControl = {
         let control = UIRefreshControl()
         control.tintColor = .Sphinx.Text
         return control
@@ -420,8 +416,6 @@ class FeaturePlanViewController: UIViewController {
             .underlineStyle: NSUnderlineStyle.single.rawValue
         ]
         planContainerView.addSubview(planTextView)
-        planRefreshControl.addTarget(self, action: #selector(handlePlanRefresh), for: .valueChanged)
-        planTextView.refreshControl = planRefreshControl
         
         // Generate Tasks Button
         generateTasksButton = UIButton()
@@ -876,13 +870,11 @@ class FeaturePlanViewController: UIViewController {
                     // Show/hide generate button based on whether tasks exist
                     self.updateGenerateTasksButton()
                     self.tasksRefreshControl.endRefreshing()
-                    self.planRefreshControl.endRefreshing()
                 }
             },
             errorCallback: { [weak self] in
                 DispatchQueue.main.async {
                     self?.tasksRefreshControl.endRefreshing()
-                    self?.planRefreshControl.endRefreshing()
                 }
                 print("[FeaturePlanVC] Failed to fetch feature detail")
             }

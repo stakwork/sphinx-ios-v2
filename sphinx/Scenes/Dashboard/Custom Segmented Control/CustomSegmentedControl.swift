@@ -308,7 +308,7 @@ extension CustomSegmentedControl {
     private func updateTitleBadges() {
         buttonTitleBadges.enumerated().forEach { (index, badge) in
             let button = buttons[index]
-            if let titleLabelText = button.titleLabel?.text {
+            if let _ = button.titleLabel?.text {
                 let titleFrame = button.titleLabel?.frame ?? .zero
                 badge.frame = .init(
                     x: (titleFrame.maxX) + 2.5,
