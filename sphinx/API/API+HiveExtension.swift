@@ -17,7 +17,7 @@ typealias HiveWorkspaceImageCallback = ((String?) -> ())
 typealias HiveFeaturesCallback = (([HiveFeature], PaginationInfo) -> ())
 typealias HiveFeatureCallback = ((HiveFeature?) -> ())
 typealias HiveChatMessagesCallback = (([HiveChatMessage]) -> ())
-typealias HiveTaskMessagesCallback = (([HiveChatMessage]) -> ())
+typealias HiveTaskMessagesCallback = (([HiveChatMessage], String?) -> ())
 typealias HiveChatMessageCallback = ((HiveChatMessage?) -> ())
 typealias HiveStakworkRunCallback = ((StakworkRun?) -> ())
 typealias HiveStakworkRunsCallback = (([StakworkRun]) -> ())
@@ -1226,7 +1226,8 @@ extension API {
                 let json = JSON(data)
                 guard json["success"].bool == true else { errorCallback(); return }
                 let messages = json["data"]["messages"].arrayValue.compactMap { HiveChatMessage(json: $0) }
-                callback(messages)
+                let podId = json["data"]["task"]["podId"].string
+                callback(messages, podId)
             case .failure:
                 errorCallback()
             }

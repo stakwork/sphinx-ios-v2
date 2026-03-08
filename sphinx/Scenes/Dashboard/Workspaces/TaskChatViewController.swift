@@ -147,11 +147,10 @@ class TaskChatViewController: UIViewController {
 
         releasePodButton = UIButton(type: .system)
         releasePodButton.translatesAutoresizingMaskIntoConstraints = false
-        let antennaImage = UIImage(systemName: "antenna.radiowaves.left.and.right") ?? UIImage(systemName: "paperplane")
-        releasePodButton.setImage(antennaImage, for: .normal)
+        releasePodButton.setImage(UIImage(systemName: "eject.fill"), for: .normal)
         releasePodButton.tintColor = UIColor.Sphinx.WashedOutReceivedText
         releasePodButton.addTarget(self, action: #selector(releasePodTapped), for: .touchUpInside)
-        releasePodButton.isHidden = (task.podId == nil)
+        releasePodButton.isHidden = true
         headerView.addSubview(releasePodButton)
 
         NSLayoutConstraint.activate([
@@ -501,7 +500,7 @@ class TaskChatViewController: UIViewController {
 
         API.sharedInstance.fetchTaskMessagesWithAuth(
             taskId: task.id,
-            callback: { [weak self] messages in
+            callback: { [weak self] messages, podId in
                 DispatchQueue.main.async {
                     guard let self = self else { return }
                     self.loadingWheel.stopAnimating()
@@ -510,6 +509,8 @@ class TaskChatViewController: UIViewController {
                     self.emptyLabel.isHidden = !messages.isEmpty
                     self.chatTableView.reloadData()
                     if !messages.isEmpty { self.scrollToBottom(animated: false) }
+                    self.task.podId = podId
+                    self.releasePodButton.isHidden = (podId == nil)
                 }
             },
             errorCallback: { [weak self] in
@@ -567,7 +568,6 @@ class TaskChatViewController: UIViewController {
                     if let updated = updatedTask {
                         self.task = updated
                         self.cachedStakworkProjectId = updated.stakworkProjectId
-                        self.releasePodButton.isHidden = (updated.podId == nil)
                     }
                     self.connectAnyCable()
                 }

@@ -19,7 +19,7 @@ struct WorkspaceTask {
     var archived: Bool
     let sourceType: String?
     let mode: String?
-    let podId: String?
+    var podId: String?
     let createdAt: String?
     let updatedAt: String?
     let featureId: String?
