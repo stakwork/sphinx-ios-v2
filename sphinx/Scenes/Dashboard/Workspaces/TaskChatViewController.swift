@@ -13,6 +13,7 @@ class TaskChatViewController: UIViewController {
     // MARK: - Properties
     private var task: WorkspaceTask
     private var workspaceSlug: String
+    private var workspaceId: String
     private var messages: [HiveChatMessage] = []
     private var processingStepText: String? = nil
     private var cachedStakworkProjectId: Int?
@@ -22,6 +23,7 @@ class TaskChatViewController: UIViewController {
     private var headerView: UIView!
     private var backButton: UIButton!
     private var titleLabel: UILabel!
+    private var releasePodButton: UIButton!
     private var shareButton: UIButton!
 
     // MARK: - Chat
@@ -47,13 +49,14 @@ class TaskChatViewController: UIViewController {
     private var emptyLabel: UILabel!
 
     // MARK: - Init
-    static func instantiate(task: WorkspaceTask, workspaceSlug: String) -> TaskChatViewController {
-        return TaskChatViewController(task: task, workspaceSlug: workspaceSlug)
+    static func instantiate(task: WorkspaceTask, workspaceSlug: String, workspaceId: String) -> TaskChatViewController {
+        return TaskChatViewController(task: task, workspaceSlug: workspaceSlug, workspaceId: workspaceId)
     }
 
-    private init(task: WorkspaceTask, workspaceSlug: String) {
+    private init(task: WorkspaceTask, workspaceSlug: String, workspaceId: String) {
         self.task = task
         self.workspaceSlug = workspaceSlug
+        self.workspaceId = workspaceId
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -142,6 +145,15 @@ class TaskChatViewController: UIViewController {
         shareButton.addTarget(self, action: #selector(shareTappedAction), for: .touchUpInside)
         headerView.addSubview(shareButton)
 
+        releasePodButton = UIButton(type: .system)
+        releasePodButton.translatesAutoresizingMaskIntoConstraints = false
+        let antennaImage = UIImage(systemName: "antenna.radiowaves.left.and.right") ?? UIImage(systemName: "paperplane")
+        releasePodButton.setImage(antennaImage, for: .normal)
+        releasePodButton.tintColor = UIColor.Sphinx.WashedOutReceivedText
+        releasePodButton.addTarget(self, action: #selector(releasePodTapped), for: .touchUpInside)
+        releasePodButton.isHidden = (task.podId == nil)
+        headerView.addSubview(releasePodButton)
+
         NSLayoutConstraint.activate([
             headerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             headerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -158,10 +170,15 @@ class TaskChatViewController: UIViewController {
             shareButton.widthAnchor.constraint(equalToConstant: 50),
             shareButton.heightAnchor.constraint(equalToConstant: 50),
 
+            releasePodButton.trailingAnchor.constraint(equalTo: shareButton.leadingAnchor),
+            releasePodButton.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
+            releasePodButton.widthAnchor.constraint(equalToConstant: 50),
+            releasePodButton.heightAnchor.constraint(equalToConstant: 50),
+
             titleLabel.centerXAnchor.constraint(equalTo: headerView.centerXAnchor),
             titleLabel.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
             titleLabel.leadingAnchor.constraint(greaterThanOrEqualTo: backButton.trailingAnchor, constant: 8),
-            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: shareButton.leadingAnchor, constant: -8),
+            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: releasePodButton.leadingAnchor, constant: -8),
 
             divider.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
             divider.trailingAnchor.constraint(equalTo: headerView.trailingAnchor),
@@ -367,6 +384,39 @@ class TaskChatViewController: UIViewController {
     }
 
     // MARK: - Actions
+    @objc private func releasePodTapped() {
+        AlertHelper.showTwoOptionsAlert(
+            title: "Release Pod",
+            message: "Are you sure you want to release the pod for this task?",
+            on: self,
+            confirm: { [weak self] in self?.performReleasePod() }
+        )
+    }
+
+    private func performReleasePod() {
+        guard let podId = task.podId else { return }
+        releasePodButton.isEnabled = false
+        releasePodButton.alpha = 0.4
+        API.sharedInstance.releasePodWithAuth(
+            workspaceId: workspaceId,
+            podId: podId,
+            taskId: task.id,
+            callback: { /* success — button stays disabled/dimmed */ },
+            errorCallback: { [weak self] in
+                DispatchQueue.main.async {
+                    guard let self = self else { return }
+                    self.releasePodButton.isEnabled = true
+                    self.releasePodButton.alpha = 1.0
+                    AlertHelper.showAlert(
+                        title: "generic.error.title".localized,
+                        message: "Failed to release pod. Please try again.",
+                        on: self
+                    )
+                }
+            }
+        )
+    }
+
     @objc private func shareTappedAction() {
         let url = "https://hive.sphinx.chat/w/\(workspaceSlug)/task/\(task.id)"
         let label = "Check out this task: \(task.title) — \(url)"
@@ -517,6 +567,7 @@ class TaskChatViewController: UIViewController {
                     if let updated = updatedTask {
                         self.task = updated
                         self.cachedStakworkProjectId = updated.stakworkProjectId
+                        self.releasePodButton.isHidden = (updated.podId == nil)
                     }
                     self.connectAnyCable()
                 }
