@@ -26,6 +26,8 @@ class FeaturePlanViewController: UIViewController {
     private var anyCableManager: HiveAnyCableManager?
     /// Snapshot of plan fields as of the last fetch — used to detect changes for sub-tab badges.
     private var planFieldSnapshot: (brief: String?, userStories: [String]?, requirements: String?, architecture: String?) = (nil, nil, nil, nil)
+    /// True until the first fetchFeatureDetail response arrives; suppresses false badges on initial load.
+    private var isInitialFetch: Bool = true
     
     // MARK: - UI Components
     private var headerView: UIView!
@@ -823,7 +825,13 @@ class FeaturePlanViewController: UIViewController {
                 guard let self = self, let updatedFeature = updatedFeature else { return }
                 DispatchQueue.main.async {
                     // --- Plan sub-tab badge logic ---
-                    let changedIndices = self.planSubTabIndicesChanged(from: self.planFieldSnapshot, to: updatedFeature)
+                    let changedIndices: [Int]
+                    if self.isInitialFetch {
+                        changedIndices = []  // suppress badges on initial load; just seed the snapshot
+                        self.isInitialFetch = false
+                    } else {
+                        changedIndices = self.planSubTabIndicesChanged(from: self.planFieldSnapshot, to: updatedFeature)
+                    }
                     if !changedIndices.isEmpty {
                         let activePlanSubTab = self.planSegmentedControl.selectedIndex
                         let isPlanPanelVisible = !self.planContainerView.isHidden
