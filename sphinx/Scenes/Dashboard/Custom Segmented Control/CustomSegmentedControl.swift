@@ -308,15 +308,25 @@ extension CustomSegmentedControl {
     private func updateTitleBadges() {
         buttonTitleBadges.enumerated().forEach { (index, badge) in
             let button = buttons[index]
-            // Use imageView frame for SF Symbol buttons, titleLabel frame for text buttons
-            let contentFrame = button.imageView?.frame ?? button.titleLabel?.frame ?? .zero
-            let badgeSize: CGFloat = 7.0
-            badge.frame = CGRect(
-                x: contentFrame.maxX - badgeSize / 2,
-                y: contentFrame.minY - badgeSize / 2,
-                width: badgeSize,
-                height: badgeSize
-            )
+            if let titleLabelText = button.titleLabel?.text {
+                let titleFrame = button.titleLabel?.frame ?? .zero
+                badge.frame = .init(
+                    x: (titleFrame.maxX) + 2.5,
+                    y: (titleFrame.minY) - 2.5,
+                    width: 5.0,
+                    height: 5.0
+                )
+            } else {
+                let imageFrame = button.imageView?.frame ?? .zero
+                let badgeSize: CGFloat = 7.0
+                badge.frame = CGRect(
+                    x: imageFrame.maxX - badgeSize / 2,
+                    y: imageFrame.minY - badgeSize / 2,
+                    width: badgeSize,
+                    height: badgeSize
+                )
+            }
+            
             badge.makeCircular()
             badge.isHidden = !indicesOfTitlesWithBadge.contains(index)
         }
