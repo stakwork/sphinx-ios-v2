@@ -567,6 +567,7 @@ class TaskChatViewController: UIViewController {
                     if let updated = updatedTask {
                         self.task = updated
                         self.cachedStakworkProjectId = updated.stakworkProjectId
+                        self.releasePodButton.isHidden = (updated.podId == nil)
                     }
                     self.connectAnyCable()
                 }
