@@ -24,6 +24,8 @@ class FeaturePlanViewController: UIViewController {
     private var isGeneratingTasks: Bool = false
     private var lastGenerationFailed: Bool = false
     private var anyCableManager: HiveAnyCableManager?
+    /// Snapshot of plan fields as of the last fetch — used to detect changes for sub-tab badges.
+    private var planFieldSnapshot: (brief: String?, userStories: [String]?, requirements: String?, architecture: String?) = (nil, nil, nil, nil)
     
     // MARK: - UI Components
     private var headerView: UIView!
@@ -704,12 +706,24 @@ class FeaturePlanViewController: UIViewController {
         tasksContainerView.isHidden = (index != 2)
         if index == 1 {
             topSegmentedControl.indicesOfTitlesWithBadge = []
+            // Clear badge for whichever plan sub-tab is currently selected
+            let active = planSegmentedControl.selectedIndex
+            planSegmentedControl.indicesOfTitlesWithBadge = planSegmentedControl.indicesOfTitlesWithBadge.filter { $0 != active }
             updatePlanText()
         }
         if index == 2 {
             topSegmentedControl.indicesOfTitlesWithBadge = []
             updateTasksPanel()
         }
+    }
+
+    private func planSubTabIndicesChanged(from old: (brief: String?, userStories: [String]?, requirements: String?, architecture: String?), to new: HiveFeature) -> [Int] {
+        var changed: [Int] = []
+        if new.brief != old.brief { changed.append(0) }
+        if (new.userStories ?? []) != (old.userStories ?? []) { changed.append(1) }
+        if new.requirements != old.requirements { changed.append(2) }
+        if new.architecture != old.architecture { changed.append(3) }
+        return changed
     }
 
     private func updateGenerateTasksButton() {
@@ -808,6 +822,24 @@ class FeaturePlanViewController: UIViewController {
             callback: { [weak self] updatedFeature in
                 guard let self = self, let updatedFeature = updatedFeature else { return }
                 DispatchQueue.main.async {
+                    // --- Plan sub-tab badge logic ---
+                    let changedIndices = self.planSubTabIndicesChanged(from: self.planFieldSnapshot, to: updatedFeature)
+                    if !changedIndices.isEmpty {
+                        let activePlanSubTab = self.planSegmentedControl.selectedIndex
+                        let isPlanPanelVisible = !self.planContainerView.isHidden
+                        let indicesToBadge = changedIndices.filter { idx in
+                            !(isPlanPanelVisible && idx == activePlanSubTab)
+                        }
+                        let existing = Set(self.planSegmentedControl.indicesOfTitlesWithBadge)
+                        self.planSegmentedControl.indicesOfTitlesWithBadge = Array(existing.union(indicesToBadge))
+                    }
+                    self.planFieldSnapshot = (
+                        brief: updatedFeature.brief,
+                        userStories: updatedFeature.userStories,
+                        requirements: updatedFeature.requirements,
+                        architecture: updatedFeature.architecture
+                    )
+                    // --- End plan sub-tab badge logic ---
                     self.feature = updatedFeature
                     self.cachedStakworkProjectId = updatedFeature.stakworkProjectId
                     self.connectAnyCable()
@@ -1020,6 +1052,8 @@ extension FeaturePlanViewController: CustomSegmentedControlDelegate {
         if control === topSegmentedControl {
             showPanel(at: index)
         } else if control === planSegmentedControl {
+            // Clear badge for the sub-tab now being viewed
+            planSegmentedControl.indicesOfTitlesWithBadge = planSegmentedControl.indicesOfTitlesWithBadge.filter { $0 != index }
             updatePlanText()
         }
     }
