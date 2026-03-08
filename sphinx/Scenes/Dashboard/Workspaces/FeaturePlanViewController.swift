@@ -45,6 +45,11 @@ class FeaturePlanViewController: UIViewController {
         control.tintColor = .Sphinx.Text
         return control
     }()
+    private lazy var planRefreshControl: UIRefreshControl = {
+        let control = UIRefreshControl()
+        control.tintColor = .Sphinx.Text
+        return control
+    }()
     
     // Chat Panel Components
     private var chatTableView: UITableView!
@@ -415,6 +420,8 @@ class FeaturePlanViewController: UIViewController {
             .underlineStyle: NSUnderlineStyle.single.rawValue
         ]
         planContainerView.addSubview(planTextView)
+        planRefreshControl.addTarget(self, action: #selector(handlePlanRefresh), for: .valueChanged)
+        planTextView.refreshControl = planRefreshControl
         
         // Generate Tasks Button
         generateTasksButton = UIButton()
@@ -689,6 +696,10 @@ class FeaturePlanViewController: UIViewController {
         fetchFeatureDetail()
     }
 
+    @objc private func handlePlanRefresh() {
+        fetchFeatureDetail()
+    }
+
     @objc private func startTasksButtonTouched() {
         startTasksButton.isHidden = true
         API.sharedInstance.assignAllFeatureTasksWithAuth(
@@ -865,11 +876,13 @@ class FeaturePlanViewController: UIViewController {
                     // Show/hide generate button based on whether tasks exist
                     self.updateGenerateTasksButton()
                     self.tasksRefreshControl.endRefreshing()
+                    self.planRefreshControl.endRefreshing()
                 }
             },
             errorCallback: { [weak self] in
                 DispatchQueue.main.async {
                     self?.tasksRefreshControl.endRefreshing()
+                    self?.planRefreshControl.endRefreshing()
                 }
                 print("[FeaturePlanVC] Failed to fetch feature detail")
             }
