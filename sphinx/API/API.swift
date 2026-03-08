@@ -125,6 +125,9 @@ class API {
     let messageBubbleHelper = NewMessageBubbleHelper()
     let btBaseUrl = "https://files.bt2.bard.garden:21433"
 
+    /// Session cookie captured from Hive API responses (used for endpoints that don't support Bearer auth)
+    var hiveSessionCookie: String? = nil
+
     enum CancellableRequestType {
         case contacts
         case messages

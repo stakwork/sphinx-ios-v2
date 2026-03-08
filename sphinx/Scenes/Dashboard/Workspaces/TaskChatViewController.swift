@@ -396,7 +396,7 @@ class TaskChatViewController: UIViewController {
         guard let podId = task.podId else { return }
         releasePodButton.isEnabled = false
         releasePodButton.alpha = 0.4
-        API.sharedInstance.releasePodWithAuth(
+        API.sharedInstance.releasePodWithCookie(
             workspaceId: workspaceId,
             podId: podId,
             taskId: task.id,
