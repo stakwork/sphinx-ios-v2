@@ -293,7 +293,7 @@ extension WorkspaceViewController: WorkspaceSearchViewControllerDelegate {
                     guard let self = self, let task = task else { return }
                     DispatchQueue.main.async {
                         self.newBubbleHelper.hideLoadingWheel()
-                        let chatVC = TaskChatViewController.instantiate(task: task, workspaceSlug: self.workspace.slug ?? "")
+                        let chatVC = TaskChatViewController.instantiate(task: task, workspaceSlug: self.workspace.slug ?? "", workspaceId: self.workspace.id)
                         self.navigationController?.pushViewController(chatVC, animated: true)
                     }
                 },
