@@ -61,6 +61,14 @@
                         <color key="textColor" name="SecondaryText"/>
                         <nil key="highlightedColor"/>
                     </label>
+                    <!-- Owner avatar image view - 24x24 circle, right of createdByLabel -->
+                    <imageView userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="owner-img-01">
+                        <rect key="frame" x="0" y="81" width="24" height="24"/>
+                        <constraints>
+                            <constraint firstAttribute="width" constant="24" id="owner-width-01"/>
+                            <constraint firstAttribute="height" constant="24" id="owner-height-01"/>
+                        </constraints>
+                    </imageView>
                     <!-- Updated at label - bottom right, like tasks -->
                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="252" verticalHuggingPriority="251" text="Updated: 2 days ago" textAlignment="right" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="updated-lbl-01">
                         <rect key="frame" x="257.666" y="81" width="119.333" height="16"/>
@@ -91,8 +99,11 @@
                     <constraint firstAttribute="trailing" secondItem="priority-badge-01" secondAttribute="trailing" constant="16" id="priority-trail-01"/>
                     <!-- Created by: leading 16, top = priority badge top (align with priority row) - same y as repo in tasks -->
                     <constraint firstItem="createdby-lbl-01" firstAttribute="leading" secondItem="content-view-01" secondAttribute="leading" constant="16" id="createdby-lead-01"/>
-                    <!-- Updated at: trailing 16, min-leading = createdby trailing + 36 (8 gap + 20 button + 8 breathing room) -->
-                    <constraint firstItem="updated-lbl-01" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="createdby-lbl-01" secondAttribute="trailing" constant="36" id="updated-min-lead-01"/>
+                    <!-- Owner image: leading = createdby trailing + 6, bottom = createdby bottom -->
+                    <constraint firstItem="owner-img-01" firstAttribute="leading" secondItem="createdby-lbl-01" secondAttribute="trailing" constant="6" id="owner-lead-01"/>
+                    <constraint firstItem="owner-img-01" firstAttribute="bottom" secondItem="createdby-lbl-01" secondAttribute="bottom" id="owner-bottom-01"/>
+                    <!-- Updated at: trailing 16, min-leading = owner-img trailing + 8 -->
+                    <constraint firstItem="updated-lbl-01" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="owner-img-01" secondAttribute="trailing" constant="8" id="updated-min-lead-01"/>
                     <constraint firstAttribute="trailing" secondItem="updated-lbl-01" secondAttribute="trailing" constant="16" id="updated-trail-01"/>
                     <!-- Align createdBy and updatedAt vertically -->
                     <constraint firstItem="updated-lbl-01" firstAttribute="centerY" secondItem="createdby-lbl-01" secondAttribute="centerY" id="updated-centery-01"/>
@@ -114,6 +125,7 @@
                 <outlet property="createdByLabel" destination="createdby-lbl-01" id="createdby-outlet-01"/>
                 <outlet property="updatedAtLabel" destination="updated-lbl-01" id="updated-outlet-01"/>
                 <outlet property="separatorView" destination="sep-view-01" id="sep-outlet-01"/>
+                <outlet property="ownerImageView" destination="owner-img-01" id="owner-outlet-01"/>
             </connections>
             <point key="canvasLocation" x="85" y="21"/>
         </tableViewCell>
