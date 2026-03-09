@@ -47,17 +47,6 @@ struct PaginationInfo {
 extension API {
 
     static let kHiveBaseUrl = "https://hive.sphinx.chat/api"
-    static let kHiveCookieDomain = "hive.sphinx.chat"
-
-    /// Reads all cookies for the Hive domain from the shared cookie storage and
-    /// caches the serialised "name=value; name2=value2" string on the API singleton.
-    func captureHiveSessionCookie() {
-        guard let url = URL(string: API.kHiveBaseUrl),
-              let cookies = HTTPCookieStorage.shared.cookies(for: url),
-              !cookies.isEmpty else { return }
-        let cookieHeader = cookies.map { "\($0.name)=\($0.value)" }.joined(separator: "; ")
-        hiveSessionCookie = cookieHeader
-    }
 
     func authenticateWithHive(
         callback: @escaping HiveAuthTokenCallback,
@@ -1238,7 +1227,6 @@ extension API {
                 guard json["success"].bool == true else { errorCallback(); return }
                 let messages = json["data"]["messages"].arrayValue.compactMap { HiveChatMessage(json: $0) }
                 let podId = json["data"]["task"]["podId"].string
-                self.captureHiveSessionCookie()
                 callback(messages, podId)
             case .failure:
                 errorCallback()
@@ -1771,17 +1759,16 @@ extension API {
     }
 
     // MARK: - Release Pod (POST /api/pool-manager/drop-pod/{workspaceId})
-    // Uses session cookie captured from a prior Hive API call — the endpoint does not support Bearer auth.
 
-    func releasePodWithCookie(
+    func releasePod(
         workspaceId: String,
         podId: String,
         taskId: String,
+        authToken: String,
         callback: @escaping HiveReleasePodCallback,
         errorCallback: @escaping EmptyCallback
     ) {
         guard
-            let cookieHeader = hiveSessionCookie,
             let encodedWorkspaceId = workspaceId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
             let encodedPodId = podId.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
             let encodedTaskId = taskId.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)
@@ -1789,15 +1776,13 @@ extension API {
             errorCallback(); return
         }
         let urlString = "\(API.kHiveBaseUrl)/pool-manager/drop-pod/\(encodedWorkspaceId)?podId=\(encodedPodId)&taskId=\(encodedTaskId)"
-        guard let request = createRequest(
-            urlString,
-            bodyParams: nil,
-            headers: ["Cookie": cookieHeader],
-            method: "POST"
-        ) else {
+        guard let request = createRequest(urlString, bodyParams: nil, method: "POST", token: authToken) else {
             errorCallback(); return
         }
         session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                errorCallback(); return
+            }
             if let statusCode = response.response?.statusCode, statusCode == 409 {
                 if case .success(let data) = response.result {
                     let json = JSON(data)
@@ -1819,6 +1804,65 @@ extension API {
                 errorCallback()
             }
         }
+    }
+
+    func releasePodWithAuth(
+        workspaceId: String,
+        podId: String,
+        taskId: String,
+        callback: @escaping HiveReleasePodCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
+            releasePod(
+                workspaceId: workspaceId,
+                podId: podId,
+                taskId: taskId,
+                authToken: storedToken,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateAndReleasePod(
+                        workspaceId: workspaceId,
+                        podId: podId,
+                        taskId: taskId,
+                        callback: callback,
+                        errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateAndReleasePod(
+                workspaceId: workspaceId,
+                podId: podId,
+                taskId: taskId,
+                callback: callback,
+                errorCallback: errorCallback
+            )
+        }
+    }
+
+    private func authenticateAndReleasePod(
+        workspaceId: String,
+        podId: String,
+        taskId: String,
+        callback: @escaping HiveReleasePodCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback(); return }
+                UserDefaults.Keys.hiveToken.set(token)
+                self?.releasePod(
+                    workspaceId: workspaceId,
+                    podId: podId,
+                    taskId: taskId,
+                    authToken: token,
+                    callback: callback,
+                    errorCallback: errorCallback
+                )
+            },
+            errorCallback: errorCallback
+        )
     }
 
     // MARK: - Fetch Task Detail
