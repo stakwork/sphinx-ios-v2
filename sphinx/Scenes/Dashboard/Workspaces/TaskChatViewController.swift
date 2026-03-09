@@ -13,6 +13,7 @@ class TaskChatViewController: UIViewController {
     // MARK: - Properties
     private var task: WorkspaceTask
     private var workspaceSlug: String
+    private var workspaceId: String
     private var messages: [HiveChatMessage] = []
     private var processingStepText: String? = nil
     private var cachedStakworkProjectId: Int?
@@ -22,6 +23,7 @@ class TaskChatViewController: UIViewController {
     private var headerView: UIView!
     private var backButton: UIButton!
     private var titleLabel: UILabel!
+    private var releasePodButton: UIButton!
     private var shareButton: UIButton!
 
     // MARK: - Chat
@@ -47,13 +49,14 @@ class TaskChatViewController: UIViewController {
     private var emptyLabel: UILabel!
 
     // MARK: - Init
-    static func instantiate(task: WorkspaceTask, workspaceSlug: String) -> TaskChatViewController {
-        return TaskChatViewController(task: task, workspaceSlug: workspaceSlug)
+    static func instantiate(task: WorkspaceTask, workspaceSlug: String, workspaceId: String) -> TaskChatViewController {
+        return TaskChatViewController(task: task, workspaceSlug: workspaceSlug, workspaceId: workspaceId)
     }
 
-    private init(task: WorkspaceTask, workspaceSlug: String) {
+    private init(task: WorkspaceTask, workspaceSlug: String, workspaceId: String) {
         self.task = task
         self.workspaceSlug = workspaceSlug
+        self.workspaceId = workspaceId
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -143,6 +146,14 @@ class TaskChatViewController: UIViewController {
         shareButton.addTarget(self, action: #selector(shareTappedAction), for: .touchUpInside)
         headerView.addSubview(shareButton)
 
+        releasePodButton = UIButton(type: .system)
+        releasePodButton.translatesAutoresizingMaskIntoConstraints = false
+        releasePodButton.setImage(UIImage(systemName: "server.rack"), for: .normal)
+        releasePodButton.tintColor = UIColor.Sphinx.PrimaryGreen
+        releasePodButton.addTarget(self, action: #selector(releasePodTapped), for: .touchUpInside)
+        releasePodButton.isHidden = true
+        headerView.addSubview(releasePodButton)
+
         NSLayoutConstraint.activate([
             headerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             headerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -154,15 +165,20 @@ class TaskChatViewController: UIViewController {
             backButton.widthAnchor.constraint(equalToConstant: 50),
             backButton.heightAnchor.constraint(equalToConstant: 50),
 
-            shareButton.trailingAnchor.constraint(equalTo: headerView.trailingAnchor),
+            shareButton.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -8),
             shareButton.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
-            shareButton.widthAnchor.constraint(equalToConstant: 50),
-            shareButton.heightAnchor.constraint(equalToConstant: 50),
+            shareButton.widthAnchor.constraint(equalToConstant: 35),
+            shareButton.heightAnchor.constraint(equalToConstant: 35),
+
+            releasePodButton.trailingAnchor.constraint(equalTo: shareButton.leadingAnchor),
+            releasePodButton.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
+            releasePodButton.widthAnchor.constraint(equalToConstant: 35),
+            releasePodButton.heightAnchor.constraint(equalToConstant: 35),
 
             titleLabel.centerXAnchor.constraint(equalTo: headerView.centerXAnchor),
             titleLabel.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
             titleLabel.leadingAnchor.constraint(greaterThanOrEqualTo: backButton.trailingAnchor, constant: 8),
-            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: shareButton.leadingAnchor, constant: -8),
+            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: releasePodButton.leadingAnchor, constant: -8),
 
             divider.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
             divider.trailingAnchor.constraint(equalTo: headerView.trailingAnchor),
@@ -368,6 +384,46 @@ class TaskChatViewController: UIViewController {
     }
 
     // MARK: - Actions
+    @objc private func releasePodTapped() {
+        AlertHelper.showTwoOptionsAlert(
+            title: "Release Pod",
+            message: "Are you sure you want to release the pod for this task?",
+            on: self,
+            confirm: { [weak self] in self?.performReleasePod() }
+        )
+    }
+
+    private func performReleasePod() {
+        guard let podId = task.podId else { return }
+        releasePodButton.isEnabled = false
+        releasePodButton.alpha = 0.4
+        API.sharedInstance.releasePodWithAuth(
+            workspaceId: workspaceId,
+            podId: podId,
+            taskId: task.id,
+            callback: { [weak self] in
+                DispatchQueue.main.async {
+                    guard let self = self else { return }
+                    self.releasePodButton.isEnabled = true
+                    self.releasePodButton.alpha = 1.0
+                    self.releasePodButton.isHidden = true
+                }
+            },
+            errorCallback: { [weak self] in
+                DispatchQueue.main.async {
+                    guard let self = self else { return }
+                    self.releasePodButton.isEnabled = true
+                    self.releasePodButton.alpha = 1.0
+                    AlertHelper.showAlert(
+                        title: "generic.error.title".localized,
+                        message: "Failed to release pod. Please try again.",
+                        on: self
+                    )
+                }
+            }
+        )
+    }
+
     @objc private func shareTappedAction() {
         let url = "https://hive.sphinx.chat/w/\(workspaceSlug)/task/\(task.id)"
         let label = "Check out this task: \(task.title) — \(url)"
@@ -452,7 +508,7 @@ class TaskChatViewController: UIViewController {
 
         API.sharedInstance.fetchTaskMessagesWithAuth(
             taskId: task.id,
-            callback: { [weak self] messages in
+            callback: { [weak self] messages, podId in
                 DispatchQueue.main.async {
                     guard let self = self else { return }
                     self.loadingWheel.stopAnimating()
@@ -461,6 +517,8 @@ class TaskChatViewController: UIViewController {
                     self.emptyLabel.isHidden = !messages.isEmpty
                     self.chatTableView.reloadData()
                     if !messages.isEmpty { self.scrollToBottom(animated: false) }
+                    self.task.podId = podId
+                    self.releasePodButton.isHidden = (podId == nil)
                 }
             },
             errorCallback: { [weak self] in
@@ -516,7 +574,9 @@ class TaskChatViewController: UIViewController {
                 guard let self = self else { return }
                 DispatchQueue.main.async {
                     if let updated = updatedTask {
+                        let podId = self.task.podId ?? updated.podId
                         self.task = updated
+                        self.task.podId = podId
                         self.cachedStakworkProjectId = updated.stakworkProjectId
                     }
                     self.connectAnyCable()

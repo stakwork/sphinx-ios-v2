@@ -17,13 +17,14 @@ typealias HiveWorkspaceImageCallback = ((String?) -> ())
 typealias HiveFeaturesCallback = (([HiveFeature], PaginationInfo) -> ())
 typealias HiveFeatureCallback = ((HiveFeature?) -> ())
 typealias HiveChatMessagesCallback = (([HiveChatMessage]) -> ())
-typealias HiveTaskMessagesCallback = (([HiveChatMessage]) -> ())
+typealias HiveTaskMessagesCallback = (([HiveChatMessage], String?) -> ())
 typealias HiveChatMessageCallback = ((HiveChatMessage?) -> ())
 typealias HiveStakworkRunCallback = ((StakworkRun?) -> ())
 typealias HiveStakworkRunsCallback = (([StakworkRun]) -> ())
 typealias HiveTaskCallback = ((WorkspaceTask?) -> ())
 typealias StakworkWorkflowCallback = ((StakworkWorkflowData?) -> ())
 typealias HiveSearchResultsCallback = ((HiveSearchResults) -> ())
+typealias HiveReleasePodCallback = (() -> ())
 
 // MARK: - PaginationInfo
 
@@ -1225,7 +1226,8 @@ extension API {
                 let json = JSON(data)
                 guard json["success"].bool == true else { errorCallback(); return }
                 let messages = json["data"]["messages"].arrayValue.compactMap { HiveChatMessage(json: $0) }
-                callback(messages)
+                let podId = json["data"]["task"]["podId"].string
+                callback(messages, podId)
             case .failure:
                 errorCallback()
             }
@@ -1819,6 +1821,113 @@ extension API {
                 guard let token = token else { errorCallback(); return }
                 UserDefaults.Keys.hiveToken.set(token)
                 self?.retryTaskWorkflow(
+                    taskId: taskId,
+                    authToken: token,
+                    callback: callback,
+                    errorCallback: errorCallback
+                )
+            },
+            errorCallback: errorCallback
+        )
+    }
+
+    // MARK: - Release Pod (POST /api/pool-manager/drop-pod/{workspaceId})
+
+    func releasePod(
+        workspaceId: String,
+        podId: String,
+        taskId: String,
+        authToken: String,
+        callback: @escaping HiveReleasePodCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        guard
+            let encodedWorkspaceId = workspaceId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
+            let encodedPodId = podId.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+            let encodedTaskId = taskId.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)
+        else {
+            errorCallback(); return
+        }
+        let urlString = "\(API.kHiveBaseUrl)/pool-manager/drop-pod/\(encodedWorkspaceId)?podId=\(encodedPodId)&taskId=\(encodedTaskId)"
+        guard let request = createRequest(urlString, bodyParams: nil, method: "POST", token: authToken) else {
+            errorCallback(); return
+        }
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                errorCallback(); return
+            }
+            if let statusCode = response.response?.statusCode, statusCode == 409 {
+                if case .success(let data) = response.result {
+                    let json = JSON(data)
+                    if json["reassigned"].bool == true {
+                        callback(); return
+                    }
+                }
+                errorCallback(); return
+            }
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+                if json["success"].bool == true {
+                    callback()
+                } else {
+                    errorCallback()
+                }
+            case .failure:
+                errorCallback()
+            }
+        }
+    }
+
+    func releasePodWithAuth(
+        workspaceId: String,
+        podId: String,
+        taskId: String,
+        callback: @escaping HiveReleasePodCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
+            releasePod(
+                workspaceId: workspaceId,
+                podId: podId,
+                taskId: taskId,
+                authToken: storedToken,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateAndReleasePod(
+                        workspaceId: workspaceId,
+                        podId: podId,
+                        taskId: taskId,
+                        callback: callback,
+                        errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateAndReleasePod(
+                workspaceId: workspaceId,
+                podId: podId,
+                taskId: taskId,
+                callback: callback,
+                errorCallback: errorCallback
+            )
+        }
+    }
+
+    private func authenticateAndReleasePod(
+        workspaceId: String,
+        podId: String,
+        taskId: String,
+        callback: @escaping HiveReleasePodCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback(); return }
+                UserDefaults.Keys.hiveToken.set(token)
+                self?.releasePod(
+                    workspaceId: workspaceId,
+                    podId: podId,
                     taskId: taskId,
                     authToken: token,
                     callback: callback,

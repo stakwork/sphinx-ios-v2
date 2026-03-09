@@ -1135,7 +1135,7 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
 
         guard tableView === tasksTableView else { return }
         let task = feature.allTasks[indexPath.row]
-        let chatVC = TaskChatViewController.instantiate(task: task, workspaceSlug: workspace.slug ?? "")
+        let chatVC = TaskChatViewController.instantiate(task: task, workspaceSlug: workspace.slug ?? "", workspaceId: workspace.id)
         navigationController?.pushViewController(chatVC, animated: true)
     }
 
