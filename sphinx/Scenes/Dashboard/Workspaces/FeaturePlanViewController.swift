@@ -1138,6 +1138,36 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
         let chatVC = TaskChatViewController.instantiate(task: task, workspaceSlug: workspace.slug ?? "")
         navigationController?.pushViewController(chatVC, animated: true)
     }
+
+    func tableView(
+        _ tableView: UITableView,
+        trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath
+    ) -> UISwipeActionsConfiguration? {
+        guard tableView === tasksTableView else { return nil }
+        let task = feature.allTasks[indexPath.row]
+        let deleteAction = UIContextualAction(style: .destructive, title: "Delete") { [weak self] _, _, completionHandler in
+            guard let self else { completionHandler(false); return }
+            AlertHelper.showTwoOptionsAlert(
+                title: "Delete Task",
+                message: "Are you sure you want to delete \"\(task.title)\"? This cannot be undone.",
+                confirmButtonTitle: "Delete",
+                confirmStyle: .destructive,
+                confirm: {
+                    self.feature.removeTask(task.id)
+                    self.tasksTableView.deleteRows(at: [indexPath], with: .automatic)
+                    self.updateTasksEmptyState()
+                    API.sharedInstance.deleteTaskWithAuth(taskId: task.id) {
+                        DispatchQueue.main.async { self.fetchFeatureDetail() }
+                    } errorCallback: {
+                        DispatchQueue.main.async { self.fetchFeatureDetail() }
+                    }
+                }
+            )
+            completionHandler(true)
+        }
+        deleteAction.image = UIImage(systemName: "trash")
+        return UISwipeActionsConfiguration(actions: [deleteAction])
+    }
 }
 
 // MARK: - UITextViewDelegate (autocomplete)

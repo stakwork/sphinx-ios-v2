@@ -100,6 +100,31 @@ struct HiveFeature {
         }
         return nil
     }
+
+    /// Removes the task with `taskId` from this feature and returns its flat index into `allTasks`.
+    /// Returns `nil` if no task with that id belongs to this feature.
+    @discardableResult
+    mutating func removeTask(_ taskId: String) -> Int? {
+        let sortedPhaseIndices = phases.indices.sorted { phases[$0].order < phases[$1].order }
+        var flatOffset = 0
+        for pi in sortedPhaseIndices {
+            for ti in phases[pi].tasks.indices {
+                if phases[pi].tasks[ti].id == taskId {
+                    phases[pi].tasks.remove(at: ti)
+                    return flatOffset + ti
+                }
+            }
+            flatOffset += phases[pi].tasks.count
+        }
+        for i in looseTasks.indices {
+            if looseTasks[i].id == taskId {
+                looseTasks.remove(at: i)
+                return flatOffset + i
+            }
+        }
+        return nil
+    }
+
     
     init?(json: JSON) {
         guard let id = json["id"].string,
