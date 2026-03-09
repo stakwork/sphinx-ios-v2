@@ -86,7 +86,7 @@ class FeatureChatMessageCell: UITableViewCell {
     private let senderAvatarImageView: UIImageView = {
         let iv = UIImageView()
         iv.translatesAutoresizingMaskIntoConstraints = false
-        iv.layer.cornerRadius = 16
+        iv.layer.cornerRadius = 10   // 20pt diameter → 10pt radius
         iv.clipsToBounds = true
         iv.contentMode = .scaleAspectFill
         iv.image = UIImage(named: "profile_avatar")
@@ -130,7 +130,8 @@ class FeatureChatMessageCell: UITableViewCell {
 
         bubbleLeadingConstraint  = bubbleView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16)
         bubbleTrailingConstraint = bubbleView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16)
-        bubbleTrailingConstraintSent = bubbleView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -56)
+        // -36 = avatar(20) + gap(8) + right margin(8)
+        bubbleTrailingConstraintSent = bubbleView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -36)
 
         timestampLeadingConstraint  = timestampLabel.leadingAnchor.constraint(equalTo: bubbleView.leadingAnchor)
         timestampTrailingConstraint = timestampLabel.trailingAnchor.constraint(equalTo: bubbleView.trailingAnchor)
@@ -138,10 +139,10 @@ class FeatureChatMessageCell: UITableViewCell {
         bubbleWidthConstraint = bubbleView.widthAnchor.constraint(lessThanOrEqualTo: contentView.widthAnchor, multiplier: 0.85)
 
         NSLayoutConstraint.activate([
-            senderAvatarImageView.widthAnchor.constraint(equalToConstant: 32),
-            senderAvatarImageView.heightAnchor.constraint(equalToConstant: 32),
+            senderAvatarImageView.widthAnchor.constraint(equalToConstant: 20),
+            senderAvatarImageView.heightAnchor.constraint(equalToConstant: 20),
             senderAvatarImageView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -8),
-            senderAvatarImageView.centerYAnchor.constraint(equalTo: bubbleView.centerYAnchor),
+            senderAvatarImageView.bottomAnchor.constraint(equalTo: bubbleView.bottomAnchor),
             bubbleView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 4),
             bubbleWidthConstraint,
             bubbleStack.topAnchor.constraint(equalTo: bubbleView.topAnchor),
