@@ -148,7 +148,7 @@ class TaskChatViewController: UIViewController {
         releasePodButton = UIButton(type: .system)
         releasePodButton.translatesAutoresizingMaskIntoConstraints = false
         releasePodButton.setImage(UIImage(systemName: "server.rack"), for: .normal)
-        releasePodButton.tintColor = UIColor.Sphinx.WashedOutReceivedText
+        releasePodButton.tintColor = UIColor.Sphinx.PrimaryGreen
         releasePodButton.addTarget(self, action: #selector(releasePodTapped), for: .touchUpInside)
         releasePodButton.isHidden = true
         headerView.addSubview(releasePodButton)
@@ -400,7 +400,14 @@ class TaskChatViewController: UIViewController {
             workspaceId: workspaceId,
             podId: podId,
             taskId: task.id,
-            callback: { /* success — button stays disabled/dimmed */ },
+            callback: { [weak self] in
+                DispatchQueue.main.async {
+                    guard let self = self else { return }
+                    self.releasePodButton.isEnabled = true
+                    self.releasePodButton.alpha = 1.0
+                    self.releasePodButton.isHidden = true
+                }
+            },
             errorCallback: { [weak self] in
                 DispatchQueue.main.async {
                     guard let self = self else { return }
