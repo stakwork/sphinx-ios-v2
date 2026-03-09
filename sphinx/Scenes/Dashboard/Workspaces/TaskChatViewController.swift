@@ -81,6 +81,7 @@ class TaskChatViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        view.layoutIfNeeded()   // forces constraint resolution before push transition animates
         // Always re-point delegate so this VC receives events even if another VC
         // previously took ownership of the shared Pusher instance.
         HivePusherManager.shared.delegate = self
