@@ -100,7 +100,7 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         haltedWorkflowBadge.isHidden = true
         // Height + equal-width to prBadgeButton so .center alignment has a defined frame
         haltedWorkflowBadge.heightAnchor.constraint(equalToConstant: 22).isActive = true
-        haltedWorkflowBadge.widthAnchor.constraint(equalTo: prBadgeButton.widthAnchor).isActive = true
+        haltedWorkflowBadge.widthAnchor.constraint(equalToConstant: 55).isActive = true
     }
 
     private func setupRetryWorkflowButton() {
