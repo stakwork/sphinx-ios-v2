@@ -13,6 +13,7 @@ class WorkspaceFeatureTableViewCell: UITableViewCell {
     @IBOutlet weak var createdByLabel: UILabel!
     @IBOutlet weak var updatedAtLabel: UILabel!
     @IBOutlet weak var separatorView: UIView!
+    @IBOutlet weak var ownerImageView: UIImageView!
     
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -39,6 +40,11 @@ class WorkspaceFeatureTableViewCell: UITableViewCell {
         }
         
         separatorView.backgroundColor = .Sphinx.LightDivider
+        
+        ownerImageView.layer.cornerRadius = 9
+        ownerImageView.clipsToBounds = true
+        ownerImageView.contentMode = .scaleAspectFill
+        ownerImageView.isHidden = true
     }
     
     func configure(with feature: HiveFeature, isLastRow: Bool) {
@@ -49,6 +55,15 @@ class WorkspaceFeatureTableViewCell: UITableViewCell {
             createdByLabel.text = "Created by \(name)"
         } else {
             createdByLabel.text = nil
+        }
+        
+        // Owner avatar
+        if let imageUrl = feature.createdBy?.image, let url = URL(string: imageUrl) {
+            ownerImageView.isHidden = false
+            ownerImageView.sd_setImage(with: url, placeholderImage: UIImage(named: "profile_avatar"))
+        } else {
+            ownerImageView.isHidden = true
+            ownerImageView.image = nil
         }
         
         // Updated at
@@ -77,6 +92,13 @@ class WorkspaceFeatureTableViewCell: UITableViewCell {
         }
         
         separatorView.isHidden = isLastRow
+    }
+    
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        ownerImageView.sd_cancelCurrentImageLoad()
+        ownerImageView.image = nil
+        ownerImageView.isHidden = true
     }
     
     private func formatDate(_ dateString: String?) -> String {
