@@ -67,6 +67,7 @@ class FeaturePlanViewController: UIViewController {
     /// NSRange of "@query" in chatInputTextView at the moment the popup is shown/updated
     private var atTriggerNSRange: NSRange?
     private var taskProgressBarView: TaskProgressBarView!
+    private var poolStatusLabel: UILabel!
     private var startTasksButton: UIButton!
 
     // Plan Panel Components
@@ -595,6 +596,14 @@ class FeaturePlanViewController: UIViewController {
         taskProgressBarView.isHidden = true
         tasksContainerView.addSubview(taskProgressBarView)
 
+        poolStatusLabel = UILabel()
+        poolStatusLabel.translatesAutoresizingMaskIntoConstraints = false
+        poolStatusLabel.font = UIFont(name: "Roboto-Regular", size: 12) ?? .systemFont(ofSize: 12)
+        poolStatusLabel.textColor = UIColor.Sphinx.SecondaryText
+        poolStatusLabel.textAlignment = .center
+        poolStatusLabel.isHidden = true
+        tasksContainerView.addSubview(poolStatusLabel)
+
         tasksTableView = UITableView()
         tasksTableView.translatesAutoresizingMaskIntoConstraints = false
         tasksTableView.backgroundColor = UIColor.Sphinx.Body
@@ -646,7 +655,12 @@ class FeaturePlanViewController: UIViewController {
             taskProgressBarView.heightAnchor.constraint(equalToConstant: 36),
 
             // Table view below progress bar, above start tasks button
-            tasksTableView.topAnchor.constraint(equalTo: taskProgressBarView.bottomAnchor),
+            poolStatusLabel.topAnchor.constraint(equalTo: taskProgressBarView.bottomAnchor, constant: 6),
+            poolStatusLabel.leadingAnchor.constraint(equalTo: tasksContainerView.leadingAnchor, constant: 16),
+            poolStatusLabel.trailingAnchor.constraint(equalTo: tasksContainerView.trailingAnchor, constant: -16),
+            poolStatusLabel.heightAnchor.constraint(equalToConstant: 20),
+
+            tasksTableView.topAnchor.constraint(equalTo: poolStatusLabel.bottomAnchor, constant: 4),
             tasksTableView.leadingAnchor.constraint(equalTo: tasksContainerView.leadingAnchor),
             tasksTableView.trailingAnchor.constraint(equalTo: tasksContainerView.trailingAnchor),
             tasksTableView.bottomAnchor.constraint(equalTo: startTasksButton.topAnchor, constant: -8),
@@ -698,9 +712,29 @@ class FeaturePlanViewController: UIViewController {
         startTasksButton.isHidden = true
         API.sharedInstance.assignAllFeatureTasksWithAuth(
             featureId: feature.id,
-            callback: { /* stay hidden — Pusher will refresh */ },
+            callback: { [weak self] in
+                DispatchQueue.main.async { self?.fetchPoolStatus() }
+            },
             errorCallback: { [weak self] in
                 DispatchQueue.main.async { self?.startTasksButton.isHidden = false }
+            }
+        )
+    }
+
+    private func fetchPoolStatus() {
+        guard let slug = workspace.slug, !slug.isEmpty else { return }
+        API.sharedInstance.fetchPoolStatusWithAuth(
+            workspaceSlug: slug,
+            callback: { [weak self] queuedCount, unusedVms in
+                DispatchQueue.main.async {
+                    self?.poolStatusLabel.text = "\(queuedCount) tasks in workspace queue · \(unusedVms) pods available"
+                    self?.poolStatusLabel.isHidden = false
+                }
+            },
+            errorCallback: { [weak self] in
+                DispatchQueue.main.async {
+                    self?.poolStatusLabel.isHidden = true
+                }
             }
         )
     }
@@ -721,6 +755,7 @@ class FeaturePlanViewController: UIViewController {
         if index == 2 {
             topSegmentedControl.indicesOfTitlesWithBadge = []
             updateTasksPanel()
+            fetchPoolStatus()
         }
     }
 

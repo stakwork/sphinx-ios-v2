@@ -25,6 +25,7 @@ typealias HiveTaskCallback = ((WorkspaceTask?) -> ())
 typealias StakworkWorkflowCallback = ((StakworkWorkflowData?) -> ())
 typealias HiveSearchResultsCallback = ((HiveSearchResults) -> ())
 typealias HiveReleasePodCallback = (() -> ())
+typealias HivePoolStatusCallback = ((_ queuedCount: Int, _ unusedVms: Int) -> ())
 
 // MARK: - PaginationInfo
 
@@ -2159,6 +2160,87 @@ extension API {
                 UserDefaults.Keys.hiveToken.set(token)
                 self?.fetchStakworkWorkflow(
                     projectId: projectId,
+                    authToken: token,
+                    callback: callback,
+                    errorCallback: errorCallback
+                )
+            },
+            errorCallback: errorCallback
+        )
+    }
+
+    // MARK: - Pool Status (GET /api/w/{workspaceSlug}/pool/status)
+
+    func fetchPoolStatus(
+        workspaceSlug: String,
+        authToken: String,
+        callback: @escaping HivePoolStatusCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        guard let encodedSlug = workspaceSlug.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+            errorCallback(); return
+        }
+        let urlString = "https://hive.sphinx.chat/api/w/\(encodedSlug)/pool/status"
+        guard let request = createRequest(urlString, bodyParams: nil, method: "GET", token: authToken) else {
+            errorCallback(); return
+        }
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                errorCallback(); return
+            }
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+                guard json["success"].bool == true,
+                      let queuedCount = json["data"]["status"]["queuedCount"].int,
+                      let unusedVms   = json["data"]["status"]["unusedVms"].int else {
+                    errorCallback(); return
+                }
+                callback(queuedCount, unusedVms)
+            case .failure:
+                errorCallback()
+            }
+        }
+    }
+
+    func fetchPoolStatusWithAuth(
+        workspaceSlug: String,
+        callback: @escaping HivePoolStatusCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
+            fetchPoolStatus(
+                workspaceSlug: workspaceSlug,
+                authToken: storedToken,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateAndFetchPoolStatus(
+                        workspaceSlug: workspaceSlug,
+                        callback: callback,
+                        errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateAndFetchPoolStatus(
+                workspaceSlug: workspaceSlug,
+                callback: callback,
+                errorCallback: errorCallback
+            )
+        }
+    }
+
+    private func authenticateAndFetchPoolStatus(
+        workspaceSlug: String,
+        callback: @escaping HivePoolStatusCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback(); return }
+                UserDefaults.Keys.hiveToken.set(token)
+                self?.fetchPoolStatus(
+                    workspaceSlug: workspaceSlug,
                     authToken: token,
                     callback: callback,
                     errorCallback: errorCallback
