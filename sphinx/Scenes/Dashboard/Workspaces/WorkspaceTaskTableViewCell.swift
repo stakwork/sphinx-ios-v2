@@ -95,11 +95,12 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         haltedWorkflowBadge.font = UIFont(name: "Roboto-Medium", size: 11)
         haltedWorkflowBadge.textAlignment = .center
         haltedWorkflowBadge.backgroundColor = .Sphinx.SphinxOrange
-        haltedWorkflowBadge.text = "  HALTED  "
+        haltedWorkflowBadge.text = "HALTED"
         haltedWorkflowBadge.translatesAutoresizingMaskIntoConstraints = false
         haltedWorkflowBadge.isHidden = true
-        // Height constraint only — stack handles trailing/bottom positioning
+        // Height + equal-width to prBadgeButton so .center alignment has a defined frame
         haltedWorkflowBadge.heightAnchor.constraint(equalToConstant: 22).isActive = true
+        haltedWorkflowBadge.widthAnchor.constraint(equalTo: prBadgeButton.widthAnchor).isActive = true
     }
 
     private func setupRetryWorkflowButton() {
