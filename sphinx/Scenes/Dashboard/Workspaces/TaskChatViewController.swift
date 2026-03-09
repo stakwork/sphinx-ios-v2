@@ -546,11 +546,11 @@ class TaskChatViewController: UIViewController {
     private func applyWorkflowStatus(_ status: WorkflowStatus) {
         workflowStatusView.status = status
         switch status {
-        case .IN_PROGRESS, .PENDING, .HALTED:
+        case .IN_PROGRESS, .HALTED:
             workflowStatusHeightConstraint.constant = 32
             workflowStatusView.show(animated: true)
             UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
-        case .COMPLETED, .ERROR, .FAILED:
+        case .PENDING, .COMPLETED, .ERROR, .FAILED:
             workflowStatusHeightConstraint.constant = 0
             workflowStatusView.hide(animated: true)
             UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
@@ -561,7 +561,7 @@ class TaskChatViewController: UIViewController {
     private func applyInitialWorkflowStatus() {
         guard let raw = task.workflowStatus,
               let status = WorkflowStatus(rawValue: raw),
-              status == .IN_PROGRESS || status == .PENDING || status == .HALTED else { return }
+              status == .IN_PROGRESS || status == .HALTED else { return }
         applyWorkflowStatus(status)
     }
 }

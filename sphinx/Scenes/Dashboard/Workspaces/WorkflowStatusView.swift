@@ -124,9 +124,8 @@ class WorkflowStatusView: UIView {
 
         switch status {
         case .PENDING:
-            showCircle(color: UIColor.lightGray)
+            hideCircle()
             hideIcon()
-            statusLabel.text = nil
             statusLabel.isHidden = true
 
         case .IN_PROGRESS:
