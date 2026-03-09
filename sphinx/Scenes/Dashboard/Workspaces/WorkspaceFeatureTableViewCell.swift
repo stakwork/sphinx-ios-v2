@@ -41,7 +41,7 @@ class WorkspaceFeatureTableViewCell: UITableViewCell {
         
         separatorView.backgroundColor = .Sphinx.LightDivider
         
-        ownerImageView.layer.cornerRadius = 12
+        ownerImageView.layer.cornerRadius = 9
         ownerImageView.clipsToBounds = true
         ownerImageView.contentMode = .scaleAspectFill
         ownerImageView.isHidden = true

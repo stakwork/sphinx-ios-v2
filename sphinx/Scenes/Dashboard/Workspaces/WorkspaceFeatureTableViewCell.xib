@@ -65,8 +65,8 @@
                     <imageView userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="owner-img-01">
                         <rect key="frame" x="0" y="81" width="24" height="24"/>
                         <constraints>
-                            <constraint firstAttribute="width" constant="24" id="owner-width-01"/>
-                            <constraint firstAttribute="height" constant="24" id="owner-height-01"/>
+                            <constraint firstAttribute="width" constant="18" id="owner-width-01"/>
+                            <constraint firstAttribute="height" constant="18" id="owner-height-01"/>
                         </constraints>
                     </imageView>
                     <!-- Updated at label - bottom right, like tasks -->
