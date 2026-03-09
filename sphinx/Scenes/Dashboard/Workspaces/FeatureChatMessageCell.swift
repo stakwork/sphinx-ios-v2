@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import SDWebImage
 
 class FeatureChatMessageCell: UITableViewCell {
 
@@ -81,9 +82,22 @@ class FeatureChatMessageCell: UITableViewCell {
         return label
     }()
 
+    // MARK: - Sender avatar (shown only for sent messages)
+    private let senderAvatarImageView: UIImageView = {
+        let iv = UIImageView()
+        iv.translatesAutoresizingMaskIntoConstraints = false
+        iv.layer.cornerRadius = 10   // 20pt diameter → 10pt radius
+        iv.clipsToBounds = true
+        iv.contentMode = .scaleAspectFill
+        iv.image = UIImage(named: "profile_avatar")
+        iv.isHidden = true
+        return iv
+    }()
+
     // MARK: - Alignment constraints (toggled per message role)
     private var bubbleLeadingConstraint: NSLayoutConstraint!
     private var bubbleTrailingConstraint: NSLayoutConstraint!
+    private var bubbleTrailingConstraintSent: NSLayoutConstraint!
     private var timestampLeadingConstraint: NSLayoutConstraint!
     private var timestampTrailingConstraint: NSLayoutConstraint!
     private var bubbleWidthConstraint: NSLayoutConstraint!
@@ -112,9 +126,12 @@ class FeatureChatMessageCell: UITableViewCell {
         bubbleView.insertSubview(textBackgroundView, belowSubview: bubbleStack)
         bubbleView.addSubview(bubbleStack)
         contentView.addSubview(timestampLabel)
+        contentView.addSubview(senderAvatarImageView)
 
         bubbleLeadingConstraint  = bubbleView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16)
         bubbleTrailingConstraint = bubbleView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16)
+        // -36 = avatar(20) + gap(8) + right margin(8)
+        bubbleTrailingConstraintSent = bubbleView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -36)
 
         timestampLeadingConstraint  = timestampLabel.leadingAnchor.constraint(equalTo: bubbleView.leadingAnchor)
         timestampTrailingConstraint = timestampLabel.trailingAnchor.constraint(equalTo: bubbleView.trailingAnchor)
@@ -122,6 +139,10 @@ class FeatureChatMessageCell: UITableViewCell {
         bubbleWidthConstraint = bubbleView.widthAnchor.constraint(lessThanOrEqualTo: contentView.widthAnchor, multiplier: 0.85)
 
         NSLayoutConstraint.activate([
+            senderAvatarImageView.widthAnchor.constraint(equalToConstant: 20),
+            senderAvatarImageView.heightAnchor.constraint(equalToConstant: 20),
+            senderAvatarImageView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -8),
+            senderAvatarImageView.bottomAnchor.constraint(equalTo: bubbleView.bottomAnchor),
             bubbleView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 4),
             bubbleWidthConstraint,
             bubbleStack.topAnchor.constraint(equalTo: bubbleView.topAnchor),
@@ -159,10 +180,22 @@ class FeatureChatMessageCell: UITableViewCell {
             timestampLabel.textColor        = UIColor.Sphinx.SecondaryTextSent
             timestampLabel.textAlignment    = .right
             bubbleLeadingConstraint.isActive  = false
-
-            bubbleTrailingConstraint.isActive = true
+            bubbleTrailingConstraint.isActive = false
+            bubbleTrailingConstraintSent.isActive = true
             timestampLeadingConstraint.isActive  = false
             timestampTrailingConstraint.isActive = true
+
+            // Sender avatar
+            senderAvatarImageView.isHidden = false
+            if let urlStr = message.createdBy?.image, let url = URL(string: urlStr) {
+                senderAvatarImageView.sd_setImage(
+                    with: url,
+                    placeholderImage: UIImage(named: "profile_avatar"),
+                    options: .lowPriority
+                )
+            } else {
+                senderAvatarImageView.image = UIImage(named: "profile_avatar")
+            }
         } else {
             let rendered = FeatureChatMessageCell.markdownRenderer.render(message.resolvedDisplayText)
             let mutable  = NSMutableAttributedString(attributedString: rendered)
@@ -179,10 +212,14 @@ class FeatureChatMessageCell: UITableViewCell {
             bubbleView.backgroundColor      = UIColor.Sphinx.ReceivedMsgBG
             timestampLabel.textColor        = UIColor.Sphinx.SecondaryText
             timestampLabel.textAlignment    = .left
-            bubbleTrailingConstraint.isActive = false
+            bubbleTrailingConstraintSent.isActive = false
+            bubbleTrailingConstraint.isActive = true
             bubbleLeadingConstraint.isActive  = true
             timestampTrailingConstraint.isActive = false
             timestampLeadingConstraint.isActive  = true
+
+            // Hide sender avatar for received messages
+            senderAvatarImageView.isHidden = true
         }
 
         // --- PR artifact card ---
@@ -313,8 +350,12 @@ class FeatureChatMessageCell: UITableViewCell {
         bubbleView.layer.cornerRadius = 18
         timestampLabel.text    = nil
         timestampLabel.isHidden = false
+        senderAvatarImageView.isHidden = true
+        senderAvatarImageView.sd_cancelCurrentImageLoad()
+        senderAvatarImageView.image = UIImage(named: "profile_avatar")
         bubbleLeadingConstraint.isActive  = false
         bubbleTrailingConstraint.isActive = false
+        bubbleTrailingConstraintSent.isActive = false
         timestampLeadingConstraint.isActive  = false
         timestampTrailingConstraint.isActive = false
         // Reset bubble width to default
