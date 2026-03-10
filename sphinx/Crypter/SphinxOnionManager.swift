@@ -877,6 +877,18 @@ extension SphinxOnionManager {//Sign Up UI Related:
         }
         return nil
     }
+
+    func getHiveLinkFrom(
+        notification: [String: AnyObject]?
+    ) -> String? {
+        guard
+            let notification = notification,
+            let aps = notification["aps"] as? [String: AnyObject],
+            let customData = aps["custom_data"] as? [String: AnyObject],
+            let hiveLink = customData["hive_link"] as? String
+        else { return nil }
+        return hiveLink
+    }
     
     func getPersonalKeys() -> Keys? {
         if let mnemonic = UserData.sharedInstance.getMnemonic() {
