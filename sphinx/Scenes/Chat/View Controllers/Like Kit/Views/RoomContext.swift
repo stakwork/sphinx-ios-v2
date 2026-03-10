@@ -228,7 +228,7 @@ final class RoomContext: ObservableObject {
             guard let self else { return }
             do {
                 let json = try self.jsonEncoder.encode(roomMessage)
-                try await self.room.localParticipant.publish(data: json)
+                try await self.room.localParticipant.publish(data: json, options: DataPublishOptions(reliable: true))
             } catch { print("Failed to encode data \(error)") }
         }
     }
