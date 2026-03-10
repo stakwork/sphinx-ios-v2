@@ -33,6 +33,27 @@ class VideoCallHelper {
         return components[0]
     }
 
+    /// Shows the audio / video mode popup for an already-built room link.
+    public static func showCallModePopup(
+        link: String,
+        button: UIButton,
+        callback: @escaping (String) -> ()
+    ) {
+        let audioCallback: (() -> ()) = {
+            callback(link + "?startAudioOnly=true")
+        }
+        let videoCallback: (() -> ()) = {
+            callback(link)
+        }
+        AlertHelper.showOptionsPopup(
+            title: "create.call".localized,
+            message: "select.call.mode".localized,
+            options: ["audio".localized, "video.or.audio".localized],
+            callbacks: [audioCallback, videoCallback],
+            sourceView: button
+        )
+    }
+
     public static func createCallMessage(
         button: UIButton,
         secondBrainUrl: String? = nil,
@@ -61,22 +82,8 @@ class VideoCallHelper {
         if let graphUrl = graphUrl {
             room = "\(API.sharedInstance.kVideoCallServer)/rooms\(TransactionMessage.kCallRoomName).-\(graphUrl)-.\(time)"
         }
-        
-        let audioCallback: (() -> ()) = {
-            callback(room + "?startAudioOnly=true")
-        }
-        
-        let videoCallback: (() -> ()) = {
-            callback(room)
-        }
-        
-        AlertHelper.showOptionsPopup(
-            title: "create.call".localized,
-            message: "select.call.mode".localized,
-            options: ["audio".localized, "video.or.audio".localized],
-            callbacks: [audioCallback, videoCallback],
-            sourceView: button
-        )
+
+        showCallModePopup(link: room, button: button, callback: callback)
     }
     
 }

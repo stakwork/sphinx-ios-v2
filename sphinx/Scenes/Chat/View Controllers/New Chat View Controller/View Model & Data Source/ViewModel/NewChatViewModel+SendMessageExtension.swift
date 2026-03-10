@@ -184,7 +184,16 @@ extension NewChatViewModel {
             API.sharedInstance.generateTribeCallLinkWithAuth(
                 swarmName: swarmName,
                 callback: { [weak self] link in
-                    self?.sendCallMessage(link: link)
+                    guard let self = self else { return }
+                    DispatchQueue.main.async {
+                        VideoCallHelper.showCallModePopup(
+                            link: link,
+                            button: sender,
+                            callback: { finalLink in
+                                self.sendCallMessage(link: finalLink)
+                            }
+                        )
+                    }
                 },
                 errorCallback: { [weak self] in
                     guard let self = self else { return }
