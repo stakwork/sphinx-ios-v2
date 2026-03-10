@@ -26,6 +26,7 @@ typealias StakworkWorkflowCallback = ((StakworkWorkflowData?) -> ())
 typealias HiveSearchResultsCallback = ((HiveSearchResults) -> ())
 typealias HiveReleasePodCallback = (() -> ())
 typealias HivePoolStatusCallback = ((_ queuedCount: Int, _ unusedVms: Int) -> ())
+typealias HiveCallLinkCallback = ((String) -> ())
 
 // MARK: - PaginationInfo
 
@@ -2228,6 +2229,83 @@ extension API {
                 errorCallback: errorCallback
             )
         }
+    }
+
+    // MARK: - Tribe Call Link
+
+    func generateTribeCallLink(
+        swarmName: String,
+        authToken: String,
+        callback: @escaping HiveCallLinkCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        guard let encodedSwarmName = swarmName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
+            errorCallback(); return
+        }
+        let urlString = "\(API.kHiveBaseUrl)/workspaces/_/calls/generate-link?swarmName=\(encodedSwarmName)"
+        guard let request = createRequest(urlString, bodyParams: nil, method: "POST", token: authToken) else {
+            errorCallback(); return
+        }
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                errorCallback(); return
+            }
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+                guard let url = json["url"].string else { errorCallback(); return }
+                callback(url)
+            case .failure:
+                errorCallback()
+            }
+        }
+    }
+
+    func generateTribeCallLinkWithAuth(
+        swarmName: String,
+        callback: @escaping HiveCallLinkCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let token: String = UserDefaults.Keys.hiveToken.get() {
+            generateTribeCallLink(
+                swarmName: swarmName,
+                authToken: token,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateAndGenerateTribeCallLink(
+                        swarmName: swarmName,
+                        callback: callback,
+                        errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateAndGenerateTribeCallLink(
+                swarmName: swarmName,
+                callback: callback,
+                errorCallback: errorCallback
+            )
+        }
+    }
+
+    private func authenticateAndGenerateTribeCallLink(
+        swarmName: String,
+        callback: @escaping HiveCallLinkCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback(); return }
+                UserDefaults.Keys.hiveToken.set(token)
+                self?.generateTribeCallLink(
+                    swarmName: swarmName,
+                    authToken: token,
+                    callback: callback,
+                    errorCallback: errorCallback
+                )
+            },
+            errorCallback: errorCallback
+        )
     }
 
     private func authenticateAndFetchPoolStatus(
