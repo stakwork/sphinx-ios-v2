@@ -550,7 +550,7 @@ struct RoomView: View {
                             // }
                         }
                         .frame(maxWidth: .infinity)
-                        .frame(height: roomCtx.isInPip ? 40 : 64)
+                        .frame(height: roomCtx.isInPip ? 36 : 48)
                         .layoutPriority(1)
                         
                         ZStack(alignment: .center) {
@@ -592,7 +592,7 @@ struct RoomView: View {
                             .frame(maxHeight: .infinity)
                         }
                         .frame(maxWidth: .infinity)
-                        .frame(height: roomCtx.isInPip ? 40 : 64)
+                        .frame(height: roomCtx.isInPip ? 36 : 48)
                         .layoutPriority(1)
                         
                         if !roomCtx.isInPip {
@@ -635,7 +635,7 @@ struct RoomView: View {
                                 .frame(maxHeight: .infinity)
                             }
                             .frame(maxWidth: .infinity)
-                            .frame(height: 64)
+                            .frame(height: 48)
                             .layoutPriority(1)
                             
                             ZStack(alignment: .center) {
@@ -692,15 +692,15 @@ struct RoomView: View {
                                             }
                                             
                                             Spacer()
-                                                .frame(width: (geometry.size.width - 64) / 2)
+                                                .frame(width: (geometry.size.width - 48) / 2)
                                         }
                                         .frame(maxWidth: .infinity)
-                                        .frame(height: 64)
+                                        .frame(height: 48)
                                     }
                                 }
                             }
                             .frame(maxWidth: .infinity)
-                            .frame(height: 64)
+                            .frame(height: 48)
                             .layoutPriority(1)
 
                             // Chat toggle button
@@ -733,7 +733,7 @@ struct RoomView: View {
                                 .frame(maxHeight: .infinity)
                             }
                             .frame(maxWidth: .infinity)
-                            .frame(height: 64)
+                            .frame(height: 48)
                             .layoutPriority(1)
                         } else {
                             ZStack(alignment: .center) {
@@ -769,8 +769,9 @@ struct RoomView: View {
                             .layoutPriority(1)
                         }
                         
-                        ZStack {
+                        ZStack(alignment: .center) {
                             GeometryReader { geometry in
+                                let size = (geometry.size.width > geometry.size.height) ? geometry.size.height : geometry.size.width
                                 Button(action: {
                                     Task {
                                         if roomCtx.didStartRecording && room.isRecording {
@@ -784,15 +785,17 @@ struct RoomView: View {
                                        .renderingMode(.template)
                                        .foregroundColor(Color.white)
                                        .font(.system(size: roomCtx.isInPip ? 18 : 22))
-                                       .frame(height: geometry.size.height)
-                                       .frame(width: min(geometry.size.width, roomCtx.isInPip ? 50 : 80))
+                                       .frame(width: size)
+                                       .frame(height: size)
+                                       .aspectRatio(1, contentMode: .fill)
                                 })
                                 .background(
                                     Color(UIColor.Sphinx.BadgeRed)
                                         .opacity(1)
-                                        .cornerRadius(min(geometry.size.width, roomCtx.isInPip ? 50 : 80) / 2)
-                                        .frame(height: min(geometry.size.width, roomCtx.isInPip ? 50 : 80))
-                                        .frame(width: min(geometry.size.width, roomCtx.isInPip ? 50 : 80))
+                                        .cornerRadius(size / 2)
+                                        .frame(width: size)
+                                        .frame(height: size)
+                                        .aspectRatio(1, contentMode: .fill)
                                 )
                                 .frame(maxWidth: .infinity)
                                 .aspectRatio(1, contentMode: .fill)
@@ -801,14 +804,14 @@ struct RoomView: View {
                             .frame(maxHeight: .infinity)
                         }
                         .frame(maxWidth: .infinity)
-                        .frame(height: roomCtx.isInPip ? 40 : 64)
+                        .frame(height: roomCtx.isInPip ? 36 : 48)
                         .layoutPriority(1)
                     }
-                    .padding(.vertical, roomCtx.isInPip ? 12 : 30)
-                    .frame(height: roomCtx.isInPip ? 40 : 64)
+                    .padding(.vertical, roomCtx.isInPip ? 8 : 12)
+                    .frame(height: roomCtx.isInPip ? 36 : 48)
                     .frame(maxWidth: .infinity)
                 }
-                .frame(height: roomCtx.isInPip ? 64 : 124)
+                .frame(height: roomCtx.isInPip ? 52 : 72)
                 .frame(minWidth: 0, maxWidth: .infinity)
                 .padding(.horizontal, roomCtx.isInPip ? 8 : 16)
             }
