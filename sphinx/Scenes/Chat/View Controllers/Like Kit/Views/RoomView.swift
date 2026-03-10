@@ -259,14 +259,45 @@ struct RoomView: View {
 
     func messageView(_ message: ExampleRoomMessage) -> some View {
         let isMe = message.senderSid == room.localParticipant.sid
-        return HStack {
+        return HStack(alignment: .top) {
             if isMe { Spacer() }
-            Text(message.text)
-                .padding(8)
-                .background(Color(isMe ? UIColor.Sphinx.PrimaryGreen : UIColor.Sphinx.SecondaryText))
-                .foregroundColor(Color.white)
-                .cornerRadius(18)
-            if !isMe { Spacer() }
+            if !isMe {
+                // Avatar on the left, top-aligned with nickname
+                if let urlStr = message.senderProfilePictureUrl, let url = URL(string: urlStr) {
+                    WebImage(url: url)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 22, height: 22)
+                        .clipShape(Circle())
+                } else {
+                    ZStack {
+                        Circle()
+                            .fill(roomCtx.getColorForParticipan(participantId: message.senderSid?.stringValue) ?? Color(UIColor.random()))
+                            .frame(width: 22, height: 22)
+                        Text((message.senderName ?? "?").getInitialsFromName())
+                            .font(Font(UIFont(name: "Roboto-Medium", size: 9.0)!))
+                            .foregroundColor(.white)
+                    }
+                }
+                // Nickname above bubble
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(message.senderName ?? "Unknown")
+                        .font(Font(UIFont(name: "Roboto-Medium", size: 11.0)!))
+                        .foregroundColor(Color(UIColor.Sphinx.SecondaryText))
+                    Text(message.text)
+                        .padding(8)
+                        .background(Color(UIColor.Sphinx.SecondaryText))
+                        .foregroundColor(Color.white)
+                        .cornerRadius(18)
+                }
+                Spacer()
+            } else {
+                Text(message.text)
+                    .padding(8)
+                    .background(Color(UIColor.Sphinx.PrimaryGreen))
+                    .foregroundColor(Color.white)
+                    .cornerRadius(18)
+            }
         }
         .padding(.vertical, 5)
         .padding(.horizontal, 10)
