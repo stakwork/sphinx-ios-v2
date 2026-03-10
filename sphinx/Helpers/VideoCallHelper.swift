@@ -25,6 +25,14 @@ class VideoCallHelper {
         return mode
     }
     
+    public static func extractSwarmName(from urlString: String) -> String? {
+        guard let url = URL(string: urlString),
+              let host = url.host else { return nil }
+        let components = host.split(separator: ".").map(String.init)
+        guard components.count > 1 else { return nil }
+        return components[0]
+    }
+
     public static func createCallMessage(
         button: UIButton,
         secondBrainUrl: String? = nil,
