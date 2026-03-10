@@ -522,13 +522,13 @@ extension TransactionMessage {
     ) -> [ActionsMenuOption] {
         var options = [ActionsMenuOption]()
         
-        if isPodcastBoost() || isBotResponse() {
+        if isPodcastBoost() {
             return options
         }
         
         if messageContainText() {
             
-            if isCopyTextActionAllowed {
+            if isCopyTextActionAllowed && !isBotHTMLResponse() {
                 options.append(
                     .init(
                         tag: MessageActionsItem.Copy,
@@ -712,7 +712,7 @@ extension TransactionMessage {
     
     var isReplyActionAllowed: Bool {
         get {
-            return (isTextMessage() || (isAttachment() && !isAudio())) && !(uuid ?? "").isEmpty
+            return (isTextMessage() || (isAttachment() && !isAudio()) || isBotResponse()) && !(uuid ?? "").isEmpty
         }
     }
     
