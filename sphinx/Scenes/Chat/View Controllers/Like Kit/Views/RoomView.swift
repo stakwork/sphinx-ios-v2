@@ -259,10 +259,10 @@ struct RoomView: View {
 
     func messageView(_ message: ExampleRoomMessage) -> some View {
         let isMe = message.senderSid == room.localParticipant.sid
-        return HStack(alignment: .bottom) {
+        return HStack(alignment: .top) {
             if isMe { Spacer() }
             if !isMe {
-                // Avatar on the left, aligned to bottom of bubble
+                // Avatar on the left, top-aligned with nickname
                 if let urlStr = message.senderProfilePictureUrl, let url = URL(string: urlStr) {
                     WebImage(url: url)
                         .resizable()
