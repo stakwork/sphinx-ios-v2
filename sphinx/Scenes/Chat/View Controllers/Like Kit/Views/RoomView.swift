@@ -257,6 +257,57 @@ struct RoomView: View {
         )
     }
 
+    func messageView(_ message: ExampleRoomMessage) -> some View {
+        let isMe = message.senderSid == room.localParticipant.sid
+        return HStack {
+            if isMe { Spacer() }
+            Text(message.text)
+                .padding(8)
+                .background(Color(isMe ? UIColor.Sphinx.PrimaryGreen : UIColor.Sphinx.SecondaryText))
+                .foregroundColor(Color.white)
+                .cornerRadius(18)
+            if !isMe { Spacer() }
+        }
+        .padding(.vertical, 5)
+        .padding(.horizontal, 10)
+    }
+
+    func messagesView(geometry: GeometryProxy) -> some View {
+        VStack(spacing: 0) {
+            ScrollViewReader { scrollView in
+                ScrollView(.vertical, showsIndicators: true) {
+                    LazyVStack(alignment: .center, spacing: 0) {
+                        ForEach(roomCtx.messages) {
+                            messageView($0)
+                        }
+                    }
+                    .padding(.vertical, 12)
+                    .padding(.horizontal, 7)
+                }
+                .onAppear { scrollToBottom(scrollView) }
+                .onChange(of: roomCtx.messages) { _ in scrollToBottom(scrollView) }
+                .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity, alignment: .topLeading)
+            }
+            HStack(spacing: 0) {
+                TextField("Enter message", text: $roomCtx.textFieldString)
+                    .textFieldStyle(PlainTextFieldStyle())
+                    .disableAutocorrection(true)
+                Button {
+                    roomCtx.sendMessage()
+                } label: {
+                    Image(systemSymbol: .paperplaneFill)
+                        .foregroundColor(roomCtx.textFieldString.isEmpty ? nil : Color(UIColor.Sphinx.PrimaryGreen))
+                }
+                .buttonStyle(.borderless)
+            }
+            .padding()
+            .background(Color(UIColor.Sphinx.Body))
+        }
+        .background(Color(UIColor.Sphinx.Body).opacity(0.95))
+        .cornerRadius(8)
+        .frame(minWidth: 0, maxWidth: geometry.isTall ? .infinity : 320)
+    }
+
     func sortedParticipants() -> [Participant] {
         room.allParticipants.values.sorted { p1, p2 in
             if p1 is LocalParticipant { return true }
@@ -270,6 +321,11 @@ struct RoomView: View {
         withAnimation {
             scrollView.scrollTo(first.id)
         }
+    }
+
+    func scrollToBottom(_ scrollView: ScrollViewProxy) {
+        guard let last = roomCtx.messages.last else { return }
+        withAnimation { scrollView.scrollTo(last.id) }
     }
     
     private func updateAudioSubscriptionStatus() {
@@ -426,6 +482,11 @@ struct RoomView: View {
                         minHeight: 0,
                         maxHeight: .infinity
                     )
+
+                    // Show messages view if enabled
+                    if roomCtx.showMessagesView {
+                        messagesView(geometry: geometry)
+                    }
                 }
                 
                 ZStack {
@@ -637,6 +698,39 @@ struct RoomView: View {
                                         .frame(height: 64)
                                     }
                                 }
+                            }
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 64)
+                            .layoutPriority(1)
+
+                            // Chat toggle button
+                            ZStack(alignment: .center) {
+                                GeometryReader { geometry in
+                                    let size = (geometry.size.width > geometry.size.height) ? geometry.size.height : geometry.size.width
+                                    Button(action: {
+                                        withAnimation { roomCtx.showMessagesView.toggle() }
+                                    }, label: {
+                                        Image(systemSymbol: .messageFill)
+                                            .renderingMode(.template)
+                                            .foregroundColor(roomCtx.showMessagesView ? Color(UIColor.Sphinx.PrimaryGreen) : Color.white)
+                                            .font(.system(size: 20))
+                                            .frame(width: size)
+                                            .frame(height: size)
+                                            .aspectRatio(1, contentMode: .fill)
+                                    })
+                                    .background(
+                                        Color(UIColor.Sphinx.MainBottomIcons)
+                                            .opacity(0.2)
+                                            .cornerRadius(size / 2)
+                                            .frame(width: size)
+                                            .frame(height: size)
+                                            .aspectRatio(1, contentMode: .fill)
+                                    )
+                                    .frame(maxWidth: .infinity)
+                                    .aspectRatio(1, contentMode: .fill)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .frame(maxHeight: .infinity)
                             }
                             .frame(maxWidth: .infinity)
                             .frame(height: 64)
