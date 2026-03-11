@@ -222,7 +222,8 @@ final class RoomContext: ObservableObject {
             id: msgId,
             timestamp: timestamp,
             message: textFieldString,
-            editTimestamp: nil
+            editTimestamp: nil,
+            sender: room.localParticipant.name
         )
         let displayMsg = ExampleRoomMessage(
             messageId: msgId,
@@ -302,7 +303,12 @@ extension RoomContext: RoomDelegate {
             let sender: Participant? = remoteParticipant ?? room.allParticipants.values.first {
                 $0.identity == remoteParticipant?.identity
             }
-            let resolvedName = sender?.name ?? sender?.identity?.stringValue ?? "Unknown"
+            let resolvedName: String
+            if let s = wireMsg.sender, !s.isEmpty {
+                resolvedName = s
+            } else {
+                resolvedName = sender?.name ?? sender?.identity?.stringValue ?? "Unknown"
+            }
             let resolvedPic = sender?.profilePictureUrl
             let displayMsg = ExampleRoomMessage(
                 messageId: wireMsg.id,
@@ -376,4 +382,5 @@ struct LiveKitChatMessage: Codable {
     let timestamp: Int64
     let message: String
     let editTimestamp: Int64?
+    let sender: String?   // Sphinx alias of the sender
 }
