@@ -40,7 +40,11 @@ class VideoCallHelper {
         callback: @escaping (String) -> ()
     ) {
         let audioCallback: (() -> ()) = {
-            callback(link + "?startAudioOnly=true")
+            if link.contains("?") {
+                callback(link + "&startAudioOnly=true")
+            } else {
+                callback(link + "?startAudioOnly=true")
+            }
         }
         let videoCallback: (() -> ()) = {
             callback(link)
