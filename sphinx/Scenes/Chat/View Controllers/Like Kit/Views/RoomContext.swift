@@ -241,7 +241,7 @@ final class RoomContext: ObservableObject {
                 let json = try self.jsonEncoder.encode(wireMsg)
                 try await self.room.localParticipant.publish(
                     data: json,
-                    options: DataPublishOptions(reliable: true, topic: "lk-chat-topic")
+                    options: DataPublishOptions(topic: "lk-chat-topic", reliable: true)
                 )
             } catch { print("Failed to encode/publish chat data \(error)") }
         }
