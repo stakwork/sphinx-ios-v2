@@ -2348,6 +2348,12 @@ extension API {
         }
 
         session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                print("[HiveAPI] device token set unauthorized (401) - token may be expired")
+                errorCallback()
+                return
+            }
+            
             switch response.result {
             case .success:
                 callback()
