@@ -2338,7 +2338,7 @@ extension API {
     ) {
         let params: [String: AnyObject] = ["ios_device_token": token as AnyObject]
         guard let request = createRequest(
-            "\(API.kHiveBaseUrl)/auth/device-token",
+            "\(API.kHiveBaseUrl)/device-token",
             bodyParams: params as NSDictionary,
             method: "POST",
             token: authToken
@@ -2348,7 +2348,7 @@ extension API {
         }
 
         session()?.request(request).responseData { response in
-            if let statusCode = response.response?.statusCode, statusCode == 401 {
+            if let statusCode = response.response?.statusCode, statusCode != 200 {
                 print("[HiveAPI] device token set unauthorized (401) - token may be expired")
                 errorCallback()
                 return
