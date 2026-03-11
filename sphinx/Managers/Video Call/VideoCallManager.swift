@@ -93,6 +93,7 @@ class VideoCallManager : NSObject {
                 room: room,
                 alias: owner.nickname ?? "",
                 profilePicture: owner.avatarUrl,
+                hiveToken: linkUrl.liveKitHiveToken,
                 callback: { url, token in
                     let liveKitVC = LiveKitCallViewController()
                     liveKitVC.url = url
