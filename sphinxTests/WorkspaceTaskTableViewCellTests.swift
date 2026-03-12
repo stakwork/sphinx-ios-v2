@@ -299,6 +299,56 @@ class WorkspaceTaskTableViewCellTests: XCTestCase {
         XCTAssertTrue(cell.retryWorkflowButton.isHidden, "retryWorkflowButton should hide after reconfiguring with non-HALTED status")
     }
 
+    // MARK: - Deployment Pill Tests
+
+    func testDeploymentPill_HiddenWhenNilStatus() {
+        let task = createMockTask(deploymentStatus: nil)
+        cell.configure(with: task, isLastRow: false)
+        XCTAssertTrue(cell.deploymentPill.isHidden, "deploymentPill should be hidden when deploymentStatus is nil")
+    }
+
+    func testDeploymentPill_ProductionShowsGreenBorderedPill() {
+        let task = createMockTask(deploymentStatus: "production")
+        cell.configure(with: task, isLastRow: false)
+        XCTAssertFalse(cell.deploymentPill.isHidden, "deploymentPill should be visible for production status")
+        XCTAssertEqual(cell.deploymentPill.text, "  PRODUCTION  ")
+        XCTAssertEqual(cell.deploymentPill.textColor, .Sphinx.PrimaryGreen)
+        XCTAssertEqual(cell.deploymentPill.backgroundColor, .white)
+        XCTAssertEqual(cell.deploymentPill.layer.borderColor, UIColor.Sphinx.PrimaryGreen.cgColor)
+    }
+
+    func testDeploymentPill_StagingShowsOrangeBorderedPill() {
+        let task = createMockTask(deploymentStatus: "staging")
+        cell.configure(with: task, isLastRow: false)
+        XCTAssertFalse(cell.deploymentPill.isHidden, "deploymentPill should be visible for staging status")
+        XCTAssertEqual(cell.deploymentPill.text, "  STAGING  ")
+        XCTAssertEqual(cell.deploymentPill.textColor, .Sphinx.SphinxOrange)
+        XCTAssertEqual(cell.deploymentPill.backgroundColor, .white)
+        XCTAssertEqual(cell.deploymentPill.layer.borderColor, UIColor.Sphinx.SphinxOrange.cgColor)
+    }
+
+    func testDeploymentPill_FailedShowsRedBorderedPill() {
+        let task = createMockTask(deploymentStatus: "failed")
+        cell.configure(with: task, isLastRow: false)
+        XCTAssertFalse(cell.deploymentPill.isHidden, "deploymentPill should be visible for failed status")
+        XCTAssertEqual(cell.deploymentPill.text, "  FAILED  ")
+        XCTAssertEqual(cell.deploymentPill.textColor, .Sphinx.PrimaryRed)
+        XCTAssertEqual(cell.deploymentPill.backgroundColor, .white)
+        XCTAssertEqual(cell.deploymentPill.layer.borderColor, UIColor.Sphinx.PrimaryRed.cgColor)
+    }
+
+    func testDeploymentPill_HiddenAfterReuse() {
+        // First configure with production status — pill should be visible
+        let productionTask = createMockTask(deploymentStatus: "production")
+        cell.configure(with: productionTask, isLastRow: false)
+        XCTAssertFalse(cell.deploymentPill.isHidden)
+
+        // Reconfigure with nil — pill should be hidden (no bleed)
+        let nilTask = createMockTask(deploymentStatus: nil)
+        cell.configure(with: nilTask, isLastRow: false)
+        XCTAssertTrue(cell.deploymentPill.isHidden, "deploymentPill should be hidden after reconfiguring with nil status")
+    }
+
     // MARK: - Helper Methods
     
     private func createMockTask(
@@ -311,7 +361,8 @@ class WorkspaceTaskTableViewCellTests: XCTestCase {
         prUrl: String? = nil,
         prStatus: String? = nil,
         prNumber: Int? = nil,
-        workflowStatus: String? = nil
+        workflowStatus: String? = nil,
+        deploymentStatus: String? = nil
     ) -> WorkspaceTask {
         var prArtifactDict: [String: Any] = [:]
         if prUrl != nil || prStatus != nil || prNumber != nil {
@@ -333,7 +384,8 @@ class WorkspaceTaskTableViewCellTests: XCTestCase {
                 "name": repositoryName as Any
             ],
             "updatedAt": updatedAt as Any,
-            "workflowStatus": workflowStatus as Any
+            "workflowStatus": workflowStatus as Any,
+            "deploymentStatus": deploymentStatus as Any
         ]
         if !prArtifactDict.isEmpty {
             fullJsonDict["prArtifact"] = prArtifactDict

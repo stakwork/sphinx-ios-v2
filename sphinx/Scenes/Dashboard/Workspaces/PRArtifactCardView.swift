@@ -121,6 +121,8 @@ class PRArtifactCardView: UIView {
         statsStack.addArrangedSubview(ciLabel)
         statsStack.addArrangedSubview(UIView()) // spacer
 
+        statsStack.isHidden = true
+
         let bottomRow = UIStackView(arrangedSubviews: [statsStack, openButton])
         bottomRow.translatesAutoresizingMaskIntoConstraints = false
         bottomRow.axis = .horizontal
