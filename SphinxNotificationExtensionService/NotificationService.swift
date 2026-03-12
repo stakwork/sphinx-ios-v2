@@ -218,9 +218,16 @@ class NotificationService: UNNotificationServiceExtension {
             let notification = notification,
             let aps = notification["aps"] as? [String: AnyObject],
             let customData = aps["custom_data"] as? [String: AnyObject],
-            let hiveLink = customData["child"] as? String
+            let child = customData["child"] as? String
         else { return nil }
-        return hiveLink
+
+        // Only treat as a Hive link if it matches WORKSPACE_SLUG/feature:ID or WORKSPACE_SLUG/task:ID
+        let parts = child.split(separator: "/", maxSplits: 1)
+        guard parts.count == 2 else { return nil }
+        let entityPart = String(parts[1])
+        guard entityPart.hasPrefix("feature:") || entityPart.hasPrefix("task:") else { return nil }
+
+        return child
     }
     
     override func serviceExtensionTimeWillExpire() {
