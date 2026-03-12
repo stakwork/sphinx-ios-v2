@@ -114,6 +114,63 @@ class WorkspaceTaskTests: XCTestCase {
         XCTAssertNil(WorkspaceTask(json: json), "WorkspaceTask init should return nil when id/title are missing")
     }
 
+    // MARK: - Deployment Status Parsing Tests
+
+    func testInit_ParsesDeploymentStatus_Production() {
+        let json = JSON([
+            "id": "task-ds-1",
+            "title": "Deploy task",
+            "status": "DONE",
+            "priority": "LOW",
+            "chatMessageCount": 0,
+            "deploymentStatus": "production"
+        ])
+
+        guard let task = WorkspaceTask(json: json) else {
+            XCTFail("WorkspaceTask init should succeed")
+            return
+        }
+
+        XCTAssertEqual(task.deploymentStatus, "production")
+    }
+
+    func testInit_ParsesDeploymentStatus_Nil() {
+        let json = JSON([
+            "id": "task-ds-2",
+            "title": "No deploy task",
+            "status": "TODO",
+            "priority": "LOW",
+            "chatMessageCount": 0
+        ])
+
+        guard let task = WorkspaceTask(json: json) else {
+            XCTFail("WorkspaceTask init should succeed")
+            return
+        }
+
+        XCTAssertNil(task.deploymentStatus, "deploymentStatus should be nil when field is absent")
+    }
+
+    func testInit_ParsesDeployedToProductionAt() {
+        let isoString = "2026-03-12T17:00:00.000Z"
+        let json = JSON([
+            "id": "task-ds-3",
+            "title": "Deployed task",
+            "status": "DONE",
+            "priority": "LOW",
+            "chatMessageCount": 0,
+            "deploymentStatus": "production",
+            "deployedToProductionAt": isoString
+        ])
+
+        guard let task = WorkspaceTask(json: json) else {
+            XCTFail("WorkspaceTask init should succeed")
+            return
+        }
+
+        XCTAssertEqual(task.deployedToProductionAt, isoString)
+    }
+
     func testPRFields_AreMutable() {
         let json = JSON([
             "id": "task-5",

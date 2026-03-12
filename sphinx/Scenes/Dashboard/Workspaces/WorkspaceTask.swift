@@ -40,6 +40,8 @@ struct WorkspaceTask {
     var prStatus: String?
     var prNumber: Int?
     var stakworkProjectId: Int?
+    var deploymentStatus: String?       // "production" | "staging" | "failed" | nil
+    var deployedToProductionAt: String? // ISO 8601
 
     init?(json: JSON) {
         guard let id = json["id"].string,
@@ -74,5 +76,7 @@ struct WorkspaceTask {
         self.prStatus = json["prArtifact"]["content"]["status"].string
         self.prNumber = json["prArtifact"]["content"]["number"].int
         self.stakworkProjectId = json["stakworkProjectId"].int
+        self.deploymentStatus = json["deploymentStatus"].string
+        self.deployedToProductionAt = json["deployedToProductionAt"].string
     }
 }

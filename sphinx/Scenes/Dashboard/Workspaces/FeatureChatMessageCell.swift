@@ -74,6 +74,19 @@ class FeatureChatMessageCell: UITableViewCell {
     /// (e.g. navigating between questions) so the host table view can recalculate row height.
     var onHeightChanged: (() -> Void)?
 
+    /// Called when the user taps an attachment tile.
+    var onAttachmentTap: ((HiveChatMessageAttachment) -> Void)? {
+        didSet { attachmentGridView.onTapAttachment = onAttachmentTap }
+    }
+
+    // MARK: - Attachment grid
+    private let attachmentGridView: AttachmentGridView = {
+        let v = AttachmentGridView()
+        v.translatesAutoresizingMaskIntoConstraints = false
+        v.isHidden = true
+        return v
+    }()
+
     private let timestampLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -115,8 +128,8 @@ class FeatureChatMessageCell: UITableViewCell {
         contentView.backgroundColor = .Sphinx.Body
         selectionStyle = .none
 
-        // Vertical stack inside bubble: text + optional PR card + optional clarifying questions
-        let bubbleStack = UIStackView(arrangedSubviews: [messageTextView, prCardView, clarifyingQuestionsView])
+        // Vertical stack inside bubble: text + optional PR card + optional clarifying questions + optional attachment grid
+        let bubbleStack = UIStackView(arrangedSubviews: [messageTextView, prCardView, clarifyingQuestionsView, attachmentGridView])
         bubbleStack.translatesAutoresizingMaskIntoConstraints = false
         bubbleStack.axis = .vertical
         bubbleStack.spacing = 0
@@ -314,6 +327,20 @@ class FeatureChatMessageCell: UITableViewCell {
         } else {
             timestampLabel.isHidden = true
         }
+
+        // --- Attachment grid ---
+        if !message.attachments.isEmpty {
+            attachmentGridView.configure(with: message.attachments)
+            attachmentGridView.isHidden = false
+            // Keep bubble at same max width as text messages
+            bubbleWidthConstraint.isActive = false
+            bubbleWidthConstraint = bubbleView.widthAnchor.constraint(
+                lessThanOrEqualTo: contentView.widthAnchor, multiplier: 0.85
+            )
+            bubbleWidthConstraint.isActive = true
+        } else {
+            attachmentGridView.isHidden = true
+        }
     }
 
     // MARK: - Helpers
@@ -347,6 +374,9 @@ class FeatureChatMessageCell: UITableViewCell {
         clarifyingQuestionsView.isHidden = true
         onClarifyingAnswerSubmit = nil
         onHeightChanged = nil
+        attachmentGridView.reset()
+        attachmentGridView.isHidden = true
+        onAttachmentTap = nil
         bubbleView.layer.cornerRadius = 18
         timestampLabel.text    = nil
         timestampLabel.isHidden = false

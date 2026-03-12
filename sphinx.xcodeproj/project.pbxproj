@@ -253,6 +253,7 @@
 		4759621B2F50CCF000564B7F /* HiveFeatureMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4759621A2F50CCF000564B7F /* HiveFeatureMocks.swift */; };
 		4759621D2F520FD300564B7F /* FeaturePlanViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C31187BFB7EDD28A632A1FD /* FeaturePlanViewController.swift */; };
 		4759621E2F520FD300564B7F /* FeatureChatMessageCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE30E2541BF20361DA34D7C4 /* FeatureChatMessageCell.swift */; };
+		AA7F6F17A0F74FF18EC160CC /* AttachmentGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 745A54A4B69B4D74B9F96B6F /* AttachmentGridView.swift */; };
 		475962212F5210E500564B7F /* HivePusherManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 475962202F5210E500564B7F /* HivePusherManager.swift */; };
 		475962232F5714D100564B7F /* WorkspaceTasksViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 475962222F5714C800564B7F /* WorkspaceTasksViewController.swift */; };
 		475962242F571D4000564B7F /* WorkspaceFeaturesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BF56C5719164A1E858E15AA /* WorkspaceFeaturesViewController.swift */; };
@@ -2277,6 +2278,7 @@
 		F8A9B0C1D2E3F4A5B6C7D8E9 /* StakworkRun.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StakworkRun.swift; sourceTree = "<group>"; };
 		FDF1E0A8EFE1D98BD5A99505 /* Pods-sphinx.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-sphinx.release.xcconfig"; path = "Target Support Files/Pods-sphinx/Pods-sphinx.release.xcconfig"; sourceTree = "<group>"; };
 		FE30E2541BF20361DA34D7C4 /* FeatureChatMessageCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureChatMessageCell.swift; sourceTree = "<group>"; };
+		745A54A4B69B4D74B9F96B6F /* AttachmentGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentGridView.swift; sourceTree = "<group>"; };
 		FED99A42AA0C9CE8FD759E82 /* Pods-sphinx.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-sphinx.debug.xcconfig"; path = "Target Support Files/Pods-sphinx/Pods-sphinx.debug.xcconfig"; sourceTree = "<group>"; };
 		H8I9J0K1L2M3N4O5P6Q7R8S9 /* WorkspaceTaskTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceTaskTests.swift; sourceTree = "<group>"; };
 		J0K1L2M3N4O5P6Q7R8S9T0U1 /* WorkspaceTasksViewControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceTasksViewControllerTests.swift; sourceTree = "<group>"; };
@@ -4108,6 +4110,7 @@
 				BBD09FC96699AA4977BB011A /* TaskChatViewController.swift */,
 				D5D5C9BE1416497D9EEB9877 /* MarkdownRenderer.swift */,
 				FE30E2541BF20361DA34D7C4 /* FeatureChatMessageCell.swift */,
+				745A54A4B69B4D74B9F96B6F /* AttachmentGridView.swift */,
 				BD1BE98930F1EB41308524E1 /* PRArtifactCardView.swift */,
 				AA001CQ02F9A0001000CQ001 /* ClarifyingQuestionsView.swift */,
 				47B9CBFB2F460C7B007527B4 /* WorkspaceTableViewCell.swift */,
@@ -5505,6 +5508,7 @@
 				4759621D2F520FD300564B7F /* FeaturePlanViewController.swift in Sources */,
 				4AC66B19341A44DA8F5A0F1E /* MarkdownRenderer.swift in Sources */,
 				4759621E2F520FD300564B7F /* FeatureChatMessageCell.swift in Sources */,
+				AA7F6F17A0F74FF18EC160CC /* AttachmentGridView.swift in Sources */,
 				BE880A27BE0E704666995737 /* PRArtifactCardView.swift in Sources */,
 				AA001CQ12F9A0001000CQ001 /* ClarifyingQuestionsView.swift in Sources */,
 				A1B2C3D4E5F60001I9J0K1L2 /* HiveLinkNavigator.swift in Sources */,
