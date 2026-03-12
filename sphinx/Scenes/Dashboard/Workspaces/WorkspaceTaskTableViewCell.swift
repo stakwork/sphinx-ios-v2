@@ -138,7 +138,7 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
     }
 
     private func setupRightPillStack() {
-        rightPillStack = UIStackView(arrangedSubviews: [prBadgeButton, haltedWorkflowBadge, deploymentPill, updatedAtLabel])
+        rightPillStack = UIStackView(arrangedSubviews: [updatedAtLabel, deploymentPill, haltedWorkflowBadge, prBadgeButton])
         rightPillStack.axis = .horizontal
         rightPillStack.alignment = .center
         rightPillStack.distribution = .fill
@@ -220,19 +220,19 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         // ── Deployment status pill ───────────────────────────────────────
         switch task.deploymentStatus {
         case "production":
-            deploymentPill.text = "  PRODUCTION  "
+            deploymentPill.text = "PRODUCTION"
             deploymentPill.textColor = .Sphinx.PrimaryGreen
             deploymentPill.layer.borderColor = UIColor.Sphinx.PrimaryGreen.cgColor
             deploymentPill.backgroundColor = .white
             deploymentPill.isHidden = false
         case "staging":
-            deploymentPill.text = "  STAGING  "
+            deploymentPill.text = "STAGING"
             deploymentPill.textColor = .Sphinx.SphinxOrange
             deploymentPill.layer.borderColor = UIColor.Sphinx.SphinxOrange.cgColor
             deploymentPill.backgroundColor = .white
             deploymentPill.isHidden = false
         case "failed":
-            deploymentPill.text = "  FAILED  "
+            deploymentPill.text = "FAILED"
             deploymentPill.textColor = .Sphinx.PrimaryRed
             deploymentPill.layer.borderColor = UIColor.Sphinx.PrimaryRed.cgColor
             deploymentPill.backgroundColor = .white
