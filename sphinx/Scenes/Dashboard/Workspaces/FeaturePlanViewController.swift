@@ -51,24 +51,7 @@ class FeaturePlanViewController: UIViewController {
     
     // Chat Panel Components
     private var chatTableView: UITableView!
-
-    // MARK: - Attachment loading overlay
-    private lazy var attachmentLoadingOverlay: UIView = {
-        let overlay = UIView()
-        overlay.translatesAutoresizingMaskIntoConstraints = false
-        overlay.backgroundColor = UIColor.black.withAlphaComponent(0.45)
-        overlay.isHidden = true
-        let spinner = UIActivityIndicatorView(style: .large)
-        spinner.translatesAutoresizingMaskIntoConstraints = false
-        spinner.color = .white
-        spinner.startAnimating()
-        overlay.addSubview(spinner)
-        NSLayoutConstraint.activate([
-            spinner.centerXAnchor.constraint(equalTo: overlay.centerXAnchor),
-            spinner.centerYAnchor.constraint(equalTo: overlay.centerYAnchor),
-        ])
-        return overlay
-    }()
+    private let bubbleHelper = NewMessageBubbleHelper()
     private var chatInputContainer: UIView!
     private var chatInputTextView: UITextView!
     private var sendButton: UIButton!
@@ -172,14 +155,7 @@ class FeaturePlanViewController: UIViewController {
         // Set initial generate button visibility
         updateGenerateTasksButton()
 
-        // Attachment loading overlay — sits on top of everything
-        view.addSubview(attachmentLoadingOverlay)
-        NSLayoutConstraint.activate([
-            attachmentLoadingOverlay.topAnchor.constraint(equalTo: view.topAnchor),
-            attachmentLoadingOverlay.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            attachmentLoadingOverlay.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            attachmentLoadingOverlay.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-        ])
+
     }
     
     private func setupHeader() {
@@ -1200,32 +1176,32 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
     private func handleAttachmentTap(_ attachment: HiveChatMessageAttachment) {
         guard let s3Key = attachment.resolvedUrl else { return }
         let mime = attachment.mimeType ?? ""
-        attachmentLoadingOverlay.isHidden = false
+        bubbleHelper.showLoadingWheel()
         API.sharedInstance.fetchPresignedUrlWithAuth(s3Key: s3Key) { [weak self] presignedStr in
             DispatchQueue.main.async {
                 guard let self = self else { return }
                 guard let urlStr = presignedStr, let url = URL(string: urlStr) else {
-                    self.attachmentLoadingOverlay.isHidden = true
+                    self.bubbleHelper.hideLoadingWheel()
                     return
                 }
                 if mime.hasPrefix("image/") {
                     if let vc = AttachmentFullScreenViewController.instantiate(imageUrl: url) {
                         self.present(vc, animated: true) {
-                            self.attachmentLoadingOverlay.isHidden = true
+                            self.bubbleHelper.hideLoadingWheel()
                         }
                     } else {
-                        self.attachmentLoadingOverlay.isHidden = true
+                        self.bubbleHelper.hideLoadingWheel()
                     }
                 } else if mime.hasPrefix("video/") {
                     let player = AVPlayer(url: url)
                     let vc = AVPlayerViewController()
                     vc.player = player
                     self.present(vc, animated: true) {
-                        self.attachmentLoadingOverlay.isHidden = true
+                        self.bubbleHelper.hideLoadingWheel()
                         player.play()
                     }
                 } else {
-                    self.attachmentLoadingOverlay.isHidden = true
+                    self.bubbleHelper.hideLoadingWheel()
                 }
             }
         }
