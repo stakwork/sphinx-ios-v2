@@ -134,10 +134,11 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         deploymentPill.translatesAutoresizingMaskIntoConstraints = false
         deploymentPill.isHidden = true
         deploymentPill.heightAnchor.constraint(equalToConstant: 22).isActive = true
+        deploymentPill.widthAnchor.constraint(equalToConstant: 90).isActive = true
     }
 
     private func setupRightPillStack() {
-        rightPillStack = UIStackView(arrangedSubviews: [deploymentPill, prBadgeButton, haltedWorkflowBadge, updatedAtLabel])
+        rightPillStack = UIStackView(arrangedSubviews: [prBadgeButton, haltedWorkflowBadge, deploymentPill, updatedAtLabel])
         rightPillStack.axis = .horizontal
         rightPillStack.alignment = .center
         rightPillStack.distribution = .fill

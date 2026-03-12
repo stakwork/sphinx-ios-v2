@@ -226,14 +226,16 @@ class WorkspaceTaskTableViewCellTests: XCTestCase {
         XCTAssertTrue(cell.rightPillStack.arrangedSubviews.contains(cell.updatedAtLabel))
     }
 
-    func testRightPillStack_PRVisible_DateLeftOfPR() {
+    func testRightPillStack_PRVisible_DateRightOfPR() {
         let task = createMockTask(prUrl: "https://github.com/org/repo/pull/1", prStatus: "OPEN")
         cell.configure(with: task, isLastRow: false)
         XCTAssertFalse(cell.prBadgeButton.isHidden)
         XCTAssertTrue(cell.haltedWorkflowBadge.isHidden)
         let subviews = cell.rightPillStack.arrangedSubviews
-        XCTAssertEqual(subviews.firstIndex(of: cell.updatedAtLabel), 0)
-        XCTAssertGreaterThan(subviews.firstIndex(of: cell.prBadgeButton)!, 0)
+        let prIndex = subviews.firstIndex(of: cell.prBadgeButton)!
+        let dateIndex = subviews.firstIndex(of: cell.updatedAtLabel)!
+        XCTAssertEqual(prIndex, 0, "PR badge should be the leftmost item")
+        XCTAssertGreaterThan(dateIndex, prIndex, "Date label should be to the right of the PR badge")
     }
 
     func testRightPillStack_HaltedVisible_DateLeftOfHalted() {
