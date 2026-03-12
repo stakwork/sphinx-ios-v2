@@ -7,6 +7,8 @@
 //
 
 import UIKit
+import AVKit
+import AVFoundation
 
 class FeaturePlanViewController: UIViewController {
     
@@ -1162,7 +1164,25 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
             tableView?.beginUpdates()
             tableView?.endUpdates()
         }
+        cell.onAttachmentTap = { [weak self] attachment in
+            self?.handleAttachmentTap(attachment)
+        }
         return cell
+    }
+
+    private func handleAttachmentTap(_ attachment: HiveChatMessageAttachment) {
+        guard let urlStr = attachment.resolvedUrl, let url = URL(string: urlStr) else { return }
+        let mime = attachment.mimeType ?? ""
+        if mime.hasPrefix("image/") {
+            if let vc = AttachmentFullScreenViewController.instantiate(imageUrl: url) {
+                present(vc, animated: true)
+            }
+        } else if mime.hasPrefix("video/") {
+            let player = AVPlayer(url: url)
+            let vc = AVPlayerViewController()
+            vc.player = player
+            present(vc, animated: true) { player.play() }
+        }
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {

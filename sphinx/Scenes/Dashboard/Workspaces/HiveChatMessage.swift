@@ -139,13 +139,17 @@ struct HiveChatMessageArtifact {
 struct HiveChatMessageAttachment {
     let filename: String?
     let path: String?
+    let url: String?
     let mimeType: String?
 
     init(json: JSON) {
         self.filename = json["filename"].string
         self.path = json["path"].string
+        self.url = json["url"].string
         self.mimeType = json["mimeType"].string
     }
+
+    var resolvedUrl: String? { url ?? path }
 }
 
 struct HiveChatMessage {
