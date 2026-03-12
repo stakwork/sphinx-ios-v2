@@ -54,8 +54,7 @@ class NotificationService: UNNotificationServiceExtension {
         self.bestAttemptContent = (request.content.mutableCopy() as? UNMutableNotificationContent)
 
         // Guard: if this is a HIVE notification, preserve server-sent title/body and return immediately
-        if let userInfo = bestAttemptContent?.userInfo as? [String: AnyObject],
-           getHiveLinkFrom(notification: userInfo) != nil {
+        if let userInfo = bestAttemptContent?.userInfo as? [String: AnyObject], getHiveLinkFrom(notification: userInfo) != nil {
             if let bestAttemptContent = bestAttemptContent {
                 resetContentHandler()
                 contentHandler(bestAttemptContent)
@@ -219,7 +218,7 @@ class NotificationService: UNNotificationServiceExtension {
             let notification = notification,
             let aps = notification["aps"] as? [String: AnyObject],
             let customData = aps["custom_data"] as? [String: AnyObject],
-            let hiveLink = customData["hive_link"] as? String
+            let hiveLink = customData["child"] as? String
         else { return nil }
         return hiveLink
     }

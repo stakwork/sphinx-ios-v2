@@ -657,21 +657,6 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         }
     }
     
-    func getChatIdFrom(
-        notification: [String: AnyObject]?
-    ) -> Int? {
-        if
-            let notification = notification,
-            let aps = notification["aps"] as? [String: AnyObject],
-            let customData = aps["custom_data"] as? [String: AnyObject]
-        {
-            if let chatId = customData["chat_id"] as? Int {
-                return chatId
-            }
-        }
-        return nil
-    }
-    
     func goTo(chat: Chat) {
         if let rootVC = getRootViewController() {
             if let centerVC = rootVC.getLastCenterViewController() {

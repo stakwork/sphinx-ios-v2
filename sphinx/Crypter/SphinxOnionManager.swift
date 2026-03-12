@@ -885,7 +885,7 @@ extension SphinxOnionManager {//Sign Up UI Related:
             let notification = notification,
             let aps = notification["aps"] as? [String: AnyObject],
             let customData = aps["custom_data"] as? [String: AnyObject],
-            let hiveLink = customData["hive_link"] as? String
+            let hiveLink = customData["child"] as? String
         else { return nil }
         return hiveLink
     }
