@@ -254,12 +254,38 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         {
             return
         }
-        
+
+        if let hiveLink = SphinxOnionManager.sharedInstance.getHiveLinkFrom(notification: notificationUserInfo),
+           let navigatableURL = buildHiveURL(from: hiveLink),
+           let currentVC = getCurrentVC() {
+            HiveLinkNavigator.navigate(hiveLink: navigatableURL, from: currentVC)
+            self.notificationUserInfo = nil
+            return
+        }
+
         if let chat = SphinxOnionManager.sharedInstance.mapNotificationToChat(notificationUserInfo: notificationUserInfo)?.0 {
             goTo(chat: chat)
         }
         
         self.notificationUserInfo = nil
+    }
+
+    /// Converts "my-workspace/feature:abc123" → "https://hive.sphinx.chat/w/my-workspace/plan/abc123"
+    /// Converts "my-workspace/task:xyz789"   → "https://hive.sphinx.chat/w/my-workspace/task/xyz789"
+    private func buildHiveURL(from hiveLink: String) -> String? {
+        let parts = hiveLink.split(separator: "/", maxSplits: 1)
+        guard parts.count == 2 else { return nil }
+        let slug = String(parts[0])
+        let entityPart = String(parts[1])
+
+        if entityPart.hasPrefix("feature:") {
+            let id = entityPart.replacingOccurrences(of: "feature:", with: "")
+            return "https://hive.sphinx.chat/w/\(slug)/plan/\(id)"
+        } else if entityPart.hasPrefix("task:") {
+            let id = entityPart.replacingOccurrences(of: "task:", with: "")
+            return "https://hive.sphinx.chat/w/\(slug)/task/\(id)"
+        }
+        return nil
     }
     
     func applicationWillTerminate(
@@ -403,6 +429,23 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     //Notifications
     func syncDeviceId() {
         UserContact.syncDeviceId()
+        syncHiveDeviceToken()
+    }
+
+    func syncHiveDeviceToken() {
+        guard let apnsToken: String = UserDefaults.Keys.deviceId.get(), !apnsToken.isEmpty else { return }
+        let lastSynced: String? = UserDefaults.Keys.hiveDeviceToken.get()
+        guard lastSynced != apnsToken else { return }
+
+        API.sharedInstance.registerDeviceTokenWithAuth(
+            token: apnsToken,
+            callback: {
+                UserDefaults.Keys.hiveDeviceToken.set(apnsToken)
+            },
+            errorCallback: {
+                print("[HIVE] Failed to register device token")
+            }
+        )
     }
     
     func handleIncomingCall(
@@ -593,6 +636,7 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         let token = tokenParts.joined()
         
         UserContact.updateDeviceId(deviceId: token)
+        syncHiveDeviceToken()
     }
 
     func application(
@@ -611,21 +655,6 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
                 }
             }
         }
-    }
-    
-    func getChatIdFrom(
-        notification: [String: AnyObject]?
-    ) -> Int? {
-        if
-            let notification = notification,
-            let aps = notification["aps"] as? [String: AnyObject],
-            let customData = aps["custom_data"] as? [String: AnyObject]
-        {
-            if let chatId = customData["chat_id"] as? Int {
-                return chatId
-            }
-        }
-        return nil
     }
     
     func goTo(chat: Chat) {

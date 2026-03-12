@@ -2381,6 +2381,84 @@ extension API {
         )
     }
 
+    // MARK: - Device Token Registration
+
+    func registerDeviceToken(
+        token: String,
+        authToken: String,
+        callback: @escaping EmptyCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        let params: [String: AnyObject] = ["ios_device_token": token as AnyObject]
+        guard let request = createRequest(
+            "\(API.kHiveBaseUrl)/device-token",
+            bodyParams: params as NSDictionary,
+            method: "POST",
+            token: authToken
+        ) else {
+            errorCallback()
+            return
+        }
+
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode != 200 {
+                print("[HiveAPI] device token set unauthorized (401) - token may be expired")
+                errorCallback()
+                return
+            }
+            
+            switch response.result {
+            case .success:
+                callback()
+            case .failure:
+                errorCallback()
+            }
+        }
+    }
+
+    func registerDeviceTokenWithAuth(
+        token: String,
+        callback: @escaping EmptyCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
+            registerDeviceToken(
+                token: token,
+                authToken: storedToken,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateWithHive(
+                        callback: { [weak self] newToken in
+                            guard let newToken = newToken else { errorCallback(); return }
+                            UserDefaults.Keys.hiveToken.set(newToken)
+                            self?.registerDeviceToken(
+                                token: token,
+                                authToken: newToken,
+                                callback: callback,
+                                errorCallback: errorCallback
+                            )
+                        },
+                        errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateWithHive(
+                callback: { [weak self] newToken in
+                    guard let newToken = newToken else { errorCallback(); return }
+                    UserDefaults.Keys.hiveToken.set(newToken)
+                    self?.registerDeviceToken(
+                        token: token,
+                        authToken: newToken,
+                        callback: callback,
+                        errorCallback: errorCallback
+                    )
+                },
+                errorCallback: errorCallback
+            )
+        }
+    }
+
 }
 
 // MARK: - Workspace Image Cache

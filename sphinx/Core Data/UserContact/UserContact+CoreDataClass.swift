@@ -506,6 +506,7 @@ public class UserContact: NSManagedObject {
     ) {
         if let currentDeviceId = newDeviceId ?? UserDefaults.Keys.deviceId.get(), !currentDeviceId.isEmpty {
             SphinxOnionManager.sharedInstance.registerDeviceID(id: currentDeviceId)
+            UserDefaults.Keys.deviceId.set(currentDeviceId)
         }
     }
     
