@@ -391,6 +391,62 @@ extension API {
         )
     }
 
+    // MARK: - Presigned URL
+
+    /// Fetches a presigned S3 URL for the given S3 key.
+    /// The server returns a 302 redirect to the actual S3 URL; URLSession follows it
+    /// and we return the final resolved URL.
+    func fetchPresignedUrl(
+        s3Key: String,
+        authToken: String,
+        callback: @escaping (String?) -> Void
+    ) {
+        guard let encoded = s3Key.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let url = URL(string: "\(API.kHiveBaseUrl)/upload/presigned-url?s3Key=\(encoded)") else {
+            callback(nil); return
+        }
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "GET"
+        urlRequest.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+
+        let session = URLSession(configuration: .default)
+        session.dataTask(with: urlRequest) { _, response, _ in
+            // URLSession follows redirects by default; response.url is the final S3 URL
+            if let httpResponse = response as? HTTPURLResponse,
+               let finalUrl = httpResponse.url?.absoluteString {
+                callback(finalUrl)
+            } else {
+                callback(nil)
+            }
+        }.resume()
+    }
+
+    func fetchPresignedUrlWithAuth(
+        s3Key: String,
+        callback: @escaping (String?) -> Void
+    ) {
+        if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
+            fetchPresignedUrl(s3Key: s3Key, authToken: storedToken) { [weak self] result in
+                if result != nil {
+                    callback(result)
+                } else {
+                    // Token may be expired — re-auth and retry once
+                    self?.authenticateWithHive(callback: { newToken in
+                        guard let newToken = newToken else { callback(nil); return }
+                        UserDefaults.Keys.hiveToken.set(newToken)
+                        self?.fetchPresignedUrl(s3Key: s3Key, authToken: newToken, callback: callback)
+                    }, errorCallback: { callback(nil) })
+                }
+            }
+        } else {
+            authenticateWithHive(callback: { [weak self] token in
+                guard let token = token else { callback(nil); return }
+                UserDefaults.Keys.hiveToken.set(token)
+                self?.fetchPresignedUrl(s3Key: s3Key, authToken: token, callback: callback)
+            }, errorCallback: { callback(nil) })
+        }
+    }
+
     // MARK: - Features
 
     func fetchFeatures(

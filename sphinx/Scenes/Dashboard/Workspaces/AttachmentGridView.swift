@@ -93,8 +93,15 @@ private class AttachmentTileView: UIView {
 
         if mime.hasPrefix("image/") {
             imageView.backgroundColor = .darkGray
-            if let urlStr = attachment.resolvedUrl, let url = URL(string: urlStr) {
-                imageView.sd_setImage(with: url, placeholderImage: nil, options: .lowPriority)
+            if let s3Key = attachment.resolvedUrl {
+                API.sharedInstance.fetchPresignedUrlWithAuth(s3Key: s3Key) { [weak self] presignedUrlStr in
+                    DispatchQueue.main.async {
+                        guard let self = self,
+                              let urlStr = presignedUrlStr,
+                              let url = URL(string: urlStr) else { return }
+                        self.imageView.sd_setImage(with: url, placeholderImage: nil, options: .lowPriority)
+                    }
+                }
             }
         } else if mime.hasPrefix("video/") {
             imageView.image = nil

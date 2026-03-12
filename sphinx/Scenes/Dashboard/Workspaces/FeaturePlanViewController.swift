@@ -1171,17 +1171,24 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
     }
 
     private func handleAttachmentTap(_ attachment: HiveChatMessageAttachment) {
-        guard let urlStr = attachment.resolvedUrl, let url = URL(string: urlStr) else { return }
+        guard let s3Key = attachment.resolvedUrl else { return }
         let mime = attachment.mimeType ?? ""
-        if mime.hasPrefix("image/") {
-            if let vc = AttachmentFullScreenViewController.instantiate(imageUrl: url) {
-                present(vc, animated: true)
+        API.sharedInstance.fetchPresignedUrlWithAuth(s3Key: s3Key) { [weak self] presignedStr in
+            DispatchQueue.main.async {
+                guard let self = self,
+                      let urlStr = presignedStr,
+                      let url = URL(string: urlStr) else { return }
+                if mime.hasPrefix("image/") {
+                    if let vc = AttachmentFullScreenViewController.instantiate(imageUrl: url) {
+                        self.present(vc, animated: true)
+                    }
+                } else if mime.hasPrefix("video/") {
+                    let player = AVPlayer(url: url)
+                    let vc = AVPlayerViewController()
+                    vc.player = player
+                    self.present(vc, animated: true) { player.play() }
+                }
             }
-        } else if mime.hasPrefix("video/") {
-            let player = AVPlayer(url: url)
-            let vc = AVPlayerViewController()
-            vc.player = player
-            present(vc, animated: true) { player.play() }
         }
     }
 
