@@ -7,6 +7,8 @@
 //
 
 import UIKit
+import AVKit
+import AVFoundation
 
 class FeaturePlanViewController: UIViewController {
     
@@ -49,6 +51,7 @@ class FeaturePlanViewController: UIViewController {
     
     // Chat Panel Components
     private var chatTableView: UITableView!
+    private let bubbleHelper = NewMessageBubbleHelper()
     private var chatInputContainer: UIView!
     private var chatInputTextView: UITextView!
     private var sendButton: UIButton!
@@ -151,6 +154,8 @@ class FeaturePlanViewController: UIViewController {
         showPanel(at: 0)
         // Set initial generate button visibility
         updateGenerateTasksButton()
+
+
     }
     
     private func setupHeader() {
@@ -1162,7 +1167,44 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
             tableView?.beginUpdates()
             tableView?.endUpdates()
         }
+        cell.onAttachmentTap = { [weak self] attachment in
+            self?.handleAttachmentTap(attachment)
+        }
         return cell
+    }
+
+    private func handleAttachmentTap(_ attachment: HiveChatMessageAttachment) {
+        guard let s3Key = attachment.resolvedUrl else { return }
+        let mime = attachment.mimeType ?? ""
+        bubbleHelper.showLoadingWheel()
+        API.sharedInstance.fetchPresignedUrlWithAuth(s3Key: s3Key) { [weak self] presignedStr in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                guard let urlStr = presignedStr, let url = URL(string: urlStr) else {
+                    self.bubbleHelper.hideLoadingWheel()
+                    return
+                }
+                if mime.hasPrefix("image/") {
+                    if let vc = AttachmentFullScreenViewController.instantiate(imageUrl: url) {
+                        self.present(vc, animated: true) {
+                            self.bubbleHelper.hideLoadingWheel()
+                        }
+                    } else {
+                        self.bubbleHelper.hideLoadingWheel()
+                    }
+                } else if mime.hasPrefix("video/") {
+                    let player = AVPlayer(url: url)
+                    let vc = AVPlayerViewController()
+                    vc.player = player
+                    self.present(vc, animated: true) {
+                        self.bubbleHelper.hideLoadingWheel()
+                        player.play()
+                    }
+                } else {
+                    self.bubbleHelper.hideLoadingWheel()
+                }
+            }
+        }
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
