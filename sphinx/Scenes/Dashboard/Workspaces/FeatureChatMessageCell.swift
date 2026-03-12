@@ -331,10 +331,10 @@ class FeatureChatMessageCell: UITableViewCell {
             attachmentGridView.configure(with: message.attachments)
             attachmentGridView.isHidden = false
             attachmentGridView.onTapAttachment = onAttachmentTap
-            // Widen bubble to near full-width when attachments are present
+            // Keep bubble at same max width as text messages
             bubbleWidthConstraint.isActive = false
             bubbleWidthConstraint = bubbleView.widthAnchor.constraint(
-                equalTo: contentView.widthAnchor, multiplier: 0.95
+                lessThanOrEqualTo: contentView.widthAnchor, multiplier: 0.85
             )
             bubbleWidthConstraint.isActive = true
         } else {
