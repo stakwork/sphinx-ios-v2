@@ -28,6 +28,24 @@ class TaskChatViewController: UIViewController {
     private var releasePodButton: UIButton!
     private var shareButton: UIButton!
 
+    // MARK: - Attachment loading overlay
+    private lazy var attachmentLoadingOverlay: UIView = {
+        let overlay = UIView()
+        overlay.translatesAutoresizingMaskIntoConstraints = false
+        overlay.backgroundColor = UIColor.black.withAlphaComponent(0.45)
+        overlay.isHidden = true
+        let spinner = UIActivityIndicatorView(style: .large)
+        spinner.translatesAutoresizingMaskIntoConstraints = false
+        spinner.color = .white
+        spinner.startAnimating()
+        overlay.addSubview(spinner)
+        NSLayoutConstraint.activate([
+            spinner.centerXAnchor.constraint(equalTo: overlay.centerXAnchor),
+            spinner.centerYAnchor.constraint(equalTo: overlay.centerYAnchor),
+        ])
+        return overlay
+    }()
+
     // MARK: - Chat
     private var chatTableView: UITableView!
     private var chatInputContainer: UIView!
@@ -350,6 +368,15 @@ class TaskChatViewController: UIViewController {
             autocompleteContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             autocompleteContainer.bottomAnchor.constraint(equalTo: chatInputContainer.topAnchor),
             autocompleteHeightConstraint
+        ])
+
+        // Attachment loading overlay — sits on top of everything
+        view.addSubview(attachmentLoadingOverlay)
+        NSLayoutConstraint.activate([
+            attachmentLoadingOverlay.topAnchor.constraint(equalTo: view.topAnchor),
+            attachmentLoadingOverlay.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            attachmentLoadingOverlay.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            attachmentLoadingOverlay.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
     }
 
@@ -733,20 +760,32 @@ extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
     private func handleAttachmentTap(_ attachment: HiveChatMessageAttachment) {
         guard let s3Key = attachment.resolvedUrl else { return }
         let mime = attachment.mimeType ?? ""
+        attachmentLoadingOverlay.isHidden = false
         API.sharedInstance.fetchPresignedUrlWithAuth(s3Key: s3Key) { [weak self] presignedStr in
             DispatchQueue.main.async {
-                guard let self = self,
-                      let urlStr = presignedStr,
-                      let url = URL(string: urlStr) else { return }
+                guard let self = self else { return }
+                guard let urlStr = presignedStr, let url = URL(string: urlStr) else {
+                    self.attachmentLoadingOverlay.isHidden = true
+                    return
+                }
                 if mime.hasPrefix("image/") {
                     if let vc = AttachmentFullScreenViewController.instantiate(imageUrl: url) {
-                        self.present(vc, animated: true)
+                        self.present(vc, animated: true) {
+                            self.attachmentLoadingOverlay.isHidden = true
+                        }
+                    } else {
+                        self.attachmentLoadingOverlay.isHidden = true
                     }
                 } else if mime.hasPrefix("video/") {
                     let player = AVPlayer(url: url)
                     let vc = AVPlayerViewController()
                     vc.player = player
-                    self.present(vc, animated: true) { player.play() }
+                    self.present(vc, animated: true) {
+                        self.attachmentLoadingOverlay.isHidden = true
+                        player.play()
+                    }
+                } else {
+                    self.attachmentLoadingOverlay.isHidden = true
                 }
             }
         }
