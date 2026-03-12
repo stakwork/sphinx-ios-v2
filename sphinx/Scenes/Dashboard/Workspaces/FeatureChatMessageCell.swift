@@ -75,7 +75,9 @@ class FeatureChatMessageCell: UITableViewCell {
     var onHeightChanged: (() -> Void)?
 
     /// Called when the user taps an attachment tile.
-    var onAttachmentTap: ((HiveChatMessageAttachment) -> Void)?
+    var onAttachmentTap: ((HiveChatMessageAttachment) -> Void)? {
+        didSet { attachmentGridView.onTapAttachment = onAttachmentTap }
+    }
 
     // MARK: - Attachment grid
     private let attachmentGridView: AttachmentGridView = {
@@ -330,7 +332,6 @@ class FeatureChatMessageCell: UITableViewCell {
         if !message.attachments.isEmpty {
             attachmentGridView.configure(with: message.attachments)
             attachmentGridView.isHidden = false
-            attachmentGridView.onTapAttachment = onAttachmentTap
             // Keep bubble at same max width as text messages
             bubbleWidthConstraint.isActive = false
             bubbleWidthConstraint = bubbleView.widthAnchor.constraint(

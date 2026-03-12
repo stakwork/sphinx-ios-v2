@@ -394,31 +394,28 @@ extension API {
     // MARK: - Presigned URL
 
     /// Fetches a presigned S3 URL for the given S3 key.
-    /// The server returns a 302 redirect to the actual S3 URL; URLSession follows it
-    /// and we return the final resolved URL.
+    /// The server returns a 302 redirect to the actual S3 URL; Alamofire follows it
+    /// and we return the final resolved URL from the response.
     func fetchPresignedUrl(
         s3Key: String,
         authToken: String,
         callback: @escaping (String?) -> Void
     ) {
-        guard let encoded = s3Key.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-              let url = URL(string: "\(API.kHiveBaseUrl)/upload/presigned-url?s3Key=\(encoded)") else {
+        guard let encoded = s3Key.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
             callback(nil); return
         }
-        var urlRequest = URLRequest(url: url)
-        urlRequest.httpMethod = "GET"
-        urlRequest.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
-
-        let session = URLSession(configuration: .default)
-        session.dataTask(with: urlRequest) { _, response, _ in
-            // URLSession follows redirects by default; response.url is the final S3 URL
-            if let httpResponse = response as? HTTPURLResponse,
-               let finalUrl = httpResponse.url?.absoluteString {
+        let urlString = "\(API.kHiveBaseUrl)/upload/presigned-url?s3Key=\(encoded)"
+        guard let request = createRequest(urlString, bodyParams: nil, method: "GET", token: authToken) else {
+            callback(nil); return
+        }
+        session()?.request(request).responseData { response in
+            // Alamofire follows the 302 redirect; response.response?.url is the final S3 URL
+            if let finalUrl = response.response?.url?.absoluteString {
                 callback(finalUrl)
             } else {
                 callback(nil)
             }
-        }.resume()
+        }
     }
 
     func fetchPresignedUrlWithAuth(
