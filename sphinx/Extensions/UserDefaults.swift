@@ -55,6 +55,7 @@ extension UserDefaults {
         public static let messagesSize = DefaultKey<Int>("messagesSize")
         public static let shouldTrackActions = DefaultKey<Bool>("shouldTrackActions")
         public static let shouldAutoDownloadSubscribedPods = DefaultKey<Bool>("shouldAutoDownloadSubscribedPods")
+        public static let hiveNotificationsEnabled = DefaultKey<Bool>("hiveNotificationsEnabled")
         public static let setupSigningDevice = DefaultKey<Bool>("setupSigningDevice")
         public static let setupPhoneSigner = DefaultKey<Bool>("setupPhoneSigner")
         public static let phoneSignerHost = DefaultKey<String>("phoneSignerHost")
