@@ -759,9 +759,9 @@ extension String {
     var isHivePlanLink: Bool {
         guard let url = URL(string: self),
               let host = url.host else { return false }
-        let components = url.pathComponents // ["/", "w", slug, "plan", id]
+        let components = url.pathComponents // ["/", "w", slug, "plan", id...] (5 or 6 parts)
         return host == "hive.sphinx.chat"
-            && components.count == 5
+            && components.count >= 5
             && components[1] == "w"
             && components[3] == "plan"
     }
@@ -771,7 +771,7 @@ extension String {
               let host = url.host else { return false }
         let components = url.pathComponents
         return host == "hive.sphinx.chat"
-            && components.count == 5
+            && components.count >= 5
             && components[1] == "w"
             && components[3] == "task"
     }
@@ -784,12 +784,13 @@ extension String {
         return parts[2]
     }
 
-    /// Returns the trailing entity ID (feature-id or task-id) from a hive.sphinx.chat/w/.../plan/{id} or .../task/{id} URL
+    /// Returns the trailing entity ID from a hive.sphinx.chat/w/.../plan/{id...} or .../task/{id...} URL.
+    /// Joins all components after index 4 with "/" to handle compound IDs like "cmmp3u4zp0005/104h0okugrd".
     var hiveEntityId: String? {
         guard let url = URL(string: self) else { return nil }
         let parts = url.pathComponents
-        guard parts.count == 5 else { return nil }
-        return parts[4]
+        guard parts.count >= 5 else { return nil }
+        return parts[4...].joined(separator: "/")
     }
     
     var isGiphy: Bool {

@@ -30,11 +30,22 @@ struct MarkdownTextView: UIViewRepresentable {
             .foregroundColor: UIColor.Sphinx.PrimaryBlue,
             .underlineStyle: NSUnderlineStyle.single.rawValue
         ]
+        // Allow the text view to shrink-wrap its content instead of expanding to fill available width
+        textView.setContentHuggingPriority(.required, for: .horizontal)
+        textView.setContentHuggingPriority(.required, for: .vertical)
+        textView.setContentCompressionResistancePriority(.required, for: .vertical)
         return textView
     }
 
     func updateUIView(_ uiView: UITextView, context: Context) {
         uiView.attributedText = attributedText
+    }
+
+    // Provide an intrinsic size so SwiftUI wraps the view tightly around the text
+    func sizeThatFits(_ proposal: ProposedViewSize, uiView: UITextView, context: Context) -> CGSize? {
+        let width = proposal.width ?? UIScreen.main.bounds.width
+        let size = uiView.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude))
+        return size
     }
 
     // MARK: - Coordinator
