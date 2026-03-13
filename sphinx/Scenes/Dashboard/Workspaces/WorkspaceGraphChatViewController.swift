@@ -16,7 +16,10 @@ class WorkspaceGraphChatViewController: UIViewController {
     private var workspace: Workspace
     private var messages: [HiveChatMessage] = []
     private var isStreaming: Bool = false {
-        didSet { updateInputState() }
+        didSet {
+            updateInputState()
+            updateEmptyState()
+        }
     }
     private var processingStepText: String? = nil
     private var sseManager: GraphChatSSEManager?
@@ -46,6 +49,7 @@ class WorkspaceGraphChatViewController: UIViewController {
     private var chatInputTextView: UITextView!
     private var sendButton: UIButton!
     private var chatInputBottomConstraint: NSLayoutConstraint!
+    private var emptyStateLabel: UILabel!
 
     // MARK: - Init
 
@@ -69,6 +73,7 @@ class WorkspaceGraphChatViewController: UIViewController {
         view.backgroundColor = UIColor.Sphinx.Body
         setupUI()
         setupKeyboardObservers()
+        updateEmptyState()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -100,6 +105,15 @@ class WorkspaceGraphChatViewController: UIViewController {
         chatTableView.contentInset = UIEdgeInsets(top: 16, left: 0, bottom: 16, right: 0)
         chatTableView.keyboardDismissMode = .interactive
         view.addSubview(chatTableView)
+
+        // Empty state label — centred over the table, hidden once messages arrive
+        emptyStateLabel = UILabel()
+        emptyStateLabel.translatesAutoresizingMaskIntoConstraints = false
+        emptyStateLabel.text = "Ask me about your codebase"
+        emptyStateLabel.textColor = UIColor.Sphinx.SecondaryText
+        emptyStateLabel.font = UIFont(name: "Roboto-Regular", size: 16)
+        emptyStateLabel.textAlignment = .center
+        view.addSubview(emptyStateLabel)
 
         // Bottom fill view — covers gap between input container and screen bottom
         let bottomFillView = UIView()
@@ -143,6 +157,12 @@ class WorkspaceGraphChatViewController: UIViewController {
         )
 
         NSLayoutConstraint.activate([
+            // Empty state label — centred in the table area (above the input bar)
+            emptyStateLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            emptyStateLabel.centerYAnchor.constraint(equalTo: chatTableView.centerYAnchor),
+            emptyStateLabel.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 32),
+            emptyStateLabel.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -32),
+
             // Table view
             chatTableView.topAnchor.constraint(equalTo: view.topAnchor),
             chatTableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -216,6 +236,12 @@ class WorkspaceGraphChatViewController: UIViewController {
         }
     }
 
+    // MARK: - Empty State
+
+    private func updateEmptyState() {
+        emptyStateLabel?.isHidden = !messages.isEmpty || isStreaming
+    }
+
     // MARK: - Input State
 
     private func updateInputState() {
@@ -252,6 +278,7 @@ class WorkspaceGraphChatViewController: UIViewController {
         messages.append(userMessage)
         let userIndexPath = IndexPath(row: messages.count - 1, section: 0)
         chatTableView.insertRows(at: [userIndexPath], with: .automatic)
+        updateEmptyState()
         scrollToBottom()
 
         isStreaming = true
@@ -348,6 +375,7 @@ extension WorkspaceGraphChatViewController: GraphChatSSEDelegate {
                 at: [IndexPath(row: messages.count - 1, section: 0)],
                 with: .automatic
             )
+            updateEmptyState()
             scrollToBottom()
         }
 
