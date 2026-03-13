@@ -338,6 +338,32 @@
                                                             <constraint firstAttribute="bottom" secondItem="fQQ-Ch-i5D" secondAttribute="bottom" constant="10" id="rXG-wd-W4n"/>
                                                         </constraints>
                                                     </view>
+                                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="hNt-xK-vR2">
+                                                        <rect key="frame" x="30" y="512" width="354" height="60"/>
+                                                        <subviews>
+                                                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" text="Hive notifications" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="pLm-rK-wQ3">
+                                                                <rect key="frame" x="0.0" y="24.5" width="280.5" height="20"/>
+                                                                <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="17"/>
+                                                                <color key="textColor" name="Text"/>
+                                                                <nil key="highlightedColor"/>
+                                                            </label>
+                                                            <switch opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="751" verticalHuggingPriority="750" horizontalCompressionResistancePriority="751" contentHorizontalAlignment="center" contentVerticalAlignment="center" on="YES" translatesAutoresizingMaskIntoConstraints="NO" id="qRs-Jn-mP5">
+                                                                <rect key="frame" x="305" y="19" width="51" height="31"/>
+                                                                <connections>
+                                                                    <action selector="hiveNotificationsSwitchChanged:" destination="54b-ve-hAY" eventType="valueChanged" id="tBc-Ux-pY7"/>
+                                                                </connections>
+                                                            </switch>
+                                                        </subviews>
+                                                        <color key="backgroundColor" name="Body"/>
+                                                        <constraints>
+                                                            <constraint firstItem="qRs-Jn-mP5" firstAttribute="leading" secondItem="pLm-rK-wQ3" secondAttribute="trailing" constant="24.5" id="aKp-Nw-zT1"/>
+                                                            <constraint firstAttribute="trailing" secondItem="qRs-Jn-mP5" secondAttribute="trailing" id="bVc-Yx-sR8"/>
+                                                            <constraint firstItem="pLm-rK-wQ3" firstAttribute="centerY" secondItem="qRs-Jn-mP5" secondAttribute="centerY" id="cDe-Fg-hI9"/>
+                                                            <constraint firstItem="pLm-rK-wQ3" firstAttribute="leading" secondItem="hNt-xK-vR2" secondAttribute="leading" id="dEf-Gh-jK0"/>
+                                                            <constraint firstAttribute="height" constant="60" id="eLm-No-pQ1"/>
+                                                            <constraint firstAttribute="bottom" secondItem="qRs-Jn-mP5" secondAttribute="bottom" constant="10" id="fRs-Tu-vW2"/>
+                                                        </constraints>
+                                                    </view>
                                                 </subviews>
                                                 <color key="backgroundColor" name="Body"/>
                                                 <constraints>
@@ -359,8 +385,11 @@
                                                     <constraint firstItem="HfE-mv-qcA" firstAttribute="leading" secondItem="rno-qx-bma" secondAttribute="leading" constant="30" id="Uqm-qh-fBP"/>
                                                     <constraint firstItem="faZ-Dw-u7B" firstAttribute="top" secondItem="AGo-La-twe" secondAttribute="bottom" id="c03-Hi-gXT"/>
                                                     <constraint firstItem="pTG-7e-gt6" firstAttribute="top" secondItem="s3W-dg-lfx" secondAttribute="bottom" id="f0I-AU-akI"/>
-                                                    <constraint firstAttribute="height" constant="527" id="oW8-qt-2vC"/>
-                                                    <constraint firstAttribute="bottom" secondItem="eUD-XV-KkF" secondAttribute="bottom" constant="15" id="rjc-1b-ERU"/>
+                                                    <constraint firstAttribute="height" constant="587" id="oW8-qt-2vC"/>
+                                                    <constraint firstItem="hNt-xK-vR2" firstAttribute="top" secondItem="eUD-XV-KkF" secondAttribute="bottom" id="gHi-Jk-lM3"/>
+                                                    <constraint firstAttribute="bottom" secondItem="hNt-xK-vR2" secondAttribute="bottom" constant="15" id="rjc-1b-ERU"/>
+                                                    <constraint firstItem="hNt-xK-vR2" firstAttribute="leading" secondItem="faZ-Dw-u7B" secondAttribute="leading" id="hNv-Op-qR4"/>
+                                                    <constraint firstItem="hNt-xK-vR2" firstAttribute="trailing" secondItem="faZ-Dw-u7B" secondAttribute="trailing" id="iSt-Uv-wX5"/>
                                                     <constraint firstItem="eUD-XV-KkF" firstAttribute="leading" secondItem="faZ-Dw-u7B" secondAttribute="leading" id="vEp-Nl-geY"/>
                                                     <constraint firstAttribute="trailing" secondItem="HfE-mv-qcA" secondAttribute="trailing" constant="30" id="w18-mJ-qXj"/>
                                                     <constraint firstItem="lQg-ws-ahO" firstAttribute="top" secondItem="pTG-7e-gt6" secondAttribute="bottom" id="zLL-Qa-CTX"/>
@@ -709,7 +738,7 @@
                                             <constraint firstAttribute="trailing" secondItem="9IK-kw-3J3" secondAttribute="trailing" id="BJJ-v6-KM4"/>
                                             <constraint firstItem="jSa-Rq-1hp" firstAttribute="leading" secondItem="zBv-Mu-Yk1" secondAttribute="leading" id="P9b-Cc-Xzt"/>
                                             <constraint firstAttribute="trailing" secondItem="21o-Jm-0d6" secondAttribute="trailing" id="SNw-Oz-bnl"/>
-                                            <constraint firstAttribute="height" constant="1167" id="VuV-s5-aZ0"/>
+                                            <constraint firstAttribute="height" constant="1227" id="VuV-s5-aZ0"/>
                                             <constraint firstItem="rno-qx-bma" firstAttribute="leading" secondItem="zBv-Mu-Yk1" secondAttribute="leading" id="ZLY-mk-C7H"/>
                                             <constraint firstItem="21o-Jm-0d6" firstAttribute="leading" secondItem="zBv-Mu-Yk1" secondAttribute="leading" id="chO-x5-9xQ"/>
                                             <constraint firstItem="rno-qx-bma" firstAttribute="top" secondItem="zBv-Mu-Yk1" secondAttribute="top" constant="10" id="jhz-JX-gmE"/>
@@ -1009,6 +1038,7 @@
                         <outlet property="advanceScrollView" destination="W3p-W4-OyK" id="uEf-bD-XEv"/>
                         <outlet property="appearanceView" destination="59j-km-mSy" id="uUV-On-eFB"/>
                         <outlet property="autoDownloadSubscribedPodsSwitch" destination="fQQ-Ch-i5D" id="bcS-W4-Mjr"/>
+                        <outlet property="hiveNotificationsSwitch" destination="qRs-Jn-mP5" id="hNs-Wt-xZ6"/>
                         <outlet property="balanceLabel" destination="B43-2h-mk8" id="WYo-pJ-NGZ"/>
                         <outlet property="bottomContainerView" destination="rno-qx-bma" id="AQR-hs-6SO"/>
                         <outlet property="changePINContainerView" destination="7yl-SA-2Ub" id="sNI-3o-9sG"/>

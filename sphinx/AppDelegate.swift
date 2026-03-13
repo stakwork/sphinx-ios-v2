@@ -433,6 +433,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func syncHiveDeviceToken() {
+        guard UserDefaults.Keys.hiveNotificationsEnabled.get(defaultValue: true) else { return }
         guard let apnsToken: String = UserDefaults.Keys.deviceId.get(), !apnsToken.isEmpty else { return }
         let lastSynced: String? = UserDefaults.Keys.hiveDeviceToken.get()
         guard lastSynced != apnsToken else { return }
