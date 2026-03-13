@@ -42,6 +42,7 @@ struct MarkdownTextView: UIViewRepresentable {
     }
 
     // Provide an intrinsic size so SwiftUI wraps the view tightly around the text
+    @available(iOS 16.0, *)
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: UITextView, context: Context) -> CGSize? {
         let width = proposal.width ?? UIScreen.main.bounds.width
         let size = uiView.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude))
