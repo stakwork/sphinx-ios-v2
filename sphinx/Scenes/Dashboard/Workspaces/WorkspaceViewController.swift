@@ -23,10 +23,11 @@ class WorkspaceViewController: PopHandlerViewController {
     @IBOutlet weak var containerView: UIView!
 
     private var workspace: Workspace!
-    private var currentTab: Int = 0 // 0 = Features, 1 = Tasks
+    private var currentTab: Int = 0 // 0 = Features, 1 = Tasks, 2 = Graph Chat
 
     private var activeFeaturesVC: WorkspaceFeaturesViewController!
     private var activeTasksVC: WorkspaceTasksViewController!
+    private var activeGraphChatVC: WorkspaceGraphChatViewController?
     private var hasAppeared = false
     private var searchVC: WorkspaceSearchViewController?
     private let newBubbleHelper = NewMessageBubbleHelper()
@@ -68,9 +69,10 @@ class WorkspaceViewController: PopHandlerViewController {
             // already covers the tab/content stack, so its isHidden state must not change.
             if currentTab == 0 {
                 activeFeaturesVC?.loadFeatures()
-            } else {
+            } else if currentTab == 1 {
                 activeTasksVC?.loadTasks()
             }
+            // currentTab == 2 (Graph Chat): history is in-memory, stream self-manages — no reload needed
 
         } else {
             hasAppeared = true
@@ -188,7 +190,7 @@ class WorkspaceViewController: PopHandlerViewController {
         topTabSegmentedControl.buttonBackgroundColor = .Sphinx.HeaderBG
         topTabSegmentedControl.selectorViewColor = .Sphinx.PrimaryGreen
         topTabSegmentedControl.configureFromOutlet(
-            buttonTitles: ["FEATURES", "TASKS"],
+            buttonTitles: ["FEATURES", "TASKS", "GRAPH CHAT"],
             initialIndex: 0,
             delegate: self
         )
@@ -226,8 +228,10 @@ class WorkspaceViewController: PopHandlerViewController {
         // Re-show whichever tab child was active while search covered the screen
         if currentTab == 0 {
             activeFeaturesVC?.view.isHidden = false
-        } else {
+        } else if currentTab == 1 {
             activeTasksVC?.view.isHidden = false
+        } else {
+            activeGraphChatVC?.view.isHidden = false
         }
     }
 }
@@ -344,8 +348,9 @@ extension WorkspaceViewController: CustomSegmentedControlDelegate {
         // Instantiate children lazily, but only make them visible when search is inactive
         let searchActive = searchVC != nil
 
-        activeTasksVC?.view.isHidden = true
         activeFeaturesVC?.view.isHidden = true
+        activeTasksVC?.view.isHidden = true
+        activeGraphChatVC?.view.isHidden = true
 
         if index == 0 {
             if activeFeaturesVC == nil {
@@ -356,13 +361,21 @@ extension WorkspaceViewController: CustomSegmentedControlDelegate {
             if !searchActive {
                 activeFeaturesVC.view.isHidden = false
             }
-        } else {
+        } else if index == 1 {
             if activeTasksVC == nil {
                 activeTasksVC = WorkspaceTasksViewController.instantiate(workspace: workspace)
                 addChildVC(activeTasksVC)
             }
             if !searchActive {
                 activeTasksVC.view.isHidden = false
+            }
+        } else {
+            if activeGraphChatVC == nil {
+                activeGraphChatVC = WorkspaceGraphChatViewController.instantiate(workspace: workspace)
+                addChildVC(activeGraphChatVC!)
+            }
+            if !searchActive {
+                activeGraphChatVC?.view.isHidden = false
             }
         }
     }

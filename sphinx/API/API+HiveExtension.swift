@@ -2459,6 +2459,27 @@ extension API {
         }
     }
 
+    // MARK: - Graph Chat Token Resolution
+
+    /// Returns a valid Hive token via `callback`, fetching a fresh one on cache miss / expiry.
+    func resolveHiveToken(
+        callback: @escaping (String) -> Void,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
+            callback(storedToken)
+        } else {
+            authenticateWithHive(
+                callback: { token in
+                    guard let token = token else { errorCallback(); return }
+                    UserDefaults.Keys.hiveToken.set(token)
+                    callback(token)
+                },
+                errorCallback: errorCallback
+            )
+        }
+    }
+
 }
 
 // MARK: - Workspace Image Cache
