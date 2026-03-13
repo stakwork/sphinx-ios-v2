@@ -679,6 +679,8 @@
 		BB22CC33DD44EE55FF6677AA /* HiveSearchResultCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = BB22CC33DD44EE55FF6677BB /* HiveSearchResultCell.xib */; };
 		BB22CC33DD44EE55FF6677CC /* WorkspaceSearchViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB22CC33DD44EE55FF6677DD /* WorkspaceSearchViewController.swift */; };
 		BC229678E479BF4D62942DCD /* TaskChatViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD09FC96699AA4977BB011A /* TaskChatViewController.swift */; };
+		32F9995B0ED442D596599316 /* GraphChatSSEManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F614A7D4B2634279808DD387 /* GraphChatSSEManager.swift */; };
+		462138747AB14C0FB68E5636 /* WorkspaceGraphChatViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 375B098280F54131B374AEA8 /* WorkspaceGraphChatViewController.swift */; };
 		BE880A27BE0E704666995737 /* PRArtifactCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD1BE98930F1EB41308524E1 /* PRArtifactCardView.swift */; };
 		C3D4E5F6A7B8C9D0E1F2A3B4 /* TaskProgressBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9D0E1F2A3B4C5 /* TaskProgressBarView.swift */; };
 		C4D5E6F7A8B949C0D1E2F3A4 /* WorkspaceTaskTableViewCellTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5E6F7A8B9CA4A01E2F3A4B5 /* WorkspaceTaskTableViewCellTests.swift */; };
@@ -2288,6 +2290,8 @@
 		Q2R3S4T5U6V7W8X9Y0Z1A2B3 /* PaginationControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaginationControlView.swift; sourceTree = "<group>"; };
 		S4T5U6V7W8X9Y0Z1A2B3C4D5 /* PaginationControlViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaginationControlViewTests.swift; sourceTree = "<group>"; };
 		U5V6W7X8Y9Z0A1B2C3D4E5F6 /* StakworkWorkflowData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StakworkWorkflowData.swift; sourceTree = "<group>"; };
+		F614A7D4B2634279808DD387 /* GraphChatSSEManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GraphChatSSEManager.swift; sourceTree = "<group>"; };
+		375B098280F54131B374AEA8 /* WorkspaceGraphChatViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceGraphChatViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -2595,11 +2599,20 @@
 			path = "QR Code Details";
 			sourceTree = "<group>";
 		};
+		2B29A8C121864AB29BF6E3F1 /* GraphChat */ = {
+			isa = PBXGroup;
+			children = (
+				F614A7D4B2634279808DD387 /* GraphChatSSEManager.swift */,
+			);
+			path = GraphChat;
+			sourceTree = "<group>";
+		};
 		471FACD623E89E19007DE1C8 /* Managers */ = {
 			isa = PBXGroup;
 			children = (
 				1B845352803C4566A0C34DFA /* HiveAnyCable */,
 				4759621F2F5210D700564B7F /* HivePusher */,
+				2B29A8C121864AB29BF6E3F1 /* GraphChat */,
 				47978EFB2F040D300092B516 /* DataSyncManager */,
 				474DC4B82D942E5A00FB6087 /* ChaptersManager */,
 				4733ED2D2CB556E700078EF2 /* Colors Manager */,
@@ -4108,6 +4121,7 @@
 				E83B28E7233A4D0D9AE288E2 /* WorkspaceViewController.swift */,
 				4C31187BFB7EDD28A632A1FD /* FeaturePlanViewController.swift */,
 				BBD09FC96699AA4977BB011A /* TaskChatViewController.swift */,
+				375B098280F54131B374AEA8 /* WorkspaceGraphChatViewController.swift */,
 				D5D5C9BE1416497D9EEB9877 /* MarkdownRenderer.swift */,
 				FE30E2541BF20361DA34D7C4 /* FeatureChatMessageCell.swift */,
 				745A54A4B69B4D74B9F96B6F /* AttachmentGridView.swift */,
@@ -5727,6 +5741,8 @@
 				470DB25423FAE43400D29FA5 /* SphinxCache.swift in Sources */,
 				475962232F5714D100564B7F /* WorkspaceTasksViewController.swift in Sources */,
 				BC229678E479BF4D62942DCD /* TaskChatViewController.swift in Sources */,
+				462138747AB14C0FB68E5636 /* WorkspaceGraphChatViewController.swift in Sources */,
+				32F9995B0ED442D596599316 /* GraphChatSSEManager.swift in Sources */,
 				47393E682461F6F600E6F93E /* KeychainManager.swift in Sources */,
 				47BF7D4B25A8A59100593489 /* API+VersionsExtension.swift in Sources */,
 				475E41612382E28800928931 /* UIButton.swift in Sources */,
