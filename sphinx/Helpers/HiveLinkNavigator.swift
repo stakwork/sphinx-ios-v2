@@ -33,8 +33,13 @@ class HiveLinkNavigator {
                                 }
                                 let workspaceVC = WorkspaceViewController.instantiate(workspace: workspace)
                                 let planVC = FeaturePlanViewController.instantiate(feature: feature, workspace: workspace)
-                                vc.navigationController?.pushViewController(workspaceVC, animated: false)
-                                vc.navigationController?.pushViewController(planVC, animated: true)
+                                
+                                if let appDelegate = UIApplication.shared.delegate as? AppDelegate, let rootVC = appDelegate.getRootViewController() {
+                                    if let navVC = rootVC.getCenterNavigationController() {
+                                        navVC.pushViewController(workspaceVC, animated: false)
+                                        navVC.pushViewController(planVC, animated: true)
+                                    }
+                                }
                             }
                         },
                         errorCallback: {
@@ -55,8 +60,13 @@ class HiveLinkNavigator {
                                 }
                                 let workspaceVC = WorkspaceViewController.instantiate(workspace: workspace)
                                 let taskChatVC = TaskChatViewController.instantiate(task: task, workspaceSlug: workspace.slug ?? "", workspaceId: workspace.id)
-                                vc.navigationController?.pushViewController(workspaceVC, animated: false)
-                                vc.navigationController?.pushViewController(taskChatVC, animated: true)
+                                
+                                if let appDelegate = UIApplication.shared.delegate as? AppDelegate, let rootVC = appDelegate.getRootViewController() {
+                                    if let navVC = rootVC.getCenterNavigationController() {
+                                        navVC.pushViewController(workspaceVC, animated: false)
+                                        navVC.pushViewController(taskChatVC, animated: true)
+                                    }
+                                }
                             }
                         },
                         errorCallback: {
