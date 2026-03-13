@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		0DB22AE0228D44FDB51A2A11 /* WorkflowStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8F00239BAA5413399F184E6 /* WorkflowStatus.swift */; };
 		12075275C652A9404FC48EBC /* Pods_sphinx.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 487E10CEB3D07B0840A84681 /* Pods_sphinx.framework */; };
+		32F9995B0ED442D596599316 /* GraphChatSSEManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F614A7D4B2634279808DD387 /* GraphChatSSEManager.swift */; };
+		462138747AB14C0FB68E5636 /* WorkspaceGraphChatViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 375B098280F54131B374AEA8 /* WorkspaceGraphChatViewController.swift */; };
 		470125C02373255C0013C57B /* TransactionMessage+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 470125BF2373255C0013C57B /* TransactionMessage+CoreDataProperties.swift */; };
 		4701460A2A3B3F3700A00DF8 /* MessageNoBubbleTableViewCell+DelegateExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 470146092A3B3F3700A00DF8 /* MessageNoBubbleTableViewCell+DelegateExtension.swift */; };
 		4701460C2A3B787300A00DF8 /* CommonNewMessageTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4701460B2A3B787300A00DF8 /* CommonNewMessageTableViewCell.swift */; };
@@ -130,7 +132,6 @@
 		4730EF382CDA70A10014581F /* API+LiveKitExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4730EF372CDA70A10014581F /* API+LiveKitExtension.swift */; };
 		4730EF3A2CDA90620014581F /* ValueStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4730EF392CDA90620014581F /* ValueStore.swift */; };
 		4730EF3C2CDA90D00014581F /* AppContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4730EF3B2CDA90D00014581F /* AppContext.swift */; };
-		4730EF5E2CDBCC5B0014581F /* MarkdownTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4730EF5D2CDBCC5B0014581F /* MarkdownTextView.swift */; };
 		4730EF3E2CDA90EA0014581F /* RoomContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4730EF3D2CDA90EA0014581F /* RoomContext.swift */; };
 		4730EF402CDA914E0014581F /* RoomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4730EF3F2CDA914E0014581F /* RoomView.swift */; };
 		4730EF422CDA916F0014581F /* ConnectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4730EF412CDA916F0014581F /* ConnectView.swift */; };
@@ -139,6 +140,7 @@
 		4730EF492CDA94500014581F /* ParticipantView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4730EF482CDA94500014581F /* ParticipantView.swift */; };
 		4730EF4B2CDA94E70014581F /* PublishOptionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4730EF4A2CDA94E70014581F /* PublishOptionsView.swift */; };
 		4730EF4D2CDA95B20014581F /* Participant+Helper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4730EF4C2CDA95B20014581F /* Participant+Helper.swift */; };
+		4730EF5E2CDBCC5B0014581F /* MarkdownTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4730EF5D2CDBCC5B0014581F /* MarkdownTextView.swift */; };
 		473258AC241BD700006E6602 /* CommonPaymentViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 473258AB241BD700006E6602 /* CommonPaymentViewController.swift */; };
 		4733C7E523C4DF4C006A2C51 /* GroupContactsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4733C7E423C4DF4C006A2C51 /* GroupContactsViewController.swift */; };
 		4733ED212CA4888E00078EF2 /* NewUnifiedEpisodeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4733ED202CA4888E00078EF2 /* NewUnifiedEpisodeView.swift */; };
@@ -680,8 +682,6 @@
 		BB22CC33DD44EE55FF6677AA /* HiveSearchResultCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = BB22CC33DD44EE55FF6677BB /* HiveSearchResultCell.xib */; };
 		BB22CC33DD44EE55FF6677CC /* WorkspaceSearchViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB22CC33DD44EE55FF6677DD /* WorkspaceSearchViewController.swift */; };
 		BC229678E479BF4D62942DCD /* TaskChatViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD09FC96699AA4977BB011A /* TaskChatViewController.swift */; };
-		32F9995B0ED442D596599316 /* GraphChatSSEManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F614A7D4B2634279808DD387 /* GraphChatSSEManager.swift */; };
-		462138747AB14C0FB68E5636 /* WorkspaceGraphChatViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 375B098280F54131B374AEA8 /* WorkspaceGraphChatViewController.swift */; };
 		BE880A27BE0E704666995737 /* PRArtifactCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD1BE98930F1EB41308524E1 /* PRArtifactCardView.swift */; };
 		C3D4E5F6A7B8C9D0E1F2A3B4 /* TaskProgressBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9D0E1F2A3B4C5 /* TaskProgressBarView.swift */; };
 		C4D5E6F7A8B949C0D1E2F3A4 /* WorkspaceTaskTableViewCellTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5E6F7A8B9CA4A01E2F3A4B5 /* WorkspaceTaskTableViewCellTests.swift */; };
@@ -1160,6 +1160,7 @@
 		334B3C102B8268E80003EA63 /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "zh-Hant.lproj/Welcome.strings"; sourceTree = "<group>"; };
 		334B3C112B8268E80003EA63 /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "zh-Hant.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		34DCDFF0972A44CB11C780E6 /* Pods-SphinxNotificationExtensionService.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SphinxNotificationExtensionService.debug.xcconfig"; path = "Target Support Files/Pods-SphinxNotificationExtensionService/Pods-SphinxNotificationExtensionService.debug.xcconfig"; sourceTree = "<group>"; };
+		375B098280F54131B374AEA8 /* WorkspaceGraphChatViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceGraphChatViewController.swift; sourceTree = "<group>"; };
 		3867EC056CA5757264104904 /* Pods_SphinxNotificationExtensionService.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SphinxNotificationExtensionService.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		418E7C0432271F8419FEF643 /* Pods-SphinxNotificationExtensionService.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SphinxNotificationExtensionService.release.xcconfig"; path = "Target Support Files/Pods-SphinxNotificationExtensionService/Pods-SphinxNotificationExtensionService.release.xcconfig"; sourceTree = "<group>"; };
 		44EC6EC0EE1C4D6B8B5FADB2 /* HiveFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveFeature.swift; sourceTree = "<group>"; };
@@ -1310,7 +1311,6 @@
 		4730EF372CDA70A10014581F /* API+LiveKitExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+LiveKitExtension.swift"; sourceTree = "<group>"; };
 		4730EF392CDA90620014581F /* ValueStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValueStore.swift; sourceTree = "<group>"; };
 		4730EF3B2CDA90D00014581F /* AppContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppContext.swift; sourceTree = "<group>"; };
-		4730EF5D2CDBCC5B0014581F /* MarkdownTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownTextView.swift; sourceTree = "<group>"; };
 		4730EF3D2CDA90EA0014581F /* RoomContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomContext.swift; sourceTree = "<group>"; };
 		4730EF3F2CDA914E0014581F /* RoomView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomView.swift; sourceTree = "<group>"; };
 		4730EF412CDA916F0014581F /* ConnectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectView.swift; sourceTree = "<group>"; };
@@ -1318,6 +1318,7 @@
 		4730EF482CDA94500014581F /* ParticipantView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParticipantView.swift; sourceTree = "<group>"; };
 		4730EF4A2CDA94E70014581F /* PublishOptionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublishOptionsView.swift; sourceTree = "<group>"; };
 		4730EF4C2CDA95B20014581F /* Participant+Helper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Participant+Helper.swift"; sourceTree = "<group>"; };
+		4730EF5D2CDBCC5B0014581F /* MarkdownTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownTextView.swift; sourceTree = "<group>"; };
 		473258AB241BD700006E6602 /* CommonPaymentViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommonPaymentViewController.swift; sourceTree = "<group>"; };
 		4732E34ED775B54D3F8EA591 /* WorkspaceTask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceTask.swift; sourceTree = "<group>"; };
 		4733C7E423C4DF4C006A2C51 /* GroupContactsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupContactsViewController.swift; sourceTree = "<group>"; };
@@ -2279,6 +2280,7 @@
 		F3E9C01E26FB76A100718942 /* DashboardFeedsEmptyStateViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardFeedsEmptyStateViewController.swift; sourceTree = "<group>"; };
 		F3EF52C426B2823700F06668 /* FeedFilterChipsCollectionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedFilterChipsCollectionViewController.swift; sourceTree = "<group>"; };
 		F3EF52C626B28DBD00F06668 /* PodcastFeedCollectionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastFeedCollectionViewController.swift; sourceTree = "<group>"; };
+		F614A7D4B2634279808DD387 /* GraphChatSSEManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GraphChatSSEManager.swift; sourceTree = "<group>"; };
 		F6A7B8C9D0E1F2A3B4C5D6E7 /* TaskProgressTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskProgressTests.swift; sourceTree = "<group>"; };
 		F8A9B0C1D2E3F4A5B6C7D8E9 /* StakworkRun.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StakworkRun.swift; sourceTree = "<group>"; };
 		FDF1E0A8EFE1D98BD5A99505 /* Pods-sphinx.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-sphinx.release.xcconfig"; path = "Target Support Files/Pods-sphinx/Pods-sphinx.release.xcconfig"; sourceTree = "<group>"; };
@@ -2292,8 +2294,6 @@
 		Q2R3S4T5U6V7W8X9Y0Z1A2B3 /* PaginationControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaginationControlView.swift; sourceTree = "<group>"; };
 		S4T5U6V7W8X9Y0Z1A2B3C4D5 /* PaginationControlViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaginationControlViewTests.swift; sourceTree = "<group>"; };
 		U5V6W7X8Y9Z0A1B2C3D4E5F6 /* StakworkWorkflowData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StakworkWorkflowData.swift; sourceTree = "<group>"; };
-		F614A7D4B2634279808DD387 /* GraphChatSSEManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GraphChatSSEManager.swift; sourceTree = "<group>"; };
-		375B098280F54131B374AEA8 /* WorkspaceGraphChatViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceGraphChatViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -2359,6 +2359,14 @@
 				3867EC056CA5757264104904 /* Pods_SphinxNotificationExtensionService.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		2B29A8C121864AB29BF6E3F1 /* GraphChat */ = {
+			isa = PBXGroup;
+			children = (
+				F614A7D4B2634279808DD387 /* GraphChatSSEManager.swift */,
+			);
+			path = GraphChat;
 			sourceTree = "<group>";
 		};
 		3ACE5CA0290E9247A1816D92 /* Pods */ = {
@@ -2599,14 +2607,6 @@
 				47FA18BF2425381500469C8F /* CreateInvoiceDetailsViewController.swift */,
 			);
 			path = "QR Code Details";
-			sourceTree = "<group>";
-		};
-		2B29A8C121864AB29BF6E3F1 /* GraphChat */ = {
-			isa = PBXGroup;
-			children = (
-				F614A7D4B2634279808DD387 /* GraphChatSSEManager.swift */,
-			);
-			path = GraphChat;
 			sourceTree = "<group>";
 		};
 		471FACD623E89E19007DE1C8 /* Managers */ = {
@@ -7111,7 +7111,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sphinx/sphinx.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 257;
+				CURRENT_PROJECT_VERSION = 258;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 8297M44YTW;
 				ENABLE_BITCODE = NO;
@@ -7201,7 +7201,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sphinx/sphinx.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 257;
+				CURRENT_PROJECT_VERSION = 258;
 				DEVELOPMENT_TEAM = 8297M44YTW;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
