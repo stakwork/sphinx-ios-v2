@@ -35,6 +35,14 @@ struct RoomView: View {
     @EnvironmentObject var roomCtx: RoomContext
     @EnvironmentObject var room: Room
 
+    private static let markdownRenderer: MarkdownRenderer = {
+        var style = MarkdownStyle()
+        style.textColor = .white
+        style.linkColor = .Sphinx.PrimaryBlue
+        style.baseFontSize = 15
+        return MarkdownRenderer(style: style)
+    }()
+
     @State var isCameraPublishingBusy = false
     @State var isMicrophonePublishingBusy = false
     @State var isScreenSharePublishingBusy = false
@@ -284,18 +292,16 @@ struct RoomView: View {
                     Text(message.senderName ?? "Unknown")
                         .font(Font(UIFont(name: "Roboto-Medium", size: 11.0)!))
                         .foregroundColor(Color(UIColor.Sphinx.SecondaryText))
-                    Text(message.text)
+                    MarkdownTextView(attributedText: RoomView.markdownRenderer.render(message.text))
                         .padding(8)
                         .background(Color(UIColor.Sphinx.SecondaryText))
-                        .foregroundColor(Color.white)
                         .cornerRadius(18)
                 }
                 Spacer()
             } else {
-                Text(message.text)
+                MarkdownTextView(attributedText: RoomView.markdownRenderer.render(message.text))
                     .padding(8)
                     .background(Color(UIColor.Sphinx.PrimaryGreen))
-                    .foregroundColor(Color.white)
                     .cornerRadius(18)
             }
         }
