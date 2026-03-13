@@ -356,7 +356,7 @@ extension WorkspaceGraphChatViewController: GraphChatSSEDelegate {
 
     private func toolDisplayName(_ toolName: String) -> String {
         // Strip workspace prefix for multi-workspace mode (e.g. "hive__learn_concept" → "learn_concept")
-        let baseTool = toolName.split(separator: "__").last.map(String.init) ?? toolName
+        let baseTool = toolName.components(separatedBy: "__").last ?? toolName
         switch baseTool {
         case "list_concepts":       return "📚 Browsing concepts"
         case "learn_concept":       return "📖 Reading documentation"
