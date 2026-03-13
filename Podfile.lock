@@ -18,6 +18,7 @@ PODS:
   - JitsiWebRTC (124.0.2)
   - KeychainAccess (4.2.2)
   - KYDrawerController (2.1.0)
+  - LDSwiftEventSource (3.3.0)
   - libwebp (1.5.0):
     - libwebp/demux (= 1.5.0)
     - libwebp/mux (= 1.5.0)
@@ -81,6 +82,7 @@ DEPENDENCIES:
   - JitsiMeetSDK (~> 11.1.1)
   - KeychainAccess
   - KYDrawerController
+  - LDSwiftEventSource (~> 3.3)
   - lottie-ios
   - MarqueeLabel
   - MessagePack.swift (~> 4.0)
@@ -114,6 +116,7 @@ SPEC REPOS:
     - JitsiWebRTC
     - KeychainAccess
     - KYDrawerController
+    - LDSwiftEventSource
     - libwebp
     - lottie-ios
     - MarqueeLabel
@@ -166,6 +169,7 @@ SPEC CHECKSUMS:
   JitsiWebRTC: b47805ab5668be38e7ee60e2258f49badfe8e1d0
   KeychainAccess: c0c4f7f38f6fc7bbe58f5702e25f7bd2f65abf51
   KYDrawerController: baad0e63b09c0cb564bd48f0f7f70f45d9176ebc
+  LDSwiftEventSource: b0826ca826ca890609a9833a05cae1f357fd3b99
   libwebp: 02b23773aedb6ff1fd38cec7a77b81414c6842a8
   lottie-ios: c058aeafa76daa4cf64d773554bccc8385d0150e
   MarqueeLabel: 02f5ac8fd6877c94564556cb93fa86c70c08baeb
@@ -193,6 +197,6 @@ SPEC CHECKSUMS:
   youtube-ios-player-helper: 0185c57db23c80d63d6ca11251d110abb8a4ca61
   Zip: b3fef584b147b6e582b2256a9815c897d60ddc67
 
-PODFILE CHECKSUM: 5bcd5b4effd2dc7fbabcf75c6a73ff8a7577ebab
+PODFILE CHECKSUM: 65d7e0f1ec42e9880f8c5ed4d302d5625618a878
 
 COCOAPODS: 1.16.2

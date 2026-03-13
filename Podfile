@@ -49,6 +49,7 @@ target 'sphinx' do
     pod 'EPUBKit'
     pod 'MobileVLCKit'
     pod 'Bugsnag'
+    pod 'LDSwiftEventSource', '~> 3.3'
 end
 
 target 'SphinxNotificationExtensionService' do
