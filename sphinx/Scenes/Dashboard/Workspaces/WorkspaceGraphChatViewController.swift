@@ -356,29 +356,46 @@ extension WorkspaceGraphChatViewController: GraphChatSSEDelegate {
     }
 
     func onToolOutputAvailable() {
-        hideProcessingBubble()
+        // Keep the processing bubble visible — it will be dismissed in onFinish
+        // once the completed assistant message is ready to take its place.
     }
 
     func onFinish() {
-        hideProcessingBubble()
+        guard !streamingBuffer.isEmpty else {
+            // Nothing to show — just clean up the bubble if present.
+            hideProcessingBubble()
+            streamingBuffer = ""
+            isStreaming = false
+            sseManager?.stopStream()
+            return
+        }
 
-        // Commit the fully-assembled assistant message now
-        if !streamingBuffer.isEmpty {
-            let assistantMsg = HiveChatMessage(
-                id: UUID().uuidString,
-                message: streamingBuffer,
-                role: "ASSISTANT",
-                createdAt: nowISO()
-            )
-            messages.append(assistantMsg)
-            chatTableView.insertRows(
-                at: [IndexPath(row: messages.count - 1, section: 0)],
-                with: .automatic
-            )
-            updateEmptyState()
+        let assistantMsg = HiveChatMessage(
+            id: UUID().uuidString,
+            message: streamingBuffer,
+            role: "ASSISTANT",
+            createdAt: nowISO()
+        )
+        messages.append(assistantMsg)
+        let insertIndexPath = IndexPath(row: messages.count - 1, section: 0)
+
+        if processingStepText != nil {
+            // Atomically swap the processing bubble out and the assistant message in —
+            // no visible gap between the two.
+            let bubbleIndexPath = IndexPath(row: messages.count - 1, section: 0)
+            processingStepText = nil
+            chatTableView.performBatchUpdates({
+                chatTableView.deleteRows(at: [bubbleIndexPath], with: .fade)
+                chatTableView.insertRows(at: [insertIndexPath], with: .automatic)
+            }, completion: { [weak self] _ in
+                self?.scrollToBottom()
+            })
+        } else {
+            chatTableView.insertRows(at: [insertIndexPath], with: .automatic)
             scrollToBottom()
         }
 
+        updateEmptyState()
         streamingBuffer = ""
         isStreaming = false
         sseManager?.stopStream()
