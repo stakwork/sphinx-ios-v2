@@ -351,8 +351,22 @@ extension WorkspaceGraphChatViewController: GraphChatSSEDelegate {
     }
 
     func onToolInputAvailable(toolName: String) {
-        let stepText = toolName == "learn_concept" ? "📚 Learning..." : "🔍 Searching..."
-        updateProcessingBubble(stepText: stepText)
+        updateProcessingBubble(stepText: toolDisplayName(toolName))
+    }
+
+    private func toolDisplayName(_ toolName: String) -> String {
+        // Strip workspace prefix for multi-workspace mode (e.g. "hive__learn_concept" → "learn_concept")
+        let baseTool = toolName.split(separator: "__").last.map(String.init) ?? toolName
+        switch baseTool {
+        case "list_concepts":       return "📚 Browsing concepts"
+        case "learn_concept":       return "📖 Reading documentation"
+        case "recent_commits":      return "🔍 Checking recent commits"
+        case "recent_contributions": return "👤 Reviewing contributions"
+        case "repo_agent":          return "🤖 Deep code analysis"
+        case "search_logs":         return "📝 Searching logs"
+        case "web_search":          return "🌐 Searching the web"
+        default:                    return "⚙️ Working..."
+        }
     }
 
     func onToolOutputAvailable() {
