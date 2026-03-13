@@ -20,9 +20,24 @@ class WorkspaceGraphChatViewController: UIViewController {
     }
     private var processingStepText: String? = nil
     private var sseManager: GraphChatSSEManager?
-    private var streamingMessageIndex: Int? = nil
+    /// Accumulates all text-delta chunks; committed to `messages` as one bubble on `onFinish`.
+    private var streamingBuffer: String = ""
 
     private let newBubbleHelper = NewMessageBubbleHelper()
+
+    // MARK: - ISO8601 timestamp helper
+
+    private func nowISO() -> String {
+        let fmt = ISO8601DateFormatter()
+        fmt.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return fmt.string(from: Date())
+    }
+
+    // MARK: - Owner avatar URL (cached per VC lifetime)
+
+    private lazy var ownerAvatarUrl: String? = {
+        return UserContact.getOwner()?.avatarUrl
+    }()
 
     // MARK: - UI
 
@@ -223,8 +238,17 @@ class WorkspaceGraphChatViewController: UIViewController {
             .font: UIFont(name: "Roboto-Regular", size: 16) ?? UIFont.systemFont(ofSize: 16)
         ]
 
-        // Append user message
-        let userMessage = HiveChatMessage(id: UUID().uuidString, message: text, role: "USER")
+        // Append user message — stamp time now; pass owner avatar so the cell shows the real photo
+        let ownerCreatedBy: HiveChatMessageCreatedBy? = ownerAvatarUrl.flatMap { url in
+            HiveChatMessageCreatedBy(json: JSON(["id": "owner", "image": url]))
+        }
+        let userMessage = HiveChatMessage(
+            id: UUID().uuidString,
+            message: text,
+            role: "USER",
+            createdAt: nowISO(),
+            createdBy: ownerCreatedBy
+        )
         messages.append(userMessage)
         let userIndexPath = IndexPath(row: messages.count - 1, section: 0)
         chatTableView.insertRows(at: [userIndexPath], with: .automatic)
@@ -295,18 +319,8 @@ class WorkspaceGraphChatViewController: UIViewController {
 extension WorkspaceGraphChatViewController: GraphChatSSEDelegate {
 
     func onTextDelta(_ delta: String) {
-        if let idx = streamingMessageIndex {
-            // Update in-place
-            messages[idx].message += delta
-            chatTableView.reloadRows(at: [IndexPath(row: idx, section: 0)], with: .none)
-        } else {
-            // First delta — create assistant bubble
-            let assistantMsg = HiveChatMessage(id: UUID().uuidString, message: delta, role: "ASSISTANT")
-            messages.append(assistantMsg)
-            streamingMessageIndex = messages.count - 1
-            chatTableView.insertRows(at: [IndexPath(row: streamingMessageIndex!, section: 0)], with: .automatic)
-        }
-        scrollToBottom()
+        // Silently accumulate — do NOT update the table until onFinish
+        streamingBuffer += delta
     }
 
     func onToolInputAvailable(toolName: String) {
@@ -320,18 +334,31 @@ extension WorkspaceGraphChatViewController: GraphChatSSEDelegate {
 
     func onFinish() {
         hideProcessingBubble()
-        streamingMessageIndex = nil
+
+        // Commit the fully-assembled assistant message now
+        if !streamingBuffer.isEmpty {
+            let assistantMsg = HiveChatMessage(
+                id: UUID().uuidString,
+                message: streamingBuffer,
+                role: "ASSISTANT",
+                createdAt: nowISO()
+            )
+            messages.append(assistantMsg)
+            chatTableView.insertRows(
+                at: [IndexPath(row: messages.count - 1, section: 0)],
+                with: .automatic
+            )
+            scrollToBottom()
+        }
+
+        streamingBuffer = ""
         isStreaming = false
         sseManager?.stopStream()
     }
 
     func onError(_ text: String) {
-        // Remove partial streaming bubble if present
-        if let idx = streamingMessageIndex {
-            messages.remove(at: idx)
-            chatTableView.deleteRows(at: [IndexPath(row: idx, section: 0)], with: .automatic)
-            streamingMessageIndex = nil
-        }
+        // Discard any partial buffer — nothing was shown, nothing to remove
+        streamingBuffer = ""
         hideProcessingBubble()
         isStreaming = false
         newBubbleHelper.showGenericMessageView(text: text.isEmpty ? "An error occurred. Please try again." : text)
