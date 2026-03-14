@@ -45,9 +45,15 @@ class FeatureChatMessageCell: UITableViewCell {
         tv.translatesAutoresizingMaskIntoConstraints = false
         tv.isEditable = false
         tv.isScrollEnabled = false
+        tv.isSelectable = true
         tv.backgroundColor = .clear
         tv.textContainerInset = UIEdgeInsets(top: 10, left: 8, bottom: 10, right: 8)
         tv.textContainer.lineFragmentPadding = 0
+        tv.linkTextAttributes = [
+            .foregroundColor: UIColor.Sphinx.PrimaryBlue,
+            .underlineStyle: NSUnderlineStyle.single.rawValue
+        ]
+        tv.delegate = LinkTapCoordinator.shared
         return tv
     }()
 
@@ -361,6 +367,25 @@ class FeatureChatMessageCell: UITableViewCell {
     /// Lock the clarifying questions view after successful submission.
     func lockClarifyingQuestionsView() {
         clarifyingQuestionsView.lock()
+    }
+
+    // MARK: - Link tap coordinator (shared, stateless)
+    private class LinkTapCoordinator: NSObject, UITextViewDelegate {
+        static let shared = LinkTapCoordinator()
+        func textView(_ textView: UITextView,
+                      shouldInteractWith url: URL,
+                      in characterRange: NSRange,
+                      interaction: UITextItemInteraction) -> Bool {
+            let urlString = url.absoluteString
+            if urlString.isHivePlanLink || urlString.isHiveTaskLink {
+                if let topVC = UIApplication.shared.topMostViewController() {
+                    HiveLinkNavigator.navigate(hiveLink: urlString, from: topVC)
+                }
+            } else {
+                UIApplication.shared.open(url)
+            }
+            return false
+        }
     }
 
     override func prepareForReuse() {
