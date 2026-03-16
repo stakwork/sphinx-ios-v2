@@ -48,9 +48,9 @@ struct HiveFeature {
     let userStories: [String]?  // Can be array or string
     let requirements: String?
     let architecture: String?
-    let status: String?
+    var status: String?
     let workflowStatus: String?
-    let priority: String?
+    var priority: String?
     let createdAt: String?
     let updatedAt: String?
     let assignee: HiveAssignee?
