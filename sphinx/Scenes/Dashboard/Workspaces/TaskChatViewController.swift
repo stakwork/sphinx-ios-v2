@@ -7,22 +7,28 @@
 //
 
 import UIKit
+import AVKit
+import AVFoundation
 
 class TaskChatViewController: UIViewController {
 
     // MARK: - Properties
     private var task: WorkspaceTask
     private var workspaceSlug: String
+    private var workspaceId: String
     private var messages: [HiveChatMessage] = []
     private var processingStepText: String? = nil
     private var cachedStakworkProjectId: Int?
-    private var hasFetchedTaskDetail: Bool = false
+    private var anyCableManager: HiveAnyCableManager?
 
     // MARK: - Header
     private var headerView: UIView!
     private var backButton: UIButton!
     private var titleLabel: UILabel!
+    private var releasePodButton: UIButton!
     private var shareButton: UIButton!
+
+    private let bubbleHelper = NewMessageBubbleHelper()
 
     // MARK: - Chat
     private var chatTableView: UITableView!
@@ -34,17 +40,27 @@ class TaskChatViewController: UIViewController {
     private var workflowStatusHeightConstraint: NSLayoutConstraint!
     private var bottomFillView: UIView!
 
+    // Autocomplete
+    private var availableWorkspaces: [Workspace] = []
+    private var filteredWorkspaces: [Workspace] = []
+    private var autocompleteContainer: UIView!
+    private var autocompleteStack: UIStackView!
+    private var autocompleteHeightConstraint: NSLayoutConstraint!
+    /// NSRange of "@query" in chatInputTextView at the moment the popup is shown/updated
+    private var atTriggerNSRange: NSRange?
+
     private var loadingWheel: UIActivityIndicatorView!
     private var emptyLabel: UILabel!
 
     // MARK: - Init
-    static func instantiate(task: WorkspaceTask, workspaceSlug: String) -> TaskChatViewController {
-        return TaskChatViewController(task: task, workspaceSlug: workspaceSlug)
+    static func instantiate(task: WorkspaceTask, workspaceSlug: String, workspaceId: String) -> TaskChatViewController {
+        return TaskChatViewController(task: task, workspaceSlug: workspaceSlug, workspaceId: workspaceId)
     }
 
-    private init(task: WorkspaceTask, workspaceSlug: String) {
+    private init(task: WorkspaceTask, workspaceSlug: String, workspaceId: String) {
         self.task = task
         self.workspaceSlug = workspaceSlug
+        self.workspaceId = workspaceId
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -59,14 +75,30 @@ class TaskChatViewController: UIViewController {
         applyInitialWorkflowStatus()
         setupKeyboardObservers()
         cachedStakworkProjectId = task.stakworkProjectId
+        connectWebSocket()         // connect Pusher immediately with known taskId
         fetchMessages()
-        connectWebSocket()
+        fetchTaskDetailAndConnect() // will call connectAnyCable() once projectId is known
+        API.sharedInstance.fetchWorkspacesWithAuth(
+            callback: { [weak self] workspaces in
+                DispatchQueue.main.async { self?.availableWorkspaces = workspaces }
+            },
+            errorCallback: { /* silent fail — autocomplete just won't show */ }
+        )
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        view.layoutIfNeeded()   // forces constraint resolution before push transition animates
+        // Always re-point delegate so this VC receives events even if another VC
+        // previously took ownership of the shared Pusher instance.
+        HivePusherManager.shared.delegate = self
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         if isMovingFromParent {
             HivePusherManager.shared.disconnect()
+            anyCableManager?.disconnect()
         }
     }
 
@@ -118,6 +150,14 @@ class TaskChatViewController: UIViewController {
         shareButton.addTarget(self, action: #selector(shareTappedAction), for: .touchUpInside)
         headerView.addSubview(shareButton)
 
+        releasePodButton = UIButton(type: .system)
+        releasePodButton.translatesAutoresizingMaskIntoConstraints = false
+        releasePodButton.setImage(UIImage(systemName: "server.rack"), for: .normal)
+        releasePodButton.tintColor = UIColor.Sphinx.PrimaryGreen
+        releasePodButton.addTarget(self, action: #selector(releasePodTapped), for: .touchUpInside)
+        releasePodButton.isHidden = true
+        headerView.addSubview(releasePodButton)
+
         NSLayoutConstraint.activate([
             headerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             headerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -129,15 +169,20 @@ class TaskChatViewController: UIViewController {
             backButton.widthAnchor.constraint(equalToConstant: 50),
             backButton.heightAnchor.constraint(equalToConstant: 50),
 
-            shareButton.trailingAnchor.constraint(equalTo: headerView.trailingAnchor),
+            shareButton.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -8),
             shareButton.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
-            shareButton.widthAnchor.constraint(equalToConstant: 50),
-            shareButton.heightAnchor.constraint(equalToConstant: 50),
+            shareButton.widthAnchor.constraint(equalToConstant: 35),
+            shareButton.heightAnchor.constraint(equalToConstant: 35),
+
+            releasePodButton.trailingAnchor.constraint(equalTo: shareButton.leadingAnchor),
+            releasePodButton.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
+            releasePodButton.widthAnchor.constraint(equalToConstant: 35),
+            releasePodButton.heightAnchor.constraint(equalToConstant: 35),
 
             titleLabel.centerXAnchor.constraint(equalTo: headerView.centerXAnchor),
             titleLabel.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
             titleLabel.leadingAnchor.constraint(greaterThanOrEqualTo: backButton.trailingAnchor, constant: 8),
-            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: shareButton.leadingAnchor, constant: -8),
+            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: releasePodButton.leadingAnchor, constant: -8),
 
             divider.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
             divider.trailingAnchor.constraint(equalTo: headerView.trailingAnchor),
@@ -225,8 +270,46 @@ class TaskChatViewController: UIViewController {
 
         chatTableView.keyboardDismissMode = .interactive
 
+        // Autocomplete table view
+        // Autocomplete popup (scroll view + stack of buttons — avoids UITableView delegate timing issues)
+        autocompleteContainer = UIView()
+        autocompleteContainer.translatesAutoresizingMaskIntoConstraints = false
+        autocompleteContainer.backgroundColor = UIColor.Sphinx.HeaderBG
+        autocompleteContainer.isHidden = true
+        autocompleteContainer.clipsToBounds = true
+        view.addSubview(autocompleteContainer)
+
+        let autocompleteScrollView = UIScrollView()
+        autocompleteScrollView.translatesAutoresizingMaskIntoConstraints = false
+        autocompleteScrollView.showsVerticalScrollIndicator = true
+        autocompleteScrollView.bounces = true
+        autocompleteContainer.addSubview(autocompleteScrollView)
+
+        autocompleteStack = UIStackView()
+        autocompleteStack.translatesAutoresizingMaskIntoConstraints = false
+        autocompleteStack.axis = .vertical
+        autocompleteStack.spacing = 0
+        autocompleteStack.distribution = .fill
+        autocompleteScrollView.addSubview(autocompleteStack)
+
+        NSLayoutConstraint.activate([
+            autocompleteScrollView.topAnchor.constraint(equalTo: autocompleteContainer.topAnchor),
+            autocompleteScrollView.leadingAnchor.constraint(equalTo: autocompleteContainer.leadingAnchor),
+            autocompleteScrollView.trailingAnchor.constraint(equalTo: autocompleteContainer.trailingAnchor),
+            autocompleteScrollView.bottomAnchor.constraint(equalTo: autocompleteContainer.bottomAnchor),
+
+            autocompleteStack.topAnchor.constraint(equalTo: autocompleteScrollView.topAnchor),
+            autocompleteStack.leadingAnchor.constraint(equalTo: autocompleteScrollView.leadingAnchor),
+            autocompleteStack.trailingAnchor.constraint(equalTo: autocompleteScrollView.trailingAnchor),
+            autocompleteStack.bottomAnchor.constraint(equalTo: autocompleteScrollView.bottomAnchor),
+            autocompleteStack.widthAnchor.constraint(equalTo: autocompleteScrollView.widthAnchor)
+        ])
+
+        chatInputTextView.delegate = self
+
         chatInputBottomConstraint = chatInputContainer.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
         workflowStatusHeightConstraint = workflowStatusView.heightAnchor.constraint(equalToConstant: 0)
+        autocompleteHeightConstraint = autocompleteContainer.heightAnchor.constraint(equalToConstant: 0)
 
         NSLayoutConstraint.activate([
             loadingWheel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
@@ -263,8 +346,15 @@ class TaskChatViewController: UIViewController {
             sendButton.centerYAnchor.constraint(equalTo: chatInputContainer.centerYAnchor),
             sendButton.trailingAnchor.constraint(equalTo: chatInputContainer.trailingAnchor, constant: -16),
             sendButton.widthAnchor.constraint(equalToConstant: 80),
-            sendButton.heightAnchor.constraint(equalToConstant: 40)
+            sendButton.heightAnchor.constraint(equalToConstant: 40),
+
+            autocompleteContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            autocompleteContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            autocompleteContainer.bottomAnchor.constraint(equalTo: chatInputContainer.topAnchor),
+            autocompleteHeightConstraint
         ])
+
+
     }
 
     // MARK: - Keyboard
@@ -300,6 +390,46 @@ class TaskChatViewController: UIViewController {
     }
 
     // MARK: - Actions
+    @objc private func releasePodTapped() {
+        AlertHelper.showTwoOptionsAlert(
+            title: "Release Pod",
+            message: "Are you sure you want to release the pod for this task?",
+            on: self,
+            confirm: { [weak self] in self?.performReleasePod() }
+        )
+    }
+
+    private func performReleasePod() {
+        guard let podId = task.podId else { return }
+        releasePodButton.isEnabled = false
+        releasePodButton.alpha = 0.4
+        API.sharedInstance.releasePodWithAuth(
+            workspaceId: workspaceId,
+            podId: podId,
+            taskId: task.id,
+            callback: { [weak self] in
+                DispatchQueue.main.async {
+                    guard let self = self else { return }
+                    self.releasePodButton.isEnabled = true
+                    self.releasePodButton.alpha = 1.0
+                    self.releasePodButton.isHidden = true
+                }
+            },
+            errorCallback: { [weak self] in
+                DispatchQueue.main.async {
+                    guard let self = self else { return }
+                    self.releasePodButton.isEnabled = true
+                    self.releasePodButton.alpha = 1.0
+                    AlertHelper.showAlert(
+                        title: "generic.error.title".localized,
+                        message: "Failed to release pod. Please try again.",
+                        on: self
+                    )
+                }
+            }
+        )
+    }
+
     @objc private func shareTappedAction() {
         let url = "https://hive.sphinx.chat/w/\(workspaceSlug)/task/\(task.id)"
         let label = "Check out this task: \(task.title) — \(url)"
@@ -318,8 +448,11 @@ class TaskChatViewController: UIViewController {
             return
         }
         chatInputTextView.text = ""
+        chatInputTextView.typingAttributes = [
+            .foregroundColor: UIColor.Sphinx.Text,
+            .font: UIFont(name: "Roboto-Regular", size: 16) ?? UIFont.systemFont(ofSize: 16)
+        ]
         chatInputTextView.resignFirstResponder()
-        showProcessingBubble()
 
         API.sharedInstance.sendTaskChatMessageWithAuth(
             taskId: task.id,
@@ -340,7 +473,6 @@ class TaskChatViewController: UIViewController {
     }
 
     private func sendClarifyingAnswers(answers: [String], replyId: String) {
-        showProcessingBubble()
         let joined = answers.joined(separator: "\n\n")
         API.sharedInstance.sendTaskChatMessageWithAuth(
             taskId: task.id,
@@ -382,7 +514,7 @@ class TaskChatViewController: UIViewController {
 
         API.sharedInstance.fetchTaskMessagesWithAuth(
             taskId: task.id,
-            callback: { [weak self] messages in
+            callback: { [weak self] messages, podId in
                 DispatchQueue.main.async {
                     guard let self = self else { return }
                     self.loadingWheel.stopAnimating()
@@ -391,6 +523,8 @@ class TaskChatViewController: UIViewController {
                     self.emptyLabel.isHidden = !messages.isEmpty
                     self.chatTableView.reloadData()
                     if !messages.isEmpty { self.scrollToBottom(animated: false) }
+                    self.task.podId = podId
+                    self.releasePodButton.isHidden = (podId == nil)
                 }
             },
             errorCallback: { [weak self] in
@@ -406,13 +540,6 @@ class TaskChatViewController: UIViewController {
     }
 
     // MARK: - Processing Bubble
-    private func showProcessingBubble() {
-        guard processingStepText == nil else { return }
-        processingStepText = "Communicating with workflow"
-        let indexPath = IndexPath(row: messages.count, section: 0)
-        chatTableView.insertRows(at: [indexPath], with: .automatic)
-        scrollToBottom(animated: true)
-    }
 
     private func hideProcessingBubble() {
         guard processingStepText != nil else { return }
@@ -421,11 +548,19 @@ class TaskChatViewController: UIViewController {
         chatTableView.deleteRows(at: [indexPath], with: .automatic)
     }
 
+    /// Shows the bubble if not yet visible, or updates its text if already shown.
+    /// Called only when a real socket event (on_step_start / on_step_complete) arrives.
     private func updateProcessingBubble(stepText: String) {
-        guard processingStepText != nil else { return }
-        processingStepText = stepText
-        let indexPath = IndexPath(row: messages.count, section: 0)
-        chatTableView.reloadRows(at: [indexPath], with: .none)
+        if processingStepText == nil {
+            processingStepText = stepText
+            let indexPath = IndexPath(row: messages.count, section: 0)
+            chatTableView.insertRows(at: [indexPath], with: .automatic)
+            scrollToBottom(animated: true)
+        } else {
+            processingStepText = stepText
+            let indexPath = IndexPath(row: messages.count, section: 0)
+            chatTableView.reloadRows(at: [indexPath], with: .none)
+        }
     }
 
     private func scrollToBottom(animated: Bool = true) {
@@ -436,23 +571,64 @@ class TaskChatViewController: UIViewController {
     }
 
     // MARK: - WebSocket
+
+    /// Fetches task detail to resolve cachedStakworkProjectId, then connects AnyCable.
+    private func fetchTaskDetailAndConnect() {
+        API.sharedInstance.fetchTaskDetailWithAuth(
+            taskId: task.id,
+            callback: { [weak self] updatedTask in
+                guard let self = self else { return }
+                DispatchQueue.main.async {
+                    if let updated = updatedTask {
+                        let podId = self.task.podId ?? updated.podId
+                        self.task = updated
+                        self.task.podId = podId
+                        self.cachedStakworkProjectId = updated.stakworkProjectId
+                    }
+                    self.connectAnyCable()
+                }
+            },
+            errorCallback: { [weak self] in
+                print("[TaskChatVC] Failed to fetch task detail for stakworkProjectId")
+            }
+        )
+    }
+
+    /// Connects (or re-points) Pusher only. Safe to call any time — no projectId needed.
     private func connectWebSocket() {
         HivePusherManager.shared.delegate = self
         HivePusherManager.shared.connect(taskId: task.id)
     }
 
+    /// Connects AnyCable. Only called after cachedStakworkProjectId is populated.
+    private func connectAnyCable() {
+        guard let projectId = cachedStakworkProjectId else { return }
+        guard anyCableManager == nil else { return }
+        anyCableManager = HiveAnyCableManager()
+        anyCableManager?.delegate = self
+        anyCableManager?.connect(projectId: projectId)
+    }
+
     // MARK: - Workflow Status
-    private func applyWorkflowStatus(_ status: WorkflowStatus) {
+    private func applyWorkflowStatus(_ status: WorkflowStatus, animated: Bool = true) {
         workflowStatusView.status = status
         switch status {
-        case .IN_PROGRESS, .PENDING, .HALTED:
+        case .IN_PROGRESS, .HALTED:
             workflowStatusHeightConstraint.constant = 32
-            workflowStatusView.show(animated: true)
-            UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
-        case .COMPLETED, .ERROR, .FAILED:
+            workflowStatusView.show(animated: animated)
+            if animated {
+                UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
+            } else {
+                self.view.layoutIfNeeded()
+            }
+        case .PENDING, .COMPLETED, .ERROR, .FAILED:
             workflowStatusHeightConstraint.constant = 0
-            workflowStatusView.hide(animated: true)
-            UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
+            workflowStatusView.hide(animated: animated)
+            if animated {
+                UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
+            } else {
+                self.view.layoutIfNeeded()
+            }
             hideProcessingBubble()
         }
     }
@@ -460,8 +636,8 @@ class TaskChatViewController: UIViewController {
     private func applyInitialWorkflowStatus() {
         guard let raw = task.workflowStatus,
               let status = WorkflowStatus(rawValue: raw),
-              status == .IN_PROGRESS || status == .PENDING || status == .HALTED else { return }
-        applyWorkflowStatus(status)
+              status == .IN_PROGRESS || status == .HALTED else { return }
+        applyWorkflowStatus(status, animated: false)
     }
 }
 
@@ -474,47 +650,12 @@ extension TaskChatViewController: HivePusherDelegate {
     func workflowStatusChanged(status: WorkflowStatus) {
         DispatchQueue.main.async {
             self.applyWorkflowStatus(status)
+            
 //            if status == .IN_PROGRESS || status == .PENDING {
 //                self.showProcessingBubble()
 //                self.fetchAndUpdateWorkflowStep()
 //            }
         }
-    }
-
-    private func fetchAndUpdateWorkflowStep() {
-        if let projectId = cachedStakworkProjectId {
-            fetchStepText(projectId: projectId)
-        } else if !hasFetchedTaskDetail {
-            hasFetchedTaskDetail = true
-            API.sharedInstance.fetchTaskDetailWithAuth(
-                taskId: task.id,
-                callback: { [weak self] updatedTask in
-                    guard let self = self else { return }
-                    if let projectId = updatedTask?.stakworkProjectId {
-                        self.cachedStakworkProjectId = projectId
-                        self.fetchStepText(projectId: projectId)
-                    }
-                },
-                errorCallback: {
-                    print("[TaskChatVC] Failed to fetch task detail for stakworkProjectId")
-                }
-            )
-        }
-    }
-
-    private func fetchStepText(projectId: Int) {
-        API.sharedInstance.fetchStakworkWorkflowWithAuth(
-            projectId: projectId,
-            callback: { [weak self] workflowData in
-                guard let self = self, let title = workflowData?.inProgressTitle else { return }
-                DispatchQueue.main.async {
-                    self.updateProcessingBubble(stepText: title)
-                }
-            },
-            errorCallback: {
-                print("[TaskChatVC] Failed to fetch stakwork workflow step")
-            }
-        )
     }
 
     func featureUpdateReceived(featureId: String) {
@@ -523,7 +664,11 @@ extension TaskChatViewController: HivePusherDelegate {
 
     func newMessageReceived(_ message: HiveChatMessage) {
         guard !messages.contains(where: { $0.id == message.id }) else { return }
-        hideProcessingBubble()
+        // Only hide the processing bubble when an AI (non-user) reply arrives,
+        // not when the echo of the sent user message comes back.
+        if !message.isUserMessage {
+            hideProcessingBubble()
+        }
         messages.append(message)
         let indexPath = IndexPath(row: messages.count - 1, section: 0)
         chatTableView.insertRows(at: [indexPath], with: .automatic)
@@ -553,13 +698,12 @@ extension TaskChatViewController: HivePusherDelegate {
         DispatchQueue.main.async { self.titleLabel.text = newTitle }
     }
 
-    func processingStepReceived(message: String) {
-        DispatchQueue.main.async {
-            if self.processingStepText == nil {
-                self.showProcessingBubble()
-            }
-            self.updateProcessingBubble(stepText: message)
-        }
+}
+
+// MARK: - HiveAnyCableDelegate
+extension TaskChatViewController: HiveAnyCableDelegate {
+    func workflowStepTextReceived(stepText: String) {
+        updateProcessingBubble(stepText: stepText)
     }
 }
 
@@ -583,7 +727,8 @@ extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
             withIdentifier: "FeatureChatMessageCell",
             for: indexPath
         ) as? FeatureChatMessageCell else { return UITableViewCell() }
-        cell.configure(with: messages[indexPath.row])
+        let isLast = indexPath.row == messages.count - 1
+        cell.configure(with: messages[indexPath.row], isLastMessage: isLast)
         cell.onClarifyingAnswerSubmit = { [weak self] answers, replyId in
             self?.sendClarifyingAnswers(answers: answers, replyId: replyId)
         }
@@ -591,6 +736,201 @@ extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
             tableView?.beginUpdates()
             tableView?.endUpdates()
         }
+        cell.onAttachmentTap = { [weak self] attachment in
+            self?.handleAttachmentTap(attachment)
+        }
         return cell
+    }
+
+    private func handleAttachmentTap(_ attachment: HiveChatMessageAttachment) {
+        guard let s3Key = attachment.resolvedUrl else { return }
+        let mime = attachment.mimeType ?? ""
+        bubbleHelper.showLoadingWheel()
+        API.sharedInstance.fetchPresignedUrlWithAuth(s3Key: s3Key) { [weak self] presignedStr in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                guard let urlStr = presignedStr, let url = URL(string: urlStr) else {
+                    self.bubbleHelper.hideLoadingWheel()
+                    return
+                }
+                if mime.hasPrefix("image/") {
+                    if let vc = AttachmentFullScreenViewController.instantiate(imageUrl: url) {
+                        self.present(vc, animated: true) {
+                            self.bubbleHelper.hideLoadingWheel()
+                        }
+                    } else {
+                        self.bubbleHelper.hideLoadingWheel()
+                    }
+                } else if mime.hasPrefix("video/") {
+                    let player = AVPlayer(url: url)
+                    let vc = AVPlayerViewController()
+                    vc.player = player
+                    self.present(vc, animated: true) {
+                        self.bubbleHelper.hideLoadingWheel()
+                        player.play()
+                    }
+                } else {
+                    self.bubbleHelper.hideLoadingWheel()
+                }
+            }
+        }
+    }
+
+    // Dismiss autocomplete when user scrolls the chat
+    func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
+        guard scrollView === chatTableView else { return }
+        hideAutocomplete()
+    }
+}
+
+// MARK: - UITextViewDelegate (autocomplete)
+extension TaskChatViewController: UITextViewDelegate {
+    func textViewDidChange(_ textView: UITextView) {
+        guard textView == chatInputTextView else { return }
+        let text = textView.text ?? ""
+        let cursor = textView.selectedRange
+
+        applyMentionColoring(to: textView, preservingCursor: cursor)
+
+        let cursorPos = cursor.location
+        guard cursorPos <= (text as NSString).length else { hideAutocomplete(); return }
+        let upToCursor = (text as NSString).substring(to: cursorPos)
+        if let atRange = upToCursor.range(of: "@", options: .backwards),
+           (atRange.lowerBound == upToCursor.startIndex ||
+            upToCursor[upToCursor.index(before: atRange.lowerBound)].isWhitespace) {
+            let query = String(upToCursor[atRange.upperBound...])
+            if query.contains(" ") || query.contains("\n") {
+                hideAutocomplete()
+                return
+            }
+            let atNSIdx = upToCursor.distance(from: upToCursor.startIndex, to: atRange.lowerBound)
+            atTriggerNSRange = NSRange(location: atNSIdx, length: cursorPos - atNSIdx)
+            filteredWorkspaces = availableWorkspaces.filter {
+                query.isEmpty ||
+                $0.name.localizedCaseInsensitiveContains(query) ||
+                ($0.slug ?? "").localizedCaseInsensitiveContains(query)
+            }
+            showAutocomplete()
+        } else {
+            hideAutocomplete()
+        }
+    }
+
+    private static let mentionRegex = try? NSRegularExpression(pattern: "@\\S+")
+
+    /// Recolors the text view: `@word` (@ + non-whitespace) = blue, all else = default text color.
+    private func applyMentionColoring(to textView: UITextView, preservingCursor cursor: NSRange) {
+        let text = textView.text ?? ""
+        let defaultFont = UIFont(name: "Roboto-Regular", size: 16) ?? UIFont.systemFont(ofSize: 16)
+        let attr = NSMutableAttributedString(
+            string: text,
+            attributes: [.foregroundColor: UIColor.Sphinx.Text, .font: defaultFont]
+        )
+        if let regex = TaskChatViewController.mentionRegex {
+            let matches = regex.matches(in: text, range: NSRange(text.startIndex..., in: text))
+            for match in matches {
+                attr.addAttribute(.foregroundColor, value: UIColor.Sphinx.PrimaryBlue, range: match.range)
+            }
+        }
+        textView.attributedText = attr
+        textView.selectedRange = cursor
+        textView.typingAttributes = [.foregroundColor: UIColor.Sphinx.Text, .font: defaultFont]
+    }
+
+    private func showAutocomplete() {
+        guard !filteredWorkspaces.isEmpty else { hideAutocomplete(); return }
+
+        autocompleteStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        for (i, ws) in filteredWorkspaces.enumerated() {
+            let row = UIView()
+            row.backgroundColor = UIColor.Sphinx.HeaderBG
+
+            let nameLabel = UILabel()
+            nameLabel.text = ws.name
+            nameLabel.textColor = UIColor.Sphinx.Text
+            nameLabel.font = UIFont(name: "Roboto-Medium", size: 14) ?? .systemFont(ofSize: 14, weight: .medium)
+
+            let slugLabel = UILabel()
+            slugLabel.text = ws.slug
+            slugLabel.textColor = UIColor.Sphinx.SecondaryText
+            slugLabel.font = UIFont(name: "Roboto-Regular", size: 12) ?? .systemFont(ofSize: 12)
+
+            let labelStack = UIStackView(arrangedSubviews: [nameLabel, slugLabel])
+            labelStack.axis = .vertical
+            labelStack.spacing = 2
+            labelStack.translatesAutoresizingMaskIntoConstraints = false
+            row.addSubview(labelStack)
+            NSLayoutConstraint.activate([
+                labelStack.leadingAnchor.constraint(equalTo: row.leadingAnchor, constant: 16),
+                labelStack.trailingAnchor.constraint(equalTo: row.trailingAnchor, constant: -16),
+                labelStack.centerYAnchor.constraint(equalTo: row.centerYAnchor)
+            ])
+
+            let btn = UIButton(type: .system)
+            btn.translatesAutoresizingMaskIntoConstraints = false
+            btn.backgroundColor = .clear
+            btn.tag = i
+            btn.addTarget(self, action: #selector(autocompleteRowTapped(_:)), for: .touchUpInside)
+            row.addSubview(btn)
+            NSLayoutConstraint.activate([
+                btn.topAnchor.constraint(equalTo: row.topAnchor),
+                btn.leadingAnchor.constraint(equalTo: row.leadingAnchor),
+                btn.trailingAnchor.constraint(equalTo: row.trailingAnchor),
+                btn.bottomAnchor.constraint(equalTo: row.bottomAnchor)
+            ])
+
+            row.heightAnchor.constraint(equalToConstant: 52).isActive = true
+            autocompleteStack.addArrangedSubview(row)
+
+            if i < filteredWorkspaces.count - 1 {
+                let divider = UIView()
+                divider.backgroundColor = UIColor.Sphinx.LightDivider
+                divider.translatesAutoresizingMaskIntoConstraints = false
+                divider.heightAnchor.constraint(equalToConstant: 1).isActive = true
+                autocompleteStack.addArrangedSubview(divider)
+            }
+        }
+
+        let maxRows = min(filteredWorkspaces.count, 4)
+        let dividerCount = max(0, maxRows - 1)
+        let visibleHeight = CGFloat(maxRows) * 52 + CGFloat(dividerCount)
+        autocompleteHeightConstraint.constant = visibleHeight
+        autocompleteContainer.isHidden = false
+        view.layoutIfNeeded()
+    }
+
+    @objc private func autocompleteRowTapped(_ sender: UIButton) {
+        guard sender.tag < filteredWorkspaces.count,
+              let triggerRange = atTriggerNSRange,
+              let currentText = chatInputTextView.text else { hideAutocomplete(); return }
+        let ws = filteredWorkspaces[sender.tag]
+        let slug = ws.slug ?? ws.name
+        let insertText = "@\(slug) "
+        let nsText = currentText as NSString
+        let safeLength = min(triggerRange.length, nsText.length - triggerRange.location)
+        guard triggerRange.location >= 0, triggerRange.location + safeLength <= nsText.length else {
+            hideAutocomplete(); return
+        }
+        let newText = nsText.replacingCharacters(in: NSRange(location: triggerRange.location, length: safeLength), with: insertText)
+        let newCursor = NSRange(location: triggerRange.location + insertText.count, length: 0)
+        let defaultFont = UIFont(name: "Roboto-Regular", size: 16) ?? UIFont.systemFont(ofSize: 16)
+        let attr = NSMutableAttributedString(string: newText, attributes: [.foregroundColor: UIColor.Sphinx.Text, .font: defaultFont])
+        if let regex = TaskChatViewController.mentionRegex {
+            let matches = regex.matches(in: newText, range: NSRange(newText.startIndex..., in: newText))
+            for match in matches {
+                attr.addAttribute(.foregroundColor, value: UIColor.Sphinx.PrimaryBlue, range: match.range)
+            }
+        }
+        chatInputTextView.attributedText = attr
+        chatInputTextView.selectedRange = newCursor
+        chatInputTextView.typingAttributes = [.foregroundColor: UIColor.Sphinx.Text, .font: defaultFont]
+        hideAutocomplete()
+        chatInputTextView.becomeFirstResponder()
+    }
+
+    private func hideAutocomplete() {
+        autocompleteContainer.isHidden = true
+        autocompleteHeightConstraint.constant = 0
+        atTriggerNSRange = nil
     }
 }

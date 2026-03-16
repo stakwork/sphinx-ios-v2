@@ -37,6 +37,7 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
     private(set) var haltedWorkflowBadge: UILabel!
     private(set) var retryWorkflowButton: UIButton!
     private(set) var rightPillStack: UIStackView!
+    private(set) var deploymentPill: UILabel!
     private var prBadgeURL: URL?
 
     override func awakeFromNib() {
@@ -71,6 +72,7 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         setupPRBadgeButton()
         setupHaltedWorkflowBadge()
         setupRetryWorkflowButton()
+        setupDeploymentPill()
         setupRightPillStack()
     }
 
@@ -95,11 +97,12 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         haltedWorkflowBadge.font = UIFont(name: "Roboto-Medium", size: 11)
         haltedWorkflowBadge.textAlignment = .center
         haltedWorkflowBadge.backgroundColor = .Sphinx.SphinxOrange
-        haltedWorkflowBadge.text = "  HALTED  "
+        haltedWorkflowBadge.text = "HALTED"
         haltedWorkflowBadge.translatesAutoresizingMaskIntoConstraints = false
         haltedWorkflowBadge.isHidden = true
-        // Height constraint only — stack handles trailing/bottom positioning
+        // Height + equal-width to prBadgeButton so .center alignment has a defined frame
         haltedWorkflowBadge.heightAnchor.constraint(equalToConstant: 22).isActive = true
+        haltedWorkflowBadge.widthAnchor.constraint(equalToConstant: 55).isActive = true
     }
 
     private func setupRetryWorkflowButton() {
@@ -121,8 +124,21 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         retryWorkflowButton.addTarget(self, action: #selector(retryWorkflowButtonTapped), for: .touchUpInside)
     }
 
+    private func setupDeploymentPill() {
+        deploymentPill = UILabel()
+        deploymentPill.layer.cornerRadius = 10
+        deploymentPill.clipsToBounds = true
+        deploymentPill.font = UIFont(name: "Roboto-Medium", size: 11)
+        deploymentPill.textAlignment = .center
+        deploymentPill.layer.borderWidth = 1
+        deploymentPill.translatesAutoresizingMaskIntoConstraints = false
+        deploymentPill.isHidden = true
+        deploymentPill.heightAnchor.constraint(equalToConstant: 22).isActive = true
+        deploymentPill.widthAnchor.constraint(equalToConstant: 90).isActive = true
+    }
+
     private func setupRightPillStack() {
-        rightPillStack = UIStackView(arrangedSubviews: [updatedAtLabel, prBadgeButton, haltedWorkflowBadge])
+        rightPillStack = UIStackView(arrangedSubviews: [updatedAtLabel, deploymentPill, haltedWorkflowBadge, prBadgeButton])
         rightPillStack.axis = .horizontal
         rightPillStack.alignment = .center
         rightPillStack.distribution = .fill
@@ -185,6 +201,7 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         prBadgeButton.isHidden = true
         haltedWorkflowBadge.isHidden = true
         retryWorkflowButton.isHidden = true
+        deploymentPill.isHidden = true
         prBadgeURL = nil
 
         // ── Exclusive pill logic: PR wins, then HALTED, then neither ─────
@@ -199,6 +216,29 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         } else if isHalted {
             haltedWorkflowBadge.isHidden = false
             retryWorkflowButton.isHidden = false
+        }
+        // ── Deployment status pill ───────────────────────────────────────
+        switch task.deploymentStatus {
+        case "production":
+            deploymentPill.text = "PRODUCTION"
+            deploymentPill.textColor = .Sphinx.PrimaryGreen
+            deploymentPill.layer.borderColor = UIColor.Sphinx.PrimaryGreen.cgColor
+            deploymentPill.backgroundColor = .white
+            deploymentPill.isHidden = false
+        case "staging":
+            deploymentPill.text = "STAGING"
+            deploymentPill.textColor = .Sphinx.SphinxOrange
+            deploymentPill.layer.borderColor = UIColor.Sphinx.SphinxOrange.cgColor
+            deploymentPill.backgroundColor = .white
+            deploymentPill.isHidden = false
+        case "failed":
+            deploymentPill.text = "FAILED"
+            deploymentPill.textColor = .Sphinx.PrimaryRed
+            deploymentPill.layer.borderColor = UIColor.Sphinx.PrimaryRed.cgColor
+            deploymentPill.backgroundColor = .white
+            deploymentPill.isHidden = false
+        default:
+            break
         }
         // UIStackView collapses hidden arranged subviews — no constraint toggling needed
     }

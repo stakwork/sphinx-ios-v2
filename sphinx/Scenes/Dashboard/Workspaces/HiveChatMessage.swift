@@ -139,19 +139,23 @@ struct HiveChatMessageArtifact {
 struct HiveChatMessageAttachment {
     let filename: String?
     let path: String?
+    let url: String?
     let mimeType: String?
 
     init(json: JSON) {
         self.filename = json["filename"].string
         self.path = json["path"].string
+        self.url = json["url"].string
         self.mimeType = json["mimeType"].string
     }
+
+    var resolvedUrl: String? { url ?? path }
 }
 
 struct HiveChatMessage {
     let id: String
     let featureId: String?
-    let message: String
+    var message: String
     let role: String       // "USER" or "ASSISTANT" (uppercase from API)
     let status: String?
     let userId: String?
@@ -160,6 +164,33 @@ struct HiveChatMessage {
     let attachments: [HiveChatMessageAttachment]
     let createdBy: HiveChatMessageCreatedBy?
     let replyId: String?
+
+    /// Memberwise initialiser for programmatic construction (e.g. Graph Chat streaming).
+    init(
+        id: String,
+        message: String,
+        role: String,
+        featureId: String? = nil,
+        status: String? = nil,
+        userId: String? = nil,
+        createdAt: String? = nil,
+        artifacts: [HiveChatMessageArtifact] = [],
+        attachments: [HiveChatMessageAttachment] = [],
+        createdBy: HiveChatMessageCreatedBy? = nil,
+        replyId: String? = nil
+    ) {
+        self.id = id
+        self.message = message
+        self.role = role
+        self.featureId = featureId
+        self.status = status
+        self.userId = userId
+        self.createdAt = createdAt
+        self.artifacts = artifacts
+        self.attachments = attachments
+        self.createdBy = createdBy
+        self.replyId = replyId
+    }
 
     init?(json: JSON) {
         guard let id = json["id"].string,

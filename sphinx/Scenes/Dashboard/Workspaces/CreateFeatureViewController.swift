@@ -178,8 +178,6 @@ class CreateFeatureViewController: UIViewController {
 
     private func configureView() {
         promptFieldView.layer.cornerRadius = 5
-        promptFieldView.layer.borderWidth = 1
-        promptFieldView.layer.borderColor = UIColor.Sphinx.LightDivider.resolvedCGColor(with: self.view)
 
         sendButton.layer.cornerRadius = 25
         sendButton.clipsToBounds = true

@@ -307,12 +307,26 @@ extension CustomSegmentedControl {
     
     private func updateTitleBadges() {
         buttonTitleBadges.enumerated().forEach { (index, badge) in
-            badge.frame = .init(
-                x: (buttons[index].titleLabel?.frame.maxX ?? 0) + 2.5,
-                y: (buttons[index].titleLabel?.frame.minY ?? 0) - 2.5,
-                width: 5.0,
-                height: 5.0
-            )
+            let button = buttons[index]
+            if let _ = button.titleLabel?.text {
+                let titleFrame = button.titleLabel?.frame ?? .zero
+                badge.frame = .init(
+                    x: (titleFrame.maxX) + 2.5,
+                    y: (titleFrame.minY) - 2.5,
+                    width: 5.0,
+                    height: 5.0
+                )
+            } else {
+                let imageFrame = button.imageView?.frame ?? .zero
+                let badgeSize: CGFloat = 7.0
+                badge.frame = CGRect(
+                    x: imageFrame.maxX - badgeSize / 2,
+                    y: imageFrame.minY - badgeSize / 2,
+                    width: badgeSize,
+                    height: badgeSize
+                )
+            }
+            
             badge.makeCircular()
             badge.isHidden = !indicesOfTitlesWithBadge.contains(index)
         }
@@ -331,7 +345,7 @@ extension CustomSegmentedControl {
         
         buttonTitleBadges.enumerated().forEach { (index, badge) in
             badge.isHidden = !indicesOfTitlesWithBadge.contains(index)
-            buttons[index].insertSubview(badge, at: 0)
+            buttons[index].addSubview(badge)
         }
     }
 }

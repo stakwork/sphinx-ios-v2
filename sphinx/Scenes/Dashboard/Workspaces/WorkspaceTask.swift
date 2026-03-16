@@ -19,7 +19,7 @@ struct WorkspaceTask {
     var archived: Bool
     let sourceType: String?
     let mode: String?
-    let podId: String?
+    var podId: String?
     let createdAt: String?
     let updatedAt: String?
     let featureId: String?
@@ -40,6 +40,8 @@ struct WorkspaceTask {
     var prStatus: String?
     var prNumber: Int?
     var stakworkProjectId: Int?
+    var deploymentStatus: String?       // "production" | "staging" | "failed" | nil
+    var deployedToProductionAt: String? // ISO 8601
 
     init?(json: JSON) {
         guard let id = json["id"].string,
@@ -52,7 +54,6 @@ struct WorkspaceTask {
         self.workflowStatus = json["workflowStatus"].string
         self.sourceType = json["sourceType"].string
         self.mode = json["mode"].string
-        self.podId = json["podId"].string
         self.createdAt = json["createdAt"].string
         self.updatedAt = json["updatedAt"].string
         self.featureId = json["feature"]["id"].string
@@ -75,5 +76,7 @@ struct WorkspaceTask {
         self.prStatus = json["prArtifact"]["content"]["status"].string
         self.prNumber = json["prArtifact"]["content"]["number"].int
         self.stakworkProjectId = json["stakworkProjectId"].int
+        self.deploymentStatus = json["deploymentStatus"].string
+        self.deployedToProductionAt = json["deployedToProductionAt"].string
     }
 }

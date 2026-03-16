@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import SDWebImage
 
 class FeatureChatMessageCell: UITableViewCell {
 
@@ -25,6 +26,17 @@ class FeatureChatMessageCell: UITableViewCell {
         view.layer.cornerRadius = 18
         view.layer.masksToBounds = true
         return view
+    }()
+
+    /// Dedicated background view that carries the bubble colour when a PR card is present.
+    /// This lets `bubbleView` stay unclipped (for the card's border) while still showing
+    /// properly-rounded corners on the text section.
+    private let textBackgroundView: UIView = {
+        let v = UIView()
+        v.translatesAutoresizingMaskIntoConstraints = false
+        v.layer.cornerRadius = 18
+        v.layer.masksToBounds = true
+        return v
     }()
 
     /// Non-scrolling UITextView so NSAttributedString (markdown) renders properly.
@@ -62,6 +74,19 @@ class FeatureChatMessageCell: UITableViewCell {
     /// (e.g. navigating between questions) so the host table view can recalculate row height.
     var onHeightChanged: (() -> Void)?
 
+    /// Called when the user taps an attachment tile.
+    var onAttachmentTap: ((HiveChatMessageAttachment) -> Void)? {
+        didSet { attachmentGridView.onTapAttachment = onAttachmentTap }
+    }
+
+    // MARK: - Attachment grid
+    private let attachmentGridView: AttachmentGridView = {
+        let v = AttachmentGridView()
+        v.translatesAutoresizingMaskIntoConstraints = false
+        v.isHidden = true
+        return v
+    }()
+
     private let timestampLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -70,9 +95,22 @@ class FeatureChatMessageCell: UITableViewCell {
         return label
     }()
 
+    // MARK: - Sender avatar (shown only for sent messages)
+    private let senderAvatarImageView: UIImageView = {
+        let iv = UIImageView()
+        iv.translatesAutoresizingMaskIntoConstraints = false
+        iv.layer.cornerRadius = 10   // 20pt diameter → 10pt radius
+        iv.clipsToBounds = true
+        iv.contentMode = .scaleAspectFill
+        iv.image = UIImage(named: "profile_avatar")
+        iv.isHidden = true
+        return iv
+    }()
+
     // MARK: - Alignment constraints (toggled per message role)
     private var bubbleLeadingConstraint: NSLayoutConstraint!
     private var bubbleTrailingConstraint: NSLayoutConstraint!
+    private var bubbleTrailingConstraintSent: NSLayoutConstraint!
     private var timestampLeadingConstraint: NSLayoutConstraint!
     private var timestampTrailingConstraint: NSLayoutConstraint!
     private var bubbleWidthConstraint: NSLayoutConstraint!
@@ -90,19 +128,23 @@ class FeatureChatMessageCell: UITableViewCell {
         contentView.backgroundColor = .Sphinx.Body
         selectionStyle = .none
 
-        // Vertical stack inside bubble: text + optional PR card + optional clarifying questions
-        let bubbleStack = UIStackView(arrangedSubviews: [messageTextView, prCardView, clarifyingQuestionsView])
+        // Vertical stack inside bubble: text + optional PR card + optional clarifying questions + optional attachment grid
+        let bubbleStack = UIStackView(arrangedSubviews: [messageTextView, prCardView, clarifyingQuestionsView, attachmentGridView])
         bubbleStack.translatesAutoresizingMaskIntoConstraints = false
         bubbleStack.axis = .vertical
         bubbleStack.spacing = 0
         bubbleStack.isLayoutMarginsRelativeArrangement = true
 
         contentView.addSubview(bubbleView)
+        bubbleView.insertSubview(textBackgroundView, belowSubview: bubbleStack)
         bubbleView.addSubview(bubbleStack)
         contentView.addSubview(timestampLabel)
+        contentView.addSubview(senderAvatarImageView)
 
         bubbleLeadingConstraint  = bubbleView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16)
         bubbleTrailingConstraint = bubbleView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16)
+        // -36 = avatar(20) + gap(8) + right margin(8)
+        bubbleTrailingConstraintSent = bubbleView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -36)
 
         timestampLeadingConstraint  = timestampLabel.leadingAnchor.constraint(equalTo: bubbleView.leadingAnchor)
         timestampTrailingConstraint = timestampLabel.trailingAnchor.constraint(equalTo: bubbleView.trailingAnchor)
@@ -110,6 +152,10 @@ class FeatureChatMessageCell: UITableViewCell {
         bubbleWidthConstraint = bubbleView.widthAnchor.constraint(lessThanOrEqualTo: contentView.widthAnchor, multiplier: 0.85)
 
         NSLayoutConstraint.activate([
+            senderAvatarImageView.widthAnchor.constraint(equalToConstant: 20),
+            senderAvatarImageView.heightAnchor.constraint(equalToConstant: 20),
+            senderAvatarImageView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -8),
+            senderAvatarImageView.bottomAnchor.constraint(equalTo: bubbleView.bottomAnchor),
             bubbleView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 4),
             bubbleWidthConstraint,
             bubbleStack.topAnchor.constraint(equalTo: bubbleView.topAnchor),
@@ -118,11 +164,16 @@ class FeatureChatMessageCell: UITableViewCell {
             bubbleStack.bottomAnchor.constraint(equalTo: bubbleView.bottomAnchor),
             timestampLabel.topAnchor.constraint(equalTo: bubbleView.bottomAnchor, constant: 4),
             timestampLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -4),
+            // textBackgroundView covers only the text area (top of bubble → bottom of text view)
+            textBackgroundView.topAnchor.constraint(equalTo: bubbleView.topAnchor),
+            textBackgroundView.leadingAnchor.constraint(equalTo: bubbleView.leadingAnchor),
+            textBackgroundView.trailingAnchor.constraint(equalTo: bubbleView.trailingAnchor),
+            textBackgroundView.bottomAnchor.constraint(equalTo: messageTextView.bottomAnchor),
         ])
     }
 
     // MARK: - Configure
-    func configure(with message: HiveChatMessage) {
+    func configure(with message: HiveChatMessage, isLastMessage: Bool = false) {
         let isUser = message.isUserMessage
 
         // --- Text content ---
@@ -142,10 +193,22 @@ class FeatureChatMessageCell: UITableViewCell {
             timestampLabel.textColor        = UIColor.Sphinx.SecondaryTextSent
             timestampLabel.textAlignment    = .right
             bubbleLeadingConstraint.isActive  = false
-
-            bubbleTrailingConstraint.isActive = true
+            bubbleTrailingConstraint.isActive = false
+            bubbleTrailingConstraintSent.isActive = true
             timestampLeadingConstraint.isActive  = false
             timestampTrailingConstraint.isActive = true
+
+            // Sender avatar
+            senderAvatarImageView.isHidden = false
+            if let urlStr = message.createdBy?.image, let url = URL(string: urlStr) {
+                senderAvatarImageView.sd_setImage(
+                    with: url,
+                    placeholderImage: UIImage(named: "profile_avatar"),
+                    options: .lowPriority
+                )
+            } else {
+                senderAvatarImageView.image = UIImage(named: "profile_avatar")
+            }
         } else {
             let rendered = FeatureChatMessageCell.markdownRenderer.render(message.resolvedDisplayText)
             let mutable  = NSMutableAttributedString(attributedString: rendered)
@@ -162,10 +225,14 @@ class FeatureChatMessageCell: UITableViewCell {
             bubbleView.backgroundColor      = UIColor.Sphinx.ReceivedMsgBG
             timestampLabel.textColor        = UIColor.Sphinx.SecondaryText
             timestampLabel.textAlignment    = .left
-            bubbleTrailingConstraint.isActive = false
+            bubbleTrailingConstraintSent.isActive = false
+            bubbleTrailingConstraint.isActive = true
             bubbleLeadingConstraint.isActive  = true
             timestampTrailingConstraint.isActive = false
             timestampLeadingConstraint.isActive  = true
+
+            // Hide sender avatar for received messages
+            senderAvatarImageView.isHidden = true
         }
 
         // --- PR artifact card ---
@@ -181,6 +248,15 @@ class FeatureChatMessageCell: UITableViewCell {
             bubbleView.layer.cornerRadius = 18
             bubbleView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
             bubbleView.layer.masksToBounds = false
+            // Move bubble colour onto textBackgroundView so the bottom corners clip correctly
+            bubbleView.backgroundColor = .clear
+            let roleColour: UIColor = isUser ? UIColor.Sphinx.SentMsgBG : UIColor.Sphinx.ReceivedMsgBG
+            textBackgroundView.backgroundColor = roleColour
+            textBackgroundView.layer.maskedCorners = [
+                .layerMinXMinYCorner, .layerMaxXMinYCorner,
+                .layerMinXMaxYCorner, .layerMaxXMaxYCorner
+            ]
+            textBackgroundView.layer.masksToBounds = true
         } else {
             prCardView.isHidden = true
             // Restore default width constraint
@@ -193,6 +269,8 @@ class FeatureChatMessageCell: UITableViewCell {
                 .layerMinXMaxYCorner, .layerMaxXMaxYCorner
             ]
             bubbleView.layer.masksToBounds = true
+            // textBackgroundView not needed — clear it
+            textBackgroundView.backgroundColor = .clear
         }
 
         // --- LONGFORM border ---
@@ -208,6 +286,12 @@ class FeatureChatMessageCell: UITableViewCell {
         if let cqArtifact = message.artifacts.first(where: { $0.isClarifyingQuestions }),
            let questions = cqArtifact.clarifyingQuestions, !questions.isEmpty {
             clarifyingQuestionsView.configure(with: questions)
+            if isLastMessage {
+                clarifyingQuestionsView.isUserInteractionEnabled = true
+                clarifyingQuestionsView.alpha = 1.0
+            } else {
+                clarifyingQuestionsView.lock()
+            }
             clarifyingQuestionsView.isHidden = false
             clarifyingQuestionsView.onSubmit = { [weak self] answers in
                 self?.onClarifyingAnswerSubmit?(answers, message.id)
@@ -243,6 +327,20 @@ class FeatureChatMessageCell: UITableViewCell {
         } else {
             timestampLabel.isHidden = true
         }
+
+        // --- Attachment grid ---
+        if !message.attachments.isEmpty {
+            attachmentGridView.configure(with: message.attachments)
+            attachmentGridView.isHidden = false
+            // Keep bubble at same max width as text messages
+            bubbleWidthConstraint.isActive = false
+            bubbleWidthConstraint = bubbleView.widthAnchor.constraint(
+                lessThanOrEqualTo: contentView.widthAnchor, multiplier: 0.85
+            )
+            bubbleWidthConstraint.isActive = true
+        } else {
+            attachmentGridView.isHidden = true
+        }
     }
 
     // MARK: - Helpers
@@ -276,11 +374,18 @@ class FeatureChatMessageCell: UITableViewCell {
         clarifyingQuestionsView.isHidden = true
         onClarifyingAnswerSubmit = nil
         onHeightChanged = nil
+        attachmentGridView.reset()
+        attachmentGridView.isHidden = true
+        onAttachmentTap = nil
         bubbleView.layer.cornerRadius = 18
         timestampLabel.text    = nil
         timestampLabel.isHidden = false
+        senderAvatarImageView.isHidden = true
+        senderAvatarImageView.sd_cancelCurrentImageLoad()
+        senderAvatarImageView.image = UIImage(named: "profile_avatar")
         bubbleLeadingConstraint.isActive  = false
         bubbleTrailingConstraint.isActive = false
+        bubbleTrailingConstraintSent.isActive = false
         timestampLeadingConstraint.isActive  = false
         timestampTrailingConstraint.isActive = false
         // Reset bubble width to default
@@ -295,5 +400,6 @@ class FeatureChatMessageCell: UITableViewCell {
         bubbleView.layer.masksToBounds = true
         bubbleView.layer.borderWidth = 0
         bubbleView.layer.borderColor = UIColor.clear.cgColor
+        textBackgroundView.backgroundColor = .clear
     }
 }

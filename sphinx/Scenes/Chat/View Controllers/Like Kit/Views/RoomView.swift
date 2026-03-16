@@ -35,6 +35,14 @@ struct RoomView: View {
     @EnvironmentObject var roomCtx: RoomContext
     @EnvironmentObject var room: Room
 
+    private static let markdownRenderer: MarkdownRenderer = {
+        var style = MarkdownStyle()
+        style.textColor = .white
+        style.linkColor = .Sphinx.PrimaryBlue
+        style.baseFontSize = 15
+        return MarkdownRenderer(style: style)
+    }()
+
     @State var isCameraPublishingBusy = false
     @State var isMicrophonePublishingBusy = false
     @State var isScreenSharePublishingBusy = false
@@ -169,7 +177,7 @@ struct RoomView: View {
                     } else {
                         ZStack {
                             Circle()
-                                .fill(roomCtx.getColorForParticipan(participantId: participant.sid?.stringValue) ?? Color(UIColor.random()))
+                                .fill(roomCtx.getColorForParticipan(participantId: participant.sid?.stringValue ?? participant.identity?.stringValue))
                                 .frame(width: 32, height: 32)
 
                             Text((participant.name ?? "Unknown").getInitialsFromName())
@@ -257,6 +265,86 @@ struct RoomView: View {
         )
     }
 
+    func messageView(_ message: ExampleRoomMessage) -> some View {
+        let isMe = message.senderSid == room.localParticipant.sid
+        return HStack(alignment: .top) {
+            if isMe { Spacer() }
+            if !isMe {
+                // Avatar on the left, top-aligned with nickname
+                if let urlStr = message.senderProfilePictureUrl, let url = URL(string: urlStr) {
+                    WebImage(url: url)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 22, height: 22)
+                        .clipShape(Circle())
+                } else {
+                    ZStack {
+                        Circle()
+                            .fill(roomCtx.getColorForMessage(senderName: message.senderName))
+                            .frame(width: 22, height: 22)
+                        Text((message.senderName ?? "?").getInitialsFromName())
+                            .font(Font(UIFont(name: "Roboto-Medium", size: 9.0)!))
+                            .foregroundColor(.white)
+                    }
+                }
+                // Nickname above bubble
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(message.senderName ?? "Unknown")
+                        .font(Font(UIFont(name: "Roboto-Medium", size: 11.0)!))
+                        .foregroundColor(Color(UIColor.Sphinx.SecondaryText))
+                    MarkdownTextView(attributedText: RoomView.markdownRenderer.render(message.text))
+                        .padding(8)
+                        .background(Color(UIColor.Sphinx.SecondaryText))
+                        .cornerRadius(18)
+                }
+                Spacer()
+            } else {
+                MarkdownTextView(attributedText: RoomView.markdownRenderer.render(message.text))
+                    .padding(8)
+                    .background(Color(UIColor.Sphinx.PrimaryGreen))
+                    .cornerRadius(18)
+            }
+        }
+        .padding(.vertical, 5)
+        .padding(.horizontal, 10)
+    }
+
+    func messagesView(geometry: GeometryProxy) -> some View {
+        VStack(spacing: 0) {
+            ScrollViewReader { scrollView in
+                ScrollView(.vertical, showsIndicators: true) {
+                    LazyVStack(alignment: .center, spacing: 0) {
+                        ForEach(roomCtx.messages) {
+                            messageView($0)
+                        }
+                    }
+                    .padding(.vertical, 12)
+                    .padding(.horizontal, 7)
+                }
+                .onAppear { scrollToBottom(scrollView) }
+                .onChange(of: roomCtx.messages) { _ in scrollToBottom(scrollView) }
+                .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity, alignment: .topLeading)
+            }
+            HStack(spacing: 0) {
+                TextField("Enter message", text: $roomCtx.textFieldString)
+                    .textFieldStyle(PlainTextFieldStyle())
+                    .disableAutocorrection(true)
+                Button {
+                    roomCtx.sendMessage()
+                } label: {
+                    Image(systemSymbol: .paperplaneFill)
+                        .foregroundColor(roomCtx.textFieldString.isEmpty ? nil : Color(UIColor.Sphinx.PrimaryGreen))
+                }
+                .buttonStyle(.borderless)
+            }
+            .padding()
+            .background(Color(UIColor.Sphinx.Body))
+        }
+        .background(Color(UIColor.Sphinx.Body).opacity(0.95))
+        .cornerRadius(8)
+        .frame(minWidth: 0, maxWidth: geometry.isTall ? .infinity : 320)
+    }
+
     func sortedParticipants() -> [Participant] {
         room.allParticipants.values.sorted { p1, p2 in
             if p1 is LocalParticipant { return true }
@@ -270,6 +358,11 @@ struct RoomView: View {
         withAnimation {
             scrollView.scrollTo(first.id)
         }
+    }
+
+    func scrollToBottom(_ scrollView: ScrollViewProxy) {
+        guard let last = roomCtx.messages.last else { return }
+        withAnimation { scrollView.scrollTo(last.id) }
     }
     
     private func updateAudioSubscriptionStatus() {
@@ -426,6 +519,11 @@ struct RoomView: View {
                         minHeight: 0,
                         maxHeight: .infinity
                     )
+
+                    // Show messages view if enabled
+                    if roomCtx.showMessagesView {
+                        messagesView(geometry: geometry)
+                    }
                 }
                 
                 ZStack {
@@ -489,7 +587,7 @@ struct RoomView: View {
                             // }
                         }
                         .frame(maxWidth: .infinity)
-                        .frame(height: roomCtx.isInPip ? 40 : 64)
+                        .frame(height: roomCtx.isInPip ? 36 : 48)
                         .layoutPriority(1)
                         
                         ZStack(alignment: .center) {
@@ -531,7 +629,7 @@ struct RoomView: View {
                             .frame(maxHeight: .infinity)
                         }
                         .frame(maxWidth: .infinity)
-                        .frame(height: roomCtx.isInPip ? 40 : 64)
+                        .frame(height: roomCtx.isInPip ? 36 : 48)
                         .layoutPriority(1)
                         
                         if !roomCtx.isInPip {
@@ -574,7 +672,7 @@ struct RoomView: View {
                                 .frame(maxHeight: .infinity)
                             }
                             .frame(maxWidth: .infinity)
-                            .frame(height: 64)
+                            .frame(height: 48)
                             .layoutPriority(1)
                             
                             ZStack(alignment: .center) {
@@ -631,15 +729,48 @@ struct RoomView: View {
                                             }
                                             
                                             Spacer()
-                                                .frame(width: (geometry.size.width - 64) / 2)
+                                                .frame(width: (geometry.size.width - 48) / 2)
                                         }
                                         .frame(maxWidth: .infinity)
-                                        .frame(height: 64)
+                                        .frame(height: 48)
                                     }
                                 }
                             }
                             .frame(maxWidth: .infinity)
-                            .frame(height: 64)
+                            .frame(height: 48)
+                            .layoutPriority(1)
+
+                            // Chat toggle button
+                            ZStack(alignment: .center) {
+                                GeometryReader { geometry in
+                                    let size = (geometry.size.width > geometry.size.height) ? geometry.size.height : geometry.size.width
+                                    Button(action: {
+                                        withAnimation { roomCtx.showMessagesView.toggle() }
+                                    }, label: {
+                                        Image(systemSymbol: .messageFill)
+                                            .renderingMode(.template)
+                                            .foregroundColor(roomCtx.showMessagesView ? Color(UIColor.Sphinx.PrimaryGreen) : Color.white)
+                                            .font(.system(size: 20))
+                                            .frame(width: size)
+                                            .frame(height: size)
+                                            .aspectRatio(1, contentMode: .fill)
+                                    })
+                                    .background(
+                                        Color(UIColor.Sphinx.MainBottomIcons)
+                                            .opacity(0.2)
+                                            .cornerRadius(size / 2)
+                                            .frame(width: size)
+                                            .frame(height: size)
+                                            .aspectRatio(1, contentMode: .fill)
+                                    )
+                                    .frame(maxWidth: .infinity)
+                                    .aspectRatio(1, contentMode: .fill)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .frame(maxHeight: .infinity)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 48)
                             .layoutPriority(1)
                         } else {
                             ZStack(alignment: .center) {
@@ -675,8 +806,9 @@ struct RoomView: View {
                             .layoutPriority(1)
                         }
                         
-                        ZStack {
+                        ZStack(alignment: .center) {
                             GeometryReader { geometry in
+                                let size = (geometry.size.width > geometry.size.height) ? geometry.size.height : geometry.size.width
                                 Button(action: {
                                     Task {
                                         if roomCtx.didStartRecording && room.isRecording {
@@ -690,15 +822,17 @@ struct RoomView: View {
                                        .renderingMode(.template)
                                        .foregroundColor(Color.white)
                                        .font(.system(size: roomCtx.isInPip ? 18 : 22))
-                                       .frame(height: geometry.size.height)
-                                       .frame(width: min(geometry.size.width, roomCtx.isInPip ? 50 : 80))
+                                       .frame(width: size)
+                                       .frame(height: size)
+                                       .aspectRatio(1, contentMode: .fill)
                                 })
                                 .background(
                                     Color(UIColor.Sphinx.BadgeRed)
                                         .opacity(1)
-                                        .cornerRadius(min(geometry.size.width, roomCtx.isInPip ? 50 : 80) / 2)
-                                        .frame(height: min(geometry.size.width, roomCtx.isInPip ? 50 : 80))
-                                        .frame(width: min(geometry.size.width, roomCtx.isInPip ? 50 : 80))
+                                        .cornerRadius(size / 2)
+                                        .frame(width: size)
+                                        .frame(height: size)
+                                        .aspectRatio(1, contentMode: .fill)
                                 )
                                 .frame(maxWidth: .infinity)
                                 .aspectRatio(1, contentMode: .fill)
@@ -707,14 +841,14 @@ struct RoomView: View {
                             .frame(maxHeight: .infinity)
                         }
                         .frame(maxWidth: .infinity)
-                        .frame(height: roomCtx.isInPip ? 40 : 64)
+                        .frame(height: roomCtx.isInPip ? 36 : 48)
                         .layoutPriority(1)
                     }
-                    .padding(.vertical, roomCtx.isInPip ? 12 : 30)
-                    .frame(height: roomCtx.isInPip ? 40 : 64)
+                    .padding(.vertical, roomCtx.isInPip ? 8 : 12)
+                    .frame(height: roomCtx.isInPip ? 36 : 48)
                     .frame(maxWidth: .infinity)
                 }
-                .frame(height: roomCtx.isInPip ? 64 : 124)
+                .frame(height: roomCtx.isInPip ? 52 : 72)
                 .frame(minWidth: 0, maxWidth: .infinity)
                 .padding(.horizontal, roomCtx.isInPip ? 8 : 16)
             }
@@ -820,7 +954,7 @@ struct RoomView: View {
                 } else {
                     ZStack(alignment: .center) {
                         Circle()
-                            .fill(roomCtx.getColorForParticipan(participantId: participant.sid?.stringValue) ?? Color(UIColor.random()))
+                            .fill(roomCtx.getColorForParticipan(participantId: participant.sid?.stringValue ?? participant.identity?.stringValue))
                             .frame(maxWidth: 32.0, maxHeight: 32.0)
 
                         Text((participant.name ?? "Unknow").getInitialsFromName())

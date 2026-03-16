@@ -21,6 +21,7 @@ class ProfileViewController: NewKeyboardHandlerViewController {
     @IBOutlet weak var sharePhotoSwitch: UISwitch!
     @IBOutlet weak var trackRecommendationsSwitch: UISwitch!
     @IBOutlet weak var autoDownloadSubscribedPodsSwitch: UISwitch!
+    @IBOutlet weak var hiveNotificationsSwitch: UISwitch!
     @IBOutlet weak var notificationSoundButton: UIButton!
     @IBOutlet weak var inviteServerTextField: UITextField!
     @IBOutlet weak var memesServerTextField: UITextField!
@@ -106,6 +107,7 @@ class ProfileViewController: NewKeyboardHandlerViewController {
         sharePhotoSwitch.onTintColor = UIColor.Sphinx.PrimaryBlue
         trackRecommendationsSwitch.onTintColor = UIColor.Sphinx.PrimaryBlue
         autoDownloadSubscribedPodsSwitch.onTintColor = UIColor.Sphinx.PrimaryBlue
+        hiveNotificationsSwitch.onTintColor = UIColor.Sphinx.PrimaryBlue
         
         exportKeyButton.layer.cornerRadius = exportKeyButton.frame.height / 2
         
@@ -185,6 +187,7 @@ class ProfileViewController: NewKeyboardHandlerViewController {
             sharePhotoSwitch.isOn = !profile.privatePhoto
             trackRecommendationsSwitch.isOn =  UserDefaults.Keys.shouldTrackActions.get(defaultValue: false)
             autoDownloadSubscribedPodsSwitch.isOn = UserDefaults.Keys.shouldAutoDownloadSubscribedPods.get(defaultValue: false)
+            hiveNotificationsSwitch.isOn = UserDefaults.Keys.hiveNotificationsEnabled.get(defaultValue: true)
             
             let nickname = profile.nickname ?? ""
             nameLabel.text = nickname.getNameStyleString()
@@ -333,6 +336,27 @@ class ProfileViewController: NewKeyboardHandlerViewController {
     
     @IBAction func autoDownloadSubscribedPodsChanged(_ sender: Any) {
         UserDefaults.Keys.shouldAutoDownloadSubscribedPods.set(autoDownloadSubscribedPodsSwitch.isOn)
+    }
+    
+    @IBAction func hiveNotificationsSwitchChanged(_ sender: UISwitch) {
+        let isOn = sender.isOn
+        UserDefaults.Keys.hiveNotificationsEnabled.set(isOn)
+        
+        if isOn {
+            if let token: String = UserDefaults.Keys.hiveDeviceToken.get(), !token.isEmpty {
+                API.sharedInstance.registerDeviceTokenWithAuth(
+                    token: token,
+                    callback: { print("[HIVE] Notifications re-enabled with stored token") },
+                    errorCallback: { print("[HIVE] Failed to re-enable Hive notifications") }
+                )
+            }
+        } else {
+            API.sharedInstance.registerDeviceTokenWithAuth(
+                token: "",
+                callback: { print("[HIVE] Notifications disabled") },
+                errorCallback: { print("[HIVE] Failed to disable Hive notifications") }
+            )
+        }
     }
     
     @IBAction func qrCodeButtonTouched() {

@@ -174,14 +174,49 @@ extension NewChatViewModel {
     }
     
     func createCallMessage(sender: UIButton) {
-        VideoCallHelper.createCallMessage(
-            button: sender,
-            secondBrainUrl: chat?.getSecondBrainAppUrl(),
-            appUrl: chat?.getAppUrl(),
-            callback: { link in
-                self.sendCallMessage(link: link)
-            }
-        )
+        let appUrl = chat?.getAppUrl()
+        let secondBrainUrl = chat?.getSecondBrainAppUrl()
+
+        let swarmName = VideoCallHelper.extractSwarmName(from: appUrl ?? "")
+            ?? VideoCallHelper.extractSwarmName(from: secondBrainUrl ?? "")
+
+        if let swarmName = swarmName {
+            API.sharedInstance.generateTribeCallLinkWithAuth(
+                swarmName: swarmName,
+                callback: { [weak self] link in
+                    guard let self = self else { return }
+                    DispatchQueue.main.async {
+                        VideoCallHelper.showCallModePopup(
+                            link: link,
+                            button: sender,
+                            callback: { finalLink in
+                                self.sendCallMessage(link: finalLink)
+                            }
+                        )
+                    }
+                },
+                errorCallback: { [weak self] in
+                    guard let self = self else { return }
+                    VideoCallHelper.createCallMessage(
+                        button: sender,
+                        secondBrainUrl: secondBrainUrl,
+                        appUrl: appUrl,
+                        callback: { link in
+                            self.sendCallMessage(link: link)
+                        }
+                    )
+                }
+            )
+        } else {
+            VideoCallHelper.createCallMessage(
+                button: sender,
+                secondBrainUrl: secondBrainUrl,
+                appUrl: appUrl,
+                callback: { link in
+                    self.sendCallMessage(link: link)
+                }
+            )
+        }
     }
     
     func sendCallMessage(link: String) {

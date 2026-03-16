@@ -125,6 +125,8 @@ class API {
     let messageBubbleHelper = NewMessageBubbleHelper()
     let btBaseUrl = "https://files.bt2.bard.garden:21433"
 
+
+
     enum CancellableRequestType {
         case contacts
         case messages

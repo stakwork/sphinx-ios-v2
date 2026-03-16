@@ -33,8 +33,7 @@ class HiveLinkNavigator {
                                 }
                                 let workspaceVC = WorkspaceViewController.instantiate(workspace: workspace)
                                 let planVC = FeaturePlanViewController.instantiate(feature: feature, workspace: workspace)
-                                vc.navigationController?.pushViewController(workspaceVC, animated: false)
-                                vc.navigationController?.pushViewController(planVC, animated: true)
+                                pushToCenter([workspaceVC, planVC])
                             }
                         },
                         errorCallback: {
@@ -54,9 +53,8 @@ class HiveLinkNavigator {
                                     fallback(url: hiveLink); return
                                 }
                                 let workspaceVC = WorkspaceViewController.instantiate(workspace: workspace)
-                                let taskChatVC = TaskChatViewController.instantiate(task: task, workspaceSlug: workspace.slug ?? "")
-                                vc.navigationController?.pushViewController(workspaceVC, animated: false)
-                                vc.navigationController?.pushViewController(taskChatVC, animated: true)
+                                let taskChatVC = TaskChatViewController.instantiate(task: task, workspaceSlug: workspace.slug ?? "", workspaceId: workspace.id)
+                                pushToCenter([workspaceVC, taskChatVC])
                             }
                         },
                         errorCallback: {
@@ -75,6 +73,19 @@ class HiveLinkNavigator {
                 }
             }
         )
+    }
+
+    private static func pushToCenter(_ viewControllers: [UIViewController]) {
+        if VideoCallManager.sharedInstance.activeFullScreenCall() {
+            VideoCallManager.sharedInstance.togglePip(pipEnabled: true)
+        }
+        guard let appDelegate = UIApplication.shared.delegate as? AppDelegate,
+              let rootVC = appDelegate.getRootViewController(),
+              let navVC = rootVC.getCenterNavigationController() else { return }
+
+        for (index, vc) in viewControllers.enumerated() {
+            navVC.pushViewController(vc, animated: index == viewControllers.count - 1)
+        }
     }
 
     private static func fallback(url: String) {

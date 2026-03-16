@@ -25,6 +25,39 @@ class VideoCallHelper {
         return mode
     }
     
+    public static func extractSwarmName(from urlString: String) -> String? {
+        guard let url = URL(string: urlString),
+              let host = url.host else { return nil }
+        let components = host.split(separator: ".").map(String.init)
+        guard components.count > 1 else { return nil }
+        return components[0]
+    }
+
+    /// Shows the audio / video mode popup for an already-built room link.
+    public static func showCallModePopup(
+        link: String,
+        button: UIButton,
+        callback: @escaping (String) -> ()
+    ) {
+        let audioCallback: (() -> ()) = {
+            if link.contains("?") {
+                callback(link + "&startAudioOnly=true")
+            } else {
+                callback(link + "?startAudioOnly=true")
+            }
+        }
+        let videoCallback: (() -> ()) = {
+            callback(link)
+        }
+        AlertHelper.showOptionsPopup(
+            title: "create.call".localized,
+            message: "select.call.mode".localized,
+            options: ["audio".localized, "video.or.audio".localized],
+            callbacks: [audioCallback, videoCallback],
+            sourceView: button
+        )
+    }
+
     public static func createCallMessage(
         button: UIButton,
         secondBrainUrl: String? = nil,
@@ -53,22 +86,8 @@ class VideoCallHelper {
         if let graphUrl = graphUrl {
             room = "\(API.sharedInstance.kVideoCallServer)/rooms\(TransactionMessage.kCallRoomName).-\(graphUrl)-.\(time)"
         }
-        
-        let audioCallback: (() -> ()) = {
-            callback(room + "?startAudioOnly=true")
-        }
-        
-        let videoCallback: (() -> ()) = {
-            callback(room)
-        }
-        
-        AlertHelper.showOptionsPopup(
-            title: "create.call".localized,
-            message: "select.call.mode".localized,
-            options: ["audio".localized, "video.or.audio".localized],
-            callbacks: [audioCallback, videoCallback],
-            sourceView: button
-        )
+
+        showCallModePopup(link: room, button: button, callback: callback)
     }
     
 }

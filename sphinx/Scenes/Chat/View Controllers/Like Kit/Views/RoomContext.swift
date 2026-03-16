@@ -95,6 +95,10 @@ final class RoomContext: ObservableObject {
     @Published var shouldAnimate = false
     @Published private var timer: Timer?
 
+    @Published var showMessagesView: Bool = false
+    @Published var messages: [ExampleRoomMessage] = []
+    @Published var textFieldString: String = ""
+
     var _connectTask: Task<Void, Error>?
     
     var colors: [String: Color] = [:]
@@ -210,6 +214,40 @@ final class RoomContext: ObservableObject {
         return room
     }
 
+    func sendMessage() {
+        guard !textFieldString.isEmpty else { return }
+        let msgId = UUID().uuidString
+        let timestamp = Int64(Date().timeIntervalSince1970 * 1000)
+        let wireMsg = LiveKitChatMessage(
+            id: msgId,
+            timestamp: timestamp,
+            message: textFieldString,
+            editTimestamp: nil,
+            sender: room.localParticipant.name
+        )
+        let displayMsg = ExampleRoomMessage(
+            messageId: msgId,
+            senderSid: room.localParticipant.sid,
+            senderIdentity: room.localParticipant.identity,
+            text: textFieldString,
+            senderName: room.localParticipant.name,
+            senderProfilePictureUrl: room.localParticipant.profilePictureUrl,
+            timestamp: timestamp
+        )
+        textFieldString = ""
+        messages.append(displayMsg)
+        Task.detached { [weak self] in
+            guard let self else { return }
+            do {
+                let json = try self.jsonEncoder.encode(wireMsg)
+                try await self.room.localParticipant.publish(
+                    data: json,
+                    options: DataPublishOptions(topic: "lk-chat-topic", reliable: true)
+                )
+            } catch { print("Failed to encode/publish chat data \(error)") }
+        }
+    }
+
     func disconnect() async {
         await room.disconnect()
     }
@@ -234,6 +272,9 @@ extension RoomContext: RoomDelegate {
                         guard let self else { return }
                         self.shouldShowDisconnectReason = true
                         self.focusParticipant = nil
+                        self.showMessagesView = false
+                        self.textFieldString = ""
+                        self.messages.removeAll()
                     }
                 }
             } else {
@@ -255,8 +296,37 @@ extension RoomContext: RoomDelegate {
         }
     }
 
-    func room(_: Room, participant _: RemoteParticipant?, didReceiveData data: Data, forTopic _: String, encryptionType: EncryptionType) {
-        print("didReceiveData")
+    func room(_: Room, participant remoteParticipant: RemoteParticipant?, didReceiveData data: Data, forTopic topic: String, encryptionType: EncryptionType) {
+        guard topic == "lk-chat-topic" else { return }
+        do {
+            let wireMsg = try jsonDecoder.decode(LiveKitChatMessage.self, from: data)
+            let sender: Participant? = remoteParticipant ?? room.allParticipants.values.first {
+                $0.identity == remoteParticipant?.identity
+            }
+            let resolvedName: String
+            if let s = wireMsg.sender, !s.isEmpty {
+                resolvedName = s
+            } else {
+                resolvedName = sender?.name ?? sender?.identity?.stringValue ?? "Unknown"
+            }
+            let resolvedPic = sender?.profilePictureUrl
+            let displayMsg = ExampleRoomMessage(
+                messageId: wireMsg.id,
+                senderSid: sender?.sid,
+                senderIdentity: sender?.identity,
+                text: wireMsg.message,
+                senderName: resolvedName,
+                senderProfilePictureUrl: resolvedPic,
+                timestamp: wireMsg.timestamp
+            )
+            Task.detached { @MainActor [weak self] in
+                guard let self else { return }
+                withAnimation {
+                    self.messages.append(displayMsg)
+                    self.showMessagesView = true
+                }
+            }
+        } catch { print("Failed to decode lk-chat-topic message \(error)") }
     }
 
     func room(_: Room, participant _: Participant, trackPublication _: TrackPublication, didReceiveTranscriptionSegments segments: [TranscriptionSegment]) {
@@ -269,16 +339,30 @@ extension RoomContext: RoomDelegate {
 }
 
 extension RoomContext {
-    func getColorForParticipan(participantId: String?) -> Color? {
-        guard let participantId = participantId else {
-            return nil
-        }
-        if let color = colors[participantId] {
+    func getColorForParticipan(participantId: String?) -> Color {
+        let key = participantId ?? "unknown"
+        if let color = colors[key] {
             return color
         }
         let randomColor = Color(UIColor.random())
-        colors[participantId] = randomColor
+        colors[key] = randomColor
         return randomColor
+    }
+    
+    /// Returns the color for a chat message sender, matching the live participant
+    /// box color when the sender name corresponds to a connected participant.
+    func getColorForMessage(senderName: String?) -> Color {
+        // Try to find a live participant whose name or identity matches the sender
+        if let senderName = senderName,
+           let match = room.allParticipants.values.first(where: {
+               $0.name == senderName || $0.identity?.stringValue == senderName
+           }) {
+            // Use the same key as participant boxes so colors stay in sync
+            let participantKey = match.sid?.stringValue ?? match.identity?.stringValue ?? senderName
+            return getColorForParticipan(participantId: participantKey)
+        }
+        // No live participant match — key by sender name
+        return getColorForParticipan(participantId: senderName)
     }
 }
 
@@ -294,6 +378,9 @@ struct ExampleRoomMessage: Identifiable, Equatable, Hashable, Codable {
     let senderSid: Participant.Sid?
     let senderIdentity: Participant.Identity?
     let text: String
+    let senderName: String?
+    let senderProfilePictureUrl: String?
+    let timestamp: Int64
 
     static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.messageId == rhs.messageId
@@ -302,4 +389,12 @@ struct ExampleRoomMessage: Identifiable, Equatable, Hashable, Codable {
     func hash(into hasher: inout Hasher) {
         hasher.combine(messageId)
     }
+}
+
+struct LiveKitChatMessage: Codable {
+    let id: String
+    let timestamp: Int64
+    let message: String
+    let editTimestamp: Int64?
+    let sender: String?   // Sphinx alias of the sender
 }

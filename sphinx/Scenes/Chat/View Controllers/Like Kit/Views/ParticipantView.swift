@@ -94,7 +94,7 @@ struct ParticipantView: View {
                 } else {
                     ZStack(alignment: .center) {
                         Circle()
-                            .fill(roomCtx.getColorForParticipan(participantId: participant.sid?.stringValue) ?? Color(UIColor.random()))
+                            .fill(roomCtx.getColorForParticipan(participantId: participant.sid?.stringValue ?? participant.identity?.stringValue))
                             .frame(maxWidth: 95.0, maxHeight: 95.0)
 
                         Text((participant.name ?? "Unknow").getInitialsFromName())

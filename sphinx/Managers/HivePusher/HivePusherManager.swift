@@ -19,7 +19,6 @@ protocol HivePusherDelegate: AnyObject {
     func taskTitleUpdated(taskId: String, newTitle: String)
     func taskGenerationStatusChanged(status: String, featureId: String)
     func taskStatusUpdated(taskId: String, status: String, workflowStatus: String?, archived: Bool)
-    func processingStepReceived(message: String)
 
     // Connection state callbacks (optional)
     func pusherConnectionStateChanged(from old: ConnectionState, to new: ConnectionState)
@@ -31,7 +30,6 @@ extension HivePusherDelegate {
     func pusherConnectionStateChanged(from old: ConnectionState, to new: ConnectionState) {}
     func pusherConnectionError(_ error: Error?) {}
     func taskStatusUpdated(taskId: String, status: String, workflowStatus: String?, archived: Bool) {}
-    func processingStepReceived(message: String) {}
     func prStatusChanged(taskId: String?, prNumber: Int, state: String, artifactStatus: String, prUrl: String?, problemDetails: String?) {}
 }
 
@@ -198,9 +196,6 @@ class HivePusherManager: NSObject {
         channel.bind(eventName: "pr-status-change") { [weak self] event in
             self?.handlePRStatusChange(event.data ?? "")
         }
-        channel.bind(eventName: "on_step_start") { [weak self] event in
-            self?.handleOnStepStart(event.data ?? "")
-        }
         print("[HivePusher] Subscribed to feature channel: feature-\(featureId)")
     }
 
@@ -217,9 +212,6 @@ class HivePusherManager: NSObject {
         }
         channel.bind(eventName: "pr-status-change") { [weak self] event in
             self?.handlePRStatusChange(event.data ?? "")
-        }
-        channel.bind(eventName: "on_step_start") { [weak self] event in
-            self?.handleOnStepStart(event.data ?? "")
         }
         print("[HivePusher] Subscribed to task channel: task-\(taskId)")
     }
@@ -325,8 +317,6 @@ class HivePusherManager: NSObject {
             handleStakworkRunDecision(data)
         case "workspace-task-title-update":
             handleWorkspaceTaskUpdate(data)
-        case "on_step_start":
-            handleOnStepStart(data)
         default:
             print("[HivePusher] Unhandled event: \(name)")
         }
@@ -461,14 +451,6 @@ class HivePusherManager: NSObject {
         }
     }
 
-    private func handleOnStepStart(_ dataString: String) {
-        guard let dataJSON = try? JSON(data: dataString.data(using: .utf8) ?? Data()) else { return }
-        let message = dataJSON["message"].stringValue
-        guard !message.isEmpty else { return }
-        DispatchQueue.main.async { [weak self] in
-            self?.delegate?.processingStepReceived(message: message)
-        }
-    }
 }
 
 // MARK: - PusherDelegate

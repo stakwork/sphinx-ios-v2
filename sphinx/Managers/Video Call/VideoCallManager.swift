@@ -22,6 +22,10 @@ class VideoCallManager : NSObject {
     var pipViewCoordinator: CustomPipViewCoordinator?
     var jitsiMeetView: JitsiMeetView?
     var videoCallPayButton: VideoCallPayButton?
+    var liveKitVC: LiveKitCallViewController?
+
+    /// Prevents re-entrant calls when syncing roomCtx.isInPip
+    private var isTogglingPip = false
 
     var chat: Chat? = nil
     var videoCallDelegate: VideoCallDelegate? = nil
@@ -48,10 +52,20 @@ class VideoCallManager : NSObject {
     }
     
     func togglePip(pipEnabled: Bool) {
+        guard !isTogglingPip else { return }
+        isTogglingPip = true
+        defer { isTogglingPip = false }
+
         if pipEnabled {
             pipViewCoordinator?.enterPictureInPicture()
+            if let vc = liveKitVC, !vc.roomCtx.isInPip {
+                vc.roomCtx.isInPip = true
+            }
         } else {
             pipViewCoordinator?.exitPictureInPicture()
+            if let vc = liveKitVC, vc.roomCtx.isInPip {
+                vc.roomCtx.isInPip = false
+            }
         }
     }
     
@@ -93,6 +107,7 @@ class VideoCallManager : NSObject {
                 room: room,
                 alias: owner.nickname ?? "",
                 profilePicture: owner.avatarUrl,
+                hiveToken: linkUrl.liveKitHiveToken,
                 callback: { url, token in
                     let liveKitVC = LiveKitCallViewController()
                     liveKitVC.url = url
@@ -104,7 +119,8 @@ class VideoCallManager : NSObject {
                         let rootViewController = window.rootViewController
                         rootViewController?.addChild(liveKitVC)
                         rootViewController?.view.addSubview(liveKitVC.view)
-                        
+
+                        self.liveKitVC = liveKitVC
                         self.pipViewCoordinator = CustomPipViewCoordinator(withView: liveKitVC.view, isLiveKit: true)
                         self.pipViewCoordinator?.delegate = self
                         self.pipViewCoordinator?.configureAsStickyView(withParentView: window)
@@ -209,6 +225,7 @@ class VideoCallManager : NSObject {
         jitsiMeetView = nil
 
         pipViewCoordinator = nil
+        liveKitVC = nil
     }
 
     func paymentSent() {

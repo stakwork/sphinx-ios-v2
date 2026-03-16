@@ -28,6 +28,12 @@ class WorkspaceTasksViewController: UIViewController {
     private weak var paginationView: PaginationControlView?
     private var paginationHasBeenBuilt = false
     
+    private lazy var refreshControl: UIRefreshControl = {
+        let control = UIRefreshControl()
+        control.tintColor = .Sphinx.Text
+        return control
+    }()
+    
     static func instantiate(workspace: Workspace) -> WorkspaceTasksViewController {
         let vc = StoryboardScene.Dashboard.workspaceTasksViewController.instantiate()
         vc.workspace = workspace
@@ -100,6 +106,19 @@ class WorkspaceTasksViewController: UIViewController {
             WorkspaceTaskTableViewCell.nib,
             forCellReuseIdentifier: WorkspaceTaskTableViewCell.reuseID
         )
+        
+        refreshControl.addTarget(
+            self,
+            action: #selector(handleRefresh),
+            for: .valueChanged
+        )
+        tableView.refreshControl = refreshControl
+    }
+    
+    @objc private func handleRefresh() {
+        currentPage = 1
+        paginationHasBeenBuilt = false
+        loadTasks()
     }
     
     private var isLoading = false {
@@ -134,6 +153,7 @@ class WorkspaceTasksViewController: UIViewController {
                     self.paginationView?.configure(currentPage: self.currentPage, totalPages: info.totalPages)
                     self.paginationHasBeenBuilt = true
                     self.isLoading = false
+                    self.refreshControl.endRefreshing()
                 }
             },
             errorCallback: { [weak self] in
@@ -141,6 +161,7 @@ class WorkspaceTasksViewController: UIViewController {
                     self?.tasks = []
                     self?.tableView.reloadData()
                     self?.isLoading = false
+                    self?.refreshControl.endRefreshing()
                 }
             }
         )
@@ -167,7 +188,7 @@ extension WorkspaceTasksViewController: UITableViewDataSource, UITableViewDelega
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         let task = tasks[indexPath.row]
-        let chatVC = TaskChatViewController.instantiate(task: task, workspaceSlug: workspace.slug ?? "")
+        let chatVC = TaskChatViewController.instantiate(task: task, workspaceSlug: workspace.slug ?? "", workspaceId: workspace.id)
         navigationController?.pushViewController(chatVC, animated: true)
     }
 
