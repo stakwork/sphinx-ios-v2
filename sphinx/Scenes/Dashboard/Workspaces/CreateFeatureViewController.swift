@@ -120,7 +120,7 @@ class CreateFeatureViewController: UIViewController {
         // Prompt Label
         promptLabel = UILabel()
         promptLabel.translatesAutoresizingMaskIntoConstraints = false
-        promptLabel.text = "What job are you trying to solve?"
+        promptLabel.text = (mode == .task) ? "Describe a task" : "What job are you trying to solve?"
         promptLabel.textAlignment = .center
         promptLabel.font = UIFont(name: "Roboto-Regular", size: 16)
         promptLabel.textColor = UIColor.Sphinx.Text
@@ -143,31 +143,30 @@ class CreateFeatureViewController: UIViewController {
         messageTextView.delegate = self
         promptFieldView.addSubview(messageTextView)
 
-        // MARK: Combo Stack (task mode)
+        // MARK: Combo Stack (task mode only — collapses when hidden)
 
         // Repository Button
         repositoryComboButton = makeComboButton(title: "Select Repository")
         repositoryComboButton.addTarget(self, action: #selector(repositoryComboTapped), for: .touchUpInside)
+        repositoryComboButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
 
         // Branch Button
         branchComboButton = makeComboButton(title: "Select Branch")
         branchComboButton.isEnabled = false
         branchComboButton.alpha = 0.5
         branchComboButton.addTarget(self, action: #selector(branchComboTapped), for: .touchUpInside)
+        branchComboButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
 
-        // Stack wrapping both
+        // comboStackView holds the two pickers; hidden = collapses to zero height in outer stack
         comboStackView = UIStackView(arrangedSubviews: [repositoryComboButton, branchComboButton])
-        comboStackView.translatesAutoresizingMaskIntoConstraints = false
         comboStackView.axis = .vertical
         comboStackView.spacing = 8
         comboStackView.isHidden = (mode == .feature)
-        view.addSubview(comboStackView)
 
-        // Bottom Container
+        // Bottom Container (send button row)
         let bottomContainer = UIView()
-        bottomContainer.translatesAutoresizingMaskIntoConstraints = false
         bottomContainer.backgroundColor = .clear
-        view.addSubview(bottomContainer)
+        bottomContainer.heightAnchor.constraint(equalToConstant: 100).isActive = true
 
         // Send Button
         sendButton = UIButton()
@@ -184,6 +183,23 @@ class CreateFeatureViewController: UIViewController {
         loadingWheel.translatesAutoresizingMaskIntoConstraints = false
         loadingWheel.hidesWhenStopped = true
         bottomContainer.addSubview(loadingWheel)
+
+        NSLayoutConstraint.activate([
+            sendButton.trailingAnchor.constraint(equalTo: bottomContainer.trailingAnchor),
+            sendButton.centerYAnchor.constraint(equalTo: bottomContainer.centerYAnchor),
+            sendButton.widthAnchor.constraint(equalToConstant: 175),
+            sendButton.heightAnchor.constraint(equalToConstant: 50),
+            loadingWheel.centerYAnchor.constraint(equalTo: sendButton.centerYAnchor),
+            loadingWheel.trailingAnchor.constraint(equalTo: sendButton.leadingAnchor, constant: -20),
+        ])
+
+        // Outer vertical stack: combo pickers + send row.
+        // UIStackView collapses hidden arranged subviews → no phantom gap in feature mode.
+        let outerStack = UIStackView(arrangedSubviews: [comboStackView, bottomContainer])
+        outerStack.translatesAutoresizingMaskIntoConstraints = false
+        outerStack.axis = .vertical
+        outerStack.spacing = 0
+        view.addSubview(outerStack)
 
         // Layout Constraints
         NSLayoutConstraint.activate([
@@ -222,31 +238,10 @@ class CreateFeatureViewController: UIViewController {
             messageTextView.bottomAnchor.constraint(equalTo: promptFieldView.bottomAnchor, constant: -8),
             messageTextView.heightAnchor.constraint(greaterThanOrEqualToConstant: 120),
 
-            // Combo Stack — between promptFieldView and bottomContainer
-            comboStackView.topAnchor.constraint(equalTo: promptFieldView.bottomAnchor, constant: 12),
-            comboStackView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
-            comboStackView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
-
-            // Repository button height
-            repositoryComboButton.heightAnchor.constraint(equalToConstant: 44),
-            // Branch button height
-            branchComboButton.heightAnchor.constraint(equalToConstant: 44),
-
-            // Bottom Container — below combo stack
-            bottomContainer.topAnchor.constraint(equalTo: comboStackView.bottomAnchor),
-            bottomContainer.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
-            bottomContainer.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
-            bottomContainer.heightAnchor.constraint(equalToConstant: 100),
-
-            // Send Button — right-aligned, 175×50
-            sendButton.trailingAnchor.constraint(equalTo: bottomContainer.trailingAnchor),
-            sendButton.centerYAnchor.constraint(equalTo: bottomContainer.centerYAnchor),
-            sendButton.widthAnchor.constraint(equalToConstant: 175),
-            sendButton.heightAnchor.constraint(equalToConstant: 50),
-
-            // Loading Wheel — left of send button
-            loadingWheel.centerYAnchor.constraint(equalTo: sendButton.centerYAnchor),
-            loadingWheel.trailingAnchor.constraint(equalTo: sendButton.leadingAnchor, constant: -20),
+            // Outer stack anchored below promptFieldView, full width (with 16pt inset)
+            outerStack.topAnchor.constraint(equalTo: promptFieldView.bottomAnchor, constant: 12),
+            outerStack.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
+            outerStack.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
         ])
     }
 
