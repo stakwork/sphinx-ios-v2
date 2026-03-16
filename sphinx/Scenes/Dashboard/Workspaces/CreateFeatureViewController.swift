@@ -423,6 +423,7 @@ class CreateFeatureViewController: UIViewController {
                     API.sharedInstance.sendTaskChatMessageWithAuth(
                         taskId: task.id,
                         message: message,
+                        mode: "stakwork",
                         callback: { [weak self] _ in
                             DispatchQueue.main.async { self?.finishTaskCreation(task: task) }
                         },
