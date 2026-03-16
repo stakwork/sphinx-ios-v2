@@ -2724,7 +2724,9 @@ extension API {
             "workspaceSlug": workspaceSlug as AnyObject,
             "repositoryId": repositoryId as AnyObject,
             "branch": branch as AnyObject,
-            "status": "active" as AnyObject
+            "status": "active" as AnyObject,
+            "mode": "live" as AnyObject,
+            "autoMerge": false as AnyObject,
         ]
         guard let request = createRequest(urlString, bodyParams: params as NSDictionary, method: "POST", token: authToken) else {
             errorCallback()
