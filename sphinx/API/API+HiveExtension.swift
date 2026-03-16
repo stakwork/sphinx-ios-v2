@@ -923,18 +923,22 @@ extension API {
         message: String,
         replyId: String? = nil,
         socketId: String? = nil,
+        mode: String? = nil,
         authToken: String,
         callback: @escaping HiveChatMessageCallback,
         errorCallback: @escaping EmptyCallback
     ) {
         let urlString = "\(API.kHiveBaseUrl)/chat/message"
-        let params: [String: AnyObject] = [
+        var params: [String: AnyObject] = [
             "taskId": taskId as AnyObject,
             "message": message as AnyObject,
             "contextTags": [] as AnyObject,
             "sourceWebsocketID": (socketId as AnyObject? ?? NSNull() as AnyObject),
             "replyId": (replyId as AnyObject? ?? NSNull() as AnyObject)
         ]
+        if let mode = mode {
+            params["mode"] = mode as AnyObject
+        }
 
         guard let request = createRequest(urlString, bodyParams: params as NSDictionary, method: "POST", token: authToken) else {
             errorCallback()
@@ -983,6 +987,7 @@ extension API {
         message: String,
         replyId: String? = nil,
         socketId: String? = nil,
+        mode: String? = nil,
         callback: @escaping HiveChatMessageCallback,
         errorCallback: @escaping EmptyCallback
     ) {
@@ -992,6 +997,7 @@ extension API {
                 message: message,
                 replyId: replyId,
                 socketId: socketId,
+                mode: mode,
                 authToken: storedToken,
                 callback: callback,
                 errorCallback: { [weak self] in
@@ -1000,6 +1006,7 @@ extension API {
                         message: message,
                         replyId: replyId,
                         socketId: socketId,
+                        mode: mode,
                         callback: callback,
                         errorCallback: errorCallback
                     )
@@ -1011,6 +1018,7 @@ extension API {
                 message: message,
                 replyId: replyId,
                 socketId: socketId,
+                mode: mode,
                 callback: callback,
                 errorCallback: errorCallback
             )
@@ -1022,6 +1030,7 @@ extension API {
         message: String,
         replyId: String? = nil,
         socketId: String? = nil,
+        mode: String? = nil,
         callback: @escaping HiveChatMessageCallback,
         errorCallback: @escaping EmptyCallback
     ) {
@@ -1034,6 +1043,7 @@ extension API {
                     message: message,
                     replyId: replyId,
                     socketId: socketId,
+                    mode: mode,
                     authToken: token,
                     callback: callback,
                     errorCallback: errorCallback
@@ -2819,7 +2829,10 @@ extension API {
             "title": title as AnyObject,
             "workspaceSlug": workspaceSlug as AnyObject,
             "repositoryId": repositoryId as AnyObject,
-            "branch": branch as AnyObject
+            "branch": branch as AnyObject,
+            "status": "active" as AnyObject,
+            "mode": "live" as AnyObject,
+            "autoMerge": false as AnyObject,
         ]
         guard let request = createRequest(urlString, bodyParams: params as NSDictionary, method: "POST", token: authToken) else {
             errorCallback()
