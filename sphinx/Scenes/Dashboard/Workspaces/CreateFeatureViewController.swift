@@ -351,16 +351,31 @@ class CreateFeatureViewController: UIViewController {
             callback: { [weak self] fetchedBranches in
                 DispatchQueue.main.async {
                     guard let self else { return }
-                    self.branches = fetchedBranches
+                    // Ensure "master" is always available — add it if the API didn't return it
+                    var allBranches = fetchedBranches
+                    if !allBranches.contains(where: { $0.name == "master" }) {
+                        allBranches.insert(WorkspaceBranch(json: ["name": "master"]), at: 0)
+                    }
+                    self.branches = allBranches
                     // Pre-select master/main, otherwise first branch
-                    let preferred = fetchedBranches.first(where: { $0.name == "master" || $0.name == "main" })
-                        ?? fetchedBranches.first
+                    let preferred = allBranches.first(where: { $0.name == "master" || $0.name == "main" })
+                        ?? allBranches.first
                     self.selectedBranch = preferred
                     self.branchComboButton.setTitle(preferred?.name ?? "Select Branch", for: .normal)
                     self.updateSendButtonState()
                 }
             },
-            errorCallback: { /* silently fail */ }
+            errorCallback: { [weak self] in
+                // API failed — fall back to just "master"
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    let master = WorkspaceBranch(json: ["name": "master"])
+                    self.branches = [master]
+                    self.selectedBranch = master
+                    self.branchComboButton.setTitle("master", for: .normal)
+                    self.updateSendButtonState()
+                }
+            }
         )
     }
 
