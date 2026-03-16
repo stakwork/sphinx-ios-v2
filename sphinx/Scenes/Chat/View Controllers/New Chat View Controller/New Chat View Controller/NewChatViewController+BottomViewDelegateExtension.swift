@@ -77,25 +77,7 @@ extension NewChatViewController : ChatMessageTextFieldViewDelegate {
         text: String,
         sendingAttachment: Bool
     ) -> Bool {
-        let messageLengthValid = SphinxOnionManager.sharedInstance.isMessageLengthValid(
-            text: text,
-            sendingAttachment: sendingAttachment,
-            threadUUID: self.chatViewModel.replyingTo?.uuid,
-            replyUUID: self.threadUUID ?? self.chatViewModel.replyingTo?.replyUUID,
-            metaDataString: chat?.getMetaDataJsonStringValue(forceIncludeTimezone: self.chatViewModel.wasTimezoneNotSentRecently())
-        )
-        
-        if !messageLengthValid {
-            self.newMessageBubbleHelper.showGenericMessageView(
-                text: "message.limit.reached".localized,
-                delay: 5,
-                textColor: UIColor.white,
-                backColor: UIColor.Sphinx.BadgeRed,
-                backAlpha: 1.0
-            )
-        }
-        
-        return messageLengthValid
+        return true
     }
     
     func shouldStartGiphy(){
