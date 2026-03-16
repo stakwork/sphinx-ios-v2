@@ -235,7 +235,10 @@ extension WorkspaceFeaturesViewController: WorkspaceFeatureTableViewCellDelegate
         let alert = UIAlertController(title: "Set Status", message: nil, preferredStyle: .actionSheet)
         for option in statusOptions {
             let isCurrent = feature.status?.uppercased() == option
-            let title = isCurrent ? "✓ \(option)" : option
+            let displayTitle = option
+                .replacingOccurrences(of: "_", with: " ")
+                .capitalized
+            let title = isCurrent ? "✓ \(displayTitle)" : displayTitle
             alert.addAction(UIAlertAction(title: title, style: .default) { [weak self] _ in
                 guard let self = self else { return }
                 let previousValue = self.features[index].status
@@ -274,7 +277,8 @@ extension WorkspaceFeaturesViewController: WorkspaceFeatureTableViewCellDelegate
         let alert = UIAlertController(title: "Set Priority", message: nil, preferredStyle: .actionSheet)
         for option in priorityOptions {
             let isCurrent = feature.priority?.uppercased() == option
-            let title = isCurrent ? "✓ \(option)" : option
+            let displayTitle = option.capitalized
+            let title = isCurrent ? "✓ \(displayTitle)" : displayTitle
             alert.addAction(UIAlertAction(title: title, style: .default) { [weak self] _ in
                 guard let self = self else { return }
                 let previousValue = self.features[index].priority
