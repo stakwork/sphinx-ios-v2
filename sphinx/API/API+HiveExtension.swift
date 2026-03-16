@@ -27,6 +27,41 @@ typealias HiveSearchResultsCallback = ((HiveSearchResults) -> ())
 typealias HiveReleasePodCallback = (() -> ())
 typealias HivePoolStatusCallback = ((_ queuedCount: Int, _ unusedVms: Int) -> ())
 typealias HiveCallLinkCallback = ((String) -> ())
+typealias HiveRepositoriesCallback = (([WorkspaceRepository]) -> ())
+typealias HiveBranchesCallback = (([WorkspaceBranch]) -> ())
+
+// MARK: - WorkspaceRepository
+
+struct WorkspaceRepository {
+    let id: String
+    let name: String
+    let repositoryUrl: String
+    let branch: String?   // default branch
+    let status: String?
+
+    init?(json: JSON) {
+        guard let id = json["id"].string,
+              let name = json["name"].string,
+              let repositoryUrl = json["repositoryUrl"].string else { return nil }
+        self.id = id
+        self.name = name
+        self.repositoryUrl = repositoryUrl
+        self.branch = json["branch"].string
+        self.status = json["status"].string
+    }
+}
+
+// MARK: - WorkspaceBranch
+
+struct WorkspaceBranch {
+    let name: String
+    let sha: String?
+
+    init(json: JSON) {
+        self.name = json["name"].string ?? ""
+        self.sha = json["sha"].string
+    }
+}
 
 // MARK: - PaginationInfo
 
@@ -2478,6 +2513,298 @@ extension API {
                 errorCallback: errorCallback
             )
         }
+    }
+
+    // MARK: - Workspace Detail (repositories)
+
+    func fetchWorkspaceDetail(
+        slug: String,
+        authToken: String,
+        callback: @escaping HiveRepositoriesCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        guard let encodedSlug = slug.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+            errorCallback()
+            return
+        }
+        let urlString = "\(API.kHiveBaseUrl)/workspaces/\(encodedSlug)"
+        guard let request = createRequest(urlString, bodyParams: nil, method: "GET", token: authToken) else {
+            errorCallback()
+            return
+        }
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                print("[HiveAPI] Fetch workspace detail unauthorized (401) - token may be expired")
+                errorCallback()
+                return
+            }
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+                if let error = json["error"].string {
+                    print("[HiveAPI] Fetch workspace detail error: \(error)")
+                    errorCallback()
+                    return
+                }
+                let repos: [WorkspaceRepository] = json["workspace"]["repositories"].arrayValue.compactMap { WorkspaceRepository(json: $0) }
+                callback(repos)
+            case .failure(let error):
+                print("[HiveAPI] Fetch workspace detail failed: \(error.localizedDescription)")
+                errorCallback()
+            }
+        }
+    }
+
+    func fetchWorkspaceDetailWithAuth(
+        slug: String,
+        callback: @escaping HiveRepositoriesCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
+            fetchWorkspaceDetail(
+                slug: slug,
+                authToken: storedToken,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateAndFetchWorkspaceDetail(
+                        slug: slug,
+                        callback: callback,
+                        errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateAndFetchWorkspaceDetail(
+                slug: slug,
+                callback: callback,
+                errorCallback: errorCallback
+            )
+        }
+    }
+
+    private func authenticateAndFetchWorkspaceDetail(
+        slug: String,
+        callback: @escaping HiveRepositoriesCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback(); return }
+                UserDefaults.Keys.hiveToken.set(token)
+                self?.fetchWorkspaceDetail(
+                    slug: slug,
+                    authToken: token,
+                    callback: callback,
+                    errorCallback: errorCallback
+                )
+            },
+            errorCallback: errorCallback
+        )
+    }
+
+    // MARK: - Repository Branches
+
+    func fetchBranches(
+        repoUrl: String,
+        workspaceSlug: String,
+        authToken: String,
+        callback: @escaping HiveBranchesCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        guard let encodedRepoUrl = repoUrl.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let encodedSlug = workspaceSlug.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
+            errorCallback()
+            return
+        }
+        let urlString = "\(API.kHiveBaseUrl)/github/repository/branches?repoUrl=\(encodedRepoUrl)&workspaceSlug=\(encodedSlug)"
+        guard let request = createRequest(urlString, bodyParams: nil, method: "GET", token: authToken) else {
+            errorCallback()
+            return
+        }
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                print("[HiveAPI] Fetch branches unauthorized (401) - token may be expired")
+                errorCallback()
+                return
+            }
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+                if let error = json["error"].string {
+                    print("[HiveAPI] Fetch branches error: \(error)")
+                    errorCallback()
+                    return
+                }
+                let branches: [WorkspaceBranch] = json["branches"].arrayValue.map { WorkspaceBranch(json: $0) }
+                callback(branches)
+            case .failure(let error):
+                print("[HiveAPI] Fetch branches failed: \(error.localizedDescription)")
+                errorCallback()
+            }
+        }
+    }
+
+    func fetchBranchesWithAuth(
+        repoUrl: String,
+        workspaceSlug: String,
+        callback: @escaping HiveBranchesCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
+            fetchBranches(
+                repoUrl: repoUrl,
+                workspaceSlug: workspaceSlug,
+                authToken: storedToken,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateAndFetchBranches(
+                        repoUrl: repoUrl,
+                        workspaceSlug: workspaceSlug,
+                        callback: callback,
+                        errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateAndFetchBranches(
+                repoUrl: repoUrl,
+                workspaceSlug: workspaceSlug,
+                callback: callback,
+                errorCallback: errorCallback
+            )
+        }
+    }
+
+    private func authenticateAndFetchBranches(
+        repoUrl: String,
+        workspaceSlug: String,
+        callback: @escaping HiveBranchesCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback(); return }
+                UserDefaults.Keys.hiveToken.set(token)
+                self?.fetchBranches(
+                    repoUrl: repoUrl,
+                    workspaceSlug: workspaceSlug,
+                    authToken: token,
+                    callback: callback,
+                    errorCallback: errorCallback
+                )
+            },
+            errorCallback: errorCallback
+        )
+    }
+
+    // MARK: - Create Task
+
+    func createTask(
+        title: String,
+        workspaceSlug: String,
+        repositoryId: String,
+        branch: String,
+        authToken: String,
+        callback: @escaping HiveTaskCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        let urlString = "\(API.kHiveBaseUrl)/tasks"
+        let params: [String: AnyObject] = [
+            "title": title as AnyObject,
+            "workspaceSlug": workspaceSlug as AnyObject,
+            "repositoryId": repositoryId as AnyObject,
+            "branch": branch as AnyObject
+        ]
+        guard let request = createRequest(urlString, bodyParams: params as NSDictionary, method: "POST", token: authToken) else {
+            errorCallback()
+            return
+        }
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                print("[HiveAPI] Create task unauthorized (401) - token may be expired")
+                errorCallback()
+                return
+            }
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+                if let error = json["error"].string {
+                    print("[HiveAPI] Create task error: \(error)")
+                    errorCallback()
+                    return
+                }
+                let task = WorkspaceTask(json: json["data"])
+                callback(task)
+            case .failure(let error):
+                print("[HiveAPI] Create task failed: \(error.localizedDescription)")
+                errorCallback()
+            }
+        }
+    }
+
+    func createTaskWithAuth(
+        title: String,
+        workspaceSlug: String,
+        repositoryId: String,
+        branch: String,
+        callback: @escaping HiveTaskCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
+            createTask(
+                title: title,
+                workspaceSlug: workspaceSlug,
+                repositoryId: repositoryId,
+                branch: branch,
+                authToken: storedToken,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateAndCreateTask(
+                        title: title,
+                        workspaceSlug: workspaceSlug,
+                        repositoryId: repositoryId,
+                        branch: branch,
+                        callback: callback,
+                        errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateAndCreateTask(
+                title: title,
+                workspaceSlug: workspaceSlug,
+                repositoryId: repositoryId,
+                branch: branch,
+                callback: callback,
+                errorCallback: errorCallback
+            )
+        }
+    }
+
+    private func authenticateAndCreateTask(
+        title: String,
+        workspaceSlug: String,
+        repositoryId: String,
+        branch: String,
+        callback: @escaping HiveTaskCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback(); return }
+                UserDefaults.Keys.hiveToken.set(token)
+                self?.createTask(
+                    title: title,
+                    workspaceSlug: workspaceSlug,
+                    repositoryId: repositoryId,
+                    branch: branch,
+                    authToken: token,
+                    callback: callback,
+                    errorCallback: errorCallback
+                )
+            },
+            errorCallback: errorCallback
+        )
     }
 
 }
