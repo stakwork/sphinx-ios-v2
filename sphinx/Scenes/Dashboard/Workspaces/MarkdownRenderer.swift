@@ -361,6 +361,20 @@ final class MarkdownRenderer {
                 s = String(s[range.upperBound...])
                 continue
             }
+            // Bare URL: https://... or http://...
+            if let range = firstRange(in: s, pattern: #"https?://[^\s]+"#) {
+                appendLiteral(s[s.startIndex..<range.lowerBound], attrs: base, to: result)
+                let urlStr = String(s[range])
+                var linkAttrs: [NSAttributedString.Key: Any] = [
+                    .font: font,
+                    .foregroundColor: style.linkColor,
+                    .underlineStyle: NSUnderlineStyle.single.rawValue
+                ]
+                if let url = URL(string: urlStr) { linkAttrs[.link] = url }
+                result.append(NSAttributedString(string: urlStr, attributes: linkAttrs))
+                s = String(s[range.upperBound...])
+                continue
+            }
             // No more patterns — append rest as-is
             result.append(NSAttributedString(string: s, attributes: base))
             break
