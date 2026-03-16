@@ -175,7 +175,11 @@ class WorkspaceViewController: PopHandlerViewController {
     }
 
     @objc private func createFeatureButtonTapped() {
-        activeFeaturesVC?.createButtonTapped()
+        if currentTab == 0 {
+            activeFeaturesVC?.createButtonTapped()
+        } else if currentTab == 1 {
+            activeTasksVC?.createButtonTapped()
+        }
     }
 
     @objc private func cancelSearchTapped() {
@@ -343,7 +347,7 @@ extension WorkspaceViewController: CustomSegmentedControlDelegate {
 
     private func switchToTab(_ index: Int) {
         currentTab = index
-        createFeatureButton.isHidden = (index != 0)
+        createFeatureButton.isHidden = (index == 2)
 
         // Instantiate children lazily, but only make them visible when search is inactive
         let searchActive = searchVC != nil

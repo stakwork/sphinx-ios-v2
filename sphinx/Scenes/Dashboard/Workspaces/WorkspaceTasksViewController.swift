@@ -252,6 +252,35 @@ extension WorkspaceTasksViewController: PaginationControlViewDelegate {
     }
 }
 
+// MARK: - Task Creation
+
+extension WorkspaceTasksViewController {
+    func createButtonTapped() {
+        let vc = CreateFeatureViewController.instantiateForTask(
+            workspaceId: workspace.id,
+            workspaceSlug: workspace.slug ?? ""
+        )
+        vc.delegate = self
+        present(vc, animated: true)
+    }
+}
+
+// MARK: - CreateFeatureViewControllerDelegate
+
+extension WorkspaceTasksViewController: CreateFeatureViewControllerDelegate {
+    func didCreateFeature(_ feature: HiveFeature) {} // no-op
+
+    func didCreateTask(_ task: WorkspaceTask) {
+        loadTasks(showLoading: false)
+        let chatVC = TaskChatViewController.instantiate(
+            task: task,
+            workspaceSlug: workspace.slug ?? "",
+            workspaceId: workspace.id
+        )
+        navigationController?.pushViewController(chatVC, animated: true)
+    }
+}
+
 extension WorkspaceTasksViewController {
     func handleTaskStatusUpdated(taskId: String, status: String, workflowStatus: String?, archived: Bool) {
         guard let index = tasks.firstIndex(where: { $0.id == taskId }) else { return }
