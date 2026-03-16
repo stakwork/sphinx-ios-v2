@@ -1,6 +1,14 @@
 import UIKit
 
+protocol WorkspaceFeatureTableViewCellDelegate: AnyObject {
+    func cell(_ cell: WorkspaceFeatureTableViewCell, didTapStatusFor featureId: String)
+    func cell(_ cell: WorkspaceFeatureTableViewCell, didTapPriorityFor featureId: String)
+}
+
 class WorkspaceFeatureTableViewCell: UITableViewCell {
+
+    weak var delegate: WorkspaceFeatureTableViewCellDelegate?
+    private var featureId: String?
     
     static let reuseID = "WorkspaceFeatureTableViewCell"
     static var nib: UINib {
@@ -37,7 +45,14 @@ class WorkspaceFeatureTableViewCell: UITableViewCell {
             $0?.textColor = .white
             $0?.font = UIFont(name: "Roboto-Medium", size: 11)
             $0?.textAlignment = .center
+            $0?.isUserInteractionEnabled = true
         }
+
+        let statusTap = UITapGestureRecognizer(target: self, action: #selector(statusBadgeTapped))
+        statusBadge.addGestureRecognizer(statusTap)
+
+        let priorityTap = UITapGestureRecognizer(target: self, action: #selector(priorityBadgeTapped))
+        priorityBadge.addGestureRecognizer(priorityTap)
         
         separatorView.backgroundColor = .Sphinx.LightDivider
         
@@ -48,6 +63,7 @@ class WorkspaceFeatureTableViewCell: UITableViewCell {
     }
     
     func configure(with feature: HiveFeature, isLastRow: Bool) {
+        featureId = feature.id
         titleLabel.text = feature.title
         
         // Created by
@@ -99,6 +115,18 @@ class WorkspaceFeatureTableViewCell: UITableViewCell {
         ownerImageView.sd_cancelCurrentImageLoad()
         ownerImageView.image = nil
         ownerImageView.isHidden = true
+        delegate = nil
+        featureId = nil
+    }
+
+    @objc private func statusBadgeTapped() {
+        guard let featureId = featureId else { return }
+        delegate?.cell(self, didTapStatusFor: featureId)
+    }
+
+    @objc private func priorityBadgeTapped() {
+        guard let featureId = featureId else { return }
+        delegate?.cell(self, didTapPriorityFor: featureId)
     }
     
     private func formatDate(_ dateString: String?) -> String {

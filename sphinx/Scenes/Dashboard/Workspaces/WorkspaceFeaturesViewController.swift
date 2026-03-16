@@ -222,6 +222,89 @@ extension WorkspaceFeaturesViewController: CreateFeatureViewControllerDelegate {
     }
 }
 
+// MARK: - WorkspaceFeatureTableViewCellDelegate
+
+extension WorkspaceFeaturesViewController: WorkspaceFeatureTableViewCellDelegate {
+
+    func cell(_ cell: WorkspaceFeatureTableViewCell, didTapStatusFor featureId: String) {
+        guard let index = features.firstIndex(where: { $0.id == featureId }) else { return }
+        let feature = features[index]
+        let indexPath = IndexPath(row: index, section: 0)
+        let statusOptions = ["BACKLOG", "PLANNED", "IN_PROGRESS", "COMPLETED", "CANCELLED", "ERROR", "BLOCKED"]
+
+        let alert = UIAlertController(title: "Set Status", message: nil, preferredStyle: .actionSheet)
+        for option in statusOptions {
+            let isCurrent = feature.status?.uppercased() == option
+            let title = isCurrent ? "✓ \(option)" : option
+            alert.addAction(UIAlertAction(title: title, style: .default) { [weak self] _ in
+                guard let self = self else { return }
+                let previousValue = self.features[index].status
+                self.features[index].status = option
+                self.tableView.reloadRows(at: [indexPath], with: .none)
+                API.sharedInstance.updateFeatureWithAuth(
+                    featureId: featureId,
+                    status: option,
+                    priority: nil,
+                    callback: { _ in },
+                    errorCallback: { [weak self] in
+                        guard let self = self else { return }
+                        DispatchQueue.main.async {
+                            self.features[index].status = previousValue
+                            self.tableView.reloadRows(at: [indexPath], with: .none)
+                            AlertHelper.showAlert(title: "Error", message: "Failed to update feature.")
+                        }
+                    }
+                )
+            })
+        }
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        if let popover = alert.popoverPresentationController {
+            popover.sourceView = cell.contentView
+            popover.sourceRect = cell.contentView.bounds
+        }
+        present(alert, animated: true)
+    }
+
+    func cell(_ cell: WorkspaceFeatureTableViewCell, didTapPriorityFor featureId: String) {
+        guard let index = features.firstIndex(where: { $0.id == featureId }) else { return }
+        let feature = features[index]
+        let indexPath = IndexPath(row: index, section: 0)
+        let priorityOptions = ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
+
+        let alert = UIAlertController(title: "Set Priority", message: nil, preferredStyle: .actionSheet)
+        for option in priorityOptions {
+            let isCurrent = feature.priority?.uppercased() == option
+            let title = isCurrent ? "✓ \(option)" : option
+            alert.addAction(UIAlertAction(title: title, style: .default) { [weak self] _ in
+                guard let self = self else { return }
+                let previousValue = self.features[index].priority
+                self.features[index].priority = option
+                self.tableView.reloadRows(at: [indexPath], with: .none)
+                API.sharedInstance.updateFeatureWithAuth(
+                    featureId: featureId,
+                    status: nil,
+                    priority: option,
+                    callback: { _ in },
+                    errorCallback: { [weak self] in
+                        guard let self = self else { return }
+                        DispatchQueue.main.async {
+                            self.features[index].priority = previousValue
+                            self.tableView.reloadRows(at: [indexPath], with: .none)
+                            AlertHelper.showAlert(title: "Error", message: "Failed to update feature.")
+                        }
+                    }
+                )
+            })
+        }
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        if let popover = alert.popoverPresentationController {
+            popover.sourceView = cell.contentView
+            popover.sourceRect = cell.contentView.bounds
+        }
+        present(alert, animated: true)
+    }
+}
+
 // MARK: - UITableView DataSource & Delegate
 
 extension WorkspaceFeaturesViewController: UITableViewDataSource, UITableViewDelegate {
@@ -240,6 +323,7 @@ extension WorkspaceFeaturesViewController: UITableViewDataSource, UITableViewDel
         let feature = features[indexPath.row]
         let isLastRow = indexPath.row == features.count - 1
         cell.configure(with: feature, isLastRow: isLastRow)
+        cell.delegate = self
         return cell
     }
     

@@ -16,6 +16,7 @@ typealias HiveTasksCallback = (([WorkspaceTask], PaginationInfo) -> ())
 typealias HiveWorkspaceImageCallback = ((String?) -> ())
 typealias HiveFeaturesCallback = (([HiveFeature], PaginationInfo) -> ())
 typealias HiveFeatureCallback = ((HiveFeature?) -> ())
+typealias HiveUpdateFeatureCallback = ((HiveFeature?) -> ())
 typealias HiveChatMessagesCallback = (([HiveChatMessage]) -> ())
 typealias HiveTaskMessagesCallback = (([HiveChatMessage], String?) -> ())
 typealias HiveChatMessageCallback = ((HiveChatMessage?) -> ())
@@ -1609,6 +1610,111 @@ extension API {
                 UserDefaults.Keys.hiveToken.set(token)
                 self?.deleteFeature(
                     featureId: featureId,
+                    authToken: token,
+                    callback: callback,
+                    errorCallback: errorCallback
+                )
+            },
+            errorCallback: errorCallback
+        )
+    }
+
+    // MARK: - Update Feature (PATCH /api/features/{featureId})
+
+    func updateFeature(
+        featureId: String,
+        status: String? = nil,
+        priority: String? = nil,
+        authToken: String,
+        callback: @escaping HiveUpdateFeatureCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        guard let encodedFeatureId = featureId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+            errorCallback(); return
+        }
+        let urlString = "\(API.kHiveBaseUrl)/features/\(encodedFeatureId)"
+
+        var params: [String: AnyObject] = [:]
+        if let status = status { params["status"] = status as AnyObject }
+        if let priority = priority { params["priority"] = priority as AnyObject }
+
+        guard let request = createRequest(urlString, bodyParams: params as NSDictionary, method: "PATCH", token: authToken) else {
+            errorCallback(); return
+        }
+
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                print("[HiveAPI] updateFeature unauthorized (401) - token may be expired")
+                errorCallback()
+                return
+            }
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+                if let error = json["error"].string {
+                    print("[HiveAPI] updateFeature error: \(error)")
+                    errorCallback()
+                    return
+                }
+                let feature = HiveFeature(json: json["data"])
+                callback(feature)
+            case .failure(let error):
+                print("[HiveAPI] updateFeature failed: \(error.localizedDescription)")
+                errorCallback()
+            }
+        }
+    }
+
+    func updateFeatureWithAuth(
+        featureId: String,
+        status: String? = nil,
+        priority: String? = nil,
+        callback: @escaping HiveUpdateFeatureCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
+            updateFeature(
+                featureId: featureId,
+                status: status,
+                priority: priority,
+                authToken: storedToken,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateAndUpdateFeature(
+                        featureId: featureId,
+                        status: status,
+                        priority: priority,
+                        callback: callback,
+                        errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateAndUpdateFeature(
+                featureId: featureId,
+                status: status,
+                priority: priority,
+                callback: callback,
+                errorCallback: errorCallback
+            )
+        }
+    }
+
+    private func authenticateAndUpdateFeature(
+        featureId: String,
+        status: String?,
+        priority: String?,
+        callback: @escaping HiveUpdateFeatureCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback(); return }
+                UserDefaults.Keys.hiveToken.set(token)
+                self?.updateFeature(
+                    featureId: featureId,
+                    status: status,
+                    priority: priority,
                     authToken: token,
                     callback: callback,
                     errorCallback: errorCallback
