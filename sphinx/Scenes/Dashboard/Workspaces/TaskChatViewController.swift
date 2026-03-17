@@ -271,29 +271,30 @@ class TaskChatViewController: UIViewController {
         sendButton.layer.cornerRadius = 20
         sendButton.addTarget(self, action: #selector(sendTapped), for: .touchUpInside)
 
-        // Input stack: [chatInputTextView flex] [attachButton] [sendButton]
-        // Text field fills remaining space; attach + send are fixed on the right.
-        let inputStack = UIStackView(arrangedSubviews: [chatInputTextView, attachButton, sendButton])
-        inputStack.translatesAutoresizingMaskIntoConstraints = false
-        inputStack.axis = .horizontal
-        inputStack.spacing = 8
-        inputStack.alignment = .center
-        inputStack.distribution = .fill
-        chatInputContainer.addSubview(inputStack)
-
-        // chatInputTextView expands to fill remaining space
-        chatInputTextView.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        chatInputTextView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        // Layout: text view fills available width; attach + send buttons pinned to right edge.
+        // [chatInputTextView --- flex ---][attachButton 32][sendButton 80]
+        chatInputContainer.addSubview(chatInputTextView)
+        chatInputContainer.addSubview(attachButton)
+        chatInputContainer.addSubview(sendButton)
 
         NSLayoutConstraint.activate([
-            attachButton.widthAnchor.constraint(equalToConstant: 32),
-            attachButton.heightAnchor.constraint(equalToConstant: 32),
+            // Send button — right edge
+            sendButton.trailingAnchor.constraint(equalTo: chatInputContainer.trailingAnchor, constant: -16),
+            sendButton.centerYAnchor.constraint(equalTo: chatInputContainer.centerYAnchor),
             sendButton.widthAnchor.constraint(equalToConstant: 80),
             sendButton.heightAnchor.constraint(equalToConstant: 40),
-            inputStack.topAnchor.constraint(equalTo: chatInputContainer.topAnchor, constant: 12),
-            inputStack.leadingAnchor.constraint(equalTo: chatInputContainer.leadingAnchor, constant: 16),
-            inputStack.trailingAnchor.constraint(equalTo: chatInputContainer.trailingAnchor, constant: -16),
-            inputStack.bottomAnchor.constraint(equalTo: chatInputContainer.bottomAnchor, constant: -12)
+
+            // Attach button — immediately left of send button
+            attachButton.trailingAnchor.constraint(equalTo: sendButton.leadingAnchor, constant: -8),
+            attachButton.centerYAnchor.constraint(equalTo: chatInputContainer.centerYAnchor),
+            attachButton.widthAnchor.constraint(equalToConstant: 32),
+            attachButton.heightAnchor.constraint(equalToConstant: 32),
+
+            // Text view — fills from left edge to attach button
+            chatInputTextView.topAnchor.constraint(equalTo: chatInputContainer.topAnchor, constant: 12),
+            chatInputTextView.bottomAnchor.constraint(equalTo: chatInputContainer.bottomAnchor, constant: -12),
+            chatInputTextView.leadingAnchor.constraint(equalTo: chatInputContainer.leadingAnchor, constant: 16),
+            chatInputTextView.trailingAnchor.constraint(equalTo: attachButton.leadingAnchor, constant: -8)
         ])
 
         // Workflow Status View
