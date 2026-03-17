@@ -52,12 +52,26 @@ class VideoCallManager : NSObject {
     }
 
     func closePipController() {
-        self.pipViewCoordinator?.hide() { _ in
+        guard let coordinator = pipViewCoordinator else {
+            // pipViewCoordinator already gone — ensure liveKitVC is still removed
+            onPiP = false
+            activeCall = false
+            teardownLiveKitVC()
+            return
+        }
+        coordinator.hide() { _ in
             self.onPiP = false
             self.activeCall = false
             self.pipViewCoordinator = nil
             self.teardownLiveKitVC()
         }
+    }
+
+    /// Removes any stale LiveKit view that survived without an active call coordinator.
+    /// Call this on foreground re-entry as a safety net.
+    func cleanUpIfStale() {
+        guard liveKitVC != nil, !activeCall else { return }
+        cleanUp()
     }
     
     func togglePip(pipEnabled: Bool) {
