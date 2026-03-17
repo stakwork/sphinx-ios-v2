@@ -923,7 +923,6 @@ extension API {
         message: String,
         replyId: String? = nil,
         socketId: String? = nil,
-        mode: String? = nil,
         attachments: [[String: AnyObject]] = [],
         authToken: String,
         callback: @escaping HiveChatMessageCallback,
@@ -935,11 +934,9 @@ extension API {
             "message": message as AnyObject,
             "contextTags": [] as AnyObject,
             "sourceWebsocketID": (socketId as AnyObject? ?? NSNull() as AnyObject),
-            "replyId": (replyId as AnyObject? ?? NSNull() as AnyObject)
+            "replyId": (replyId as AnyObject? ?? NSNull() as AnyObject),
+            "mode": "live" as AnyObject
         ]
-        if let mode = mode {
-            params["mode"] = mode as AnyObject
-        }
         if !attachments.isEmpty {
             params["attachments"] = attachments as AnyObject
         }
@@ -991,7 +988,6 @@ extension API {
         message: String,
         replyId: String? = nil,
         socketId: String? = nil,
-        mode: String? = nil,
         attachments: [[String: AnyObject]] = [],
         callback: @escaping HiveChatMessageCallback,
         errorCallback: @escaping EmptyCallback
@@ -1002,7 +998,6 @@ extension API {
                 message: message,
                 replyId: replyId,
                 socketId: socketId,
-                mode: mode,
                 attachments: attachments,
                 authToken: storedToken,
                 callback: callback,
@@ -1012,7 +1007,6 @@ extension API {
                         message: message,
                         replyId: replyId,
                         socketId: socketId,
-                        mode: mode,
                         attachments: attachments,
                         callback: callback,
                         errorCallback: errorCallback
@@ -1025,7 +1019,6 @@ extension API {
                 message: message,
                 replyId: replyId,
                 socketId: socketId,
-                mode: mode,
                 attachments: attachments,
                 callback: callback,
                 errorCallback: errorCallback
@@ -1052,7 +1045,6 @@ extension API {
                     message: message,
                     replyId: replyId,
                     socketId: socketId,
-                    mode: mode,
                     attachments: attachments,
                     authToken: token,
                     callback: callback,
