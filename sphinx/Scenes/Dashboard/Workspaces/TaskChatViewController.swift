@@ -245,7 +245,7 @@ class TaskChatViewController: UIViewController {
         // Attach button
         attachButton = UIButton(type: .system)
         attachButton.translatesAutoresizingMaskIntoConstraints = false
-        let paperclipConfig = UIImage.SymbolConfiguration(pointSize: 22, weight: .regular)
+        let paperclipConfig = UIImage.SymbolConfiguration(pointSize: 16, weight: .regular)
         attachButton.setImage(UIImage(systemName: "paperclip", withConfiguration: paperclipConfig), for: .normal)
         attachButton.tintColor = UIColor.Sphinx.WashedOutReceivedText
         attachButton.addTarget(self, action: #selector(attachTapped), for: .touchUpInside)
@@ -271,8 +271,9 @@ class TaskChatViewController: UIViewController {
         sendButton.layer.cornerRadius = 20
         sendButton.addTarget(self, action: #selector(sendTapped), for: .touchUpInside)
 
-        // Input stack: [attachButton] [chatInputTextView] [sendButton]
-        let inputStack = UIStackView(arrangedSubviews: [attachButton, chatInputTextView, sendButton])
+        // Input stack: [chatInputTextView flex] [attachButton] [sendButton]
+        // Text field fills remaining space; attach + send are fixed on the right.
+        let inputStack = UIStackView(arrangedSubviews: [chatInputTextView, attachButton, sendButton])
         inputStack.translatesAutoresizingMaskIntoConstraints = false
         inputStack.axis = .horizontal
         inputStack.spacing = 8
@@ -280,9 +281,13 @@ class TaskChatViewController: UIViewController {
         inputStack.distribution = .fill
         chatInputContainer.addSubview(inputStack)
 
+        // chatInputTextView expands to fill remaining space
+        chatInputTextView.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        chatInputTextView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
         NSLayoutConstraint.activate([
-            attachButton.widthAnchor.constraint(equalToConstant: 40),
-            attachButton.heightAnchor.constraint(equalToConstant: 40),
+            attachButton.widthAnchor.constraint(equalToConstant: 32),
+            attachButton.heightAnchor.constraint(equalToConstant: 32),
             sendButton.widthAnchor.constraint(equalToConstant: 80),
             sendButton.heightAnchor.constraint(equalToConstant: 40),
             inputStack.topAnchor.constraint(equalTo: chatInputContainer.topAnchor, constant: 12),
