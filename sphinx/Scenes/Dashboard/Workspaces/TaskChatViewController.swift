@@ -271,7 +271,7 @@ class TaskChatViewController: UIViewController {
         sendButton.setTitleColor(.white, for: .normal)
         sendButton.titleLabel?.font = UIFont.systemFont(ofSize: 18, weight: .medium)
         sendButton.backgroundColor = UIColor.Sphinx.PrimaryBlue
-        sendButton.layer.cornerRadius = 20
+        sendButton.layer.cornerRadius = 28
         sendButton.addTarget(self, action: #selector(sendTapped), for: .touchUpInside)
 
         // Layout: text view fills available width; attach + send buttons pinned to right edge.
@@ -284,8 +284,8 @@ class TaskChatViewController: UIViewController {
             // Send button — right edge
             sendButton.trailingAnchor.constraint(equalTo: chatInputContainer.trailingAnchor, constant: -16),
             sendButton.centerYAnchor.constraint(equalTo: chatInputContainer.centerYAnchor),
-            sendButton.widthAnchor.constraint(equalToConstant: 80),
-            sendButton.heightAnchor.constraint(equalToConstant: 40),
+            sendButton.heightAnchor.constraint(equalTo: chatInputTextView.heightAnchor),
+            sendButton.widthAnchor.constraint(equalTo: sendButton.heightAnchor),
 
             // Attach button — immediately left of send button
             attachButton.trailingAnchor.constraint(equalTo: sendButton.leadingAnchor, constant: -8),
