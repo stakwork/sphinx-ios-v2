@@ -924,6 +924,7 @@ extension API {
         replyId: String? = nil,
         socketId: String? = nil,
         mode: String? = nil,
+        attachments: [[String: AnyObject]] = [],
         authToken: String,
         callback: @escaping HiveChatMessageCallback,
         errorCallback: @escaping EmptyCallback
@@ -938,6 +939,9 @@ extension API {
         ]
         if let mode = mode {
             params["mode"] = mode as AnyObject
+        }
+        if !attachments.isEmpty {
+            params["attachments"] = attachments as AnyObject
         }
 
         guard let request = createRequest(urlString, bodyParams: params as NSDictionary, method: "POST", token: authToken) else {
@@ -988,6 +992,7 @@ extension API {
         replyId: String? = nil,
         socketId: String? = nil,
         mode: String? = nil,
+        attachments: [[String: AnyObject]] = [],
         callback: @escaping HiveChatMessageCallback,
         errorCallback: @escaping EmptyCallback
     ) {
@@ -998,6 +1003,7 @@ extension API {
                 replyId: replyId,
                 socketId: socketId,
                 mode: mode,
+                attachments: attachments,
                 authToken: storedToken,
                 callback: callback,
                 errorCallback: { [weak self] in
@@ -1007,6 +1013,7 @@ extension API {
                         replyId: replyId,
                         socketId: socketId,
                         mode: mode,
+                        attachments: attachments,
                         callback: callback,
                         errorCallback: errorCallback
                     )
@@ -1019,6 +1026,7 @@ extension API {
                 replyId: replyId,
                 socketId: socketId,
                 mode: mode,
+                attachments: attachments,
                 callback: callback,
                 errorCallback: errorCallback
             )
@@ -1031,6 +1039,7 @@ extension API {
         replyId: String? = nil,
         socketId: String? = nil,
         mode: String? = nil,
+        attachments: [[String: AnyObject]] = [],
         callback: @escaping HiveChatMessageCallback,
         errorCallback: @escaping EmptyCallback
     ) {
@@ -1044,6 +1053,7 @@ extension API {
                     replyId: replyId,
                     socketId: socketId,
                     mode: mode,
+                    attachments: attachments,
                     authToken: token,
                     callback: callback,
                     errorCallback: errorCallback
@@ -2956,6 +2966,162 @@ extension API {
             },
             errorCallback: errorCallback
         )
+    }
+
+    // MARK: - Upload Presigned URL
+
+    func requestUploadPresignedUrl(
+        taskId: String,
+        filename: String,
+        contentType: String,
+        size: Int,
+        authToken: String,
+        callback: @escaping (String?, String?) -> Void,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        let urlString = "\(API.kHiveBaseUrl)/upload/presigned-url"
+        let params: [String: AnyObject] = [
+            "taskId": taskId as AnyObject,
+            "filename": filename as AnyObject,
+            "contentType": contentType as AnyObject,
+            "size": size as AnyObject
+        ]
+
+        guard let request = createRequest(urlString, bodyParams: params as NSDictionary, method: "POST", token: authToken) else {
+            errorCallback()
+            return
+        }
+
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                print("[HiveAPI] Request upload presigned URL unauthorized (401) - token may be expired")
+                errorCallback()
+                return
+            }
+
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+
+                if let error = json["error"].string {
+                    print("[HiveAPI] Request upload presigned URL error: \(error)")
+                    errorCallback()
+                    return
+                }
+
+                guard let presignedUrl = json["presignedUrl"].string,
+                      let s3Path = json["s3Path"].string else {
+                    print("[HiveAPI] Request upload presigned URL - failed to parse response")
+                    errorCallback()
+                    return
+                }
+
+                callback(presignedUrl, s3Path)
+            case .failure(let error):
+                print("[HiveAPI] Request upload presigned URL failed: \(error.localizedDescription)")
+                errorCallback()
+            }
+        }
+    }
+
+    func requestUploadPresignedUrlWithAuth(
+        taskId: String,
+        filename: String,
+        contentType: String,
+        size: Int,
+        callback: @escaping (String?, String?) -> Void,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
+            requestUploadPresignedUrl(
+                taskId: taskId,
+                filename: filename,
+                contentType: contentType,
+                size: size,
+                authToken: storedToken,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateAndRequestUploadPresignedUrl(
+                        taskId: taskId,
+                        filename: filename,
+                        contentType: contentType,
+                        size: size,
+                        callback: callback,
+                        errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateAndRequestUploadPresignedUrl(
+                taskId: taskId,
+                filename: filename,
+                contentType: contentType,
+                size: size,
+                callback: callback,
+                errorCallback: errorCallback
+            )
+        }
+    }
+
+    private func authenticateAndRequestUploadPresignedUrl(
+        taskId: String,
+        filename: String,
+        contentType: String,
+        size: Int,
+        callback: @escaping (String?, String?) -> Void,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback(); return }
+                UserDefaults.Keys.hiveToken.set(token)
+                self?.requestUploadPresignedUrl(
+                    taskId: taskId,
+                    filename: filename,
+                    contentType: contentType,
+                    size: size,
+                    authToken: token,
+                    callback: callback,
+                    errorCallback: errorCallback
+                )
+            },
+            errorCallback: errorCallback
+        )
+    }
+
+    // MARK: - Upload File to S3
+
+    func uploadFileToS3(
+        presignedUrl: String,
+        data: Data,
+        contentType: String,
+        callback: @escaping EmptyCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        guard let url = URL(string: presignedUrl) else {
+            errorCallback()
+            return
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue(contentType, forHTTPHeaderField: "Content-Type")
+
+        URLSession.shared.uploadTask(with: request, from: data) { _, response, error in
+            if let error = error {
+                print("[HiveAPI] Upload file to S3 failed: \(error.localizedDescription)")
+                errorCallback()
+                return
+            }
+            if let statusCode = (response as? HTTPURLResponse)?.statusCode,
+               statusCode == 200 || statusCode == 204 {
+                callback()
+            } else {
+                let code = (response as? HTTPURLResponse)?.statusCode ?? -1
+                print("[HiveAPI] Upload file to S3 unexpected status: \(code)")
+                errorCallback()
+            }
+        }.resume()
     }
 
 }
