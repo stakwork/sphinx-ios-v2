@@ -47,6 +47,9 @@ class TaskChatViewController: UIViewController {
     private var pendingAttachmentsBarHeightConstraint: NSLayoutConstraint!
     private var pendingAttachments: [PendingAttachment] = []
 
+    // MARK: - Agent state
+    private var isAgentWorking: Bool = false
+
     // Autocomplete
     private var availableWorkspaces: [Workspace] = []
     private var filteredWorkspaces: [Workspace] = []
@@ -455,7 +458,8 @@ class TaskChatViewController: UIViewController {
     }
 
     private func updateSendButtonState() {
-        let blocked = pendingAttachments.contains { $0.state == .uploading || $0.state == .failed }
+        let uploading = pendingAttachments.contains { $0.state == .uploading || $0.state == .failed }
+        let blocked = isAgentWorking || uploading
         sendButton.isEnabled = !blocked
         sendButton.alpha = blocked ? 0.5 : 1.0
     }
@@ -707,6 +711,7 @@ class TaskChatViewController: UIViewController {
             } else {
                 self.view.layoutIfNeeded()
             }
+            setInputEnabled(false)
         case .PENDING, .COMPLETED, .ERROR, .FAILED:
             workflowStatusHeightConstraint.constant = 0
             workflowStatusView.hide(animated: animated)
@@ -716,7 +721,18 @@ class TaskChatViewController: UIViewController {
                 self.view.layoutIfNeeded()
             }
             hideProcessingBubble()
+            setInputEnabled(true)
         }
+    }
+
+    /// Enables or disables the input bar (send + attach + text field) when the agent is working.
+    private func setInputEnabled(_ enabled: Bool) {
+        isAgentWorking = !enabled
+        chatInputTextView.isEditable = enabled
+        attachButton.isEnabled = enabled
+        attachButton.alpha = enabled ? 1.0 : 0.5
+        // Let updateSendButtonState handle send button — it checks both workflow + upload state
+        updateSendButtonState()
     }
 
     private func applyInitialWorkflowStatus() {
