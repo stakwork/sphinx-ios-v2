@@ -269,7 +269,7 @@ class TaskChatViewController: UIViewController {
         sendButton.translatesAutoresizingMaskIntoConstraints = false
         sendButton.setTitle("➤", for: .normal)
         sendButton.setTitleColor(.white, for: .normal)
-        sendButton.titleLabel?.font = UIFont.systemFont(ofSize: 18, weight: .medium)
+        sendButton.titleLabel?.font = UIFont.systemFont(ofSize: 28, weight: .medium)
         sendButton.backgroundColor = UIColor.Sphinx.PrimaryBlue
         sendButton.layer.cornerRadius = 28
         sendButton.addTarget(self, action: #selector(sendTapped), for: .touchUpInside)
