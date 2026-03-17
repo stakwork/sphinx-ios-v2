@@ -26,6 +26,7 @@ class VideoCallManager : NSObject {
 
     /// Prevents re-entrant calls when syncing roomCtx.isInPip
     private var isTogglingPip = false
+    private var isStartingCall = false
 
     var chat: Chat? = nil
     var videoCallDelegate: VideoCallDelegate? = nil
@@ -43,12 +44,34 @@ class VideoCallManager : NSObject {
         return isGroup
     }
     
+    private func teardownLiveKitVC() {
+        liveKitVC?.willMove(toParent: nil)
+        liveKitVC?.view.removeFromSuperview()
+        liveKitVC?.removeFromParent()
+        liveKitVC = nil
+    }
+
     func closePipController() {
-        self.pipViewCoordinator?.hide() { _ in
+        guard let coordinator = pipViewCoordinator else {
+            // pipViewCoordinator already gone — ensure liveKitVC is still removed
+            onPiP = false
+            activeCall = false
+            teardownLiveKitVC()
+            return
+        }
+        coordinator.hide() { _ in
             self.onPiP = false
             self.activeCall = false
             self.pipViewCoordinator = nil
+            self.teardownLiveKitVC()
         }
+    }
+
+    /// Removes any stale LiveKit view that survived without an active call coordinator.
+    /// Call this on foreground re-entry as a safety net.
+    func cleanUpIfStale() {
+        guard liveKitVC != nil, !activeCall else { return }
+        cleanUp()
     }
     
     func togglePip(pipEnabled: Bool) {
@@ -103,6 +126,8 @@ class VideoCallManager : NSObject {
         }
         
         if linkUrl.isLiveKitCallLink, let room = linkUrl.liveKitRoomName {
+            guard !isStartingCall else { return }
+            isStartingCall = true
             API.sharedInstance.getLiveKitToken(
                 room: room,
                 alias: owner.nickname ?? "",
@@ -115,25 +140,30 @@ class VideoCallManager : NSObject {
                     liveKitVC.token = token
                     liveKitVC.audioOnly = audioOnly ?? false
                     
-                    if let window = self.getKeyWindow() {
-                        let rootViewController = window.rootViewController
-                        rootViewController?.addChild(liveKitVC)
-                        rootViewController?.view.addSubview(liveKitVC.view)
-
-                        self.liveKitVC = liveKitVC
-                        self.pipViewCoordinator = CustomPipViewCoordinator(withView: liveKitVC.view, isLiveKit: true)
-                        self.pipViewCoordinator?.delegate = self
-                        self.pipViewCoordinator?.configureAsStickyView(withParentView: window)
-                        self.pipViewCoordinator?.initialPositionInSuperview = .upperRightCorner
-                        
-                        liveKitVC.didMove(toParent: rootViewController)
-                        
-                        self.pipViewCoordinator?.show()
-                        
-                        self.activeCall = true
+                    guard let window = self.getKeyWindow() else {
+                        self.isStartingCall = false
+                        return
                     }
+                    
+                    let rootViewController = window.rootViewController
+                    rootViewController?.addChild(liveKitVC)
+                    rootViewController?.view.addSubview(liveKitVC.view)
+
+                    self.liveKitVC = liveKitVC
+                    self.pipViewCoordinator = CustomPipViewCoordinator(withView: liveKitVC.view, isLiveKit: true)
+                    self.pipViewCoordinator?.delegate = self
+                    self.pipViewCoordinator?.configureAsStickyView(withParentView: window)
+                    self.pipViewCoordinator?.initialPositionInSuperview = .upperRightCorner
+                    
+                    liveKitVC.didMove(toParent: rootViewController)
+                    
+                    self.pipViewCoordinator?.show()
+                    
+                    self.activeCall = true
+                    self.isStartingCall = false
                 },
                 errorCallback: { error in
+                    self.isStartingCall = false
                     AlertHelper.showAlert(title: "error.getting.token.title".localized, message: error)
                 }
             )
@@ -217,6 +247,7 @@ class VideoCallManager : NSObject {
     fileprivate func cleanUp() {
         onPiP = false
         activeCall = false
+        isStartingCall = false
 
         videoCallPayButton?.removeFromSuperview()
         videoCallPayButton = nil
@@ -225,7 +256,7 @@ class VideoCallManager : NSObject {
         jitsiMeetView = nil
 
         pipViewCoordinator = nil
-        liveKitVC = nil
+        teardownLiveKitVC()
     }
 
     func paymentSent() {

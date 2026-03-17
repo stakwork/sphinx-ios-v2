@@ -215,6 +215,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         isActive = true
         notificationUserInfo = nil
 
+        // Remove any LiveKit PiP view that became orphaned while the app was in the background
+        // (e.g. call ended via network error while suspended, teardown animation never completed).
+        VideoCallManager.sharedInstance.cleanUpIfStale()
+
         if !UserData.sharedInstance.isUserLogged() {
             return
         }

@@ -276,6 +276,7 @@ extension RoomContext: RoomDelegate {
                         self.textFieldString = ""
                         self.messages.removeAll()
                     }
+                    onCallEnded?()
                 }
             } else {
                 onCallEnded?()
