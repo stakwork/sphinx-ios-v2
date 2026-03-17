@@ -145,9 +145,9 @@ class WorkspaceGraphChatViewController: UIViewController {
         sendButton.translatesAutoresizingMaskIntoConstraints = false
         sendButton.setTitle("➤", for: .normal)
         sendButton.setTitleColor(.white, for: .normal)
-        sendButton.titleLabel?.font = UIFont.systemFont(ofSize: 18, weight: .medium)
+        sendButton.titleLabel?.font = UIFont.systemFont(ofSize: 28, weight: .medium)
         sendButton.backgroundColor = UIColor.Sphinx.PrimaryBlue
-        sendButton.layer.cornerRadius = 20
+        sendButton.layer.cornerRadius = 28
         sendButton.addTarget(self, action: #selector(sendButtonTouched), for: .touchUpInside)
         chatInputContainer.addSubview(sendButton)
 
@@ -190,8 +190,8 @@ class WorkspaceGraphChatViewController: UIViewController {
             // Send button
             sendButton.centerYAnchor.constraint(equalTo: chatInputContainer.centerYAnchor),
             sendButton.trailingAnchor.constraint(equalTo: chatInputContainer.trailingAnchor, constant: -16),
-            sendButton.widthAnchor.constraint(equalToConstant: 80),
-            sendButton.heightAnchor.constraint(equalToConstant: 40),
+            sendButton.heightAnchor.constraint(equalTo: chatInputTextView.heightAnchor),
+            sendButton.widthAnchor.constraint(equalTo: sendButton.heightAnchor),
         ])
     }
 
