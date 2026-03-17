@@ -2732,27 +2732,59 @@ extension API {
             errorCallback()
             return
         }
-        let urlString = "\(API.kHiveBaseUrl)/github/repository/branches?repoUrl=\(encodedRepoUrl)&workspaceSlug=\(encodedSlug)"
+        fetchBranchesPage(
+            encodedRepoUrl: encodedRepoUrl,
+            encodedSlug: encodedSlug,
+            authToken: authToken,
+            page: 1,
+            accumulated: [],
+            callback: callback,
+            errorCallback: errorCallback
+        )
+    }
+
+    private func fetchBranchesPage(
+        encodedRepoUrl: String,
+        encodedSlug: String,
+        authToken: String,
+        page: Int,
+        perPage: Int = 100,
+        accumulated: [WorkspaceBranch],
+        callback: @escaping HiveBranchesCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        let urlString = "\(API.kHiveBaseUrl)/github/repository/branches?repoUrl=\(encodedRepoUrl)&workspaceSlug=\(encodedSlug)&page=\(page)&per_page=\(perPage)"
         guard let request = createRequest(urlString, bodyParams: nil, method: "GET", token: authToken) else {
-            errorCallback()
-            return
+            errorCallback(); return
         }
         session()?.request(request).responseData { response in
             if let statusCode = response.response?.statusCode, statusCode == 401 {
                 print("[HiveAPI] Fetch branches unauthorized (401) - token may be expired")
-                errorCallback()
-                return
+                errorCallback(); return
             }
             switch response.result {
             case .success(let data):
                 let json = JSON(data)
                 if let error = json["error"].string {
                     print("[HiveAPI] Fetch branches error: \(error)")
-                    errorCallback()
-                    return
+                    errorCallback(); return
                 }
-                let branches: [WorkspaceBranch] = json["branches"].arrayValue.map { WorkspaceBranch(json: $0) }
-                callback(branches)
+                let pageBranches = json["branches"].arrayValue.map { WorkspaceBranch(json: $0) }
+                let all = accumulated + pageBranches
+                if pageBranches.count < perPage {
+                    callback(all)
+                } else {
+                    self.fetchBranchesPage(
+                        encodedRepoUrl: encodedRepoUrl,
+                        encodedSlug: encodedSlug,
+                        authToken: authToken,
+                        page: page + 1,
+                        perPage: perPage,
+                        accumulated: all,
+                        callback: callback,
+                        errorCallback: errorCallback
+                    )
+                }
             case .failure(let error):
                 print("[HiveAPI] Fetch branches failed: \(error.localizedDescription)")
                 errorCallback()

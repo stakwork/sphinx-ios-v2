@@ -309,8 +309,6 @@ class CreateFeatureViewController: UIViewController {
                 guard let self else { return }
                 self.selectedRepository = repo
                 self.repositoryComboButton.setTitle(repo.name, for: .normal)
-                self.branchComboButton.isEnabled = true
-                self.branchComboButton.alpha = 1.0
                 self.fetchBranches(for: repo)
                 self.updateSendButtonState()
             })
@@ -345,21 +343,22 @@ class CreateFeatureViewController: UIViewController {
     }
 
     private func fetchBranches(for repo: WorkspaceRepository) {
+        branchComboButton.isEnabled = false
+        branchComboButton.alpha = 0.5
+        branchComboButton.setTitle("Loading branches…", for: .normal)
+
         API.sharedInstance.fetchBranchesWithAuth(
             repoUrl: repo.repositoryUrl,
             workspaceSlug: workspaceSlug,
             callback: { [weak self] fetchedBranches in
                 DispatchQueue.main.async {
                     guard let self else { return }
-                    // Ensure "master" is always available — add it if the API didn't return it
-                    var allBranches = fetchedBranches
-                    if !allBranches.contains(where: { $0.name == "master" }) {
-                        allBranches.insert(WorkspaceBranch(json: ["name": "master"]), at: 0)
-                    }
-                    self.branches = allBranches
+                    self.branchComboButton.isEnabled = true
+                    self.branchComboButton.alpha = 1.0
+                    self.branches = fetchedBranches
                     // Pre-select master/main, otherwise first branch
-                    let preferred = allBranches.first(where: { $0.name == "master" || $0.name == "main" })
-                        ?? allBranches.first
+                    let preferred = fetchedBranches.first(where: { $0.name == "master" || $0.name == "main" })
+                        ?? fetchedBranches.first
                     self.selectedBranch = preferred
                     self.branchComboButton.setTitle(preferred?.name ?? "Select Branch", for: .normal)
                     self.updateSendButtonState()
@@ -369,6 +368,8 @@ class CreateFeatureViewController: UIViewController {
                 // API failed — fall back to just "master"
                 DispatchQueue.main.async {
                     guard let self else { return }
+                    self.branchComboButton.isEnabled = true
+                    self.branchComboButton.alpha = 1.0
                     let master = WorkspaceBranch(json: ["name": "master"])
                     self.branches = [master]
                     self.selectedBranch = master
