@@ -9,6 +9,7 @@
 import UIKit
 import AVKit
 import AVFoundation
+import PhotosUI
 
 class TaskChatViewController: UIViewController {
 
@@ -39,6 +40,15 @@ class TaskChatViewController: UIViewController {
     private var workflowStatusView: WorkflowStatusView!
     private var workflowStatusHeightConstraint: NSLayoutConstraint!
     private var bottomFillView: UIView!
+
+    // MARK: - Attachments
+    private var attachButton: UIButton!
+    private var pendingAttachmentsBar: PendingAttachmentsBarView!
+    private var pendingAttachmentsBarHeightConstraint: NSLayoutConstraint!
+    private var pendingAttachments: [PendingAttachment] = []
+
+    // MARK: - Agent state
+    private var isAgentWorking: Bool = false
 
     // Autocomplete
     private var availableWorkspaces: [Workspace] = []
@@ -235,6 +245,14 @@ class TaskChatViewController: UIViewController {
         chatInputContainer.backgroundColor = UIColor.Sphinx.HeaderBG
         view.addSubview(chatInputContainer)
 
+        // Attach button
+        attachButton = UIButton(type: .system)
+        attachButton.translatesAutoresizingMaskIntoConstraints = false
+        let paperclipConfig = UIImage.SymbolConfiguration(pointSize: 16, weight: .regular)
+        attachButton.setImage(UIImage(systemName: "paperclip", withConfiguration: paperclipConfig), for: .normal)
+        attachButton.tintColor = UIColor.Sphinx.WashedOutReceivedText
+        attachButton.addTarget(self, action: #selector(attachTapped), for: .touchUpInside)
+
         // Text view
         chatInputTextView = UITextView()
         chatInputTextView.translatesAutoresizingMaskIntoConstraints = false
@@ -245,7 +263,6 @@ class TaskChatViewController: UIViewController {
         chatInputTextView.layer.borderWidth = 1
         chatInputTextView.layer.borderColor = UIColor.Sphinx.LightDivider.cgColor
         chatInputTextView.textContainerInset = UIEdgeInsets(top: 10, left: 12, bottom: 10, right: 12)
-        chatInputContainer.addSubview(chatInputTextView)
 
         // Send button
         sendButton = UIButton()
@@ -256,7 +273,32 @@ class TaskChatViewController: UIViewController {
         sendButton.backgroundColor = UIColor.Sphinx.PrimaryBlue
         sendButton.layer.cornerRadius = 20
         sendButton.addTarget(self, action: #selector(sendTapped), for: .touchUpInside)
+
+        // Layout: text view fills available width; attach + send buttons pinned to right edge.
+        // [chatInputTextView --- flex ---][attachButton 32][sendButton 80]
+        chatInputContainer.addSubview(chatInputTextView)
+        chatInputContainer.addSubview(attachButton)
         chatInputContainer.addSubview(sendButton)
+
+        NSLayoutConstraint.activate([
+            // Send button — right edge
+            sendButton.trailingAnchor.constraint(equalTo: chatInputContainer.trailingAnchor, constant: -16),
+            sendButton.centerYAnchor.constraint(equalTo: chatInputContainer.centerYAnchor),
+            sendButton.widthAnchor.constraint(equalToConstant: 80),
+            sendButton.heightAnchor.constraint(equalToConstant: 40),
+
+            // Attach button — immediately left of send button
+            attachButton.trailingAnchor.constraint(equalTo: sendButton.leadingAnchor, constant: -8),
+            attachButton.centerYAnchor.constraint(equalTo: chatInputContainer.centerYAnchor),
+            attachButton.widthAnchor.constraint(equalToConstant: 32),
+            attachButton.heightAnchor.constraint(equalToConstant: 32),
+
+            // Text view — fills from left edge to attach button
+            chatInputTextView.topAnchor.constraint(equalTo: chatInputContainer.topAnchor, constant: 12),
+            chatInputTextView.bottomAnchor.constraint(equalTo: chatInputContainer.bottomAnchor, constant: -12),
+            chatInputTextView.leadingAnchor.constraint(equalTo: chatInputContainer.leadingAnchor, constant: 16),
+            chatInputTextView.trailingAnchor.constraint(equalTo: attachButton.leadingAnchor, constant: -8)
+        ])
 
         // Workflow Status View
         workflowStatusView = WorkflowStatusView()
@@ -307,9 +349,22 @@ class TaskChatViewController: UIViewController {
 
         chatInputTextView.delegate = self
 
+        // Pending attachments bar — inserted between workflowStatusView and chatInputContainer
+        pendingAttachmentsBar = PendingAttachmentsBarView()
+        pendingAttachmentsBar.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(pendingAttachmentsBar)
+
+        pendingAttachmentsBar.onRemove = { [weak self] id in
+            guard let self = self else { return }
+            self.pendingAttachments.removeAll { $0.id == id }
+            self.refreshAttachmentsBar()
+            self.updateSendButtonState()
+        }
+
         chatInputBottomConstraint = chatInputContainer.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
         workflowStatusHeightConstraint = workflowStatusView.heightAnchor.constraint(equalToConstant: 0)
         autocompleteHeightConstraint = autocompleteContainer.heightAnchor.constraint(equalToConstant: 0)
+        pendingAttachmentsBarHeightConstraint = pendingAttachmentsBar.heightAnchor.constraint(equalToConstant: 0)
 
         NSLayoutConstraint.activate([
             loadingWheel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
@@ -325,8 +380,13 @@ class TaskChatViewController: UIViewController {
 
             workflowStatusView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             workflowStatusView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            workflowStatusView.bottomAnchor.constraint(equalTo: chatInputContainer.topAnchor),
+            workflowStatusView.bottomAnchor.constraint(equalTo: pendingAttachmentsBar.topAnchor),
             workflowStatusHeightConstraint,
+
+            pendingAttachmentsBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            pendingAttachmentsBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            pendingAttachmentsBar.bottomAnchor.constraint(equalTo: chatInputContainer.topAnchor),
+            pendingAttachmentsBarHeightConstraint,
 
             chatInputContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             chatInputContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
@@ -337,16 +397,6 @@ class TaskChatViewController: UIViewController {
             bottomFillView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             bottomFillView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             bottomFillView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-
-            chatInputTextView.topAnchor.constraint(equalTo: chatInputContainer.topAnchor, constant: 12),
-            chatInputTextView.leadingAnchor.constraint(equalTo: chatInputContainer.leadingAnchor, constant: 16),
-            chatInputTextView.bottomAnchor.constraint(equalTo: chatInputContainer.bottomAnchor, constant: -12),
-            chatInputTextView.trailingAnchor.constraint(equalTo: sendButton.leadingAnchor, constant: -12),
-
-            sendButton.centerYAnchor.constraint(equalTo: chatInputContainer.centerYAnchor),
-            sendButton.trailingAnchor.constraint(equalTo: chatInputContainer.trailingAnchor, constant: -16),
-            sendButton.widthAnchor.constraint(equalToConstant: 80),
-            sendButton.heightAnchor.constraint(equalToConstant: 40),
 
             autocompleteContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             autocompleteContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
@@ -390,6 +440,30 @@ class TaskChatViewController: UIViewController {
     }
 
     // MARK: - Actions
+
+    @objc private func attachTapped() {
+        var config = PHPickerConfiguration(photoLibrary: .shared())
+        config.filter = .images
+        config.selectionLimit = 0 // unlimited
+        let picker = PHPickerViewController(configuration: config)
+        picker.delegate = self
+        present(picker, animated: true)
+    }
+
+    private func refreshAttachmentsBar() {
+        pendingAttachmentsBar.configure(with: pendingAttachments)
+        pendingAttachmentsBarHeightConstraint.constant = pendingAttachments.isEmpty ? 0 : 88
+        view.layoutIfNeeded()
+        scrollToBottom(animated: false)
+    }
+
+    private func updateSendButtonState() {
+        let uploading = pendingAttachments.contains { $0.state == .uploading || $0.state == .failed }
+        let blocked = isAgentWorking || uploading
+        sendButton.isEnabled = !blocked
+        sendButton.alpha = blocked ? 0.5 : 1.0
+    }
+
     @objc private func releasePodTapped() {
         AlertHelper.showTwoOptionsAlert(
             title: "Release Pod",
@@ -454,13 +528,29 @@ class TaskChatViewController: UIViewController {
         ]
         chatInputTextView.resignFirstResponder()
 
+        let attachmentsPayload: [[String: AnyObject]] = pendingAttachments
+            .filter { $0.state == .done }
+            .compactMap { pending in
+                guard let s3Path = pending.s3Path else { return nil }
+                return [
+                    "path": s3Path as AnyObject,
+                    "filename": pending.filename as AnyObject,
+                    "mimeType": pending.mimeType as AnyObject,
+                    "size": pending.size as AnyObject
+                ]
+            }
+
         API.sharedInstance.sendTaskChatMessageWithAuth(
             taskId: task.id,
             message: message,
             socketId: HivePusherManager.shared.socketId,
+            attachments: attachmentsPayload,
             callback: { [weak self] sentMessage in
                 DispatchQueue.main.async {
                     guard let self = self, let sentMessage = sentMessage else { return }
+                    self.pendingAttachments = []
+                    self.refreshAttachmentsBar()
+                    self.updateSendButtonState()
                     self.newMessageReceived(sentMessage)
                 }
             },
@@ -621,6 +711,7 @@ class TaskChatViewController: UIViewController {
             } else {
                 self.view.layoutIfNeeded()
             }
+            setInputEnabled(false)
         case .PENDING, .COMPLETED, .ERROR, .FAILED:
             workflowStatusHeightConstraint.constant = 0
             workflowStatusView.hide(animated: animated)
@@ -630,7 +721,18 @@ class TaskChatViewController: UIViewController {
                 self.view.layoutIfNeeded()
             }
             hideProcessingBubble()
+            setInputEnabled(true)
         }
+    }
+
+    /// Enables or disables the input bar (send + attach + text field) when the agent is working.
+    private func setInputEnabled(_ enabled: Bool) {
+        isAgentWorking = !enabled
+        chatInputTextView.isEditable = enabled
+        attachButton.isEnabled = enabled
+        attachButton.alpha = enabled ? 1.0 : 0.5
+        // Let updateSendButtonState handle send button — it checks both workflow + upload state
+        updateSendButtonState()
     }
 
     private func applyInitialWorkflowStatus() {
@@ -932,5 +1034,92 @@ extension TaskChatViewController: UITextViewDelegate {
         autocompleteContainer.isHidden = true
         autocompleteHeightConstraint.constant = 0
         atTriggerNSRange = nil
+    }
+}
+
+// MARK: - PHPickerViewControllerDelegate
+extension TaskChatViewController: PHPickerViewControllerDelegate {
+    func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+        dismiss(animated: true)
+        guard !results.isEmpty else { return }
+
+        let allowedMimes: Set<String> = ["image/jpeg", "image/png", "image/gif", "image/webp"]
+        let maxBytes = 10 * 1024 * 1024 // 10 MB
+
+        for result in results {
+            result.itemProvider.loadObject(ofClass: UIImage.self) { [weak self] object, error in
+                guard let self = self, let image = object as? UIImage else { return }
+
+                let mimeType = "image/jpeg"
+                guard let data = image.jpegData(compressionQuality: 0.85) else { return }
+                let filename = "image_\(UUID().uuidString).jpg"
+                let size = data.count
+
+                guard allowedMimes.contains(mimeType), size <= maxBytes else {
+                    DispatchQueue.main.async {
+                        AlertHelper.showAlert(
+                            title: "Invalid file",
+                            message: size > maxBytes ? "File exceeds 10 MB limit." : "Unsupported file type.",
+                            on: self
+                        )
+                    }
+                    return
+                }
+
+                let pending = PendingAttachment(
+                    id: UUID(),
+                    image: image,
+                    filename: filename,
+                    mimeType: mimeType,
+                    size: size,
+                    state: .uploading,
+                    s3Path: nil
+                )
+                DispatchQueue.main.async {
+                    self.pendingAttachments.append(pending)
+                    self.refreshAttachmentsBar()
+                    self.updateSendButtonState()
+                }
+
+                API.sharedInstance.requestUploadPresignedUrlWithAuth(
+                    taskId: self.task.id,
+                    filename: filename,
+                    contentType: mimeType,
+                    size: size,
+                    callback: { [weak self] presignedUrl, s3Path in
+                        guard let self = self,
+                              let presignedUrl = presignedUrl,
+                              let s3Path = s3Path else {
+                            self?.markPending(id: pending.id, state: .failed)
+                            return
+                        }
+                        API.sharedInstance.uploadFileToS3(
+                            presignedUrl: presignedUrl,
+                            data: data,
+                            contentType: mimeType,
+                            callback: { [weak self] in
+                                self?.markPending(id: pending.id, state: .done, s3Path: s3Path)
+                            },
+                            errorCallback: { [weak self] in
+                                self?.markPending(id: pending.id, state: .failed)
+                            }
+                        )
+                    },
+                    errorCallback: { [weak self] in
+                        self?.markPending(id: pending.id, state: .failed)
+                    }
+                )
+            }
+        }
+    }
+
+    private func markPending(id: UUID, state: PendingAttachmentState, s3Path: String? = nil) {
+        DispatchQueue.main.async {
+            guard let idx = self.pendingAttachments.firstIndex(where: { $0.id == id }) else { return }
+            self.pendingAttachments[idx].state = state
+            if let s3Path = s3Path { self.pendingAttachments[idx].s3Path = s3Path }
+            self.refreshAttachmentsBar()
+            self.updateSendButtonState()
+        }
     }
 }
