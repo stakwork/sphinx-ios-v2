@@ -450,7 +450,7 @@ class TaskChatViewController: UIViewController {
     private func refreshAttachmentsBar() {
         pendingAttachmentsBar.configure(with: pendingAttachments)
         pendingAttachmentsBarHeightConstraint.constant = pendingAttachments.isEmpty ? 0 : 88
-        UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
+        view.layoutIfNeeded()
     }
 
     private func updateSendButtonState() {
