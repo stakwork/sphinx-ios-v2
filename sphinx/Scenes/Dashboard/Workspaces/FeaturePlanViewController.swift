@@ -50,6 +50,7 @@ class FeaturePlanViewController: UIViewController {
     }()
     
     // Chat Panel Components
+    private var chatLoadingWheel: UIActivityIndicatorView!
     private var chatTableView: UITableView!
     private let bubbleHelper = NewMessageBubbleHelper()
     private var chatInputContainer: UIView!
@@ -253,6 +254,13 @@ class FeaturePlanViewController: UIViewController {
         chatTableView.estimatedRowHeight = 200
         chatTableView.contentInset = UIEdgeInsets(top: 16, left: 0, bottom: 16, right: 0)
         chatContainerView.addSubview(chatTableView)
+
+        // Loading wheel (while fetching chat history)
+        chatLoadingWheel = UIActivityIndicatorView(style: .medium)
+        chatLoadingWheel.translatesAutoresizingMaskIntoConstraints = false
+        chatLoadingWheel.hidesWhenStopped = true
+        chatLoadingWheel.color = UIColor.Sphinx.Text
+        chatContainerView.addSubview(chatLoadingWheel)
         
         // Bottom Fill View — covers the gap between chatInputContainer and the physical screen bottom
         bottomFillView = UIView()
@@ -352,6 +360,9 @@ class FeaturePlanViewController: UIViewController {
             chatTableView.leadingAnchor.constraint(equalTo: chatContainerView.leadingAnchor),
             chatTableView.trailingAnchor.constraint(equalTo: chatContainerView.trailingAnchor),
             chatTableView.bottomAnchor.constraint(equalTo: workflowStatusView.topAnchor),
+
+            chatLoadingWheel.centerXAnchor.constraint(equalTo: chatContainerView.centerXAnchor),
+            chatLoadingWheel.centerYAnchor.constraint(equalTo: chatContainerView.centerYAnchor),
 
             workflowStatusView.leadingAnchor.constraint(equalTo: chatContainerView.leadingAnchor),
             workflowStatusView.trailingAnchor.constraint(equalTo: chatContainerView.trailingAnchor),
@@ -941,20 +952,29 @@ class FeaturePlanViewController: UIViewController {
     }
 
     private func fetchChatHistory() {
+        chatLoadingWheel.startAnimating()
+        chatTableView.isHidden = true
+
         API.sharedInstance.fetchFeatureChatWithAuth(
             featureId: feature.id,
             callback: { [weak self] messages in
                 DispatchQueue.main.async {
-                    self?.messages = messages.filter {
+                    guard let self = self else { return }
+                    self.chatLoadingWheel.stopAnimating()
+                    self.chatTableView.isHidden = false
+                    self.messages = messages.filter {
                         !$0.message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !$0.artifacts.isEmpty
                     }
-                    self?.chatTableView.reloadData()
-                    self?.scrollToBottom()
+                    self.chatTableView.reloadData()
+                    self.scrollToBottom()
                 }
             },
             errorCallback: { [weak self] in
                 DispatchQueue.main.async {
-                    self?.showChatHistoryError()
+                    guard let self = self else { return }
+                    self.chatLoadingWheel.stopAnimating()
+                    self.chatTableView.isHidden = false
+                    self.showChatHistoryError()
                 }
             }
         )
