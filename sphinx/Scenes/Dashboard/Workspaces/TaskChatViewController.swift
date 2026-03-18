@@ -647,6 +647,11 @@ class TaskChatViewController: UIViewController {
                 ]
             }
 
+        // Dismiss the attachments preview bar immediately on send tap
+        pendingAttachments = []
+        refreshAttachmentsBar()
+        updateSendButtonState()
+
         API.sharedInstance.sendTaskChatMessageWithAuth(
             taskId: task.id,
             message: message,
@@ -655,9 +660,6 @@ class TaskChatViewController: UIViewController {
             callback: { [weak self] sentMessage in
                 DispatchQueue.main.async {
                     guard let self = self, let sentMessage = sentMessage else { return }
-                    self.pendingAttachments = []
-                    self.refreshAttachmentsBar()
-                    self.updateSendButtonState()
                     self.newMessageReceived(sentMessage)
                 }
             },
