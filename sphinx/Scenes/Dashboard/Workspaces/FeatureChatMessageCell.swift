@@ -341,7 +341,7 @@ class FeatureChatMessageCell: UITableViewCell {
             // Keep bubble at same max width as text messages
             bubbleWidthConstraint.isActive = false
             bubbleWidthConstraint = bubbleView.widthAnchor.constraint(
-                lessThanOrEqualTo: contentView.widthAnchor, multiplier: 0.85
+                equalTo: contentView.widthAnchor, multiplier: 0.85
             )
             bubbleWidthConstraint.isActive = true
         } else {
