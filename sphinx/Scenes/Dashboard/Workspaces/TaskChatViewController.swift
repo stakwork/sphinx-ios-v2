@@ -493,7 +493,9 @@ class TaskChatViewController: UIViewController {
         let prefix = chatInputTextView.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         speechManager.startTranscribing(
             textHandler: { [weak self] text in
-                self?.chatInputTextView.text = prefix.isEmpty ? text : prefix + " " + text
+                guard let self else { return }
+                self.chatInputTextView.text = prefix.isEmpty ? text : prefix + " " + text
+                self.updateInputBarHeight()
             },
             errorHandler: { [weak self] _ in
                 self?.stopRecording()
@@ -770,6 +772,25 @@ class TaskChatViewController: UIViewController {
         return textViewHeight + 12 + 12
     }
 
+    private func updateInputBarHeight() {
+        let font = chatInputTextView.font ?? UIFont.systemFont(ofSize: 16)
+        let insets = chatInputTextView.textContainerInset.top + chatInputTextView.textContainerInset.bottom
+        let padding = chatInputTextView.textContainer.lineFragmentPadding * 2
+        let fittingSize = chatInputTextView.sizeThatFits(
+            CGSize(width: chatInputTextView.bounds.width, height: .greatestFiniteMagnitude))
+        let maxHeight = ceil(font.lineHeight * 4 + insets + padding)
+        let newTextViewHeight = min(fittingSize.height, maxHeight)
+
+        chatInputTextView.isScrollEnabled = fittingSize.height > maxHeight
+
+        if newTextViewHeight != chatInputTextViewHeightConstraint.constant {
+            chatInputTextViewHeightConstraint.constant = newTextViewHeight
+            chatInputContainerHeightConstraint.constant = containerHeight(for: newTextViewHeight)
+            view.layoutIfNeeded()
+            scrollToBottom(animated: false)
+        }
+    }
+
     private func scrollToBottom(animated: Bool = true) {
         let totalRows = messages.count + (processingStepText != nil ? 1 : 0)
         guard totalRows > 0 else { return }
@@ -1036,23 +1057,7 @@ extension TaskChatViewController: UITextViewDelegate {
             hideAutocomplete()
         }
 
-        // Dynamic height
-        let font = chatInputTextView.font ?? UIFont.systemFont(ofSize: 16)
-        let insets = chatInputTextView.textContainerInset.top + chatInputTextView.textContainerInset.bottom
-        let padding = chatInputTextView.textContainer.lineFragmentPadding * 2
-        let fittingSize = chatInputTextView.sizeThatFits(
-            CGSize(width: chatInputTextView.bounds.width, height: .greatestFiniteMagnitude))
-        let maxHeight = ceil(font.lineHeight * 4 + insets + padding)
-        let newTextViewHeight = min(fittingSize.height, maxHeight)
-
-        chatInputTextView.isScrollEnabled = fittingSize.height > maxHeight
-
-        if newTextViewHeight != chatInputTextViewHeightConstraint.constant {
-            chatInputTextViewHeightConstraint.constant = newTextViewHeight
-            chatInputContainerHeightConstraint.constant = containerHeight(for: newTextViewHeight)
-            view.layoutIfNeeded()
-            scrollToBottom(animated: false)
-        }
+        updateInputBarHeight()
     }
 
     private static let mentionRegex = try? NSRegularExpression(pattern: "@\\S+")
