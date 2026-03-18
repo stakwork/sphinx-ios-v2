@@ -789,6 +789,11 @@ class TaskChatViewController: UIViewController {
             view.layoutIfNeeded()
             scrollToBottom(animated: false)
         }
+
+        if chatInputTextView.isScrollEnabled {
+            let end = NSRange(location: chatInputTextView.text.utf16.count, length: 0)
+            chatInputTextView.scrollRangeToVisible(end)
+        }
     }
 
     private func scrollToBottom(animated: Bool = true) {

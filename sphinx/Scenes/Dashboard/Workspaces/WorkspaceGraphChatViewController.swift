@@ -467,6 +467,11 @@ class WorkspaceGraphChatViewController: UIViewController {
             view.layoutIfNeeded()
             scrollToBottom()
         }
+
+        if chatInputTextView.isScrollEnabled {
+            let end = NSRange(location: chatInputTextView.text.utf16.count, length: 0)
+            chatInputTextView.scrollRangeToVisible(end)
+        }
     }
 
     // MARK: - Scroll
