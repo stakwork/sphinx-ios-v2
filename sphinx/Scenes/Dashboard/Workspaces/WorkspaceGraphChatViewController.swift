@@ -51,6 +51,8 @@ class WorkspaceGraphChatViewController: UIViewController {
     private var micButton: UIButton!
     private let speechManager = SpeechTranscriptionManager()
     private var chatInputBottomConstraint: NSLayoutConstraint!
+    private var chatInputContainerHeightConstraint: NSLayoutConstraint!
+    private var chatInputTextViewHeightConstraint: NSLayoutConstraint!
     private var bottomFillView: UIView!
     private var emptyStateLabel: UILabel!
 
@@ -149,6 +151,7 @@ class WorkspaceGraphChatViewController: UIViewController {
         chatInputTextView.layer.borderWidth = 1
         chatInputTextView.layer.borderColor = UIColor.Sphinx.LightDivider.cgColor
         chatInputTextView.textContainerInset = UIEdgeInsets(top: 10, left: 12, bottom: 10, right: 12)
+        chatInputTextView.isScrollEnabled = false
         chatInputTextView.delegate = self
         chatInputContainer.addSubview(chatInputTextView)
 
@@ -159,7 +162,7 @@ class WorkspaceGraphChatViewController: UIViewController {
         sendButton.setTitleColor(.white, for: .normal)
         sendButton.titleLabel?.font = UIFont.systemFont(ofSize: 28, weight: .medium)
         sendButton.backgroundColor = UIColor.Sphinx.PrimaryBlue
-        sendButton.layer.cornerRadius = 28
+        sendButton.layer.cornerRadius = singleLineTextViewHeight() / 2
         sendButton.addTarget(self, action: #selector(sendButtonTouched), for: .touchUpInside)
         chatInputContainer.addSubview(sendButton)
 
@@ -196,7 +199,11 @@ class WorkspaceGraphChatViewController: UIViewController {
             chatInputContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             chatInputContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             chatInputBottomConstraint,
-            chatInputContainer.heightAnchor.constraint(equalToConstant: 80),
+            {
+                let oneLine = singleLineTextViewHeight()
+                chatInputContainerHeightConstraint = chatInputContainer.heightAnchor.constraint(equalToConstant: containerHeight(for: oneLine))
+                return chatInputContainerHeightConstraint
+            }(),
 
             // Bottom fill
             bottomFillView.topAnchor.constraint(equalTo: chatInputContainer.bottomAnchor),
@@ -207,8 +214,11 @@ class WorkspaceGraphChatViewController: UIViewController {
             // Text view
             chatInputTextView.topAnchor.constraint(equalTo: chatInputContainer.topAnchor, constant: 12),
             chatInputTextView.leadingAnchor.constraint(equalTo: chatInputContainer.leadingAnchor, constant: 16),
-            chatInputTextView.bottomAnchor.constraint(equalTo: chatInputContainer.bottomAnchor, constant: -12),
             chatInputTextView.trailingAnchor.constraint(equalTo: micButton.leadingAnchor, constant: -12),
+            {
+                chatInputTextViewHeightConstraint = chatInputTextView.heightAnchor.constraint(equalToConstant: singleLineTextViewHeight())
+                return chatInputTextViewHeightConstraint
+            }(),
 
             // Mic button
             micButton.centerYAnchor.constraint(equalTo: chatInputContainer.centerYAnchor),
@@ -219,7 +229,7 @@ class WorkspaceGraphChatViewController: UIViewController {
             // Send button
             sendButton.centerYAnchor.constraint(equalTo: chatInputContainer.centerYAnchor),
             sendButton.trailingAnchor.constraint(equalTo: chatInputContainer.trailingAnchor, constant: -16),
-            sendButton.heightAnchor.constraint(equalTo: chatInputTextView.heightAnchor),
+            sendButton.heightAnchor.constraint(equalToConstant: singleLineTextViewHeight()),
             sendButton.widthAnchor.constraint(equalTo: sendButton.heightAnchor),
         ])
     }
@@ -296,7 +306,9 @@ class WorkspaceGraphChatViewController: UIViewController {
         let prefix = chatInputTextView.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         speechManager.startTranscribing(
             textHandler: { [weak self] text in
-                self?.chatInputTextView.text = prefix.isEmpty ? text : prefix + " " + text
+                guard let self else { return }
+                self.chatInputTextView.text = prefix.isEmpty ? text : prefix + " " + text
+                self.updateInputBarHeight()
             },
             errorHandler: { [weak self] _ in
                 self?.stopRecording()
@@ -353,6 +365,11 @@ class WorkspaceGraphChatViewController: UIViewController {
             .foregroundColor: UIColor.Sphinx.Text,
             .font: UIFont(name: "Roboto-Regular", size: 16) ?? UIFont.systemFont(ofSize: 16)
         ]
+        let oneLine = singleLineTextViewHeight()
+        chatInputTextViewHeightConstraint.constant = oneLine
+        chatInputContainerHeightConstraint.constant = containerHeight(for: oneLine)
+        chatInputTextView.isScrollEnabled = false
+        view.layoutIfNeeded()
 
         // Append user message — stamp time now; pass owner avatar so the cell shows the real photo
         let ownerCreatedBy: HiveChatMessageCreatedBy? = ownerAvatarUrl.flatMap { url in
@@ -419,6 +436,42 @@ class WorkspaceGraphChatViewController: UIViewController {
         let indexPath = IndexPath(row: messages.count, section: 0)
         processingStepText = nil
         chatTableView.deleteRows(at: [indexPath], with: .automatic)
+    }
+
+    // MARK: - Input Bar Sizing Helpers
+
+    private func singleLineTextViewHeight() -> CGFloat {
+        let font = UIFont(name: "Roboto-Regular", size: 16) ?? UIFont.systemFont(ofSize: 16)
+        let insets: CGFloat = 10 + 10
+        return ceil(font.lineHeight + insets)
+    }
+
+    private func containerHeight(for textViewHeight: CGFloat) -> CGFloat {
+        return textViewHeight + 12 + 12
+    }
+
+    private func updateInputBarHeight() {
+        let font = chatInputTextView.font ?? UIFont.systemFont(ofSize: 16)
+        let insets = chatInputTextView.textContainerInset.top + chatInputTextView.textContainerInset.bottom
+        let padding = chatInputTextView.textContainer.lineFragmentPadding * 2
+        let fittingSize = chatInputTextView.sizeThatFits(
+            CGSize(width: chatInputTextView.bounds.width, height: .greatestFiniteMagnitude))
+        let maxHeight = ceil(font.lineHeight * 4 + insets + padding)
+        let newTextViewHeight = min(fittingSize.height, maxHeight)
+
+        chatInputTextView.isScrollEnabled = fittingSize.height > maxHeight
+
+        if newTextViewHeight != chatInputTextViewHeightConstraint.constant {
+            chatInputTextViewHeightConstraint.constant = newTextViewHeight
+            chatInputContainerHeightConstraint.constant = containerHeight(for: newTextViewHeight)
+            view.layoutIfNeeded()
+            scrollToBottom()
+        }
+
+        if chatInputTextView.isScrollEnabled {
+            let end = NSRange(location: chatInputTextView.text.utf16.count, length: 0)
+            chatInputTextView.scrollRangeToVisible(end)
+        }
     }
 
     // MARK: - Scroll
@@ -562,5 +615,10 @@ extension WorkspaceGraphChatViewController: UITextViewDelegate {
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
         // Allow return key to send on send button tap (not via keyboard return)
         return true
+    }
+
+    func textViewDidChange(_ textView: UITextView) {
+        guard textView == chatInputTextView else { return }
+        updateInputBarHeight()
     }
 }
