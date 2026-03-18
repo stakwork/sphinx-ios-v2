@@ -328,7 +328,7 @@ class TaskChatViewController: UIViewController {
             // Text view — fills from left edge to attach button
             chatInputTextView.topAnchor.constraint(equalTo: chatInputContainer.topAnchor, constant: 12),
             chatInputTextView.leadingAnchor.constraint(equalTo: chatInputContainer.leadingAnchor, constant: 16),
-            chatInputTextView.trailingAnchor.constraint(equalTo: attachButton.leadingAnchor, constant: -8),
+            chatInputTextView.trailingAnchor.constraint(equalTo: attachButton.leadingAnchor, constant: -4),
             {
                 chatInputTextViewHeightConstraint = chatInputTextView.heightAnchor.constraint(equalToConstant: singleLineTextViewHeight())
                 return chatInputTextViewHeightConstraint
