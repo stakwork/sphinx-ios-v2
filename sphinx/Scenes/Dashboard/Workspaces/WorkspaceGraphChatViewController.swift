@@ -48,6 +48,8 @@ class WorkspaceGraphChatViewController: UIViewController {
     private var chatInputContainer: UIView!
     private var chatInputTextView: UITextView!
     private var sendButton: UIButton!
+    private var micButton: UIButton!
+    private let speechManager = SpeechTranscriptionManager()
     private var chatInputBottomConstraint: NSLayoutConstraint!
     private var emptyStateLabel: UILabel!
 
@@ -74,6 +76,15 @@ class WorkspaceGraphChatViewController: UIViewController {
         setupUI()
         setupKeyboardObservers()
         updateEmptyState()
+        speechManager.requestPermission { [weak self] granted in
+            self?.micButton.isHidden = !granted
+            if !granted {
+                self?.newBubbleHelper.showGenericMessageView(
+                    text: "Speech recognition permission denied.",
+                    delay: 3, textColor: .white,
+                    backColor: UIColor.Sphinx.PrimaryRed, backAlpha: 1.0)
+            }
+        }
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -151,6 +162,17 @@ class WorkspaceGraphChatViewController: UIViewController {
         sendButton.addTarget(self, action: #selector(sendButtonTouched), for: .touchUpInside)
         chatInputContainer.addSubview(sendButton)
 
+        // Mic button
+        let micConfig = UIImage.SymbolConfiguration(pointSize: 16, weight: .medium)
+        micButton = UIButton(type: .system)
+        micButton.translatesAutoresizingMaskIntoConstraints = false
+        micButton.setImage(UIImage(systemName: "mic.fill", withConfiguration: micConfig), for: .normal)
+        micButton.tintColor = UIColor.Sphinx.WashedOutReceivedText
+        let lp = UILongPressGestureRecognizer(target: self, action: #selector(micLongPressed(_:)))
+        lp.minimumPressDuration = 0.1
+        micButton.addGestureRecognizer(lp)
+        chatInputContainer.addSubview(micButton)
+
         // Constraints
         chatInputBottomConstraint = chatInputContainer.bottomAnchor.constraint(
             equalTo: view.safeAreaLayoutGuide.bottomAnchor
@@ -185,7 +207,13 @@ class WorkspaceGraphChatViewController: UIViewController {
             chatInputTextView.topAnchor.constraint(equalTo: chatInputContainer.topAnchor, constant: 12),
             chatInputTextView.leadingAnchor.constraint(equalTo: chatInputContainer.leadingAnchor, constant: 16),
             chatInputTextView.bottomAnchor.constraint(equalTo: chatInputContainer.bottomAnchor, constant: -12),
-            chatInputTextView.trailingAnchor.constraint(equalTo: sendButton.leadingAnchor, constant: -12),
+            chatInputTextView.trailingAnchor.constraint(equalTo: micButton.leadingAnchor, constant: -12),
+
+            // Mic button
+            micButton.centerYAnchor.constraint(equalTo: chatInputContainer.centerYAnchor),
+            micButton.widthAnchor.constraint(equalToConstant: 32),
+            micButton.heightAnchor.constraint(equalToConstant: 32),
+            micButton.trailingAnchor.constraint(equalTo: sendButton.leadingAnchor, constant: -8),
 
             // Send button
             sendButton.centerYAnchor.constraint(equalTo: chatInputContainer.centerYAnchor),
@@ -248,6 +276,37 @@ class WorkspaceGraphChatViewController: UIViewController {
         sendButton.isEnabled = !isStreaming
         sendButton.alpha = isStreaming ? 0.5 : 1.0
         chatInputTextView.isEditable = !isStreaming
+        micButton.isEnabled = !isStreaming
+        micButton.alpha = isStreaming ? 0.5 : 1.0
+    }
+
+    // MARK: - Mic Recording
+
+    @objc private func micLongPressed(_ gesture: UILongPressGestureRecognizer) {
+        switch gesture.state {
+        case .began: startRecording()
+        case .ended, .cancelled: stopRecording()
+        default: break
+        }
+    }
+
+    private func startRecording() {
+        micButton.tintColor = UIColor.Sphinx.PrimaryBlue
+        speechManager.startTranscribing(
+            textHandler: { [weak self] text in self?.chatInputTextView.text = text },
+            errorHandler: { [weak self] _ in
+                self?.stopRecording()
+                self?.newBubbleHelper.showGenericMessageView(
+                    text: "Speech recognition unavailable.",
+                    delay: 3, textColor: .white,
+                    backColor: UIColor.Sphinx.PrimaryRed, backAlpha: 1.0)
+            }
+        )
+    }
+
+    private func stopRecording() {
+        speechManager.stopTranscribing()
+        micButton.tintColor = UIColor.Sphinx.WashedOutReceivedText
     }
 
     // MARK: - Send

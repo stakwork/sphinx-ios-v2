@@ -61,6 +61,8 @@
 	<string>Sphinx would like to use Face ID to authenticate</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Sphinx needs access to local devices in order to connect to your home node. Allow access and re-scan your connection code.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Sphinx uses speech recognition to transcribe your voice messages.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Sphinx would like to access microphone to record video and audio messages</string>
 	<key>NSPhotoLibraryUsageDescription</key>
