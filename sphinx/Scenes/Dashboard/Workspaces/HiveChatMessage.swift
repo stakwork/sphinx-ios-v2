@@ -141,12 +141,25 @@ struct HiveChatMessageAttachment {
     let path: String?
     let url: String?
     let mimeType: String?
+    /// When `true` the `url` is already a pre-signed S3 URL and should be used directly
+    /// without an additional presign round-trip.
+    let isPresigned: Bool
 
     init(json: JSON) {
         self.filename = json["filename"].string
         self.path = json["path"].string
         self.url = json["url"].string
         self.mimeType = json["mimeType"].string
+        self.isPresigned = false
+    }
+
+    /// Convenience init for pre-signed URLs (e.g. from the /attachments endpoint).
+    init(presignedUrl: String, mimeType: String?, filename: String? = nil) {
+        self.url = presignedUrl
+        self.mimeType = mimeType
+        self.filename = filename
+        self.path = nil
+        self.isPresigned = true
     }
 
     var resolvedUrl: String? { url ?? path }
