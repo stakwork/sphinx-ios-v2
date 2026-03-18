@@ -106,7 +106,12 @@ private class AttachmentTileView: UIView {
         if mime.hasPrefix("image/") {
             imageView.backgroundColor = UIColor.Sphinx.Body
             loadingSpinner.startAnimating()
-            if let s3Key = attachment.resolvedUrl {
+            if attachment.isPresigned, let urlStr = attachment.resolvedUrl, let url = URL(string: urlStr) {
+                // Pre-signed URL — use directly, no second presign needed
+                imageView.sd_setImage(with: url, placeholderImage: nil, options: .lowPriority) { [weak self] _, _, _, _ in
+                    DispatchQueue.main.async { self?.loadingSpinner.stopAnimating() }
+                }
+            } else if let s3Key = attachment.resolvedUrl {
                 API.sharedInstance.fetchPresignedUrlWithAuth(s3Key: s3Key) { [weak self] presignedUrlStr in
                     DispatchQueue.main.async {
                         guard let self = self,

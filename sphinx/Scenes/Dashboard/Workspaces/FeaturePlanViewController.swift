@@ -42,6 +42,15 @@ class FeaturePlanViewController: UIViewController {
     private var planContainerView: UIView!
     private var tasksContainerView: UIView!
     private var tasksTableView: UITableView!
+
+    // Verify Panel Components
+    private var verifyContainerView: UIView!
+    private var verifyScrollView: UIScrollView!
+    private var verifyStackView: UIStackView!
+    private var verifyEmptyTitleLabel: UILabel!
+    private var verifyEmptySubtitleLabel: UILabel!
+    private var verifyLoadingIndicator: UIActivityIndicatorView!
+    private var verifyAttachmentGroups: [(taskTitle: String, attachments: [HiveFeatureAttachment])] = []
     
     private lazy var tasksRefreshControl: UIRefreshControl = {
         let control = UIRefreshControl()
@@ -163,6 +172,7 @@ class FeaturePlanViewController: UIViewController {
         setupChatPanel()
         setupPlanPanel()
         setupTasksPanel()
+        setupVerifyPanel()
         
         // Initially show chat panel
         showPanel(at: 0)
@@ -227,14 +237,14 @@ class FeaturePlanViewController: UIViewController {
     }
     
     private func setupTopSegmentedControl() {
-        topSegmentedControl = CustomSegmentedControl(frame: .zero, buttonTitles: ["CHAT", "PLAN", "TASKS"])
+        topSegmentedControl = CustomSegmentedControl(frame: .zero, buttonTitles: ["CHAT", "PLAN", "TASKS", "VERIFY"])
         topSegmentedControl.translatesAutoresizingMaskIntoConstraints = false
         // Set colors BEFORE configure so configureSelectorView picks up the right color
         topSegmentedControl.buttonBackgroundColor = UIColor.Sphinx.HeaderBG
         topSegmentedControl.backgroundColor = UIColor.Sphinx.HeaderBG
         topSegmentedControl.selectorViewColor = UIColor.Sphinx.PrimaryGreen
         topSegmentedControl.configureFromOutlet(
-            buttonTitles: ["CHAT", "PLAN", "TASKS"],
+            buttonTitles: ["CHAT", "PLAN", "TASKS", "VERIFY"],
             initialIndex: 0,
             delegate: self
         )
@@ -790,6 +800,181 @@ class FeaturePlanViewController: UIViewController {
         ])
     }
 
+    // MARK: - Verify Panel Setup
+    private func setupVerifyPanel() {
+        verifyContainerView = UIView()
+        verifyContainerView.translatesAutoresizingMaskIntoConstraints = false
+        verifyContainerView.backgroundColor = UIColor.Sphinx.Body
+        verifyContainerView.isHidden = true
+        view.addSubview(verifyContainerView)
+
+        verifyScrollView = UIScrollView()
+        verifyScrollView.translatesAutoresizingMaskIntoConstraints = false
+        verifyScrollView.showsVerticalScrollIndicator = true
+        verifyContainerView.addSubview(verifyScrollView)
+
+        verifyStackView = UIStackView()
+        verifyStackView.translatesAutoresizingMaskIntoConstraints = false
+        verifyStackView.axis = .vertical
+        verifyStackView.spacing = 16
+        verifyStackView.alignment = .fill
+        verifyScrollView.addSubview(verifyStackView)
+
+        verifyLoadingIndicator = UIActivityIndicatorView(style: .medium)
+        verifyLoadingIndicator.translatesAutoresizingMaskIntoConstraints = false
+        verifyLoadingIndicator.hidesWhenStopped = true
+        verifyLoadingIndicator.color = UIColor.Sphinx.Text
+        verifyContainerView.addSubview(verifyLoadingIndicator)
+
+        // Empty state labels
+        verifyEmptyTitleLabel = UILabel()
+        verifyEmptyTitleLabel.translatesAutoresizingMaskIntoConstraints = false
+        verifyEmptyTitleLabel.text = "No screenshots yet"
+        verifyEmptyTitleLabel.font = UIFont(name: "Roboto-Medium", size: 17) ?? .systemFont(ofSize: 17, weight: .medium)
+        verifyEmptyTitleLabel.textColor = UIColor.Sphinx.Text
+        verifyEmptyTitleLabel.textAlignment = .center
+        verifyEmptyTitleLabel.isHidden = true
+
+        verifyEmptySubtitleLabel = UILabel()
+        verifyEmptySubtitleLabel.translatesAutoresizingMaskIntoConstraints = false
+        verifyEmptySubtitleLabel.text = "Screenshots will appear here once an agent has run a task"
+        verifyEmptySubtitleLabel.font = UIFont(name: "Roboto-Regular", size: 13) ?? .systemFont(ofSize: 13)
+        verifyEmptySubtitleLabel.textColor = UIColor.Sphinx.SecondaryText
+        verifyEmptySubtitleLabel.textAlignment = .center
+        verifyEmptySubtitleLabel.numberOfLines = 0
+        verifyEmptySubtitleLabel.isHidden = true
+
+        let emptyStack = UIStackView(arrangedSubviews: [verifyEmptyTitleLabel, verifyEmptySubtitleLabel])
+        emptyStack.translatesAutoresizingMaskIntoConstraints = false
+        emptyStack.axis = .vertical
+        emptyStack.spacing = 6
+        verifyContainerView.addSubview(emptyStack)
+
+        NSLayoutConstraint.activate([
+            verifyContainerView.topAnchor.constraint(equalTo: topSegmentedControl.bottomAnchor),
+            verifyContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            verifyContainerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            verifyContainerView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            verifyScrollView.topAnchor.constraint(equalTo: verifyContainerView.topAnchor),
+            verifyScrollView.leadingAnchor.constraint(equalTo: verifyContainerView.leadingAnchor),
+            verifyScrollView.trailingAnchor.constraint(equalTo: verifyContainerView.trailingAnchor),
+            verifyScrollView.bottomAnchor.constraint(equalTo: verifyContainerView.bottomAnchor),
+
+            verifyStackView.topAnchor.constraint(equalTo: verifyScrollView.contentLayoutGuide.topAnchor, constant: 16),
+            verifyStackView.leadingAnchor.constraint(equalTo: verifyScrollView.contentLayoutGuide.leadingAnchor),
+            verifyStackView.trailingAnchor.constraint(equalTo: verifyScrollView.contentLayoutGuide.trailingAnchor),
+            verifyStackView.bottomAnchor.constraint(equalTo: verifyScrollView.contentLayoutGuide.bottomAnchor, constant: -16),
+            verifyStackView.widthAnchor.constraint(equalTo: verifyScrollView.frameLayoutGuide.widthAnchor),
+
+            verifyLoadingIndicator.centerXAnchor.constraint(equalTo: verifyContainerView.centerXAnchor),
+            verifyLoadingIndicator.centerYAnchor.constraint(equalTo: verifyContainerView.centerYAnchor),
+
+            emptyStack.centerXAnchor.constraint(equalTo: verifyContainerView.centerXAnchor),
+            emptyStack.centerYAnchor.constraint(equalTo: verifyContainerView.centerYAnchor),
+            emptyStack.leadingAnchor.constraint(greaterThanOrEqualTo: verifyContainerView.leadingAnchor, constant: 32),
+            emptyStack.trailingAnchor.constraint(lessThanOrEqualTo: verifyContainerView.trailingAnchor, constant: -32)
+        ])
+    }
+
+    private func fetchVerifyAttachments() {
+        verifyLoadingIndicator.startAnimating()
+        verifyEmptyTitleLabel.isHidden = true
+        verifyEmptySubtitleLabel.isHidden = true
+
+        API.sharedInstance.fetchFeatureAttachmentsWithAuth(
+            featureId: feature.id,
+            callback: { [weak self] attachments in
+                DispatchQueue.main.async {
+                    guard let self = self else { return }
+                    // Group by taskId preserving insertion order
+                    var seen: [String: Int] = [:]
+                    var groups: [(taskTitle: String, attachments: [HiveFeatureAttachment])] = []
+                    for att in attachments {
+                        if let idx = seen[att.taskId] {
+                            groups[idx].attachments.append(att)
+                        } else {
+                            seen[att.taskId] = groups.count
+                            groups.append((taskTitle: att.taskTitle, attachments: [att]))
+                        }
+                    }
+                    self.verifyAttachmentGroups = groups
+                    self.renderVerifyPanel()
+                }
+            },
+            errorCallback: { [weak self] in
+                DispatchQueue.main.async {
+                    self?.verifyLoadingIndicator.stopAnimating()
+                }
+            }
+        )
+    }
+
+    private func renderVerifyPanel() {
+        // Reset any existing AttachmentGridViews to cancel in-flight loads
+        for subview in verifyStackView.arrangedSubviews {
+            if let grid = subview as? AttachmentGridView { grid.reset() }
+            subview.removeFromSuperview()
+        }
+        verifyLoadingIndicator.stopAnimating()
+
+        if verifyAttachmentGroups.isEmpty {
+            verifyEmptyTitleLabel.isHidden = false
+            verifyEmptySubtitleLabel.isHidden = false
+            verifyScrollView.isHidden = true
+        } else {
+            verifyEmptyTitleLabel.isHidden = true
+            verifyEmptySubtitleLabel.isHidden = true
+            verifyScrollView.isHidden = false
+
+            for group in verifyAttachmentGroups {
+                // Section header with left padding via container view
+                let headerContainer = UIView()
+                headerContainer.translatesAutoresizingMaskIntoConstraints = false
+
+                let headerLabel = UILabel()
+                headerLabel.translatesAutoresizingMaskIntoConstraints = false
+                headerLabel.text = group.taskTitle
+                headerLabel.font = UIFont(name: "Roboto-Medium", size: 14) ?? .systemFont(ofSize: 14, weight: .medium)
+                headerLabel.textColor = UIColor.Sphinx.SecondaryText
+                headerLabel.numberOfLines = 1
+                headerContainer.addSubview(headerLabel)
+                NSLayoutConstraint.activate([
+                    headerLabel.topAnchor.constraint(equalTo: headerContainer.topAnchor),
+                    headerLabel.bottomAnchor.constraint(equalTo: headerContainer.bottomAnchor),
+                    headerLabel.leadingAnchor.constraint(equalTo: headerContainer.leadingAnchor, constant: 16),
+                    headerLabel.trailingAnchor.constraint(equalTo: headerContainer.trailingAnchor, constant: -16)
+                ])
+                verifyStackView.addArrangedSubview(headerContainer)
+
+                let grid = AttachmentGridView()
+                grid.translatesAutoresizingMaskIntoConstraints = false
+                grid.configure(with: group.attachments.map { $0.toChatAttachment() })
+                grid.onTapAttachment = { [weak self] att in
+                    // Map back to the HiveFeatureAttachment using the url
+                    guard let featureAtt = group.attachments.first(where: { $0.url == att.url }) else { return }
+                    self?.handleVerifyAttachmentTap(featureAtt)
+                }
+                verifyStackView.addArrangedSubview(grid)
+            }
+        }
+    }
+
+    private func handleVerifyAttachmentTap(_ attachment: HiveFeatureAttachment) {
+        guard let url = URL(string: attachment.url) else { return }
+        let mime = attachment.mimeType ?? ""
+        if mime.hasPrefix("image/") {
+            if let vc = AttachmentFullScreenViewController.instantiate(imageUrl: url) {
+                present(vc, animated: true)
+            }
+        } else if mime.hasPrefix("video/") {
+            let player = AVPlayer(url: url)
+            let vc = AVPlayerViewController()
+            vc.player = player
+            present(vc, animated: true) { player.play() }
+        }
+    }
+
     private func updateTasksEmptyState() {
         tasksEmptyLabel.isHidden = !feature.allTasks.isEmpty
     }
@@ -859,17 +1044,28 @@ class FeaturePlanViewController: UIViewController {
         chatContainerView.isHidden  = (index != 0)
         planContainerView.isHidden  = (index != 1)
         tasksContainerView.isHidden = (index != 2)
+        verifyContainerView.isHidden = (index != 3)
         if index == 1 {
-            topSegmentedControl.indicesOfTitlesWithBadge = []
+            // Clear PLAN badge only
+            let existing = Set(topSegmentedControl.indicesOfTitlesWithBadge)
+            topSegmentedControl.indicesOfTitlesWithBadge = Array(existing.subtracting([1]))
             // Clear badge for whichever plan sub-tab is currently selected
             let active = planSegmentedControl.selectedIndex
             planSegmentedControl.indicesOfTitlesWithBadge = planSegmentedControl.indicesOfTitlesWithBadge.filter { $0 != active }
             updatePlanText()
         }
         if index == 2 {
-            topSegmentedControl.indicesOfTitlesWithBadge = []
+            // Clear TASKS badge only
+            let existing = Set(topSegmentedControl.indicesOfTitlesWithBadge)
+            topSegmentedControl.indicesOfTitlesWithBadge = Array(existing.subtracting([2]))
             updateTasksPanel()
             fetchPoolStatus()
+        }
+        if index == 3 {
+            // Clear VERIFY badge and fetch fresh attachments
+            let existing = Set(topSegmentedControl.indicesOfTitlesWithBadge)
+            topSegmentedControl.indicesOfTitlesWithBadge = Array(existing.subtracting([3]))
+            fetchVerifyAttachments()
         }
     }
 
@@ -1576,9 +1772,19 @@ extension FeaturePlanViewController: HivePusherDelegate {
     func featureUpdateReceived(featureId: String) {
         fetchFeatureDetail()
         updateTasksPanel()
-        
+
+        // Badge the PLAN tab (index 1) if not currently on it
         if planContainerView.isHidden {
-            topSegmentedControl.indicesOfTitlesWithBadge = [1]
+            let existing = Set(topSegmentedControl.indicesOfTitlesWithBadge)
+            topSegmentedControl.indicesOfTitlesWithBadge = Array(existing.union([1]))
+        }
+
+        // Badge or refresh the VERIFY tab (index 3)
+        if verifyContainerView.isHidden {
+            let existing = Set(topSegmentedControl.indicesOfTitlesWithBadge)
+            topSegmentedControl.indicesOfTitlesWithBadge = Array(existing.union([3]))
+        } else {
+            fetchVerifyAttachments() // already on VERIFY — silent refresh
         }
     }
     
