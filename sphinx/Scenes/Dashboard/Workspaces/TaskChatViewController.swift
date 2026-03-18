@@ -37,6 +37,8 @@ class TaskChatViewController: UIViewController {
     private var chatInputTextView: UITextView!
     private var sendButton: UIButton!
     private var chatInputBottomConstraint: NSLayoutConstraint!
+    private var chatInputContainerHeightConstraint: NSLayoutConstraint!
+    private var chatInputTextViewHeightConstraint: NSLayoutConstraint!
     private var workflowStatusView: WorkflowStatusView!
     private var workflowStatusHeightConstraint: NSLayoutConstraint!
     private var bottomFillView: UIView!
@@ -276,6 +278,7 @@ class TaskChatViewController: UIViewController {
         chatInputTextView.layer.borderWidth = 1
         chatInputTextView.layer.borderColor = UIColor.Sphinx.LightDivider.cgColor
         chatInputTextView.textContainerInset = UIEdgeInsets(top: 10, left: 12, bottom: 10, right: 12)
+        chatInputTextView.isScrollEnabled = false
 
         // Send button
         sendButton = UIButton()
@@ -284,7 +287,7 @@ class TaskChatViewController: UIViewController {
         sendButton.setTitleColor(.white, for: .normal)
         sendButton.titleLabel?.font = UIFont.systemFont(ofSize: 28, weight: .medium)
         sendButton.backgroundColor = UIColor.Sphinx.PrimaryBlue
-        sendButton.layer.cornerRadius = 28
+        sendButton.layer.cornerRadius = singleLineTextViewHeight() / 2
         sendButton.addTarget(self, action: #selector(sendTapped), for: .touchUpInside)
 
         // Mic button
@@ -307,7 +310,7 @@ class TaskChatViewController: UIViewController {
             // Send button — right edge
             sendButton.trailingAnchor.constraint(equalTo: chatInputContainer.trailingAnchor, constant: -16),
             sendButton.centerYAnchor.constraint(equalTo: chatInputContainer.centerYAnchor),
-            sendButton.heightAnchor.constraint(equalTo: chatInputTextView.heightAnchor),
+            sendButton.heightAnchor.constraint(equalToConstant: singleLineTextViewHeight()),
             sendButton.widthAnchor.constraint(equalTo: sendButton.heightAnchor),
 
             // Mic button — immediately left of send button
@@ -324,9 +327,12 @@ class TaskChatViewController: UIViewController {
 
             // Text view — fills from left edge to attach button
             chatInputTextView.topAnchor.constraint(equalTo: chatInputContainer.topAnchor, constant: 12),
-            chatInputTextView.bottomAnchor.constraint(equalTo: chatInputContainer.bottomAnchor, constant: -12),
             chatInputTextView.leadingAnchor.constraint(equalTo: chatInputContainer.leadingAnchor, constant: 16),
-            chatInputTextView.trailingAnchor.constraint(equalTo: attachButton.leadingAnchor, constant: -8)
+            chatInputTextView.trailingAnchor.constraint(equalTo: attachButton.leadingAnchor, constant: -8),
+            {
+                chatInputTextViewHeightConstraint = chatInputTextView.heightAnchor.constraint(equalToConstant: singleLineTextViewHeight())
+                return chatInputTextViewHeightConstraint
+            }()
         ])
 
         // Workflow Status View
@@ -420,7 +426,11 @@ class TaskChatViewController: UIViewController {
             chatInputContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             chatInputContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             chatInputBottomConstraint,
-            chatInputContainer.heightAnchor.constraint(equalToConstant: 80),
+            {
+                let oneLine = singleLineTextViewHeight()
+                chatInputContainerHeightConstraint = chatInputContainer.heightAnchor.constraint(equalToConstant: containerHeight(for: oneLine))
+                return chatInputContainerHeightConstraint
+            }(),
 
             bottomFillView.topAnchor.constraint(equalTo: chatInputContainer.bottomAnchor),
             bottomFillView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -616,6 +626,11 @@ class TaskChatViewController: UIViewController {
             .foregroundColor: UIColor.Sphinx.Text,
             .font: UIFont(name: "Roboto-Regular", size: 16) ?? UIFont.systemFont(ofSize: 16)
         ]
+        let oneLine = singleLineTextViewHeight()
+        chatInputTextViewHeightConstraint.constant = oneLine
+        chatInputContainerHeightConstraint.constant = containerHeight(for: oneLine)
+        chatInputTextView.isScrollEnabled = false
+        view.layoutIfNeeded()
         chatInputTextView.resignFirstResponder()
 
         let attachmentsPayload: [[String: AnyObject]] = pendingAttachments
@@ -741,6 +756,18 @@ class TaskChatViewController: UIViewController {
             let indexPath = IndexPath(row: messages.count, section: 0)
             chatTableView.reloadRows(at: [indexPath], with: .none)
         }
+    }
+
+    // MARK: - Input Bar Sizing Helpers
+
+    private func singleLineTextViewHeight() -> CGFloat {
+        let font = UIFont(name: "Roboto-Regular", size: 16) ?? UIFont.systemFont(ofSize: 16)
+        let insets: CGFloat = 10 + 10
+        return ceil(font.lineHeight + insets)
+    }
+
+    private func containerHeight(for textViewHeight: CGFloat) -> CGFloat {
+        return textViewHeight + 12 + 12
     }
 
     private func scrollToBottom(animated: Bool = true) {
@@ -1007,6 +1034,24 @@ extension TaskChatViewController: UITextViewDelegate {
             showAutocomplete()
         } else {
             hideAutocomplete()
+        }
+
+        // Dynamic height
+        let font = chatInputTextView.font ?? UIFont.systemFont(ofSize: 16)
+        let insets = chatInputTextView.textContainerInset.top + chatInputTextView.textContainerInset.bottom
+        let padding = chatInputTextView.textContainer.lineFragmentPadding * 2
+        let fittingSize = chatInputTextView.sizeThatFits(
+            CGSize(width: chatInputTextView.bounds.width, height: .greatestFiniteMagnitude))
+        let maxHeight = ceil(font.lineHeight * 4 + insets + padding)
+        let newTextViewHeight = min(fittingSize.height, maxHeight)
+
+        chatInputTextView.isScrollEnabled = fittingSize.height > maxHeight
+
+        if newTextViewHeight != chatInputTextViewHeightConstraint.constant {
+            chatInputTextViewHeightConstraint.constant = newTextViewHeight
+            chatInputContainerHeightConstraint.constant = containerHeight(for: newTextViewHeight)
+            view.layoutIfNeeded()
+            scrollToBottom(animated: false)
         }
     }
 
