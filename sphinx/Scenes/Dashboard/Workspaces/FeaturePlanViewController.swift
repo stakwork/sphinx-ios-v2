@@ -56,6 +56,8 @@ class FeaturePlanViewController: UIViewController {
     private var chatInputContainer: UIView!
     private var chatInputTextView: UITextView!
     private var sendButton: UIButton!
+    private var micButton: UIButton!
+    private let speechManager = SpeechTranscriptionManager()
     private var chatInputContainerBottomConstraint: NSLayoutConstraint!
     private var workflowStatusView: WorkflowStatusView!
     private var workflowStatusHeightConstraint: NSLayoutConstraint!
@@ -111,6 +113,15 @@ class FeaturePlanViewController: UIViewController {
         setupUI()
         applyInitialWorkflowStatus()
         setupKeyboardObservers()
+        speechManager.requestPermission { [weak self] granted in
+            self?.micButton.isHidden = !granted
+            if !granted {
+                self?.bubbleHelper.showGenericMessageView(
+                    text: "Speech recognition permission denied.",
+                    delay: 3, textColor: .white,
+                    backColor: UIColor.Sphinx.PrimaryRed, backAlpha: 1.0)
+            }
+        }
         cachedStakworkProjectId = feature.stakworkProjectId
         connectWebSocket()   // connect Pusher immediately with known featureId
         fetchFeatureDetail() // will also call connectAnyCable() once projectId is known
@@ -296,6 +307,17 @@ class FeaturePlanViewController: UIViewController {
         sendButton.layer.cornerRadius = 28
         sendButton.addTarget(self, action: #selector(sendButtonTouched), for: .touchUpInside)
         chatInputContainer.addSubview(sendButton)
+
+        // Mic Button
+        let micConfig = UIImage.SymbolConfiguration(pointSize: 16, weight: .medium)
+        micButton = UIButton(type: .system)
+        micButton.translatesAutoresizingMaskIntoConstraints = false
+        micButton.setImage(UIImage(systemName: "mic.fill", withConfiguration: micConfig), for: .normal)
+        micButton.tintColor = UIColor.Sphinx.WashedOutReceivedText
+        let lp = UILongPressGestureRecognizer(target: self, action: #selector(micLongPressed(_:)))
+        lp.minimumPressDuration = 0.1
+        micButton.addGestureRecognizer(lp)
+        chatInputContainer.addSubview(micButton)
         
         // Workflow Status View
         workflowStatusView = WorkflowStatusView()
@@ -382,8 +404,13 @@ class FeaturePlanViewController: UIViewController {
             chatInputTextView.topAnchor.constraint(equalTo: chatInputContainer.topAnchor, constant: 12),
             chatInputTextView.leadingAnchor.constraint(equalTo: chatInputContainer.leadingAnchor, constant: 16),
             chatInputTextView.bottomAnchor.constraint(equalTo: chatInputContainer.bottomAnchor, constant: -12),
-            chatInputTextView.trailingAnchor.constraint(equalTo: sendButton.leadingAnchor, constant: -12),
-            
+            chatInputTextView.trailingAnchor.constraint(equalTo: micButton.leadingAnchor, constant: -12),
+
+            micButton.centerYAnchor.constraint(equalTo: chatInputContainer.centerYAnchor),
+            micButton.widthAnchor.constraint(equalToConstant: 32),
+            micButton.heightAnchor.constraint(equalToConstant: 32),
+            micButton.trailingAnchor.constraint(equalTo: sendButton.leadingAnchor, constant: -8),
+
             sendButton.centerYAnchor.constraint(equalTo: chatInputContainer.centerYAnchor),
             sendButton.trailingAnchor.constraint(equalTo: chatInputContainer.trailingAnchor, constant: -16),
             sendButton.heightAnchor.constraint(equalTo: chatInputTextView.heightAnchor),
@@ -545,6 +572,65 @@ class FeaturePlanViewController: UIViewController {
         }
     }
     
+    // MARK: - Mic Recording
+
+    @objc private func micLongPressed(_ gesture: UILongPressGestureRecognizer) {
+        switch gesture.state {
+        case .began: startRecording()
+        case .ended, .cancelled: stopRecording()
+        default: break
+        }
+    }
+
+    private func startRecording() {
+        startRecordingBarAnimation()
+        let prefix = chatInputTextView.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        speechManager.startTranscribing(
+            textHandler: { [weak self] text in
+                self?.chatInputTextView.text = prefix.isEmpty ? text : prefix + " " + text
+            },
+            errorHandler: { [weak self] _ in
+                self?.stopRecording()
+                self?.bubbleHelper.showGenericMessageView(
+                    text: "Speech recognition unavailable.",
+                    delay: 3, textColor: .white,
+                    backColor: UIColor.Sphinx.PrimaryRed, backAlpha: 1.0)
+            }
+        )
+    }
+
+    private func stopRecording() {
+        speechManager.stopTranscribing()
+        micButton.tintColor = UIColor.Sphinx.WashedOutReceivedText
+        stopRecordingBarAnimation()
+    }
+
+    private func startRecordingBarAnimation() {
+        micButton.tintColor = .white
+        let green = UIColor.Sphinx.PrimaryGreen
+        chatInputContainer.backgroundColor = green
+        bottomFillView.backgroundColor = green
+        UIView.animate(
+            withDuration: 0.7,
+            delay: 0,
+            options: [.repeat, .autoreverse, .allowUserInteraction],
+            animations: { [weak self] in
+                self?.chatInputContainer.alpha = 0.45
+                self?.bottomFillView.alpha = 0.45
+            }
+        )
+    }
+
+    private func stopRecordingBarAnimation() {
+        chatInputContainer.layer.removeAllAnimations()
+        bottomFillView.layer.removeAllAnimations()
+        chatInputContainer.alpha = 1.0
+        bottomFillView.alpha = 1.0
+        chatInputContainer.backgroundColor = UIColor.Sphinx.HeaderBG
+        bottomFillView.backgroundColor = UIColor.Sphinx.HeaderBG
+        micButton.tintColor = UIColor.Sphinx.WashedOutReceivedText
+    }
+
     // MARK: - Actions
     @objc private func shareTappedAction() {
         let url = "https://hive.sphinx.chat/w/\(workspace.slug ?? "")/plan/\(feature.id)"
@@ -848,6 +934,8 @@ class FeaturePlanViewController: UIViewController {
         sendButton.isEnabled = !isAIWorking
         sendButton.alpha = isAIWorking ? 0.5 : 1.0
         chatInputTextView.isEditable = !isAIWorking
+        micButton.isEnabled = !isAIWorking
+        micButton.alpha = isAIWorking ? 0.5 : 1.0
     }
 
     private func applyInitialWorkflowStatus() {

@@ -47,6 +47,10 @@ class TaskChatViewController: UIViewController {
     private var pendingAttachmentsBarHeightConstraint: NSLayoutConstraint!
     private var pendingAttachments: [PendingAttachment] = []
 
+    // MARK: - Mic / Speech
+    private var micButton: UIButton!
+    private let speechManager = SpeechTranscriptionManager()
+
     // MARK: - Agent state
     private var isAgentWorking: Bool = false
 
@@ -84,6 +88,15 @@ class TaskChatViewController: UIViewController {
         setupUI()
         applyInitialWorkflowStatus()
         setupKeyboardObservers()
+        speechManager.requestPermission { [weak self] granted in
+            self?.micButton.isHidden = !granted
+            if !granted {
+                self?.bubbleHelper.showGenericMessageView(
+                    text: "Speech recognition permission denied.",
+                    delay: 3, textColor: .white,
+                    backColor: UIColor.Sphinx.PrimaryRed, backAlpha: 1.0)
+            }
+        }
         cachedStakworkProjectId = task.stakworkProjectId
         connectWebSocket()         // connect Pusher immediately with known taskId
         fetchMessages()
@@ -274,10 +287,20 @@ class TaskChatViewController: UIViewController {
         sendButton.layer.cornerRadius = 28
         sendButton.addTarget(self, action: #selector(sendTapped), for: .touchUpInside)
 
-        // Layout: text view fills available width; attach + send buttons pinned to right edge.
-        // [chatInputTextView --- flex ---][attachButton 32][sendButton 80]
+        // Mic button
+        let micConfig = UIImage.SymbolConfiguration(pointSize: 16, weight: .medium)
+        micButton = UIButton(type: .system)
+        micButton.translatesAutoresizingMaskIntoConstraints = false
+        micButton.setImage(UIImage(systemName: "mic.fill", withConfiguration: micConfig), for: .normal)
+        micButton.tintColor = UIColor.Sphinx.WashedOutReceivedText
+        let lp = UILongPressGestureRecognizer(target: self, action: #selector(micLongPressed(_:)))
+        lp.minimumPressDuration = 0.1
+        micButton.addGestureRecognizer(lp)
+
+        // Layout: [chatInputTextView --- flex ---][attachButton 32][micButton 32][sendButton ●]
         chatInputContainer.addSubview(chatInputTextView)
         chatInputContainer.addSubview(attachButton)
+        chatInputContainer.addSubview(micButton)
         chatInputContainer.addSubview(sendButton)
 
         NSLayoutConstraint.activate([
@@ -287,8 +310,14 @@ class TaskChatViewController: UIViewController {
             sendButton.heightAnchor.constraint(equalTo: chatInputTextView.heightAnchor),
             sendButton.widthAnchor.constraint(equalTo: sendButton.heightAnchor),
 
-            // Attach button — immediately left of send button
-            attachButton.trailingAnchor.constraint(equalTo: sendButton.leadingAnchor, constant: -8),
+            // Mic button — immediately left of send button
+            micButton.trailingAnchor.constraint(equalTo: sendButton.leadingAnchor, constant: -8),
+            micButton.centerYAnchor.constraint(equalTo: chatInputContainer.centerYAnchor),
+            micButton.widthAnchor.constraint(equalToConstant: 32),
+            micButton.heightAnchor.constraint(equalToConstant: 32),
+
+            // Attach button — immediately left of mic button
+            attachButton.trailingAnchor.constraint(equalTo: micButton.leadingAnchor, constant: -8),
             attachButton.centerYAnchor.constraint(equalTo: chatInputContainer.centerYAnchor),
             attachButton.widthAnchor.constraint(equalToConstant: 32),
             attachButton.heightAnchor.constraint(equalToConstant: 32),
@@ -439,6 +468,65 @@ class TaskChatViewController: UIViewController {
         UIView.animate(withDuration: duration) { self.view.layoutIfNeeded() }
     }
 
+    // MARK: - Mic Recording
+
+    @objc private func micLongPressed(_ gesture: UILongPressGestureRecognizer) {
+        switch gesture.state {
+        case .began: startRecording()
+        case .ended, .cancelled: stopRecording()
+        default: break
+        }
+    }
+
+    private func startRecording() {
+        startRecordingBarAnimation()
+        let prefix = chatInputTextView.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        speechManager.startTranscribing(
+            textHandler: { [weak self] text in
+                self?.chatInputTextView.text = prefix.isEmpty ? text : prefix + " " + text
+            },
+            errorHandler: { [weak self] _ in
+                self?.stopRecording()
+                self?.bubbleHelper.showGenericMessageView(
+                    text: "Speech recognition unavailable.",
+                    delay: 3, textColor: .white,
+                    backColor: UIColor.Sphinx.PrimaryRed, backAlpha: 1.0)
+            }
+        )
+    }
+
+    private func stopRecording() {
+        speechManager.stopTranscribing()
+        micButton.tintColor = UIColor.Sphinx.WashedOutReceivedText
+        stopRecordingBarAnimation()
+    }
+
+    private func startRecordingBarAnimation() {
+        micButton.tintColor = .white
+        let green = UIColor.Sphinx.PrimaryGreen
+        chatInputContainer.backgroundColor = green
+        bottomFillView.backgroundColor = green
+        UIView.animate(
+            withDuration: 0.7,
+            delay: 0,
+            options: [.repeat, .autoreverse, .allowUserInteraction],
+            animations: { [weak self] in
+                self?.chatInputContainer.alpha = 0.45
+                self?.bottomFillView.alpha = 0.45
+            }
+        )
+    }
+
+    private func stopRecordingBarAnimation() {
+        chatInputContainer.layer.removeAllAnimations()
+        bottomFillView.layer.removeAllAnimations()
+        chatInputContainer.alpha = 1.0
+        bottomFillView.alpha = 1.0
+        chatInputContainer.backgroundColor = UIColor.Sphinx.HeaderBG
+        bottomFillView.backgroundColor = UIColor.Sphinx.HeaderBG
+        micButton.tintColor = UIColor.Sphinx.WashedOutReceivedText
+    }
+
     // MARK: - Actions
 
     @objc private func attachTapped() {
@@ -462,6 +550,8 @@ class TaskChatViewController: UIViewController {
         let blocked = isAgentWorking || uploading
         sendButton.isEnabled = !blocked
         sendButton.alpha = blocked ? 0.5 : 1.0
+        micButton.isEnabled = !blocked
+        micButton.alpha = blocked ? 0.5 : 1.0
     }
 
     @objc private func releasePodTapped() {
@@ -725,12 +815,14 @@ class TaskChatViewController: UIViewController {
         }
     }
 
-    /// Enables or disables the input bar (send + attach + text field) when the agent is working.
+    /// Enables or disables the input bar (send + attach + mic + text field) when the agent is working.
     private func setInputEnabled(_ enabled: Bool) {
         isAgentWorking = !enabled
         chatInputTextView.isEditable = enabled
         attachButton.isEnabled = enabled
         attachButton.alpha = enabled ? 1.0 : 0.5
+        micButton.isEnabled = enabled
+        micButton.alpha = enabled ? 1.0 : 0.5
         // Let updateSendButtonState handle send button — it checks both workflow + upload state
         updateSendButtonState()
     }
