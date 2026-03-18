@@ -292,7 +292,6 @@ class WorkspaceGraphChatViewController: UIViewController {
     }
 
     private func startRecording() {
-        micButton.tintColor = UIColor.Sphinx.PrimaryBlue
         startRecordingBarAnimation()
         speechManager.startTranscribing(
             textHandler: { [weak self] text in self?.chatInputTextView.text = text },
@@ -313,6 +312,7 @@ class WorkspaceGraphChatViewController: UIViewController {
     }
 
     private func startRecordingBarAnimation() {
+        micButton.tintColor = .white
         let green = UIColor.Sphinx.PrimaryGreen
         chatInputContainer.backgroundColor = green
         bottomFillView.backgroundColor = green
@@ -322,6 +322,7 @@ class WorkspaceGraphChatViewController: UIViewController {
             options: [.repeat, .autoreverse, .allowUserInteraction],
             animations: { [weak self] in
                 self?.chatInputContainer.alpha = 0.45
+                self?.bottomFillView.alpha = 0.45
             }
         )
     }
@@ -330,8 +331,10 @@ class WorkspaceGraphChatViewController: UIViewController {
         chatInputContainer.layer.removeAllAnimations()
         bottomFillView.layer.removeAllAnimations()
         chatInputContainer.alpha = 1.0
+        bottomFillView.alpha = 1.0
         chatInputContainer.backgroundColor = UIColor.Sphinx.HeaderBG
         bottomFillView.backgroundColor = UIColor.Sphinx.HeaderBG
+        micButton.tintColor = UIColor.Sphinx.WashedOutReceivedText
     }
 
     // MARK: - Send
