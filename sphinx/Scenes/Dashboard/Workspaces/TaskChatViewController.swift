@@ -480,8 +480,11 @@ class TaskChatViewController: UIViewController {
 
     private func startRecording() {
         startRecordingBarAnimation()
+        let prefix = chatInputTextView.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         speechManager.startTranscribing(
-            textHandler: { [weak self] text in self?.chatInputTextView.text = text },
+            textHandler: { [weak self] text in
+                self?.chatInputTextView.text = prefix.isEmpty ? text : prefix + " " + text
+            },
             errorHandler: { [weak self] _ in
                 self?.stopRecording()
                 self?.bubbleHelper.showGenericMessageView(
