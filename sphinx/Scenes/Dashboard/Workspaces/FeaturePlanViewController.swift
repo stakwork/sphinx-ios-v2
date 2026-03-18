@@ -584,6 +584,7 @@ class FeaturePlanViewController: UIViewController {
 
     private func startRecording() {
         micButton.tintColor = UIColor.Sphinx.PrimaryBlue
+        startRecordingBarAnimation()
         speechManager.startTranscribing(
             textHandler: { [weak self] text in self?.chatInputTextView.text = text },
             errorHandler: { [weak self] _ in
@@ -599,6 +600,29 @@ class FeaturePlanViewController: UIViewController {
     private func stopRecording() {
         speechManager.stopTranscribing()
         micButton.tintColor = UIColor.Sphinx.WashedOutReceivedText
+        stopRecordingBarAnimation()
+    }
+
+    private func startRecordingBarAnimation() {
+        let green = UIColor.Sphinx.PrimaryGreen
+        chatInputContainer.backgroundColor = green
+        bottomFillView.backgroundColor = green
+        UIView.animate(
+            withDuration: 0.7,
+            delay: 0,
+            options: [.repeat, .autoreverse, .allowUserInteraction],
+            animations: { [weak self] in
+                self?.chatInputContainer.alpha = 0.45
+            }
+        )
+    }
+
+    private func stopRecordingBarAnimation() {
+        chatInputContainer.layer.removeAllAnimations()
+        bottomFillView.layer.removeAllAnimations()
+        chatInputContainer.alpha = 1.0
+        chatInputContainer.backgroundColor = UIColor.Sphinx.HeaderBG
+        bottomFillView.backgroundColor = UIColor.Sphinx.HeaderBG
     }
 
     // MARK: - Actions
