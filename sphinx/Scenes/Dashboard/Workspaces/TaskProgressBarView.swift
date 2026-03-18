@@ -117,9 +117,24 @@ class TaskProgressBarView: UIView {
 
     func configure(with progress: TaskProgress) {
         currentProgress = progress
-        isHidden = (progress.total == 0)
         percentLabel.text = "\(progress.completePercent)% complete"
         setNeedsLayout()
+    }
+
+    func setDisabled(_ disabled: Bool) {
+        if disabled {
+            alpha = 0.75
+            trackView.backgroundColor = UIColor.Sphinx.SecondaryText
+            doneBar.isHidden = true
+            inProgressBar.isHidden = true
+            percentLabel.text = "0% complete"
+        } else {
+            alpha = 1.0
+            trackView.backgroundColor = UIColor.systemGray5
+            doneBar.isHidden = false
+            inProgressBar.isHidden = false
+            percentLabel.text = "\(currentProgress.completePercent)% complete"
+        }
     }
 
     // MARK: - Private

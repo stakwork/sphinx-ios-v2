@@ -695,7 +695,7 @@ class FeaturePlanViewController: UIViewController {
 
         // Progress bar
         taskProgressBarView = TaskProgressBarView()
-        taskProgressBarView.isHidden = true
+        taskProgressBarView.isHidden = false
         tasksContainerView.addSubview(taskProgressBarView)
 
         poolStatusLabel = UILabel()
@@ -785,7 +785,7 @@ class FeaturePlanViewController: UIViewController {
     private func updateProgressBar() {
         let progress = TaskProgress(tasks: feature.allTasks)
         taskProgressBarView.configure(with: progress)
-        taskProgressBarView.isHidden = feature.allTasks.isEmpty
+        taskProgressBarView.setDisabled(feature.allTasks.isEmpty)
     }
 
     private func updateStartTasksButton() {
