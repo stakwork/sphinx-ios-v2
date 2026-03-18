@@ -75,7 +75,8 @@ extension ChatAttachmentViewController: ChatMessageTextFieldViewDelegate {
         if let giphy = selectedGiphy,
             let messageString = giphyHelper.getMessageStringFrom(media: giphy.0, text: message) {
             delegate?.shouldSendGiphy(message: messageString, data: giphy.1)
-            dismissView()
+            self.view.alpha = 0
+            self.dismiss(animated: false)
             completion?(true, nil)
             
             return

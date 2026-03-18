@@ -216,8 +216,10 @@ class ChatAttachmentViewController: NewKeyboardHandlerViewController, BackCamera
                     contactPubkey: chat?.getContact()?.publicKey
                 )
                 
+                // Dismiss instantly — no animation — so the overlay vanishes on tap
+                self.view.alpha = 0
+                self.dismiss(animated: false)
                 delegate?.shouldStartUploading(attachmentObject: attachmentObject)
-                dismissView()
                 completion?(true, nil)
             }
         } else {
