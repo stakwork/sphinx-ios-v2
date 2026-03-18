@@ -320,7 +320,7 @@ class TaskChatViewController: UIViewController {
             micButton.heightAnchor.constraint(equalToConstant: 32),
 
             // Attach button — immediately left of mic button
-            attachButton.trailingAnchor.constraint(equalTo: micButton.leadingAnchor, constant: -8),
+            attachButton.trailingAnchor.constraint(equalTo: micButton.leadingAnchor, constant: -4),
             attachButton.centerYAnchor.constraint(equalTo: chatInputContainer.centerYAnchor),
             attachButton.widthAnchor.constraint(equalToConstant: 32),
             attachButton.heightAnchor.constraint(equalToConstant: 32),
