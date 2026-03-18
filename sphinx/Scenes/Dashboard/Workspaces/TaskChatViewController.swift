@@ -609,7 +609,7 @@ class TaskChatViewController: UIViewController {
     @objc private func shareTappedAction() {
         let url = "https://hive.sphinx.chat/w/\(workspaceSlug)/task/\(task.id)"
         let label = "Check out this task: \(task.title) — \(url)"
-        let shareVC = HiveShareViewController.instantiate(url: url, label: label)
+        let shareVC = HiveShareViewController.instantiate(url: url, label: label, workspaceSlug: workspaceSlug)
         present(shareVC, animated: true)
     }
 

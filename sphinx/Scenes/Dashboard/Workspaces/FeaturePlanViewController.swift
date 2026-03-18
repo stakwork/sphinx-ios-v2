@@ -647,7 +647,7 @@ class FeaturePlanViewController: UIViewController {
     @objc private func shareTappedAction() {
         let url = "https://hive.sphinx.chat/w/\(workspace.slug ?? "")/plan/\(feature.id)"
         let label = "Check out this feature: \(feature.title) — \(url)"
-        let shareVC = HiveShareViewController.instantiate(url: url, label: label)
+        let shareVC = HiveShareViewController.instantiate(url: url, label: label, workspaceSlug: workspace.slug ?? "")
         present(shareVC, animated: true)
     }
 
