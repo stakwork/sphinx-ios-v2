@@ -410,7 +410,7 @@ class FeaturePlanViewController: UIViewController {
 
             chatInputTextView.topAnchor.constraint(equalTo: chatInputContainer.topAnchor, constant: 12),
             chatInputTextView.leadingAnchor.constraint(equalTo: chatInputContainer.leadingAnchor, constant: 16),
-            chatInputTextView.trailingAnchor.constraint(equalTo: micButton.leadingAnchor, constant: -12),
+            chatInputTextView.trailingAnchor.constraint(equalTo: micButton.leadingAnchor, constant: -8),
             {
                 chatInputTextViewHeightConstraint = chatInputTextView.heightAnchor.constraint(equalToConstant: singleLineTextViewHeight())
                 return chatInputTextViewHeightConstraint
