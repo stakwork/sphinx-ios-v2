@@ -1306,6 +1306,86 @@ extension API {
             errorCallback: errorCallback
         )
     }
+    // MARK: - Feature Attachments
+
+    typealias HiveFeatureAttachmentsCallback = (([HiveFeatureAttachment]) -> ())
+
+    func fetchFeatureAttachments(
+        featureId: String,
+        authToken: String,
+        callback: @escaping HiveFeatureAttachmentsCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        guard let encodedId = featureId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+            errorCallback(); return
+        }
+        let urlString = "\(API.kHiveBaseUrl)/features/\(encodedId)/attachments"
+        guard let request = createRequest(urlString, bodyParams: nil, method: "GET", token: authToken) else {
+            errorCallback(); return
+        }
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                errorCallback(); return
+            }
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+                let attachments = json["attachments"].arrayValue.compactMap { HiveFeatureAttachment(json: $0) }
+                callback(attachments)
+            case .failure(let error):
+                print("[HiveAPI] Feature attachments fetch failed: \(error.localizedDescription)")
+                errorCallback()
+            }
+        }
+    }
+
+    func fetchFeatureAttachmentsWithAuth(
+        featureId: String,
+        callback: @escaping HiveFeatureAttachmentsCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
+            fetchFeatureAttachments(
+                featureId: featureId,
+                authToken: storedToken,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateAndFetchFeatureAttachments(
+                        featureId: featureId,
+                        callback: callback,
+                        errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateAndFetchFeatureAttachments(
+                featureId: featureId,
+                callback: callback,
+                errorCallback: errorCallback
+            )
+        }
+    }
+
+    private func authenticateAndFetchFeatureAttachments(
+        featureId: String,
+        callback: @escaping HiveFeatureAttachmentsCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback(); return }
+                UserDefaults.Keys.hiveToken.set(token)
+                self?.fetchFeatureAttachments(
+                    featureId: featureId,
+                    authToken: token,
+                    callback: callback,
+                    errorCallback: errorCallback
+                )
+            },
+            errorCallback: errorCallback
+        )
+    }
+
     // MARK: - Task Messages
 
     func fetchTaskMessages(

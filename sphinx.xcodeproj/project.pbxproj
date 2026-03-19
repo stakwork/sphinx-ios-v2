@@ -672,6 +672,7 @@
 		A1B2C3D4E5F601020304050B /* PendingAttachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F601020304050A /* PendingAttachment.swift */; };
 		A1B2C3D4E5F601020304050D /* PendingAttachmentsBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F601020304050C /* PendingAttachmentsBarView.swift */; };
 		A1B2C3D4E5F601020304050F /* SpeechTranscriptionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F601020304050E /* SpeechTranscriptionManager.swift */; };
+		A1B2C3D4E5F601020304060B /* HiveFeatureAttachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AABB00FF00BEEF00000001 /* HiveFeatureAttachment.swift */; };
 		A1B2C3D4E5F6A7B8C9D0E1F2 /* TaskProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6A7B8C9D0E1F2A3 /* TaskProgress.swift */; };
 		A5F3D5A533984995ADE1BADF /* WorkspaceFeatureTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = C638608884A0403797B98830 /* WorkspaceFeatureTableViewCell.xib */; };
 		A748D979E2F14560BF39E4A7 /* HiveChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8ABF62A347844ECEB2FC60A4 /* HiveChatMessage.swift */; };
@@ -1757,6 +1758,7 @@
 		47AA08C2234B8CF2002C69E2 /* AddFriendViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddFriendViewController.swift; sourceTree = "<group>"; };
 		47AA08C4234B96BF002C69E2 /* ConfirmAddFriendViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfirmAddFriendViewController.swift; sourceTree = "<group>"; };
 		47AA08C6234BB8E0002C69E2 /* ShareInviteCodeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareInviteCodeViewController.swift; sourceTree = "<group>"; };
+		47AABB00FF00BEEF00000001 /* HiveFeatureAttachment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveFeatureAttachment.swift; sourceTree = "<group>"; };
 		47AAD79A29BB6646002B70C1 /* playing_bar.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = playing_bar.json; sourceTree = "<group>"; };
 		47AAFC7D238D7C8D00E30BDA /* PaymentRequestDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentRequestDecoder.swift; sourceTree = "<group>"; };
 		47AAFC7F238EC5AA00E30BDA /* NewQRScannerProcessingCodeExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewQRScannerProcessingCodeExtension.swift; sourceTree = "<group>"; };
@@ -4129,6 +4131,7 @@
 				BB22CC33DD44EE55FF6677DD /* WorkspaceSearchViewController.swift */,
 				8ABF62A347844ECEB2FC60A4 /* HiveChatMessage.swift */,
 				47AABB00FF00BEEF00000003 /* WorkspaceMember.swift */,
+				47AABB00FF00BEEF00000001 /* HiveFeatureAttachment.swift */,
 				47B9CBFA2F460C7B007527B4 /* WorkspacesViewController.swift */,
 				E83B28E7233A4D0D9AE288E2 /* WorkspaceViewController.swift */,
 				4C31187BFB7EDD28A632A1FD /* FeaturePlanViewController.swift */,
@@ -5554,6 +5557,7 @@
 				BB22CC33DD44EE55FF6677CC /* WorkspaceSearchViewController.swift in Sources */,
 				A748D979E2F14560BF39E4A7 /* HiveChatMessage.swift in Sources */,
 				47AABB00FF00BEEF00000004 /* WorkspaceMember.swift in Sources */,
+				A1B2C3D4E5F601020304060B /* HiveFeatureAttachment.swift in Sources */,
 				CECFBF062965C8E600BAD935 /* DiscoverTribeData.swift in Sources */,
 				475C566D2A7BEC5F00E6F9A9 /* ThreadTableDataSource+ResultsControllerExtension.swift in Sources */,
 				47E6A4D02A2E6F8500A9509E /* GroupActionsView.swift in Sources */,
@@ -7127,7 +7131,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sphinx/sphinx.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 261;
+				CURRENT_PROJECT_VERSION = 262;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 8297M44YTW;
 				ENABLE_BITCODE = NO;
@@ -7217,7 +7221,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sphinx/sphinx.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 261;
+				CURRENT_PROJECT_VERSION = 262;
 				DEVELOPMENT_TEAM = 8297M44YTW;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
