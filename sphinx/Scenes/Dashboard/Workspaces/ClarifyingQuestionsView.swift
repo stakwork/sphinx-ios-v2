@@ -8,34 +8,82 @@
 
 import UIKit
 
-// MARK: - MultilineTitleButton
-// UIButton doesn't grow its intrinsicContentSize for multiline titleLabel text.
-// This subclass overrides intrinsicContentSize so Auto Layout can grow button height.
-private final class MultilineTitleButton: UIButton {
-    private var lastKnownWidth: CGFloat = 0
+// MARK: - OptionPillView
+// Replaces UIButton for option items.
+// UIButton.intrinsicContentSize doesn't account for multiline titleLabel text — any attempt
+// to override intrinsicContentSize causes layoutSubviews to re-fire, which changes the cell
+// height mid-scroll and causes UITableView contentOffset jump-corrections.
+// A UIView + UILabel with standard Auto Layout constraints has perfectly stable sizing from
+// the very first layout pass — no feedback loops.
+private final class OptionPillView: UIView {
 
-    override var intrinsicContentSize: CGSize {
-        guard let titleLabel = titleLabel else { return super.intrinsicContentSize }
-        let insets = contentEdgeInsets
-        let containerWidth = superview?.bounds.width ?? (UIScreen.main.bounds.width - 48)
-        let availableWidth = containerWidth - insets.left - insets.right
-        guard availableWidth > 0 else { return super.intrinsicContentSize }
-        let titleSize = titleLabel.sizeThatFits(
-            CGSize(width: availableWidth, height: .greatestFiniteMagnitude)
-        )
-        let height = max(titleSize.height + insets.top + insets.bottom, 44)
-        return CGSize(width: super.intrinsicContentSize.width, height: height)
+    let label: UILabel = {
+        let l = UILabel()
+        l.translatesAutoresizingMaskIntoConstraints = false
+        l.font = UIFont(name: "Roboto-Regular", size: 14) ?? UIFont.systemFont(ofSize: 14)
+        l.textColor = UIColor.Sphinx.Text
+        l.numberOfLines = 0
+        l.lineBreakMode = .byWordWrapping
+        return l
+    }()
+
+    // Exposed so ClarifyingQuestionsView can read/write
+    var isSelected: Bool = false {
+        didSet { applyStyle() }
     }
 
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        // Only invalidate when width actually changes — calling unconditionally
-        // on every layout pass triggers table view height recalculation loops
-        // that cause contentOffset jumps while the user is scrolling.
-        let w = bounds.width
-        if w != lastKnownWidth {
-            lastKnownWidth = w
-            invalidateIntrinsicContentSize()
+    /// Called when the pill is tapped (set by ClarifyingQuestionsView)
+    var onTap: ((OptionPillView) -> Void)?
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setup()
+    }
+    required init?(coder: NSCoder) { super.init(coder: coder); setup() }
+
+    private func setup() {
+        translatesAutoresizingMaskIntoConstraints = false
+        layer.cornerRadius = 16
+        layer.masksToBounds = true
+        layer.borderWidth = 1
+
+        addSubview(label)
+        NSLayoutConstraint.activate([
+            label.topAnchor.constraint(equalTo: topAnchor, constant: 10),
+            label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+            label.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
+            label.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -10),
+            // Minimum tap-target height
+            heightAnchor.constraint(greaterThanOrEqualToConstant: 44),
+        ])
+
+        applyStyle()
+
+        let tap = UITapGestureRecognizer(target: self, action: #selector(tapped))
+        addGestureRecognizer(tap)
+    }
+
+    @objc private func tapped() { onTap?(self) }
+
+    func applySelectedStyle() {
+        isSelected = true
+    }
+
+    func applyUnselectedStyle() {
+        isSelected = false
+    }
+
+    private func applyStyle() {
+        if isSelected {
+            backgroundColor = UIColor.Sphinx.PrimaryBlue
+            label.textColor = .white
+            layer.borderColor = UIColor.clear.cgColor
+            layer.borderWidth = 0
+        } else {
+            backgroundColor = UIColor.Sphinx.Body
+            label.textColor = UIColor.Sphinx.Text
+            layer.borderColor = UIColor.Sphinx.LightDivider.cgColor
+            layer.borderWidth = 1
         }
     }
 }
@@ -60,9 +108,7 @@ final class ClarifyingQuestionsView: UIView {
 
     // Review-mode state
     private var isLockedForReview: Bool = false
-    /// Maps question index → set of selected option indices (restored from answer text)
     private var restoredAnswersByIndex: [Int: Set<Int>] = [:]
-    /// Maps question index → free-text context the user typed (not matching any option label)
     private var restoredContextByIndex: [Int: String] = [:]
 
     // MARK: - UI Components
@@ -103,7 +149,7 @@ final class ClarifyingQuestionsView: UIView {
         return sv
     }()
 
-    /// Read-only label shown below options in review mode when the user added free-text context.
+    /// Read-only label shown in review mode when the user added free-text context.
     private let reviewContextLabel: UILabel = {
         let l = UILabel()
         l.translatesAutoresizingMaskIntoConstraints = false
@@ -173,11 +219,10 @@ final class ClarifyingQuestionsView: UIView {
         return b
     }()
 
-    // Constraint references for toggling between normal and review layout
+    // Constraint references
     private var actionButtonBottomConstraint: NSLayoutConstraint?
     private var contextViewTopConstraint: NSLayoutConstraint?
     private var optionsBottomToNavRowConstraint: NSLayoutConstraint?
-    // reviewContextLabel anchors (added once, hidden/shown as needed)
     private var reviewContextTopConstraint: NSLayoutConstraint?
 
     // MARK: - Init
@@ -220,7 +265,6 @@ final class ClarifyingQuestionsView: UIView {
         )
         actionButtonBottomConstraint = actionBottom
 
-        // reviewContextLabel: anchored below optionsStack, hidden by default
         let reviewCtxTop = reviewContextLabel.topAnchor.constraint(
             equalTo: optionsStackView.bottomAnchor, constant: 8
         )
@@ -244,7 +288,6 @@ final class ClarifyingQuestionsView: UIView {
             optionsStackView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
             optionsStackView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
 
-            // reviewContextLabel (hidden until review mode)
             reviewCtxTop,
             reviewContextLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
             reviewContextLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
@@ -287,44 +330,34 @@ final class ClarifyingQuestionsView: UIView {
         alpha = 0.5
     }
 
-    /// Lock in read-only review mode. Parses `answersText` to restore selections and free-text context.
     func lockWithAnswers(_ answersText: String) {
         restoredAnswersByIndex = [:]
         restoredContextByIndex = [:]
 
-        // Split into Q/A blocks
-        let blocks = answersText.components(separatedBy: "\n\n").filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        let blocks = answersText.components(separatedBy: "\n\n")
+            .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 
         for block in blocks {
             let lines = block.components(separatedBy: "\n")
-            // Match block to question by Q: line
             guard let qLine = lines.first(where: { $0.hasPrefix("Q: ") }),
                   let aLine = lines.first(where: { $0.hasPrefix("A: ") }) else { continue }
 
             let qText = String(qLine.dropFirst(3))
             let aValue = String(aLine.dropFirst(3))
 
-            // Find which question this block belongs to
             guard let qIdx = questions.firstIndex(where: { $0.question == qText }) else { continue }
 
-            let (selectedIndices, contextParts) = parseAnswerValue(
-                aValue,
-                options: questions[qIdx].options
-            )
-            restoredAnswersByIndex[qIdx] = selectedIndices
-            if !contextParts.isEmpty {
-                restoredContextByIndex[qIdx] = contextParts.joined(separator: ", ")
+            let (matched, context) = parseAnswerValue(aValue, options: questions[qIdx].options)
+            restoredAnswersByIndex[qIdx] = matched
+            if !context.isEmpty {
+                restoredContextByIndex[qIdx] = context.joined(separator: ", ")
             }
         }
 
         isLockedForReview = true
-
-        // Hide interactive-only elements
         additionalContextTextView.isHidden = true
         placeholderLabel.isHidden = true
         actionButton.isHidden = true
-
-        // Swap constraint chain: options → navRow → bottom  (not options → textView → actionBtn → bottom)
         contextViewTopConstraint?.isActive = false
         actionButtonBottomConstraint?.isActive = false
 
@@ -366,8 +399,6 @@ final class ClarifyingQuestionsView: UIView {
     private func addNavRowIfNeeded() {
         guard navRowStackView == nil else { return }
 
-        // Only prevButton + nextButton — counterLabel stays in containerView so its
-        // constraints (which questionLabel depends on) are never disturbed.
         let navRow = UIStackView(arrangedSubviews: [prevButton, nextButton])
         navRow.translatesAutoresizingMaskIntoConstraints = false
         navRow.axis = .horizontal
@@ -406,27 +437,26 @@ final class ClarifyingQuestionsView: UIView {
             reviewContextLabel.isHidden = true
         }
 
-        // Rebuild option pills
+        // Rebuild option pills using OptionPillView (stable sizing, no feedback loops)
         optionsStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
         for (i, option) in q.options.enumerated() {
-            let btn = makeOptionButton(title: option, tag: i)
-            optionsStackView.addArrangedSubview(btn)
+            let pill = makeOptionPill(title: option, index: i)
+            optionsStackView.addArrangedSubview(pill)
         }
 
         if isLockedForReview {
             let restored = restoredAnswersByIndex[index] ?? []
-            optionsStackView.arrangedSubviews.compactMap { $0 as? UIButton }.forEach { btn in
-                if restored.contains(btn.tag) {
-                    applySelectedStyle(to: btn)
+            optionsStackView.arrangedSubviews.compactMap { $0 as? OptionPillView }.forEach { pill in
+                if restored.contains(pill.tag) {
+                    pill.applySelectedStyle()
                 }
-                btn.isUserInteractionEnabled = false
+                pill.isUserInteractionEnabled = false
             }
 
-            // Show free-text context if present for this question
+            // Context label below options
             if let ctx = restoredContextByIndex[index], !ctx.isEmpty {
                 reviewContextLabel.text = "Additional: \(ctx)"
                 reviewContextLabel.isHidden = false
-                // Repin the navRow constraint below the context label
                 optionsBottomToNavRowConstraint?.isActive = false
                 reviewContextTopConstraint?.isActive = true
                 if let navRow = navRowStackView {
@@ -434,13 +464,11 @@ final class ClarifyingQuestionsView: UIView {
                         equalTo: navRow.topAnchor, constant: -8
                     )
                     ctxToNav.isActive = true
-                    // Store so we can remove/replace on next call
                     optionsBottomToNavRowConstraint = ctxToNav
                 }
             } else {
                 reviewContextLabel.isHidden = true
                 reviewContextTopConstraint?.isActive = false
-                // Re-pin options directly to navRow
                 optionsBottomToNavRowConstraint?.isActive = false
                 if let navRow = navRowStackView {
                     let optToNav = optionsStackView.bottomAnchor.constraint(
@@ -457,42 +485,19 @@ final class ClarifyingQuestionsView: UIView {
             updateActionButton()
         }
 
-        invalidateIntrinsicContentSize()
         if notifyHeightChange {
             onHeightChanged?()
         }
     }
 
-    private func makeOptionButton(title: String, tag: Int) -> UIButton {
-        let btn = MultilineTitleButton(type: .system)
-        btn.translatesAutoresizingMaskIntoConstraints = false
-        btn.tag = tag
-        btn.setTitle(title, for: .normal)
-        btn.titleLabel?.font = UIFont(name: "Roboto-Regular", size: 14) ?? UIFont.systemFont(ofSize: 14)
-        btn.titleLabel?.numberOfLines = 0
-        btn.titleLabel?.lineBreakMode = .byWordWrapping
-        btn.contentHorizontalAlignment = .left
-        btn.contentEdgeInsets = UIEdgeInsets(top: 10, left: 16, bottom: 10, right: 16)
-        btn.layer.cornerRadius = 16
-        btn.layer.masksToBounds = true
-        btn.heightAnchor.constraint(greaterThanOrEqualToConstant: 44).isActive = true
-        btn.addTarget(self, action: #selector(optionTapped(_:)), for: .touchUpInside)
-        applyUnselectedStyle(to: btn)
-        return btn
-    }
-
-    private func applyUnselectedStyle(to button: UIButton) {
-        button.backgroundColor = UIColor.Sphinx.Body
-        button.setTitleColor(UIColor.Sphinx.Text, for: .normal)
-        button.layer.borderWidth = 1
-        button.layer.borderColor = UIColor.Sphinx.LightDivider.cgColor
-    }
-
-    private func applySelectedStyle(to button: UIButton) {
-        button.backgroundColor = UIColor.Sphinx.PrimaryBlue
-        button.setTitleColor(.white, for: .normal)
-        button.layer.borderWidth = 0
-        button.layer.borderColor = UIColor.clear.cgColor
+    private func makeOptionPill(title: String, index: Int) -> OptionPillView {
+        let pill = OptionPillView()
+        pill.tag = index
+        pill.label.text = title
+        pill.onTap = { [weak self] tappedPill in
+            self?.optionPillTapped(tappedPill)
+        }
+        return pill
     }
 
     private func updateActionButton() {
@@ -507,28 +512,28 @@ final class ClarifyingQuestionsView: UIView {
 
     // MARK: - Private: Actions
 
-    @objc private func optionTapped(_ sender: UIButton) {
+    private func optionPillTapped(_ pill: OptionPillView) {
         guard currentIndex < questions.count else { return }
         let q = questions[currentIndex]
-        let tappedIndex = sender.tag
+        let tappedIndex = pill.tag
 
         if q.type == "single_choice" {
             let alreadySelected = selectedIndices.contains(tappedIndex)
             selectedIndices = alreadySelected ? [] : [tappedIndex]
-            optionsStackView.arrangedSubviews.compactMap { $0 as? UIButton }.forEach { btn in
-                if !alreadySelected && btn.tag == tappedIndex {
-                    applySelectedStyle(to: btn)
+            optionsStackView.arrangedSubviews.compactMap { $0 as? OptionPillView }.forEach { p in
+                if !alreadySelected && p.tag == tappedIndex {
+                    p.applySelectedStyle()
                 } else {
-                    applyUnselectedStyle(to: btn)
+                    p.applyUnselectedStyle()
                 }
             }
         } else {
             if selectedIndices.contains(tappedIndex) {
                 selectedIndices.remove(tappedIndex)
-                applyUnselectedStyle(to: sender)
+                pill.applyUnselectedStyle()
             } else {
                 selectedIndices.insert(tappedIndex)
-                applySelectedStyle(to: sender)
+                pill.applySelectedStyle()
             }
         }
 
@@ -570,38 +575,49 @@ final class ClarifyingQuestionsView: UIView {
         currentIndex += 1
         showQuestion(at: currentIndex, notifyHeightChange: true)
     }
+
+    // MARK: - Test Hooks
+    /// Simulate a tap on the option pill at the given index. Used in unit tests only.
+    func simulateTapOptionPill(at index: Int) {
+        let pills = optionsStackView.arrangedSubviews
+            .compactMap { $0 as? OptionPillView }
+            .sorted { $0.tag < $1.tag }
+        guard index < pills.count else { return }
+        optionPillTapped(pills[index])
+    }
+}
+
+
+
+// MARK: - UITextViewDelegate
+
+extension ClarifyingQuestionsView: UITextViewDelegate {
+    func textViewDidChange(_ textView: UITextView) {
+        placeholderLabel.isHidden = !textView.text.isEmpty
+        updateActionButton()
+    }
 }
 
 // MARK: - Helpers
 
-/// Normalises dash variants and trims whitespace for fuzzy option matching.
 private func normalizeForMatch(_ s: String) -> String {
     s.trimmingCharacters(in: .whitespacesAndNewlines)
-     .replacingOccurrences(of: "\u{2014}", with: "-")  // em-dash
-     .replacingOccurrences(of: "\u{2013}", with: "-")  // en-dash
-     .replacingOccurrences(of: "\u{2012}", with: "-")  // figure dash
+     .replacingOccurrences(of: "\u{2014}", with: "-")
+     .replacingOccurrences(of: "\u{2013}", with: "-")
+     .replacingOccurrences(of: "\u{2012}", with: "-")
      .replacingOccurrences(of: "--",        with: "-")
 }
 
-/// Greedily parses an A: value string back into matched option indices and leftover context.
-///
-/// Problem with naive split(", "): option labels often contain commas (e.g.
-/// "Reuse FEATURE_UPDATED — fires multiple times, each time with more fields populated"),
-/// which would be shredded by a simple separator split. Instead we work in normalised
-/// space and scan left-to-right, consuming the longest matching option at each step.
 private func parseAnswerValue(
     _ aValue: String,
     options: [String]
 ) -> (matched: Set<Int>, context: [String]) {
     let normOptions = options.map { normalizeForMatch($0) }
-    // Work entirely in normalised space — we only need indices + leftover text.
     var remaining = normalizeForMatch(aValue)
     var matchedIndices: Set<Int> = []
     var contextParts: [String] = []
 
     while !remaining.isEmpty {
-        // Find the longest option that the remaining string starts with,
-        // confirmed by being followed by ", " or end-of-string.
         var bestIdx: Int? = nil
         var bestLen = 0
 
@@ -621,7 +637,6 @@ private func parseAnswerValue(
             remaining = String(remaining.dropFirst(bestLen))
             if remaining.hasPrefix(", ") { remaining = String(remaining.dropFirst(2)) }
         } else {
-            // No option matched — consume up to the next ", " as free-text context.
             if let sepRange = remaining.range(of: ", ") {
                 contextParts.append(String(remaining[..<sepRange.lowerBound]))
                 remaining = String(remaining[sepRange.upperBound...])
@@ -633,13 +648,4 @@ private func parseAnswerValue(
     }
 
     return (matchedIndices, contextParts)
-}
-
-// MARK: - UITextViewDelegate
-
-extension ClarifyingQuestionsView: UITextViewDelegate {
-    func textViewDidChange(_ textView: UITextView) {
-        placeholderLabel.isHidden = !textView.text.isEmpty
-        updateActionButton()
-    }
 }

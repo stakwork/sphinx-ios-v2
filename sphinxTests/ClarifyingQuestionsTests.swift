@@ -482,20 +482,9 @@ extension ClarifyingQuestionsView {
         return result
     }
 
-    /// Simulate a tap on the option button at the given index (test-only).
+    /// Simulate a tap on the option pill at the given index (test-only).
     func simulateTapOption(at index: Int) {
-        // Option buttons are UIButtons with matching tag; they are NOT the action button
-        // or navigation buttons — identify those by title
-        let nonOptionTitles: Set<String> = ["Next →", "Submit", "← Prev"]
-        let allButtons = allSubviews(ofType: UIButton.self, in: self)
-        let optionButtons = allButtons.filter { btn in
-            guard let title = btn.title(for: .normal) else { return false }
-            return !nonOptionTitles.contains(title)
-        }
-        // Sort by tag order to match the original option index
-        let sorted = optionButtons.sorted { $0.tag < $1.tag }
-        guard index < sorted.count else { return }
-        sorted[index].sendActions(for: .touchUpInside)
+        simulateTapOptionPill(at: index)
     }
 
     /// Simulate a tap on the action button (Next → / Submit) (test-only).

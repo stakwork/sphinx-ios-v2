@@ -21,6 +21,9 @@ class TaskChatViewController: UIViewController {
     private var processingStepText: String? = nil
     private var cachedStakworkProjectId: Int?
     private var anyCableManager: HiveAnyCableManager?
+    /// Caches the last-known rendered height for each chat row so estimatedHeightForRowAt
+    /// can return accurate values and prevent UITableView contentOffset jump-corrections.
+    private var chatCellHeightCache: [Int: CGFloat] = [:]
 
     // MARK: - Header
     private var headerView: UIView!
@@ -718,6 +721,7 @@ class TaskChatViewController: UIViewController {
                     guard let self = self else { return }
                     self.loadingWheel.stopAnimating()
                     self.messages = messages
+                    self.chatCellHeightCache.removeAll()
                     self.chatTableView.isHidden = false
                     self.emptyLabel.isHidden = !messages.isEmpty
                     self.chatTableView.reloadData()
@@ -1001,7 +1005,14 @@ extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
         return cell
     }
 
+    func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+        chatCellHeightCache[indexPath.row] = cell.bounds.height
+    }
+
     func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
+        // Return the cached real height if we've seen this row before — canonical fix
+        // for UITableView contentOffset jumps when scrolling up.
+        if let cached = chatCellHeightCache[indexPath.row] { return cached }
         if processingStepText != nil && indexPath.row == messages.count { return 60 }
         guard indexPath.row < messages.count else { return 200 }
         let msg = messages[indexPath.row]
