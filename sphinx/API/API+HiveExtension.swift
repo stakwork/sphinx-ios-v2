@@ -30,6 +30,7 @@ typealias HivePoolStatusCallback = ((_ queuedCount: Int, _ unusedVms: Int) -> ()
 typealias HiveCallLinkCallback = ((String) -> ())
 typealias HiveRepositoriesCallback = (([WorkspaceRepository]) -> ())
 typealias HiveBranchesCallback = (([WorkspaceBranch]) -> ())
+typealias HiveWorkspaceMembersCallback = (([WorkspaceMember]) -> ())
 
 // MARK: - WorkspaceRepository
 
@@ -3194,6 +3195,86 @@ extension API {
                 errorCallback()
             }
         }.resume()
+    }
+
+    // MARK: - Workspace Members
+
+    func fetchWorkspaceMembers(
+        slug: String,
+        authToken: String,
+        callback: @escaping HiveWorkspaceMembersCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        guard let encodedSlug = slug.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+            errorCallback(); return
+        }
+        let urlString = "\(API.kHiveBaseUrl)/workspaces/\(encodedSlug)/members"
+        guard let request = createRequest(urlString, bodyParams: nil, method: "GET", token: authToken) else {
+            errorCallback(); return
+        }
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                print("[HiveAPI] Fetch workspace members failed with status code (401) - token may be expired")
+                errorCallback()
+                return
+            }
+            
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+                var members: [WorkspaceMember] = []
+                if let arr = json["members"].array {
+                    members = arr.compactMap { WorkspaceMember(json: $0) }
+                }
+                if let ownerDict = json["owner"].dictionary {
+                    let ownerJson = JSON(ownerDict)
+                    if let owner = WorkspaceMember(json: ownerJson) {
+                        members.append(owner)
+                    }
+                }
+                callback(members)
+            case .failure:
+                errorCallback()
+            }
+        }
+    }
+
+    func fetchWorkspaceMembersWithAuth(
+        slug: String,
+        callback: @escaping HiveWorkspaceMembersCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
+            fetchWorkspaceMembers(
+                slug: slug,
+                authToken: storedToken,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateAndFetchWorkspaceMembers(
+                        slug: slug,
+                        callback: callback,
+                        errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateAndFetchWorkspaceMembers(slug: slug, callback: callback, errorCallback: errorCallback)
+        }
+    }
+
+    private func authenticateAndFetchWorkspaceMembers(
+        slug: String,
+        callback: @escaping HiveWorkspaceMembersCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback(); return }
+                UserDefaults.Keys.hiveToken.set(token)
+                self?.fetchWorkspaceMembers(slug: slug, authToken: token, callback: callback, errorCallback: errorCallback)
+            },
+            errorCallback: errorCallback
+        )
     }
 
 }

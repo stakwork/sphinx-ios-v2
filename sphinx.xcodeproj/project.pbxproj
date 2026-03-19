@@ -655,8 +655,6 @@
 		47FE9A3E23C381A20090913F /* UITapGestureRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47FE9A3D23C381A20090913F /* UITapGestureRecognizer.swift */; };
 		4AC66B19341A44DA8F5A0F1E /* MarkdownRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5D5C9BE1416497D9EEB9877 /* MarkdownRenderer.swift */; };
 		5010E69969BC4B008CB1B8DB /* HiveChatMessageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F4B101D1E0946E1A2ED0FCA /* HiveChatMessageTests.swift */; };
-		5C4CD33514044245AA1118AE /* WorkspaceFeatureTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65CCA59A46E54A47BF7232FC /* WorkspaceFeatureTableViewCell.swift */; };
-		6C2EB62CC9284A8B9B5B320D /* WorkspaceFeatureTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = D11C49EF137D47F1BCA5623D /* WorkspaceFeatureTableViewCell.xib */; };
 		731EF373B8FBD726748501FC /* WorkspaceTaskTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = E6E60B7E071F2F4E54B84E16 /* WorkspaceTaskTableViewCell.xib */; };
 		81D6970D2A7742A888F18562 /* WorkspaceFeatureTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6957C94054A8404294F1E644 /* WorkspaceFeatureTableViewCell.swift */; };
 		8846460B606C49A09D11D185 /* HiveAnyCableManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 667BC9B05F7A484EB3EE6CB7 /* HiveAnyCableManagerTests.swift */; };
@@ -676,6 +674,7 @@
 		A1B2C3D4E5F6A7B8C9D0E1F2 /* TaskProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6A7B8C9D0E1F2A3 /* TaskProgress.swift */; };
 		A5F3D5A533984995ADE1BADF /* WorkspaceFeatureTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = C638608884A0403797B98830 /* WorkspaceFeatureTableViewCell.xib */; };
 		A748D979E2F14560BF39E4A7 /* HiveChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8ABF62A347844ECEB2FC60A4 /* HiveChatMessage.swift */; };
+		47AABB00FF00BEEF00000004 /* WorkspaceMember.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AABB00FF00BEEF00000003 /* WorkspaceMember.swift */; };
 		A9F9FCD16AAC4DCD96AD35C4 /* HiveAnyCableManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E9262D0931349B5946161EE /* HiveAnyCableManager.swift */; };
 		AA001CQ12F9A0001000CQ001 /* ClarifyingQuestionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA001CQ02F9A0001000CQ001 /* ClarifyingQuestionsView.swift */; };
 		AA001CQ32F9A0001000CQ001 /* ClarifyingQuestionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA001CQ22F9A0001000CQ001 /* ClarifyingQuestionsTests.swift */; };
@@ -1962,13 +1961,13 @@
 		47FE9A3D23C381A20090913F /* UITapGestureRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITapGestureRecognizer.swift; sourceTree = "<group>"; };
 		487E10CEB3D07B0840A84681 /* Pods_sphinx.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_sphinx.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C31187BFB7EDD28A632A1FD /* FeaturePlanViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeaturePlanViewController.swift; sourceTree = "<group>"; };
-		65CCA59A46E54A47BF7232FC /* WorkspaceFeatureTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceFeatureTableViewCell.swift; sourceTree = "<group>"; };
 		667BC9B05F7A484EB3EE6CB7 /* HiveAnyCableManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveAnyCableManagerTests.swift; sourceTree = "<group>"; };
 		6957C94054A8404294F1E644 /* WorkspaceFeatureTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceFeatureTableViewCell.swift; sourceTree = "<group>"; };
 		6E9262D0931349B5946161EE /* HiveAnyCableManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveAnyCableManager.swift; sourceTree = "<group>"; };
 		745A54A4B69B4D74B9F96B6F /* AttachmentGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentGridView.swift; sourceTree = "<group>"; };
 		7734ED4D2D66C733003276BA /* sphinx 53.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 53.xcdatamodel"; sourceTree = "<group>"; };
 		8ABF62A347844ECEB2FC60A4 /* HiveChatMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveChatMessage.swift; sourceTree = "<group>"; };
+		47AABB00FF00BEEF00000003 /* WorkspaceMember.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceMember.swift; sourceTree = "<group>"; };
 		90FA80AA7B584833953F22B2 /* HiveAnyCableDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveAnyCableDelegate.swift; sourceTree = "<group>"; };
 		9386C2882BB25C2200ABDEF3 /* AddTagsButtonCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = AddTagsButtonCell.xib; sourceTree = "<group>"; };
 		9386C28A2BB25EDC00ABDEF3 /* AddedTagsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddedTagsView.swift; sourceTree = "<group>"; };
@@ -2158,7 +2157,6 @@
 		CEF821D52963B68600CBB28F /* DiscoverTribesWebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverTribesWebViewController.swift; sourceTree = "<group>"; };
 		CEF88DCF29B66B9200DC1C40 /* RecommendationItemWUnifiedViewCollectionViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendationItemWUnifiedViewCollectionViewCell.swift; sourceTree = "<group>"; };
 		CEF88DD029B66B9200DC1C40 /* RecommendationItemWUnifiedViewCollectionViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = RecommendationItemWUnifiedViewCollectionViewCell.xib; sourceTree = "<group>"; };
-		D11C49EF137D47F1BCA5623D /* WorkspaceFeatureTableViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = WorkspaceFeatureTableViewCell.xib; sourceTree = "<group>"; };
 		D4E5F6A7B8C9D0E1F2A3B4C5 /* TaskProgressBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskProgressBarView.swift; sourceTree = "<group>"; };
 		D5D5C9BE1416497D9EEB9877 /* MarkdownRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownRenderer.swift; sourceTree = "<group>"; };
 		D5E6F7A8B9CA4A01E2F3A4B5 /* WorkspaceTaskTableViewCellTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceTaskTableViewCellTests.swift; sourceTree = "<group>"; };
@@ -4117,8 +4115,6 @@
 				9BF56C5719164A1E858E15AA /* WorkspaceFeaturesViewController.swift */,
 				6957C94054A8404294F1E644 /* WorkspaceFeatureTableViewCell.swift */,
 				C638608884A0403797B98830 /* WorkspaceFeatureTableViewCell.xib */,
-				65CCA59A46E54A47BF7232FC /* WorkspaceFeatureTableViewCell.swift */,
-				D11C49EF137D47F1BCA5623D /* WorkspaceFeatureTableViewCell.xib */,
 				475962172F50CC6700564B7F /* Mocks */,
 				47B9CBF92F460C7B007527B4 /* Workspace.swift */,
 				4732E34ED775B54D3F8EA591 /* WorkspaceTask.swift */,
@@ -4128,6 +4124,7 @@
 				BB22CC33DD44EE55FF6677BB /* HiveSearchResultCell.xib */,
 				BB22CC33DD44EE55FF6677DD /* WorkspaceSearchViewController.swift */,
 				8ABF62A347844ECEB2FC60A4 /* HiveChatMessage.swift */,
+				47AABB00FF00BEEF00000003 /* WorkspaceMember.swift */,
 				47AABB00FF00BEEF00000001 /* HiveFeatureAttachment.swift */,
 				47B9CBFA2F460C7B007527B4 /* WorkspacesViewController.swift */,
 				E83B28E7233A4D0D9AE288E2 /* WorkspaceViewController.swift */,
@@ -5217,7 +5214,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				A5F3D5A533984995ADE1BADF /* WorkspaceFeatureTableViewCell.xib in Resources */,
-				6C2EB62CC9284A8B9B5B320D /* WorkspaceFeatureTableViewCell.xib in Resources */,
 				47018F9227CFEEAF00797E0B /* skip30v1.caf in Resources */,
 				CE9A18582A1D6AC900F176DE /* MediaStorageSourceTableViewCell.xib in Resources */,
 				47018F9327CFEEAF00797E0B /* skip30v2.caf in Resources */,
@@ -5281,7 +5277,6 @@
 				47DE1C4B2A6ED0CA0029597B /* ThreadLastMessageHeader.xib in Resources */,
 				47C7D704278749CF006D2809 /* PeopleTorActionsView.xib in Resources */,
 				CE842DEF298D61CF00620AD3 /* BadgeAdminListHeaderCell.xib in Resources */,
-				F39F2C8626E2840500D357F6 /* FeedSearchResultsCollectionViewSectionHeader.xib in Resources */,
 				4724BC1325474B440012BD76 /* WebApps.storyboard in Resources */,
 				4785C10724D4A6A0004E2D6C /* AppSizeView.xib in Resources */,
 				47E6A4DE2A2E703F00A9509E /* GroupRequestView.xib in Resources */,
@@ -5547,12 +5542,12 @@
 				P1Q2R3S4T5U6V7W8X9Y0Z1A2 /* PaginationControlView.swift in Sources */,
 				T4U5V6W7X8Y9Z0A1B2C3D4E5 /* StakworkWorkflowData.swift in Sources */,
 				81D6970D2A7742A888F18562 /* WorkspaceFeatureTableViewCell.swift in Sources */,
-				5C4CD33514044245AA1118AE /* WorkspaceFeatureTableViewCell.swift in Sources */,
 				D2789CFCCA3E453295F15A2E /* HiveFeature.swift in Sources */,
 				AA11BB22CC33DD44EE55FF67 /* HiveSearchResult.swift in Sources */,
 				BB22CC33DD44EE55FF667788 /* HiveSearchResultCell.swift in Sources */,
 				BB22CC33DD44EE55FF6677CC /* WorkspaceSearchViewController.swift in Sources */,
 				A748D979E2F14560BF39E4A7 /* HiveChatMessage.swift in Sources */,
+				47AABB00FF00BEEF00000004 /* WorkspaceMember.swift in Sources */,
 				A1B2C3D4E5F601020304060B /* HiveFeatureAttachment.swift in Sources */,
 				CECFBF062965C8E600BAD935 /* DiscoverTribeData.swift in Sources */,
 				475C566D2A7BEC5F00E6F9A9 /* ThreadTableDataSource+ResultsControllerExtension.swift in Sources */,
