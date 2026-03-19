@@ -1001,6 +1001,14 @@ extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
         return cell
     }
 
+    func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
+        if processingStepText != nil && indexPath.row == messages.count { return 60 }
+        guard indexPath.row < messages.count else { return 200 }
+        let msg = messages[indexPath.row]
+        if msg.artifacts.contains(where: { $0.isClarifyingQuestions }) { return 600 }
+        return 200
+    }
+
     private func handleAttachmentTap(_ attachment: HiveChatMessageAttachment) {
         guard let s3Key = attachment.resolvedUrl else { return }
         let mime = attachment.mimeType ?? ""

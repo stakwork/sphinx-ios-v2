@@ -1570,6 +1570,18 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
         }
     }
 
+    func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
+        guard tableView === chatTableView else { return 110 }
+        if processingStepText != nil && indexPath.row == messages.count { return 60 }
+        guard indexPath.row < messages.count else { return 200 }
+        let msg = messages[indexPath.row]
+        // CQ cells can be very tall (many multiline option buttons). Return a generous
+        // estimate so UITableView doesn't under-shoot and then compensate with a
+        // contentOffset jump that kicks the user back to the bottom.
+        if msg.artifacts.contains(where: { $0.isClarifyingQuestions }) { return 600 }
+        return 200
+    }
+
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
 

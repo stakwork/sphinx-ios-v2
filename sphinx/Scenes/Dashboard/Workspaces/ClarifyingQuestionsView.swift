@@ -12,6 +12,8 @@ import UIKit
 // UIButton doesn't grow its intrinsicContentSize for multiline titleLabel text.
 // This subclass overrides intrinsicContentSize so Auto Layout can grow button height.
 private final class MultilineTitleButton: UIButton {
+    private var lastKnownWidth: CGFloat = 0
+
     override var intrinsicContentSize: CGSize {
         guard let titleLabel = titleLabel else { return super.intrinsicContentSize }
         let insets = contentEdgeInsets
@@ -27,7 +29,14 @@ private final class MultilineTitleButton: UIButton {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        invalidateIntrinsicContentSize()
+        // Only invalidate when width actually changes — calling unconditionally
+        // on every layout pass triggers table view height recalculation loops
+        // that cause contentOffset jumps while the user is scrolling.
+        let w = bounds.width
+        if w != lastKnownWidth {
+            lastKnownWidth = w
+            invalidateIntrinsicContentSize()
+        }
     }
 }
 
@@ -383,7 +392,7 @@ final class ClarifyingQuestionsView: UIView {
 
     // MARK: - Private: Rendering
 
-    private func showQuestion(at index: Int) {
+    private func showQuestion(at index: Int, notifyHeightChange: Bool = false) {
         guard index < questions.count else { return }
         let q = questions[index]
 
@@ -449,7 +458,9 @@ final class ClarifyingQuestionsView: UIView {
         }
 
         invalidateIntrinsicContentSize()
-        onHeightChanged?()
+        if notifyHeightChange {
+            onHeightChanged?()
+        }
     }
 
     private func makeOptionButton(title: String, tag: Int) -> UIButton {
@@ -544,20 +555,20 @@ final class ClarifyingQuestionsView: UIView {
             onSubmit?(collectedAnswers)
         } else {
             currentIndex += 1
-            showQuestion(at: currentIndex)
+            showQuestion(at: currentIndex, notifyHeightChange: true)
         }
     }
 
     @objc private func showPrev() {
         guard currentIndex > 0 else { return }
         currentIndex -= 1
-        showQuestion(at: currentIndex)
+        showQuestion(at: currentIndex, notifyHeightChange: true)
     }
 
     @objc private func showNext() {
         guard currentIndex < questions.count - 1 else { return }
         currentIndex += 1
-        showQuestion(at: currentIndex)
+        showQuestion(at: currentIndex, notifyHeightChange: true)
     }
 }
 
