@@ -3133,6 +3133,12 @@ extension API {
             errorCallback(); return
         }
         session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                print("[HiveAPI] Fetch workspace members failed with status code (401) - token may be expired")
+                errorCallback()
+                return
+            }
+            
             switch response.result {
             case .success(let data):
                 let json = JSON(data)
