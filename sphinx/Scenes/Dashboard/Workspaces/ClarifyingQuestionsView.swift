@@ -15,7 +15,6 @@ private final class MultilineTitleButton: UIButton {
     override var intrinsicContentSize: CGSize {
         guard let titleLabel = titleLabel else { return super.intrinsicContentSize }
         let insets = contentEdgeInsets
-        // Use superview width when available; fall back to screen width heuristic
         let containerWidth = superview?.bounds.width ?? (UIScreen.main.bounds.width - 48)
         let availableWidth = containerWidth - insets.left - insets.right
         guard availableWidth > 0 else { return super.intrinsicContentSize }
@@ -28,7 +27,6 @@ private final class MultilineTitleButton: UIButton {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        // Re-evaluate height every time layout changes (e.g. after first width pass)
         invalidateIntrinsicContentSize()
     }
 }
@@ -41,11 +39,7 @@ final class ClarifyingQuestionsView: UIView {
 
     // MARK: - Public API
 
-    /// Called with all collected answer strings when the user taps Submit on the final question.
     var onSubmit: (([String]) -> Void)?
-
-    /// Called after `showQuestion(at:)` rebuilds the options stack so the host cell
-    /// can ask the table view to recalculate its row height.
     var onHeightChanged: (() -> Void)?
 
     // MARK: - Private State
@@ -57,7 +51,10 @@ final class ClarifyingQuestionsView: UIView {
 
     // Review-mode state
     private var isLockedForReview: Bool = false
+    /// Maps question index → set of selected option indices (restored from answer text)
     private var restoredAnswersByIndex: [Int: Set<Int>] = [:]
+    /// Maps question index → free-text context the user typed (not matching any option label)
+    private var restoredContextByIndex: [Int: String] = [:]
 
     // MARK: - UI Components
 
@@ -97,6 +94,17 @@ final class ClarifyingQuestionsView: UIView {
         return sv
     }()
 
+    /// Read-only label shown below options in review mode when the user added free-text context.
+    private let reviewContextLabel: UILabel = {
+        let l = UILabel()
+        l.translatesAutoresizingMaskIntoConstraints = false
+        l.font = UIFont(name: "Roboto-Regular", size: 13) ?? UIFont.systemFont(ofSize: 13)
+        l.textColor = UIColor.Sphinx.SecondaryText
+        l.numberOfLines = 0
+        l.isHidden = true
+        return l
+    }()
+
     private let additionalContextTextView: UITextView = {
         let tv = UITextView()
         tv.translatesAutoresizingMaskIntoConstraints = false
@@ -122,7 +130,6 @@ final class ClarifyingQuestionsView: UIView {
         return b
     }()
 
-    // Placeholder handling
     private let placeholderLabel: UILabel = {
         let l = UILabel()
         l.translatesAutoresizingMaskIntoConstraints = false
@@ -132,8 +139,7 @@ final class ClarifyingQuestionsView: UIView {
         return l
     }()
 
-    // Navigation row (review mode only) — prevButton and nextButton only.
-    // counterLabel stays in its original position so its constraints are never broken.
+    // Navigation row (review mode only)
     private var navRowStackView: UIStackView?
 
     private lazy var prevButton: UIButton = {
@@ -158,10 +164,12 @@ final class ClarifyingQuestionsView: UIView {
         return b
     }()
 
-    // Stored constraint references so we can toggle them cleanly
-    private var actionButtonBottomConstraint: NSLayoutConstraint?   // actionButton.bottom → containerView.bottom
-    private var contextViewTopConstraint: NSLayoutConstraint?        // additionalContextTextView.top → optionsStack.bottom
-    private var optionsBottomToNavRowConstraint: NSLayoutConstraint? // optionsStack.bottom → navRow.top
+    // Constraint references for toggling between normal and review layout
+    private var actionButtonBottomConstraint: NSLayoutConstraint?
+    private var contextViewTopConstraint: NSLayoutConstraint?
+    private var optionsBottomToNavRowConstraint: NSLayoutConstraint?
+    // reviewContextLabel anchors (added once, hidden/shown as needed)
+    private var reviewContextTopConstraint: NSLayoutConstraint?
 
     // MARK: - Init
 
@@ -185,6 +193,7 @@ final class ClarifyingQuestionsView: UIView {
         containerView.addSubview(counterLabel)
         containerView.addSubview(questionLabel)
         containerView.addSubview(optionsStackView)
+        containerView.addSubview(reviewContextLabel)
         containerView.addSubview(additionalContextTextView)
         additionalContextTextView.addSubview(placeholderLabel)
         containerView.addSubview(actionButton)
@@ -192,7 +201,6 @@ final class ClarifyingQuestionsView: UIView {
         additionalContextTextView.delegate = self
         actionButton.addTarget(self, action: #selector(actionButtonTapped), for: .touchUpInside)
 
-        // Store references to constraints we need to toggle in review mode
         let contextTop = additionalContextTextView.topAnchor.constraint(
             equalTo: optionsStackView.bottomAnchor, constant: 12
         )
@@ -202,6 +210,12 @@ final class ClarifyingQuestionsView: UIView {
             equalTo: containerView.bottomAnchor, constant: -12
         )
         actionButtonBottomConstraint = actionBottom
+
+        // reviewContextLabel: anchored below optionsStack, hidden by default
+        let reviewCtxTop = reviewContextLabel.topAnchor.constraint(
+            equalTo: optionsStackView.bottomAnchor, constant: 8
+        )
+        reviewContextTopConstraint = reviewCtxTop
 
         NSLayoutConstraint.activate([
             containerView.topAnchor.constraint(equalTo: topAnchor, constant: 8),
@@ -213,7 +227,6 @@ final class ClarifyingQuestionsView: UIView {
             counterLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
             counterLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
 
-            // questionLabel anchors to counterLabel.bottom — NEVER move counterLabel out of containerView
             questionLabel.topAnchor.constraint(equalTo: counterLabel.bottomAnchor, constant: 6),
             questionLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
             questionLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
@@ -222,7 +235,11 @@ final class ClarifyingQuestionsView: UIView {
             optionsStackView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
             optionsStackView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
 
-            // contextTop (stored reference)
+            // reviewContextLabel (hidden until review mode)
+            reviewCtxTop,
+            reviewContextLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
+            reviewContextLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
+
             contextTop,
             additionalContextTextView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
             additionalContextTextView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
@@ -243,7 +260,6 @@ final class ClarifyingQuestionsView: UIView {
 
     // MARK: - Public Methods
 
-    /// Configure the view with a set of clarifying questions and show the first one.
     func configure(with questions: [ClarifyingQuestion]) {
         guard !questions.isEmpty else { return }
         self.questions = questions
@@ -257,52 +273,65 @@ final class ClarifyingQuestionsView: UIView {
         showQuestion(at: 0)
     }
 
-    /// Lock the view after submission — dims it and disables interaction.
     func lock() {
         isUserInteractionEnabled = false
         alpha = 0.5
     }
 
-    /// Lock the view in read-only review mode, restoring selected answers parsed from `answersText`.
-    /// Navigation (prev/next) remains active; option buttons and action button are disabled.
+    /// Lock in read-only review mode. Parses `answersText` to restore selections and free-text context.
     func lockWithAnswers(_ answersText: String) {
-        // Parse answersText: blocks separated by "\n\n", each block has a line "A: ..."
-        let blocks = answersText.components(separatedBy: "\n\n")
         restoredAnswersByIndex = [:]
+        restoredContextByIndex = [:]
 
-        for (i, block) in blocks.enumerated() {
-            guard i < questions.count else { break }
+        // Split into Q/A blocks
+        let blocks = answersText.components(separatedBy: "\n\n").filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+
+        for block in blocks {
             let lines = block.components(separatedBy: "\n")
-            guard let aLine = lines.first(where: { $0.hasPrefix("A: ") }) else { continue }
-            let aValue = String(aLine.dropFirst(3)) // strip "A: "
-            let selectedLabels = aValue.components(separatedBy: ", ")
-            var indices: Set<Int> = []
-            for label in selectedLabels {
-                if let idx = questions[i].options.firstIndex(of: label) {
-                    indices.insert(idx)
+            // Match block to question by Q: line
+            guard let qLine = lines.first(where: { $0.hasPrefix("Q: ") }),
+                  let aLine = lines.first(where: { $0.hasPrefix("A: ") }) else { continue }
+
+            let qText = String(qLine.dropFirst(3))
+            let aValue = String(aLine.dropFirst(3))
+
+            // Find which question this block belongs to
+            guard let qIdx = questions.firstIndex(where: { $0.question == qText }) else { continue }
+
+            let parts = aValue.components(separatedBy: ", ")
+            var selectedIndices: Set<Int> = []
+            var contextParts: [String] = []
+
+            for part in parts {
+                if let optIdx = questions[qIdx].options.firstIndex(of: part) {
+                    selectedIndices.insert(optIdx)
+                } else {
+                    // Not a known option label → it's free-text context
+                    contextParts.append(part)
                 }
             }
-            restoredAnswersByIndex[i] = indices
+
+            restoredAnswersByIndex[qIdx] = selectedIndices
+            if !contextParts.isEmpty {
+                restoredContextByIndex[qIdx] = contextParts.joined(separator: ", ")
+            }
         }
 
         isLockedForReview = true
 
-        // Hide interactive elements
+        // Hide interactive-only elements
         additionalContextTextView.isHidden = true
         placeholderLabel.isHidden = true
         actionButton.isHidden = true
 
-        // Switch constraint chain: detach textView from optionsStack bottom,
-        // attach navRow instead.
+        // Swap constraint chain: options → navRow → bottom  (not options → textView → actionBtn → bottom)
         contextViewTopConstraint?.isActive = false
         actionButtonBottomConstraint?.isActive = false
 
         addNavRowIfNeeded()
-
         showQuestion(at: 0)
     }
 
-    /// Reset to initial blank state (used in `prepareForReuse`).
     func reset() {
         questions = []
         currentIndex = 0
@@ -310,15 +339,17 @@ final class ClarifyingQuestionsView: UIView {
         collectedAnswers = []
         isLockedForReview = false
         restoredAnswersByIndex = [:]
+        restoredContextByIndex = [:]
         counterLabel.text = nil
         questionLabel.text = nil
+        reviewContextLabel.text = nil
+        reviewContextLabel.isHidden = true
         additionalContextTextView.text = ""
         additionalContextTextView.isHidden = false
         placeholderLabel.isHidden = false
         actionButton.isHidden = false
         optionsStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
 
-        // Remove nav row and restore original constraint chain
         optionsBottomToNavRowConstraint?.isActive = false
         optionsBottomToNavRowConstraint = nil
         navRowStackView?.removeFromSuperview()
@@ -335,9 +366,8 @@ final class ClarifyingQuestionsView: UIView {
     private func addNavRowIfNeeded() {
         guard navRowStackView == nil else { return }
 
-        // Build navRow with ONLY prevButton and nextButton.
-        // Do NOT include counterLabel — moving it out of containerView would destroy
-        // the questionLabel.top → counterLabel.bottom constraint chain, collapsing the layout.
+        // Only prevButton + nextButton — counterLabel stays in containerView so its
+        // constraints (which questionLabel depends on) are never disturbed.
         let navRow = UIStackView(arrangedSubviews: [prevButton, nextButton])
         navRow.translatesAutoresizingMaskIntoConstraints = false
         navRow.axis = .horizontal
@@ -346,7 +376,6 @@ final class ClarifyingQuestionsView: UIView {
         containerView.addSubview(navRow)
         navRowStackView = navRow
 
-        // Pin navRow to container bottom; pin optionsStack bottom to navRow top
         let optToNav = optionsStackView.bottomAnchor.constraint(
             equalTo: navRow.topAnchor, constant: -12
         )
@@ -374,6 +403,7 @@ final class ClarifyingQuestionsView: UIView {
         if !isLockedForReview {
             additionalContextTextView.text = ""
             placeholderLabel.isHidden = false
+            reviewContextLabel.isHidden = true
         }
 
         // Rebuild option pills
@@ -384,7 +414,6 @@ final class ClarifyingQuestionsView: UIView {
         }
 
         if isLockedForReview {
-            // Restore selections and disable interaction on all option buttons
             let restored = restoredAnswersByIndex[index] ?? []
             optionsStackView.arrangedSubviews.compactMap { $0 as? UIButton }.forEach { btn in
                 if restored.contains(btn.tag) {
@@ -392,7 +421,36 @@ final class ClarifyingQuestionsView: UIView {
                 }
                 btn.isUserInteractionEnabled = false
             }
-            // Update nav button enabled states
+
+            // Show free-text context if present for this question
+            if let ctx = restoredContextByIndex[index], !ctx.isEmpty {
+                reviewContextLabel.text = "Additional: \(ctx)"
+                reviewContextLabel.isHidden = false
+                // Repin the navRow constraint below the context label
+                optionsBottomToNavRowConstraint?.isActive = false
+                reviewContextTopConstraint?.isActive = true
+                if let navRow = navRowStackView {
+                    let ctxToNav = reviewContextLabel.bottomAnchor.constraint(
+                        equalTo: navRow.topAnchor, constant: -8
+                    )
+                    ctxToNav.isActive = true
+                    // Store so we can remove/replace on next call
+                    optionsBottomToNavRowConstraint = ctxToNav
+                }
+            } else {
+                reviewContextLabel.isHidden = true
+                reviewContextTopConstraint?.isActive = false
+                // Re-pin options directly to navRow
+                optionsBottomToNavRowConstraint?.isActive = false
+                if let navRow = navRowStackView {
+                    let optToNav = optionsStackView.bottomAnchor.constraint(
+                        equalTo: navRow.topAnchor, constant: -12
+                    )
+                    optToNav.isActive = true
+                    optionsBottomToNavRowConstraint = optToNav
+                }
+            }
+
             prevButton.isEnabled = index > 0
             nextButton.isEnabled = index < questions.count - 1
         } else {
@@ -404,7 +462,6 @@ final class ClarifyingQuestionsView: UIView {
     }
 
     private func makeOptionButton(title: String, tag: Int) -> UIButton {
-        // Use MultilineTitleButton so intrinsicContentSize grows with wrapped text
         let btn = MultilineTitleButton(type: .system)
         btn.translatesAutoresizingMaskIntoConstraints = false
         btn.tag = tag
@@ -442,7 +499,6 @@ final class ClarifyingQuestionsView: UIView {
         let enabled = hasSelection || hasContext
         actionButton.isEnabled = enabled
         actionButton.alpha = enabled ? 1.0 : 0.5
-
         let isLast = currentIndex == questions.count - 1
         actionButton.setTitle(isLast ? "Submit" : "Next →", for: .normal)
     }
@@ -465,7 +521,6 @@ final class ClarifyingQuestionsView: UIView {
                 }
             }
         } else {
-            // multiple_choice: toggle
             if selectedIndices.contains(tappedIndex) {
                 selectedIndices.remove(tappedIndex)
                 applyUnselectedStyle(to: sender)
@@ -489,7 +544,6 @@ final class ClarifyingQuestionsView: UIView {
         let contextText = additionalContextTextView.text
             .trimmingCharacters(in: .whitespacesAndNewlines)
 
-        // Format: "Q: {question}\nA: {answer1}, {answer2}" (context appended with ", " if present)
         var parts = selectedLabels
         if !contextText.isEmpty { parts.append(contextText) }
         let answerString = "Q: \(q.question)\nA: \(parts.joined(separator: ", "))"

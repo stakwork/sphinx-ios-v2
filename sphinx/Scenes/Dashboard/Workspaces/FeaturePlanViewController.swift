@@ -1519,8 +1519,10 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
             self?.sendClarifyingAnswers(answers: answers, replyId: replyId)
         }
         cell.onHeightChanged = { [weak tableView] in
-            tableView?.beginUpdates()
-            tableView?.endUpdates()
+            UIView.performWithoutAnimation {
+                tableView?.beginUpdates()
+                tableView?.endUpdates()
+            }
         }
         cell.onAttachmentTap = { [weak self] attachment in
             self?.handleAttachmentTap(attachment)
