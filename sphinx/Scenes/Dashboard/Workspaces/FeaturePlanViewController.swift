@@ -1062,9 +1062,6 @@ class FeaturePlanViewController: UIViewController {
             fetchPoolStatus()
         }
         if index == 3 {
-            // Clear VERIFY badge and fetch fresh attachments
-            let existing = Set(topSegmentedControl.indicesOfTitlesWithBadge)
-            topSegmentedControl.indicesOfTitlesWithBadge = Array(existing.subtracting([3]))
             fetchVerifyAttachments()
         }
     }
@@ -1779,12 +1776,9 @@ extension FeaturePlanViewController: HivePusherDelegate {
             topSegmentedControl.indicesOfTitlesWithBadge = Array(existing.union([1]))
         }
 
-        // Badge or refresh the VERIFY tab (index 3)
-        if verifyContainerView.isHidden {
-            let existing = Set(topSegmentedControl.indicesOfTitlesWithBadge)
-            topSegmentedControl.indicesOfTitlesWithBadge = Array(existing.union([3]))
-        } else {
-            fetchVerifyAttachments() // already on VERIFY — silent refresh
+        // Silent refresh if already on VERIFY tab (index 3)
+        if !verifyContainerView.isHidden {
+            fetchVerifyAttachments()
         }
     }
     
