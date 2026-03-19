@@ -38,11 +38,10 @@ class MessageThreadView: UIView {
     @IBOutlet weak var moreRepliesLabel: UILabel!
     
     @IBOutlet weak var messageFakeBubbleView: UIView!
-    
-    var mentionsBadgeContainer: UIView?
-    var mentionsBadgeLabel: UILabel?
-    private var badgeLeadingAfterLabel: NSLayoutConstraint?
-    private var badgeLeadingStandalone: NSLayoutConstraint?
+
+    @IBOutlet weak var mentionsBadgeContainer: UIView!
+    @IBOutlet weak var mentionsBadgeView: UIView!
+    @IBOutlet weak var mentionsBadgeLabel: UILabel!
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -63,51 +62,6 @@ class MessageThreadView: UIView {
         self.autoresizingMask = [.flexibleHeight, .flexibleWidth]
         
         setupViews()
-        setupMentionsBadge()
-    }
-    
-    func setupMentionsBadge() {
-        let container = UIView()
-        container.translatesAutoresizingMaskIntoConstraints = false
-        container.backgroundColor = UIColor.Sphinx.PrimaryBlue
-        container.layer.cornerRadius = 10
-        container.clipsToBounds = true
-        container.isHidden = true
-        
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.textColor = .white
-        label.font = UIFont.systemFont(ofSize: 11, weight: .semibold)
-        label.textAlignment = .center
-        
-        container.addSubview(label)
-        NSLayoutConstraint.activate([
-            label.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 6),
-            label.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -6),
-            label.topAnchor.constraint(equalTo: container.topAnchor, constant: 3),
-            label.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -3)
-        ])
-        
-        // Add badge inside moreRepliesBubbleView.
-        // Two mutually exclusive leading constraints:
-        // - after moreRepliesLabel (when count+label are visible)
-        // - from bubble leading edge (when only badge is shown, no count/label)
-        moreRepliesBubbleView.addSubview(container)
-        
-        let afterLabel = container.leadingAnchor.constraint(equalTo: moreRepliesLabel.trailingAnchor, constant: 8)
-        let standalone = container.leadingAnchor.constraint(equalTo: moreRepliesBubbleView.leadingAnchor, constant: 16)
-        standalone.isActive = true
-        
-        NSLayoutConstraint.activate([
-            container.centerYAnchor.constraint(equalTo: moreRepliesBubbleView.topAnchor, constant: 17),
-            container.heightAnchor.constraint(equalToConstant: 20)
-        ])
-        
-        badgeLeadingAfterLabel = afterLabel
-        badgeLeadingStandalone = standalone
-        
-        mentionsBadgeContainer = container
-        mentionsBadgeLabel = label
     }
     
     func setupViews() {
@@ -140,6 +94,9 @@ class MessageThreadView: UIView {
         messageFakeBubbleView.layer.cornerRadius = 9
         
         moreRepliesCountView.layer.cornerRadius = moreRepliesCountView.frame.height / 2
+        
+        mentionsBadgeView.layer.cornerRadius = 10
+        mentionsBadgeView.clipsToBounds = true
         
         firstReplyAvatarView.setInitialLabelSize(size: 11)
         firstReplyAvatarView.resetView()
@@ -211,21 +168,14 @@ class MessageThreadView: UIView {
             moreRepliesLabel.isHidden = true
         }
         
-        // Show moreRepliesContainer when there are extra replies OR mention badge to display
+        // Show moreRepliesContainer when there are extra replies OR a mention badge to display
         moreRepliesContainer.isHidden = !hasMoreReplies && mentionsCount == 0
         
         if mentionsCount > 0 {
-            mentionsBadgeLabel?.text = "@ \(mentionsCount)"
-            mentionsBadgeContainer?.isHidden = false
-            if hasMoreReplies {
-                badgeLeadingStandalone?.isActive = false
-                badgeLeadingAfterLabel?.isActive = true
-            } else {
-                badgeLeadingAfterLabel?.isActive = false
-                badgeLeadingStandalone?.isActive = true
-            }
+            mentionsBadgeLabel.text = "@ \(mentionsCount)"
+            mentionsBadgeContainer.isHidden = false
         } else {
-            mentionsBadgeContainer?.isHidden = true
+            mentionsBadgeContainer.isHidden = true
         }
         
         configureMediaWith(
