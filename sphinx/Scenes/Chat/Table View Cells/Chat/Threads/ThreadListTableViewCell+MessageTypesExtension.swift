@@ -35,6 +35,14 @@ extension ThreadListTableViewCell {
         repliesCountLabel.text = "\(threadLayoutState.repliesCount) replies"
         lastReplyDateLabel.text = threadLayoutState.lastReplyTimestamp
         
+        let mentionsCount = threadLayoutState.mentionsCount
+        if mentionsCount > 0 {
+            mentionsBadgeLabel?.text = "@ \(mentionsCount)"
+            mentionsBadgeContainer?.isHidden = false
+        } else {
+            mentionsBadgeContainer?.isHidden = true
+        }
+        
         let threadPeople = threadLayoutState.threadPeople
 
         if (threadPeople.count > 0) {

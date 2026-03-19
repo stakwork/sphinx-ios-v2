@@ -60,12 +60,49 @@ class ThreadListTableViewCell: UITableViewCell {
     @IBOutlet weak var repliesCountLabel: UILabel!
     @IBOutlet weak var lastReplyDateLabel: UILabel!
     
+    var mentionsBadgeContainer: UIView?
+    var mentionsBadgeLabel: UILabel?
+    
     var urlRanges = [NSRange]()
     
     override func awakeFromNib() {
         super.awakeFromNib()
 
         setupViews()
+        setupMentionsBadge()
+    }
+    
+    func setupMentionsBadge() {
+        let container = UIView()
+        container.translatesAutoresizingMaskIntoConstraints = false
+        container.backgroundColor = UIColor.Sphinx.PrimaryBlue
+        container.layer.cornerRadius = 10
+        container.clipsToBounds = true
+        container.isHidden = true
+        
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.textColor = .white
+        label.font = UIFont.systemFont(ofSize: 11, weight: .semibold)
+        label.textAlignment = .center
+        
+        container.addSubview(label)
+        NSLayoutConstraint.activate([
+            label.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 6),
+            label.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -6),
+            label.topAnchor.constraint(equalTo: container.topAnchor, constant: 3),
+            label.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -3)
+        ])
+        
+        contentView.addSubview(container)
+        NSLayoutConstraint.activate([
+            container.leadingAnchor.constraint(equalTo: repliesCountLabel.trailingAnchor, constant: 8),
+            container.centerYAnchor.constraint(equalTo: repliesCountLabel.centerYAnchor),
+            container.heightAnchor.constraint(greaterThanOrEqualToConstant: 20)
+        ])
+        
+        mentionsBadgeContainer = container
+        mentionsBadgeLabel = label
     }
 
     override func prepareForReuse() {

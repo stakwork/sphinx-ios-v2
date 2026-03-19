@@ -39,6 +39,9 @@ class MessageThreadView: UIView {
     
     @IBOutlet weak var messageFakeBubbleView: UIView!
     
+    var mentionsBadgeContainer: UIView?
+    var mentionsBadgeLabel: UILabel?
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
         setup()
@@ -58,6 +61,41 @@ class MessageThreadView: UIView {
         self.autoresizingMask = [.flexibleHeight, .flexibleWidth]
         
         setupViews()
+        setupMentionsBadge()
+    }
+    
+    func setupMentionsBadge() {
+        let container = UIView()
+        container.translatesAutoresizingMaskIntoConstraints = false
+        container.backgroundColor = UIColor.Sphinx.PrimaryBlue
+        container.layer.cornerRadius = 10
+        container.clipsToBounds = true
+        
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.textColor = .white
+        label.font = UIFont.systemFont(ofSize: 11, weight: .semibold)
+        label.textAlignment = .center
+        
+        container.addSubview(label)
+        NSLayoutConstraint.activate([
+            label.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 6),
+            label.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -6),
+            label.topAnchor.constraint(equalTo: container.topAnchor, constant: 3),
+            label.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -3)
+        ])
+        
+        // Insert above messageFakeBubbleView (below moreRepliesContainer's parent stackView)
+        // We add it to contentView and position it relative to moreRepliesContainer
+        contentView.addSubview(container)
+        NSLayoutConstraint.activate([
+            container.leadingAnchor.constraint(equalTo: moreRepliesContainer.leadingAnchor),
+            container.topAnchor.constraint(equalTo: moreRepliesContainer.bottomAnchor, constant: 4),
+            container.heightAnchor.constraint(greaterThanOrEqualToConstant: 20)
+        ])
+        
+        mentionsBadgeContainer = container
+        mentionsBadgeLabel = label
     }
     
     func setupViews() {
@@ -154,6 +192,14 @@ class MessageThreadView: UIView {
             moreRepliesContainer.isHidden = false
         } else {
             moreRepliesContainer.isHidden = true
+        }
+        
+        let mentionsCount = threadMessages.mentionsCount
+        if mentionsCount > 0 {
+            mentionsBadgeLabel?.text = "@ \(mentionsCount)"
+            mentionsBadgeContainer?.isHidden = false
+        } else {
+            mentionsBadgeContainer?.isHidden = true
         }
         
         configureMediaWith(
