@@ -28,6 +28,10 @@ final class ClarifyingQuestionsView: UIView {
     private var selectedIndices: Set<Int> = []
     private var collectedAnswers: [String] = []
 
+    // Review-mode state
+    private var isLockedForReview: Bool = false
+    private var restoredAnswersByIndex: [Int: Set<Int>] = [:]
+
     // MARK: - UI Components
 
     private let containerView: UIView = {
@@ -101,6 +105,37 @@ final class ClarifyingQuestionsView: UIView {
         return l
     }()
 
+    // Navigation row (review mode only)
+    private var navRowStackView: UIStackView?
+    private var navRowBottomConstraint: NSLayoutConstraint?
+    private var optionsBottomToActionConstraint: NSLayoutConstraint?
+    private var optionsBottomToNavRowConstraint: NSLayoutConstraint?
+
+    private lazy var prevButton: UIButton = {
+        let b = UIButton(type: .system)
+        b.translatesAutoresizingMaskIntoConstraints = false
+        b.setTitle("← Prev", for: .normal)
+        b.titleLabel?.font = UIFont(name: "Roboto-Regular", size: 13) ?? UIFont.systemFont(ofSize: 13)
+        b.setTitleColor(UIColor.Sphinx.PrimaryBlue, for: .normal)
+        b.setTitleColor(UIColor.Sphinx.SecondaryText, for: .disabled)
+        b.addTarget(self, action: #selector(showPrev), for: .touchUpInside)
+        return b
+    }()
+
+    private lazy var nextButton: UIButton = {
+        let b = UIButton(type: .system)
+        b.translatesAutoresizingMaskIntoConstraints = false
+        b.setTitle("Next →", for: .normal)
+        b.titleLabel?.font = UIFont(name: "Roboto-Regular", size: 13) ?? UIFont.systemFont(ofSize: 13)
+        b.setTitleColor(UIColor.Sphinx.PrimaryBlue, for: .normal)
+        b.setTitleColor(UIColor.Sphinx.SecondaryText, for: .disabled)
+        b.addTarget(self, action: #selector(showNext), for: .touchUpInside)
+        return b
+    }()
+
+    // Stores actionButton-bottom constraint so we can deactivate it when switching to nav mode
+    private var actionButtonBottomConstraint: NSLayoutConstraint?
+
     // MARK: - Init
 
     override init(frame: CGRect) {
@@ -130,6 +165,9 @@ final class ClarifyingQuestionsView: UIView {
 
         additionalContextTextView.delegate = self
         actionButton.addTarget(self, action: #selector(actionButtonTapped), for: .touchUpInside)
+
+        let actionBottom = actionButton.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -12)
+        actionButtonBottomConstraint = actionBottom
 
         NSLayoutConstraint.activate([
             containerView.topAnchor.constraint(equalTo: topAnchor, constant: 8),
@@ -161,7 +199,7 @@ final class ClarifyingQuestionsView: UIView {
 
             actionButton.topAnchor.constraint(equalTo: additionalContextTextView.bottomAnchor, constant: 12),
             actionButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
-            actionButton.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -12),
+            actionBottom,
             actionButton.heightAnchor.constraint(equalToConstant: 36),
             actionButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 90),
         ])
@@ -189,19 +227,102 @@ final class ClarifyingQuestionsView: UIView {
         alpha = 0.5
     }
 
+    /// Lock the view in read-only review mode, restoring selected answers parsed from `answersText`.
+    /// Navigation (prev/next) remains active; option buttons and action button are disabled.
+    func lockWithAnswers(_ answersText: String) {
+        // Parse answersText: blocks separated by "\n\n", each block has a line "A: ..."
+        let blocks = answersText.components(separatedBy: "\n\n")
+        restoredAnswersByIndex = [:]
+
+        for (i, block) in blocks.enumerated() {
+            guard i < questions.count else { break }
+            let lines = block.components(separatedBy: "\n")
+            let aLine = lines.first(where: { $0.hasPrefix("A: ") })
+            guard let aLine = aLine else { continue }
+            let aValue = String(aLine.dropFirst(3)) // strip "A: "
+            let selectedLabels = aValue.components(separatedBy: ", ")
+            var indices: Set<Int> = []
+            for label in selectedLabels {
+                if let idx = questions[i].options.firstIndex(of: label) {
+                    indices.insert(idx)
+                }
+            }
+            restoredAnswersByIndex[i] = indices
+        }
+
+        isLockedForReview = true
+
+        // Hide interactive elements
+        additionalContextTextView.isHidden = true
+        placeholderLabel.isHidden = true
+        actionButton.isHidden = true
+        actionButtonBottomConstraint?.isActive = false
+
+        // Build and show nav row
+        addNavRowIfNeeded()
+
+        showQuestion(at: 0)
+    }
+
     /// Reset to initial blank state (used in `prepareForReuse`).
     func reset() {
         questions = []
         currentIndex = 0
         selectedIndices = []
         collectedAnswers = []
+        isLockedForReview = false
+        restoredAnswersByIndex = [:]
         counterLabel.text = nil
         questionLabel.text = nil
         additionalContextTextView.text = ""
+        additionalContextTextView.isHidden = false
         placeholderLabel.isHidden = false
+        actionButton.isHidden = false
+        actionButtonBottomConstraint?.isActive = true
         optionsStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        navRowStackView?.removeFromSuperview()
+        navRowStackView = nil
+        navRowBottomConstraint = nil
+        optionsBottomToNavRowConstraint?.isActive = false
+        optionsBottomToNavRowConstraint = nil
         isUserInteractionEnabled = true
         alpha = 1.0
+    }
+
+    // MARK: - Private: Nav Row
+
+    private func addNavRowIfNeeded() {
+        guard navRowStackView == nil else { return }
+
+        let navRow = UIStackView(arrangedSubviews: [prevButton, counterLabel, nextButton])
+        navRow.translatesAutoresizingMaskIntoConstraints = false
+        navRow.axis = .horizontal
+        navRow.distribution = .equalSpacing
+        navRow.alignment = .center
+        containerView.addSubview(navRow)
+        navRowStackView = navRow
+
+        // counterLabel was previously constrained to containerView top — detach it conceptually
+        // by moving it into the stackView (it's still in containerView's subviews but the
+        // stackView now manages its position).
+        // We need to deactivate the old counterLabel top/leading/trailing constraints first.
+        counterLabel.removeFromSuperview()
+        navRow.insertArrangedSubview(counterLabel, at: 1)
+
+        let bottom = navRow.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -12)
+        navRowBottomConstraint = bottom
+
+        NSLayoutConstraint.activate([
+            navRow.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
+            navRow.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
+            bottom,
+            navRow.heightAnchor.constraint(equalToConstant: 36),
+        ])
+
+        // Pin options stack bottom to nav row top instead of additionalContextTextView
+        let optToNav = optionsStackView.bottomAnchor.constraint(equalTo: navRow.topAnchor, constant: -12)
+        optionsBottomToNavRowConstraint = optToNav
+        optToNav.isActive = true
     }
 
     // MARK: - Private: Rendering
@@ -210,11 +331,18 @@ final class ClarifyingQuestionsView: UIView {
         guard index < questions.count else { return }
         let q = questions[index]
 
-        counterLabel.text = "\(index + 1) of \(questions.count)"
+        if !isLockedForReview {
+            counterLabel.text = "\(index + 1) of \(questions.count)"
+        } else {
+            counterLabel.text = "\(index + 1) / \(questions.count)"
+        }
+
         questionLabel.text = q.question
         selectedIndices = []
-        additionalContextTextView.text = ""
-        placeholderLabel.isHidden = false
+        if !isLockedForReview {
+            additionalContextTextView.text = ""
+            placeholderLabel.isHidden = false
+        }
 
         // Rebuild option pills
         optionsStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
@@ -223,7 +351,22 @@ final class ClarifyingQuestionsView: UIView {
             optionsStackView.addArrangedSubview(btn)
         }
 
-        updateActionButton()
+        if isLockedForReview {
+            // Restore selections and disable interaction on all option buttons
+            let restored = restoredAnswersByIndex[index] ?? []
+            optionsStackView.arrangedSubviews.compactMap { $0 as? UIButton }.forEach { btn in
+                if restored.contains(btn.tag) {
+                    applySelectedStyle(to: btn)
+                }
+                btn.isUserInteractionEnabled = false
+            }
+            // Update nav button states
+            prevButton.isEnabled = index > 0
+            nextButton.isEnabled = index < questions.count - 1
+        } else {
+            updateActionButton()
+        }
+
         invalidateIntrinsicContentSize()
         onHeightChanged?()
     }
@@ -234,6 +377,8 @@ final class ClarifyingQuestionsView: UIView {
         btn.tag = tag
         btn.setTitle(title, for: .normal)
         btn.titleLabel?.font = UIFont(name: "Roboto-Regular", size: 14) ?? UIFont.systemFont(ofSize: 14)
+        btn.titleLabel?.numberOfLines = 0
+        btn.titleLabel?.lineBreakMode = .byWordWrapping
         btn.contentHorizontalAlignment = .left
         btn.contentEdgeInsets = UIEdgeInsets(top: 10, left: 16, bottom: 10, right: 16)
         btn.layer.cornerRadius = 16
@@ -314,10 +459,10 @@ final class ClarifyingQuestionsView: UIView {
         let contextText = additionalContextTextView.text
             .trimmingCharacters(in: .whitespacesAndNewlines)
 
-        var answerString = "Q\(currentIndex + 1): \(selectedLabels.joined(separator: ", "))"
-        if !contextText.isEmpty {
-            answerString += " | Additional: \(contextText)"
-        }
+        // New format: "Q: {question}\nA: {answer1}, {answer2}, {context}"
+        var parts = selectedLabels
+        if !contextText.isEmpty { parts.append(contextText) }
+        let answerString = "Q: \(q.question)\nA: \(parts.joined(separator: ", "))"
         collectedAnswers.append(answerString)
 
         if currentIndex == questions.count - 1 {
@@ -326,6 +471,18 @@ final class ClarifyingQuestionsView: UIView {
             currentIndex += 1
             showQuestion(at: currentIndex)
         }
+    }
+
+    @objc private func showPrev() {
+        guard currentIndex > 0 else { return }
+        currentIndex -= 1
+        showQuestion(at: currentIndex)
+    }
+
+    @objc private func showNext() {
+        guard currentIndex < questions.count - 1 else { return }
+        currentIndex += 1
+        showQuestion(at: currentIndex)
     }
 }
 

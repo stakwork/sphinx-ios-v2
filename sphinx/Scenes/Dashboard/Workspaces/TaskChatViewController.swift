@@ -685,7 +685,7 @@ class TaskChatViewController: UIViewController {
                     // Lock the cell that triggered the submit
                     if let idx = self.messages.firstIndex(where: { $0.id == replyId }),
                        let cell = self.chatTableView.cellForRow(at: IndexPath(row: idx, section: 0)) as? FeatureChatMessageCell {
-                        cell.lockClarifyingQuestionsView()
+                        cell.lockClarifyingQuestionsView(answersText: joined)
                     }
                 }
             },
@@ -977,7 +977,9 @@ extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
             for: indexPath
         ) as? FeatureChatMessageCell else { return UITableViewCell() }
         let isLast = indexPath.row == messages.count - 1
-        cell.configure(with: messages[indexPath.row], isLastMessage: isLast)
+        let message = messages[indexPath.row]
+        let answerMsg = messages.first { $0.replyId == message.id && $0.isUserMessage }
+        cell.configure(with: message, isLastMessage: isLast, submittedAnswerText: answerMsg?.message)
         cell.onClarifyingAnswerSubmit = { [weak self] answers, replyId in
             self?.sendClarifyingAnswers(answers: answers, replyId: replyId)
         }

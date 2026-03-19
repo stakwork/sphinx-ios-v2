@@ -183,7 +183,7 @@ class ClarifyingQuestionsViewTests: XCTestCase {
         view.simulateTapActionButton()
 
         XCTAssertEqual(capturedAnswers.count, 1)
-        XCTAssertEqual(capturedAnswers[0], "Q1: iOS")
+        XCTAssertEqual(capturedAnswers[0], "Q: Platform?\nA: iOS")
     }
 
     func testAnswerFormat_SingleChoice_ReselectOverridesFirst() {
@@ -199,7 +199,7 @@ class ClarifyingQuestionsViewTests: XCTestCase {
         view.simulateTapOption(at: 1)
         view.simulateTapActionButton()
 
-        XCTAssertEqual(capturedAnswers[0], "Q1: B")
+        XCTAssertEqual(capturedAnswers[0], "Q: Pick one\nA: B")
     }
 
     // MARK: - single_choice deselection (toggle)
@@ -234,7 +234,7 @@ class ClarifyingQuestionsViewTests: XCTestCase {
         view.simulateTapActionButton()
 
         XCTAssertEqual(capturedAnswers.count, 1)
-        XCTAssertEqual(capturedAnswers[0], "Q1: B")
+        XCTAssertEqual(capturedAnswers[0], "Q: Pick one\nA: B")
     }
 
     func testSingleChoice_TappingDifferentOptionReplacesSelection() {
@@ -250,7 +250,7 @@ class ClarifyingQuestionsViewTests: XCTestCase {
         view.simulateTapOption(at: 2)
         view.simulateTapActionButton()
 
-        XCTAssertEqual(capturedAnswers[0], "Q1: C")
+        XCTAssertEqual(capturedAnswers[0], "Q: Pick one\nA: C")
     }
 
     func testSingleChoice_DeselectThenReselectWorks() {
@@ -267,7 +267,7 @@ class ClarifyingQuestionsViewTests: XCTestCase {
         view.simulateTapOption(at: 1) // select B
         view.simulateTapActionButton()
 
-        XCTAssertEqual(capturedAnswers[0], "Q1: B")
+        XCTAssertEqual(capturedAnswers[0], "Q: Pick one\nA: B")
     }
 
     func testAnswerFormat_MultipleChoice_CanSelectSeveral() {
@@ -282,7 +282,7 @@ class ClarifyingQuestionsViewTests: XCTestCase {
         view.simulateTapOption(at: 2) // Z
         view.simulateTapActionButton()
 
-        XCTAssertEqual(capturedAnswers[0], "Q1: X, Z")
+        XCTAssertEqual(capturedAnswers[0], "Q: Pick many\nA: X, Z")
     }
 
     func testAnswerFormat_MultipleChoice_DeselectionWorks() {
@@ -299,7 +299,7 @@ class ClarifyingQuestionsViewTests: XCTestCase {
         view.simulateTapActionButton()
 
         // Only Y should remain
-        XCTAssertEqual(capturedAnswers[0], "Q1: Y")
+        XCTAssertEqual(capturedAnswers[0], "Q: Pick many\nA: Y")
     }
 
     func testAnswerFormat_MultiQuestion_AllAnswersCollected() {
@@ -321,8 +321,8 @@ class ClarifyingQuestionsViewTests: XCTestCase {
         view.simulateTapActionButton() // Submit
 
         XCTAssertEqual(capturedAnswers.count, 2)
-        XCTAssertEqual(capturedAnswers[0], "Q1: B")
-        XCTAssertEqual(capturedAnswers[1], "Q2: X, Z")
+        XCTAssertEqual(capturedAnswers[0], "Q: Q1\nA: B")
+        XCTAssertEqual(capturedAnswers[1], "Q: Q2\nA: X, Z")
     }
 
     // MARK: - Additional context capture
@@ -348,9 +348,9 @@ class ClarifyingQuestionsViewTests: XCTestCase {
         view.simulateTapActionButton() // Submit
 
         XCTAssertEqual(capturedAnswers.count, 2)
-        XCTAssertEqual(capturedAnswers[0], "Q1: A | Additional: some extra info",
+        XCTAssertEqual(capturedAnswers[0], "Q: Q1\nA: A, some extra info",
                        "Context on a non-final question must be in that question's answer string")
-        XCTAssertEqual(capturedAnswers[1], "Q2: Y")
+        XCTAssertEqual(capturedAnswers[1], "Q: Q2\nA: Y")
     }
 
     func testAdditionalContext_FinalQuestion_IncludedInAnswerString() {
@@ -368,7 +368,7 @@ class ClarifyingQuestionsViewTests: XCTestCase {
         view.simulateTapActionButton() // Submit
 
         XCTAssertEqual(capturedAnswers.count, 1)
-        XCTAssertEqual(capturedAnswers[0], "Q1: iOS | Additional: prefer SwiftUI",
+        XCTAssertEqual(capturedAnswers[0], "Q: Platform?\nA: iOS, prefer SwiftUI",
                        "Context on the final question must be embedded in the answer string")
     }
 
@@ -403,6 +403,58 @@ class ClarifyingQuestionsViewTests: XCTestCase {
         XCTAssertEqual(submitCount, 1, "onSubmit should fire exactly once on Submit")
     }
 
+    // MARK: - lockWithAnswers
+
+    func testLockWithAnswers_RestoresSelections() {
+        let view = ClarifyingQuestionsView(frame: CGRect(x: 0, y: 0, width: 320, height: 600))
+        var submitFired = false
+        view.onSubmit = { _ in submitFired = true }
+
+        let q1 = ClarifyingQuestion(question: "Q1", options: ["A", "B", "C"], type: "single_choice")
+        let q2 = ClarifyingQuestion(question: "Q2", options: ["X", "Y", "Z"], type: "multiple_choice")
+        view.configure(with: [q1, q2])
+
+        // Lock with answer text matching q1→A and q2→X,Z
+        view.lockWithAnswers("Q: Q1\nA: A\n\nQ: Q2\nA: X, Z")
+
+        // Tapping options should not fire onSubmit (they are disabled)
+        view.simulateTapOption(at: 0)
+        view.simulateTapActionButton()
+        XCTAssertFalse(submitFired, "Option tap and action button should be disabled in review mode")
+
+        // Nav buttons should exist
+        let prevBtn = view.findNavButton(title: "← Prev")
+        let nextBtn = view.findNavButton(title: "Next →")
+        XCTAssertNotNil(prevBtn, "Prev button should exist in review mode")
+        XCTAssertNotNil(nextBtn, "Next button should exist in review mode")
+
+        // On Q1 (index 0): prev disabled, next enabled
+        XCTAssertFalse(prevBtn!.isEnabled, "Prev should be disabled on first question")
+        XCTAssertTrue(nextBtn!.isEnabled, "Next should be enabled when there are more questions")
+
+        // Tap next to go to Q2
+        nextBtn!.sendActions(for: .touchUpInside)
+
+        // On Q2 (index 1, last): prev enabled, next disabled
+        XCTAssertTrue(prevBtn!.isEnabled, "Prev should be enabled on Q2")
+        XCTAssertFalse(nextBtn!.isEnabled, "Next should be disabled on last question")
+    }
+
+    func testLockWithAnswers_SingleQuestion_NoNavButtons() {
+        let view = ClarifyingQuestionsView(frame: CGRect(x: 0, y: 0, width: 320, height: 400))
+        let q = ClarifyingQuestion(question: "Platform?", options: ["iOS", "Android"], type: "single_choice")
+        view.configure(with: [q])
+
+        view.lockWithAnswers("Q: Platform?\nA: iOS")
+
+        let prevBtn = view.findNavButton(title: "← Prev")
+        let nextBtn = view.findNavButton(title: "Next →")
+
+        // Buttons exist but both should be disabled for a single question
+        XCTAssertFalse(prevBtn?.isEnabled ?? true, "Prev should be disabled for single question")
+        XCTAssertFalse(nextBtn?.isEnabled ?? true, "Next should be disabled for single question")
+    }
+
     // MARK: - Mock data integration
 
     func testMockConversation_ContainsClarifyingQuestionsMessage() {
@@ -433,12 +485,12 @@ extension ClarifyingQuestionsView {
     /// Simulate a tap on the option button at the given index (test-only).
     func simulateTapOption(at index: Int) {
         // Option buttons are UIButtons with matching tag; they are NOT the action button
-        // (action button has no tag set explicitly, defaulting to 0 — we identify it by title)
-        let actionTitles: Set<String> = ["Next →", "Submit"]
+        // or navigation buttons — identify those by title
+        let nonOptionTitles: Set<String> = ["Next →", "Submit", "← Prev"]
         let allButtons = allSubviews(ofType: UIButton.self, in: self)
         let optionButtons = allButtons.filter { btn in
             guard let title = btn.title(for: .normal) else { return false }
-            return !actionTitles.contains(title)
+            return !nonOptionTitles.contains(title)
         }
         // Sort by tag order to match the original option index
         let sorted = optionButtons.sorted { $0.tag < $1.tag }
@@ -454,7 +506,15 @@ extension ClarifyingQuestionsView {
             guard let title = btn.title(for: .normal) else { return false }
             return actionTitles.contains(title)
         }) else { return }
+        guard btn.isEnabled else { return }
         btn.sendActions(for: .touchUpInside)
+    }
+
+    /// Find the prev/next navigation buttons added in review mode (test-only).
+    func findNavButton(title: String) -> UIButton? {
+        return allSubviews(ofType: UIButton.self, in: self).first {
+            $0.title(for: .normal) == title
+        }
     }
 
     /// Simulate typing text into the additional context text view (test-only).

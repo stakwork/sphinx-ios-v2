@@ -1319,7 +1319,7 @@ class FeaturePlanViewController: UIViewController {
                     // Lock the cell that triggered the submit
                     if let idx = self.messages.firstIndex(where: { $0.id == replyId }),
                        let cell = self.chatTableView.cellForRow(at: IndexPath(row: idx, section: 0)) as? FeatureChatMessageCell {
-                        cell.lockClarifyingQuestionsView()
+                        cell.lockClarifyingQuestionsView(answersText: joined)
                     }
                 }
             },
@@ -1513,7 +1513,8 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
         }
         let message = messages[indexPath.row]
         let isLast = indexPath.row == messages.count - 1
-        cell.configure(with: message, isLastMessage: isLast)
+        let answerMsg = messages.first { $0.replyId == message.id && $0.isUserMessage }
+        cell.configure(with: message, isLastMessage: isLast, submittedAnswerText: answerMsg?.message)
         cell.onClarifyingAnswerSubmit = { [weak self] answers, replyId in
             self?.sendClarifyingAnswers(answers: answers, replyId: replyId)
         }

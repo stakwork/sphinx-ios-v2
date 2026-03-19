@@ -179,7 +179,7 @@ class FeatureChatMessageCell: UITableViewCell {
     }
 
     // MARK: - Configure
-    func configure(with message: HiveChatMessage, isLastMessage: Bool = false) {
+    func configure(with message: HiveChatMessage, isLastMessage: Bool = false, submittedAnswerText: String? = nil) {
         let isUser = message.isUserMessage
 
         // --- Text content ---
@@ -293,8 +293,9 @@ class FeatureChatMessageCell: UITableViewCell {
            let questions = cqArtifact.clarifyingQuestions, !questions.isEmpty {
             clarifyingQuestionsView.configure(with: questions)
             if isLastMessage {
-                clarifyingQuestionsView.isUserInteractionEnabled = true
-                clarifyingQuestionsView.alpha = 1.0
+                // interactive — nothing to lock
+            } else if let answerText = submittedAnswerText {
+                clarifyingQuestionsView.lockWithAnswers(answerText)
             } else {
                 clarifyingQuestionsView.lock()
             }
@@ -365,8 +366,12 @@ class FeatureChatMessageCell: UITableViewCell {
     }
 
     /// Lock the clarifying questions view after successful submission.
-    func lockClarifyingQuestionsView() {
-        clarifyingQuestionsView.lock()
+    func lockClarifyingQuestionsView(answersText: String? = nil) {
+        if let text = answersText {
+            clarifyingQuestionsView.lockWithAnswers(text)
+        } else {
+            clarifyingQuestionsView.lock()
+        }
     }
 
     // MARK: - Link tap coordinator (shared, stateless)
