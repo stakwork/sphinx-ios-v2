@@ -298,24 +298,10 @@ final class ClarifyingQuestionsView: UIView {
             // Find which question this block belongs to
             guard let qIdx = questions.firstIndex(where: { $0.question == qText }) else { continue }
 
-            let parts = aValue.components(separatedBy: ", ")
-            var selectedIndices: Set<Int> = []
-            var contextParts: [String] = []
-
-            for part in parts {
-                // Normalize dashes + whitespace before matching so em-dash / en-dash /
-                // double-hyphen differences between server option text and serialised answer
-                // don't cause options to fall through into the "Additional" context bucket.
-                if let optIdx = questions[qIdx].options.firstIndex(where: {
-                    normalizeDashes($0) == normalizeDashes(part)
-                }) {
-                    selectedIndices.insert(optIdx)
-                } else {
-                    // Not a known option label → it's free-text context
-                    contextParts.append(part)
-                }
-            }
-
+            let (selectedIndices, contextParts) = parseAnswerValue(
+                aValue,
+                options: questions[qIdx].options
+            )
             restoredAnswersByIndex[qIdx] = selectedIndices
             if !contextParts.isEmpty {
                 restoredContextByIndex[qIdx] = contextParts.joined(separator: ", ")
@@ -577,13 +563,65 @@ final class ClarifyingQuestionsView: UIView {
 
 // MARK: - Helpers
 
-/// Normalises dash variants (em-dash, en-dash, double-hyphen) and trims whitespace
-/// so option-label comparisons survive minor encoding differences.
-private func normalizeDashes(_ s: String) -> String {
+/// Normalises dash variants and trims whitespace for fuzzy option matching.
+private func normalizeForMatch(_ s: String) -> String {
     s.trimmingCharacters(in: .whitespacesAndNewlines)
-     .replacingOccurrences(of: "\u{2014}", with: "-")  // em-dash →  -
-     .replacingOccurrences(of: "\u{2013}", with: "-")  // en-dash →  -
-     .replacingOccurrences(of: "--",        with: "-") // double-hyphen → -
+     .replacingOccurrences(of: "\u{2014}", with: "-")  // em-dash
+     .replacingOccurrences(of: "\u{2013}", with: "-")  // en-dash
+     .replacingOccurrences(of: "\u{2012}", with: "-")  // figure dash
+     .replacingOccurrences(of: "--",        with: "-")
+}
+
+/// Greedily parses an A: value string back into matched option indices and leftover context.
+///
+/// Problem with naive split(", "): option labels often contain commas (e.g.
+/// "Reuse FEATURE_UPDATED — fires multiple times, each time with more fields populated"),
+/// which would be shredded by a simple separator split. Instead we work in normalised
+/// space and scan left-to-right, consuming the longest matching option at each step.
+private func parseAnswerValue(
+    _ aValue: String,
+    options: [String]
+) -> (matched: Set<Int>, context: [String]) {
+    let normOptions = options.map { normalizeForMatch($0) }
+    // Work entirely in normalised space — we only need indices + leftover text.
+    var remaining = normalizeForMatch(aValue)
+    var matchedIndices: Set<Int> = []
+    var contextParts: [String] = []
+
+    while !remaining.isEmpty {
+        // Find the longest option that the remaining string starts with,
+        // confirmed by being followed by ", " or end-of-string.
+        var bestIdx: Int? = nil
+        var bestLen = 0
+
+        for (i, normOpt) in normOptions.enumerated() {
+            guard normOpt.count > bestLen else { continue }
+            if remaining.hasPrefix(normOpt) {
+                let after = remaining.dropFirst(normOpt.count)
+                if after.isEmpty || after.hasPrefix(", ") {
+                    bestIdx = i
+                    bestLen = normOpt.count
+                }
+            }
+        }
+
+        if let idx = bestIdx {
+            matchedIndices.insert(idx)
+            remaining = String(remaining.dropFirst(bestLen))
+            if remaining.hasPrefix(", ") { remaining = String(remaining.dropFirst(2)) }
+        } else {
+            // No option matched — consume up to the next ", " as free-text context.
+            if let sepRange = remaining.range(of: ", ") {
+                contextParts.append(String(remaining[..<sepRange.lowerBound]))
+                remaining = String(remaining[sepRange.upperBound...])
+            } else {
+                contextParts.append(remaining)
+                remaining = ""
+            }
+        }
+    }
+
+    return (matchedIndices, contextParts)
 }
 
 // MARK: - UITextViewDelegate
