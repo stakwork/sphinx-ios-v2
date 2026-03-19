@@ -41,6 +41,8 @@ class MessageThreadView: UIView {
     
     var mentionsBadgeContainer: UIView?
     var mentionsBadgeLabel: UILabel?
+    private var badgeLeadingAfterLabel: NSLayoutConstraint?
+    private var badgeLeadingStandalone: NSLayoutConstraint?
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -70,6 +72,7 @@ class MessageThreadView: UIView {
         container.backgroundColor = UIColor.Sphinx.PrimaryBlue
         container.layer.cornerRadius = 10
         container.clipsToBounds = true
+        container.isHidden = true
         
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -85,14 +88,23 @@ class MessageThreadView: UIView {
             label.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -3)
         ])
         
-        // Insert above messageFakeBubbleView (below moreRepliesContainer's parent stackView)
-        // We add it to contentView and position it relative to moreRepliesContainer
-        contentView.addSubview(container)
+        // Add badge inside moreRepliesBubbleView.
+        // Two mutually exclusive leading constraints:
+        // - after moreRepliesLabel (when count+label are visible)
+        // - from bubble leading edge (when only badge is shown, no count/label)
+        moreRepliesBubbleView.addSubview(container)
+        
+        let afterLabel = container.leadingAnchor.constraint(equalTo: moreRepliesLabel.trailingAnchor, constant: 8)
+        let standalone = container.leadingAnchor.constraint(equalTo: moreRepliesBubbleView.leadingAnchor, constant: 16)
+        standalone.isActive = true
+        
         NSLayoutConstraint.activate([
-            container.leadingAnchor.constraint(equalTo: moreRepliesContainer.leadingAnchor),
-            container.topAnchor.constraint(equalTo: moreRepliesContainer.bottomAnchor, constant: 4),
-            container.heightAnchor.constraint(greaterThanOrEqualToConstant: 20)
+            container.centerYAnchor.constraint(equalTo: moreRepliesBubbleView.topAnchor, constant: 17),
+            container.heightAnchor.constraint(equalToConstant: 20)
         ])
+        
+        badgeLeadingAfterLabel = afterLabel
+        badgeLeadingStandalone = standalone
         
         mentionsBadgeContainer = container
         mentionsBadgeLabel = label
@@ -187,17 +199,31 @@ class MessageThreadView: UIView {
             secondReplyContainer.isHidden = true
         }
         
-        if threadMessages.moreRepliesCount > 0 {
+        let mentionsCount = threadMessages.mentionsCount
+        let hasMoreReplies = threadMessages.moreRepliesCount > 0
+        
+        if hasMoreReplies {
             moreRepliesCountLabel.text = "\(threadMessages.moreRepliesCount)"
-            moreRepliesContainer.isHidden = false
+            moreRepliesCountView.isHidden = false
+            moreRepliesLabel.isHidden = false
         } else {
-            moreRepliesContainer.isHidden = true
+            moreRepliesCountView.isHidden = true
+            moreRepliesLabel.isHidden = true
         }
         
-        let mentionsCount = threadMessages.mentionsCount
+        // Show moreRepliesContainer when there are extra replies OR mention badge to display
+        moreRepliesContainer.isHidden = !hasMoreReplies && mentionsCount == 0
+        
         if mentionsCount > 0 {
             mentionsBadgeLabel?.text = "@ \(mentionsCount)"
             mentionsBadgeContainer?.isHidden = false
+            if hasMoreReplies {
+                badgeLeadingStandalone?.isActive = false
+                badgeLeadingAfterLabel?.isActive = true
+            } else {
+                badgeLeadingAfterLabel?.isActive = false
+                badgeLeadingStandalone?.isActive = true
+            }
         } else {
             mentionsBadgeContainer?.isHidden = true
         }

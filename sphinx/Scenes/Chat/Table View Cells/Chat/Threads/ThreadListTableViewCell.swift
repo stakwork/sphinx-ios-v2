@@ -90,15 +90,16 @@ class ThreadListTableViewCell: UITableViewCell {
         NSLayoutConstraint.activate([
             label.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 6),
             label.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -6),
-            label.topAnchor.constraint(equalTo: container.topAnchor, constant: 3),
-            label.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -3)
+            label.topAnchor.constraint(equalTo: container.topAnchor, constant: 2),
+            label.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -2)
         ])
         
+        // Add badge to contentView, positioned right after repliesCountLabel
         contentView.addSubview(container)
         NSLayoutConstraint.activate([
             container.leadingAnchor.constraint(equalTo: repliesCountLabel.trailingAnchor, constant: 8),
             container.centerYAnchor.constraint(equalTo: repliesCountLabel.centerYAnchor),
-            container.heightAnchor.constraint(greaterThanOrEqualToConstant: 20)
+            container.heightAnchor.constraint(equalToConstant: 20)
         ])
         
         mentionsBadgeContainer = container
