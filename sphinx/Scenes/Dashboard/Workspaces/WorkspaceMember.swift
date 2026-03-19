@@ -23,6 +23,6 @@ struct WorkspaceMember {
         self.userId = userId
         self.role = json["role"].string ?? ""
         self.joinedAt = json["joinedAt"].string
-        self.lightningPubkey = json["user"]["lightningPubkey"].string
+        self.lightningPubkey = json["user"]["decryptedLightningPubkey"].string
     }
 }

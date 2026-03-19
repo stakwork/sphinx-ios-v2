@@ -410,9 +410,8 @@ class HiveShareViewController: UIViewController {
 
         let allContacts = ContactsService.sharedInstance.contactListObjects
         let matched = allContacts.filter { item in
-            guard let contact = item as? UserContact else { return false }
-            if let pk = contact.publicKey, pubkeySet.contains(pk) { return true }
-            if let addr = contact.getAddress(), pubkeySet.contains(addr) { return true }
+            guard let contact = item as? Chat else { return false }
+            if let pk = contact.ownerPubkey, pubkeySet.contains(pk) { return true }
             return false
         }
 
@@ -597,7 +596,7 @@ extension HiveShareViewController: UITableViewDataSource, UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
         let container = UIView()
-        container.backgroundColor = UIColor.Sphinx.Body
+        container.backgroundColor = UIColor.Sphinx.HeaderBG
         let label = UILabel()
         label.text = section == 0 ? "CONTACTS IN THE WORKSPACE" : "TRIBES"
         label.font = UIFont(name: "Roboto-Medium", size: 12) ?? .systemFont(ofSize: 12, weight: .medium)
