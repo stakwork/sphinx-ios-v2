@@ -39,7 +39,6 @@ class MessageThreadView: UIView {
     
     @IBOutlet weak var messageFakeBubbleView: UIView!
 
-    @IBOutlet weak var mentionsBadgeContainer: UIView!
     @IBOutlet weak var mentionsBadgeView: UIView!
     @IBOutlet weak var mentionsBadgeLabel: UILabel!
     
@@ -97,6 +96,7 @@ class MessageThreadView: UIView {
         
         mentionsBadgeView.layer.cornerRadius = 10
         mentionsBadgeView.clipsToBounds = true
+        mentionsBadgeView.isHidden = true
         
         firstReplyAvatarView.setInitialLabelSize(size: 11)
         firstReplyAvatarView.resetView()
@@ -173,9 +173,9 @@ class MessageThreadView: UIView {
         
         if mentionsCount > 0 {
             mentionsBadgeLabel.text = "@ \(mentionsCount)"
-            mentionsBadgeContainer.isHidden = false
+            mentionsBadgeView.isHidden = false
         } else {
-            mentionsBadgeContainer.isHidden = true
+            mentionsBadgeView.isHidden = true
         }
         
         configureMediaWith(
