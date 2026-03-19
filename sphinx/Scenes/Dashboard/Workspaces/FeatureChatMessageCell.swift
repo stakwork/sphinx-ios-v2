@@ -139,7 +139,7 @@ class FeatureChatMessageCell: UITableViewCell {
         bubbleStack.translatesAutoresizingMaskIntoConstraints = false
         bubbleStack.axis = .vertical
         bubbleStack.spacing = 0
-        bubbleStack.isLayoutMarginsRelativeArrangement = true
+        bubbleStack.isLayoutMarginsRelativeArrangement = false
 
         contentView.addSubview(bubbleView)
         bubbleView.insertSubview(textBackgroundView, belowSubview: bubbleStack)
