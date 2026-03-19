@@ -403,6 +403,50 @@ class ClarifyingQuestionsViewTests: XCTestCase {
         XCTAssertEqual(submitCount, 1, "onSubmit should fire exactly once on Submit")
     }
 
+    // MARK: - Multiline option button tests
+
+    func testOptionButton_LongText_HasMultilineLabel() {
+        let longOption = "This is a very long option string that should definitely wrap across multiple lines on any reasonable screen width"
+        let q = ClarifyingQuestion(question: "Pick one", options: [longOption, "Short"], type: "single_choice")
+        let view = ClarifyingQuestionsView(frame: CGRect(x: 0, y: 0, width: 320, height: 600))
+        view.configure(with: [q])
+        view.setNeedsLayout()
+        view.layoutIfNeeded()
+
+        let actionTitles: Set<String> = ["Next →", "Submit"]
+        let allButtons = view.allSubviewsPublic(ofType: UIButton.self)
+        let optionButtons = allButtons.filter { btn in
+            guard let title = btn.title(for: .normal) else { return false }
+            return !actionTitles.contains(title)
+        }
+
+        let longBtn = optionButtons.first { $0.title(for: .normal) == longOption }
+        XCTAssertNotNil(longBtn, "Button with long option text should exist")
+        XCTAssertEqual(longBtn?.titleLabel?.numberOfLines, 0, "titleLabel.numberOfLines should be 0")
+        let height = longBtn?.intrinsicContentSize.height ?? 0
+        XCTAssertGreaterThan(height, 44, "Button intrinsicContentSize.height should exceed 44 for long text")
+    }
+
+    func testOnHeightChanged_CalledOnQuestionTransition() {
+        var heightChangedCount = 0
+        let view = ClarifyingQuestionsView()
+        view.onHeightChanged = { heightChangedCount += 1 }
+
+        let q1 = ClarifyingQuestion(question: "Short options", options: ["A", "B"], type: "single_choice")
+        let longOption = "This is a very long option that will definitely need to wrap across multiple lines in the UI"
+        let q2 = ClarifyingQuestion(question: "Long options", options: [longOption, "Short"], type: "single_choice")
+        view.configure(with: [q1, q2])
+
+        let countAfterConfigure = heightChangedCount
+
+        // Advance to q2
+        view.simulateTapOption(at: 0)
+        view.simulateTapActionButton() // Next
+
+        XCTAssertGreaterThan(heightChangedCount, countAfterConfigure,
+                             "onHeightChanged should be called after navigating to the next question")
+    }
+
     // MARK: - Mock data integration
 
     func testMockConversation_ContainsClarifyingQuestionsMessage() {
@@ -428,6 +472,11 @@ extension ClarifyingQuestionsView {
             result.append(contentsOf: allSubviews(ofType: type, in: sub))
         }
         return result
+    }
+
+    /// Public wrapper used by multiline tests.
+    func allSubviewsPublic<T: UIView>(ofType type: T.Type) -> [T] {
+        allSubviews(ofType: type, in: self)
     }
 
     /// Simulate a tap on the option button at the given index (test-only).

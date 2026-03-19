@@ -224,6 +224,8 @@ final class ClarifyingQuestionsView: UIView {
         }
 
         updateActionButton()
+        optionsStackView.setNeedsLayout()
+        optionsStackView.layoutIfNeeded()
         invalidateIntrinsicContentSize()
         onHeightChanged?()
     }
@@ -234,11 +236,20 @@ final class ClarifyingQuestionsView: UIView {
         btn.tag = tag
         btn.setTitle(title, for: .normal)
         btn.titleLabel?.font = UIFont(name: "Roboto-Regular", size: 14) ?? UIFont.systemFont(ofSize: 14)
+        btn.titleLabel?.numberOfLines = 0
+        btn.titleLabel?.lineBreakMode = .byWordWrapping
         btn.contentHorizontalAlignment = .left
-        btn.contentEdgeInsets = UIEdgeInsets(top: 10, left: 16, bottom: 10, right: 16)
         btn.layer.cornerRadius = 16
         btn.layer.masksToBounds = true
-        btn.heightAnchor.constraint(greaterThanOrEqualToConstant: 44).isActive = true
+        if let titleLabel = btn.titleLabel {
+            titleLabel.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                titleLabel.topAnchor.constraint(equalTo: btn.topAnchor, constant: 10),
+                titleLabel.bottomAnchor.constraint(equalTo: btn.bottomAnchor, constant: -10),
+                titleLabel.leadingAnchor.constraint(equalTo: btn.leadingAnchor, constant: 16),
+                titleLabel.trailingAnchor.constraint(equalTo: btn.trailingAnchor, constant: -16),
+            ])
+        }
         btn.addTarget(self, action: #selector(optionTapped(_:)), for: .touchUpInside)
         applyUnselectedStyle(to: btn)
         return btn
