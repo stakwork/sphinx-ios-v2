@@ -303,7 +303,12 @@ final class ClarifyingQuestionsView: UIView {
             var contextParts: [String] = []
 
             for part in parts {
-                if let optIdx = questions[qIdx].options.firstIndex(of: part) {
+                // Normalize dashes + whitespace before matching so em-dash / en-dash /
+                // double-hyphen differences between server option text and serialised answer
+                // don't cause options to fall through into the "Additional" context bucket.
+                if let optIdx = questions[qIdx].options.firstIndex(where: {
+                    normalizeDashes($0) == normalizeDashes(part)
+                }) {
                     selectedIndices.insert(optIdx)
                 } else {
                     // Not a known option label → it's free-text context
@@ -568,6 +573,17 @@ final class ClarifyingQuestionsView: UIView {
         currentIndex += 1
         showQuestion(at: currentIndex)
     }
+}
+
+// MARK: - Helpers
+
+/// Normalises dash variants (em-dash, en-dash, double-hyphen) and trims whitespace
+/// so option-label comparisons survive minor encoding differences.
+private func normalizeDashes(_ s: String) -> String {
+    s.trimmingCharacters(in: .whitespacesAndNewlines)
+     .replacingOccurrences(of: "\u{2014}", with: "-")  // em-dash →  -
+     .replacingOccurrences(of: "\u{2013}", with: "-")  // en-dash →  -
+     .replacingOccurrences(of: "--",        with: "-") // double-hyphen → -
 }
 
 // MARK: - UITextViewDelegate

@@ -798,9 +798,15 @@ class TaskChatViewController: UIViewController {
         }
     }
 
-    private func scrollToBottom(animated: Bool = true) {
+    private func scrollToBottom(animated: Bool = true, onlyIfNearBottom: Bool = false) {
         let totalRows = messages.count + (processingStepText != nil ? 1 : 0)
         guard totalRows > 0 else { return }
+        if onlyIfNearBottom {
+            let contentHeight = chatTableView.contentSize.height
+            let visibleBottom = chatTableView.contentOffset.y + chatTableView.bounds.height
+            let distanceFromBottom = contentHeight - visibleBottom
+            guard distanceFromBottom < 80 else { return }
+        }
         let indexPath = IndexPath(row: totalRows - 1, section: 0)
         chatTableView.scrollToRow(at: indexPath, at: .bottom, animated: animated)
     }
@@ -921,7 +927,7 @@ extension TaskChatViewController: HivePusherDelegate {
         messages.append(message)
         let indexPath = IndexPath(row: messages.count - 1, section: 0)
         chatTableView.insertRows(at: [indexPath], with: .automatic)
-        scrollToBottom()
+        scrollToBottom(onlyIfNearBottom: true)
     }
 
     func prStatusChanged(taskId: String?, prNumber: Int, state: String, artifactStatus: String, prUrl: String?, problemDetails: String?) {

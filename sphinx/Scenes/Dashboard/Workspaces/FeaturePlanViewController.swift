@@ -1413,9 +1413,15 @@ class FeaturePlanViewController: UIViewController {
     }
 
     // MARK: - Helper Methods
-    private func scrollToBottom() {
+    private func scrollToBottom(onlyIfNearBottom: Bool = false) {
         let totalRows = messages.count + (processingStepText != nil ? 1 : 0)
         guard totalRows > 0 else { return }
+        if onlyIfNearBottom {
+            let contentHeight = chatTableView.contentSize.height
+            let visibleBottom = chatTableView.contentOffset.y + chatTableView.bounds.height
+            let distanceFromBottom = contentHeight - visibleBottom
+            guard distanceFromBottom < 80 else { return }
+        }
         let lastIndexPath = IndexPath(row: totalRows - 1, section: 0)
         chatTableView.scrollToRow(at: lastIndexPath, at: .bottom, animated: true)
     }
@@ -1796,7 +1802,7 @@ extension FeaturePlanViewController: HivePusherDelegate {
         
         let indexPath = IndexPath(row: messages.count - 1, section: 0)
         chatTableView.insertRows(at: [indexPath], with: .automatic)
-        scrollToBottom()
+        scrollToBottom(onlyIfNearBottom: true)
     }
     
     func workflowStatusChanged(status: WorkflowStatus) {
