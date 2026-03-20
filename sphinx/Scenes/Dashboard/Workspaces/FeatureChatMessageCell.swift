@@ -314,6 +314,9 @@ class FeatureChatMessageCell: UITableViewCell {
             bubbleView.layer.cornerRadius = 0
         } else {
             clarifyingQuestionsView.isHidden = true
+            // Restore bubble appearance that the CQ branch zeroes out
+            bubbleView.layer.cornerRadius = 18
+            bubbleView.layer.masksToBounds = true
             // Derive hasText the same way Fix 3 does — don't override its decision
             let hasText: Bool
             if isUser {
