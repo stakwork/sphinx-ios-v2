@@ -68,6 +68,7 @@ class FeatureChatMessageCell: UITableViewCell {
     private let clarifyingQuestionsView: ClarifyingQuestionsView = {
         let v = ClarifyingQuestionsView()
         v.isHidden = true
+        v.clipsToBounds = true  // prevent subview bleed when UIStackView collapses to height=0
         return v
     }()
 

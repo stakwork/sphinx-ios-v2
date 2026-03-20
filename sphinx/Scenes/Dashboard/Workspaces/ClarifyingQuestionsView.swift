@@ -131,11 +131,19 @@ final class ClarifyingQuestionsView: UIView {
         additionalContextTextView.delegate = self
         actionButton.addTarget(self, action: #selector(actionButtonTapped), for: .touchUpInside)
 
+        // Top/bottom use priority 999 so UIStackView's required height=0 collapse
+        // constraint wins when this view is hidden — preventing empty-space bleed
+        // into neighbouring cells.
+        let topPin = containerView.topAnchor.constraint(equalTo: topAnchor, constant: 8)
+        topPin.priority = UILayoutPriority(999)
+        let bottomPin = containerView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -8)
+        bottomPin.priority = UILayoutPriority(999)
+
         NSLayoutConstraint.activate([
-            containerView.topAnchor.constraint(equalTo: topAnchor, constant: 8),
+            topPin,
             containerView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 0),
             containerView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: 0),
-            containerView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -8),
+            bottomPin,
 
             counterLabel.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 12),
             counterLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
