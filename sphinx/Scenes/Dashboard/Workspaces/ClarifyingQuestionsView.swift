@@ -232,11 +232,24 @@ final class ClarifyingQuestionsView: UIView {
         let btn = UIButton(type: .system)
         btn.translatesAutoresizingMaskIntoConstraints = false
         btn.tag = tag
-        btn.setTitle(title, for: .normal)
-        btn.titleLabel?.font = UIFont(name: "Roboto-Regular", size: 14) ?? UIFont.systemFont(ofSize: 14)
-        btn.contentHorizontalAlignment = .left
-        btn.contentEdgeInsets = UIEdgeInsets(top: 10, left: 16, bottom: 10, right: 16)
-        btn.layer.cornerRadius = 16
+
+        var config = UIButton.Configuration.plain()
+        config.contentInsets = NSDirectionalEdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16)
+        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attrs in
+            var updated = attrs
+            updated.font = UIFont(name: "Roboto-Regular", size: 14) ?? UIFont.systemFont(ofSize: 14)
+            return updated
+        }
+        config.title = title
+        btn.configuration = config
+
+        // Multiline + font auto-scaling
+        btn.titleLabel?.numberOfLines = 0
+        btn.titleLabel?.lineBreakMode = .byWordWrapping
+        btn.titleLabel?.adjustsFontSizeToFitWidth = true
+        btn.titleLabel?.minimumScaleFactor = 0.75
+
+        btn.layer.cornerRadius = 12
         btn.layer.masksToBounds = true
         btn.heightAnchor.constraint(greaterThanOrEqualToConstant: 44).isActive = true
         btn.addTarget(self, action: #selector(optionTapped(_:)), for: .touchUpInside)
@@ -245,15 +258,15 @@ final class ClarifyingQuestionsView: UIView {
     }
 
     private func applyUnselectedStyle(to button: UIButton) {
-        button.backgroundColor = UIColor.Sphinx.Body
-        button.setTitleColor(UIColor.Sphinx.Text, for: .normal)
+        button.configuration?.background.backgroundColor = UIColor.Sphinx.Body
+        button.configuration?.baseForegroundColor = UIColor.Sphinx.Text
         button.layer.borderWidth = 1
         button.layer.borderColor = UIColor.Sphinx.LightDivider.cgColor
     }
 
     private func applySelectedStyle(to button: UIButton) {
-        button.backgroundColor = UIColor.Sphinx.PrimaryBlue
-        button.setTitleColor(.white, for: .normal)
+        button.configuration?.background.backgroundColor = UIColor.Sphinx.PrimaryBlue
+        button.configuration?.baseForegroundColor = .white
         button.layer.borderWidth = 0
         button.layer.borderColor = UIColor.clear.cgColor
     }
