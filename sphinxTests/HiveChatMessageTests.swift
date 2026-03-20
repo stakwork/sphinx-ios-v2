@@ -370,4 +370,78 @@ class HiveChatMessageTests: XCTestCase {
             "LONGFORM mock message resolvedDisplayText should be non-empty"
         )
     }
+
+    // MARK: - isDisplayable Tests
+
+    func testIsDisplayable_EmptyMessageNoAttachmentsNoArtifacts_ReturnsFalse() {
+        let jsonDict: [String: Any] = [
+            "id": "disp-001",
+            "message": "",
+            "role": "ASSISTANT"
+        ]
+        let message = HiveChatMessage(json: JSON(jsonDict))
+        XCTAssertNotNil(message)
+        XCTAssertFalse(message?.isDisplayable == true)
+    }
+
+    func testIsDisplayable_EmptyMessageStreamOnlyArtifact_ReturnsFalse() {
+        let jsonDict: [String: Any] = [
+            "id": "disp-002",
+            "message": "",
+            "role": "ASSISTANT",
+            "artifacts": [
+                [
+                    "id": "art-001",
+                    "type": "STREAM",
+                    "content": ["text": "streaming..."] as [String: Any]
+                ] as [String: Any]
+            ] as [Any]
+        ]
+        let message = HiveChatMessage(json: JSON(jsonDict))
+        XCTAssertNotNil(message)
+        XCTAssertFalse(message?.isDisplayable == true)
+    }
+
+    func testIsDisplayable_NonEmptyMessage_ReturnsTrue() {
+        let jsonDict: [String: Any] = [
+            "id": "disp-003",
+            "message": "Hello world",
+            "role": "USER"
+        ]
+        let message = HiveChatMessage(json: JSON(jsonDict))
+        XCTAssertNotNil(message)
+        XCTAssertTrue(message?.isDisplayable == true)
+    }
+
+    func testIsDisplayable_EmptyMessageWithAttachment_ReturnsTrue() {
+        let jsonDict: [String: Any] = [
+            "id": "disp-004",
+            "message": "",
+            "role": "USER",
+            "attachments": [
+                ["url": "https://example.com/image.png", "type": "image/png"] as [String: Any]
+            ] as [Any]
+        ]
+        let message = HiveChatMessage(json: JSON(jsonDict))
+        XCTAssertNotNil(message)
+        XCTAssertTrue(message?.isDisplayable == true)
+    }
+
+    func testIsDisplayable_EmptyMessageWithNonStreamArtifact_ReturnsTrue() {
+        let jsonDict: [String: Any] = [
+            "id": "disp-005",
+            "message": "",
+            "role": "ASSISTANT",
+            "artifacts": [
+                [
+                    "id": "art-002",
+                    "type": "LONGFORM",
+                    "content": ["title": "Plan", "text": "Here is the plan."] as [String: Any]
+                ] as [String: Any]
+            ] as [Any]
+        ]
+        let message = HiveChatMessage(json: JSON(jsonDict))
+        XCTAssertNotNil(message)
+        XCTAssertTrue(message?.isDisplayable == true)
+    }
 }

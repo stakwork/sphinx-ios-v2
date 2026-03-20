@@ -24,11 +24,7 @@ class TaskChatViewController: UIViewController {
     }
 
     private var displayMessages: [HiveChatMessage] {
-        messages.filter { message in
-            !message.message.isEmpty ||
-            !message.attachments.isEmpty ||
-            message.artifacts.contains(where: { $0.type != "STREAM" })
-        }
+        messages.filter { $0.isDisplayable }
     }
 
     private var processingStepText: String? = nil
@@ -932,6 +928,7 @@ extension TaskChatViewController: HivePusherDelegate {
             hideProcessingBubble()
         }
         messages.append(message)
+        guard message.isDisplayable else { return }
         let indexPath = IndexPath(row: displayMessages.count - 1, section: 0)
         chatTableView.insertRows(at: [indexPath], with: .automatic)
         // If it's a CQ answer, also reload the CQ cell to show answered state
