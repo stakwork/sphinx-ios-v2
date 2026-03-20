@@ -171,6 +171,39 @@ class WorkspaceTaskTests: XCTestCase {
         XCTAssertEqual(task.deployedToProductionAt, isoString)
     }
 
+    // MARK: - systemAssigneeType Parsing Tests
+
+    func testInit_ParsesSystemAssigneeType_WhenPresent() {
+        let json = JSON([
+            "id": "task-sat-1",
+            "title": "Coordinator task",
+            "status": "TODO",
+            "priority": "LOW",
+            "chatMessageCount": 0,
+            "systemAssigneeType": "TASK_COORDINATOR"
+        ])
+        guard let task = WorkspaceTask(json: json) else {
+            XCTFail("WorkspaceTask init should succeed")
+            return
+        }
+        XCTAssertEqual(task.systemAssigneeType, "TASK_COORDINATOR")
+    }
+
+    func testInit_SystemAssigneeType_IsNilWhenAbsent() {
+        let json = JSON([
+            "id": "task-sat-2",
+            "title": "Normal task",
+            "status": "TODO",
+            "priority": "LOW",
+            "chatMessageCount": 0
+        ])
+        guard let task = WorkspaceTask(json: json) else {
+            XCTFail("WorkspaceTask init should succeed")
+            return
+        }
+        XCTAssertNil(task.systemAssigneeType)
+    }
+
     func testPRFields_AreMutable() {
         let json = JSON([
             "id": "task-5",
