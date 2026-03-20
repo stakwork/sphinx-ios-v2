@@ -42,6 +42,7 @@ struct WorkspaceTask {
     var stakworkProjectId: Int?
     var deploymentStatus: String?       // "production" | "staging" | "failed" | nil
     var deployedToProductionAt: String? // ISO 8601
+    let systemAssigneeType: String?     // e.g. "TASK_COORDINATOR"
 
     init?(json: JSON) {
         guard let id = json["id"].string,
@@ -78,5 +79,6 @@ struct WorkspaceTask {
         self.stakworkProjectId = json["stakworkProjectId"].int
         self.deploymentStatus = json["deploymentStatus"].string
         self.deployedToProductionAt = json["deployedToProductionAt"].string
+        self.systemAssigneeType = json["systemAssigneeType"].string
     }
 }

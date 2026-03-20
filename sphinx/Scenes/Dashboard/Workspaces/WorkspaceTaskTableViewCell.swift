@@ -187,11 +187,17 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
             statusBadge.text = "  READY  "
             statusBadge.backgroundColor = .Sphinx.PrimaryGreen
         } else {
-            let displayStatus = task.status
-                .replacingOccurrences(of: "_", with: " ")
-                .replacingOccurrences(of: "-", with: " ")
-            statusBadge.text = "  \(displayStatus)  "
-            statusBadge.backgroundColor = statusColor(for: task.status)
+            let isQueueTask = task.status == "TODO" && task.systemAssigneeType == "TASK_COORDINATOR"
+            if isQueueTask {
+                statusBadge.text = "  QUEUE  "
+                statusBadge.backgroundColor = .Sphinx.BlueTextAccent
+            } else {
+                let displayStatus = task.status
+                    .replacingOccurrences(of: "_", with: " ")
+                    .replacingOccurrences(of: "-", with: " ")
+                statusBadge.text = "  \(displayStatus)  "
+                statusBadge.backgroundColor = statusColor(for: task.status)
+            }
         }
 
         priorityBadge.text = "  \(task.priority)  "
