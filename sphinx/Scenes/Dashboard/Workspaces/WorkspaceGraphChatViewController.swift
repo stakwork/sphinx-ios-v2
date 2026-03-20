@@ -651,8 +651,10 @@ extension WorkspaceGraphChatViewController: UITableViewDataSource, UITableViewDe
                 self?.sendClarifyingAnswers(answers: answers, replyId: replyId)
             }
             cell.onHeightChanged = { [weak tableView] in
-                tableView?.beginUpdates()
-                tableView?.endUpdates()
+                UIView.performWithoutAnimation {
+                    tableView?.beginUpdates()
+                    tableView?.endUpdates()
+                }
             }
             return cell
         }
@@ -665,8 +667,10 @@ extension WorkspaceGraphChatViewController: UITableViewDataSource, UITableViewDe
         }
         cell.configure(with: message, isLastMessage: isLast)
         cell.onHeightChanged = { [weak tableView] in
-            tableView?.beginUpdates()
-            tableView?.endUpdates()
+            UIView.performWithoutAnimation {
+                    tableView?.beginUpdates()
+                    tableView?.endUpdates()
+                }
         }
         return cell
     }

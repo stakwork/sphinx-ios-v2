@@ -390,13 +390,9 @@ final class ClarifyingQuestionsView: UIView {
         for (i, option) in q.options.enumerated() {
             let optionView = makeOptionView(title: option, tag: i)
             optionView.isUserInteractionEnabled = false
-            let normalisedOption = option
-                .replacingOccurrences(of: "\u{2014}", with: "")
-                .trimmingCharacters(in: .whitespaces)
+            let normalisedOption = stripDashes(option)
             let isSelected = parsed.selectedOptions.contains {
-                $0.replacingOccurrences(of: "\u{2014}", with: "")
-                  .trimmingCharacters(in: .whitespaces)
-                  .caseInsensitiveCompare(normalisedOption) == .orderedSame
+                stripDashes($0).caseInsensitiveCompare(normalisedOption) == .orderedSame
             }
             isSelected ? applySelectedStyle(to: optionView) : applyUnselectedStyle(to: optionView)
             optionsStackView.addArrangedSubview(optionView)
@@ -488,6 +484,19 @@ final class ClarifyingQuestionsView: UIView {
         actionButton.setTitle(isLast ? "Submit" : "Next →", for: .normal)
     }
 
+    // MARK: - Private: String helpers
+
+    /// Strips em-dash (—), en-dash (–), hyphen-minus (-) and surrounding whitespace for comparison.
+    private func stripDashes(_ string: String) -> String {
+        return string
+            .replacingOccurrences(of: "\u{2014}", with: "") // em-dash
+            .replacingOccurrences(of: "\u{2013}", with: "") // en-dash
+            .components(separatedBy: .whitespaces)
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
+            .trimmingCharacters(in: .whitespaces)
+    }
+
     // MARK: - Private: Parse answered state
 
     private func parseAnswers(from answerText: String, questions: [ClarifyingQuestion]) -> [(selectedOptions: [String], additionalText: String?)] {
@@ -511,13 +520,9 @@ final class ClarifyingQuestionsView: UIView {
             var additionalTokens: [String] = []
 
             for token in tokens {
-                let normToken = token
-                    .replacingOccurrences(of: "\u{2014}", with: "")
-                    .trimmingCharacters(in: .whitespaces)
+                let normToken = stripDashes(token)
                 let matchesOption = question.options.contains { opt in
-                    let normOpt = opt
-                        .replacingOccurrences(of: "\u{2014}", with: "")
-                        .trimmingCharacters(in: .whitespaces)
+                    let normOpt = stripDashes(opt)
                     return normToken.caseInsensitiveCompare(normOpt) == .orderedSame
                 }
                 if matchesOption {
