@@ -18,9 +18,9 @@ class FeaturePlanViewController: UIViewController {
     private var messages: [HiveChatMessage] = []
     private var processingStepText: String? = nil
     private var cachedStakworkProjectId: Int?
-    /// Caches the last-known rendered height for each chat row so estimatedHeightForRowAt
-    /// can return accurate values and prevent UITableView contentOffset jump-corrections.
-    private var chatCellHeightCache: [Int: CGFloat] = [:]
+    /// True while the user is actively dragging the chat upward to browse history.
+    /// Prevents incoming messages from hijacking scroll position.
+    private var userIsScrollingUp: Bool = false
     private var isAIWorking: Bool = false {
         didSet {
             updateAIWorkingState()
@@ -1261,7 +1261,6 @@ class FeaturePlanViewController: UIViewController {
                     self.messages = messages.filter {
                         !$0.message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !$0.artifacts.isEmpty
                     }
-                    self.chatCellHeightCache.removeAll()
                     self.chatTableView.reloadData()
                     self.scrollToBottom()
                 }
@@ -1323,7 +1322,6 @@ class FeaturePlanViewController: UIViewController {
                     // Re-render the CQ row in answered state so height recalculates
                     if let idx = self.messages.firstIndex(where: { $0.id == replyId }) {
                         let cqPath = IndexPath(row: idx, section: 0)
-                        self.chatCellHeightCache.removeValue(forKey: idx)
                         UIView.performWithoutAnimation {
                             self.chatTableView.reloadRows(at: [cqPath], with: .none)
                         }
@@ -1420,18 +1418,11 @@ class FeaturePlanViewController: UIViewController {
     }
 
     // MARK: - Helper Methods
-    private func isNearBottom() -> Bool {
-        let contentHeight = chatTableView.contentSize.height
-        let visibleBottom = chatTableView.contentOffset.y + chatTableView.bounds.height
-        return (contentHeight - visibleBottom) < 120
-    }
-
-    private func scrollToBottom(onlyIfNearBottom: Bool = false) {
+    private func scrollToBottom(animated: Bool = true) {
         let totalRows = messages.count + (processingStepText != nil ? 1 : 0)
         guard totalRows > 0 else { return }
-        if onlyIfNearBottom, !isNearBottom() { return }
         let lastIndexPath = IndexPath(row: totalRows - 1, section: 0)
-        chatTableView.scrollToRow(at: lastIndexPath, at: .bottom, animated: true)
+        chatTableView.scrollToRow(at: lastIndexPath, at: .bottom, animated: animated)
     }
     
     private func showChatHistoryError() {
@@ -1578,14 +1569,8 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
         }
     }
 
-    func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
-        guard tableView === chatTableView else { return }
-        chatCellHeightCache[indexPath.row] = cell.bounds.height
-    }
-
     func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
         guard tableView === chatTableView else { return 110 }
-        if let cached = chatCellHeightCache[indexPath.row] { return cached }
         if processingStepText != nil && indexPath.row == messages.count { return 60 }
         guard indexPath.row < messages.count else { return 80 }
         return FeatureChatMessageCell.estimatedHeight(
@@ -1789,10 +1774,21 @@ extension FeaturePlanViewController: UITextViewDelegate {
         atTriggerNSRange = nil
     }
 
-    // Dismiss when user scrolls the chat table
+    // Track user scroll to avoid hijacking position when browsing history
     func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
         guard scrollView === chatTableView else { return }
         hideAutocomplete()
+        userIsScrollingUp = true
+    }
+
+    func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+        guard scrollView === chatTableView else { return }
+        if !decelerate { userIsScrollingUp = false }
+    }
+
+    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+        guard scrollView === chatTableView else { return }
+        userIsScrollingUp = false
     }
 
 }
@@ -1822,13 +1818,10 @@ extension FeaturePlanViewController: HivePusherDelegate {
         if !message.isUserMessage {
             hideProcessingBubble()
         }
-        // Capture near-bottom state BEFORE insertRows grows contentSize
-        let wasNearBottom = isNearBottom()
         messages.append(message)
-        
         let indexPath = IndexPath(row: messages.count - 1, section: 0)
         chatTableView.insertRows(at: [indexPath], with: .automatic)
-        if wasNearBottom {
+        if !userIsScrollingUp {
             scrollToBottom()
         }
     }

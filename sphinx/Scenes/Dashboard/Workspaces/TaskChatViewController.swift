@@ -21,9 +21,8 @@ class TaskChatViewController: UIViewController {
     private var processingStepText: String? = nil
     private var cachedStakworkProjectId: Int?
     private var anyCableManager: HiveAnyCableManager?
-    /// Caches the last-known rendered height for each chat row so estimatedHeightForRowAt
-    /// can return accurate values and prevent UITableView contentOffset jump-corrections.
-    private var chatCellHeightCache: [Int: CGFloat] = [:]
+    /// True while the user is actively dragging the chat upward to browse history.
+    private var userIsScrollingUp: Bool = false
 
     // MARK: - Header
     private var headerView: UIView!
@@ -688,7 +687,6 @@ class TaskChatViewController: UIViewController {
                     // Re-render the CQ row in answered state so height recalculates
                     if let idx = self.messages.firstIndex(where: { $0.id == replyId }) {
                         let cqPath = IndexPath(row: idx, section: 0)
-                        self.chatCellHeightCache.removeValue(forKey: idx)
                         UIView.performWithoutAnimation {
                             self.chatTableView.reloadRows(at: [cqPath], with: .none)
                         }
@@ -724,7 +722,6 @@ class TaskChatViewController: UIViewController {
                     guard let self = self else { return }
                     self.loadingWheel.stopAnimating()
                     self.messages = messages
-                    self.chatCellHeightCache.removeAll()
                     self.chatTableView.isHidden = false
                     self.emptyLabel.isHidden = !messages.isEmpty
                     self.chatTableView.reloadData()
@@ -805,16 +802,9 @@ class TaskChatViewController: UIViewController {
         }
     }
 
-    private func isNearBottom() -> Bool {
-        let contentHeight = chatTableView.contentSize.height
-        let visibleBottom = chatTableView.contentOffset.y + chatTableView.bounds.height
-        return (contentHeight - visibleBottom) < 120
-    }
-
-    private func scrollToBottom(animated: Bool = true, onlyIfNearBottom: Bool = false) {
+    private func scrollToBottom(animated: Bool = true) {
         let totalRows = messages.count + (processingStepText != nil ? 1 : 0)
         guard totalRows > 0 else { return }
-        if onlyIfNearBottom, !isNearBottom() { return }
         let indexPath = IndexPath(row: totalRows - 1, section: 0)
         chatTableView.scrollToRow(at: indexPath, at: .bottom, animated: animated)
     }
@@ -932,12 +922,10 @@ extension TaskChatViewController: HivePusherDelegate {
         if !message.isUserMessage {
             hideProcessingBubble()
         }
-        // Capture near-bottom state BEFORE insertRows grows contentSize
-        let wasNearBottom = isNearBottom()
         messages.append(message)
         let indexPath = IndexPath(row: messages.count - 1, section: 0)
         chatTableView.insertRows(at: [indexPath], with: .automatic)
-        if wasNearBottom {
+        if !userIsScrollingUp {
             scrollToBottom()
         }
     }
@@ -1013,12 +1001,7 @@ extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
         return cell
     }
 
-    func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
-        chatCellHeightCache[indexPath.row] = cell.bounds.height
-    }
-
     func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
-        if let cached = chatCellHeightCache[indexPath.row] { return cached }
         if processingStepText != nil && indexPath.row == messages.count { return 60 }
         guard indexPath.row < messages.count else { return 80 }
         return FeatureChatMessageCell.estimatedHeight(
@@ -1061,10 +1044,21 @@ extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
         }
     }
 
-    // Dismiss autocomplete when user scrolls the chat
+    // Track user scroll to avoid hijacking position when browsing history
     func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
         guard scrollView === chatTableView else { return }
         hideAutocomplete()
+        userIsScrollingUp = true
+    }
+
+    func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+        guard scrollView === chatTableView else { return }
+        if !decelerate { userIsScrollingUp = false }
+    }
+
+    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+        guard scrollView === chatTableView else { return }
+        userIsScrollingUp = false
     }
 }
 
