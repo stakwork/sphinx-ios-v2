@@ -16,6 +16,15 @@ class FeaturePlanViewController: UIViewController {
     private var feature: HiveFeature
     private var workspace: Workspace
     private var messages: [HiveChatMessage] = []
+
+    private var cqMessageIds: Set<String> {
+        Set(messages.filter { $0.artifacts.contains(where: { $0.isClarifyingQuestions }) }.map { $0.id })
+    }
+
+    private var displayMessages: [HiveChatMessage] {
+        messages
+    }
+
     private var processingStepText: String? = nil
     private var cachedStakworkProjectId: Int?
     private var isAIWorking: Bool = false {
@@ -1318,8 +1327,8 @@ class FeaturePlanViewController: UIViewController {
                     guard let self = self, let sentMessage = sentMessage else { return }
                     self.newMessageReceived(sentMessage)
                     // Reload the CQ cell so it recomputes height with answered state
-                    if let idx = self.messages.firstIndex(where: { $0.id == replyId }) {
-                        self.chatTableView.reloadRows(at: [IndexPath(row: idx, section: 0)], with: .none)
+                    if let displayIdx = self.displayMessages.firstIndex(where: { $0.id == replyId }) {
+                        self.chatTableView.reloadRows(at: [IndexPath(row: displayIdx, section: 0)], with: .none)
                     }
                 }
             },
@@ -1356,7 +1365,7 @@ class FeaturePlanViewController: UIViewController {
 
     private func hideProcessingBubble() {
         guard processingStepText != nil else { return }
-        let indexPath = IndexPath(row: messages.count, section: 0)
+        let indexPath = IndexPath(row: displayMessages.count, section: 0)
         processingStepText = nil
         chatTableView.deleteRows(at: [indexPath], with: .automatic)
     }
@@ -1366,12 +1375,12 @@ class FeaturePlanViewController: UIViewController {
     private func updateProcessingBubble(stepText: String) {
         if processingStepText == nil {
             processingStepText = stepText
-            let indexPath = IndexPath(row: messages.count, section: 0)
+            let indexPath = IndexPath(row: displayMessages.count, section: 0)
             chatTableView.insertRows(at: [indexPath], with: .automatic)
             scrollToBottom()
         } else {
             processingStepText = stepText
-            let indexPath = IndexPath(row: messages.count, section: 0)
+            let indexPath = IndexPath(row: displayMessages.count, section: 0)
             chatTableView.reloadRows(at: [indexPath], with: .none)
         }
     }
@@ -1414,7 +1423,7 @@ class FeaturePlanViewController: UIViewController {
 
     // MARK: - Helper Methods
     private func scrollToBottom() {
-        let totalRows = messages.count + (processingStepText != nil ? 1 : 0)
+        let totalRows = displayMessages.count + (processingStepText != nil ? 1 : 0)
         guard totalRows > 0 else { return }
         let lastIndexPath = IndexPath(row: totalRows - 1, section: 0)
         chatTableView.scrollToRow(at: lastIndexPath, at: .bottom, animated: true)
@@ -1472,7 +1481,7 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
         if tableView === tasksTableView {
             return feature.allTasks.count
         }
-        return messages.count + (processingStepText != nil ? 1 : 0)
+        return displayMessages.count + (processingStepText != nil ? 1 : 0)
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -1496,7 +1505,7 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
             return cell
         }
 
-        if processingStepText != nil && indexPath.row == messages.count {
+        if processingStepText != nil && indexPath.row == displayMessages.count {
             let cell = tableView.dequeueReusableCell(
                 withIdentifier: "HiveProcessingBubbleCell",
                 for: indexPath
@@ -1505,8 +1514,8 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
             return cell
         }
 
-        let message = messages[indexPath.row]
-        let isLast = indexPath.row == messages.count - 1
+        let message = displayMessages[indexPath.row]
+        let isLast = indexPath.row == displayMessages.count - 1
 
         if message.artifacts.contains(where: { $0.isClarifyingQuestions }) {
             guard let cell = tableView.dequeueReusableCell(
@@ -1533,7 +1542,9 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
         ) as? FeatureChatMessageCell else {
             return UITableViewCell()
         }
-        cell.configure(with: message, isLastMessage: isLast)
+        // If this message is a CQ answer, show italic summary instead of raw text
+        let italic = cqAnswerItalicText(for: message)
+        cell.configure(with: message, isLastMessage: isLast, italicText: italic)
         cell.onHeightChanged = { [weak tableView] in
             UIView.performWithoutAnimation {
                     tableView?.beginUpdates()
@@ -1544,6 +1555,14 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
             self?.handleAttachmentTap(attachment)
         }
         return cell
+    }
+
+    private func cqAnswerItalicText(for message: HiveChatMessage) -> String? {
+        guard let replyId = message.replyId, cqMessageIds.contains(replyId) else { return nil }
+        let count = messages.first(where: { $0.id == replyId })
+            .flatMap { $0.artifacts.first(where: { $0.isClarifyingQuestions }) }
+            .flatMap { $0.clarifyingQuestions }?.count ?? 1
+        return count == 1 ? "1 question answered" : "\(count) questions answered"
     }
 
     private func handleAttachmentTap(_ attachment: HiveChatMessageAttachment) {
@@ -1809,9 +1828,14 @@ extension FeaturePlanViewController: HivePusherDelegate {
             hideProcessingBubble()
         }
         messages.append(message)
-        
-        let indexPath = IndexPath(row: messages.count - 1, section: 0)
+        let indexPath = IndexPath(row: displayMessages.count - 1, section: 0)
         chatTableView.insertRows(at: [indexPath], with: .automatic)
+        // If it's a CQ answer, also reload the CQ cell to show answered state
+        if cqMessageIds.contains(message.replyId ?? "") {
+            if let displayIdx = displayMessages.firstIndex(where: { $0.id == message.replyId }) {
+                chatTableView.reloadRows(at: [IndexPath(row: displayIdx, section: 0)], with: .none)
+            }
+        }
         scrollToBottom()
     }
     
@@ -1845,7 +1869,9 @@ extension FeaturePlanViewController: HivePusherDelegate {
             messages[idx].artifacts[artifactIdx].prContent?.state = state
             messages[idx].artifacts[artifactIdx].prContent?.status = artifactStatus
             if let url = prUrl { messages[idx].artifacts[artifactIdx].prContent?.url = url }
-            chatTableView.reloadRows(at: [IndexPath(row: idx, section: 0)], with: .none)
+            if let displayIdx = displayMessages.firstIndex(where: { $0.id == messages[idx].id }) {
+                chatTableView.reloadRows(at: [IndexPath(row: displayIdx, section: 0)], with: .none)
+            }
         }
 
         // Update task row in tasks table

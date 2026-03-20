@@ -169,21 +169,31 @@ class FeatureChatMessageCell: UITableViewCell {
     }
 
     // MARK: - Configure
-    func configure(with message: HiveChatMessage, isLastMessage: Bool = false) {
+    func configure(with message: HiveChatMessage, isLastMessage: Bool = false, italicText: String? = nil) {
         let isUser = message.isUserMessage
 
         // --- Text content ---
         if isUser {
-            let rendered = FeatureChatMessageCell.markdownRenderer.render(message.resolvedDisplayText)
-            let mutable  = NSMutableAttributedString(attributedString: rendered)
-            mutable.enumerateAttribute(.foregroundColor, in: NSRange(location: 0, length: mutable.length)) { value, range, _ in
-                if let color = value as? UIColor, color == UIColor.Sphinx.Text {
-                    mutable.addAttribute(.foregroundColor, value: UIColor.Sphinx.TextMessages, range: range)
+            let mutable: NSMutableAttributedString
+            if let italic = italicText {
+                let font = UIFont(name: "Roboto-Italic", size: 15)
+                    ?? UIFont.italicSystemFont(ofSize: 15)
+                mutable = NSMutableAttributedString(
+                    string: italic,
+                    attributes: [.font: font, .foregroundColor: UIColor.Sphinx.TextMessages]
+                )
+            } else {
+                let rendered = FeatureChatMessageCell.markdownRenderer.render(message.resolvedDisplayText)
+                mutable = NSMutableAttributedString(attributedString: rendered)
+                mutable.enumerateAttribute(.foregroundColor, in: NSRange(location: 0, length: mutable.length)) { value, range, _ in
+                    if let color = value as? UIColor, color == UIColor.Sphinx.Text {
+                        mutable.addAttribute(.foregroundColor, value: UIColor.Sphinx.TextMessages, range: range)
+                    }
                 }
             }
             messageTextView.attributedText = mutable
             // Fix 3: hide text view when message body is blank
-            let hasText = !message.resolvedDisplayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            let hasText = italicText != nil || !message.resolvedDisplayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             messageTextView.isHidden = !hasText
             bubbleView.backgroundColor      = UIColor.Sphinx.SentMsgBG
             timestampLabel.textColor        = UIColor.Sphinx.SecondaryTextSent
