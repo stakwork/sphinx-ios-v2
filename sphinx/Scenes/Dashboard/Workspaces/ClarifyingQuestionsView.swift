@@ -29,6 +29,19 @@ final class ClarifyingQuestionsView: UIView {
     private var collectedAnswers: [String] = []
     private var parsedAnswers: [(selectedOptions: [String], additionalText: String?)] = []
 
+    // MARK: - Dynamic Layout Constraints
+
+    /// Active state: container's bottom is tied to actionButton
+    private var activeContainerBottomConstraint: NSLayoutConstraint!
+    /// Answered state: container's bottom is tied to navigationStackView
+    private var answeredContainerBottomConstraint: NSLayoutConstraint!
+    /// Active state: actionButton's top is tied to additionalContextTextView's bottom
+    private var actionButtonTopConstraint: NSLayoutConstraint!
+    /// Answered state, no extra text: navStack's top is tied to optionsStackView's bottom
+    private var navTopFromOptionsConstraint: NSLayoutConstraint!
+    /// Answered state, with extra text: navStack's top is tied to additionalContextLabel's bottom
+    private var navTopFromLabelConstraint: NSLayoutConstraint!
+
     // MARK: - UI Components
 
     private let containerView: UIView = {
@@ -85,7 +98,7 @@ final class ClarifyingQuestionsView: UIView {
         let l = UILabel()
         l.translatesAutoresizingMaskIntoConstraints = false
         l.font = UIFont(name: "Roboto-Regular", size: 14) ?? UIFont.systemFont(ofSize: 14)
-        l.textColor = UIColor.Sphinx.Text
+        l.textColor = UIColor.Sphinx.SecondaryText
         l.numberOfLines = 0
         l.isHidden = true
         return l
@@ -112,6 +125,7 @@ final class ClarifyingQuestionsView: UIView {
         b.backgroundColor = UIColor.Sphinx.PrimaryBlue
         b.layer.cornerRadius = 10
         b.layer.masksToBounds = true
+        b.contentEdgeInsets = UIEdgeInsets(top: 0, left: 12, bottom: 0, right: 12)
         return b
     }()
 
@@ -125,6 +139,7 @@ final class ClarifyingQuestionsView: UIView {
         b.backgroundColor = UIColor.Sphinx.PrimaryBlue
         b.layer.cornerRadius = 10
         b.layer.masksToBounds = true
+        b.contentEdgeInsets = UIEdgeInsets(top: 0, left: 12, bottom: 0, right: 12)
         return b
     }()
 
@@ -183,54 +198,76 @@ final class ClarifyingQuestionsView: UIView {
         prevButton.addTarget(self, action: #selector(prevTapped), for: .touchUpInside)
         nextButton.addTarget(self, action: #selector(nextTapped), for: .touchUpInside)
 
+        // Dynamic constraints — created here but activated/deactivated at runtime
+        actionButtonTopConstraint = actionButton.topAnchor.constraint(
+            equalTo: additionalContextTextView.bottomAnchor, constant: 12
+        )
+        activeContainerBottomConstraint = actionButton.bottomAnchor.constraint(
+            equalTo: containerView.bottomAnchor, constant: -12
+        )
+        answeredContainerBottomConstraint = navigationStackView.bottomAnchor.constraint(
+            equalTo: containerView.bottomAnchor, constant: -12
+        )
+        navTopFromOptionsConstraint = navigationStackView.topAnchor.constraint(
+            equalTo: optionsStackView.bottomAnchor, constant: 12
+        )
+        navTopFromLabelConstraint = navigationStackView.topAnchor.constraint(
+            equalTo: additionalContextLabel.bottomAnchor, constant: 12
+        )
+
         NSLayoutConstraint.activate([
+            // Container fills the view
             containerView.topAnchor.constraint(equalTo: topAnchor, constant: 8),
-            containerView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 0),
-            containerView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: 0),
+            containerView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            containerView.trailingAnchor.constraint(equalTo: trailingAnchor),
             containerView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -8),
 
+            // Counter label
             counterLabel.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 12),
             counterLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
             counterLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
 
+            // Question label
             questionLabel.topAnchor.constraint(equalTo: counterLabel.bottomAnchor, constant: 6),
             questionLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
             questionLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
 
+            // Options stack
             optionsStackView.topAnchor.constraint(equalTo: questionLabel.bottomAnchor, constant: 12),
             optionsStackView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
             optionsStackView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
 
+            // Additional context text view (active state)
             additionalContextTextView.topAnchor.constraint(equalTo: optionsStackView.bottomAnchor, constant: 12),
             additionalContextTextView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
             additionalContextTextView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
             additionalContextTextView.heightAnchor.constraint(greaterThanOrEqualToConstant: 60),
             additionalContextTextView.heightAnchor.constraint(lessThanOrEqualToConstant: 100),
 
+            // Placeholder inside text view
             placeholderLabel.topAnchor.constraint(equalTo: additionalContextTextView.topAnchor, constant: 8),
             placeholderLabel.leadingAnchor.constraint(equalTo: additionalContextTextView.leadingAnchor, constant: 12),
             placeholderLabel.trailingAnchor.constraint(equalTo: additionalContextTextView.trailingAnchor, constant: -12),
 
+            // Additional context label (answered state) — same leading/trailing as other content
             additionalContextLabel.topAnchor.constraint(equalTo: optionsStackView.bottomAnchor, constant: 12),
             additionalContextLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
             additionalContextLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
 
-            actionButton.topAnchor.constraint(equalTo: additionalContextTextView.bottomAnchor, constant: 12),
+            // Action button (active state) — right-aligned, height fixed
             actionButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
-            actionButton.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -12),
             actionButton.heightAnchor.constraint(equalToConstant: 36),
             actionButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 90),
 
-            navigationStackView.topAnchor.constraint(equalTo: additionalContextLabel.bottomAnchor, constant: 12),
+            // Navigation stack (answered state) — right-aligned, height fixed
             navigationStackView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
-            navigationStackView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -12),
+            navigationStackView.leadingAnchor.constraint(greaterThanOrEqualTo: containerView.leadingAnchor, constant: 12),
             navigationStackView.heightAnchor.constraint(equalToConstant: 36),
-
-            prevButton.heightAnchor.constraint(equalToConstant: 36),
-            prevButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 90),
-            nextButton.heightAnchor.constraint(equalToConstant: 36),
-            nextButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 90),
         ])
+
+        // Activate active-state dynamic constraints by default
+        actionButtonTopConstraint.isActive = true
+        activeContainerBottomConstraint.isActive = true
     }
 
     // MARK: - Public Methods
@@ -253,7 +290,8 @@ final class ClarifyingQuestionsView: UIView {
     func configureAnswered(questions: [ClarifyingQuestion], answerText: String) {
         self.questions = questions
         self.currentIndex = 0
-        isUserInteractionEnabled = false
+        // Keep the whole view interactive so Prev/Next buttons respond to taps
+        isUserInteractionEnabled = true
         alpha = 1.0
         self.parsedAnswers = parseAnswers(from: answerText, questions: questions)
         showAnsweredQuestion(at: 0)
@@ -284,6 +322,30 @@ final class ClarifyingQuestionsView: UIView {
         optionsStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
         isUserInteractionEnabled = true
         alpha = 1.0
+        activateActiveStateConstraints()
+    }
+
+    // MARK: - Private: Constraint Management
+
+    private func activateActiveStateConstraints() {
+        answeredContainerBottomConstraint.isActive = false
+        navTopFromOptionsConstraint.isActive = false
+        navTopFromLabelConstraint.isActive = false
+        actionButtonTopConstraint.isActive = true
+        activeContainerBottomConstraint.isActive = true
+    }
+
+    private func activateAnsweredStateConstraints(hasAdditionalText: Bool) {
+        activeContainerBottomConstraint.isActive = false
+        actionButtonTopConstraint.isActive = false
+        if hasAdditionalText {
+            navTopFromOptionsConstraint.isActive = false
+            navTopFromLabelConstraint.isActive = true
+        } else {
+            navTopFromLabelConstraint.isActive = false
+            navTopFromOptionsConstraint.isActive = true
+        }
+        answeredContainerBottomConstraint.isActive = true
     }
 
     // MARK: - Private: Rendering
@@ -296,7 +358,11 @@ final class ClarifyingQuestionsView: UIView {
         questionLabel.text = q.question
         selectedIndices = []
         additionalContextTextView.text = ""
+        additionalContextTextView.isHidden = false
+        additionalContextLabel.isHidden = true
         placeholderLabel.isHidden = false
+        actionButton.isHidden = false
+        navigationStackView.isHidden = true
 
         // Rebuild option pills
         optionsStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
@@ -305,6 +371,7 @@ final class ClarifyingQuestionsView: UIView {
             optionsStackView.addArrangedSubview(optionView)
         }
 
+        activateActiveStateConstraints()
         updateActionButton()
         invalidateIntrinsicContentSize()
         onHeightChanged?()
@@ -335,22 +402,28 @@ final class ClarifyingQuestionsView: UIView {
             optionsStackView.addArrangedSubview(optionView)
         }
 
-        // Additional text: hide editable view, show read-only label
+        // Hide active-state views
         additionalContextTextView.isHidden = true
         placeholderLabel.isHidden = true
+        actionButton.isHidden = true
+
+        // Show additional text label only when content is present
+        let hasAdditionalText: Bool
         if let extra = parsed.additionalText, !extra.isEmpty {
             additionalContextLabel.text = extra
             additionalContextLabel.isHidden = false
+            hasAdditionalText = true
         } else {
             additionalContextLabel.isHidden = true
+            hasAdditionalText = false
         }
 
-        // Navigation buttons replace action button
-        actionButton.isHidden = true
+        // Show navigation buttons
         navigationStackView.isHidden = false
         prevButton.isEnabled = index > 0
         nextButton.isEnabled = index < questions.count - 1
 
+        activateAnsweredStateConstraints(hasAdditionalText: hasAdditionalText)
         invalidateIntrinsicContentSize()
         onHeightChanged?()
     }
@@ -554,9 +627,7 @@ extension ClarifyingQuestionsView {
     func selectOptionForTesting(at index: Int) {
         let views = optionsStackView.arrangedSubviews
         guard index < views.count else { return }
-        // Synthesise a fake UITapGestureRecognizer pointing at the option view and call the handler
         let optionView = views[index]
-        // Create a mock recognizer targeting the option view
         let fakeTap = UITapGestureRecognizer(target: self, action: #selector(optionTapped(_:)))
         optionView.addGestureRecognizer(fakeTap)
         optionTapped(fakeTap)
