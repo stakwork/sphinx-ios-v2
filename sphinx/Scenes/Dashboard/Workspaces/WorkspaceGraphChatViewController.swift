@@ -15,6 +15,7 @@ class WorkspaceGraphChatViewController: UIViewController {
 
     private var workspace: Workspace
     private var messages: [HiveChatMessage] = []
+    private var cachedRowHeights: [Int: CGFloat] = [:]
     private var isStreaming: Bool = false {
         didSet {
             updateInputState()
@@ -596,15 +597,20 @@ extension WorkspaceGraphChatViewController: UITableViewDataSource, UITableViewDe
         let message = messages[indexPath.row]
         let isLast = indexPath.row == messages.count - 1
         cell.configure(with: message, isLastMessage: isLast)
-        cell.onHeightChanged = { [weak tableView] in
-            tableView?.beginUpdates()
-            tableView?.endUpdates()
+        cell.onHeightChanged = { [weak tableView, indexPath] in
+            UIView.performWithoutAnimation {
+                tableView?.reloadRows(at: [indexPath], with: .none)
+            }
         }
         return cell
     }
 
+    func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+        cachedRowHeights[indexPath.row] = cell.frame.height
+    }
+
     func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
-        return 80
+        return cachedRowHeights[indexPath.row] ?? 80
     }
 }
 

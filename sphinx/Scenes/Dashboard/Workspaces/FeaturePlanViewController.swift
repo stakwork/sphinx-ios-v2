@@ -18,6 +18,7 @@ class FeaturePlanViewController: UIViewController {
     private var messages: [HiveChatMessage] = []
     private var processingStepText: String? = nil
     private var cachedStakworkProjectId: Int?
+    private var cachedRowHeights: [Int: CGFloat] = [:]
     private var isAIWorking: Bool = false {
         didSet {
             updateAIWorkingState()
@@ -1258,6 +1259,7 @@ class FeaturePlanViewController: UIViewController {
                     self.messages = messages.filter {
                         !$0.message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !$0.artifacts.isEmpty
                     }
+                    self.cachedRowHeights = [:]
                     self.chatTableView.reloadData()
                     self.scrollToBottom()
                 }
@@ -1517,14 +1519,28 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
         cell.onClarifyingAnswerSubmit = { [weak self] answers, replyId in
             self?.sendClarifyingAnswers(answers: answers, replyId: replyId)
         }
-        cell.onHeightChanged = { [weak tableView] in
-            tableView?.beginUpdates()
-            tableView?.endUpdates()
+        cell.onHeightChanged = { [weak tableView, indexPath] in
+            UIView.performWithoutAnimation {
+                tableView?.reloadRows(at: [indexPath], with: .none)
+            }
         }
         cell.onAttachmentTap = { [weak self] attachment in
             self?.handleAttachmentTap(attachment)
         }
         return cell
+    }
+
+    func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+        if tableView == chatTableView {
+            cachedRowHeights[indexPath.row] = cell.frame.height
+        }
+    }
+
+    func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
+        if tableView == chatTableView {
+            return cachedRowHeights[indexPath.row] ?? 80
+        }
+        return UITableView.automaticDimension
     }
 
     private func handleAttachmentTap(_ attachment: HiveChatMessageAttachment) {

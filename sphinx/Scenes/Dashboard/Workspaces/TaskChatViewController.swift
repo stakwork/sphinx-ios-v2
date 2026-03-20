@@ -20,6 +20,7 @@ class TaskChatViewController: UIViewController {
     private var messages: [HiveChatMessage] = []
     private var processingStepText: String? = nil
     private var cachedStakworkProjectId: Int?
+    private var cachedRowHeights: [Int: CGFloat] = [:]
     private var anyCableManager: HiveAnyCableManager?
 
     // MARK: - Header
@@ -720,6 +721,7 @@ class TaskChatViewController: UIViewController {
                     self.messages = messages
                     self.chatTableView.isHidden = false
                     self.emptyLabel.isHidden = !messages.isEmpty
+                    self.cachedRowHeights = [:]
                     self.chatTableView.reloadData()
                     if !messages.isEmpty { self.scrollToBottom(animated: false) }
                     self.task.podId = podId
@@ -981,14 +983,23 @@ extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
         cell.onClarifyingAnswerSubmit = { [weak self] answers, replyId in
             self?.sendClarifyingAnswers(answers: answers, replyId: replyId)
         }
-        cell.onHeightChanged = { [weak tableView] in
-            tableView?.beginUpdates()
-            tableView?.endUpdates()
+        cell.onHeightChanged = { [weak tableView, indexPath] in
+            UIView.performWithoutAnimation {
+                tableView?.reloadRows(at: [indexPath], with: .none)
+            }
         }
         cell.onAttachmentTap = { [weak self] attachment in
             self?.handleAttachmentTap(attachment)
         }
         return cell
+    }
+
+    func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+        cachedRowHeights[indexPath.row] = cell.frame.height
+    }
+
+    func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
+        return cachedRowHeights[indexPath.row] ?? 80
     }
 
     private func handleAttachmentTap(_ attachment: HiveChatMessageAttachment) {
