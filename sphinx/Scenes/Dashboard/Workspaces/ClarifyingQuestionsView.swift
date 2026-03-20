@@ -282,7 +282,12 @@ final class ClarifyingQuestionsView: UIView {
         optionsStackView.setNeedsLayout()
         optionsStackView.layoutIfNeeded()
         invalidateIntrinsicContentSize()
-        onHeightChanged?()
+        // Dispatch async so this never fires from within cellForRowAt (which would
+        // cause tableView.beginUpdates/endUpdates to run during cell dequeue, corrupting
+        // height calculations for sibling cells).
+        DispatchQueue.main.async { [weak self] in
+            self?.onHeightChanged?()
+        }
     }
 
     private func makeOptionRow(title: String, index: Int) -> OptionRowView {

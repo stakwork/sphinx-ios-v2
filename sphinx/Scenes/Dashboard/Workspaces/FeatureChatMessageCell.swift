@@ -395,6 +395,8 @@ class FeatureChatMessageCell: UITableViewCell {
         messageTextView.isHidden = false
         messageTextView.textContainerInset = UIEdgeInsets(top: 10, left: 8, bottom: 10, right: 8)
         prCardView.isHidden = true
+        clarifyingQuestionsView.onHeightChanged = nil
+        clarifyingQuestionsView.onSubmit = nil
         clarifyingQuestionsView.reset()
         clarifyingQuestionsView.isHidden = true
         onClarifyingAnswerSubmit = nil
@@ -403,6 +405,7 @@ class FeatureChatMessageCell: UITableViewCell {
         attachmentGridView.isHidden = true
         onAttachmentTap = nil
         bubbleView.layer.cornerRadius = 18
+        bubbleView.backgroundColor = .clear
         timestampLabel.text    = nil
         timestampLabel.isHidden = false
         senderAvatarImageView.isHidden = true
