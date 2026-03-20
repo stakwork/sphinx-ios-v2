@@ -21,11 +21,7 @@ class WorkspaceGraphChatViewController: UIViewController {
     }
 
     private var displayMessages: [HiveChatMessage] {
-        messages.filter { message in
-            !message.message.isEmpty ||
-            !message.attachments.isEmpty ||
-            message.artifacts.contains(where: { $0.type != "STREAM" })
-        }
+        messages.filter { $0.isDisplayable }
     }
     
     private var isStreaming: Bool = false {
@@ -598,6 +594,11 @@ extension WorkspaceGraphChatViewController: GraphChatSSEDelegate {
             createdAt: nowISO()
         )
         messages.append(assistantMsg)
+        guard assistantMsg.isDisplayable else {
+            streamingBuffer = ""
+            updateEmptyState()
+            return
+        }
         let insertIndexPath = IndexPath(row: displayMessages.count - 1, section: 0)
 
         if processingStepText != nil {

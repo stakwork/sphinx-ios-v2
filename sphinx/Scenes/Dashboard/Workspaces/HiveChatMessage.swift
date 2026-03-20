@@ -245,4 +245,12 @@ struct HiveChatMessage {
         return message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             && artifacts.contains(where: { $0.isLongform })
     }
+
+    /// Returns true when this message should be shown in the chat table.
+    /// Mirrors the filter applied by `displayMessages` in all chat view controllers.
+    var isDisplayable: Bool {
+        !message.isEmpty ||
+        !attachments.isEmpty ||
+        artifacts.contains(where: { $0.type != "STREAM" })
+    }
 }
