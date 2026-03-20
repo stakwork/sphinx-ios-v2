@@ -139,7 +139,7 @@ class FeatureChatMessageCell: UITableViewCell {
         bubbleStack.translatesAutoresizingMaskIntoConstraints = false
         bubbleStack.axis = .vertical
         bubbleStack.spacing = 0
-        bubbleStack.isLayoutMarginsRelativeArrangement = true
+        bubbleStack.isLayoutMarginsRelativeArrangement = false
 
         contentView.addSubview(bubbleView)
         bubbleView.insertSubview(textBackgroundView, belowSubview: bubbleStack)
@@ -348,6 +348,45 @@ class FeatureChatMessageCell: UITableViewCell {
         } else {
             attachmentGridView.isHidden = true
         }
+    }
+
+    // MARK: - Static height estimator
+    /// Returns a fast, reasonably accurate row-height estimate for a message without
+    /// laying out any views. Used by both VCs in estimatedHeightForRowAt so the
+    /// UITableView scroll-indicator stays stable instead of rescaling as rows are measured.
+    ///
+    /// Anatomy of a cell (approximate):
+    ///   contentView = bubbleView.top(+4) + bubbleView + timestamp(~19) + gaps(~8) ≈ fixed+31
+    ///   bubbleView  = text (or CQ view)
+    ///   text        = textContainerInset(top:10 bot:10) + lines × lineHeight(≈18)
+    static func estimatedHeight(for message: HiveChatMessage, tableViewWidth: CGFloat) -> CGFloat {
+        let fixedOverhead: CGFloat = 31   // cell top(4) + timestamp(19) + bottom gap(8)
+        let textInsets: CGFloat = 20      // top 10 + bottom 10
+
+        // CQ cells: already known to be large
+        if message.artifacts.contains(where: { $0.isClarifyingQuestions }) { return 600 }
+
+        // PR card cells: fixed-ish
+        if message.artifacts.contains(where: { $0.isPullRequest }) { return 220 }
+
+        // Attachment grid
+        if !message.attachments.isEmpty { return 260 }
+
+        // Text bubble: estimate lines from char count
+        let text = message.resolvedDisplayText
+        if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return fixedOverhead + textInsets }
+
+        // Bubble width ≈ 85% of table width, minus horizontal text insets (8 each side)
+        let bubbleWidth = tableViewWidth * 0.85 - 16
+        let charsPerLine = max(1, Int(bubbleWidth / 8.5))  // ~8.5 pt per char at 15pt font
+        let lineCount = max(1, (text.count + charsPerLine - 1) / charsPerLine)
+        let lineHeight: CGFloat = 19  // 15pt font + leading
+        let textHeight = CGFloat(lineCount) * lineHeight + textInsets
+
+        // Longform messages (markdown) tend to be taller — add generous padding
+        if message.isLongformMessage { return fixedOverhead + textHeight + 40 }
+
+        return fixedOverhead + textHeight
     }
 
     // MARK: - Helpers

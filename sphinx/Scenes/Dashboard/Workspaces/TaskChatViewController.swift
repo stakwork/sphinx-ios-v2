@@ -1010,14 +1010,13 @@ extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
-        // Return the cached real height if we've seen this row before — canonical fix
-        // for UITableView contentOffset jumps when scrolling up.
         if let cached = chatCellHeightCache[indexPath.row] { return cached }
         if processingStepText != nil && indexPath.row == messages.count { return 60 }
-        guard indexPath.row < messages.count else { return 200 }
-        let msg = messages[indexPath.row]
-        if msg.artifacts.contains(where: { $0.isClarifyingQuestions }) { return 600 }
-        return 200
+        guard indexPath.row < messages.count else { return 80 }
+        return FeatureChatMessageCell.estimatedHeight(
+            for: messages[indexPath.row],
+            tableViewWidth: chatTableView.bounds.width
+        )
     }
 
     private func handleAttachmentTap(_ attachment: HiveChatMessageAttachment) {

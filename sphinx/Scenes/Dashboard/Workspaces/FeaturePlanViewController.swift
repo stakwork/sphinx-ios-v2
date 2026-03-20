@@ -1581,15 +1581,13 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
 
     func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
         guard tableView === chatTableView else { return 110 }
-        // Return the cached real height if we've seen this row before — this is the
-        // canonical fix for UITableView contentOffset jumps when scrolling up.
         if let cached = chatCellHeightCache[indexPath.row] { return cached }
-        // First-time estimates: be generous for tall cell types.
         if processingStepText != nil && indexPath.row == messages.count { return 60 }
-        guard indexPath.row < messages.count else { return 200 }
-        let msg = messages[indexPath.row]
-        if msg.artifacts.contains(where: { $0.isClarifyingQuestions }) { return 600 }
-        return 200
+        guard indexPath.row < messages.count else { return 80 }
+        return FeatureChatMessageCell.estimatedHeight(
+            for: messages[indexPath.row],
+            tableViewWidth: chatTableView.bounds.width
+        )
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
