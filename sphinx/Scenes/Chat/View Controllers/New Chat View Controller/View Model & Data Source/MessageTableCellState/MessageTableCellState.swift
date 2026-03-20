@@ -548,7 +548,8 @@ struct MessageTableCellState {
             originalMessage: originalThreadMessage,
             firstReplySenderIndo: getSenderInfo(message: firstReplyMessage),
             secondReplySenderInfo: secondReplySenderInfo,
-            moreRepliesCount: threadMessages.count - 3
+            moreRepliesCount: threadMessages.count - 3,
+            mentionsCount: (threadOriginalMessage?.push == true ? 1 : 0) + threadMessages.filter({ $0.push }).count
         )
     }()
     

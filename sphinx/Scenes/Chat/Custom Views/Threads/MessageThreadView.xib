@@ -43,6 +43,8 @@
                 <outlet property="secondReplyAvatarView" destination="DeC-XS-vIF" id="FQ4-US-mdo"/>
                 <outlet property="secondReplyBubbleView" destination="h0W-tX-cfd" id="2n9-ZS-92x"/>
                 <outlet property="secondReplyContainer" destination="9ay-3A-NxK" id="B8E-WR-CjZ"/>
+                <outlet property="mentionsBadgeView" destination="bPl-Mn-t0n" id="bO2-Mn-t0n"/>
+                <outlet property="mentionsBadgeLabel" destination="bLb-Mn-t0n" id="bO3-Mn-t0n"/>
             </connections>
         </placeholder>
         <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
@@ -222,6 +224,24 @@
                                             <color key="textColor" name="Text"/>
                                             <nil key="highlightedColor"/>
                                         </label>
+                                        <view hidden="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="bPl-Mn-t0n">
+                                            <rect key="frame" x="317" y="6" width="60" height="20"/>
+                                            <subviews>
+                                                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="@ 2" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="bLb-Mn-t0n">
+                                                    <rect key="frame" x="6" y="3" width="48" height="14"/>
+                                                    <fontDescription key="fontDescription" name="Roboto-Medium" family="Roboto" pointSize="11"/>
+                                                    <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                                    <nil key="highlightedColor"/>
+                                                </label>
+                                            </subviews>
+                                            <color key="backgroundColor" name="PrimaryBlue"/>
+                                            <constraints>
+                                                <constraint firstItem="bLb-Mn-t0n" firstAttribute="leading" secondItem="bPl-Mn-t0n" secondAttribute="leading" constant="6" id="bC1-Mn-t0n"/>
+                                                <constraint firstAttribute="trailing" secondItem="bLb-Mn-t0n" secondAttribute="trailing" constant="6" id="bC2-Mn-t0n"/>
+                                                <constraint firstItem="bLb-Mn-t0n" firstAttribute="centerY" secondItem="bPl-Mn-t0n" secondAttribute="centerY" id="bC3-Mn-t0n"/>
+                                                <constraint firstAttribute="height" constant="20" id="bC4-Mn-t0n"/>
+                                            </constraints>
+                                        </view>
                                     </subviews>
                                     <color key="backgroundColor" name="Body"/>
                                     <constraints>
@@ -229,6 +249,8 @@
                                         <constraint firstItem="STg-CK-1mE" firstAttribute="top" secondItem="Md2-Pb-250" secondAttribute="top" constant="6" id="JVb-r3-Yfc"/>
                                         <constraint firstItem="I0E-vS-bRu" firstAttribute="leading" secondItem="STg-CK-1mE" secondAttribute="trailing" constant="16" id="iYI-qL-qLV"/>
                                         <constraint firstItem="I0E-vS-bRu" firstAttribute="centerY" secondItem="STg-CK-1mE" secondAttribute="centerY" id="odw-8r-VVf"/>
+                                        <constraint firstAttribute="trailing" secondItem="bPl-Mn-t0n" secondAttribute="trailing" constant="16" id="bC5-Mn-t0n"/>
+                                        <constraint firstItem="bPl-Mn-t0n" firstAttribute="centerY" secondItem="STg-CK-1mE" secondAttribute="centerY" id="bC6-Mn-t0n"/>
                                     </constraints>
                                 </view>
                             </subviews>
@@ -281,6 +303,9 @@
         </view>
     </objects>
     <resources>
+        <namedColor name="PrimaryBlue">
+            <color red="0.38039215686274508" green="0.54117647058823526" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
         <namedColor name="Body">
             <color red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>

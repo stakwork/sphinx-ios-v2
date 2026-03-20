@@ -38,6 +38,9 @@ class MessageThreadView: UIView {
     @IBOutlet weak var moreRepliesLabel: UILabel!
     
     @IBOutlet weak var messageFakeBubbleView: UIView!
+
+    @IBOutlet weak var mentionsBadgeView: UIView!
+    @IBOutlet weak var mentionsBadgeLabel: UILabel!
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -90,6 +93,10 @@ class MessageThreadView: UIView {
         messageFakeBubbleView.layer.cornerRadius = 9
         
         moreRepliesCountView.layer.cornerRadius = moreRepliesCountView.frame.height / 2
+        
+        mentionsBadgeView.layer.cornerRadius = 10
+        mentionsBadgeView.clipsToBounds = true
+        mentionsBadgeView.isHidden = true
         
         firstReplyAvatarView.setInitialLabelSize(size: 11)
         firstReplyAvatarView.resetView()
@@ -149,11 +156,26 @@ class MessageThreadView: UIView {
             secondReplyContainer.isHidden = true
         }
         
-        if threadMessages.moreRepliesCount > 0 {
+        let mentionsCount = threadMessages.mentionsCount
+        let hasMoreReplies = threadMessages.moreRepliesCount > 0
+        
+        if hasMoreReplies {
             moreRepliesCountLabel.text = "\(threadMessages.moreRepliesCount)"
-            moreRepliesContainer.isHidden = false
+            moreRepliesCountView.isHidden = false
+            moreRepliesLabel.isHidden = false
         } else {
-            moreRepliesContainer.isHidden = true
+            moreRepliesCountView.isHidden = true
+            moreRepliesLabel.isHidden = true
+        }
+        
+        // Show moreRepliesContainer when there are extra replies OR a mention badge to display
+        moreRepliesContainer.isHidden = !hasMoreReplies && mentionsCount == 0
+        
+        if mentionsCount > 0 {
+            mentionsBadgeLabel.text = "@ \(mentionsCount)"
+            mentionsBadgeView.isHidden = false
+        } else {
+            mentionsBadgeView.isHidden = true
         }
         
         configureMediaWith(
