@@ -183,7 +183,7 @@ class ClarifyingQuestionsViewTests: XCTestCase {
         view.simulateTapActionButton()
 
         XCTAssertEqual(capturedAnswers.count, 1)
-        XCTAssertEqual(capturedAnswers[0], "Q1: iOS")
+        XCTAssertEqual(capturedAnswers[0], "Q: Platform?\nA: iOS")
     }
 
     func testAnswerFormat_SingleChoice_ReselectOverridesFirst() {
@@ -199,7 +199,7 @@ class ClarifyingQuestionsViewTests: XCTestCase {
         view.simulateTapOption(at: 1)
         view.simulateTapActionButton()
 
-        XCTAssertEqual(capturedAnswers[0], "Q1: B")
+        XCTAssertEqual(capturedAnswers[0], "Q: Pick one\nA: B")
     }
 
     // MARK: - single_choice deselection (toggle)
@@ -234,7 +234,7 @@ class ClarifyingQuestionsViewTests: XCTestCase {
         view.simulateTapActionButton()
 
         XCTAssertEqual(capturedAnswers.count, 1)
-        XCTAssertEqual(capturedAnswers[0], "Q1: B")
+        XCTAssertEqual(capturedAnswers[0], "Q: Pick one\nA: B")
     }
 
     func testSingleChoice_TappingDifferentOptionReplacesSelection() {
@@ -250,7 +250,7 @@ class ClarifyingQuestionsViewTests: XCTestCase {
         view.simulateTapOption(at: 2)
         view.simulateTapActionButton()
 
-        XCTAssertEqual(capturedAnswers[0], "Q1: C")
+        XCTAssertEqual(capturedAnswers[0], "Q: Pick one\nA: C")
     }
 
     func testSingleChoice_DeselectThenReselectWorks() {
@@ -267,7 +267,7 @@ class ClarifyingQuestionsViewTests: XCTestCase {
         view.simulateTapOption(at: 1) // select B
         view.simulateTapActionButton()
 
-        XCTAssertEqual(capturedAnswers[0], "Q1: B")
+        XCTAssertEqual(capturedAnswers[0], "Q: Pick one\nA: B")
     }
 
     func testAnswerFormat_MultipleChoice_CanSelectSeveral() {
@@ -282,7 +282,7 @@ class ClarifyingQuestionsViewTests: XCTestCase {
         view.simulateTapOption(at: 2) // Z
         view.simulateTapActionButton()
 
-        XCTAssertEqual(capturedAnswers[0], "Q1: X, Z")
+        XCTAssertEqual(capturedAnswers[0], "Q: Pick many\nA: X, Z")
     }
 
     func testAnswerFormat_MultipleChoice_DeselectionWorks() {
@@ -299,7 +299,7 @@ class ClarifyingQuestionsViewTests: XCTestCase {
         view.simulateTapActionButton()
 
         // Only Y should remain
-        XCTAssertEqual(capturedAnswers[0], "Q1: Y")
+        XCTAssertEqual(capturedAnswers[0], "Q: Pick many\nA: Y")
     }
 
     func testAnswerFormat_MultiQuestion_AllAnswersCollected() {
@@ -321,15 +321,13 @@ class ClarifyingQuestionsViewTests: XCTestCase {
         view.simulateTapActionButton() // Submit
 
         XCTAssertEqual(capturedAnswers.count, 2)
-        XCTAssertEqual(capturedAnswers[0], "Q1: B")
-        XCTAssertEqual(capturedAnswers[1], "Q2: X, Z")
+        XCTAssertEqual(capturedAnswers[0], "Q: Q1\nA: B")
+        XCTAssertEqual(capturedAnswers[1], "Q: Q2\nA: X, Z")
     }
 
     // MARK: - Additional context capture
 
     func testAdditionalContext_NonFinalQuestion_IncludedInAnswerString() {
-        // Bug 3 fix: context typed on a non-final question must be embedded in
-        // that question's answer string, not silently dropped.
         var capturedAnswers: [String] = []
         let view = ClarifyingQuestionsView()
         view.onSubmit = { capturedAnswers = $0 }
@@ -348,14 +346,12 @@ class ClarifyingQuestionsViewTests: XCTestCase {
         view.simulateTapActionButton() // Submit
 
         XCTAssertEqual(capturedAnswers.count, 2)
-        XCTAssertEqual(capturedAnswers[0], "Q1: A | Additional: some extra info",
+        XCTAssertEqual(capturedAnswers[0], "Q: Q1\nA: A, some extra info",
                        "Context on a non-final question must be in that question's answer string")
-        XCTAssertEqual(capturedAnswers[1], "Q2: Y")
+        XCTAssertEqual(capturedAnswers[1], "Q: Q2\nA: Y")
     }
 
     func testAdditionalContext_FinalQuestion_IncludedInAnswerString() {
-        // Bug 3 fix: context on the final (submit) question must also be embedded
-        // in the answer string (not appended as a separate entry).
         var capturedAnswers: [String] = []
         let view = ClarifyingQuestionsView()
         view.onSubmit = { capturedAnswers = $0 }
@@ -368,8 +364,126 @@ class ClarifyingQuestionsViewTests: XCTestCase {
         view.simulateTapActionButton() // Submit
 
         XCTAssertEqual(capturedAnswers.count, 1)
-        XCTAssertEqual(capturedAnswers[0], "Q1: iOS | Additional: prefer SwiftUI",
+        XCTAssertEqual(capturedAnswers[0], "Q: Platform?\nA: iOS, prefer SwiftUI",
                        "Context on the final question must be embedded in the answer string")
+    }
+
+    // MARK: - New answer format
+
+    func testAnswerFormat_NewFormat_SingleChoice() {
+        var capturedAnswers: [String] = []
+        let view = ClarifyingQuestionsView()
+        view.onSubmit = { capturedAnswers = $0 }
+
+        let q = ClarifyingQuestion(question: "Platform?", options: ["iOS", "Android"], type: "single_choice")
+        view.configure(with: [q])
+
+        view.simulateTapOption(at: 0) // iOS
+        view.simulateTapActionButton()
+
+        XCTAssertEqual(capturedAnswers.count, 1)
+        XCTAssertEqual(capturedAnswers[0], "Q: Platform?\nA: iOS")
+    }
+
+    func testAnswerFormat_NewFormat_MultiQuestion() {
+        var capturedAnswers: [String] = []
+        let view = ClarifyingQuestionsView()
+        view.onSubmit = { capturedAnswers = $0 }
+
+        let q1 = ClarifyingQuestion(question: "Platform?", options: ["iOS", "Android"], type: "single_choice")
+        let q2 = ClarifyingQuestion(question: "Approach?", options: ["SwiftUI", "UIKit"], type: "single_choice")
+        view.configure(with: [q1, q2])
+
+        view.simulateTapOption(at: 0)
+        view.simulateTapActionButton() // Next
+        view.simulateTapOption(at: 1)
+        view.simulateTapActionButton() // Submit
+
+        XCTAssertEqual(capturedAnswers[0], "Q: Platform?\nA: iOS")
+        XCTAssertEqual(capturedAnswers[1], "Q: Approach?\nA: UIKit")
+    }
+
+    // MARK: - configureAnswered tests
+
+    func testConfigureAnswered_HighlightsCorrectOptions() {
+        let view = ClarifyingQuestionsView(frame: CGRect(x: 0, y: 0, width: 320, height: 400))
+        let q = ClarifyingQuestion(question: "Platform?", options: ["iOS", "Android", "Both"], type: "single_choice")
+        let answerText = "Q: Platform?\nA: iOS"
+        view.configureAnswered(questions: [q], answerText: answerText)
+
+        // View should be non-interactive (answered state)
+        XCTAssertFalse(view.isUserInteractionEnabled)
+        XCTAssertEqual(view.alpha, 1.0, accuracy: 0.001)
+    }
+
+    func testConfigureAnswered_ShowsAdditionalTextLabel() {
+        let view = ClarifyingQuestionsView(frame: CGRect(x: 0, y: 0, width: 320, height: 400))
+        let q = ClarifyingQuestion(question: "Platform?", options: ["iOS", "Android"], type: "single_choice")
+        let answerText = "Q: Platform?\nA: iOS, some extra context"
+        view.configureAnswered(questions: [q], answerText: answerText)
+
+        let label = view.additionalContextLabelForTesting
+        XCTAssertNotNil(label)
+        XCTAssertFalse(label!.isHidden, "additionalContextLabel should be visible when additional text is present")
+        XCTAssertEqual(label!.text, "some extra context")
+    }
+
+    func testConfigureAnswered_HidesAdditionalTextLabelWhenEmpty() {
+        let view = ClarifyingQuestionsView(frame: CGRect(x: 0, y: 0, width: 320, height: 400))
+        let q = ClarifyingQuestion(question: "Platform?", options: ["iOS", "Android"], type: "single_choice")
+        let answerText = "Q: Platform?\nA: iOS"
+        view.configureAnswered(questions: [q], answerText: answerText)
+
+        let label = view.additionalContextLabelForTesting
+        XCTAssertNotNil(label)
+        XCTAssertTrue(label!.isHidden, "additionalContextLabel should be hidden when no additional text")
+    }
+
+    func testConfigureAnswered_PrevDisabledOnFirstQuestion() {
+        let view = ClarifyingQuestionsView(frame: CGRect(x: 0, y: 0, width: 320, height: 400))
+        let q1 = ClarifyingQuestion(question: "Q1", options: ["A", "B"], type: "single_choice")
+        let q2 = ClarifyingQuestion(question: "Q2", options: ["X", "Y"], type: "single_choice")
+        let answerText = "Q: Q1\nA: A\n\nQ: Q2\nA: X"
+        view.configureAnswered(questions: [q1, q2], answerText: answerText)
+
+        XCTAssertFalse(view.prevButtonForTesting?.isEnabled ?? true,
+                       "Prev button should be disabled on first question")
+    }
+
+    func testConfigureAnswered_NextDisabledOnLastQuestion() {
+        let view = ClarifyingQuestionsView(frame: CGRect(x: 0, y: 0, width: 320, height: 400))
+        let q = ClarifyingQuestion(question: "Q1", options: ["A", "B"], type: "single_choice")
+        let answerText = "Q: Q1\nA: A"
+        view.configureAnswered(questions: [q], answerText: answerText)
+
+        XCTAssertFalse(view.nextButtonForTesting?.isEnabled ?? true,
+                       "Next button should be disabled on last question (only one question)")
+    }
+
+    func testConfigureAnswered_NavigationAdvancesQuestion() {
+        let view = ClarifyingQuestionsView(frame: CGRect(x: 0, y: 0, width: 320, height: 400))
+        let q1 = ClarifyingQuestion(question: "Q1", options: ["A", "B"], type: "single_choice")
+        let q2 = ClarifyingQuestion(question: "Q2", options: ["X", "Y"], type: "single_choice")
+        let answerText = "Q: Q1\nA: A\n\nQ: Q2\nA: X"
+        view.configureAnswered(questions: [q1, q2], answerText: answerText)
+
+        view.simulateTapNext()
+
+        XCTAssertEqual(view.counterLabelForTesting?.text, "2 of 2",
+                       "Counter label should update to '2 of 2' after tapping Next")
+    }
+
+    func testConfigureAnswered_DashStripping() {
+        let view = ClarifyingQuestionsView(frame: CGRect(x: 0, y: 0, width: 320, height: 400))
+        let option = "Reuse FEATURE_UPDATED \u{2014} fires multiple times"
+        let q = ClarifyingQuestion(question: "Event type?", options: [option, "Other"], type: "single_choice")
+        // Answer token has em-dash stripped
+        let answerText = "Q: Event type?\nA: Reuse FEATURE_UPDATED  fires multiple times"
+        view.configureAnswered(questions: [q], answerText: answerText)
+
+        // The view should be in answered state (non-interactive) without crashing
+        XCTAssertFalse(view.isUserInteractionEnabled)
+        XCTAssertEqual(view.alpha, 1.0, accuracy: 0.001)
     }
 
     // MARK: - onSubmit callback
@@ -420,47 +534,30 @@ class ClarifyingQuestionsViewTests: XCTestCase {
 
 extension ClarifyingQuestionsView {
 
-    /// Recursively find all views of a given type.
-    private func allSubviews<T: UIView>(ofType type: T.Type, in view: UIView) -> [T] {
-        var result: [T] = []
-        for sub in view.subviews {
-            if let match = sub as? T { result.append(match) }
-            result.append(contentsOf: allSubviews(ofType: type, in: sub))
-        }
-        return result
-    }
-
-    /// Simulate a tap on the option button at the given index (test-only).
+    /// Simulate a tap on the option view at the given index (test-only).
+    /// Options are UIViews in optionsStackView with UITapGestureRecognizer attached.
     func simulateTapOption(at index: Int) {
-        // Option buttons are UIButtons with matching tag; they are NOT the action button
-        // (action button has no tag set explicitly, defaulting to 0 — we identify it by title)
-        let actionTitles: Set<String> = ["Next →", "Submit"]
-        let allButtons = allSubviews(ofType: UIButton.self, in: self)
-        let optionButtons = allButtons.filter { btn in
-            guard let title = btn.title(for: .normal) else { return false }
-            return !actionTitles.contains(title)
-        }
-        // Sort by tag order to match the original option index
-        let sorted = optionButtons.sorted { $0.tag < $1.tag }
-        guard index < sorted.count else { return }
-        sorted[index].sendActions(for: .touchUpInside)
+        selectOptionForTesting(at: index)
     }
 
     /// Simulate a tap on the action button (Next → / Submit) (test-only).
     func simulateTapActionButton() {
-        let actionTitles: Set<String> = ["Next →", "Submit"]
-        let allButtons = allSubviews(ofType: UIButton.self, in: self)
-        guard let btn = allButtons.first(where: { btn in
-            guard let title = btn.title(for: .normal) else { return false }
-            return actionTitles.contains(title)
-        }) else { return }
-        btn.sendActions(for: .touchUpInside)
+        actionButtonForTesting?.sendActions(for: .touchUpInside)
+    }
+
+    /// Simulate a tap on the Prev button (test-only).
+    func simulateTapPrev() {
+        prevButtonForTesting?.sendActions(for: .touchUpInside)
+    }
+
+    /// Simulate a tap on the Next button (test-only).
+    func simulateTapNext() {
+        nextButtonForTesting?.sendActions(for: .touchUpInside)
     }
 
     /// Simulate typing text into the additional context text view (test-only).
     func simulateTypeAdditionalContext(_ text: String) {
-        let textViews = allSubviews(ofType: UITextView.self, in: self)
-        guard let tv = textViews.first else { return }
+        guard let tv = additionalContextTextViewForTesting else { return }
         tv.text = text
         // Manually invoke the delegate so internal state (placeholder, button enable) updates
         tv.delegate?.textViewDidChange?(tv)

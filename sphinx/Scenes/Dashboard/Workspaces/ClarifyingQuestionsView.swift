@@ -27,6 +27,7 @@ final class ClarifyingQuestionsView: UIView {
     private var currentIndex: Int = 0
     private var selectedIndices: Set<Int> = []
     private var collectedAnswers: [String] = []
+    private var parsedAnswers: [(selectedOptions: [String], additionalText: String?)] = []
 
     // MARK: - UI Components
 
@@ -80,6 +81,16 @@ final class ClarifyingQuestionsView: UIView {
         return tv
     }()
 
+    private let additionalContextLabel: UILabel = {
+        let l = UILabel()
+        l.translatesAutoresizingMaskIntoConstraints = false
+        l.font = UIFont(name: "Roboto-Regular", size: 14) ?? UIFont.systemFont(ofSize: 14)
+        l.textColor = UIColor.Sphinx.Text
+        l.numberOfLines = 0
+        l.isHidden = true
+        return l
+    }()
+
     private let actionButton: UIButton = {
         let b = UIButton(type: .system)
         b.translatesAutoresizingMaskIntoConstraints = false
@@ -89,6 +100,41 @@ final class ClarifyingQuestionsView: UIView {
         b.layer.cornerRadius = 10
         b.layer.masksToBounds = true
         return b
+    }()
+
+    private let prevButton: UIButton = {
+        let b = UIButton(type: .system)
+        b.translatesAutoresizingMaskIntoConstraints = false
+        b.setTitle("← Prev", for: .normal)
+        b.titleLabel?.font = UIFont(name: "Roboto-Medium", size: 14) ?? UIFont.boldSystemFont(ofSize: 14)
+        b.setTitleColor(.white, for: .normal)
+        b.setTitleColor(UIColor.white.withAlphaComponent(0.4), for: .disabled)
+        b.backgroundColor = UIColor.Sphinx.PrimaryBlue
+        b.layer.cornerRadius = 10
+        b.layer.masksToBounds = true
+        return b
+    }()
+
+    private let nextButton: UIButton = {
+        let b = UIButton(type: .system)
+        b.translatesAutoresizingMaskIntoConstraints = false
+        b.setTitle("Next →", for: .normal)
+        b.titleLabel?.font = UIFont(name: "Roboto-Medium", size: 14) ?? UIFont.boldSystemFont(ofSize: 14)
+        b.setTitleColor(.white, for: .normal)
+        b.setTitleColor(UIColor.white.withAlphaComponent(0.4), for: .disabled)
+        b.backgroundColor = UIColor.Sphinx.PrimaryBlue
+        b.layer.cornerRadius = 10
+        b.layer.masksToBounds = true
+        return b
+    }()
+
+    private let navigationStackView: UIStackView = {
+        let sv = UIStackView()
+        sv.translatesAutoresizingMaskIntoConstraints = false
+        sv.axis = .horizontal
+        sv.spacing = 8
+        sv.isHidden = true
+        return sv
     }()
 
     // Placeholder handling
@@ -126,10 +172,16 @@ final class ClarifyingQuestionsView: UIView {
         containerView.addSubview(optionsStackView)
         containerView.addSubview(additionalContextTextView)
         additionalContextTextView.addSubview(placeholderLabel)
+        containerView.addSubview(additionalContextLabel)
+        navigationStackView.addArrangedSubview(prevButton)
+        navigationStackView.addArrangedSubview(nextButton)
+        containerView.addSubview(navigationStackView)
         containerView.addSubview(actionButton)
 
         additionalContextTextView.delegate = self
         actionButton.addTarget(self, action: #selector(actionButtonTapped), for: .touchUpInside)
+        prevButton.addTarget(self, action: #selector(prevTapped), for: .touchUpInside)
+        nextButton.addTarget(self, action: #selector(nextTapped), for: .touchUpInside)
 
         NSLayoutConstraint.activate([
             containerView.topAnchor.constraint(equalTo: topAnchor, constant: 8),
@@ -159,11 +211,25 @@ final class ClarifyingQuestionsView: UIView {
             placeholderLabel.leadingAnchor.constraint(equalTo: additionalContextTextView.leadingAnchor, constant: 12),
             placeholderLabel.trailingAnchor.constraint(equalTo: additionalContextTextView.trailingAnchor, constant: -12),
 
+            additionalContextLabel.topAnchor.constraint(equalTo: optionsStackView.bottomAnchor, constant: 12),
+            additionalContextLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
+            additionalContextLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
+
             actionButton.topAnchor.constraint(equalTo: additionalContextTextView.bottomAnchor, constant: 12),
             actionButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
             actionButton.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -12),
             actionButton.heightAnchor.constraint(equalToConstant: 36),
             actionButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 90),
+
+            navigationStackView.topAnchor.constraint(equalTo: additionalContextLabel.bottomAnchor, constant: 12),
+            navigationStackView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
+            navigationStackView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -12),
+            navigationStackView.heightAnchor.constraint(equalToConstant: 36),
+
+            prevButton.heightAnchor.constraint(equalToConstant: 36),
+            prevButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 90),
+            nextButton.heightAnchor.constraint(equalToConstant: 36),
+            nextButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 90),
         ])
     }
 
@@ -183,6 +249,16 @@ final class ClarifyingQuestionsView: UIView {
         showQuestion(at: 0)
     }
 
+    /// Configure the view in answered/read-only state, reconstructing selections from the reply message.
+    func configureAnswered(questions: [ClarifyingQuestion], answerText: String) {
+        self.questions = questions
+        self.currentIndex = 0
+        isUserInteractionEnabled = false
+        alpha = 1.0
+        self.parsedAnswers = parseAnswers(from: answerText, questions: questions)
+        showAnsweredQuestion(at: 0)
+    }
+
     /// Lock the view after submission — dims it and disables interaction.
     func lock() {
         isUserInteractionEnabled = false
@@ -195,10 +271,16 @@ final class ClarifyingQuestionsView: UIView {
         currentIndex = 0
         selectedIndices = []
         collectedAnswers = []
+        parsedAnswers = []
         counterLabel.text = nil
         questionLabel.text = nil
         additionalContextTextView.text = ""
+        additionalContextTextView.isHidden = false
         placeholderLabel.isHidden = false
+        additionalContextLabel.text = nil
+        additionalContextLabel.isHidden = true
+        navigationStackView.isHidden = true
+        actionButton.isHidden = false
         optionsStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
         isUserInteractionEnabled = true
         alpha = 1.0
@@ -224,6 +306,51 @@ final class ClarifyingQuestionsView: UIView {
         }
 
         updateActionButton()
+        invalidateIntrinsicContentSize()
+        onHeightChanged?()
+    }
+
+    private func showAnsweredQuestion(at index: Int) {
+        guard index < questions.count else { return }
+        let q = questions[index]
+        let parsed = index < parsedAnswers.count ? parsedAnswers[index] : (selectedOptions: [String](), additionalText: nil)
+
+        counterLabel.text = "\(index + 1) of \(questions.count)"
+        questionLabel.text = q.question
+
+        // Rebuild option pills — non-interactive, apply selected/unselected style
+        optionsStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        for (i, option) in q.options.enumerated() {
+            let optionView = makeOptionView(title: option, tag: i)
+            optionView.isUserInteractionEnabled = false
+            let normalisedOption = option
+                .replacingOccurrences(of: "\u{2014}", with: "")
+                .trimmingCharacters(in: .whitespaces)
+            let isSelected = parsed.selectedOptions.contains {
+                $0.replacingOccurrences(of: "\u{2014}", with: "")
+                  .trimmingCharacters(in: .whitespaces)
+                  .caseInsensitiveCompare(normalisedOption) == .orderedSame
+            }
+            isSelected ? applySelectedStyle(to: optionView) : applyUnselectedStyle(to: optionView)
+            optionsStackView.addArrangedSubview(optionView)
+        }
+
+        // Additional text: hide editable view, show read-only label
+        additionalContextTextView.isHidden = true
+        placeholderLabel.isHidden = true
+        if let extra = parsed.additionalText, !extra.isEmpty {
+            additionalContextLabel.text = extra
+            additionalContextLabel.isHidden = false
+        } else {
+            additionalContextLabel.isHidden = true
+        }
+
+        // Navigation buttons replace action button
+        actionButton.isHidden = true
+        navigationStackView.isHidden = false
+        prevButton.isEnabled = index > 0
+        nextButton.isEnabled = index < questions.count - 1
+
         invalidateIntrinsicContentSize()
         onHeightChanged?()
     }
@@ -288,6 +415,52 @@ final class ClarifyingQuestionsView: UIView {
         actionButton.setTitle(isLast ? "Submit" : "Next →", for: .normal)
     }
 
+    // MARK: - Private: Parse answered state
+
+    private func parseAnswers(from answerText: String, questions: [ClarifyingQuestion]) -> [(selectedOptions: [String], additionalText: String?)] {
+        let blocks = answerText.components(separatedBy: "\n\n")
+        var result: [(selectedOptions: [String], additionalText: String?)] = []
+
+        for (qIndex, block) in blocks.enumerated() {
+            guard qIndex < questions.count else { break }
+            let question = questions[qIndex]
+
+            // Split on "\nA: " to get answer portion
+            let parts = block.components(separatedBy: "\nA: ")
+            guard parts.count >= 2 else {
+                result.append((selectedOptions: [], additionalText: nil))
+                continue
+            }
+            let answerPortion = parts[1]
+            let tokens = answerPortion.components(separatedBy: ", ")
+
+            var selectedOptions: [String] = []
+            var additionalTokens: [String] = []
+
+            for token in tokens {
+                let normToken = token
+                    .replacingOccurrences(of: "\u{2014}", with: "")
+                    .trimmingCharacters(in: .whitespaces)
+                let matchesOption = question.options.contains { opt in
+                    let normOpt = opt
+                        .replacingOccurrences(of: "\u{2014}", with: "")
+                        .trimmingCharacters(in: .whitespaces)
+                    return normToken.caseInsensitiveCompare(normOpt) == .orderedSame
+                }
+                if matchesOption {
+                    selectedOptions.append(token.trimmingCharacters(in: .whitespaces))
+                } else if !normToken.isEmpty {
+                    additionalTokens.append(token.trimmingCharacters(in: .whitespaces))
+                }
+            }
+
+            let additionalText = additionalTokens.isEmpty ? nil : additionalTokens.joined(separator: ", ")
+            result.append((selectedOptions: selectedOptions, additionalText: additionalText))
+        }
+
+        return result
+    }
+
     // MARK: - Private: Actions
 
     @objc private func optionTapped(_ sender: UITapGestureRecognizer) {
@@ -333,9 +506,13 @@ final class ClarifyingQuestionsView: UIView {
         let contextText = additionalContextTextView.text
             .trimmingCharacters(in: .whitespacesAndNewlines)
 
-        var answerString = "Q\(currentIndex + 1): \(selectedLabels.joined(separator: ", "))"
+        var answerString = "Q: \(q.question)\nA: \(selectedLabels.joined(separator: ", "))"
         if !contextText.isEmpty {
-            answerString += " | Additional: \(contextText)"
+            if !selectedLabels.isEmpty {
+                answerString = "Q: \(q.question)\nA: \(selectedLabels.joined(separator: ", ")), \(contextText)"
+            } else {
+                answerString = "Q: \(q.question)\nA: \(contextText)"
+            }
         }
         collectedAnswers.append(answerString)
 
@@ -345,6 +522,45 @@ final class ClarifyingQuestionsView: UIView {
             currentIndex += 1
             showQuestion(at: currentIndex)
         }
+    }
+
+    @objc private func prevTapped() {
+        guard currentIndex > 0 else { return }
+        currentIndex -= 1
+        showAnsweredQuestion(at: currentIndex)
+    }
+
+    @objc private func nextTapped() {
+        guard currentIndex < questions.count - 1 else { return }
+        currentIndex += 1
+        showAnsweredQuestion(at: currentIndex)
+    }
+}
+
+// MARK: - Testing Support (internal access for unit tests)
+
+extension ClarifyingQuestionsView {
+
+    var optionsStackViewForTesting: UIStackView { optionsStackView }
+    var additionalContextLabelForTesting: UILabel? { additionalContextLabel }
+    var additionalContextTextViewForTesting: UITextView? { additionalContextTextView }
+    var actionButtonForTesting: UIButton? { actionButton }
+    var prevButtonForTesting: UIButton? { prevButton }
+    var nextButtonForTesting: UIButton? { nextButton }
+    var counterLabelForTesting: UILabel? { counterLabel }
+    var navigationStackViewForTesting: UIStackView? { navigationStackView }
+
+    /// Direct option selection for unit tests — fires the tap gesture on the option view at the given index.
+    func selectOptionForTesting(at index: Int) {
+        let views = optionsStackView.arrangedSubviews
+        guard index < views.count else { return }
+        // Synthesise a fake UITapGestureRecognizer pointing at the option view and call the handler
+        let optionView = views[index]
+        // Create a mock recognizer targeting the option view
+        let fakeTap = UITapGestureRecognizer(target: self, action: #selector(optionTapped(_:)))
+        optionView.addGestureRecognizer(fakeTap)
+        optionTapped(fakeTap)
+        optionView.removeGestureRecognizer(fakeTap)
     }
 }
 
