@@ -9,23 +9,6 @@
 import UIKit
 import SDWebImage
 
-/// UITextView whose intrinsicContentSize reliably includes textContainerInset.bottom.
-/// The default UITextView implementation is buggy: when attributedText is set, the
-/// reported height sometimes omits the bottom inset, causing the bubble to clip the
-/// last line of text. Overriding intrinsicContentSize to use the layout manager's
-/// usedRect + both insets fixes this consistently.
-private final class BubbleTextView: UITextView {
-    override var intrinsicContentSize: CGSize {
-        // Force layout so usedRect is up-to-date
-        layoutManager.ensureLayout(for: textContainer)
-        let usedRect = layoutManager.usedRect(for: textContainer)
-        let insets = textContainerInset
-        let h = ceil(usedRect.height + insets.top + insets.bottom)
-        let w = super.intrinsicContentSize.width
-        return CGSize(width: w, height: h)
-    }
-}
-
 class FeatureChatMessageCell: UITableViewCell {
 
     // MARK: - Shared markdown renderer
@@ -57,8 +40,8 @@ class FeatureChatMessageCell: UITableViewCell {
     }()
 
     /// Non-scrolling UITextView so NSAttributedString (markdown) renders properly.
-    private let messageTextView: BubbleTextView = {
-        let tv = BubbleTextView()
+    private let messageTextView: UITextView = {
+        let tv = UITextView()
         tv.translatesAutoresizingMaskIntoConstraints = false
         tv.isEditable = false
         tv.isScrollEnabled = false

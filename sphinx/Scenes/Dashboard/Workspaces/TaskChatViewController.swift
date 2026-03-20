@@ -685,10 +685,13 @@ class TaskChatViewController: UIViewController {
                 DispatchQueue.main.async {
                     guard let self = self, let sentMessage = sentMessage else { return }
                     self.newMessageReceived(sentMessage)
-                    // Lock the cell that triggered the submit
-                    if let idx = self.messages.firstIndex(where: { $0.id == replyId }),
-                       let cell = self.chatTableView.cellForRow(at: IndexPath(row: idx, section: 0)) as? FeatureChatMessageCell {
-                        cell.lockClarifyingQuestionsView(answersText: joined)
+                    // Re-render the CQ row in answered state so height recalculates
+                    if let idx = self.messages.firstIndex(where: { $0.id == replyId }) {
+                        let cqPath = IndexPath(row: idx, section: 0)
+                        self.chatCellHeightCache.removeValue(forKey: idx)
+                        UIView.performWithoutAnimation {
+                            self.chatTableView.reloadRows(at: [cqPath], with: .none)
+                        }
                     }
                 }
             },
@@ -931,7 +934,11 @@ extension TaskChatViewController: HivePusherDelegate {
         messages.append(message)
         let indexPath = IndexPath(row: messages.count - 1, section: 0)
         chatTableView.insertRows(at: [indexPath], with: .automatic)
-        scrollToBottom(onlyIfNearBottom: true)
+        if message.isUserMessage {
+            scrollToBottom()
+        } else {
+            scrollToBottom(onlyIfNearBottom: true)
+        }
     }
 
     func prStatusChanged(taskId: String?, prNumber: Int, state: String, artifactStatus: String, prUrl: String?, problemDetails: String?) {
