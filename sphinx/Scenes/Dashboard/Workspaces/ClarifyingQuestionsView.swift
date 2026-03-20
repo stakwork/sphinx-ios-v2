@@ -219,8 +219,8 @@ final class ClarifyingQuestionsView: UIView {
         // Rebuild option pills
         optionsStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
         for (i, option) in q.options.enumerated() {
-            let btn = makeOptionButton(title: option, tag: i)
-            optionsStackView.addArrangedSubview(btn)
+            let optionView = makeOptionView(title: option, tag: i)
+            optionsStackView.addArrangedSubview(optionView)
         }
 
         updateActionButton()
@@ -228,34 +228,53 @@ final class ClarifyingQuestionsView: UIView {
         onHeightChanged?()
     }
 
-    private func makeOptionButton(title: String, tag: Int) -> UIButton {
-        let btn = UIButton(type: .system)
-        btn.translatesAutoresizingMaskIntoConstraints = false
-        btn.tag = tag
-        btn.setTitle(title, for: .normal)
-        btn.titleLabel?.font = UIFont(name: "Roboto-Regular", size: 14) ?? UIFont.systemFont(ofSize: 14)
-        btn.contentHorizontalAlignment = .left
-        btn.contentEdgeInsets = UIEdgeInsets(top: 10, left: 16, bottom: 10, right: 16)
-        btn.layer.cornerRadius = 16
-        btn.layer.masksToBounds = true
-        btn.heightAnchor.constraint(greaterThanOrEqualToConstant: 44).isActive = true
-        btn.addTarget(self, action: #selector(optionTapped(_:)), for: .touchUpInside)
-        applyUnselectedStyle(to: btn)
-        return btn
+    private func makeOptionView(title: String, tag: Int) -> UIView {
+        let container = UIView()
+        container.translatesAutoresizingMaskIntoConstraints = false
+        container.tag = tag
+        container.layer.cornerRadius = 16
+        container.layer.masksToBounds = true
+        container.layer.borderWidth = 1
+        container.isUserInteractionEnabled = true
+
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.text = title
+        label.font = UIFont(name: "Roboto-Regular", size: 14) ?? UIFont.systemFont(ofSize: 14)
+        label.numberOfLines = 0
+        label.lineBreakMode = .byWordWrapping
+        container.addSubview(label)
+
+        NSLayoutConstraint.activate([
+            label.topAnchor.constraint(equalTo: container.topAnchor, constant: 10),
+            label.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
+            label.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -10),
+            label.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -16),
+        ])
+
+        let tap = UITapGestureRecognizer(target: self, action: #selector(optionTapped(_:)))
+        container.addGestureRecognizer(tap)
+
+        applyUnselectedStyle(to: container)
+        return container
     }
 
-    private func applyUnselectedStyle(to button: UIButton) {
-        button.backgroundColor = UIColor.Sphinx.Body
-        button.setTitleColor(UIColor.Sphinx.Text, for: .normal)
-        button.layer.borderWidth = 1
-        button.layer.borderColor = UIColor.Sphinx.LightDivider.cgColor
+    private func applyUnselectedStyle(to view: UIView) {
+        view.backgroundColor = UIColor.Sphinx.Body
+        view.layer.borderWidth = 1
+        view.layer.borderColor = UIColor.Sphinx.LightDivider.cgColor
+        if let label = view.subviews.first(where: { $0 is UILabel }) as? UILabel {
+            label.textColor = UIColor.Sphinx.Text
+        }
     }
 
-    private func applySelectedStyle(to button: UIButton) {
-        button.backgroundColor = UIColor.Sphinx.PrimaryBlue
-        button.setTitleColor(.white, for: .normal)
-        button.layer.borderWidth = 0
-        button.layer.borderColor = UIColor.clear.cgColor
+    private func applySelectedStyle(to view: UIView) {
+        view.backgroundColor = UIColor.Sphinx.PrimaryBlue
+        view.layer.borderWidth = 0
+        view.layer.borderColor = UIColor.clear.cgColor
+        if let label = view.subviews.first(where: { $0 is UILabel }) as? UILabel {
+            label.textColor = .white
+        }
     }
 
     private func updateActionButton() {
@@ -271,30 +290,30 @@ final class ClarifyingQuestionsView: UIView {
 
     // MARK: - Private: Actions
 
-    @objc private func optionTapped(_ sender: UIButton) {
-        guard currentIndex < questions.count else { return }
+    @objc private func optionTapped(_ sender: UITapGestureRecognizer) {
+        guard currentIndex < questions.count, let tappedView = sender.view else { return }
         let q = questions[currentIndex]
-        let tappedIndex = sender.tag
+        let tappedIndex = tappedView.tag
 
         if q.type == "single_choice" {
             // Toggle: deselect if already selected, otherwise select tapped
             let alreadySelected = selectedIndices.contains(tappedIndex)
             selectedIndices = alreadySelected ? [] : [tappedIndex]
-            optionsStackView.arrangedSubviews.compactMap { $0 as? UIButton }.forEach { btn in
-                if !alreadySelected && btn.tag == tappedIndex {
-                    applySelectedStyle(to: btn)
+            optionsStackView.arrangedSubviews.compactMap { $0 as? UIView }.forEach { view in
+                if !alreadySelected && view.tag == tappedIndex {
+                    applySelectedStyle(to: view)
                 } else {
-                    applyUnselectedStyle(to: btn)
+                    applyUnselectedStyle(to: view)
                 }
             }
         } else {
             // multiple_choice: toggle
             if selectedIndices.contains(tappedIndex) {
                 selectedIndices.remove(tappedIndex)
-                applyUnselectedStyle(to: sender)
+                applyUnselectedStyle(to: tappedView)
             } else {
                 selectedIndices.insert(tappedIndex)
-                applySelectedStyle(to: sender)
+                applySelectedStyle(to: tappedView)
             }
         }
 
