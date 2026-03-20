@@ -59,7 +59,7 @@ class ClarifyingQuestionMessageCell: UITableViewCell {
         NSLayoutConstraint.activate([
             clarifyingQuestionsView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 4),
             clarifyingQuestionsView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            clarifyingQuestionsView.widthAnchor.constraint(equalTo: contentView.widthAnchor, multiplier: 0.8),
+            clarifyingQuestionsView.widthAnchor.constraint(equalTo: contentView.widthAnchor, multiplier: 0.85),
 
             timestampLabel.topAnchor.constraint(equalTo: clarifyingQuestionsView.bottomAnchor, constant: 4),
             timestampLabel.leadingAnchor.constraint(equalTo: clarifyingQuestionsView.leadingAnchor),

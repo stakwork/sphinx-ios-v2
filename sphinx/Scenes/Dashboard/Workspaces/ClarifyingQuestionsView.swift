@@ -519,26 +519,46 @@ final class ClarifyingQuestionsView: UIView {
                 result.append((selectedOptions: [], additionalText: nil))
                 continue
             }
-            let answerPortion = parts[1]
-            let tokens = answerPortion.components(separatedBy: ", ")
+            let answerPortion = parts[1].trimmingCharacters(in: .whitespacesAndNewlines)
+            let normAnswer = normaliseForComparison(answerPortion)
 
+            // Match options by checking whether the full answer contains the normalised option text.
+            // We scan the whole answer string rather than splitting on ", " because option text
+            // itself may contain commas (e.g. "Real-time via WebSocket — connect, same as feature chat").
             var selectedOptions: [String] = []
-            var additionalTokens: [String] = []
+            var remainingAnswer = answerPortion
 
-            for token in tokens {
-                let normToken = normaliseForComparison(token)
-                let matchesOption = question.options.contains { opt in
-                    let normOpt = normaliseForComparison(opt)
-                    return normToken == normOpt
-                }
-                if matchesOption {
-                    selectedOptions.append(token.trimmingCharacters(in: .whitespaces))
-                } else if !normToken.isEmpty {
-                    additionalTokens.append(token.trimmingCharacters(in: .whitespaces))
+            // Sort options longest-first so greedy matching prefers the most specific option.
+            let sortedOptions = question.options.sorted { $0.count > $1.count }
+            for opt in sortedOptions {
+                let normOpt = normaliseForComparison(opt)
+                if normAnswer.contains(normOpt) {
+                    selectedOptions.append(opt)
+                    // Remove the matched portion from remainingAnswer so it isn't treated as extra text
+                    if let range = remainingAnswer.range(of: opt) {
+                        remainingAnswer.removeSubrange(range)
+                    } else {
+                        // Fallback: remove by normalised text (handles dash variants)
+                        let normRemaining = normaliseForComparison(remainingAnswer)
+                        if let r = normRemaining.range(of: normOpt) {
+                            // Map character range back approximately — just clear whole remaining
+                            remainingAnswer = ""
+                        }
+                    }
                 }
             }
 
-            let additionalText = additionalTokens.isEmpty ? nil : additionalTokens.joined(separator: ", ")
+            // Strip separators from what remains to find any genuine additional text
+            let additionalText: String? = {
+                let cleaned = remainingAnswer
+                    .replacingOccurrences(of: ", ", with: " ")
+                    .replacingOccurrences(of: ",", with: " ")
+                    .components(separatedBy: .whitespaces)
+                    .filter { !$0.isEmpty }
+                    .joined(separator: " ")
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                return cleaned.isEmpty ? nil : cleaned
+            }()
             result.append((selectedOptions: selectedOptions, additionalText: additionalText))
         }
 
