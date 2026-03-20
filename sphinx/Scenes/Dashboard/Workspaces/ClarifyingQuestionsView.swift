@@ -8,6 +8,30 @@
 
 import UIKit
 
+// MARK: - MultilineOptionButton
+
+/// UIButton subclass that updates titleLabel.preferredMaxLayoutWidth on every
+/// layout pass so the button's intrinsic content size correctly accounts for
+/// word-wrapped text and the stack view can size the row to the full text height.
+private final class MultilineOptionButton: UIButton {
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        guard let label = titleLabel else { return }
+        let insets = contentEdgeInsets
+        let availableWidth = bounds.width - insets.left - insets.right
+        if label.preferredMaxLayoutWidth != availableWidth {
+            label.preferredMaxLayoutWidth = availableWidth
+            invalidateIntrinsicContentSize()
+        }
+    }
+
+    override var intrinsicContentSize: CGSize {
+        let base = super.intrinsicContentSize
+        // Ensure the button is never shorter than a comfortable tap target
+        return CGSize(width: base.width, height: max(base.height, 44))
+    }
+}
+
 /// Self-contained paginated view for presenting AI clarifying questions.
 /// Embed below the bubble stack in `FeatureChatMessageCell`.
 final class ClarifyingQuestionsView: UIView {
@@ -231,7 +255,7 @@ final class ClarifyingQuestionsView: UIView {
     }
 
     private func makeOptionButton(title: String, tag: Int) -> UIButton {
-        let btn = UIButton(type: .system)
+        let btn = MultilineOptionButton(type: .system)
         btn.translatesAutoresizingMaskIntoConstraints = false
         btn.tag = tag
         btn.setTitle(title, for: .normal)
