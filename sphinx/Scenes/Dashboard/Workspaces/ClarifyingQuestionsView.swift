@@ -27,18 +27,10 @@ private final class OptionPillView: UIView {
         return l
     }()
 
-    // Exposed so ClarifyingQuestionsView can read/write
-    var isSelected: Bool = false {
-        didSet { applyStyle() }
-    }
-
-    /// Called when the pill is tapped (set by ClarifyingQuestionsView)
+    var isSelected: Bool = false { didSet { applyStyle() } }
     var onTap: ((OptionPillView) -> Void)?
 
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        setup()
-    }
+    override init(frame: CGRect) { super.init(frame: frame); setup() }
     required init?(coder: NSCoder) { super.init(coder: coder); setup() }
 
     private func setup() {
@@ -46,32 +38,21 @@ private final class OptionPillView: UIView {
         layer.cornerRadius = 16
         layer.masksToBounds = true
         layer.borderWidth = 1
-
         addSubview(label)
         NSLayoutConstraint.activate([
             label.topAnchor.constraint(equalTo: topAnchor, constant: 10),
             label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
             label.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
             label.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -10),
-            // Minimum tap-target height
             heightAnchor.constraint(greaterThanOrEqualToConstant: 44),
         ])
-
         applyStyle()
-
-        let tap = UITapGestureRecognizer(target: self, action: #selector(tapped))
-        addGestureRecognizer(tap)
+        addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(tapped)))
     }
 
     @objc private func tapped() { onTap?(self) }
-
-    func applySelectedStyle() {
-        isSelected = true
-    }
-
-    func applyUnselectedStyle() {
-        isSelected = false
-    }
+    func applySelectedStyle() { isSelected = true }
+    func applyUnselectedStyle() { isSelected = false }
 
     private func applyStyle() {
         if isSelected {
@@ -95,12 +76,10 @@ private final class OptionPillView: UIView {
 final class ClarifyingQuestionsView: UIView {
 
     // MARK: - Public API
-
     var onSubmit: (([String]) -> Void)?
     var onHeightChanged: (() -> Void)?
 
     // MARK: - Private State
-
     private var questions: [ClarifyingQuestion] = []
     private var currentIndex: Int = 0
     private var selectedIndices: Set<Int> = []
@@ -111,7 +90,7 @@ final class ClarifyingQuestionsView: UIView {
     private var restoredAnswersByIndex: [Int: Set<Int>] = [:]
     private var restoredContextByIndex: [Int: String] = [:]
 
-    // MARK: - UI Components
+    // MARK: - Static UI Components (always in view hierarchy)
 
     private let containerView: UIView = {
         let v = UIView()
@@ -149,17 +128,6 @@ final class ClarifyingQuestionsView: UIView {
         return sv
     }()
 
-    /// Read-only label shown in review mode when the user added free-text context.
-    private let reviewContextLabel: UILabel = {
-        let l = UILabel()
-        l.translatesAutoresizingMaskIntoConstraints = false
-        l.font = UIFont(name: "Roboto-Regular", size: 13) ?? UIFont.systemFont(ofSize: 13)
-        l.textColor = UIColor.Sphinx.SecondaryText
-        l.numberOfLines = 0
-        l.isHidden = true
-        return l
-    }()
-
     private let additionalContextTextView: UITextView = {
         let tv = UITextView()
         tv.translatesAutoresizingMaskIntoConstraints = false
@@ -194,8 +162,13 @@ final class ClarifyingQuestionsView: UIView {
         return l
     }()
 
-    // Navigation row (review mode only)
+    // MARK: - Dynamic review-mode components (added/removed from hierarchy as needed)
+    // These are NOT added at setupUI() — they are added lazily only when entering review mode.
+    // Keeping them out of the hierarchy in normal mode prevents their constraints from
+    // polluting the Auto Layout pass and causing wrong cell heights on received message bubbles.
+
     private var navRowStackView: UIStackView?
+    private var reviewContextLabel: UILabel?   // created lazily in review mode
 
     private lazy var prevButton: UIButton = {
         let b = UIButton(type: .system)
@@ -219,11 +192,11 @@ final class ClarifyingQuestionsView: UIView {
         return b
     }()
 
-    // Constraint references
+    // MARK: - Stored constraint references
     private var actionButtonBottomConstraint: NSLayoutConstraint?
     private var contextViewTopConstraint: NSLayoutConstraint?
     private var optionsBottomToNavRowConstraint: NSLayoutConstraint?
-    private var reviewContextTopConstraint: NSLayoutConstraint?
+    private var reviewContextBottomToNavConstraint: NSLayoutConstraint?
 
     // MARK: - Init
 
@@ -247,7 +220,6 @@ final class ClarifyingQuestionsView: UIView {
         containerView.addSubview(counterLabel)
         containerView.addSubview(questionLabel)
         containerView.addSubview(optionsStackView)
-        containerView.addSubview(reviewContextLabel)
         containerView.addSubview(additionalContextTextView)
         additionalContextTextView.addSubview(placeholderLabel)
         containerView.addSubview(actionButton)
@@ -264,11 +236,6 @@ final class ClarifyingQuestionsView: UIView {
             equalTo: containerView.bottomAnchor, constant: -12
         )
         actionButtonBottomConstraint = actionBottom
-
-        let reviewCtxTop = reviewContextLabel.topAnchor.constraint(
-            equalTo: optionsStackView.bottomAnchor, constant: 8
-        )
-        reviewContextTopConstraint = reviewCtxTop
 
         NSLayoutConstraint.activate([
             containerView.topAnchor.constraint(equalTo: topAnchor, constant: 8),
@@ -287,10 +254,6 @@ final class ClarifyingQuestionsView: UIView {
             optionsStackView.topAnchor.constraint(equalTo: questionLabel.bottomAnchor, constant: 12),
             optionsStackView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
             optionsStackView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
-
-            reviewCtxTop,
-            reviewContextLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
-            reviewContextLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
 
             contextTop,
             additionalContextTextView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
@@ -375,18 +338,22 @@ final class ClarifyingQuestionsView: UIView {
         restoredContextByIndex = [:]
         counterLabel.text = nil
         questionLabel.text = nil
-        reviewContextLabel.text = nil
-        reviewContextLabel.isHidden = true
         additionalContextTextView.text = ""
         additionalContextTextView.isHidden = false
         placeholderLabel.isHidden = false
         actionButton.isHidden = false
         optionsStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
 
+        // Remove all dynamic review-mode views from the hierarchy
         optionsBottomToNavRowConstraint?.isActive = false
         optionsBottomToNavRowConstraint = nil
+        reviewContextBottomToNavConstraint?.isActive = false
+        reviewContextBottomToNavConstraint = nil
         navRowStackView?.removeFromSuperview()
         navRowStackView = nil
+        reviewContextLabel?.removeFromSuperview()
+        reviewContextLabel = nil
+
         contextViewTopConstraint?.isActive = true
         actionButtonBottomConstraint?.isActive = true
 
@@ -421,6 +388,23 @@ final class ClarifyingQuestionsView: UIView {
         ])
     }
 
+    /// Add or reuse the reviewContextLabel. Only called when in review mode and context exists.
+    private func ensureReviewContextLabel() -> UILabel {
+        if let existing = reviewContextLabel { return existing }
+        let l = UILabel()
+        l.translatesAutoresizingMaskIntoConstraints = false
+        l.font = UIFont(name: "Roboto-Regular", size: 13) ?? UIFont.systemFont(ofSize: 13)
+        l.textColor = UIColor.Sphinx.SecondaryText
+        l.numberOfLines = 0
+        containerView.addSubview(l)
+        NSLayoutConstraint.activate([
+            l.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
+            l.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
+        ])
+        reviewContextLabel = l
+        return l
+    }
+
     // MARK: - Private: Rendering
 
     private func showQuestion(at index: Int, notifyHeightChange: Bool = false) {
@@ -434,42 +418,49 @@ final class ClarifyingQuestionsView: UIView {
         if !isLockedForReview {
             additionalContextTextView.text = ""
             placeholderLabel.isHidden = false
-            reviewContextLabel.isHidden = true
         }
 
-        // Rebuild option pills using OptionPillView (stable sizing, no feedback loops)
         optionsStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
         for (i, option) in q.options.enumerated() {
-            let pill = makeOptionPill(title: option, index: i)
-            optionsStackView.addArrangedSubview(pill)
+            optionsStackView.addArrangedSubview(makeOptionPill(title: option, index: i))
         }
 
         if isLockedForReview {
             let restored = restoredAnswersByIndex[index] ?? []
             optionsStackView.arrangedSubviews.compactMap { $0 as? OptionPillView }.forEach { pill in
-                if restored.contains(pill.tag) {
-                    pill.applySelectedStyle()
-                }
+                if restored.contains(pill.tag) { pill.applySelectedStyle() }
                 pill.isUserInteractionEnabled = false
             }
 
-            // Context label below options
+            // Deactivate previous dynamic bottom constraint before re-pinning
+            optionsBottomToNavRowConstraint?.isActive = false
+            reviewContextBottomToNavConstraint?.isActive = false
+
             if let ctx = restoredContextByIndex[index], !ctx.isEmpty {
-                reviewContextLabel.text = "Additional: \(ctx)"
-                reviewContextLabel.isHidden = false
-                optionsBottomToNavRowConstraint?.isActive = false
-                reviewContextTopConstraint?.isActive = true
+                // Show review context label, pinned: optionsStack → ctxLabel → navRow
+                let lbl = ensureReviewContextLabel()
+                lbl.text = "Additional: \(ctx)"
+                lbl.isHidden = false
+
+                // options bottom → label top
+                let optToCtx = optionsStackView.bottomAnchor.constraint(
+                    equalTo: lbl.topAnchor, constant: -8
+                )
+                optToCtx.isActive = true
+                optionsBottomToNavRowConstraint = optToCtx
+
+                // label bottom → navRow top
                 if let navRow = navRowStackView {
-                    let ctxToNav = reviewContextLabel.bottomAnchor.constraint(
+                    let ctxToNav = lbl.bottomAnchor.constraint(
                         equalTo: navRow.topAnchor, constant: -8
                     )
                     ctxToNav.isActive = true
-                    optionsBottomToNavRowConstraint = ctxToNav
+                    reviewContextBottomToNavConstraint = ctxToNav
                 }
             } else {
-                reviewContextLabel.isHidden = true
-                reviewContextTopConstraint?.isActive = false
-                optionsBottomToNavRowConstraint?.isActive = false
+                // Hide/remove context label; pin options directly to navRow
+                reviewContextLabel?.isHidden = true
+
                 if let navRow = navRowStackView {
                     let optToNav = optionsStackView.bottomAnchor.constraint(
                         equalTo: navRow.topAnchor, constant: -12
@@ -494,9 +485,7 @@ final class ClarifyingQuestionsView: UIView {
         let pill = OptionPillView()
         pill.tag = index
         pill.label.text = title
-        pill.onTap = { [weak self] tappedPill in
-            self?.optionPillTapped(tappedPill)
-        }
+        pill.onTap = { [weak self] tappedPill in self?.optionPillTapped(tappedPill) }
         return pill
     }
 
@@ -506,8 +495,7 @@ final class ClarifyingQuestionsView: UIView {
         let enabled = hasSelection || hasContext
         actionButton.isEnabled = enabled
         actionButton.alpha = enabled ? 1.0 : 0.5
-        let isLast = currentIndex == questions.count - 1
-        actionButton.setTitle(isLast ? "Submit" : "Next →", for: .normal)
+        actionButton.setTitle(currentIndex == questions.count - 1 ? "Submit" : "Next →", for: .normal)
     }
 
     // MARK: - Private: Actions
@@ -521,41 +509,28 @@ final class ClarifyingQuestionsView: UIView {
             let alreadySelected = selectedIndices.contains(tappedIndex)
             selectedIndices = alreadySelected ? [] : [tappedIndex]
             optionsStackView.arrangedSubviews.compactMap { $0 as? OptionPillView }.forEach { p in
-                if !alreadySelected && p.tag == tappedIndex {
-                    p.applySelectedStyle()
-                } else {
-                    p.applyUnselectedStyle()
-                }
+                if !alreadySelected && p.tag == tappedIndex { p.applySelectedStyle() }
+                else { p.applyUnselectedStyle() }
             }
         } else {
             if selectedIndices.contains(tappedIndex) {
-                selectedIndices.remove(tappedIndex)
-                pill.applyUnselectedStyle()
+                selectedIndices.remove(tappedIndex); pill.applyUnselectedStyle()
             } else {
-                selectedIndices.insert(tappedIndex)
-                pill.applySelectedStyle()
+                selectedIndices.insert(tappedIndex); pill.applySelectedStyle()
             }
         }
-
         updateActionButton()
     }
 
     @objc private func actionButtonTapped() {
         guard currentIndex < questions.count else { return }
         let q = questions[currentIndex]
-
         let selectedLabels = q.options.enumerated()
-            .filter { selectedIndices.contains($0.offset) }
-            .map { $0.element }
-
-        let contextText = additionalContextTextView.text
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-
+            .filter { selectedIndices.contains($0.offset) }.map { $0.element }
+        let contextText = additionalContextTextView.text.trimmingCharacters(in: .whitespacesAndNewlines)
         var parts = selectedLabels
         if !contextText.isEmpty { parts.append(contextText) }
-        let answerString = "Q: \(q.question)\nA: \(parts.joined(separator: ", "))"
-        collectedAnswers.append(answerString)
-
+        collectedAnswers.append("Q: \(q.question)\nA: \(parts.joined(separator: ", "))")
         if currentIndex == questions.count - 1 {
             onSubmit?(collectedAnswers)
         } else {
@@ -577,17 +552,13 @@ final class ClarifyingQuestionsView: UIView {
     }
 
     // MARK: - Test Hooks
-    /// Simulate a tap on the option pill at the given index. Used in unit tests only.
     func simulateTapOptionPill(at index: Int) {
         let pills = optionsStackView.arrangedSubviews
-            .compactMap { $0 as? OptionPillView }
-            .sorted { $0.tag < $1.tag }
+            .compactMap { $0 as? OptionPillView }.sorted { $0.tag < $1.tag }
         guard index < pills.count else { return }
         optionPillTapped(pills[index])
     }
 }
-
-
 
 // MARK: - UITextViewDelegate
 
@@ -620,18 +591,15 @@ private func parseAnswerValue(
     while !remaining.isEmpty {
         var bestIdx: Int? = nil
         var bestLen = 0
-
         for (i, normOpt) in normOptions.enumerated() {
             guard normOpt.count > bestLen else { continue }
             if remaining.hasPrefix(normOpt) {
                 let after = remaining.dropFirst(normOpt.count)
                 if after.isEmpty || after.hasPrefix(", ") {
-                    bestIdx = i
-                    bestLen = normOpt.count
+                    bestIdx = i; bestLen = normOpt.count
                 }
             }
         }
-
         if let idx = bestIdx {
             matchedIndices.insert(idx)
             remaining = String(remaining.dropFirst(bestLen))
@@ -641,11 +609,9 @@ private func parseAnswerValue(
                 contextParts.append(String(remaining[..<sepRange.lowerBound]))
                 remaining = String(remaining[sepRange.upperBound...])
             } else {
-                contextParts.append(remaining)
-                remaining = ""
+                contextParts.append(remaining); remaining = ""
             }
         }
     }
-
     return (matchedIndices, contextParts)
 }
