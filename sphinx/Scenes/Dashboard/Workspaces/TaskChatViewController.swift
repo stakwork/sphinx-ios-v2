@@ -18,6 +18,18 @@ class TaskChatViewController: UIViewController {
     private var workspaceSlug: String
     private var workspaceId: String
     private var messages: [HiveChatMessage] = []
+
+    private var cqMessageIds: Set<String> {
+        Set(messages.filter { $0.artifacts.contains(where: { $0.isClarifyingQuestions }) }.map { $0.id })
+    }
+
+    private var displayMessages: [HiveChatMessage] {
+        messages.filter { msg in
+            guard let replyId = msg.replyId else { return true }
+            return !cqMessageIds.contains(replyId)
+        }
+    }
+
     private var processingStepText: String? = nil
     private var cachedStakworkProjectId: Int?
     private var anyCableManager: HiveAnyCableManager?
@@ -684,8 +696,8 @@ class TaskChatViewController: UIViewController {
                     guard let self = self, let sentMessage = sentMessage else { return }
                     self.newMessageReceived(sentMessage)
                     // Reload the CQ cell so it recomputes height with answered state
-                    if let idx = self.messages.firstIndex(where: { $0.id == replyId }) {
-                        self.chatTableView.reloadRows(at: [IndexPath(row: idx, section: 0)], with: .none)
+                    if let displayIdx = self.displayMessages.firstIndex(where: { $0.id == replyId }) {
+                        self.chatTableView.reloadRows(at: [IndexPath(row: displayIdx, section: 0)], with: .none)
                     }
                 }
             },
@@ -742,7 +754,7 @@ class TaskChatViewController: UIViewController {
 
     private func hideProcessingBubble() {
         guard processingStepText != nil else { return }
-        let indexPath = IndexPath(row: messages.count, section: 0)
+        let indexPath = IndexPath(row: displayMessages.count, section: 0)
         processingStepText = nil
         chatTableView.deleteRows(at: [indexPath], with: .automatic)
     }
@@ -752,12 +764,12 @@ class TaskChatViewController: UIViewController {
     private func updateProcessingBubble(stepText: String) {
         if processingStepText == nil {
             processingStepText = stepText
-            let indexPath = IndexPath(row: messages.count, section: 0)
+            let indexPath = IndexPath(row: displayMessages.count, section: 0)
             chatTableView.insertRows(at: [indexPath], with: .automatic)
             scrollToBottom(animated: true)
         } else {
             processingStepText = stepText
-            let indexPath = IndexPath(row: messages.count, section: 0)
+            let indexPath = IndexPath(row: displayMessages.count, section: 0)
             chatTableView.reloadRows(at: [indexPath], with: .none)
         }
     }
@@ -799,7 +811,7 @@ class TaskChatViewController: UIViewController {
     }
 
     private func scrollToBottom(animated: Bool = true) {
-        let totalRows = messages.count + (processingStepText != nil ? 1 : 0)
+        let totalRows = displayMessages.count + (processingStepText != nil ? 1 : 0)
         guard totalRows > 0 else { return }
         let indexPath = IndexPath(row: totalRows - 1, section: 0)
         chatTableView.scrollToRow(at: indexPath, at: .bottom, animated: animated)
@@ -919,7 +931,15 @@ extension TaskChatViewController: HivePusherDelegate {
             hideProcessingBubble()
         }
         messages.append(message)
-        let indexPath = IndexPath(row: messages.count - 1, section: 0)
+        // Skip row insertion for CQ answer messages — they are hidden via displayMessages
+        guard !cqMessageIds.contains(message.replyId ?? "") else {
+            // Still reload the CQ cell to show answered state
+            if let displayIdx = displayMessages.firstIndex(where: { $0.id == message.replyId }) {
+                chatTableView.reloadRows(at: [IndexPath(row: displayIdx, section: 0)], with: .none)
+            }
+            return
+        }
+        let indexPath = IndexPath(row: displayMessages.count - 1, section: 0)
         chatTableView.insertRows(at: [indexPath], with: .automatic)
         scrollToBottom()
     }
@@ -933,7 +953,9 @@ extension TaskChatViewController: HivePusherDelegate {
         messages[idx].artifacts[artifactIdx].prContent?.status = artifactStatus
         if let url = prUrl { messages[idx].artifacts[artifactIdx].prContent?.url = url }
         DispatchQueue.main.async {
-            self.chatTableView.reloadRows(at: [IndexPath(row: idx, section: 0)], with: .none)
+            if let displayIdx = self.displayMessages.firstIndex(where: { $0.id == self.messages[idx].id }) {
+                self.chatTableView.reloadRows(at: [IndexPath(row: displayIdx, section: 0)], with: .none)
+            }
         }
     }
 
@@ -959,11 +981,11 @@ extension TaskChatViewController: HiveAnyCableDelegate {
 // MARK: - UITableView
 extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        messages.count + (processingStepText != nil ? 1 : 0)
+        displayMessages.count + (processingStepText != nil ? 1 : 0)
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        if processingStepText != nil && indexPath.row == messages.count {
+        if processingStepText != nil && indexPath.row == displayMessages.count {
             let cell = tableView.dequeueReusableCell(
                 withIdentifier: "HiveProcessingBubbleCell",
                 for: indexPath
@@ -972,13 +994,13 @@ extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
             return cell
         }
 
-        let isLast = indexPath.row == messages.count - 1
-        if messages[indexPath.row].artifacts.contains(where: { $0.isClarifyingQuestions }) {
+        let isLast = indexPath.row == displayMessages.count - 1
+        if displayMessages[indexPath.row].artifacts.contains(where: { $0.isClarifyingQuestions }) {
             guard let cell = tableView.dequeueReusableCell(
                 withIdentifier: "ClarifyingQuestionMessageCell",
                 for: indexPath
             ) as? ClarifyingQuestionMessageCell else { return UITableViewCell() }
-            let cqMessage = messages[indexPath.row]
+            let cqMessage = displayMessages[indexPath.row]
             let answerMessage = messages.first(where: { $0.replyId == cqMessage.id && $0.isUserMessage })
             cell.configure(with: cqMessage, isLastMessage: isLast, answerMessage: answerMessage)
             cell.onClarifyingAnswerSubmit = { [weak self] answers, replyId in
@@ -997,7 +1019,7 @@ extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
             withIdentifier: "FeatureChatMessageCell",
             for: indexPath
         ) as? FeatureChatMessageCell else { return UITableViewCell() }
-        cell.configure(with: messages[indexPath.row], isLastMessage: isLast)
+        cell.configure(with: displayMessages[indexPath.row], isLastMessage: isLast)
         cell.onHeightChanged = { [weak tableView] in
             UIView.performWithoutAnimation {
                     tableView?.beginUpdates()

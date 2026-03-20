@@ -15,6 +15,17 @@ class WorkspaceGraphChatViewController: UIViewController {
 
     private var workspace: Workspace
     private var messages: [HiveChatMessage] = []
+
+    private var cqMessageIds: Set<String> {
+        Set(messages.filter { $0.artifacts.contains(where: { $0.isClarifyingQuestions }) }.map { $0.id })
+    }
+
+    private var displayMessages: [HiveChatMessage] {
+        messages.filter { msg in
+            guard let replyId = msg.replyId else { return true }
+            return !cqMessageIds.contains(replyId)
+        }
+    }
     private var isStreaming: Bool = false {
         didSet {
             updateInputState()
@@ -370,11 +381,10 @@ class WorkspaceGraphChatViewController: UIViewController {
         )
         messages.append(userMessage)
         // Reload the CQ cell so it recomputes height with answered state
-        if let idx = messages.firstIndex(where: { $0.id == replyId }) {
-            chatTableView.reloadRows(at: [IndexPath(row: idx, section: 0)], with: .none)
+        if let displayIdx = displayMessages.firstIndex(where: { $0.id == replyId }) {
+            chatTableView.reloadRows(at: [IndexPath(row: displayIdx, section: 0)], with: .none)
         }
-        let userIndexPath = IndexPath(row: messages.count - 1, section: 0)
-        chatTableView.insertRows(at: [userIndexPath], with: .automatic)
+        // Do NOT insert a row for the answer message — displayMessages filters it out
         scrollToBottom()
 
         // Build payload and stream response
@@ -433,7 +443,7 @@ class WorkspaceGraphChatViewController: UIViewController {
             createdBy: ownerCreatedBy
         )
         messages.append(userMessage)
-        let userIndexPath = IndexPath(row: messages.count - 1, section: 0)
+        let userIndexPath = IndexPath(row: displayMessages.count - 1, section: 0)
         chatTableView.insertRows(at: [userIndexPath], with: .automatic)
         updateEmptyState()
         scrollToBottom()
@@ -471,19 +481,19 @@ class WorkspaceGraphChatViewController: UIViewController {
     private func updateProcessingBubble(stepText: String) {
         if processingStepText == nil {
             processingStepText = stepText
-            let indexPath = IndexPath(row: messages.count, section: 0)
+            let indexPath = IndexPath(row: displayMessages.count, section: 0)
             chatTableView.insertRows(at: [indexPath], with: .automatic)
             scrollToBottom()
         } else {
             processingStepText = stepText
-            let indexPath = IndexPath(row: messages.count, section: 0)
+            let indexPath = IndexPath(row: displayMessages.count, section: 0)
             chatTableView.reloadRows(at: [indexPath], with: .none)
         }
     }
 
     private func hideProcessingBubble() {
         guard processingStepText != nil else { return }
-        let indexPath = IndexPath(row: messages.count, section: 0)
+        let indexPath = IndexPath(row: displayMessages.count, section: 0)
         processingStepText = nil
         chatTableView.deleteRows(at: [indexPath], with: .automatic)
     }
@@ -527,7 +537,7 @@ class WorkspaceGraphChatViewController: UIViewController {
     // MARK: - Scroll
 
     private func scrollToBottom() {
-        let totalRows = messages.count + (processingStepText != nil ? 1 : 0)
+        let totalRows = displayMessages.count + (processingStepText != nil ? 1 : 0)
         guard totalRows > 0 else { return }
         let lastIndexPath = IndexPath(row: totalRows - 1, section: 0)
         chatTableView.scrollToRow(at: lastIndexPath, at: .bottom, animated: true)
@@ -584,12 +594,12 @@ extension WorkspaceGraphChatViewController: GraphChatSSEDelegate {
             createdAt: nowISO()
         )
         messages.append(assistantMsg)
-        let insertIndexPath = IndexPath(row: messages.count - 1, section: 0)
+        let insertIndexPath = IndexPath(row: displayMessages.count - 1, section: 0)
 
         if processingStepText != nil {
             // Atomically swap the processing bubble out and the assistant message in —
             // no visible gap between the two.
-            let bubbleIndexPath = IndexPath(row: messages.count - 1, section: 0)
+            let bubbleIndexPath = IndexPath(row: displayMessages.count - 1, section: 0)
             processingStepText = nil
             chatTableView.performBatchUpdates({
                 chatTableView.deleteRows(at: [bubbleIndexPath], with: .fade)
@@ -622,12 +632,12 @@ extension WorkspaceGraphChatViewController: GraphChatSSEDelegate {
 extension WorkspaceGraphChatViewController: UITableViewDataSource, UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return messages.count + (processingStepText != nil ? 1 : 0)
+        return displayMessages.count + (processingStepText != nil ? 1 : 0)
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         // Processing bubble row
-        if processingStepText != nil && indexPath.row == messages.count {
+        if processingStepText != nil && indexPath.row == displayMessages.count {
             let cell = tableView.dequeueReusableCell(
                 withIdentifier: "HiveProcessingBubbleCell",
                 for: indexPath
@@ -637,8 +647,8 @@ extension WorkspaceGraphChatViewController: UITableViewDataSource, UITableViewDe
         }
 
         // Message row
-        let message = messages[indexPath.row]
-        let isLast = indexPath.row == messages.count - 1
+        let message = displayMessages[indexPath.row]
+        let isLast = indexPath.row == displayMessages.count - 1
 
         if message.artifacts.contains(where: { $0.isClarifyingQuestions }) {
             guard let cell = tableView.dequeueReusableCell(
