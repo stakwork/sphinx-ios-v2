@@ -8,27 +8,58 @@
 
 import UIKit
 
-// MARK: - MultilineOptionButton
+// MARK: - OptionRowView
 
-/// UIButton subclass that updates titleLabel.preferredMaxLayoutWidth on every
-/// layout pass so the button's intrinsic content size correctly accounts for
-/// word-wrapped text and the stack view can size the row to the full text height.
-private final class MultilineOptionButton: UIButton {
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        guard let label = titleLabel else { return }
-        let insets = contentEdgeInsets
-        let availableWidth = bounds.width - insets.left - insets.right
-        if label.preferredMaxLayoutWidth != availableWidth {
-            label.preferredMaxLayoutWidth = availableWidth
-            invalidateIntrinsicContentSize()
-        }
+/// A tappable option row built from a plain UIView + UILabel.
+/// Unlike UIButton, a UIView's intrinsic size is driven entirely by its
+/// Auto Layout subviews, so multiline text naturally expands the row height.
+final class OptionRowView: UIView {
+
+    var onTap: (() -> Void)?
+
+    let label: UILabel = {
+        let l = UILabel()
+        l.translatesAutoresizingMaskIntoConstraints = false
+        l.numberOfLines = 0
+        l.lineBreakMode = .byWordWrapping
+        l.font = UIFont(name: "Roboto-Regular", size: 14) ?? UIFont.systemFont(ofSize: 14)
+        return l
+    }()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setup()
     }
 
-    override var intrinsicContentSize: CGSize {
-        let base = super.intrinsicContentSize
-        // Ensure the button is never shorter than a comfortable tap target
-        return CGSize(width: base.width, height: max(base.height, 44))
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setup()
+    }
+
+    private func setup() {
+        translatesAutoresizingMaskIntoConstraints = false
+        layer.cornerRadius = 16
+        layer.masksToBounds = true
+        addSubview(label)
+        NSLayoutConstraint.activate([
+            label.topAnchor.constraint(equalTo: topAnchor, constant: 10),
+            label.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -10),
+            label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+            label.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
+            heightAnchor.constraint(greaterThanOrEqualToConstant: 44),
+        ])
+        let tap = UITapGestureRecognizer(target: self, action: #selector(handleTap))
+        addGestureRecognizer(tap)
+        isUserInteractionEnabled = true
+    }
+
+    @objc private func handleTap() {
+        onTap?()
+    }
+
+    /// Test-only: programmatically fire the tap callback.
+    func simulateTap() {
+        onTap?()
     }
 }
 
@@ -243,8 +274,8 @@ final class ClarifyingQuestionsView: UIView {
         // Rebuild option pills
         optionsStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
         for (i, option) in q.options.enumerated() {
-            let btn = makeOptionButton(title: option, tag: i)
-            optionsStackView.addArrangedSubview(btn)
+            let row = makeOptionRow(title: option, index: i)
+            optionsStackView.addArrangedSubview(row)
         }
 
         updateActionButton()
@@ -254,35 +285,29 @@ final class ClarifyingQuestionsView: UIView {
         onHeightChanged?()
     }
 
-    private func makeOptionButton(title: String, tag: Int) -> UIButton {
-        let btn = MultilineOptionButton(type: .system)
-        btn.translatesAutoresizingMaskIntoConstraints = false
-        btn.tag = tag
-        btn.setTitle(title, for: .normal)
-        btn.titleLabel?.font = UIFont(name: "Roboto-Regular", size: 14) ?? UIFont.systemFont(ofSize: 14)
-        btn.titleLabel?.numberOfLines = 0
-        btn.titleLabel?.lineBreakMode = .byWordWrapping
-        btn.contentHorizontalAlignment = .left
-        btn.contentEdgeInsets = UIEdgeInsets(top: 10, left: 16, bottom: 10, right: 16)
-        btn.layer.cornerRadius = 16
-        btn.layer.masksToBounds = true
-        btn.addTarget(self, action: #selector(optionTapped(_:)), for: .touchUpInside)
-        applyUnselectedStyle(to: btn)
-        return btn
+    private func makeOptionRow(title: String, index: Int) -> OptionRowView {
+        let row = OptionRowView()
+        row.tag = index
+        row.label.text = title
+        applyUnselectedStyle(to: row)
+        row.onTap = { [weak self] in
+            self?.optionRowTapped(row)
+        }
+        return row
     }
 
-    private func applyUnselectedStyle(to button: UIButton) {
-        button.backgroundColor = UIColor.Sphinx.Body
-        button.setTitleColor(UIColor.Sphinx.Text, for: .normal)
-        button.layer.borderWidth = 1
-        button.layer.borderColor = UIColor.Sphinx.LightDivider.cgColor
+    private func applyUnselectedStyle(to row: OptionRowView) {
+        row.backgroundColor = UIColor.Sphinx.Body
+        row.label.textColor = UIColor.Sphinx.Text
+        row.layer.borderWidth = 1
+        row.layer.borderColor = UIColor.Sphinx.LightDivider.cgColor
     }
 
-    private func applySelectedStyle(to button: UIButton) {
-        button.backgroundColor = UIColor.Sphinx.PrimaryBlue
-        button.setTitleColor(.white, for: .normal)
-        button.layer.borderWidth = 0
-        button.layer.borderColor = UIColor.clear.cgColor
+    private func applySelectedStyle(to row: OptionRowView) {
+        row.backgroundColor = UIColor.Sphinx.PrimaryBlue
+        row.label.textColor = .white
+        row.layer.borderWidth = 0
+        row.layer.borderColor = UIColor.clear.cgColor
     }
 
     private func updateActionButton() {
@@ -298,24 +323,22 @@ final class ClarifyingQuestionsView: UIView {
 
     // MARK: - Private: Actions
 
-    @objc private func optionTapped(_ sender: UIButton) {
+    private func optionRowTapped(_ sender: OptionRowView) {
         guard currentIndex < questions.count else { return }
         let q = questions[currentIndex]
         let tappedIndex = sender.tag
 
         if q.type == "single_choice" {
-            // Toggle: deselect if already selected, otherwise select tapped
             let alreadySelected = selectedIndices.contains(tappedIndex)
             selectedIndices = alreadySelected ? [] : [tappedIndex]
-            optionsStackView.arrangedSubviews.compactMap { $0 as? UIButton }.forEach { btn in
-                if !alreadySelected && btn.tag == tappedIndex {
-                    applySelectedStyle(to: btn)
+            optionsStackView.arrangedSubviews.compactMap { $0 as? OptionRowView }.forEach { row in
+                if !alreadySelected && row.tag == tappedIndex {
+                    applySelectedStyle(to: row)
                 } else {
-                    applyUnselectedStyle(to: btn)
+                    applyUnselectedStyle(to: row)
                 }
             }
         } else {
-            // multiple_choice: toggle
             if selectedIndices.contains(tappedIndex) {
                 selectedIndices.remove(tappedIndex)
                 applyUnselectedStyle(to: sender)

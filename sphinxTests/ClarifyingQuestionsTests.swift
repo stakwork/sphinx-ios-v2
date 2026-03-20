@@ -403,9 +403,9 @@ class ClarifyingQuestionsViewTests: XCTestCase {
         XCTAssertEqual(submitCount, 1, "onSubmit should fire exactly once on Submit")
     }
 
-    // MARK: - Multiline option button tests
+    // MARK: - Multiline option row tests
 
-    func testOptionButton_LongText_HasMultilineLabel() {
+    func testOptionRow_LongText_HasMultilineLabel() {
         let longOption = "This is a very long option string that should definitely wrap across multiple lines on any reasonable screen width"
         let q = ClarifyingQuestion(question: "Pick one", options: [longOption, "Short"], type: "single_choice")
         let view = ClarifyingQuestionsView(frame: CGRect(x: 0, y: 0, width: 320, height: 600))
@@ -413,18 +413,12 @@ class ClarifyingQuestionsViewTests: XCTestCase {
         view.setNeedsLayout()
         view.layoutIfNeeded()
 
-        let actionTitles: Set<String> = ["Next →", "Submit"]
-        let allButtons = view.allSubviewsPublic(ofType: UIButton.self)
-        let optionButtons = allButtons.filter { btn in
-            guard let title = btn.title(for: .normal) else { return false }
-            return !actionTitles.contains(title)
-        }
-
-        let longBtn = optionButtons.first { $0.title(for: .normal) == longOption }
-        XCTAssertNotNil(longBtn, "Button with long option text should exist")
-        XCTAssertEqual(longBtn?.titleLabel?.numberOfLines, 0, "titleLabel.numberOfLines should be 0")
-        let height = longBtn?.intrinsicContentSize.height ?? 0
-        XCTAssertGreaterThan(height, 44, "Button intrinsicContentSize.height should exceed 44 for long text")
+        let rows = view.allSubviewsPublic(ofType: OptionRowView.self)
+        let longRow = rows.first { $0.label.text == longOption }
+        XCTAssertNotNil(longRow, "OptionRowView with long option text should exist")
+        XCTAssertEqual(longRow?.label.numberOfLines, 0, "label.numberOfLines should be 0")
+        let height = longRow?.frame.height ?? 0
+        XCTAssertGreaterThan(height, 44, "OptionRowView height should exceed 44 for long text")
     }
 
     func testOnHeightChanged_CalledOnQuestionTransition() {
@@ -479,20 +473,12 @@ extension ClarifyingQuestionsView {
         allSubviews(ofType: type, in: self)
     }
 
-    /// Simulate a tap on the option button at the given index (test-only).
+    /// Simulate a tap on the option row at the given index (test-only).
     func simulateTapOption(at index: Int) {
-        // Option buttons are UIButtons with matching tag; they are NOT the action button
-        // (action button has no tag set explicitly, defaulting to 0 — we identify it by title)
-        let actionTitles: Set<String> = ["Next →", "Submit"]
-        let allButtons = allSubviews(ofType: UIButton.self, in: self)
-        let optionButtons = allButtons.filter { btn in
-            guard let title = btn.title(for: .normal) else { return false }
-            return !actionTitles.contains(title)
-        }
-        // Sort by tag order to match the original option index
-        let sorted = optionButtons.sorted { $0.tag < $1.tag }
+        let rows = allSubviews(ofType: OptionRowView.self, in: self)
+        let sorted = rows.sorted { $0.tag < $1.tag }
         guard index < sorted.count else { return }
-        sorted[index].sendActions(for: .touchUpInside)
+        sorted[index].simulateTap()
     }
 
     /// Simulate a tap on the action button (Next → / Submit) (test-only).
