@@ -390,9 +390,9 @@ final class ClarifyingQuestionsView: UIView {
         for (i, option) in q.options.enumerated() {
             let optionView = makeOptionView(title: option, tag: i)
             optionView.isUserInteractionEnabled = false
-            let normalisedOption = stripDashes(option)
+            let normalisedOption = normaliseForComparison(option)
             let isSelected = parsed.selectedOptions.contains {
-                stripDashes($0).caseInsensitiveCompare(normalisedOption) == .orderedSame
+                normaliseForComparison($0) == normalisedOption
             }
             isSelected ? applySelectedStyle(to: optionView) : applyUnselectedStyle(to: optionView)
             optionsStackView.addArrangedSubview(optionView)
@@ -486,15 +486,21 @@ final class ClarifyingQuestionsView: UIView {
 
     // MARK: - Private: String helpers
 
-    /// Strips em-dash (—), en-dash (–), hyphen-minus (-) and surrounding whitespace for comparison.
-    private func stripDashes(_ string: String) -> String {
+    /// Normalises a string for comparison by keeping only alphanumeric characters and spaces,
+    /// collapsing runs of whitespace. This removes any dash/punctuation variant regardless of
+    /// Unicode code point, so "Option — subtitle" and "Option  subtitle" compare equal.
+    private func normaliseForComparison(_ string: String) -> String {
         return string
-            .replacingOccurrences(of: "\u{2014}", with: "") // em-dash
-            .replacingOccurrences(of: "\u{2013}", with: "") // en-dash
+            .unicodeScalars
+            .map { scalar -> Character in
+                let c = Character(scalar)
+                return (c.isLetter || c.isNumber) ? c : " "
+            }
+            .reduce("") { $0 + String($1) }
             .components(separatedBy: .whitespaces)
             .filter { !$0.isEmpty }
             .joined(separator: " ")
-            .trimmingCharacters(in: .whitespaces)
+            .lowercased()
     }
 
     // MARK: - Private: Parse answered state
@@ -520,10 +526,10 @@ final class ClarifyingQuestionsView: UIView {
             var additionalTokens: [String] = []
 
             for token in tokens {
-                let normToken = stripDashes(token)
+                let normToken = normaliseForComparison(token)
                 let matchesOption = question.options.contains { opt in
-                    let normOpt = stripDashes(opt)
-                    return normToken.caseInsensitiveCompare(normOpt) == .orderedSame
+                    let normOpt = normaliseForComparison(opt)
+                    return normToken == normOpt
                 }
                 if matchesOption {
                     selectedOptions.append(token.trimmingCharacters(in: .whitespaces))
