@@ -21,7 +21,13 @@ class WorkspaceGraphChatViewController: UIViewController {
     }
 
     private var displayMessages: [HiveChatMessage] {
-        messages
+        messages.filter { message in
+            let shouldHide = message.message.isEmpty &&
+                             message.artifacts.isEmpty &&
+                             message.attachments.isEmpty &&
+                             message.role == "ASSISTANT"
+            return !shouldHide
+        }
     }
     private var isStreaming: Bool = false {
         didSet {
