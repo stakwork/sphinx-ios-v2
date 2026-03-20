@@ -22,7 +22,11 @@ class FeaturePlanViewController: UIViewController {
     }
 
     private var displayMessages: [HiveChatMessage] {
-        messages
+        messages.filter { message in
+            !message.message.isEmpty ||
+            !message.attachments.isEmpty ||
+            message.artifacts.contains(where: { $0.type != "STREAM" })
+        }
     }
 
     private var processingStepText: String? = nil
