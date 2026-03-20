@@ -805,15 +805,16 @@ class TaskChatViewController: UIViewController {
         }
     }
 
+    private func isNearBottom() -> Bool {
+        let contentHeight = chatTableView.contentSize.height
+        let visibleBottom = chatTableView.contentOffset.y + chatTableView.bounds.height
+        return (contentHeight - visibleBottom) < 120
+    }
+
     private func scrollToBottom(animated: Bool = true, onlyIfNearBottom: Bool = false) {
         let totalRows = messages.count + (processingStepText != nil ? 1 : 0)
         guard totalRows > 0 else { return }
-        if onlyIfNearBottom {
-            let contentHeight = chatTableView.contentSize.height
-            let visibleBottom = chatTableView.contentOffset.y + chatTableView.bounds.height
-            let distanceFromBottom = contentHeight - visibleBottom
-            guard distanceFromBottom < 80 else { return }
-        }
+        if onlyIfNearBottom, !isNearBottom() { return }
         let indexPath = IndexPath(row: totalRows - 1, section: 0)
         chatTableView.scrollToRow(at: indexPath, at: .bottom, animated: animated)
     }
@@ -931,13 +932,13 @@ extension TaskChatViewController: HivePusherDelegate {
         if !message.isUserMessage {
             hideProcessingBubble()
         }
+        // Capture near-bottom state BEFORE insertRows grows contentSize
+        let wasNearBottom = isNearBottom()
         messages.append(message)
         let indexPath = IndexPath(row: messages.count - 1, section: 0)
         chatTableView.insertRows(at: [indexPath], with: .automatic)
-        if message.isUserMessage {
+        if wasNearBottom {
             scrollToBottom()
-        } else {
-            scrollToBottom(onlyIfNearBottom: true)
         }
     }
 
