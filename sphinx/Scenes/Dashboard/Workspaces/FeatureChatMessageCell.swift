@@ -180,7 +180,7 @@ class FeatureChatMessageCell: UITableViewCell {
                     ?? UIFont.italicSystemFont(ofSize: 15)
                 mutable = NSMutableAttributedString(
                     string: italic,
-                    attributes: [.font: font, .foregroundColor: UIColor.Sphinx.TextMessages]
+                    attributes: [.font: font, .foregroundColor: UIColor.Sphinx.TextMessages.withAlphaComponent(0.5)]
                 )
             } else {
                 let rendered = FeatureChatMessageCell.markdownRenderer.render(message.resolvedDisplayText)

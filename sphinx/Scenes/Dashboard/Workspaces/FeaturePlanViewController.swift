@@ -1562,7 +1562,7 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
         let count = messages.first(where: { $0.id == replyId })
             .flatMap { $0.artifacts.first(where: { $0.isClarifyingQuestions }) }
             .flatMap { $0.clarifyingQuestions }?.count ?? 1
-        return count == 1 ? "1 question answered" : "\(count) questions answered"
+        return count == 1 ? "1 clarifying question answered" : "\(count) clarifying questions answered"
     }
 
     private func handleAttachmentTap(_ attachment: HiveChatMessageAttachment) {

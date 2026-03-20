@@ -171,7 +171,7 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
                 .foregroundColor: UIColor.Sphinx.SecondaryText,
                 .font: UIFont.systemFont(ofSize: 16, weight: .medium)
             ]
-            titleLabel.attributedText = NSAttributedString(string: task.title ?? "", attributes: attrs)
+            titleLabel.attributedText = NSAttributedString(string: task.title, attributes: attrs)
         } else {
             titleLabel.attributedText = nil
             titleLabel.text = task.title
@@ -184,12 +184,12 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
 
         let hasOpenPR = task.prUrl != nil && !(task.prStatus == "MERGED" || task.prStatus == "DONE")
         if hasOpenPR {
-            statusBadge.text = "  READY  "
+            statusBadge.text = "READY"
             statusBadge.backgroundColor = .Sphinx.PrimaryGreen
         } else {
             let isQueueTask = task.status == "TODO" && task.systemAssigneeType == "TASK_COORDINATOR"
             if isQueueTask {
-                statusBadge.text = "  QUEUE  "
+                statusBadge.text = "QUEUE"
                 statusBadge.backgroundColor = .Sphinx.BlueTextAccent
             } else {
                 let displayStatus = task.status
