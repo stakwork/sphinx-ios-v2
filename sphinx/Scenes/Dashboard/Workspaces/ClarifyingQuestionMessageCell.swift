@@ -59,7 +59,7 @@ class ClarifyingQuestionMessageCell: UITableViewCell {
         NSLayoutConstraint.activate([
             clarifyingQuestionsView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 4),
             clarifyingQuestionsView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            clarifyingQuestionsView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            clarifyingQuestionsView.widthAnchor.constraint(equalTo: contentView.widthAnchor, multiplier: 0.85),
 
             timestampLabel.topAnchor.constraint(equalTo: clarifyingQuestionsView.bottomAnchor, constant: 4),
             timestampLabel.leadingAnchor.constraint(equalTo: clarifyingQuestionsView.leadingAnchor),
@@ -70,14 +70,19 @@ class ClarifyingQuestionMessageCell: UITableViewCell {
 
     // MARK: - Configure
 
-    func configure(with message: HiveChatMessage, isLastMessage: Bool) {
+    func configure(with message: HiveChatMessage, isLastMessage: Bool, answerMessage: HiveChatMessage? = nil) {
         guard let cqArtifact = message.artifacts.first(where: { $0.isClarifyingQuestions }),
               let questions = cqArtifact.clarifyingQuestions, !questions.isEmpty else { return }
 
         clarifyingQuestionsView.configure(with: questions)
 
         if !isLastMessage {
-            clarifyingQuestionsView.lock()
+            if let answerMsg = answerMessage,
+               !answerMsg.message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                clarifyingQuestionsView.configureAnswered(questions: questions, answerText: answerMsg.message)
+            } else {
+                clarifyingQuestionsView.lock()
+            }
         }
 
         clarifyingQuestionsView.onSubmit = { [weak self] answers in
