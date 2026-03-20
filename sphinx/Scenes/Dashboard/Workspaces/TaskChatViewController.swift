@@ -24,10 +24,7 @@ class TaskChatViewController: UIViewController {
     }
 
     private var displayMessages: [HiveChatMessage] {
-        messages.filter { msg in
-            guard let replyId = msg.replyId else { return true }
-            return !cqMessageIds.contains(replyId)
-        }
+        messages
     }
 
     private var processingStepText: String? = nil
@@ -931,16 +928,14 @@ extension TaskChatViewController: HivePusherDelegate {
             hideProcessingBubble()
         }
         messages.append(message)
-        // Skip row insertion for CQ answer messages — they are hidden via displayMessages
-        guard !cqMessageIds.contains(message.replyId ?? "") else {
-            // Still reload the CQ cell to show answered state
+        let indexPath = IndexPath(row: displayMessages.count - 1, section: 0)
+        chatTableView.insertRows(at: [indexPath], with: .automatic)
+        // If it's a CQ answer, also reload the CQ cell to show answered state
+        if cqMessageIds.contains(message.replyId ?? "") {
             if let displayIdx = displayMessages.firstIndex(where: { $0.id == message.replyId }) {
                 chatTableView.reloadRows(at: [IndexPath(row: displayIdx, section: 0)], with: .none)
             }
-            return
         }
-        let indexPath = IndexPath(row: displayMessages.count - 1, section: 0)
-        chatTableView.insertRows(at: [indexPath], with: .automatic)
         scrollToBottom()
     }
 
@@ -1019,7 +1014,10 @@ extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
             withIdentifier: "FeatureChatMessageCell",
             for: indexPath
         ) as? FeatureChatMessageCell else { return UITableViewCell() }
-        cell.configure(with: displayMessages[indexPath.row], isLastMessage: isLast)
+        let msg = displayMessages[indexPath.row]
+        // If this message is a CQ answer, show italic summary instead of raw text
+        let italic = cqAnswerItalicText(for: msg)
+        cell.configure(with: msg, isLastMessage: isLast, italicText: italic)
         cell.onHeightChanged = { [weak tableView] in
             UIView.performWithoutAnimation {
                     tableView?.beginUpdates()
@@ -1030,6 +1028,14 @@ extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
             self?.handleAttachmentTap(attachment)
         }
         return cell
+    }
+
+    private func cqAnswerItalicText(for message: HiveChatMessage) -> String? {
+        guard let replyId = message.replyId, cqMessageIds.contains(replyId) else { return nil }
+        let count = messages.first(where: { $0.id == replyId })
+            .flatMap { $0.artifacts.first(where: { $0.isClarifyingQuestions }) }
+            .flatMap { $0.clarifyingQuestions }?.count ?? 1
+        return count == 1 ? "1 question answered" : "\(count) questions answered"
     }
 
     private func handleAttachmentTap(_ attachment: HiveChatMessageAttachment) {

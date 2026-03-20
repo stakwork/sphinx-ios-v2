@@ -21,10 +21,7 @@ class WorkspaceGraphChatViewController: UIViewController {
     }
 
     private var displayMessages: [HiveChatMessage] {
-        messages.filter { msg in
-            guard let replyId = msg.replyId else { return true }
-            return !cqMessageIds.contains(replyId)
-        }
+        messages
     }
     private var isStreaming: Bool = false {
         didSet {
@@ -380,11 +377,13 @@ class WorkspaceGraphChatViewController: UIViewController {
             replyId: replyId
         )
         messages.append(userMessage)
+        // Insert the answer row (shown as italic summary text)
+        let answerIndexPath = IndexPath(row: displayMessages.count - 1, section: 0)
+        chatTableView.insertRows(at: [answerIndexPath], with: .automatic)
         // Reload the CQ cell so it recomputes height with answered state
         if let displayIdx = displayMessages.firstIndex(where: { $0.id == replyId }) {
             chatTableView.reloadRows(at: [IndexPath(row: displayIdx, section: 0)], with: .none)
         }
-        // Do NOT insert a row for the answer message — displayMessages filters it out
         scrollToBottom()
 
         // Build payload and stream response
@@ -675,7 +674,9 @@ extension WorkspaceGraphChatViewController: UITableViewDataSource, UITableViewDe
         ) as? FeatureChatMessageCell else {
             return UITableViewCell()
         }
-        cell.configure(with: message, isLastMessage: isLast)
+        // If this message is a CQ answer, show italic summary instead of raw text
+        let italic = cqAnswerItalicText(for: message)
+        cell.configure(with: message, isLastMessage: isLast, italicText: italic)
         cell.onHeightChanged = { [weak tableView] in
             UIView.performWithoutAnimation {
                     tableView?.beginUpdates()
@@ -683,6 +684,14 @@ extension WorkspaceGraphChatViewController: UITableViewDataSource, UITableViewDe
                 }
         }
         return cell
+    }
+
+    private func cqAnswerItalicText(for message: HiveChatMessage) -> String? {
+        guard let replyId = message.replyId, cqMessageIds.contains(replyId) else { return nil }
+        let count = messages.first(where: { $0.id == replyId })
+            .flatMap { $0.artifacts.first(where: { $0.isClarifyingQuestions }) }
+            .flatMap { $0.clarifyingQuestions }?.count ?? 1
+        return count == 1 ? "1 question answered" : "\(count) questions answered"
     }
 
     func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
