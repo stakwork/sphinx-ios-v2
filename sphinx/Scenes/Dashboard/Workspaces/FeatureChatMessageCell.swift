@@ -64,17 +64,7 @@ class FeatureChatMessageCell: UITableViewCell {
         return v
     }()
 
-    /// Clarifying questions view — only shown when a PLAN/ask_clarifying_questions artifact is present.
-    private let clarifyingQuestionsView: ClarifyingQuestionsView = {
-        let v = ClarifyingQuestionsView()
-        v.isHidden = true
-        return v
-    }()
-
     // MARK: - Callbacks
-
-    /// Set by the view controller; called when the user submits clarifying answers.
-    var onClarifyingAnswerSubmit: ((_ answers: [String], _ replyId: String) -> Void)?
 
     /// Called when the clarifying questions view changes its content height
     /// (e.g. navigating between questions) so the host table view can recalculate row height.
@@ -134,8 +124,8 @@ class FeatureChatMessageCell: UITableViewCell {
         contentView.backgroundColor = .Sphinx.Body
         selectionStyle = .none
 
-        // Vertical stack inside bubble: text + optional PR card + optional clarifying questions + optional attachment grid
-        let bubbleStack = UIStackView(arrangedSubviews: [messageTextView, prCardView, clarifyingQuestionsView, attachmentGridView])
+        // Vertical stack inside bubble: text + optional PR card + optional attachment grid
+        let bubbleStack = UIStackView(arrangedSubviews: [messageTextView, prCardView, attachmentGridView])
         bubbleStack.translatesAutoresizingMaskIntoConstraints = false
         bubbleStack.axis = .vertical
         bubbleStack.spacing = 0
@@ -288,44 +278,6 @@ class FeatureChatMessageCell: UITableViewCell {
             bubbleView.layer.borderColor = UIColor.clear.cgColor
         }
 
-        // --- Clarifying questions ---
-        if let cqArtifact = message.artifacts.first(where: { $0.isClarifyingQuestions }),
-           let questions = cqArtifact.clarifyingQuestions, !questions.isEmpty {
-            clarifyingQuestionsView.configure(with: questions)
-            if isLastMessage {
-                clarifyingQuestionsView.isUserInteractionEnabled = true
-                clarifyingQuestionsView.alpha = 1.0
-            } else {
-                clarifyingQuestionsView.lock()
-            }
-            clarifyingQuestionsView.isHidden = false
-            clarifyingQuestionsView.onSubmit = { [weak self] answers in
-                self?.onClarifyingAnswerSubmit?(answers, message.id)
-            }
-            clarifyingQuestionsView.onHeightChanged = { [weak self] in
-                self?.onHeightChanged?()
-            }
-            // Hide the text bubble entirely — no text to show, and we don't want
-            // its top/bottom insets bleeding as empty space above/below the card.
-            messageTextView.isHidden = true
-            messageTextView.textContainerInset = .zero
-            bubbleView.backgroundColor = .clear
-            bubbleView.layer.cornerRadius = 0
-        } else {
-            clarifyingQuestionsView.isHidden = true
-            // Derive hasText the same way Fix 3 does — don't override its decision
-            let hasText: Bool
-            if isUser {
-                hasText = !message.resolvedDisplayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            } else {
-                hasText = !message.resolvedDisplayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            }
-            messageTextView.isHidden = !hasText
-            messageTextView.textContainerInset = hasText
-                ? UIEdgeInsets(top: 10, left: 8, bottom: 10, right: 8)
-                : .zero
-        }
-
         // --- Timestamp ---
         if let ts = message.createdAt {
             timestampLabel.text    = formatTimestamp(ts)
@@ -364,11 +316,6 @@ class FeatureChatMessageCell: UITableViewCell {
         return fmt.string(from: d)
     }
 
-    /// Lock the clarifying questions view after successful submission.
-    func lockClarifyingQuestionsView() {
-        clarifyingQuestionsView.lock()
-    }
-
     // MARK: - Link tap coordinator (shared, stateless)
     private class LinkTapCoordinator: NSObject, UITextViewDelegate {
         static let shared = LinkTapCoordinator()
@@ -395,9 +342,6 @@ class FeatureChatMessageCell: UITableViewCell {
         messageTextView.isHidden = false
         messageTextView.textContainerInset = UIEdgeInsets(top: 10, left: 8, bottom: 10, right: 8)
         prCardView.isHidden = true
-        clarifyingQuestionsView.reset()
-        clarifyingQuestionsView.isHidden = true
-        onClarifyingAnswerSubmit = nil
         onHeightChanged = nil
         attachmentGridView.reset()
         attachmentGridView.isHidden = true

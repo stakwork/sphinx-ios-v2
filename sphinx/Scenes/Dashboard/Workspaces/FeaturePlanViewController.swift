@@ -272,6 +272,7 @@ class FeaturePlanViewController: UIViewController {
         chatTableView.delegate = self
         chatTableView.dataSource = self
         chatTableView.register(FeatureChatMessageCell.self, forCellReuseIdentifier: "FeatureChatMessageCell")
+        chatTableView.register(ClarifyingQuestionMessageCell.self, forCellReuseIdentifier: "ClarifyingQuestionMessageCell")
         chatTableView.register(HiveProcessingBubbleCell.self, forCellReuseIdentifier: "HiveProcessingBubbleCell")
         chatTableView.rowHeight = UITableView.automaticDimension
         chatTableView.estimatedRowHeight = 200
@@ -1316,10 +1317,9 @@ class FeaturePlanViewController: UIViewController {
                 DispatchQueue.main.async {
                     guard let self = self, let sentMessage = sentMessage else { return }
                     self.newMessageReceived(sentMessage)
-                    // Lock the cell that triggered the submit
-                    if let idx = self.messages.firstIndex(where: { $0.id == replyId }),
-                       let cell = self.chatTableView.cellForRow(at: IndexPath(row: idx, section: 0)) as? FeatureChatMessageCell {
-                        cell.lockClarifyingQuestionsView()
+                    // Reload the CQ cell so it recomputes height with answered state
+                    if let idx = self.messages.firstIndex(where: { $0.id == replyId }) {
+                        self.chatTableView.reloadRows(at: [IndexPath(row: idx, section: 0)], with: .none)
                     }
                 }
             },
@@ -1505,21 +1505,40 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
             return cell
         }
 
+        let message = messages[indexPath.row]
+        let isLast = indexPath.row == messages.count - 1
+
+        if message.artifacts.contains(where: { $0.isClarifyingQuestions }) {
+            guard let cell = tableView.dequeueReusableCell(
+                withIdentifier: "ClarifyingQuestionMessageCell",
+                for: indexPath
+            ) as? ClarifyingQuestionMessageCell else { return UITableViewCell() }
+            let answerMessage = messages.first(where: { $0.replyId == message.id && $0.isUserMessage })
+            cell.configure(with: message, isLastMessage: isLast, answerMessage: answerMessage)
+            cell.onClarifyingAnswerSubmit = { [weak self] answers, replyId in
+                self?.sendClarifyingAnswers(answers: answers, replyId: replyId)
+            }
+            cell.onHeightChanged = { [weak tableView] in
+                UIView.performWithoutAnimation {
+                    tableView?.beginUpdates()
+                    tableView?.endUpdates()
+                }
+            }
+            return cell
+        }
+
         guard let cell = tableView.dequeueReusableCell(
             withIdentifier: "FeatureChatMessageCell",
             for: indexPath
         ) as? FeatureChatMessageCell else {
             return UITableViewCell()
         }
-        let message = messages[indexPath.row]
-        let isLast = indexPath.row == messages.count - 1
         cell.configure(with: message, isLastMessage: isLast)
-        cell.onClarifyingAnswerSubmit = { [weak self] answers, replyId in
-            self?.sendClarifyingAnswers(answers: answers, replyId: replyId)
-        }
         cell.onHeightChanged = { [weak tableView] in
-            tableView?.beginUpdates()
-            tableView?.endUpdates()
+            UIView.performWithoutAnimation {
+                    tableView?.beginUpdates()
+                    tableView?.endUpdates()
+                }
         }
         cell.onAttachmentTap = { [weak self] attachment in
             self?.handleAttachmentTap(attachment)

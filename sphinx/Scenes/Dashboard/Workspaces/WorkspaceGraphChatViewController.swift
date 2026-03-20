@@ -113,6 +113,7 @@ class WorkspaceGraphChatViewController: UIViewController {
         chatTableView.delegate = self
         chatTableView.dataSource = self
         chatTableView.register(FeatureChatMessageCell.self, forCellReuseIdentifier: "FeatureChatMessageCell")
+        chatTableView.register(ClarifyingQuestionMessageCell.self, forCellReuseIdentifier: "ClarifyingQuestionMessageCell")
         chatTableView.register(HiveProcessingBubbleCell.self, forCellReuseIdentifier: "HiveProcessingBubbleCell")
         chatTableView.rowHeight = UITableView.automaticDimension
         chatTableView.estimatedRowHeight = 80
@@ -352,6 +353,55 @@ class WorkspaceGraphChatViewController: UIViewController {
         micButton.tintColor = UIColor.Sphinx.WashedOutReceivedText
     }
 
+    // MARK: - Clarifying Answers
+
+    private func sendClarifyingAnswers(answers: [String], replyId: String) {
+        let joined = answers.joined(separator: "\n\n")
+        let ownerCreatedBy: HiveChatMessageCreatedBy? = ownerAvatarUrl.flatMap { url in
+            HiveChatMessageCreatedBy(json: JSON(["id": "owner", "image": url]))
+        }
+        let userMessage = HiveChatMessage(
+            id: UUID().uuidString,
+            message: joined,
+            role: "USER",
+            createdAt: nowISO(),
+            createdBy: ownerCreatedBy,
+            replyId: replyId
+        )
+        messages.append(userMessage)
+        // Reload the CQ cell so it recomputes height with answered state
+        if let idx = messages.firstIndex(where: { $0.id == replyId }) {
+            chatTableView.reloadRows(at: [IndexPath(row: idx, section: 0)], with: .none)
+        }
+        let userIndexPath = IndexPath(row: messages.count - 1, section: 0)
+        chatTableView.insertRows(at: [userIndexPath], with: .automatic)
+        scrollToBottom()
+
+        // Build payload and stream response
+        let messagesPayload: [[String: String]] = messages.map {
+            ["role": $0.role.lowercased(), "content": $0.message]
+        }
+        let slug = workspace.slug ?? ""
+        isStreaming = true
+        API.sharedInstance.resolveHiveToken(
+            callback: { [weak self] token in
+                guard let self = self else { return }
+                self.sseManager = GraphChatSSEManager()
+                self.sseManager?.delegate = self
+                self.sseManager?.startStream(
+                    messages: messagesPayload,
+                    workspaceSlug: slug,
+                    token: token
+                )
+            },
+            errorCallback: { [weak self] in
+                guard let self = self else { return }
+                self.isStreaming = false
+                self.newBubbleHelper.showGenericMessageView(text: "Authentication failed. Please try again.")
+            }
+        )
+    }
+
     // MARK: - Send
 
     @objc private func sendButtonTouched() {
@@ -587,18 +637,40 @@ extension WorkspaceGraphChatViewController: UITableViewDataSource, UITableViewDe
         }
 
         // Message row
+        let message = messages[indexPath.row]
+        let isLast = indexPath.row == messages.count - 1
+
+        if message.artifacts.contains(where: { $0.isClarifyingQuestions }) {
+            guard let cell = tableView.dequeueReusableCell(
+                withIdentifier: "ClarifyingQuestionMessageCell",
+                for: indexPath
+            ) as? ClarifyingQuestionMessageCell else { return UITableViewCell() }
+            let answerMessage = messages.first(where: { $0.replyId == message.id && $0.isUserMessage })
+            cell.configure(with: message, isLastMessage: isLast, answerMessage: answerMessage)
+            cell.onClarifyingAnswerSubmit = { [weak self] answers, replyId in
+                self?.sendClarifyingAnswers(answers: answers, replyId: replyId)
+            }
+            cell.onHeightChanged = { [weak tableView] in
+                UIView.performWithoutAnimation {
+                    tableView?.beginUpdates()
+                    tableView?.endUpdates()
+                }
+            }
+            return cell
+        }
+
         guard let cell = tableView.dequeueReusableCell(
             withIdentifier: "FeatureChatMessageCell",
             for: indexPath
         ) as? FeatureChatMessageCell else {
             return UITableViewCell()
         }
-        let message = messages[indexPath.row]
-        let isLast = indexPath.row == messages.count - 1
         cell.configure(with: message, isLastMessage: isLast)
         cell.onHeightChanged = { [weak tableView] in
-            tableView?.beginUpdates()
-            tableView?.endUpdates()
+            UIView.performWithoutAnimation {
+                    tableView?.beginUpdates()
+                    tableView?.endUpdates()
+                }
         }
         return cell
     }
