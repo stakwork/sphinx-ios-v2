@@ -390,9 +390,9 @@ final class ClarifyingQuestionsView: UIView {
         for (i, option) in q.options.enumerated() {
             let optionView = makeOptionView(title: option, tag: i)
             optionView.isUserInteractionEnabled = false
-            let normalisedOption = normaliseForComparison(option)
+            let normalisedOption = normaliseDashes(option)
             let isSelected = parsed.selectedOptions.contains {
-                normaliseForComparison($0) == normalisedOption
+                normaliseDashes($0) == normalisedOption
             }
             isSelected ? applySelectedStyle(to: optionView) : applyUnselectedStyle(to: optionView)
             optionsStackView.addArrangedSubview(optionView)
@@ -486,17 +486,11 @@ final class ClarifyingQuestionsView: UIView {
 
     // MARK: - Private: String helpers
 
-    /// Normalises a string for comparison by keeping only alphanumeric characters and spaces,
-    /// collapsing runs of whitespace. This removes any dash/punctuation variant regardless of
-    /// Unicode code point, so "Option — subtitle" and "Option  subtitle" compare equal.
-    private func normaliseForComparison(_ string: String) -> String {
+    /// Strips em-dash and en-dash, collapses whitespace, lowercases — used only for option matching.
+    private func normaliseDashes(_ string: String) -> String {
         return string
-            .unicodeScalars
-            .map { scalar -> Character in
-                let c = Character(scalar)
-                return (c.isLetter || c.isNumber) ? c : " "
-            }
-            .reduce("") { $0 + String($1) }
+            .replacingOccurrences(of: "\u{2014}", with: " ") // em-dash → space
+            .replacingOccurrences(of: "\u{2013}", with: " ") // en-dash → space
             .components(separatedBy: .whitespaces)
             .filter { !$0.isEmpty }
             .joined(separator: " ")
@@ -506,59 +500,74 @@ final class ClarifyingQuestionsView: UIView {
     // MARK: - Private: Parse answered state
 
     private func parseAnswers(from answerText: String, questions: [ClarifyingQuestion]) -> [(selectedOptions: [String], additionalText: String?)] {
-        let blocks = answerText.components(separatedBy: "\n\n")
+        // Split into per-question blocks by detecting "Q: " at the start of a line.
+        // This correctly handles answers whose additional text contains blank lines (\n\n).
+        var blocks: [String] = []
+        var currentLines: [String] = []
+        for line in answerText.components(separatedBy: "\n") {
+            if line.hasPrefix("Q: ") && !currentLines.isEmpty {
+                blocks.append(currentLines.joined(separator: "\n"))
+                currentLines = [line]
+            } else {
+                currentLines.append(line)
+            }
+        }
+        if !currentLines.isEmpty { blocks.append(currentLines.joined(separator: "\n")) }
+
         var result: [(selectedOptions: [String], additionalText: String?)] = []
 
         for (qIndex, block) in blocks.enumerated() {
             guard qIndex < questions.count else { break }
             let question = questions[qIndex]
 
-            // Split on "\nA: " to get answer portion
-            let parts = block.components(separatedBy: "\nA: ")
-            guard parts.count >= 2 else {
+            // Extract answer portion: everything after the first "\nA: "
+            guard let aRange = block.range(of: "\nA: ") else {
                 result.append((selectedOptions: [], additionalText: nil))
                 continue
             }
-            let answerPortion = parts[1].trimmingCharacters(in: .whitespacesAndNewlines)
-            let normAnswer = normaliseForComparison(answerPortion)
+            let answerPortion = String(block[aRange.upperBound...])
+                .trimmingCharacters(in: .whitespacesAndNewlines)
 
-            // Match options by checking whether the full answer contains the normalised option text.
-            // We scan the whole answer string rather than splitting on ", " because option text
-            // itself may contain commas (e.g. "Real-time via WebSocket — connect, same as feature chat").
+            let normAnswer = normaliseDashes(answerPortion)
             var selectedOptions: [String] = []
-            var remainingAnswer = answerPortion
+            var remainingText = answerPortion
 
-            // Sort options longest-first so greedy matching prefers the most specific option.
-            let sortedOptions = question.options.sorted { $0.count > $1.count }
-            for opt in sortedOptions {
-                let normOpt = normaliseForComparison(opt)
-                if normAnswer.contains(normOpt) {
-                    selectedOptions.append(opt)
-                    // Remove the matched portion from remainingAnswer so it isn't treated as extra text
-                    if let range = remainingAnswer.range(of: opt) {
-                        remainingAnswer.removeSubrange(range)
-                    } else {
-                        // Fallback: remove by normalised text (handles dash variants)
-                        let normRemaining = normaliseForComparison(remainingAnswer)
-                        if let r = normRemaining.range(of: normOpt) {
-                            // Map character range back approximately — just clear whole remaining
-                            remainingAnswer = ""
-                        }
-                    }
+            // A dash-neutral marker for 1-to-1 character substitution.
+            // Replacing dashes with a fixed char preserves string length/indices,
+            // so ranges found in the substituted string are valid in the original.
+            let dashMarker = "\u{FFFD}"
+
+            // Sort options longest-first to prefer more-specific matches.
+            for opt in question.options.sorted(by: { $0.count > $1.count }) {
+                let normOpt = normaliseDashes(opt)
+                guard normAnswer.contains(normOpt) else { continue }
+                selectedOptions.append(opt)
+
+                // Remove the matched option from remainingText using a 1-to-1 dash substitution
+                // so that the range found maps directly back to the original string's indices.
+                let markedOpt = opt
+                    .replacingOccurrences(of: "\u{2014}", with: dashMarker)
+                    .replacingOccurrences(of: "\u{2013}", with: dashMarker)
+                let markedRemaining = remainingText
+                    .replacingOccurrences(of: "\u{2014}", with: dashMarker)
+                    .replacingOccurrences(of: "\u{2013}", with: dashMarker)
+
+                if let r = markedRemaining.range(of: markedOpt, options: .caseInsensitive) {
+                    remainingText.removeSubrange(r)
                 }
             }
 
-            // Strip separators from what remains to find any genuine additional text
+            // Clean up separator artefacts around removed options to isolate additional text.
             let additionalText: String? = {
-                let cleaned = remainingAnswer
-                    .replacingOccurrences(of: ", ", with: " ")
-                    .replacingOccurrences(of: ",", with: " ")
-                    .components(separatedBy: .whitespaces)
-                    .filter { !$0.isEmpty }
-                    .joined(separator: " ")
+                var s = remainingText
+                // Strip leading/trailing option separators (", " written between answers)
+                while s.hasPrefix(", ") { s.removeFirst(2) }
+                while s.hasSuffix(", ") { s.removeLast(2) }
+                s = s.trimmingCharacters(in: CharacterSet(charactersIn: " ,"))
                     .trimmingCharacters(in: .whitespacesAndNewlines)
-                return cleaned.isEmpty ? nil : cleaned
+                return s.isEmpty ? nil : s
             }()
+
             result.append((selectedOptions: selectedOptions, additionalText: additionalText))
         }
 
