@@ -113,6 +113,7 @@ class WorkspaceGraphChatViewController: UIViewController {
         chatTableView.delegate = self
         chatTableView.dataSource = self
         chatTableView.register(FeatureChatMessageCell.self, forCellReuseIdentifier: "FeatureChatMessageCell")
+        chatTableView.register(ClarifyingQuestionMessageCell.self, forCellReuseIdentifier: "ClarifyingQuestionMessageCell")
         chatTableView.register(HiveProcessingBubbleCell.self, forCellReuseIdentifier: "HiveProcessingBubbleCell")
         chatTableView.rowHeight = UITableView.automaticDimension
         chatTableView.estimatedRowHeight = 80
@@ -587,14 +588,28 @@ extension WorkspaceGraphChatViewController: UITableViewDataSource, UITableViewDe
         }
 
         // Message row
+        let message = messages[indexPath.row]
+        let isLast = indexPath.row == messages.count - 1
+
+        if message.artifacts.contains(where: { $0.isClarifyingQuestions }) {
+            guard let cell = tableView.dequeueReusableCell(
+                withIdentifier: "ClarifyingQuestionMessageCell",
+                for: indexPath
+            ) as? ClarifyingQuestionMessageCell else { return UITableViewCell() }
+            cell.configure(with: message, isLastMessage: isLast)
+            cell.onHeightChanged = { [weak tableView] in
+                tableView?.beginUpdates()
+                tableView?.endUpdates()
+            }
+            return cell
+        }
+
         guard let cell = tableView.dequeueReusableCell(
             withIdentifier: "FeatureChatMessageCell",
             for: indexPath
         ) as? FeatureChatMessageCell else {
             return UITableViewCell()
         }
-        let message = messages[indexPath.row]
-        let isLast = indexPath.row == messages.count - 1
         cell.configure(with: message, isLastMessage: isLast)
         cell.onHeightChanged = { [weak tableView] in
             tableView?.beginUpdates()

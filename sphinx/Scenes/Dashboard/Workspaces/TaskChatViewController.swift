@@ -243,6 +243,7 @@ class TaskChatViewController: UIViewController {
         chatTableView.dataSource = self
         chatTableView.contentInset = UIEdgeInsets(top: 16, left: 0, bottom: 16, right: 0)
         chatTableView.register(FeatureChatMessageCell.self, forCellReuseIdentifier: "FeatureChatMessageCell")
+        chatTableView.register(ClarifyingQuestionMessageCell.self, forCellReuseIdentifier: "ClarifyingQuestionMessageCell")
         chatTableView.register(HiveProcessingBubbleCell.self, forCellReuseIdentifier: "HiveProcessingBubbleCell")
         chatTableView.rowHeight = UITableView.automaticDimension
         chatTableView.estimatedRowHeight = 200
@@ -684,7 +685,7 @@ class TaskChatViewController: UIViewController {
                     self.newMessageReceived(sentMessage)
                     // Lock the cell that triggered the submit
                     if let idx = self.messages.firstIndex(where: { $0.id == replyId }),
-                       let cell = self.chatTableView.cellForRow(at: IndexPath(row: idx, section: 0)) as? FeatureChatMessageCell {
+                       let cell = self.chatTableView.cellForRow(at: IndexPath(row: idx, section: 0)) as? ClarifyingQuestionMessageCell {
                         cell.lockClarifyingQuestionsView()
                     }
                 }
@@ -972,15 +973,28 @@ extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
             return cell
         }
 
+        let isLast = indexPath.row == messages.count - 1
+        if messages[indexPath.row].artifacts.contains(where: { $0.isClarifyingQuestions }) {
+            guard let cell = tableView.dequeueReusableCell(
+                withIdentifier: "ClarifyingQuestionMessageCell",
+                for: indexPath
+            ) as? ClarifyingQuestionMessageCell else { return UITableViewCell() }
+            cell.configure(with: messages[indexPath.row], isLastMessage: isLast)
+            cell.onClarifyingAnswerSubmit = { [weak self] answers, replyId in
+                self?.sendClarifyingAnswers(answers: answers, replyId: replyId)
+            }
+            cell.onHeightChanged = { [weak tableView] in
+                tableView?.beginUpdates()
+                tableView?.endUpdates()
+            }
+            return cell
+        }
+
         guard let cell = tableView.dequeueReusableCell(
             withIdentifier: "FeatureChatMessageCell",
             for: indexPath
         ) as? FeatureChatMessageCell else { return UITableViewCell() }
-        let isLast = indexPath.row == messages.count - 1
         cell.configure(with: messages[indexPath.row], isLastMessage: isLast)
-        cell.onClarifyingAnswerSubmit = { [weak self] answers, replyId in
-            self?.sendClarifyingAnswers(answers: answers, replyId: replyId)
-        }
         cell.onHeightChanged = { [weak tableView] in
             tableView?.beginUpdates()
             tableView?.endUpdates()

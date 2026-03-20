@@ -928,6 +928,7 @@
 		G7H8I9J0K1L2M3N4O5P6Q7R8 /* WorkspaceTaskTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = H8I9J0K1L2M3N4O5P6Q7R8S9 /* WorkspaceTaskTests.swift */; };
 		I9J0K1L2M3N4O5P6Q7R8S9T0 /* WorkspaceTasksViewControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = J0K1L2M3N4O5P6Q7R8S9T0U1 /* WorkspaceTasksViewControllerTests.swift */; };
 		K1L2M3N4O5P6Q7R8S9T0U1V2 /* CreateFeatureViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = L2M3N4O5P6Q7R8S9T0U1V2W3 /* CreateFeatureViewController.swift */; };
+		CQ1A2B3C4D5E6F7A8B9C0D1E /* ClarifyingQuestionMessageCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = CQ2B3C4D5E6F7A8B9C0D1E2F /* ClarifyingQuestionMessageCell.swift */; };
 		M3N4O5P6Q7R8S9T0U1V2W3X4 /* HiveProcessingBubbleCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = N4O5P6Q7R8S9T0U1V2W3X4Y5 /* HiveProcessingBubbleCell.swift */; };
 		O5P6Q7R8S9T0U1V2W3X4Y5Z6 /* HiveShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = P6Q7R8S9T0U1V2W3X4Y5Z6A7 /* HiveShareViewController.swift */; };
 		P1Q2R3S4T5U6V7W8X9Y0Z1A2 /* PaginationControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = Q2R3S4T5U6V7W8X9Y0Z1A2B3 /* PaginationControlView.swift */; };
@@ -2295,6 +2296,7 @@
 		H8I9J0K1L2M3N4O5P6Q7R8S9 /* WorkspaceTaskTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceTaskTests.swift; sourceTree = "<group>"; };
 		J0K1L2M3N4O5P6Q7R8S9T0U1 /* WorkspaceTasksViewControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceTasksViewControllerTests.swift; sourceTree = "<group>"; };
 		L2M3N4O5P6Q7R8S9T0U1V2W3 /* CreateFeatureViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateFeatureViewController.swift; sourceTree = "<group>"; };
+		CQ2B3C4D5E6F7A8B9C0D1E2F /* ClarifyingQuestionMessageCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClarifyingQuestionMessageCell.swift; sourceTree = "<group>"; };
 		N4O5P6Q7R8S9T0U1V2W3X4Y5 /* HiveProcessingBubbleCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveProcessingBubbleCell.swift; sourceTree = "<group>"; };
 		P6Q7R8S9T0U1V2W3X4Y5Z6A7 /* HiveShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveShareViewController.swift; sourceTree = "<group>"; };
 		Q2R3S4T5U6V7W8X9Y0Z1A2B3 /* PaginationControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaginationControlView.swift; sourceTree = "<group>"; };
@@ -4150,6 +4152,7 @@
 				B2C3D4E5F6A7B8C9D0E1F2A3 /* TaskProgress.swift */,
 				D4E5F6A7B8C9D0E1F2A3B4C5 /* TaskProgressBarView.swift */,
 				L2M3N4O5P6Q7R8S9T0U1V2W3 /* CreateFeatureViewController.swift */,
+				CQ2B3C4D5E6F7A8B9C0D1E2F /* ClarifyingQuestionMessageCell.swift */,
 				N4O5P6Q7R8S9T0U1V2W3X4Y5 /* HiveProcessingBubbleCell.swift */,
 				P6Q7R8S9T0U1V2W3X4Y5Z6A7 /* HiveShareViewController.swift */,
 				Q2R3S4T5U6V7W8X9Y0Z1A2B3 /* PaginationControlView.swift */,
@@ -5596,6 +5599,7 @@
 				A1B2C3D4E5F6A7B8C9D0E1F2 /* TaskProgress.swift in Sources */,
 				C3D4E5F6A7B8C9D0E1F2A3B4 /* TaskProgressBarView.swift in Sources */,
 				K1L2M3N4O5P6Q7R8S9T0U1V2 /* CreateFeatureViewController.swift in Sources */,
+				CQ1A2B3C4D5E6F7A8B9C0D1E /* ClarifyingQuestionMessageCell.swift in Sources */,
 				M3N4O5P6Q7R8S9T0U1V2W3X4 /* HiveProcessingBubbleCell.swift in Sources */,
 				O5P6Q7R8S9T0U1V2W3X4Y5Z6 /* HiveShareViewController.swift in Sources */,
 				47FA72792A30E19300FB4535 /* MessagesPreloaderHelper.swift in Sources */,
