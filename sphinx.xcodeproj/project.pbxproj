@@ -367,6 +367,7 @@
 		477B319223B10FC30081413E /* NewMessageBubbleHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 477B319123B10FC30081413E /* NewMessageBubbleHelper.swift */; };
 		477BCF322A0031060080ED65 /* TransactionTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 477BCF302A0031060080ED65 /* TransactionTableViewCell.swift */; };
 		477BCF3B2A0144C00080ED65 /* CircularDotView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 477BCF3A2A0144C00080ED65 /* CircularDotView.swift */; };
+		A1B2C3D4E5F60002A1B2C3D4 /* SphinxToggleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60001A1B2C3D4 /* SphinxToggleView.swift */; };
 		477BCF3C2A014CC20080ED65 /* TransactionTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 477BCF3E2A014CC20080ED65 /* TransactionTableViewCell.xib */; };
 		477C525028C6307100C24117 /* NotificationsLevelViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 477C524F28C6307100C24117 /* NotificationsLevelViewController.swift */; };
 		477C525228C6358200C24117 /* NotificationLevelTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 477C525128C6358200C24117 /* NotificationLevelTableViewCell.swift */; };
@@ -1583,6 +1584,7 @@
 		477B319123B10FC30081413E /* NewMessageBubbleHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewMessageBubbleHelper.swift; sourceTree = "<group>"; };
 		477BCF302A0031060080ED65 /* TransactionTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionTableViewCell.swift; sourceTree = "<group>"; };
 		477BCF3A2A0144C00080ED65 /* CircularDotView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircularDotView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60001A1B2C3D4 /* SphinxToggleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SphinxToggleView.swift; sourceTree = "<group>"; };
 		477BCF3D2A014CC20080ED65 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/TransactionTableViewCell.xib; sourceTree = "<group>"; };
 		477BCF402A014CC70080ED65 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/TransactionTableViewCell.strings; sourceTree = "<group>"; };
 		477BCF422A014CC80080ED65 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/TransactionTableViewCell.strings; sourceTree = "<group>"; };
@@ -3554,6 +3556,7 @@
 				473633E925559945007405F2 /* LogarithmicSlider.swift */,
 				47341E8328C79A8B00426055 /* CustomAlertController.swift */,
 				477BCF3A2A0144C00080ED65 /* CircularDotView.swift */,
+				A1B2C3D4E5F60001A1B2C3D4 /* SphinxToggleView.swift */,
 			);
 			path = "Custom Classes";
 			sourceTree = "<group>";
@@ -5867,6 +5870,7 @@
 				475BDD32232ACBB900C5BBD6 /* UIFont.swift in Sources */,
 				CEBF0D07297603B0006C1F21 /* TribeTagSelectionCollectionViewCell.swift in Sources */,
 				477BCF3B2A0144C00080ED65 /* CircularDotView.swift in Sources */,
+				A1B2C3D4E5F60002A1B2C3D4 /* SphinxToggleView.swift in Sources */,
 				478B05C4297832FC00A1B254 /* PodcastPlayerController+Payments.swift in Sources */,
 				47651C3523DB4A4F00CBC605 /* TouchUpGestureRecognizer.swift in Sources */,
 				477C57E7234785ED00BB4E04 /* WalletBalanceService.swift in Sources */,

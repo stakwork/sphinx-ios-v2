@@ -2120,6 +2120,65 @@ extension API {
         )
     }
 
+    // MARK: - Update Task Auto-Merge (PATCH /api/tickets/{taskId})
+
+    private func updateTaskAutoMerge(
+        taskId: String,
+        autoMerge: Bool,
+        authToken: String,
+        callback: @escaping EmptyCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        guard let encoded = taskId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+            errorCallback(); return
+        }
+        let urlString = "\(API.kHiveBaseUrl)/tickets/\(encoded)"
+        let body: NSDictionary = ["autoMerge": autoMerge]
+        guard let request = createRequest(urlString, bodyParams: body, method: "PATCH", token: authToken) else {
+            errorCallback(); return
+        }
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 { errorCallback(); return }
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+                if json["success"].bool == true { callback() }
+                else { errorCallback() }
+            case .failure: errorCallback()
+            }
+        }
+    }
+
+    func updateTaskAutoMergeWithAuth(
+        taskId: String,
+        autoMerge: Bool,
+        callback: @escaping EmptyCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let token: String = UserDefaults.Keys.hiveToken.get() {
+            updateTaskAutoMerge(taskId: taskId, autoMerge: autoMerge, authToken: token, callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateAndUpdateTaskAutoMerge(taskId: taskId, autoMerge: autoMerge,
+                        callback: callback, errorCallback: errorCallback)
+                })
+        } else {
+            authenticateAndUpdateTaskAutoMerge(taskId: taskId, autoMerge: autoMerge,
+                callback: callback, errorCallback: errorCallback)
+        }
+    }
+
+    private func authenticateAndUpdateTaskAutoMerge(
+        taskId: String, autoMerge: Bool,
+        callback: @escaping EmptyCallback, errorCallback: @escaping EmptyCallback
+    ) {
+        authenticateWithHive(callback: { [weak self] token in
+            guard let token = token else { errorCallback(); return }
+            UserDefaults.Keys.hiveToken.set(token)
+            self?.updateTaskAutoMerge(taskId: taskId, autoMerge: autoMerge, authToken: token,
+                callback: callback, errorCallback: errorCallback)
+        }, errorCallback: errorCallback)
+    }
+
     // MARK: - Release Pod (POST /api/pool-manager/drop-pod/{workspaceId})
 
     func releasePod(
