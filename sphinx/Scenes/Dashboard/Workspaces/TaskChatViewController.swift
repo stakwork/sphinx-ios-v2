@@ -930,7 +930,9 @@ extension TaskChatViewController: HivePusherDelegate {
         messages.append(message)
         guard message.isDisplayable else { return }
         let indexPath = IndexPath(row: displayMessages.count - 1, section: 0)
-        chatTableView.insertRows(at: [indexPath], with: .automatic)
+        UIView.performWithoutAnimation {
+            chatTableView.insertRows(at: [indexPath], with: .none)
+        }
         // If it's a CQ answer, also reload the CQ cell to show answered state
         if cqMessageIds.contains(message.replyId ?? "") {
             if let displayIdx = displayMessages.firstIndex(where: { $0.id == message.replyId }) {
