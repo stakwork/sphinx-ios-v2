@@ -380,7 +380,9 @@ class WorkspaceGraphChatViewController: UIViewController {
         messages.append(userMessage)
         // Insert the answer row (shown as italic summary text)
         let answerIndexPath = IndexPath(row: displayMessages.count - 1, section: 0)
-        chatTableView.insertRows(at: [answerIndexPath], with: .automatic)
+        UIView.performWithoutAnimation {
+            chatTableView.insertRows(at: [answerIndexPath], with: .none)
+        }
         // Reload the CQ cell so it recomputes height with answered state
         if let displayIdx = displayMessages.firstIndex(where: { $0.id == replyId }) {
             chatTableView.reloadRows(at: [IndexPath(row: displayIdx, section: 0)], with: .none)
