@@ -32,6 +32,7 @@ class FeaturePlanViewController: UIViewController {
             updateAIWorkingState()
         }
     }
+    private var hasAppeared = false
     private var isGeneratingTasks: Bool = false
     private var lastGenerationFailed: Bool = false
     private var anyCableManager: HiveAnyCableManager?
@@ -149,6 +150,12 @@ class FeaturePlanViewController: UIViewController {
         fetchFeatureDetail() // will also call connectAnyCable() once projectId is known
         checkForActiveTaskGeneration()
         fetchChatHistory()
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(appWillEnterForeground),
+            name: UIApplication.willEnterForegroundNotification,
+            object: nil
+        )
         API.sharedInstance.fetchWorkspacesWithAuth(
             callback: { [weak self] workspaces in
                 DispatchQueue.main.async { self?.availableWorkspaces = workspaces }
@@ -159,17 +166,31 @@ class FeaturePlanViewController: UIViewController {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        connectWebSocket()
-    }
-    
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        if isMovingFromParent {
-            HivePusherManager.shared.disconnect()
-            anyCableManager?.disconnect()
+        if hasAppeared {
+            reconnectAndRefresh()
+        } else {
+            hasAppeared = true
+            connectWebSocket()
         }
     }
-    
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        HivePusherManager.shared.disconnect()
+        anyCableManager?.disconnect()
+        anyCableManager = nil
+    }
+
+    @objc private func appWillEnterForeground() {
+        reconnectAndRefresh()
+    }
+
+    private func reconnectAndRefresh() {
+        connectWebSocket()
+        fetchFeatureDetail()
+        fetchChatHistory()
+    }
+
     deinit {
         NotificationCenter.default.removeObserver(self)
     }
