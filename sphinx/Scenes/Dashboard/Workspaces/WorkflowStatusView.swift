@@ -27,7 +27,7 @@ class WorkflowStatusView: UIView {
         let sv = UIStackView()
         sv.axis = .horizontal
         sv.alignment = .center
-        sv.spacing = 8
+        sv.spacing = 4
         sv.translatesAutoresizingMaskIntoConstraints = false
         return sv
     }()
@@ -42,6 +42,13 @@ class WorkflowStatusView: UIView {
         lbl.isHidden = true
         lbl.translatesAutoresizingMaskIntoConstraints = false
         return lbl
+    }()
+    
+    private let circleContainerView: UIView = {
+        let v = UIView()
+        v.translatesAutoresizingMaskIntoConstraints = false
+        v.clipsToBounds = false          // allow ring to overflow
+        return v
     }()
 
     /// Circle indicator (used for PENDING, IN_PROGRESS, COMPLETED)
@@ -133,15 +140,24 @@ class WorkflowStatusView: UIView {
             circleView.widthAnchor.constraint(equalToConstant: 8),
             circleView.heightAnchor.constraint(equalToConstant: 8)
         ])
+        
+        NSLayoutConstraint.activate([
+            circleContainerView.widthAnchor.constraint(equalToConstant: 14),
+            circleContainerView.heightAnchor.constraint(equalToConstant: 14)
+        ])
+        
+        circleContainerView.addSubview(circleView)
+        
+        circleContainerView.centerYAnchor.constraint(equalTo: circleView.centerYAnchor).isActive = true
+        circleContainerView.centerXAnchor.constraint(equalTo: circleView.centerXAnchor).isActive = true
 
-        topRowStack.addArrangedSubview(circleView)
+        topRowStack.addArrangedSubview(circleContainerView)
         topRowStack.addArrangedSubview(iconView)
         topRowStack.addArrangedSubview(statusLabel)
         topRowStack.addArrangedSubview(retryButton)
 
         outerStackView.addArrangedSubview(topRowStack)
         outerStackView.addArrangedSubview(detailLabel)
-        detailLabel.leadingAnchor.constraint(equalTo: circleView.leadingAnchor).isActive = true
 
         retryButton.addTarget(self, action: #selector(retryButtonTapped), for: .touchUpInside)
 
