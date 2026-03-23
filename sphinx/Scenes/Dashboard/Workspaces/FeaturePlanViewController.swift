@@ -36,6 +36,7 @@ class FeaturePlanViewController: UIViewController {
     private var isGeneratingTasks: Bool = false
     private var lastGenerationFailed: Bool = false
     private var anyCableManager: HiveAnyCableManager?
+    private var agentEventsManager: AgentEventsSSEManager?
     /// Snapshot of plan fields as of the last fetch — used to detect changes for sub-tab badges.
     private var planFieldSnapshot: (brief: String?, userStories: [String]?, requirements: String?, architecture: String?) = (nil, nil, nil, nil)
     /// True until the first fetchFeatureDetail response arrives; suppresses false badges on initial load.
@@ -179,6 +180,8 @@ class FeaturePlanViewController: UIViewController {
         HivePusherManager.shared.disconnect()
         anyCableManager?.disconnect()
         anyCableManager = nil
+        agentEventsManager?.stopStream()
+        agentEventsManager = nil
     }
 
     @objc private func appWillEnterForeground() {
@@ -1925,6 +1928,15 @@ extension FeaturePlanViewController: HivePusherDelegate {
     }
     
     func newMessageReceived(_ message: HiveChatMessage) {
+        // STREAM artifact → open agent events SSE for status bar second line
+        if let streamInfo = message.artifacts.first(where: { $0.isStream })?.streamInfo {
+            connectAgentEventsStream(
+                requestId: streamInfo.requestId,
+                eventsToken: streamInfo.eventsToken,
+                baseUrl: streamInfo.baseUrl
+            )
+        }
+
         guard !messages.contains(where: { $0.id == message.id }) else { return }
         // Only hide the processing bubble when an AI (non-user) reply arrives,
         // not when the echo of the sent user message comes back.
@@ -2041,5 +2053,64 @@ extension FeaturePlanViewController: HiveAnyCableDelegate {
         workflowStatusView.setStepDetail(stepText)
         updateStatusViewHeight()
         UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
+    }
+}
+
+// MARK: - Agent Events SSE (second stream for working status bar)
+extension FeaturePlanViewController {
+
+    func connectAgentEventsStream(requestId: String, eventsToken: String, baseUrl: String) {
+        agentEventsManager?.stopStream()
+        agentEventsManager = AgentEventsSSEManager()
+        agentEventsManager?.delegate = self
+        agentEventsManager?.startStream(requestId: requestId, eventsToken: eventsToken, baseUrl: baseUrl)
+    }
+}
+
+extension FeaturePlanViewController: AgentEventsSSEDelegate {
+
+    func agentEventToolCall(toolName: String, input: [String: Any]?) {
+        let display = agentToolDisplayText(toolName: toolName, input: input)
+        workflowStatusView.setStepDetail(display)
+        updateStatusViewHeight()
+        UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
+    }
+
+    func agentEventText(_ text: String) {
+        let truncated = text.count > 60 ? String(text.prefix(60)) + "…" : text
+        workflowStatusView.setStepDetail(truncated)
+        updateStatusViewHeight()
+        UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
+    }
+
+    func agentEventFinish() {
+        agentEventsManager?.stopStream()
+        agentEventsManager = nil
+    }
+
+    func agentEventError(_ message: String) {
+        print("[AgentEventsSSE] FeaturePlan error: \(message)")
+        agentEventsManager?.stopStream()
+        agentEventsManager = nil
+    }
+
+    private func agentToolDisplayText(toolName: String, input: [String: Any]?) -> String {
+        let baseTool = toolName.components(separatedBy: "__").last ?? toolName
+        let icon: String
+        switch baseTool {
+        case "list_concepts":        icon = "📚 Browsing concepts"
+        case "learn_concept":        icon = "📖 Reading documentation"
+        case "recent_commits":       icon = "🔍 Checking recent commits"
+        case "recent_contributions": icon = "👤 Reviewing contributions"
+        case "repo_agent":           icon = "🤖 Deep code analysis"
+        case "search_logs":          icon = "📝 Searching logs"
+        case "web_search":           icon = "🌐 Searching the web"
+        default:                     icon = "⚙️ \(baseTool)"
+        }
+        guard let input = input, let first = input.first else { return icon }
+        let value = String(describing: first.value)
+        let detail = "\(first.key): \(value)"
+        let combined = "\(icon) — \(detail)"
+        return combined.count > 60 ? String(combined.prefix(60)) + "…" : combined
     }
 }
