@@ -27,6 +27,7 @@ class TaskChatViewController: UIViewController {
         messages.filter { $0.isDisplayable }
     }
 
+    private var hasAppeared = false
     private var processingStepText: String? = nil
     private var cachedStakworkProjectId: Int?
     private var anyCableManager: HiveAnyCableManager?
@@ -112,6 +113,12 @@ class TaskChatViewController: UIViewController {
         connectWebSocket()         // connect Pusher immediately with known taskId
         fetchMessages()
         fetchTaskDetailAndConnect() // will call connectAnyCable() once projectId is known
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(appWillEnterForeground),
+            name: UIApplication.willEnterForegroundNotification,
+            object: nil
+        )
         API.sharedInstance.fetchWorkspacesWithAuth(
             callback: { [weak self] workspaces in
                 DispatchQueue.main.async { self?.availableWorkspaces = workspaces }
@@ -123,17 +130,28 @@ class TaskChatViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         view.layoutIfNeeded()   // forces constraint resolution before push transition animates
-        // Always re-point delegate so this VC receives events even if another VC
-        // previously took ownership of the shared Pusher instance.
-        HivePusherManager.shared.delegate = self
+        if hasAppeared {
+            reconnectAndRefresh()
+        } else {
+            hasAppeared = true
+        }
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        if isMovingFromParent {
-            HivePusherManager.shared.disconnect()
-            anyCableManager?.disconnect()
-        }
+        HivePusherManager.shared.disconnect()
+        anyCableManager?.disconnect()
+        anyCableManager = nil
+    }
+
+    @objc private func appWillEnterForeground() {
+        reconnectAndRefresh()
+    }
+
+    private func reconnectAndRefresh() {
+        connectWebSocket()
+        fetchMessages()
+        fetchTaskDetailAndConnect()
     }
 
     deinit {

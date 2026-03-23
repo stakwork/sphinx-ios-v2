@@ -54,36 +54,53 @@ class WorkspaceViewController: PopHandlerViewController {
         setupSearchBar()
         setupSegmentedControls()
         switchToTab(0)
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(appWillEnterForeground),
+            name: UIApplication.willEnterForegroundNotification,
+            object: nil
+        )
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        // Always re-assert delegate (corrects pointer after returning from FeaturePlanVC)
-        HivePusherManager.shared.delegate = self
-        // Only reconnect if the session is gone or pointing at a different workspace
-        if !HivePusherManager.shared.isConnectedToWorkspace(id: workspace.id) {
-            HivePusherManager.shared.connect(workspaceId: workspace.id, workspaceSlug: workspace.slug)
-        }
         if hasAppeared {
-            // Only reload data; never touch visibility — the search overlay (if active)
-            // already covers the tab/content stack, so its isHidden state must not change.
-            if currentTab == 0 {
-                activeFeaturesVC?.loadFeatures()
-            } else if currentTab == 1 {
-                activeTasksVC?.loadTasks()
-            }
-            // currentTab == 2 (Graph Chat): history is in-memory, stream self-manages — no reload needed
-
+            reconnectAndRefresh()
         } else {
             hasAppeared = true
+            HivePusherManager.shared.delegate = self
+            if !HivePusherManager.shared.isConnectedToWorkspace(id: workspace.id) {
+                HivePusherManager.shared.connect(workspaceId: workspace.id, workspaceSlug: workspace.slug)
+            }
         }
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        if isMovingFromParent {
-            HivePusherManager.shared.disconnect()
+        HivePusherManager.shared.disconnect()
+    }
+
+    @objc private func appWillEnterForeground() {
+        reconnectAndRefresh()
+    }
+
+    private func reconnectAndRefresh() {
+        HivePusherManager.shared.delegate = self
+        if !HivePusherManager.shared.isConnectedToWorkspace(id: workspace.id) {
+            HivePusherManager.shared.connect(workspaceId: workspace.id, workspaceSlug: workspace.slug)
         }
+        // Only reload data; never touch visibility — the search overlay (if active)
+        // already covers the tab/content stack, so its isHidden state must not change.
+        if currentTab == 0 {
+            activeFeaturesVC?.loadFeatures()
+        } else if currentTab == 1 {
+            activeTasksVC?.loadTasks()
+        }
+        // currentTab == 2 (Graph Chat): history is in-memory, stream self-manages — no reload needed
     }
 
     private func setupHeader() {
