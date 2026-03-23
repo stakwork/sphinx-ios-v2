@@ -95,6 +95,8 @@ class FeaturePlanViewController: UIViewController {
     private var taskProgressBarView: TaskProgressBarView!
     private var poolStatusLabel: UILabel!
     private var startTasksButton: UIButton!
+    private var tasksGenerateButton: UIButton!
+    private var tasksRetryButton: UIButton!
 
     // Plan Panel Components
     private var planSegmentedControl: CustomSegmentedControl!
@@ -776,6 +778,32 @@ class FeaturePlanViewController: UIViewController {
         startTasksButton.addTarget(self, action: #selector(startTasksButtonTouched), for: .touchUpInside)
         tasksContainerView.addSubview(startTasksButton)
 
+        // Tasks Generate button
+        tasksGenerateButton = UIButton()
+        tasksGenerateButton.translatesAutoresizingMaskIntoConstraints = false
+        tasksGenerateButton.setTitle("GENERATE TASKS", for: .normal)
+        tasksGenerateButton.setTitle("GENERATING TASKS…", for: .disabled)
+        tasksGenerateButton.setTitleColor(.white, for: .normal)
+        tasksGenerateButton.setTitleColor(UIColor.white.withAlphaComponent(0.7), for: .disabled)
+        tasksGenerateButton.titleLabel?.font = UIFont(name: "Roboto-Medium", size: 16)
+        tasksGenerateButton.backgroundColor = UIColor.Sphinx.PrimaryGreen
+        tasksGenerateButton.layer.cornerRadius = 25
+        tasksGenerateButton.isHidden = true
+        tasksGenerateButton.addTarget(self, action: #selector(generateTasksButtonTouched), for: .touchUpInside)
+        tasksContainerView.addSubview(tasksGenerateButton)
+
+        // Tasks Retry button
+        tasksRetryButton = UIButton()
+        tasksRetryButton.translatesAutoresizingMaskIntoConstraints = false
+        tasksRetryButton.setTitle("RETRY", for: .normal)
+        tasksRetryButton.setTitleColor(.white, for: .normal)
+        tasksRetryButton.titleLabel?.font = UIFont(name: "Roboto-Medium", size: 16)
+        tasksRetryButton.backgroundColor = UIColor.Sphinx.SphinxOrange
+        tasksRetryButton.layer.cornerRadius = 25
+        tasksRetryButton.isHidden = true
+        tasksRetryButton.addTarget(self, action: #selector(retryButtonTouched), for: .touchUpInside)
+        tasksContainerView.addSubview(tasksRetryButton)
+
         NSLayoutConstraint.activate([
             tasksContainerView.topAnchor.constraint(equalTo: topSegmentedControl.bottomAnchor),
             tasksContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -804,6 +832,18 @@ class FeaturePlanViewController: UIViewController {
             startTasksButton.trailingAnchor.constraint(equalTo: tasksContainerView.trailingAnchor, constant: -32),
             startTasksButton.bottomAnchor.constraint(equalTo: tasksContainerView.safeAreaLayoutGuide.bottomAnchor, constant: -16),
             startTasksButton.heightAnchor.constraint(equalToConstant: 50),
+
+            // Tasks Generate button — same slot as startTasksButton
+            tasksGenerateButton.leadingAnchor.constraint(equalTo: tasksContainerView.leadingAnchor, constant: 32),
+            tasksGenerateButton.trailingAnchor.constraint(equalTo: tasksContainerView.trailingAnchor, constant: -32),
+            tasksGenerateButton.bottomAnchor.constraint(equalTo: tasksContainerView.safeAreaLayoutGuide.bottomAnchor, constant: -16),
+            tasksGenerateButton.heightAnchor.constraint(equalToConstant: 50),
+
+            // Tasks Retry button — same slot as startTasksButton
+            tasksRetryButton.leadingAnchor.constraint(equalTo: tasksContainerView.leadingAnchor, constant: 32),
+            tasksRetryButton.trailingAnchor.constraint(equalTo: tasksContainerView.trailingAnchor, constant: -32),
+            tasksRetryButton.bottomAnchor.constraint(equalTo: tasksContainerView.safeAreaLayoutGuide.bottomAnchor, constant: -16),
+            tasksRetryButton.heightAnchor.constraint(equalToConstant: 50),
 
             tasksEmptyLabel.centerXAnchor.constraint(equalTo: tasksContainerView.centerXAnchor),
             tasksEmptyLabel.centerYAnchor.constraint(equalTo: tasksContainerView.centerYAnchor)
@@ -1097,27 +1137,50 @@ class FeaturePlanViewController: UIViewController {
         planTextViewBottomToContainer.isActive = false
 
         if hasTasks {
+            // PLAN tab
             generateTasksButton.isHidden = true
             retryButton.isHidden = true
             planTextViewBottomToContainer.isActive = true
+            // TASKS tab — hide generate/retry; startTasksButton driven separately by updateStartTasksButton()
+            tasksGenerateButton.isHidden = true
+            tasksRetryButton.isHidden = true
         } else if isGeneratingTasks {
+            // PLAN tab
             generateTasksButton.isHidden = false
             generateTasksButton.isEnabled = false
             generateTasksButton.alpha = 0.5
             retryButton.isHidden = true
             planTextViewBottomToButton.isActive = true
+            // TASKS tab
+            tasksGenerateButton.isHidden = false
+            tasksGenerateButton.isEnabled = false
+            tasksGenerateButton.alpha = 0.5
+            tasksRetryButton.isHidden = true
+            startTasksButton.isHidden = true
         } else if lastGenerationFailed {
+            // PLAN tab
             generateTasksButton.isHidden = true
             retryButton.isHidden = false
             planTextViewBottomToRetry.isActive = true
+            // TASKS tab
+            tasksGenerateButton.isHidden = true
+            tasksRetryButton.isHidden = false
+            startTasksButton.isHidden = true
         } else {
             let hasArchitecture = !(feature.architecture ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            // PLAN tab
             generateTasksButton.isHidden = !hasArchitecture
             generateTasksButton.isEnabled = hasArchitecture
             generateTasksButton.alpha = 1.0
             retryButton.isHidden = true
             planTextViewBottomToButton.isActive = hasArchitecture
             planTextViewBottomToContainer.isActive = !hasArchitecture
+            // TASKS tab
+            tasksGenerateButton.isHidden = !hasArchitecture
+            tasksGenerateButton.isEnabled = hasArchitecture
+            tasksGenerateButton.alpha = 1.0
+            tasksRetryButton.isHidden = true
+            startTasksButton.isHidden = true
         }
     }
     
