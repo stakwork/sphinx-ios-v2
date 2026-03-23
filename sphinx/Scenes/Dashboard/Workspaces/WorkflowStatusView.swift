@@ -196,22 +196,17 @@ class WorkflowStatusView: UIView {
     /// Whether the second-line detail label is currently visible.
     var hasDetailText: Bool { !detailLabel.isHidden }
 
-    /// Show or hide the second animated line below "Working…".
+    /// Replace the "Working…" label with step text, or restore "Working…" when nil.
     func setStepDetail(_ text: String?) {
-        guard let text = text, status == .IN_PROGRESS else {
+        guard status == .IN_PROGRESS else {
             detailLabel.isHidden = true
             detailLabel.layer.removeAnimation(forKey: "detailPulse")
+            statusLabel.text = "Working…"
             return
         }
-        detailLabel.text = text
-        detailLabel.isHidden = false
-        let anim = CABasicAnimation(keyPath: "opacity")
-        anim.fromValue = 0.6
-        anim.toValue = 1.0
-        anim.duration = 0.8
-        anim.repeatCount = .infinity
-        anim.autoreverses = true
-        detailLabel.layer.add(anim, forKey: "detailPulse")
+        detailLabel.isHidden = true
+        detailLabel.layer.removeAnimation(forKey: "detailPulse")
+        statusLabel.text = text ?? "Working…"
     }
 
     @objc private func retryButtonTapped() {
