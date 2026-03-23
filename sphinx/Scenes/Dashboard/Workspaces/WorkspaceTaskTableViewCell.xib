@@ -18,21 +18,19 @@
     <objects>
         <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner"/>
         <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
-        <tableViewCell contentMode="scaleToFill" indentationWidth="10" rowHeight="140" id="task-cell-01" customClass="WorkspaceTaskTableViewCell" customModule="sphinx" customModuleProvider="target">
+        <tableViewCell contentMode="scaleToFill" selectionStyle="blue" indentationWidth="10" rowHeight="140" id="task-cell-01" customClass="WorkspaceTaskTableViewCell" customModule="sphinx" customModuleProvider="target">
             <rect key="frame" x="0.0" y="0.0" width="393" height="140"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
             <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="task-cell-01" id="content-view-01">
                 <rect key="frame" x="0.0" y="0.0" width="393" height="140"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
-                    <!-- Title label: top-aligned with status pill (both at contentView.top + 12) -->
-                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" verticalContentCompressionResistancePriority="750" text="Task Title" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="2" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="title-lbl-01">
-                        <rect key="frame" x="16" y="12" width="244" height="38"/>
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Task Title" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="2" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="title-lbl-01">
+                        <rect key="frame" x="16" y="11.999999999999998" width="71" height="19.333333333333329"/>
                         <fontDescription key="fontDescription" type="system" weight="medium" pointSize="16"/>
                         <color key="textColor" name="Text"/>
                         <nil key="highlightedColor"/>
                     </label>
-                    <!-- Status badge: top-aligned with title -->
                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="IN_PROGRESS" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="status-badge-01">
                         <rect key="frame" x="277" y="12" width="100" height="20"/>
                         <constraints>
@@ -53,24 +51,22 @@
                         <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <nil key="highlightedColor"/>
                     </label>
-                    <!-- Auto Merge label -->
-                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Auto Merge" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="auto-merge-lbl-01">
-                        <rect key="frame" x="16" y="58" width="80" height="33"/>
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="249" text="Auto Merge" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="auto-merge-lbl-01">
+                        <rect key="frame" x="16" y="39.333333333333343" width="67.333333333333329" height="63.666666666666657"/>
                         <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="13"/>
                         <color key="textColor" name="SecondaryText"/>
                         <nil key="highlightedColor"/>
                     </label>
-                    <!-- Toggle: placed immediately after Auto Merge label, 58×33 pt (1.5× PR pill) -->
                     <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="auto-merge-toggle-01" customClass="SphinxToggleView" customModule="sphinx" customModuleProvider="target">
-                        <rect key="frame" x="104" y="58" width="58" height="33"/>
-                        <constraints>
-                            <constraint firstAttribute="width" constant="58" id="toggle-width-01"/>
-                            <constraint firstAttribute="height" constant="33" id="toggle-height-01"/>
-                        </constraints>
+                        <rect key="frame" x="91.333333333333329" y="60.333333333333343" width="37.999999999999986" height="22"/>
                         <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        <constraints>
+                            <constraint firstAttribute="height" constant="22" id="toggle-height-01"/>
+                            <constraint firstAttribute="width" constant="38" id="toggle-width-01"/>
+                        </constraints>
                     </view>
                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Repository" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="repo-lbl-01">
-                        <rect key="frame" x="16" y="107" width="233.66666666666663" height="16"/>
+                        <rect key="frame" x="16" y="111" width="63" height="16"/>
                         <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="13"/>
                         <color key="textColor" name="SecondaryText"/>
                         <nil key="highlightedColor"/>
@@ -85,30 +81,24 @@
                 </subviews>
                 <color key="backgroundColor" name="Body"/>
                 <constraints>
-                    <!-- Separator pinned to bottom -->
                     <constraint firstItem="sep-view-01" firstAttribute="top" secondItem="repo-lbl-01" secondAttribute="bottom" constant="12" id="0Qw-aZ-bza"/>
+                    <constraint firstItem="auto-merge-lbl-01" firstAttribute="centerY" secondItem="auto-merge-toggle-01" secondAttribute="centerY" id="auto-merge-lbl-cy-01"/>
+                    <constraint firstItem="auto-merge-lbl-01" firstAttribute="leading" secondItem="content-view-01" secondAttribute="leading" constant="16" id="auto-merge-lbl-lead-01"/>
+                    <constraint firstItem="auto-merge-lbl-01" firstAttribute="top" secondItem="title-lbl-01" secondAttribute="bottom" constant="8" id="auto-merge-lbl-top-01"/>
+                    <constraint firstItem="auto-merge-toggle-01" firstAttribute="centerY" secondItem="auto-merge-lbl-01" secondAttribute="centerY" id="auto-merge-toggle-cy-01"/>
+                    <constraint firstItem="auto-merge-toggle-01" firstAttribute="leading" secondItem="auto-merge-lbl-01" secondAttribute="trailing" constant="8" id="auto-merge-toggle-lead-01"/>
                     <constraint firstItem="priority-badge-01" firstAttribute="top" secondItem="status-badge-01" secondAttribute="bottom" constant="8" id="priority-top-01"/>
                     <constraint firstAttribute="trailing" secondItem="priority-badge-01" secondAttribute="trailing" constant="16" id="priority-trail-01"/>
                     <constraint firstItem="repo-lbl-01" firstAttribute="leading" secondItem="content-view-01" secondAttribute="leading" constant="16" id="repo-lead-01"/>
+                    <constraint firstItem="repo-lbl-01" firstAttribute="top" secondItem="auto-merge-lbl-01" secondAttribute="bottom" constant="8" id="repo-top-01"/>
                     <constraint firstAttribute="bottom" secondItem="sep-view-01" secondAttribute="bottom" id="sep-bot-01"/>
                     <constraint firstItem="sep-view-01" firstAttribute="leading" secondItem="content-view-01" secondAttribute="leading" constant="16" id="sep-lead-01"/>
                     <constraint firstAttribute="trailing" secondItem="sep-view-01" secondAttribute="trailing" id="sep-trail-01"/>
-                    <!-- Status badge: greaterThanOrEqual leading so it stays on right, top-aligned with title -->
                     <constraint firstItem="status-badge-01" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="title-lbl-01" secondAttribute="trailing" constant="8" id="status-lead-01"/>
                     <constraint firstItem="status-badge-01" firstAttribute="top" secondItem="content-view-01" secondAttribute="top" constant="12" id="status-top-01"/>
                     <constraint firstAttribute="trailing" secondItem="status-badge-01" secondAttribute="trailing" constant="16" id="status-trail-01"/>
-                    <!-- Title: top-aligned with status pill -->
                     <constraint firstItem="title-lbl-01" firstAttribute="leading" secondItem="content-view-01" secondAttribute="leading" constant="16" id="title-lead-01"/>
                     <constraint firstItem="title-lbl-01" firstAttribute="top" secondItem="content-view-01" secondAttribute="top" constant="12" id="title-top-01"/>
-                    <!-- Auto merge label: top = title.bottom + 8 -->
-                    <constraint firstItem="auto-merge-lbl-01" firstAttribute="top" secondItem="title-lbl-01" secondAttribute="bottom" constant="8" id="auto-merge-lbl-top-01"/>
-                    <constraint firstItem="auto-merge-lbl-01" firstAttribute="leading" secondItem="content-view-01" secondAttribute="leading" constant="16" id="auto-merge-lbl-lead-01"/>
-                    <constraint firstItem="auto-merge-lbl-01" firstAttribute="centerY" secondItem="auto-merge-toggle-01" secondAttribute="centerY" id="auto-merge-lbl-cy-01"/>
-                    <!-- Toggle: leading = autoMergeLabel.trailing + 8, vertically centred with label -->
-                    <constraint firstItem="auto-merge-toggle-01" firstAttribute="leading" secondItem="auto-merge-lbl-01" secondAttribute="trailing" constant="8" id="auto-merge-toggle-lead-01"/>
-                    <constraint firstItem="auto-merge-toggle-01" firstAttribute="centerY" secondItem="auto-merge-lbl-01" secondAttribute="centerY" id="auto-merge-toggle-cy-01"/>
-                    <!-- Repository label: top = autoMergeLabel.bottom + 8 -->
-                    <constraint firstItem="repo-lbl-01" firstAttribute="top" secondItem="auto-merge-lbl-01" secondAttribute="bottom" constant="8" id="repo-top-01"/>
                 </constraints>
             </tableViewCellContentView>
             <connections>
@@ -125,7 +115,7 @@
     </objects>
     <resources>
         <namedColor name="Body">
-            <color red="0.1137254902" green="0.12156862745098039" blue="0.16078431372549021" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+            <color red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>
         <namedColor name="Divider">
             <color red="0.86274509803921573" green="0.8784313725490196" blue="0.8901960784313725" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>

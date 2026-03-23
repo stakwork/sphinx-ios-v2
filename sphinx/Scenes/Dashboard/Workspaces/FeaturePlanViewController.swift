@@ -742,7 +742,7 @@ class FeaturePlanViewController: UIViewController {
         tasksTableView.translatesAutoresizingMaskIntoConstraints = false
         tasksTableView.backgroundColor = UIColor.Sphinx.Body
         tasksTableView.separatorStyle = .none
-        tasksTableView.rowHeight = 140
+        tasksTableView.rowHeight = 125
         tasksTableView.contentInset = UIEdgeInsets(top: 12, left: 0, bottom: 0, right: 0)
         tasksTableView.register(
             WorkspaceTaskTableViewCell.nib,

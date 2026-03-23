@@ -22,10 +22,10 @@ final class SphinxToggleView: UIControl {
     private let trackLayer = CALayer()
     private let thumbLayer = CALayer()
 
-    private let trackW: CGFloat = 58
-    private let trackH: CGFloat = 33
-    private let thumbDiameter: CGFloat = 27
-    private let thumbInset: CGFloat = 3
+    private let trackW: CGFloat = 38
+    private let trackH: CGFloat = 22
+    private let thumbDiameter: CGFloat = 18
+    private let thumbInset: CGFloat = 1
 
     override init(frame: CGRect) { super.init(frame: frame); commonInit() }
     required init?(coder: NSCoder) { super.init(coder: coder); commonInit() }
@@ -85,5 +85,5 @@ final class SphinxToggleView: UIControl {
         updateAppearance(animated: false)
     }
 
-    override var intrinsicContentSize: CGSize { CGSize(width: 58, height: 33) }
+    override var intrinsicContentSize: CGSize { CGSize(width: 38, height: 22) }
 }
