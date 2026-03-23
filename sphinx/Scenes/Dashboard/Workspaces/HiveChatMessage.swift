@@ -55,6 +55,14 @@ struct ClarifyingQuestion {
     let type: String // "single_choice" or "multiple_choice"
 }
 
+// MARK: - Stream Artifact Info
+
+struct StreamArtifactInfo {
+    let requestId: String
+    let eventsToken: String
+    let baseUrl: String
+}
+
 struct HiveChatMessageArtifact {
     let id: String?
     let type: String?
@@ -68,9 +76,12 @@ struct HiveChatMessageArtifact {
     let contentJSON: JSON?
     /// Parsed clarifying questions when type == "PLAN" and tool_use == "ask_clarifying_questions"
     let clarifyingQuestions: [ClarifyingQuestion]?
+    /// Parsed stream info when type == "STREAM"
+    let streamInfo: StreamArtifactInfo?
 
     var isPullRequest: Bool { type == "PULL_REQUEST" }
     var isLongform: Bool { type == "LONGFORM" }
+    var isStream: Bool { type == "STREAM" }
 
     var isClarifyingQuestions: Bool {
         return type == "PLAN" && contentJSON?["tool_use"].string == "ask_clarifying_questions"
@@ -80,7 +91,35 @@ struct HiveChatMessageArtifact {
         self.id   = json["id"].string
         self.type = json["type"].string
 
-        if json["type"].string == "PULL_REQUEST" {
+        if json["type"].string == "STREAM" {
+            self.prContent = nil
+            self.content = nil
+            self.longformContent = nil
+            self.contentJSON = nil
+            self.clarifyingQuestions = nil
+            // Content may be a JSON object or a JSON string that needs decoding
+            let rawContent = json["content"]
+            let contentJSON: JSON
+            if rawContent.type == .string,
+               let str = rawContent.string,
+               let data = str.data(using: .utf8),
+               let parsed = try? JSON(data: data) {
+                contentJSON = parsed
+            } else {
+                contentJSON = rawContent
+            }
+            if let requestId = contentJSON["requestId"].string,
+               let eventsToken = contentJSON["eventsToken"].string,
+               let baseUrl = contentJSON["baseUrl"].string {
+                self.streamInfo = StreamArtifactInfo(
+                    requestId: requestId,
+                    eventsToken: eventsToken,
+                    baseUrl: baseUrl
+                )
+            } else {
+                self.streamInfo = nil
+            }
+        } else if json["type"].string == "PULL_REQUEST" {
             let c = json["content"]
             let progress = c["progress"]
             self.prContent = PRContent(
@@ -103,6 +142,7 @@ struct HiveChatMessageArtifact {
             self.longformContent = nil
             self.contentJSON = nil
             self.clarifyingQuestions = nil
+            self.streamInfo = nil
         } else if json["type"].string == "LONGFORM" {
             let c = json["content"]
             self.longformContent = LongformContent(title: c["title"].string, text: c["text"].string)
@@ -110,6 +150,7 @@ struct HiveChatMessageArtifact {
             self.prContent = nil
             self.contentJSON = nil
             self.clarifyingQuestions = nil
+            self.streamInfo = nil
         } else if json["type"].string == "PLAN" {
             self.prContent = nil
             self.content = nil
@@ -126,12 +167,14 @@ struct HiveChatMessageArtifact {
             } else {
                 self.clarifyingQuestions = nil
             }
+            self.streamInfo = nil
         } else {
             self.prContent = nil
             self.contentJSON = nil
             self.clarifyingQuestions = nil
             self.longformContent = nil
             self.content = json["content"].string
+            self.streamInfo = nil
         }
     }
 }

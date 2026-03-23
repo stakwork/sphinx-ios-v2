@@ -19,6 +19,7 @@ protocol GraphChatSSEDelegate: AnyObject {
     func onFinish()
     func onError(_ text: String)
     func onToolCall(toolName: String, input: [String: Any]?)
+    func onStreamArtifact(requestId: String, eventsToken: String, baseUrl: String)
 }
 
 // MARK: - Manager
@@ -99,6 +100,34 @@ class GraphChatSSEManager: EventHandler {
             case "error":
                 let errorText = json["errorText"].string ?? json["message"].string ?? "An error occurred"
                 self.delegate?.onError(errorText)
+
+            case "message-created", "stream-artifact":
+                // A STREAM artifact has arrived containing agent events connection info.
+                // The artifact is nested: json["artifact"]["content"] or json["content"]
+                let artifactContent = json["artifact"]["content"].exists()
+                    ? json["artifact"]["content"]
+                    : json["content"]
+
+                // Content may be a nested JSON object or a JSON-encoded string
+                let contentJSON: JSON
+                if artifactContent.type == .string,
+                   let str = artifactContent.string,
+                   let data = str.data(using: .utf8),
+                   let parsed = try? JSON(data: data) {
+                    contentJSON = parsed
+                } else {
+                    contentJSON = artifactContent
+                }
+
+                if let requestId = contentJSON["requestId"].string,
+                   let eventsToken = contentJSON["eventsToken"].string,
+                   let baseUrl = contentJSON["baseUrl"].string {
+                    self.delegate?.onStreamArtifact(
+                        requestId: requestId,
+                        eventsToken: eventsToken,
+                        baseUrl: baseUrl
+                    )
+                }
 
             default:
                 break

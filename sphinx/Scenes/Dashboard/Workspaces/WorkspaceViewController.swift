@@ -350,7 +350,13 @@ extension WorkspaceViewController: HivePusherDelegate {
         activeTasksVC?.handlePRStatusChanged(taskId: taskId, prNumber: prNumber, state: state, artifactStatus: artifactStatus, prUrl: prUrl, problemDetails: problemDetails)
     }
     func featureUpdateReceived(featureId: String) {}
-    func newMessageReceived(_ message: HiveChatMessage) {}
+    func newMessageReceived(_ message: HiveChatMessage) {
+        // Forward STREAM artifact messages to the graph chat VC so it can
+        // open the second SSE stream for real-time agent activity.
+        if message.artifacts.contains(where: { $0.isStream }) {
+            activeGraphChatVC?.handleStreamArtifactMessage(message)
+        }
+    }
     func workflowStatusChanged(status: WorkflowStatus) {}
     func taskTitleUpdated(taskId: String, newTitle: String) {}
 }

@@ -32,6 +32,8 @@ class WorkspaceGraphChatViewController: UIViewController {
     }
     private var processingStepText: String? = nil
     private var sseManager: GraphChatSSEManager?
+    /// Second SSE stream for real-time agent events (tool calls, status updates).
+    private var agentEventsManager: AgentEventsSSEManager?
     /// Accumulates all text-delta chunks; committed to `messages` as one bubble on `onFinish`.
     private var streamingBuffer: String = ""
 
@@ -103,11 +105,13 @@ class WorkspaceGraphChatViewController: UIViewController {
         super.viewWillDisappear(animated)
         if isMovingFromParent {
             sseManager?.stopStream()
+            agentEventsManager?.stopStream()
         }
     }
 
     deinit {
         sseManager?.stopStream()
+        agentEventsManager?.stopStream()
         NotificationCenter.default.removeObserver(self)
     }
 
@@ -585,12 +589,19 @@ extension WorkspaceGraphChatViewController: GraphChatSSEDelegate {
         updateProcessingBubble(stepText: display)
     }
 
+    func onStreamArtifact(requestId: String, eventsToken: String, baseUrl: String) {
+        connectAgentEventsStream(requestId: requestId, eventsToken: eventsToken, baseUrl: baseUrl)
+    }
+
     func onToolOutputAvailable() {
         // Keep the processing bubble visible — it will be dismissed in onFinish
         // once the completed assistant message is ready to take its place.
     }
 
     func onFinish() {
+        agentEventsManager?.stopStream()
+        agentEventsManager = nil
+
         guard !streamingBuffer.isEmpty else {
             // Nothing to show — just clean up the bubble if present.
             hideProcessingBubble()
@@ -634,14 +645,81 @@ extension WorkspaceGraphChatViewController: GraphChatSSEDelegate {
         streamingBuffer = ""
         isStreaming = false
         sseManager?.stopStream()
+        agentEventsManager?.stopStream()
+        agentEventsManager = nil
     }
 
     func onError(_ text: String) {
+        agentEventsManager?.stopStream()
+        agentEventsManager = nil
         // Discard any partial buffer — nothing was shown, nothing to remove
         streamingBuffer = ""
         hideProcessingBubble()
         isStreaming = false
         newBubbleHelper.showGenericMessageView(text: text.isEmpty ? "An error occurred. Please try again." : text)
+    }
+}
+
+// MARK: - Agent Events (second SSE stream)
+
+extension WorkspaceGraphChatViewController {
+
+    /// Opens the second SSE connection to `${baseUrl}/events/${requestId}?token=eventsToken`
+    /// for real-time agent activity updates that drive the working status bar.
+    func connectAgentEventsStream(requestId: String, eventsToken: String, baseUrl: String) {
+        agentEventsManager?.stopStream()
+        agentEventsManager = AgentEventsSSEManager()
+        agentEventsManager?.delegate = self
+        agentEventsManager?.startStream(
+            requestId: requestId,
+            eventsToken: eventsToken,
+            baseUrl: baseUrl
+        )
+    }
+
+    /// Called externally when a Pusher new-message delivers a STREAM artifact,
+    /// so the view controller can open the agent events stream.
+    func handleStreamArtifactMessage(_ message: HiveChatMessage) {
+        guard let streamInfo = message.artifacts.first(where: { $0.isStream })?.streamInfo else {
+            return
+        }
+        connectAgentEventsStream(
+            requestId: streamInfo.requestId,
+            eventsToken: streamInfo.eventsToken,
+            baseUrl: streamInfo.baseUrl
+        )
+    }
+}
+
+// MARK: - AgentEventsSSEDelegate
+
+extension WorkspaceGraphChatViewController: AgentEventsSSEDelegate {
+
+    func agentEventToolCall(toolName: String, input: [String: Any]?) {
+        var display = toolDisplayName(toolName)
+        if let input = input, let first = input.first {
+            let value = String(describing: first.value)
+            let detail = "\(first.key): \(value)"
+            let combined = "\(display) — \(detail)"
+            display = combined.count > 60 ? String(combined.prefix(60)) + "…" : combined
+        }
+        updateProcessingBubble(stepText: display)
+    }
+
+    func agentEventText(_ text: String) {
+        // Show as status step text in the processing bubble
+        let truncated = text.count > 60 ? String(text.prefix(60)) + "…" : text
+        updateProcessingBubble(stepText: truncated)
+    }
+
+    func agentEventFinish() {
+        // Agent events stream signals done — keep bubble visible until onFinish
+        // cleans up after the main chat stream completes.
+    }
+
+    func agentEventError(_ message: String) {
+        print("[AgentEventsSSE] Error: \(message)")
+        // Non-fatal — the main chat stream may still complete normally.
     }
 }
 
