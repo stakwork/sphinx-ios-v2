@@ -21,6 +21,8 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
     @IBOutlet weak var statusBadge: UILabel!
     @IBOutlet weak var priorityBadge: UILabel!
     @IBOutlet weak var separatorView: UIView!
+    @IBOutlet weak var autoMergeLabel: UILabel!
+    @IBOutlet weak var autoMergeToggle: SphinxToggleView!
 
     // Programmatic — no longer an @IBOutlet (removed from XIB)
     var updatedAtLabel: UILabel = {
@@ -33,6 +35,7 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
 
     var onPRBadgeTapped: ((URL) -> Void)?
     var onRetryWorkflowTapped: (() -> Void)?
+    var onAutoMergeToggled: ((Bool) -> Void)?
     private(set) var prBadgeButton: UIButton!
     private(set) var haltedWorkflowBadge: UILabel!
     private(set) var retryWorkflowButton: UIButton!
@@ -55,6 +58,10 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
 
         repositoryLabel.textColor = .Sphinx.SecondaryText
         repositoryLabel.font = UIFont(name: "Roboto-Regular", size: 13)
+
+        autoMergeLabel.font = UIFont(name: "Roboto-Regular", size: 13)
+        autoMergeLabel.textColor = .Sphinx.SecondaryText
+        autoMergeToggle.addTarget(self, action: #selector(autoMergeToggleChanged), for: .valueChanged)
 
         updatedAtLabel.textColor = .Sphinx.SecondaryText
         updatedAtLabel.font = UIFont(name: "Roboto-Regular", size: 13)
@@ -157,6 +164,10 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         onRetryWorkflowTapped?()
     }
 
+    @objc private func autoMergeToggleChanged() {
+        onAutoMergeToggled?(autoMergeToggle.isOn)
+    }
+
     @objc private func prBadgeTapped() {
         guard let url = prBadgeURL else { return }
         onPRBadgeTapped?(url)
@@ -209,6 +220,12 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         retryWorkflowButton.isHidden = true
         deploymentPill.isHidden = true
         prBadgeURL = nil
+        onAutoMergeToggled = nil
+
+        // ── Auto-merge toggle ────────────────────────────────────────────
+        autoMergeToggle.isOn      = task.autoMerge
+        autoMergeToggle.isEnabled = task.status == "TODO"
+        autoMergeLabel.alpha      = task.status == "TODO" ? 1.0 : 0.4
 
         // ── Exclusive pill logic: PR wins, then HALTED, then neither ─────
         let prIsMerged = task.prStatus == "MERGED" || task.prStatus == "DONE"

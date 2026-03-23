@@ -742,7 +742,7 @@ class FeaturePlanViewController: UIViewController {
         tasksTableView.translatesAutoresizingMaskIntoConstraints = false
         tasksTableView.backgroundColor = UIColor.Sphinx.Body
         tasksTableView.separatorStyle = .none
-        tasksTableView.rowHeight = 110
+        tasksTableView.rowHeight = 125
         tasksTableView.contentInset = UIEdgeInsets(top: 12, left: 0, bottom: 0, right: 0)
         tasksTableView.register(
             WorkspaceTaskTableViewCell.nib,
@@ -1501,6 +1501,21 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
                 guard let self else { return }
                 let t = self.feature.allTasks[indexPath.row]
                 API.sharedInstance.retryTaskWorkflowWithAuth(taskId: t.id, callback: {}, errorCallback: {})
+            }
+            cell.onAutoMergeToggled = { [weak self] isOn in
+                guard let self else { return }
+                feature.updateTask(task.id) { $0.autoMerge = isOn }
+                API.sharedInstance.updateTaskAutoMergeWithAuth(
+                    taskId: task.id, autoMerge: isOn,
+                    callback: {},
+                    errorCallback: { [weak self] in
+                        guard let self else { return }
+                        feature.updateTask(task.id) { $0.autoMerge = !isOn }
+                        DispatchQueue.main.async {
+                            self.tasksTableView.reloadRows(at: [indexPath], with: .none)
+                        }
+                    }
+                )
             }
             return cell
         }
