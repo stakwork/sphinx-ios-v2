@@ -115,10 +115,16 @@ class WorkflowStatusView: UIView {
         translatesAutoresizingMaskIntoConstraints = false
 
         addSubview(outerStackView)
+        // top/bottom pin the stack so it expands the view when a second line appears.
+        // The bottomAnchor uses .defaultHigh (< required) so the height=0 "hidden" state
+        // from the VC's height constraint can win without an unsatisfiable-constraint warning.
+        let bottomPin = outerStackView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -8)
+        bottomPin.priority = .defaultHigh
         NSLayoutConstraint.activate([
             outerStackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
             outerStackView.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -16),
-            outerStackView.centerYAnchor.constraint(equalTo: centerYAnchor)
+            outerStackView.topAnchor.constraint(equalTo: topAnchor, constant: 8),
+            bottomPin
         ])
 
         // Circle fixed size
