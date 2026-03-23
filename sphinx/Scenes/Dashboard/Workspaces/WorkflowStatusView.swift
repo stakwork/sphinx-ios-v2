@@ -259,13 +259,13 @@ class WorkflowStatusView: UIView {
     }
 
     private func showCircle(color: UIColor) {
-        circleView.isHidden = false
+        circleContainerView.isHidden = false
         circleView.backgroundColor = color
         circleView.layer.cornerRadius = 4
     }
 
     private func hideCircle() {
-        circleView.isHidden = true
+        circleContainerView.isHidden = true
     }
 
     private func showIcon(systemName: String, color: UIColor) {
