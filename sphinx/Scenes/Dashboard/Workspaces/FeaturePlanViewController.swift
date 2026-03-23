@@ -1359,6 +1359,16 @@ class FeaturePlanViewController: UIViewController {
                     }
                     self.chatTableView.reloadData()
                     self.scrollToBottom()
+                    
+                    if let streamInfo = messages.filter({
+                        $0.artifacts.first(where: { $0.isStream })?.streamInfo != nil
+                    }).first?.artifacts.first(where: { $0.isStream })?.streamInfo {
+                        self.connectAgentEventsStream(
+                            requestId: streamInfo.requestId,
+                            eventsToken: streamInfo.eventsToken,
+                            baseUrl: streamInfo.baseUrl
+                        )
+                    }
                 }
             },
             errorCallback: { [weak self] in
