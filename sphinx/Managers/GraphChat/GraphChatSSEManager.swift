@@ -18,6 +18,7 @@ protocol GraphChatSSEDelegate: AnyObject {
     func onToolOutputAvailable()
     func onFinish()
     func onError(_ text: String)
+    func onToolCall(toolName: String, input: [String: Any]?)
 }
 
 // MARK: - Manager
@@ -77,12 +78,17 @@ class GraphChatSSEManager: EventHandler {
             guard let self = self else { return }
             switch type {
             case "text-delta":
-                let delta = json["delta"].stringValue
+                let delta = json["delta"].string ?? json["text"].string ?? ""
                 self.delegate?.onTextDelta(delta)
 
             case "tool-input-available":
                 let toolName = json["toolName"].stringValue
                 self.delegate?.onToolInputAvailable(toolName: toolName)
+
+            case "tool-call":
+                let toolName = json["toolName"].stringValue
+                let input = json["args"].dictionaryObject ?? json["input"].dictionaryObject
+                self.delegate?.onToolCall(toolName: toolName, input: input)
 
             case "tool-output-available", "tool-result":
                 self.delegate?.onToolOutputAvailable()
