@@ -367,7 +367,6 @@
 		477B319223B10FC30081413E /* NewMessageBubbleHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 477B319123B10FC30081413E /* NewMessageBubbleHelper.swift */; };
 		477BCF322A0031060080ED65 /* TransactionTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 477BCF302A0031060080ED65 /* TransactionTableViewCell.swift */; };
 		477BCF3B2A0144C00080ED65 /* CircularDotView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 477BCF3A2A0144C00080ED65 /* CircularDotView.swift */; };
-		A1B2C3D4E5F60002A1B2C3D4 /* SphinxToggleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60001A1B2C3D4 /* SphinxToggleView.swift */; };
 		477BCF3C2A014CC20080ED65 /* TransactionTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 477BCF3E2A014CC20080ED65 /* TransactionTableViewCell.xib */; };
 		477C525028C6307100C24117 /* NotificationsLevelViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 477C524F28C6307100C24117 /* NotificationsLevelViewController.swift */; };
 		477C525228C6358200C24117 /* NotificationLevelTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 477C525128C6358200C24117 /* NotificationLevelTableViewCell.swift */; };
@@ -669,6 +668,7 @@
 		93D7B5472BAE0FEA007C53A9 /* AddTagsButtonCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93D7B5462BAE0FEA007C53A9 /* AddTagsButtonCell.swift */; };
 		93FCEA782B91AF3B0069B344 /* DashboardUITest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93FCEA772B91AF3B0069B344 /* DashboardUITest.swift */; };
 		A1B2C3D4E5F60001I9J0K1L2 /* HiveLinkNavigator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F60002I9J0K1L2M3 /* HiveLinkNavigator.swift */; };
+		A1B2C3D4E5F60002A1B2C3D4 /* SphinxToggleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60001A1B2C3D4 /* SphinxToggleView.swift */; };
 		A1B2C3D4E5F601020304050B /* PendingAttachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F601020304050A /* PendingAttachment.swift */; };
 		A1B2C3D4E5F601020304050D /* PendingAttachmentsBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F601020304050C /* PendingAttachmentsBarView.swift */; };
 		A1B2C3D4E5F601020304050F /* SpeechTranscriptionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F601020304050E /* SpeechTranscriptionManager.swift */; };
@@ -1584,7 +1584,6 @@
 		477B319123B10FC30081413E /* NewMessageBubbleHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewMessageBubbleHelper.swift; sourceTree = "<group>"; };
 		477BCF302A0031060080ED65 /* TransactionTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionTableViewCell.swift; sourceTree = "<group>"; };
 		477BCF3A2A0144C00080ED65 /* CircularDotView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircularDotView.swift; sourceTree = "<group>"; };
-		A1B2C3D4E5F60001A1B2C3D4 /* SphinxToggleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SphinxToggleView.swift; sourceTree = "<group>"; };
 		477BCF3D2A014CC20080ED65 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/TransactionTableViewCell.xib; sourceTree = "<group>"; };
 		477BCF402A014CC70080ED65 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/TransactionTableViewCell.strings; sourceTree = "<group>"; };
 		477BCF422A014CC80080ED65 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/TransactionTableViewCell.strings; sourceTree = "<group>"; };
@@ -1980,6 +1979,7 @@
 		9B5504520C1B4722A0EBFA00 /* HiveFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveFeatureTests.swift; sourceTree = "<group>"; };
 		9BF56C5719164A1E858E15AA /* WorkspaceFeaturesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceFeaturesViewController.swift; sourceTree = "<group>"; };
 		9F4B101D1E0946E1A2ED0FCA /* HiveChatMessageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveChatMessageTests.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60001A1B2C3D4 /* SphinxToggleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SphinxToggleView.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F601020304050A /* PendingAttachment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingAttachment.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F601020304050C /* PendingAttachmentsBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingAttachmentsBarView.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F601020304050E /* SpeechTranscriptionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechTranscriptionManager.swift; sourceTree = "<group>"; };
@@ -7130,7 +7130,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sphinx/sphinx.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 264;
+				CURRENT_PROJECT_VERSION = 266;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 8297M44YTW;
 				ENABLE_BITCODE = NO;
@@ -7220,7 +7220,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sphinx/sphinx.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 264;
+				CURRENT_PROJECT_VERSION = 266;
 				DEVELOPMENT_TEAM = 8297M44YTW;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
