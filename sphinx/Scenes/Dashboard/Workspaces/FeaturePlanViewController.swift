@@ -1244,14 +1244,19 @@ class FeaturePlanViewController: UIViewController {
         applyWorkflowStatus(status)
     }
 
+    private func updateStatusViewHeight() {
+        workflowStatusHeightConstraint.constant = workflowStatusView.hasDetailText ? 48 : 32
+    }
+
     private func applyWorkflowStatus(_ status: WorkflowStatus) {
         workflowStatusView.status = status
         switch status {
         case .IN_PROGRESS, .PENDING, .HALTED:
-            workflowStatusHeightConstraint.constant = 32
+            updateStatusViewHeight()
             workflowStatusView.show(animated: true)
             UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
         case .COMPLETED, .ERROR, .FAILED:
+            workflowStatusView.setStepDetail(nil)
             workflowStatusHeightConstraint.constant = 0
             workflowStatusView.hide(animated: true)
             UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
@@ -2033,5 +2038,8 @@ extension FeaturePlanViewController: HivePusherDelegate {
 extension FeaturePlanViewController: HiveAnyCableDelegate {
     func workflowStepTextReceived(stepText: String) {
         updateProcessingBubble(stepText: stepText)
+        workflowStatusView.setStepDetail(stepText)
+        updateStatusViewHeight()
+        UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
     }
 }
