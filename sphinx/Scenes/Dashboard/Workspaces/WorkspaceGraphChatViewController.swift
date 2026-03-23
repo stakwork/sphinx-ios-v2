@@ -574,6 +574,17 @@ extension WorkspaceGraphChatViewController: GraphChatSSEDelegate {
         }
     }
 
+    func onToolCall(toolName: String, input: [String: Any]?) {
+        var display = toolDisplayName(toolName)
+        if let input = input, let first = input.first {
+            let value = String(describing: first.value)
+            let detail = "\(first.key): \(value)"
+            let combined = "\(display) — \(detail)"
+            display = combined.count > 60 ? String(combined.prefix(60)) + "…" : combined
+        }
+        updateProcessingBubble(stepText: display)
+    }
+
     func onToolOutputAvailable() {
         // Keep the processing bubble visible — it will be dismissed in onFinish
         // once the completed assistant message is ready to take its place.
