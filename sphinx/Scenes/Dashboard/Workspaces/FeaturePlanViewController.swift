@@ -2034,8 +2034,11 @@ extension FeaturePlanViewController: AgentEventsSSEDelegate {
     }
 
     func agentEventText(_ text: String) {
-        let truncated = text.count > 60 ? String(text.prefix(60)) + "…" : text
-        workflowStatusView.setStepDetail(truncated)
+        let sanitised = text
+            .replacingOccurrences(of: "\r\n", with: " ")
+            .replacingOccurrences(of: "\n", with: " ")
+            .replacingOccurrences(of: "\r", with: " ")
+        workflowStatusView.setStepDetail(sanitised)
         updateStatusViewHeight()
         UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
     }
@@ -2066,8 +2069,11 @@ extension FeaturePlanViewController: AgentEventsSSEDelegate {
         }
         guard let input = input, let first = input.first else { return icon }
         let value = String(describing: first.value)
+            .replacingOccurrences(of: "\r\n", with: " ")
+            .replacingOccurrences(of: "\n", with: " ")
+            .replacingOccurrences(of: "\r", with: " ")
         let detail = "\(first.key): \(value)"
         let combined = "\(icon) — \(detail)"
-        return combined.count > 60 ? String(combined.prefix(60)) + "…" : combined
+        return combined
     }
 }

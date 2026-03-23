@@ -38,6 +38,7 @@ class WorkflowStatusView: UIView {
         lbl.font = UIFont(name: "Roboto-Regular", size: 11) ?? UIFont.systemFont(ofSize: 11)
         lbl.textColor = UIColor.Sphinx.SecondaryText
         lbl.numberOfLines = 1
+        lbl.lineBreakMode = .byTruncatingTail
         lbl.isHidden = true
         lbl.translatesAutoresizingMaskIntoConstraints = false
         return lbl
@@ -140,6 +141,7 @@ class WorkflowStatusView: UIView {
 
         outerStackView.addArrangedSubview(topRowStack)
         outerStackView.addArrangedSubview(detailLabel)
+        detailLabel.leadingAnchor.constraint(equalTo: circleView.leadingAnchor).isActive = true
 
         retryButton.addTarget(self, action: #selector(retryButtonTapped), for: .touchUpInside)
 
