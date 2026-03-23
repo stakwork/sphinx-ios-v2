@@ -25,7 +25,6 @@ class FeaturePlanViewController: UIViewController {
         messages.filter { $0.isDisplayable }
     }
 
-    private var processingStepText: String? = nil
     private var cachedStakworkProjectId: Int?
     private var isAIWorking: Bool = false {
         didSet {
@@ -308,7 +307,6 @@ class FeaturePlanViewController: UIViewController {
         chatTableView.dataSource = self
         chatTableView.register(FeatureChatMessageCell.self, forCellReuseIdentifier: "FeatureChatMessageCell")
         chatTableView.register(ClarifyingQuestionMessageCell.self, forCellReuseIdentifier: "ClarifyingQuestionMessageCell")
-        chatTableView.register(HiveProcessingBubbleCell.self, forCellReuseIdentifier: "HiveProcessingBubbleCell")
         chatTableView.rowHeight = UITableView.automaticDimension
         chatTableView.estimatedRowHeight = 200
         chatTableView.contentInset = UIEdgeInsets(top: 16, left: 0, bottom: 16, right: 0)
@@ -1263,7 +1261,6 @@ class FeaturePlanViewController: UIViewController {
             workflowStatusHeightConstraint.constant = 0
             workflowStatusView.hide(animated: true)
             UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
-            hideProcessingBubble()
         }
         isAIWorking = (status == .IN_PROGRESS)
     }
@@ -1453,30 +1450,6 @@ class FeaturePlanViewController: UIViewController {
         anyCableManager?.connect(projectId: projectId)
     }
     
-    // MARK: - Processing Bubble
-
-    private func hideProcessingBubble() {
-        guard processingStepText != nil else { return }
-        let indexPath = IndexPath(row: displayMessages.count, section: 0)
-        processingStepText = nil
-        chatTableView.deleteRows(at: [indexPath], with: .automatic)
-    }
-
-    /// Shows the bubble if not yet visible, or updates its text if already shown.
-    /// Called only when a real socket event (on_step_start / on_step_complete) arrives.
-    private func updateProcessingBubble(stepText: String) {
-        if processingStepText == nil {
-            processingStepText = stepText
-            let indexPath = IndexPath(row: displayMessages.count, section: 0)
-            chatTableView.insertRows(at: [indexPath], with: .automatic)
-            scrollToBottom()
-        } else {
-            processingStepText = stepText
-            let indexPath = IndexPath(row: displayMessages.count, section: 0)
-            chatTableView.reloadRows(at: [indexPath], with: .none)
-        }
-    }
-
     // MARK: - Input Bar Sizing Helpers
 
     private func singleLineTextViewHeight() -> CGFloat {
@@ -1515,7 +1488,7 @@ class FeaturePlanViewController: UIViewController {
 
     // MARK: - Helper Methods
     private func scrollToBottom() {
-        let totalRows = displayMessages.count + (processingStepText != nil ? 1 : 0)
+        let totalRows = displayMessages.count
         guard totalRows > 0 else { return }
         let lastIndexPath = IndexPath(row: totalRows - 1, section: 0)
         chatTableView.scrollToRow(at: lastIndexPath, at: .bottom, animated: true)
@@ -1573,7 +1546,7 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
         if tableView === tasksTableView {
             return feature.allTasks.count
         }
-        return displayMessages.count + (processingStepText != nil ? 1 : 0)
+        return displayMessages.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -1609,15 +1582,6 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
                     }
                 )
             }
-            return cell
-        }
-
-        if processingStepText != nil && indexPath.row == displayMessages.count {
-            let cell = tableView.dequeueReusableCell(
-                withIdentifier: "HiveProcessingBubbleCell",
-                for: indexPath
-            ) as! HiveProcessingBubbleCell
-            cell.configure(stepText: processingStepText ?? "Communicating with workflow")
             return cell
         }
 
@@ -1938,11 +1902,6 @@ extension FeaturePlanViewController: HivePusherDelegate {
         }
 
         guard !messages.contains(where: { $0.id == message.id }) else { return }
-        // Only hide the processing bubble when an AI (non-user) reply arrives,
-        // not when the echo of the sent user message comes back.
-        if !message.isUserMessage {
-            hideProcessingBubble()
-        }
         messages.append(message)
         guard message.isDisplayable else { return }
         let indexPath = IndexPath(row: displayMessages.count - 1, section: 0)
@@ -2049,7 +2008,6 @@ extension FeaturePlanViewController: HivePusherDelegate {
 // MARK: - HiveAnyCableDelegate
 extension FeaturePlanViewController: HiveAnyCableDelegate {
     func workflowStepTextReceived(stepText: String) {
-        updateProcessingBubble(stepText: stepText)
         workflowStatusView.setStepDetail(stepText)
         updateStatusViewHeight()
         UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
