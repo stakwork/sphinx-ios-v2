@@ -12,13 +12,35 @@ class WorkflowStatusView: UIView {
 
     // MARK: - Subviews
 
-    private let stackView: UIStackView = {
+    /// Outer vertical stack (topRowStack + detailLabel)
+    private let outerStackView: UIStackView = {
+        let sv = UIStackView()
+        sv.axis = .vertical
+        sv.alignment = .leading
+        sv.spacing = 2
+        sv.translatesAutoresizingMaskIntoConstraints = false
+        return sv
+    }()
+
+    /// Top row: circle / icon / label / retry
+    private let topRowStack: UIStackView = {
         let sv = UIStackView()
         sv.axis = .horizontal
         sv.alignment = .center
         sv.spacing = 8
         sv.translatesAutoresizingMaskIntoConstraints = false
         return sv
+    }()
+
+    /// Second line — real-time agent activity detail
+    private let detailLabel: UILabel = {
+        let lbl = UILabel()
+        lbl.font = UIFont(name: "Roboto-Regular", size: 11) ?? UIFont.systemFont(ofSize: 11)
+        lbl.textColor = UIColor.Sphinx.SecondaryText
+        lbl.numberOfLines = 1
+        lbl.isHidden = true
+        lbl.translatesAutoresizingMaskIntoConstraints = false
+        return lbl
     }()
 
     /// Circle indicator (used for PENDING, IN_PROGRESS, COMPLETED)
@@ -92,11 +114,11 @@ class WorkflowStatusView: UIView {
         backgroundColor = .clear
         translatesAutoresizingMaskIntoConstraints = false
 
-        addSubview(stackView)
+        addSubview(outerStackView)
         NSLayoutConstraint.activate([
-            stackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
-            stackView.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -16),
-            stackView.centerYAnchor.constraint(equalTo: centerYAnchor)
+            outerStackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+            outerStackView.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -16),
+            outerStackView.centerYAnchor.constraint(equalTo: centerYAnchor)
         ])
 
         // Circle fixed size
@@ -105,10 +127,13 @@ class WorkflowStatusView: UIView {
             circleView.heightAnchor.constraint(equalToConstant: 8)
         ])
 
-        stackView.addArrangedSubview(circleView)
-        stackView.addArrangedSubview(iconView)
-        stackView.addArrangedSubview(statusLabel)
-        stackView.addArrangedSubview(retryButton)
+        topRowStack.addArrangedSubview(circleView)
+        topRowStack.addArrangedSubview(iconView)
+        topRowStack.addArrangedSubview(statusLabel)
+        topRowStack.addArrangedSubview(retryButton)
+
+        outerStackView.addArrangedSubview(topRowStack)
+        outerStackView.addArrangedSubview(detailLabel)
 
         retryButton.addTarget(self, action: #selector(retryButtonTapped), for: .touchUpInside)
 
@@ -127,6 +152,7 @@ class WorkflowStatusView: UIView {
             hideCircle()
             hideIcon()
             statusLabel.isHidden = true
+            setStepDetail(nil)
 
         case .IN_PROGRESS:
             showCircle(color: UIColor.Sphinx.PrimaryBlue)
@@ -140,25 +166,52 @@ class WorkflowStatusView: UIView {
             hideIcon()
             statusLabel.text = nil
             statusLabel.isHidden = true
+            setStepDetail(nil)
 
         case .ERROR:
             hideCircle()
             showIcon(systemName: "exclamationmark.circle.fill", color: UIColor.Sphinx.SphinxOrange)
             statusLabel.text = "Error"
             statusLabel.isHidden = false
+            setStepDetail(nil)
 
         case .HALTED:
             hideCircle()
             showIcon(systemName: "pause.circle.fill", color: UIColor.Sphinx.SphinxOrange)
             statusLabel.text = "Halted"
             statusLabel.isHidden = false
+            setStepDetail(nil)
 
         case .FAILED:
             hideCircle()
             showIcon(systemName: "xmark.circle.fill", color: UIColor.Sphinx.SphinxOrange)
             statusLabel.text = "Failed"
             statusLabel.isHidden = false
+            setStepDetail(nil)
         }
+    }
+
+    // MARK: - Detail Text
+
+    /// Whether the second-line detail label is currently visible.
+    var hasDetailText: Bool { !detailLabel.isHidden }
+
+    /// Show or hide the second animated line below "Working…".
+    func setStepDetail(_ text: String?) {
+        guard let text = text, status == .IN_PROGRESS else {
+            detailLabel.isHidden = true
+            detailLabel.layer.removeAnimation(forKey: "detailPulse")
+            return
+        }
+        detailLabel.text = text
+        detailLabel.isHidden = false
+        let anim = CABasicAnimation(keyPath: "opacity")
+        anim.fromValue = 0.6
+        anim.toValue = 1.0
+        anim.duration = 0.8
+        anim.repeatCount = .infinity
+        anim.autoreverses = true
+        detailLabel.layer.add(anim, forKey: "detailPulse")
     }
 
     @objc private func retryButtonTapped() {

@@ -872,11 +872,15 @@ class TaskChatViewController: UIViewController {
     }
 
     // MARK: - Workflow Status
+    private func updateStatusViewHeight() {
+        workflowStatusHeightConstraint.constant = workflowStatusView.hasDetailText ? 48 : 32
+    }
+
     private func applyWorkflowStatus(_ status: WorkflowStatus, animated: Bool = true) {
         workflowStatusView.status = status
         switch status {
         case .IN_PROGRESS, .HALTED:
-            workflowStatusHeightConstraint.constant = 32
+            updateStatusViewHeight()
             workflowStatusView.show(animated: animated)
             if animated {
                 UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
@@ -885,6 +889,7 @@ class TaskChatViewController: UIViewController {
             }
             setInputEnabled(false)
         case .PENDING, .COMPLETED, .ERROR, .FAILED:
+            workflowStatusView.setStepDetail(nil)
             workflowStatusHeightConstraint.constant = 0
             workflowStatusView.hide(animated: animated)
             if animated {
@@ -991,6 +996,9 @@ extension TaskChatViewController: HivePusherDelegate {
 extension TaskChatViewController: HiveAnyCableDelegate {
     func workflowStepTextReceived(stepText: String) {
         updateProcessingBubble(stepText: stepText)
+        workflowStatusView.setStepDetail(stepText)
+        updateStatusViewHeight()
+        UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
     }
 }
 
