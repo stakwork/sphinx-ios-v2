@@ -134,6 +134,7 @@ class TaskChatViewController: UIViewController {
             reconnectAndRefresh()
         } else {
             hasAppeared = true
+            connectWebSocket()
         }
     }
 
