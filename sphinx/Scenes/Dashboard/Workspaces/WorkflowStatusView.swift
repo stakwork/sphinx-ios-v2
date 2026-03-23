@@ -158,7 +158,7 @@ class WorkflowStatusView: UIView {
             hideCircle()
             hideIcon()
             statusLabel.isHidden = true
-            setStepDetail(nil)
+            clearDetailLabel()
 
         case .IN_PROGRESS:
             showCircle(color: UIColor.Sphinx.PrimaryBlue)
@@ -172,41 +172,56 @@ class WorkflowStatusView: UIView {
             hideIcon()
             statusLabel.text = nil
             statusLabel.isHidden = true
-            setStepDetail(nil)
+            clearDetailLabel()
 
         case .ERROR:
             hideCircle()
             showIcon(systemName: "exclamationmark.circle.fill", color: UIColor.Sphinx.SphinxOrange)
             statusLabel.text = "Error"
             statusLabel.isHidden = false
-            setStepDetail(nil)
+            clearDetailLabel()
 
         case .HALTED:
             hideCircle()
             showIcon(systemName: "pause.circle.fill", color: UIColor.Sphinx.SphinxOrange)
             statusLabel.text = "Halted"
             statusLabel.isHidden = false
-            setStepDetail(nil)
+            clearDetailLabel()
 
         case .FAILED:
             hideCircle()
             showIcon(systemName: "xmark.circle.fill", color: UIColor.Sphinx.SphinxOrange)
             statusLabel.text = "Failed"
             statusLabel.isHidden = false
-            setStepDetail(nil)
+            clearDetailLabel()
         }
     }
 
-    // MARK: - Detail Text
+    // MARK: - Status / Detail Text
 
     /// Whether the second-line detail label is currently visible.
     var hasDetailText: Bool { !detailLabel.isHidden }
 
-    /// Show or hide the second line below "Working…".
-    /// `statusLabel` always stays as "Working…"; only `detailLabel` is updated.
+    /// Unconditionally hides and clears the detail label (used on terminal states).
+    private func clearDetailLabel() {
+        detailLabel.isHidden = true
+        detailLabel.text = nil
+        detailLabel.layer.removeAnimation(forKey: "detailPulse")
+    }
+
+    /// Update the first-line status label (e.g. from `workflowStepTextReceived`).
+    /// Falls back to "Working…" when `text` is nil. Only effective while IN_PROGRESS.
+    func setStatusText(_ text: String?) {
+        guard status == .IN_PROGRESS else { return }
+        statusLabel.text = text ?? "Working…"
+    }
+
+    /// Show real-time agent activity on the second line below the status label.
+    /// Only shown while IN_PROGRESS; passing nil hides the label and clears its text.
     func setStepDetail(_ text: String?) {
         guard let text = text, status == .IN_PROGRESS else {
             detailLabel.isHidden = true
+            detailLabel.text = nil
             detailLabel.layer.removeAnimation(forKey: "detailPulse")
             return
         }

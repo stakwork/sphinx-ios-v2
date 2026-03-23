@@ -975,8 +975,7 @@ extension TaskChatViewController: HivePusherDelegate {
 // MARK: - HiveAnyCableDelegate
 extension TaskChatViewController: HiveAnyCableDelegate {
     func workflowStepTextReceived(stepText: String) {
-        workflowStatusView.setStepDetail(stepText)
-        updateStatusViewHeight()
+        workflowStatusView.setStatusText(stepText)
         UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
     }
 }
