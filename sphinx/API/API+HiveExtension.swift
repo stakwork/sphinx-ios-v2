@@ -28,6 +28,7 @@ typealias HiveSearchResultsCallback = ((HiveSearchResults) -> ())
 typealias HiveReleasePodCallback = (() -> ())
 typealias HivePoolStatusCallback = ((_ queuedCount: Int, _ unusedVms: Int) -> ())
 typealias HiveCallLinkCallback = ((String) -> ())
+typealias HivePoolWorkspacesCallback = ((_ pods: [WorkspacePod], _ hasWarning: Bool) -> ())
 typealias HiveRepositoriesCallback = (([WorkspaceRepository]) -> ())
 typealias HiveBranchesCallback = (([WorkspaceBranch]) -> ())
 typealias HiveWorkspaceMembersCallback = (([WorkspaceMember]) -> ())
@@ -2575,6 +2576,87 @@ extension API {
                 errorCallback: errorCallback
             )
         }
+    }
+
+    // MARK: - Pool Workspaces
+
+    func fetchPoolWorkspaces(
+        workspaceSlug: String,
+        authToken: String,
+        callback: @escaping HivePoolWorkspacesCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        guard let encodedSlug = workspaceSlug.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+            errorCallback(); return
+        }
+        let urlString = "https://hive.sphinx.chat/api/w/\(encodedSlug)/pool/workspaces"
+        guard let request = createRequest(urlString, bodyParams: nil, method: "GET", token: authToken) else {
+            errorCallback(); return
+        }
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                errorCallback(); return
+            }
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+                guard json["success"].bool == true else {
+                    errorCallback(); return
+                }
+                let hasWarning = json["warning"].string != nil
+                let pods: [WorkspacePod] = json["data"]["workspaces"].arrayValue.compactMap { WorkspacePod(json: $0) }
+                callback(pods, hasWarning)
+            case .failure:
+                errorCallback()
+            }
+        }
+    }
+
+    func fetchPoolWorkspacesWithAuth(
+        workspaceSlug: String,
+        callback: @escaping HivePoolWorkspacesCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
+            fetchPoolWorkspaces(
+                workspaceSlug: workspaceSlug,
+                authToken: storedToken,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateAndFetchPoolWorkspaces(
+                        workspaceSlug: workspaceSlug,
+                        callback: callback,
+                        errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateAndFetchPoolWorkspaces(
+                workspaceSlug: workspaceSlug,
+                callback: callback,
+                errorCallback: errorCallback
+            )
+        }
+    }
+
+    private func authenticateAndFetchPoolWorkspaces(
+        workspaceSlug: String,
+        callback: @escaping HivePoolWorkspacesCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback(); return }
+                UserDefaults.Keys.hiveToken.set(token)
+                self?.fetchPoolWorkspaces(
+                    workspaceSlug: workspaceSlug,
+                    authToken: token,
+                    callback: callback,
+                    errorCallback: errorCallback
+                )
+            },
+            errorCallback: errorCallback
+        )
     }
 
     // MARK: - Tribe Call Link
