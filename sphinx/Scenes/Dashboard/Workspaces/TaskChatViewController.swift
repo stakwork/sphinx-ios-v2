@@ -34,6 +34,7 @@ class TaskChatViewController: UIViewController {
 
     // MARK: - Header
     private var headerView: UIView!
+    private var headerStackView: UIStackView!
     private var backButton: UIButton!
     private var titleLabel: UILabel!
     private var releasePodButton: UIButton!
@@ -186,24 +187,23 @@ class TaskChatViewController: UIViewController {
         backButton.setTitle("\u{E5C4}", for: .normal)
         backButton.setTitleColor(UIColor.Sphinx.WashedOutReceivedText, for: .normal)
         backButton.addTarget(self, action: #selector(backTapped), for: .touchUpInside)
-        headerView.addSubview(backButton)
 
         titleLabel = UILabel()
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.text = task.title
         titleLabel.font = UIFont(name: "Roboto-Medium", size: 14)
         titleLabel.textColor = UIColor.Sphinx.Text
-        titleLabel.textAlignment = .center
+        titleLabel.textAlignment = .left
         titleLabel.numberOfLines = 1
         titleLabel.lineBreakMode = .byTruncatingTail
-        headerView.addSubview(titleLabel)
+        titleLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        titleLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
         shareButton = UIButton(type: .system)
         shareButton.translatesAutoresizingMaskIntoConstraints = false
         shareButton.setImage(UIImage(systemName: "square.and.arrow.up"), for: .normal)
         shareButton.tintColor = UIColor.Sphinx.WashedOutReceivedText
         shareButton.addTarget(self, action: #selector(shareTappedAction), for: .touchUpInside)
-        headerView.addSubview(shareButton)
 
         releasePodButton = UIButton(type: .system)
         releasePodButton.translatesAutoresizingMaskIntoConstraints = false
@@ -211,7 +211,27 @@ class TaskChatViewController: UIViewController {
         releasePodButton.tintColor = UIColor.Sphinx.PrimaryGreen
         releasePodButton.addTarget(self, action: #selector(releasePodTapped), for: .touchUpInside)
         releasePodButton.isHidden = true
-        headerView.addSubview(releasePodButton)
+
+        // Fix sizes for icon buttons
+        backButton.widthAnchor.constraint(equalToConstant: 50).isActive = true
+        backButton.heightAnchor.constraint(equalToConstant: 50).isActive = true
+        shareButton.widthAnchor.constraint(equalToConstant: 35).isActive = true
+        shareButton.heightAnchor.constraint(equalToConstant: 35).isActive = true
+        releasePodButton.widthAnchor.constraint(equalToConstant: 35).isActive = true
+        releasePodButton.heightAnchor.constraint(equalToConstant: 35).isActive = true
+
+        // Build the stack
+        headerStackView = UIStackView(arrangedSubviews: [backButton, titleLabel, releasePodButton, shareButton])
+        headerStackView.axis = .horizontal
+        headerStackView.alignment = .center
+        headerStackView.distribution = .fill
+        headerStackView.spacing = 0
+        headerStackView.translatesAutoresizingMaskIntoConstraints = false
+        headerView.addSubview(headerStackView)
+
+        // Custom spacing
+        headerStackView.setCustomSpacing(8, after: backButton)
+        headerStackView.setCustomSpacing(8, after: titleLabel)
 
         NSLayoutConstraint.activate([
             headerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
@@ -219,25 +239,10 @@ class TaskChatViewController: UIViewController {
             headerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             headerView.heightAnchor.constraint(equalToConstant: 50),
 
-            backButton.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
-            backButton.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
-            backButton.widthAnchor.constraint(equalToConstant: 50),
-            backButton.heightAnchor.constraint(equalToConstant: 50),
-
-            shareButton.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -8),
-            shareButton.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
-            shareButton.widthAnchor.constraint(equalToConstant: 35),
-            shareButton.heightAnchor.constraint(equalToConstant: 35),
-
-            releasePodButton.trailingAnchor.constraint(equalTo: shareButton.leadingAnchor),
-            releasePodButton.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
-            releasePodButton.widthAnchor.constraint(equalToConstant: 35),
-            releasePodButton.heightAnchor.constraint(equalToConstant: 35),
-
-            titleLabel.centerXAnchor.constraint(equalTo: headerView.centerXAnchor),
-            titleLabel.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
-            titleLabel.leadingAnchor.constraint(greaterThanOrEqualTo: backButton.trailingAnchor, constant: 8),
-            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: releasePodButton.leadingAnchor, constant: -8),
+            headerStackView.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
+            headerStackView.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -8),
+            headerStackView.topAnchor.constraint(equalTo: headerView.topAnchor),
+            headerStackView.bottomAnchor.constraint(equalTo: headerView.bottomAnchor),
 
             divider.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
             divider.trailingAnchor.constraint(equalTo: headerView.trailingAnchor),
