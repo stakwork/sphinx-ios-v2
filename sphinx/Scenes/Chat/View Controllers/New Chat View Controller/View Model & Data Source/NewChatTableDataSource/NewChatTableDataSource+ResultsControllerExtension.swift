@@ -892,6 +892,10 @@ extension NewChatTableDataSource : NSFetchedResultsControllerDelegate {
                     showLoadingMore: !self.allItemsLoaded && messages.count >= 100
                 )
             }
+            
+            DispatchQueue.main.async {
+                self.delegate?.updateEmptyView()
+            }
         }
     }
     

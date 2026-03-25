@@ -317,11 +317,14 @@ class NewChatViewController: NewKeyboardHandlerViewController {
     func updateEmptyView() {
         if shouldShowPendingChat {
             setupPendingChatPlaceholder()
-        } else if chat?.lastMessage == nil {
-            setupEmptyChatPlaceholder()
         } else {
-            emptyAvatarPlaceholderView.isHidden = true
-            bottomView.isHidden = false
+            chat?.updateLastMessage()
+            if chat?.lastMessage == nil {
+                setupEmptyChatPlaceholder()
+            } else {
+                emptyAvatarPlaceholderView.isHidden = true
+                bottomView.isHidden = false
+            }
         }
     }
 }
