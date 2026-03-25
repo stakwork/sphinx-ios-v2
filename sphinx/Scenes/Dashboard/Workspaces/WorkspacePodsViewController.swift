@@ -19,6 +19,17 @@ class WorkspacePodsViewController: UIViewController {
 
     // MARK: - UI
 
+    private lazy var poolStatusLabel: UILabel = {
+        let l = UILabel()
+        l.translatesAutoresizingMaskIntoConstraints = false
+        l.font = UIFont(name: "Roboto-Regular", size: 13) ?? UIFont.systemFont(ofSize: 13)
+        l.textColor = .Sphinx.SecondaryText
+        l.textAlignment = .center
+        l.numberOfLines = 1
+        l.isHidden = true
+        return l
+    }()
+
     private lazy var tableView: UITableView = {
         let tv = UITableView(frame: .zero, style: .plain)
         tv.translatesAutoresizingMaskIntoConstraints = false
@@ -91,13 +102,18 @@ class WorkspacePodsViewController: UIViewController {
     // MARK: - UI Setup
 
     private func setupUI() {
+        view.addSubview(poolStatusLabel)
         view.addSubview(tableView)
         view.addSubview(activityIndicator)
         view.addSubview(loadingLabel)
         view.addSubview(emptyStateLabel)
 
         NSLayoutConstraint.activate([
-            tableView.topAnchor.constraint(equalTo: view.topAnchor),
+            poolStatusLabel.topAnchor.constraint(equalTo: view.topAnchor, constant: 8),
+            poolStatusLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            poolStatusLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+
+            tableView.topAnchor.constraint(equalTo: poolStatusLabel.bottomAnchor, constant: 8),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
@@ -141,6 +157,25 @@ class WorkspacePodsViewController: UIViewController {
             errorCallback: { [weak self] in
                 DispatchQueue.main.async {
                     self?.handlePodsError()
+                }
+            }
+        )
+
+        fetchPoolStatus(slug: slug)
+    }
+
+    private func fetchPoolStatus(slug: String) {
+        API.sharedInstance.fetchPoolStatusWithAuth(
+            workspaceSlug: slug,
+            callback: { [weak self] queuedCount, unusedVms in
+                DispatchQueue.main.async {
+                    self?.poolStatusLabel.text = "\(queuedCount) tasks in workspace queue · \(unusedVms) pods available"
+                    self?.poolStatusLabel.isHidden = false
+                }
+            },
+            errorCallback: { [weak self] in
+                DispatchQueue.main.async {
+                    self?.poolStatusLabel.isHidden = true
                 }
             }
         )
