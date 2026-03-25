@@ -213,7 +213,10 @@ final class MarkdownRenderer {
             .foregroundColor: style.codeForeground,
             .backgroundColor: style.codeBackground
         ]
-        return NSAttributedString(string: code, attributes: attrs)
+        // Pad each line with spaces so background covers the full block width
+        let paddedLines = code.components(separatedBy: "\n").map { "  \($0)  " }
+        let padded = "\n" + paddedLines.joined(separator: "\n") + "\n"
+        return NSAttributedString(string: padded, attributes: attrs)
     }
 
     private func renderBlockquote(_ text: String) -> NSAttributedString {
