@@ -51,15 +51,19 @@ struct WorkspacePod {
 
     var cpuPercentage: Double {
         guard resourceUsage.available else { return 0 }
-        let requestStr = resourceUsage.requestsCPU.hasSuffix("m")
-            ? String(resourceUsage.requestsCPU.dropLast())
-            : resourceUsage.requestsCPU
-        let usageStr = resourceUsage.usageCPU.hasSuffix("m")
-            ? String(resourceUsage.usageCPU.dropLast())
-            : resourceUsage.usageCPU
-        guard let requests = Double(requestStr), requests > 0,
-              let usage    = Double(usageStr) else { return 0 }
-        return (usage / requests) * 100
+        let requests = parseMilliCores(resourceUsage.requestsCPU)
+        let usage    = parseMilliCores(resourceUsage.usageCPU)
+        guard requests > 0 else { return 0 }
+        return min((usage / requests) * 100, 100)
+    }
+
+    /// Normalises a CPU value to milli-cores regardless of whether
+    /// the raw string uses the "m" suffix (milli-cores) or bare number (cores).
+    private func parseMilliCores(_ raw: String) -> Double {
+        if raw.hasSuffix("m") {
+            return Double(raw.dropLast()) ?? 0
+        }
+        return (Double(raw) ?? 0) * 1000   // cores → milli-cores
     }
 
     // MARK: - Computed: Memory
@@ -69,7 +73,7 @@ struct WorkspacePod {
         let requests = parseMemoryToBytes(resourceUsage.requestsMemory)
         let usage    = parseMemoryToBytes(resourceUsage.usageMemory)
         guard requests > 0 else { return 0 }
-        return (usage / requests) * 100
+        return min((usage / requests) * 100, 100)
     }
 
     private func parseMemoryToBytes(_ value: String) -> Double {
@@ -106,9 +110,6 @@ struct WorkspacePod {
     var subtitle: String? {
         if state == "pending" {
             return "Preparing your environment…"
-        }
-        if usageStatus == "used", let info = userInfo {
-            return info
         }
         return nil
     }

@@ -40,15 +40,6 @@ class WorkspacePodTableViewCell: UITableViewCell {
         return l
     }()
 
-    private let userLabel: UILabel = {
-        let l = UILabel()
-        l.translatesAutoresizingMaskIntoConstraints = false
-        l.font = UIFont(name: "Roboto-Regular", size: 13) ?? UIFont.systemFont(ofSize: 13)
-        l.textColor = .Sphinx.SecondaryText
-        l.numberOfLines = 1
-        return l
-    }()
-
     // CPU row
     private let cpuTitleLabel: UILabel = {
         let l = UILabel()
@@ -154,7 +145,6 @@ class WorkspacePodTableViewCell: UITableViewCell {
         contentView.addSubview(statusDot)
         contentView.addSubview(podNameLabel)
         contentView.addSubview(subtitleLabel)
-        contentView.addSubview(userLabel)
         contentView.addSubview(cpuTitleLabel)
         contentView.addSubview(cpuProgressView)
         contentView.addSubview(cpuPercentLabel)
@@ -186,14 +176,9 @@ class WorkspacePodTableViewCell: UITableViewCell {
             subtitleLabel.trailingAnchor.constraint(equalTo: podNameLabel.trailingAnchor),
             subtitleLabel.topAnchor.constraint(equalTo: podNameLabel.bottomAnchor, constant: 2),
 
-            // User label — below subtitle
-            userLabel.leadingAnchor.constraint(equalTo: podNameLabel.leadingAnchor),
-            userLabel.trailingAnchor.constraint(equalTo: podNameLabel.trailingAnchor),
-            userLabel.topAnchor.constraint(equalTo: subtitleLabel.bottomAnchor, constant: 2),
-
             // CPU row — title
             cpuTitleLabel.leadingAnchor.constraint(equalTo: podNameLabel.leadingAnchor),
-            cpuTitleLabel.topAnchor.constraint(equalTo: userLabel.bottomAnchor, constant: 8),
+            cpuTitleLabel.topAnchor.constraint(equalTo: subtitleLabel.bottomAnchor, constant: 8),
             cpuTitleLabel.widthAnchor.constraint(equalToConstant: 52),
 
             // CPU percent label
@@ -246,13 +231,6 @@ class WorkspacePodTableViewCell: UITableViewCell {
             subtitleLabel.isHidden = false
         } else {
             subtitleLabel.isHidden = true
-        }
-
-        if let user = pod.userInfo {
-            userLabel.text = user
-            userLabel.isHidden = false
-        } else {
-            userLabel.isHidden = true
         }
 
         // CPU
