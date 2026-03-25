@@ -56,11 +56,13 @@ final class MarkdownRenderer {
         while i < lines.count {
             let line = lines[i]
 
-            // Fenced code block
-            if line.hasPrefix("```") {
+            // Fenced code block (optional language identifier after ```, handles indented fences)
+            let trimmedLine = line.trimmingCharacters(in: .whitespaces)
+            if trimmedLine.hasPrefix("```") {
+                // Strip optional language identifier (e.g. ```ts → ignore "ts")
                 var codeLines: [String] = []
                 i += 1
-                while i < lines.count && !lines[i].hasPrefix("```") {
+                while i < lines.count && !lines[i].trimmingCharacters(in: .whitespaces).hasPrefix("```") {
                     codeLines.append(lines[i])
                     i += 1
                 }
@@ -295,7 +297,7 @@ final class MarkdownRenderer {
             if let range = firstRange(in: s, pattern: #"\*\*\*(.+?)\*\*\*"#) {
                 appendLiteral(s[s.startIndex..<range.lowerBound], attrs: base, to: result)
                 let inner = String(s[range].dropFirst(3).dropLast(3))
-                result.append(NSAttributedString(string: inner, attributes: [.font: style.boldItalicFont, .foregroundColor: color]))
+                result.append(renderInline(inner, font: style.boldItalicFont, color: color))
                 s = String(s[range.upperBound...])
                 continue
             }
@@ -304,15 +306,22 @@ final class MarkdownRenderer {
                 appendLiteral(s[s.startIndex..<range.lowerBound], attrs: base, to: result)
                 let full = String(s[range])
                 let inner = String(full.dropFirst(2).dropLast(2))
-                result.append(NSAttributedString(string: inner, attributes: [.font: style.boldFont, .foregroundColor: color]))
+                result.append(renderInline(inner, font: style.boldFont, color: color))
                 s = String(s[range.upperBound...])
                 continue
             }
-            // Italic: *text* or _text_
-            if let range = firstRange(in: s, pattern: #"(\*|_)(.+?)(\*|_)"#) {
+            // Italic: *text*
+            if let range = firstRange(in: s, pattern: #"\*([^*]+?)\*"#) {
                 appendLiteral(s[s.startIndex..<range.lowerBound], attrs: base, to: result)
-                let full = String(s[range])
-                let inner = String(full.dropFirst(1).dropLast(1))
+                let inner = String(s[range].dropFirst(1).dropLast(1))
+                result.append(NSAttributedString(string: inner, attributes: [.font: style.italicFont, .foregroundColor: color]))
+                s = String(s[range.upperBound...])
+                continue
+            }
+            // Italic: _text_ (only when _ is not flanked by a word character)
+            if let range = firstRange(in: s, pattern: #"(?<!\w)_([^_]+?)_(?!\w)"#) {
+                appendLiteral(s[s.startIndex..<range.lowerBound], attrs: base, to: result)
+                let inner = String(s[range].dropFirst(1).dropLast(1))
                 result.append(NSAttributedString(string: inner, attributes: [.font: style.italicFont, .foregroundColor: color]))
                 s = String(s[range.upperBound...])
                 continue
