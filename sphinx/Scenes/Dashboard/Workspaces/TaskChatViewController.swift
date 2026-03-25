@@ -230,8 +230,7 @@ class TaskChatViewController: UIViewController {
         headerView.addSubview(headerStackView)
 
         // Custom spacing
-        headerStackView.setCustomSpacing(8, after: backButton)
-        headerStackView.setCustomSpacing(8, after: titleLabel)
+        headerStackView.setCustomSpacing(4, after: titleLabel)
 
         NSLayoutConstraint.activate([
             headerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
