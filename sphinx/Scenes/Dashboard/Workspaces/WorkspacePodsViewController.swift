@@ -35,7 +35,7 @@ class WorkspacePodsViewController: UIViewController {
         tv.translatesAutoresizingMaskIntoConstraints = false
         tv.backgroundColor = .Sphinx.Body
         tv.separatorStyle = .singleLine
-        tv.separatorColor = .Sphinx.DividerColor
+        tv.separatorColor = .Sphinx.LightDivider
         tv.rowHeight = UITableView.automaticDimension
         tv.estimatedRowHeight = 120
         tv.register(WorkspacePodTableViewCell.self, forCellReuseIdentifier: WorkspacePodTableViewCell.reuseID)
