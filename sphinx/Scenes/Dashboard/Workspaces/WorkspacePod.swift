@@ -75,6 +75,18 @@ struct WorkspacePod {
         return Double(numeric) ?? 0
     }
 
+    // MARK: - Computed: Sort Order (green=0, yellow=1, grey/other=2, red=3)
+
+    var sortOrder: Int {
+        switch state {
+        case "running" where usageStatus == "used":   return 0  // green
+        case "pending":                                return 1  // yellow
+        case "running":                                return 2  // grey (unused)
+        case "failed":                                 return 3  // red
+        default:                                       return 2
+        }
+    }
+
     // MARK: - Computed: Status Dot Color
 
     var statusDotColor: UIColor {

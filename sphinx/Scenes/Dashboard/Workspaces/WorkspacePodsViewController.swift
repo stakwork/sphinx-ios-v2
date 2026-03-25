@@ -186,7 +186,7 @@ class WorkspacePodsViewController: UIViewController {
         activityIndicator.stopAnimating()
         loadingLabel.isHidden = true
 
-        self.pods = pods
+        self.pods = pods.sorted { $0.sortOrder < $1.sortOrder }
 
         if pods.isEmpty {
             tableView.isHidden = true
