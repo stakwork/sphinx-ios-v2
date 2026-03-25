@@ -21,11 +21,12 @@ struct WorkspacePod {
         let usageMemory: String
 
         init(json: JSON) {
-            self.available      = json["available"].bool ?? true
-            self.requestsCPU    = json["requests_cpu"].string    ?? json["requestsCPU"].string    ?? "0"
-            self.requestsMemory = json["requests_memory"].string ?? json["requestsMemory"].string ?? "0"
-            self.usageCPU       = json["usage_cpu"].string       ?? json["usageCPU"].string       ?? "0"
-            self.usageMemory    = json["usage_memory"].string    ?? json["usageMemory"].string    ?? "0"
+            self.available = json["available"].bool ?? true
+            // API returns nested objects: resource_usage.requests.cpu / resource_usage.usage.cpu
+            self.requestsCPU    = json["requests"]["cpu"].string    ?? "0"
+            self.requestsMemory = json["requests"]["memory"].string ?? "0"
+            self.usageCPU       = json["usage"]["cpu"].string       ?? "0"
+            self.usageMemory    = json["usage"]["memory"].string    ?? "0"
         }
     }
 
@@ -51,36 +52,38 @@ struct WorkspacePod {
 
     var cpuPercentage: Double {
         guard resourceUsage.available else { return 0 }
-        let requestStr = resourceUsage.requestsCPU.hasSuffix("m")
-            ? String(resourceUsage.requestsCPU.dropLast())
-            : resourceUsage.requestsCPU
-        let usageStr = resourceUsage.usageCPU.hasSuffix("m")
-            ? String(resourceUsage.usageCPU.dropLast())
-            : resourceUsage.usageCPU
-        guard let requests = Double(requestStr), requests > 0,
-              let usage    = Double(usageStr) else { return 0 }
-        return (usage / requests) * 100
+        let requests = parseLeadingNumber(resourceUsage.requestsCPU)
+        let usage    = parseLeadingNumber(resourceUsage.usageCPU)
+        guard requests > 0 else { return 0 }
+        return min((usage / requests) * 100, 100)
     }
 
     // MARK: - Computed: Memory
 
     var memoryPercentage: Double {
         guard resourceUsage.available else { return 0 }
-        let requests = parseMemoryToBytes(resourceUsage.requestsMemory)
-        let usage    = parseMemoryToBytes(resourceUsage.usageMemory)
+        let requests = parseLeadingNumber(resourceUsage.requestsMemory)
+        let usage    = parseLeadingNumber(resourceUsage.usageMemory)
         guard requests > 0 else { return 0 }
-        return (usage / requests) * 100
+        return min((usage / requests) * 100, 100)
     }
 
-    private func parseMemoryToBytes(_ value: String) -> Double {
-        if value.hasSuffix("Gi") {
-            return (Double(value.dropLast(2)) ?? 0) * 1_073_741_824
-        } else if value.hasSuffix("Mi") {
-            return (Double(value.dropLast(2)) ?? 0) * 1_048_576
-        } else if value.hasSuffix("Ki") {
-            return (Double(value.dropLast(2)) ?? 0) * 1_024
-        } else {
-            return Double(value) ?? 0
+    /// Mirrors JS parseFloat(): strips any trailing unit suffix and returns the numeric prefix.
+    /// e.g. "500m" → 500, "1Gi" → 1, "256Mi" → 256, "0.5" → 0.5
+    private func parseLeadingNumber(_ raw: String) -> Double {
+        let numeric = raw.prefix(while: { $0.isNumber || $0 == "." })
+        return Double(numeric) ?? 0
+    }
+
+    // MARK: - Computed: Sort Order (green=0, yellow=1, grey/other=2, red=3)
+
+    var sortOrder: Int {
+        switch state {
+        case "running" where usageStatus == "used":   return 0  // green
+        case "pending":                                return 1  // yellow
+        case "running":                                return 2  // grey (unused)
+        case "failed":                                 return 3  // red
+        default:                                       return 2
         }
     }
 
@@ -107,7 +110,7 @@ struct WorkspacePod {
         if state == "pending" {
             return "Preparing your environment…"
         }
-        if usageStatus == "used", let info = userInfo {
+        if state == "running", usageStatus == "used", let info = userInfo, !info.isEmpty {
             return info
         }
         return nil

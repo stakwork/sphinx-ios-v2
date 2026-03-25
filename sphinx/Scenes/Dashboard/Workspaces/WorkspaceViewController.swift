@@ -28,6 +28,7 @@ class WorkspaceViewController: PopHandlerViewController {
     private var activeFeaturesVC: WorkspaceFeaturesViewController!
     private var activeTasksVC: WorkspaceTasksViewController!
     private var activeGraphChatVC: WorkspaceGraphChatViewController?
+    private var activePodsVC: WorkspacePodsViewController?
     private var hasAppeared = false
     private var searchVC: WorkspaceSearchViewController?
     private let newBubbleHelper = NewMessageBubbleHelper()
@@ -99,6 +100,8 @@ class WorkspaceViewController: PopHandlerViewController {
             activeFeaturesVC?.loadFeatures()
         } else if currentTab == 1 {
             activeTasksVC?.loadTasks()
+        } else if currentTab == 3 {
+            activePodsVC?.loadPods()
         }
         // currentTab == 2 (Graph Chat): history is in-memory, stream self-manages — no reload needed
     }
@@ -211,7 +214,7 @@ class WorkspaceViewController: PopHandlerViewController {
         topTabSegmentedControl.buttonBackgroundColor = .Sphinx.HeaderBG
         topTabSegmentedControl.selectorViewColor = .Sphinx.PrimaryGreen
         topTabSegmentedControl.configureFromOutlet(
-            buttonTitles: ["FEATURES", "TASKS", "GRAPH CHAT"],
+            buttonTitles: ["FEATURES", "TASKS", "GRAPH CHAT", "PODS"],
             initialIndex: 0,
             delegate: self
         )
@@ -251,8 +254,10 @@ class WorkspaceViewController: PopHandlerViewController {
             activeFeaturesVC?.view.isHidden = false
         } else if currentTab == 1 {
             activeTasksVC?.view.isHidden = false
-        } else {
+        } else if currentTab == 2 {
             activeGraphChatVC?.view.isHidden = false
+        } else if currentTab == 3 {
+            activePodsVC?.view.isHidden = false
         }
     }
 }
@@ -364,7 +369,7 @@ extension WorkspaceViewController: CustomSegmentedControlDelegate {
 
     private func switchToTab(_ index: Int) {
         currentTab = index
-        createFeatureButton.isHidden = (index == 2)
+        createFeatureButton.isHidden = (index == 2 || index == 3)
 
         // Instantiate children lazily, but only make them visible when search is inactive
         let searchActive = searchVC != nil
@@ -372,6 +377,7 @@ extension WorkspaceViewController: CustomSegmentedControlDelegate {
         activeFeaturesVC?.view.isHidden = true
         activeTasksVC?.view.isHidden = true
         activeGraphChatVC?.view.isHidden = true
+        activePodsVC?.view.isHidden = true
 
         if index == 0 {
             if activeFeaturesVC == nil {
@@ -390,13 +396,21 @@ extension WorkspaceViewController: CustomSegmentedControlDelegate {
             if !searchActive {
                 activeTasksVC.view.isHidden = false
             }
-        } else {
+        } else if index == 2 {
             if activeGraphChatVC == nil {
                 activeGraphChatVC = WorkspaceGraphChatViewController.instantiate(workspace: workspace)
                 addChildVC(activeGraphChatVC!)
             }
             if !searchActive {
                 activeGraphChatVC?.view.isHidden = false
+            }
+        } else if index == 3 {
+            if activePodsVC == nil {
+                activePodsVC = WorkspacePodsViewController.instantiate(workspace: workspace)
+                addChildVC(activePodsVC!)
+            }
+            if !searchActive {
+                activePodsVC?.view.isHidden = false
             }
         }
     }

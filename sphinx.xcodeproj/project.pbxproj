@@ -482,6 +482,8 @@
 		47AA08C7234BB8E0002C69E2 /* ShareInviteCodeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AA08C6234BB8E0002C69E2 /* ShareInviteCodeViewController.swift */; };
 		47AABB00FF00BEEF00000004 /* WorkspaceMember.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AABB00FF00BEEF00000003 /* WorkspaceMember.swift */; };
 		47AABB00FF00BEEF00000006 /* WorkspacePod.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AABB00FF00BEEF00000005 /* WorkspacePod.swift */; };
+		47AABB00FF00BEEF00000007 /* WorkspacePodTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AABB00FF00BEEF00000008 /* WorkspacePodTableViewCell.swift */; };
+		47AABB00FF00BEEF00000009 /* WorkspacePodsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AABB00FF00BEEF0000000A /* WorkspacePodsViewController.swift */; };
 		47AAD79B29BB6646002B70C1 /* playing_bar.json in Resources */ = {isa = PBXBuildFile; fileRef = 47AAD79A29BB6646002B70C1 /* playing_bar.json */; };
 		47AAFC7E238D7C8D00E30BDA /* PaymentRequestDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AAFC7D238D7C8D00E30BDA /* PaymentRequestDecoder.swift */; };
 		47AAFC80238EC5AA00E30BDA /* NewQRScannerProcessingCodeExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AAFC7F238EC5AA00E30BDA /* NewQRScannerProcessingCodeExtension.swift */; };
@@ -1763,6 +1765,8 @@
 		47AABB00FF00BEEF00000001 /* HiveFeatureAttachment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveFeatureAttachment.swift; sourceTree = "<group>"; };
 		47AABB00FF00BEEF00000003 /* WorkspaceMember.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceMember.swift; sourceTree = "<group>"; };
 		47AABB00FF00BEEF00000005 /* WorkspacePod.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspacePod.swift; sourceTree = "<group>"; };
+		47AABB00FF00BEEF00000008 /* WorkspacePodTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspacePodTableViewCell.swift; sourceTree = "<group>"; };
+		47AABB00FF00BEEF0000000A /* WorkspacePodsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspacePodsViewController.swift; sourceTree = "<group>"; };
 		47AAD79A29BB6646002B70C1 /* playing_bar.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = playing_bar.json; sourceTree = "<group>"; };
 		47AAFC7D238D7C8D00E30BDA /* PaymentRequestDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentRequestDecoder.swift; sourceTree = "<group>"; };
 		47AAFC7F238EC5AA00E30BDA /* NewQRScannerProcessingCodeExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewQRScannerProcessingCodeExtension.swift; sourceTree = "<group>"; };
@@ -4136,6 +4140,8 @@
 				8ABF62A347844ECEB2FC60A4 /* HiveChatMessage.swift */,
 				47AABB00FF00BEEF00000003 /* WorkspaceMember.swift */,
 				47AABB00FF00BEEF00000005 /* WorkspacePod.swift */,
+				47AABB00FF00BEEF00000008 /* WorkspacePodTableViewCell.swift */,
+				47AABB00FF00BEEF0000000A /* WorkspacePodsViewController.swift */,
 				47AABB00FF00BEEF00000001 /* HiveFeatureAttachment.swift */,
 				47B9CBFA2F460C7B007527B4 /* WorkspacesViewController.swift */,
 				E83B28E7233A4D0D9AE288E2 /* WorkspaceViewController.swift */,
@@ -5561,6 +5567,8 @@
 				A748D979E2F14560BF39E4A7 /* HiveChatMessage.swift in Sources */,
 				47AABB00FF00BEEF00000004 /* WorkspaceMember.swift in Sources */,
 				47AABB00FF00BEEF00000006 /* WorkspacePod.swift in Sources */,
+				47AABB00FF00BEEF00000007 /* WorkspacePodTableViewCell.swift in Sources */,
+				47AABB00FF00BEEF00000009 /* WorkspacePodsViewController.swift in Sources */,
 				A1B2C3D4E5F601020304060B /* HiveFeatureAttachment.swift in Sources */,
 				CECFBF062965C8E600BAD935 /* DiscoverTribeData.swift in Sources */,
 				475C566D2A7BEC5F00E6F9A9 /* ThreadTableDataSource+ResultsControllerExtension.swift in Sources */,
