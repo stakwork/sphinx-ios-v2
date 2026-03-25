@@ -1354,9 +1354,7 @@ class FeaturePlanViewController: UIViewController {
                     guard let self = self else { return }
                     self.chatLoadingWheel.stopAnimating()
                     self.chatTableView.isHidden = false
-                    self.messages = messages.filter {
-                        !$0.message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !$0.artifacts.isEmpty
-                    }
+                    self.messages = messages.filter { $0.isDisplayable }
                     self.chatTableView.reloadData()
                     self.scrollToBottom()
                     
