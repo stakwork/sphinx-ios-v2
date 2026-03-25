@@ -124,6 +124,11 @@ class WorkspacePodTableViewCell: UITableViewCell {
 
     private var currentPod: WorkspacePod?
 
+    // MARK: - Toggling Constraints
+    private var subtitleHeightConstraint: NSLayoutConstraint!
+    private var cpuTopToSubtitle: NSLayoutConstraint!
+    private var cpuTopToPodName: NSLayoutConstraint!
+
     // MARK: - Init
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
@@ -178,7 +183,6 @@ class WorkspacePodTableViewCell: UITableViewCell {
 
             // CPU row — title
             cpuTitleLabel.leadingAnchor.constraint(equalTo: podNameLabel.leadingAnchor),
-            cpuTitleLabel.topAnchor.constraint(equalTo: subtitleLabel.bottomAnchor, constant: 8),
             cpuTitleLabel.widthAnchor.constraint(equalToConstant: 52),
 
             // CPU percent label
@@ -216,6 +220,13 @@ class WorkspacePodTableViewCell: UITableViewCell {
             openIDEButton.leadingAnchor.constraint(equalTo: copyPasswordButton.trailingAnchor, constant: 8),
             openIDEButton.centerYAnchor.constraint(equalTo: copyPasswordButton.centerYAnchor),
         ])
+
+        subtitleHeightConstraint = subtitleLabel.heightAnchor.constraint(equalToConstant: 0)
+        cpuTopToSubtitle = cpuTitleLabel.topAnchor.constraint(equalTo: subtitleLabel.bottomAnchor, constant: 8)
+        cpuTopToPodName  = cpuTitleLabel.topAnchor.constraint(equalTo: podNameLabel.bottomAnchor, constant: 8)
+        // Default state: no subtitle
+        subtitleHeightConstraint.isActive = true
+        cpuTopToPodName.isActive = true
     }
 
     // MARK: - Configure
@@ -228,9 +239,14 @@ class WorkspacePodTableViewCell: UITableViewCell {
 
         if let sub = pod.subtitle {
             subtitleLabel.text = sub
-            subtitleLabel.isHidden = false
+            subtitleHeightConstraint.isActive = false
+            cpuTopToPodName.isActive = false
+            cpuTopToSubtitle.isActive = true
         } else {
-            subtitleLabel.isHidden = true
+            subtitleLabel.text = nil
+            cpuTopToSubtitle.isActive = false
+            cpuTopToPodName.isActive = true
+            subtitleHeightConstraint.isActive = true
         }
 
         // CPU
