@@ -427,6 +427,35 @@ class HiveChatMessageTests: XCTestCase {
         XCTAssertTrue(message?.isDisplayable == true)
     }
 
+    func testIsDisplayable_StreamOnlyMessageWithPopulatedStreamInfo_ReturnsFalse() {
+        // Mirrors the exact production JSON shape that caused the floating date label bug
+        let jsonDict: [String: Any] = [
+            "id": "cmn6azsay00wzla04etinu52o",
+            "featureId": "cmn6azn2w0004lb04dzrjpacs",
+            "message": "",
+            "role": "ASSISTANT",
+            "status": "SENT",
+            "createdAt": "2026-03-25T17:14:26.698Z",
+            "artifacts": [
+                [
+                    "id": "cmn6azsay00x0la048u667cak",
+                    "type": "STREAM",
+                    "content": [
+                        "requestId": "9224f8c3-b7dd-49a0-a049-1f87577a664a",
+                        "eventsToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test",
+                        "baseUrl": "https://swarmW6qeCC.sphinx.chat:3355"
+                    ] as [String: Any]
+                ] as [String: Any]
+            ] as [Any]
+        ]
+        let message = HiveChatMessage(json: JSON(jsonDict))
+        XCTAssertNotNil(message)
+        // isDisplayable must be false so fetchChatHistory excludes it from self.messages
+        XCTAssertFalse(message!.isDisplayable)
+        // Confirm streamInfo IS decoded — SSE connection should still work
+        XCTAssertNotNil(message!.artifacts.first?.streamInfo)
+    }
+
     func testIsDisplayable_EmptyMessageWithNonStreamArtifact_ReturnsTrue() {
         let jsonDict: [String: Any] = [
             "id": "disp-005",
