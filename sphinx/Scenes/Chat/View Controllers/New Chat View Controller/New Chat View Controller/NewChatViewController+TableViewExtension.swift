@@ -384,4 +384,8 @@ extension NewChatViewController : TribeMemberViewDelegate {
     }
     
     func shouldDismissMemberPopup() {}
+    
+    func updateEmptyView() {
+        (self as NewChatViewController).updateEmptyView()
+    }
 }

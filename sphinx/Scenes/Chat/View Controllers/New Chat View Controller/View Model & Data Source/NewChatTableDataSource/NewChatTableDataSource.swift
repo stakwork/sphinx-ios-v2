@@ -70,6 +70,9 @@ protocol NewChatTableDataSourceDelegate : class {
     
     ///Pending outgoing message
     func shouldUpdateHeaderScheduleIcon(message: TransactionMessage?)
+    
+    ///Empty view
+    func updateEmptyView()
 }
 
 class NewChatTableDataSource : NSObject {
