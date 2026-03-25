@@ -21,11 +21,12 @@ struct WorkspacePod {
         let usageMemory: String
 
         init(json: JSON) {
-            self.available      = json["available"].bool ?? true
-            self.requestsCPU    = json["requests_cpu"].string    ?? json["requestsCPU"].string    ?? "0"
-            self.requestsMemory = json["requests_memory"].string ?? json["requestsMemory"].string ?? "0"
-            self.usageCPU       = json["usage_cpu"].string       ?? json["usageCPU"].string       ?? "0"
-            self.usageMemory    = json["usage_memory"].string    ?? json["usageMemory"].string    ?? "0"
+            self.available = json["available"].bool ?? true
+            // API returns nested objects: resource_usage.requests.cpu / resource_usage.usage.cpu
+            self.requestsCPU    = json["requests"]["cpu"].string    ?? "0"
+            self.requestsMemory = json["requests"]["memory"].string ?? "0"
+            self.usageCPU       = json["usage"]["cpu"].string       ?? "0"
+            self.usageMemory    = json["usage"]["memory"].string    ?? "0"
         }
     }
 
@@ -51,41 +52,27 @@ struct WorkspacePod {
 
     var cpuPercentage: Double {
         guard resourceUsage.available else { return 0 }
-        let requests = parseMilliCores(resourceUsage.requestsCPU)
-        let usage    = parseMilliCores(resourceUsage.usageCPU)
+        let requests = parseLeadingNumber(resourceUsage.requestsCPU)
+        let usage    = parseLeadingNumber(resourceUsage.usageCPU)
         guard requests > 0 else { return 0 }
         return min((usage / requests) * 100, 100)
-    }
-
-    /// Normalises a CPU value to milli-cores regardless of whether
-    /// the raw string uses the "m" suffix (milli-cores) or bare number (cores).
-    private func parseMilliCores(_ raw: String) -> Double {
-        if raw.hasSuffix("m") {
-            return Double(raw.dropLast()) ?? 0
-        }
-        return (Double(raw) ?? 0) * 1000   // cores → milli-cores
     }
 
     // MARK: - Computed: Memory
 
     var memoryPercentage: Double {
         guard resourceUsage.available else { return 0 }
-        let requests = parseMemoryToBytes(resourceUsage.requestsMemory)
-        let usage    = parseMemoryToBytes(resourceUsage.usageMemory)
+        let requests = parseLeadingNumber(resourceUsage.requestsMemory)
+        let usage    = parseLeadingNumber(resourceUsage.usageMemory)
         guard requests > 0 else { return 0 }
         return min((usage / requests) * 100, 100)
     }
 
-    private func parseMemoryToBytes(_ value: String) -> Double {
-        if value.hasSuffix("Gi") {
-            return (Double(value.dropLast(2)) ?? 0) * 1_073_741_824
-        } else if value.hasSuffix("Mi") {
-            return (Double(value.dropLast(2)) ?? 0) * 1_048_576
-        } else if value.hasSuffix("Ki") {
-            return (Double(value.dropLast(2)) ?? 0) * 1_024
-        } else {
-            return Double(value) ?? 0
-        }
+    /// Mirrors JS parseFloat(): strips any trailing unit suffix and returns the numeric prefix.
+    /// e.g. "500m" → 500, "1Gi" → 1, "256Mi" → 256, "0.5" → 0.5
+    private func parseLeadingNumber(_ raw: String) -> Double {
+        let numeric = raw.prefix(while: { $0.isNumber || $0 == "." })
+        return Double(numeric) ?? 0
     }
 
     // MARK: - Computed: Status Dot Color
@@ -110,6 +97,9 @@ struct WorkspacePod {
     var subtitle: String? {
         if state == "pending" {
             return "Preparing your environment…"
+        }
+        if state == "running", usageStatus == "used", let info = userInfo, !info.isEmpty {
+            return info
         }
         return nil
     }
