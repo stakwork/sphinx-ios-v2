@@ -109,11 +109,11 @@ class WorkspacePodsViewController: UIViewController {
         view.addSubview(emptyStateLabel)
 
         NSLayoutConstraint.activate([
-            poolStatusLabel.topAnchor.constraint(equalTo: view.topAnchor, constant: 12),
+            poolStatusLabel.topAnchor.constraint(equalTo: view.topAnchor, constant: 16),
             poolStatusLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             poolStatusLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
 
-            tableView.topAnchor.constraint(equalTo: poolStatusLabel.bottomAnchor, constant: 12),
+            tableView.topAnchor.constraint(equalTo: poolStatusLabel.bottomAnchor, constant: 16),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),

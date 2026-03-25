@@ -184,11 +184,11 @@ class WorkspacePodTableViewCell: UITableViewCell {
             // CPU percent label
             cpuPercentLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             cpuPercentLabel.centerYAnchor.constraint(equalTo: cpuTitleLabel.centerYAnchor),
-            cpuPercentLabel.widthAnchor.constraint(equalToConstant: 44),
+            cpuPercentLabel.widthAnchor.constraint(equalToConstant: 48),
 
             // CPU progress view
             cpuProgressView.leadingAnchor.constraint(equalTo: cpuTitleLabel.trailingAnchor, constant: 6),
-            cpuProgressView.trailingAnchor.constraint(equalTo: cpuPercentLabel.leadingAnchor, constant: -6),
+            cpuProgressView.trailingAnchor.constraint(equalTo: cpuPercentLabel.leadingAnchor, constant: -4),
             cpuProgressView.centerYAnchor.constraint(equalTo: cpuTitleLabel.centerYAnchor),
             cpuProgressView.heightAnchor.constraint(equalToConstant: 6),
 
@@ -200,11 +200,11 @@ class WorkspacePodTableViewCell: UITableViewCell {
             // Memory percent label
             memPercentLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             memPercentLabel.centerYAnchor.constraint(equalTo: memTitleLabel.centerYAnchor),
-            memPercentLabel.widthAnchor.constraint(equalToConstant: 44),
+            memPercentLabel.widthAnchor.constraint(equalToConstant: 48),
 
             // Memory progress view
             memProgressView.leadingAnchor.constraint(equalTo: memTitleLabel.trailingAnchor, constant: 6),
-            memProgressView.trailingAnchor.constraint(equalTo: memPercentLabel.leadingAnchor, constant: -6),
+            memProgressView.trailingAnchor.constraint(equalTo: memPercentLabel.leadingAnchor, constant: -4),
             memProgressView.centerYAnchor.constraint(equalTo: memTitleLabel.centerYAnchor),
             memProgressView.heightAnchor.constraint(equalToConstant: 6),
 
@@ -237,13 +237,13 @@ class WorkspacePodTableViewCell: UITableViewCell {
         let cpuPct = pod.cpuPercentage
         cpuProgressView.setProgress(Float(cpuPct / 100), animated: false)
         cpuProgressView.progressTintColor = cpuPct > 70 ? .systemOrange : .Sphinx.PrimaryGreen
-        cpuPercentLabel.text = String(format: "%d%%", Int(cpuPct))
+        cpuPercentLabel.text = String(format: "%.1f%%", cpuPct)
 
         // Memory
         let memPct = pod.memoryPercentage
         memProgressView.setProgress(Float(memPct / 100), animated: false)
         memProgressView.progressTintColor = memPct > 70 ? .systemOrange : .Sphinx.PrimaryGreen
-        memPercentLabel.text = String(format: "%d%%", Int(memPct))
+        memPercentLabel.text = String(format: "%.1f%%", memPct)
 
         // Buttons
         copyPasswordButton.isHidden = pod.password == nil
