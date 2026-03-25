@@ -102,6 +102,10 @@ class WorkspacePodsViewController: UIViewController {
     // MARK: - UI Setup
 
     private func setupUI() {
+        let refreshControl = UIRefreshControl()
+        refreshControl.addTarget(self, action: #selector(handlePullToRefresh(_:)), for: .valueChanged)
+        tableView.refreshControl = refreshControl
+
         view.addSubview(poolStatusLabel)
         view.addSubview(tableView)
         view.addSubview(activityIndicator)
@@ -162,6 +166,29 @@ class WorkspacePodsViewController: UIViewController {
         )
 
         fetchPoolStatus(slug: slug)
+    }
+
+    @objc private func handlePullToRefresh(_ sender: UIRefreshControl) {
+        guard let slug = workspace.slug else {
+            sender.endRefreshing()
+            return
+        }
+        fetchPoolStatus(slug: slug)
+        API.sharedInstance.fetchPoolWorkspacesWithAuth(
+            workspaceSlug: slug,
+            callback: { [weak self] pods, hasWarning in
+                DispatchQueue.main.async {
+                    sender.endRefreshing()
+                    self?.handlePodsLoaded(pods, hasWarning)
+                }
+            },
+            errorCallback: { [weak self] in
+                DispatchQueue.main.async {
+                    sender.endRefreshing()
+                    self?.handlePodsError()
+                }
+            }
+        )
     }
 
     private func fetchPoolStatus(slug: String) {
