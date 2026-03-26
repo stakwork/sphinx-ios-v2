@@ -23,7 +23,7 @@ class WorkspaceViewController: PopHandlerViewController {
     @IBOutlet weak var containerView: UIView!
 
     private var workspace: Workspace!
-    private var currentTab: Int = 0 // 0 = Features, 1 = Tasks, 2 = Graph Chat
+    private var currentTab: Int = 0 // 0 = Tasks, 1 = Features, 2 = Graph Chat, 3 = Pods
 
     private var activeFeaturesVC: WorkspaceFeaturesViewController!
     private var activeTasksVC: WorkspaceTasksViewController!
@@ -97,9 +97,9 @@ class WorkspaceViewController: PopHandlerViewController {
         // Only reload data; never touch visibility — the search overlay (if active)
         // already covers the tab/content stack, so its isHidden state must not change.
         if currentTab == 0 {
-            activeFeaturesVC?.loadFeatures()
-        } else if currentTab == 1 {
             activeTasksVC?.loadTasks()
+        } else if currentTab == 1 {
+            activeFeaturesVC?.loadFeatures()
         } else if currentTab == 3 {
             activePodsVC?.loadPods()
         }
@@ -196,9 +196,9 @@ class WorkspaceViewController: PopHandlerViewController {
 
     @objc private func createFeatureButtonTapped() {
         if currentTab == 0 {
-            activeFeaturesVC?.createButtonTapped()
-        } else if currentTab == 1 {
             activeTasksVC?.createButtonTapped()
+        } else if currentTab == 1 {
+            activeFeaturesVC?.createButtonTapped()
         }
     }
 
@@ -214,7 +214,7 @@ class WorkspaceViewController: PopHandlerViewController {
         topTabSegmentedControl.buttonBackgroundColor = .Sphinx.HeaderBG
         topTabSegmentedControl.selectorViewColor = .Sphinx.PrimaryGreen
         topTabSegmentedControl.configureFromOutlet(
-            buttonTitles: ["FEATURES", "TASKS", "GRAPH CHAT", "PODS"],
+            buttonTitles: ["TASKS", "FEATURES", "GRAPH CHAT", "PODS"],
             initialIndex: 0,
             delegate: self
         )
@@ -251,9 +251,9 @@ class WorkspaceViewController: PopHandlerViewController {
 
         // Re-show whichever tab child was active while search covered the screen
         if currentTab == 0 {
-            activeFeaturesVC?.view.isHidden = false
-        } else if currentTab == 1 {
             activeTasksVC?.view.isHidden = false
+        } else if currentTab == 1 {
+            activeFeaturesVC?.view.isHidden = false
         } else if currentTab == 2 {
             activeGraphChatVC?.view.isHidden = false
         } else if currentTab == 3 {
@@ -380,21 +380,21 @@ extension WorkspaceViewController: CustomSegmentedControlDelegate {
         activePodsVC?.view.isHidden = true
 
         if index == 0 {
-            if activeFeaturesVC == nil {
-                activeFeaturesVC = WorkspaceFeaturesViewController.instantiate(workspace: workspace)
-                addChildVC(activeFeaturesVC)
-            }
-            // Only reveal if search overlay is not covering the stack
-            if !searchActive {
-                activeFeaturesVC.view.isHidden = false
-            }
-        } else if index == 1 {
             if activeTasksVC == nil {
                 activeTasksVC = WorkspaceTasksViewController.instantiate(workspace: workspace)
                 addChildVC(activeTasksVC)
             }
+            // Only reveal if search overlay is not covering the stack
             if !searchActive {
                 activeTasksVC.view.isHidden = false
+            }
+        } else if index == 1 {
+            if activeFeaturesVC == nil {
+                activeFeaturesVC = WorkspaceFeaturesViewController.instantiate(workspace: workspace)
+                addChildVC(activeFeaturesVC)
+            }
+            if !searchActive {
+                activeFeaturesVC.view.isHidden = false
             }
         } else if index == 2 {
             if activeGraphChatVC == nil {
