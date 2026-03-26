@@ -1909,6 +1909,7 @@ extension FeaturePlanViewController: HivePusherDelegate {
             )
         }
 
+        guard message.featureId == nil || message.featureId == feature.id else { return }
         guard !messages.contains(where: { $0.id == message.id }) else { return }
         messages.append(message)
         guard message.isDisplayable else { return }

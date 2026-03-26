@@ -456,6 +456,31 @@ class HiveChatMessageTests: XCTestCase {
         XCTAssertNotNil(message!.artifacts.first?.streamInfo)
     }
 
+    // MARK: - taskId Decoding Tests
+
+    func testHiveChatMessage_TaskId_DecodedWhenPresent() {
+        let jsonDict: [String: Any] = [
+            "id": "msg-task-001",
+            "message": "Task message",
+            "role": "USER",
+            "taskId": "task-abc-123"
+        ]
+        let message = HiveChatMessage(json: JSON(jsonDict))
+        XCTAssertNotNil(message)
+        XCTAssertEqual(message?.taskId, "task-abc-123")
+    }
+
+    func testHiveChatMessage_TaskId_NilWhenAbsent() {
+        let jsonDict: [String: Any] = [
+            "id": "msg-task-002",
+            "message": "Task message without taskId",
+            "role": "USER"
+        ]
+        let message = HiveChatMessage(json: JSON(jsonDict))
+        XCTAssertNotNil(message)
+        XCTAssertNil(message?.taskId)
+    }
+
     func testIsDisplayable_EmptyMessageWithNonStreamArtifact_ReturnsTrue() {
         let jsonDict: [String: Any] = [
             "id": "disp-005",
