@@ -23,7 +23,7 @@ class WorkspaceViewController: PopHandlerViewController {
     @IBOutlet weak var containerView: UIView!
 
     private var workspace: Workspace!
-    private var currentTab: Int = 0 // 0 = Tasks, 1 = Features, 2 = Graph Chat, 3 = Pods
+    private var currentTab: Int = 0 // 0 = Tasks, 1 = Graph Chat, 2 = Pods, 3 = Features
 
     private var activeFeaturesVC: WorkspaceFeaturesViewController!
     private var activeTasksVC: WorkspaceTasksViewController!
@@ -98,12 +98,12 @@ class WorkspaceViewController: PopHandlerViewController {
         // already covers the tab/content stack, so its isHidden state must not change.
         if currentTab == 0 {
             activeTasksVC?.loadTasks()
-        } else if currentTab == 1 {
-            activeFeaturesVC?.loadFeatures()
-        } else if currentTab == 3 {
+        } else if currentTab == 2 {
             activePodsVC?.loadPods()
+        } else if currentTab == 3 {
+            activeFeaturesVC?.loadFeatures()
         }
-        // currentTab == 2 (Graph Chat): history is in-memory, stream self-manages — no reload needed
+        // currentTab == 1 (Graph Chat): history is in-memory, stream self-manages — no reload needed
     }
 
     private func setupHeader() {
@@ -197,7 +197,7 @@ class WorkspaceViewController: PopHandlerViewController {
     @objc private func createFeatureButtonTapped() {
         if currentTab == 0 {
             activeTasksVC?.createButtonTapped()
-        } else if currentTab == 1 {
+        } else if currentTab == 3 {
             activeFeaturesVC?.createButtonTapped()
         }
     }
@@ -214,7 +214,7 @@ class WorkspaceViewController: PopHandlerViewController {
         topTabSegmentedControl.buttonBackgroundColor = .Sphinx.HeaderBG
         topTabSegmentedControl.selectorViewColor = .Sphinx.PrimaryGreen
         topTabSegmentedControl.configureFromOutlet(
-            buttonTitles: ["TASKS", "FEATURES", "GRAPH CHAT", "PODS"],
+            buttonTitles: ["TASKS", "GRAPH CHAT", "PODS", "FEATURES"],
             initialIndex: 0,
             delegate: self
         )
@@ -253,11 +253,11 @@ class WorkspaceViewController: PopHandlerViewController {
         if currentTab == 0 {
             activeTasksVC?.view.isHidden = false
         } else if currentTab == 1 {
-            activeFeaturesVC?.view.isHidden = false
-        } else if currentTab == 2 {
             activeGraphChatVC?.view.isHidden = false
-        } else if currentTab == 3 {
+        } else if currentTab == 2 {
             activePodsVC?.view.isHidden = false
+        } else if currentTab == 3 {
+            activeFeaturesVC?.view.isHidden = false
         }
     }
 }
@@ -369,7 +369,7 @@ extension WorkspaceViewController: CustomSegmentedControlDelegate {
 
     private func switchToTab(_ index: Int) {
         currentTab = index
-        createFeatureButton.isHidden = (index == 2 || index == 3)
+        createFeatureButton.isHidden = (index == 1 || index == 2)
 
         // Instantiate children lazily, but only make them visible when search is inactive
         let searchActive = searchVC != nil
@@ -389,14 +389,6 @@ extension WorkspaceViewController: CustomSegmentedControlDelegate {
                 activeTasksVC.view.isHidden = false
             }
         } else if index == 1 {
-            if activeFeaturesVC == nil {
-                activeFeaturesVC = WorkspaceFeaturesViewController.instantiate(workspace: workspace)
-                addChildVC(activeFeaturesVC)
-            }
-            if !searchActive {
-                activeFeaturesVC.view.isHidden = false
-            }
-        } else if index == 2 {
             if activeGraphChatVC == nil {
                 activeGraphChatVC = WorkspaceGraphChatViewController.instantiate(workspace: workspace)
                 addChildVC(activeGraphChatVC!)
@@ -404,13 +396,21 @@ extension WorkspaceViewController: CustomSegmentedControlDelegate {
             if !searchActive {
                 activeGraphChatVC?.view.isHidden = false
             }
-        } else if index == 3 {
+        } else if index == 2 {
             if activePodsVC == nil {
                 activePodsVC = WorkspacePodsViewController.instantiate(workspace: workspace)
                 addChildVC(activePodsVC!)
             }
             if !searchActive {
                 activePodsVC?.view.isHidden = false
+            }
+        } else if index == 3 {
+            if activeFeaturesVC == nil {
+                activeFeaturesVC = WorkspaceFeaturesViewController.instantiate(workspace: workspace)
+                addChildVC(activeFeaturesVC)
+            }
+            if !searchActive {
+                activeFeaturesVC.view.isHidden = false
             }
         }
     }
