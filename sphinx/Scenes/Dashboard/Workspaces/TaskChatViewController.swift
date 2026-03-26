@@ -934,6 +934,7 @@ extension TaskChatViewController: HivePusherDelegate {
             )
         }
 
+        guard message.taskId == task.id else { return }
         guard !messages.contains(where: { $0.id == message.id }) else { return }
         messages.append(message)
         guard message.isDisplayable else { return }

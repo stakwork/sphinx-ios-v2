@@ -211,6 +211,7 @@ struct HiveChatMessageAttachment {
 struct HiveChatMessage {
     let id: String
     let featureId: String?
+    let taskId: String?
     var message: String
     let role: String       // "USER" or "ASSISTANT" (uppercase from API)
     let status: String?
@@ -227,6 +228,7 @@ struct HiveChatMessage {
         message: String,
         role: String,
         featureId: String? = nil,
+        taskId: String? = nil,
         status: String? = nil,
         userId: String? = nil,
         createdAt: String? = nil,
@@ -239,6 +241,7 @@ struct HiveChatMessage {
         self.message = message
         self.role = role
         self.featureId = featureId
+        self.taskId = taskId
         self.status = status
         self.userId = userId
         self.createdAt = createdAt
@@ -254,6 +257,7 @@ struct HiveChatMessage {
               let role = json["role"].string else { return nil }
         self.id = id
         self.featureId = json["featureId"].string
+        self.taskId = json["taskId"].string
         self.message = message
         self.role = role
         self.status = json["status"].string
