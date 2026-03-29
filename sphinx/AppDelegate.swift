@@ -82,8 +82,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             UITableView.appearance().sectionHeaderTopPadding = CGFloat(0)
         }
         
-        try? AVAudioSession.sharedInstance().setCategory(.playback)
-                
         //        registerAppRefresh()
         //        configureStoreKit()
         //        registerForVoIP()
@@ -93,6 +91,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         configureBugsnag()
         configureNotificationCenter()
         configureSVGRendering()
+        configureSDWebImage()
         connectMQTT()
         
         StorageManager.sharedManager.deleteOldMedia()
@@ -318,6 +317,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //            self.handleAppRefresh(task: task)
 //        })
 //    }
+    
+    func configureSDWebImage() {
+        SDImageCache.shared.config.maxMemoryCost = 75 * 1024 * 1024 // 75 MB
+    }
     
     func configureSVGRendering(){
         let SVGCoder = SDImageSVGCoder.shared
@@ -592,6 +595,14 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
     ) {
         if isActive || !UserData.sharedInstance.isUserLogged() {
+            completionHandler(.noData)
+            return
+        }
+        
+        // Skip reconnect if PIN is required but not available in memory
+        // (process was silently relaunched in background after being killed)
+        if UserData.sharedInstance.isPinSet() &&
+           SphinxOnionManager.sharedInstance.appSessionPin == nil {
             completionHandler(.noData)
             return
         }
