@@ -596,12 +596,13 @@ extension SphinxOnionManager {
             
             let byteArray: [UInt8] = [UInt8](payload)
             
-            self.mqtt?.publish(
-                CocoaMQTTMessage(
-                    topic: topic,
-                    payload: byteArray
-                )
+            let message = CocoaMQTTMessage(
+                topic: topic,
+                payload: byteArray
             )
+            message.qos = .qos0
+            
+            self.mqtt?.publish(message)
             
             DelayPerformedHelper.performAfterDelay(seconds: 0.25, completion: {
                 callback(rr, skipAsyncTopic)
@@ -615,7 +616,7 @@ extension SphinxOnionManager {
     func handleTopicsToSubscribe(topics: [String]) {
         for topic in topics {
             self.mqtt.subscribe([
-                (topic, CocoaMQTTQoS.qos1)
+                (topic, CocoaMQTTQoS.qos0)
             ])
         }
     }
