@@ -590,8 +590,9 @@ public class Chat: NSManagedObject {
                     }
                     message.seen = true
                 } else {
-                    message.seen = false
-                    message.chat?.seen = false
+                    if !message.seen {
+                        message.chat?.seen = false
+                    }
                 }
             }
         } catch let error as NSError {
