@@ -383,6 +383,16 @@ class SphinxOnionManager : NSObject {
         // Cancel reconnection timer to prevent background reconnection attempts
         endReconnectionTimer()
 
+        // Cancel all pending timers to prevent background DB writes and network calls
+        watchdogTimer?.invalidate()
+        watchdogTimer = nil
+
+        delayedRRTimers.values.forEach { $0.invalidate() }
+        delayedRRTimers.removeAll()
+
+        paymentTimeoutTimers.values.forEach { $0.invalidate() }
+        paymentTimeoutTimers.removeAll()
+
         if let mqtt = self.mqtt, mqtt.connState == .connected {
             mqtt.disconnect()
         } else {
