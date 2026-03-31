@@ -262,10 +262,7 @@ extension SphinxOnionManager {
                 isTribe: isTribe
             )
             
-            let tag = handleRunReturn(
-                rr: rr,
-                isSendingMessage: true
-            )
+            let tag = getMessageTag(messages: rr.msgs, isSendingMessage: true)
             
             let sentMessage = processNewOutgoingMessage(
                 rr: rr,
@@ -293,6 +290,13 @@ extension SphinxOnionManager {
                 chat.timezoneUpdated = false
 //                chat.managedObjectContext?.saveContext()
             }
+            
+            (context ?? chat.managedObjectContext)?.saveContext()
+            
+            let _ = handleRunReturn(
+                rr: rr,
+                isSendingMessage: true
+            )
             
             return (sentMessage, nil)
         } catch let error {
