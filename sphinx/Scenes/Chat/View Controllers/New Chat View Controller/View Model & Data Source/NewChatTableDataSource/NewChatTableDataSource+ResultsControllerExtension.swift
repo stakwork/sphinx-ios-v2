@@ -36,7 +36,7 @@ extension NewChatTableDataSource {
         restorePreloadedMessages()
         
         self.configureResultsController(items: max(self.dataSource.snapshot().numberOfItems, 100))
-        self.fetchMoreItems()
+//        self.fetchMoreItems()
     }
     
     func makeSnapshotForCurrentState() -> DataSourceSnapshot {
