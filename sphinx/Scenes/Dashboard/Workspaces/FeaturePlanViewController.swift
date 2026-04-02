@@ -9,6 +9,7 @@
 import UIKit
 import AVKit
 import AVFoundation
+import PusherSwift
 
 class FeaturePlanViewController: UIViewController {
     

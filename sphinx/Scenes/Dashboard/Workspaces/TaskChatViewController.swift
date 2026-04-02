@@ -10,6 +10,7 @@ import UIKit
 import AVKit
 import AVFoundation
 import PhotosUI
+import PusherSwift
 
 class TaskChatViewController: UIViewController {
 
