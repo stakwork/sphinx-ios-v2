@@ -145,10 +145,7 @@ class DashboardRootViewController: RootViewController {
                 loading: shouldShowHeaderLoadingWheel,
                 loadingWheel: headerView.loadingWheel,
                 loadingWheelColor: UIColor.white,
-                views: [
-                    searchBarContainer,
-                    bottomBarContainer,
-                ]
+                views: []
             )
         }
     }
