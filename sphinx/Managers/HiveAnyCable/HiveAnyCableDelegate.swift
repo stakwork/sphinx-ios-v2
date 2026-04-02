@@ -8,4 +8,9 @@
 
 protocol HiveAnyCableDelegate: AnyObject {
     func workflowStepTextReceived(stepText: String)
+    func anyCableDidDisconnect()
+}
+
+extension HiveAnyCableDelegate {
+    func anyCableDidDisconnect() {}
 }

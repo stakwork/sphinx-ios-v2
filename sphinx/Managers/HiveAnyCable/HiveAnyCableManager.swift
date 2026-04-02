@@ -130,6 +130,9 @@ extension HiveAnyCableManager: WebSocketDelegate {
         } else {
             print("[HiveAnyCable] Disconnected cleanly")
         }
+        DispatchQueue.main.async { [weak self] in
+            self?.delegate?.anyCableDidDisconnect()
+        }
     }
 
     func websocketDidReceiveMessage(socket: WebSocketClient, text: String) {

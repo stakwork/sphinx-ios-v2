@@ -905,6 +905,13 @@ class TaskChatViewController: UIViewController {
 
 // MARK: - HivePusherDelegate
 extension TaskChatViewController: HivePusherDelegate {
+    func pusherConnectionStateChanged(from old: ConnectionState, to new: ConnectionState) {
+        guard new == .disconnected else { return }
+        DispatchQueue.main.async { [weak self] in
+            self?.reconnectAndRefresh()
+        }
+    }
+
     func taskGenerationStatusChanged(status: String, featureId: String) {
         
     }
@@ -983,6 +990,11 @@ extension TaskChatViewController: HiveAnyCableDelegate {
     func workflowStepTextReceived(stepText: String) {
         workflowStatusView.setStatusText(stepText)
         UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
+    }
+
+    func anyCableDidDisconnect() {
+        anyCableManager = nil
+        reconnectAndRefresh()
     }
 }
 
