@@ -1883,6 +1883,13 @@ extension FeaturePlanViewController: UITextViewDelegate {
 
 // MARK: - HivePusherDelegate
 extension FeaturePlanViewController: HivePusherDelegate {
+    func pusherConnectionStateChanged(from old: ConnectionState, to new: ConnectionState) {
+        guard new == .disconnected else { return }
+        DispatchQueue.main.async { [weak self] in
+            self?.reconnectAndRefresh()
+        }
+    }
+
     func featureUpdateReceived(featureId: String) {
         fetchFeatureDetail()
         updateTasksPanel()
@@ -2019,6 +2026,11 @@ extension FeaturePlanViewController: HiveAnyCableDelegate {
     func workflowStepTextReceived(stepText: String) {
         workflowStatusView.setStatusText(stepText)
         UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
+    }
+
+    func anyCableDidDisconnect() {
+        anyCableManager = nil
+        reconnectAndRefresh()
     }
 }
 
