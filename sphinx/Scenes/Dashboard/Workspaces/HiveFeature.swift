@@ -73,9 +73,9 @@ struct HiveFeature {
         let df = DateFormatter()
         df.locale = Locale(identifier: "en_US_POSIX")
         df.timeZone = TimeZone(secondsFromGMT: 0)
-        return combined.sorted {
-            let d0 = $0.createdAt.flatMap { HiveFeature.parseISO8601($0, formatter: df) } ?? Date.distantPast
-            let d1 = $1.createdAt.flatMap { HiveFeature.parseISO8601($1, formatter: df) } ?? Date.distantPast
+        return combined.sorted { taskA, taskB in
+            let d0 = taskA.createdAt.flatMap { s in HiveFeature.parseISO8601(s, formatter: df) } ?? Date.distantPast
+            let d1 = taskB.createdAt.flatMap { s in HiveFeature.parseISO8601(s, formatter: df) } ?? Date.distantPast
             return d0 < d1
         }
     }
