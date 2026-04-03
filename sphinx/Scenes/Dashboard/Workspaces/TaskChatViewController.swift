@@ -940,12 +940,13 @@ class TaskChatViewController: UIViewController {
             scrollView.bottomAnchor.constraint(equalTo: overlay.bottomAnchor)
         ])
 
+        let renderer = MarkdownRenderer(style: MarkdownStyle())
+        let attributed = renderer.render(description)
+
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
         label.numberOfLines = 0
-        label.font = UIFont(name: "Roboto-Regular", size: 15) ?? UIFont.systemFont(ofSize: 15)
-        label.textColor = UIColor.Sphinx.Text
-        label.text = description
+        label.attributedText = attributed
         scrollView.addSubview(label)
 
         NSLayoutConstraint.activate([
