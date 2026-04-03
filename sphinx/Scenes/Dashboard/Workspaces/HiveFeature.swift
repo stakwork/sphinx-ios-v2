@@ -66,10 +66,13 @@ struct HiveFeature {
     /// Top-level tasks not assigned to any phase (from the detail endpoint)
     var looseTasks: [WorkspaceTask]
 
-    /// Flattened list of all tasks across phases + loose tasks, sorted by phase order then task order.
+    /// Flattened list of all tasks across phases + loose tasks, sorted by createdAt ascending (oldest first).
     var allTasks: [WorkspaceTask] {
         let phaseTasks = phases.sorted { $0.order < $1.order }.flatMap { $0.tasks }
-        return phaseTasks + looseTasks
+        let combined = phaseTasks + looseTasks
+        return combined.sorted {
+            ($0.createdAt ?? "") < ($1.createdAt ?? "")
+        }
     }
 
     var hasTasks: Bool { !allTasks.isEmpty }
