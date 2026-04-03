@@ -70,8 +70,12 @@ struct HiveFeature {
     var allTasks: [WorkspaceTask] {
         let phaseTasks = phases.sorted { $0.order < $1.order }.flatMap { $0.tasks }
         let combined = phaseTasks + looseTasks
+        let iso = ISO8601DateFormatter()
+        iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         return combined.sorted {
-            ($0.createdAt ?? "") < ($1.createdAt ?? "")
+            let d0 = $0.createdAt.flatMap { iso.date(from: $0) } ?? Date.distantPast
+            let d1 = $1.createdAt.flatMap { iso.date(from: $1) } ?? Date.distantPast
+            return d0 < d1
         }
     }
 
