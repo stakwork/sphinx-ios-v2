@@ -68,6 +68,9 @@ class TaskChatViewController: UIViewController {
     // MARK: - Agent state
     private var isAgentWorking: Bool = false
 
+    // MARK: - Description overlay
+    private var taskDescriptionOverlay: UIView?
+
     // Autocomplete
     private var availableWorkspaces: [Workspace] = []
     private var filteredWorkspaces: [Workspace] = []
@@ -168,6 +171,7 @@ class TaskChatViewController: UIViewController {
         view.backgroundColor = UIColor.Sphinx.Body
         setupHeader()
         setupChatArea()
+        setupDescriptionOverlayIfNeeded()
     }
 
     private func setupHeader() {
@@ -829,6 +833,9 @@ class TaskChatViewController: UIViewController {
                         self.task = updated
                         self.task.podId = podId
                         self.cachedStakworkProjectId = updated.stakworkProjectId
+                        if updated.status != "TODO" && updated.workflowStatus != "PENDING" {
+                            self.dismissDescriptionOverlay(animated: false)
+                        }
                     }
                     self.connectAnyCable()
                 }
@@ -902,6 +909,83 @@ class TaskChatViewController: UIViewController {
               status == .IN_PROGRESS || status == .HALTED else { return }
         applyWorkflowStatus(status, animated: false)
     }
+
+    // MARK: - Description Overlay
+
+    private func setupDescriptionOverlayIfNeeded() {
+        let isPending = task.status == "TODO" || task.status == "PENDING"
+        guard isPending,
+              let description = task.description, !description.isEmpty else { return }
+
+        let overlay = UIView()
+        overlay.translatesAutoresizingMaskIntoConstraints = false
+        overlay.backgroundColor = UIColor.Sphinx.Body
+        view.addSubview(overlay)
+
+        NSLayoutConstraint.activate([
+            overlay.topAnchor.constraint(equalTo: headerView.bottomAnchor),
+            overlay.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            overlay.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            overlay.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+
+        let scrollView = UIScrollView()
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        overlay.addSubview(scrollView)
+
+        NSLayoutConstraint.activate([
+            scrollView.topAnchor.constraint(equalTo: overlay.topAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: overlay.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: overlay.trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: overlay.bottomAnchor)
+        ])
+
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.numberOfLines = 0
+        label.font = UIFont(name: "Roboto-Regular", size: 15) ?? UIFont.systemFont(ofSize: 15)
+        label.textColor = UIColor.Sphinx.Text
+        label.text = description
+        scrollView.addSubview(label)
+
+        NSLayoutConstraint.activate([
+            label.topAnchor.constraint(equalTo: scrollView.topAnchor, constant: 16),
+            label.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor, constant: 16),
+            label.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor, constant: -16),
+            label.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: -16),
+            label.widthAnchor.constraint(equalTo: scrollView.widthAnchor, constant: -32)
+        ])
+
+        chatInputContainer.isHidden = true
+        bottomFillView.isHidden = true
+        workflowStatusView.isHidden = true
+        pendingAttachmentsBar.isHidden = true
+
+        taskDescriptionOverlay = overlay
+    }
+
+    private func dismissDescriptionOverlay(animated: Bool) {
+        guard let overlay = taskDescriptionOverlay else { return }
+
+        let restore = {
+            self.chatInputContainer.isHidden = false
+            self.bottomFillView.isHidden = false
+            self.workflowStatusView.isHidden = false
+            self.pendingAttachmentsBar.isHidden = false
+            overlay.removeFromSuperview()
+            self.taskDescriptionOverlay = nil
+        }
+
+        if animated {
+            UIView.animate(withDuration: 0.25, animations: {
+                overlay.alpha = 0
+            }, completion: { _ in
+                restore()
+            })
+        } else {
+            restore()
+        }
+    }
 }
 
 // MARK: - HivePusherDelegate
@@ -920,7 +1004,9 @@ extension TaskChatViewController: HivePusherDelegate {
     func workflowStatusChanged(status: WorkflowStatus) {
         DispatchQueue.main.async {
             self.applyWorkflowStatus(status)
-            
+            if status != .PENDING {
+                self.dismissDescriptionOverlay(animated: true)
+            }
 //            if status == .IN_PROGRESS || status == .PENDING {
 //                self.showProcessingBubble()
 //                self.fetchAndUpdateWorkflowStep()
