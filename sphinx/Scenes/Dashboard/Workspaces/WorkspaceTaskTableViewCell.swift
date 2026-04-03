@@ -201,7 +201,7 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
             let isQueueTask = task.status == "TODO" && task.systemAssigneeType == "TASK_COORDINATOR"
             if isQueueTask {
                 statusBadge.text = "QUEUE"
-                statusBadge.backgroundColor = .Sphinx.BlueTextAccent
+                statusBadge.backgroundColor = .systemGray
             } else {
                 let displayStatus = task.status
                     .replacingOccurrences(of: "_", with: " ")
