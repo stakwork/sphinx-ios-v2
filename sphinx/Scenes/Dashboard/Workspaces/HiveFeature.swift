@@ -66,10 +66,27 @@ struct HiveFeature {
     /// Top-level tasks not assigned to any phase (from the detail endpoint)
     var looseTasks: [WorkspaceTask]
 
-    /// Flattened list of all tasks across phases + loose tasks, sorted by phase order then task order.
+    /// Flattened list of all tasks across phases + loose tasks, sorted by createdAt ascending (oldest first).
     var allTasks: [WorkspaceTask] {
         let phaseTasks = phases.sorted { $0.order < $1.order }.flatMap { $0.tasks }
-        return phaseTasks + looseTasks
+        let combined = phaseTasks + looseTasks
+        let df = DateFormatter()
+        df.locale = Locale(identifier: "en_US_POSIX")
+        df.timeZone = TimeZone(secondsFromGMT: 0)
+        return combined.sorted { taskA, taskB in
+            let d0 = taskA.createdAt.flatMap { s in HiveFeature.parseISO8601(s, formatter: df) } ?? Date.distantPast
+            let d1 = taskB.createdAt.flatMap { s in HiveFeature.parseISO8601(s, formatter: df) } ?? Date.distantPast
+            return d0 < d1
+        }
+    }
+
+    private static func parseISO8601(_ string: String, formatter: DateFormatter) -> Date? {
+        let formats = ["yyyy-MM-dd'T'HH:mm:ss.SSSZ", "yyyy-MM-dd'T'HH:mm:ssZ"]
+        for format in formats {
+            formatter.dateFormat = format
+            if let date = formatter.date(from: string) { return date }
+        }
+        return nil
     }
 
     var hasTasks: Bool { !allTasks.isEmpty }
