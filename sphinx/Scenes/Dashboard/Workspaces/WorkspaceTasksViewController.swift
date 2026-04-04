@@ -180,7 +180,13 @@ extension WorkspaceTasksViewController: UITableViewDataSource, UITableViewDelega
         cell.onRetryWorkflowTapped = { [weak self] in
             guard let self else { return }
             let task = self.tasks[indexPath.row]
-            API.sharedInstance.retryTaskWorkflowWithAuth(taskId: task.id, callback: {}, errorCallback: {})
+            API.sharedInstance.retryTaskWorkflowWithAuth(taskId: task.id, callback: { [weak self] in
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    self.tasks[indexPath.row].workflowStatus = "IN_PROGRESS"
+                    self.tableView.reloadRows(at: [indexPath], with: .none)
+                }
+            }, errorCallback: {})
         }
         return cell
     }
