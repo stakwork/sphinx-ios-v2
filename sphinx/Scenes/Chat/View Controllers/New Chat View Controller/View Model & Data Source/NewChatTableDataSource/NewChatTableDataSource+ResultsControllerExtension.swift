@@ -69,6 +69,7 @@ extension NewChatTableDataSource {
             
             self.saveSnapshotCurrentState()
             self.dataSource.apply(snapshot, animatingDifferences: false)
+            self.isRestoringScrollPosition = true
             self.restoreScrollLastPosition()
             
             DelayPerformedHelper.performAfterDelay(seconds: 1.0, completion: {
@@ -793,11 +794,23 @@ extension NewChatTableDataSource : NSFetchedResultsControllerDelegate {
             return
         }
         
-        messagesCountRequested = items
+        var requestedItems = items
+        
+        // If there is a saved scroll state mid-chat, ensure we fetch enough items to cover the anchor
+        if let chatId = chat.id,
+           let scrollState = preloaderHelper.getScrollState(for: chatId),
+           !scrollState.isAtBottom {
+            // Count how many messages exist from the anchor downward (more recent)
+            let anchorId = scrollState.firstRowId
+            let countFromAnchor = TransactionMessage.getCountOfMessages(forChat: chat, fromId: anchorId) + 20
+            requestedItems = max(items, countFromAnchor)
+        }
+        
+        messagesCountRequested = requestedItems
         
         var fetchRequest = getFetchRequestFor(
             chat: chat,
-            with: items
+            with: requestedItems
         )
         
         if let minIndex = getFetchMinIndex(fetchRequest: fetchRequest), !isThread {
@@ -805,7 +818,7 @@ extension NewChatTableDataSource : NSFetchedResultsControllerDelegate {
             
             fetchRequest = getFetchRequestFor(
                 chat: chat,
-                with: items,
+                with: requestedItems,
                 and: minIndex
             )
         }

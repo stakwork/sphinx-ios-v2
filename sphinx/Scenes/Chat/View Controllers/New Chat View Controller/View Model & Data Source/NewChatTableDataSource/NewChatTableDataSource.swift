@@ -106,6 +106,7 @@ class NewChatTableDataSource : NSObject {
     let messageBubbleHelper = NewMessageBubbleHelper()
     let audioPlayerHelper = AudioPlayerHelper()
     var podcastPlayerController = PodcastPlayerController.sharedInstance
+    var isRestoringScrollPosition: Bool = false
     
     ///Messages Data
     var messagesArray: [TransactionMessage] = []

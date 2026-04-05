@@ -145,6 +145,9 @@ class NewChatViewController: NewKeyboardHandlerViewController {
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         
+        // Save scroll state before the view disappears
+        chatTableDataSource?.saveSnapshotCurrentState()
+        
         if self.isMovingFromParent {
             chat?.setChatMessagesAsSeen()
         }
@@ -154,7 +157,6 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         super.viewDidDisappear(animated)
         
         if self.isMovingFromParent {
-            chatTableDataSource?.saveSnapshotCurrentState()
             chatTableDataSource?.stopListeningToResultsController()
 
             stopPlayingClip()
