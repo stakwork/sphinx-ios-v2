@@ -505,6 +505,7 @@
 		47AF0D3C254C9F1000C98398 /* fireworks.json in Resources */ = {isa = PBXBuildFile; fileRef = 47AF0D3B254C9F1000C98398 /* fireworks.json */; };
 		47AF0D4C2551883400C98398 /* PodcastModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AF0D4B2551883400C98398 /* PodcastModels.swift */; };
 		47B3B4CD2F8460B400317A05 /* AnthropicProvider in Frameworks */ = {isa = PBXBuildFile; productRef = 47B3B4CC2F8460B400317A05 /* AnthropicProvider */; };
+		7605C48395834E8F9EF5BBA2 /* AIAgentManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C8F6F4C52D48F59440969F /* AIAgentManager.swift */; };
 		47B3B4CF2F8460B400317A05 /* OpenAIProvider in Frameworks */ = {isa = PBXBuildFile; productRef = 47B3B4CE2F8460B400317A05 /* OpenAIProvider */; };
 		47B46F66254AFE1C007F61CD /* ChatHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47B46F65254AFE1C007F61CD /* ChatHeaderView.swift */; };
 		47B690DD24A2CF6000F07B73 /* AppAppearenceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47B690DC24A2CF6000F07B73 /* AppAppearenceView.swift */; };
@@ -2638,6 +2639,7 @@
 		471FACD623E89E19007DE1C8 /* Managers */ = {
 			isa = PBXGroup;
 			children = (
+				5DF2DCE5F5AE4D99A76A5485 /* AI Agent */,
 				1B845352803C4566A0C34DFA /* HiveAnyCable */,
 				4759621F2F5210D700564B7F /* HivePusher */,
 				2B29A8C121864AB29BF6E3F1 /* GraphChat */,
@@ -3952,6 +3954,14 @@
 				47978EF72F040C9B0092B516 /* DataSync+CoreDataClass.swift */,
 			);
 			path = "Data Sync";
+			sourceTree = "<group>";
+		};
+		5DF2DCE5F5AE4D99A76A5485 /* AI Agent */ = {
+			isa = PBXGroup;
+			children = (
+				31C8F6F4C52D48F59440969F /* AIAgentManager.swift */,
+			);
+			path = "AI Agent";
 			sourceTree = "<group>";
 		};
 		47978EFB2F040D300092B516 /* DataSyncManager */ = {
@@ -5845,6 +5855,7 @@
 				47183CB22548AA4400E6FD19 /* PodcastPlayerView.swift in Sources */,
 				47978EFD2F040D3D0092B516 /* DataSyncManager.swift in Sources */,
 				47978EFE2F040D420092B516 /* DataSyncModels.swift in Sources */,
+				7605C48395834E8F9EF5BBA2 /* AIAgentManager.swift in Sources */,
 				F34BFED7267B350D003F6D55 /* RestoreUserDescriptionViewController.swift in Sources */,
 				472092C92A278B0400468796 /* NewMessageTableViewCell.swift in Sources */,
 				472092B92A24FF6100468796 /* NewChatHeaderView.swift in Sources */,
@@ -7561,6 +7572,7 @@
 				version = 2.8.1;
 			};
 		};
+		31C8F6F4C52D48F59440969F /* AIAgentManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIAgentManager.swift; sourceTree = "<group>"; };
 		47B3B4CB2F8460B400317A05 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/teunlao/swift-ai-sdk";
