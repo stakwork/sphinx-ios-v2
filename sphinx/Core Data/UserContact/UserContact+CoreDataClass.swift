@@ -299,6 +299,13 @@ public class UserContact: NSManagedObject, @unchecked Sendable {
         return contact
     }
     
+    public static func agentContact() -> UserContact? {
+        let fetchRequest: NSFetchRequest<UserContact> = UserContact.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "isAgent == true")
+        fetchRequest.fetchLimit = 1
+        return (try? CoreDataManager.sharedManager.persistentContainer.viewContext.fetch(fetchRequest))?.first
+    }
+    
     public static func getContactWithInviteCode(
         inviteCode: String,
         managedContext: NSManagedObjectContext? = nil
