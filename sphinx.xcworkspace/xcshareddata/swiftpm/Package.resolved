@@ -1,5 +1,5 @@
 {
-  "originHash" : "f559ebb42a9c400d3f67459787661393d2f2a31065836d6c63f1b0fd6e28762a",
+  "originHash" : "40f7e98e3cce5726b1b3636d00ffd0931ad737f1e274b2db2443b7a9b71f2636",
   "pins" : [
     {
       "identity" : "client-sdk-swift",
@@ -17,6 +17,24 @@
       "state" : {
         "revision" : "e2e28f4e56e1769c2ec3c61c9355fc64eb7a535a",
         "version" : "5.3.0"
+      }
+    },
+    {
+      "identity" : "swift-ai-sdk",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/teunlao/swift-ai-sdk",
+      "state" : {
+        "revision" : "89374cac1b61ba6c6ec4183366a6652fa706f1d9",
+        "version" : "0.17.6"
+      }
+    },
+    {
+      "identity" : "swift-argument-parser",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-argument-parser",
+      "state" : {
+        "revision" : "626b5b7b2f45e1b0b1c6f4a309296d1d21d7311b",
+        "version" : "1.7.1"
       }
     },
     {

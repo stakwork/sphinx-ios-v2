@@ -504,6 +504,8 @@
 		47AF0D39254C98DE00C98398 /* BoostFireworksAnimationView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 47AF0D38254C98DE00C98398 /* BoostFireworksAnimationView.xib */; };
 		47AF0D3C254C9F1000C98398 /* fireworks.json in Resources */ = {isa = PBXBuildFile; fileRef = 47AF0D3B254C9F1000C98398 /* fireworks.json */; };
 		47AF0D4C2551883400C98398 /* PodcastModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AF0D4B2551883400C98398 /* PodcastModels.swift */; };
+		47B3B4CD2F8460B400317A05 /* AnthropicProvider in Frameworks */ = {isa = PBXBuildFile; productRef = 47B3B4CC2F8460B400317A05 /* AnthropicProvider */; };
+		47B3B4CF2F8460B400317A05 /* OpenAIProvider in Frameworks */ = {isa = PBXBuildFile; productRef = 47B3B4CE2F8460B400317A05 /* OpenAIProvider */; };
 		47B46F66254AFE1C007F61CD /* ChatHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47B46F65254AFE1C007F61CD /* ChatHeaderView.swift */; };
 		47B690DD24A2CF6000F07B73 /* AppAppearenceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47B690DC24A2CF6000F07B73 /* AppAppearenceView.swift */; };
 		47B690E124A2E00800F07B73 /* UIWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47B690E024A2E00800F07B73 /* UIWindow.swift */; };
@@ -685,6 +687,7 @@
 		AA001CQ32F9A0001000CQ001 /* ClarifyingQuestionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA001CQ22F9A0001000CQ001 /* ClarifyingQuestionsTests.swift */; };
 		AA11BB22CC33DD44EE55FF67 /* HiveSearchResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11BB22CC33DD44EE55FF66 /* HiveSearchResult.swift */; };
 		AA7F6F17A0F74FF18EC160CC /* AttachmentGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 745A54A4B69B4D74B9F96B6F /* AttachmentGridView.swift */; };
+		AABB11221DEF456700AABBCC /* SphinxrsExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB11221DEF456700AABBBB /* SphinxrsExtensions.swift */; };
 		AE87DA2C30C34E7BBDFDBA56 /* HivePusherManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4D0E0284E4B436180B0BAAF /* HivePusherManagerTests.swift */; };
 		BB22CC33DD44EE55FF667788 /* HiveSearchResultCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB22CC33DD44EE55FF667799 /* HiveSearchResultCell.swift */; };
 		BB22CC33DD44EE55FF6677AA /* HiveSearchResultCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = BB22CC33DD44EE55FF6677BB /* HiveSearchResultCell.xib */; };
@@ -729,7 +732,6 @@
 		CE49E13229ACEFAA006D3CCE /* VoIPPushMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE49E13129ACEFAA006D3CCE /* VoIPPushMessage.swift */; };
 		CE4A85932B5F051600813B59 /* SphinxOnionManager+TribesExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE4A85922B5F051600813B59 /* SphinxOnionManager+TribesExtension.swift */; };
 		CE4B53FD2AFC389C00708A0C /* SphinxOnionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE4B53FC2AFC389C00708A0C /* SphinxOnionManager.swift */; };
-		AABB11221DEF456700AABBCC /* SphinxrsExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB11221DEF456700AABBBB /* SphinxrsExtensions.swift */; };
 		CE50CB9F2C3DBB45009E71FB /* SphinxOnionManager+BTClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE50CB9E2C3DBB45009E71FB /* SphinxOnionManager+BTClient.swift */; };
 		CE51F350298870BF00ABBACB /* MemberBadgeDetailVM.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE51F34F298870BF00ABBACB /* MemberBadgeDetailVM.swift */; };
 		CE51F3562988743E00ABBACB /* MemberDetailTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE51F3542988743E00ABBACB /* MemberDetailTableViewCell.swift */; };
@@ -1995,6 +1997,7 @@
 		AA001CQ02F9A0001000CQ001 /* ClarifyingQuestionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClarifyingQuestionsView.swift; sourceTree = "<group>"; };
 		AA001CQ22F9A0001000CQ001 /* ClarifyingQuestionsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClarifyingQuestionsTests.swift; sourceTree = "<group>"; };
 		AA11BB22CC33DD44EE55FF66 /* HiveSearchResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveSearchResult.swift; sourceTree = "<group>"; };
+		AABB11221DEF456700AABBBB /* SphinxrsExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SphinxrsExtensions.swift; sourceTree = "<group>"; };
 		B2C3D4E5F60002I9J0K1L2M3 /* HiveLinkNavigator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveLinkNavigator.swift; sourceTree = "<group>"; };
 		B2C3D4E5F6A7B8C9D0E1F2A3 /* TaskProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskProgress.swift; sourceTree = "<group>"; };
 		B4D0E0284E4B436180B0BAAF /* HivePusherManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HivePusherManagerTests.swift; sourceTree = "<group>"; };
@@ -2040,7 +2043,6 @@
 		CE49E13129ACEFAA006D3CCE /* VoIPPushMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoIPPushMessage.swift; sourceTree = "<group>"; };
 		CE4A85922B5F051600813B59 /* SphinxOnionManager+TribesExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SphinxOnionManager+TribesExtension.swift"; sourceTree = "<group>"; };
 		CE4B53FC2AFC389C00708A0C /* SphinxOnionManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SphinxOnionManager.swift; sourceTree = "<group>"; };
-		AABB11221DEF456700AABBBB /* SphinxrsExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SphinxrsExtensions.swift; sourceTree = "<group>"; };
 		CE50CB9E2C3DBB45009E71FB /* SphinxOnionManager+BTClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SphinxOnionManager+BTClient.swift"; sourceTree = "<group>"; };
 		CE51F34F298870BF00ABBACB /* MemberBadgeDetailVM.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberBadgeDetailVM.swift; sourceTree = "<group>"; };
 		CE51F3542988743E00ABBACB /* MemberDetailTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberDetailTableViewCell.swift; sourceTree = "<group>"; };
@@ -2325,6 +2327,8 @@
 				474C7A5128D3A765007A3E17 /* universal-sphinxrs.a in Frameworks */,
 				F331199D268E93FB005082EB /* StoreKit.framework in Frameworks */,
 				4703CF932519425E007B685C /* PDFKit.framework in Frameworks */,
+				47B3B4CD2F8460B400317A05 /* AnthropicProvider in Frameworks */,
+				47B3B4CF2F8460B400317A05 /* OpenAIProvider in Frameworks */,
 				12075275C652A9404FC48EBC /* Pods_sphinx.framework in Frameworks */,
 				473873AE2CD906C500CBBC28 /* LiveKit in Frameworks */,
 			);
@@ -5113,6 +5117,8 @@
 			packageProductDependencies = (
 				473873AD2CD906C500CBBC28 /* LiveKit */,
 				4730EF442CDA91CF0014581F /* SFSafeSymbols */,
+				47B3B4CC2F8460B400317A05 /* AnthropicProvider */,
+				47B3B4CE2F8460B400317A05 /* OpenAIProvider */,
 			);
 			productName = sphinx;
 			productReference = 4779F15E232AA0F200D35E81 /* sphinx.app */;
@@ -5216,6 +5222,7 @@
 			packageReferences = (
 				473873AC2CD906C500CBBC28 /* XCRemoteSwiftPackageReference "client-sdk-swift" */,
 				4730EF432CDA91CF0014581F /* XCRemoteSwiftPackageReference "SFSafeSymbols" */,
+				47B3B4CB2F8460B400317A05 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */,
 			);
 			productRefGroup = 4779F15F232AA0F200D35E81 /* Products */;
 			projectDirPath = "";
@@ -5510,9 +5517,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-sphinx/Pods-sphinx-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-sphinx/Pods-sphinx-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -7549,6 +7560,14 @@
 				version = 2.8.1;
 			};
 		};
+		47B3B4CB2F8460B400317A05 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/teunlao/swift-ai-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.17.6;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -7561,6 +7580,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 473873AC2CD906C500CBBC28 /* XCRemoteSwiftPackageReference "client-sdk-swift" */;
 			productName = LiveKit;
+		};
+		47B3B4CC2F8460B400317A05 /* AnthropicProvider */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 47B3B4CB2F8460B400317A05 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
+			productName = AnthropicProvider;
+		};
+		47B3B4CE2F8460B400317A05 /* OpenAIProvider */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 47B3B4CB2F8460B400317A05 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
+			productName = OpenAIProvider;
 		};
 /* End XCSwiftPackageProductDependency section */
 
