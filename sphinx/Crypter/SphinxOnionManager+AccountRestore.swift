@@ -1043,8 +1043,13 @@ extension SphinxOnionManager {
         
         restoredContactInfoTracker = []
         
-        let isAppActive = DispatchQueue.main.sync {
-            (UIApplication.shared.delegate as? AppDelegate)?.isActive == true
+        let isAppActive: Bool
+        if Thread.isMainThread {
+            isAppActive = (UIApplication.shared.delegate as? AppDelegate)?.isActive == true
+        } else {
+            isAppActive = DispatchQueue.main.sync {
+                (UIApplication.shared.delegate as? AppDelegate)?.isActive == true
+            }
         }
         if isAppActive {
             ///Avoid processes that will run after the completion handler is called

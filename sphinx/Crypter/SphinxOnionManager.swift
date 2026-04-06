@@ -68,7 +68,9 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
     
     var isConnected : Bool = false{
         didSet{
-            NotificationCenter.default.post(name: .onConnectionStatusChanged, object: nil)
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: .onConnectionStatusChanged, object: nil)
+            }
         }
     }
     

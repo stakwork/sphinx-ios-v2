@@ -570,17 +570,13 @@ extension NewChatTableDataSource {
             if rowIndex < 0 {
                 self.delegate?.shouldReloadThreadHeaderView()
             } else {
-                mediaReloadQueue.async {
-                    MainActor.assumeIsolated {
-                        var snapshot = self.dataSource.snapshot()
-
-                        if snapshot.itemIdentifiers.contains(tableCellState.1) {
-                            snapshot.reloadItems([tableCellState.1])
-
-                            DispatchQueue.main.async {
-                                self.dataSource.apply(snapshot, animatingDifferences: false)
-                            }
-                        }
+                let cellState = tableCellState.1
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    var snapshot = self.dataSource.snapshot()
+                    if snapshot.itemIdentifiers.contains(cellState) {
+                        snapshot.reloadItems([cellState])
+                        self.dataSource.apply(snapshot, animatingDifferences: false)
                     }
                 }
             }
@@ -606,16 +602,13 @@ extension NewChatTableDataSource {
                     (UIScreen.main.bounds.width - (MessageTableCellState.kRowLeftMargin + MessageTableCellState.kRowRightMargin)) * (MessageTableCellState.kBubbleWidthPercentage)
             )
 
-            dataSourceQueue.async {
-                MainActor.assumeIsolated {
-                    var snapshot = self.dataSource.snapshot()
-
-                    if snapshot.itemIdentifiers.contains(tableCellState.1) {
-                        snapshot.reloadItems([tableCellState.1])
-                        DispatchQueue.main.async {
-                            self.dataSource.apply(snapshot, animatingDifferences: true)
-                        }
-                    }
+            let cellState = tableCellState.1
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                var snapshot = self.dataSource.snapshot()
+                if snapshot.itemIdentifiers.contains(cellState) {
+                    snapshot.reloadItems([cellState])
+                    self.dataSource.apply(snapshot, animatingDifferences: true)
                 }
             }
         }
@@ -632,17 +625,13 @@ extension NewChatTableDataSource {
         ) {
             uploadingProgress[messageId] = updatedUploadProgressData
 
-            dataSourceQueue.async {
-                MainActor.assumeIsolated {
-                    var snapshot = self.dataSource.snapshot()
-
-                    if snapshot.itemIdentifiers.contains(tableCellState.1) {
-                        snapshot.reloadItems([tableCellState.1])
-
-                        DispatchQueue.main.async {
-                            self.dataSource.apply(snapshot, animatingDifferences: false)
-                        }
-                    }
+            let cellState = tableCellState.1
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                var snapshot = self.dataSource.snapshot()
+                if snapshot.itemIdentifiers.contains(cellState) {
+                    snapshot.reloadItems([cellState])
+                    self.dataSource.apply(snapshot, animatingDifferences: false)
                 }
             }
         }
@@ -660,17 +649,13 @@ extension NewChatTableDataSource {
         {
             preloaderHelper.linksData[linkWeb.link] = linkData
 
-            dataSourceQueue.async {
-                MainActor.assumeIsolated {
-                    var snapshot = self.dataSource.snapshot()
-
-                    if snapshot.itemIdentifiers.contains(tableCellState.1) {
-                        snapshot.reloadItems([tableCellState.1])
-
-                        DispatchQueue.main.async {
-                            self.dataSource.apply(snapshot, animatingDifferences: true)
-                        }
-                    }
+            let cellState = tableCellState.1
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                var snapshot = self.dataSource.snapshot()
+                if snapshot.itemIdentifiers.contains(cellState) {
+                    snapshot.reloadItems([cellState])
+                    self.dataSource.apply(snapshot, animatingDifferences: true)
                 }
             }
         }

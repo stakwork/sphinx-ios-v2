@@ -558,11 +558,13 @@ extension SphinxOnionManager {
         if let _ = rr.settleTopic, let _ = rr.settlePayload {
             let paymentHashes = rr.msgs.compactMap({ $0.paymentHash })
             for paymentHash in paymentHashes {
-                NotificationCenter.default.post(
-                    name: .sentInvoiceSettled,
-                    object: nil,
-                    userInfo: ["paymentHash": paymentHash]
-                )
+                DispatchQueue.main.async {
+                    NotificationCenter.default.post(
+                        name: .sentInvoiceSettled,
+                        object: nil,
+                        userInfo: ["paymentHash": paymentHash]
+                    )
+                }
             }
         }
     }

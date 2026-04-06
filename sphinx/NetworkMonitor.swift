@@ -61,11 +61,14 @@ class NetworkMonitor: @unchecked Sendable {
 
         print("Network status changed - isConnected: \(isConnected), Connection Type: \(String(describing: connectionType))")
 
-        // Example Notification Logic
-        if isConnected {
-            NotificationCenter.default.post(name: .connectedToInternet, object: nil)
-        } else {
-            NotificationCenter.default.post(name: .disconnectedFromInternet, object: nil)
+        // Post notifications on main thread — observers may use MainActor.assumeIsolated
+        let connected = isConnected
+        DispatchQueue.main.async {
+            if connected {
+                NotificationCenter.default.post(name: .connectedToInternet, object: nil)
+            } else {
+                NotificationCenter.default.post(name: .disconnectedFromInternet, object: nil)
+            }
         }
     }
 

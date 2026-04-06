@@ -179,10 +179,10 @@ extension YouTubeVideoFeedEpisodePlayerViewController {
             if let url =
             videoPlayerEpisode.getVideoUrl()
             {
-                DispatchQueue.main.sync {
-                    localVideoPlayerContainer.isHidden = false
-                    avPlayer = createVideoPlayerView(withVideoURL: url)
-                    avPlayer?.delegate = self
+                DispatchQueue.main.async {
+                    self.localVideoPlayerContainer.isHidden = false
+                    self.avPlayer = self.createVideoPlayerView(withVideoURL: url)
+                    self.avPlayer?.delegate = self
                 }
             }
         }
@@ -191,7 +191,7 @@ extension YouTubeVideoFeedEpisodePlayerViewController {
             API.sharedInstance.getVideoRemoteStorageStatus(videoID: videoPlayerEpisode.youtubeVideoID, callback: { filePath in
                 if let validPath = filePath,
                    let url = URL(string: validPath){
-                    DispatchQueue.main.sync {
+                    DispatchQueue.main.async {
                         self.localVideoPlayerContainer.isHidden = false
                         self.avPlayer = self.createVideoPlayerView(withVideoURL: url)
                         self.avPlayer?.delegate = self

@@ -273,11 +273,14 @@ extension SphinxOnionManager {
                            let preimage = dictionary["preimage"] as? String,
                            !preimage.isEmpty
                         {
-                            NotificationCenter.default.post(
-                                name: .invoiceIPaidSettled,
-                                object: nil,
-                                userInfo: dictionary as [AnyHashable: Any]
-                            )
+                            let userInfo = dictionary as [AnyHashable: Any]
+                            DispatchQueue.main.async {
+                                NotificationCenter.default.post(
+                                    name: .invoiceIPaidSettled,
+                                    object: nil,
+                                    userInfo: userInfo
+                                )
+                            }
                         }
                     }
                 } catch {
@@ -537,16 +540,19 @@ extension SphinxOnionManager {
                         cachedMessage.paymentHash = sentStatus.paymentHash
                     }
                 } else {
-                    NotificationCenter.default.post(
-                        Notification(
-                            name: .onKeysendStatusReceived,
-                            object: nil,
-                            userInfo: [
-                                "tag" : tag,
-                                "status": sentStatus.status ?? SphinxOnionManager.kFailedStatus
-                            ]
+                    let keysendUserInfo: [AnyHashable: Any] = [
+                        "tag": tag,
+                        "status": sentStatus.status ?? SphinxOnionManager.kFailedStatus
+                    ]
+                    DispatchQueue.main.async {
+                        NotificationCenter.default.post(
+                            Notification(
+                                name: .onKeysendStatusReceived,
+                                object: nil,
+                                userInfo: keysendUserInfo
+                            )
                         )
-                    )
+                    }
                     
                     self.onPaymentStatusReceivedFor(tag: tag, status: sentStatus.status ?? SphinxOnionManager.kFailedStatus)
                 }
@@ -717,7 +723,9 @@ extension SphinxOnionManager {
                             
                             if !chatIds.isEmpty {
                                 let userInfo: [String: [Int]] = ["chat-ids" : chatIds]
-                                NotificationCenter.default.post(name: .onMessagesStatusChanged, object: nil, userInfo: userInfo)
+                                DispatchQueue.main.async {
+                                    NotificationCenter.default.post(name: .onMessagesStatusChanged, object: nil, userInfo: userInfo)
+                                }
                             }
                         }
                     } catch {
