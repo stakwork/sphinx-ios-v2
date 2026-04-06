@@ -506,6 +506,7 @@
 		47AF0D4C2551883400C98398 /* PodcastModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AF0D4B2551883400C98398 /* PodcastModels.swift */; };
 		47B3B4CD2F8460B400317A05 /* AnthropicProvider in Frameworks */ = {isa = PBXBuildFile; productRef = 47B3B4CC2F8460B400317A05 /* AnthropicProvider */; };
 		47B3B4CF2F8460B400317A05 /* OpenAIProvider in Frameworks */ = {isa = PBXBuildFile; productRef = 47B3B4CE2F8460B400317A05 /* OpenAIProvider */; };
+		47B3B4D12F8473B500317A05 /* SwiftAISDK in Frameworks */ = {isa = PBXBuildFile; productRef = 47B3B4D02F8473B500317A05 /* SwiftAISDK */; };
 		47B46F66254AFE1C007F61CD /* ChatHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47B46F65254AFE1C007F61CD /* ChatHeaderView.swift */; };
 		47B690DD24A2CF6000F07B73 /* AppAppearenceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47B690DC24A2CF6000F07B73 /* AppAppearenceView.swift */; };
 		47B690E124A2E00800F07B73 /* UIWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47B690E024A2E00800F07B73 /* UIWindow.swift */; };
@@ -663,6 +664,7 @@
 		5010E69969BC4B008CB1B8DB /* HiveChatMessageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F4B101D1E0946E1A2ED0FCA /* HiveChatMessageTests.swift */; };
 		5AAB70B77BA445A795F0B858 /* AgentEventsSSEManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4D6CE7267E74E279F16D1AB /* AgentEventsSSEManager.swift */; };
 		731EF373B8FBD726748501FC /* WorkspaceTaskTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = E6E60B7E071F2F4E54B84E16 /* WorkspaceTaskTableViewCell.xib */; };
+		7605C48395834E8F9EF5BBA2 /* AIAgentManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C8F6F4C52D48F59440969F /* AIAgentManager.swift */; };
 		81D6970D2A7742A888F18562 /* WorkspaceFeatureTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6957C94054A8404294F1E644 /* WorkspaceFeatureTableViewCell.swift */; };
 		8846460B606C49A09D11D185 /* HiveAnyCableManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 667BC9B05F7A484EB3EE6CB7 /* HiveAnyCableManagerTests.swift */; };
 		8A76E71FD2044567BAC32D0D /* HiveFeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B5504520C1B4722A0EBFA00 /* HiveFeatureTests.swift */; };
@@ -983,6 +985,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		31C8F6F4C52D48F59440969F /* AIAgentManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIAgentManager.swift; sourceTree = "<group>"; };
 		334B3B522B8268CD0003EA63 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
 		334B3B532B8268CD0003EA63 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/RecommendationsHeaderCollectionReusableView.strings; sourceTree = "<group>"; };
 		334B3B542B8268CD0003EA63 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/Chat.strings; sourceTree = "<group>"; };
@@ -1804,7 +1807,6 @@
 		47B9A647233BB6AE00D2B022 /* AddressBookHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBookHeaderView.swift; sourceTree = "<group>"; };
 		47B9A649233BB6BA00D2B022 /* AddressBookHeaderView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = AddressBookHeaderView.xib; sourceTree = "<group>"; };
 		47B9CBF82F3D2D19007527B4 /* sphinx 57.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 57.xcdatamodel"; sourceTree = "<group>"; };
-		CE1A2B3C4D5E6F7A8B9C0D1E /* sphinx 58.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 58.xcdatamodel"; sourceTree = "<group>"; };
 		47B9CBF92F460C7B007527B4 /* Workspace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Workspace.swift; sourceTree = "<group>"; };
 		47B9CBFA2F460C7B007527B4 /* WorkspacesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspacesViewController.swift; sourceTree = "<group>"; };
 		47B9CBFB2F460C7B007527B4 /* WorkspaceTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceTableViewCell.swift; sourceTree = "<group>"; };
@@ -2017,6 +2019,7 @@
 		CE0C4675296DC5E200E82353 /* ContentFeedStatus+SupportingModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ContentFeedStatus+SupportingModels.swift"; sourceTree = "<group>"; };
 		CE167B562B0BAF6A00A9238E /* sphinxOnionAccountCreateUnitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = sphinxOnionAccountCreateUnitTests.swift; sourceTree = "<group>"; };
 		CE167B582B0BB17500A9238E /* sphinxOnionAccountCreateUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = sphinxOnionAccountCreateUITests.swift; sourceTree = "<group>"; };
+		CE1A2B3C4D5E6F7A8B9C0D1E /* sphinx 58.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 58.xcdatamodel"; sourceTree = "<group>"; };
 		CE1F033E2994458B002E1079 /* ChatLeaderboardEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatLeaderboardEntry.swift; sourceTree = "<group>"; };
 		CE2349842B8E749F00A708CB /* SphinxOnionManager+InvitesExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SphinxOnionManager+InvitesExtension.swift"; sourceTree = "<group>"; };
 		CE2585E829A3FE7200130641 /* JitsiIncomingCallManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JitsiIncomingCallManager.swift; sourceTree = "<group>"; };
@@ -2326,6 +2329,7 @@
 			files = (
 				4730EF452CDA91CF0014581F /* SFSafeSymbols in Frameworks */,
 				474C7A5128D3A765007A3E17 /* universal-sphinxrs.a in Frameworks */,
+				47B3B4D12F8473B500317A05 /* SwiftAISDK in Frameworks */,
 				F331199D268E93FB005082EB /* StoreKit.framework in Frameworks */,
 				4703CF932519425E007B685C /* PDFKit.framework in Frameworks */,
 				47B3B4CD2F8460B400317A05 /* AnthropicProvider in Frameworks */,
@@ -2638,6 +2642,7 @@
 		471FACD623E89E19007DE1C8 /* Managers */ = {
 			isa = PBXGroup;
 			children = (
+				5DF2DCE5F5AE4D99A76A5485 /* AI Agent */,
 				1B845352803C4566A0C34DFA /* HiveAnyCable */,
 				4759621F2F5210D700564B7F /* HivePusher */,
 				2B29A8C121864AB29BF6E3F1 /* GraphChat */,
@@ -4585,6 +4590,14 @@
 			path = "Like Kit";
 			sourceTree = "<group>";
 		};
+		5DF2DCE5F5AE4D99A76A5485 /* AI Agent */ = {
+			isa = PBXGroup;
+			children = (
+				31C8F6F4C52D48F59440969F /* AIAgentManager.swift */,
+			);
+			path = "AI Agent";
+			sourceTree = "<group>";
+		};
 		CE3133A32977747E00E91E3A /* Badges */ = {
 			isa = PBXGroup;
 			children = (
@@ -5120,6 +5133,7 @@
 				4730EF442CDA91CF0014581F /* SFSafeSymbols */,
 				47B3B4CC2F8460B400317A05 /* AnthropicProvider */,
 				47B3B4CE2F8460B400317A05 /* OpenAIProvider */,
+				47B3B4D02F8473B500317A05 /* SwiftAISDK */,
 			);
 			productName = sphinx;
 			productReference = 4779F15E232AA0F200D35E81 /* sphinx.app */;
@@ -5845,6 +5859,7 @@
 				47183CB22548AA4400E6FD19 /* PodcastPlayerView.swift in Sources */,
 				47978EFD2F040D3D0092B516 /* DataSyncManager.swift in Sources */,
 				47978EFE2F040D420092B516 /* DataSyncModels.swift in Sources */,
+				7605C48395834E8F9EF5BBA2 /* AIAgentManager.swift in Sources */,
 				F34BFED7267B350D003F6D55 /* RestoreUserDescriptionViewController.swift in Sources */,
 				472092C92A278B0400468796 /* NewMessageTableViewCell.swift in Sources */,
 				472092B92A24FF6100468796 /* NewChatHeaderView.swift in Sources */,
@@ -7168,7 +7183,7 @@
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = sphinx/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -7257,7 +7272,7 @@
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = sphinx/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -7591,6 +7606,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 47B3B4CB2F8460B400317A05 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
 			productName = OpenAIProvider;
+		};
+		47B3B4D02F8473B500317A05 /* SwiftAISDK */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 47B3B4CB2F8460B400317A05 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
+			productName = SwiftAISDK;
 		};
 /* End XCSwiftPackageProductDependency section */
 
