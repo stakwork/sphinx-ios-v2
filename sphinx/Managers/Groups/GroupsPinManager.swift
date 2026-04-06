@@ -19,7 +19,7 @@ class GroupsPinManager {
     
     var userData = UserData.sharedInstance
     
-    func shouldAskForPin() -> Bool {
+    @MainActor func shouldAskForPin() -> Bool {
         if UserData.sharedInstance.isUserLogged() {
             if userData.getPINNeverOverride() {
                 return false

@@ -567,7 +567,8 @@ extension DashboardNewsletterFeedCollectionViewController: @preconcurrency NSFet
     /// Called when the contents of the fetched results controller change.
     ///
     /// If this method is implemented, no other delegate methods will be invoked.
-    nonisolated func controller(
+    @MainActor
+    func controller(
         _ controller: NSFetchedResultsController<NSFetchRequestResult>,
         didChangeContentWith snapshot: NSDiffableDataSourceSnapshotReference
     ) {
@@ -583,13 +584,8 @@ extension DashboardNewsletterFeedCollectionViewController: @preconcurrency NSFet
             NewsletterFeed.convertFrom(contentFeed: $0)
         }
 
-        Task { @MainActor [weak self] in
-            self?.updateWithNew(
-                newsletterFeeds: newsletterFeeds
-            )
-
-            self?.onNewResultsFetched(newsletterFeeds.count)
-        }
+        self.updateWithNew(newsletterFeeds: newsletterFeeds)
+        self.onNewResultsFetched(newsletterFeeds.count)
     }
 }
 

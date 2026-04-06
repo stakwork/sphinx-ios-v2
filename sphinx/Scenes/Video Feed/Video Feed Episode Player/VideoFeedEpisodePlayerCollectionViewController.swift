@@ -75,7 +75,7 @@ extension VideoFeedEpisodePlayerCollectionViewController {
     }
     
     
-    enum DataSourceItem: Hashable {
+    enum DataSourceItem: Hashable, Sendable {
         case videoPlayerEpisodeDetails(Video)
         case videoFeedEpisode(Video)
     }

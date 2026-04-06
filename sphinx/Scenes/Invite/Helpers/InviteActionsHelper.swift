@@ -53,18 +53,22 @@ class InviteActionsHelper {
         
         guard let _ = parameters["name"] as? String,
             let _ = parameters["description"] as? String else{
-            AlertHelper.showAlert(
-                title: "generic.error.title".localized,
-                message: "generic.error.message".localized
-            )
+            DispatchQueue.main.async {
+                AlertHelper.showAlert(
+                    title: "generic.error.title".localized,
+                    message: "generic.error.message".localized
+                )
+            }
             return
         }
         
         let _ = SphinxOnionManager.sharedInstance.createTribe(params: parameters, callback: handleNewTribeNotification,errorCallback: { error in
-            AlertHelper.showAlert(
-                title: "generic.error.title".localized,
-                message: error?.localizedDescription ?? ""
-            )
+            DispatchQueue.main.async {
+                AlertHelper.showAlert(
+                    title: "generic.error.title".localized,
+                    message: error?.localizedDescription ?? ""
+                )
+            }
         })
     }
     
@@ -114,10 +118,12 @@ class InviteActionsHelper {
                 alias: UserContact.getOwner()?.nickname,
                 isPrivate: isPrivate, 
                 errorCallback: { error in
-                    AlertHelper.showAlert(
-                        title: "generic.error.title".localized,
-                        message: error.localizedDescription
-                    )
+                    DispatchQueue.main.async {
+                        AlertHelper.showAlert(
+                            title: "generic.error.title".localized,
+                            message: error.localizedDescription
+                        )
+                    }
                 }
             ) {
                 chat.status = (isPrivate) ? Chat.ChatStatus.pending.rawValue : Chat.ChatStatus.approved.rawValue

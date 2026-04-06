@@ -17,7 +17,7 @@ class AlertHelper {
         }
     }
     
-    class func showAlert(
+    @MainActor class func showAlert(
         title: String,
         message: String,
         on vc: UIViewController? = nil,
@@ -28,7 +28,7 @@ class AlertHelper {
         }
     }
     
-    class func showAlert(
+    @MainActor class func showAlert(
         title: String,
         message: String,
         on vc: UIViewController,
@@ -49,7 +49,7 @@ class AlertHelper {
         vc.present(alert, animated: true, completion: nil)
     }
     
-    class func showTwoOptionsAlert(
+    @MainActor class func showTwoOptionsAlert(
         title: String,
         message: String,
         confirmButtonTitle: String? = nil,
@@ -75,7 +75,7 @@ class AlertHelper {
         }
     }
     
-    class func showTwoOptionsAlert(
+    @MainActor class func showTwoOptionsAlert(
         title: String,
         message: String,
         on vc: UIViewController,
@@ -101,7 +101,7 @@ class AlertHelper {
         vc.present(alert, animated: true, completion: nil)
     }
     
-    class func showPromptAlert(
+    @MainActor class func showPromptAlert(
         title: String,
         message: String,
         textFieldText: String? = nil,
@@ -135,7 +135,7 @@ class AlertHelper {
         vc.present(alert, animated: true, completion: nil)
     }
     
-    class func showOptionsPopup(title: String,
+    @MainActor class func showOptionsPopup(title: String,
                                 message: String,
                                 options: [String],
                                 callbacks: [() -> ()],

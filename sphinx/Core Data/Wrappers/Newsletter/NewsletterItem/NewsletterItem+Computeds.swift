@@ -10,7 +10,7 @@ import Foundation
 
 extension NewsletterItem {
     
-    static let dateFormatter: RelativeDateTimeFormatter = {
+    @MainActor static let dateFormatter: RelativeDateTimeFormatter = {
         let formatter = RelativeDateTimeFormatter()
         
         return formatter

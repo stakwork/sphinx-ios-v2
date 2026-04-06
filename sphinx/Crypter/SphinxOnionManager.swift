@@ -830,16 +830,20 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
 
 extension SphinxOnionManager {//Sign Up UI Related:
     func showMnemonicToUser(
-        completion:@escaping (Bool)->()
+        completion: @escaping @MainActor (Bool)->()
     ){
         let generateSeedCallback: (() -> ()) = {
             guard let mnemonic = self.generateMnemonic(), let _ = self.vc as? NewUserSignupFormViewController else {
-                completion(false)
+                Task { @MainActor in
+                    completion(false)
+                }
                 return
             }
             
             self.showMnemonicToUser(mnemonic: mnemonic, callback: {
-                completion(true)
+                Task { @MainActor in
+                    completion(true)
+                }
             })
         }
         
@@ -854,24 +858,28 @@ extension SphinxOnionManager {//Sign Up UI Related:
         }
     }
     
-    func showMnemonicToUser(mnemonic: String, callback: @escaping () -> ()) {
+    func showMnemonicToUser(mnemonic: String, callback: @escaping @MainActor () -> ()) {
         guard let _ = vc else {
-            callback()
+            Task { @MainActor in
+                callback()
+            }
             return
         }
         
-        AlertHelper.showAlert(
-            title: "profile.store-mnemonic".localized,
-            message: mnemonic,
-            on: vc,
-            confirmLabel: "Copy",
-            completion: {
-                Task { @MainActor in
-                    ClipboardHelper.copyToClipboard(text: mnemonic, message: "profile.mnemonic-copied".localized)
+        DispatchQueue.main.async {
+            AlertHelper.showAlert(
+                title: "profile.store-mnemonic".localized,
+                message: mnemonic,
+                on: self.vc,
+                confirmLabel: "Copy",
+                completion: {
+                    Task { @MainActor in
+                        ClipboardHelper.copyToClipboard(text: mnemonic, message: "profile.mnemonic-copied".localized)
+                        callback()
+                    }
                 }
-                callback()
-            }
-        )
+            )
+        }
     }
     
     func mapNotificationToChat(notificationUserInfo : [String: AnyObject]) -> (Chat, String)? {

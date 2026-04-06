@@ -151,7 +151,9 @@ extension API {
                             if (success) {
                                 callback(true,bolt11)
                             } else {
-                                AlertHelper.showAlert(title: "payment.failed".localized, message: "Error msg: \(errorMsg ?? "error unknown")")
+                                DispatchQueue.main.async {
+                                    AlertHelper.showAlert(title: "payment.failed".localized, message: "Error msg: \(errorMsg ?? "error unknown")")
+                                }
                                 callback(false,nil)
                             }
                         })

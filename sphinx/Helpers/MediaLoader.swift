@@ -145,6 +145,7 @@ class MediaLoader {
         )
     }
     
+    @MainActor
     class func loadImage(
         url: URL,
         message: TransactionMessage,
@@ -169,20 +170,16 @@ class MediaLoader {
         loadDataFrom(URL: url, completion: { (data, fileName) in
             message.saveFileName(fileName)
             
-            DispatchQueue.main.async {
-                loadImageFromData(
-                    data: data,
-                    url: url,
-                    message: message,
-                    mediaKey: mediaKey,
-                    completion: completion,
-                    errorCompletion: errorCompletion
-                )
-            }
+            loadImageFromData(
+                data: data,
+                url: url,
+                message: message,
+                mediaKey: mediaKey,
+                completion: completion,
+                errorCompletion: errorCompletion
+            )
         }, errorCompletion: {
-            DispatchQueue.main.async {
-                Task { @MainActor in errorCompletion(messageId) }
-            }
+            Task { @MainActor in errorCompletion(messageId) }
         })
     }
     
@@ -237,6 +234,7 @@ class MediaLoader {
         return UIImage(data: data)
     }
     
+    @MainActor
     class func loadMessageData(
         url: URL,
         message: TransactionMessage,
@@ -265,6 +263,7 @@ class MediaLoader {
         })
     }
     
+    @MainActor
     class func loadVideo(
         url: URL,
         message: TransactionMessage,
@@ -310,6 +309,7 @@ class MediaLoader {
         }
     }
     
+    @MainActor
     class func loadFileData(
         url: URL,
         message: TransactionMessage,
@@ -344,6 +344,7 @@ class MediaLoader {
         }
     }
     
+    @MainActor
     class func loadFileData(
         url: URL,
         isPdf: Bool,

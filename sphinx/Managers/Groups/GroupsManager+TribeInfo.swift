@@ -158,10 +158,12 @@ extension GroupsManager {
                 alias: UserContact.getOwner()?.nickname,
                 isPrivate: isPrivate,
                 errorCallback: { error in
-                    AlertHelper.showAlert(
-                        title: "generic.error.title".localized,
-                        message: error.localizedDescription
-                    )
+                    DispatchQueue.main.async {
+                        AlertHelper.showAlert(
+                            title: "generic.error.title".localized,
+                            message: error.localizedDescription
+                        )
+                    }
                 }
             ) {
                 if let chat = Chat.insertChat(chat: chatJSON) {

@@ -80,7 +80,7 @@ class DeepLinksHandlerHelper {
         return false
     }
     
-    static func goToSignerHardwareSetup(vc: UIViewController) -> Bool {
+    @MainActor static func goToSignerHardwareSetup(vc: UIViewController) -> Bool {
         if let glyphQuery = UserDefaults.Keys.glyphQuery.get(defaultValue: ""), glyphQuery.isNotEmpty {
             
             UserDefaults.Keys.glyphQuery.removeValue()

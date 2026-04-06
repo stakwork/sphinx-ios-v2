@@ -253,46 +253,52 @@ class StorageManager {
     }
     
     func processGarbageCleanup() {
-        if (garbageCleanIsInProgress == false) {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0, execute: {
-                self.refreshAllStoredData {
-                    self.cleanupGarbage(completion: {
-                        self.refreshAllStoredData {}
-                    })
-                }
-            })
-        }
+//        if (garbageCleanIsInProgress == false) {
+//            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0, execute: {
+//                Task { @MainActor in
+//                    self.refreshAllStoredData {
+//                        Task { @MainActor in
+//                            self.cleanupGarbage(completion: {
+//                                Task { @MainActor in
+//                                    self.refreshAllStoredData {}
+//                                }
+//                            })
+//                        }
+//                    }
+//                }
+//            })
+//        }
     }
     
     func cleanupGarbage(completion: @escaping ()->()){
-        garbageCleanIsInProgress = true
-        var wdt_flag = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 300.0, execute: {
-            wdt_flag = false
-        })
-        let choppingBlockSnapshot = allItems.sorted(by: {$0.date < $1.date})//static snapshot that never changes
-        let changingChoppingBlock = choppingBlockSnapshot//changes so we can compare against limit
-        var i = 0
-        var semaphore = false
-        while (checkForMemoryOverflow(items: changingChoppingBlock) && wdt_flag) {
-            if (semaphore == false) {//only allow deletion if semaphore isn't active
-                semaphore = true
-                deleteItem(item: choppingBlockSnapshot[i], completion: {
-                    semaphore = false//allow next deletion
-                    changingChoppingBlock[i].sizeMB = 0.0
-                    i += 1
-                })
-            }
-            wdt_flag = (i >= choppingBlockSnapshot.count - 1) ? false : wdt_flag
-        }
-        
-        //now cleanup old chat media
-        self.deleteAllOldChatMedia(completion: {
-            wdt_flag = false
-            self.garbageCleanIsInProgress = false
-            completion()
-        })
-        
+//        garbageCleanIsInProgress = true
+//        var wdt_flag = true
+//        
+//        DispatchQueue.main.asyncAfter(deadline: .now() + 300.0, execute: {
+//            wdt_flag = false
+//        })
+//        let choppingBlockSnapshot = allItems.sorted(by: {$0.date < $1.date})//static snapshot that never changes
+//        let changingChoppingBlock = choppingBlockSnapshot//changes so we can compare against limit
+//        var i = 0
+//        var semaphore = false
+//        while (checkForMemoryOverflow(items: changingChoppingBlock) && wdt_flag) {
+//            if (semaphore == false) {//only allow deletion if semaphore isn't active
+//                semaphore = true
+//                deleteItem(item: choppingBlockSnapshot[i], completion: {
+//                    semaphore = false//allow next deletion
+//                    changingChoppingBlock[i].sizeMB = 0.0
+//                    i += 1
+//                })
+//            }
+//            wdt_flag = (i >= choppingBlockSnapshot.count - 1) ? false : wdt_flag
+//        }
+//        
+//        //now cleanup old chat media
+//        self.deleteAllOldChatMedia(completion: {
+//            wdt_flag = false
+//            self.garbageCleanIsInProgress = false
+//            completion()
+//        })   
     }
     
     func deleteItem(item: StorageManagerItem, completion: @escaping ()->()){

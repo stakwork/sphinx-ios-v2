@@ -12,7 +12,7 @@ class UserData {
     
     class var sharedInstance : UserData {
         struct Static {
-            static let instance = UserData()
+            nonisolated(unsafe) static let instance = UserData()
         }
         return Static.instance
     }
@@ -102,11 +102,11 @@ class UserData {
         return false
     }
     
-    func getPINNeverOverride() -> Bool{
+    @MainActor func getPINNeverOverride() -> Bool{
         return self.getPINHours() == Constants.kMaxPinTimeoutValue
     }
     
-    func getPINHours() -> Int {
+    @MainActor func getPINHours() -> Int {
         return UserDefaults.Keys.pinHours.get(defaultValue: Constants.kMaxPinTimeoutValue)
     }
     

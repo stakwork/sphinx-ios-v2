@@ -26,6 +26,7 @@ class MediaDownloader {
         }
     }
     
+    @MainActor
     static func shouldSaveFile(
         message: TransactionMessage?,
         purchaseAcceptMessage: TransactionMessage?,
@@ -73,7 +74,7 @@ class MediaDownloader {
         })
     }
     
-    static func saveImageToPhotos(
+    @MainActor static func saveImageToPhotos(
         message: TransactionMessage?,
         purchaseAcceptMessage: TransactionMessage?,
         completion: @escaping (Bool) -> ()
@@ -98,7 +99,7 @@ class MediaDownloader {
         completion(false)
     }
     
-    static func saveVideoToPhotos(
+    @MainActor static func saveVideoToPhotos(
         message: TransactionMessage?,
         purchaseAcceptMessage: TransactionMessage?,
         completion: @escaping (Bool) -> ()
@@ -145,7 +146,7 @@ class MediaDownloader {
         return nil
     }
     
-    static func saveGifToPhotos(
+    @MainActor static func saveGifToPhotos(
         message: TransactionMessage?,
         purchaseAcceptMessage: TransactionMessage?,
         completion: @escaping (Bool) -> ()

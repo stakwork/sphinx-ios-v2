@@ -87,14 +87,14 @@ class ChatListHeader: UIView {
     }
     
     func updateSigningStatusSign(){
-        if let mqtt = CrypterManager.sharedInstance.mqtt{
-            let status = mqtt.connState
-            let connected = status == CocoaMQTTConnState.connected
-            mqttCheckButton.setTitleColor(connected ? ChatListHeader.kConnectedColor : ChatListHeader.kNotConnectedColor, for: .normal)
-        }
-        else{
-            mqttCheckButton.setTitleColor(ChatListHeader.kNotConnectedColor, for: .normal)
-        }
+//        if let mqtt = CrypterManager.sharedInstance.mqtt{
+//            let status = mqtt.connState
+//            let connected = status == CocoaMQTTConnState.connected
+//            mqttCheckButton.setTitleColor(connected ? ChatListHeader.kConnectedColor : ChatListHeader.kNotConnectedColor, for: .normal)
+//        }
+//        else{
+//            mqttCheckButton.setTitleColor(ChatListHeader.kNotConnectedColor, for: .normal)
+//        }
         
     }
     

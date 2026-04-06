@@ -160,6 +160,7 @@ class CrypterManager : NSObject {
         clear()
     }
     
+    @MainActor
     func setupSigningDevice(
         vc: UIViewController,
         overrideMessages: Bool = false,
@@ -179,6 +180,7 @@ class CrypterManager : NSObject {
         chooseConnectionType(overrideMessages: overrideMessages)
     }
     
+    @MainActor
     func chooseConnectionType(
         overrideMessages: Bool = false
     ) {
@@ -192,23 +194,26 @@ class CrypterManager : NSObject {
             self.startMQTTSetup()
         }
         
-        AlertHelper.showOptionsPopup(
-            title: "profile.signer-setup-title".localized,
-            message: "profile.signer-setup-message".localized,
-            options: [
-                "profile.harware-option".localized,
-                "profile.phone-signer-option".localized
-            ],
-            callbacks: [
-                setupHardwareCallback,
-                setupPhoneDeviceCallback
-            ],
-            sourceView: self.vc.view,
-            vc: self.vc
-        )
+        DispatchQueue.main.async {
+            AlertHelper.showOptionsPopup(
+                title: "profile.signer-setup-title".localized,
+                message: "profile.signer-setup-message".localized,
+                options: [
+                    "profile.harware-option".localized,
+                    "profile.phone-signer-option".localized
+                ],
+                callbacks: [
+                    setupHardwareCallback,
+                    setupPhoneDeviceCallback
+                ],
+                sourceView: self.vc.view,
+                vc: self.vc
+            )
+        }
     }
     
-    func showQRScanner(presentingVC:UIViewController?=nil) {
+    @MainActor
+    func showQRScanner(presentingVC: UIViewController? = nil) {
         if(presentingVC != nil){
             self.vc = presentingVC
         }
@@ -225,6 +230,7 @@ class CrypterManager : NSObject {
         }
     }
     
+    @MainActor
     func resetMQTTConnection(overrideMessages:Bool=false) {
         if mqtt?.connState != .connected && mqtt?.connState != .connecting && overrideMessages == false {
             showErrorWithMessage("MQTT not connected yet")
@@ -253,6 +259,7 @@ class CrypterManager : NSObject {
         API.sharedInstance.postMQTTStatusChange()
     }
     
+    @MainActor
     func startMQTTSetup() {
         if mqtt?.connState == .connected || mqtt?.connState == .connecting {
             showSuccessWithMessage("MQTT already connected or connecting")
@@ -275,6 +282,7 @@ class CrypterManager : NSObject {
         API.sharedInstance.postMQTTStatusChange()
     }
     
+    @MainActor
     func chooseImportOrGenerateSeed(network:String,host:String,relay:String){
         let requestEnteredMneumonicCallback: (() -> ()) = {
             self.importSeedPhrase(network: network, host: host, relay: relay)
@@ -284,16 +292,19 @@ class CrypterManager : NSObject {
             let _ = self.performWalletFinalization(network: network, host: host, relay: relay)
         }
         
-        AlertHelper.showTwoOptionsAlert(
-            title: "profile.mnemonic-generate-or-import-title".localized,
-            message: "profile.mnemonic-generate-or-import-prompt".localized,
-            confirmButtonTitle: "profile.mnemonic-generate-prompt".localized,
-            cancelButtonTitle: "profile.mnemonic-import-prompt".localized,
-            confirm: generateSeedCallback,
-            cancel: requestEnteredMneumonicCallback
-        )
+        DispatchQueue.main.async {
+            AlertHelper.showTwoOptionsAlert(
+                title: "profile.mnemonic-generate-or-import-title".localized,
+                message: "profile.mnemonic-generate-or-import-prompt".localized,
+                confirmButtonTitle: "profile.mnemonic-generate-prompt".localized,
+                cancelButtonTitle: "profile.mnemonic-import-prompt".localized,
+                confirm: generateSeedCallback,
+                cancel: requestEnteredMneumonicCallback
+            )
+        }
     }
     
+    @MainActor
     func importSeedPhrase(
         network: String,
         host: String,
@@ -310,6 +321,7 @@ class CrypterManager : NSObject {
         }
     }
     
+    @MainActor
     func performWalletFinalization(
         network: String,
         host: String,
@@ -361,6 +373,7 @@ class CrypterManager : NSObject {
     
     
     
+    @MainActor
     func connectToMQTTWith(
         host: String,
         network: String,
@@ -722,6 +735,7 @@ class CrypterManager : NSObject {
     }
     
     ///Signer setup
+    @MainActor
     func startSigningDeviceSetup() {
         API.sharedInstance.getHardwarePublicKey(callback: {_ in}, errorCallback: {})//force request for LAN access
         
@@ -740,20 +754,28 @@ class CrypterManager : NSObject {
         })
     }
     
-    func checkNetwork(callback: @escaping () -> ()) {
-        AlertHelper.showTwoOptionsAlert(
-            title: "profile.network-check-title".localized,
-            message: "profile.network-check-message".localized,
-            on: vc,
-            confirmButtonTitle: "yes".localized,
-            cancelButtonTitle: "no".localized,
-            confirm: { 
-                callback()
-            },
-            cancel: {}
-        )
+    func checkNetwork(callback: @escaping @MainActor () -> ()) {
+        guard let vc = vc else {
+            return
+        }
+        DispatchQueue.main.async {
+            AlertHelper.showTwoOptionsAlert(
+                title: "profile.network-check-title".localized,
+                message: "profile.network-check-message".localized,
+                on: vc,
+                confirmButtonTitle: "yes".localized,
+                cancelButtonTitle: "no".localized,
+                confirm: {
+                    Task { @MainActor in
+                        callback()
+                    }
+                },
+                cancel: {}
+            )
+        }
     }
     
+    @MainActor
     func promptForNetworkName(
         callback: @escaping (String) -> ()
     ) {
@@ -768,6 +790,7 @@ class CrypterManager : NSObject {
         )
     }
     
+    @MainActor
     func promptForNetworkPassword(
         _ networkName: String,
         callback: @escaping () -> ()
@@ -784,6 +807,7 @@ class CrypterManager : NSObject {
         )
     }
     
+    @MainActor
     func promptForHardwareUrl(callback: @escaping () -> ()) {
         if let url = self.hardwarePostDto.lightningNodeUrl, url.isNotEmpty {
             callback()
@@ -801,7 +825,12 @@ class CrypterManager : NSObject {
         )
     }
     
+    @MainActor
     func promptForBitcoinNetwork(callback: @escaping () -> ()) {
+        guard let vc = vc else {
+            callback()
+            return
+        }
         if let net = self.hardwarePostDto.bitcoinNetwork, net.isNotEmpty {
             callback()
             return
@@ -827,31 +856,39 @@ class CrypterManager : NSObject {
         )
     }
     
+    @MainActor
     func promptFor(
         _ title: String,
         message: String,
         errorMessage: String,
         textFieldText: String? = nil,
         secureEntry: Bool = false,
-        callback: @escaping (String) -> ()) {
-            
-        AlertHelper.showPromptAlert(
-            title: title,
-            message: message,
-            textFieldText: textFieldText,
-            secureEntry: secureEntry,
-            on: vc,
-            confirm: { value in
-                if let value = value, !value.isEmpty {
-                    callback(value)
-                } else {
-                    self.showErrorWithMessage(errorMessage)
-                }
-            },
-            cancel: {}
-        )
+        callback: @escaping (String) -> ())
+    {
+        guard let vc = vc else {
+            return
+        }
+        
+        DispatchQueue.main.async {
+            AlertHelper.showPromptAlert(
+                title: title,
+                message: message,
+                textFieldText: textFieldText,
+                secureEntry: secureEntry,
+                on: vc,
+                confirm: { value in
+                    if let value = value, !value.isEmpty {
+                        callback(value)
+                    } else {
+                        self.showErrorWithMessage(errorMessage)
+                    }
+                },
+                cancel: {}
+            )
+        }
     }
     
+    @MainActor
     func promptForSeedGeneration(
         callback: @escaping ((String, String)) -> ()
     ) {
@@ -870,19 +907,22 @@ class CrypterManager : NSObject {
             self.promptForSeedEnter(callback: callback)
         }
         
-        AlertHelper.showOptionsPopup(
-            title: "profile.mnemonic-generation-title".localized,
-            message: "profile.mnemonic-generation-description".localized,
-            options: [
-                "profile.mnemonic-generate".localized,
-                "profile.mnemonic-enter".localized
-            ],
-            callbacks: [generateMnemonicCallbak, enterMnemonicCallback],
-            sourceView: self.vc.view,
-            vc: self.vc
-        )
+        DispatchQueue.main.async {
+            AlertHelper.showOptionsPopup(
+                title: "profile.mnemonic-generation-title".localized,
+                message: "profile.mnemonic-generation-description".localized,
+                options: [
+                    "profile.mnemonic-generate".localized,
+                    "profile.mnemonic-enter".localized
+                ],
+                callbacks: [generateMnemonicCallbak, enterMnemonicCallback],
+                sourceView: self.vc.view,
+                vc: self.vc
+            )
+        }
     }
     
+    @MainActor
     func promptForSeedEnter(
         callback: @escaping ((String, String)) -> ()
     ) {
@@ -925,7 +965,9 @@ class CrypterManager : NSObject {
         enteredMnemonic: String? = nil
     ) -> (String, String) {
         guard let mnemonic = enteredMnemonic ?? UserData.sharedInstance.getMnemonic() ?? generateMnemonic() else{
-            AlertHelper.showAlert(title: "Error generating seed", message: "Please try again.")
+            DispatchQueue.main.async {
+                AlertHelper.showAlert(title: "Error generating seed", message: "Please try again.")
+            }
             return ("","")
         }
         do {
@@ -953,6 +995,7 @@ class CrypterManager : NSObject {
         return nil
     }
     
+    @MainActor
     func setupSigningDevice() {
         guard let lssNonceBytes = stringToBytes(lssNonce) else {
             return
@@ -1039,9 +1082,11 @@ class CrypterManager : NSObject {
         })
     }
     
-    func showMnemonicToUser(mnemonic: String, callback: @escaping () -> ()) {
+    func showMnemonicToUser(mnemonic: String, callback: @escaping @MainActor () -> ()) {
         guard let vc = vc else {
-            callback()
+            Task { @MainActor in
+                callback()
+            }
             return
         }
         
@@ -1049,20 +1094,26 @@ class CrypterManager : NSObject {
             title: "Copy",
             style: .default,
             handler: { _ in
-                ClipboardHelper.copyToClipboard(text: mnemonic, message: "profile.mnemonic-copied".localized)
-                callback()
+                Task { @MainActor in
+                    ClipboardHelper.copyToClipboard(text: mnemonic, message: "profile.mnemonic-copied".localized)
+                    callback()
+                }
             }
         )
         
-        AlertHelper.showAlert(
-            title: "profile.store-mnemonic".localized,
-            message: mnemonic,
-            on: vc,
-            additionAlertAction: copyAction,
-            completion: {
-                callback()
-            }
-        )
+        DispatchQueue.main.async {
+            AlertHelper.showAlert(
+                title: "profile.store-mnemonic".localized,
+                message: mnemonic,
+                on: vc,
+                additionAlertAction: copyAction,
+                completion: {
+                    Task { @MainActor in
+                        callback()
+                    }
+                }
+            )
+        }
     }
     
     func getUrl(route: String) -> String {

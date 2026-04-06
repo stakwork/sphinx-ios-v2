@@ -31,7 +31,7 @@ class NewMessageBubbleHelper {
     static let messageViewTag = -1
     static let loadingViewTag = -2
     
-    func showAudioTooltip(y: CGFloat, delay: Double = 2.0) {
+    @MainActor func showAudioTooltip(y: CGFloat, delay: Double = 2.0) {
         let screenSize = WindowsManager.getWindowSize()
         let tooltipHeight: CGFloat = 60
         let yPosition = y - tooltipHeight
@@ -48,7 +48,7 @@ class NewMessageBubbleHelper {
         }
     }
     
-    func showGenericMessageView(
+    @MainActor func showGenericMessageView(
         text: String,
         delay: Double = 1.5,
         textColor: UIColor = UIColor.Sphinx.Body,
@@ -68,7 +68,7 @@ class NewMessageBubbleHelper {
         }
     }
     
-    func showLoadingWheel(
+    @MainActor func showLoadingWheel(
         text: String? = nil,
         textColor: UIColor = UIColor.Sphinx.Body,
         backColor: UIColor = UIColor.Sphinx.Text,
@@ -156,7 +156,7 @@ class NewMessageBubbleHelper {
         }
     }
     
-    func getGenericMessageBubbleView(
+    @MainActor func getGenericMessageBubbleView(
         label: UILabel? = nil,
         backColor: UIColor = UIColor.Sphinx.Text,
         backAlpha: CGFloat = 0.8, hasWheel: Bool = false
@@ -187,7 +187,7 @@ class NewMessageBubbleHelper {
         return v
     }
     
-    func getGenericMessageLabel(
+    @MainActor func getGenericMessageLabel(
         text: String,
         textColor: UIColor = UIColor.Sphinx.Body
     ) -> UILabel {
@@ -205,6 +205,7 @@ class NewMessageBubbleHelper {
         return label
     }
     
+    @MainActor
     func addLinksOn(
         _ label: UILabel,
         color: UIColor
@@ -234,7 +235,7 @@ class NewMessageBubbleHelper {
         }
     }
     
-    func showMessageView(
+    @MainActor func showMessageView(
         title: String,
         text: String,
         chatId: Int? = nil,
@@ -280,7 +281,7 @@ class NewMessageBubbleHelper {
         }
     }
     
-    func showMessageView(
+    @MainActor func showMessageView(
         message: TransactionMessage,
         delay: Double = 2.5,
         onKeyWindow: Bool = true
@@ -326,7 +327,7 @@ class NewMessageBubbleHelper {
         }
     }
     
-    func toggleBubbleView(
+    @MainActor func toggleBubbleView(
         view: UIView,
         show: Bool,
         animated: Bool = true,
@@ -351,6 +352,7 @@ class NewMessageBubbleHelper {
         }
     }
     
+    @MainActor
     func getBubbleView(
         label: UILabel,
         chatId: Int? = nil
@@ -421,7 +423,7 @@ class NewMessageBubbleHelper {
         return boundingBox
     }
     
-    @objc func handleTap(_ sender: TouchUpGestureRecognizer? = nil) {
+    @MainActor @objc func handleTap(_ sender: TouchUpGestureRecognizer? = nil) {
         if let view = sender?.view {
             toggleBubbleView(view: view, show: false, animated: false)
             
@@ -431,13 +433,13 @@ class NewMessageBubbleHelper {
         }
     }
     
-    @objc func handleSwipe(_ sender: UISwipeGestureRecognizer? = nil) {
+    @MainActor @objc func handleSwipe(_ sender: UISwipeGestureRecognizer? = nil) {
         if let view = sender?.view, view.tag > 0 {
             toggleBubbleView(view: view, show: false)
         }
     }
     
-    func goToChat(chatId: Int) {
+    @MainActor func goToChat(chatId: Int) {
         if let chat = Chat.getChatWith(id: chatId) {
             
             let chatVC = NewChatViewController.instantiate(

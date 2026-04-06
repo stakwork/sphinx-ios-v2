@@ -27,7 +27,7 @@ class ActionsManager {
 
     class var sharedInstance : ActionsManager {
         struct Static {
-            static let instance = ActionsManager()
+            nonisolated(unsafe) static let instance = ActionsManager()
         }
         return Static.instance
     }

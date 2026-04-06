@@ -49,13 +49,15 @@ class VideoCallHelper {
         let videoCallback: (() -> ()) = {
             callback(link)
         }
-        AlertHelper.showOptionsPopup(
-            title: "create.call".localized,
-            message: "select.call.mode".localized,
-            options: ["audio".localized, "video.or.audio".localized],
-            callbacks: [audioCallback, videoCallback],
-            sourceView: button
-        )
+        DispatchQueue.main.async {
+            AlertHelper.showOptionsPopup(
+                title: "create.call".localized,
+                message: "select.call.mode".localized,
+                options: ["audio".localized, "video.or.audio".localized],
+                callbacks: [audioCallback, videoCallback],
+                sourceView: button
+            )
+        }
     }
 
     public static func createCallMessage(

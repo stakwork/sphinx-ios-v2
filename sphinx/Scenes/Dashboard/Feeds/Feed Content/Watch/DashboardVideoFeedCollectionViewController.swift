@@ -543,12 +543,13 @@ extension DashboardVideoFeedCollectionViewController {
 }
 
 
-extension DashboardVideoFeedCollectionViewController: NSFetchedResultsControllerDelegate {
+extension DashboardVideoFeedCollectionViewController: @preconcurrency NSFetchedResultsControllerDelegate {
     
     /// Called when the contents of the fetched results controller change.
     ///
     /// If this method is implemented, no other delegate methods will be invoked.
-    nonisolated func controller(
+    @MainActor
+    func controller(
         _ controller: NSFetchedResultsController<NSFetchRequestResult>,
         didChangeContentWith snapshot: NSDiffableDataSourceSnapshotReference
     ) {
@@ -564,10 +565,8 @@ extension DashboardVideoFeedCollectionViewController: NSFetchedResultsController
             VideoFeed.convertFrom(contentFeed: $0)
         }
 
-        Task { @MainActor [weak self] in
-            self?.updateWithNew(videoFeeds: videoFeeds)
-            self?.onNewResultsFetched(videoFeeds.count)
-        }
+        self.updateWithNew(videoFeeds: videoFeeds)
+        self.onNewResultsFetched(videoFeeds.count)
     }
 }
 
