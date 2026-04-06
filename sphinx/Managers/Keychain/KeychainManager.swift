@@ -25,6 +25,8 @@ class KeychainManager {
         case walletMnemonic = "wallet_mnemonic"
         case balanceMsats = "balance_msats"
         case pushKey = "push_key"
+        case aiAgentProvider = "ios.ai_agent_provider"
+        case aiAgentApiKey = "ios.ai_agent_api_key"
     }
     
     let keychain = Keychain(service: "sphinx-app", accessGroup: KeychainManager.kKeychainGroup)
