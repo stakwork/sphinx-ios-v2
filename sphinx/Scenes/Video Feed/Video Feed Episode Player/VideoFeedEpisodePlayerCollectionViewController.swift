@@ -19,8 +19,8 @@ class VideoFeedEpisodePlayerCollectionViewController: UICollectionViewController
     
     var videosExpanded: [Int: Bool] = [:]
 
-    var onVideoEpisodeCellSelected: ((String) -> Void)!
-    var onVideoChapterSelected: ((String, Int) -> Void)!
+    var onVideoEpisodeCellSelected: (@MainActor (String) -> Void)!
+    var onVideoChapterSelected: (@MainActor (String, Int) -> Void)!
     var onFeedSubscriptionSelected: (() -> Void)!
     var onFeedSubscriptionCancellationSelected: (() -> Void)!
     
@@ -40,8 +40,8 @@ extension VideoFeedEpisodePlayerCollectionViewController {
         videoPlayerEpisode: Video,
         videoFeedEpisodes: [Video],
         boostDelegate: CustomBoostDelegate?,
-        onVideoEpisodeCellSelected: @escaping ((String) -> Void) = { _ in },
-        onVideoChapterSelected: @escaping ((String, Int) -> Void) = { (_, _) in },
+        onVideoEpisodeCellSelected: @escaping (@MainActor (String) -> Void) = { _ in },
+        onVideoChapterSelected: @escaping (@MainActor (String, Int) -> Void) = { (_, _) in },
         onFeedSubscriptionSelected: @escaping (() -> Void) = {},
         onFeedSubscriptionCancellationSelected: @escaping (() -> Void) = {}
     ) -> VideoFeedEpisodePlayerCollectionViewController {

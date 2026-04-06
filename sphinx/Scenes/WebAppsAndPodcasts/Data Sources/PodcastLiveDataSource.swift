@@ -8,7 +8,7 @@
 
 import UIKit
 
-class PodcastLiveDataSource : NSObject {
+@MainActor class PodcastLiveDataSource : NSObject {
     
     var tableView: UITableView! = nil
     
@@ -66,7 +66,7 @@ class PodcastLiveDataSource : NSObject {
         tableView.reloadData()
     }
     
-    func insert(messages: [TransactionMessage]) {
+    @MainActor func insert(messages: [TransactionMessage]) {
         guard let owner = owner else {
             return
         }

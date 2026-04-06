@@ -21,7 +21,7 @@ import UIKit
 import SDWebImageSwiftUI
 
 let adaptiveMin = 170.0
-let toolbarPlacement: ToolbarItemPlacement = .bottomBar
+@MainActor let toolbarPlacement: ToolbarItemPlacement = .bottomBar
 
 extension CIImage {
     // helper to create a `CIImage` for both platforms

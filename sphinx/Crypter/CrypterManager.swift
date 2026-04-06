@@ -1124,7 +1124,7 @@ class CrypterManager : NSObject {
         
     }
     
-    func showErrorWithMessage(_ message: String) {
+    @MainActor func showErrorWithMessage(_ message: String) {
         self.newMessageBubbleHelper.hideLoadingWheel()
         
         self.newMessageBubbleHelper.showGenericMessageView(
@@ -1136,7 +1136,7 @@ class CrypterManager : NSObject {
         )
     }
     
-    func showSuccessWithMessage(_ message: String) {
+    @MainActor func showSuccessWithMessage(_ message: String) {
         self.newMessageBubbleHelper.showGenericMessageView(
             text: message,
             delay: 6,

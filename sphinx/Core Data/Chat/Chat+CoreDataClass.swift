@@ -11,7 +11,7 @@ import CoreData
 import SwiftyJSON
 
 @objc(Chat)
-public class Chat: NSManagedObject {
+public class Chat: NSManagedObject, @unchecked Sendable {
     
     public enum ChatType: Int {
         case conversation = 0
@@ -870,7 +870,7 @@ public class Chat: NSManagedObject {
     }
     
     
-    @MainActor func updateTribeInfo(completion: @escaping () -> ()) {
+    @MainActor func updateTribeInfo(completion: @escaping @Sendable () -> ()) {
         let host = SphinxOnionManager.sharedInstance.tribesServerIP
         
         if let uuid = ownerPubkey,

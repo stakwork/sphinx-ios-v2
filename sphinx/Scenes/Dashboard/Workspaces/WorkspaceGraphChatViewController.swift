@@ -89,12 +89,14 @@ class WorkspaceGraphChatViewController: UIViewController {
         setupKeyboardObservers()
         updateEmptyState()
         speechManager.requestPermission { [weak self] granted in
-            self?.micButton.isHidden = !granted
-            if !granted {
-                self?.newBubbleHelper.showGenericMessageView(
-                    text: "Speech recognition permission denied.",
-                    delay: 3, textColor: .white,
-                    backColor: UIColor.Sphinx.PrimaryRed, backAlpha: 1.0)
+            Task { @MainActor [weak self] in
+                self?.micButton.isHidden = !granted
+                if !granted {
+                    self?.newBubbleHelper.showGenericMessageView(
+                        text: "Speech recognition permission denied.",
+                        delay: 3, textColor: .white,
+                        backColor: UIColor.Sphinx.PrimaryRed, backAlpha: 1.0)
+                }
             }
         }
     }
@@ -548,7 +550,7 @@ class WorkspaceGraphChatViewController: UIViewController {
 
 // MARK: - GraphChatSSEDelegate
 
-extension WorkspaceGraphChatViewController: GraphChatSSEDelegate {
+extension WorkspaceGraphChatViewController: @preconcurrency GraphChatSSEDelegate {
 
     func onTextDelta(_ delta: String) {
         // Silently accumulate — do NOT update the table until onFinish

@@ -8,7 +8,7 @@
 
 import UIKit
 
-class CustomDismissibleView : UIView, CAAnimationDelegate {
+class CustomDismissibleView : UIView {
     
     var currentLocation: CGFloat = .zero
         
@@ -71,17 +71,17 @@ class CustomDismissibleView : UIView, CAAnimationDelegate {
         }
     }
     
-    nonisolated func animationDidStop(_ anim: CAAnimation, finished flag: Bool) {
-        MainActor.assumeIsolated {
-            if flag && currentLocation < 0 {
-                onViewDimissed?()
-            }
-            reset()
-        }
-    }
-    
     func reset() {
         self.layer.transform = CATransform3DIdentity
         self.layer.removeAllAnimations()
+    }
+}
+
+extension CustomDismissibleView: @preconcurrency CAAnimationDelegate {
+    func animationDidStop(_ anim: CAAnimation, finished flag: Bool) {
+        if flag && currentLocation < 0 {
+            onViewDimissed?()
+        }
+        reset()
     }
 }

@@ -104,7 +104,7 @@ public class ContentFeed: NSManagedObject {
     public static func fetchChatFeedContentInBackground(
         feedUrl: String,
         chatId: Int,
-        completion: @escaping (String?) -> ()
+        completion: @escaping @Sendable (String?) -> ()
     ) {
         fetchContentFeed(
             at: feedUrl,
@@ -167,7 +167,7 @@ public class ContentFeed: NSManagedObject {
         feedUrl: String,
         feedId: String,
         context: NSManagedObjectContext,
-        completion: @escaping (Result<ContentFeed, Error>) -> ()
+        completion: @escaping @Sendable (Result<ContentFeed, Error>) -> ()
     ) {
         let backgroundContentFeed: ContentFeed? = ContentFeed.getFeedById(feedId: feedId, managedContext: context)
         

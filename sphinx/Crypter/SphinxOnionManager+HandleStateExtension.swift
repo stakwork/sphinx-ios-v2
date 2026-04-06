@@ -592,7 +592,7 @@ extension SphinxOnionManager {
     func handleRegisterTopic(
         rr: RunReturn,
         skipAsyncTopic: Bool,
-        callback: @escaping (RunReturn, Bool) -> ()
+        callback: @escaping @Sendable (RunReturn, Bool) -> ()
     ) {
         if let topic = rr.registerTopic, let payload = rr.registerPayload {
             

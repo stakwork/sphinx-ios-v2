@@ -34,6 +34,7 @@ class VideoCallHelper {
     }
 
     /// Shows the audio / video mode popup for an already-built room link.
+    @MainActor
     public static func showCallModePopup(
         link: String,
         button: UIButton,
@@ -49,17 +50,16 @@ class VideoCallHelper {
         let videoCallback: (() -> ()) = {
             callback(link)
         }
-        DispatchQueue.main.async {
-            AlertHelper.showOptionsPopup(
-                title: "create.call".localized,
-                message: "select.call.mode".localized,
-                options: ["audio".localized, "video.or.audio".localized],
-                callbacks: [audioCallback, videoCallback],
-                sourceView: button
-            )
-        }
+        AlertHelper.showOptionsPopup(
+            title: "create.call".localized,
+            message: "select.call.mode".localized,
+            options: ["audio".localized, "video.or.audio".localized],
+            callbacks: [audioCallback, videoCallback],
+            sourceView: button
+        )
     }
 
+    @MainActor
     public static func createCallMessage(
         button: UIButton,
         secondBrainUrl: String? = nil,

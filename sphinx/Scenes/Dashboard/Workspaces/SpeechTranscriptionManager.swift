@@ -8,7 +8,7 @@
 import Speech
 import AVFoundation
 
-final class SpeechTranscriptionManager {
+final class SpeechTranscriptionManager: @unchecked Sendable {
     private let recognizer = SFSpeechRecognizer(locale: Locale.current)
     private var audioEngine = AVAudioEngine()
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
@@ -19,9 +19,9 @@ final class SpeechTranscriptionManager {
     private var activeTextHandler: ((String) -> Void)?
     private var activeErrorHandler: ((Error) -> Void)?
 
-    func requestPermission(completion: @escaping (Bool) -> Void) {
+    func requestPermission(completion: @escaping @Sendable (Bool) -> Void) {
         SFSpeechRecognizer.requestAuthorization { status in
-            DispatchQueue.main.async { completion(status == .authorized) }
+            Task { @MainActor in completion(status == .authorized) }
         }
     }
 
@@ -53,7 +53,7 @@ final class SpeechTranscriptionManager {
             guard let self else { return }
             if let result = result {
                 let text = result.bestTranscription.formattedString
-                DispatchQueue.main.async { self.activeTextHandler?(text) }
+                Task { @MainActor [weak self] in self?.activeTextHandler?(text) }
             }
             if let error = error {
                 // Ignore cancellation — that's us stopping intentionally.
@@ -63,7 +63,7 @@ final class SpeechTranscriptionManager {
                     || nsErr.domain == "kAFAssistantErrorDomain" && nsErr.code == 0
                     || nsErr.code == 301  // AVAudioSession interruption / session deactivated
                 if !isCancelled {
-                    DispatchQueue.main.async { self.activeErrorHandler?(error) }
+                    Task { @MainActor [weak self] in self?.activeErrorHandler?(error) }
                 }
             }
         }

@@ -11,7 +11,7 @@ import CoreData
 import SwiftyJSON
 
 @objc(LSat)
-public class LSat: NSManagedObject {
+public class LSat: NSManagedObject, @unchecked Sendable {
     
     enum LSatStatus: Int {
         case expired = 0

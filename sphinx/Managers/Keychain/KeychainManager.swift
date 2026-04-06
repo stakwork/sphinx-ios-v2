@@ -13,7 +13,7 @@ class KeychainManager {
     
     class var sharedInstance : KeychainManager {
         struct Static {
-            static let instance = KeychainManager()
+            nonisolated(unsafe) static let instance = KeychainManager()
         }
         return Static.instance
     }

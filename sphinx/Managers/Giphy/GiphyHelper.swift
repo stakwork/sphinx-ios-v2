@@ -10,6 +10,8 @@ import Foundation
 import GiphyUISDK
 import SwiftyJSON
 
+extension GPHMedia: @unchecked Sendable {}
+
 class GiphyHelper {
     
     public static let kPrefix = "giphy::"

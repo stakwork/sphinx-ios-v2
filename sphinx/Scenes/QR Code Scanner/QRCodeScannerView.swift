@@ -70,18 +70,15 @@ final class QRCodeScannerView: UIView {
     }
 }
 
-extension QRCodeScannerView: @MainActor AVCaptureMetadataOutputObjectsDelegate {
-    @MainActor
+extension QRCodeScannerView: @preconcurrency AVCaptureMetadataOutputObjectsDelegate {
     func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection) {
-        MainActor.assumeIsolated {
-            guard
-                let metadataObj = metadataObjects.first as? AVMetadataMachineReadableCodeObject,
-                let code = metadataObj.stringValue,
-                code != oldCode
-                else { return }
+        guard
+            let metadataObj = metadataObjects.first as? AVMetadataMachineReadableCodeObject,
+            let code = metadataObj.stringValue,
+            code != oldCode
+            else { return }
 
-            oldCode = code
-            handler?(code)
-        }
+        oldCode = code
+        handler?(code)
     }
 }

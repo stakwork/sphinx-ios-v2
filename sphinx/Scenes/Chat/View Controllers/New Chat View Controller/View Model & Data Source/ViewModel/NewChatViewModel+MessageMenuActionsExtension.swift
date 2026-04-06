@@ -125,7 +125,7 @@ extension NewChatViewModel {
     }
     
     func sendFlagMessageFor(_ message: TransactionMessage) {
-        Task.detached(priority: .userInitiated) { [weak self] in
+        Task { @MainActor [weak self] in
             let supportContact = SignupHelper.getSupportContact()
 
             if let pubkey = supportContact["pubkey"].string {

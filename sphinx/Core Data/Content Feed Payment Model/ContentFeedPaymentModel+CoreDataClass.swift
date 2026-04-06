@@ -12,7 +12,7 @@ import SwiftyJSON
 
 
 @objc(ContentFeedPaymentModel)
-public class ContentFeedPaymentModel: NSManagedObject {
+public class ContentFeedPaymentModel: NSManagedObject, @unchecked Sendable {
     
     public static func createObjectFrom(
         json: JSON,

@@ -72,6 +72,7 @@ class MediaPreloadManager: @unchecked Sendable {
         }
     }
 
+    @MainActor
     private func performImageLoad(
         url: URL,
         message: TransactionMessage,

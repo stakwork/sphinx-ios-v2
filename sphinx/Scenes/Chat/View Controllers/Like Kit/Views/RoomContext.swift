@@ -18,15 +18,15 @@ import LiveKit
 import SwiftUI
 
 // This class contains the logic to control behavior of the whole app.
-final class RoomContext: ObservableObject {
+final class RoomContext: ObservableObject, @unchecked Sendable {
     let jsonEncoder = JSONEncoder()
     let jsonDecoder = JSONDecoder()
     
     typealias OnConnected = () -> Void
     typealias OnCallEnded = () -> Void
     
-    private var onConnected: OnConnected? = nil
-    private var onCallEnded: OnCallEnded? = nil
+    nonisolated(unsafe) private var onConnected: OnConnected? = nil
+    nonisolated(unsafe) private var onCallEnded: OnCallEnded? = nil
 
     private let store: ValueStore<Preferences>
 
@@ -86,7 +86,9 @@ final class RoomContext: ObservableObject {
     
     @Published var isInPip: Bool = false {
         didSet {
-            VideoCallManager.sharedInstance.togglePip(pipEnabled: isInPip)
+            Task { @MainActor in
+                VideoCallManager.sharedInstance.togglePip(pipEnabled: self.isInPip)
+            }
         }
     }
     

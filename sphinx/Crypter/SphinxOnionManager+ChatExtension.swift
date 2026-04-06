@@ -861,25 +861,28 @@ extension SphinxOnionManager {
             }
             
             if let newMessage = newMessage {
+                ///Show if is incoming, and topic is stream which means message coming in in real time
+                let shouldShowIncomingMsgNotification = !(message.fromMe ?? false) && topic?.isMessageInRealTimeTopic == true
+
+                if shouldShowIncomingMsgNotification {
+                    let msgId = newMessage.id
+                    Task { @MainActor [weak self] in
+                        guard let self,
+                              let msg = TransactionMessage.getMessageWith(id: msgId) else { return }
+                        self.newMessageBubbleHelper.showMessageView(message: msg)
+                    }
+                }
+
                 if !existingMessagesIdMap.keys.contains(newMessage.id) {
                     existingMessagesIdMap[newMessage.id] = newMessage
                 }
-                
+
                 if let uuid = newMessage.uuid, !existingMessagesUUIDMap.keys.contains(uuid) {
                     existingMessagesUUIDMap[uuid] = newMessage
                 }
-                
+
                 if let chat = newMessage.chat, let ownerPubKey = chat.ownerPubkey, chat.isPublicGroup(), !tribesMap.keys.contains(ownerPubKey) {
                     tribesMap[ownerPubKey] = chat
-                }
-                
-                ///Show if is incoming, and topic is stream which means message coming in in real time
-                let shouldShowIncomingMsgNotification = !(message.fromMe ?? false) && topic?.isMessageInRealTimeTopic == true
-                
-                if shouldShowIncomingMsgNotification {
-                    DispatchQueue.main.async {
-                        self.newMessageBubbleHelper.showMessageView(message: newMessage)
-                    }
                 }
             }
             
@@ -1725,10 +1728,12 @@ extension SphinxOnionManager {
                 )
                 completion(message)
             } else {
-                AlertHelper.showAlert(
-                    title: "Routing Error",
-                    message: "There was a routing error. Please try again."
-                )
+                DispatchQueue.main.async {
+                    AlertHelper.showAlert(
+                        title: "Routing Error",
+                        message: "There was a routing error. Please try again."
+                    )
+                }
                 completion(nil)
             }
         }

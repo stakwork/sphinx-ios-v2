@@ -106,12 +106,14 @@ class TaskChatViewController: UIViewController {
         applyInitialWorkflowStatus()
         setupKeyboardObservers()
         speechManager.requestPermission { [weak self] granted in
-            self?.micButton.isHidden = !granted
-            if !granted {
-                self?.bubbleHelper.showGenericMessageView(
-                    text: "Speech recognition permission denied.",
-                    delay: 3, textColor: .white,
-                    backColor: UIColor.Sphinx.PrimaryRed, backAlpha: 1.0)
+            Task { @MainActor [weak self] in
+                self?.micButton.isHidden = !granted
+                if !granted {
+                    self?.bubbleHelper.showGenericMessageView(
+                        text: "Speech recognition permission denied.",
+                        delay: 3, textColor: .white,
+                        backColor: UIColor.Sphinx.PrimaryRed, backAlpha: 1.0)
+                }
             }
         }
         cachedStakworkProjectId = task.stakworkProjectId

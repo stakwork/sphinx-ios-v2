@@ -23,7 +23,7 @@ protocol GraphChatSSEDelegate: AnyObject {
 
 // MARK: - Manager
 
-class GraphChatSSEManager: EventHandler {
+class GraphChatSSEManager: EventHandler, @unchecked Sendable {
 
     weak var delegate: GraphChatSSEDelegate?
     private var eventSource: EventSource?

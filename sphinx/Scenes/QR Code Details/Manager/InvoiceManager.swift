@@ -81,7 +81,7 @@ class InvoiceManager: @unchecked Sendable {
     }
 
     @discardableResult
-    func goToCreateInvoiceDetails(
+    @MainActor func goToCreateInvoiceDetails(
         vc: UIViewController,
         delegate: PaymentInvoiceDelegate? = nil
     ) -> Bool {
@@ -92,10 +92,8 @@ class InvoiceManager: @unchecked Sendable {
 
             let (valid, invoiceDetails) = setValueFrom(invoiceDetailsString: invoiceQuery)
             if valid {
-                Task { @MainActor in
-                    let createInvoiceDetailsVC = CreateInvoiceDetailsViewController.instantiate(invoiceDetails: invoiceDetails, delegate: delegate)
-                    vc.presentNavigationControllerWith(vc: createInvoiceDetailsVC)
-                }
+                let createInvoiceDetailsVC = CreateInvoiceDetailsViewController.instantiate(invoiceDetails: invoiceDetails, delegate: delegate)
+                vc.presentNavigationControllerWith(vc: createInvoiceDetailsVC)
                 return true
             }
         }

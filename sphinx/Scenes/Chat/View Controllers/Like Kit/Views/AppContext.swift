@@ -18,6 +18,8 @@ import Combine
 import LiveKit
 import SwiftUI
 
+extension AudioDevice: @unchecked Sendable {}
+
 // This class contains the logic to control behavior of the whole app.
 final class AppContext: ObservableObject, @unchecked Sendable {
     private let store: ValueStore<Preferences>
@@ -82,9 +84,11 @@ final class AppContext: ObservableObject, @unchecked Sendable {
             guard let self else { return }
             print("devices did update")
             // force UI update for outputDevice / inputDevice
-            DispatchQueue.main.async { [weak self] in
-                self?.outputDevice = audioManager.outputDevice
-                self?.inputDevice = audioManager.inputDevice
+            let outputDevice = audioManager.outputDevice
+            let inputDevice = audioManager.inputDevice
+            Task { @MainActor [weak self] in
+                self?.outputDevice = outputDevice
+                self?.inputDevice = inputDevice
             }
         }
     }

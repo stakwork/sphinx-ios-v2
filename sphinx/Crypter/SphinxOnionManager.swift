@@ -817,7 +817,7 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
         }
     }
     
-    func showSuccessWithMessage(_ message: String) {
+    @MainActor func showSuccessWithMessage(_ message: String) {
         self.newMessageBubbleHelper.showGenericMessageView(
             text: message,
             delay: 6,

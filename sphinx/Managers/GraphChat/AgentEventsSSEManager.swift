@@ -26,7 +26,7 @@ import SwiftyJSON
 
 // MARK: - Manager
 
-class AgentEventsSSEManager: EventHandler {
+class AgentEventsSSEManager: EventHandler, @unchecked Sendable {
 
     weak var delegate: AgentEventsSSEDelegate?
     private var eventSource: EventSource?

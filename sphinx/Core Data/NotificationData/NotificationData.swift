@@ -10,7 +10,7 @@ import Foundation
 import CoreData
 
 @objc(NotificationData)
-public class NotificationData: NSManagedObject {
+public class NotificationData: NSManagedObject, @unchecked Sendable {
     
     static func getAllFetchRequest() -> NSFetchRequest<NotificationData> {
         let fetchRequest = fetchRequest()

@@ -11,7 +11,7 @@ import CoreData
 import SwiftyJSON
 
 @objc(UserContact)
-public class UserContact: NSManagedObject {
+public class UserContact: NSManagedObject, @unchecked Sendable {
     
     enum Status: Int {
         case Pending
