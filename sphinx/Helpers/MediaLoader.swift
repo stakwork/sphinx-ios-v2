@@ -179,11 +179,11 @@ class MediaLoader {
                 errorCompletion: errorCompletion
             )
         }, errorCompletion: {
-            Task { @MainActor in errorCompletion(messageId) }
+            errorCompletion(messageId)
         })
     }
     
-    class func loadImageFromData(
+    @MainActor class func loadImageFromData(
         data: Data,
         url: URL,
         message: TransactionMessage,
@@ -395,7 +395,7 @@ class MediaLoader {
         }
     }
     
-    class func loadMediaFromData(
+    @MainActor class func loadMediaFromData(
         data: Data,
         url: URL, message: TransactionMessage,
         mediaKey: String? = nil,
