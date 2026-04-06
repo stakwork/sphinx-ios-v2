@@ -198,6 +198,8 @@ internal enum StoryboardScene {
         internal static let profileManageStorageSpecificChatOrContentFeedItemVC = SceneType<ProfileManageStorageSpecificChatOrContentFeedItemVC>(storyboard: Profile.self, identifier: "ProfileManageStorageSpecificChatOrContentFeedItemVC")
         
         internal static let notificationSoundViewController = SceneType<NotificationSoundViewController>(storyboard: Profile.self, identifier: "NotificationSoundViewController")
+        
+        internal static let setupAIAgentViewController = SceneType<SetupAIAgentViewController>(storyboard: Profile.self, identifier: "SetupAIAgentViewController")
     }
     
     internal enum Invite: StoryboardType {
