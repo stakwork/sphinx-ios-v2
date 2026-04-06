@@ -50,6 +50,8 @@ class ChatMessageTextFieldView: UIView {
     @IBOutlet weak var recordingBlueCircle: UIView!
     @IBOutlet weak var animatedMicLabelView: IntermitentAlphaAnimatedView!
     
+    var isAgentChat: Bool = false
+    
     var textViewHeightConstraint: NSLayoutConstraint? = nil
     
     let kFieldPlaceHolder = "message.placeholder".localized
@@ -139,6 +141,12 @@ class ChatMessageTextFieldView: UIView {
         textView.text = ""
         togglePlaceHolder(editing: textView.isFirstResponder)
         textViewDidChange(textView)
+    }
+    
+    func configureForAgentChat() {
+        isAgentChat = true
+        attachmentButtonContainer.isHidden = true
+        audioButtonContainer.isHidden = true
     }
     
     func updateFieldStateFrom(_ chat: Chat?) {

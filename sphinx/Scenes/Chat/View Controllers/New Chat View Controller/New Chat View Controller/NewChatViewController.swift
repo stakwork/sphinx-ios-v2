@@ -31,6 +31,7 @@ class NewChatViewController: NewKeyboardHandlerViewController {
     var chat: Chat?
     var threadUUID: String? = nil
     var owner: UserContact!
+    var isAgentChat: Bool = false
     
     var isThread: Bool {
         get {
@@ -100,6 +101,7 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         }
         
         viewController.owner = UserContact.getOwner()
+        viewController.isAgentChat = viewController.contact?.isAgent == true
         
         viewController.threadUUID = threadUUID
         viewController.chatListViewModel = chatListViewModel
@@ -140,6 +142,9 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         fetchTribeData()
         loadReplyableMeesage()
         
+        if isAgentChat {
+            insertIntroMessageIfNeeded()
+        }
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -163,7 +168,7 @@ class NewChatViewController: NewKeyboardHandlerViewController {
                 return
             }
             
-            if let chat = chat {
+            if let chat = chat, !isAgentChat {
                 SphinxOnionManager.sharedInstance.batchDeleteOldMessagesInBackground(forChat: chat)
             }
         }
@@ -250,6 +255,11 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         configureThreadHeaderAndBottomView()
         
         bottomView.updateFieldStateFrom(chat)
+        
+        if isAgentChat {
+            bottomView.configureForAgentChat()
+        }
+        
         showPendingApprovalMessage()
 
         updateEmptyView()
@@ -315,6 +325,7 @@ class NewChatViewController: NewKeyboardHandlerViewController {
     }
 
     func updateEmptyView() {
+        guard !isAgentChat else { return }
         if shouldShowPendingChat {
             setupPendingChatPlaceholder()
         } else {
