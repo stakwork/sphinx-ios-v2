@@ -477,7 +477,7 @@ final class AIAgentManager: @unchecked Sendable {
         let contact = chat.getConversationContact()
         let isoFormatter = ISO8601DateFormatter()
         let lines: [String] = messages.map { msg in
-            let content = msg.getMessageContentPreview(owner: owner, contact: contact, includeSender: false)
+            let content = msg.getMessageContentPreview(owner: owner, contact: contact)
             let isMe = msg.senderId == owner.id
             let sender = isMe ? "Me" : (msg.senderAlias ?? chatName)
             let dateStr = msg.date.map { isoFormatter.string(from: $0) } ?? "unknown date"
@@ -499,7 +499,7 @@ final class AIAgentManager: @unchecked Sendable {
         let contact = chat.getConversationContact()
         let isoFormatter = ISO8601DateFormatter()
         let lines: [String] = messages.map { msg in
-            let content = msg.getMessageContentPreview(owner: owner, contact: contact, includeSender: false)
+            let content = msg.getMessageContentPreview(owner: owner, contact: contact)
             let isMe = msg.senderId == owner.id
             let sender = isMe ? "Me" : (msg.senderAlias ?? chatName)
             let dateStr = msg.date.map { isoFormatter.string(from: $0) } ?? "unknown date"
