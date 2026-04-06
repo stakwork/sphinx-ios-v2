@@ -8,14 +8,9 @@
 
 import UIKit
 
-class ImagePickerManager {
-    
-    class var sharedInstance : ImagePickerManager {
-        struct Static {
-            static let instance = ImagePickerManager()
-        }
-        return Static.instance
-    }
+@MainActor class ImagePickerManager {
+
+    static let sharedInstance = ImagePickerManager()
     
     var picker = UIImagePickerController()
     var viewController : UIViewController?

@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol ThreadHeaderTableViewCellDelegate: class {
+@MainActor protocol ThreadHeaderTableViewCellDelegate: class {
     func shouldExpandHeaderMessage()
     
     func shouldLoadImageDataFor(messageId: Int, and rowIndex: Int)

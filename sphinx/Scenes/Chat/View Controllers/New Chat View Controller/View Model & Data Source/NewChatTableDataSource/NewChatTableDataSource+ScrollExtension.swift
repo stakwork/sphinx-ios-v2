@@ -103,21 +103,22 @@ extension NewChatTableDataSource: UITableViewDelegate {
                         if (minIndex - 1) <= 0 {
                             return
                         }
-                        DispatchQueue.global(qos: .background).async {
-                            SphinxOnionManager.sharedInstance.startChatMsgBlockFetch(
-                                startIndex: minIndex - 1,
-                                itemsPerPage: itemsPerPage,
-                                stopIndex: 0,
-                                publicKey: publicKey
-                            ) { messagesCount in
+                        SphinxOnionManager.sharedInstance.startChatMsgBlockFetch(
+                            startIndex: minIndex - 1,
+                            itemsPerPage: itemsPerPage,
+                            stopIndex: 0,
+                            publicKey: publicKey
+                        ) { messagesCount in
+                            Task { @MainActor [weak self] in
+                                guard let self = self else { return }
                                 if messagesCount < itemsPerPage {
                                     self.allItemsLoaded = true
-                                    
+
                                     self.processMessages(
                                         messages: self.messagesArray,
                                         showLoadingMore: false
                                     )
-                                    
+
                                     if self.isSearching {
                                         self.delegate?.shouldToggleSearchLoadingWheel(active: false)
                                     }

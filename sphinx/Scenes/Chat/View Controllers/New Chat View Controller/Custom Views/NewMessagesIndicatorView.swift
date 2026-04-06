@@ -8,6 +8,7 @@
 
 import UIKit
 
+@MainActor
 protocol NewMessagesIndicatorViewDelegate : class {
     func didTouchButton()
 }

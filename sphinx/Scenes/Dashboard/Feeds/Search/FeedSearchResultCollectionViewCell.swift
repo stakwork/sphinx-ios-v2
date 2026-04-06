@@ -55,9 +55,11 @@ extension FeedSearchResultCollectionViewCell {
     
     override func awakeFromNib() {
         super.awakeFromNib()
-        
-        feedThumbnailImageView.layer.cornerRadius = 6.0
-        feedThumbnailImageView.clipsToBounds = true
+
+        MainActor.assumeIsolated {
+            feedThumbnailImageView.layer.cornerRadius = 6.0
+            feedThumbnailImageView.clipsToBounds = true
+        }
     }
 }
 

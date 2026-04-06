@@ -9,7 +9,7 @@
 import UIKit
 import Lottie
 
-protocol AnimationViewDelegate : class {
+@MainActor protocol AnimationViewDelegate : class {
     func animationDidFinish()
 }
 

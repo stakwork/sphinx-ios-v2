@@ -52,7 +52,7 @@ class SoundsPlayer {
         }
     }
     
-    public static func playHaptic() {
+    @MainActor public static func playHaptic() {
         let feedbackGenerator = UIImpactFeedbackGenerator(style: .heavy)
         feedbackGenerator.prepare()
         feedbackGenerator.impactOccurred()

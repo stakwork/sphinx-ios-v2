@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol PodcastEpisodesDSDelegate : class {
+@MainActor protocol PodcastEpisodesDSDelegate : class {
     func didTapForDescriptionAt(episode:PodcastEpisode,cell:UITableViewCell)
     func didTapEpisodeWith(episodeId: String)
     func downloadTapped(_ indexPath: IndexPath, episode: PodcastEpisode)
@@ -20,6 +20,7 @@ protocol PodcastEpisodesDSDelegate : class {
     func shouldPlayChapterWith(index: Int, on episode: PodcastEpisode)
 }
 
+@MainActor
 class PodcastEpisodesDataSource : NSObject {
     
     weak var delegate: PodcastEpisodesDSDelegate?

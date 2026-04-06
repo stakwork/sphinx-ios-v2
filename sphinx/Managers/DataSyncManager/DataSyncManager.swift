@@ -9,11 +9,11 @@
 import Foundation
 import CoreData
 
-class DataSyncManager: NSObject {
+class DataSyncManager: NSObject, @unchecked Sendable {
 
     // MARK: - Singleton
 
-    static let sharedInstance = DataSyncManager()
+    nonisolated(unsafe) static let sharedInstance = DataSyncManager()
 
     // MARK: - Properties
 
@@ -173,9 +173,9 @@ class DataSyncManager: NSObject {
 
         Task {
             defer {
-                syncLock.lock()
-                isSyncing = false
-                syncLock.unlock()
+                syncLock.withLock {
+                    isSyncing = false
+                }
             }
 
             await syncWithServer()

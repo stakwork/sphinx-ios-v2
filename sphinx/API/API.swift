@@ -105,13 +105,13 @@ typealias PodcastEpisodeSearchCompletionHandler = (
 
 
 
-class API {
+class API: @unchecked Sendable {
     typealias HUBNodeInvoice = String
     typealias SphinxInviteCode = String
     
-    class var sharedInstance : API {
+    nonisolated(unsafe) class var sharedInstance : API {
         struct Static {
-            static let instance = API()
+            nonisolated(unsafe) static let instance = API()
         }
         return Static.instance
     }

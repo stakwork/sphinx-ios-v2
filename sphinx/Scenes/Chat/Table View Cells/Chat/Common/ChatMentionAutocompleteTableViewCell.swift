@@ -18,7 +18,7 @@ class ChatMentionAutocompleteTableViewCell: UITableViewCell {
     @IBOutlet weak var initialsView: UIView!
     @IBOutlet weak var initialsLabel: UILabel!
     
-    static let reuseID = "ChatMentionAutocompleteTableViewCell"
+    nonisolated(unsafe) static let reuseID = "ChatMentionAutocompleteTableViewCell"
     static let nib: UINib = {
         UINib(nibName: "ChatMentionAutocompleteTableViewCell", bundle: nil)
     }()
@@ -30,12 +30,13 @@ class ChatMentionAutocompleteTableViewCell: UITableViewCell {
 
     override func awakeFromNib() {
         super.awakeFromNib()
-        
-        self.transform = CGAffineTransform(scaleX: 1, y: -1)
-        self.contentView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleClick)))
-        
-        avatarImage.makeCircular()
-        initialsView.makeCircular()
+
+        Task { @MainActor in
+            self.transform = CGAffineTransform(scaleX: 1, y: -1)
+            self.contentView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(self.handleClick)))
+            self.avatarImage.makeCircular()
+            self.initialsView.makeCircular()
+        }
     }
 
     override func setSelected(_ selected: Bool, animated: Bool) {

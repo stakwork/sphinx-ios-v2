@@ -9,7 +9,7 @@
 import UIKit
 import KYDrawerController
 
-final class MainCoordinator: NSObject {
+@MainActor final class MainCoordinator: NSObject {
 
     var drawerController : KYDrawerController!
     var rootViewController : RootViewController!

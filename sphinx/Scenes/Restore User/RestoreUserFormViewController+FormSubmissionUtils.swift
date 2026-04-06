@@ -135,7 +135,7 @@ extension RestoreUserFormViewController {
 }
 
 
-extension RestoreUserFormViewController : NSFetchedResultsControllerDelegate{
+extension RestoreUserFormViewController : @preconcurrency NSFetchedResultsControllerDelegate {
     
     func proceedToNewUserWelcome() {
         guard let _ = SignupHelper.getInviter() else {
@@ -201,20 +201,25 @@ extension RestoreUserFormViewController : NSFetchedResultsControllerDelegate{
         }
     }
     
-    func controller(
+    nonisolated func controller(
         _ controller: NSFetchedResultsController<NSFetchRequestResult>,
         didChangeContentWith snapshot: NSDiffableDataSourceSnapshotReference
     ) {
+        let hasObject: Bool
         if let resultController = controller as? NSFetchedResultsController<NSManagedObject>,
            let firstSection = resultController.sections?.first {
-            
-            if let _ = firstSection.objects?.first {
-                selfContactFetchListener = nil
-                
-                watchdogTimer?.invalidate()
-                watchdogTimer = nil
-                
-                finalizeSignup()
+            hasObject = firstSection.objects?.first != nil
+        } else {
+            hasObject = false
+        }
+
+        if hasObject {
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                self.selfContactFetchListener = nil
+                self.watchdogTimer?.invalidate()
+                self.watchdogTimer = nil
+                self.finalizeSignup()
             }
         }
     }
@@ -222,14 +227,14 @@ extension RestoreUserFormViewController : NSFetchedResultsControllerDelegate{
     private func setupWatchdogTimer() {
         watchdogTimer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: false) { [weak self] _ in
             guard let self = self else { return }
-            
-            if self.selfContactFetchListener?.fetchedObjects?.first == nil {
-                DispatchQueue.main.async {
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                if self.selfContactFetchListener?.fetchedObjects?.first == nil {
                     self.loading = false
                     self.navigationController?.popViewController(animated: true)
+                } else {
+                    self.finalizeSignup()
                 }
-            } else {
-                self.finalizeSignup()
             }
         }
     }

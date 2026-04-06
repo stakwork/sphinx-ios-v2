@@ -12,9 +12,9 @@ import SwiftyJSON
 import CoreData
 
 
-class SphinxOnionManager : NSObject {
+class SphinxOnionManager : NSObject, @unchecked Sendable {
     
-    private static var _sharedInstance: SphinxOnionManager? = nil
+    nonisolated(unsafe) private static var _sharedInstance: SphinxOnionManager? = nil
 
     static var sharedInstance: SphinxOnionManager {
         if _sharedInstance == nil {
@@ -556,30 +556,37 @@ class SphinxOnionManager : NSObject {
     func startReconnectionTimer(
         delay: Double = 0.0
     ) {
-        if (UIApplication.shared.delegate as? AppDelegate)?.isActive == false {
-            return
+        DispatchQueue.main.async {
+            MainActor.assumeIsolated {
+                if (UIApplication.shared.delegate as? AppDelegate)?.isActive == false {
+                    return
+                }
+
+                self.reconnectionTimer?.invalidate()
+
+                self.reconnectionTimer = Timer.scheduledTimer(
+                    timeInterval: delay,
+                    target: self,
+                    selector: #selector(self.reconnectionTimerFired),
+                    userInfo: nil,
+                    repeats: false
+                )
+            }
         }
-        
-        reconnectionTimer?.invalidate()
-        
-        reconnectionTimer = Timer.scheduledTimer(
-            timeInterval: delay,
-            target: self,
-            selector: #selector(reconnectionTimerFired),
-            userInfo: nil,
-            repeats: false
-        )
     }
-    
+
     @objc func reconnectionTimerFired() {
-        if (UIApplication.shared.delegate as? AppDelegate)?.isActive == false {
+        let isActive = MainActor.assumeIsolated {
+            (UIApplication.shared.delegate as? AppDelegate)?.isActive
+        }
+        if isActive == false {
             return
         }
-        
+
         if !NetworkMonitor.shared.isConnected {
             return
         }
-        
+
         reconnectToServer(
             connectingCallback: nil,
             contactRestoreCallback: self.contactRestoreCallback,
@@ -841,7 +848,9 @@ extension SphinxOnionManager {//Sign Up UI Related:
     
     func importSeedPhrase(){
         if let vc = self.vc as? ImportSeedViewDelegate {
-            vc.showImportSeedView()
+            Task { @MainActor in
+                vc.showImportSeedView()
+            }
         }
     }
     
@@ -857,7 +866,9 @@ extension SphinxOnionManager {//Sign Up UI Related:
             on: vc,
             confirmLabel: "Copy",
             completion: {
-                ClipboardHelper.copyToClipboard(text: mnemonic, message: "profile.mnemonic-copied".localized)
+                Task { @MainActor in
+                    ClipboardHelper.copyToClipboard(text: mnemonic, message: "profile.mnemonic-copied".localized)
+                }
                 callback()
             }
         )

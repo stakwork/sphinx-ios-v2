@@ -9,10 +9,10 @@ class PodcastFeedCollectionViewController: UICollectionViewController {
     
     var interSectionSpacing: CGFloat!
 
-    var onPodcastEpisodeCellSelected: ((String) -> Void)!
-    var onSubscribedPodcastFeedCellSelected: ((PodcastFeed) -> Void)!
-    var onNewResultsFetched: ((Int) -> Void)!
-    var onContentScrolled: ((UIScrollView) -> Void)?
+    var onPodcastEpisodeCellSelected: (@MainActor (String) -> Void)!
+    var onSubscribedPodcastFeedCellSelected: (@MainActor (PodcastFeed) -> Void)!
+    var onNewResultsFetched: (@MainActor (Int) -> Void)!
+    var onContentScrolled: (@MainActor (UIScrollView) -> Void)?
 
     private var managedObjectContext: NSManagedObjectContext!
     private var fetchedResultsController: NSFetchedResultsController<ContentFeed>!
@@ -34,10 +34,10 @@ extension PodcastFeedCollectionViewController {
     static func instantiate(
         managedObjectContext: NSManagedObjectContext = CoreDataManager.sharedManager.persistentContainer.viewContext,
         interSectionSpacing: CGFloat = 10.0,
-        onPodcastEpisodeCellSelected: @escaping ((String) -> Void) = { _ in },
-        onSubscribedPodcastFeedCellSelected: @escaping ((PodcastFeed) -> Void) = { _ in },
-        onNewResultsFetched: @escaping ((Int) -> Void) = { _ in },
-        onContentScrolled: ((UIScrollView) -> Void)? = nil
+        onPodcastEpisodeCellSelected: @escaping (@MainActor (String) -> Void) = { _ in },
+        onSubscribedPodcastFeedCellSelected: @escaping (@MainActor (PodcastFeed) -> Void) = { _ in },
+        onNewResultsFetched: @escaping (@MainActor (Int) -> Void) = { _ in },
+        onContentScrolled: (@MainActor (UIScrollView) -> Void)? = nil
     ) -> PodcastFeedCollectionViewController {
         let viewController = StoryboardScene.Dashboard.podcastFeedCollectionViewController.instantiate()
 
@@ -80,7 +80,7 @@ extension PodcastFeedCollectionViewController {
     }
 
 
-    enum DataSourceItem: Hashable, Equatable {
+    enum DataSourceItem: Hashable, Equatable, @unchecked Sendable {
         case listenNowEpisode(PodcastEpisode, Int)
         case recentlyPlayedEpisode(PodcastEpisode, Int)
         
@@ -480,7 +480,7 @@ extension PodcastFeedCollectionViewController {
 
 
 // MARK: - `NSFetchedResultsControllerDelegate` Methods
-extension PodcastFeedCollectionViewController: NSFetchedResultsControllerDelegate {
+extension PodcastFeedCollectionViewController: @preconcurrency NSFetchedResultsControllerDelegate {
 
     /// Called when the contents of the fetched results controller change.
     ///
@@ -496,18 +496,13 @@ extension PodcastFeedCollectionViewController: NSFetchedResultsControllerDelegat
         else {
             return
         }
-        
+
         let podcastFeeds = foundFeeds.map {
             PodcastFeed.convertFrom(contentFeed: $0)
         }
 
-        DispatchQueue.main.async { [weak self] in
-            self?.updateWithNew(
-                podcastFeeds: podcastFeeds
-            )
-            
-            self?.onNewResultsFetched(podcastFeeds.count)
-        }
+        updateWithNew(podcastFeeds: podcastFeeds)
+        onNewResultsFetched(podcastFeeds.count)
     }
 }
 

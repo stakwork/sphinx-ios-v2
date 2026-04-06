@@ -327,6 +327,6 @@ extension LeftMenuViewController : LeftMenuDelegate {
 }
 
 extension LeftMenuViewController : KYDrawerControllerDelegate {
-    func drawerController(_ drawerController: KYDrawerController, didChangeState state: KYDrawerController.DrawerState) {}
+    nonisolated func drawerController(_ drawerController: KYDrawerController, didChangeState state: KYDrawerController.DrawerState) {}
 }
 

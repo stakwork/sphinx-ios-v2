@@ -264,7 +264,7 @@ extension MemberDetailTableViewCell {
 }
 
 
-private var ordinalFormatter: NumberFormatter = {
+nonisolated(unsafe) private var ordinalFormatter: NumberFormatter = {
     let formatter = NumberFormatter()
     formatter.numberStyle = .ordinal
     return formatter

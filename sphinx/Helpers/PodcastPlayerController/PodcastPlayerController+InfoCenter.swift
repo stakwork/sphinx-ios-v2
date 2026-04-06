@@ -10,6 +10,7 @@
 //import AVKit
 import MediaPlayer
 
+@MainActor
 extension PodcastPlayerController {
     func updateItemDataSync(
         podcastId: String,

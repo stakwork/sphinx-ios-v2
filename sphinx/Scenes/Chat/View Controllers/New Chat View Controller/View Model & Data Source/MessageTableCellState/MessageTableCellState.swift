@@ -8,7 +8,7 @@
 
 import UIKit
 
-struct MessageTableCellState {
+@MainActor struct MessageTableCellState: @unchecked Sendable {
 
     ///Constants
     static let kBubbleCornerRadius: CGFloat = 8.0
@@ -1018,7 +1018,7 @@ extension MessageTableCellState {
     }
 }
 
-extension MessageTableCellState : Hashable {
+extension MessageTableCellState: @preconcurrency Hashable {
 
     static func == (lhs: MessageTableCellState, rhs: MessageTableCellState) -> Bool {
         var mutableLhs = lhs

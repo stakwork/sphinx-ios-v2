@@ -8,6 +8,7 @@
 
 import UIKit
 
+@MainActor
 protocol PinnedMessageViewDelegate: class {
     func didTapPinnedMessageButtonFor(messageId: Int)
 }

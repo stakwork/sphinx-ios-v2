@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol PodcastAudioViewDelegate: class {
+@MainActor protocol PodcastAudioViewDelegate: class {
     func didTapClipPlayPauseButtonAt(time: Double)
     func shouldSeekTo(time: Double)
     func shouldToggleReplyGesture(enable: Bool)
@@ -172,8 +172,8 @@ class PodcastAudioView: UIView {
         if shouldSync {
             delegate?.shouldSeekTo(time: currentTime)
             
-            DelayPerformedHelper.performAfterDelay(seconds: 1.0, completion: {
-                self.preventUIUpdates = false
+            DelayPerformedHelper.performAfterDelay(seconds: 1.0, completion: { [weak self] in
+                Task { @MainActor [weak self] in self?.preventUIUpdates = false }
             })
         }
     }
@@ -205,9 +205,9 @@ class PodcastAudioView: UIView {
         
         delegate?.didTapClipPlayPauseButtonAt(time: currentTime)
         
-        DelayPerformedHelper.performAfterDelay(seconds: 1.0, completion: {
-            self.preventUIUpdates = false
+        DelayPerformedHelper.performAfterDelay(seconds: 1.0, completion: { [weak self] in
+            Task { @MainActor [weak self] in self?.preventUIUpdates = false }
         })
     }
-    
+
 }

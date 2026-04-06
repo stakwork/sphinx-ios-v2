@@ -9,7 +9,7 @@
 import UIKit
 import CoreData
 
-protocol NewChatViewControllerDelegate: class {
+@MainActor protocol NewChatViewControllerDelegate: AnyObject {
     func shouldReloadRowFor(chatId: Int)
 }
 

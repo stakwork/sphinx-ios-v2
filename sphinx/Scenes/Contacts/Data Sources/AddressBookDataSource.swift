@@ -8,13 +8,13 @@
 
 import UIKit
 
-protocol AddressBookDataSourceDelegate: class {
+@MainActor protocol AddressBookDataSourceDelegate: AnyObject {
     func didTapOnContact(contact: UserContact)
     func shouldShowAlert(title: String, text: String)
     func shouldToggleInteraction(enable: Bool)
 }
 
-class AddressBookDataSource: NSObject {
+@MainActor class AddressBookDataSource: NSObject {
     
     weak var delegate: AddressBookDataSourceDelegate?
     var tableView : UITableView!

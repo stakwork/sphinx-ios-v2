@@ -16,9 +16,11 @@ class ItemDescriptionImageTableViewCell: UITableViewCell {
     
     override func awakeFromNib() {
         super.awakeFromNib()
-        
-        itemImageView.layer.cornerRadius = 10.0
-        itemImageView.clipsToBounds = true
+
+        Task { @MainActor in
+            self.itemImageView.layer.cornerRadius = 10.0
+            self.itemImageView.clipsToBounds = true
+        }
     }
 
     override func setSelected(_ selected: Bool, animated: Bool) {

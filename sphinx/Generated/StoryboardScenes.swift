@@ -388,7 +388,7 @@ internal protocol StoryboardType {
 }
 
 internal extension StoryboardType {
-  static var storyboard: UIStoryboard {
+  @MainActor static var storyboard: UIStoryboard {
     let name = self.storyboardName
     return UIStoryboard(name: name, bundle: Bundle(for: BundleToken.self))
   }
@@ -398,7 +398,7 @@ internal struct SceneType<T: UIViewController> {
   internal let storyboard: StoryboardType.Type
   internal let identifier: String
 
-  internal func instantiate() -> T {
+  @MainActor internal func instantiate() -> T {
     let identifier = self.identifier
     guard let controller = storyboard.storyboard.instantiateViewController(withIdentifier: identifier) as? T else {
       fatalError("ViewController '\(identifier)' is not of the expected class \(T.self).")
@@ -410,7 +410,7 @@ internal struct SceneType<T: UIViewController> {
 internal struct InitialSceneType<T: UIViewController> {
   internal let storyboard: StoryboardType.Type
 
-  internal func instantiate() -> T {
+  @MainActor internal func instantiate() -> T {
     guard let controller = storyboard.storyboard.instantiateInitialViewController() as? T else {
       fatalError("ViewController is not of the expected class \(T.self).")
     }

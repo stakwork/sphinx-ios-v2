@@ -9,8 +9,8 @@ import UIKit
 import CoreData
 
 
-protocol FeedSearchResultsViewControllerDelegate: AnyObject {
-    
+@MainActor protocol FeedSearchResultsViewControllerDelegate: AnyObject {
+
     func viewController(
         _ viewController: UIViewController,
         didSelectFeedSearchResult feedId: String
@@ -24,7 +24,7 @@ class FeedSearchContainerViewController: UIViewController {
     private var managedObjectContext: NSManagedObjectContext!
     private weak var resultsDelegate: FeedSearchResultsViewControllerDelegate?
     
-    var onContentScrolled: ((UIScrollView) -> Void)?
+    var onContentScrolled: (@MainActor (UIScrollView) -> Void)?
     
     var feedType: FeedType? = nil
     var searchTimer: Timer? = nil
@@ -41,8 +41,12 @@ class FeedSearchContainerViewController: UIViewController {
     
     internal lazy var searchResultsViewController: FeedSearchResultsCollectionViewController = {
         .instantiate(
-            onSubscribedFeedCellSelected: handleFeedCellSelection,
-            onFeedSearchResultCellSelected: handleSearchResultCellSelection,
+            onSubscribedFeedCellSelected: { [weak self] result in
+                Task { @MainActor [weak self] in self?.handleFeedCellSelection(result) }
+            },
+            onFeedSearchResultCellSelected: { [weak self] result in
+                Task { @MainActor [weak self] in self?.handleSearchResultCellSelection(result) }
+            },
             onContentScrolled: onContentScrolled
         )
     }()
@@ -64,7 +68,7 @@ extension FeedSearchContainerViewController {
     static func instantiate(
         managedObjectContext: NSManagedObjectContext = CoreDataManager.sharedManager.persistentContainer.viewContext,
         resultsDelegate: FeedSearchResultsViewControllerDelegate,
-        onContentScrolled: ((UIScrollView) -> Void)? = nil
+        onContentScrolled: (@MainActor (UIScrollView) -> Void)? = nil
     ) -> FeedSearchContainerViewController {
         let viewController = StoryboardScene
             .Dashboard
@@ -312,12 +316,12 @@ extension FeedSearchContainerViewController {
 }
 
 
-extension FeedSearchContainerViewController: NSFetchedResultsControllerDelegate {
-    
+extension FeedSearchContainerViewController: @preconcurrency NSFetchedResultsControllerDelegate {
+
     /// Called when the contents of the fetched results controller change.
     ///
     /// If this method is implemented, no other delegate methods will be invoked.
-    func controller(
+    nonisolated func controller(
         _ controller: NSFetchedResultsController<NSFetchRequestResult>,
         didChangeContentWith snapshot: NSDiffableDataSourceSnapshotReference
     ) {

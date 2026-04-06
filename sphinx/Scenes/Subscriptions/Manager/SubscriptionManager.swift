@@ -12,7 +12,7 @@ class SubscriptionManager {
     
     class var sharedInstance : SubscriptionManager {
         struct Static {
-            static let instance = SubscriptionManager()
+            nonisolated(unsafe) static let instance = SubscriptionManager()
         }
         return Static.instance
     }
@@ -354,7 +354,7 @@ class SubscriptionManager {
     }
     
     //Navigate methods
-    func goToSubscriptionDetails(
+    @MainActor func goToSubscriptionDetails(
         vc: UIViewController
     ) -> Bool {
         if let subscriptionQuery = UserDefaults.Keys.subscriptionQuery.get(defaultValue: ""), subscriptionQuery != "" {

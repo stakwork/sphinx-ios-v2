@@ -59,7 +59,7 @@ class GiphyHelper {
         return nil
     }
     
-    public static func getGiphyDataFrom(url: String, messageId: Int, completion: @escaping (Data?, Int) -> ()) {
+    public static func getGiphyDataFrom(url: String, messageId: Int, completion: @escaping @Sendable (Data?, Int) -> ()) {
         if let data = MediaLoader.getMediaDataFromCachedUrl(url: url) {
             completion(data, messageId)
             return
@@ -78,7 +78,7 @@ class GiphyHelper {
         }
     }
     
-    func getGiphyVC(darkMode: Bool, delegate: GiphyDelegate) -> GiphyViewController {
+    @MainActor func getGiphyVC(darkMode: Bool, delegate: GiphyDelegate) -> GiphyViewController {
         GiphyViewController.trayHeightMultiplier = 0.55
         
         let giphy = GiphyViewController()
@@ -106,7 +106,7 @@ class GiphyHelper {
         return nil
     }
     
-    func loadGiphyDataFrom(message: TransactionMessage, completion: @escaping (Data, Int) -> (), errorCompletion: @escaping (Int) -> ()) {
+    func loadGiphyDataFrom(message: TransactionMessage, completion: @escaping @Sendable (Data, Int) -> (), errorCompletion: @escaping @Sendable (Int) -> ()) {
         let messageId = message.id
         let messageContent = message.messageContent ?? ""
         

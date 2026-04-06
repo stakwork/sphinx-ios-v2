@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol ChatHeaderViewDelegate : class {
+@MainActor protocol ChatHeaderViewDelegate : class {
     ///Chat header
     func didTapHeaderButton()
     func didTapBackButton()
@@ -77,8 +77,8 @@ class ChatHeaderView: UIView {
         contentView.frame = self.bounds
         contentView.autoresizingMask = [.flexibleHeight, .flexibleWidth]
         
-        NotificationCenter.default.addObserver(forName: .onBalanceDidChange, object: nil, queue: OperationQueue.main) { (n: Notification) in
-            self.updateSatsEarned()
+        NotificationCenter.default.addObserver(forName: .onBalanceDidChange, object: nil, queue: OperationQueue.main) { [weak self] (n: Notification) in
+            Task { @MainActor [weak self] in self?.updateSatsEarned() }
         }
     }
     

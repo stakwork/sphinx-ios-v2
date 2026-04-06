@@ -1,5 +1,6 @@
 import UIKit
 
+@MainActor
 protocol ChatListCollectionViewCellDelegate : NSObject{
     func didLongPressOnCell(
         cell: ChatListCollectionViewCell,
@@ -52,8 +53,10 @@ extension ChatListCollectionViewCell {
     
     override func awakeFromNib() {
         super.awakeFromNib()
-        
-        setupViews()
+
+        Task { @MainActor in
+            self.setupViews()
+        }
     }
 }
 

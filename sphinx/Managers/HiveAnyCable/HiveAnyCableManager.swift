@@ -10,7 +10,7 @@ import Foundation
 import Starscream
 import SwiftyJSON
 
-class HiveAnyCableManager: NSObject {
+class HiveAnyCableManager: NSObject, @unchecked Sendable {
 
     weak var delegate: HiveAnyCableDelegate?
 

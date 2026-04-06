@@ -10,11 +10,11 @@
 import Foundation
 import UIKit
 
-class ChaptersManager : NSObject {
-    
+class ChaptersManager : NSObject, @unchecked Sendable {
+
     class var sharedInstance : ChaptersManager {
         struct Static {
-            static let instance = ChaptersManager()
+            nonisolated(unsafe) static let instance = ChaptersManager()
         }
         return Static.instance
     }

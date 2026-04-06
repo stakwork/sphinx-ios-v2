@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol PaidAttachmentViewDelegate: class {
+@MainActor protocol PaidAttachmentViewDelegate: class {
     func didTapPayButton()
 }
 

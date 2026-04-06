@@ -7,7 +7,7 @@
 //
 
 import UIKit
-import UIView_Shimmer
+@preconcurrency import UIView_Shimmer
 
 class ShimmeringTableView: UIView, ShimmeringViewProtocol {
 
@@ -15,8 +15,8 @@ class ShimmeringTableView: UIView, ShimmeringViewProtocol {
     
     @IBOutlet var shimmeringSubviews: [UIButton]!
     
-    var shimmeringAnimatedItems: [UIView] {
-        get {
+    nonisolated var shimmeringAnimatedItems: [UIView] {
+        MainActor.assumeIsolated {
             shimmeringSubviews ?? []
         }
     }

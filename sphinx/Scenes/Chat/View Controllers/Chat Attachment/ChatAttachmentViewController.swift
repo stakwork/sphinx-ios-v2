@@ -15,6 +15,7 @@ import CoreData
 
 protocol BackCameraVC {}
 
+@MainActor
 protocol AttachmentsDelegate: class {
     func willDismissPresentedVC()
     func shouldStartUploading(attachmentObject: AttachmentObject)

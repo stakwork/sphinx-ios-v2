@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol MediaStorageTypeSummaryTableViewCellDelegate : class {
+@MainActor protocol MediaStorageTypeSummaryTableViewCellDelegate : class {
     func didTapDelete(type:StorageManagerMediaType)
 }
 

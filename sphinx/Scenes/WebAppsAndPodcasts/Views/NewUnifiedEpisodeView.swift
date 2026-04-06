@@ -9,7 +9,7 @@
 import UIKit
 import Lottie
 
-protocol FeedItemRowDelegate : class {
+@MainActor protocol FeedItemRowDelegate : class {
     func shouldStartDownloading(episode: PodcastEpisode, cell: UITableViewCell)
     func shouldDeleteFile(episode: PodcastEpisode, cell: UITableViewCell)
     func shouldShowMore(episode: PodcastEpisode, cell: UITableViewCell)
@@ -30,7 +30,7 @@ protocol FeedItemRowDelegate : class {
     func shouldPlayChapterWith(index: Int, on video: Video)
 }
 
-protocol PodcastEpisodeRowDelegate : class {
+@MainActor protocol PodcastEpisodeRowDelegate : class {
     func shouldStartDownloading(episode: PodcastEpisode)
     func shouldDeleteFile(episode: PodcastEpisode)
     func shouldShowMore(episode: PodcastEpisode)
@@ -40,7 +40,7 @@ protocol PodcastEpisodeRowDelegate : class {
     func shouldPlayChapterWith(index: Int, on episode: PodcastEpisode)
 }
 
-protocol VideoRowDelegate : class {
+@MainActor protocol VideoRowDelegate : class {
     func shouldShowMore(video: Video)
     func shouldShare(video: Video)
     func shouldShowDescription(video:Video)

@@ -323,7 +323,7 @@ extension YouTubeVideoFeedEpisodePlayerViewController {
 
 
 // MARK: -  YTPlayerViewDelegate
-extension YouTubeVideoFeedEpisodePlayerViewController: YTPlayerViewDelegate {
+extension YouTubeVideoFeedEpisodePlayerViewController: @preconcurrency YTPlayerViewDelegate {
     func playerView(_ playerView: YTPlayerView, didPlayTime playTime: Float) {
         currentTime = playTime
     }
@@ -394,7 +394,7 @@ extension YouTubeVideoFeedEpisodePlayerViewController: YTPlayerViewDelegate {
 }
 
 
-extension YouTubeVideoFeedEpisodePlayerViewController : AVPlayerViewControllerDelegate{
+extension YouTubeVideoFeedEpisodePlayerViewController : @preconcurrency AVPlayerViewControllerDelegate{
     func playerViewController(
         _ playerViewController: AVPlayerViewController,
         willBeginFullScreenPresentationWithAnimationCoordinator coordinator: UIViewControllerTransitionCoordinator

@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol WorkspacesViewControllerDelegate: AnyObject {
+@MainActor protocol WorkspacesViewControllerDelegate: AnyObject {
     func viewControllerContentScrolled(scrollView: UIScrollView)
     func didSelectWorkspace(_ workspace: Workspace)
 }

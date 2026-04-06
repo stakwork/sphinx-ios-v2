@@ -9,6 +9,7 @@
 import UIKit
 import KeychainAccess
 
+@MainActor
 protocol NotificationSoundDelegate: class {
     func didUpdateSound()
 }

@@ -1,7 +1,7 @@
 import UIKit
 
 
-protocol DashboardChatsListDelegate: AnyObject {
+@MainActor protocol DashboardChatsListDelegate: AnyObject {
     
     func viewController(
         _ viewController: UIViewController,

@@ -34,7 +34,7 @@ protocol StoreKitServiceTransactionObserverDelegate: AnyObject {
 }
 
 
-final class StoreKitService: NSObject {
+final class StoreKitService: NSObject, @unchecked Sendable {
     typealias ProductIdentifier = String
     
     enum ProductIdentifiers {
@@ -67,7 +67,7 @@ final class StoreKitService: NSObject {
 
 
 extension StoreKitService {
-    static let shared: StoreKitService = .init()
+    nonisolated(unsafe) static let shared: StoreKitService = .init()
 }
 
 

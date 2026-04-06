@@ -13,7 +13,7 @@ class NewsletterFeedItemsCollectionViewController: UICollectionViewController {
     
     var newsletterItems: [NewsletterItem]!
 
-    var onNewsletterItemCellSelected: ((String) -> Void)!
+    var onNewsletterItemCellSelected: (@MainActor (String) -> Void)!
     
     private var currentDataSnapshot: DataSourceSnapshot!
     private var dataSource: DataSource!
@@ -24,7 +24,7 @@ extension NewsletterFeedItemsCollectionViewController {
     
     static func instantiate(
         newsletterItems: [NewsletterItem],
-        onNewsletterItemCellSelected: @escaping ((String) -> Void) = { _ in }
+        onNewsletterItemCellSelected: @escaping (@MainActor (String) -> Void) = { _ in }
     ) -> NewsletterFeedItemsCollectionViewController {
         let viewController = StoryboardScene
             .NewsletterFeed
@@ -47,7 +47,7 @@ extension NewsletterFeedItemsCollectionViewController {
         case newsletterItems
     }
     
-    enum DataSourceItem: Hashable {
+    enum DataSourceItem: Hashable, @unchecked Sendable {
         case newsletterItem(NewsletterItem)
     }
     

@@ -242,12 +242,12 @@ extension SphinxOnionManager {
             var pendingMembers: [TribeMembersRRObject] = []
             
             // Parse confirmed members
-            if let confirmedArray = jsonDict?["confirmed"] as? [[String: Any]] {
+            if let confirmedArray = jsonDict["confirmed"] as? [[String: Any]] {
                 confirmedMembers = confirmedArray.compactMap { Mapper<TribeMembersRRObject>().map(JSONObject: $0) }
             }
-            
+
             // Parse pending members (assuming a similar structure for actual pending members)
-            if let pendingArray = jsonDict?["pending"] as? [[String: Any]] {
+            if let pendingArray = jsonDict["pending"] as? [[String: Any]] {
                 pendingMembers = pendingArray.compactMap { Mapper<TribeMembersRRObject>().map(JSONObject: $0) }
             }
             
@@ -556,14 +556,16 @@ extension SphinxOnionManager {
     }
     
     func handleTopicsToPush(topics: [String], payloads: [Data]) {
-        DelayPerformedHelper.performAfterDelay(seconds: 0.5, completion: {
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            guard let self = self else { return }
             for i in 0..<topics.count {
                 let _ = self.handleTopicToPush(
                     topic: topics[i],
                     payload: payloads[i]
                 )
             }
-        })
+        }
     }
     
     func handleTopicToPush(
@@ -604,9 +606,10 @@ extension SphinxOnionManager {
             
             self.mqtt?.publish(message)
             
-            DelayPerformedHelper.performAfterDelay(seconds: 0.25, completion: {
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 250_000_000)
                 callback(rr, skipAsyncTopic)
-            })
+            }
             
         } else {
             callback(rr, skipAsyncTopic)

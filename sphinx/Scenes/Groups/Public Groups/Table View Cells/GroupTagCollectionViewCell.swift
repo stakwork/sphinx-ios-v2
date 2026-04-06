@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol GroupTagCollectionViewCellDelegate: class {
+@MainActor protocol GroupTagCollectionViewCellDelegate: class {
     func didTapCloseButton(cell: UICollectionViewCell)
 }
 

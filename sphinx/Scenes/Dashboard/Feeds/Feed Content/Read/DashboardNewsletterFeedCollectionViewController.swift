@@ -16,10 +16,10 @@ class DashboardNewsletterFeedCollectionViewController: UICollectionViewControlle
     
     var interSectionSpacing: CGFloat = 20.0
 
-    var onNewsletterItemCellSelected: ((String) -> Void)!
-    var onNewsletterFeedCellSelected: ((String) -> Void)!
-    var onNewResultsFetched: ((Int) -> Void)!
-    var onContentScrolled: ((UIScrollView) -> Void)?
+    var onNewsletterItemCellSelected: (@MainActor (String) -> Void)!
+    var onNewsletterFeedCellSelected: (@MainActor (String) -> Void)!
+    var onNewResultsFetched: (@MainActor (Int) -> Void)!
+    var onContentScrolled: (@MainActor (UIScrollView) -> Void)?
 
     private var managedObjectContext: NSManagedObjectContext!
     private var fetchedResultsController: NSFetchedResultsController<ContentFeed>!
@@ -41,10 +41,10 @@ extension DashboardNewsletterFeedCollectionViewController {
     static func instantiate(
         managedObjectContext: NSManagedObjectContext = CoreDataManager.sharedManager.persistentContainer.viewContext,
         interSectionSpacing: CGFloat = 20.0,
-        onNewsletterItemCellSelected: ((String) -> Void)!,
-        onNewsletterFeedCellSelected: ((String) -> Void)!,
-        onNewResultsFetched: @escaping ((Int) -> Void) = { _ in },
-        onContentScrolled: ((UIScrollView) -> Void)? = nil
+        onNewsletterItemCellSelected: (@MainActor (String) -> Void)!,
+        onNewsletterFeedCellSelected: (@MainActor (String) -> Void)!,
+        onNewResultsFetched: @escaping (@MainActor (Int) -> Void) = { _ in },
+        onContentScrolled: (@MainActor (UIScrollView) -> Void)? = nil
     ) -> DashboardNewsletterFeedCollectionViewController {
         
         let viewController = StoryboardScene
@@ -86,7 +86,7 @@ extension DashboardNewsletterFeedCollectionViewController {
     }
     
     
-    enum DataSourceItem: Hashable {
+    enum DataSourceItem: Hashable, @unchecked Sendable {
         case newsletterItem(NewsletterItem)
         case newsletterFeed(NewsletterFeed)
         
@@ -562,12 +562,12 @@ extension DashboardNewsletterFeedCollectionViewController {
 }
 
 
-extension DashboardNewsletterFeedCollectionViewController: NSFetchedResultsControllerDelegate {
+extension DashboardNewsletterFeedCollectionViewController: @preconcurrency NSFetchedResultsControllerDelegate {
     
     /// Called when the contents of the fetched results controller change.
     ///
     /// If this method is implemented, no other delegate methods will be invoked.
-    func controller(
+    nonisolated func controller(
         _ controller: NSFetchedResultsController<NSFetchRequestResult>,
         didChangeContentWith snapshot: NSDiffableDataSourceSnapshotReference
     ) {
@@ -578,16 +578,16 @@ extension DashboardNewsletterFeedCollectionViewController: NSFetchedResultsContr
         else {
             return
         }
-        
+
         let newsletterFeeds = foundFeeds.map {
             NewsletterFeed.convertFrom(contentFeed: $0)
         }
-        
-        DispatchQueue.main.async { [weak self] in
+
+        Task { @MainActor [weak self] in
             self?.updateWithNew(
                 newsletterFeeds: newsletterFeeds
             )
-            
+
             self?.onNewResultsFetched(newsletterFeeds.count)
         }
     }

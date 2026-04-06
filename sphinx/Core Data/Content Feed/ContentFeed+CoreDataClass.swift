@@ -100,35 +100,28 @@ public class ContentFeed: NSManagedObject {
         managedObjectContext?.saveContext()
     }
     
+    @MainActor
     public static func fetchChatFeedContentInBackground(
         feedUrl: String,
         chatId: Int,
         completion: @escaping (String?) -> ()
     ) {
-        let backgroundContext = CoreDataManager.sharedManager.getBackgroundContext()
-        
-        backgroundContext.perform {
-            let backgroundChat: Chat? = Chat.getChatWith(id: chatId, managedContext: backgroundContext)
+        fetchContentFeed(
+            at: feedUrl,
+            chat: nil,
+            persistingIn: CoreDataManager.sharedManager.persistentContainer.viewContext
+        ) { result in
             
-            fetchContentFeed(
-                at: feedUrl,
-                chat: backgroundChat,
-                persistingIn: backgroundContext
-            ) { result in
+            if case .success(let contentFeed) = result {
+                let feedId = contentFeed.feedID
                 
-                if case .success(let contentFeed) = result {
-                    let feedId = contentFeed.feedID
-                    
-                    backgroundContext.saveContext()
-                    
-                    DispatchQueue.main.async {
-                        completion(feedId)
-                    }
-                    return
+                DispatchQueue.main.async {
+                    completion(feedId)
                 }
-                
-                completion(nil)
+                return
             }
+            
+            completion(nil)
         }
     }
     
@@ -169,13 +162,14 @@ public class ContentFeed: NSManagedObject {
         )
     }
     
+    @MainActor
     public static func fetchFeedItems(
         feedUrl: String,
-        contentFeedId: String,
+        feedId: String,
         context: NSManagedObjectContext,
         completion: @escaping (Result<ContentFeed, Error>) -> ()
     ) {
-        let backgroundContentFeed: ContentFeed? = ContentFeed.getFeedById(feedId: contentFeedId, managedContext: context)
+        let backgroundContentFeed: ContentFeed? = ContentFeed.getFeedById(feedId: feedId, managedContext: context)
         
         fetchContentFeedItems(
             at: feedUrl,

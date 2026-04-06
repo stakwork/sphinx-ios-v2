@@ -1,6 +1,6 @@
 import UIKit
 
-class HiveLinkNavigator {
+@MainActor class HiveLinkNavigator {
 
     static func navigate(hiveLink: String, from vc: UIViewController) {
         guard let slug = hiveLink.hiveWorkspaceSlug,

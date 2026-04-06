@@ -13,7 +13,7 @@ final class QRCodeScannerView: UIView {
     private weak var scanRectView: UIView?
     private weak var captureDevice: AVCaptureDevice?
     
-    private var captureSession = AVCaptureSession()
+    private nonisolated(unsafe) var captureSession = AVCaptureSession()
     private var videoPreviewLayer: AVCaptureVideoPreviewLayer?
     private var oldCode: String?
     

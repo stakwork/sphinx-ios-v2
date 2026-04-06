@@ -10,9 +10,9 @@ import Foundation
 
 class GroupsPinManager {
     
-    class var sharedInstance : GroupsPinManager {
+    nonisolated(unsafe) class var sharedInstance : GroupsPinManager {
         struct Static {
-            static let instance = GroupsPinManager()
+            nonisolated(unsafe) static let instance = GroupsPinManager()
         }
         return Static.instance
     }

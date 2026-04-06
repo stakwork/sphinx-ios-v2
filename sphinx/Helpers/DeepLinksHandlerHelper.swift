@@ -10,7 +10,7 @@ import UIKit
 
 class DeepLinksHandlerHelper {
     
-    static func didHandleLinkQuery(
+    @MainActor static func didHandleLinkQuery(
         vc: UIViewController,
         delegate: PaymentInvoiceDelegate? = nil
     ) -> Bool {
@@ -62,7 +62,7 @@ class DeepLinksHandlerHelper {
         return false
     }
     
-    static func joinJitsiCall(vc: UIViewController, forceJoin: Bool = false) -> Bool {
+    @MainActor static func joinJitsiCall(vc: UIViewController, forceJoin: Bool = false) -> Bool {
         if let callLink = UserDefaults.Keys.callLinkUrl.get(defaultValue: ""), callLink.isNotEmpty {
             
             if !GroupsPinManager.sharedInstance.shouldAskForPin() || forceJoin {

@@ -24,7 +24,7 @@ class UserData {
     let keychainManager = KeychainManager.sharedInstance
     
     public static let kMinimumMemoryFootprintGB : Int = 4
-    public static var kMaximumMemoryFootprintGB : Int = {
+    nonisolated(unsafe) public static var kMaximumMemoryFootprintGB : Int = {
         if let max = getTotalDiskStorage(){
             return Int(Double(max)/1e9)
         }

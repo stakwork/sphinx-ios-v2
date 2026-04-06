@@ -9,7 +9,7 @@
 import UIKit
 import SwiftyJSON
 
-@objc protocol PaymentInvoiceDelegate: class {
+@MainActor @objc protocol PaymentInvoiceDelegate: class {
     @objc optional func willDismissPresentedView(paymentCreated: Bool)
     @objc optional func didCreateMessage(message: TransactionMessage)
     @objc optional func didFailCreatingInvoice()

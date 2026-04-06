@@ -30,8 +30,10 @@ class WorkspaceTableViewCell: UITableViewCell {
 
     override func awakeFromNib() {
         super.awakeFromNib()
-        setupLogoImageView()
-        setupCell()
+        Task { @MainActor in
+            self.setupLogoImageView()
+            self.setupCell()
+        }
     }
 
     override func prepareForReuse() {

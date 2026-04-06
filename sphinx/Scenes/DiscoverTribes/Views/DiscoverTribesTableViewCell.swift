@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol DiscoverTribesCellDelegate: class {
+@MainActor protocol DiscoverTribesCellDelegate: class {
     func handleJoin(url:URL)
 }
 

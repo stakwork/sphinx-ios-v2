@@ -8,7 +8,7 @@
 
 import UIKit
 
-@objc protocol ChatMessageTextFieldViewDelegate {
+@MainActor @objc protocol ChatMessageTextFieldViewDelegate {
     func didDetectPossibleMention(mentionText: String)
     func didDetectPossibleMacro(macro:String)
     func shouldSendMessage(text: String, type: Int, completion: @escaping (Bool, String?) -> ())

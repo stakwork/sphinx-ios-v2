@@ -9,7 +9,7 @@
 import UIKit
 import AVFoundation
 
-class CameraHelper {
+@MainActor class CameraHelper {
     public static func showPhotoLibrary(
         picker: UIImagePickerController,
         vc: UIViewController,

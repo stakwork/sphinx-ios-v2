@@ -71,11 +71,13 @@ class CustomDismissibleView : UIView, CAAnimationDelegate {
         }
     }
     
-    func animationDidStop(_ anim: CAAnimation, finished flag: Bool) {
-        if flag && currentLocation < 0 {
-            onViewDimissed?()
+    nonisolated func animationDidStop(_ anim: CAAnimation, finished flag: Bool) {
+        MainActor.assumeIsolated {
+            if flag && currentLocation < 0 {
+                onViewDimissed?()
+            }
+            reset()
         }
-        reset()
     }
     
     func reset() {

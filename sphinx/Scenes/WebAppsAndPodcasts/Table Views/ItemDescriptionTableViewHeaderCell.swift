@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol ItemDescriptionTableViewHeaderCellDelegate: class {
+@MainActor protocol ItemDescriptionTableViewHeaderCellDelegate: class {
     func didTogglePausePlay()
     func itemShareTapped(episode:PodcastEpisode)
     func itemShareTapped(video:Video)
@@ -46,10 +46,12 @@ class ItemDescriptionTableViewHeaderCell: UITableViewCell {
     
     override func awakeFromNib() {
         super.awakeFromNib()
-        
-        playButton.makeCircular()
-        dotView.makeCircular()
-        mediaTypeIcon.layer.cornerRadius = 3.0
+
+        Task { @MainActor in
+            self.playButton.makeCircular()
+            self.dotView.makeCircular()
+            self.mediaTypeIcon.layer.cornerRadius = 3.0
+        }
     }
 
     override func setSelected(_ selected: Bool, animated: Bool) {

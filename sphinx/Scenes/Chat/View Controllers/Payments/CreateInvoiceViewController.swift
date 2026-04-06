@@ -321,11 +321,13 @@ class CreateInvoiceViewController: CommonPaymentViewController {
     
     func showPendingAlert() {
         DelayPerformedHelper.performAfterDelay(seconds: 2.0, completion: {
-            AlertHelper.showAlert(
-                title: "processing.payment".localized,
-                message: "processing.payment.description".localized
-            ) {
-                self.dismissView()
+            MainActor.assumeIsolated {
+                AlertHelper.showAlert(
+                    title: "processing.payment".localized,
+                    message: "processing.payment.description".localized
+                ) {
+                    self.dismissView()
+                }
             }
         })
     }

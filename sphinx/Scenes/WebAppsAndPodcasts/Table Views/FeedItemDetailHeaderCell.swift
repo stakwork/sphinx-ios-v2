@@ -21,15 +21,18 @@ class FeedItemDetailHeaderCell: UITableViewCell {
     @IBOutlet weak var dotView2: UIView!
     
     static let reuseID = "FeedItemDetailHeaderCell"
+
     override func awakeFromNib() {
         super.awakeFromNib()
-        
-        self.backgroundColor = .clear
-        self.contentView.backgroundColor = .clear
-        feedItemImageView.layer.cornerRadius = 10.0
-        sourceTypeImageView.layer.cornerRadius = 3.0
-        dotView1.makeCircular()
-        dotView2.makeCircular()
+
+        MainActor.assumeIsolated {
+            self.backgroundColor = .clear
+            self.contentView.backgroundColor = .clear
+            feedItemImageView.layer.cornerRadius = 10.0
+            sourceTypeImageView.layer.cornerRadius = 3.0
+            dotView1.makeCircular()
+            dotView2.makeCircular()
+        }
     }
     
     func configureView(

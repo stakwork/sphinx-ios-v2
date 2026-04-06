@@ -13,7 +13,7 @@ class RecommendationsHelper {
     class var sharedInstance : RecommendationsHelper {
         
         struct Static {
-            static let instance = RecommendationsHelper()
+            nonisolated(unsafe) static let instance = RecommendationsHelper()
         }
         
         return Static.instance

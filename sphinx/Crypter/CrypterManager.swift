@@ -16,9 +16,9 @@ import Security
 
 class CrypterManager : NSObject {
     
-    class var sharedInstance : CrypterManager {
+    nonisolated(unsafe) class var sharedInstance : CrypterManager {
         struct Static {
-            static let instance = CrypterManager()
+            nonisolated(unsafe) static let instance = CrypterManager()
         }
         return Static.instance
     }
@@ -300,11 +300,13 @@ class CrypterManager : NSObject {
         relay: String
     ){
         if let vc = self.vc as? ImportSeedViewDelegate {
-            vc.showImportSeedView(
-                network: network,
-                host: host,
-                relay: relay
-            )
+            Task { @MainActor in
+                vc.showImportSeedView(
+                    network: network,
+                    host: host,
+                    relay: relay
+                )
+            }
         }
     }
     

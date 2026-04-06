@@ -9,7 +9,7 @@
 import UIKit
 import SwiftyJSON
 
-protocol WorkspaceSearchViewControllerDelegate: AnyObject {
+@MainActor protocol WorkspaceSearchViewControllerDelegate: AnyObject {
     func didSelectSearchResult(_ result: HiveSearchResultItem)
 }
 

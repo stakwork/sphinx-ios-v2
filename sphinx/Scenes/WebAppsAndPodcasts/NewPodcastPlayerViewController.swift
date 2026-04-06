@@ -8,14 +8,14 @@
 
 import UIKit
 
-protocol PodcastPlayerVCDelegate: AnyObject {
+@MainActor protocol PodcastPlayerVCDelegate: AnyObject {
     func willDismissPlayer()
     func shouldShareClip(comment: PodcastComment)
     func shouldGoToPlayer(podcast: PodcastFeed)
     func didFailPlayingPodcast()
 }
 
-@objc protocol CustomBoostDelegate: AnyObject {
+@MainActor @objc protocol CustomBoostDelegate: AnyObject {
     func didSendBoostMessage(success: Bool, message: TransactionMessage?)
     @objc optional func didStartEditingBoostAmount()
 }
@@ -62,8 +62,8 @@ class NewPodcastPlayerViewController: UIViewController {
         showPodcastInfo()
         updateFeed()
         
-        NotificationCenter.default.addObserver(forName: .onConnectionStatusChanged, object: nil, queue: OperationQueue.main) { (n: Notification) in
-            self.tableView.reloadData()
+        NotificationCenter.default.addObserver(forName: .onConnectionStatusChanged, object: nil, queue: OperationQueue.main) { [weak self] (n: Notification) in
+            Task { @MainActor [weak self] in self?.tableView.reloadData() }
         }
         
         NotificationCenter.default.removeObserver(self, name: .refreshFeedUI, object: nil)
@@ -344,8 +344,8 @@ extension NewPodcastPlayerViewController : PickerViewDelegate {
 }
 
 extension NewPodcastPlayerViewController: URLSessionDelegate {
-    func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
-        DispatchQueue.main.async {
+    nonisolated func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
+        Task { @MainActor in
             if let appDelegate = UIApplication.shared.delegate as? AppDelegate,
                 let completionHandler = appDelegate.backgroundSessionCompletionHandler {
                 appDelegate.backgroundSessionCompletionHandler = nil
@@ -419,17 +419,21 @@ extension UIViewController {
             let secondActivityItem : NSURL = NSURL(string: link)!
             
             if let imageUrl = newsletterItem.imageUrl?.path, let url = URL(string: imageUrl) {
-                URLSession.shared.dataTask(with: url) { (data, _, _) in
+                URLSession.shared.dataTask(with: url) { [weak self] (data, _, _) in
                     guard let data = data, let image = UIImage(data: data) else {
-                        self.shouldShare(
-                            items: [firstActivityItem, secondActivityItem]
-                        )
+                        Task { @MainActor [weak self] in
+                            self?.shouldShare(
+                                items: [firstActivityItem, secondActivityItem]
+                            )
+                        }
                         return
                     }
 
-                    self.shouldShare(
-                        items: [firstActivityItem, secondActivityItem, image]
-                    )
+                    Task { @MainActor [weak self] in
+                        self?.shouldShare(
+                            items: [firstActivityItem, secondActivityItem, image]
+                        )
+                    }
                 }.resume()
             } else {
                 shouldShare(

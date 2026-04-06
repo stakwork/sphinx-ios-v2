@@ -9,7 +9,7 @@
 import UIKit
 import SDWebImage
 
-@objc protocol ThreadHeaderViewDelegate {
+@MainActor @objc protocol ThreadHeaderViewDelegate {
     func didTapBackButton()
     
     @objc optional func didTapThreadHeaderButton()
@@ -288,25 +288,25 @@ class ThreadHeaderView : UIView {
                 )
 
                 if let messageId = messageId, mediaData == nil {
-                    let delayTime = DispatchTime.now() + Double(Int64(0.1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
-                    DispatchQueue.global().asyncAfter(deadline: delayTime) {
+                    Task { @MainActor [weak self] in
+                        try? await Task.sleep(nanoseconds: 100_000_000)
                         if messageMedia.isImage {
-                            self.delegate?.shouldLoadImageDataFor?(
+                            self?.delegate?.shouldLoadImageDataFor?(
                                 messageId: messageId,
                                 and: -1
                             )
                         } else if messageMedia.isPdf {
-                            self.delegate?.shouldLoadPdfDataFor?(
+                            self?.delegate?.shouldLoadPdfDataFor?(
                                 messageId: messageId,
                                 and: -1
                             )
                         } else if messageMedia.isVideo {
-                            self.delegate?.shouldLoadVideoDataFor?(
+                            self?.delegate?.shouldLoadVideoDataFor?(
                                 messageId: messageId,
                                 and: -1
                             )
                         } else if messageMedia.isGiphy {
-                            self.delegate?.shouldLoadGiphyDataFor?(
+                            self?.delegate?.shouldLoadGiphyDataFor?(
                                 messageId: messageId,
                                 and: -1
                             )
@@ -328,9 +328,9 @@ class ThreadHeaderView : UIView {
             mediaView.configureForGenericFile()
             
             if let messageId = messageId, mediaData == nil {
-                let delayTime = DispatchTime.now() + Double(Int64(0.1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
-                DispatchQueue.global().asyncAfter(deadline: delayTime) {
-                    self.delegate?.shouldLoadFileDataFor?(
+                Task { @MainActor [weak self] in
+                    try? await Task.sleep(nanoseconds: 100_000_000)
+                    self?.delegate?.shouldLoadFileDataFor?(
                         messageId: messageId,
                         and: -1
                     )
@@ -350,9 +350,9 @@ class ThreadHeaderView : UIView {
             mediaView.configureForAudio()
             
             if let messageId = messageId, mediaData == nil {
-                let delayTime = DispatchTime.now() + Double(Int64(0.1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
-                DispatchQueue.global().asyncAfter(deadline: delayTime) {
-                    self.delegate?.shouldLoadAudioDataFor?(
+                Task { @MainActor [weak self] in
+                    try? await Task.sleep(nanoseconds: 100_000_000)
+                    self?.delegate?.shouldLoadAudioDataFor?(
                         messageId: messageId,
                         and: -1
                     )

@@ -342,16 +342,16 @@ enum SettingValue: Codable {
         var timezoneEnabled: String? = nil
         var timezoneIdentifier: String? = nil
 
-        if let enabled = json?["timezoneEnabled"] as? String, enabled.isNotEmpty {
+        if let enabled = json["timezoneEnabled"] as? String, enabled.isNotEmpty {
             timezoneEnabled = enabled
-        } else if let enabled = json?["timezone_enabled"] as? String, enabled.isNotEmpty {
+        } else if let enabled = json["timezone_enabled"] as? String, enabled.isNotEmpty {
             timezoneEnabled = enabled
         }
 
         // Check for timezone identifier - empty string is valid and becomes nil (device timezone)
-        if let identifier = json?["timezoneIdentifier"] as? String, identifier.isNotEmpty {
+        if let identifier = json["timezoneIdentifier"] as? String, identifier.isNotEmpty {
             timezoneIdentifier = identifier
-        } else if let identifier = json?["timezone_identifier"] as? String, identifier.isNotEmpty {
+        } else if let identifier = json["timezone_identifier"] as? String, identifier.isNotEmpty {
             timezoneIdentifier = identifier
         }
         // Note: timezoneIdentifier can be nil (empty string or missing), meaning use device timezone
@@ -370,13 +370,13 @@ enum SettingValue: Codable {
     private static func parseFeedStatus(from string: String) -> FeedStatus? {
         guard let data = string.data(using: .utf8),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let chatPubkey = json?["chat_pubkey"] as? String,
-              let feedUrl = json?["feed_url"] as? String,
-              let feedId = json?["feed_id"] as? String,
-              let subscribed = json?["subscribed"] as? String,
-              let satsPerMinute = json?["sats_per_minute"] as? String,
-              let playerSpeed = json?["player_speed"] as? String,
-              let itemId = json?["item_id"] as? String else {
+              let chatPubkey = json["chat_pubkey"] as? String,
+              let feedUrl = json["feed_url"] as? String,
+              let feedId = json["feed_id"] as? String,
+              let subscribed = json["subscribed"] as? String,
+              let satsPerMinute = json["sats_per_minute"] as? String,
+              let playerSpeed = json["player_speed"] as? String,
+              let itemId = json["item_id"] as? String else {
             return nil
         }
 
@@ -394,8 +394,8 @@ enum SettingValue: Codable {
     private static func parseFeedItemStatus(from string: String) -> FeedItemStatus? {
         guard let data = string.data(using: .utf8),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let duration = json?["duration"] as? String,
-              let currentTime = json?["current_time"] as? String else {
+              let duration = json["duration"] as? String,
+              let currentTime = json["current_time"] as? String else {
             return nil
         }
 

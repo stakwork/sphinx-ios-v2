@@ -10,13 +10,17 @@ import Foundation
 import JitsiMeetSDK
 import AVKit
 
-class VideoCallManager : NSObject {
+@MainActor class VideoCallManager : NSObject {
 
-    class var sharedInstance : VideoCallManager {
+    nonisolated(unsafe) class var sharedInstance : VideoCallManager {
         struct Static {
-            static let instance = VideoCallManager()
+            nonisolated(unsafe) static let instance = VideoCallManager()
         }
         return Static.instance
+    }
+
+    nonisolated override init() {
+        super.init()
     }
 
     var pipViewCoordinator: CustomPipViewCoordinator?
@@ -134,37 +138,42 @@ class VideoCallManager : NSObject {
                 profilePicture: owner.avatarUrl,
                 hiveToken: linkUrl.liveKitHiveToken,
                 callback: { url, token in
-                    let liveKitVC = LiveKitCallViewController()
-                    liveKitVC.url = url
-                    liveKitVC.startRecording = linkUrl.contains("record=true") || shouldStartRecording
-                    liveKitVC.token = token
-                    liveKitVC.audioOnly = audioOnly ?? false
-                    
-                    guard let window = self.getKeyWindow() else {
-                        self.isStartingCall = false
-                        return
-                    }
-                    
-                    let rootViewController = window.rootViewController
-                    rootViewController?.addChild(liveKitVC)
-                    rootViewController?.view.addSubview(liveKitVC.view)
+                    Task { @MainActor [weak self] in
+                        guard let self = self else { return }
+                        let liveKitVC = LiveKitCallViewController()
+                        liveKitVC.url = url
+                        liveKitVC.startRecording = linkUrl.contains("record=true") || shouldStartRecording
+                        liveKitVC.token = token
+                        liveKitVC.audioOnly = audioOnly ?? false
 
-                    self.liveKitVC = liveKitVC
-                    self.pipViewCoordinator = CustomPipViewCoordinator(withView: liveKitVC.view, isLiveKit: true)
-                    self.pipViewCoordinator?.delegate = self
-                    self.pipViewCoordinator?.configureAsStickyView(withParentView: window)
-                    self.pipViewCoordinator?.initialPositionInSuperview = .upperRightCorner
-                    
-                    liveKitVC.didMove(toParent: rootViewController)
-                    
-                    self.pipViewCoordinator?.show()
-                    
-                    self.activeCall = true
-                    self.isStartingCall = false
+                        guard let window = self.getKeyWindow() else {
+                            self.isStartingCall = false
+                            return
+                        }
+
+                        let rootViewController = window.rootViewController
+                        rootViewController?.addChild(liveKitVC)
+                        rootViewController?.view.addSubview(liveKitVC.view)
+
+                        self.liveKitVC = liveKitVC
+                        self.pipViewCoordinator = CustomPipViewCoordinator(withView: liveKitVC.view, isLiveKit: true)
+                        self.pipViewCoordinator?.delegate = self
+                        self.pipViewCoordinator?.configureAsStickyView(withParentView: window)
+                        self.pipViewCoordinator?.initialPositionInSuperview = .upperRightCorner
+
+                        liveKitVC.didMove(toParent: rootViewController)
+
+                        self.pipViewCoordinator?.show()
+
+                        self.activeCall = true
+                        self.isStartingCall = false
+                    }
                 },
                 errorCallback: { error in
-                    self.isStartingCall = false
-                    AlertHelper.showAlert(title: "error.getting.token.title".localized, message: error)
+                    Task { @MainActor [weak self] in
+                        self?.isStartingCall = false
+                        AlertHelper.showAlert(title: "error.getting.token.title".localized, message: error)
+                    }
                 }
             )
         } else if linkUrl.isJitsiCallLink {
@@ -178,6 +187,8 @@ class VideoCallManager : NSObject {
                 })
                 return
             case .granted://continue
+                break
+            @unknown default:
                 break
             }
 
@@ -270,51 +281,48 @@ class VideoCallManager : NSObject {
 }
 
 extension VideoCallManager : JitsiMeetViewDelegate {
-    func conferenceJoined(_ data: [AnyHashable : Any]!) {
-        activeCall = true
-
-        if onPiP {
-            return
+    nonisolated func conferenceJoined(_ data: [AnyHashable : Any]!) {
+        Task { @MainActor [weak self] in
+            guard let self = self else { return }
+            self.activeCall = true
+            if self.onPiP { return }
+            self.videoCallPayButton?.isHidden = self.isGroupChat()
         }
-
-        videoCallPayButton?.isHidden = isGroupChat()
     }
-    
-    func conferenceTerminated(_ data: [AnyHashable : Any]!) {
-        DispatchQueue.main.async {
+
+    nonisolated func conferenceTerminated(_ data: [AnyHashable : Any]!) {
+        Task { @MainActor [weak self] in
+            guard let self = self else { return }
             self.videoCallPayButton?.isHidden = true
-            
             self.pipViewCoordinator?.hide() { _ in
                 self.cleanUp()
             }
-            
             self.videoCallDelegate?.didFinishCall()
         }
-        
-        if #available(iOS 14.0, *) {
-            JitsiIncomingCallManager.sharedInstance.finishCall()
-        }
-    }
-    
-    func ready(toClose data: [AnyHashable : Any]!) {
-        DispatchQueue.main.async {
-            self.videoCallPayButton?.isHidden = true
-            
-            self.pipViewCoordinator?.hide() { _ in
-                self.cleanUp()
-            }
-            
-            self.videoCallDelegate?.didFinishCall()
-        }
-        
+
         if #available(iOS 14.0, *) {
             JitsiIncomingCallManager.sharedInstance.finishCall()
         }
     }
 
-    func enterPicture(inPicture data: [AnyHashable : Any]!) {
-        DispatchQueue.main.async {
-            self.pipViewCoordinator?.enterPictureInPicture()
+    nonisolated func ready(toClose data: [AnyHashable : Any]!) {
+        Task { @MainActor [weak self] in
+            guard let self = self else { return }
+            self.videoCallPayButton?.isHidden = true
+            self.pipViewCoordinator?.hide() { _ in
+                self.cleanUp()
+            }
+            self.videoCallDelegate?.didFinishCall()
+        }
+
+        if #available(iOS 14.0, *) {
+            JitsiIncomingCallManager.sharedInstance.finishCall()
+        }
+    }
+
+    nonisolated func enterPicture(inPicture data: [AnyHashable : Any]!) {
+        Task { @MainActor [weak self] in
+            self?.pipViewCoordinator?.enterPictureInPicture()
         }
     }
 }

@@ -9,7 +9,7 @@
 import Foundation
 import AVKit
 
-protocol PlayerDelegate : class {
+@MainActor protocol PlayerDelegate : class {
     func loadingState(_ podcastData: PodcastData)
     func playingState(_ podcastData: PodcastData)
     func pausedState(_ podcastData: PodcastData)
@@ -66,7 +66,7 @@ let sounds = [
     "skip30v4.caf"
 ]
 
-class PodcastPlayerController: NSObject {
+class PodcastPlayerController: NSObject, @unchecked Sendable {
     
     var delegates = [String : PlayerDelegate]()
     
@@ -97,17 +97,19 @@ class PodcastPlayerController: NSObject {
                 return
             }
             self.podcast = getPodcastFrom(podcastData: podcastData)
-            
-            self.resetPlayedSeconds()
+
+            MainActor.assumeIsolated {
+                self.resetPlayedSeconds()
+            }
         }
     }
     
     class var sharedInstance : PodcastPlayerController {
-        
+
         struct Static {
-            static let instance = PodcastPlayerController()
+            nonisolated(unsafe) static let instance = PodcastPlayerController()
         }
-        
+
         return Static.instance
     }
     
@@ -115,9 +117,12 @@ class PodcastPlayerController: NSObject {
     
     override init() {
         super.init()
-        
-        setupNowPlayingInfoCenter()
-        preloadAll()
+
+        Task { @MainActor [weak self] in
+            guard let self = self else { return }
+            self.setupNowPlayingInfoCenter()
+            self.preloadAll()
+        }
     }
     
     func saveState() {

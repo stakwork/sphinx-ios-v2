@@ -11,7 +11,7 @@ import CoreData
 import SwiftyJSON
 
 @objc(TransactionMessage)
-public class TransactionMessage: NSManagedObject {
+public class TransactionMessage: NSManagedObject, @unchecked Sendable {
     
     enum TransactionMessageType: Int {
         case message = 0 //

@@ -37,52 +37,52 @@ public extension UIFont {
         return withTraits(traits: .traitItalic)
     }
     
-    static func getMessageFont() -> UIFont {
+    @MainActor static func getMessageFont() -> UIFont {
         return Constants.kMessageFont
     }
-    
-    static func getMessageBoldFont() -> UIFont {
+
+    @MainActor static func getMessageBoldFont() -> UIFont {
         return Constants.kMessageBoldFont
     }
 
-    static func getHighlightedMessageFont() -> UIFont {
+    @MainActor static func getHighlightedMessageFont() -> UIFont {
         return Constants.kMessageHighlightedFont
     }
-    
-    static func getThreadHeaderFont() -> UIFont {
+
+    @MainActor static func getThreadHeaderFont() -> UIFont {
         return Constants.kThreadHeaderFont
     }
-    
-    static func getThreadHeaderHightlightedFont() -> UIFont {
+
+    @MainActor static func getThreadHeaderHightlightedFont() -> UIFont {
         return Constants.kThreadHeaderHighlightedFont
     }
-    
-    static func getThreadHeaderBoldFont() -> UIFont {
+
+    @MainActor static func getThreadHeaderBoldFont() -> UIFont {
         return Constants.kThreadHeaderBoldFont
     }
-    
-    static func getThreadListFont() -> UIFont {
+
+    @MainActor static func getThreadListFont() -> UIFont {
         return Constants.kThreadListFont
     }
-    
-    static func getThreadListBoldFont() -> UIFont {
+
+    @MainActor static func getThreadListBoldFont() -> UIFont {
         return Constants.kThreadListBoldFont
     }
-    
-    static func getThreadListHightlightedFont() -> UIFont {
+
+    @MainActor static func getThreadListHightlightedFont() -> UIFont {
         return Constants.kThreadListHighlightedFont
     }
-    
-    static func getEmojisFont() -> UIFont {
+
+    @MainActor static func getEmojisFont() -> UIFont {
         return Constants.kEmojisFont
     }
-    
-    static func getAmountFont() -> UIFont {
+
+    @MainActor static func getAmountFont() -> UIFont {
         let size: CGFloat = UIDevice.current.isIpad ? 20 : 16
         return UIFont(name: "Roboto-Bold", size: size)!
     }
-    
-    static func getEncryptionErrorFont() -> UIFont {
+
+    @MainActor static func getEncryptionErrorFont() -> UIFont {
         return Constants.kBoldSmallMessageFont
     }
 }

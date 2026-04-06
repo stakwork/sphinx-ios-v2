@@ -9,7 +9,7 @@
 import UIKit
 import SDWebImage
 
-protocol ChatAvatarViewDelegate: class {
+@MainActor protocol ChatAvatarViewDelegate: class {
     func didTapAvatarView()
 }
 

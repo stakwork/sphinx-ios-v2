@@ -133,11 +133,11 @@ extension NewMessageTableViewCell {
             urlRanges = ChatHelper.removeDuplicatedContainedFrom(urlRanges: urlRanges)
             
             if let messageId = messageId, messageContent.shouldLoadPaidText {
-                let delayTime = DispatchTime.now() + Double(Int64(0.1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
-                DispatchQueue.global().asyncAfter(deadline: delayTime) {
-                    self.delegate?.shouldLoadTextDataFor(
+                Task { @MainActor [weak self] in
+                    try? await Task.sleep(nanoseconds: 100_000_000)
+                    self?.delegate?.shouldLoadTextDataFor(
                         messageId: messageId,
-                        and: self.rowIndex
+                        and: self?.rowIndex ?? 0
                     )
                 }
             }
@@ -257,11 +257,11 @@ extension NewMessageTableViewCell {
                     )
                     mediaContentView.isHidden = false
                 } else if let messageId = messageId, mediaData == nil {
-                    let delayTime = DispatchTime.now() + Double(Int64(0.1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
-                    DispatchQueue.global().asyncAfter(deadline: delayTime) {
-                        self.delegate?.shouldLoadLinkImageDataFor(
+                    Task { @MainActor [weak self] in
+                        try? await Task.sleep(nanoseconds: 100_000_000)
+                        self?.delegate?.shouldLoadLinkImageDataFor(
                             messageId: messageId,
-                            and: self.rowIndex
+                            and: self?.rowIndex ?? 0
                         )
                     }
                 }
@@ -277,27 +277,28 @@ extension NewMessageTableViewCell {
                 mediaContentView.isHidden = false
                 
                 if let messageId = messageId, mediaData == nil {
-                    let delayTime = DispatchTime.now() + Double(Int64(0.1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
-                    DispatchQueue.global().asyncAfter(deadline: delayTime) {
+                    Task { @MainActor [weak self] in
+                        try? await Task.sleep(nanoseconds: 100_000_000)
+                        let rowIndex = self?.rowIndex ?? 0
                         if messageMedia.isImage {
-                            self.delegate?.shouldLoadImageDataFor(
+                            self?.delegate?.shouldLoadImageDataFor(
                                 messageId: messageId,
-                                and: self.rowIndex
+                                and: rowIndex
                             )
                         } else if messageMedia.isPdf {
-                            self.delegate?.shouldLoadPdfDataFor(
+                            self?.delegate?.shouldLoadPdfDataFor(
                                 messageId: messageId,
-                                and: self.rowIndex
+                                and: rowIndex
                             )
                         } else if messageMedia.isVideo {
-                            self.delegate?.shouldLoadVideoDataFor(
+                            self?.delegate?.shouldLoadVideoDataFor(
                                 messageId: messageId,
-                                and: self.rowIndex
+                                and: rowIndex
                             )
                         } else if messageMedia.isGiphy {
-                            self.delegate?.shouldLoadGiphyDataFor(
+                            self?.delegate?.shouldLoadGiphyDataFor(
                                 messageId: messageId,
-                                and: self.rowIndex
+                                and: rowIndex
                             )
                         }
                     }
@@ -320,11 +321,11 @@ extension NewMessageTableViewCell {
             fileDetailsView.isHidden = false
             
             if let messageId = messageId, mediaData == nil {
-                let delayTime = DispatchTime.now() + Double(Int64(0.1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
-                DispatchQueue.global().asyncAfter(deadline: delayTime) {
-                    self.delegate?.shouldLoadFileDataFor(
+                Task { @MainActor [weak self] in
+                    try? await Task.sleep(nanoseconds: 100_000_000)
+                    self?.delegate?.shouldLoadFileDataFor(
                         messageId: messageId,
-                        and: self.rowIndex
+                        and: self?.rowIndex ?? 0
                     )
                 }
             }
@@ -347,11 +348,11 @@ extension NewMessageTableViewCell {
             audioMessageView.isHidden = false
             
             if let messageId = messageId, mediaData == nil {
-                let delayTime = DispatchTime.now() + Double(Int64(0.1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
-                DispatchQueue.global().asyncAfter(deadline: delayTime) {
-                    self.delegate?.shouldLoadAudioDataFor(
+                Task { @MainActor [weak self] in
+                    try? await Task.sleep(nanoseconds: 100_000_000)
+                    self?.delegate?.shouldLoadAudioDataFor(
                         messageId: messageId,
-                        and: self.rowIndex
+                        and: self?.rowIndex ?? 0
                     )
                 }
             }
@@ -373,11 +374,11 @@ extension NewMessageTableViewCell {
             podcastAudioView.isHidden = false
             
             if let messageId = messageId, mediaData == nil {
-                let delayTime = DispatchTime.now() + Double(Int64(0.1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
-                DispatchQueue.global().asyncAfter(deadline: delayTime) {
-                    self.delegate?.shouldPodcastCommentDataFor(
+                Task { @MainActor [weak self] in
+                    try? await Task.sleep(nanoseconds: 100_000_000)
+                    self?.delegate?.shouldPodcastCommentDataFor(
                         messageId: messageId,
-                        and: self.rowIndex
+                        and: self?.rowIndex ?? 0
                     )
                 }
             }
@@ -440,11 +441,11 @@ extension NewMessageTableViewCell {
                 tribeLinkPreviewView.configureWith(tribeData: tribeData, and: bubble, delegate: self)
                 tribeLinkPreviewView.isHidden = false
             } else if let messageId = messageId {
-                let delayTime = DispatchTime.now() + Double(Int64(0.1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
-                DispatchQueue.global().asyncAfter(deadline: delayTime) {
-                    self.delegate?.shouldLoadTribeInfoFor(
+                Task { @MainActor [weak self] in
+                    try? await Task.sleep(nanoseconds: 100_000_000)
+                    self?.delegate?.shouldLoadTribeInfoFor(
                         messageId: messageId,
-                        and: self.rowIndex
+                        and: self?.rowIndex ?? 0
                     )
                 }
             }
@@ -462,11 +463,11 @@ extension NewMessageTableViewCell {
                     linkPreviewView.isHidden = false
                 }
             } else if let messageId = messageId {
-                let delayTime = DispatchTime.now() + Double(Int64(0.1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
-                DispatchQueue.global().asyncAfter(deadline: delayTime) {
-                    self.delegate?.shouldLoadLinkDataFor(
+                Task { @MainActor [weak self] in
+                    try? await Task.sleep(nanoseconds: 100_000_000)
+                    self?.delegate?.shouldLoadLinkDataFor(
                         messageId: messageId,
-                        and: self.rowIndex
+                        and: self?.rowIndex ?? 0
                     )
                 }
             }

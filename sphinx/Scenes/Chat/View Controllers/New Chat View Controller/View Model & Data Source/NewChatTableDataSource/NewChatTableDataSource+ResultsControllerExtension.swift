@@ -735,7 +735,7 @@ extension NewChatTableDataSource {
 
 
 
-extension NewChatTableDataSource : NSFetchedResultsControllerDelegate {
+extension NewChatTableDataSource : @preconcurrency NSFetchedResultsControllerDelegate {
     
     func startListeningToResultsController() {
         messagesResultsController?.delegate = self

@@ -8,7 +8,7 @@
 import UIKit
 import CoreData
 
-protocol VideoFeedEpisodePlayerViewControllerDelegate: AnyObject {
+@MainActor protocol VideoFeedEpisodePlayerViewControllerDelegate: AnyObject {
     
     func viewController(
         _ viewController: UIViewController,

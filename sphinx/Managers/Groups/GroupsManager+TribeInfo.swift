@@ -10,6 +10,8 @@ import Foundation
 import SwiftyJSON
 import CoreData
 
+extension JSON: @unchecked Sendable {}
+
 extension GroupsManager {
     
     struct TribeInfo: Equatable {

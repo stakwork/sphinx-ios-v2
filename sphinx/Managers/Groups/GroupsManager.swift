@@ -11,9 +11,9 @@ import SwiftyJSON
 
 class GroupsManager {
 
-    class var sharedInstance : GroupsManager {
+    nonisolated(unsafe) class var sharedInstance : GroupsManager {
         struct Static {
-            static let instance = GroupsManager()
+            nonisolated(unsafe) static let instance = GroupsManager()
         }
         return Static.instance
     }

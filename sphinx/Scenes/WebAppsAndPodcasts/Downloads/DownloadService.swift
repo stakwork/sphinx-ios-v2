@@ -8,7 +8,7 @@
 
 import Foundation
 
-protocol DownloadServiceDelegate : class {
+@MainActor protocol DownloadServiceDelegate : AnyObject {
     func shouldReloadRowFor(download: Download)
     func shouldReloadRowFor(video:VideoDownload)
 }
@@ -25,7 +25,7 @@ enum DownloadServiceDelegateKeys: String {
     case VideoFeedDelegate = "VideoFeedDelegate"
 }
 
-class DownloadService : NSObject {
+class DownloadService : NSObject, @unchecked Sendable {
     
     var delegates: [String: DownloadServiceDelegate] = [:]
     
@@ -86,13 +86,14 @@ class DownloadService : NSObject {
         download.state = VideoDownload.State.downloading
         activeVideoDownloads[url.absoluteString] = download
         
-        for d in self.delegates.values {
-            d.shouldReloadRowFor(video: download)
+        let delegatesSnapshot = self.delegates
+        Task { @MainActor in
+            for d in delegatesSnapshot.values { d.shouldReloadRowFor(video: download) }
         }
-        
+
         DispatchQueue.global(qos: .utility).async {
             self.downloadDispatchSemaphore.wait()
-            
+
             download.task = self.downloadsSession.downloadTask(with: url)
             download.task?.resume()
         
@@ -126,13 +127,14 @@ class DownloadService : NSObject {
         }
         
         
-        for d in self.delegates.values {
-            d.shouldReloadRowFor(download: download)
+        let delegatesSnapshot = self.delegates
+        Task { @MainActor in
+            for d in delegatesSnapshot.values { d.shouldReloadRowFor(download: download) }
         }
-        
+
         DispatchQueue.global(qos: .utility).async {
             self.downloadDispatchSemaphore.wait()
-            
+
             download.task = self.downloadsSession.downloadTask(with: url)
             download.task?.resume()
             self.downloadsQueue.sync{

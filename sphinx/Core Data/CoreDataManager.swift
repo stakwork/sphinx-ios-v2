@@ -10,9 +10,9 @@ import Foundation
 import CoreData
 import UIKit
 
-class CoreDataManager {
-    
-    static let sharedManager = CoreDataManager()
+class CoreDataManager: @unchecked Sendable {
+
+    nonisolated(unsafe) static let sharedManager = CoreDataManager()
     
     private init() {}
     
@@ -26,7 +26,7 @@ class CoreDataManager {
             }
         })
         
-        container.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
+        container.viewContext.mergePolicy = NSMergePolicy(merge: .mergeByPropertyObjectTrumpMergePolicyType)
         container.viewContext.shouldDeleteInaccessibleFaults = true
         
         // 🔑 Ensures that the `mainContext` is aware of any changes that were made
@@ -53,7 +53,7 @@ class CoreDataManager {
     
     func getBackgroundContext() -> NSManagedObjectContext {
         let backgroundContext = CoreDataManager.sharedManager.persistentContainer.newBackgroundContext()
-        backgroundContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
+        backgroundContext.mergePolicy = NSMergePolicy(merge: .mergeByPropertyObjectTrumpMergePolicyType)
         backgroundContext.shouldDeleteInaccessibleFaults = true
         backgroundContext.automaticallyMergesChangesFromParent = true
         

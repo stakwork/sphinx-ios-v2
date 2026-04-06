@@ -9,7 +9,7 @@
 import UIKit
 import CoreData
 
-@objc protocol NewContactVCDelegate: class {
+@MainActor @objc protocol NewContactVCDelegate: class {
     @objc optional func shouldReloadContacts(
         reload: Bool,
         dashboardTabIndex: Int

@@ -9,6 +9,7 @@
 import Foundation
 import UIKit
 
+@MainActor
 class ProfileManageStorageViewModel : NSObject{
     var vc : ProfileManageStorageViewController
     var mediaTypeTableView:UITableView

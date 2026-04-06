@@ -46,8 +46,10 @@ extension VideoFeedEpisodePlayerCollectionViewDetailsCell {
     
     override func awakeFromNib() {
         super.awakeFromNib()
-        
-        setupViews()
+
+        Task { @MainActor in
+            self.setupViews()
+        }
     }
     
     

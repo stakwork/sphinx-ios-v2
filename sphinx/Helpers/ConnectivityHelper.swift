@@ -11,7 +11,7 @@ import Alamofire
 
 struct ConnectivityHelper {
     
-    static let sharedInstance = NetworkReachabilityManager()
+    nonisolated(unsafe) static let sharedInstance = NetworkReachabilityManager()
 
     static var isConnectedToInternet: Bool {
         return self.sharedInstance?.isReachable == true && ConnectivityHelper.isConnected()

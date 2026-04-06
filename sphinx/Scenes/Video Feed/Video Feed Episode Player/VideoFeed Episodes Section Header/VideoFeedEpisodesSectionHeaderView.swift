@@ -8,7 +8,7 @@
 import UIKit
 
 
-class VideoFeedEpisodesSectionHeaderView: UICollectionReusableView {
+@MainActor class VideoFeedEpisodesSectionHeaderView: UICollectionReusableView {
     @IBOutlet private weak var feedAvatarImage: UIImageView!
     @IBOutlet private weak var feedAuthorNameLabel: UILabel!
     
@@ -49,8 +49,10 @@ extension VideoFeedEpisodesSectionHeaderView {
 
     override func awakeFromNib() {
         super.awakeFromNib()
-        
-        setupViews()
+
+        MainActor.assumeIsolated {
+            setupViews()
+        }
     }
     
     

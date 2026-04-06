@@ -62,10 +62,8 @@ extension ChatMessageTextFieldView : UITextViewDelegate {
         let string = textView.text ?? ""
         let cursorPosition = textView.selectedRange.location
         
-        DispatchQueue.global(qos: .userInitiated).async {
-            self.processMention(text: string, cursorPosition: cursorPosition)
-            self.processMacro(text: string, cursorPosition: cursorPosition)
-        }
+        processMention(text: string, cursorPosition: cursorPosition)
+        processMacro(text: string, cursorPosition: cursorPosition)
     }
     
     func adjustTextViewHeight() {

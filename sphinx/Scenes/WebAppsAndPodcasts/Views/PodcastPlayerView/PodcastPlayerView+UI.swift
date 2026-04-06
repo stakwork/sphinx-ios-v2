@@ -249,8 +249,8 @@ extension PodcastPlayerView {
     }
     
     func hideAdvertLabel() {
-        DelayPerformedHelper.performAfterDelay(seconds: 1.0, completion: {
-            self.advertContainer.isHidden = true
+        DelayPerformedHelper.performAfterDelay(seconds: 1.0, completion: { [weak self] in
+            Task { @MainActor [weak self] in self?.advertContainer.isHidden = true }
         })
     }
     

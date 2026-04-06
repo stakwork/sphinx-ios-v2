@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol PaymentTemplatesDSDelegate: class {
+@MainActor protocol PaymentTemplatesDSDelegate: AnyObject {
     func didSelectImage(image: ImageTemplate?)
 }
 
@@ -27,7 +27,7 @@ struct ImageTemplate {
     }
 }
 
-class PaymentTemplatesDataSource: NSObject {
+@MainActor class PaymentTemplatesDataSource: NSObject {
     
     weak var delegate: PaymentTemplatesDSDelegate?
     

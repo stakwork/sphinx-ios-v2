@@ -9,11 +9,11 @@ import Foundation
 import SwiftyJSON
 import CoreData
 
-class ContactsService: NSObject {
-    
+class ContactsService: NSObject, @unchecked Sendable {
+
     class var sharedInstance : ContactsService {
         struct Static {
-            static let instance = ContactsService()
+            nonisolated(unsafe) static let instance = ContactsService()
         }
         return Static.instance
     }
@@ -128,7 +128,7 @@ class ContactsService: NSObject {
     }
 }
 
-extension ContactsService : NSFetchedResultsControllerDelegate {
+extension ContactsService : @preconcurrency NSFetchedResultsControllerDelegate {
     func controller(
         _ controller: NSFetchedResultsController<NSFetchRequestResult>,
         didChangeContentWith snapshot: NSDiffableDataSourceSnapshotReference

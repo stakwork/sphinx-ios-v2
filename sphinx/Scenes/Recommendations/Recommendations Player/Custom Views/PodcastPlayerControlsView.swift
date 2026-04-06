@@ -8,6 +8,7 @@
 
 import UIKit
 
+@MainActor
 protocol RecommendationPlayerViewDelegate: AnyObject {
     func shouldShowSpeedPicker()
     func shouldSetProgress(duration: Int, currentTime: Int)

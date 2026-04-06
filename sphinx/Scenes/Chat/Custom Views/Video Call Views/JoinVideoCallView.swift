@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol JoinCallViewDelegate: class {
+@MainActor protocol JoinCallViewDelegate: class {
     func didTapCopyLink()
     func didTapAudioButton()
     func didTapVideoButton()

@@ -13,7 +13,7 @@ import Photos
 
 class MediaLoader {
     
-    static let cache = SphinxCache()
+    nonisolated(unsafe) static let cache = SphinxCache()
     
     class func isAuthenticated() -> (Bool, String?) {
         if let token: String = UserDefaults.Keys.attachmentsToken.get() {
@@ -26,11 +26,11 @@ class MediaLoader {
         return (false, nil)
     }
     
-    class func loadDataFrom(
+    nonisolated class func loadDataFrom(
         URL: URL,
         includeToken: Bool = true,
-        completion: @escaping (Data, String?) -> (),
-        errorCompletion: @escaping () -> ()
+        completion: @escaping @MainActor (Data, String?) -> (),
+        errorCompletion: @escaping @MainActor () -> ()
     ) {
         let sessionConfig = URLSessionConfiguration.default
         let session = URLSession(configuration: sessionConfig, delegate: nil, delegateQueue: nil)
@@ -47,7 +47,7 @@ class MediaLoader {
                     errorCompletion: errorCompletion
                 )
             }, errorCompletion: {
-                errorCompletion()
+                Task { @MainActor in errorCompletion() }
             })
             return
         }
@@ -65,11 +65,10 @@ class MediaLoader {
             with: request,
             completionHandler: { (data: Data?, response: URLResponse?, error: Error?) -> Void in
                 if let _ = error {
-                    errorCompletion()
-                } else if (response as? HTTPURLResponse)?.statusCode == API.sharedInstance.unauthorizedStatusCode {
-                    errorCompletion()
+                    Task { @MainActor in errorCompletion() }
                 } else if let data = data {
-                    completion(data, response?.getFileName())
+                    let fileName = response?.getFileName()
+                    Task { @MainActor in completion(data, fileName) }
                 }
             }
         )
@@ -77,7 +76,7 @@ class MediaLoader {
         task.resume()
     }
     
-    class func asyncLoadImage(
+    @MainActor class func asyncLoadImage(
         imageView: UIImageView,
         nsUrl: URL,
         placeHolderImage: UIImage?,
@@ -89,13 +88,15 @@ class MediaLoader {
             options: SDWebImageOptions.progressiveLoad,
             completed: { (image, error, _, _) in
                 if let completion = completion, let _ = image {
-                    completion()
+                    Task { @MainActor in
+                        completion()
+                    }
                 }
             }
         )
     }
     
-    class func asyncLoadImage(
+    @MainActor class func asyncLoadImage(
         imageView: UIImageView,
         nsUrl: URL,
         placeHolderImage: UIImage?,
@@ -108,7 +109,9 @@ class MediaLoader {
             options: SDWebImageOptions.progressiveLoad,
             completed: { (image, error, _, _) in
                 if let image = image {
-                    completion(image)
+                    Task { @MainActor in
+                        completion(image)
+                    }
                 } else if let errorCompletion = errorCompletion, let error = error {
                     errorCompletion(error)
                 }
@@ -116,12 +119,12 @@ class MediaLoader {
         )
     }
     
-    class func asyncLoadImage(
+    @MainActor class func asyncLoadImage(
         imageView: UIImageView,
         nsUrl: URL,
         placeHolderImage: UIImage?,
         id: Int,
-        completion: @escaping ((UIImage, Int) -> ()),
+        completion: @escaping @MainActor (UIImage, Int) -> (),
         errorCompletion: ((Error) -> ())? = nil
     ) {
         imageView.sd_setImage(
@@ -130,9 +133,13 @@ class MediaLoader {
             options: SDWebImageOptions.progressiveLoad,
             completed: { (image, error, _, _) in
                 if let image = image {
-                    completion(image, id)
+                    Task { @MainActor in
+                        completion(image, id)
+                    }
                 } else if let errorCompletion = errorCompletion, let error = error {
-                    errorCompletion(error)
+                    Task { @MainActor in
+                        errorCompletion(error)
+                    }
                 }
             }
         )
@@ -142,21 +149,19 @@ class MediaLoader {
         url: URL,
         message: TransactionMessage,
         mediaKey: String?,
-        completion: @escaping (Int, UIImage) -> (),
-        errorCompletion: @escaping (Int) -> ()
+        completion: @escaping @MainActor (Int, UIImage) -> (),
+        errorCompletion: @escaping @MainActor (Int) -> ()
     ) {
         let messageId = message.id
         let isGif = message.isGif()
         
         if message.isMediaExpired() {
             clearImageCacheFor(url: url.absoluteString)
-            errorCompletion(messageId)
+            Task { @MainActor in errorCompletion(messageId) }
             return
         } else if let cachedImage = getImageFromCachedUrl(url: url.absoluteString) {
             if !isGif || (isGif && getMediaDataFromCachedUrl(url: url.absoluteString) != nil) {
-                DispatchQueue.main.async {
-                    completion(messageId, cachedImage)
-                }
+                Task { @MainActor in completion(messageId, cachedImage) }
                 return
             }
         }
@@ -176,7 +181,7 @@ class MediaLoader {
             }
         }, errorCompletion: {
             DispatchQueue.main.async {
-                errorCompletion(messageId)
+                Task { @MainActor in errorCompletion(messageId) }
             }
         })
     }
@@ -186,8 +191,8 @@ class MediaLoader {
         url: URL,
         message: TransactionMessage,
         mediaKey: String?,
-        completion: @escaping (Int, UIImage) -> (),
-        errorCompletion: @escaping (Int) -> ()
+        completion: @escaping @MainActor (Int, UIImage) -> (),
+        errorCompletion: @escaping @MainActor (Int) -> ()
     ) {
         let messageId = message.id
         let isGif = message.isGif()
@@ -214,13 +219,9 @@ class MediaLoader {
                 message: message
             )
             
-            DispatchQueue.main.async {
-                completion(messageId, decryptedImage)
-            }
+            Task { @MainActor in completion(messageId, decryptedImage) }
         } else {
-            DispatchQueue.main.async {
-                errorCompletion(messageId)
-            }
+            Task { @MainActor in errorCompletion(messageId) }
         }
     }
     
@@ -240,33 +241,27 @@ class MediaLoader {
         url: URL,
         message: TransactionMessage,
         mediaKey: String?,
-        completion: @escaping (Int, String) -> (),
-        errorCompletion: @escaping (Int) -> ()
+        completion: @escaping @MainActor (Int, String) -> (),
+        errorCompletion: @escaping @MainActor (Int) -> ()
     ) {
+        let messageId = message.id
+        
         loadDataFrom(URL: url, completion: { (data, _) in
             if let mediaKey = mediaKey, mediaKey.isNotEmpty {
                 if let data = SymmetricEncryptionManager.sharedInstance.decryptData(data: data, key: mediaKey) {
                     let str = String(decoding: data, as: UTF8.self)
                     if str != "" {
-                        DispatchQueue.main.async {
+                        Task { @MainActor in
                             message.messageContent = str
-                            
-                            completion(
-                                message.id,
-                                str
-                            )
+                            completion(message.id, str)
                         }
                         return
                     }
                 }
             }
-            DispatchQueue.main.async {
-                errorCompletion(message.id)
-            }
+            Task { @MainActor in errorCompletion(messageId) }
         }, errorCompletion: {
-            DispatchQueue.main.async {
-                errorCompletion(message.id)
-            }
+            Task { @MainActor in errorCompletion(messageId) }
         })
     }
     
@@ -274,27 +269,23 @@ class MediaLoader {
         url: URL,
         message: TransactionMessage,
         mediaKey: String?,
-        completion: @escaping (Int, Data, UIImage?) -> (),
-        errorCompletion: @escaping (Int) -> ()
+        completion: @escaping @MainActor (Int, Data, UIImage?) -> (),
+        errorCompletion: @escaping @MainActor (Int) -> ()
     ) {
         let messageId = message.id
         
         if message.isMediaExpired() {
             clearImageCacheFor(url: url.absoluteString)
             clearMediaDataCacheFor(url: url.absoluteString)
-            errorCompletion(messageId)
+            Task { @MainActor in errorCompletion(messageId) }
         } else if let data = getMediaDataFromCachedUrl(url: url.absoluteString) {
             let image = self.getImageFromCachedUrl(url: url.absoluteString) ?? nil
             if image == nil {
                 self.getThumbnailImageFromVideoData(data: data, videoUrl: url.absoluteString, completion: { image in
-                    DispatchQueue.main.async {
-                        completion(messageId, data, image)
-                    }
+                    Task { @MainActor in completion(messageId, data, image) }
                 })
             } else {
-                DispatchQueue.main.async {
-                    completion(messageId, data, image)
-                }
+                Task { @MainActor in completion(messageId, data, image) }
             }
         } else {
             loadDataFrom(URL: url, completion: { (data, fileName) in
@@ -308,17 +299,13 @@ class MediaLoader {
                     isVideo: true,
                     completion: { data in
                         self.getThumbnailImageFromVideoData(data: data, videoUrl: url.absoluteString, completion: { image in
-                            DispatchQueue.main.async {
-                                completion(messageId, data, image)
-                            }
+                            Task { @MainActor in completion(messageId, data, image) }
                         })
                     },
                     errorCompletion: errorCompletion
                 )
             }, errorCompletion: {
-                DispatchQueue.main.async {
-                    errorCompletion(messageId)
-                }
+                Task { @MainActor in errorCompletion(messageId) }
             })
         }
     }
@@ -327,18 +314,16 @@ class MediaLoader {
         url: URL,
         message: TransactionMessage,
         mediaKey: String?,
-        completion: @escaping (Int, Data) -> (),
-        errorCompletion: @escaping (Int) -> ()
+        completion: @escaping @MainActor (Int, Data) -> (),
+        errorCompletion: @escaping @MainActor (Int) -> ()
     ) {
         let messageId = message.id
         
         if message.isMediaExpired() {
             clearMediaDataCacheFor(url: url.absoluteString)
-            errorCompletion(messageId)
+            Task { @MainActor in errorCompletion(messageId) }
         } else if let data = getMediaDataFromCachedUrl(url: url.absoluteString) {
-            DispatchQueue.main.async {
-                completion(messageId, data)
-            }
+            Task { @MainActor in completion(messageId, data) }
         } else {
             loadDataFrom(URL: url, completion: { (data, fileName) in
                 message.saveFileName(fileName)
@@ -349,16 +334,12 @@ class MediaLoader {
                     message: message,
                     mediaKey: mediaKey,
                     completion: { data in
-                        DispatchQueue.main.async {
-                            completion(messageId, data)
-                        }
+                        Task { @MainActor in completion(messageId, data) }
                     },
                     errorCompletion: errorCompletion
                 )
             }, errorCompletion: {
-                DispatchQueue.main.async {
-                    errorCompletion(messageId)
-                }
+                Task { @MainActor in errorCompletion(messageId) }
             })
         }
     }
@@ -368,14 +349,14 @@ class MediaLoader {
         isPdf: Bool,
         message: TransactionMessage,
         mediaKey: String?,
-        completion: @escaping (Int, Data, MessageTableCellState.FileInfo) -> (),
-        errorCompletion: @escaping (Int) -> ()
+        completion: @escaping @MainActor (Int, Data, MessageTableCellState.FileInfo) -> (),
+        errorCompletion: @escaping @MainActor (Int) -> ()
     ) {
         let messageId = message.id
         
         if message.isMediaExpired() {
             clearMediaDataCacheFor(url: url.absoluteString)
-            errorCompletion(messageId)
+            Task { @MainActor in errorCompletion(messageId) }
         } else if let data = getMediaDataFromCachedUrl(url: url.absoluteString) {
             
             let fileInfo = MessageTableCellState.FileInfo(
@@ -385,13 +366,7 @@ class MediaLoader {
                 previewImage: isPdf ? data.getPDFThumbnail() : nil
             )
             
-            DispatchQueue.main.async {
-                completion(
-                    messageId,
-                    data,
-                    fileInfo
-                )
-            }
+            Task { @MainActor in completion(messageId, data, fileInfo) }
         } else {
             loadDataFrom(URL: url, completion: { (data, fileName) in
                 message.saveFileName(fileName)
@@ -409,16 +384,12 @@ class MediaLoader {
                             previewImage: isPdf ? data.getPDFThumbnail() : nil
                         )
                         
-                        DispatchQueue.main.async {
-                            completion(messageId, data, fileInfo)
-                        }
+                        Task { @MainActor in completion(messageId, data, fileInfo) }
                     },
                     errorCompletion: errorCompletion
                 )
             }, errorCompletion: {
-                DispatchQueue.main.async {
-                    errorCompletion(messageId)
-                }
+                Task { @MainActor in errorCompletion(messageId) }
             })
         }
     }
@@ -428,8 +399,8 @@ class MediaLoader {
         url: URL, message: TransactionMessage,
         mediaKey: String? = nil,
         isVideo: Bool = false,
-        completion: @escaping (Data) -> (),
-        errorCompletion: @escaping (Int) -> ()
+        completion: @escaping @MainActor (Data) -> (),
+        errorCompletion: @escaping @MainActor (Int) -> ()
     ) {
         if let mediaKey = mediaKey, mediaKey != "" {
             
@@ -445,9 +416,7 @@ class MediaLoader {
                     message: message
                 )
 
-                DispatchQueue.main.async {
-                    completion(decryptedData)
-                }
+                Task { @MainActor in completion(decryptedData) }
                 return
             }
         } else {
@@ -456,22 +425,20 @@ class MediaLoader {
                 url: url.absoluteString
             )
             
-            DispatchQueue.main.async {
-                completion(data)
-            }
+            Task { @MainActor in completion(data) }
         }
     }
     
     class func loadTemplate(
         row: Int,
         muid: String,
-        completion: @escaping (Int, String, UIImage) -> ()
+        completion: @escaping @MainActor (Int, String, UIImage) -> ()
     ) {
         let urlString = "\(API.kAttachmentsServerUrl)/template/\(muid)"
         
         if let url = URL(string: urlString) {
             if let cachedImage = getImageFromCachedUrl(url: url.absoluteString) {
-                completion(row, muid, cachedImage)
+                Task { @MainActor in completion(row, muid, cachedImage) }
             } else {
                 loadDataFrom(URL: url, includeToken: true, completion: { (data, _) in
                     if let image = UIImage(data: data) {
@@ -481,9 +448,7 @@ class MediaLoader {
                             message: nil
                         )
                         
-                        DispatchQueue.main.async {
-                            completion(row, muid, image)
-                        }
+                        Task { @MainActor in completion(row, muid, image) }
                         return
                     }
                 }, errorCompletion: {})
@@ -494,10 +459,11 @@ class MediaLoader {
     class func loadPublicImage(
         url: URL,
         messageId: Int,
-        completion: @escaping (Int, UIImage) -> (), errorCompletion: @escaping (Int) -> ()
+        completion: @escaping @MainActor (Int, UIImage) -> (),
+        errorCompletion: @escaping @MainActor  (Int) -> ()
     ) {
         if let cachedImage = getImageFromCachedUrl(url: url.absoluteString) {
-            completion(messageId, cachedImage)
+            Task { @MainActor in completion(messageId, cachedImage) }
         } else {
             loadDataFrom(URL: url, includeToken: true, completion: { (data, _) in
                 if let image = UIImage(data: data) {
@@ -507,16 +473,14 @@ class MediaLoader {
                         message: nil
                     )
                     
-                    DispatchQueue.main.async {
-                        completion(messageId, image)
-                    }
+                    Task { @MainActor in completion(messageId, image) }
                     return
                 }
             }, errorCompletion: {})
         }
     }
     
-    class func getDataFromUrl(
+    nonisolated class func getDataFromUrl(
         url: URL
     ) -> Data? {
         var data: Data?
@@ -532,7 +496,7 @@ class MediaLoader {
         return data
     }
     
-    class func saveFileInMemory(
+    nonisolated class func saveFileInMemory(
         data: Data,
         name: String
     ) -> URL? {
@@ -546,7 +510,7 @@ class MediaLoader {
         return url
     }
     
-    class func getThumbnailImageFromVideoData(
+    nonisolated class func getThumbnailImageFromVideoData(
         data: Data,
         videoUrl: String,
         completion: @escaping ((_ image: UIImage?)->Void)
@@ -569,9 +533,7 @@ class MediaLoader {
                         message: nil
                     )
                     
-                    DispatchQueue.main.async {
-                        completion(thumbImage)
-                    }
+                    Task { @MainActor in completion(thumbImage) }
                 } catch {
                     deleteItemAt(url: url)
                     DispatchQueue.main.async {
@@ -584,20 +546,20 @@ class MediaLoader {
         }
     }
     
-    class func clearMessageMediaCache(message: TransactionMessage) {
+    nonisolated class func clearMessageMediaCache(message: TransactionMessage) {
         if let url = message.getPurchaseAcceptItem()?.getMediaUrlFromMediaToken() ?? message.getMediaUrlFromMediaToken() {
             clearImageCacheFor(url: url.absoluteString)
             clearMediaDataCacheFor(url: url.absoluteString)
         }
     }
     
-    class func clearImageCacheFor(url: String) {
+    nonisolated class func clearImageCacheFor(url: String) {
         SDImageCache.shared.removeImage(forKey: url, withCompletion: nil)
         cache.removeValue(forKey: url)
         
     }
     
-    class func storeImageInCache(
+    nonisolated class func storeImageInCache(
         img: UIImage,
         url: String,
         message: TransactionMessage? = nil
@@ -624,15 +586,15 @@ class MediaLoader {
         }
     }
     
-    class func getDiskImagePath(forKey key: String)->String? {
+    nonisolated class func getDiskImagePath(forKey key: String)->String? {
         return SDImageCache.shared.cachePath(forKey: key)
     }
     
-    class func getImageFromCachedUrl(url: String) -> UIImage? {
+    nonisolated class func getImageFromCachedUrl(url: String) -> UIImage? {
         return SDImageCache.shared.imageFromCache(forKey: url)
     }
     
-    class func storeMediaDataInCache(
+    nonisolated class func storeMediaDataInCache(
         data: Data,
         url: String,
         message: TransactionMessage? = nil
@@ -659,15 +621,15 @@ class MediaLoader {
         }
     }
     
-    class func getMediaDataFromCachedUrl(url: String) -> Data? {
+    nonisolated class func getMediaDataFromCachedUrl(url: String) -> Data? {
         return cache[url]
     }
     
-    class func clearMediaDataCacheFor(url: String) {
+    nonisolated class func clearMediaDataCacheFor(url: String) {
         return cache.removeValue(forKey: url)
     }
         
-    class func deleteItemAt(url: URL) {
+    nonisolated class func deleteItemAt(url: URL) {
         do {
             try FileManager().removeItem(at: url)
         } catch {

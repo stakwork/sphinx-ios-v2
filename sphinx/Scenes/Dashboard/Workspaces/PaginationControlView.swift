@@ -9,7 +9,7 @@ import UIKit
 
 // MARK: - Delegate Protocol
 
-protocol PaginationControlViewDelegate: AnyObject {
+@MainActor protocol PaginationControlViewDelegate: AnyObject {
     func paginationControlView(_ view: PaginationControlView, didSelectPage page: Int)
 }
 

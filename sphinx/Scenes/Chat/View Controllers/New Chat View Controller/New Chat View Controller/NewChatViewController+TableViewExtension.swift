@@ -101,7 +101,9 @@ extension NewChatViewController : NewChatTableDataSourceDelegate {
         scrolledAtBottom = true
         
         DelayPerformedHelper.performAfterDelay(seconds: 0.5, completion: {
-            self.chat?.setChatMessagesAsSeen()
+            MainActor.assumeIsolated {
+                self.chat?.setChatMessagesAsSeen()
+            }
         })
     }
     
@@ -228,20 +230,22 @@ extension NewChatViewController : NewChatTableDataSourceDelegate {
         }
 
         DelayPerformedHelper.performAfterDelay(seconds: cellOutOfBounds.0 || cellOutOfBounds.1 ? 0.3 : 0.0, completion: {
-            if self.isKeyboardVisible() {
-                self.messageMenuData = MessageTableCellState.MessageMenuData(
-                    messageId: messageId,
-                    bubbleRect: bubbleViewRect,
-                    indexPath: indexPath
-                )
-                self.view.endEditing(true)
-            } else {
-                self.showMessageMenuFor(
-                    messageId: messageId,
-                    indexPath: indexPath,
-                    bubbleViewRect: bubbleViewRect, 
-                    isThreadRow: self.isThread
-                )
+            MainActor.assumeIsolated {
+                if self.isKeyboardVisible() {
+                    self.messageMenuData = MessageTableCellState.MessageMenuData(
+                        messageId: messageId,
+                        bubbleRect: bubbleViewRect,
+                        indexPath: indexPath
+                    )
+                    self.view.endEditing(true)
+                } else {
+                    self.showMessageMenuFor(
+                        messageId: messageId,
+                        indexPath: indexPath,
+                        bubbleViewRect: bubbleViewRect,
+                        isThreadRow: self.isThread
+                    )
+                }
             }
         })
     }

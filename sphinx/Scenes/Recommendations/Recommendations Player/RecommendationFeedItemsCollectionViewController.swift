@@ -14,7 +14,7 @@ class RecommendationFeedItemsCollectionViewController: UICollectionViewControlle
     
     var podcast: PodcastFeed!
 
-    var onRecommendationCellSelected: ((String) -> Void)!
+    var onRecommendationCellSelected: (@MainActor (String) -> Void)!
     
     private var currentDataSnapshot: DataSourceSnapshot!
     private var dataSource: DataSource!
@@ -25,7 +25,7 @@ extension RecommendationFeedItemsCollectionViewController {
     
     static func instantiate(
         podcast: PodcastFeed,
-        onRecommendationCellSelected: @escaping ((String) -> Void) = { _ in }
+        onRecommendationCellSelected: @escaping @MainActor (String) -> Void = { _ in }
     ) -> RecommendationFeedItemsCollectionViewController {
         let viewController = StoryboardScene
             .Recommendations
@@ -47,7 +47,7 @@ extension RecommendationFeedItemsCollectionViewController {
         case recommendations
     }
     
-    enum DataSourceItem: Hashable {
+    enum DataSourceItem: Hashable, @unchecked Sendable {
         case recommendation(
             PodcastEpisode,
             Bool

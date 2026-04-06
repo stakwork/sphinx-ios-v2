@@ -9,7 +9,7 @@
 import Foundation
 import SwiftyJSON
 
-struct HiveChatMessageCreatedBy {
+struct HiveChatMessageCreatedBy: Sendable {
     let id: String
     let name: String?
     let email: String?
@@ -24,14 +24,14 @@ struct HiveChatMessageCreatedBy {
     }
 }
 
-struct PRProgress {
+struct PRProgress: @unchecked Sendable {
     let state: String?
     let mergeable: Bool?
     let ciStatus: String?
     let ciSummary: String?
 }
 
-struct PRContent {
+struct PRContent: Sendable {
     let repo: String?
     var url: String?
     var status: String?
@@ -44,12 +44,12 @@ struct PRContent {
     var state: String?
 }
 
-struct LongformContent {
+struct LongformContent: Sendable {
     let title: String?
     let text: String?
 }
 
-struct ClarifyingQuestion {
+struct ClarifyingQuestion: Sendable {
     let question: String
     let options: [String]
     let type: String // "single_choice" or "multiple_choice"
@@ -57,13 +57,13 @@ struct ClarifyingQuestion {
 
 // MARK: - Stream Artifact Info
 
-struct StreamArtifactInfo {
+struct StreamArtifactInfo: Sendable {
     let requestId: String
     let eventsToken: String
     let baseUrl: String
 }
 
-struct HiveChatMessageArtifact {
+struct HiveChatMessageArtifact: @unchecked Sendable {
     let id: String?
     let type: String?
     /// Plain string content (for CODE, DIFF, etc.)
@@ -179,7 +179,7 @@ struct HiveChatMessageArtifact {
     }
 }
 
-struct HiveChatMessageAttachment {
+struct HiveChatMessageAttachment: Sendable {
     let filename: String?
     let path: String?
     let url: String?
@@ -208,7 +208,7 @@ struct HiveChatMessageAttachment {
     var resolvedUrl: String? { url ?? path }
 }
 
-struct HiveChatMessage {
+struct HiveChatMessage: @unchecked Sendable {
     let id: String
     let featureId: String?
     let taskId: String?

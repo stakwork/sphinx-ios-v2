@@ -14,10 +14,10 @@ class DashboardVideoFeedCollectionViewController: UICollectionViewController {
     
     var interSectionSpacing: CGFloat = 20.0
 
-    var onVideoEpisodeCellSelected: ((String) -> Void)!
-    var onVideoFeedCellSelected: ((String) -> Void)!
-    var onNewResultsFetched: ((Int) -> Void)!
-    var onContentScrolled: ((UIScrollView) -> Void)?
+    var onVideoEpisodeCellSelected: (@MainActor (String) -> Void)!
+    var onVideoFeedCellSelected: (@MainActor (String) -> Void)!
+    var onNewResultsFetched: (@MainActor (Int) -> Void)!
+    var onContentScrolled: (@MainActor (UIScrollView) -> Void)?
 
     private var managedObjectContext: NSManagedObjectContext!
     private var fetchedResultsController: NSFetchedResultsController<ContentFeed>!
@@ -39,10 +39,10 @@ extension DashboardVideoFeedCollectionViewController {
     static func instantiate(
         managedObjectContext: NSManagedObjectContext = CoreDataManager.sharedManager.persistentContainer.viewContext,
         interSectionSpacing: CGFloat = 20.0,
-        onVideoEpisodeCellSelected: ((String) -> Void)!,
-        onVideoFeedCellSelected: ((String) -> Void)!,
-        onNewResultsFetched: @escaping ((Int) -> Void) = { _ in },
-        onContentScrolled: ((UIScrollView) -> Void)? = nil
+        onVideoEpisodeCellSelected: (@MainActor (String) -> Void)!,
+        onVideoFeedCellSelected: (@MainActor (String) -> Void)!,
+        onNewResultsFetched: @escaping (@MainActor (Int) -> Void) = { _ in },
+        onContentScrolled: (@MainActor (UIScrollView) -> Void)? = nil
     ) -> DashboardVideoFeedCollectionViewController {
         let viewController = StoryboardScene
             .Dashboard
@@ -82,7 +82,7 @@ extension DashboardVideoFeedCollectionViewController {
     }
     
     
-    enum DataSourceItem: Hashable {
+    enum DataSourceItem: Hashable, @unchecked Sendable {
         case releasedEpisode(Video)
         case playedEpisode(Video)
         
@@ -436,6 +436,7 @@ extension DashboardVideoFeedCollectionViewController {
     }
     
     
+    
     func updateWithNew(
         videoFeeds: [VideoFeed],
         shouldAnimate: Bool = true
@@ -547,7 +548,7 @@ extension DashboardVideoFeedCollectionViewController: NSFetchedResultsController
     /// Called when the contents of the fetched results controller change.
     ///
     /// If this method is implemented, no other delegate methods will be invoked.
-    func controller(
+    nonisolated func controller(
         _ controller: NSFetchedResultsController<NSFetchRequestResult>,
         didChangeContentWith snapshot: NSDiffableDataSourceSnapshotReference
     ) {
@@ -562,12 +563,9 @@ extension DashboardVideoFeedCollectionViewController: NSFetchedResultsController
         let videoFeeds = foundFeeds.map {
             VideoFeed.convertFrom(contentFeed: $0)
         }
-        
-        DispatchQueue.main.async { [weak self] in
-            self?.updateWithNew(
-                videoFeeds: videoFeeds
-            )
-            
+
+        Task { @MainActor [weak self] in
+            self?.updateWithNew(videoFeeds: videoFeeds)
             self?.onNewResultsFetched(videoFeeds.count)
         }
     }

@@ -9,11 +9,11 @@
 import Foundation
 import CoreGraphics
 
-class MessagesPreloaderHelper {
-    
-    class var sharedInstance : MessagesPreloaderHelper {
+@MainActor class MessagesPreloaderHelper {
+
+    nonisolated(unsafe) class var sharedInstance : MessagesPreloaderHelper {
         struct Static {
-            static let instance = MessagesPreloaderHelper()
+            nonisolated(unsafe) static let instance = MessagesPreloaderHelper()
         }
         return Static.instance
     }

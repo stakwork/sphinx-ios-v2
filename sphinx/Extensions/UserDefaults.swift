@@ -100,7 +100,7 @@ extension UserDefaults {
     }
 }
 
-public class DefaultKey<S> {
+public class DefaultKey<S>: @unchecked Sendable {
     private let name: String
     
     init(_ name: String) {

@@ -14,7 +14,7 @@ import WebKit
 import SwiftyJSON
 import ObjectMapper
 
-protocol WebAppHelperDelegate : class {
+@MainActor protocol WebAppHelperDelegate : class {
     func setBudget(budget:Int)
 }
 
@@ -51,7 +51,7 @@ struct LSatInProgress {
     }
 }
 
-class WebAppHelper : NSObject {
+@MainActor class WebAppHelper : NSObject {
     
     public let messageHandler = "sphinx"
     

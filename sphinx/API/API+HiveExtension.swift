@@ -3422,8 +3422,8 @@ extension API {
 
 // MARK: - Workspace Image Cache
 
-class WorkspaceImageCache {
-    static let shared = WorkspaceImageCache()
+class WorkspaceImageCache: @unchecked Sendable {
+    nonisolated(unsafe) static let shared = WorkspaceImageCache()
 
     private struct CachedImage {
         let url: String

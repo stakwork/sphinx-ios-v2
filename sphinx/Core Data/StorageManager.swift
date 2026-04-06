@@ -84,7 +84,7 @@ class StorageManager {
     
     class var sharedManager : StorageManager {
         struct Static {
-            static let instance = StorageManager()
+            nonisolated(unsafe) static let instance = StorageManager()
         }
         return Static.instance
     }
@@ -221,14 +221,17 @@ class StorageManager {
         return podcastsToItemDict
     }
     
-    func refreshAllStoredData(completion: @escaping ()->()){
+    func refreshAllStoredData(completion: @escaping @MainActor ()->()){
         downloadedPods = getDownloadedPodcastEpisodeList()
         getImageCacheItems(completion: { results in
             self.cachedMedia = results
             self.getSphinxCacheVideos(completion: { videoResults in
                 self.cachedMedia += videoResults
                 self.populateVideoImages()
-                completion()
+                
+                Task { @MainActor in
+                    completion()
+                }
             })
         })
     }

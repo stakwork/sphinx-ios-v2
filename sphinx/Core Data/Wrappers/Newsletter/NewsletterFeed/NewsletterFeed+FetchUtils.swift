@@ -26,7 +26,7 @@ extension NewsletterFeed {
 
     public enum Predicates {
         
-        public static let newsletterFeeds: NSPredicate = {
+        nonisolated(unsafe) public static let newsletterFeeds: NSPredicate = {
             NSPredicate(
                 format: "feedKindValue == %d",
                 FeedType.Newsletter.rawValue
@@ -34,7 +34,7 @@ extension NewsletterFeed {
         }()
         
         
-        public static let followedNewsletterFeeds: NSPredicate = {
+        nonisolated(unsafe) public static let followedNewsletterFeeds: NSPredicate = {
             NSPredicate(
                 format: "chat != nil AND feedKindValue == %d",
                 FeedType.Newsletter.rawValue

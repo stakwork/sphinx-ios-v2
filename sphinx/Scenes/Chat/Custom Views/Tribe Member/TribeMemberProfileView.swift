@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol TribeMemberProfileViewDelegate: class {
+@MainActor protocol TribeMemberProfileViewDelegate: class {
     func didTapSendSats()
     func dismissLineWasDragged(gestureRecognizer: UIPanGestureRecognizer, view: UIView)
 }

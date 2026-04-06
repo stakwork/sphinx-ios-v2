@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol InvoiceViewDelegate: class {
+@MainActor protocol InvoiceViewDelegate: class {
     func didTapInvoicePayButton()
 }
 

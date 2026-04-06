@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol ChapterViewDelegate : class {
+@MainActor protocol ChapterViewDelegate : class {
     func shouldPlayChapterWith(index: Int)
 }
 

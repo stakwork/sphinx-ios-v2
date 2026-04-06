@@ -50,8 +50,10 @@ extension DashboardVideoEpisodeCollectionViewCell {
     
     override func awakeFromNib() {
         super.awakeFromNib()
-        
-        setupViews()
+
+        MainActor.assumeIsolated {
+            setupViews()
+        }
     }
 }
 

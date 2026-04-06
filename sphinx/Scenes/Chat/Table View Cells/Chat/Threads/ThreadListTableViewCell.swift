@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol ThreadListTableViewCellDelegate: class {
+@MainActor protocol ThreadListTableViewCellDelegate: class {
     func shouldLoadImageDataFor(messageId: Int, and rowIndex: Int)
     func shouldLoadPdfDataFor(messageId: Int, and rowIndex: Int)
     func shouldLoadFileDataFor(messageId: Int, and rowIndex: Int)
@@ -68,7 +68,9 @@ class ThreadListTableViewCell: UITableViewCell {
     override func awakeFromNib() {
         super.awakeFromNib()
 
-        setupViews()
+        MainActor.assumeIsolated {
+            setupViews()
+        }
     }
 
     override func prepareForReuse() {

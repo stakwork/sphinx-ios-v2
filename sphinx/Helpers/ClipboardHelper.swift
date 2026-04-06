@@ -10,7 +10,7 @@ import UIKit
 
 class ClipboardHelper {
     
-    public static func copyToClipboard(text: String, message: String? = "text.copied.clipboard".localized) {
+    @MainActor public static func copyToClipboard(text: String, message: String? = "text.copied.clipboard".localized) {
         UIPasteboard.general.string = text
         SoundsPlayer.playHaptic()
         

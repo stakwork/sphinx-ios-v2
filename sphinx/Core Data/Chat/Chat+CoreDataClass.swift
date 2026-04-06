@@ -332,17 +332,16 @@ public class Chat: NSManagedObject {
 
         let sortDescriptors = [NSSortDescriptor(key: "name", ascending: true)]
 
-        let chat : Chat? = CoreDataManager.sharedManager.getObjectsOfTypeWith(
+        let results: [Chat] = CoreDataManager.sharedManager.getObjectsOfTypeWith(
             predicate: predicate,
             sortDescriptors: sortDescriptors,
             entityName: "Chat",
             fetchLimit: 1,
             context: context
-        ).first
-
-        return chat
+        )
+        return results.first
     }
-    
+
     static func getTribeChatWithOwnerPubkey(
         ownerPubkey: String,
         context: NSManagedObjectContext? = nil
@@ -352,18 +351,17 @@ public class Chat: NSManagedObject {
             Chat.ChatType.publicGroup.rawValue,
             ownerPubkey
         )
-        
+
         let sortDescriptors = [NSSortDescriptor(key: "name", ascending: true)]
-        
-        let chat : Chat? = CoreDataManager.sharedManager.getObjectsOfTypeWith(
+
+        let results: [Chat] = CoreDataManager.sharedManager.getObjectsOfTypeWith(
             predicate: predicate,
             sortDescriptors: sortDescriptors,
             entityName: "Chat",
             fetchLimit: 1,
             context: context
-        ).first
-        
-        return chat
+        )
+        return results.first
     }
     
     static func getChatTribesFor(
@@ -872,10 +870,13 @@ public class Chat: NSManagedObject {
     }
     
     
-    func updateTribeInfo(completion: @escaping () -> ()) {
-        if let uuid = ownerPubkey, isPublicGroup() {
-            let host = SphinxOnionManager.sharedInstance.tribesServerIP
-            
+    @MainActor func updateTribeInfo(completion: @escaping () -> ()) {
+        let host = SphinxOnionManager.sharedInstance.tribesServerIP
+        
+        if let uuid = ownerPubkey,
+            host.isEmpty == false,
+            isPublicGroup()
+        {
             API.sharedInstance.getTribeInfo(
                 host: host,
                 uuid: uuid,
@@ -885,8 +886,8 @@ public class Chat: NSManagedObject {
                     
                     if let feedUrl = self.tribeInfo?.feedUrl, !feedUrl.isEmpty {
                         ContentFeed.fetchChatFeedContentInBackground(feedUrl: feedUrl, chatId: self.id) { feedId in
-                            if let feedId = feedId {
-                                self.contentFeed = ContentFeed.getFeedById(feedId: feedId)
+                            if let feedId = feedId, let feed = ContentFeed.getFeedById(feedId: feedId) {
+                                self.contentFeed = feed
                                 self.saveChat()
                             }
                             completion()

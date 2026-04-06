@@ -8,6 +8,7 @@
 
 import UIKit
 
+@MainActor
 protocol ChatSearchResultsBarDelegate : class {
     func didTapNavigateArrowButton(button: ChatSearchResultsBar.NavigateArrowButton)
 }
@@ -123,7 +124,7 @@ class ChatSearchResultsBar: UIView {
         }
         
         DelayPerformedHelper.performAfterDelay(seconds: 0.5, completion: {
-            sender.isUserInteractionEnabled = true
+            Task { @MainActor in sender.isUserInteractionEnabled = true }
         })
     }
 }

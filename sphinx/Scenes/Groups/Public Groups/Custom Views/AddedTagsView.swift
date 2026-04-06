@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol AddedTagsViewDelegate: class {
+@MainActor protocol AddedTagsViewDelegate: class {
     func didTapCloseButton()
 }
 

@@ -11,9 +11,9 @@ import UIKit
 
 /// Manages media preloading and tracks in-progress downloads to prevent duplicates.
 /// Downloads continue even when views are deallocated, ensuring images are cached.
-class MediaPreloadManager {
+class MediaPreloadManager: @unchecked Sendable {
 
-    static let sharedInstance = MediaPreloadManager()
+    nonisolated(unsafe) static let sharedInstance = MediaPreloadManager()
 
     /// Completion handler type for image loads
     typealias ImageCompletion = (Int, UIImage) -> Void

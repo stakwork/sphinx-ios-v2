@@ -9,7 +9,7 @@
 import UIKit
 import CoreData
 
-protocol NewsletterFeedContainerViewControllerDelegate: AnyObject {
+@MainActor protocol NewsletterFeedContainerViewControllerDelegate: AnyObject {
 
     func viewController(
         _ viewController: UIViewController,
@@ -38,7 +38,7 @@ class NewsletterFeedContainerViewController: UIViewController {
     internal lazy var collectionViewController: NewsletterFeedItemsCollectionViewController = {
         NewsletterFeedItemsCollectionViewController.instantiate(
             newsletterItems: newsletterFeed.itemsArray,
-            onNewsletterItemCellSelected: handleNewsletterItemCellSelection(_:)
+            onNewsletterItemCellSelected: { @MainActor [weak self] x in self?.handleNewsletterItemCellSelection(x) }
         )
     }()
 }

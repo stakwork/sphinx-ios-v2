@@ -9,7 +9,7 @@
 import Foundation
 import UIKit
 
-class DiscoverTribesTagSelectionVM : NSObject {
+@MainActor class DiscoverTribesTagSelectionVM : NSObject {
     var vc: DiscoverTribesTagSelectionVC
     
     let columnLayout = FlowLayout(

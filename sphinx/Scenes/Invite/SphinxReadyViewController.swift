@@ -101,16 +101,14 @@ class SphinxReadyViewController: UIViewController {
         resetSignupData()
         UserDefaults.Keys.lastPinDate.set(Date())
         
-        DelayPerformedHelper.performAfterDelay(
-            seconds: 1.0,
-            completion: {
-                if let appDelegate = UIApplication.shared.delegate as? AppDelegate,
-                   let rootVC = appDelegate.getRootViewController()
-                {
-                    let mainCoordinator = MainCoordinator(rootViewController: rootVC)
-                    mainCoordinator.presentInitialDrawer()
-                }
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
+            if let appDelegate = UIApplication.shared.delegate as? AppDelegate,
+               let rootVC = appDelegate.getRootViewController()
+            {
+                let mainCoordinator = MainCoordinator(rootViewController: rootVC)
+                mainCoordinator.presentInitialDrawer()
             }
-        )
+        }
     }
 }

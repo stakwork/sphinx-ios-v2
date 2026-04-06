@@ -19,7 +19,7 @@ import LiveKit
 import SwiftUI
 
 // This class contains the logic to control behavior of the whole app.
-final class AppContext: ObservableObject {
+final class AppContext: ObservableObject, @unchecked Sendable {
     private let store: ValueStore<Preferences>
 
     @Published var videoViewVisible: Bool = true {
@@ -82,10 +82,9 @@ final class AppContext: ObservableObject {
             guard let self else { return }
             print("devices did update")
             // force UI update for outputDevice / inputDevice
-            Task.detached { @MainActor [weak self] in
-                guard let self else { return }
-                self.outputDevice = audioManager.outputDevice
-                self.inputDevice = audioManager.inputDevice
+            DispatchQueue.main.async { [weak self] in
+                self?.outputDevice = audioManager.outputDevice
+                self?.inputDevice = audioManager.inputDevice
             }
         }
     }

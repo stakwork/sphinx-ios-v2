@@ -8,6 +8,7 @@
 
 import UIKit
 
+@MainActor
 protocol TribeMemberViewDelegate: class {
     func shouldGoToSendPayment(message: TransactionMessage)
     func shouldDismissMemberPopup()

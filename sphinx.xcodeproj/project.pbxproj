@@ -729,6 +729,7 @@
 		CE49E13229ACEFAA006D3CCE /* VoIPPushMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE49E13129ACEFAA006D3CCE /* VoIPPushMessage.swift */; };
 		CE4A85932B5F051600813B59 /* SphinxOnionManager+TribesExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE4A85922B5F051600813B59 /* SphinxOnionManager+TribesExtension.swift */; };
 		CE4B53FD2AFC389C00708A0C /* SphinxOnionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE4B53FC2AFC389C00708A0C /* SphinxOnionManager.swift */; };
+		AABB11221DEF456700AABBCC /* SphinxrsExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB11221DEF456700AABBBB /* SphinxrsExtensions.swift */; };
 		CE50CB9F2C3DBB45009E71FB /* SphinxOnionManager+BTClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE50CB9E2C3DBB45009E71FB /* SphinxOnionManager+BTClient.swift */; };
 		CE51F350298870BF00ABBACB /* MemberBadgeDetailVM.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE51F34F298870BF00ABBACB /* MemberBadgeDetailVM.swift */; };
 		CE51F3562988743E00ABBACB /* MemberDetailTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE51F3542988743E00ABBACB /* MemberDetailTableViewCell.swift */; };
@@ -2039,6 +2040,7 @@
 		CE49E13129ACEFAA006D3CCE /* VoIPPushMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoIPPushMessage.swift; sourceTree = "<group>"; };
 		CE4A85922B5F051600813B59 /* SphinxOnionManager+TribesExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SphinxOnionManager+TribesExtension.swift"; sourceTree = "<group>"; };
 		CE4B53FC2AFC389C00708A0C /* SphinxOnionManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SphinxOnionManager.swift; sourceTree = "<group>"; };
+		AABB11221DEF456700AABBBB /* SphinxrsExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SphinxrsExtensions.swift; sourceTree = "<group>"; };
 		CE50CB9E2C3DBB45009E71FB /* SphinxOnionManager+BTClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SphinxOnionManager+BTClient.swift"; sourceTree = "<group>"; };
 		CE51F34F298870BF00ABBACB /* MemberBadgeDetailVM.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberBadgeDetailVM.swift; sourceTree = "<group>"; };
 		CE51F3542988743E00ABBACB /* MemberDetailTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberDetailTableViewCell.swift; sourceTree = "<group>"; };
@@ -4493,6 +4495,7 @@
 				CE50CB9E2C3DBB45009E71FB /* SphinxOnionManager+BTClient.swift */,
 				4733ED262CA72AA200078EF2 /* SphinxOnionManager+PeopleExtension.swift */,
 				4733ED302CB5572700078EF2 /* SphinxOnionManager+OnionStateExtension.swift */,
+				AABB11221DEF456700AABBBB /* SphinxrsExtensions.swift */,
 			);
 			path = Crypter;
 			sourceTree = "<group>";
@@ -5764,6 +5767,7 @@
 				F313024626BA62B300A1396E /* ChatsCollectionViewController.swift in Sources */,
 				47FCE2C02CD903B6005DB8AF /* LiveKitCallViewController.swift in Sources */,
 				CE4B53FD2AFC389C00708A0C /* SphinxOnionManager.swift in Sources */,
+				AABB11221DEF456700AABBCC /* SphinxrsExtensions.swift in Sources */,
 				CE51F350298870BF00ABBACB /* MemberBadgeDetailVM.swift in Sources */,
 				4705D39F2799C339009C0729 /* UITextField.swift in Sources */,
 				470146232A3F93DA00A00DF8 /* NewChatViewController+AttachmentsExtension.swift in Sources */,
@@ -7075,7 +7079,7 @@
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = 4.2;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
 		};
@@ -7133,7 +7137,7 @@
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
-				SWIFT_VERSION = 4.2;
+				SWIFT_VERSION = 6.0;
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
@@ -7223,7 +7227,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.gl.sphinx.v2;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "$(PROJECT_DIR)/sphinx/Crypter/Sphinxrs-Bridging-Header.h";
-				SWIFT_VERSION = 4.2;
+				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -7312,7 +7316,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.gl.sphinx.v2;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "$(PROJECT_DIR)/sphinx/Crypter/Sphinxrs-Bridging-Header.h";
-				SWIFT_VERSION = 4.2;
+				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
@@ -7332,7 +7336,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.gl.sphinxTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 4.2;
+				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/sphinx.app/sphinx";
 			};
@@ -7353,7 +7357,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.gl.sphinxTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 4.2;
+				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/sphinx.app/sphinx";
 			};
@@ -7373,7 +7377,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.gl.sphinxUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 4.2;
+				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = sphinx;
 			};
@@ -7394,7 +7398,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.gl.sphinxUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 4.2;
+				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = sphinx;
 			};
@@ -7435,7 +7439,7 @@
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = "$(PROJECT_DIR)/sphinx/Crypter/Sphinxrs-Bridging-Header.h";
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -7473,7 +7477,7 @@
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = "$(PROJECT_DIR)/sphinx/Crypter/Sphinxrs-Bridging-Header.h";
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;

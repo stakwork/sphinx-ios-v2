@@ -9,7 +9,7 @@
 import Foundation
 import UIKit
 
-protocol ItemDescriptionViewControllerDelegate: class {
+@MainActor protocol ItemDescriptionViewControllerDelegate: class {
     func shouldDismissAndPlayVideo(video:Video)
     func shouldDismissAndPlayVideo(episodeAsVideo:PodcastEpisode)
     func didDismissDescriptionView(index:Int)

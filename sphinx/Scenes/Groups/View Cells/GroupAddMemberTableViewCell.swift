@@ -16,11 +16,13 @@ class GroupAddMemberTableViewCell: UITableViewCell {
     
     override func awakeFromNib() {
         super.awakeFromNib()
-        
-        let addFriendButtonView = AddFriendRowButton(frame: CGRect(x: 0.0, y: 0.0, width: WindowsManager.getWindowWidth(), height: rowHeight))
-        addFriendButtonView.delegate = self
-        addFriendButtonView.configureForGroup()
-        contentView.addSubview(addFriendButtonView)
+
+        MainActor.assumeIsolated {
+            let addFriendButtonView = AddFriendRowButton(frame: CGRect(x: 0.0, y: 0.0, width: WindowsManager.getWindowWidth(), height: rowHeight))
+            addFriendButtonView.delegate = self
+            addFriendButtonView.configureForGroup()
+            contentView.addSubview(addFriendButtonView)
+        }
     }
 
     override func setSelected(_ selected: Bool, animated: Bool) {

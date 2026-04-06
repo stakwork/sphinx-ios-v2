@@ -8,7 +8,7 @@
 
 import UIKit
 
-@objc protocol MessageOptionsDelegate: class {
+@MainActor @objc protocol MessageOptionsDelegate: AnyObject {
     func shouldDismiss(completion: @escaping (() -> ()))
     func shouldDeleteMessage()
     func shouldReplyToMessage()

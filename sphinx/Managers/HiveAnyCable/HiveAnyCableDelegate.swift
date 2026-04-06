@@ -6,7 +6,7 @@
 //  Copyright © 2026 sphinx. All rights reserved.
 //
 
-protocol HiveAnyCableDelegate: AnyObject {
+@MainActor protocol HiveAnyCableDelegate: AnyObject {
     func workflowStepTextReceived(stepText: String)
     func anyCableDidDisconnect()
 }

@@ -1,6 +1,6 @@
 import UIKit
 
-protocol WorkspaceFeatureTableViewCellDelegate: AnyObject {
+@MainActor protocol WorkspaceFeatureTableViewCellDelegate: AnyObject {
     func cell(_ cell: WorkspaceFeatureTableViewCell, didTapStatusFor featureId: String)
     func cell(_ cell: WorkspaceFeatureTableViewCell, didTapPriorityFor featureId: String)
 }
@@ -25,41 +25,43 @@ class WorkspaceFeatureTableViewCell: UITableViewCell {
     
     override func awakeFromNib() {
         super.awakeFromNib()
-        
-        backgroundColor = .Sphinx.Body
-        contentView.backgroundColor = .Sphinx.Body
-        
-        titleLabel.textColor = .Sphinx.Text
-        titleLabel.font = UIFont.systemFont(ofSize: 16, weight: .medium)
-        titleLabel.numberOfLines = 2
-        
-        createdByLabel.textColor = .Sphinx.SecondaryText
-        createdByLabel.font = UIFont(name: "Roboto-Regular", size: 13)
-        
-        updatedAtLabel.textColor = .Sphinx.SecondaryText
-        updatedAtLabel.font = UIFont(name: "Roboto-Regular", size: 13)
-        
-        [statusBadge, priorityBadge].forEach {
-            $0?.layer.cornerRadius = 10
-            $0?.clipsToBounds = true
-            $0?.textColor = .white
-            $0?.font = UIFont(name: "Roboto-Medium", size: 11)
-            $0?.textAlignment = .center
-            $0?.isUserInteractionEnabled = true
+
+        MainActor.assumeIsolated {
+            backgroundColor = .Sphinx.Body
+            contentView.backgroundColor = .Sphinx.Body
+
+            titleLabel.textColor = .Sphinx.Text
+            titleLabel.font = UIFont.systemFont(ofSize: 16, weight: .medium)
+            titleLabel.numberOfLines = 2
+
+            createdByLabel.textColor = .Sphinx.SecondaryText
+            createdByLabel.font = UIFont(name: "Roboto-Regular", size: 13)
+
+            updatedAtLabel.textColor = .Sphinx.SecondaryText
+            updatedAtLabel.font = UIFont(name: "Roboto-Regular", size: 13)
+
+            [statusBadge, priorityBadge].forEach {
+                $0?.layer.cornerRadius = 10
+                $0?.clipsToBounds = true
+                $0?.textColor = .white
+                $0?.font = UIFont(name: "Roboto-Medium", size: 11)
+                $0?.textAlignment = .center
+                $0?.isUserInteractionEnabled = true
+            }
+
+            let statusTap = UITapGestureRecognizer(target: self, action: #selector(statusBadgeTapped))
+            statusBadge.addGestureRecognizer(statusTap)
+
+            let priorityTap = UITapGestureRecognizer(target: self, action: #selector(priorityBadgeTapped))
+            priorityBadge.addGestureRecognizer(priorityTap)
+
+            separatorView.backgroundColor = .Sphinx.LightDivider
+
+            ownerImageView.layer.cornerRadius = 9
+            ownerImageView.clipsToBounds = true
+            ownerImageView.contentMode = .scaleAspectFill
+            ownerImageView.isHidden = true
         }
-
-        let statusTap = UITapGestureRecognizer(target: self, action: #selector(statusBadgeTapped))
-        statusBadge.addGestureRecognizer(statusTap)
-
-        let priorityTap = UITapGestureRecognizer(target: self, action: #selector(priorityBadgeTapped))
-        priorityBadge.addGestureRecognizer(priorityTap)
-        
-        separatorView.backgroundColor = .Sphinx.LightDivider
-        
-        ownerImageView.layer.cornerRadius = 9
-        ownerImageView.clipsToBounds = true
-        ownerImageView.contentMode = .scaleAspectFill
-        ownerImageView.isHidden = true
     }
     
     func configure(with feature: HiveFeature, isLastRow: Bool) {

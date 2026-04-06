@@ -9,7 +9,7 @@
 import UIKit
 import CoreData
 
-protocol NewChatTableDataSourceDelegate : class {
+@MainActor protocol NewChatTableDataSourceDelegate : class {
     ///New msgs indicator
     func configureNewMessagesIndicatorWith(newMsgCount: Int)
     
@@ -75,7 +75,7 @@ protocol NewChatTableDataSourceDelegate : class {
     func updateEmptyView()
 }
 
-class NewChatTableDataSource : NSObject {
+@MainActor class NewChatTableDataSource : NSObject {
     
     ///Delegate
     weak var delegate: NewChatTableDataSourceDelegate?
@@ -175,8 +175,9 @@ class NewChatTableDataSource : NSObject {
         if isThread {
             return
         }
+        let chat = self.chat
         DispatchQueue.global(qos: .background).async {
-            self.chat?.processAliases()
+            chat?.processAliases()
         }
     }
     

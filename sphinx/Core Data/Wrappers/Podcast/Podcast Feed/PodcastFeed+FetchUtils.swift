@@ -63,7 +63,7 @@ extension PodcastFeed {
             )
         }
         
-        public static let podcastAllFeeds: NSPredicate = {
+        public nonisolated(unsafe) static let podcastAllFeeds: NSPredicate = {
             NSPredicate(
                 format: "feedKindValue == %d",
                 FeedType.Podcast.rawValue
@@ -71,14 +71,14 @@ extension PodcastFeed {
         }()
         
         
-        public static let podcastFollowedFeeds: NSPredicate = {
+        public nonisolated(unsafe) static let podcastFollowedFeeds: NSPredicate = {
             NSPredicate(
                 format: "(isSubscribedToFromSearch == true OR chat != nil) AND feedKindValue == %d",
                 FeedType.Podcast.rawValue
             )
         }()
         
-        public static let lastPlayed: NSPredicate = {
+        public nonisolated(unsafe) static let lastPlayed: NSPredicate = {
             NSPredicate(
                 format: "dateLastConsumed != nil AND feedKindValue == %d",
                 FeedType.Podcast.rawValue
@@ -96,7 +96,7 @@ extension PodcastFeed {
 
     public enum SortDescriptors {
 
-        public static let nameAscending: NSSortDescriptor = NSSortDescriptor(
+        public nonisolated(unsafe) static let nameAscending: NSSortDescriptor = NSSortDescriptor(
             key: "title",
             ascending: true,
 
@@ -109,7 +109,7 @@ extension PodcastFeed {
         )
 
 
-        public static let nameDescending: NSSortDescriptor = {
+        public nonisolated(unsafe) static let nameDescending: NSSortDescriptor = {
             guard let descriptor = nameAscending.reversedSortDescriptor as? NSSortDescriptor else {
                 preconditionFailure("Unable to make reversed sort descriptor")
             }

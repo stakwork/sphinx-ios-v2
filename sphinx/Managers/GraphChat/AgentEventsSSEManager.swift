@@ -17,7 +17,7 @@ import SwiftyJSON
 
 // MARK: - Delegate
 
-protocol AgentEventsSSEDelegate: AnyObject {
+@MainActor protocol AgentEventsSSEDelegate: AnyObject {
     func agentEventToolCall(toolName: String, input: [String: Any]?)
     func agentEventText(_ text: String)
     func agentEventFinish()

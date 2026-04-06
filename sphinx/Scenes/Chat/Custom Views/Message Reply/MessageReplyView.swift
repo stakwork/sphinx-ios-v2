@@ -8,7 +8,7 @@
 
 import UIKit
 
-@objc protocol MessageReplyViewDelegate: class {
+@MainActor @objc protocol MessageReplyViewDelegate: AnyObject {
     @objc optional func didCloseView()
     @objc optional func shouldScrollTo(message: TransactionMessage)
 }

@@ -8,11 +8,11 @@
 
 import UIKit
 
-protocol HistoryDataSourceDelegate: class {
+@MainActor protocol HistoryDataSourceDelegate: class {
     func shouldLoadMoreTransactions()
 }
 
-class HistoryDataSource : NSObject {
+@MainActor class HistoryDataSource : NSObject {
     
     weak var delegate: HistoryDataSourceDelegate?
     
@@ -39,8 +39,8 @@ class HistoryDataSource : NSObject {
         self.transactions = transactions
         self.tableView.reloadData()
         
-        DelayPerformedHelper.performAfterDelay(seconds: 0.5) {
-            self.insertingRows = false
+        DelayPerformedHelper.performAfterDelay(seconds: 0.5) { [weak self] in
+            Task { @MainActor [weak self] in self?.insertingRows = false }
         }
     }
     
@@ -49,8 +49,8 @@ class HistoryDataSource : NSObject {
         insertObjectsToModel(transactions: transactions)
         tableView.reloadData()
         
-        DelayPerformedHelper.performAfterDelay(seconds: 0.5) {
-            self.insertingRows = false
+        DelayPerformedHelper.performAfterDelay(seconds: 0.5) { [weak self] in
+            Task { @MainActor [weak self] in self?.insertingRows = false }
         }
     }
     
@@ -110,8 +110,8 @@ extension HistoryDataSource : UIScrollViewDelegate {
         ) {
             insertingRows = true
 
-            DelayPerformedHelper.performAfterDelay(seconds: 0.5, completion: {
-                self.delegate?.shouldLoadMoreTransactions()
+            DelayPerformedHelper.performAfterDelay(seconds: 0.5, completion: { [weak self] in
+                Task { @MainActor [weak self] in self?.delegate?.shouldLoadMoreTransactions() }
             })
         }
     }

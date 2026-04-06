@@ -104,14 +104,16 @@ extension NewChatViewModel {
 
 extension NewChatViewModel {
     func shouldFlagMessage(message: TransactionMessage) {
-        DelayPerformedHelper.performAfterDelay(seconds: 0.1, completion: {
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 100_000_000)
+            guard let self = self else { return }
             AlertHelper.showTwoOptionsAlert(
                 title: "alert-confirm.flag-message-title".localized,
                 message: "alert-confirm.flag-message-message".localized,
                 confirm: {
                     self.flagMessage(message)
                 })
-        })
+        }
     }
     
     private func flagMessage(_ message: TransactionMessage) {
@@ -123,26 +125,26 @@ extension NewChatViewModel {
     }
     
     func sendFlagMessageFor(_ message: TransactionMessage) {
-        DispatchQueue.global().async {
+        Task.detached(priority: .userInitiated) { [weak self] in
             let supportContact = SignupHelper.getSupportContact()
-            
+
             if let pubkey = supportContact["pubkey"].string {
-                
+
                 if let contact = UserContact.getContactWith(pubkey: pubkey) {
-                    
+
                     let messageSender = message.getMessageSender()
-                    
+
                     var flagMessageContent = """
                     Message Flagged
                     - Message: \(message.uuid ?? "Empty Message UUID")
                     - Sender: \(messageSender?.publicKey ?? "Empty Sender")
                     """
-                    
+
                     if let chat = message.chat, chat.isPublicGroup() {
                         flagMessageContent = "\(flagMessageContent)\n- Tribe: \(chat.uuid ?? "Empty Tribe UUID")"
                     }
-                    
-                    self.sendFlagMessage(
+
+                    await self?.sendFlagMessage(
                         contact: contact,
                         text: flagMessageContent
                     )
@@ -170,14 +172,16 @@ extension NewChatViewModel {
 
 extension NewChatViewModel {
     func shouldDeleteMessage(message: TransactionMessage) {
-        DelayPerformedHelper.performAfterDelay(seconds: 0.1, completion: {
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 100_000_000)
+            guard let self = self else { return }
             AlertHelper.showTwoOptionsAlert(
                 title: "alert-confirm.delete-message-title".localized,
                 message: "alert-confirm.delete-message-message".localized,
                 confirm: {
                     self.deleteMessage(message)
                 })
-        })
+        }
     }
     
     private func deleteMessage(_ message: TransactionMessage) {

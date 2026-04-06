@@ -9,7 +9,7 @@
 import UIKit
 import SDWebImage
 
-protocol LinkPreviewDelegate: class {
+@MainActor protocol LinkPreviewDelegate: class {
     func didTapOnTribeButton()
     func didTapOnContactButton()
     func didTapOnWebLinkButton()

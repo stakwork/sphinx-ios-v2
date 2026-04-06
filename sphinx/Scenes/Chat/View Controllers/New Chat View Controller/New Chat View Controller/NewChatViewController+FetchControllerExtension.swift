@@ -9,7 +9,7 @@
 import UIKit
 import CoreData
 
-extension NewChatViewController: NSFetchedResultsControllerDelegate {
+extension NewChatViewController: @preconcurrency NSFetchedResultsControllerDelegate {
     
     func configureFetchResultsController() {
         if isThread {
@@ -59,28 +59,27 @@ extension NewChatViewController: NSFetchedResultsControllerDelegate {
         _ controller: NSFetchedResultsController<NSFetchRequestResult>,
         didChangeContentWith snapshot: NSDiffableDataSourceSnapshotReference
     ) {
-        if
+        guard
             let resultController = controller as? NSFetchedResultsController<NSManagedObject>,
-            let firstSection = resultController.sections?.first {
-            
-            var shouldReloadView = false
-        
-            if let contacts = firstSection.objects as? [UserContact], let contact = contacts.first {
-                self.contact = contact
-                self.chatViewModel.setContact(contact)
-                shouldReloadView = true
-            }
-            
-            if let chats = firstSection.objects as? [Chat], let chat = chats.first {
-                self.chat = chat
-                self.chatViewModel.setChat(chat)
-                shouldReloadView = true
-            }
-        
-            if shouldReloadView {
-                setupData()
-            }
-            
+            let firstSection = resultController.sections?.first
+        else { return }
+
+        var shouldReloadView = false
+
+        if let contacts = firstSection.objects as? [UserContact], let contact = contacts.first {
+            self.contact = contact
+            self.chatViewModel.setContact(contact)
+            shouldReloadView = true
+        }
+
+        if let chats = firstSection.objects as? [Chat], let chat = chats.first {
+            self.chat = chat
+            self.chatViewModel.setChat(chat)
+            shouldReloadView = true
+        }
+
+        if shouldReloadView {
+            self.setupData()
         }
     }
 }

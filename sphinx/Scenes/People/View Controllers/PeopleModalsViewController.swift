@@ -8,11 +8,11 @@
 
 import UIKit
 
-protocol ModalViewDelegate: class {
+@MainActor protocol ModalViewDelegate: AnyObject {
     func shouldDismissVC()
 }
 
-protocol ModalViewInterface: class {
+@MainActor protocol ModalViewInterface: AnyObject {
     var alpha: CGFloat { get set }
     
     func modalWillShowWith(query: String, delegate: ModalViewDelegate)

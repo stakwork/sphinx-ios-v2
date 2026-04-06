@@ -54,41 +54,45 @@ extension NewMessageTableViewCell : MediaMessageViewDelegate {
     ) {
         if let originalMessageId = originalMessageId {
             let delayTime = DispatchTime.now() + Double(Int64(0.1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
-            DispatchQueue.global().asyncAfter(deadline: delayTime) {
+            let delegate = self.delegate
+            let rowIndex: Int = self.rowIndex
+            DispatchQueue.main.asyncAfter(deadline: delayTime) {
                 if originalMessageMedia.isImage {
-                    self.delegate?.shouldLoadImageDataFor(
+                    delegate?.shouldLoadImageDataFor(
                         messageId: originalMessageId,
-                        and: self.rowIndex
+                        and: rowIndex
                     )
                 } else if originalMessageMedia.isPdf {
-                    self.delegate?.shouldLoadPdfDataFor(
+                    delegate?.shouldLoadPdfDataFor(
                         messageId: originalMessageId,
-                        and: self.rowIndex
+                        and: rowIndex
                     )
                 } else if originalMessageMedia.isVideo {
-                    self.delegate?.shouldLoadVideoDataFor(
+                    delegate?.shouldLoadVideoDataFor(
                         messageId: originalMessageId,
-                        and: self.rowIndex
+                        and: rowIndex
                     )
                 } else if originalMessageMedia.isGiphy {
-                    self.delegate?.shouldLoadGiphyDataFor(
+                    delegate?.shouldLoadGiphyDataFor(
                         messageId: originalMessageId,
-                        and: self.rowIndex
+                        and: rowIndex
                     )
                 }
             }
         }
     }
-    
+
     func shouldLoadOriginalMessageFileDataFrom(
         originalMessageFile: BubbleMessageLayoutState.GenericFile
     ) {
         if let originalMessageId = originalMessageId {
             let delayTime = DispatchTime.now() + Double(Int64(0.1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
-            DispatchQueue.global().asyncAfter(deadline: delayTime) {
-                self.delegate?.shouldLoadFileDataFor(
+            let delegate = self.delegate
+            let rowIndex: Int = self.rowIndex
+            DispatchQueue.main.asyncAfter(deadline: delayTime) {
+                delegate?.shouldLoadFileDataFor(
                     messageId: originalMessageId,
-                    and: self.rowIndex
+                    and: rowIndex
                 )
             }
         }
@@ -153,10 +157,12 @@ extension NewMessageTableViewCell : AudioMessageViewDelegate {
     func shouldLoadOriginalMessageAudioDataFrom(originalMessageAudio: BubbleMessageLayoutState.Audio) {
         if let originalMessageId = originalMessageId {
             let delayTime = DispatchTime.now() + Double(Int64(0.1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
-            DispatchQueue.global().asyncAfter(deadline: delayTime) {
-                self.delegate?.shouldLoadAudioDataFor(
+            let delegate = self.delegate
+            let rowIndex: Int = self.rowIndex
+            DispatchQueue.main.asyncAfter(deadline: delayTime) {
+                delegate?.shouldLoadAudioDataFor(
                     messageId: originalMessageId,
-                    and: self.rowIndex
+                    and: rowIndex
                 )
             }
         }

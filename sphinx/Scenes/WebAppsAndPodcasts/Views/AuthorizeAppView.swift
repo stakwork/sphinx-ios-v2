@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol AuthorizeAppViewDelegate: class {
+@MainActor protocol AuthorizeAppViewDelegate: class {
     func shouldAuthorizeWith(dict: [String: AnyObject])
     func shouldAuthorizeBudgetWith(amount: Int, dict: [String: AnyObject])
     func shouldClose()

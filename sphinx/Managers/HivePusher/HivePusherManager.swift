@@ -10,7 +10,9 @@ import Foundation
 import PusherSwift
 import SwiftyJSON
 
-protocol HivePusherDelegate: AnyObject {
+extension ConnectionState: @retroactive @unchecked Sendable {}
+
+@MainActor protocol HivePusherDelegate: AnyObject {
     func featureUpdateReceived(featureId: String)
     func newMessageReceived(_ message: HiveChatMessage)
     func workflowStatusChanged(status: WorkflowStatus)
@@ -33,10 +35,10 @@ extension HivePusherDelegate {
     func prStatusChanged(taskId: String?, prNumber: Int, state: String, artifactStatus: String, prUrl: String?, problemDetails: String?) {}
 }
 
-class HivePusherManager: NSObject {
-    static let shared = HivePusherManager()
+class HivePusherManager: NSObject, @unchecked Sendable {
+    nonisolated(unsafe) static let shared = HivePusherManager()
 
-    weak var delegate: HivePusherDelegate?
+    nonisolated(unsafe) weak var delegate: HivePusherDelegate?
 
     private var fetchWorkItem: DispatchWorkItem?
 
@@ -343,7 +345,9 @@ class HivePusherManager: NSObject {
 
         fetchWorkItem?.cancel()
         let workItem = DispatchWorkItem { [weak self] in
-            self?.delegate?.featureUpdateReceived(featureId: featureId)
+            Task { @MainActor [weak self] in
+                self?.delegate?.featureUpdateReceived(featureId: featureId)
+            }
         }
         fetchWorkItem = workItem
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: workItem)
@@ -368,7 +372,7 @@ class HivePusherManager: NSObject {
                     print("[HivePusher] fetchChatMessage returned nil for id: \(trimmedId)")
                     return
                 }
-                DispatchQueue.main.async {
+                DispatchQueue.main.async { [weak self] in
                     self?.delegate?.newMessageReceived(message)
                 }
             },

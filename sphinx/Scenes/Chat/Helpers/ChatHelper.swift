@@ -7,6 +7,7 @@
 
 import UIKit
 
+@MainActor
 class ChatHelper {
     
     public static func getSenderColorFor(message: TransactionMessage) -> UIColor {
@@ -105,7 +106,7 @@ class ChatHelper {
         return nil
     }
 
-    public static func removeDuplicatedContainedFrom(
+    nonisolated public static func removeDuplicatedContainedFrom(
         urlRanges: [NSRange]
     ) -> [NSRange] {
         var ranges = urlRanges
@@ -136,7 +137,7 @@ class ChatHelper {
     }
 }
 
-func getWindowInsets() -> UIEdgeInsets {
+@MainActor func getWindowInsets() -> UIEdgeInsets {
     var insets = UIEdgeInsets(top: 20.0, left: 0.0, bottom: 0.0, right: 0.0)
     
     if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene, let rootWindow = windowScene.windows.first {

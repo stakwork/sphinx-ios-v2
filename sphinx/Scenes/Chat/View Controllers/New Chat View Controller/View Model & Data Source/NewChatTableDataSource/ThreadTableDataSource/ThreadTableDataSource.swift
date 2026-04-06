@@ -72,14 +72,17 @@ class ThreadTableDataSource : NewChatTableDataSource {
     
     override func restoreScrollLastPosition() {
         DelayPerformedHelper.performAfterDelay(seconds: 0.2, completion: {
-            
-            self.calculateHeightAndReloadHeader()
-            
-            DelayPerformedHelper.performAfterDelay(seconds: 0.2, completion: {
-                self.tableView.alpha = 1.0
-                self.toggleHeader()
-            })
-       })
+            MainActor.assumeIsolated {
+                self.calculateHeightAndReloadHeader()
+
+                DelayPerformedHelper.performAfterDelay(seconds: 0.2, completion: {
+                    MainActor.assumeIsolated {
+                        self.tableView.alpha = 1.0
+                        self.toggleHeader()
+                    }
+                })
+            }
+        })
     }
     
     func didChangeTableContent() -> Bool {

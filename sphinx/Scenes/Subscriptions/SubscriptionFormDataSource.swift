@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol SubscriptionFormDataSourceDelegate: class {
+@MainActor protocol SubscriptionFormDataSourceDelegate: AnyObject {
     func shouldShowAlert(title: String, text: String)
     func didTapSubscribeButton()
 }
@@ -26,7 +26,7 @@ struct TableSection {
     }
 }
 
-class SubscriptionFormDataSource : NSObject {
+@MainActor class SubscriptionFormDataSource : NSObject {
     
     weak var delegate: SubscriptionFormDataSourceDelegate!
     

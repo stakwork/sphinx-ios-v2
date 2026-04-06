@@ -19,11 +19,11 @@ class AllTribeFeedsCollectionViewController: UICollectionViewController {
     var interSectionSpacing: CGFloat = 10.0
     var interCellSpacing: CGFloat = 6.0
 
-    var onCellSelected: ((String) -> Void)!
-    var onDownloadedItemSelected: ((String, String) -> Void)!
-    var onRecommendationSelected: (([RecommendationResult], String) -> Void)!
-    var onContentScrolled: ((UIScrollView) -> Void)?
-    var onNewResultsFetched: ((Int) -> Void)!
+    var onCellSelected: (@MainActor (String) -> Void)!
+    var onDownloadedItemSelected: (@MainActor (String, String) -> Void)!
+    var onRecommendationSelected: (@MainActor ([RecommendationResult], String) -> Void)!
+    var onContentScrolled: (@MainActor (UIScrollView) -> Void)?
+    var onNewResultsFetched: (@MainActor (Int) -> Void)!
 
     private var managedObjectContext: NSManagedObjectContext!
     private var fetchedResultsController: NSFetchedResultsController<ContentFeed>!
@@ -76,11 +76,11 @@ extension AllTribeFeedsCollectionViewController {
     static func instantiate(
         managedObjectContext: NSManagedObjectContext = CoreDataManager.sharedManager.persistentContainer.viewContext,
         interSectionSpacing: CGFloat = 10.0,
-        onCellSelected: ((String) -> Void)!,
-        onDownloadedItemSelected: ((String, String) -> Void)!,
-        onRecommendationSelected: (([RecommendationResult], String) -> Void)!,
-        onNewResultsFetched: @escaping ((Int) -> Void) = { _ in },
-        onContentScrolled: ((UIScrollView) -> Void)? = nil
+        onCellSelected: (@MainActor (String) -> Void)!,
+        onDownloadedItemSelected: (@MainActor (String, String) -> Void)!,
+        onRecommendationSelected: (@MainActor ([RecommendationResult], String) -> Void)!,
+        onNewResultsFetched: @escaping (@MainActor (Int) -> Void) = { _ in },
+        onContentScrolled: (@MainActor (UIScrollView) -> Void)? = nil
     ) -> AllTribeFeedsCollectionViewController {
         
         let viewController = StoryboardScene
@@ -129,7 +129,7 @@ extension AllTribeFeedsCollectionViewController {
     }
     
     
-    enum DataSourceItem: Hashable {
+    enum DataSourceItem: Hashable, @unchecked Sendable {
         case downloadedEpisode(PodcastEpisode, Int)
         case tribePodcastFeed(ContentFeed, Int)
         case tribeVideoFeed(ContentFeed, Int)
@@ -824,8 +824,8 @@ extension AllTribeFeedsCollectionViewController {
 }
 
 
-extension AllTribeFeedsCollectionViewController: NSFetchedResultsControllerDelegate {
-    
+extension AllTribeFeedsCollectionViewController: @preconcurrency NSFetchedResultsControllerDelegate {
+
     /// Called when the contents of the fetched results controller change.
     ///
     /// If this method is implemented, no other delegate methods will be invoked.
@@ -840,16 +840,9 @@ extension AllTribeFeedsCollectionViewController: NSFetchedResultsControllerDeleg
         else {
             return
         }
-        
-        DispatchQueue.main.async { [weak self] in
-            
-            self?.updateWithNew(
-                feeds: foundFeeds
-            )
-            
-            //Sent 1 to always show recommendations
-            self?.onNewResultsFetched(1)
-        }
+
+        updateWithNew(feeds: foundFeeds)
+        onNewResultsFetched(1)
     }
 }
 

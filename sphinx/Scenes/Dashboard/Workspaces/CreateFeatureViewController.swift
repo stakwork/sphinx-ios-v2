@@ -10,7 +10,7 @@ import UIKit
 
 // MARK: - Delegate Protocol
 
-protocol CreateFeatureViewControllerDelegate: AnyObject {
+@MainActor protocol CreateFeatureViewControllerDelegate: AnyObject {
     func didCreateFeature(_ feature: HiveFeature)
     func didCreateTask(_ task: WorkspaceTask)
 }

@@ -9,6 +9,7 @@
 import Foundation
 import AVKit
 
+@MainActor
 extension PodcastPlayerController {
     func setAudioSession() {
         do {

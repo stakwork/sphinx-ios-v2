@@ -516,11 +516,13 @@ extension NewChatTableDataSource : NewMessageTableViewCellDelegate {
                         asset.loadValuesAsynchronously(forKeys: ["duration"], completionHandler: {
                             let duration = Int(Double(asset.duration.value) / Double(asset.duration.timescale))
                             episode.duration = duration
-                            
-                            updateWith(
-                                duration: Double(duration),
-                                currentTime: Double(podcastComment.timestamp ?? 0)
-                            )
+
+                            DispatchQueue.main.async {
+                                updateWith(
+                                    duration: Double(duration),
+                                    currentTime: Double(podcastComment.timestamp ?? 0)
+                                )
+                            }
                         })
                     }
                 }
@@ -569,13 +571,15 @@ extension NewChatTableDataSource {
                 self.delegate?.shouldReloadThreadHeaderView()
             } else {
                 mediaReloadQueue.async {
-                    var snapshot = self.dataSource.snapshot()
-                
-                    if snapshot.itemIdentifiers.contains(tableCellState.1) {
-                        snapshot.reloadItems([tableCellState.1])
-                        
-                        DispatchQueue.main.async {
-                            self.dataSource.apply(snapshot, animatingDifferences: false)
+                    MainActor.assumeIsolated {
+                        var snapshot = self.dataSource.snapshot()
+
+                        if snapshot.itemIdentifiers.contains(tableCellState.1) {
+                            snapshot.reloadItems([tableCellState.1])
+
+                            DispatchQueue.main.async {
+                                self.dataSource.apply(snapshot, animatingDifferences: false)
+                            }
                         }
                     }
                 }
@@ -603,18 +607,20 @@ extension NewChatTableDataSource {
             )
 
             dataSourceQueue.async {
-                var snapshot = self.dataSource.snapshot()
-            
-                if snapshot.itemIdentifiers.contains(tableCellState.1) {
-                    snapshot.reloadItems([tableCellState.1])
-                    DispatchQueue.main.async {
-                        self.dataSource.apply(snapshot, animatingDifferences: true)
+                MainActor.assumeIsolated {
+                    var snapshot = self.dataSource.snapshot()
+
+                    if snapshot.itemIdentifiers.contains(tableCellState.1) {
+                        snapshot.reloadItems([tableCellState.1])
+                        DispatchQueue.main.async {
+                            self.dataSource.apply(snapshot, animatingDifferences: true)
+                        }
                     }
                 }
             }
         }
     }
-    
+
     func updateMessageTableCellStateFor(
         rowIndex: Int?,
         messageId: Int,
@@ -625,21 +631,23 @@ extension NewChatTableDataSource {
             and: rowIndex
         ) {
             uploadingProgress[messageId] = updatedUploadProgressData
-            
+
             dataSourceQueue.async {
-                var snapshot = self.dataSource.snapshot()
-            
-                if snapshot.itemIdentifiers.contains(tableCellState.1) {
-                    snapshot.reloadItems([tableCellState.1])
-                    
-                    DispatchQueue.main.async {
-                        self.dataSource.apply(snapshot, animatingDifferences: false)
+                MainActor.assumeIsolated {
+                    var snapshot = self.dataSource.snapshot()
+
+                    if snapshot.itemIdentifiers.contains(tableCellState.1) {
+                        snapshot.reloadItems([tableCellState.1])
+
+                        DispatchQueue.main.async {
+                            self.dataSource.apply(snapshot, animatingDifferences: false)
+                        }
                     }
                 }
             }
         }
     }
-    
+
     func updateMessageTableCellStateFor(
         rowIndex: Int,
         messageId: Int,
@@ -653,13 +661,15 @@ extension NewChatTableDataSource {
             preloaderHelper.linksData[linkWeb.link] = linkData
 
             dataSourceQueue.async {
-                var snapshot = self.dataSource.snapshot()
-            
-                if snapshot.itemIdentifiers.contains(tableCellState.1) {
-                    snapshot.reloadItems([tableCellState.1])
-                    
-                    DispatchQueue.main.async {
-                        self.dataSource.apply(snapshot, animatingDifferences: true)
+                MainActor.assumeIsolated {
+                    var snapshot = self.dataSource.snapshot()
+
+                    if snapshot.itemIdentifiers.contains(tableCellState.1) {
+                        snapshot.reloadItems([tableCellState.1])
+
+                        DispatchQueue.main.async {
+                            self.dataSource.apply(snapshot, animatingDifferences: true)
+                        }
                     }
                 }
             }
@@ -1085,7 +1095,9 @@ extension NewChatTableDataSource {
         )
         
         DelayPerformedHelper.performAfterDelay(seconds: 1.0, completion: {
-            self.messageBubbleHelper.hideLoadingWheel()
+            MainActor.assumeIsolated {
+                self.messageBubbleHelper.hideLoadingWheel()
+            }
         })
     }
     

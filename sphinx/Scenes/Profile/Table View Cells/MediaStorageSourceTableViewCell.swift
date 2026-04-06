@@ -30,12 +30,14 @@ class MediaStorageSourceTableViewCell: UITableViewCell {
     var index : Int? = nil
     weak var delegate: MediaStorageSourceTableViewCellDelegate? = nil
     
-    static let reuseID = "MediaStorageSourceTableViewCell"
+    nonisolated(unsafe) static let reuseID = "MediaStorageSourceTableViewCell"
 
     override func awakeFromNib() {
         super.awakeFromNib()
         // Initialization code
-        deleteButton.imageView?.contentMode = .scaleAspectFit
+        MainActor.assumeIsolated {
+            deleteButton.imageView?.contentMode = .scaleAspectFit
+        }
     }
     
     enum DocsColors {

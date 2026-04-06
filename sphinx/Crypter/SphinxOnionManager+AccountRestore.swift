@@ -9,7 +9,7 @@
 import Foundation
 import CoreData
 import ObjectMapper
-import SwiftyJSON
+@preconcurrency import SwiftyJSON
 
 class ChatsFetchParams {
     var restoreInProgress: Bool
@@ -690,7 +690,7 @@ extension SphinxOnionManager {
     func fetchMissingTribesFor(
         rr: RunReturn,
         topic: String?,
-        completion: @escaping (RunReturn, [String: JSON], String?) -> ()
+        completion: @escaping @Sendable (RunReturn, [String: JSON], String?) -> ()
     ) {
         let messages = rr.msgs
         
@@ -1043,7 +1043,10 @@ extension SphinxOnionManager {
         
         restoredContactInfoTracker = []
         
-        if (UIApplication.shared.delegate as? AppDelegate)?.isActive == true {
+        let isAppActive = DispatchQueue.main.sync {
+            (UIApplication.shared.delegate as? AppDelegate)?.isActive == true
+        }
+        if isAppActive {
             ///Avoid processes that will run after the completion handler is called
             requestPings()
             updateRoutingInfo()

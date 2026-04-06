@@ -21,19 +21,20 @@ class MemberBadgeHeaderCell: UITableViewCell {
 
     override func awakeFromNib() {
         super.awakeFromNib()
-        
-        //Send Sats
-        sendSatsButton.layer.cornerRadius = sendSatsButton.frame.height/2.0
-        sendSatsButton.titleLabel?.font = UIFont(name: "Roboto", size: 14.0)
-        sendSatsButton.setTitle("badges.send-sats".localized, for: .normal)
-        
 
-        //Earn Badges
-        earnBadgesButton.setTitle("badges.earn-badges".localized, for: .normal)
-        earnBadgesButton.titleLabel?.font = UIFont(name: "Roboto", size: 14.0)
-        earnBadgesButton.layer.borderWidth = 1.0
-        earnBadgesButton.layer.borderColor = UIColor.Sphinx.MainBottomIcons.cgColor
-        earnBadgesButton.layer.cornerRadius = earnBadgesButton.frame.height/2.0
+        MainActor.assumeIsolated {
+            //Send Sats
+            sendSatsButton.layer.cornerRadius = sendSatsButton.frame.height/2.0
+            sendSatsButton.titleLabel?.font = UIFont(name: "Roboto", size: 14.0)
+            sendSatsButton.setTitle("badges.send-sats".localized, for: .normal)
+
+            //Earn Badges
+            earnBadgesButton.setTitle("badges.earn-badges".localized, for: .normal)
+            earnBadgesButton.titleLabel?.font = UIFont(name: "Roboto", size: 14.0)
+            earnBadgesButton.layer.borderWidth = 1.0
+            earnBadgesButton.layer.borderColor = UIColor.Sphinx.MainBottomIcons.cgColor
+            earnBadgesButton.layer.cornerRadius = earnBadgesButton.frame.height/2.0
+        }
     }
 
     override func setSelected(_ selected: Bool, animated: Bool) {

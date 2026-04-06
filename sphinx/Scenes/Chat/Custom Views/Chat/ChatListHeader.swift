@@ -9,7 +9,7 @@
 import UIKit
 import CocoaMQTT
 
-protocol ChatListHeaderDelegate: class {
+@MainActor protocol ChatListHeaderDelegate: AnyObject {
     func leftMenuButtonTouched()
 }
 

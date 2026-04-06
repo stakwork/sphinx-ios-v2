@@ -14,9 +14,11 @@ class LoadingRecommendationsCollectionViewCell: UICollectionViewCell {
     
     override func awakeFromNib() {
         super.awakeFromNib()
-        
-        loadingWheel.color = UIColor.Sphinx.Text
-        loadingWheel.startAnimating()
+
+        Task { @MainActor in
+            self.loadingWheel.color = UIColor.Sphinx.Text
+            self.loadingWheel.startAnimating()
+        }
     }
 
     func startAnimating() {
@@ -25,8 +27,8 @@ class LoadingRecommendationsCollectionViewCell: UICollectionViewCell {
 }
 
 extension LoadingRecommendationsCollectionViewCell {
-    static let reuseID = "LoadingRecommendationsCollectionViewCell"
-    
+    nonisolated(unsafe) static let reuseID = "LoadingRecommendationsCollectionViewCell"
+
     static let nib: UINib = {
         UINib(nibName: "LoadingRecommendationsCollectionViewCell", bundle: nil)
     }()

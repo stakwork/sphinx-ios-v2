@@ -8,7 +8,7 @@
 
 import UIKit
 
-struct ThreadTableCellState {
+@MainActor struct ThreadTableCellState: @unchecked Sendable {
     
     ///Constants
     let kAudioBubbleMargings: CGFloat = 78
@@ -168,15 +168,12 @@ extension ThreadTableCellState {
     }
 }
 
-extension ThreadTableCellState : Hashable {
+extension ThreadTableCellState: @preconcurrency Hashable {
 
     static func == (lhs: ThreadTableCellState, rhs: ThreadTableCellState) -> Bool {
-        let mutableLhs = lhs
-        let mutableRhs = rhs
-
         return
-            mutableLhs.originalMessage?.id      == mutableRhs.originalMessage?.id &&
-            mutableLhs.threadMessages.count     == mutableRhs.threadMessages.count
+            lhs.originalMessage?.id      == rhs.originalMessage?.id &&
+            lhs.threadMessages.count     == rhs.threadMessages.count
     }
 
     func hash(into hasher: inout Hasher) {
