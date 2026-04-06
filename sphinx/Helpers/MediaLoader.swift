@@ -145,7 +145,7 @@ class MediaLoader {
         )
     }
     
-    class func loadImage(
+    @MainActor class func loadImage(
         url: URL,
         message: TransactionMessage,
         mediaKey: String?,
@@ -169,24 +169,20 @@ class MediaLoader {
         loadDataFrom(URL: url, completion: { (data, fileName) in
             message.saveFileName(fileName)
             
-            DispatchQueue.main.async {
-                loadImageFromData(
-                    data: data,
-                    url: url,
-                    message: message,
-                    mediaKey: mediaKey,
-                    completion: completion,
-                    errorCompletion: errorCompletion
-                )
-            }
+            loadImageFromData(
+                data: data,
+                url: url,
+                message: message,
+                mediaKey: mediaKey,
+                completion: completion,
+                errorCompletion: errorCompletion
+            )
         }, errorCompletion: {
-            DispatchQueue.main.async {
-                Task { @MainActor in errorCompletion(messageId) }
-            }
+            errorCompletion(messageId)
         })
     }
     
-    class func loadImageFromData(
+    @MainActor class func loadImageFromData(
         data: Data,
         url: URL,
         message: TransactionMessage,
@@ -237,7 +233,7 @@ class MediaLoader {
         return UIImage(data: data)
     }
     
-    class func loadMessageData(
+    @MainActor class func loadMessageData(
         url: URL,
         message: TransactionMessage,
         mediaKey: String?,
@@ -265,7 +261,7 @@ class MediaLoader {
         })
     }
     
-    class func loadVideo(
+    @MainActor class func loadVideo(
         url: URL,
         message: TransactionMessage,
         mediaKey: String?,
@@ -310,7 +306,7 @@ class MediaLoader {
         }
     }
     
-    class func loadFileData(
+    @MainActor class func loadFileData(
         url: URL,
         message: TransactionMessage,
         mediaKey: String?,
@@ -344,7 +340,7 @@ class MediaLoader {
         }
     }
     
-    class func loadFileData(
+    @MainActor class func loadFileData(
         url: URL,
         isPdf: Bool,
         message: TransactionMessage,
@@ -394,7 +390,7 @@ class MediaLoader {
         }
     }
     
-    class func loadMediaFromData(
+    @MainActor class func loadMediaFromData(
         data: Data,
         url: URL, message: TransactionMessage,
         mediaKey: String? = nil,
