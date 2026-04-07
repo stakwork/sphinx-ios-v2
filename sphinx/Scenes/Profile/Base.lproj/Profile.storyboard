@@ -1982,10 +1982,49 @@
                         <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="SAI-scroll-001">
-                                <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
+                            <!-- Status bar spacer -->
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="SAI-status-bar">
+                                <rect key="frame" x="0.0" y="0.0" width="414" height="48"/>
+                                <color key="backgroundColor" name="Body"/>
+                            </view>
+                            <!-- Header view with back button + centered title -->
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="SAI-header-view">
+                                <rect key="frame" x="0.0" y="48" width="414" height="50"/>
                                 <subviews>
-                                    <!-- Outer container card (like bottomContainerView in Profile) -->
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="SAI-back-btn">
+                                        <rect key="frame" x="0.0" y="0.0" width="50" height="50"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="50" id="SAI-back-w"/>
+                                        </constraints>
+                                        <fontDescription key="fontDescription" name="MaterialIcons-Regular" family="Material Icons" pointSize="21"/>
+                                        <state key="normal" title="">
+                                            <color key="titleColor" name="WashedOutReceivedText"/>
+                                        </state>
+                                        <connections>
+                                            <action selector="backButtonTouched" destination="SAI-vc-002" eventType="touchUpInside" id="SAI-back-act"/>
+                                        </connections>
+                                    </button>
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Configure AI Agent" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="SAI-title-lbl">
+                                        <rect key="frame" x="50" y="16.5" width="314" height="17"/>
+                                        <fontDescription key="fontDescription" name="Montserrat-SemiBold" family="Montserrat" pointSize="14"/>
+                                        <color key="textColor" name="Text"/>
+                                        <nil key="highlightedColor"/>
+                                    </label>
+                                </subviews>
+                                <color key="backgroundColor" name="Body"/>
+                                <constraints>
+                                    <constraint firstItem="SAI-back-btn" firstAttribute="leading" secondItem="SAI-header-view" secondAttribute="leading" id="SAI-hdr-c1"/>
+                                    <constraint firstItem="SAI-back-btn" firstAttribute="top" secondItem="SAI-header-view" secondAttribute="top" id="SAI-hdr-c2"/>
+                                    <constraint firstAttribute="bottom" secondItem="SAI-back-btn" secondAttribute="bottom" id="SAI-hdr-c3"/>
+                                    <constraint firstItem="SAI-title-lbl" firstAttribute="centerY" secondItem="SAI-header-view" secondAttribute="centerY" id="SAI-hdr-c4"/>
+                                    <constraint firstItem="SAI-title-lbl" firstAttribute="centerX" secondItem="SAI-header-view" secondAttribute="centerX" id="SAI-hdr-c5"/>
+                                    <constraint firstAttribute="height" constant="50" id="SAI-hdr-h"/>
+                                </constraints>
+                            </view>
+                            <!-- Scroll view with field card -->
+                            <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="SAI-scroll-001">
+                                <rect key="frame" x="0.0" y="98" width="414" height="750"/>
+                                <subviews>
                                     <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="SAI-card-001">
                                         <rect key="frame" x="0.0" y="20" width="414" height="225"/>
                                         <subviews>
@@ -2119,42 +2158,55 @@
                                             <constraint firstAttribute="height" constant="225" id="SAI-card-h"/>
                                         </constraints>
                                     </view>
-                                    <!-- Confirm button (styled like exportKeyButton) -->
-                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="SAI-confirm-btn">
-                                        <rect key="frame" x="41.5" y="277" width="331" height="52"/>
-                                        <color key="backgroundColor" name="PrimaryBlue"/>
-                                        <constraints>
-                                            <constraint firstAttribute="height" constant="52" id="SAI-confirm-h"/>
-                                        </constraints>
-                                        <fontDescription key="fontDescription" name="Montserrat-Regular" family="Montserrat" pointSize="17"/>
-                                        <state key="normal" title="Confirm">
-                                            <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                        </state>
-                                        <connections>
-                                            <action selector="confirmTapped" destination="SAI-vc-002" eventType="touchUpInside" id="SAI-confirm-act"/>
-                                        </connections>
-                                    </button>
                                 </subviews>
                                 <color key="backgroundColor" name="Body"/>
                                 <constraints>
                                     <constraint firstItem="SAI-card-001" firstAttribute="top" secondItem="SAI-content-lg" secondAttribute="top" constant="20" id="SAI-scroll-c1"/>
                                     <constraint firstItem="SAI-card-001" firstAttribute="leading" secondItem="SAI-content-lg" secondAttribute="leading" id="SAI-scroll-c2"/>
                                     <constraint firstItem="SAI-card-001" firstAttribute="width" secondItem="SAI-frame-lg" secondAttribute="width" id="SAI-scroll-c3"/>
-                                    <constraint firstItem="SAI-confirm-btn" firstAttribute="top" secondItem="SAI-card-001" secondAttribute="bottom" constant="32" id="SAI-scroll-c4"/>
-                                    <constraint firstItem="SAI-confirm-btn" firstAttribute="centerX" secondItem="SAI-frame-lg" secondAttribute="centerX" id="SAI-scroll-c5"/>
-                                    <constraint firstItem="SAI-confirm-btn" firstAttribute="width" secondItem="SAI-frame-lg" secondAttribute="width" multiplier="0.8" id="SAI-scroll-c6"/>
-                                    <constraint firstItem="SAI-confirm-btn" firstAttribute="bottom" secondItem="SAI-content-lg" secondAttribute="bottom" constant="-32" id="SAI-scroll-c7"/>
+                                    <constraint firstItem="SAI-card-001" firstAttribute="bottom" secondItem="SAI-content-lg" secondAttribute="bottom" constant="-20" id="SAI-scroll-c4"/>
                                 </constraints>
                                 <viewLayoutGuide key="contentLayoutGuide" id="SAI-content-lg"/>
                                 <viewLayoutGuide key="frameLayoutGuide" id="SAI-frame-lg"/>
                             </scrollView>
+                            <!-- Confirm button pinned to bottom of view -->
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="SAI-confirm-btn">
+                                <rect key="frame" x="41.5" y="812" width="331" height="52"/>
+                                <color key="backgroundColor" name="PrimaryBlue"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="52" id="SAI-confirm-h"/>
+                                </constraints>
+                                <fontDescription key="fontDescription" name="Montserrat-SemiBold" family="Montserrat" pointSize="14"/>
+                                <inset key="contentEdgeInsets" minX="60" minY="0.0" maxX="60" maxY="0.0"/>
+                                <state key="normal" title="Confirm">
+                                    <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                </state>
+                                <connections>
+                                    <action selector="confirmTapped" destination="SAI-vc-002" eventType="touchUpInside" id="SAI-confirm-act"/>
+                                </connections>
+                            </button>
                         </subviews>
+                        <viewLayoutGuide key="safeArea" id="SAI-safe-area"/>
                         <color key="backgroundColor" name="Body"/>
                         <constraints>
-                            <constraint firstItem="SAI-scroll-001" firstAttribute="top" secondItem="SAI-vw-001" secondAttribute="top" id="SAI-view-c1"/>
-                            <constraint firstItem="SAI-scroll-001" firstAttribute="leading" secondItem="SAI-vw-001" secondAttribute="leading" id="SAI-view-c2"/>
-                            <constraint firstItem="SAI-scroll-001" firstAttribute="trailing" secondItem="SAI-vw-001" secondAttribute="trailing" id="SAI-view-c3"/>
-                            <constraint firstItem="SAI-scroll-001" firstAttribute="bottom" secondItem="SAI-vw-001" secondAttribute="bottom" id="SAI-view-c4"/>
+                            <!-- Status bar spacer -->
+                            <constraint firstItem="SAI-status-bar" firstAttribute="top" secondItem="SAI-vw-001" secondAttribute="top" id="SAI-view-c1"/>
+                            <constraint firstItem="SAI-status-bar" firstAttribute="leading" secondItem="SAI-vw-001" secondAttribute="leading" id="SAI-view-c2"/>
+                            <constraint firstAttribute="trailing" secondItem="SAI-status-bar" secondAttribute="trailing" id="SAI-view-c3"/>
+                            <constraint firstAttribute="height" constant="48" id="SAI-status-h"/>
+                            <!-- Header view -->
+                            <constraint firstItem="SAI-header-view" firstAttribute="top" secondItem="SAI-status-bar" secondAttribute="bottom" id="SAI-view-c5"/>
+                            <constraint firstItem="SAI-header-view" firstAttribute="leading" secondItem="SAI-vw-001" secondAttribute="leading" id="SAI-view-c6"/>
+                            <constraint firstAttribute="trailing" secondItem="SAI-header-view" secondAttribute="trailing" id="SAI-view-c7"/>
+                            <!-- Scroll view -->
+                            <constraint firstItem="SAI-scroll-001" firstAttribute="top" secondItem="SAI-header-view" secondAttribute="bottom" id="SAI-view-c8"/>
+                            <constraint firstItem="SAI-scroll-001" firstAttribute="leading" secondItem="SAI-vw-001" secondAttribute="leading" id="SAI-view-c9"/>
+                            <constraint firstAttribute="trailing" secondItem="SAI-scroll-001" secondAttribute="trailing" id="SAI-view-c10"/>
+                            <constraint firstAttribute="bottom" secondItem="SAI-scroll-001" secondAttribute="bottom" id="SAI-view-c11"/>
+                            <!-- Confirm button -->
+                            <constraint firstItem="SAI-confirm-btn" firstAttribute="centerX" secondItem="SAI-vw-001" secondAttribute="centerX" id="SAI-view-c12"/>
+                            <constraint firstItem="SAI-confirm-btn" firstAttribute="width" secondItem="SAI-vw-001" secondAttribute="width" multiplier="0.8" id="SAI-view-c13"/>
+                            <constraint firstItem="SAI-safe-area" firstAttribute="bottom" secondItem="SAI-confirm-btn" secondAttribute="bottom" constant="33" id="SAI-view-c14"/>
                         </constraints>
                     </view>
                     <connections>
@@ -2162,6 +2214,7 @@
                         <outlet property="apiKeyTextField" destination="SAI-key-tf" id="SAI-out-key"/>
                         <outlet property="confirmButton" destination="SAI-confirm-btn" id="SAI-out-confirm"/>
                         <outlet property="fieldsContainerView" destination="SAI-card-001" id="SAI-out-card"/>
+                        <outlet property="headerView" destination="SAI-header-view" id="SAI-out-header"/>
                         <outlet property="providerTextField" destination="SAI-prov-tf" id="SAI-out-prov"/>
                     </connections>
                 </viewController>

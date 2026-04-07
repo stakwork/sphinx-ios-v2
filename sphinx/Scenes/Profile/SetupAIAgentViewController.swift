@@ -10,6 +10,7 @@ import UIKit
 
 class SetupAIAgentViewController: UIViewController {
     
+    @IBOutlet weak var headerView: UIView!
     @IBOutlet weak var fieldsContainerView: UIView!
     @IBOutlet weak var providerTextField: UITextField!
     @IBOutlet weak var apiKeyTextField: UITextField!
@@ -24,20 +25,24 @@ class SetupAIAgentViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "Configure AI Agent"
         configureView()
     }
     
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        confirmButton.layer.cornerRadius = 9.0
+        confirmButton.layer.cornerRadius = confirmButton.frame.height / 2
         confirmButton.clipsToBounds = true
+        headerView.addShadow(location: VerticalLocation.bottom, opacity: 0.2, radius: 2.0)
         fieldsContainerView.addShadow(
             location: VerticalLocation.center,
             color: UIColor.black,
             opacity: 0.2,
             radius: 2.0
         )
+    }
+    
+    @IBAction func backButtonTouched() {
+        navigationController?.popViewController(animated: true)
     }
     
     private func configureView() {
