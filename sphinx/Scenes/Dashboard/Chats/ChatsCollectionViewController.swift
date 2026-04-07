@@ -481,6 +481,8 @@ extension ChatsCollectionViewController : ChatListCollectionViewCellDelegate, Me
     }
     
     func shouldToggleReadUnread(chat: Chat) {
+        guard chat.getConversationContact()?.isAgent != true else { return }
+        
         guard let lastMessage = chat.lastMessage else {
             return
         }

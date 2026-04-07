@@ -48,6 +48,10 @@ extension NewChatAccessoryView {
         messageFieldView.updateFieldStateFrom(chat)
     }
     
+    func configureForAgentChat() {
+        messageFieldView.configureForAgentChat()
+    }
+    
     func setDelegates(
         messageFieldDelegate: ChatMessageTextFieldViewDelegate,
         searchDelegate: ChatSearchResultsBarDelegate? = nil

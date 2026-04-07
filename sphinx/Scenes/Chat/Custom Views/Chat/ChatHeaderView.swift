@@ -53,6 +53,7 @@ class ChatHeaderView: UIView {
     
     var chat: Chat? = nil
     var contact: UserContact? = nil
+    @IBOutlet weak var agentCpuIconImageView: UIImageView!
     
     public enum RightButtons: Int {
         case SecondBrain
@@ -109,6 +110,21 @@ class ChatHeaderView: UIView {
         setVolumeState(muted: chat?.isMuted() ?? false)
         configureImageOrInitials()
         setupPendingUI()
+        
+        if contact?.isAgent == true {
+            configureForAgentChat()
+        }
+    }
+    
+    func configureForAgentChat() {
+        volumeButton.isHidden = true
+        lockSign.isHidden = true
+        boltSign.isHidden = true
+        webAppButton.isHidden = true
+        secondBrainButton.isHidden = true
+        showThreadsButton.isHidden = true
+        agentCpuIconImageView.image = UIImage(systemName: "cpu")
+        agentCpuIconImageView.isHidden = false
     }
     
     func configureTimezoneInfo() {

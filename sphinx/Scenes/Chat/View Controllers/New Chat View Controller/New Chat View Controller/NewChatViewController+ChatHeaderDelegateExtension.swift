@@ -82,6 +82,22 @@ extension NewChatViewController : ChatHeaderViewDelegate, ThreadHeaderViewDelega
     }
     
     func didTapMoreOptionsButton(sender: UIButton) {
+        if contact?.isAgent == true {
+            let alert = CustomAlertController(
+                title: "chat.options".localized,
+                message: "select.option".localized,
+                preferredStyle: .actionSheet
+            )
+            alert.addAction(UIAlertAction(title: "search.messages".localized, style: .default) { _ in
+                self.toggleSearchMode(active: true)
+            })
+            alert.addAction(UIAlertAction(title: "cancel".localized, style: .cancel))
+            alert.popoverPresentationController?.sourceView = sender
+            alert.popoverPresentationController?.sourceRect = sender.bounds
+            present(alert, animated: true)
+            return
+        }
+        
         let alert = CustomAlertController(
             title: "chat.options".localized,
             message: "select.option".localized,
