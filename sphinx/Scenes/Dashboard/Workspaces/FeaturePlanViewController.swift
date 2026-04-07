@@ -1622,7 +1622,7 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
             let tasks = feature.allTasks
             let task = tasks[taskIndex]
             let isLast = taskIndex == tasks.count - 1
-            cell.configure(with: task, isLastRow: isLast, index: indexPath.row)
+            cell.configure(with: task, isLastRow: isLast, index: indexPath.row, showCircle: hasDependencies)
             cell.onPRBadgeTapped = { url in UIApplication.shared.open(url) }
             cell.onRetryWorkflowTapped = { [weak self] in
                 guard let self else { return }

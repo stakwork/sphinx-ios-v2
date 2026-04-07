@@ -47,6 +47,10 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         return label
     }()
 
+    // Title leading constraints — swapped depending on whether the circle is visible
+    private var titleLeadingWithCircle: NSLayoutConstraint!
+    private var titleLeadingWithoutCircle: NSLayoutConstraint!
+
     var onPRBadgeTapped: ((URL) -> Void)?
     var onRetryWorkflowTapped: (() -> Void)?
     var onAutoMergeToggled: ((Bool) -> Void)?
@@ -72,20 +76,20 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
             taskIndexCircle.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             taskIndexCircle.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor)
         ])
-        // Re-pin titleLabel leading from contentView.leading → taskIndexCircle.trailing + 8
-        if let existingLeading = titleLabel.constraints.first(where: {
-            $0.firstAttribute == .leading && $0.secondItem === contentView
-        }) {
-            existingLeading.isActive = false
-        }
-        // Also deactivate XIB-set constraint on contentView itself
+
+        // Deactivate XIB-set titleLabel leading constraint
         for c in contentView.constraints {
             if (c.firstItem === titleLabel && c.firstAttribute == .leading) ||
                (c.secondItem === titleLabel && c.secondAttribute == .leading) {
                 c.isActive = false
             }
         }
-        titleLabel.leadingAnchor.constraint(equalTo: taskIndexCircle.trailingAnchor, constant: 8).isActive = true
+
+        // Build both leading variants — only one is active at a time
+        titleLeadingWithCircle    = titleLabel.leadingAnchor.constraint(equalTo: taskIndexCircle.trailingAnchor, constant: 8)
+        titleLeadingWithoutCircle = titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16)
+        // Default: circle hidden, title at original position
+        titleLeadingWithoutCircle.isActive = true
 
         titleLabel.textColor = .Sphinx.Text
         titleLabel.font = UIFont.systemFont(ofSize: 16, weight: .medium)
@@ -208,7 +212,16 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         onPRBadgeTapped?(url)
     }
 
-    func configure(with task: WorkspaceTask, isLastRow: Bool, index: Int = 1) {
+    func configure(with task: WorkspaceTask, isLastRow: Bool, index: Int = 1, showCircle: Bool = false) {
+        // Circle visibility + title leading constraint
+        taskIndexCircle.isHidden = !showCircle
+        if showCircle {
+            titleLeadingWithoutCircle.isActive = false
+            titleLeadingWithCircle.isActive = true
+        } else {
+            titleLeadingWithCircle.isActive = false
+            titleLeadingWithoutCircle.isActive = true
+        }
         taskIndexCircle.text = "\(index)"
         taskIndexCircle.backgroundColor = statusColor(for: task.status)
 
