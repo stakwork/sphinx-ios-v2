@@ -123,7 +123,6 @@ class ChatHeaderView: UIView {
         webAppButton.isHidden = true
         secondBrainButton.isHidden = true
         showThreadsButton.isHidden = true
-        agentCpuIconImageView.image = UIImage(systemName: "cpu")
         agentCpuIconImageView.isHidden = false
     }
     
