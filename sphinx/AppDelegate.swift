@@ -374,6 +374,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         if isUserLogged {
             syncDeviceId()
             feedsManager.restoreContentFeedStatusInBackground()
+            Task { @MainActor in
+                AIAgentManager.sharedInstance.createAgentContactAndChatIfNeeded()
+            }
         }
 
         takeUserToInitialVC(isUserLogged: UserData.sharedInstance.isSignupCompleted())
