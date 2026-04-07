@@ -407,6 +407,7 @@ extension DashboardRootViewController {
             self.shouldShowHeaderLoadingWheel = false
             
             self.refreshUnreadStatus()
+            AIAgentManager.sharedInstance.createAgentContactAndChatIfNeeded()
             
             if isRestore {
                 self.finishUserInfoSetup()
