@@ -19,6 +19,7 @@ class ChatListCollectionViewCell: UICollectionViewCell {
     @IBOutlet weak var dateLabel: UILabel!
     @IBOutlet weak var separatorLine: UIView!
     @IBOutlet weak var lockSign: UILabel!
+    @IBOutlet weak var cpuIcon: UILabel!
     @IBOutlet weak var scheduleIcon: UILabel!
     @IBOutlet weak var inviteIcon: UILabel!
     @IBOutlet weak var failedMessageIcon: UILabel!
@@ -113,6 +114,7 @@ extension ChatListCollectionViewCell {
         messageLabel.text = ""
         dateLabel.text = ""
         lockSign.isHidden = true
+        cpuIcon.isHidden = true
         muteImageView.isHidden = true
         inviteIcon.isHidden = true
         invitePriceContainer.isHidden = true
@@ -146,7 +148,9 @@ extension ChatListCollectionViewCell {
             
             nameLabel.text = chatListObject.getName()
             muteImageView.isHidden = (chatListObject.getChat()?.isMuted() ?? false) == false
-            lockSign.isHidden = chatListObject.isEncrypted() == false
+            let isAgentContact = chatListObject.getContact()?.isAgent == true
+            lockSign.isHidden = isAgentContact || chatListObject.isEncrypted() == false
+            cpuIcon.isHidden = !isAgentContact
         }
         
         renderLastMessage(for: chatListObject)

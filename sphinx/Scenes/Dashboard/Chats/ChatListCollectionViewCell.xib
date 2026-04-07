@@ -87,7 +87,13 @@
                                                 <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="17"/>
                                                 <nil key="highlightedColor"/>
                                             </label>
-                                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" horizontalCompressionResistancePriority="1000" text="lock" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="5mW-mI-rq1" userLabel="Lock Icon">
+                                            <label hidden="YES" opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" horizontalCompressionResistancePriority="1000" text="lock" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="5mW-mI-rq1" userLabel="Lock Icon">
+                                                <rect key="frame" x="224.5" y="3" width="15" height="15"/>
+                                                <fontDescription key="fontDescription" name="MaterialIcons-Regular" family="Material Icons" pointSize="15"/>
+                                                <color key="textColor" name="SecondaryText"/>
+                                                <nil key="highlightedColor"/>
+                                            </label>
+                                            <label hidden="YES" opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" horizontalCompressionResistancePriority="1000" text="memory" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="aG3-cP-uX7" userLabel="CPU Icon">
                                                 <rect key="frame" x="224.5" y="3" width="15" height="15"/>
                                                 <fontDescription key="fontDescription" name="MaterialIcons-Regular" family="Material Icons" pointSize="15"/>
                                                 <color key="textColor" name="SecondaryText"/>
@@ -245,6 +251,7 @@
                 <outlet property="invitePriceContainer" destination="eYG-mr-4p4" id="jRx-16-6IA"/>
                 <outlet property="invitePriceLabel" destination="Vlv-bF-u0Z" id="oKX-TH-Qkx"/>
                 <outlet property="lockSign" destination="5mW-mI-rq1" id="83T-yE-96S"/>
+                <outlet property="cpuIcon" destination="aG3-cP-uX7" id="bH4-dQ-vY8"/>
                 <outlet property="mentionsBadgeContainer" destination="8aw-VR-6KG" id="HCN-6o-dLY"/>
                 <outlet property="mentionsBadgeLabel" destination="GPz-N9-tGf" id="I41-Ul-QMJ"/>
                 <outlet property="messageLabel" destination="VVb-7i-7EF" id="slX-Wl-zy1"/>
