@@ -1589,16 +1589,18 @@ extension FeaturePlanViewController: CustomSegmentedControlDelegate {
 extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if tableView === tasksTableView {
-            // No diagram row when there are no tasks
-            return feature.allTasks.isEmpty ? 0 : feature.allTasks.count + 1
+            // Diagram row only shown when at least one task has a dependency
+            let hasDependencies = feature.allTasks.contains { !$0.dependsOnTaskIds.isEmpty }
+            return hasDependencies ? feature.allTasks.count + 1 : feature.allTasks.count
         }
         return displayMessages.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         if tableView === tasksTableView {
-            // Row 0: dependency diagram
-            if indexPath.row == 0 {
+            // Row 0: dependency diagram (only when at least one task has a dependency)
+            let hasDependencies = feature.allTasks.contains { !$0.dependsOnTaskIds.isEmpty }
+            if hasDependencies && indexPath.row == 0 {
                 guard let cell = tableView.dequeueReusableCell(
                     withIdentifier: TaskDependencyDiagramCell.reuseID,
                     for: indexPath
@@ -1609,8 +1611,8 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
                 return cell
             }
 
-            // Rows 1+: task cells (offset by 1)
-            let taskIndex = indexPath.row - 1
+            // Task rows: offset by 1 only when diagram row is present
+            let taskIndex = hasDependencies ? indexPath.row - 1 : indexPath.row
             guard let cell = tableView.dequeueReusableCell(
                 withIdentifier: WorkspaceTaskTableViewCell.reuseID,
                 for: indexPath
@@ -1734,8 +1736,10 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
         tableView.deselectRow(at: indexPath, animated: true)
 
         guard tableView === tasksTableView else { return }
-        guard indexPath.row > 0 else { return }
-        let task = feature.allTasks[indexPath.row - 1]
+        let hasDependencies = feature.allTasks.contains { !$0.dependsOnTaskIds.isEmpty }
+        guard !hasDependencies || indexPath.row > 0 else { return }
+        let taskIndex = hasDependencies ? indexPath.row - 1 : indexPath.row
+        let task = feature.allTasks[taskIndex]
         let chatVC = TaskChatViewController.instantiate(task: task, workspaceSlug: workspace.slug ?? "", workspaceId: workspace.id)
         navigationController?.pushViewController(chatVC, animated: true)
     }
@@ -1745,8 +1749,10 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
         trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath
     ) -> UISwipeActionsConfiguration? {
         guard tableView === tasksTableView else { return nil }
-        guard indexPath.row > 0 else { return nil }
-        let task = feature.allTasks[indexPath.row - 1]
+        let hasDependencies = feature.allTasks.contains { !$0.dependsOnTaskIds.isEmpty }
+        guard !hasDependencies || indexPath.row > 0 else { return nil }
+        let taskIndex = hasDependencies ? indexPath.row - 1 : indexPath.row
+        let task = feature.allTasks[taskIndex]
         let deleteAction = UIContextualAction(style: .destructive, title: "Delete") { [weak self] _, _, completionHandler in
             guard let self else { completionHandler(false); return }
             AlertHelper.showTwoOptionsAlert(
@@ -2004,11 +2010,11 @@ extension FeaturePlanViewController: HivePusherDelegate {
             $0.workflowStatus = workflowStatus
             $0.archived = archived
         }) else { return }
-        // Reload the task row (+1 offset) and the diagram row (0) so circle colours stay in sync
-        tasksTableView.reloadRows(at: [
-            IndexPath(row: 0, section: 0),
-            IndexPath(row: flatIndex + 1, section: 0)
-        ], with: .none)
+        // Reload the task row and diagram row (only when diagram is visible)
+        let hasDependencies = feature.allTasks.contains { !$0.dependsOnTaskIds.isEmpty }
+        var rowsToReload = [IndexPath(row: hasDependencies ? flatIndex + 1 : flatIndex, section: 0)]
+        if hasDependencies { rowsToReload.insert(IndexPath(row: 0, section: 0), at: 0) }
+        tasksTableView.reloadRows(at: rowsToReload, with: .none)
         updateProgressBar()
         updateTasksEmptyState()
     }
@@ -2038,7 +2044,8 @@ extension FeaturePlanViewController: HivePusherDelegate {
                   $0.prStatus = artifactStatus
                   $0.prUrl = prUrl
               }) else { return }
-        tasksTableView.reloadRows(at: [IndexPath(row: flatIndex + 1, section: 0)], with: .none)
+        let hasDeps1 = feature.allTasks.contains { !$0.dependsOnTaskIds.isEmpty }
+        tasksTableView.reloadRows(at: [IndexPath(row: hasDeps1 ? flatIndex + 1 : flatIndex, section: 0)], with: .none)
     }
 
     func featureTitleUpdated(featureId: String, newTitle: String) {
@@ -2049,7 +2056,8 @@ extension FeaturePlanViewController: HivePusherDelegate {
 
     func taskTitleUpdated(taskId: String, newTitle: String) {
         guard let flatIndex = feature.updateTask(taskId, apply: { $0.title = newTitle }) else { return }
-        tasksTableView.reloadRows(at: [IndexPath(row: flatIndex + 1, section: 0)], with: .none)
+        let hasDeps2 = feature.allTasks.contains { !$0.dependsOnTaskIds.isEmpty }
+        tasksTableView.reloadRows(at: [IndexPath(row: hasDeps2 ? flatIndex + 1 : flatIndex, section: 0)], with: .none)
     }
 
     func taskGenerationStatusChanged(status: String, featureId: String) {
