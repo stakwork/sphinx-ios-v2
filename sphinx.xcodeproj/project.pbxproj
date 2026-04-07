@@ -822,6 +822,9 @@
 		D2789CFCCA3E453295F15A2E /* HiveFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44EC6EC0EE1C4D6B8B5FADB2 /* HiveFeature.swift */; };
 		E5F6A7B8C9D0E1F2A3B4C5D6 /* TaskProgressTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6A7B8C9D0E1F2A3B4C5D6E7 /* TaskProgressTests.swift */; };
 		E63B82C04D5080098BD7DDBA /* WorkspaceTaskTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB71680A85C46EAF9E7DD25B /* WorkspaceTaskTableViewCell.swift */; };
+		BC156E8B9FC640DAB0D6E3A1 /* TaskDependencyDiagramCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1426B8E2ACCC4781BB119239 /* TaskDependencyDiagramCell.swift */; };
+		0F3FA12DF80F42E88DAC8AA9 /* TaskDependencyDiagramView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 101C5A13C28347DF905BBCEE /* TaskDependencyDiagramView.swift */; };
+		685B3ADA82094C84B9B72C3B /* TaskDependencyDiagramViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87516064474D4E7BB35029E5 /* TaskDependencyDiagramViewTests.swift */; };
 		E7F8A9B0C1D2E3F4A5B6C7D8 /* StakworkRun.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A9B0C1D2E3F4A5B6C7D8E9 /* StakworkRun.swift */; };
 		F1112586252F49F6B6476409 /* HiveAnyCableDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90FA80AA7B584833953F22B2 /* HiveAnyCableDelegate.swift */; };
 		F30884A72699123600CADDEB /* LeftMenuViewController+KarmaPurchaseUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = F30884A62699123600CADDEB /* LeftMenuViewController+KarmaPurchaseUtils.swift */; };
@@ -2189,6 +2192,9 @@
 		E6E60B7E071F2F4E54B84E16 /* WorkspaceTaskTableViewCell.xib */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = file.xib; path = WorkspaceTaskTableViewCell.xib; sourceTree = "<group>"; };
 		E83B28E7233A4D0D9AE288E2 /* WorkspaceViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceViewController.swift; sourceTree = "<group>"; };
 		EB71680A85C46EAF9E7DD25B /* WorkspaceTaskTableViewCell.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkspaceTaskTableViewCell.swift; sourceTree = "<group>"; };
+		1426B8E2ACCC4781BB119239 /* TaskDependencyDiagramCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskDependencyDiagramCell.swift; sourceTree = "<group>"; };
+		101C5A13C28347DF905BBCEE /* TaskDependencyDiagramView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskDependencyDiagramView.swift; sourceTree = "<group>"; };
+		87516064474D4E7BB35029E5 /* TaskDependencyDiagramViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskDependencyDiagramViewTests.swift; sourceTree = "<group>"; };
 		F30884A62699123600CADDEB /* LeftMenuViewController+KarmaPurchaseUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LeftMenuViewController+KarmaPurchaseUtils.swift"; sourceTree = "<group>"; };
 		F30884A82699181200CADDEB /* API+KarmaPurchaseUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+KarmaPurchaseUtils.swift"; sourceTree = "<group>"; };
 		F313024526BA62B200A1396E /* ChatsCollectionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatsCollectionViewController.swift; sourceTree = "<group>"; };
@@ -3716,6 +3722,7 @@
 				667BC9B05F7A484EB3EE6CB7 /* HiveAnyCableManagerTests.swift */,
 				D5E6F7A8B9CA4A01E2F3A4B5 /* WorkspaceTaskTableViewCellTests.swift */,
 				F6A7B8C9D0E1F2A3B4C5D6E7 /* TaskProgressTests.swift */,
+				87516064474D4E7BB35029E5 /* TaskDependencyDiagramViewTests.swift */,
 				H8I9J0K1L2M3N4O5P6Q7R8S9 /* WorkspaceTaskTests.swift */,
 				J0K1L2M3N4O5P6Q7R8S9T0U1 /* WorkspaceTasksViewControllerTests.swift */,
 				S4T5U6V7W8X9Y0Z1A2B3C4D5 /* PaginationControlViewTests.swift */,
@@ -4177,6 +4184,8 @@
 				47B9CBFC2F460C7B007527B4 /* WorkspaceTableViewCell.xib */,
 				EB71680A85C46EAF9E7DD25B /* WorkspaceTaskTableViewCell.swift */,
 				E6E60B7E071F2F4E54B84E16 /* WorkspaceTaskTableViewCell.xib */,
+				1426B8E2ACCC4781BB119239 /* TaskDependencyDiagramCell.swift */,
+				101C5A13C28347DF905BBCEE /* TaskDependencyDiagramView.swift */,
 				47B9CC092F4E0C7B007527B4 /* HiveConfigurationViewController.swift */,
 				A8F00239BAA5413399F184E6 /* WorkflowStatus.swift */,
 				E5BD9804E22A4372A9E191D5 /* WorkflowStatusView.swift */,
@@ -6262,6 +6271,8 @@
 				47DAABCB24913E6E00EF38B0 /* SwipableReplyCell.swift in Sources */,
 				475BDCB7232AC1E800C5BBD6 /* PaymentInvoiceView.swift in Sources */,
 				E63B82C04D5080098BD7DDBA /* WorkspaceTaskTableViewCell.swift in Sources */,
+				BC156E8B9FC640DAB0D6E3A1 /* TaskDependencyDiagramCell.swift in Sources */,
+				0F3FA12DF80F42E88DAC8AA9 /* TaskDependencyDiagramView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -6279,6 +6290,7 @@
 				8846460B606C49A09D11D185 /* HiveAnyCableManagerTests.swift in Sources */,
 				C4D5E6F7A8B949C0D1E2F3A4 /* WorkspaceTaskTableViewCellTests.swift in Sources */,
 				E5F6A7B8C9D0E1F2A3B4C5D6 /* TaskProgressTests.swift in Sources */,
+				685B3ADA82094C84B9B72C3B /* TaskDependencyDiagramViewTests.swift in Sources */,
 				G7H8I9J0K1L2M3N4O5P6Q7R8 /* WorkspaceTaskTests.swift in Sources */,
 				I9J0K1L2M3N4O5P6Q7R8S9T0 /* WorkspaceTasksViewControllerTests.swift in Sources */,
 				R3S4T5U6V7W8X9Y0Z1A2B3C4 /* PaginationControlViewTests.swift in Sources */,
