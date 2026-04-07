@@ -62,3 +62,13 @@
 "Uah-nc-EPN.text" = "フィードのレコメンデーション"; // Fīdo no rekomen'dēshon
 
 "mU1-dY-IRh.text" = "自動ダウンロードされたPodcastエピソード";
+
+"AIg-lbl-001.text" = "AIエージェントを設定";
+
+"SAI-title-lbl.text" = "AIエージェントを設定";
+
+"SAI-prov-lbl.text" = "プロバイダー";
+
+"SAI-key-lbl.text" = "APIキー";
+
+"SAI-name-lbl.text" = "エージェント名";

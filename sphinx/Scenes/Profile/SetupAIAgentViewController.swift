@@ -47,11 +47,13 @@ class SetupAIAgentViewController: UIViewController {
     
     private func configureView() {
         // Pre-populate fields
-        providerTextField.text = userData.getAIAgentValue(with: .aiAgentProvider)
-            ?? AIAgentManager.AIProvider.anthropic.rawValue
+        providerTextField.text = userData.getAIAgentValue(with: .aiAgentProvider) ?? AIAgentManager.AIProvider.anthropic.rawValue
+        
+        apiKeyTextField.delegate = self
         apiKeyTextField.text = userData.getAIAgentValue(with: .aiAgentApiKey) ?? ""
-        agentNameTextField.text = UserContact.getContactWith(id: AIAgentManager.agentLocalId)?.nickname
-            ?? "Sphinx Agent"
+        
+        agentNameTextField.delegate = self
+        agentNameTextField.text = UserContact.getContactWith(id: AIAgentManager.agentLocalId)?.nickname ?? "Sphinx Agent"
         
         updateConfirmButton()
         
@@ -112,5 +114,15 @@ class SetupAIAgentViewController: UIViewController {
         }
         
         navigationController?.popViewController(animated: true)
+    }
+}
+
+extension SetupAIAgentViewController: UITextFieldDelegate {
+    
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        
+        view.endEditing(true)
+        
+        return true
     }
 }

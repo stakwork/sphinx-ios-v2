@@ -22,6 +22,7 @@
 		4701461F2A3F939600A00DF8 /* NewChatViewModel+MessageMenuActionsExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4701461E2A3F939600A00DF8 /* NewChatViewModel+MessageMenuActionsExtension.swift */; };
 		470146212A3F93B200A00DF8 /* NewChatViewModel+AttachmentsExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 470146202A3F93B200A00DF8 /* NewChatViewModel+AttachmentsExtension.swift */; };
 		470146232A3F93DA00A00DF8 /* NewChatViewController+AttachmentsExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 470146222A3F93DA00A00DF8 /* NewChatViewController+AttachmentsExtension.swift */; };
+		D30E5DF5BD6E4A209227EEB5 /* NewChatViewController+AgentExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 009A40E65F444529AAD5F256 /* NewChatViewController+AgentExtension.swift */; };
 		470146272A3F9AB500A00DF8 /* PaymentsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 470146262A3F9AB500A00DF8 /* PaymentsViewModel.swift */; };
 		4701462B2A3FC0A900A00DF8 /* NewChatTableDataSource+AttachmentsExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4701462A2A3FC0A900A00DF8 /* NewChatTableDataSource+AttachmentsExtension.swift */; };
 		47018F8127CFB7CE00797E0B /* pause_animation.json in Resources */ = {isa = PBXBuildFile; fileRef = 47018F8027CFB7CD00797E0B /* pause_animation.json */; };
@@ -1192,6 +1193,7 @@
 		4701461E2A3F939600A00DF8 /* NewChatViewModel+MessageMenuActionsExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NewChatViewModel+MessageMenuActionsExtension.swift"; sourceTree = "<group>"; };
 		470146202A3F93B200A00DF8 /* NewChatViewModel+AttachmentsExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NewChatViewModel+AttachmentsExtension.swift"; sourceTree = "<group>"; };
 		470146222A3F93DA00A00DF8 /* NewChatViewController+AttachmentsExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NewChatViewController+AttachmentsExtension.swift"; sourceTree = "<group>"; };
+		009A40E65F444529AAD5F256 /* NewChatViewController+AgentExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NewChatViewController+AgentExtension.swift"; sourceTree = "<group>"; };
 		470146262A3F9AB500A00DF8 /* PaymentsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentsViewModel.swift; sourceTree = "<group>"; };
 		4701462A2A3FC0A900A00DF8 /* NewChatTableDataSource+AttachmentsExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NewChatTableDataSource+AttachmentsExtension.swift"; sourceTree = "<group>"; };
 		47018F8027CFB7CD00797E0B /* pause_animation.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = pause_animation.json; sourceTree = "<group>"; };
@@ -4337,6 +4339,7 @@
 				472092CB2A27985800468796 /* NewChatViewController+TableViewExtension.swift */,
 				470146152A3B962E00A00DF8 /* NewChatViewController+MessageMenuDelegate.swift */,
 				470146222A3F93DA00A00DF8 /* NewChatViewController+AttachmentsExtension.swift */,
+			009A40E65F444529AAD5F256 /* NewChatViewController+AgentExtension.swift */,
 			);
 			path = "New Chat View Controller";
 			sourceTree = "<group>";
@@ -5801,6 +5804,7 @@
 				CE51F350298870BF00ABBACB /* MemberBadgeDetailVM.swift in Sources */,
 				4705D39F2799C339009C0729 /* UITextField.swift in Sources */,
 				470146232A3F93DA00A00DF8 /* NewChatViewController+AttachmentsExtension.swift in Sources */,
+			D30E5DF5BD6E4A209227EEB5 /* NewChatViewController+AgentExtension.swift in Sources */,
 				47FA727C2A32373900FB4535 /* NewOnlyTextMessageTableViewCell.swift in Sources */,
 				F32A697926D515AB0004B8B3 /* PodcastFeed+Computeds.swift in Sources */,
 				CE3133B32977747E00E91E3A /* BadgeAdminManagementListVC.swift in Sources */,
