@@ -9,7 +9,7 @@ import CoreData
 import SwiftyJSON
 
 @objc(ContentFeed)
-public class ContentFeed: NSManagedObject {
+public class ContentFeed: NSManagedObject, @unchecked Sendable {
     
     public static func createObjectFrom(
         json: JSON,

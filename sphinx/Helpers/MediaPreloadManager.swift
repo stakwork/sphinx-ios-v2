@@ -65,7 +65,7 @@ class MediaPreloadManager: @unchecked Sendable {
             // Perform the actual load
             self.performImageLoad(
                 url: url,
-                message: message,
+                messageId: messageId,
                 mediaKey: mediaKey,
                 urlString: urlString
             )
@@ -75,11 +75,14 @@ class MediaPreloadManager: @unchecked Sendable {
     @MainActor
     private func performImageLoad(
         url: URL,
-        message: TransactionMessage,
+        messageId: Int,
         mediaKey: String?,
         urlString: String
     ) {
-        let messageId = message.id
+        guard let message = TransactionMessage.getMessageWith(id: messageId) else {
+            notifyImageError(for: urlString)
+            return
+        }
         let isGif = message.isGif()
 
         // Check if expired
@@ -206,19 +209,24 @@ class MediaPreloadManager: @unchecked Sendable {
 
             self.performVideoLoad(
                 url: url,
-                message: message,
+                messageId: messageId,
                 mediaKey: mediaKey,
                 urlString: urlString
             )
         }
     }
 
+    @MainActor
     private func performVideoLoad(
         url: URL,
-        message: TransactionMessage,
+        messageId: Int,
         mediaKey: String?,
         urlString: String
     ) {
+        guard let message = TransactionMessage.getMessageWith(id: messageId) else {
+            notifyVideoError(for: urlString)
+            return
+        }
         if message.isMediaExpired() {
             MediaLoader.clearImageCacheFor(url: urlString)
             MediaLoader.clearMediaDataCacheFor(url: urlString)
@@ -346,22 +354,25 @@ class MediaPreloadManager: @unchecked Sendable {
             self.performFileLoad(
                 url: url,
                 isPdf: isPdf,
-                message: message,
+                messageId: messageId,
                 mediaKey: mediaKey,
                 urlString: urlString
             )
         }
     }
 
+    @MainActor
     private func performFileLoad(
         url: URL,
         isPdf: Bool,
-        message: TransactionMessage,
+        messageId: Int,
         mediaKey: String?,
         urlString: String
     ) {
-        let messageId = message.id
-
+        guard let message = TransactionMessage.getMessageWith(id: messageId) else {
+            notifyFileError(for: urlString)
+            return
+        }
         if message.isMediaExpired() {
             MediaLoader.clearMediaDataCacheFor(url: urlString)
             notifyFileError(for: urlString)

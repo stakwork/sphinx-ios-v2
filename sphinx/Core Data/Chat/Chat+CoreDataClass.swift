@@ -885,12 +885,17 @@ public class Chat: NSManagedObject, @unchecked Sendable {
                     self.updateChatFromTribesInfo()
                     
                     if let feedUrl = self.tribeInfo?.feedUrl, !feedUrl.isEmpty {
-                        ContentFeed.fetchChatFeedContentInBackground(feedUrl: feedUrl, chatId: self.id) { feedId in
-                            if let feedId = feedId, let feed = ContentFeed.getFeedById(feedId: feedId) {
-                                self.contentFeed = feed
-                                self.saveChat()
+                        let myChatId = self.id
+                        ContentFeed.fetchChatFeedContentInBackground(feedUrl: feedUrl, chatId: myChatId) { feedId in
+                            Task { @MainActor in
+                                if let feedId = feedId,
+                                   let feed = ContentFeed.getFeedById(feedId: feedId),
+                                   let chat = Chat.getChatWith(id: myChatId) {
+                                    chat.contentFeed = feed
+                                    chat.saveChat()
+                                }
+                                completion()
                             }
-                            completion()
                         }
                         return
                     } else if let existingFeed = self.contentFeed {
