@@ -39,6 +39,7 @@ class ProfileViewController: NewKeyboardHandlerViewController {
     @IBOutlet weak var exportKeyButton: UIButton!
     @IBOutlet weak var changePINContainerView: UIView!
     @IBOutlet weak var setGithubPATContainerView: UIView!
+    @IBOutlet weak var configureAIAgentContainerView: UIView!
     @IBOutlet weak var uploadingLabel: UILabel!
     @IBOutlet weak var uploadLoadingWheel: UIActivityIndicatorView!
     @IBOutlet weak var contentScrollView: UIScrollView!
@@ -132,6 +133,7 @@ class ProfileViewController: NewKeyboardHandlerViewController {
         serversContainer.addShadow(location: VerticalLocation.center, color: UIColor.black, opacity: 0.2, radius: 2.0)
         exportKeysContainer.addShadow(location: VerticalLocation.center, color: UIColor.black, opacity: 0.2, radius: 2.0)
         changePINContainerView.addShadow(location: VerticalLocation.center, color: UIColor.black, opacity: 0.2, radius: 2.0)
+        configureAIAgentContainerView.addShadow(location: VerticalLocation.center, color: UIColor.black, opacity: 0.2, radius: 2.0)
         
         setStatusBarColor()
     }
@@ -402,6 +404,11 @@ class ProfileViewController: NewKeyboardHandlerViewController {
             })
         }
         self.present(setPinVC, animated: true)
+    }
+    
+    @IBAction func configureAIAgentTapped() {
+        let vc = SetupAIAgentViewController.instantiate()
+        navigationController?.pushViewController(vc, animated: true)
     }
     
     @IBAction func setGithubPATButtonTouched() {
