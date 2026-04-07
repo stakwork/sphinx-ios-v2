@@ -29,117 +29,17 @@ extension NewOnlyTextMessageTableViewCell {
             messageLabel.attributedText = nil
             messageLabel.text = nil
             
-            if messageContent.hasNoMarkdown && searchingTerm == nil {
-                messageLabel.text = messageContent.text
-                messageLabel.font = UIFont.getMessageFont()
-            } else {
+            let rendered = NSMutableAttributedString(
+                attributedString: ChatHelper.markdownRenderer.render(messageContent.text ?? "")
+            )
+            if let term = searchingTerm, !term.isEmpty {
                 let messageC = messageContent.text ?? ""
-                
-                let attributedString = NSMutableAttributedString(string: messageC)
-                attributedString.addAttributes(
-                    [
-                        NSAttributedString.Key.font: UIFont.getMessageFont()
-                    ], range: messageC.nsRange
-                )
-                
-                ///Highlighted text formatting
-                let highlightedNsRanges = messageContent.highlightedMatches.map {
-                    return $0.range
-                }
-                
-                for nsRange in highlightedNsRanges {
-                    
-                    let adaptedRange = NSRange(
-                        location: nsRange.location,
-                        length: nsRange.length
-                    )
-                    
-                    attributedString.addAttributes(
-                        [
-                            NSAttributedString.Key.foregroundColor: UIColor.Sphinx.HighlightedText,
-                            NSAttributedString.Key.backgroundColor: UIColor.Sphinx.HighlightedTextBackground,
-                            NSAttributedString.Key.font: UIFont.getHighlightedMessageFont()
-                        ],
-                        range: adaptedRange
-                    )
-                }
-                
-                ///Bold text formatting
-                let boldNsRanges = messageContent.boldMatches.map {
-                    return $0.range
-                }
-                
-                for nsRange in boldNsRanges {
-                    
-                    let adaptedRange = NSRange(
-                        location: nsRange.location,
-                        length: nsRange.length
-                    )
-                    
-                    attributedString.addAttributes(
-                        [
-                            NSAttributedString.Key.font: UIFont.getMessageBoldFont()
-                        ],
-                        range: adaptedRange
-                    )
-                }
-                
-                ///Links formatting
-                for match in messageContent.linkMatches {
-                    
-                    attributedString.addAttributes(
-                        [
-                            NSAttributedString.Key.foregroundColor: UIColor.Sphinx.PrimaryBlue,
-                            NSAttributedString.Key.underlineStyle: NSUnderlineStyle.single.rawValue,
-                            NSAttributedString.Key.font: UIFont.getMessageFont()
-                        ],
-                        range: match.range
-                    )
-                    
-                    urlRanges.append(match.range)
-                }
-                
-                ///Markdown Links formatting
-                for (textCheckingResult, _, link, _) in messageContent.linkMarkdownMatches {
-                    
-                    let nsRange = textCheckingResult.range
-                    
-                    if let url = URL(string: link) {
-                        attributedString.addAttributes(
-                            [
-                                NSAttributedString.Key.link: url,
-                                NSAttributedString.Key.foregroundColor: UIColor.Sphinx.PrimaryBlue,
-                                NSAttributedString.Key.underlineStyle: NSUnderlineStyle.single.rawValue,
-                                NSAttributedString.Key.font: UIFont.getMessageFont()
-                            ],
-                            range: nsRange
-                        )
-                    }
-                    
-                    urlRanges.append(nsRange)
-                }
-                
-                ///Search term formatting
-                let term = searchingTerm ?? ""
-                let searchingTermRange = (messageC.lowercased() as NSString).range(of: term.lowercased())
-                attributedString.addAttributes(
-                    [
-                        NSAttributedString.Key.backgroundColor: UIColor.Sphinx.PrimaryGreen
-                    ], range: searchingTermRange
-                )
-                
-                messageLabel.attributedText = attributedString
-                messageLabel.isUserInteractionEnabled = true
+                let searchRange = (messageC.lowercased() as NSString).range(of: term.lowercased())
+                rendered.addAttributes([.backgroundColor: UIColor.Sphinx.PrimaryGreen], range: searchRange)
             }
+            messageLabel.attributedText = rendered
+            messageLabel.isUserInteractionEnabled = true
         }
-        
-        if urlRanges.isEmpty {
-            messageLabel.removeGestureRecognizer(tap)
-        } else {
-            messageLabel.addGestureRecognizer(tap)
-        }
-        
-        urlRanges = ChatHelper.removeDuplicatedContainedFrom(urlRanges: urlRanges)
     }
     
     func configureWith(

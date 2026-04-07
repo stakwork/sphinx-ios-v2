@@ -15,6 +15,7 @@ struct MarkdownStyle {
     var codeBackground: UIColor  = UIColor(red: 0, green: 0, blue: 0, alpha: 0.25)
     var codeForeground: UIColor  = UIColor.Sphinx.Text.withAlphaComponent(0.75)
     var linkColor: UIColor       = .Sphinx.PrimaryBlue
+    var mentionColor: UIColor    = .Sphinx.PrimaryBlue
     var quoteColor: UIColor      = .Sphinx.SecondaryText
     var quoteBarColor: UIColor   = .Sphinx.LightDivider
     var baseFontSize: CGFloat    = 15
@@ -224,7 +225,7 @@ final class MarkdownRenderer {
         let result = NSMutableAttributedString(attributedString: inner)
         result.addAttributes([
             .foregroundColor: style.quoteColor,
-            .font: UIFont.italicSystemFont(ofSize: style.baseFontSize)
+            .font: style.italicFont
         ], range: NSRange(location: 0, length: result.length))
         // Prepend "│ " indicator
         let prefix = NSAttributedString(string: "┃ ", attributes: [
@@ -381,6 +382,17 @@ final class MarkdownRenderer {
                 ]
                 if let url = URL(string: urlStr) { linkAttrs[.link] = url }
                 result.append(NSAttributedString(string: urlStr, attributes: linkAttrs))
+                s = String(s[range.upperBound...])
+                continue
+            }
+            // Mention: @alias
+            if let range = firstRange(in: s, pattern: #"\B@[^\s]+"#) {
+                appendLiteral(s[s.startIndex..<range.lowerBound], attrs: base, to: result)
+                let mention = String(s[range])
+                result.append(NSAttributedString(string: mention, attributes: [
+                    .font: font,
+                    .foregroundColor: style.mentionColor
+                ]))
                 s = String(s[range.upperBound...])
                 continue
             }
