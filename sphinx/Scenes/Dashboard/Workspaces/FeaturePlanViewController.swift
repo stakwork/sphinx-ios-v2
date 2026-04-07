@@ -771,11 +771,16 @@ class FeaturePlanViewController: UIViewController {
         tasksTableView.translatesAutoresizingMaskIntoConstraints = false
         tasksTableView.backgroundColor = UIColor.Sphinx.Body
         tasksTableView.separatorStyle = .none
-        tasksTableView.rowHeight = 125
+        tasksTableView.rowHeight = UITableView.automaticDimension
+        tasksTableView.estimatedRowHeight = 200
         tasksTableView.contentInset = UIEdgeInsets(top: 12, left: 0, bottom: 0, right: 0)
         tasksTableView.register(
             WorkspaceTaskTableViewCell.nib,
             forCellReuseIdentifier: WorkspaceTaskTableViewCell.reuseID
+        )
+        tasksTableView.register(
+            TaskDependencyDiagramCell.self,
+            forCellReuseIdentifier: TaskDependencyDiagramCell.reuseID
         )
         // Delegate/dataSource wired in extension below
         tasksTableView.delegate = self
@@ -1584,13 +1589,27 @@ extension FeaturePlanViewController: CustomSegmentedControlDelegate {
 extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if tableView === tasksTableView {
-            return feature.allTasks.count
+            return feature.allTasks.count + 1  // +1 for dependency diagram row
         }
         return displayMessages.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         if tableView === tasksTableView {
+            // Row 0: dependency diagram
+            if indexPath.row == 0 {
+                guard let cell = tableView.dequeueReusableCell(
+                    withIdentifier: TaskDependencyDiagramCell.reuseID,
+                    for: indexPath
+                ) as? TaskDependencyDiagramCell else {
+                    return UITableViewCell()
+                }
+                cell.configure(tasks: feature.allTasks)
+                return cell
+            }
+
+            // Rows 1+: task cells (offset by 1)
+            let taskIndex = indexPath.row - 1
             guard let cell = tableView.dequeueReusableCell(
                 withIdentifier: WorkspaceTaskTableViewCell.reuseID,
                 for: indexPath
@@ -1598,13 +1617,13 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
                 return UITableViewCell()
             }
             let tasks = feature.allTasks
-            let task = tasks[indexPath.row]
-            let isLast = indexPath.row == tasks.count - 1
-            cell.configure(with: task, isLastRow: isLast)
+            let task = tasks[taskIndex]
+            let isLast = taskIndex == tasks.count - 1
+            cell.configure(with: task, isLastRow: isLast, index: indexPath.row)
             cell.onPRBadgeTapped = { url in UIApplication.shared.open(url) }
             cell.onRetryWorkflowTapped = { [weak self] in
                 guard let self else { return }
-                let t = self.feature.allTasks[indexPath.row]
+                let t = self.feature.allTasks[taskIndex]
                 API.sharedInstance.retryTaskWorkflowWithAuth(taskId: t.id, callback: {}, errorCallback: {})
             }
             cell.onAutoMergeToggled = { [weak self] isOn in
@@ -1714,7 +1733,8 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
         tableView.deselectRow(at: indexPath, animated: true)
 
         guard tableView === tasksTableView else { return }
-        let task = feature.allTasks[indexPath.row]
+        guard indexPath.row > 0 else { return }
+        let task = feature.allTasks[indexPath.row - 1]
         let chatVC = TaskChatViewController.instantiate(task: task, workspaceSlug: workspace.slug ?? "", workspaceId: workspace.id)
         navigationController?.pushViewController(chatVC, animated: true)
     }
@@ -1724,7 +1744,8 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
         trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath
     ) -> UISwipeActionsConfiguration? {
         guard tableView === tasksTableView else { return nil }
-        let task = feature.allTasks[indexPath.row]
+        guard indexPath.row > 0 else { return nil }
+        let task = feature.allTasks[indexPath.row - 1]
         let deleteAction = UIContextualAction(style: .destructive, title: "Delete") { [weak self] _, _, completionHandler in
             guard let self else { completionHandler(false); return }
             AlertHelper.showTwoOptionsAlert(
@@ -1982,7 +2003,7 @@ extension FeaturePlanViewController: HivePusherDelegate {
             $0.workflowStatus = workflowStatus
             $0.archived = archived
         }) else { return }
-        tasksTableView.reloadRows(at: [IndexPath(row: flatIndex, section: 0)], with: .none)
+        tasksTableView.reloadRows(at: [IndexPath(row: flatIndex + 1, section: 0)], with: .none)
         updateProgressBar()
         updateTasksEmptyState()
     }
@@ -2012,7 +2033,7 @@ extension FeaturePlanViewController: HivePusherDelegate {
                   $0.prStatus = artifactStatus
                   $0.prUrl = prUrl
               }) else { return }
-        tasksTableView.reloadRows(at: [IndexPath(row: flatIndex, section: 0)], with: .none)
+        tasksTableView.reloadRows(at: [IndexPath(row: flatIndex + 1, section: 0)], with: .none)
     }
 
     func featureTitleUpdated(featureId: String, newTitle: String) {
@@ -2023,7 +2044,7 @@ extension FeaturePlanViewController: HivePusherDelegate {
 
     func taskTitleUpdated(taskId: String, newTitle: String) {
         guard let flatIndex = feature.updateTask(taskId, apply: { $0.title = newTitle }) else { return }
-        tasksTableView.reloadRows(at: [IndexPath(row: flatIndex, section: 0)], with: .none)
+        tasksTableView.reloadRows(at: [IndexPath(row: flatIndex + 1, section: 0)], with: .none)
     }
 
     func taskGenerationStatusChanged(status: String, featureId: String) {

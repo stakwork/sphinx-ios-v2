@@ -33,6 +33,20 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         return label
     }()
 
+    // Programmatic numbered status circle
+    private(set) var taskIndexCircle: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.textAlignment = .center
+        label.textColor = .white
+        label.font = UIFont(name: "Roboto-Medium", size: 12) ?? UIFont.systemFont(ofSize: 12, weight: .medium)
+        label.layer.cornerRadius = 14
+        label.clipsToBounds = true
+        label.widthAnchor.constraint(equalToConstant: 28).isActive = true
+        label.heightAnchor.constraint(equalToConstant: 28).isActive = true
+        return label
+    }()
+
     var onPRBadgeTapped: ((URL) -> Void)?
     var onRetryWorkflowTapped: (() -> Void)?
     var onAutoMergeToggled: ((Bool) -> Void)?
@@ -51,6 +65,27 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
     private func setupCell() {
         backgroundColor = .Sphinx.Body
         contentView.backgroundColor = .Sphinx.Body
+
+        // Add and constrain the numbered status circle
+        contentView.addSubview(taskIndexCircle)
+        NSLayoutConstraint.activate([
+            taskIndexCircle.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            taskIndexCircle.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor)
+        ])
+        // Re-pin titleLabel leading from contentView.leading → taskIndexCircle.trailing + 8
+        if let existingLeading = titleLabel.constraints.first(where: {
+            $0.firstAttribute == .leading && $0.secondItem === contentView
+        }) {
+            existingLeading.isActive = false
+        }
+        // Also deactivate XIB-set constraint on contentView itself
+        for c in contentView.constraints {
+            if (c.firstItem === titleLabel && c.firstAttribute == .leading) ||
+               (c.secondItem === titleLabel && c.secondAttribute == .leading) {
+                c.isActive = false
+            }
+        }
+        titleLabel.leadingAnchor.constraint(equalTo: taskIndexCircle.trailingAnchor, constant: 8).isActive = true
 
         titleLabel.textColor = .Sphinx.Text
         titleLabel.font = UIFont.systemFont(ofSize: 16, weight: .medium)
@@ -173,7 +208,10 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         onPRBadgeTapped?(url)
     }
 
-    func configure(with task: WorkspaceTask, isLastRow: Bool) {
+    func configure(with task: WorkspaceTask, isLastRow: Bool, index: Int = 1) {
+        taskIndexCircle.text = "\(index)"
+        taskIndexCircle.backgroundColor = statusColor(for: task.status)
+
         let isMerged = task.prStatus == "MERGED" || task.prStatus == "DONE"
 
         if isMerged {
@@ -303,7 +341,7 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         }
     }
 
-    private func statusColor(for status: String) -> UIColor {
+    func statusColor(for status: String) -> UIColor {
         switch status {
         case "DONE":
             return .Sphinx.GreenBorder
