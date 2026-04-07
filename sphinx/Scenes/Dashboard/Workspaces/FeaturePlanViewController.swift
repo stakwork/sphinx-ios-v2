@@ -105,6 +105,8 @@ class FeaturePlanViewController: UIViewController {
     private var planTextView: UITextView!
     private var generateTasksButton: UIButton!
     private var retryButton: UIButton!
+    /// Dynamic bottom constraint for tasksTableView — switches between safe area and visible button.
+    private var tasksTableViewBottomConstraint: NSLayoutConstraint!
     /// Switches between pinning planTextView bottom to the button (button visible)
     /// or to the container bottom (button hidden).
     private var planTextViewBottomToButton: NSLayoutConstraint!
@@ -829,6 +831,10 @@ class FeaturePlanViewController: UIViewController {
         tasksRetryButton.addTarget(self, action: #selector(retryButtonTouched), for: .touchUpInside)
         tasksContainerView.addSubview(tasksRetryButton)
 
+        // buttons all start hidden — pin table directly to safe area
+        tasksTableViewBottomConstraint = tasksTableView.bottomAnchor
+            .constraint(equalTo: tasksContainerView.safeAreaLayoutGuide.bottomAnchor)
+
         NSLayoutConstraint.activate([
             tasksContainerView.topAnchor.constraint(equalTo: topSegmentedControl.bottomAnchor),
             tasksContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -850,7 +856,7 @@ class FeaturePlanViewController: UIViewController {
             tasksTableView.topAnchor.constraint(equalTo: poolStatusLabel.bottomAnchor, constant: 4),
             tasksTableView.leadingAnchor.constraint(equalTo: tasksContainerView.leadingAnchor),
             tasksTableView.trailingAnchor.constraint(equalTo: tasksContainerView.trailingAnchor),
-            tasksTableView.bottomAnchor.constraint(equalTo: startTasksButton.topAnchor, constant: -8),
+            tasksTableViewBottomConstraint,
 
             // Start Tasks button pinned to bottom
             startTasksButton.leadingAnchor.constraint(equalTo: tasksContainerView.leadingAnchor, constant: 32),
@@ -1060,9 +1066,24 @@ class FeaturePlanViewController: UIViewController {
         taskProgressBarView.setDisabled(feature.allTasks.isEmpty)
     }
 
+    private func updateTasksTableViewBottomConstraint() {
+        let activeButton: UIButton? = [startTasksButton, tasksGenerateButton, tasksRetryButton]
+            .first(where: { !$0.isHidden })
+        tasksTableViewBottomConstraint.isActive = false
+        if let btn = activeButton {
+            tasksTableViewBottomConstraint = tasksTableView.bottomAnchor
+                .constraint(equalTo: btn.topAnchor, constant: -8)
+        } else {
+            tasksTableViewBottomConstraint = tasksTableView.bottomAnchor
+                .constraint(equalTo: tasksContainerView.safeAreaLayoutGuide.bottomAnchor)
+        }
+        tasksTableViewBottomConstraint.isActive = true
+    }
+
     private func updateStartTasksButton() {
         let startable = feature.allTasks.filter { $0.assigneeId == nil && $0.status == "TODO" }
         startTasksButton.isHidden = startable.isEmpty
+        updateTasksTableViewBottomConstraint()
         let n = startable.count
         startTasksButton.setTitle("Start \(n) task\(n == 1 ? "" : "s")", for: .normal)
     }
@@ -1084,13 +1105,17 @@ class FeaturePlanViewController: UIViewController {
 
     @objc private func startTasksButtonTouched() {
         startTasksButton.isHidden = true
+        updateTasksTableViewBottomConstraint()
         API.sharedInstance.assignAllFeatureTasksWithAuth(
             featureId: feature.id,
             callback: { [weak self] in
                 DispatchQueue.main.async { self?.fetchPoolStatus() }
             },
             errorCallback: { [weak self] in
-                DispatchQueue.main.async { self?.startTasksButton.isHidden = false }
+                DispatchQueue.main.async {
+                    self?.startTasksButton.isHidden = false
+                    self?.updateTasksTableViewBottomConstraint()
+                }
             }
         )
     }
@@ -1169,6 +1194,7 @@ class FeaturePlanViewController: UIViewController {
             // TASKS tab — hide generate/retry; startTasksButton driven separately by updateStartTasksButton()
             tasksGenerateButton.isHidden = true
             tasksRetryButton.isHidden = true
+            updateTasksTableViewBottomConstraint()
         } else if isGeneratingTasks {
             // PLAN tab
             generateTasksButton.isHidden = false
@@ -1182,6 +1208,7 @@ class FeaturePlanViewController: UIViewController {
             tasksGenerateButton.alpha = 0.5
             tasksRetryButton.isHidden = true
             startTasksButton.isHidden = true
+            updateTasksTableViewBottomConstraint()
         } else if lastGenerationFailed {
             // PLAN tab
             generateTasksButton.isHidden = true
@@ -1191,6 +1218,7 @@ class FeaturePlanViewController: UIViewController {
             tasksGenerateButton.isHidden = true
             tasksRetryButton.isHidden = false
             startTasksButton.isHidden = true
+            updateTasksTableViewBottomConstraint()
         } else {
             let hasArchitecture = !(feature.architecture ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             // PLAN tab
@@ -1206,6 +1234,7 @@ class FeaturePlanViewController: UIViewController {
             tasksGenerateButton.alpha = 1.0
             tasksRetryButton.isHidden = true
             startTasksButton.isHidden = true
+            updateTasksTableViewBottomConstraint()
         }
     }
     
