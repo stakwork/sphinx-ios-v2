@@ -1605,7 +1605,13 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
             cell.onRetryWorkflowTapped = { [weak self] in
                 guard let self else { return }
                 let t = self.feature.allTasks[indexPath.row]
-                API.sharedInstance.retryTaskWorkflowWithAuth(taskId: t.id, callback: {}, errorCallback: {})
+                API.sharedInstance.retryTaskWorkflowWithAuth(taskId: t.id, callback: { [weak self] in
+                    DispatchQueue.main.async {
+                        guard let self else { return }
+                        _ = self.feature.updateTask(t.id) { $0.workflowStatus = "IN_PROGRESS" }
+                        self.tasksTableView.reloadRows(at: [indexPath], with: .none)
+                    }
+                }, errorCallback: {})
             }
             cell.onAutoMergeToggled = { [weak self] isOn in
                 guard let self else { return }
