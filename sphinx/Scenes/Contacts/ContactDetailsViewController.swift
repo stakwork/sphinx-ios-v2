@@ -68,6 +68,17 @@ class ContactDetailsViewController: UIViewController {
         } else {
             timezoneSharingView.configure(enabled: false, identifier: nil)
         }
+        
+        configureForAgentIfNeeded()
+    }
+    
+    private func configureForAgentIfNeeded() {
+        guard contact.isAgent else { return }
+        // publicKeyLabel lives in stackView (2jd-iM-FaC) inside outer stackView (rEN-fs-VCA)
+        // Hiding the outer stack removes pubkey row, routeHint row, and their 1pt separators
+        publicKeyLabel.superview?.superview?.isHidden = true
+        timezoneSharingView.isHidden = true
+        removeContactButtonBack.isHidden = true
     }
     
     @IBAction func contactAvatarButtonTapped() {
