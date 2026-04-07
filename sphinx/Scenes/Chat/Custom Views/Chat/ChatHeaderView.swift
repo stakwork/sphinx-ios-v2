@@ -53,7 +53,7 @@ class ChatHeaderView: UIView {
     
     var chat: Chat? = nil
     var contact: UserContact? = nil
-    var agentCpuIconImageView: UIImageView? = nil
+    @IBOutlet weak var agentCpuIconImageView: UIImageView!
     
     public enum RightButtons: Int {
         case SecondBrain
@@ -123,22 +123,8 @@ class ChatHeaderView: UIView {
         webAppButton.isHidden = true
         secondBrainButton.isHidden = true
         showThreadsButton.isHidden = true
-        
-        if agentCpuIconImageView == nil {
-            let iv = UIImageView(image: UIImage(systemName: "cpu"))
-            iv.tintColor = UIColor.Sphinx.SecondaryText
-            iv.contentMode = .scaleAspectFit
-            iv.translatesAutoresizingMaskIntoConstraints = false
-            lockSign.superview?.addSubview(iv)
-            NSLayoutConstraint.activate([
-                iv.centerYAnchor.constraint(equalTo: lockSign.centerYAnchor),
-                iv.centerXAnchor.constraint(equalTo: lockSign.centerXAnchor),
-                iv.widthAnchor.constraint(equalToConstant: 16),
-                iv.heightAnchor.constraint(equalToConstant: 16)
-            ])
-            agentCpuIconImageView = iv
-        }
-        agentCpuIconImageView?.isHidden = false
+        agentCpuIconImageView.image = UIImage(systemName: "cpu")
+        agentCpuIconImageView.isHidden = false
     }
     
     func configureTimezoneInfo() {
