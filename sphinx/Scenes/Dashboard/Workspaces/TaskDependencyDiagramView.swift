@@ -231,17 +231,15 @@ class TaskDependencyDiagramView: UIView {
 
     private func makeArrowLayer(from start: CGPoint, to end: CGPoint, color: CGColor) -> CAShapeLayer {
         let path = UIBezierPath()
-        let midX = (start.x + end.x) / 2
-        path.move(to: start)
-        path.addCurve(
-            to: end,
-            controlPoint1: CGPoint(x: midX, y: start.y),
-            controlPoint2: CGPoint(x: midX, y: end.y)
-        )
 
+        // Always draw a straight horizontal line (arrowhead always points right)
+        path.move(to: start)
+        path.addLine(to: end)
+
+        // Fixed arrowhead pointing right (angle = 0)
         let arrowLength: CGFloat = 8
         let arrowAngle: CGFloat = .pi / 6
-        let angle = atan2(end.y - start.y, end.x - start.x)
+        let angle: CGFloat = 0 // always pointing right
 
         let arrowPoint1 = CGPoint(
             x: end.x - arrowLength * cos(angle - arrowAngle),

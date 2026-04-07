@@ -1589,7 +1589,8 @@ extension FeaturePlanViewController: CustomSegmentedControlDelegate {
 extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if tableView === tasksTableView {
-            return feature.allTasks.count + 1  // +1 for dependency diagram row
+            // No diagram row when there are no tasks
+            return feature.allTasks.isEmpty ? 0 : feature.allTasks.count + 1
         }
         return displayMessages.count
     }
@@ -2003,7 +2004,11 @@ extension FeaturePlanViewController: HivePusherDelegate {
             $0.workflowStatus = workflowStatus
             $0.archived = archived
         }) else { return }
-        tasksTableView.reloadRows(at: [IndexPath(row: flatIndex + 1, section: 0)], with: .none)
+        // Reload the task row (+1 offset) and the diagram row (0) so circle colours stay in sync
+        tasksTableView.reloadRows(at: [
+            IndexPath(row: 0, section: 0),
+            IndexPath(row: flatIndex + 1, section: 0)
+        ], with: .none)
         updateProgressBar()
         updateTasksEmptyState()
     }
