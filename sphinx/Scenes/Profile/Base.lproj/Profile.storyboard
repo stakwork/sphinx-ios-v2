@@ -1981,8 +1981,189 @@
                     <view key="view" contentMode="scaleToFill" id="SAI-vw-001">
                         <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="SAI-scroll-001">
+                                <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
+                                <subviews>
+                                    <!-- Outer container card (like bottomContainerView in Profile) -->
+                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="SAI-card-001">
+                                        <rect key="frame" x="0.0" y="20" width="414" height="225"/>
+                                        <subviews>
+                                            <!-- Provider row -->
+                                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="SAI-prov-row">
+                                                <rect key="frame" x="30" y="0.0" width="354" height="75"/>
+                                                <subviews>
+                                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Provider" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="SAI-prov-lbl">
+                                                        <rect key="frame" x="0.0" y="25" width="52" height="14.5"/>
+                                                        <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="12"/>
+                                                        <color key="textColor" name="SecondaryText"/>
+                                                        <nil key="highlightedColor"/>
+                                                    </label>
+                                                    <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="SAI-prov-tf">
+                                                        <rect key="frame" x="0.0" y="39.5" width="354" height="34.5"/>
+                                                        <color key="textColor" name="Text"/>
+                                                        <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="17"/>
+                                                        <textInputTraits key="textInputTraits" enabled="NO"/>
+                                                    </textField>
+                                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="SAI-prov-div">
+                                                        <rect key="frame" x="0.0" y="74" width="354" height="1"/>
+                                                        <color key="backgroundColor" name="LightDivider"/>
+                                                        <constraints>
+                                                            <constraint firstAttribute="height" constant="1" id="SAI-prov-div-h"/>
+                                                        </constraints>
+                                                    </view>
+                                                </subviews>
+                                                <color key="backgroundColor" name="Body"/>
+                                                <constraints>
+                                                    <constraint firstItem="SAI-prov-tf" firstAttribute="leading" secondItem="SAI-prov-row" secondAttribute="leading" id="SAI-prov-c1"/>
+                                                    <constraint firstItem="SAI-prov-tf" firstAttribute="top" secondItem="SAI-prov-lbl" secondAttribute="bottom" id="SAI-prov-c2"/>
+                                                    <constraint firstItem="SAI-prov-tf" firstAttribute="trailing" secondItem="SAI-prov-div" secondAttribute="trailing" id="SAI-prov-c3"/>
+                                                    <constraint firstAttribute="trailing" secondItem="SAI-prov-div" secondAttribute="trailing" id="SAI-prov-c4"/>
+                                                    <constraint firstItem="SAI-prov-lbl" firstAttribute="top" secondItem="SAI-prov-row" secondAttribute="top" constant="25" id="SAI-prov-c5"/>
+                                                    <constraint firstAttribute="height" constant="75" id="SAI-prov-c6"/>
+                                                    <constraint firstItem="SAI-prov-div" firstAttribute="top" secondItem="SAI-prov-tf" secondAttribute="bottom" id="SAI-prov-c7"/>
+                                                    <constraint firstAttribute="bottom" secondItem="SAI-prov-div" secondAttribute="bottom" id="SAI-prov-c8"/>
+                                                    <constraint firstItem="SAI-prov-lbl" firstAttribute="leading" secondItem="SAI-prov-row" secondAttribute="leading" id="SAI-prov-c9"/>
+                                                    <constraint firstItem="SAI-prov-div" firstAttribute="leading" secondItem="SAI-prov-row" secondAttribute="leading" id="SAI-prov-c10"/>
+                                                </constraints>
+                                            </view>
+                                            <!-- API Key row -->
+                                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="SAI-key-row">
+                                                <rect key="frame" x="30" y="75" width="354" height="75"/>
+                                                <subviews>
+                                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="API Key" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="SAI-key-lbl">
+                                                        <rect key="frame" x="0.0" y="25" width="45" height="14.5"/>
+                                                        <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="12"/>
+                                                        <color key="textColor" name="SecondaryText"/>
+                                                        <nil key="highlightedColor"/>
+                                                    </label>
+                                                    <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="SAI-key-tf">
+                                                        <rect key="frame" x="0.0" y="39.5" width="354" height="34.5"/>
+                                                        <color key="textColor" name="Text"/>
+                                                        <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="17"/>
+                                                        <textInputTraits key="textInputTraits" returnKeyType="done"/>
+                                                    </textField>
+                                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="SAI-key-div">
+                                                        <rect key="frame" x="0.0" y="74" width="354" height="1"/>
+                                                        <color key="backgroundColor" name="LightDivider"/>
+                                                        <constraints>
+                                                            <constraint firstAttribute="height" constant="1" id="SAI-key-div-h"/>
+                                                        </constraints>
+                                                    </view>
+                                                </subviews>
+                                                <color key="backgroundColor" name="Body"/>
+                                                <constraints>
+                                                    <constraint firstItem="SAI-key-tf" firstAttribute="leading" secondItem="SAI-key-row" secondAttribute="leading" id="SAI-key-c1"/>
+                                                    <constraint firstItem="SAI-key-tf" firstAttribute="top" secondItem="SAI-key-lbl" secondAttribute="bottom" id="SAI-key-c2"/>
+                                                    <constraint firstItem="SAI-key-tf" firstAttribute="trailing" secondItem="SAI-key-div" secondAttribute="trailing" id="SAI-key-c3"/>
+                                                    <constraint firstAttribute="trailing" secondItem="SAI-key-div" secondAttribute="trailing" id="SAI-key-c4"/>
+                                                    <constraint firstItem="SAI-key-lbl" firstAttribute="top" secondItem="SAI-key-row" secondAttribute="top" constant="25" id="SAI-key-c5"/>
+                                                    <constraint firstAttribute="height" constant="75" id="SAI-key-c6"/>
+                                                    <constraint firstItem="SAI-key-div" firstAttribute="top" secondItem="SAI-key-tf" secondAttribute="bottom" id="SAI-key-c7"/>
+                                                    <constraint firstAttribute="bottom" secondItem="SAI-key-div" secondAttribute="bottom" id="SAI-key-c8"/>
+                                                    <constraint firstItem="SAI-key-lbl" firstAttribute="leading" secondItem="SAI-key-row" secondAttribute="leading" id="SAI-key-c9"/>
+                                                    <constraint firstItem="SAI-key-div" firstAttribute="leading" secondItem="SAI-key-row" secondAttribute="leading" id="SAI-key-c10"/>
+                                                </constraints>
+                                            </view>
+                                            <!-- Agent Name row -->
+                                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="SAI-name-row">
+                                                <rect key="frame" x="30" y="150" width="354" height="75"/>
+                                                <subviews>
+                                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Agent Name" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="SAI-name-lbl">
+                                                        <rect key="frame" x="0.0" y="25" width="72" height="14.5"/>
+                                                        <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="12"/>
+                                                        <color key="textColor" name="SecondaryText"/>
+                                                        <nil key="highlightedColor"/>
+                                                    </label>
+                                                    <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="SAI-name-tf">
+                                                        <rect key="frame" x="0.0" y="39.5" width="354" height="34.5"/>
+                                                        <color key="textColor" name="Text"/>
+                                                        <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="17"/>
+                                                        <textInputTraits key="textInputTraits" autocapitalizationType="words" returnKeyType="done"/>
+                                                    </textField>
+                                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="SAI-name-div">
+                                                        <rect key="frame" x="0.0" y="74" width="354" height="1"/>
+                                                        <color key="backgroundColor" name="LightDivider"/>
+                                                        <constraints>
+                                                            <constraint firstAttribute="height" constant="1" id="SAI-name-div-h"/>
+                                                        </constraints>
+                                                    </view>
+                                                </subviews>
+                                                <color key="backgroundColor" name="Body"/>
+                                                <constraints>
+                                                    <constraint firstItem="SAI-name-tf" firstAttribute="leading" secondItem="SAI-name-row" secondAttribute="leading" id="SAI-name-c1"/>
+                                                    <constraint firstItem="SAI-name-tf" firstAttribute="top" secondItem="SAI-name-lbl" secondAttribute="bottom" id="SAI-name-c2"/>
+                                                    <constraint firstItem="SAI-name-tf" firstAttribute="trailing" secondItem="SAI-name-div" secondAttribute="trailing" id="SAI-name-c3"/>
+                                                    <constraint firstAttribute="trailing" secondItem="SAI-name-div" secondAttribute="trailing" id="SAI-name-c4"/>
+                                                    <constraint firstItem="SAI-name-lbl" firstAttribute="top" secondItem="SAI-name-row" secondAttribute="top" constant="25" id="SAI-name-c5"/>
+                                                    <constraint firstAttribute="height" constant="75" id="SAI-name-c6"/>
+                                                    <constraint firstItem="SAI-name-div" firstAttribute="top" secondItem="SAI-name-tf" secondAttribute="bottom" id="SAI-name-c7"/>
+                                                    <constraint firstAttribute="bottom" secondItem="SAI-name-div" secondAttribute="bottom" id="SAI-name-c8"/>
+                                                    <constraint firstItem="SAI-name-lbl" firstAttribute="leading" secondItem="SAI-name-row" secondAttribute="leading" id="SAI-name-c9"/>
+                                                    <constraint firstItem="SAI-name-div" firstAttribute="leading" secondItem="SAI-name-row" secondAttribute="leading" id="SAI-name-c10"/>
+                                                </constraints>
+                                            </view>
+                                        </subviews>
+                                        <color key="backgroundColor" name="Body"/>
+                                        <constraints>
+                                            <constraint firstItem="SAI-prov-row" firstAttribute="top" secondItem="SAI-card-001" secondAttribute="top" id="SAI-card-c1"/>
+                                            <constraint firstItem="SAI-prov-row" firstAttribute="leading" secondItem="SAI-card-001" secondAttribute="leading" constant="30" id="SAI-card-c2"/>
+                                            <constraint firstAttribute="trailing" secondItem="SAI-prov-row" secondAttribute="trailing" constant="30" id="SAI-card-c3"/>
+                                            <constraint firstItem="SAI-key-row" firstAttribute="top" secondItem="SAI-prov-row" secondAttribute="bottom" id="SAI-card-c4"/>
+                                            <constraint firstItem="SAI-key-row" firstAttribute="leading" secondItem="SAI-card-001" secondAttribute="leading" constant="30" id="SAI-card-c5"/>
+                                            <constraint firstAttribute="trailing" secondItem="SAI-key-row" secondAttribute="trailing" constant="30" id="SAI-card-c6"/>
+                                            <constraint firstItem="SAI-name-row" firstAttribute="top" secondItem="SAI-key-row" secondAttribute="bottom" id="SAI-card-c7"/>
+                                            <constraint firstItem="SAI-name-row" firstAttribute="leading" secondItem="SAI-card-001" secondAttribute="leading" constant="30" id="SAI-card-c8"/>
+                                            <constraint firstAttribute="trailing" secondItem="SAI-name-row" secondAttribute="trailing" constant="30" id="SAI-card-c9"/>
+                                            <constraint firstAttribute="bottom" secondItem="SAI-name-row" secondAttribute="bottom" id="SAI-card-c10"/>
+                                            <constraint firstAttribute="height" constant="225" id="SAI-card-h"/>
+                                        </constraints>
+                                    </view>
+                                    <!-- Confirm button (styled like exportKeyButton) -->
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="SAI-confirm-btn">
+                                        <rect key="frame" x="41.5" y="277" width="331" height="52"/>
+                                        <color key="backgroundColor" name="PrimaryBlue"/>
+                                        <constraints>
+                                            <constraint firstAttribute="height" constant="52" id="SAI-confirm-h"/>
+                                        </constraints>
+                                        <fontDescription key="fontDescription" name="Montserrat-Regular" family="Montserrat" pointSize="17"/>
+                                        <state key="normal" title="Confirm">
+                                            <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        </state>
+                                        <connections>
+                                            <action selector="confirmTapped" destination="SAI-vc-002" eventType="touchUpInside" id="SAI-confirm-act"/>
+                                        </connections>
+                                    </button>
+                                </subviews>
+                                <color key="backgroundColor" name="Body"/>
+                                <constraints>
+                                    <constraint firstItem="SAI-card-001" firstAttribute="top" secondItem="SAI-content-lg" secondAttribute="top" constant="20" id="SAI-scroll-c1"/>
+                                    <constraint firstItem="SAI-card-001" firstAttribute="leading" secondItem="SAI-content-lg" secondAttribute="leading" id="SAI-scroll-c2"/>
+                                    <constraint firstItem="SAI-card-001" firstAttribute="width" secondItem="SAI-frame-lg" secondAttribute="width" id="SAI-scroll-c3"/>
+                                    <constraint firstItem="SAI-confirm-btn" firstAttribute="top" secondItem="SAI-card-001" secondAttribute="bottom" constant="32" id="SAI-scroll-c4"/>
+                                    <constraint firstItem="SAI-confirm-btn" firstAttribute="centerX" secondItem="SAI-frame-lg" secondAttribute="centerX" id="SAI-scroll-c5"/>
+                                    <constraint firstItem="SAI-confirm-btn" firstAttribute="width" secondItem="SAI-frame-lg" secondAttribute="width" multiplier="0.8" id="SAI-scroll-c6"/>
+                                    <constraint firstItem="SAI-confirm-btn" firstAttribute="bottom" secondItem="SAI-content-lg" secondAttribute="bottom" constant="-32" id="SAI-scroll-c7"/>
+                                </constraints>
+                                <viewLayoutGuide key="contentLayoutGuide" id="SAI-content-lg"/>
+                                <viewLayoutGuide key="frameLayoutGuide" id="SAI-frame-lg"/>
+                            </scrollView>
+                        </subviews>
                         <color key="backgroundColor" name="Body"/>
+                        <constraints>
+                            <constraint firstItem="SAI-scroll-001" firstAttribute="top" secondItem="SAI-vw-001" secondAttribute="top" id="SAI-view-c1"/>
+                            <constraint firstItem="SAI-scroll-001" firstAttribute="leading" secondItem="SAI-vw-001" secondAttribute="leading" id="SAI-view-c2"/>
+                            <constraint firstItem="SAI-scroll-001" firstAttribute="trailing" secondItem="SAI-vw-001" secondAttribute="trailing" id="SAI-view-c3"/>
+                            <constraint firstItem="SAI-scroll-001" firstAttribute="bottom" secondItem="SAI-vw-001" secondAttribute="bottom" id="SAI-view-c4"/>
+                        </constraints>
                     </view>
+                    <connections>
+                        <outlet property="agentNameTextField" destination="SAI-name-tf" id="SAI-out-name"/>
+                        <outlet property="apiKeyTextField" destination="SAI-key-tf" id="SAI-out-key"/>
+                        <outlet property="confirmButton" destination="SAI-confirm-btn" id="SAI-out-confirm"/>
+                        <outlet property="fieldsContainerView" destination="SAI-card-001" id="SAI-out-card"/>
+                        <outlet property="providerTextField" destination="SAI-prov-tf" id="SAI-out-prov"/>
+                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="SAI-fr-001" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
