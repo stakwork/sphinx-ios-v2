@@ -25,6 +25,14 @@ class TaskDependencyDiagramView: UIView {
         return sv
     }()
 
+    /// Container inside the scrollView that holds both the column stack and the arrow overlay
+    private let contentContainer: UIView = {
+        let v = UIView()
+        v.translatesAutoresizingMaskIntoConstraints = false
+        v.backgroundColor = .clear
+        return v
+    }()
+
     private let columnStack: UIStackView = {
         let sv = UIStackView()
         sv.translatesAutoresizingMaskIntoConstraints = false
@@ -34,7 +42,7 @@ class TaskDependencyDiagramView: UIView {
         return sv
     }()
 
-    /// Transparent overlay for drawing arrows
+    /// Transparent overlay sitting on top of columnStack — same frame, same coordinate space
     private let arrowOverlay: UIView = {
         let v = UIView()
         v.translatesAutoresizingMaskIntoConstraints = false
@@ -45,11 +53,8 @@ class TaskDependencyDiagramView: UIView {
 
     // MARK: - State
     private var tasks: [WorkspaceTask] = []
-    /// column index for each task id
     private var taskColumns: [String: Int] = [:]
-    /// ordered columns
     private var columns: [[WorkspaceTask]] = []
-    /// node view for each task id (used for arrow drawing)
     private var nodeViews: [String: UIView] = [:]
     private var arrowLayers: [CAShapeLayer] = []
 
@@ -66,24 +71,36 @@ class TaskDependencyDiagramView: UIView {
 
     private func setupViews() {
         addSubview(scrollView)
-        scrollView.addSubview(columnStack)
-        scrollView.addSubview(arrowOverlay)
+        scrollView.addSubview(contentContainer)
+        contentContainer.addSubview(columnStack)
+        contentContainer.addSubview(arrowOverlay)
 
         NSLayoutConstraint.activate([
+            // ScrollView fills the diagram view
             scrollView.topAnchor.constraint(equalTo: topAnchor),
             scrollView.leadingAnchor.constraint(equalTo: leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: trailingAnchor),
             scrollView.bottomAnchor.constraint(equalTo: bottomAnchor),
 
-            columnStack.topAnchor.constraint(equalTo: scrollView.topAnchor, constant: verticalPadding),
-            columnStack.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor, constant: 16),
-            columnStack.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: -verticalPadding),
-            columnStack.heightAnchor.constraint(equalTo: scrollView.heightAnchor, constant: -(verticalPadding * 2)),
+            // Content container fills scroll view content area (drives horizontal scrolling)
+            contentContainer.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
+            contentContainer.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor),
+            contentContainer.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
+            contentContainer.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
+            // Height of content equals scroll view frame height
+            contentContainer.heightAnchor.constraint(equalTo: scrollView.frameLayoutGuide.heightAnchor),
 
-            arrowOverlay.topAnchor.constraint(equalTo: scrollView.topAnchor),
-            arrowOverlay.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
-            arrowOverlay.widthAnchor.constraint(equalTo: columnStack.widthAnchor, constant: 32),
-            arrowOverlay.heightAnchor.constraint(equalTo: scrollView.heightAnchor)
+            // Column stack inside the container
+            columnStack.topAnchor.constraint(equalTo: contentContainer.topAnchor, constant: verticalPadding),
+            columnStack.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: 16),
+            columnStack.bottomAnchor.constraint(lessThanOrEqualTo: contentContainer.bottomAnchor, constant: -verticalPadding),
+            columnStack.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -16),
+
+            // Arrow overlay exactly matches the column stack so coordinate conversions are trivial
+            arrowOverlay.topAnchor.constraint(equalTo: contentContainer.topAnchor),
+            arrowOverlay.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor),
+            arrowOverlay.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor),
+            arrowOverlay.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor)
         ])
     }
 
@@ -93,17 +110,15 @@ class TaskDependencyDiagramView: UIView {
         computeColumns()
         buildLayout()
         invalidateIntrinsicContentSize()
+        // Defer arrow drawing until after Auto Layout has resolved all frames
         setNeedsLayout()
     }
 
     // MARK: - Column computation (topological sort)
-    /// Exposed as `internal` so it can be unit-tested.
     func computeColumnAssignments(for tasks: [WorkspaceTask]) -> [String: Int] {
         var columns: [String: Int] = [:]
-        // Initialise all to 0
         for task in tasks { columns[task.id] = 0 }
 
-        // Iterate until stable
         var changed = true
         while changed {
             changed = false
@@ -133,7 +148,6 @@ class TaskDependencyDiagramView: UIView {
 
     // MARK: - Layout
     private func buildLayout() {
-        // Remove previous column subviews
         columnStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         nodeViews.removeAll()
 
@@ -154,7 +168,6 @@ class TaskDependencyDiagramView: UIView {
 
             columnStack.addArrangedSubview(colStackView)
 
-            // Add spacing after each column except last
             if colIdx < columns.count - 1 {
                 let spacer = UIView()
                 spacer.translatesAutoresizingMaskIntoConstraints = false
@@ -180,13 +193,16 @@ class TaskDependencyDiagramView: UIView {
     }
 
     // MARK: - Arrows
+
     override func layoutSubviews() {
         super.layoutSubviews()
-        drawArrows()
+        // Defer to next run-loop tick so all nested stack views have finished layout
+        DispatchQueue.main.async { [weak self] in
+            self?.drawArrows()
+        }
     }
 
     private func drawArrows() {
-        // Remove old layers
         arrowLayers.forEach { $0.removeFromSuperlayer() }
         arrowLayers.removeAll()
 
@@ -199,18 +215,12 @@ class TaskDependencyDiagramView: UIView {
             for sourceId in task.dependsOnTaskIds {
                 guard let sourceNode = nodeViews[sourceId] else { continue }
 
-                // Convert frames to arrowOverlay coordinate space
-                let sourceFrameInOverlay = sourceNode.convert(sourceNode.bounds, to: arrowOverlay)
-                let dependentFrameInOverlay = dependentNode.convert(dependentNode.bounds, to: arrowOverlay)
+                // Both nodes and the arrowOverlay share the same contentContainer coordinate space
+                let sourceFrame = sourceNode.convert(sourceNode.bounds, to: arrowOverlay)
+                let dependentFrame = dependentNode.convert(dependentNode.bounds, to: arrowOverlay)
 
-                let startPoint = CGPoint(
-                    x: sourceFrameInOverlay.maxX,
-                    y: sourceFrameInOverlay.midY
-                )
-                let endPoint = CGPoint(
-                    x: dependentFrameInOverlay.minX,
-                    y: dependentFrameInOverlay.midY
-                )
+                let startPoint = CGPoint(x: sourceFrame.maxX, y: sourceFrame.midY)
+                let endPoint   = CGPoint(x: dependentFrame.minX, y: dependentFrame.midY)
 
                 let layer = makeArrowLayer(from: startPoint, to: endPoint, color: arrowColor)
                 arrowOverlay.layer.addSublayer(layer)
@@ -221,8 +231,6 @@ class TaskDependencyDiagramView: UIView {
 
     private func makeArrowLayer(from start: CGPoint, to end: CGPoint, color: CGColor) -> CAShapeLayer {
         let path = UIBezierPath()
-
-        // Draw line
         let midX = (start.x + end.x) / 2
         path.move(to: start)
         path.addCurve(
@@ -231,9 +239,8 @@ class TaskDependencyDiagramView: UIView {
             controlPoint2: CGPoint(x: midX, y: end.y)
         )
 
-        // Arrowhead
         let arrowLength: CGFloat = 8
-        let arrowAngle: CGFloat = .pi / 6 // 30°
+        let arrowAngle: CGFloat = .pi / 6
         let angle = atan2(end.y - start.y, end.x - start.x)
 
         let arrowPoint1 = CGPoint(

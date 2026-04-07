@@ -41,8 +41,8 @@ class TaskDependencyDiagramCell: UITableViewCell {
 
     // MARK: - Setup
     private func setupCell() {
-        backgroundColor = .Sphinx.Body
-        contentView.backgroundColor = .Sphinx.Body
+        backgroundColor = .Sphinx.HeaderBG
+        contentView.backgroundColor = .Sphinx.HeaderBG
         selectionStyle = .none
 
         contentView.addSubview(headerLabel)
