@@ -39,6 +39,17 @@ extension NewOnlyTextMessageTableViewCell {
             }
             messageLabel.attributedText = rendered
             messageLabel.isUserInteractionEnabled = true
+
+            // Collect link ranges for tap handling
+            rendered.enumerateAttribute(.sphinxURL, in: NSRange(location: 0, length: rendered.length)) { value, range, _ in
+                if value != nil { urlRanges.append(range) }
+            }
+        }
+
+        if urlRanges.isEmpty {
+            messageLabel.removeGestureRecognizer(tap)
+        } else {
+            messageLabel.addGestureRecognizer(tap)
         }
     }
     

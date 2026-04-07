@@ -9,6 +9,12 @@
 
 import UIKit
 
+extension NSAttributedString.Key {
+    /// Stores a URL (as URL) for link ranges without using .link,
+    /// so UILabel respects the foregroundColor instead of tinting with tintColor.
+    static let sphinxURL = NSAttributedString.Key("SphinxURL")
+}
+
 struct MarkdownStyle {
     var textColor: UIColor       = .Sphinx.Text
     var secondaryColor: UIColor  = .Sphinx.SecondaryText
@@ -365,7 +371,8 @@ final class MarkdownRenderer {
                         .foregroundColor: style.linkColor,
                         .underlineStyle: NSUnderlineStyle.single.rawValue
                     ]
-                    if let url = URL(string: urlStr) { linkAttrs[.link] = url }
+                    // Use .sphinxURL instead of .link so UILabel respects foregroundColor
+                    if let url = URL(string: urlStr) { linkAttrs[.sphinxURL] = url }
                     result.append(NSAttributedString(string: linkText, attributes: linkAttrs))
                 }
                 s = String(s[range.upperBound...])
@@ -375,12 +382,13 @@ final class MarkdownRenderer {
             if let range = firstRange(in: s, pattern: #"https?://[^\s]+"#) {
                 appendLiteral(s[s.startIndex..<range.lowerBound], attrs: base, to: result)
                 let urlStr = String(s[range])
-                var linkAttrs: [NSAttributedString.Key: Any] = [
+                // Use .sphinxURL instead of .link so UILabel respects foregroundColor
+                let linkAttrs: [NSAttributedString.Key: Any] = [
                     .font: font,
                     .foregroundColor: style.linkColor,
-                    .underlineStyle: NSUnderlineStyle.single.rawValue
+                    .underlineStyle: NSUnderlineStyle.single.rawValue,
+                    .sphinxURL: URL(string: urlStr) as Any
                 ]
-                if let url = URL(string: urlStr) { linkAttrs[.link] = url }
                 result.append(NSAttributedString(string: urlStr, attributes: linkAttrs))
                 s = String(s[range.upperBound...])
                 continue

@@ -33,7 +33,7 @@ class CommonNewMessageTableViewCell : SwipableReplyCell {
                     label,
                     inRange: range
                 ) {
-                    if let link = (attributedText.attribute(.link, at: range.location, effectiveRange: nil) as? URL)?.absoluteString {
+                    if let link = (attributedText.attribute(.sphinxURL, at: range.location, effectiveRange: nil) as? URL)?.absoluteString {
                         delegate?.didTapOnLink(link)
                     } else {
                         let link = (attributedText.string as NSString).substring(with: range)
