@@ -10,6 +10,8 @@ import UIKit
 @MainActor
 class ChatHelper {
     
+    static let markdownRenderer = MarkdownRenderer()
+    
     public static func getSenderColorFor(message: TransactionMessage) -> UIColor {
         var key:String? = nil
         

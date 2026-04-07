@@ -219,8 +219,6 @@ class MediaPreloadManager: @unchecked Sendable {
         mediaKey: String?,
         urlString: String
     ) {
-        let messageId = message.id
-
         if message.isMediaExpired() {
             MediaLoader.clearImageCacheFor(url: urlString)
             MediaLoader.clearMediaDataCacheFor(url: urlString)
