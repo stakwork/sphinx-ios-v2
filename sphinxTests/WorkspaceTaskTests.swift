@@ -204,6 +204,55 @@ class WorkspaceTaskTests: XCTestCase {
         XCTAssertNil(task.systemAssigneeType)
     }
 
+    // MARK: - dependsOnTaskIds Parsing Tests
+
+    func testInit_DependsOnTaskIds_WithPopulatedArray() {
+        let json = JSON([
+            "id": "task-dep-1",
+            "title": "Dependent task",
+            "status": "TODO",
+            "priority": "LOW",
+            "chatMessageCount": 0,
+            "dependsOnTaskIds": ["task_002"]
+        ])
+        guard let task = WorkspaceTask(json: json) else {
+            XCTFail("WorkspaceTask init should succeed")
+            return
+        }
+        XCTAssertEqual(task.dependsOnTaskIds, ["task_002"])
+    }
+
+    func testInit_DependsOnTaskIds_WithEmptyArray() {
+        let json = JSON([
+            "id": "task-dep-2",
+            "title": "No deps task",
+            "status": "TODO",
+            "priority": "LOW",
+            "chatMessageCount": 0,
+            "dependsOnTaskIds": []
+        ])
+        guard let task = WorkspaceTask(json: json) else {
+            XCTFail("WorkspaceTask init should succeed")
+            return
+        }
+        XCTAssertEqual(task.dependsOnTaskIds, [])
+    }
+
+    func testInit_DependsOnTaskIds_MissingKey_DefaultsToEmptyArray() {
+        let json = JSON([
+            "id": "task-dep-3",
+            "title": "No key task",
+            "status": "TODO",
+            "priority": "LOW",
+            "chatMessageCount": 0
+        ])
+        guard let task = WorkspaceTask(json: json) else {
+            XCTFail("WorkspaceTask init should succeed")
+            return
+        }
+        XCTAssertEqual(task.dependsOnTaskIds, [])
+    }
+
     func testPRFields_AreMutable() {
         let json = JSON([
             "id": "task-5",
