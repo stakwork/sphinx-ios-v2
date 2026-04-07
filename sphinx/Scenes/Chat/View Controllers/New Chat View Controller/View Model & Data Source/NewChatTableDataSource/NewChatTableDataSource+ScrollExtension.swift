@@ -31,7 +31,8 @@ extension NewChatTableDataSource: UITableViewDelegate {
                 
         if scrolledToTop {
             didScrollToTop()
-        } else if scrolledToBottom {
+        }
+        if scrolledToBottom {
             didScrollToBottom()
         }
         

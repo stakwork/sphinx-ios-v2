@@ -75,6 +75,7 @@ extension NewChatViewController : NewChatTableDataSourceDelegate {
     func shouldDismissKeyboard() {
         self.bottomView.messageFieldView.shouldDismissKeyboard()
     }
+    
     func configureNewMessagesIndicatorWith(newMsgCount: Int) {
         DispatchQueue.main.async {
             self.newMsgsIndicatorView.configureWith(
