@@ -147,6 +147,9 @@ class ChatMessageTextFieldView: UIView {
         isAgentChat = true
         attachmentButtonContainer.isHidden = true
         audioButtonContainer.isHidden = true
+        sendButtonContainer.isHidden = false
+        sendButton.isEnabled = false
+        sendButton.alpha = 0.4
     }
     
     func updateFieldStateFrom(_ chat: Chat?) {
