@@ -864,7 +864,7 @@ extension NewChatTableDataSource : @preconcurrency NSFetchedResultsControllerDel
                 if let messages = firstSection.objects as? [TransactionMessage] {
                     if !self.isThread {
                         ///Do not processes aliases and timezone on thread since it came from chat
-                        self.chat?.processAliasesFrom(messages: messages.reversed())
+                        self.chat?.processAliases()
                     }
                     
                     self.messagesCountFetched = messages.count

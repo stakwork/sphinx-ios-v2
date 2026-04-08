@@ -468,7 +468,7 @@ public class Chat: NSManagedObject, @unchecked Sendable {
     ) {
         let backgroundContext = CoreDataManager.sharedManager.getBackgroundContext()
         
-        backgroundContext.performAndWait { [weak self] in
+        backgroundContext.perform { [weak self] in
             guard let self = self else {
                 return
             }
