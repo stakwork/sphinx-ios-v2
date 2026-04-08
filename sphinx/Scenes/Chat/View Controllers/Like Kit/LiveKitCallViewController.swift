@@ -133,6 +133,7 @@ struct RoomContextView: View {
                 print("\(String(describing: type(of: self))) onDisappear")
                 Task {
                     await roomCtx.disconnect()
+                    appCtx.cleanup()
                 }
             }
             .onAppear() {
@@ -188,35 +189,43 @@ struct RoomContextView: View {
     
     func enableMic() {
         Task {
-            try await roomCtx.room.localParticipant.setMicrophone(enabled: true)
+            do {
+                try await roomCtx.room.localParticipant.setMicrophone(enabled: true)
+            } catch {
+                print("enableMic failed: \(error)")
+            }
         }
     }
     
     func enableCamera() {
         Task {
-            let captureOptions = CameraCaptureOptions(
-                device: AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .front),
-                dimensions: .h1080_169
-            )
-            
-            let maxFPS: Int = 30
+            do {
+                let captureOptions = CameraCaptureOptions(
+                    device: AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .front),
+                    dimensions: .h1080_169
+                )
+                
+                let maxFPS: Int = 30
 
-            let publishOptions = VideoPublishOptions(
-                name: nil,
-                encoding: VideoEncoding(maxBitrate: VideoParameters.presetH1080_169.encoding.maxBitrate, maxFps: maxFPS),
-                screenShareEncoding: nil,
-                simulcast: true,
-                simulcastLayers: [],
-                screenShareSimulcastLayers: [],
-                preferredCodec: VideoCodec.vp8,
-                preferredBackupCodec: nil
-            )
-            
-            try await roomCtx.room.localParticipant.setCamera(
-                enabled: true,
-                captureOptions: captureOptions,
-                publishOptions: publishOptions
-            )
+                let publishOptions = VideoPublishOptions(
+                    name: nil,
+                    encoding: VideoEncoding(maxBitrate: VideoParameters.presetH1080_169.encoding.maxBitrate, maxFps: maxFPS),
+                    screenShareEncoding: nil,
+                    simulcast: true,
+                    simulcastLayers: [],
+                    screenShareSimulcastLayers: [],
+                    preferredCodec: VideoCodec.vp8,
+                    preferredBackupCodec: nil
+                )
+                
+                try await roomCtx.room.localParticipant.setCamera(
+                    enabled: true,
+                    captureOptions: captureOptions,
+                    publishOptions: publishOptions
+                )
+            } catch {
+                print("enableCamera failed: \(error)")
+            }
         }
     }
 }
