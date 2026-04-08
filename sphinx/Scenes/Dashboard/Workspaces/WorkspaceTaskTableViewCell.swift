@@ -39,11 +39,11 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         label.translatesAutoresizingMaskIntoConstraints = false
         label.textAlignment = .center
         label.textColor = .white
-        label.font = UIFont(name: "Roboto-Medium", size: 12) ?? UIFont.systemFont(ofSize: 12, weight: .medium)
-        label.layer.cornerRadius = 14
+        label.font = UIFont(name: "Roboto-Medium", size: 11) ?? UIFont.systemFont(ofSize: 11, weight: .medium)
+        label.layer.cornerRadius = 10
         label.clipsToBounds = true
-        label.widthAnchor.constraint(equalToConstant: 28).isActive = true
-        label.heightAnchor.constraint(equalToConstant: 28).isActive = true
+        label.widthAnchor.constraint(equalToConstant: 20).isActive = true
+        label.heightAnchor.constraint(equalToConstant: 20).isActive = true
         return label
     }()
 
@@ -92,8 +92,10 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         titleLeadingWithoutCircle.isActive = true
 
         titleLabel.textColor = .Sphinx.Text
-        titleLabel.font = UIFont.systemFont(ofSize: 16, weight: .medium)
+        titleLabel.font = UIFont.systemFont(ofSize: 15, weight: .medium)
         titleLabel.numberOfLines = 2
+        // Fix to exactly 2-line height so the row never collapses for short titles
+        titleLabel.heightAnchor.constraint(equalToConstant: 36).isActive = true
 
         repositoryLabel.textColor = .Sphinx.SecondaryText
         repositoryLabel.font = UIFont(name: "Roboto-Regular", size: 13)
@@ -109,7 +111,7 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
             $0?.layer.cornerRadius = 10
             $0?.clipsToBounds = true
             $0?.textColor = .white
-            $0?.font = UIFont(name: "Roboto-Medium", size: 11)
+            $0?.font = UIFont(name: "Roboto-Medium", size: 10) ?? UIFont.systemFont(ofSize: 10, weight: .medium)
             $0?.textAlignment = .center
         }
 
@@ -231,7 +233,7 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
             let attrs: [NSAttributedString.Key: Any] = [
                 .strikethroughStyle: NSUnderlineStyle.single.rawValue,
                 .foregroundColor: UIColor.Sphinx.SecondaryText,
-                .font: UIFont.systemFont(ofSize: 16, weight: .medium)
+                .font: UIFont.systemFont(ofSize: 15, weight: .medium)
             ]
             titleLabel.attributedText = NSAttributedString(string: task.title, attributes: attrs)
         } else {
