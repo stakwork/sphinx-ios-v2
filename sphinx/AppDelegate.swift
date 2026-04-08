@@ -84,7 +84,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         //        registerAppRefresh()
         //        configureStoreKit()
-        //        registerForVoIP()
+        registerForVoIP()
         
         setAppConfiguration()
         configureGiphy()
@@ -463,7 +463,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         callerName:String
     ){
         if #available(iOS 14.0, *) {
-            JitsiIncomingCallManager.sharedInstance.reportIncomingCall(
+            LiveKitIncomingCallManager.sharedInstance.reportIncomingCall(
                 uuid: UUID(),
                 handle: callerName
             )
@@ -716,28 +716,22 @@ extension AppDelegate : @preconcurrency PKPushRegistryDelegate {
     }
     
     func pushRegistry(_ registry: PKPushRegistry, didReceiveIncomingPushWith payload: PKPushPayload, for type: PKPushType, completion: @escaping () -> Void) {
-//        if let dict = payload.dictionaryPayload as? [String:Any],
-//           let aps = dict["aps"] as? [String:Any],
-//           let contents = aps["alert"] as? String,
-//           let pushMessage = VoIPPushMessage.voipMessage(jsonString: contents),
-//           let pushBody = pushMessage.body as? VoIPPushMessageBody {
-//            
-//            if #available(iOS 14.0, *) {
-//                //                let (result, link) = EncryptionManager.sharedInstance.decryptMessage(message: pushBody.linkURL)
-//                //                pushBody.linkURL = link
-//                //                
-//                //                let manager = JitsiIncomingCallManager.sharedInstance
-//                //                manager.currentJitsiURL = (result == true) ? link : pushBody.linkURL
-//                //                manager.hasVideo = pushBody.isVideoCall()
-//                //                
-//                //                self.handleIncomingCall(callerName: pushBody.callerName)
-//            }
-//            completion()
-//        } else {
-//            completion()
-//        }
-        
-        completion()
+        if let dict = payload.dictionaryPayload as? [String: Any],
+           let aps = dict["aps"] as? [String: Any],
+           let contents = aps["alert"] as? String,
+           let pushMessage = VoIPPushMessage.voipMessage(jsonString: contents),
+           let pushBody = pushMessage.body as? VoIPPushMessageBody {
+
+            if #available(iOS 14.0, *) {
+                UserDefaults.Keys.callLinkUrl.set(pushBody.linkURL)
+                LiveKitIncomingCallManager.sharedInstance.currentLiveKitURL = pushBody.linkURL
+                LiveKitIncomingCallManager.sharedInstance.hasVideo = pushBody.isVideoCall()
+                self.handleIncomingCall(callerName: pushBody.callerName)
+            }
+            completion()
+        } else {
+            completion()
+        }
     }
     
     func pushRegistry(_ registry: PKPushRegistry, didInvalidatePushTokenFor type: PKPushType) {
