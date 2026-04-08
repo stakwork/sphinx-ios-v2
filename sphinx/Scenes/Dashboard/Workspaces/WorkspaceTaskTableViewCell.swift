@@ -40,10 +40,10 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         label.textAlignment = .center
         label.textColor = .white
         label.font = UIFont(name: "Roboto-Medium", size: 11) ?? UIFont.systemFont(ofSize: 11, weight: .medium)
-        label.layer.cornerRadius = 8.5
+        label.layer.cornerRadius = 10
         label.clipsToBounds = true
-        label.widthAnchor.constraint(equalToConstant: 17).isActive = true
-        label.heightAnchor.constraint(equalToConstant: 17).isActive = true
+        label.widthAnchor.constraint(equalToConstant: 20).isActive = true
+        label.heightAnchor.constraint(equalToConstant: 20).isActive = true
         return label
     }()
 
