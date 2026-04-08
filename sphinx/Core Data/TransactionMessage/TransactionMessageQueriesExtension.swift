@@ -827,4 +827,9 @@ extension TransactionMessage {
         }
         return groupedMessages
     }
+    
+    static func getCountOfMessages(forChat chat: Chat, fromId messageId: Int) -> Int {
+        let predicate = NSPredicate(format: "chat == %@ AND id >= %d", chat, messageId)
+        return CoreDataManager.sharedManager.getObjectsCountOfTypeWith(predicate: predicate, entityName: "TransactionMessage")
+    }
 }
