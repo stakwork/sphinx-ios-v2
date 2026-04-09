@@ -68,7 +68,7 @@ class FeatureChatMessageCell: UITableViewCell {
         btn.contentHorizontalAlignment = .left
         btn.titleLabel?.font = UIFont.boldSystemFont(ofSize: 15)
         btn.setTitleColor(UIColor.Sphinx.SecondaryText, for: .normal)
-        btn.contentEdgeInsets = UIEdgeInsets(top: 10, left: 12, bottom: 6, right: 12)
+        btn.contentEdgeInsets = UIEdgeInsets(top: 10, left: 12, bottom: 10, right: 12)
         btn.isHidden = true
         return btn
     }()
@@ -364,8 +364,8 @@ class FeatureChatMessageCell: UITableViewCell {
         messageTextView.isHidden = true
 
         // Header
-        let arrow = isLogsExpanded ? "▾" : ">"
-        logsHeaderButton.setTitle("\(arrow) Logs", for: .normal)
+        let title = isLogsExpanded ? "Logs (tap to collapse)" : "Logs (tap to expand)"
+        logsHeaderButton.setTitle(title, for: .normal)
         logsHeaderButton.isHidden = false
 
         // Body
@@ -437,7 +437,7 @@ class FeatureChatMessageCell: UITableViewCell {
         isLogsExpanded = false
         currentLogsContent = nil
         logsHeaderButton.isHidden = true
-        logsHeaderButton.setTitle("> Logs", for: .normal)
+        logsHeaderButton.setTitle("Logs (tap to expand)", for: .normal)
         logsBodyTextView.isHidden = true
         logsBodyTextView.attributedText = nil
 
