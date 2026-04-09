@@ -23,7 +23,7 @@ class WorkspaceViewController: PopHandlerViewController {
     @IBOutlet weak var containerView: UIView!
 
     private var workspace: Workspace!
-    private var currentTab: Int = 0 // 0 = Features, 1 = Tasks, 2 = Graph Chat
+    private var currentTab: Int = 0 // 0 = Tasks, 1 = Features, 2 = Graph Chat, 3 = Pods
 
     private var activeFeaturesVC: WorkspaceFeaturesViewController!
     private var activeTasksVC: WorkspaceTasksViewController!
@@ -97,9 +97,9 @@ class WorkspaceViewController: PopHandlerViewController {
         // Only reload data; never touch visibility — the search overlay (if active)
         // already covers the tab/content stack, so its isHidden state must not change.
         if currentTab == 0 {
-            activeFeaturesVC?.loadFeatures()
-        } else if currentTab == 1 {
             activeTasksVC?.loadTasks()
+        } else if currentTab == 1 {
+            activeFeaturesVC?.loadFeatures()
         } else if currentTab == 3 {
             activePodsVC?.loadPods()
         }
@@ -196,9 +196,9 @@ class WorkspaceViewController: PopHandlerViewController {
 
     @objc private func createFeatureButtonTapped() {
         if currentTab == 0 {
-            activeFeaturesVC?.createButtonTapped()
-        } else if currentTab == 1 {
             activeTasksVC?.createButtonTapped()
+        } else if currentTab == 1 {
+            activeFeaturesVC?.createButtonTapped()
         }
     }
 
@@ -214,7 +214,7 @@ class WorkspaceViewController: PopHandlerViewController {
         topTabSegmentedControl.buttonBackgroundColor = .Sphinx.HeaderBG
         topTabSegmentedControl.selectorViewColor = .Sphinx.PrimaryGreen
         topTabSegmentedControl.configureFromOutlet(
-            buttonTitles: ["FEATURES", "TASKS", "GRAPH CHAT", "PODS"],
+            buttonTitles: ["TASKS", "FEATURES", "GRAPH CHAT", "PODS"],
             initialIndex: 0,
             delegate: self
         )
@@ -369,7 +369,7 @@ extension WorkspaceViewController: CustomSegmentedControlDelegate {
 
     private func switchToTab(_ index: Int) {
         currentTab = index
-        createFeatureButton.isHidden = (index == 2 || index == 3)
+        createFeatureButton.isHidden = (index == 0 || index == 2 || index == 3)
 
         // Instantiate children lazily, but only make them visible when search is inactive
         let searchActive = searchVC != nil
@@ -380,6 +380,14 @@ extension WorkspaceViewController: CustomSegmentedControlDelegate {
         activePodsVC?.view.isHidden = true
 
         if index == 0 {
+            if activeTasksVC == nil {
+                activeTasksVC = WorkspaceTasksViewController.instantiate(workspace: workspace)
+                addChildVC(activeTasksVC)
+            }
+            if !searchActive {
+                activeTasksVC.view.isHidden = false
+            }
+        } else if index == 1 {
             if activeFeaturesVC == nil {
                 activeFeaturesVC = WorkspaceFeaturesViewController.instantiate(workspace: workspace)
                 addChildVC(activeFeaturesVC)
@@ -387,14 +395,6 @@ extension WorkspaceViewController: CustomSegmentedControlDelegate {
             // Only reveal if search overlay is not covering the stack
             if !searchActive {
                 activeFeaturesVC.view.isHidden = false
-            }
-        } else if index == 1 {
-            if activeTasksVC == nil {
-                activeTasksVC = WorkspaceTasksViewController.instantiate(workspace: workspace)
-                addChildVC(activeTasksVC)
-            }
-            if !searchActive {
-                activeTasksVC.view.isHidden = false
             }
         } else if index == 2 {
             if activeGraphChatVC == nil {
