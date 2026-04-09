@@ -172,8 +172,7 @@ class WorkflowDiagramView: UIView, UIScrollViewDelegate {
             scrollView.bottomAnchor.constraint(equalTo: bottomAnchor)
         ])
 
-        // Canvas view
-        canvasView.translatesAutoresizingMaskIntoConstraints = false
+        // Canvas view — uses direct frame assignment, so TAMR must stay true (default)
         canvasView.backgroundColor = .clear
         scrollView.addSubview(canvasView)
     }
@@ -202,7 +201,6 @@ class WorkflowDiagramView: UIView, UIScrollViewDelegate {
         // ---- Place node views ----
         for (key, step) in diagram.steps {
             let nodeView = WorkflowStepNodeView(step: step)
-            nodeView.translatesAutoresizingMaskIntoConstraints = false
 
             let w: CGFloat = step.nodeType == .condition
                 ? WorkflowStepNodeView.conditionSize
@@ -233,9 +231,8 @@ class WorkflowDiagramView: UIView, UIScrollViewDelegate {
         scrollView.contentSize = canvasView.frame.size
 
         // ---- Draw edges ----
-        DispatchQueue.main.async { [weak self] in
-            self?.drawEdges(diagram: diagram)
-        }
+        canvasView.layoutIfNeeded()
+        drawEdges(diagram: diagram)
     }
 
     private func drawEdges(diagram: WorkflowDiagramData) {
