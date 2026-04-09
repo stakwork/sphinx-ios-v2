@@ -222,14 +222,42 @@ class TaskDependencyDiagramView: UIView {
                 let startPoint = CGPoint(x: sourceFrame.maxX, y: sourceFrame.midY)
                 let endPoint   = CGPoint(x: dependentFrame.minX, y: dependentFrame.midY)
 
-                let layer = makeArrowLayer(from: startPoint, to: endPoint, color: arrowColor)
+                let sourceCol = taskColumns[sourceId] ?? 0
+                let destCol   = taskColumns[task.id]  ?? 0
+                var verticalOffset: CGFloat = 0
+
+                if abs(destCol - sourceCol) > 1 {
+                    let minCol = min(sourceCol, destCol)
+                    let maxCol = max(sourceCol, destCol)
+                    let arrowMidY = (startPoint.y + endPoint.y) / 2
+
+                    let obstructingYs: [CGFloat] = tasks
+                        .filter { t in
+                            let col = taskColumns[t.id] ?? 0
+                            return col > minCol && col < maxCol
+                        }
+                        .compactMap { t -> CGFloat? in
+                            guard let nv = nodeViews[t.id] else { return nil }
+                            let f = nv.convert(nv.bounds, to: arrowOverlay)
+                            return f.midY
+                        }
+                        .filter { abs($0 - arrowMidY) < nodeSize }
+
+                    if !obstructingYs.isEmpty {
+                        let clearance = nodeSize / 2 + nodeSpacing + 4
+                        let avgObstructY = obstructingYs.reduce(0, +) / CGFloat(obstructingYs.count)
+                        verticalOffset = avgObstructY >= arrowMidY ? -clearance : clearance
+                    }
+                }
+
+                let layer = makeArrowLayer(from: startPoint, to: endPoint, color: arrowColor, verticalOffset: verticalOffset)
                 arrowOverlay.layer.addSublayer(layer)
                 arrowLayers.append(layer)
             }
         }
     }
 
-    private func makeArrowLayer(from start: CGPoint, to end: CGPoint, color: CGColor) -> CAShapeLayer {
+    private func makeArrowLayer(from start: CGPoint, to end: CGPoint, color: CGColor, verticalOffset: CGFloat = 0) -> CAShapeLayer {
         let path = UIBezierPath()
 
         // Bezier curve from source right-edge to dependent left-edge
@@ -237,8 +265,8 @@ class TaskDependencyDiagramView: UIView {
         path.move(to: start)
         path.addCurve(
             to: end,
-            controlPoint1: CGPoint(x: midX, y: start.y),
-            controlPoint2: CGPoint(x: midX, y: end.y)
+            controlPoint1: CGPoint(x: midX, y: start.y + verticalOffset),
+            controlPoint2: CGPoint(x: midX, y: end.y + verticalOffset)
         )
 
         // Fixed arrowhead pointing right (angle = 0)
