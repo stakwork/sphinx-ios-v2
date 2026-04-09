@@ -91,6 +91,7 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         // Default: circle hidden, title at original position
         titleLeadingWithoutCircle.isActive = true
 
+//        titleLabel.heightAnchor.constraint(equalToConstant: 36).isActive = true
         titleLabel.textColor = .Sphinx.Text
         titleLabel.font = UIFont.systemFont(ofSize: 15, weight: .medium)
         // numberOfLines = 2 caps wrapping; intrinsic height sizes the row naturally
@@ -185,7 +186,7 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
     private func setupRightPillStack() {
         // retryWorkflowButton lives here, immediately after haltedWorkflowBadge,
         // so they always share the same vertical axis via .alignment = .center
-        rightPillStack = UIStackView(arrangedSubviews: [updatedAtLabel, deploymentPill, haltedWorkflowBadge, retryWorkflowButton, prBadgeButton])
+        rightPillStack = UIStackView(arrangedSubviews: [updatedAtLabel, deploymentPill, retryWorkflowButton, haltedWorkflowBadge, prBadgeButton])
         rightPillStack.axis = .horizontal
         rightPillStack.alignment = .center
         rightPillStack.distribution = .fill
@@ -197,8 +198,9 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         // never overlapping the status/priority badges above it.
         NSLayoutConstraint.activate([
             rightPillStack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            rightPillStack.centerYAnchor.constraint(equalTo: repositoryLabel.centerYAnchor),
-            rightPillStack.leadingAnchor.constraint(greaterThanOrEqualTo: repositoryLabel.trailingAnchor, constant: 8)
+            rightPillStack.leadingAnchor.constraint(greaterThanOrEqualTo: repositoryLabel.trailingAnchor, constant: 8),
+            rightPillStack.topAnchor.constraint(greaterThanOrEqualTo: priorityBadge.bottomAnchor, constant: 12),
+            rightPillStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -10)
         ])
     }
 
