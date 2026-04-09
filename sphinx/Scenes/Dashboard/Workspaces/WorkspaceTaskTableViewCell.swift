@@ -93,9 +93,8 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
 
         titleLabel.textColor = .Sphinx.Text
         titleLabel.font = UIFont.systemFont(ofSize: 15, weight: .medium)
+        // numberOfLines = 2 caps wrapping; intrinsic height sizes the row naturally
         titleLabel.numberOfLines = 2
-        // Fix to exactly 2-line height so the row never collapses for short titles
-        titleLabel.heightAnchor.constraint(equalToConstant: 36).isActive = true
 
         repositoryLabel.textColor = .Sphinx.SecondaryText
         repositoryLabel.font = UIFont(name: "Roboto-Regular", size: 13)
@@ -133,7 +132,7 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         prBadgeButton.isHidden = true
         prBadgeButton.translatesAutoresizingMaskIntoConstraints = false
         prBadgeButton.addTarget(self, action: #selector(prBadgeTapped), for: .touchUpInside)
-        // Height constraint only — stack handles trailing/bottom positioning
+        // Height constraint only — stack handles trailing positioning
         prBadgeButton.heightAnchor.constraint(equalToConstant: 22).isActive = true
     }
 
@@ -148,7 +147,6 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         haltedWorkflowBadge.text = "HALTED"
         haltedWorkflowBadge.translatesAutoresizingMaskIntoConstraints = false
         haltedWorkflowBadge.isHidden = true
-        // Height + equal-width to prBadgeButton so .center alignment has a defined frame
         haltedWorkflowBadge.heightAnchor.constraint(equalToConstant: 22).isActive = true
         haltedWorkflowBadge.widthAnchor.constraint(equalToConstant: 55).isActive = true
     }
@@ -160,16 +158,15 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         retryWorkflowButton.tintColor = .Sphinx.SphinxOrange
         retryWorkflowButton.translatesAutoresizingMaskIntoConstraints = false
         retryWorkflowButton.isHidden = true
-        contentView.addSubview(retryWorkflowButton)
-
-        NSLayoutConstraint.activate([
-            retryWorkflowButton.leadingAnchor.constraint(equalTo: repositoryLabel.trailingAnchor, constant: 8),
-            retryWorkflowButton.centerYAnchor.constraint(equalTo: repositoryLabel.centerYAnchor),
-            retryWorkflowButton.widthAnchor.constraint(equalToConstant: 20),
-            retryWorkflowButton.heightAnchor.constraint(equalToConstant: 20)
-        ])
-
+        // Size constraints at defaultHigh so UIStackView's collapse constraint can win when hidden
+        let retryW = retryWorkflowButton.widthAnchor.constraint(equalToConstant: 20)
+        retryW.priority = .defaultHigh
+        retryW.isActive = true
+        let retryH = retryWorkflowButton.heightAnchor.constraint(equalToConstant: 20)
+        retryH.priority = .defaultHigh
+        retryH.isActive = true
         retryWorkflowButton.addTarget(self, action: #selector(retryWorkflowButtonTapped), for: .touchUpInside)
+        // NOTE: do NOT addSubview here — setupRightPillStack adds it as an arranged subview
     }
 
     private func setupDeploymentPill() {
@@ -186,7 +183,9 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
     }
 
     private func setupRightPillStack() {
-        rightPillStack = UIStackView(arrangedSubviews: [updatedAtLabel, deploymentPill, haltedWorkflowBadge, prBadgeButton])
+        // retryWorkflowButton lives here, immediately after haltedWorkflowBadge,
+        // so they always share the same vertical axis via .alignment = .center
+        rightPillStack = UIStackView(arrangedSubviews: [updatedAtLabel, deploymentPill, haltedWorkflowBadge, retryWorkflowButton, prBadgeButton])
         rightPillStack.axis = .horizontal
         rightPillStack.alignment = .center
         rightPillStack.distribution = .fill
@@ -194,9 +193,11 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         rightPillStack.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(rightPillStack)
 
+        // Anchor to repositoryLabel's centerY so the pill row always tracks the repo label,
+        // never overlapping the status/priority badges above it.
         NSLayoutConstraint.activate([
             rightPillStack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            rightPillStack.bottomAnchor.constraint(equalTo: separatorView.topAnchor, constant: -12),
+            rightPillStack.centerYAnchor.constraint(equalTo: repositoryLabel.centerYAnchor),
             rightPillStack.leadingAnchor.constraint(greaterThanOrEqualTo: repositoryLabel.trailingAnchor, constant: 8)
         ])
     }
@@ -318,27 +319,27 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         }
         // UIStackView collapses hidden arranged subviews — no constraint toggling needed
     }
-    
+
     private func formatDate(_ dateString: String?) -> String {
         guard let dateString = dateString else { return "" }
-        
+
         let isoFormatter = ISO8601DateFormatter()
         isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         var date = isoFormatter.date(from: dateString)
-        
+
         if date == nil {
             isoFormatter.formatOptions = [.withInternetDateTime]
             date = isoFormatter.date(from: dateString)
         }
-        
+
         guard let date = date else { return dateString }
-        
+
         let now = Date()
         let seconds = now.timeIntervalSince(date)
         let minutes = seconds / 60
         let hours = seconds / 3600
         let days = seconds / 86400
-        
+
         if seconds < 60 {
             return "Just now"
         } else if minutes < 60 {
