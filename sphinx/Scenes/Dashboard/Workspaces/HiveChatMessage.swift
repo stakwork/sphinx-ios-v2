@@ -63,6 +63,20 @@ struct StreamArtifactInfo: Sendable {
     let baseUrl: String
 }
 
+struct WorkflowArtifactContent: Sendable {
+    let projectId: String?
+    let workflowId: String?
+    let workflowName: String?
+    let workflowRefId: String?
+
+    init(json: JSON) {
+        self.projectId = json["projectId"].string
+        self.workflowId = json["workflowId"].string
+        self.workflowName = json["workflowName"].string
+        self.workflowRefId = json["workflowRefId"].string
+    }
+}
+
 struct HiveChatMessageArtifact: @unchecked Sendable {
     let id: String?
     let type: String?
@@ -78,10 +92,13 @@ struct HiveChatMessageArtifact: @unchecked Sendable {
     let clarifyingQuestions: [ClarifyingQuestion]?
     /// Parsed stream info when type == "STREAM"
     let streamInfo: StreamArtifactInfo?
+    /// Parsed workflow content when type == "WORKFLOW"
+    let workflowContent: WorkflowArtifactContent?
 
     var isPullRequest: Bool { type == "PULL_REQUEST" }
     var isLongform: Bool { type == "LONGFORM" }
     var isStream: Bool { type == "STREAM" }
+    var isWorkflow: Bool { type == "WORKFLOW" }
 
     var isClarifyingQuestions: Bool {
         return type == "PLAN" && contentJSON?["tool_use"].string == "ask_clarifying_questions"
@@ -97,6 +114,7 @@ struct HiveChatMessageArtifact: @unchecked Sendable {
             self.longformContent = nil
             self.contentJSON = nil
             self.clarifyingQuestions = nil
+            self.workflowContent = nil
             // Content may be a JSON object or a JSON string that needs decoding
             let rawContent = json["content"]
             let contentJSON: JSON
@@ -143,6 +161,7 @@ struct HiveChatMessageArtifact: @unchecked Sendable {
             self.contentJSON = nil
             self.clarifyingQuestions = nil
             self.streamInfo = nil
+            self.workflowContent = nil
         } else if json["type"].string == "LONGFORM" {
             let c = json["content"]
             self.longformContent = LongformContent(title: c["title"].string, text: c["text"].string)
@@ -151,6 +170,7 @@ struct HiveChatMessageArtifact: @unchecked Sendable {
             self.contentJSON = nil
             self.clarifyingQuestions = nil
             self.streamInfo = nil
+            self.workflowContent = nil
         } else if json["type"].string == "PLAN" {
             self.prContent = nil
             self.content = nil
@@ -168,6 +188,26 @@ struct HiveChatMessageArtifact: @unchecked Sendable {
                 self.clarifyingQuestions = nil
             }
             self.streamInfo = nil
+            self.workflowContent = nil
+        } else if json["type"].string == "WORKFLOW" {
+            self.prContent = nil
+            self.content = nil
+            self.longformContent = nil
+            self.contentJSON = nil
+            self.clarifyingQuestions = nil
+            self.streamInfo = nil
+            // Content may be a JSON object or a JSON string that needs decoding
+            let rawContent = json["content"]
+            let contentJSON: JSON
+            if rawContent.type == .string,
+               let str = rawContent.string,
+               let data = str.data(using: .utf8),
+               let parsed = try? JSON(data: data) {
+                contentJSON = parsed
+            } else {
+                contentJSON = rawContent
+            }
+            self.workflowContent = WorkflowArtifactContent(json: contentJSON)
         } else {
             self.prContent = nil
             self.contentJSON = nil
@@ -175,6 +215,7 @@ struct HiveChatMessageArtifact: @unchecked Sendable {
             self.longformContent = nil
             self.content = json["content"].string
             self.streamInfo = nil
+            self.workflowContent = nil
         }
     }
 }
@@ -298,6 +339,6 @@ struct HiveChatMessage: @unchecked Sendable {
     var isDisplayable: Bool {
         !message.isEmpty ||
         !attachments.isEmpty ||
-        artifacts.contains(where: { $0.type != "STREAM" })
+        artifacts.contains(where: { $0.type != "STREAM" && $0.type != "WORKFLOW" })
     }
 }
