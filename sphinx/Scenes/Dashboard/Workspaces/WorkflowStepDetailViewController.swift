@@ -126,29 +126,16 @@ class WorkflowStepDetailViewController: UIViewController {
         contentStack.translatesAutoresizingMaskIntoConstraints = false
         contentScrollView.addSubview(contentStack)
 
-        // Variables section — use orderedVarKeys to preserve JSON document order
-        if let attrs = step.rawJSON["attributes"] as? [String: Any],
-           let vars = attrs["vars"] as? [String: Any],
-           !vars.isEmpty {
-            let rows = step.orderedVarKeys.compactMap { key -> [String]? in
-                guard let val = vars[key] else { return nil }
-                return [key, formatValue(val)]
-            }
-            if !rows.isEmpty {
-                contentStack.addArrangedSubview(makeSectionTable(title: "Variables", rows: rows))
-            }
+        // Variables section — raw JSON values captured in scanner, order fully preserved
+        if !step.orderedVars.isEmpty {
+            let rows = step.orderedVars.map { [$0.0, displayRawJSON($0.1)] }
+            contentStack.addArrangedSubview(makeSectionTable(title: "Variables", rows: rows))
         }
 
-        // Attributes section — use orderedAttributeKeys to preserve JSON document order
-        if let attrs = step.rawJSON["attributes"] as? [String: Any],
-           !step.orderedAttributeKeys.isEmpty {
-            let rows = step.orderedAttributeKeys.compactMap { key -> [String]? in
-                guard let val = attrs[key] else { return nil }
-                return [key, formatValue(val)]
-            }
-            if !rows.isEmpty {
-                contentStack.addArrangedSubview(makeSectionTable(title: "Attributes", rows: rows))
-            }
+        // Attributes section — raw JSON values captured in scanner, order fully preserved
+        if !step.orderedAttributes.isEmpty {
+            let rows = step.orderedAttributes.map { [$0.0, displayRawJSON($0.1)] }
+            contentStack.addArrangedSubview(makeSectionTable(title: "Attributes", rows: rows))
         }
 
         // ---- Divider ----
@@ -262,14 +249,18 @@ class WorkflowStepDetailViewController: UIViewController {
 
     // MARK: - Helpers
 
-    private func formatValue(_ value: Any) -> String {
-        if let str = value as? String { return str }
-        if let num = value as? NSNumber { return num.stringValue }
-        if let data = try? JSONSerialization.data(withJSONObject: value, options: []),
-           let str = String(data: data, encoding: .utf8) {
-            return str.trimmingCharacters(in: .whitespacesAndNewlines)
+    /// Strips surrounding quotes from plain JSON strings; leaves objects/arrays/numbers as-is.
+    private func displayRawJSON(_ raw: String) -> String {
+        let s = raw.trimmingCharacters(in: .whitespaces)
+        if s.hasPrefix("\"") && s.hasSuffix("\"") && s.count >= 2 {
+            // Unescape: remove outer quotes and decode \" inside
+            let inner = String(s.dropFirst().dropLast())
+            return inner.replacingOccurrences(of: "\\\"", with: "\"")
+                        .replacingOccurrences(of: "\\\\", with: "\\")
+                        .replacingOccurrences(of: "\\n",  with: "\n")
+                        .replacingOccurrences(of: "\\t",  with: "\t")
         }
-        return "\(value)"
+        return s
     }
 
     private func nodeTypeColor(_ type: WorkflowNodeType) -> UIColor {
