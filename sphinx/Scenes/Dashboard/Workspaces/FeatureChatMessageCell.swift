@@ -22,6 +22,12 @@ class FeatureChatMessageCell: UITableViewCell {
     private var isLogsExpanded: Bool = false
     private var currentLogsContent: String? = nil
 
+    // MARK: - Table views tracking
+    private var activeTableViews: [MarkdownTableView] = []
+
+    // MARK: - Bubble stack (promoted to stored property for dynamic table insertion)
+    private var bubbleStack: UIStackView = UIStackView()
+
     // MARK: - UI Components
 
     private let bubbleView: UIView = {
@@ -158,7 +164,7 @@ class FeatureChatMessageCell: UITableViewCell {
         logsHeaderButton.addTarget(self, action: #selector(logsHeaderTapped), for: .touchUpInside)
 
         // Vertical stack inside bubble: text + logs header + logs body + optional PR card + optional attachment grid
-        let bubbleStack = UIStackView(arrangedSubviews: [messageTextView, logsHeaderButton, logsBodyTextView, prCardView, attachmentGridView])
+        bubbleStack = UIStackView(arrangedSubviews: [messageTextView, logsHeaderButton, logsBodyTextView, prCardView, attachmentGridView])
         bubbleStack.translatesAutoresizingMaskIntoConstraints = false
         bubbleStack.axis = .vertical
         bubbleStack.spacing = 0
@@ -205,6 +211,10 @@ class FeatureChatMessageCell: UITableViewCell {
     func configure(with message: HiveChatMessage, isLastMessage: Bool = false, italicText: String? = nil) {
         let isUser = message.isUserMessage
 
+        // --- Clean up any table views from previous use ---
+        activeTableViews.forEach { $0.removeFromSuperview() }
+        activeTableViews.removeAll()
+
         // --- Text content ---
         if isUser {
             if let italic = italicText {
@@ -219,20 +229,14 @@ class FeatureChatMessageCell: UITableViewCell {
                 currentLogsContent = logsBody
                 configureLogsViews()
             } else {
-                let rendered = FeatureChatMessageCell.markdownRenderer.render(message.resolvedDisplayText)
-                let mutable = NSMutableAttributedString(attributedString: rendered)
-                mutable.enumerateAttribute(.foregroundColor, in: NSRange(location: 0, length: mutable.length)) { value, range, _ in
-                    if let color = value as? UIColor, color == UIColor.Sphinx.Text {
-                        mutable.addAttribute(.foregroundColor, value: UIColor.Sphinx.TextMessages, range: range)
-                    }
-                }
-                messageTextView.attributedText = mutable
+                renderSegmentedContent(message.resolvedDisplayText)
             }
             // For logs messages, configureLogsViews() already manages messageTextView visibility.
             // Only touch it for non-logs messages.
-            if message.logsContent == nil {
-                let hasText = italicText != nil
-                    || !message.resolvedDisplayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            if message.logsContent == nil && italicText == nil {
+                // messageTextView visibility is handled inside renderSegmentedContent
+            } else if message.logsContent == nil {
+                let hasText = !message.resolvedDisplayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 messageTextView.isHidden = !hasText
             }
             bubbleView.backgroundColor      = UIColor.Sphinx.SentMsgBG
@@ -260,18 +264,7 @@ class FeatureChatMessageCell: UITableViewCell {
                 currentLogsContent = logsBody
                 configureLogsViews()
             } else {
-                let rendered = FeatureChatMessageCell.markdownRenderer.render(message.resolvedDisplayText)
-                let mutable  = NSMutableAttributedString(attributedString: rendered)
-                // Swap base text colour to match the bubble's text style
-                mutable.enumerateAttribute(.foregroundColor, in: NSRange(location: 0, length: mutable.length)) { value, range, _ in
-                    if let color = value as? UIColor, color == UIColor.Sphinx.Text {
-                        mutable.addAttribute(.foregroundColor, value: UIColor.Sphinx.TextMessages, range: range)
-                    }
-                }
-                messageTextView.attributedText = mutable
-                // Fix 3: hide text view when message body is blank
-                let hasText = !message.resolvedDisplayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                messageTextView.isHidden = !hasText
+                renderSegmentedContent(message.resolvedDisplayText)
             }
             bubbleView.backgroundColor      = UIColor.Sphinx.ReceivedMsgBG
             timestampLabel.textColor        = UIColor.Sphinx.SecondaryText
@@ -356,6 +349,53 @@ class FeatureChatMessageCell: UITableViewCell {
         }
     }
 
+    // MARK: - Segmented content rendering
+
+    /// Splits `rawText` into text/table segments and renders each in order into the bubble stack.
+    private func renderSegmentedContent(_ rawText: String) {
+        let segments = MarkdownContentSplitter.split(rawText)
+
+        // Determine the index of prCardView so tables are inserted before it
+        var insertIndex = bubbleStack.arrangedSubviews.firstIndex(of: prCardView) ?? bubbleStack.arrangedSubviews.count
+
+        var hasTextSegment = false
+
+        for segment in segments {
+            switch segment {
+            case .text(let txt):
+                let rendered = FeatureChatMessageCell.markdownRenderer.render(txt)
+                let mutable = NSMutableAttributedString(attributedString: rendered)
+                mutable.enumerateAttribute(.foregroundColor, in: NSRange(location: 0, length: mutable.length)) { value, range, _ in
+                    if let color = value as? UIColor, color == UIColor.Sphinx.Text {
+                        mutable.addAttribute(.foregroundColor, value: UIColor.Sphinx.TextMessages, range: range)
+                    }
+                }
+                messageTextView.attributedText = mutable
+                messageTextView.isHidden = txt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                hasTextSegment = true
+
+            case .table(let headers, let rows):
+                let tableView = MarkdownTableView()
+                tableView.configure(headers: headers, rows: rows)
+                // Set explicit height constraint so Auto Layout resolves inside the stack
+                tableView.heightAnchor.constraint(equalToConstant: tableView.intrinsicContentHeight).isActive = true
+                bubbleStack.insertArrangedSubview(tableView, at: insertIndex)
+                insertIndex += 1
+                activeTableViews.append(tableView)
+            }
+        }
+
+        // If there were no text segments, hide the text view
+        if !hasTextSegment {
+            messageTextView.isHidden = true
+        }
+
+        // Notify host table view to recalculate row height
+        if !activeTableViews.isEmpty {
+            onHeightChanged?()
+        }
+    }
+
     // MARK: - Logs helpers
 
     /// Configures the logs header button and body text view based on current expand state.
@@ -432,6 +472,10 @@ class FeatureChatMessageCell: UITableViewCell {
 
     override func prepareForReuse() {
         super.prepareForReuse()
+
+        // Remove any dynamically inserted table views
+        activeTableViews.forEach { $0.removeFromSuperview() }
+        activeTableViews.removeAll()
 
         // Reset logs state
         isLogsExpanded = false
