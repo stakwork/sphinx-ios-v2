@@ -18,6 +18,10 @@ class FeatureChatMessageCell: UITableViewCell {
         return MarkdownRenderer(style: style)
     }()
 
+    // MARK: - Logs expand/collapse state
+    private var isLogsExpanded: Bool = false
+    private var currentLogsContent: String? = nil
+
     // MARK: - UI Components
 
     private let bubbleView: UIView = {
@@ -54,6 +58,32 @@ class FeatureChatMessageCell: UITableViewCell {
             .underlineStyle: NSUnderlineStyle.single.rawValue
         ]
         tv.delegate = LinkTapCoordinator.shared
+        return tv
+    }()
+
+    /// Tappable header shown for logs messages (collapsed: "> Logs", expanded: "▾ Logs").
+    private let logsHeaderButton: UIButton = {
+        let btn = UIButton(type: .system)
+        btn.translatesAutoresizingMaskIntoConstraints = false
+        btn.contentHorizontalAlignment = .left
+        btn.titleLabel?.font = UIFont.boldSystemFont(ofSize: 15)
+        btn.setTitleColor(UIColor.Sphinx.SecondaryText, for: .normal)
+        btn.contentEdgeInsets = UIEdgeInsets(top: 10, left: 12, bottom: 6, right: 12)
+        btn.isHidden = true
+        return btn
+    }()
+
+    /// Non-scrolling text view for the logs body (code-block style). Hidden when collapsed.
+    private let logsBodyTextView: UITextView = {
+        let tv = UITextView()
+        tv.translatesAutoresizingMaskIntoConstraints = false
+        tv.isEditable = false
+        tv.isScrollEnabled = false
+        tv.isSelectable = true
+        tv.backgroundColor = .clear
+        tv.textContainerInset = UIEdgeInsets(top: 4, left: 8, bottom: 10, right: 8)
+        tv.textContainer.lineFragmentPadding = 0
+        tv.isHidden = true
         return tv
     }()
 
@@ -124,8 +154,11 @@ class FeatureChatMessageCell: UITableViewCell {
         contentView.backgroundColor = .Sphinx.Body
         selectionStyle = .none
 
-        // Vertical stack inside bubble: text + optional PR card + optional attachment grid
-        let bubbleStack = UIStackView(arrangedSubviews: [messageTextView, prCardView, attachmentGridView])
+        // Wire logs header tap
+        logsHeaderButton.addTarget(self, action: #selector(logsHeaderTapped), for: .touchUpInside)
+
+        // Vertical stack inside bubble: text + logs header + logs body + optional PR card + optional attachment grid
+        let bubbleStack = UIStackView(arrangedSubviews: [messageTextView, logsHeaderButton, logsBodyTextView, prCardView, attachmentGridView])
         bubbleStack.translatesAutoresizingMaskIntoConstraints = false
         bubbleStack.axis = .vertical
         bubbleStack.spacing = 0
@@ -183,7 +216,8 @@ class FeatureChatMessageCell: UITableViewCell {
                 )
                 messageTextView.attributedText = mutable
             } else if let logsBody = message.logsContent {
-                messageTextView.attributedText = makeLogsAttributedString(content: logsBody)
+                currentLogsContent = logsBody
+                configureLogsViews()
             } else {
                 let rendered = FeatureChatMessageCell.markdownRenderer.render(message.resolvedDisplayText)
                 let mutable = NSMutableAttributedString(attributedString: rendered)
@@ -194,11 +228,13 @@ class FeatureChatMessageCell: UITableViewCell {
                 }
                 messageTextView.attributedText = mutable
             }
-            // Fix 3: hide text view when message body is blank
-            let hasText = italicText != nil
-                || message.logsContent != nil
-                || !message.resolvedDisplayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            messageTextView.isHidden = !hasText
+            // For logs messages, configureLogsViews() already manages messageTextView visibility.
+            // Only touch it for non-logs messages.
+            if message.logsContent == nil {
+                let hasText = italicText != nil
+                    || !message.resolvedDisplayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                messageTextView.isHidden = !hasText
+            }
             bubbleView.backgroundColor      = UIColor.Sphinx.SentMsgBG
             timestampLabel.textColor        = UIColor.Sphinx.SecondaryTextSent
             timestampLabel.textAlignment    = .right
@@ -221,8 +257,8 @@ class FeatureChatMessageCell: UITableViewCell {
             }
         } else {
             if let logsBody = message.logsContent {
-                messageTextView.attributedText = makeLogsAttributedString(content: logsBody)
-                messageTextView.isHidden = false
+                currentLogsContent = logsBody
+                configureLogsViews()
             } else {
                 let rendered = FeatureChatMessageCell.markdownRenderer.render(message.resolvedDisplayText)
                 let mutable  = NSMutableAttributedString(attributedString: rendered)
@@ -320,19 +356,34 @@ class FeatureChatMessageCell: UITableViewCell {
         }
     }
 
-    // MARK: - Helpers
+    // MARK: - Logs helpers
 
-    private func makeLogsAttributedString(content: String) -> NSAttributedString {
-        let result = NSMutableAttributedString()
+    /// Configures the logs header button and body text view based on current expand state.
+    private func configureLogsViews() {
+        // Hide the regular message text view — logs use dedicated views
+        messageTextView.isHidden = true
 
-        // "Logs" label line
-        let labelAttrs: [NSAttributedString.Key: Any] = [
-            .font: UIFont.boldSystemFont(ofSize: 13),
-            .foregroundColor: UIColor.Sphinx.SecondaryText
-        ]
-        result.append(NSAttributedString(string: "Logs\n", attributes: labelAttrs))
+        // Header
+        let arrow = isLogsExpanded ? "▾" : ">"
+        logsHeaderButton.setTitle("\(arrow) Logs", for: .normal)
+        logsHeaderButton.isHidden = false
 
-        // Code block body — reuse style from the shared MarkdownRenderer
+        // Body
+        if isLogsExpanded, let content = currentLogsContent {
+            logsBodyTextView.attributedText = makeLogsBodyAttributedString(content: content)
+            logsBodyTextView.isHidden = false
+        } else {
+            logsBodyTextView.isHidden = true
+        }
+    }
+
+    @objc private func logsHeaderTapped() {
+        isLogsExpanded.toggle()
+        configureLogsViews()
+        onHeightChanged?()
+    }
+
+    private func makeLogsBodyAttributedString(content: String) -> NSAttributedString {
         let style = FeatureChatMessageCell.markdownRenderer.style
         let codeAttrs: [NSAttributedString.Key: Any] = [
             .font: style.codeFont,
@@ -341,10 +392,10 @@ class FeatureChatMessageCell: UITableViewCell {
         ]
         let paddedLines = content.components(separatedBy: "\n").map { "  \($0)  " }
         let padded = paddedLines.joined(separator: "\n")
-        result.append(NSAttributedString(string: padded, attributes: codeAttrs))
-
-        return result
+        return NSAttributedString(string: padded, attributes: codeAttrs)
     }
+
+    // MARK: - Helpers
 
     private func formatTimestamp(_ timestamp: String) -> String {
         let iso = ISO8601DateFormatter()
@@ -381,7 +432,15 @@ class FeatureChatMessageCell: UITableViewCell {
 
     override func prepareForReuse() {
         super.prepareForReuse()
-        
+
+        // Reset logs state
+        isLogsExpanded = false
+        currentLogsContent = nil
+        logsHeaderButton.isHidden = true
+        logsHeaderButton.setTitle("> Logs", for: .normal)
+        logsBodyTextView.isHidden = true
+        logsBodyTextView.attributedText = nil
+
         messageTextView.attributedText = nil
         messageTextView.isHidden = false
         messageTextView.textContainerInset = UIEdgeInsets(top: 10, left: 8, bottom: 10, right: 8)
