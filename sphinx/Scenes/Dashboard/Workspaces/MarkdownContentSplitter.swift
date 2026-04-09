@@ -78,10 +78,9 @@ struct MarkdownContentSplitter {
 
     // MARK: - Private helpers
 
-    /// Returns true if the line looks like a GFM table row (contains at least one `|`)
+    /// Returns true if the line looks like a GFM table row (starts with `|`)
     private static func isTableLine(_ line: String) -> Bool {
-        let trimmed = line.trimmingCharacters(in: .whitespaces)
-        return trimmed.hasPrefix("|") || trimmed.contains("|")
+        return line.trimmingCharacters(in: .whitespaces).hasPrefix("|")
     }
 
     /// Returns true if the line is a GFM separator row (cells contain only `-`, `:`, spaces)

@@ -22,8 +22,9 @@ class FeatureChatMessageCell: UITableViewCell {
     private var isLogsExpanded: Bool = false
     private var currentLogsContent: String? = nil
 
-    // MARK: - Table views tracking
+    // MARK: - Dynamically inserted segment views (tables + extra text views)
     private var activeTableViews: [MarkdownTableView] = []
+    private var activeSegmentViews: [UIView] = []
 
     // MARK: - Bubble stack (promoted to stored property for dynamic table insertion)
     private var bubbleStack: UIStackView = UIStackView()
@@ -211,8 +212,9 @@ class FeatureChatMessageCell: UITableViewCell {
     func configure(with message: HiveChatMessage, isLastMessage: Bool = false, italicText: String? = nil) {
         let isUser = message.isUserMessage
 
-        // --- Clean up any table views from previous use ---
-        activeTableViews.forEach { $0.removeFromSuperview() }
+        // --- Clean up any dynamically inserted segment views from previous use ---
+        activeSegmentViews.forEach { $0.removeFromSuperview() }
+        activeSegmentViews.removeAll()
         activeTableViews.removeAll()
 
         // --- Text content ---
@@ -355,10 +357,16 @@ class FeatureChatMessageCell: UITableViewCell {
     private func renderSegmentedContent(_ rawText: String) {
         let segments = MarkdownContentSplitter.split(rawText)
 
-        // Determine the index of prCardView so tables are inserted before it
-        var insertIndex = bubbleStack.arrangedSubviews.firstIndex(of: prCardView) ?? bubbleStack.arrangedSubviews.count
+        // Insert all segments in order directly before prCardView.
+        // The first .text segment reuses the existing messageTextView (position 0 in stack).
+        // Every subsequent segment — whether text or table — is a new view inserted after
+        // the previous one, preserving exact document order.
 
-        var hasTextSegment = false
+        let prCardIndex = bubbleStack.arrangedSubviews.firstIndex(of: prCardView) ?? bubbleStack.arrangedSubviews.count
+        // We'll track where the *next* new view should be inserted (just before prCardView initially)
+        var nextInsertIndex = prCardIndex
+
+        var usedMessageTextView = false
 
         for segment in segments {
             switch segment {
@@ -370,23 +378,53 @@ class FeatureChatMessageCell: UITableViewCell {
                         mutable.addAttribute(.foregroundColor, value: UIColor.Sphinx.TextMessages, range: range)
                     }
                 }
-                messageTextView.attributedText = mutable
-                messageTextView.isHidden = txt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                hasTextSegment = true
+
+                if !usedMessageTextView {
+                    // Reuse the pre-existing messageTextView for the first text segment
+                    messageTextView.attributedText = mutable
+                    messageTextView.isHidden = txt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                    usedMessageTextView = true
+                    // messageTextView is already in the stack at index 0 — nextInsertIndex stays
+                    // pointing after it only if we need to insert something before prCardView
+                } else {
+                    // Create an additional text view for subsequent text segments
+                    let tv = UITextView()
+                    tv.translatesAutoresizingMaskIntoConstraints = false
+                    tv.isEditable = false
+                    tv.isScrollEnabled = false
+                    tv.isSelectable = true
+                    tv.backgroundColor = .clear
+                    tv.textContainerInset = UIEdgeInsets(top: 6, left: 8, bottom: 6, right: 8)
+                    tv.textContainer.lineFragmentPadding = 0
+                    tv.linkTextAttributes = [
+                        .foregroundColor: UIColor.Sphinx.PrimaryBlue,
+                        .underlineStyle: NSUnderlineStyle.single.rawValue
+                    ]
+                    tv.attributedText = mutable
+                    tv.isHidden = txt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                    bubbleStack.insertArrangedSubview(tv, at: nextInsertIndex)
+                    nextInsertIndex += 1
+                    activeSegmentViews.append(tv)
+                }
 
             case .table(let headers, let rows):
+                if !usedMessageTextView {
+                    // No text segment came before this table — hide the messageTextView
+                    messageTextView.isHidden = true
+                    usedMessageTextView = true
+                }
                 let tableView = MarkdownTableView()
                 tableView.configure(headers: headers, rows: rows)
-                // Set explicit height constraint so Auto Layout resolves inside the stack
                 tableView.heightAnchor.constraint(equalToConstant: tableView.intrinsicContentHeight).isActive = true
-                bubbleStack.insertArrangedSubview(tableView, at: insertIndex)
-                insertIndex += 1
+                bubbleStack.insertArrangedSubview(tableView, at: nextInsertIndex)
+                nextInsertIndex += 1
                 activeTableViews.append(tableView)
+                activeSegmentViews.append(tableView)
             }
         }
 
-        // If there were no text segments, hide the text view
-        if !hasTextSegment {
+        // If no segments at all, hide the text view
+        if segments.isEmpty {
             messageTextView.isHidden = true
         }
 
@@ -473,8 +511,9 @@ class FeatureChatMessageCell: UITableViewCell {
     override func prepareForReuse() {
         super.prepareForReuse()
 
-        // Remove any dynamically inserted table views
-        activeTableViews.forEach { $0.removeFromSuperview() }
+        // Remove any dynamically inserted segment views (extra text views + table views)
+        activeSegmentViews.forEach { $0.removeFromSuperview() }
+        activeSegmentViews.removeAll()
         activeTableViews.removeAll()
 
         // Reset logs state
