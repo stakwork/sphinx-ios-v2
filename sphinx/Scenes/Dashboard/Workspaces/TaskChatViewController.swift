@@ -658,6 +658,93 @@ class TaskChatViewController: UIViewController {
         navigationController?.popViewController(animated: true)
     }
 
+    // MARK: - Workflow context
+
+    private var latestWorkflowContent: WorkflowContent? {
+        messages
+            .flatMap { $0.artifacts }
+            .last(where: { $0.isWorkflow })?
+            .workflowContent
+    }
+
+    // MARK: - Send routing
+
+    private func sendStandardMessage(_ message: String, replyId: String? = nil, attachments: [[String: AnyObject]] = []) {
+        API.sharedInstance.sendTaskChatMessageWithAuth(
+            taskId: task.id,
+            message: message,
+            replyId: replyId,
+            socketId: HivePusherManager.shared.socketId,
+            attachments: attachments,
+            callback: { [weak self] sentMessage in
+                DispatchQueue.main.async {
+                    guard let self = self, let sentMessage = sentMessage else { return }
+                    self.newMessageReceived(sentMessage)
+                }
+            },
+            errorCallback: { [weak self] in
+                DispatchQueue.main.async {
+                    self?.showSendMessageError()
+                }
+            }
+        )
+    }
+
+    private func sendMessage(_ message: String, replyId: String? = nil, attachments: [[String: AnyObject]] = []) {
+        switch task.mode {
+        case "workflow_editor":
+            guard let wf = latestWorkflowContent,
+                  let workflowId = wf.workflowId,
+                  let workflowName = wf.workflowName,
+                  let workflowRefId = wf.workflowRefId else {
+                sendStandardMessage(message, replyId: replyId, attachments: attachments)
+                return
+            }
+            API.sharedInstance.sendWorkflowEditorMessageWithAuth(
+                taskId: task.id,
+                message: message,
+                workflowId: workflowId,
+                workflowName: workflowName,
+                workflowRefId: workflowRefId,
+                workflowVersionId: wf.workflowVersionId,
+                webhook: wf.webhook,
+                callback: { [weak self] sentMessage in
+                    DispatchQueue.main.async {
+                        guard let self, let sentMessage else { return }
+                        self.newMessageReceived(sentMessage)
+                    }
+                },
+                errorCallback: { [weak self] in
+                    DispatchQueue.main.async { self?.showSendMessageError() }
+                }
+            )
+        case "project_debugger":
+            let projectId = latestWorkflowContent?.projectId
+                ?? cachedStakworkProjectId.map { String($0) }
+            guard let projectId else {
+                sendStandardMessage(message, replyId: replyId, attachments: attachments)
+                return
+            }
+            API.sharedInstance.sendProjectDebuggerMessageWithAuth(
+                taskId: task.id,
+                message: message,
+                projectId: projectId,
+                webhook: latestWorkflowContent?.webhook,
+                callback: { [weak self] sentMessage in
+                    DispatchQueue.main.async {
+                        guard let self, let sentMessage else { return }
+                        self.newMessageReceived(sentMessage)
+                    }
+                },
+                errorCallback: { [weak self] in
+                    DispatchQueue.main.async { self?.showSendMessageError() }
+                }
+            )
+        default:
+            sendStandardMessage(message, replyId: replyId, attachments: attachments)
+        }
+    }
+
     @objc private func sendTapped() {
         guard let message = chatInputTextView.text?.trimmingCharacters(in: .whitespacesAndNewlines),
               !message.isEmpty else {
@@ -693,48 +780,12 @@ class TaskChatViewController: UIViewController {
         refreshAttachmentsBar()
         updateSendButtonState()
 
-        API.sharedInstance.sendTaskChatMessageWithAuth(
-            taskId: task.id,
-            message: message,
-            socketId: HivePusherManager.shared.socketId,
-            attachments: attachmentsPayload,
-            callback: { [weak self] sentMessage in
-                DispatchQueue.main.async {
-                    guard let self = self, let sentMessage = sentMessage else { return }
-                    self.newMessageReceived(sentMessage)
-                }
-            },
-            errorCallback: { [weak self] in
-                DispatchQueue.main.async {
-                    self?.showSendMessageError()
-                }
-            }
-        )
+        sendMessage(message, attachments: attachmentsPayload)
     }
 
     private func sendClarifyingAnswers(answers: [String], replyId: String) {
         let joined = answers.joined(separator: "\n\n")
-        API.sharedInstance.sendTaskChatMessageWithAuth(
-            taskId: task.id,
-            message: joined,
-            replyId: replyId,
-            socketId: HivePusherManager.shared.socketId,
-            callback: { [weak self] sentMessage in
-                DispatchQueue.main.async {
-                    guard let self = self, let sentMessage = sentMessage else { return }
-                    self.newMessageReceived(sentMessage)
-                    // Reload the CQ cell so it recomputes height with answered state
-                    if let displayIdx = self.displayMessages.firstIndex(where: { $0.id == replyId }) {
-                        self.chatTableView.reloadRows(at: [IndexPath(row: displayIdx, section: 0)], with: .none)
-                    }
-                }
-            },
-            errorCallback: { [weak self] in
-                DispatchQueue.main.async {
-                    self?.showSendMessageError()
-                }
-            }
-        )
+        sendMessage(joined, replyId: replyId)
     }
 
     private func showSendMessageError() {

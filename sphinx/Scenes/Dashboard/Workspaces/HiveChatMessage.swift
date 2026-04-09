@@ -63,6 +63,17 @@ struct StreamArtifactInfo: Sendable {
     let baseUrl: String
 }
 
+// MARK: - Workflow Content
+
+struct WorkflowContent: Sendable {
+    let workflowId: Int?
+    let workflowName: String?
+    let workflowRefId: String?
+    let workflowVersionId: String?
+    let projectId: String?       // covers both projectId and debuggerProjectId
+    let webhook: String?
+}
+
 struct HiveChatMessageArtifact: @unchecked Sendable {
     let id: String?
     let type: String?
@@ -78,10 +89,13 @@ struct HiveChatMessageArtifact: @unchecked Sendable {
     let clarifyingQuestions: [ClarifyingQuestion]?
     /// Parsed stream info when type == "STREAM"
     let streamInfo: StreamArtifactInfo?
+    /// Parsed workflow content when type == "WORKFLOW"
+    let workflowContent: WorkflowContent?
 
     var isPullRequest: Bool { type == "PULL_REQUEST" }
     var isLongform: Bool { type == "LONGFORM" }
     var isStream: Bool { type == "STREAM" }
+    var isWorkflow: Bool { type == "WORKFLOW" }
 
     var isClarifyingQuestions: Bool {
         return type == "PLAN" && contentJSON?["tool_use"].string == "ask_clarifying_questions"
@@ -97,6 +111,7 @@ struct HiveChatMessageArtifact: @unchecked Sendable {
             self.longformContent = nil
             self.contentJSON = nil
             self.clarifyingQuestions = nil
+            self.workflowContent = nil
             // Content may be a JSON object or a JSON string that needs decoding
             let rawContent = json["content"]
             let contentJSON: JSON
@@ -143,6 +158,7 @@ struct HiveChatMessageArtifact: @unchecked Sendable {
             self.contentJSON = nil
             self.clarifyingQuestions = nil
             self.streamInfo = nil
+            self.workflowContent = nil
         } else if json["type"].string == "LONGFORM" {
             let c = json["content"]
             self.longformContent = LongformContent(title: c["title"].string, text: c["text"].string)
@@ -151,6 +167,7 @@ struct HiveChatMessageArtifact: @unchecked Sendable {
             self.contentJSON = nil
             self.clarifyingQuestions = nil
             self.streamInfo = nil
+            self.workflowContent = nil
         } else if json["type"].string == "PLAN" {
             self.prContent = nil
             self.content = nil
@@ -168,6 +185,23 @@ struct HiveChatMessageArtifact: @unchecked Sendable {
                 self.clarifyingQuestions = nil
             }
             self.streamInfo = nil
+            self.workflowContent = nil
+        } else if json["type"].string == "WORKFLOW" {
+            let c = json["content"]
+            self.workflowContent = WorkflowContent(
+                workflowId:        c["workflowId"].int,
+                workflowName:      c["workflowName"].string,
+                workflowRefId:     c["workflowRefId"].string,
+                workflowVersionId: c["workflowVersionId"].string,
+                projectId:         c["projectId"].string ?? c["debuggerProjectId"].string,
+                webhook:           c["webhook"].string
+            )
+            self.content = nil
+            self.prContent = nil
+            self.longformContent = nil
+            self.contentJSON = nil
+            self.clarifyingQuestions = nil
+            self.streamInfo = nil
         } else {
             self.prContent = nil
             self.contentJSON = nil
@@ -175,6 +209,7 @@ struct HiveChatMessageArtifact: @unchecked Sendable {
             self.longformContent = nil
             self.content = json["content"].string
             self.streamInfo = nil
+            self.workflowContent = nil
         }
     }
 }
