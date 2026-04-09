@@ -33,8 +33,6 @@ class WorkspaceFeatureTableViewCell: UITableViewCell {
             titleLabel.textColor = .Sphinx.Text
             titleLabel.font = UIFont.systemFont(ofSize: 15, weight: .medium)
             titleLabel.numberOfLines = 2
-            // Fix to exactly 2-line height so the row never collapses for short titles
-            titleLabel.heightAnchor.constraint(equalToConstant: 36).isActive = true
 
             createdByLabel.textColor = .Sphinx.SecondaryText
             createdByLabel.font = UIFont(name: "Roboto-Regular", size: 13)
