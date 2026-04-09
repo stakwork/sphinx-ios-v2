@@ -269,10 +269,11 @@ class TaskDependencyDiagramView: UIView {
             controlPoint2: CGPoint(x: midX, y: end.y + verticalOffset)
         )
 
-        // Fixed arrowhead pointing right (angle = 0)
+        // Arrowhead angle based on the curve's tangent at the endpoint (direction from cp2 → end)
         let arrowLength: CGFloat = 8
         let arrowAngle: CGFloat = .pi / 6
-        let angle: CGFloat = 0 // always pointing right
+        let cp2 = CGPoint(x: midX, y: end.y + verticalOffset)
+        let angle = atan2(end.y - cp2.y, end.x - cp2.x)
 
         let arrowPoint1 = CGPoint(
             x: end.x - arrowLength * cos(angle - arrowAngle),
