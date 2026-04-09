@@ -22,32 +22,154 @@ struct WorkflowEdge {
     let label: String?  // branch label e.g. "true" / "false"
 }
 
-// MARK: - Ordered key extraction
+// MARK: - JSON byte scanner for ordered key extraction
+//
+// NSJSONSerialization → [String: Any] destroys key order (NSDictionary is unordered).
+// JSONDecoder.allKeys on Apple platforms has the same problem (backed by NSJSONSerialization).
+// The ONLY reliable approach is to scan the raw UTF-8 bytes character by character.
 
-/// A `CodingKey` that accepts any string — used to enumerate all keys in JSON order.
-private struct AnyCodingKey: CodingKey {
-    var stringValue: String
-    var intValue: Int?
-    init(stringValue: String) { self.stringValue = stringValue }
-    init?(intValue: Int) { self.intValue = intValue; self.stringValue = "\(intValue)" }
-}
+private struct JSONScanner {
+    private let chars: [Character]
+    var pos: Int = 0
 
-/// Returns the keys of a JSON object in their original document order by decoding
-/// with `KeyedDecodingContainer.allKeys`, which preserves insertion order in
-/// Apple's `JSONDecoder` implementation.
-private func orderedKeys(fromJSONObject jsonObject: [String: Any]) -> [String] {
-    guard let data = try? JSONSerialization.data(withJSONObject: jsonObject),
-          let decoded = try? JSONDecoder().decode(OrderedKeys.self, from: data) else {
-        return Array(jsonObject.keys)
+    init(_ data: Data) {
+        chars = Array(String(data: data, encoding: .utf8) ?? "")
     }
-    return decoded.keys
-}
 
-private struct OrderedKeys: Decodable {
-    let keys: [String]
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: AnyCodingKey.self)
-        keys = container.allKeys.map { $0.stringValue }
+    private var current: Character? { pos < chars.count ? chars[pos] : nil }
+    private mutating func advance() { if pos < chars.count { pos += 1 } }
+
+    private mutating func skipWhitespace() {
+        while let c = current, c.isWhitespace { advance() }
+    }
+
+    // Reads a JSON string (pos must be at the opening `"`).
+    mutating func readString() -> String {
+        skipWhitespace()
+        guard current == "\"" else { return "" }
+        advance()
+        var out = ""
+        while let c = current {
+            advance()
+            if c == "\"" { break }
+            if c == "\\" { if let esc = current { out.append(esc); advance() } }
+            else { out.append(c) }
+        }
+        return out
+    }
+
+    // Skips any JSON value (string, number, bool, null, object, array).
+    mutating func skipValue() {
+        skipWhitespace()
+        guard let c = current else { return }
+        if c == "\"" {
+            _ = readString()
+        } else if c == "{" || c == "[" {
+            let open = c; let close: Character = c == "{" ? "}" : "]"
+            advance(); var depth = 1
+            while let sc = current, depth > 0 {
+                if sc == "\"" { _ = readString() }
+                else { if sc == open { depth += 1 } else if sc == close { depth -= 1 }; advance() }
+            }
+        } else {
+            // number, bool, null — ends at structural character
+            while let c = current, c != "," && c != "}" && c != "]" { advance() }
+        }
+    }
+
+    // Enters an object (consumes `{`). Returns false if not positioned at `{`.
+    mutating func enterObject() -> Bool {
+        skipWhitespace()
+        guard current == "{" else { return false }
+        advance(); return true
+    }
+
+    // Enters an array (consumes `[`). Returns false if not positioned at `[`.
+    mutating func enterArray() -> Bool {
+        skipWhitespace()
+        guard current == "[" else { return false }
+        advance(); return true
+    }
+
+    // Returns the next key inside an already-entered object, or nil when `}` is reached.
+    // Consumes the key string and the `:` separator; pos is left at the value.
+    mutating func nextKey() -> String? {
+        skipWhitespace()
+        while let c = current, c == "," { advance(); skipWhitespace() }
+        guard let c = current, c != "}" else { return nil }
+        guard c == "\"" else { skipValue(); return nil }
+        let key = readString()
+        skipWhitespace()
+        guard current == ":" else { return nil }
+        advance()   // consume ":"
+        return key
+    }
+
+    // Non-destructively returns the top-level key names of the object at current pos.
+    // Saves and restores pos so caller can still consume the object normally.
+    mutating func peekObjectKeyNames() -> [String] {
+        let saved = pos
+        var keys: [String] = []
+        guard enterObject() else { pos = saved; return [] }
+        while let key = nextKey() { keys.append(key); skipValue() }
+        pos = saved     // ← restore — caller will consume the object itself
+        return keys
+    }
+
+    // Main entry point: scans the entire document and builds
+    // stepId → (ordered attribute keys excl. "vars", ordered var keys).
+    mutating func extractAttributeKeyMap() -> [String: ([String], [String])] {
+        var result: [String: ([String], [String])] = [:]
+        guard enterObject() else { return result }
+
+        // Navigate to "transitions" value
+        while let key = nextKey() {
+            if key == "transitions" { break }
+            skipValue()
+        }
+        guard enterArray() else { return result }
+
+        // Iterate each transition object
+        while true {
+            skipWhitespace()
+            guard let c = current else { break }
+            if c == "]" { break }
+            if c == "," { advance(); continue }
+            guard enterObject() else { skipValue(); continue }
+
+            var stepId:   String?   = nil
+            var attrKeys: [String]  = []
+            var varKeys:  [String]  = []
+
+            while let key = nextKey() {
+                switch key {
+                case "id":
+                    stepId = readString()
+                case "attributes":
+                    // First pass (non-destructive): collect attribute key names
+                    attrKeys = peekObjectKeyNames().filter { $0 != "vars" }
+                    // Second pass (consuming): dig into "vars"
+                    guard enterObject() else { skipValue(); continue }
+                    while let attrKey = nextKey() {
+                        if attrKey == "vars" {
+                            varKeys = peekObjectKeyNames()
+                            skipValue()     // consume vars object
+                        } else {
+                            skipValue()
+                        }
+                    }
+                    if current == "}" { advance() }   // consume closing `}` of attributes
+                default:
+                    skipValue()
+                }
+            }
+            if current == "}" { advance() }   // consume closing `}` of transition
+
+            if let id = stepId {
+                result[id] = (attrKeys, varKeys)
+            }
+        }
+        return result
     }
 }
 
@@ -96,20 +218,21 @@ struct WorkflowDiagramData {
 
     /// Parse workflow JSON, handling single and double-encoded JSON strings.
     static func parse(from workflowJson: String) -> WorkflowDiagramData? {
-        // Unwrap potential double-encoding: keep parsing until we get a dictionary
-        guard let initialData = workflowJson.data(using: .utf8),
-              let initialObj = try? JSONSerialization.jsonObject(with: initialData) else {
-            return nil
+        // Resolve raw bytes (unwrap potential double-encoding)
+        guard var rawData = workflowJson.data(using: .utf8) else { return nil }
+
+        // If the top-level value is a JSON string, keep unwrapping until we reach an object
+        while let str = try? JSONSerialization.jsonObject(with: rawData) as? String,
+              let inner = str.data(using: .utf8) {
+            rawData = inner
         }
 
-        var current: Any = initialObj
-        while let str = current as? String,
-              let data = str.data(using: .utf8),
-              let inner = try? JSONSerialization.jsonObject(with: data) {
-            current = inner
-        }
+        // Extract ordered keys by scanning raw bytes — the ONLY approach that preserves JSON key order
+        var scanner = JSONScanner(rawData)
+        let orderedKeyMap = scanner.extractAttributeKeyMap()   // [stepId: ([attrKeys], [varKeys])]
 
-        guard let dict = current as? [String: Any],
+        // Now parse the full object via JSONSerialization (order doesn't matter for value lookup)
+        guard let dict = try? JSONSerialization.jsonObject(with: rawData) as? [String: Any],
               let transitionsArray = dict["transitions"] as? [[String: Any]] else {
             return nil
         }
@@ -123,11 +246,8 @@ struct WorkflowDiagramData {
             let position = t["position"] as? [String: Any]
             let skill    = t["skill"]    as? [String: Any]
             let status   = t["status"]   as? [String: Any]
-            let attrs    = t["attributes"] as? [String: Any]
-            let vars     = attrs?["vars"] as? [String: Any]
 
-            let attrKeys = attrs.map { orderedKeys(fromJSONObject: $0).filter { $0 != "vars" } } ?? []
-            let varKeys  = vars.map  { orderedKeys(fromJSONObject: $0) } ?? []
+            let keyEntry = orderedKeyMap[stepId]
 
             let step = WorkflowStep(
                 id:                   stepId,
@@ -140,8 +260,8 @@ struct WorkflowDiagramData {
                 skillType:            skill?["type"]        as? String,
                 stepState:            status?["step_state"] as? String,
                 rawJSON:              t,
-                orderedAttributeKeys: attrKeys,
-                orderedVarKeys:       varKeys
+                orderedAttributeKeys: keyEntry?.attrKeys ?? [],
+                orderedVarKeys:       keyEntry?.varKeys  ?? []
             )
             steps[stepId] = step
         }
