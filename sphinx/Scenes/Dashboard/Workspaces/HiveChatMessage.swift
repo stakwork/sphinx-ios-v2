@@ -328,6 +328,20 @@ struct HiveChatMessage: @unchecked Sendable {
             && artifacts.contains(where: { $0.isLongform })
     }
 
+    /// True when the full message content is a logs block.
+    var isLogsMessage: Bool {
+        let t = resolvedDisplayText.trimmingCharacters(in: .whitespacesAndNewlines)
+        return t.hasPrefix("<logs>") && t.hasSuffix("</logs>")
+    }
+
+    /// Extracts the raw content between <logs>…</logs> tags.
+    var logsContent: String? {
+        guard isLogsMessage else { return nil }
+        let t = resolvedDisplayText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let inner = t.dropFirst("<logs>".count).dropLast("</logs>".count)
+        return String(inner)
+    }
+
     /// Returns true when this message should be shown in the chat table.
     /// Mirrors the filter applied by `displayMessages` in all chat view controllers.
     var isDisplayable: Bool {
