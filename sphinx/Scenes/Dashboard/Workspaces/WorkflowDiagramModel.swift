@@ -76,24 +76,24 @@ struct WorkflowDiagramData {
         }
 
         guard let dict = current as? [String: Any],
-              let transitions = dict["transitions"] as? [String: Any] else {
+              let transitionsArray = dict["transitions"] as? [[String: Any]] else {
             return nil
         }
 
         var steps: [String: WorkflowStep] = [:]
         var edges: [WorkflowEdge] = []
 
-        for (stepId, value) in transitions {
-            guard let t = value as? [String: Any] else { continue }
+        for t in transitionsArray {
+            guard let stepId = t["id"] as? String else { continue }
 
             let position = t["position"] as? [String: Any]
             let skill    = t["skill"]    as? [String: Any]
             let status   = t["status"]   as? [String: Any]
 
             let step = WorkflowStep(
-                id:          (t["id"] as? String) ?? stepId,
-                uniqueId:    t["unique_id"]   as? String,
-                displayId:   t["display_id"]  as? String,
+                id:          stepId,
+                uniqueId:    t["unique_id"]    as? String,
+                displayId:   t["display_id"]   as? String,
                 displayName: t["display_name"] as? String,
                 name:        (t["name"] as? String) ?? "",
                 positionX:   CGFloat((position?["x"] as? Double) ?? 0),
@@ -103,25 +103,14 @@ struct WorkflowDiagramData {
                 rawJSON:     t
             )
             steps[stepId] = step
+        }
 
-            // Build edges — prefer connection_edges, fall back to connections
-            if let connEdges = t["connection_edges"] as? [[String: Any]] {
-                for edge in connEdges {
-                    if let targetId = edge["target_id"] as? String {
-                        edges.append(WorkflowEdge(
-                            fromId: stepId,
-                            toId:   targetId,
-                            label:  edge["name"] as? String
-                        ))
-                    }
-                }
-            } else if let connections = t["connections"] as? [String: Any] {
-                // connections can be [String: String] or [String: Any] — extract first string value
-                for (_, val) in connections {
-                    if let targetId = val as? String {
-                        edges.append(WorkflowEdge(fromId: stepId, toId: targetId, label: nil))
-                        break
-                    }
+        // Build edges from top-level connections array
+        if let connectionsArray = dict["connections"] as? [[String: Any]] {
+            for conn in connectionsArray {
+                if let source = conn["source"] as? String,
+                   let target = conn["target"] as? String {
+                    edges.append(WorkflowEdge(fromId: source, toId: target, label: conn["name"] as? String))
                 }
             }
         }
