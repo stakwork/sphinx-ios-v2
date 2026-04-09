@@ -94,8 +94,6 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         titleLabel.textColor = .Sphinx.Text
         titleLabel.font = UIFont.systemFont(ofSize: 15, weight: .medium)
         titleLabel.numberOfLines = 2
-        // Fix to exactly 2-line height so the row never collapses for short titles
-        titleLabel.heightAnchor.constraint(equalToConstant: 36).isActive = true
 
         repositoryLabel.textColor = .Sphinx.SecondaryText
         repositoryLabel.font = UIFont(name: "Roboto-Regular", size: 13)
@@ -160,15 +158,8 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         retryWorkflowButton.tintColor = .Sphinx.SphinxOrange
         retryWorkflowButton.translatesAutoresizingMaskIntoConstraints = false
         retryWorkflowButton.isHidden = true
-        contentView.addSubview(retryWorkflowButton)
-
-        NSLayoutConstraint.activate([
-            retryWorkflowButton.leadingAnchor.constraint(equalTo: repositoryLabel.trailingAnchor, constant: 8),
-            retryWorkflowButton.centerYAnchor.constraint(equalTo: repositoryLabel.centerYAnchor),
-            retryWorkflowButton.widthAnchor.constraint(equalToConstant: 20),
-            retryWorkflowButton.heightAnchor.constraint(equalToConstant: 20)
-        ])
-
+        retryWorkflowButton.widthAnchor.constraint(equalToConstant: 20).isActive = true
+        retryWorkflowButton.heightAnchor.constraint(equalToConstant: 20).isActive = true
         retryWorkflowButton.addTarget(self, action: #selector(retryWorkflowButtonTapped), for: .touchUpInside)
     }
 
@@ -186,7 +177,7 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
     }
 
     private func setupRightPillStack() {
-        rightPillStack = UIStackView(arrangedSubviews: [updatedAtLabel, deploymentPill, haltedWorkflowBadge, prBadgeButton])
+        rightPillStack = UIStackView(arrangedSubviews: [updatedAtLabel, deploymentPill, haltedWorkflowBadge, retryWorkflowButton, prBadgeButton])
         rightPillStack.axis = .horizontal
         rightPillStack.alignment = .center
         rightPillStack.distribution = .fill
