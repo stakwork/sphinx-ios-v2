@@ -141,7 +141,7 @@ private struct JSONScanner {
             var attrKeys: [String]  = []
             var varKeys:  [String]  = []
 
-            while let key = nextKey() {
+            stepLoop: while let key = nextKey() {
                 switch key {
                 case "id":
                     stepId = readString()
@@ -149,7 +149,7 @@ private struct JSONScanner {
                     // First pass (non-destructive): collect attribute key names
                     attrKeys = peekObjectKeyNames().filter { $0 != "vars" }
                     // Second pass (consuming): dig into "vars"
-                    guard enterObject() else { skipValue(); continue }
+                    if !enterObject() { skipValue(); continue stepLoop }
                     while let attrKey = nextKey() {
                         if attrKey == "vars" {
                             varKeys = peekObjectKeyNames()
