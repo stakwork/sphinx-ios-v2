@@ -185,34 +185,40 @@ class WorkflowStepDetailViewController: UIViewController {
             iconImageView.widthAnchor.constraint(equalToConstant: 32),
             iconImageView.heightAnchor.constraint(equalToConstant: 32),
 
+            // Top: icon + name row
             topRow.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
             topRow.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             topRow.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
 
+            // Step Alias below top row
             aliasSection.topAnchor.constraint(equalTo: topRow.bottomAnchor, constant: 16),
             aliasSection.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             aliasSection.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
 
+            // Buttons pinned to bottom of safe area
+            buttonStack.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20),
+            buttonStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            buttonStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            buttonStack.heightAnchor.constraint(equalToConstant: 44),
+
+            // Divider above button stack
+            divider.bottomAnchor.constraint(equalTo: buttonStack.topAnchor, constant: -16),
+            divider.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            divider.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            divider.heightAnchor.constraint(equalToConstant: 1),
+
+            // Scroll view fills the space between alias and divider
             contentScrollView.topAnchor.constraint(equalTo: aliasSection.bottomAnchor, constant: 16),
             contentScrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             contentScrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            contentScrollView.bottomAnchor.constraint(equalTo: divider.topAnchor, constant: -8),
 
+            // Content stack inside scroll view
             contentStack.topAnchor.constraint(equalTo: contentScrollView.topAnchor, constant: 0),
             contentStack.bottomAnchor.constraint(equalTo: contentScrollView.bottomAnchor, constant: 0),
             contentStack.leadingAnchor.constraint(equalTo: contentScrollView.leadingAnchor, constant: 20),
             contentStack.trailingAnchor.constraint(equalTo: contentScrollView.trailingAnchor, constant: -20),
             contentStack.widthAnchor.constraint(equalTo: contentScrollView.widthAnchor, constant: -40),
-
-            divider.topAnchor.constraint(equalTo: contentScrollView.bottomAnchor, constant: 8),
-            divider.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            divider.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            divider.heightAnchor.constraint(equalToConstant: 1),
-
-            buttonStack.topAnchor.constraint(equalTo: divider.bottomAnchor, constant: 16),
-            buttonStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            buttonStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            buttonStack.heightAnchor.constraint(equalToConstant: 44),
-            buttonStack.bottomAnchor.constraint(lessThanOrEqualTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20)
         ])
     }
 
