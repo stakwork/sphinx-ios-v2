@@ -378,6 +378,18 @@ final class MarkdownRenderer {
                 s = String(s[range.upperBound...])
                 continue
             }
+            // Mention: @alias — must be checked before bare URL so that
+            // "@Name ... https://..." doesn't swallow the mention as plain text
+            if let range = firstRange(in: s, pattern: #"(?<!\w)@\S+"#) {
+                appendLiteral(s[s.startIndex..<range.lowerBound], attrs: base, to: result)
+                let mention = String(s[range])
+                result.append(NSAttributedString(string: mention, attributes: [
+                    .font: font,
+                    .foregroundColor: style.mentionColor
+                ]))
+                s = String(s[range.upperBound...])
+                continue
+            }
             // Bare URL: https://... or http://...
             if let range = firstRange(in: s, pattern: #"https?://[^\s]+"#) {
                 appendLiteral(s[s.startIndex..<range.lowerBound], attrs: base, to: result)
@@ -390,17 +402,6 @@ final class MarkdownRenderer {
                     .sphinxURL: URL(string: urlStr) as Any
                 ]
                 result.append(NSAttributedString(string: urlStr, attributes: linkAttrs))
-                s = String(s[range.upperBound...])
-                continue
-            }
-            // Mention: @alias
-            if let range = firstRange(in: s, pattern: #"(?<!\w)@\S+"#) {
-                appendLiteral(s[s.startIndex..<range.lowerBound], attrs: base, to: result)
-                let mention = String(s[range])
-                result.append(NSAttributedString(string: mention, attributes: [
-                    .font: font,
-                    .foregroundColor: style.mentionColor
-                ]))
                 s = String(s[range.upperBound...])
                 continue
             }
