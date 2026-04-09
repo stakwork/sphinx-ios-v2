@@ -2,7 +2,7 @@
 //  WorkflowStepDetailViewController.swift
 //  sphinx
 //
-//  Bottom sheet showing workflow step details with Cancel / Select Step actions.
+//  Bottom sheet showing workflow step details with structured sections.
 //
 
 import UIKit
@@ -34,22 +34,21 @@ class WorkflowStepDetailViewController: UIViewController {
     // MARK: - UI
 
     private func setupUI() {
-        // ---- Icon + display name row ----
+
+        // ---- Icon (StepIcons assets) ----
         let iconImageView = UIImageView()
         iconImageView.translatesAutoresizingMaskIntoConstraints = false
         iconImageView.contentMode = .scaleAspectFit
-        iconImageView.tintColor = nodeTypeColor(step.nodeType)
-        let symbolName: String
+        let iconName: String
         switch step.nodeType {
-        case .human:     symbolName = "person.fill"
-        case .automated: symbolName = "gear"
-        case .api:       symbolName = "link"
-        case .condition: symbolName = "arrow.triangle.branch"
-        case .loop:      symbolName = "arrow.clockwise"
+        case .human: iconName = "human"
+        case .api:   iconName = "api"
+        default:     iconName = "automated"
         }
-        iconImageView.image = UIImage(systemName: symbolName,
-                                      withConfiguration: UIImage.SymbolConfiguration(pointSize: 24, weight: .regular))
+        iconImageView.image = UIImage(named: iconName)?.withRenderingMode(.alwaysTemplate)
+        iconImageView.tintColor = nodeTypeColor(step.nodeType)
 
+        // ---- Display name ----
         let displayNameLabel = UILabel()
         displayNameLabel.translatesAutoresizingMaskIntoConstraints = false
         displayNameLabel.text = step.displayName ?? step.name
@@ -57,6 +56,7 @@ class WorkflowStepDetailViewController: UIViewController {
         displayNameLabel.textColor = UIColor.Sphinx.Text
         displayNameLabel.numberOfLines = 2
 
+        // ---- Tech name ----
         let techNameLabel = UILabel()
         techNameLabel.translatesAutoresizingMaskIntoConstraints = false
         techNameLabel.text = step.name
@@ -64,9 +64,22 @@ class WorkflowStepDetailViewController: UIViewController {
         techNameLabel.textColor = UIColor.Sphinx.SecondaryText
         techNameLabel.numberOfLines = 1
 
-        let nameStack = UIStackView(arrangedSubviews: [displayNameLabel, techNameLabel])
+        // ---- Type badge ----
+        let typeColor = nodeTypeColor(step.nodeType)
+        let badgeLabel = PaddedLabel()
+        badgeLabel.translatesAutoresizingMaskIntoConstraints = false
+        badgeLabel.text = typeString(for: step.nodeType)
+        badgeLabel.font = UIFont(name: "Roboto-Regular", size: 11) ?? UIFont.systemFont(ofSize: 11)
+        badgeLabel.textColor = typeColor
+        badgeLabel.backgroundColor = typeColor.withAlphaComponent(0.15)
+        badgeLabel.layer.cornerRadius = 4
+        badgeLabel.clipsToBounds = true
+        badgeLabel.textInsets = UIEdgeInsets(top: 3, left: 8, bottom: 3, right: 8)
+
+        let nameStack = UIStackView(arrangedSubviews: [displayNameLabel, techNameLabel, badgeLabel])
         nameStack.axis = .vertical
-        nameStack.spacing = 2
+        nameStack.spacing = 4
+        nameStack.alignment = .leading
         nameStack.translatesAutoresizingMaskIntoConstraints = false
 
         let topRow = UIStackView(arrangedSubviews: [iconImageView, nameStack])
@@ -75,26 +88,59 @@ class WorkflowStepDetailViewController: UIViewController {
         topRow.spacing = 12
         topRow.translatesAutoresizingMaskIntoConstraints = false
 
-        // ---- Display ID ----
-        let displayIdLabel = UILabel()
-        displayIdLabel.translatesAutoresizingMaskIntoConstraints = false
-        if let did = step.displayId ?? step.uniqueId {
-            displayIdLabel.text = did
-        } else {
-            displayIdLabel.text = step.id
-        }
-        displayIdLabel.font = UIFont(name: "Roboto-Regular", size: 12) ?? UIFont.systemFont(ofSize: 12)
-        displayIdLabel.textColor = UIColor.Sphinx.SecondaryText
-        displayIdLabel.numberOfLines = 1
+        // ---- Step Alias section ----
+        let aliasHeaderLabel = UILabel()
+        aliasHeaderLabel.text = "STEP ALIAS"
+        aliasHeaderLabel.font = UIFont(name: "Roboto-Medium", size: 11) ?? UIFont.systemFont(ofSize: 11, weight: .medium)
+        aliasHeaderLabel.textColor = UIColor.Sphinx.SecondaryText
 
-        // ---- Attributes text view ----
-        let attrsTextView = UITextView()
-        attrsTextView.translatesAutoresizingMaskIntoConstraints = false
-        attrsTextView.isEditable = false
-        attrsTextView.backgroundColor = .clear
-        attrsTextView.textColor = UIColor.Sphinx.Text
-        attrsTextView.font = UIFont(name: "Roboto-Regular", size: 13) ?? UIFont.systemFont(ofSize: 13)
-        attrsTextView.text = buildAttributesText()
+        let aliasValueLabel = UILabel()
+        aliasValueLabel.text = step.displayId ?? step.uniqueId ?? step.id
+        aliasValueLabel.font = UIFont(name: "Roboto-Regular", size: 14) ?? UIFont.systemFont(ofSize: 14)
+        aliasValueLabel.textColor = UIColor.Sphinx.Text
+        aliasValueLabel.numberOfLines = 1
+        aliasValueLabel.lineBreakMode = .byTruncatingTail
+
+        let aliasStack = UIStackView(arrangedSubviews: [aliasHeaderLabel, aliasValueLabel])
+        aliasStack.axis = .vertical
+        aliasStack.spacing = 2
+        aliasStack.translatesAutoresizingMaskIntoConstraints = false
+
+        // ---- Scrollable content sections ----
+        let contentStack = UIStackView()
+        contentStack.axis = .vertical
+        contentStack.spacing = 16
+        contentStack.translatesAutoresizingMaskIntoConstraints = false
+
+        // Variables section
+        if let attrs = step.rawJSON["attributes"] as? [String: Any],
+           let vars = attrs["vars"] as? [String: Any],
+           !vars.isEmpty {
+            let rows = vars.sorted(by: { $0.key < $1.key }).map { ($0.key, formatValue($0.value)) }
+            contentStack.addArrangedSubview(makeSectionView(title: "Variables", rows: rows))
+        }
+
+        // Attributes section (all except vars)
+        if let attrs = step.rawJSON["attributes"] as? [String: Any] {
+            let filtered = attrs.filter { $0.key != "vars" }
+            if !filtered.isEmpty {
+                let rows = filtered.sorted(by: { $0.key < $1.key }).map { ($0.key, formatValue($0.value)) }
+                contentStack.addArrangedSubview(makeSectionView(title: "Attributes", rows: rows))
+            }
+        }
+
+        let scrollView = UIScrollView()
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.showsVerticalScrollIndicator = true
+        scrollView.addSubview(contentStack)
+
+        NSLayoutConstraint.activate([
+            contentStack.topAnchor.constraint(equalTo: scrollView.topAnchor),
+            contentStack.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
+            contentStack.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
+            contentStack.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
+            contentStack.widthAnchor.constraint(equalTo: scrollView.widthAnchor)
+        ])
 
         // ---- Divider ----
         let divider = UIView()
@@ -129,8 +175,8 @@ class WorkflowStepDetailViewController: UIViewController {
 
         // ---- Add to view ----
         view.addSubview(topRow)
-        view.addSubview(displayIdLabel)
-        view.addSubview(attrsTextView)
+        view.addSubview(aliasStack)
+        view.addSubview(scrollView)
         view.addSubview(divider)
         view.addSubview(buttonStack)
 
@@ -142,15 +188,15 @@ class WorkflowStepDetailViewController: UIViewController {
             topRow.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             topRow.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
 
-            displayIdLabel.topAnchor.constraint(equalTo: topRow.bottomAnchor, constant: 6),
-            displayIdLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            displayIdLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            aliasStack.topAnchor.constraint(equalTo: topRow.bottomAnchor, constant: 16),
+            aliasStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            aliasStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
 
-            attrsTextView.topAnchor.constraint(equalTo: displayIdLabel.bottomAnchor, constant: 12),
-            attrsTextView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            attrsTextView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            scrollView.topAnchor.constraint(equalTo: aliasStack.bottomAnchor, constant: 16),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
 
-            divider.topAnchor.constraint(equalTo: attrsTextView.bottomAnchor, constant: 8),
+            divider.topAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: 8),
             divider.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             divider.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             divider.heightAnchor.constraint(equalToConstant: 1),
@@ -163,35 +209,16 @@ class WorkflowStepDetailViewController: UIViewController {
         ])
     }
 
-    private func buildAttributesText() -> String {
-        var lines: [String] = []
+    // MARK: - Helpers
 
-        func addSection(_ dict: [String: Any], _ heading: String) {
-            guard !dict.isEmpty else { return }
-            lines.append("── \(heading) ──")
-            for (key, value) in dict.sorted(by: { $0.key < $1.key }) {
-                lines.append("  \(key): \(value)")
-            }
+    private func typeString(for nodeType: WorkflowNodeType) -> String {
+        switch nodeType {
+        case .automated: return "Automated"
+        case .human:     return "Human"
+        case .api:       return "API"
+        case .condition: return "Condition"
+        case .loop:      return "Loop"
         }
-
-        if let step = step.rawJSON["step"] as? [String: Any] {
-            addSection(step, "Step")
-        }
-        if let attrs = step.rawJSON["attributes"] as? [String: Any] {
-            addSection(attrs, "Attributes")
-        }
-
-        if lines.isEmpty {
-            // fallback: show top-level keys (excluding noisy ones)
-            let skip: Set<String> = ["connection_edges", "connections", "position",
-                                      "status", "skill", "step", "attributes"]
-            let topLevel = step.rawJSON.filter { !skip.contains($0.key) }
-            if !topLevel.isEmpty {
-                addSection(topLevel, "Details")
-            }
-        }
-
-        return lines.joined(separator: "\n")
     }
 
     private func nodeTypeColor(_ type: WorkflowNodeType) -> UIColor {
@@ -204,6 +231,69 @@ class WorkflowStepDetailViewController: UIViewController {
         }
     }
 
+    private func formatValue(_ value: Any) -> String {
+        if let str = value as? String { return str }
+        if let num = value as? NSNumber { return num.stringValue }
+        if let data = try? JSONSerialization.data(withJSONObject: value, options: [.prettyPrinted]),
+           let str = String(data: data, encoding: .utf8) {
+            let trimmed = str.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.count > 120 ? String(trimmed.prefix(120)) + "…" : trimmed
+        }
+        return "\(value)"
+    }
+
+    private func makeSectionView(title: String, rows: [(String, String)]) -> UIView {
+        let container = UIStackView()
+        container.axis = .vertical
+        container.spacing = 0
+
+        // Section header
+        let headerLabel = UILabel()
+        headerLabel.text = title.uppercased()
+        headerLabel.font = UIFont(name: "Roboto-Medium", size: 11) ?? UIFont.systemFont(ofSize: 11, weight: .medium)
+        headerLabel.textColor = UIColor.Sphinx.SecondaryText
+        container.addArrangedSubview(headerLabel)
+
+        let headerSpacer = UIView()
+        headerSpacer.heightAnchor.constraint(equalToConstant: 8).isActive = true
+        container.addArrangedSubview(headerSpacer)
+
+        for (key, value) in rows {
+            let keyLabel = UILabel()
+            keyLabel.text = key
+            keyLabel.font = UIFont(name: "Roboto-Regular", size: 13) ?? UIFont.systemFont(ofSize: 13)
+            keyLabel.textColor = UIColor.Sphinx.SecondaryText
+            keyLabel.numberOfLines = 1
+            keyLabel.lineBreakMode = .byTruncatingTail
+            keyLabel.widthAnchor.constraint(equalToConstant: 120).isActive = true
+            keyLabel.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+            keyLabel.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+
+            let valueLabel = UILabel()
+            valueLabel.text = value
+            valueLabel.font = UIFont(name: "Roboto-Regular", size: 13) ?? UIFont.systemFont(ofSize: 13)
+            valueLabel.textColor = UIColor.Sphinx.Text
+            valueLabel.numberOfLines = 4
+            valueLabel.lineBreakMode = .byTruncatingTail
+            valueLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
+
+            let rowStack = UIStackView(arrangedSubviews: [keyLabel, valueLabel])
+            rowStack.axis = .horizontal
+            rowStack.alignment = .top
+            rowStack.spacing = 8
+
+            container.addArrangedSubview(rowStack)
+
+            // Separator
+            let sep = UIView()
+            sep.backgroundColor = UIColor.Sphinx.LightDivider
+            sep.heightAnchor.constraint(equalToConstant: 1).isActive = true
+            container.addArrangedSubview(sep)
+        }
+
+        return container
+    }
+
     // MARK: - Actions
 
     @objc private func cancelTapped() {
@@ -213,5 +303,31 @@ class WorkflowStepDetailViewController: UIViewController {
     @objc private func selectTapped() {
         onSelectStep?(step)
         dismiss(animated: true)
+    }
+}
+
+// MARK: - PaddedLabel
+
+private class PaddedLabel: UILabel {
+    var textInsets = UIEdgeInsets.zero
+
+    override func drawText(in rect: CGRect) {
+        super.drawText(in: rect.inset(by: textInsets))
+    }
+
+    override var intrinsicContentSize: CGSize {
+        let size = super.intrinsicContentSize
+        return CGSize(
+            width:  size.width  + textInsets.left + textInsets.right,
+            height: size.height + textInsets.top  + textInsets.bottom
+        )
+    }
+
+    override func sizeThatFits(_ size: CGSize) -> CGSize {
+        let s = super.sizeThatFits(size)
+        return CGSize(
+            width:  s.width  + textInsets.left + textInsets.right,
+            height: s.height + textInsets.top  + textInsets.bottom
+        )
     }
 }
