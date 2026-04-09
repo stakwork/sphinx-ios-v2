@@ -48,7 +48,7 @@ class WorkspaceFeaturesViewController: UIViewController {
         tableView.backgroundColor = .Sphinx.Body
         tableView.separatorStyle = .none
         tableView.rowHeight = UITableView.automaticDimension
-        tableView.estimatedRowHeight = 110
+        tableView.estimatedRowHeight = WorkspaceFeatureTableViewCell.cellHeight
         tableView.contentInset = UIEdgeInsets(top: 12, left: 0, bottom: 0, right: 0)
         tableView.translatesAutoresizingMaskIntoConstraints = false
         
@@ -316,7 +316,7 @@ extension WorkspaceFeaturesViewController: UITableViewDataSource, UITableViewDel
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return features.count
     }
-    
+
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(
             withIdentifier: WorkspaceFeatureTableViewCell.reuseID,

@@ -16,6 +16,15 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         return UINib(nibName: "WorkspaceTaskTableViewCell", bundle: nil)
     }
 
+    /// Minimum row height fitting all elements without overlap:
+    /// top(12) + title-2lines(36) + gap(8) + autoMerge/toggle-row(22) + gap(8)
+    /// + repo(16) + gap(12) + separator(1) = 115pt.
+    /// The XIB was designed at 140pt to give visual breathing room for
+    /// the rightPillStack (updatedAt + deployment/PR/halted badges, h=22)
+    /// which floats 12pt above the separator on the right side.
+    /// 140pt is the safe minimum to display all elements without overlap.
+    static let cellHeight: CGFloat = 140
+
     @IBOutlet weak var titleLabel: UILabel!
     @IBOutlet weak var repositoryLabel: UILabel!
     @IBOutlet weak var statusBadge: UILabel!
@@ -69,6 +78,9 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
     private func setupCell() {
         backgroundColor = .Sphinx.Body
         contentView.backgroundColor = .Sphinx.Body
+
+        // Enforce minimum cell height so all elements are always visible without overlap
+        contentView.heightAnchor.constraint(greaterThanOrEqualToConstant: WorkspaceTaskTableViewCell.cellHeight).isActive = true
 
         // Add and constrain the numbered status circle
         contentView.addSubview(taskIndexCircle)

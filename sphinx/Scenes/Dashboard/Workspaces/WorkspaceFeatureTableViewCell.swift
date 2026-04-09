@@ -14,6 +14,10 @@ class WorkspaceFeatureTableViewCell: UITableViewCell {
     static var nib: UINib {
         return UINib(nibName: "WorkspaceFeatureTableViewCell", bundle: nil)
     }
+
+    /// Minimum row height that fits all visible elements without overlap:
+    /// top(12) + title-2lines(36) + createdBy-fixed-at(81) + createdBy(16) + gap(12) + separator(1) = 110pt
+    static let cellHeight: CGFloat = 110
     
     @IBOutlet weak var titleLabel: UILabel!
     @IBOutlet weak var statusBadge: UILabel!
@@ -29,6 +33,9 @@ class WorkspaceFeatureTableViewCell: UITableViewCell {
         MainActor.assumeIsolated {
             backgroundColor = .Sphinx.Body
             contentView.backgroundColor = .Sphinx.Body
+
+            // Enforce minimum cell height so all elements are always visible without overlap
+            contentView.heightAnchor.constraint(greaterThanOrEqualToConstant: WorkspaceFeatureTableViewCell.cellHeight).isActive = true
 
             titleLabel.textColor = .Sphinx.Text
             titleLabel.font = UIFont.systemFont(ofSize: 15, weight: .medium)
