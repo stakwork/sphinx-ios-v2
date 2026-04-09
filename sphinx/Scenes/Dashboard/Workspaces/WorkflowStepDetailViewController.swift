@@ -103,7 +103,7 @@ class WorkflowStepDetailViewController: UIViewController {
 
         let aliasValueLabel = UILabel()
         aliasValueLabel.translatesAutoresizingMaskIntoConstraints = false
-        aliasValueLabel.text = step.displayId ?? step.uniqueId ?? step.id
+        aliasValueLabel.text = step.id
         aliasValueLabel.font = UIFont(name: "Roboto-Regular", size: 14) ?? UIFont.systemFont(ofSize: 14)
         aliasValueLabel.textColor = UIColor.Sphinx.Text
         aliasValueLabel.numberOfLines = 1
