@@ -49,6 +49,16 @@ private class WorkflowStepNodeView: UIView {
 
     required init?(coder: NSCoder) { fatalError() }
 
+    private func nodeTypeColor() -> UIColor {
+        switch step.nodeType {
+        case .automated: return UIColor.Sphinx.PrimaryGreen
+        case .human:     return UIColor.Sphinx.PrimaryBlue
+        case .api:       return .systemCyan
+        case .condition: return .systemOrange
+        case .loop:      return .systemPurple
+        }
+    }
+
     private func iconAssetName(for nodeType: WorkflowNodeType) -> String {
         switch nodeType {
         case .human: return "human"
@@ -68,16 +78,10 @@ private class WorkflowStepNodeView: UIView {
     }
 
     private func setup() {
-        // Background colour by nodeType
-        let bg: UIColor
-        switch step.nodeType {
-        case .automated: bg = UIColor.Sphinx.PrimaryGreen
-        case .human:     bg = UIColor.Sphinx.PrimaryBlue
-        case .api:       bg = .systemCyan
-        case .condition: bg = .systemOrange
-        case .loop:      bg = .systemPurple
-        }
-        backgroundColor = bg
+        // White background with SecondaryText border
+        backgroundColor = .white
+        layer.borderWidth = 1.5
+        layer.borderColor = UIColor.Sphinx.SecondaryText.cgColor
 
         if step.nodeType == .condition {
             // Diamond: rotate 45°, equal W×H
@@ -87,7 +91,7 @@ private class WorkflowStepNodeView: UIView {
             layer.cornerRadius = 8
         }
 
-        // Status ring
+        // Status ring — overrides default border colour
         if let state = step.stepState {
             let ringColor: UIColor
             switch state {
@@ -108,7 +112,7 @@ private class WorkflowStepNodeView: UIView {
         // Build content stack
         let contentStack = buildContentStack()
 
-        // For condition we add content un-transformed by embedding in a sub-view
+        // For condition nodes embed content in a counter-rotated host so text stays upright
         if step.nodeType == .condition {
             let labelHost = UIView()
             labelHost.translatesAutoresizingMaskIntoConstraints = false
@@ -136,12 +140,14 @@ private class WorkflowStepNodeView: UIView {
     }
 
     private func buildContentStack() -> UIStackView {
+        let accent = nodeTypeColor()
+
         // Top row: icon + type label
         let iconImageView = UIImageView()
         iconImageView.translatesAutoresizingMaskIntoConstraints = false
         iconImageView.contentMode = .scaleAspectFit
         iconImageView.image = UIImage(named: iconAssetName(for: step.nodeType))?.withRenderingMode(.alwaysTemplate)
-        iconImageView.tintColor = .white
+        iconImageView.tintColor = accent
         NSLayoutConstraint.activate([
             iconImageView.widthAnchor.constraint(equalToConstant: 16),
             iconImageView.heightAnchor.constraint(equalToConstant: 16)
@@ -149,7 +155,7 @@ private class WorkflowStepNodeView: UIView {
 
         let typeLabel = UILabel()
         typeLabel.text = typeString(for: step.nodeType)
-        typeLabel.textColor = UIColor.white.withAlphaComponent(0.85)
+        typeLabel.textColor = accent
         typeLabel.font = UIFont(name: "Roboto-Regular", size: 10) ?? UIFont.systemFont(ofSize: 10)
         typeLabel.lineBreakMode = .byTruncatingTail
         typeLabel.numberOfLines = 1
@@ -162,7 +168,7 @@ private class WorkflowStepNodeView: UIView {
         // Middle row: alias
         let aliasLabel = UILabel()
         aliasLabel.text = step.displayId ?? step.id
-        aliasLabel.textColor = UIColor.white.withAlphaComponent(0.7)
+        aliasLabel.textColor = UIColor.Sphinx.SecondaryText
         aliasLabel.font = UIFont(name: "Roboto-Regular", size: 11) ?? UIFont.systemFont(ofSize: 11)
         aliasLabel.numberOfLines = 1
         aliasLabel.lineBreakMode = .byTruncatingTail
@@ -170,7 +176,7 @@ private class WorkflowStepNodeView: UIView {
         // Bottom row: display name
         let nameLabel = UILabel()
         nameLabel.text = step.displayName ?? step.name
-        nameLabel.textColor = .white
+        nameLabel.textColor = UIColor.Sphinx.Text
         nameLabel.font = UIFont(name: "Roboto-Medium", size: 12) ?? UIFont.systemFont(ofSize: 12, weight: .medium)
         nameLabel.textAlignment = .left
         nameLabel.numberOfLines = 2
@@ -191,11 +197,6 @@ private class WorkflowStepNodeView: UIView {
         pulse.autoreverses = true
         pulse.repeatCount  = .infinity
         layer.add(pulse, forKey: "pulse")
-    }
-
-    /// Returns the visual centre in its parent's coordinate space (accounts for rotation).
-    var visualCenter: CGPoint {
-        return CGPoint(x: frame.midX, y: frame.midY)
     }
 
     /// Right-edge midpoint in parent coordinate space (for outgoing edges).
@@ -223,6 +224,7 @@ class WorkflowDiagramView: UIView, UIScrollViewDelegate {
     private var edgeLayers: [CAShapeLayer] = []
     private var edgeLabels: [UILabel] = []
     private var didPerformInitialZoom = false
+    private var startNodeFrame: CGRect = .zero   // used to centre on START at first layout
 
     // MARK: Init
 
@@ -239,9 +241,8 @@ class WorkflowDiagramView: UIView, UIScrollViewDelegate {
     private func setup() {
         backgroundColor = UIColor.Sphinx.Body
 
-        // Scroll view
         scrollView.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.minimumZoomScale = 0.15
+        scrollView.minimumZoomScale = 0.1
         scrollView.maximumZoomScale = 3.0
         scrollView.showsHorizontalScrollIndicator = true
         scrollView.showsVerticalScrollIndicator   = true
@@ -256,7 +257,6 @@ class WorkflowDiagramView: UIView, UIScrollViewDelegate {
             scrollView.bottomAnchor.constraint(equalTo: bottomAnchor)
         ])
 
-        // Canvas view — uses direct frame assignment
         canvasView.backgroundColor = .clear
         scrollView.addSubview(canvasView)
     }
@@ -265,7 +265,7 @@ class WorkflowDiagramView: UIView, UIScrollViewDelegate {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        if !didPerformInitialZoom && canvasView.frame.width > 0 {
+        if !didPerformInitialZoom && canvasView.frame.width > 0 && scrollView.bounds.width > 0 {
             didPerformInitialZoom = true
             zoomToFit()
         }
@@ -274,13 +274,30 @@ class WorkflowDiagramView: UIView, UIScrollViewDelegate {
     private func zoomToFit() {
         guard scrollView.bounds.width > 0, scrollView.bounds.height > 0,
               canvasView.frame.width > 0, canvasView.frame.height > 0 else { return }
+
         let scaleX = scrollView.bounds.width  / canvasView.frame.width
         let scaleY = scrollView.bounds.height / canvasView.frame.height
         let scale  = max(min(scaleX, scaleY), scrollView.minimumZoomScale)
         scrollView.setZoomScale(scale, animated: false)
-        let offsetX = max((canvasView.frame.width  * scale - scrollView.bounds.width)  / 2, 0)
-        let offsetY = max((canvasView.frame.height * scale - scrollView.bounds.height) / 2, 0)
-        scrollView.contentOffset = CGPoint(x: offsetX, y: offsetY)
+
+        // Centre viewport on the START pill
+        if startNodeFrame != .zero {
+            let scaledStartX = startNodeFrame.midX * scale
+            let scaledStartY = startNodeFrame.midY * scale
+            let rawOffX = scaledStartX - scrollView.bounds.width  / 2
+            let rawOffY = scaledStartY - scrollView.bounds.height / 2
+            let maxOffX = max(canvasView.frame.width  * scale - scrollView.bounds.width,  0)
+            let maxOffY = max(canvasView.frame.height * scale - scrollView.bounds.height, 0)
+            scrollView.contentOffset = CGPoint(
+                x: min(max(rawOffX, 0), maxOffX),
+                y: min(max(rawOffY, 0), maxOffY)
+            )
+        } else {
+            // Fallback: show full canvas centred
+            let offsetX = max((canvasView.frame.width  * scale - scrollView.bounds.width)  / 2, 0)
+            let offsetY = max((canvasView.frame.height * scale - scrollView.bounds.height) / 2, 0)
+            scrollView.contentOffset = CGPoint(x: offsetX, y: offsetY)
+        }
     }
 
     // MARK: - UIScrollViewDelegate
@@ -292,10 +309,9 @@ class WorkflowDiagramView: UIView, UIScrollViewDelegate {
     // MARK: - Configure
 
     func configure(with diagram: WorkflowDiagramData) {
-        // Reset zoom flag so re-loading triggers auto-zoom again
         didPerformInitialZoom = false
+        startNodeFrame = .zero
 
-        // Clear previous content
         canvasView.subviews.forEach { $0.removeFromSuperview() }
         edgeLayers.forEach { $0.removeFromSuperlayer() }
         edgeLabels.forEach { $0.removeFromSuperview() }
@@ -305,7 +321,8 @@ class WorkflowDiagramView: UIView, UIScrollViewDelegate {
 
         guard !diagram.steps.isEmpty else { return }
 
-        let padding: CGFloat = 60
+        let hPadding: CGFloat = 60   // horizontal canvas padding
+        let vPadding: CGFloat = 100  // vertical canvas padding (extra space top/bottom)
         let positionScale: CGFloat = 0.5
 
         // ---- Place node views ----
@@ -319,12 +336,16 @@ class WorkflowDiagramView: UIView, UIScrollViewDelegate {
                 ? WorkflowStepNodeView.conditionSize
                 : WorkflowStepNodeView.nodeHeight
 
-            nodeView.frame = CGRect(
-                x: step.positionX * positionScale + padding,
-                y: step.positionY * positionScale + padding,
-                width: w,
-                height: h
-            )
+            let cx = step.positionX * positionScale + hPadding + w / 2
+            let cy = step.positionY * positionScale + vPadding + h / 2
+
+            if step.nodeType == .condition {
+                // MUST use bounds + center for rotated views — setting frame is undefined
+                nodeView.bounds = CGRect(origin: .zero, size: CGSize(width: w, height: h))
+                nodeView.center = CGPoint(x: cx, y: cy)
+            } else {
+                nodeView.frame = CGRect(x: cx - w / 2, y: cy - h / 2, width: w, height: h)
+            }
 
             canvasView.addSubview(nodeView)
             nodeViews[key] = nodeView
@@ -334,41 +355,48 @@ class WorkflowDiagramView: UIView, UIScrollViewDelegate {
             nodeView.isUserInteractionEnabled = true
         }
 
-        // ---- Compute canvas bounds before terminal nodes ----
-        let allNodesMinX  = nodeViews.values.map { $0.frame.minX }.min() ?? padding
-        let allNodesMaxX  = nodeViews.values.map { $0.frame.maxX }.max() ?? 400
-        let allNodesMinY  = nodeViews.values.map { $0.frame.minY }.min() ?? 0
-        let allNodesMaxY  = nodeViews.values.map { $0.frame.maxY }.max() ?? 400
-        let allNodesMidY  = (allNodesMinY + allNodesMaxY) / 2
+        // ---- Compute layout bounds from placed nodes ----
+        // Use center-based computation to handle rotated condition nodes correctly
+        let allCentersX = nodeViews.values.map { $0.frame.midX }
+        let allCentersY = nodeViews.values.map { $0.frame.midY }
+        let allNodesMinX = nodeViews.values.map { $0.frame.minX }.min() ?? hPadding
+        let allNodesMaxX = nodeViews.values.map { $0.frame.maxX }.max() ?? 400
+        let allNodesMinY = allCentersY.min() ?? 0
+        let allNodesMaxY = allCentersY.max() ?? 400
 
-        var maxY = allNodesMaxY
+        // Terminal nodes are placed relative to the first/last step by midY
+        let sortedByX = nodeViews.values.sorted { $0.frame.midX < $1.frame.midX }
+        let firstNodeMidY = sortedByX.first?.frame.midY ?? ((allNodesMinY + allNodesMaxY) / 2)
+        let lastNodeMidY  = sortedByX.last?.frame.midY  ?? ((allNodesMinY + allNodesMaxY) / 2)
 
         // ---- Inject terminal nodes ----
         let terminalW: CGFloat = 80
         let terminalH: CGFloat = 32
+        let terminalGrey = UIColor.gray
 
-        // START — dark grey pill at the left
-        let startView = WorkflowTerminalNodeView(text: "START", color: UIColor.darkGray)
+        // START — PrimaryGreen pill, vertically aligned with first step
+        let startView = WorkflowTerminalNodeView(text: "START", color: UIColor.Sphinx.PrimaryGreen)
         startView.frame = CGRect(
             x: max(allNodesMinX - terminalW - 20, 4),
-            y: allNodesMidY - terminalH / 2,
+            y: firstNodeMidY - terminalH / 2,
             width: terminalW, height: terminalH
         )
         startView.layer.cornerRadius = terminalH / 2
         canvasView.addSubview(startView)
+        startNodeFrame = startView.frame  // save for initial centring
 
-        // END — green pill at the right
-        let endView = WorkflowTerminalNodeView(text: "END", color: UIColor.Sphinx.PrimaryGreen)
+        // END — grey pill, vertically aligned with last step
+        let endView = WorkflowTerminalNodeView(text: "END", color: terminalGrey)
         endView.frame = CGRect(
             x: allNodesMaxX + 20,
-            y: allNodesMidY - terminalH / 2,
+            y: lastNodeMidY - terminalH / 2,
             width: terminalW, height: terminalH
         )
         endView.layer.cornerRadius = terminalH / 2
         canvasView.addSubview(endView)
 
-        // HALTED — orange pill below END
-        let haltedView = WorkflowTerminalNodeView(text: "HALTED", color: UIColor.Sphinx.SphinxOrange)
+        // HALTED — grey pill below END
+        let haltedView = WorkflowTerminalNodeView(text: "HALTED", color: terminalGrey)
         haltedView.frame = CGRect(
             x: allNodesMaxX + 20,
             y: endView.frame.maxY + 16,
@@ -377,12 +405,11 @@ class WorkflowDiagramView: UIView, UIScrollViewDelegate {
         haltedView.layer.cornerRadius = terminalH / 2
         canvasView.addSubview(haltedView)
 
-        maxY = max(maxY, haltedView.frame.maxY)
-
-        // ---- Expand canvas to include terminal nodes ----
-        let expandedMaxX = haltedView.frame.maxX + padding
-        let expandedMaxY = maxY + padding
-        canvasView.frame = CGRect(x: 0, y: 0, width: expandedMaxX, height: expandedMaxY)
+        // ---- Expand canvas to fit everything ----
+        let canvasMaxX = haltedView.frame.maxX + hPadding
+        let canvasMaxY = max(allNodesMaxY + (WorkflowStepNodeView.nodeHeight / 2),
+                             haltedView.frame.maxY) + vPadding
+        canvasView.frame = CGRect(x: 0, y: 0, width: canvasMaxX, height: canvasMaxY)
         scrollView.contentSize = canvasView.frame.size
 
         // ---- Draw step-to-step edges ----
@@ -392,19 +419,19 @@ class WorkflowDiagramView: UIView, UIScrollViewDelegate {
         // ---- Draw terminal edges ----
         let edgeColor = UIColor.Sphinx.WashedOutReceivedText.cgColor
 
-        // START → first (leftmost) node
-        if let firstNode = nodeViews.values.min(by: { $0.frame.minX < $1.frame.minX }) {
-            let startArrow = makeArrowLayer(
+        // START → leftmost node
+        if let firstNode = sortedByX.first {
+            let arrow = makeArrowLayer(
                 from: CGPoint(x: startView.frame.maxX, y: startView.frame.midY),
                 to: firstNode.leftEdgeMid,
                 color: edgeColor
             )
-            canvasView.layer.insertSublayer(startArrow, at: 0)
-            edgeLayers.append(startArrow)
+            canvasView.layer.insertSublayer(arrow, at: 0)
+            edgeLayers.append(arrow)
         }
 
-        // Last (rightmost) node → END and HALTED
-        if let lastNode = nodeViews.values.max(by: { $0.frame.maxX < $1.frame.maxX }) {
+        // Rightmost node → END and HALTED
+        if let lastNode = sortedByX.last {
             for termView in [endView, haltedView] {
                 let arrow = makeArrowLayer(
                     from: lastNode.rightEdgeMid,
@@ -459,7 +486,6 @@ class WorkflowDiagramView: UIView, UIScrollViewDelegate {
             controlPoint2: CGPoint(x: midX, y: end.y)
         )
 
-        // Arrowhead
         let dx = end.x - start.x
         let dy = end.y - start.y
         let angle = atan2(dy, dx)
