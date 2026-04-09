@@ -126,19 +126,27 @@ class WorkflowStepDetailViewController: UIViewController {
         contentStack.translatesAutoresizingMaskIntoConstraints = false
         contentScrollView.addSubview(contentStack)
 
-        // Variables section
+        // Variables section — use orderedVarKeys to preserve JSON document order
         if let attrs = step.rawJSON["attributes"] as? [String: Any],
            let vars = attrs["vars"] as? [String: Any],
            !vars.isEmpty {
-            let rows = vars.sorted(by: { $0.key < $1.key }).map { [$0.key, formatValue($0.value)] }
-            contentStack.addArrangedSubview(makeSectionTable(title: "Variables", rows: rows))
+            let rows = step.orderedVarKeys.compactMap { key -> [String]? in
+                guard let val = vars[key] else { return nil }
+                return [key, formatValue(val)]
+            }
+            if !rows.isEmpty {
+                contentStack.addArrangedSubview(makeSectionTable(title: "Variables", rows: rows))
+            }
         }
 
-        // Attributes section (all keys except "vars")
-        if let attrs = step.rawJSON["attributes"] as? [String: Any] {
-            let filtered = attrs.filter { $0.key != "vars" }
-            if !filtered.isEmpty {
-                let rows = filtered.sorted(by: { $0.key < $1.key }).map { [$0.key, formatValue($0.value)] }
+        // Attributes section — use orderedAttributeKeys to preserve JSON document order
+        if let attrs = step.rawJSON["attributes"] as? [String: Any],
+           !step.orderedAttributeKeys.isEmpty {
+            let rows = step.orderedAttributeKeys.compactMap { key -> [String]? in
+                guard let val = attrs[key] else { return nil }
+                return [key, formatValue(val)]
+            }
+            if !rows.isEmpty {
                 contentStack.addArrangedSubview(makeSectionTable(title: "Attributes", rows: rows))
             }
         }
