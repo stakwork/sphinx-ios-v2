@@ -1057,6 +1057,252 @@ extension API {
         )
     }
 
+    // MARK: - Workflow Editor
+
+    func sendWorkflowEditorMessage(
+        taskId: String,
+        message: String,
+        workflowId: Int,
+        workflowName: String,
+        workflowRefId: String,
+        workflowVersionId: String?,
+        webhook: String?,
+        authToken: String,
+        callback: @escaping HiveChatMessageCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        let urlString = "\(API.kHiveBaseUrl)/workflow-editor"
+        var params: [String: AnyObject] = [
+            "taskId": taskId as AnyObject,
+            "message": message as AnyObject,
+            "workflowId": workflowId as AnyObject,
+            "workflowName": workflowName as AnyObject,
+            "workflowRefId": workflowRefId as AnyObject
+        ]
+        if let workflowVersionId = workflowVersionId {
+            params["workflowVersionId"] = workflowVersionId as AnyObject
+        }
+        if let webhook = webhook {
+            params["webhook"] = webhook as AnyObject
+        }
+
+        guard let request = createRequest(urlString, bodyParams: params as NSDictionary, method: "POST", token: authToken) else {
+            errorCallback()
+            return
+        }
+
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                print("[HiveAPI] sendWorkflowEditorMessage unauthorized (401)")
+                errorCallback()
+                return
+            }
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+                if let error = json["error"].string {
+                    print("[HiveAPI] sendWorkflowEditorMessage error: \(error)")
+                    errorCallback()
+                    return
+                }
+                guard json["success"].bool == true else {
+                    print("[HiveAPI] sendWorkflowEditorMessage returned success=false")
+                    errorCallback()
+                    return
+                }
+                guard let sentMessage = HiveChatMessage(json: json["message"]) else {
+                    print("[HiveAPI] sendWorkflowEditorMessage - failed to parse returned message")
+                    errorCallback()
+                    return
+                }
+                callback(sentMessage)
+            case .failure(let error):
+                print("[HiveAPI] sendWorkflowEditorMessage failed: \(error.localizedDescription)")
+                errorCallback()
+            }
+        }
+    }
+
+    func sendWorkflowEditorMessageWithAuth(
+        taskId: String,
+        message: String,
+        workflowId: Int,
+        workflowName: String,
+        workflowRefId: String,
+        workflowVersionId: String?,
+        webhook: String?,
+        callback: @escaping HiveChatMessageCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
+            sendWorkflowEditorMessage(
+                taskId: taskId, message: message,
+                workflowId: workflowId, workflowName: workflowName,
+                workflowRefId: workflowRefId,
+                workflowVersionId: workflowVersionId, webhook: webhook,
+                authToken: storedToken,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateAndSendWorkflowEditorMessage(
+                        taskId: taskId, message: message,
+                        workflowId: workflowId, workflowName: workflowName,
+                        workflowRefId: workflowRefId,
+                        workflowVersionId: workflowVersionId, webhook: webhook,
+                        callback: callback, errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateAndSendWorkflowEditorMessage(
+                taskId: taskId, message: message,
+                workflowId: workflowId, workflowName: workflowName,
+                workflowRefId: workflowRefId,
+                workflowVersionId: workflowVersionId, webhook: webhook,
+                callback: callback, errorCallback: errorCallback
+            )
+        }
+    }
+
+    private func authenticateAndSendWorkflowEditorMessage(
+        taskId: String,
+        message: String,
+        workflowId: Int,
+        workflowName: String,
+        workflowRefId: String,
+        workflowVersionId: String?,
+        webhook: String?,
+        callback: @escaping HiveChatMessageCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback(); return }
+                UserDefaults.Keys.hiveToken.set(token)
+                self?.sendWorkflowEditorMessage(
+                    taskId: taskId, message: message,
+                    workflowId: workflowId, workflowName: workflowName,
+                    workflowRefId: workflowRefId,
+                    workflowVersionId: workflowVersionId, webhook: webhook,
+                    authToken: token,
+                    callback: callback, errorCallback: errorCallback
+                )
+            },
+            errorCallback: errorCallback
+        )
+    }
+
+    // MARK: - Project Debugger
+
+    func sendProjectDebuggerMessage(
+        taskId: String,
+        message: String,
+        projectId: String,
+        webhook: String?,
+        authToken: String,
+        callback: @escaping HiveChatMessageCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        let urlString = "\(API.kHiveBaseUrl)/project-debugger"
+        var params: [String: AnyObject] = [
+            "taskId": taskId as AnyObject,
+            "message": message as AnyObject,
+            "projectId": projectId as AnyObject
+        ]
+        if let webhook = webhook {
+            params["webhook"] = webhook as AnyObject
+        }
+
+        guard let request = createRequest(urlString, bodyParams: params as NSDictionary, method: "POST", token: authToken) else {
+            errorCallback()
+            return
+        }
+
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                print("[HiveAPI] sendProjectDebuggerMessage unauthorized (401)")
+                errorCallback()
+                return
+            }
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+                if let error = json["error"].string {
+                    print("[HiveAPI] sendProjectDebuggerMessage error: \(error)")
+                    errorCallback()
+                    return
+                }
+                guard json["success"].bool == true else {
+                    print("[HiveAPI] sendProjectDebuggerMessage returned success=false")
+                    errorCallback()
+                    return
+                }
+                guard let sentMessage = HiveChatMessage(json: json["message"]) else {
+                    print("[HiveAPI] sendProjectDebuggerMessage - failed to parse returned message")
+                    errorCallback()
+                    return
+                }
+                callback(sentMessage)
+            case .failure(let error):
+                print("[HiveAPI] sendProjectDebuggerMessage failed: \(error.localizedDescription)")
+                errorCallback()
+            }
+        }
+    }
+
+    func sendProjectDebuggerMessageWithAuth(
+        taskId: String,
+        message: String,
+        projectId: String,
+        webhook: String?,
+        callback: @escaping HiveChatMessageCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
+            sendProjectDebuggerMessage(
+                taskId: taskId, message: message,
+                projectId: projectId, webhook: webhook,
+                authToken: storedToken,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateAndSendProjectDebuggerMessage(
+                        taskId: taskId, message: message,
+                        projectId: projectId, webhook: webhook,
+                        callback: callback, errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateAndSendProjectDebuggerMessage(
+                taskId: taskId, message: message,
+                projectId: projectId, webhook: webhook,
+                callback: callback, errorCallback: errorCallback
+            )
+        }
+    }
+
+    private func authenticateAndSendProjectDebuggerMessage(
+        taskId: String,
+        message: String,
+        projectId: String,
+        webhook: String?,
+        callback: @escaping HiveChatMessageCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback(); return }
+                UserDefaults.Keys.hiveToken.set(token)
+                self?.sendProjectDebuggerMessage(
+                    taskId: taskId, message: message,
+                    projectId: projectId, webhook: webhook,
+                    authToken: token,
+                    callback: callback, errorCallback: errorCallback
+                )
+            },
+            errorCallback: errorCallback
+        )
+    }
+
     func triggerTaskGeneration(
         workspaceId: String,
         featureId: String,
