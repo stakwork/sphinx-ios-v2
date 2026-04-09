@@ -420,6 +420,15 @@ class FeatureChatMessageCell: UITableViewCell {
                 nextInsertIndex += 1
                 activeTableViews.append(tableView)
                 activeSegmentViews.append(tableView)
+
+                // Post-table spacer so content after the table has clear visual separation
+                let spacer = UIView()
+                spacer.translatesAutoresizingMaskIntoConstraints = false
+                spacer.backgroundColor = .clear
+                spacer.heightAnchor.constraint(equalToConstant: 8).isActive = true
+                bubbleStack.insertArrangedSubview(spacer, at: nextInsertIndex)
+                nextInsertIndex += 1
+                activeSegmentViews.append(spacer)
             }
         }
 

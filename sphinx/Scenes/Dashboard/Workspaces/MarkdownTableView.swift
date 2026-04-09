@@ -9,13 +9,15 @@
 import UIKit
 
 /// A horizontally-scrollable table view that renders a GFM-style markdown table
-/// as a programmatic grid of UILabel cells inside a UIScrollView.
+/// as a programmatic grid of selectable UITextView cells inside a UIScrollView.
 class MarkdownTableView: UIView {
 
     // MARK: - Constants
 
     private static let rowHeight: CGFloat = 36
-    private static let cellPadding: CGFloat = 16   // 8pt each side
+    /// 8pt each side + 8pt safety buffer to prevent truncation
+    private static let cellPadding: CGFloat = 24
+    private static let horizontalMargin: CGFloat = 8
     private static let headerFont = UIFont.boldSystemFont(ofSize: 13)
     private static let bodyFont   = UIFont.systemFont(ofSize: 13)
 
@@ -64,10 +66,12 @@ class MarkdownTableView: UIView {
         addSubview(scrollView)
         scrollView.addSubview(contentView)
 
+        let m = MarkdownTableView.horizontalMargin
         NSLayoutConstraint.activate([
+            // Inset scroll view horizontally for leading/trailing margins
             scrollView.topAnchor.constraint(equalTo: topAnchor),
-            scrollView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: m),
+            scrollView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -m),
             scrollView.bottomAnchor.constraint(equalTo: bottomAnchor),
 
             contentView.topAnchor.constraint(equalTo: scrollView.topAnchor),
@@ -87,6 +91,10 @@ class MarkdownTableView: UIView {
 
         // Idempotent: remove all previous subviews from the content view
         contentView.subviews.forEach { $0.removeFromSuperview() }
+        // Remove previously added width constraints on contentView
+        contentView.constraints
+            .filter { $0.firstAttribute == .width }
+            .forEach { contentView.removeConstraint($0) }
 
         guard !headers.isEmpty else { return }
 
@@ -100,15 +108,9 @@ class MarkdownTableView: UIView {
         contentWidthConstraint.isActive = true
 
         // Draw header row
-        drawRow(
-            cells: headers,
-            rowIndex: 0,
-            isHeader: true,
-            columnWidths: columnWidths,
-            totalWidth: totalWidth
-        )
+        drawRow(cells: headers, rowIndex: 0, isHeader: true, columnWidths: columnWidths, totalWidth: totalWidth)
 
-        // 1pt divider below header
+        // 1pt horizontal divider below header
         let divider = UIView()
         divider.translatesAutoresizingMaskIntoConstraints = false
         divider.backgroundColor = UIColor.Sphinx.LightDivider
@@ -122,13 +124,7 @@ class MarkdownTableView: UIView {
 
         // Draw data rows
         for (idx, rowCells) in rows.enumerated() {
-            drawRow(
-                cells: rowCells,
-                rowIndex: idx + 1,
-                isHeader: false,
-                columnWidths: columnWidths,
-                totalWidth: totalWidth
-            )
+            drawRow(cells: rowCells, rowIndex: idx + 1, isHeader: false, columnWidths: columnWidths, totalWidth: totalWidth)
         }
     }
 
@@ -139,7 +135,8 @@ class MarkdownTableView: UIView {
 
         let measure: (String, UIFont) -> CGFloat = { text, font in
             let size = (text as NSString).size(withAttributes: [.font: font])
-            return size.width + MarkdownTableView.cellPadding
+            // Add full cell padding (8pt each side) plus a safety buffer to avoid truncation
+            return ceil(size.width) + MarkdownTableView.cellPadding
         }
 
         for (col, header) in headers.enumerated() {
@@ -164,15 +161,16 @@ class MarkdownTableView: UIView {
     ) {
         let yOffset = CGFloat(rowIndex) * MarkdownTableView.rowHeight
 
-        // Row background
+        // Row background — use semi-transparent LightDivider tints so neither shade
+        // blends into the bubble background colour
         let rowBG = UIView()
         rowBG.translatesAutoresizingMaskIntoConstraints = false
         if isHeader {
             rowBG.backgroundColor = UIColor.Sphinx.LightDivider
         } else {
             rowBG.backgroundColor = (rowIndex % 2 == 0)
-                ? UIColor.Sphinx.Body
-                : UIColor.Sphinx.ReceivedMsgBG
+                ? UIColor.Sphinx.LightDivider.withAlphaComponent(0.35)
+                : UIColor.Sphinx.LightDivider.withAlphaComponent(0.12)
         }
         contentView.addSubview(rowBG)
         NSLayoutConstraint.activate([
@@ -182,27 +180,35 @@ class MarkdownTableView: UIView {
             rowBG.heightAnchor.constraint(equalToConstant: MarkdownTableView.rowHeight)
         ])
 
-        // Cell labels
+        // Cell text views (selectable, non-editable, non-scrolling)
         var xOffset: CGFloat = 0
         let font: UIFont = isHeader ? MarkdownTableView.headerFont : MarkdownTableView.bodyFont
 
         for (col, colWidth) in columnWidths.enumerated() {
             let text = col < cells.count ? cells[col] : ""
-            let label = UILabel()
-            label.translatesAutoresizingMaskIntoConstraints = false
-            label.text = text
-            label.font = font
-            label.textColor = UIColor.Sphinx.TextMessages
-            label.numberOfLines = 1
-            label.lineBreakMode = .byTruncatingTail
-            contentView.addSubview(label)
+
+            let tv = UITextView()
+            tv.translatesAutoresizingMaskIntoConstraints = false
+            tv.isEditable = false
+            tv.isScrollEnabled = false
+            tv.isSelectable = true
+            tv.backgroundColor = .clear
+            tv.font = font
+            tv.textColor = UIColor.Sphinx.TextMessages
+            // Vertical centering: equal top/bottom insets, 8pt horizontal inset
+            tv.textContainerInset = UIEdgeInsets(top: 9, left: 8, bottom: 9, right: 8)
+            tv.textContainer.lineFragmentPadding = 0
+            tv.textContainer.maximumNumberOfLines = 1
+            tv.textContainer.lineBreakMode = .byClipping  // no truncation — column is wide enough
+            tv.text = text
+            contentView.addSubview(tv)
 
             let currentX = xOffset
             NSLayoutConstraint.activate([
-                label.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: currentX + 8),
-                label.topAnchor.constraint(equalTo: contentView.topAnchor, constant: yOffset),
-                label.widthAnchor.constraint(equalToConstant: colWidth - 16),
-                label.heightAnchor.constraint(equalToConstant: MarkdownTableView.rowHeight)
+                tv.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: currentX),
+                tv.topAnchor.constraint(equalTo: contentView.topAnchor, constant: yOffset),
+                tv.widthAnchor.constraint(equalToConstant: colWidth),
+                tv.heightAnchor.constraint(equalToConstant: MarkdownTableView.rowHeight)
             ])
 
             xOffset += colWidth
