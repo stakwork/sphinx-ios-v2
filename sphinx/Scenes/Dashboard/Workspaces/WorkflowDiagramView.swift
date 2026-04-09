@@ -194,16 +194,17 @@ private class WorkflowStepNodeView: UIView {
         layer.addSublayer(dl)
         diamondLayer = dl
 
-        // Label centred in the view
+        // Label centred in the view — always use black since the diamond fill is always white
         let nameLabel = UILabel()
         nameLabel.text = conditionDisplayText(for: step)
-        nameLabel.textColor = UIColor.Sphinx.Text
+        nameLabel.textColor = .black
         nameLabel.font = UIFont(name: "Roboto-Medium", size: 10) ?? UIFont.systemFont(ofSize: 10, weight: .medium)
         nameLabel.textAlignment = .center
         nameLabel.numberOfLines = 3
         nameLabel.lineBreakMode = .byTruncatingTail
         nameLabel.translatesAutoresizingMaskIntoConstraints = false
         addSubview(nameLabel)
+        bringSubviewToFront(nameLabel)
 
         // Keep label inside the "inner" diamond area (approx 50% of each dimension)
         let insetX = Self.conditionWidth  * 0.15

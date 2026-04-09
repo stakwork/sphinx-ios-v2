@@ -130,16 +130,16 @@ class WorkflowStepDetailViewController: UIViewController {
         if let attrs = step.rawJSON["attributes"] as? [String: Any],
            let vars = attrs["vars"] as? [String: Any],
            !vars.isEmpty {
-            let rows = vars.sorted(by: { $0.key < $1.key }).map { ($0.key, formatValue($0.value)) }
-            contentStack.addArrangedSubview(makeSectionView(title: "Variables", rows: rows))
+            let rows = vars.sorted(by: { $0.key < $1.key }).map { [$0.key, formatValue($0.value)] }
+            contentStack.addArrangedSubview(makeSectionTable(title: "Variables", rows: rows))
         }
 
         // Attributes section (all keys except "vars")
         if let attrs = step.rawJSON["attributes"] as? [String: Any] {
             let filtered = attrs.filter { $0.key != "vars" }
             if !filtered.isEmpty {
-                let rows = filtered.sorted(by: { $0.key < $1.key }).map { ($0.key, formatValue($0.value)) }
-                contentStack.addArrangedSubview(makeSectionView(title: "Attributes", rows: rows))
+                let rows = filtered.sorted(by: { $0.key < $1.key }).map { [$0.key, formatValue($0.value)] }
+                contentStack.addArrangedSubview(makeSectionTable(title: "Attributes", rows: rows))
             }
         }
 
@@ -224,10 +224,11 @@ class WorkflowStepDetailViewController: UIViewController {
 
     // MARK: - Section Builder
 
-    private func makeSectionView(title: String, rows: [(String, String)]) -> UIView {
+    private func makeSectionTable(title: String, rows: [[String]]) -> UIView {
         let container = UIStackView()
         container.axis = .vertical
-        container.spacing = 0
+        container.spacing = 8
+        container.translatesAutoresizingMaskIntoConstraints = false
 
         // Section title
         let titleLabel = UILabel()
@@ -236,58 +237,17 @@ class WorkflowStepDetailViewController: UIViewController {
         titleLabel.textColor = UIColor.Sphinx.SecondaryText
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         container.addArrangedSubview(titleLabel)
-        container.setCustomSpacing(8, after: titleLabel)
 
-        // Rows
-        for (key, value) in rows {
-            let rowStack = UIStackView()
-            rowStack.axis = .horizontal
-            rowStack.spacing = 8
-            rowStack.alignment = .top
+        // MarkdownTableView with Name / Value header row
+        let tableView = MarkdownTableView()
+        tableView.translatesAutoresizingMaskIntoConstraints = false
+        tableView.configure(headers: ["Name", "Value"], rows: rows)
 
-            let keyLabel = UILabel()
-            keyLabel.text = key
-            keyLabel.font = UIFont(name: "Roboto-Regular", size: 13) ?? UIFont.systemFont(ofSize: 13)
-            keyLabel.textColor = UIColor.Sphinx.SecondaryText
-            keyLabel.numberOfLines = 1
-            keyLabel.lineBreakMode = .byTruncatingTail
-            keyLabel.setContentHuggingPriority(.defaultHigh, for: .horizontal)
-            keyLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-            NSLayoutConstraint.activate([
-                keyLabel.widthAnchor.constraint(lessThanOrEqualToConstant: 120)
-            ])
+        let rowCount = rows.count
+        let tableHeight = tableView.intrinsicContentHeight
+        tableView.heightAnchor.constraint(equalToConstant: tableHeight).isActive = true
 
-            let valueLabel = UILabel()
-            valueLabel.text = value
-            valueLabel.font = UIFont(name: "Roboto-Regular", size: 13) ?? UIFont.systemFont(ofSize: 13)
-            valueLabel.textColor = UIColor.Sphinx.Text
-            valueLabel.numberOfLines = 4
-            valueLabel.lineBreakMode = .byTruncatingTail
-            valueLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
-
-            rowStack.addArrangedSubview(keyLabel)
-            rowStack.addArrangedSubview(valueLabel)
-
-            let rowWrapper = UIView()
-            rowWrapper.translatesAutoresizingMaskIntoConstraints = false
-            rowStack.translatesAutoresizingMaskIntoConstraints = false
-            rowWrapper.addSubview(rowStack)
-            NSLayoutConstraint.activate([
-                rowStack.topAnchor.constraint(equalTo: rowWrapper.topAnchor, constant: 8),
-                rowStack.bottomAnchor.constraint(equalTo: rowWrapper.bottomAnchor, constant: -8),
-                rowStack.leadingAnchor.constraint(equalTo: rowWrapper.leadingAnchor),
-                rowStack.trailingAnchor.constraint(equalTo: rowWrapper.trailingAnchor)
-            ])
-
-            container.addArrangedSubview(rowWrapper)
-
-            // Separator
-            let sep = UIView()
-            sep.backgroundColor = UIColor.Sphinx.LightDivider
-            sep.translatesAutoresizingMaskIntoConstraints = false
-            sep.heightAnchor.constraint(equalToConstant: 1).isActive = true
-            container.addArrangedSubview(sep)
-        }
+        container.addArrangedSubview(tableView)
 
         return container
     }
@@ -297,10 +257,9 @@ class WorkflowStepDetailViewController: UIViewController {
     private func formatValue(_ value: Any) -> String {
         if let str = value as? String { return str }
         if let num = value as? NSNumber { return num.stringValue }
-        if let data = try? JSONSerialization.data(withJSONObject: value, options: [.prettyPrinted]),
+        if let data = try? JSONSerialization.data(withJSONObject: value, options: []),
            let str = String(data: data, encoding: .utf8) {
-            let trimmed = str.trimmingCharacters(in: .whitespacesAndNewlines)
-            return trimmed.count > 120 ? String(trimmed.prefix(120)) + "…" : trimmed
+            return str.trimmingCharacters(in: .whitespacesAndNewlines)
         }
         return "\(value)"
     }
