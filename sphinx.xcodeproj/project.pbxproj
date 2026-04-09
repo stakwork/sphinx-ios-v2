@@ -682,6 +682,10 @@
 		A1B2C3D4E5F60002A1B2C3D4 /* SphinxToggleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60001A1B2C3D4 /* SphinxToggleView.swift */; };
 		A1B2C3D4E5F601020304050B /* PendingAttachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F601020304050A /* PendingAttachment.swift */; };
 		A1B2C3D4E5F601020304050D /* PendingAttachmentsBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F601020304050C /* PendingAttachmentsBarView.swift */; };
+		34409291F9084619ADFBFDD1 /* WorkflowDiagramModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60E020F2675C40F7ADDF3C84 /* WorkflowDiagramModel.swift */; };
+		FDF80E5B06DF4B2B911CEDC8 /* WorkflowDiagramView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E255EF5E6864CF986414022 /* WorkflowDiagramView.swift */; };
+		EE44FFE9AE354DE9BD645666 /* WorkflowStepDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF4585E811B94287A8BC1A6B /* WorkflowStepDetailViewController.swift */; };
+		87BC1E0C10D34B4AB9519D57 /* SelectedStepChipView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DA529CF166A42808FC3A554 /* SelectedStepChipView.swift */; };
 		A1B2C3D4E5F601020304050F /* SpeechTranscriptionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F601020304050E /* SpeechTranscriptionManager.swift */; };
 		A1B2C3D4E5F601020304060B /* HiveFeatureAttachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AABB00FF00BEEF00000001 /* HiveFeatureAttachment.swift */; };
 		A1B2C3D4E5F6A7B8C9D0E1F2 /* TaskProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6A7B8C9D0E1F2A3 /* TaskProgress.swift */; };
@@ -2006,6 +2010,10 @@
 		A1B2C3D4E5F60001A1B2C3D4 /* SphinxToggleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SphinxToggleView.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F601020304050A /* PendingAttachment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingAttachment.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F601020304050C /* PendingAttachmentsBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingAttachmentsBarView.swift; sourceTree = "<group>"; };
+		60E020F2675C40F7ADDF3C84 /* WorkflowDiagramModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkflowDiagramModel.swift; sourceTree = "<group>"; };
+		3E255EF5E6864CF986414022 /* WorkflowDiagramView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkflowDiagramView.swift; sourceTree = "<group>"; };
+		FF4585E811B94287A8BC1A6B /* WorkflowStepDetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkflowStepDetailViewController.swift; sourceTree = "<group>"; };
+		1DA529CF166A42808FC3A554 /* SelectedStepChipView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectedStepChipView.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F601020304050E /* SpeechTranscriptionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechTranscriptionManager.swift; sourceTree = "<group>"; };
 		A8F00239BAA5413399F184E6 /* WorkflowStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkflowStatus.swift; sourceTree = "<group>"; };
 		AA001CQ02F9A0001000CQ001 /* ClarifyingQuestionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClarifyingQuestionsView.swift; sourceTree = "<group>"; };
@@ -4194,6 +4202,10 @@
 				101C5A13C28347DF905BBCEE /* TaskDependencyDiagramView.swift */,
 				47B9CC092F4E0C7B007527B4 /* HiveConfigurationViewController.swift */,
 				A8F00239BAA5413399F184E6 /* WorkflowStatus.swift */,
+				60E020F2675C40F7ADDF3C84 /* WorkflowDiagramModel.swift */,
+				3E255EF5E6864CF986414022 /* WorkflowDiagramView.swift */,
+				FF4585E811B94287A8BC1A6B /* WorkflowStepDetailViewController.swift */,
+				1DA529CF166A42808FC3A554 /* SelectedStepChipView.swift */,
 				E5BD9804E22A4372A9E191D5 /* WorkflowStatusView.swift */,
 				F8A9B0C1D2E3F4A5B6C7D8E9 /* StakworkRun.swift */,
 				B2C3D4E5F6A7B8C9D0E1F2A3 /* TaskProgress.swift */,
@@ -5664,6 +5676,10 @@
 				47B9CC012F460C7B007527B4 /* WorkspacesViewController.swift in Sources */,
 				47B9CC0A2F4E0C7B007527B4 /* HiveConfigurationViewController.swift in Sources */,
 				0DB22AE0228D44FDB51A2A11 /* WorkflowStatus.swift in Sources */,
+				34409291F9084619ADFBFDD1 /* WorkflowDiagramModel.swift in Sources */,
+				FDF80E5B06DF4B2B911CEDC8 /* WorkflowDiagramView.swift in Sources */,
+				EE44FFE9AE354DE9BD645666 /* WorkflowStepDetailViewController.swift in Sources */,
+				87BC1E0C10D34B4AB9519D57 /* SelectedStepChipView.swift in Sources */,
 				911C33D7996D4895912C076E /* WorkflowStatusView.swift in Sources */,
 				E7F8A9B0C1D2E3F4A5B6C7D8 /* StakworkRun.swift in Sources */,
 				A1B2C3D4E5F6A7B8C9D0E1F2 /* TaskProgress.swift in Sources */,

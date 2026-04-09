@@ -1067,6 +1067,11 @@ extension API {
         workflowRefId: String,
         workflowVersionId: String?,
         webhook: String?,
+        stepName: String? = nil,
+        stepUniqueId: String? = nil,
+        stepDisplayName: String? = nil,
+        stepType: String? = nil,
+        stepData: [String: AnyObject]? = nil,
         authToken: String,
         callback: @escaping HiveChatMessageCallback,
         errorCallback: @escaping EmptyCallback
@@ -1085,6 +1090,11 @@ extension API {
         if let webhook = webhook {
             params["webhook"] = webhook as AnyObject
         }
+        if let stepName      { params["stepName"]        = stepName        as AnyObject }
+        if let stepUniqueId  { params["stepUniqueId"]    = stepUniqueId    as AnyObject }
+        if let stepDisplayName { params["stepDisplayName"] = stepDisplayName as AnyObject }
+        if let stepType      { params["stepType"]        = stepType        as AnyObject }
+        if let stepData      { params["stepData"]        = stepData        as AnyObject }
 
         guard let request = createRequest(urlString, bodyParams: params as NSDictionary, method: "POST", token: authToken) else {
             errorCallback()
@@ -1131,6 +1141,11 @@ extension API {
         workflowRefId: String,
         workflowVersionId: String?,
         webhook: String?,
+        stepName: String? = nil,
+        stepUniqueId: String? = nil,
+        stepDisplayName: String? = nil,
+        stepType: String? = nil,
+        stepData: [String: AnyObject]? = nil,
         callback: @escaping HiveChatMessageCallback,
         errorCallback: @escaping EmptyCallback
     ) {
@@ -1140,6 +1155,9 @@ extension API {
                 workflowId: workflowId, workflowName: workflowName,
                 workflowRefId: workflowRefId,
                 workflowVersionId: workflowVersionId, webhook: webhook,
+                stepName: stepName, stepUniqueId: stepUniqueId,
+                stepDisplayName: stepDisplayName, stepType: stepType,
+                stepData: stepData,
                 authToken: storedToken,
                 callback: callback,
                 errorCallback: { [weak self] in
@@ -1148,6 +1166,9 @@ extension API {
                         workflowId: workflowId, workflowName: workflowName,
                         workflowRefId: workflowRefId,
                         workflowVersionId: workflowVersionId, webhook: webhook,
+                        stepName: stepName, stepUniqueId: stepUniqueId,
+                        stepDisplayName: stepDisplayName, stepType: stepType,
+                        stepData: stepData,
                         callback: callback, errorCallback: errorCallback
                     )
                 }
@@ -1158,6 +1179,9 @@ extension API {
                 workflowId: workflowId, workflowName: workflowName,
                 workflowRefId: workflowRefId,
                 workflowVersionId: workflowVersionId, webhook: webhook,
+                stepName: stepName, stepUniqueId: stepUniqueId,
+                stepDisplayName: stepDisplayName, stepType: stepType,
+                stepData: stepData,
                 callback: callback, errorCallback: errorCallback
             )
         }
@@ -1171,6 +1195,11 @@ extension API {
         workflowRefId: String,
         workflowVersionId: String?,
         webhook: String?,
+        stepName: String? = nil,
+        stepUniqueId: String? = nil,
+        stepDisplayName: String? = nil,
+        stepType: String? = nil,
+        stepData: [String: AnyObject]? = nil,
         callback: @escaping HiveChatMessageCallback,
         errorCallback: @escaping EmptyCallback
     ) {
@@ -1183,6 +1212,9 @@ extension API {
                     workflowId: workflowId, workflowName: workflowName,
                     workflowRefId: workflowRefId,
                     workflowVersionId: workflowVersionId, webhook: webhook,
+                    stepName: stepName, stepUniqueId: stepUniqueId,
+                    stepDisplayName: stepDisplayName, stepType: stepType,
+                    stepData: stepData,
                     authToken: token,
                     callback: callback, errorCallback: errorCallback
                 )

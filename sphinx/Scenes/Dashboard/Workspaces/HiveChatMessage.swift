@@ -72,6 +72,7 @@ struct WorkflowContent: Sendable {
     let workflowVersionId: String?
     let projectId: String?       // covers both projectId and debuggerProjectId
     let webhook: String?
+    let workflowJson: String?
 }
 
 struct HiveChatMessageArtifact: @unchecked Sendable {
@@ -194,7 +195,8 @@ struct HiveChatMessageArtifact: @unchecked Sendable {
                 workflowRefId:     c["workflowRefId"].string,
                 workflowVersionId: c["workflowVersionId"].string,
                 projectId:         c["projectId"].string ?? c["debuggerProjectId"].string,
-                webhook:           c["webhook"].string
+                webhook:           c["webhook"].string,
+                workflowJson:      c["workflowJson"].string
             )
             self.content = nil
             self.prContent = nil

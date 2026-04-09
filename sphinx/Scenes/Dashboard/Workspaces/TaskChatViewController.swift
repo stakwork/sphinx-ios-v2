@@ -71,6 +71,17 @@ class TaskChatViewController: UIViewController {
     // MARK: - Description overlay
     private var taskDescriptionOverlay: UIView?
 
+    // MARK: - Workflow diagram tab (workflow_editor mode only)
+    private var tabSegmentedControl: CustomSegmentedControl?
+    private var workflowContainerView: UIView?
+    private var workflowDiagramView: WorkflowDiagramView?
+    private var mergedDiagram: WorkflowDiagramData?
+    private var selectedStep: WorkflowStep?
+    private var selectedStepChip: SelectedStepChipView!
+    private var selectedStepChipHeightConstraint: NSLayoutConstraint!
+    /// Top-anchor constraint for chatTableView — updated when tab bar is present
+    private var chatTableViewTopConstraint: NSLayoutConstraint!
+
     // Autocomplete
     private var availableWorkspaces: [Workspace] = []
     private var filteredWorkspaces: [Workspace] = []
@@ -173,6 +184,7 @@ class TaskChatViewController: UIViewController {
         view.backgroundColor = UIColor.Sphinx.Body
         setupHeader()
         setupChatArea()
+        setupTabBarIfNeeded()
         setupDescriptionOverlayIfNeeded()
     }
 
@@ -442,6 +454,16 @@ class TaskChatViewController: UIViewController {
         autocompleteHeightConstraint = autocompleteContainer.heightAnchor.constraint(equalToConstant: 0)
         pendingAttachmentsBarHeightConstraint = pendingAttachmentsBar.heightAnchor.constraint(equalToConstant: 0)
 
+        // Selected step chip — sits between pendingAttachmentsBar and chatInputContainer
+        selectedStepChip = SelectedStepChipView()
+        selectedStepChip.translatesAutoresizingMaskIntoConstraints = false
+        selectedStepChip.isHidden = true
+        view.addSubview(selectedStepChip)
+        selectedStepChip.onDeselect = { [weak self] in
+            self?.clearSelectedStep()
+        }
+        selectedStepChipHeightConstraint = selectedStepChip.heightAnchor.constraint(equalToConstant: 0)
+
         NSLayoutConstraint.activate([
             loadingWheel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             loadingWheel.centerYAnchor.constraint(equalTo: view.centerYAnchor),
@@ -449,7 +471,10 @@ class TaskChatViewController: UIViewController {
             emptyLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             emptyLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor),
 
-            chatTableView.topAnchor.constraint(equalTo: headerView.bottomAnchor),
+            {
+                chatTableViewTopConstraint = chatTableView.topAnchor.constraint(equalTo: headerView.bottomAnchor)
+                return chatTableViewTopConstraint
+            }(),
             chatTableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             chatTableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             chatTableView.bottomAnchor.constraint(equalTo: workflowStatusView.topAnchor),
@@ -461,8 +486,13 @@ class TaskChatViewController: UIViewController {
 
             pendingAttachmentsBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             pendingAttachmentsBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            pendingAttachmentsBar.bottomAnchor.constraint(equalTo: chatInputContainer.topAnchor),
+            pendingAttachmentsBar.bottomAnchor.constraint(equalTo: selectedStepChip.topAnchor),
             pendingAttachmentsBarHeightConstraint,
+
+            selectedStepChip.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            selectedStepChip.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            selectedStepChip.bottomAnchor.constraint(equalTo: chatInputContainer.topAnchor),
+            selectedStepChipHeightConstraint,
 
             chatInputContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             chatInputContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
@@ -485,6 +515,141 @@ class TaskChatViewController: UIViewController {
         ])
 
 
+    }
+
+    // MARK: - Workflow Diagram Tab Bar
+
+    private func setupTabBarIfNeeded() {
+        guard task.mode == "workflow_editor" else { return }
+
+        // --- Tab bar ---
+        let seg = CustomSegmentedControl(frame: .zero, buttonTitles: ["CHAT", "WORKFLOW"])
+        seg.translatesAutoresizingMaskIntoConstraints = false
+        seg.buttonBackgroundColor = UIColor.Sphinx.HeaderBG
+        seg.backgroundColor      = UIColor.Sphinx.HeaderBG
+        seg.selectorViewColor    = UIColor.Sphinx.PrimaryGreen
+        seg.configureFromOutlet(buttonTitles: ["CHAT", "WORKFLOW"], delegate: self)
+        view.addSubview(seg)
+        tabSegmentedControl = seg
+
+        NSLayoutConstraint.activate([
+            seg.topAnchor.constraint(equalTo: headerView.bottomAnchor),
+            seg.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            seg.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            seg.heightAnchor.constraint(equalToConstant: 50)
+        ])
+
+        // Move chatTableView top anchor to below the tab bar
+        chatTableViewTopConstraint.isActive = false
+        chatTableViewTopConstraint = chatTableView.topAnchor.constraint(equalTo: seg.bottomAnchor)
+        chatTableViewTopConstraint.isActive = true
+
+        // --- Workflow container ---
+        let container = UIView()
+        container.translatesAutoresizingMaskIntoConstraints = false
+        container.backgroundColor = UIColor.Sphinx.Body
+        container.isHidden = true
+        view.addSubview(container)
+        workflowContainerView = container
+
+        NSLayoutConstraint.activate([
+            container.topAnchor.constraint(equalTo: seg.bottomAnchor),
+            container.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            container.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            container.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+        ])
+
+        // --- Diagram view inside container ---
+        let diagram = WorkflowDiagramView()
+        diagram.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(diagram)
+        workflowDiagramView = diagram
+
+        NSLayoutConstraint.activate([
+            diagram.topAnchor.constraint(equalTo: container.topAnchor),
+            diagram.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            diagram.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            diagram.bottomAnchor.constraint(equalTo: container.bottomAnchor)
+        ])
+
+        diagram.onStepTapped = { [weak self] step in
+            self?.handleStepTapped(step)
+        }
+    }
+
+    // MARK: - Panel switching (tab bar)
+
+    private func showChatPanel() {
+        chatTableView.isHidden = false
+        workflowStatusView.isHidden = false
+        pendingAttachmentsBar.isHidden = false
+        selectedStepChip.isHidden = (selectedStep == nil)
+        chatInputContainer.isHidden = false
+        bottomFillView.isHidden = false
+        workflowContainerView?.isHidden = true
+    }
+
+    private func showWorkflowPanel() {
+        chatTableView.isHidden = true
+        workflowStatusView.isHidden = true
+        pendingAttachmentsBar.isHidden = true
+        selectedStepChip.isHidden = true
+        chatInputContainer.isHidden = true
+        bottomFillView.isHidden = true
+        workflowContainerView?.isHidden = false
+        refreshDiagram()
+    }
+
+    // MARK: - Diagram
+
+    private func refreshDiagram() {
+        var latestJson: String? = nil
+        for msg in messages {
+            for artifact in msg.artifacts where artifact.isWorkflow {
+                if let j = artifact.workflowContent?.workflowJson {
+                    latestJson = j
+                }
+            }
+        }
+        guard let json = latestJson else { return }
+        mergedDiagram = WorkflowDiagramData.parse(from: json)
+        if let diagram = mergedDiagram {
+            workflowDiagramView?.configure(with: diagram)
+        }
+    }
+
+    // MARK: - Step selection
+
+    private func handleStepTapped(_ step: WorkflowStep) {
+        let vc = WorkflowStepDetailViewController.instantiate(step: step)
+        if let sheet = vc.sheetPresentationController {
+            sheet.detents = [.medium()]
+            sheet.prefersGrabberVisible = true
+        }
+        vc.onSelectStep = { [weak self] selectedStep in
+            self?.applySelectedStep(selectedStep)
+        }
+        present(vc, animated: true)
+    }
+
+    private func applySelectedStep(_ step: WorkflowStep) {
+        selectedStep = step
+        selectedStepChip.configure(with: step)
+        selectedStepChip.isHidden = false
+        selectedStepChipHeightConstraint.constant = 44
+        UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
+
+        // Switch to CHAT tab
+        tabSegmentedControl?.selectTabWith(index: 0)
+        showChatPanel()
+    }
+
+    private func clearSelectedStep() {
+        selectedStep = nil
+        selectedStepChip.clear()
+        selectedStepChip.isHidden = true
+        selectedStepChipHeightConstraint.constant = 0
+        UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
     }
 
     // MARK: - Keyboard
@@ -700,6 +865,7 @@ class TaskChatViewController: UIViewController {
                 sendStandardMessage(message, replyId: replyId, attachments: attachments)
                 return
             }
+            let step = selectedStep
             API.sharedInstance.sendWorkflowEditorMessageWithAuth(
                 taskId: task.id,
                 message: message,
@@ -708,10 +874,16 @@ class TaskChatViewController: UIViewController {
                 workflowRefId: workflowRefId,
                 workflowVersionId: wf.workflowVersionId,
                 webhook: wf.webhook,
+                stepName: step?.name,
+                stepUniqueId: step?.uniqueId,
+                stepDisplayName: step?.displayName,
+                stepType: step?.skillType,
+                stepData: step?.rawJSON as? [String: AnyObject],
                 callback: { [weak self] sentMessage in
                     DispatchQueue.main.async {
                         guard let self, let sentMessage else { return }
                         self.newMessageReceived(sentMessage)
+                        if step != nil { self.clearSelectedStep() }
                     }
                 },
                 errorCallback: { [weak self] in
@@ -746,8 +918,10 @@ class TaskChatViewController: UIViewController {
     }
 
     @objc private func sendTapped() {
-        guard let message = chatInputTextView.text?.trimmingCharacters(in: .whitespacesAndNewlines),
-              !message.isEmpty else {
+        let rawMessage = chatInputTextView.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        // Default to "Modify this step" when input is empty but a step is selected
+        let message = (rawMessage.isEmpty && selectedStep != nil) ? "Modify this step" : rawMessage
+        guard !message.isEmpty else {
             chatInputTextView.resignFirstResponder()
             return
         }
@@ -1097,6 +1271,11 @@ extension TaskChatViewController: HivePusherDelegate {
             }
         }
         scrollToBottom()
+        // Update diagram if a new WORKFLOW artifact arrived
+        if task.mode == "workflow_editor",
+           message.artifacts.contains(where: { $0.isWorkflow }) {
+            refreshDiagram()
+        }
     }
 
     func prStatusChanged(taskId: String?, prNumber: Int, state: String, artifactStatus: String, prUrl: String?, problemDetails: String?) {
@@ -1538,6 +1717,18 @@ extension TaskChatViewController: PHPickerViewControllerDelegate {
             if let s3Path = s3Path { self.pendingAttachments[idx].s3Path = s3Path }
             self.refreshAttachmentsBar()
             self.updateSendButtonState()
+        }
+    }
+}
+
+// MARK: - CustomSegmentedControlDelegate
+
+extension TaskChatViewController: CustomSegmentedControlDelegate {
+    func segmentedControlDidSwitch(_ control: CustomSegmentedControl, to index: Int) {
+        if index == 1 {
+            showWorkflowPanel()
+        } else {
+            showChatPanel()
         }
     }
 }
