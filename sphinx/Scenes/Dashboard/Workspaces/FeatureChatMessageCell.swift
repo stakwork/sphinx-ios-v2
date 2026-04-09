@@ -174,26 +174,30 @@ class FeatureChatMessageCell: UITableViewCell {
 
         // --- Text content ---
         if isUser {
-            let mutable: NSMutableAttributedString
             if let italic = italicText {
                 let font = UIFont(name: "Roboto-Italic", size: 15)
                     ?? UIFont.italicSystemFont(ofSize: 15)
-                mutable = NSMutableAttributedString(
+                let mutable = NSMutableAttributedString(
                     string: italic,
                     attributes: [.font: font, .foregroundColor: UIColor.Sphinx.TextMessages.withAlphaComponent(0.5)]
                 )
+                messageTextView.attributedText = mutable
+            } else if let logsBody = message.logsContent {
+                messageTextView.attributedText = makeLogsAttributedString(content: logsBody)
             } else {
                 let rendered = FeatureChatMessageCell.markdownRenderer.render(message.resolvedDisplayText)
-                mutable = NSMutableAttributedString(attributedString: rendered)
+                let mutable = NSMutableAttributedString(attributedString: rendered)
                 mutable.enumerateAttribute(.foregroundColor, in: NSRange(location: 0, length: mutable.length)) { value, range, _ in
                     if let color = value as? UIColor, color == UIColor.Sphinx.Text {
                         mutable.addAttribute(.foregroundColor, value: UIColor.Sphinx.TextMessages, range: range)
                     }
                 }
+                messageTextView.attributedText = mutable
             }
-            messageTextView.attributedText = mutable
             // Fix 3: hide text view when message body is blank
-            let hasText = italicText != nil || !message.resolvedDisplayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            let hasText = italicText != nil
+                || message.logsContent != nil
+                || !message.resolvedDisplayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             messageTextView.isHidden = !hasText
             bubbleView.backgroundColor      = UIColor.Sphinx.SentMsgBG
             timestampLabel.textColor        = UIColor.Sphinx.SecondaryTextSent
@@ -216,18 +220,23 @@ class FeatureChatMessageCell: UITableViewCell {
                 senderAvatarImageView.image = UIImage(named: "profile_avatar")
             }
         } else {
-            let rendered = FeatureChatMessageCell.markdownRenderer.render(message.resolvedDisplayText)
-            let mutable  = NSMutableAttributedString(attributedString: rendered)
-            // Swap base text colour to match the bubble's text style
-            mutable.enumerateAttribute(.foregroundColor, in: NSRange(location: 0, length: mutable.length)) { value, range, _ in
-                if let color = value as? UIColor, color == UIColor.Sphinx.Text {
-                    mutable.addAttribute(.foregroundColor, value: UIColor.Sphinx.TextMessages, range: range)
+            if let logsBody = message.logsContent {
+                messageTextView.attributedText = makeLogsAttributedString(content: logsBody)
+                messageTextView.isHidden = false
+            } else {
+                let rendered = FeatureChatMessageCell.markdownRenderer.render(message.resolvedDisplayText)
+                let mutable  = NSMutableAttributedString(attributedString: rendered)
+                // Swap base text colour to match the bubble's text style
+                mutable.enumerateAttribute(.foregroundColor, in: NSRange(location: 0, length: mutable.length)) { value, range, _ in
+                    if let color = value as? UIColor, color == UIColor.Sphinx.Text {
+                        mutable.addAttribute(.foregroundColor, value: UIColor.Sphinx.TextMessages, range: range)
+                    }
                 }
+                messageTextView.attributedText = mutable
+                // Fix 3: hide text view when message body is blank
+                let hasText = !message.resolvedDisplayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                messageTextView.isHidden = !hasText
             }
-            messageTextView.attributedText = mutable
-            // Fix 3: hide text view when message body is blank
-            let hasText = !message.resolvedDisplayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            messageTextView.isHidden = !hasText
             bubbleView.backgroundColor      = UIColor.Sphinx.ReceivedMsgBG
             timestampLabel.textColor        = UIColor.Sphinx.SecondaryText
             timestampLabel.textAlignment    = .left
@@ -312,6 +321,31 @@ class FeatureChatMessageCell: UITableViewCell {
     }
 
     // MARK: - Helpers
+
+    private func makeLogsAttributedString(content: String) -> NSAttributedString {
+        let result = NSMutableAttributedString()
+
+        // "Logs" label line
+        let labelAttrs: [NSAttributedString.Key: Any] = [
+            .font: UIFont.boldSystemFont(ofSize: 13),
+            .foregroundColor: UIColor.Sphinx.SecondaryText
+        ]
+        result.append(NSAttributedString(string: "Logs\n", attributes: labelAttrs))
+
+        // Code block body — reuse style from the shared MarkdownRenderer
+        let style = FeatureChatMessageCell.markdownRenderer.style
+        let codeAttrs: [NSAttributedString.Key: Any] = [
+            .font: style.codeFont,
+            .foregroundColor: style.codeForeground,
+            .backgroundColor: style.codeBackground
+        ]
+        let paddedLines = content.components(separatedBy: "\n").map { "  \($0)  " }
+        let padded = paddedLines.joined(separator: "\n")
+        result.append(NSAttributedString(string: padded, attributes: codeAttrs))
+
+        return result
+    }
+
     private func formatTimestamp(_ timestamp: String) -> String {
         let iso = ISO8601DateFormatter()
         iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
