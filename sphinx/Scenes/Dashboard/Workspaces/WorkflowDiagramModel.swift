@@ -260,8 +260,8 @@ struct WorkflowDiagramData {
                 skillType:            skill?["type"]        as? String,
                 stepState:            status?["step_state"] as? String,
                 rawJSON:              t,
-                orderedAttributeKeys: keyEntry?.attrKeys ?? [],
-                orderedVarKeys:       keyEntry?.varKeys  ?? []
+                orderedAttributeKeys: keyEntry?.0 ?? [],
+                orderedVarKeys:       keyEntry?.1 ?? []
             )
             steps[stepId] = step
         }
