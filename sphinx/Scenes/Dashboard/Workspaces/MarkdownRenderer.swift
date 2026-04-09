@@ -394,7 +394,7 @@ final class MarkdownRenderer {
                 continue
             }
             // Mention: @alias
-            if let range = firstRange(in: s, pattern: #"\B@[^\s]+"#) {
+            if let range = firstRange(in: s, pattern: #"(?<!\w)@\S+"#) {
                 appendLiteral(s[s.startIndex..<range.lowerBound], attrs: base, to: result)
                 let mention = String(s[range])
                 result.append(NSAttributedString(string: mention, attributes: [
