@@ -21,7 +21,7 @@ extension CreateFeatureViewControllerDelegate {
 
 // MARK: - CreationMode
 
-enum CreationMode { case feature, task }
+enum CreationMode { case feature, task, debugRun, loadWorkflow }
 
 // MARK: - CreateFeatureViewController
 
@@ -32,6 +32,7 @@ class CreateFeatureViewController: UIViewController {
     weak var delegate: CreateFeatureViewControllerDelegate?
 
     var mode: CreationMode = .feature
+    var isStakworkMode: Bool = false
     var workspaceSlug: String = ""
     var repositories: [WorkspaceRepository] = []
     var selectedRepository: WorkspaceRepository? = nil
@@ -49,8 +50,10 @@ class CreateFeatureViewController: UIViewController {
     private var loadingWheel: UIActivityIndicatorView!
 
     // Combo UI (task mode only)
+    private var modeSelectorButton: UIButton!
     private var repositoryComboButton: UIButton!
     private var branchComboButton: UIButton!
+    private var versionComboButton: UIButton!
     private var comboStackView: UIStackView!
 
     // MARK: - Instantiation
@@ -62,11 +65,12 @@ class CreateFeatureViewController: UIViewController {
         return vc
     }
 
-    static func instantiateForTask(workspaceId: String, workspaceSlug: String) -> CreateFeatureViewController {
+    static func instantiateForTask(workspaceId: String, workspaceSlug: String, isStakwork: Bool = false) -> CreateFeatureViewController {
         let vc = StoryboardScene.Dashboard.createFeatureViewController.instantiate()
         vc.workspaceId = workspaceId
         vc.workspaceSlug = workspaceSlug
         vc.mode = .task
+        vc.isStakworkMode = isStakwork
         vc.modalPresentationStyle = .automatic
         return vc
     }
@@ -79,6 +83,7 @@ class CreateFeatureViewController: UIViewController {
         configureView()
 
         if mode == .task {
+            applyMode(.task)
             API.sharedInstance.fetchWorkspaceDetailWithAuth(
                 slug: workspaceSlug,
                 callback: { [weak self] repos in
@@ -145,6 +150,12 @@ class CreateFeatureViewController: UIViewController {
 
         // MARK: Combo Stack (task mode only — collapses when hidden)
 
+        // Mode Selector Button (stakwork only)
+        modeSelectorButton = makeComboButton(title: "Create Task")
+        modeSelectorButton.addTarget(self, action: #selector(modeSelectorTapped), for: .touchUpInside)
+        modeSelectorButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        modeSelectorButton.isHidden = !isStakworkMode
+
         // Repository Button
         repositoryComboButton = makeComboButton(title: "Select Repository")
         repositoryComboButton.addTarget(self, action: #selector(repositoryComboTapped), for: .touchUpInside)
@@ -157,8 +168,15 @@ class CreateFeatureViewController: UIViewController {
         branchComboButton.addTarget(self, action: #selector(branchComboTapped), for: .touchUpInside)
         branchComboButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
 
-        // comboStackView holds the two pickers; hidden = collapses to zero height in outer stack
-        comboStackView = UIStackView(arrangedSubviews: [repositoryComboButton, branchComboButton])
+        // Version Combo Button (loadWorkflow mode only)
+        versionComboButton = makeComboButton(title: "Select Version")
+        versionComboButton.isEnabled = false
+        versionComboButton.alpha = 0.5
+        versionComboButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        versionComboButton.isHidden = true
+
+        // comboStackView holds the pickers; hidden = collapses to zero height in outer stack
+        comboStackView = UIStackView(arrangedSubviews: [modeSelectorButton, repositoryComboButton, branchComboButton, versionComboButton])
         comboStackView.axis = .vertical
         comboStackView.spacing = 8
         comboStackView.isHidden = (mode == .feature)
@@ -295,7 +313,51 @@ class CreateFeatureViewController: UIViewController {
     private func updateSendButtonState() {
         let hasMessage = !(messageTextView.text?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
         let hasRepo = selectedRepository != nil
-        sendButton.isEnabled = hasMessage && (mode == .feature || hasRepo)
+        sendButton.isEnabled = hasMessage && (mode == .feature || (mode == .task && hasRepo) || mode == .debugRun || mode == .loadWorkflow)
+    }
+
+    // MARK: - Mode Management
+
+    private func applyMode(_ newMode: CreationMode) {
+        mode = newMode
+        switch newMode {
+        case .task:         promptLabel.text = "Describe a task"
+        case .debugRun:     promptLabel.text = "Paste Run ID"
+        case .loadWorkflow: promptLabel.text = "Paste Workflow ID"
+        default: break
+        }
+        repositoryComboButton.isHidden = (newMode != .task)
+        branchComboButton.isHidden     = (newMode != .task)
+        versionComboButton.isHidden    = (newMode != .loadWorkflow)
+        switch newMode {
+        case .task:         sendButton.setTitle("SEND", for: .normal)
+        case .debugRun:     sendButton.setTitle("Debug this run", for: .normal)
+        case .loadWorkflow: sendButton.setTitle("Load Workflow", for: .normal)
+        default: break
+        }
+        updateSendButtonState()
+    }
+
+    @objc private func modeSelectorTapped() {
+        let sheet = UIAlertController(title: "Select Mode", message: nil, preferredStyle: .actionSheet)
+        let options: [(String, CreationMode)] = [
+            ("Create Task", .task),
+            ("Debug Run", .debugRun),
+            ("Load Workflow", .loadWorkflow)
+        ]
+        for (title, modeCase) in options {
+            sheet.addAction(UIAlertAction(title: title, style: .default) { [weak self] _ in
+                guard let self else { return }
+                self.modeSelectorButton.setTitle(title, for: .normal)
+                self.applyMode(modeCase)
+            })
+        }
+        sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        if let popover = sheet.popoverPresentationController {
+            popover.sourceView = modeSelectorButton
+            popover.sourceRect = modeSelectorButton.bounds
+        }
+        present(sheet, animated: true)
     }
 
     // MARK: - Combo Actions
@@ -396,6 +458,12 @@ class CreateFeatureViewController: UIViewController {
                 title: "Error",
                 message: "Please enter a message before sending."
             )
+            return
+        }
+
+        // MARK: Stub modes
+        if mode == .debugRun || mode == .loadWorkflow {
+            AlertHelper.showAlert(title: "Info", message: "Action not implemented yet")
             return
         }
 

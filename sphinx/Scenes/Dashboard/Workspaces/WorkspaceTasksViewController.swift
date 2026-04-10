@@ -257,9 +257,11 @@ extension WorkspaceTasksViewController: PaginationControlViewDelegate {
 
 extension WorkspaceTasksViewController {
     func createButtonTapped() {
+        let isStakwork = workspace.slug == "stakwork"
         let vc = CreateFeatureViewController.instantiateForTask(
             workspaceId: workspace.id,
-            workspaceSlug: workspace.slug ?? ""
+            workspaceSlug: workspace.slug ?? "",
+            isStakwork: isStakwork
         )
         vc.delegate = self
         present(vc, animated: true)
