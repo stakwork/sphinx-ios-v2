@@ -99,7 +99,7 @@ class MarkdownTableView: UIView {
         guard !headers.isEmpty else { return }
 
         let totalColumns = headers.count
-        let columnWidths = calculateColumnWidths(headers: headers, rows: rows, totalColumns: totalColumns)
+        let columnWidths = MarkdownTableView.calculateColumnWidths(headers: headers, rows: rows, totalColumns: totalColumns)
         let totalWidth   = columnWidths.reduce(0, +)
 
         // Minimum width = scroll view width (fills container); grows wider when content needs it (enables horizontal scroll)
@@ -130,9 +130,51 @@ class MarkdownTableView: UIView {
         }
     }
 
+    /// Configures (or re-configures) the table grid using pre-computed column widths.
+    /// Skips the expensive `NSString.size(withAttributes:)` measurement step — safe to call from `cellForRowAt`.
+    func configure(headers: [String], rows: [[String]], precomputedColumnWidths: [CGFloat]) {
+        rowCount = rows.count
+
+        contentView.subviews.forEach { $0.removeFromSuperview() }
+        contentView.constraints
+            .filter { $0.firstAttribute == .width }
+            .forEach { contentView.removeConstraint($0) }
+
+        guard !headers.isEmpty else { return }
+
+        let columnWidths = precomputedColumnWidths
+        let totalWidth   = columnWidths.reduce(0, +)
+
+        let minWidthConstraint = contentView.widthAnchor.constraint(greaterThanOrEqualTo: scrollView.widthAnchor)
+        minWidthConstraint.isActive = true
+        let contentWidthConstraint = contentView.widthAnchor.constraint(equalToConstant: totalWidth)
+        contentWidthConstraint.priority = .defaultHigh
+        contentWidthConstraint.isActive = true
+
+        drawRow(cells: headers, rowIndex: 0, isHeader: true, columnWidths: columnWidths, totalWidth: totalWidth)
+
+        let divider = UIView()
+        divider.translatesAutoresizingMaskIntoConstraints = false
+        divider.backgroundColor = UIColor.Sphinx.LightDivider
+        contentView.addSubview(divider)
+        NSLayoutConstraint.activate([
+            divider.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            divider.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            divider.topAnchor.constraint(equalTo: contentView.topAnchor, constant: MarkdownTableView.rowHeight),
+            divider.heightAnchor.constraint(equalToConstant: 1)
+        ])
+
+        for (idx, rowCells) in rows.enumerated() {
+            drawRow(cells: rowCells, rowIndex: idx + 1, isHeader: false, columnWidths: columnWidths, totalWidth: totalWidth)
+        }
+    }
+
     // MARK: - Private helpers
 
-    private func calculateColumnWidths(headers: [String], rows: [[String]], totalColumns: Int) -> [CGFloat] {
+    /// Calculates the minimum column widths needed to display `headers` and `rows` without truncation.
+    /// This method is `static internal` so it can be called from a background thread (no view instance needed).
+    /// The font objects are static constants — safe to read off the main thread.
+    static func calculateColumnWidths(headers: [String], rows: [[String]], totalColumns: Int) -> [CGFloat] {
         var widths = [CGFloat](repeating: 0, count: totalColumns)
 
         let measure: (String, UIFont) -> CGFloat = { text, font in

@@ -231,7 +231,11 @@ class FeatureChatMessageCell: UITableViewCell {
                 currentLogsContent = logsBody
                 configureLogsViews()
             } else {
-                renderSegmentedContent(message.resolvedDisplayText)
+                renderSegmentedContent(
+                    message.resolvedDisplayText,
+                    cachedSegments: message.cachedSegments,
+                    cachedColumnWidths: message.cachedColumnWidths
+                )
             }
             // For logs messages, configureLogsViews() already manages messageTextView visibility.
             // Only touch it for non-logs messages.
@@ -266,7 +270,11 @@ class FeatureChatMessageCell: UITableViewCell {
                 currentLogsContent = logsBody
                 configureLogsViews()
             } else {
-                renderSegmentedContent(message.resolvedDisplayText)
+                renderSegmentedContent(
+                    message.resolvedDisplayText,
+                    cachedSegments: message.cachedSegments,
+                    cachedColumnWidths: message.cachedColumnWidths
+                )
             }
             bubbleView.backgroundColor      = UIColor.Sphinx.ReceivedMsgBG
             timestampLabel.textColor        = UIColor.Sphinx.SecondaryText
@@ -354,8 +362,14 @@ class FeatureChatMessageCell: UITableViewCell {
     // MARK: - Segmented content rendering
 
     /// Splits `rawText` into text/table segments and renders each in order into the bubble stack.
-    private func renderSegmentedContent(_ rawText: String) {
-        let segments = MarkdownContentSplitter.split(rawText)
+    /// When `cachedSegments` is provided the expensive `MarkdownContentSplitter.split()` call is
+    /// skipped. When `cachedColumnWidths` is provided each table skips `calculateColumnWidths()`.
+    private func renderSegmentedContent(
+        _ rawText: String,
+        cachedSegments: [MessageContentSegment]? = nil,
+        cachedColumnWidths: [[CGFloat]]? = nil
+    ) {
+        let segments = cachedSegments ?? MarkdownContentSplitter.split(rawText)
 
         // Insert all segments in order directly before prCardView.
         // The first .text segment reuses the existing messageTextView (position 0 in stack).
@@ -367,6 +381,7 @@ class FeatureChatMessageCell: UITableViewCell {
         var nextInsertIndex = prCardIndex
 
         var usedMessageTextView = false
+        var tableSegmentIndex = 0
 
         for segment in segments {
             switch segment {
@@ -414,7 +429,13 @@ class FeatureChatMessageCell: UITableViewCell {
                     usedMessageTextView = true
                 }
                 let tableView = MarkdownTableView()
-                tableView.configure(headers: headers, rows: rows)
+                // Use pre-computed widths when available to avoid measuring on the main thread
+                if let widths = cachedColumnWidths, tableSegmentIndex < widths.count {
+                    tableView.configure(headers: headers, rows: rows, precomputedColumnWidths: widths[tableSegmentIndex])
+                } else {
+                    tableView.configure(headers: headers, rows: rows)
+                }
+                tableSegmentIndex += 1
                 tableView.heightAnchor.constraint(equalToConstant: tableView.intrinsicContentHeight).isActive = true
                 bubbleStack.insertArrangedSubview(tableView, at: nextInsertIndex)
                 nextInsertIndex += 1

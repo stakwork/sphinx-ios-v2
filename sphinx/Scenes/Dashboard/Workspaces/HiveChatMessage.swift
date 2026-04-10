@@ -344,6 +344,16 @@ struct HiveChatMessage: @unchecked Sendable {
         return String(inner)
     }
 
+    // MARK: - Pre-computed render cache (populated off the main thread)
+
+    /// Cached result of `MarkdownContentSplitter.split(resolvedDisplayText)`.
+    /// `nil` means the cache has not been populated yet — callers must fall back to computing inline.
+    var cachedSegments: [MessageContentSegment]? = nil
+
+    /// One `[CGFloat]` per `.table` segment in `cachedSegments`, in document order.
+    /// `nil` means column widths have not been pre-measured yet.
+    var cachedColumnWidths: [[CGFloat]]? = nil
+
     /// Returns true when this message should be shown in the chat table.
     /// Mirrors the filter applied by `displayMessages` in all chat view controllers.
     var isDisplayable: Bool {
