@@ -15,7 +15,7 @@ struct WorkflowVersion: Sendable {
     let refId: String?          // ref_id (graph node ref)
     let workflowVersionId: String? // full UUID string
     let published: Bool
-    let workflowJson: [String: Any]?
+    let workflowJson: String?
 
     init?(json: JSON) {
         guard let versionId = json["workflow_version_id"].int,
@@ -26,6 +26,6 @@ struct WorkflowVersion: Sendable {
         self.refId = json["ref_id"].string
         self.workflowVersionId = json["ref_id"].string
         self.published = json["published"].bool ?? false
-        self.workflowJson = json["workflow_json"].dictionaryObject
+        self.workflowJson = json["workflow_json"].string
     }
 }
