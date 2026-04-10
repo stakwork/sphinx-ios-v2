@@ -73,6 +73,7 @@ struct WorkflowContent: Sendable {
     let projectId: String?       // covers both projectId and debuggerProjectId
     let webhook: String?
     let workflowJson: String?
+    let originalWorkflowJson: String?
 }
 
 struct HiveChatMessageArtifact: @unchecked Sendable {
@@ -190,13 +191,14 @@ struct HiveChatMessageArtifact: @unchecked Sendable {
         } else if json["type"].string == "WORKFLOW" {
             let c = json["content"]
             self.workflowContent = WorkflowContent(
-                workflowId:        c["workflowId"].int,
-                workflowName:      c["workflowName"].string,
-                workflowRefId:     c["workflowRefId"].string,
-                workflowVersionId: c["workflowVersionId"].string,
-                projectId:         c["projectId"].string ?? c["debuggerProjectId"].string,
-                webhook:           c["webhook"].string,
-                workflowJson:      c["workflowJson"].string
+                workflowId:           c["workflowId"].int,
+                workflowName:         c["workflowName"].string,
+                workflowRefId:        c["workflowRefId"].string,
+                workflowVersionId:    c["workflowVersionId"].string,
+                projectId:            c["projectId"].string ?? c["debuggerProjectId"].string,
+                webhook:              c["webhook"].string,
+                workflowJson:         c["workflowJson"].string,
+                originalWorkflowJson: c["originalWorkflowJson"].string
             )
             self.content = nil
             self.prContent = nil

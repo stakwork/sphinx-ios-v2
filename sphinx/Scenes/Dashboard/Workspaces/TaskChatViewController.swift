@@ -76,6 +76,9 @@ class TaskChatViewController: UIViewController {
     private var workflowContainerView: UIView?
     private var workflowDiagramView: WorkflowDiagramView?
     private var mergedDiagram: WorkflowDiagramData?
+    private var changesContainerView: UIView?
+    private var workflowDiffView: WorkflowDiffView?
+    private var changesEmptyStack: UIStackView?
     private var selectedStep: WorkflowStep?
     private var selectedStepChip: SelectedStepChipView!
     private var selectedStepChipHeightConstraint: NSLayoutConstraint!
@@ -523,12 +526,12 @@ class TaskChatViewController: UIViewController {
         guard task.mode == "workflow_editor" else { return }
 
         // --- Tab bar ---
-        let seg = CustomSegmentedControl(frame: .zero, buttonTitles: ["CHAT", "WORKFLOW"])
+        let seg = CustomSegmentedControl(frame: .zero, buttonTitles: ["CHAT", "WORKFLOW", "CHANGES"])
         seg.translatesAutoresizingMaskIntoConstraints = false
         seg.buttonBackgroundColor = UIColor.Sphinx.HeaderBG
         seg.backgroundColor      = UIColor.Sphinx.HeaderBG
         seg.selectorViewColor    = UIColor.Sphinx.PrimaryGreen
-        seg.configureFromOutlet(buttonTitles: ["CHAT", "WORKFLOW"], delegate: self)
+        seg.configureFromOutlet(buttonTitles: ["CHAT", "WORKFLOW", "CHANGES"], delegate: self)
         view.addSubview(seg)
         tabSegmentedControl = seg
 
@@ -575,6 +578,63 @@ class TaskChatViewController: UIViewController {
         diagram.onStepTapped = { [weak self] step in
             self?.handleStepTapped(step)
         }
+
+        // --- Changes container ---
+        let changesContainer = UIView()
+        changesContainer.translatesAutoresizingMaskIntoConstraints = false
+        changesContainer.backgroundColor = UIColor.Sphinx.Body
+        changesContainer.isHidden = true
+        view.addSubview(changesContainer)
+        changesContainerView = changesContainer
+
+        NSLayoutConstraint.activate([
+            changesContainer.topAnchor.constraint(equalTo: seg.bottomAnchor),
+            changesContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            changesContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            changesContainer.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+        ])
+
+        // --- Diff view inside changes container ---
+        let diffView = WorkflowDiffView()
+        diffView.translatesAutoresizingMaskIntoConstraints = false
+        changesContainer.addSubview(diffView)
+        workflowDiffView = diffView
+
+        NSLayoutConstraint.activate([
+            diffView.topAnchor.constraint(equalTo: changesContainer.topAnchor),
+            diffView.leadingAnchor.constraint(equalTo: changesContainer.leadingAnchor),
+            diffView.trailingAnchor.constraint(equalTo: changesContainer.trailingAnchor),
+            diffView.bottomAnchor.constraint(equalTo: changesContainer.bottomAnchor)
+        ])
+
+        // --- Empty state stack for changes ---
+        let titleLabel = UILabel()
+        titleLabel.text = "No changes detected"
+        titleLabel.font = UIFont(name: "Roboto-Medium", size: 17) ?? UIFont.systemFont(ofSize: 17, weight: .medium)
+        titleLabel.textColor = UIColor.Sphinx.Text
+        titleLabel.textAlignment = .center
+
+        let subtitleLabel = UILabel()
+        subtitleLabel.text = "The workflow JSON is identical"
+        subtitleLabel.font = UIFont(name: "Roboto-Regular", size: 13) ?? UIFont.systemFont(ofSize: 13)
+        subtitleLabel.textColor = UIColor.Sphinx.SecondaryText
+        subtitleLabel.textAlignment = .center
+        subtitleLabel.numberOfLines = 0
+
+        let emptyStack = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
+        emptyStack.axis = .vertical
+        emptyStack.spacing = 6
+        emptyStack.alignment = .center
+        emptyStack.translatesAutoresizingMaskIntoConstraints = false
+        changesContainer.addSubview(emptyStack)
+        changesEmptyStack = emptyStack
+
+        NSLayoutConstraint.activate([
+            emptyStack.centerXAnchor.constraint(equalTo: changesContainer.centerXAnchor),
+            emptyStack.centerYAnchor.constraint(equalTo: changesContainer.centerYAnchor),
+            emptyStack.leadingAnchor.constraint(greaterThanOrEqualTo: changesContainer.leadingAnchor, constant: 32),
+            emptyStack.trailingAnchor.constraint(lessThanOrEqualTo: changesContainer.trailingAnchor, constant: -32)
+        ])
     }
 
     // MARK: - Panel switching (tab bar)
@@ -597,7 +657,20 @@ class TaskChatViewController: UIViewController {
         chatInputContainer.isHidden = true
         bottomFillView.isHidden = true
         workflowContainerView?.isHidden = false
+        changesContainerView?.isHidden = true
         refreshDiagram()
+    }
+
+    private func showChangesPanel() {
+        chatTableView.isHidden = true
+        workflowStatusView.isHidden = true
+        pendingAttachmentsBar.isHidden = true
+        selectedStepChip.isHidden = true
+        chatInputContainer.isHidden = true
+        bottomFillView.isHidden = true
+        workflowContainerView?.isHidden = true
+        changesContainerView?.isHidden = false
+        refreshDiff()
     }
 
     // MARK: - Diagram
@@ -615,6 +688,33 @@ class TaskChatViewController: UIViewController {
         mergedDiagram = WorkflowDiagramData.parse(from: json)
         if let diagram = mergedDiagram {
             workflowDiagramView?.configure(with: diagram)
+        }
+    }
+
+    private func refreshDiff() {
+        // Reverse-scan for the most recent WORKFLOW artifact with both json fields
+        var foundOriginal: String? = nil
+        var foundUpdated: String? = nil
+        for msg in messages.reversed() {
+            for artifact in msg.artifacts.reversed() where artifact.isWorkflow {
+                if let orig = artifact.workflowContent?.originalWorkflowJson,
+                   let updated = artifact.workflowContent?.workflowJson {
+                    foundOriginal = orig
+                    foundUpdated = updated
+                    break
+                }
+            }
+            if foundOriginal != nil { break }
+        }
+
+        if let orig = foundOriginal, let updated = foundUpdated {
+            workflowDiffView?.configure(original: orig, updated: updated)
+            let hasDiff = workflowDiffView?.hasDiffContent ?? false
+            changesEmptyStack?.isHidden = hasDiff
+            workflowDiffView?.isHidden = !hasDiff
+        } else {
+            changesEmptyStack?.isHidden = false
+            workflowDiffView?.isHidden = true
         }
     }
 
@@ -1316,10 +1416,11 @@ extension TaskChatViewController: HivePusherDelegate {
             }
         }
         scrollToBottom()
-        // Update diagram if a new WORKFLOW artifact arrived
+        // Update diagram and diff if a new WORKFLOW artifact arrived
         if task.mode == "workflow_editor",
            message.artifacts.contains(where: { $0.isWorkflow }) {
             refreshDiagram()
+            refreshDiff()
         }
     }
 
@@ -1770,10 +1871,10 @@ extension TaskChatViewController: PHPickerViewControllerDelegate {
 
 extension TaskChatViewController: CustomSegmentedControlDelegate {
     func segmentedControlDidSwitch(_ control: CustomSegmentedControl, to index: Int) {
-        if index == 1 {
-            showWorkflowPanel()
-        } else {
-            showChatPanel()
+        switch index {
+        case 1: showWorkflowPanel()
+        case 2: showChangesPanel()
+        default: showChatPanel()
         }
     }
 }
