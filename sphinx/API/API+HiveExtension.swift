@@ -1067,6 +1067,7 @@ extension API {
         workflowRefId: String,
         workflowVersionId: String?,
         webhook: String?,
+        workflowJson: String? = nil,
         stepName: String? = nil,
         stepUniqueId: String? = nil,
         stepDisplayName: String? = nil,
@@ -1090,11 +1091,14 @@ extension API {
         if let webhook = webhook {
             params["webhook"] = webhook as AnyObject
         }
-        if let stepName      { params["stepName"]        = stepName        as AnyObject }
-        if let stepUniqueId  { params["stepUniqueId"]    = stepUniqueId    as AnyObject }
-        if let stepDisplayName { params["stepDisplayName"] = stepDisplayName as AnyObject }
-        if let stepType      { params["stepType"]        = stepType        as AnyObject }
-        if let stepData      { params["stepData"]        = stepData        as AnyObject }
+        if let workflowJson = workflowJson {
+            params["workflowJson"] = workflowJson as AnyObject
+        }
+        params["stepName"] = (stepName ?? "") as AnyObject
+        params["stepUniqueId"] = (stepUniqueId ?? "") as AnyObject
+        params["stepDisplayName"] = (stepDisplayName ?? "") as AnyObject
+        params["stepType"] = (stepType ?? "") as AnyObject
+        params["stepData"] = (stepData as [String: AnyObject]? ?? [:]) as AnyObject
 
         guard let request = createRequest(urlString, bodyParams: params as NSDictionary, method: "POST", token: authToken) else {
             errorCallback()
@@ -1141,6 +1145,7 @@ extension API {
         workflowRefId: String,
         workflowVersionId: String?,
         webhook: String?,
+        workflowJson: String?,
         stepName: String? = nil,
         stepUniqueId: String? = nil,
         stepDisplayName: String? = nil,
@@ -1152,37 +1157,56 @@ extension API {
         if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
             sendWorkflowEditorMessage(
                 taskId: taskId, message: message,
-                workflowId: workflowId, workflowName: workflowName,
+                workflowId: workflowId,
+                workflowName: workflowName,
                 workflowRefId: workflowRefId,
-                workflowVersionId: workflowVersionId, webhook: webhook,
-                stepName: stepName, stepUniqueId: stepUniqueId,
-                stepDisplayName: stepDisplayName, stepType: stepType,
+                workflowVersionId: workflowVersionId,
+                webhook: webhook,
+                workflowJson: workflowJson,
+                stepName: stepName,
+                stepUniqueId: stepUniqueId,
+                stepDisplayName: stepDisplayName,
+                stepType: stepType,
                 stepData: stepData,
                 authToken: storedToken,
                 callback: callback,
                 errorCallback: { [weak self] in
                     self?.authenticateAndSendWorkflowEditorMessage(
-                        taskId: taskId, message: message,
-                        workflowId: workflowId, workflowName: workflowName,
+                        taskId: taskId,
+                        message: message,
+                        workflowId: workflowId,
+                        workflowName: workflowName,
                         workflowRefId: workflowRefId,
-                        workflowVersionId: workflowVersionId, webhook: webhook,
-                        stepName: stepName, stepUniqueId: stepUniqueId,
-                        stepDisplayName: stepDisplayName, stepType: stepType,
+                        workflowVersionId: workflowVersionId,
+                        webhook: webhook,
+                        workflowJson: workflowJson,
+                        stepName: stepName,
+                        stepUniqueId: stepUniqueId,
+                        stepDisplayName: stepDisplayName,
+                        stepType: stepType,
                         stepData: stepData,
-                        callback: callback, errorCallback: errorCallback
+                        callback: callback,
+                        errorCallback: errorCallback
                     )
                 }
             )
         } else {
             authenticateAndSendWorkflowEditorMessage(
-                taskId: taskId, message: message,
-                workflowId: workflowId, workflowName: workflowName,
+                taskId: taskId,
+                message: message,
+                workflowId: workflowId,
+                workflowName: workflowName,
                 workflowRefId: workflowRefId,
-                workflowVersionId: workflowVersionId, webhook: webhook,
-                stepName: stepName, stepUniqueId: stepUniqueId,
-                stepDisplayName: stepDisplayName, stepType: stepType,
+                workflowVersionId: workflowVersionId,
+                webhook: webhook,
+                workflowJson: workflowJson,
+                stepName: stepName,
+                stepUniqueId: stepUniqueId,
+                stepDisplayName: stepDisplayName,
+                stepType: stepType,
                 stepData: stepData,
-                callback: callback, errorCallback: errorCallback
+                callback: callback,
+                errorCallback: errorCallback
             )
         }
     }
@@ -1195,6 +1219,7 @@ extension API {
         workflowRefId: String,
         workflowVersionId: String?,
         webhook: String?,
+        workflowJson: String? = nil,
         stepName: String? = nil,
         stepUniqueId: String? = nil,
         stepDisplayName: String? = nil,
@@ -1208,15 +1233,22 @@ extension API {
                 guard let token = token else { errorCallback(); return }
                 UserDefaults.Keys.hiveToken.set(token)
                 self?.sendWorkflowEditorMessage(
-                    taskId: taskId, message: message,
-                    workflowId: workflowId, workflowName: workflowName,
+                    taskId: taskId,
+                    message: message,
+                    workflowId: workflowId,
+                    workflowName: workflowName,
                     workflowRefId: workflowRefId,
-                    workflowVersionId: workflowVersionId, webhook: webhook,
-                    stepName: stepName, stepUniqueId: stepUniqueId,
-                    stepDisplayName: stepDisplayName, stepType: stepType,
+                    workflowVersionId: workflowVersionId,
+                    webhook: webhook,
+                    workflowJson: workflowJson,
+                    stepName: stepName,
+                    stepUniqueId: stepUniqueId,
+                    stepDisplayName: stepDisplayName,
+                    stepType: stepType,
                     stepData: stepData,
                     authToken: token,
-                    callback: callback, errorCallback: errorCallback
+                    callback: callback,
+                    errorCallback: errorCallback
                 )
             },
             errorCallback: errorCallback
