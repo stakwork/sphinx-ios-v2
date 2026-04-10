@@ -74,6 +74,12 @@ final class WorkflowDiffView: UIView {
 
     // MARK: - Public API
 
+    /// Apply pre-computed diff lines directly. Must be called on the main thread.
+    func applyDiffLines(_ lines: [DiffLine]) {
+        diffLines = lines
+        rebuildRows()
+    }
+
     /// Cleans both JSON strings, computes the diff, and rebuilds the row views.
     func configure(original: String, updated: String) {
         let cleanedOriginal = cleanJsonForDiff(original) ?? original

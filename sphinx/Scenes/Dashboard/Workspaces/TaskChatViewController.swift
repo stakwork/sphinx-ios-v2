@@ -79,6 +79,15 @@ class TaskChatViewController: UIViewController {
     private var changesContainerView: UIView?
     private var workflowDiffView: WorkflowDiffView?
     private var changesEmptyStack: UIStackView?
+    private var diffWorkItem: DispatchWorkItem?
+
+    private lazy var changesLoadingWheel: UIActivityIndicatorView = {
+        let indicator = UIActivityIndicatorView(style: .medium)
+        indicator.translatesAutoresizingMaskIntoConstraints = false
+        indicator.hidesWhenStopped = true
+        indicator.color = UIColor.Sphinx.Text
+        return indicator
+    }()
     private var selectedStep: WorkflowStep?
     private var selectedStepChip: SelectedStepChipView!
     private var selectedStepChipHeightConstraint: NSLayoutConstraint!
@@ -635,6 +644,12 @@ class TaskChatViewController: UIViewController {
             emptyStack.leadingAnchor.constraint(greaterThanOrEqualTo: changesContainer.leadingAnchor, constant: 32),
             emptyStack.trailingAnchor.constraint(lessThanOrEqualTo: changesContainer.trailingAnchor, constant: -32)
         ])
+
+        changesContainer.addSubview(changesLoadingWheel)
+        NSLayoutConstraint.activate([
+            changesLoadingWheel.centerXAnchor.constraint(equalTo: changesContainer.centerXAnchor),
+            changesLoadingWheel.centerYAnchor.constraint(equalTo: changesContainer.centerYAnchor)
+        ])
     }
 
     // MARK: - Panel switching (tab bar)
@@ -719,7 +734,16 @@ class TaskChatViewController: UIViewController {
     }
 
     private func refreshDiff() {
-        // Reverse-scan for the most recent WORKFLOW artifact with both json fields
+        // Cancel any in-flight work
+        diffWorkItem?.cancel()
+        diffWorkItem = nil
+
+        // Immediately show spinner, hide content
+        changesLoadingWheel.startAnimating()
+        workflowDiffView?.isHidden = true
+        changesEmptyStack?.isHidden = true
+
+        // Scan messages on main thread (UI-owned state)
         var foundOriginal: String? = nil
         var foundUpdated: String? = nil
         for msg in messages.reversed() {
@@ -734,15 +758,35 @@ class TaskChatViewController: UIViewController {
             if foundOriginal != nil { break }
         }
 
-        if let orig = foundOriginal, let updated = foundUpdated {
-            workflowDiffView?.configure(original: orig, updated: updated)
-            let hasDiff = workflowDiffView?.hasDiffContent ?? false
-            changesEmptyStack?.isHidden = hasDiff
-            workflowDiffView?.isHidden = !hasDiff
-        } else {
+        guard let orig = foundOriginal, let updated = foundUpdated else {
+            // No data — resolve immediately
+            changesLoadingWheel.stopAnimating()
             changesEmptyStack?.isHidden = false
             workflowDiffView?.isHidden = true
+            return
         }
+
+        // Dispatch heavy work to background
+        let workItem = DispatchWorkItem { [weak self] in
+            let cleanedOriginal = cleanJsonForDiff(orig) ?? orig
+            let cleanedUpdated  = cleanJsonForDiff(updated) ?? updated
+            let lines = computeDiff(original: cleanedOriginal, updated: cleanedUpdated)
+
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self, !(workItem.isCancelled) else { return }
+                self.changesLoadingWheel.stopAnimating()
+                if lines.isEmpty {
+                    self.changesEmptyStack?.isHidden = false
+                    self.workflowDiffView?.isHidden = true
+                } else {
+                    self.workflowDiffView?.applyDiffLines(lines)
+                    self.workflowDiffView?.isHidden = false
+                    self.changesEmptyStack?.isHidden = true
+                }
+            }
+        }
+        diffWorkItem = workItem
+        DispatchQueue.global(qos: .userInitiated).async(execute: workItem)
     }
 
     // MARK: - Step selection
