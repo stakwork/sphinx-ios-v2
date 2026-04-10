@@ -76,6 +76,9 @@ class TaskChatViewController: UIViewController {
     private var workflowContainerView: UIView?
     private var workflowDiagramView: WorkflowDiagramView?
     private var mergedDiagram: WorkflowDiagramData?
+    private var changesContainerView: UIView?
+    private var workflowDiffView: WorkflowDiffView?
+    private var changesEmptyStack: UIStackView?
     private var selectedStep: WorkflowStep?
     private var selectedStepChip: SelectedStepChipView!
     private var selectedStepChipHeightConstraint: NSLayoutConstraint!
@@ -523,12 +526,12 @@ class TaskChatViewController: UIViewController {
         guard task.mode == "workflow_editor" else { return }
 
         // --- Tab bar ---
-        let seg = CustomSegmentedControl(frame: .zero, buttonTitles: ["CHAT", "WORKFLOW"])
+        let seg = CustomSegmentedControl(frame: .zero, buttonTitles: ["CHAT", "WORKFLOW", "CHANGES"])
         seg.translatesAutoresizingMaskIntoConstraints = false
         seg.buttonBackgroundColor = UIColor.Sphinx.HeaderBG
         seg.backgroundColor      = UIColor.Sphinx.HeaderBG
         seg.selectorViewColor    = UIColor.Sphinx.PrimaryGreen
-        seg.configureFromOutlet(buttonTitles: ["CHAT", "WORKFLOW"], delegate: self)
+        seg.configureFromOutlet(buttonTitles: ["CHAT", "WORKFLOW", "CHANGES"], delegate: self)
         view.addSubview(seg)
         tabSegmentedControl = seg
 
@@ -575,18 +578,85 @@ class TaskChatViewController: UIViewController {
         diagram.onStepTapped = { [weak self] step in
             self?.handleStepTapped(step)
         }
+
+        // --- Changes container ---
+        let changesContainer = UIView()
+        changesContainer.translatesAutoresizingMaskIntoConstraints = false
+        changesContainer.backgroundColor = UIColor.Sphinx.Body
+        changesContainer.isHidden = true
+        view.addSubview(changesContainer)
+        changesContainerView = changesContainer
+
+        NSLayoutConstraint.activate([
+            changesContainer.topAnchor.constraint(equalTo: seg.bottomAnchor),
+            changesContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            changesContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            changesContainer.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+        ])
+
+        // --- Diff view inside changes container ---
+        let diffView = WorkflowDiffView()
+        diffView.translatesAutoresizingMaskIntoConstraints = false
+        changesContainer.addSubview(diffView)
+        workflowDiffView = diffView
+
+        NSLayoutConstraint.activate([
+            diffView.topAnchor.constraint(equalTo: changesContainer.topAnchor),
+            diffView.leadingAnchor.constraint(equalTo: changesContainer.leadingAnchor),
+            diffView.trailingAnchor.constraint(equalTo: changesContainer.trailingAnchor),
+            diffView.bottomAnchor.constraint(equalTo: changesContainer.bottomAnchor)
+        ])
+
+        // --- Empty state stack for changes ---
+        let titleLabel = UILabel()
+        titleLabel.text = "No changes detected"
+        titleLabel.font = UIFont(name: "Roboto-Medium", size: 17) ?? UIFont.systemFont(ofSize: 17, weight: .medium)
+        titleLabel.textColor = UIColor.Sphinx.Text
+        titleLabel.textAlignment = .center
+
+        let subtitleLabel = UILabel()
+        subtitleLabel.text = "The workflow JSON is identical"
+        subtitleLabel.font = UIFont(name: "Roboto-Regular", size: 13) ?? UIFont.systemFont(ofSize: 13)
+        subtitleLabel.textColor = UIColor.Sphinx.SecondaryText
+        subtitleLabel.textAlignment = .center
+        subtitleLabel.numberOfLines = 0
+
+        let emptyStack = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
+        emptyStack.axis = .vertical
+        emptyStack.spacing = 6
+        emptyStack.alignment = .center
+        emptyStack.translatesAutoresizingMaskIntoConstraints = false
+        changesContainer.addSubview(emptyStack)
+        changesEmptyStack = emptyStack
+
+        NSLayoutConstraint.activate([
+            emptyStack.centerXAnchor.constraint(equalTo: changesContainer.centerXAnchor),
+            emptyStack.centerYAnchor.constraint(equalTo: changesContainer.centerYAnchor),
+            emptyStack.leadingAnchor.constraint(greaterThanOrEqualTo: changesContainer.leadingAnchor, constant: 32),
+            emptyStack.trailingAnchor.constraint(lessThanOrEqualTo: changesContainer.trailingAnchor, constant: -32)
+        ])
     }
 
     // MARK: - Panel switching (tab bar)
 
     private func showChatPanel() {
         chatTableView.isHidden = false
-        workflowStatusView.isHidden = false
         pendingAttachmentsBar.isHidden = false
         selectedStepChip.isHidden = (selectedStep == nil)
         chatInputContainer.isHidden = false
         bottomFillView.isHidden = false
         workflowContainerView?.isHidden = true
+        changesContainerView?.isHidden = true
+        // Clear WORKFLOW badge (index 1) when viewing chat — no-op if badge isn't set
+        clearTabBadge(index: 1)
+        
+        guard let raw = task.workflowStatus,
+              let status = WorkflowStatus(rawValue: raw),
+              status == .IN_PROGRESS || status == .HALTED else {
+            workflowStatusView.isHidden = true
+            return
+        }
+        workflowStatusView.isHidden = false
     }
 
     private func showWorkflowPanel() {
@@ -597,7 +667,37 @@ class TaskChatViewController: UIViewController {
         chatInputContainer.isHidden = true
         bottomFillView.isHidden = true
         workflowContainerView?.isHidden = false
+        changesContainerView?.isHidden = true
+        // Clear WORKFLOW badge (index 1) when tab is opened
+        clearTabBadge(index: 1)
         refreshDiagram()
+    }
+
+    private func showChangesPanel() {
+        chatTableView.isHidden = true
+        workflowStatusView.isHidden = true
+        pendingAttachmentsBar.isHidden = true
+        selectedStepChip.isHidden = true
+        chatInputContainer.isHidden = true
+        bottomFillView.isHidden = true
+        workflowContainerView?.isHidden = true
+        changesContainerView?.isHidden = false
+        // Clear CHANGES badge (index 2) when tab is opened
+        clearTabBadge(index: 2)
+        refreshDiff()
+    }
+
+    /// Sets a badge dot on the given tab index (only when not currently viewing that tab).
+    private func setBadgeOnInactiveTab(index: Int) {
+        guard let seg = tabSegmentedControl, seg.selectedIndex != index else { return }
+        let existing = Set(seg.indicesOfTitlesWithBadge)
+        seg.indicesOfTitlesWithBadge = Array(existing.union([index]))
+    }
+
+    /// Removes the badge dot from the given tab index.
+    private func clearTabBadge(index: Int) {
+        guard let seg = tabSegmentedControl else { return }
+        seg.indicesOfTitlesWithBadge = seg.indicesOfTitlesWithBadge.filter { $0 != index }
     }
 
     // MARK: - Diagram
@@ -615,6 +715,33 @@ class TaskChatViewController: UIViewController {
         mergedDiagram = WorkflowDiagramData.parse(from: json)
         if let diagram = mergedDiagram {
             workflowDiagramView?.configure(with: diagram)
+        }
+    }
+
+    private func refreshDiff() {
+        // Reverse-scan for the most recent WORKFLOW artifact with both json fields
+        var foundOriginal: String? = nil
+        var foundUpdated: String? = nil
+        for msg in messages.reversed() {
+            for artifact in msg.artifacts.reversed() where artifact.isWorkflow {
+                if let orig = artifact.workflowContent?.originalWorkflowJson,
+                   let updated = artifact.workflowContent?.workflowJson {
+                    foundOriginal = orig
+                    foundUpdated = updated
+                    break
+                }
+            }
+            if foundOriginal != nil { break }
+        }
+
+        if let orig = foundOriginal, let updated = foundUpdated {
+            workflowDiffView?.configure(original: orig, updated: updated)
+            let hasDiff = workflowDiffView?.hasDiffContent ?? false
+            changesEmptyStack?.isHidden = hasDiff
+            workflowDiffView?.isHidden = !hasDiff
+        } else {
+            changesEmptyStack?.isHidden = false
+            workflowDiffView?.isHidden = true
         }
     }
 
@@ -834,6 +961,7 @@ class TaskChatViewController: UIViewController {
         var workflowJson: String?
         var projectId: String?
         var webhook: String?
+        var originalWorkflowJson: String?
         
         for message in messages.reversed() {
             for artifact in message.artifacts where artifact.type == "WORKFLOW" {
@@ -846,6 +974,7 @@ class TaskChatViewController: UIViewController {
                 workflowJson = workflowJson ?? content.workflowJson
                 projectId = projectId ?? content.projectId
                 webhook = webhook ?? content.webhook
+                originalWorkflowJson = originalWorkflowJson ?? content.originalWorkflowJson
                 
                 // Early exit based on mode
                 let hasWorkflowEditorMinimum = workflowId != nil && workflowRefId != nil
@@ -873,7 +1002,8 @@ class TaskChatViewController: UIViewController {
             workflowVersionId: workflowVersionId,
             projectId: projectId,
             webhook: webhook,
-            workflowJson: workflowJson
+            workflowJson: workflowJson,
+            originalWorkflowJson: originalWorkflowJson
         )
     }
 
@@ -898,6 +1028,11 @@ class TaskChatViewController: UIViewController {
                 }
             }
         )
+    }
+    
+    private func onWorkflowEditorMessageSent() {
+        self.task.workflowStatus = WorkflowStatus.IN_PROGRESS.rawValue
+        self.applyInitialWorkflowStatus()
     }
 
     private func sendMessage(_ message: String, replyId: String? = nil, attachments: [[String: AnyObject]] = []) {
@@ -928,6 +1063,7 @@ class TaskChatViewController: UIViewController {
                 callback: { [weak self] sentMessage in
                     DispatchQueue.main.async {
                         guard let self, let sentMessage else { return }
+                        self.onWorkflowEditorMessageSent()
                         self.newMessageReceived(sentMessage)
                         if step != nil { self.clearSelectedStep() }
                     }
@@ -1138,6 +1274,20 @@ class TaskChatViewController: UIViewController {
         workflowStatusHeightConstraint.constant = workflowStatusView.hasDetailText ? 48 : 32
     }
 
+    /// Makes the status bar visible with the "Working" state if it isn't already showing.
+    /// Called by SSE/AnyCable step events so the bar appears as soon as the agent starts working,
+    /// even if the Pusher `workflow-status-update` hasn't fired yet.
+    private func ensureStatusBarVisible() {
+        guard workflowStatusHeightConstraint.constant == 0 else { return }
+        workflowStatusView.status = .IN_PROGRESS
+        updateStatusViewHeight()
+        if workflowStatusView.isHidden {
+            workflowStatusView.show(animated: true)
+        }
+        setInputEnabled(false)
+        UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
+    }
+
     private func applyWorkflowStatus(_ status: WorkflowStatus, animated: Bool = true) {
         workflowStatusView.status = status
         switch status {
@@ -1276,6 +1426,7 @@ extension TaskChatViewController: HivePusherDelegate {
     
     func workflowStatusChanged(status: WorkflowStatus) {
         DispatchQueue.main.async {
+            self.task.workflowStatus = status.rawValue
             self.applyWorkflowStatus(status)
             if status != .PENDING {
                 self.dismissDescriptionOverlay(animated: true)
@@ -1290,6 +1441,12 @@ extension TaskChatViewController: HivePusherDelegate {
     func featureUpdateReceived(featureId: String) {
         // no-op: TaskChatViewController does not display feature-level updates
     }
+    
+    func taskStatusUpdated(taskId: String, status: String, workflowStatus: String?, archived: Bool) {
+        task.status = status
+        task.workflowStatus = workflowStatus
+        task.archived = archived
+    }
 
     func newMessageReceived(_ message: HiveChatMessage) {
         // STREAM artifact → open agent events SSE for status bar second line
@@ -1300,8 +1457,23 @@ extension TaskChatViewController: HivePusherDelegate {
                 baseUrl: streamInfo.baseUrl
             )
         }
+        
+        if let workflowContent = message.artifacts.first(where: { $0.isWorkflow })?.workflowContent,
+           let projectIdString = workflowContent.projectId,
+           let newProjectId = Int(projectIdString),
+           cachedStakworkProjectId != newProjectId
+        {
+            cachedStakworkProjectId = newProjectId
+            
+            anyCableManager?.disconnect()
+            anyCableManager = nil
+            connectAnyCable()
+        }
 
-        guard message.taskId == task.id else { return }
+        // taskId may be nil when the message is fetched from the single-message endpoint
+        // (which doesn't always include taskId). The Pusher channel is already scoped to
+        // this task, so skip the taskId check when nil.
+        if let msgTaskId = message.taskId, msgTaskId != task.id { return }
         guard !messages.contains(where: { $0.id == message.id }) else { return }
         messages.append(message)
         guard message.isDisplayable else { return }
@@ -1316,10 +1488,14 @@ extension TaskChatViewController: HivePusherDelegate {
             }
         }
         scrollToBottom()
-        // Update diagram if a new WORKFLOW artifact arrived
+        // Update diagram and diff if a new WORKFLOW artifact arrived
         if task.mode == "workflow_editor",
            message.artifacts.contains(where: { $0.isWorkflow }) {
             refreshDiagram()
+            refreshDiff()
+            // Badge WORKFLOW (1) and CHANGES (2) tabs if not currently active
+            setBadgeOnInactiveTab(index: 1)
+            setBadgeOnInactiveTab(index: 2)
         }
     }
 
@@ -1353,6 +1529,7 @@ extension TaskChatViewController: HivePusherDelegate {
 // MARK: - HiveAnyCableDelegate
 extension TaskChatViewController: HiveAnyCableDelegate {
     func workflowStepTextReceived(stepText: String) {
+        ensureStatusBarVisible()
         workflowStatusView.setStatusText(stepText)
         UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
     }
@@ -1377,6 +1554,7 @@ extension TaskChatViewController {
 extension TaskChatViewController: AgentEventsSSEDelegate {
 
     func agentEventToolCall(toolName: String, input: [String: Any]?) {
+        ensureStatusBarVisible()
         let display = agentToolDisplayText(toolName: toolName, input: input)
         workflowStatusView.setStepDetail(display)
         updateStatusViewHeight()
@@ -1384,6 +1562,7 @@ extension TaskChatViewController: AgentEventsSSEDelegate {
     }
 
     func agentEventText(_ text: String) {
+        ensureStatusBarVisible()
         let sanitised = text
             .replacingOccurrences(of: "\r\n", with: " ")
             .replacingOccurrences(of: "\n", with: " ")
@@ -1770,10 +1949,10 @@ extension TaskChatViewController: PHPickerViewControllerDelegate {
 
 extension TaskChatViewController: CustomSegmentedControlDelegate {
     func segmentedControlDidSwitch(_ control: CustomSegmentedControl, to index: Int) {
-        if index == 1 {
-            showWorkflowPanel()
-        } else {
-            showChatPanel()
+        switch index {
+        case 1: showWorkflowPanel()
+        case 2: showChangesPanel()
+        default: showChatPanel()
         }
     }
 }
