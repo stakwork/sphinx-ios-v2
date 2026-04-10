@@ -641,7 +641,6 @@ class TaskChatViewController: UIViewController {
 
     private func showChatPanel() {
         chatTableView.isHidden = false
-        workflowStatusView.isHidden = false
         pendingAttachmentsBar.isHidden = false
         selectedStepChip.isHidden = (selectedStep == nil)
         chatInputContainer.isHidden = false
@@ -650,11 +649,19 @@ class TaskChatViewController: UIViewController {
         changesContainerView?.isHidden = true
         // Clear WORKFLOW badge (index 1) when viewing chat — no-op if badge isn't set
         clearTabBadge(index: 1)
+        
+        guard let raw = task.workflowStatus,
+              let status = WorkflowStatus(rawValue: raw),
+              status == .IN_PROGRESS || status == .HALTED else {
+            workflowStatusView.isHidden = true
+            return
+        }
+        workflowStatusView.isHidden = false
     }
 
     private func showWorkflowPanel() {
         chatTableView.isHidden = true
-        workflowStatusView.isHidden = false
+        workflowStatusView.isHidden = true
         pendingAttachmentsBar.isHidden = true
         selectedStepChip.isHidden = true
         chatInputContainer.isHidden = true
@@ -668,7 +675,7 @@ class TaskChatViewController: UIViewController {
 
     private func showChangesPanel() {
         chatTableView.isHidden = true
-        workflowStatusView.isHidden = false
+        workflowStatusView.isHidden = true
         pendingAttachmentsBar.isHidden = true
         selectedStepChip.isHidden = true
         chatInputContainer.isHidden = true
@@ -954,6 +961,7 @@ class TaskChatViewController: UIViewController {
         var workflowJson: String?
         var projectId: String?
         var webhook: String?
+        var originalWorkflowJson: String?
         
         for message in messages.reversed() {
             for artifact in message.artifacts where artifact.type == "WORKFLOW" {
@@ -966,6 +974,7 @@ class TaskChatViewController: UIViewController {
                 workflowJson = workflowJson ?? content.workflowJson
                 projectId = projectId ?? content.projectId
                 webhook = webhook ?? content.webhook
+                originalWorkflowJson = originalWorkflowJson ?? content.originalWorkflowJson
                 
                 // Early exit based on mode
                 let hasWorkflowEditorMinimum = workflowId != nil && workflowRefId != nil
@@ -993,7 +1002,8 @@ class TaskChatViewController: UIViewController {
             workflowVersionId: workflowVersionId,
             projectId: projectId,
             webhook: webhook,
-            workflowJson: workflowJson
+            workflowJson: workflowJson,
+            originalWorkflowJson: originalWorkflowJson
         )
     }
 
@@ -1018,6 +1028,11 @@ class TaskChatViewController: UIViewController {
                 }
             }
         )
+    }
+    
+    private func onWorkflowEditorMessageSent() {
+        self.task.workflowStatus = WorkflowStatus.IN_PROGRESS.rawValue
+        self.applyInitialWorkflowStatus()
     }
 
     private func sendMessage(_ message: String, replyId: String? = nil, attachments: [[String: AnyObject]] = []) {
@@ -1048,6 +1063,7 @@ class TaskChatViewController: UIViewController {
                 callback: { [weak self] sentMessage in
                     DispatchQueue.main.async {
                         guard let self, let sentMessage else { return }
+                        self.onWorkflowEditorMessageSent()
                         self.newMessageReceived(sentMessage)
                         if step != nil { self.clearSelectedStep() }
                     }
@@ -1410,6 +1426,7 @@ extension TaskChatViewController: HivePusherDelegate {
     
     func workflowStatusChanged(status: WorkflowStatus) {
         DispatchQueue.main.async {
+            self.task.workflowStatus = status.rawValue
             self.applyWorkflowStatus(status)
             if status != .PENDING {
                 self.dismissDescriptionOverlay(animated: true)
@@ -1424,6 +1441,12 @@ extension TaskChatViewController: HivePusherDelegate {
     func featureUpdateReceived(featureId: String) {
         // no-op: TaskChatViewController does not display feature-level updates
     }
+    
+    func taskStatusUpdated(taskId: String, status: String, workflowStatus: String?, archived: Bool) {
+        task.status = status
+        task.workflowStatus = workflowStatus
+        task.archived = archived
+    }
 
     func newMessageReceived(_ message: HiveChatMessage) {
         // STREAM artifact → open agent events SSE for status bar second line
@@ -1433,6 +1456,18 @@ extension TaskChatViewController: HivePusherDelegate {
                 eventsToken: streamInfo.eventsToken,
                 baseUrl: streamInfo.baseUrl
             )
+        }
+        
+        if let workflowContent = message.artifacts.first(where: { $0.isWorkflow })?.workflowContent,
+           let projectIdString = workflowContent.projectId,
+           let newProjectId = Int(projectIdString),
+           cachedStakworkProjectId != newProjectId
+        {
+            cachedStakworkProjectId = newProjectId
+            
+            anyCableManager?.disconnect()
+            anyCableManager = nil
+            connectAnyCable()
         }
 
         // taskId may be nil when the message is fetched from the single-message endpoint
