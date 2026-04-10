@@ -647,30 +647,50 @@ class TaskChatViewController: UIViewController {
         chatInputContainer.isHidden = false
         bottomFillView.isHidden = false
         workflowContainerView?.isHidden = true
+        changesContainerView?.isHidden = true
+        // Clear WORKFLOW badge (index 1) when viewing chat — no-op if badge isn't set
+        clearTabBadge(index: 1)
     }
 
     private func showWorkflowPanel() {
         chatTableView.isHidden = true
-        workflowStatusView.isHidden = true
+        workflowStatusView.isHidden = false
         pendingAttachmentsBar.isHidden = true
         selectedStepChip.isHidden = true
         chatInputContainer.isHidden = true
         bottomFillView.isHidden = true
         workflowContainerView?.isHidden = false
         changesContainerView?.isHidden = true
+        // Clear WORKFLOW badge (index 1) when tab is opened
+        clearTabBadge(index: 1)
         refreshDiagram()
     }
 
     private func showChangesPanel() {
         chatTableView.isHidden = true
-        workflowStatusView.isHidden = true
+        workflowStatusView.isHidden = false
         pendingAttachmentsBar.isHidden = true
         selectedStepChip.isHidden = true
         chatInputContainer.isHidden = true
         bottomFillView.isHidden = true
         workflowContainerView?.isHidden = true
         changesContainerView?.isHidden = false
+        // Clear CHANGES badge (index 2) when tab is opened
+        clearTabBadge(index: 2)
         refreshDiff()
+    }
+
+    /// Sets a badge dot on the given tab index (only when not currently viewing that tab).
+    private func setBadgeOnInactiveTab(index: Int) {
+        guard let seg = tabSegmentedControl, seg.selectedIndex != index else { return }
+        let existing = Set(seg.indicesOfTitlesWithBadge)
+        seg.indicesOfTitlesWithBadge = Array(existing.union([index]))
+    }
+
+    /// Removes the badge dot from the given tab index.
+    private func clearTabBadge(index: Int) {
+        guard let seg = tabSegmentedControl else { return }
+        seg.indicesOfTitlesWithBadge = seg.indicesOfTitlesWithBadge.filter { $0 != index }
     }
 
     // MARK: - Diagram
@@ -1421,6 +1441,9 @@ extension TaskChatViewController: HivePusherDelegate {
            message.artifacts.contains(where: { $0.isWorkflow }) {
             refreshDiagram()
             refreshDiff()
+            // Badge WORKFLOW (1) and CHANGES (2) tabs if not currently active
+            setBadgeOnInactiveTab(index: 1)
+            setBadgeOnInactiveTab(index: 2)
         }
     }
 
