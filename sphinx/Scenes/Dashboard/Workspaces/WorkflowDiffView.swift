@@ -32,6 +32,10 @@ final class WorkflowDiffView: UIView {
     // MARK: - State
 
     private var diffLines: [DiffLine] = []
+    
+    var hasDiffLines: Bool {
+        !diffLines.isEmpty
+    }
 
     /// True when the current diff contains at least one added or removed line.
     var hasDiffContent: Bool {
@@ -73,6 +77,12 @@ final class WorkflowDiffView: UIView {
     }
 
     // MARK: - Public API
+
+    /// Apply pre-computed diff lines directly. Must be called on the main thread.
+    func applyDiffLines(_ lines: [DiffLine]) {
+        diffLines = lines
+        rebuildRows()
+    }
 
     /// Cleans both JSON strings, computes the diff, and rebuilds the row views.
     func configure(original: String, updated: String) {

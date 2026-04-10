@@ -79,6 +79,15 @@ class TaskChatViewController: UIViewController {
     private var changesContainerView: UIView?
     private var workflowDiffView: WorkflowDiffView?
     private var changesEmptyStack: UIStackView?
+    private var diffTask: Task<Void, Never>?
+
+    private lazy var changesLoadingWheel: UIActivityIndicatorView = {
+        let indicator = UIActivityIndicatorView(style: .medium)
+        indicator.translatesAutoresizingMaskIntoConstraints = false
+        indicator.hidesWhenStopped = true
+        indicator.color = UIColor.Sphinx.Text
+        return indicator
+    }()
     private var selectedStep: WorkflowStep?
     private var selectedStepChip: SelectedStepChipView!
     private var selectedStepChipHeightConstraint: NSLayoutConstraint!
@@ -635,11 +644,19 @@ class TaskChatViewController: UIViewController {
             emptyStack.leadingAnchor.constraint(greaterThanOrEqualTo: changesContainer.leadingAnchor, constant: 32),
             emptyStack.trailingAnchor.constraint(lessThanOrEqualTo: changesContainer.trailingAnchor, constant: -32)
         ])
+
+        changesContainer.addSubview(changesLoadingWheel)
+        NSLayoutConstraint.activate([
+            changesLoadingWheel.centerXAnchor.constraint(equalTo: changesContainer.centerXAnchor),
+            changesLoadingWheel.centerYAnchor.constraint(equalTo: changesContainer.centerYAnchor)
+        ])
     }
 
     // MARK: - Panel switching (tab bar)
 
     private func showChatPanel() {
+        diffTask?.cancel()
+        diffTask = nil
         chatTableView.isHidden = false
         pendingAttachmentsBar.isHidden = false
         selectedStepChip.isHidden = (selectedStep == nil)
@@ -660,6 +677,8 @@ class TaskChatViewController: UIViewController {
     }
 
     private func showWorkflowPanel() {
+        diffTask?.cancel()
+        diffTask = nil
         chatTableView.isHidden = true
         workflowStatusView.isHidden = true
         pendingAttachmentsBar.isHidden = true
@@ -718,8 +737,21 @@ class TaskChatViewController: UIViewController {
         }
     }
 
-    private func refreshDiff() {
-        // Reverse-scan for the most recent WORKFLOW artifact with both json fields
+    private func refreshDiff(forceUpdate: Bool = false) {
+        if !forceUpdate && (workflowDiffView == nil || workflowDiffView?.hasDiffLines == true) {
+            return
+        }
+        
+        // Cancel any in-flight work
+        diffTask?.cancel()
+        diffTask = nil
+
+        // Immediately show spinner, hide content
+        changesLoadingWheel.startAnimating()
+        workflowDiffView?.isHidden = true
+        changesEmptyStack?.isHidden = true
+
+        // Scan messages on main thread (UI-owned state)
         var foundOriginal: String? = nil
         var foundUpdated: String? = nil
         for msg in messages.reversed() {
@@ -734,14 +766,34 @@ class TaskChatViewController: UIViewController {
             if foundOriginal != nil { break }
         }
 
-        if let orig = foundOriginal, let updated = foundUpdated {
-            workflowDiffView?.configure(original: orig, updated: updated)
-            let hasDiff = workflowDiffView?.hasDiffContent ?? false
-            changesEmptyStack?.isHidden = hasDiff
-            workflowDiffView?.isHidden = !hasDiff
-        } else {
+        guard let orig = foundOriginal, let updated = foundUpdated else {
+            // No data — resolve immediately
+            changesLoadingWheel.stopAnimating()
             changesEmptyStack?.isHidden = false
             workflowDiffView?.isHidden = true
+            return
+        }
+
+        // Dispatch heavy work to background via Task.detached (nonisolated — safe in Swift 6)
+        diffTask = Task.detached(priority: .utility) { [weak self] in
+            guard !Task.isCancelled else { return }
+            let cleanedOriginal = cleanJsonForDiff(orig) ?? orig
+            let cleanedUpdated  = cleanJsonForDiff(updated) ?? updated
+            let lines = computeDiff(original: cleanedOriginal, updated: cleanedUpdated)
+
+            guard !Task.isCancelled else { return }
+            await MainActor.run { [weak self] in
+                guard let self = self, !Task.isCancelled else { return }
+                self.changesLoadingWheel.stopAnimating()
+                if lines.isEmpty {
+                    self.changesEmptyStack?.isHidden = false
+                    self.workflowDiffView?.isHidden = true
+                } else {
+                    self.workflowDiffView?.applyDiffLines(lines)
+                    self.workflowDiffView?.isHidden = false
+                    self.changesEmptyStack?.isHidden = true
+                }
+            }
         }
     }
 
@@ -1493,10 +1545,9 @@ extension TaskChatViewController: HivePusherDelegate {
         }
         scrollToBottom()
         // Update diagram and diff if a new WORKFLOW artifact arrived
-        if task.mode == "workflow_editor",
-           message.artifacts.contains(where: { $0.isWorkflow }) {
+        if task.mode == "workflow_editor", message.artifacts.contains(where: { $0.isWorkflow }) {
             refreshDiagram()
-            refreshDiff()
+            refreshDiff(forceUpdate: true)
             // Badge WORKFLOW (1) and CHANGES (2) tabs if not currently active
             setBadgeOnInactiveTab(index: 1)
             setBadgeOnInactiveTab(index: 2)
