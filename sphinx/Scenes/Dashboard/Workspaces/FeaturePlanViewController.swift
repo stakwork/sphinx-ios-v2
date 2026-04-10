@@ -1387,22 +1387,30 @@ class FeaturePlanViewController: UIViewController {
         API.sharedInstance.fetchFeatureChatWithAuth(
             featureId: feature.id,
             callback: { [weak self] messages in
-                DispatchQueue.main.async {
-                    guard let self = self else { return }
-                    self.chatLoadingWheel.stopAnimating()
-                    self.chatTableView.isHidden = false
-                    self.messages = messages.filter { $0.isDisplayable }
-                    self.chatTableView.reloadData()
-                    self.scrollToBottom()
-                    
-                    if let streamInfo = messages.filter({
-                        $0.artifacts.first(where: { $0.isStream })?.streamInfo != nil
-                    }).first?.artifacts.first(where: { $0.isStream })?.streamInfo {
-                        self.connectAgentEventsStream(
-                            requestId: streamInfo.requestId,
-                            eventsToken: streamInfo.eventsToken,
-                            baseUrl: streamInfo.baseUrl
-                        )
+                // Alamofire fires this callback on the main queue, so we must explicitly
+                // jump to a background thread for the expensive precompute work.
+                // Capture UIScreen.main.bounds.width here on the main thread.
+                let screenWidth = UIScreen.main.bounds.width
+                DispatchQueue.global(qos: .userInitiated).async {
+                    var displayable = messages.filter { $0.isDisplayable }
+                    HiveChatMessage.precompute(&displayable, screenWidth: screenWidth)
+                    DispatchQueue.main.async {
+                        guard let self = self else { return }
+                        self.chatLoadingWheel.stopAnimating()
+                        self.chatTableView.isHidden = false
+                        self.messages = displayable
+                        self.chatTableView.reloadData()
+                        self.scrollToBottom()
+
+                        if let streamInfo = messages.filter({
+                            $0.artifacts.first(where: { $0.isStream })?.streamInfo != nil
+                        }).first?.artifacts.first(where: { $0.isStream })?.streamInfo {
+                            self.connectAgentEventsStream(
+                                requestId: streamInfo.requestId,
+                                eventsToken: streamInfo.eventsToken,
+                                baseUrl: streamInfo.baseUrl
+                            )
+                        }
                     }
                 }
             },
@@ -1595,7 +1603,12 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
         }
         return displayMessages.count
     }
-    
+
+    func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
+        guard tableView === chatTableView else { return 80 }
+        return displayMessages[indexPath.row].estimatedCellHeight ?? 80
+    }
+
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         if tableView === tasksTableView {
             // Row 0: dependency diagram (only when at least one task has a dependency)
@@ -1978,19 +1991,32 @@ extension FeaturePlanViewController: HivePusherDelegate {
 
         guard message.featureId == feature.id else { return }
         guard !messages.contains(where: { $0.id == message.id }) else { return }
-        messages.append(message)
-        guard message.isDisplayable else { return }
-        let indexPath = IndexPath(row: displayMessages.count - 1, section: 0)
-        UIView.performWithoutAnimation {
-            chatTableView.insertRows(at: [indexPath], with: .none)
-        }
-        // If it's a CQ answer, also reload the CQ cell to show answered state
-        if cqMessageIds.contains(message.replyId ?? "") {
-            if let displayIdx = displayMessages.firstIndex(where: { $0.id == message.replyId }) {
-                chatTableView.reloadRows(at: [IndexPath(row: displayIdx, section: 0)], with: .none)
+
+        // Pre-compute segment parsing + column widths off the main thread so
+        // insertRows never triggers expensive work on scroll.
+        // Capture UIScreen.main.bounds.width here on the main thread.
+        let screenWidth = UIScreen.main.bounds.width
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            var arr = [message]
+            HiveChatMessage.precompute(&arr, screenWidth: screenWidth)
+            let precomputed = arr[0]
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                self.messages.append(precomputed)
+                guard precomputed.isDisplayable else { return }
+                let indexPath = IndexPath(row: self.displayMessages.count - 1, section: 0)
+                UIView.performWithoutAnimation {
+                    self.chatTableView.insertRows(at: [indexPath], with: .none)
+                }
+                // If it's a CQ answer, also reload the CQ cell to show answered state
+                if self.cqMessageIds.contains(precomputed.replyId ?? "") {
+                    if let displayIdx = self.displayMessages.firstIndex(where: { $0.id == precomputed.replyId }) {
+                        self.chatTableView.reloadRows(at: [IndexPath(row: displayIdx, section: 0)], with: .none)
+                    }
+                }
+                self.scrollToBottom()
             }
         }
-        scrollToBottom()
     }
     
     func workflowStatusChanged(status: WorkflowStatus) {

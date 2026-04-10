@@ -10,6 +10,12 @@ import UIKit
 
 /// A horizontally-scrollable table view that renders a GFM-style markdown table
 /// as a programmatic grid of selectable UITextView cells inside a UIScrollView.
+///
+/// **Performance notes:**
+/// - `calculateColumnWidths` is `static internal` so the caller can run it on a background
+///   thread and pass pre-computed widths to `configure(headers:rows:precomputedColumnWidths:)`.
+/// - All subviews inside `contentView` use direct `.frame` assignment (no Auto Layout
+///   constraints), making `configure()` cheap enough to call from `cellForRowAt`.
 class MarkdownTableView: UIView {
 
     // MARK: - Constants
@@ -18,12 +24,14 @@ class MarkdownTableView: UIView {
     /// 8pt each side + 8pt safety buffer to prevent truncation
     private static let cellPadding: CGFloat = 24
     private static let horizontalMargin: CGFloat = 0
-    private static let headerFont = UIFont.boldSystemFont(ofSize: 13)
-    private static let bodyFont   = UIFont.systemFont(ofSize: 13)
+    static let headerFont = UIFont.boldSystemFont(ofSize: 13)
+    static let bodyFont   = UIFont.systemFont(ofSize: 13)
 
-    // MARK: - Stored state (for intrinsicContentHeight)
+    // MARK: - Stored state
 
     private var rowCount: Int = 0
+    /// Total pixel width of the content (sum of column widths). Drives contentSize + layout.
+    private var totalContentWidth: CGFloat = 0
 
     /// Returns the total height needed for the table (header row + all data rows).
     var intrinsicContentHeight: CGFloat {
@@ -42,11 +50,8 @@ class MarkdownTableView: UIView {
         return sv
     }()
 
-    private let contentView: UIView = {
-        let v = UIView()
-        v.translatesAutoresizingMaskIntoConstraints = false
-        return v
-    }()
+    /// Frame-layout container — subviews inside use `.frame`, not Auto Layout.
+    private let contentView = UIView()
 
     // MARK: - Init
 
@@ -66,154 +71,136 @@ class MarkdownTableView: UIView {
         addSubview(scrollView)
         scrollView.addSubview(contentView)
 
-        let m = MarkdownTableView.horizontalMargin
+        // Only the scroll view itself uses Auto Layout (pinned to self). Everything
+        // inside contentView uses frame layout set in configure().
         NSLayoutConstraint.activate([
-            // Inset scroll view horizontally for leading/trailing margins
             scrollView.topAnchor.constraint(equalTo: topAnchor),
-            scrollView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: m),
-            scrollView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -m),
+            scrollView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: trailingAnchor),
             scrollView.bottomAnchor.constraint(equalTo: bottomAnchor),
-
-            contentView.topAnchor.constraint(equalTo: scrollView.topAnchor),
-            contentView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
-            contentView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
-            contentView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
-            // Content height matches the scroll view height (no vertical scroll)
-            contentView.heightAnchor.constraint(equalTo: scrollView.heightAnchor),
         ])
+    }
+
+    // MARK: - Layout
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        // Update contentView frame and scrollView.contentSize whenever our bounds change.
+        let tableHeight = intrinsicContentHeight
+        let contentWidth = max(totalContentWidth, scrollView.bounds.width)
+        contentView.frame = CGRect(x: 0, y: 0, width: contentWidth, height: tableHeight)
+        scrollView.contentSize = CGSize(width: contentWidth, height: tableHeight)
     }
 
     // MARK: - Public API
 
-    /// Configures (or re-configures) the table grid. Safe to call multiple times.
+    /// Configures (or re-configures) the table. Measures column widths inline.
     func configure(headers: [String], rows: [[String]]) {
-        rowCount = rows.count
-
-        // Idempotent: remove all previous subviews from the content view
-        contentView.subviews.forEach { $0.removeFromSuperview() }
-        // Remove previously added width constraints on contentView
-        contentView.constraints
-            .filter { $0.firstAttribute == .width }
-            .forEach { contentView.removeConstraint($0) }
-
-        guard !headers.isEmpty else { return }
-
-        let totalColumns = headers.count
-        let columnWidths = calculateColumnWidths(headers: headers, rows: rows, totalColumns: totalColumns)
-        let totalWidth   = columnWidths.reduce(0, +)
-
-        // Minimum width = scroll view width (fills container); grows wider when content needs it (enables horizontal scroll)
-        let minWidthConstraint = contentView.widthAnchor.constraint(greaterThanOrEqualTo: scrollView.widthAnchor)
-        minWidthConstraint.isActive = true
-        let contentWidthConstraint = contentView.widthAnchor.constraint(equalToConstant: totalWidth)
-        contentWidthConstraint.priority = .defaultHigh
-        contentWidthConstraint.isActive = true
-
-        // Draw header row
-        drawRow(cells: headers, rowIndex: 0, isHeader: true, columnWidths: columnWidths, totalWidth: totalWidth)
-
-        // 1pt horizontal divider below header
-        let divider = UIView()
-        divider.translatesAutoresizingMaskIntoConstraints = false
-        divider.backgroundColor = UIColor.Sphinx.LightDivider
-        contentView.addSubview(divider)
-        NSLayoutConstraint.activate([
-            divider.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            divider.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            divider.topAnchor.constraint(equalTo: contentView.topAnchor, constant: MarkdownTableView.rowHeight),
-            divider.heightAnchor.constraint(equalToConstant: 1)
-        ])
-
-        // Draw data rows
-        for (idx, rowCells) in rows.enumerated() {
-            drawRow(cells: rowCells, rowIndex: idx + 1, isHeader: false, columnWidths: columnWidths, totalWidth: totalWidth)
-        }
+        let widths = MarkdownTableView.calculateColumnWidths(
+            headers: headers, rows: rows, totalColumns: headers.count)
+        buildGrid(headers: headers, rows: rows, columnWidths: widths)
     }
 
-    // MARK: - Private helpers
+    /// Configures (or re-configures) the table using pre-computed column widths.
+    /// Skips `NSString.size(withAttributes:)` entirely — safe to call from `cellForRowAt`.
+    func configure(headers: [String], rows: [[String]], precomputedColumnWidths: [CGFloat]) {
+        buildGrid(headers: headers, rows: rows, columnWidths: precomputedColumnWidths)
+    }
 
-    private func calculateColumnWidths(headers: [String], rows: [[String]], totalColumns: Int) -> [CGFloat] {
+    // MARK: - Column-width measurement (static — background-thread safe)
+
+    /// Calculates the minimum column widths needed to display all content without truncation.
+    /// `static internal` so callers can run this on a background thread.
+    /// Font constants are static — safe to read off the main thread.
+    static func calculateColumnWidths(headers: [String], rows: [[String]], totalColumns: Int) -> [CGFloat] {
         var widths = [CGFloat](repeating: 0, count: totalColumns)
 
         let measure: (String, UIFont) -> CGFloat = { text, font in
             let size = (text as NSString).size(withAttributes: [.font: font])
-            // Add full cell padding (8pt each side) plus a safety buffer to avoid truncation
             return ceil(size.width) + MarkdownTableView.cellPadding
         }
 
         for (col, header) in headers.enumerated() {
-            widths[col] = max(widths[col], measure(header, MarkdownTableView.headerFont))
+            widths[col] = max(widths[col], measure(header, headerFont))
         }
-
         for row in rows {
             for (col, cell) in row.enumerated() where col < totalColumns {
-                widths[col] = max(widths[col], measure(cell, MarkdownTableView.bodyFont))
+                widths[col] = max(widths[col], measure(cell, bodyFont))
             }
         }
-
         return widths
     }
 
-    private func drawRow(
-        cells: [String],
-        rowIndex: Int,
-        isHeader: Bool,
-        columnWidths: [CGFloat],
-        totalWidth: CGFloat
-    ) {
-        let yOffset = CGFloat(rowIndex) * MarkdownTableView.rowHeight
+    // MARK: - Private grid builder
 
-        // Row background — use semi-transparent LightDivider tints so neither shade
-        // blends into the bubble background colour
-        let rowBG = UIView()
-        rowBG.translatesAutoresizingMaskIntoConstraints = false
-        if isHeader {
-            rowBG.backgroundColor = UIColor.Sphinx.LightDivider
-        } else {
-            rowBG.backgroundColor = (rowIndex % 2 == 0)
-                ? UIColor.Sphinx.LightDivider.withAlphaComponent(0.35)
-                : UIColor.Sphinx.LightDivider.withAlphaComponent(0.12)
+    /// Builds the entire grid using direct `.frame` assignment — no Auto Layout constraints
+    /// created per cell, making this safe and fast to call from `cellForRowAt`.
+    private func buildGrid(headers: [String], rows: [[String]], columnWidths: [CGFloat]) {
+        rowCount = rows.count
+
+        // Remove all previously created grid subviews
+        contentView.subviews.forEach { $0.removeFromSuperview() }
+
+        guard !headers.isEmpty else {
+            totalContentWidth = 0
+            return
         }
-        contentView.addSubview(rowBG)
-        NSLayoutConstraint.activate([
-            rowBG.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            rowBG.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            rowBG.topAnchor.constraint(equalTo: contentView.topAnchor, constant: yOffset),
-            rowBG.heightAnchor.constraint(equalToConstant: MarkdownTableView.rowHeight)
-        ])
 
-        // Cell text views (selectable, non-editable, non-scrolling)
-        var xOffset: CGFloat = 0
-        let font: UIFont = isHeader ? MarkdownTableView.headerFont : MarkdownTableView.bodyFont
+        totalContentWidth = columnWidths.reduce(0, +)
+        let rh = MarkdownTableView.rowHeight
 
-        for (col, colWidth) in columnWidths.enumerated() {
-            let text = col < cells.count ? cells[col] : ""
+        // We don't know the final scrollView width at configure time, so we use
+        // totalContentWidth as a placeholder; layoutSubviews() corrects it.
+        let contentWidth = max(totalContentWidth, 1)
+        contentView.frame = CGRect(x: 0, y: 0, width: contentWidth, height: intrinsicContentHeight)
+        scrollView.contentSize = CGSize(width: contentWidth, height: intrinsicContentHeight)
 
-            let tv = UITextView()
-            tv.translatesAutoresizingMaskIntoConstraints = false
-            tv.isEditable = false
-            tv.isScrollEnabled = false
-            tv.isSelectable = true
-            tv.backgroundColor = .clear
-            tv.font = font
-            tv.textColor = UIColor.Sphinx.TextMessages
-            // Vertical centering: equal top/bottom insets, 8pt horizontal inset
-            tv.textContainerInset = UIEdgeInsets(top: 9, left: 8, bottom: 9, right: 8)
-            tv.textContainer.lineFragmentPadding = 0
-            tv.textContainer.maximumNumberOfLines = 1
-            tv.textContainer.lineBreakMode = .byClipping  // no truncation — column is wide enough
-            tv.text = text
-            contentView.addSubview(tv)
+        // Draw all rows (index 0 = header)
+        let allRows = [headers] + rows
+        for (rowIndex, cells) in allRows.enumerated() {
+            let isHeader = rowIndex == 0
+            let yOffset = CGFloat(rowIndex) * rh
 
-            let currentX = xOffset
-            NSLayoutConstraint.activate([
-                tv.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: currentX),
-                tv.topAnchor.constraint(equalTo: contentView.topAnchor, constant: yOffset),
-                tv.widthAnchor.constraint(equalToConstant: colWidth),
-                tv.heightAnchor.constraint(equalToConstant: MarkdownTableView.rowHeight)
-            ])
+            // Row background (frame-based)
+            let rowBG = UIView(frame: CGRect(x: 0, y: yOffset, width: contentWidth, height: rh))
+            if isHeader {
+                rowBG.backgroundColor = UIColor.Sphinx.LightDivider
+            } else {
+                rowBG.backgroundColor = (rowIndex % 2 == 0)
+                    ? UIColor.Sphinx.LightDivider.withAlphaComponent(0.35)
+                    : UIColor.Sphinx.LightDivider.withAlphaComponent(0.12)
+            }
+            contentView.addSubview(rowBG)
 
-            xOffset += colWidth
+            // Cell text views (frame-based)
+            let font: UIFont = isHeader ? MarkdownTableView.headerFont : MarkdownTableView.bodyFont
+            var xOffset: CGFloat = 0
+            for (col, colWidth) in columnWidths.enumerated() {
+                let text = col < cells.count ? cells[col] : ""
+                let tv = UITextView(frame: CGRect(x: xOffset, y: yOffset, width: colWidth, height: rh))
+                tv.isEditable = false
+                tv.isScrollEnabled = false
+                tv.isSelectable = true
+                tv.backgroundColor = .clear
+                tv.font = font
+                tv.textColor = UIColor.Sphinx.TextMessages
+                tv.textContainerInset = UIEdgeInsets(top: 9, left: 8, bottom: 9, right: 8)
+                tv.textContainer.lineFragmentPadding = 0
+                tv.textContainer.maximumNumberOfLines = 1
+                tv.textContainer.lineBreakMode = .byClipping
+                tv.text = text
+                contentView.addSubview(tv)
+                xOffset += colWidth
+            }
+
+            // 1pt divider below header row
+            if isHeader {
+                let divider = UIView(frame: CGRect(x: 0, y: rh - 1, width: contentWidth, height: 1))
+                divider.backgroundColor = UIColor.Sphinx.LightDivider
+                rowBG.addSubview(divider)
+            }
         }
+
+        setNeedsLayout()
     }
 }

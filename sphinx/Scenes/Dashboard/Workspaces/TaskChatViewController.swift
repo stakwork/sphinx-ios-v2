@@ -1024,16 +1024,24 @@ class TaskChatViewController: UIViewController {
         API.sharedInstance.fetchTaskMessagesWithAuth(
             taskId: task.id,
             callback: { [weak self] messages, podId in
-                DispatchQueue.main.async {
-                    guard let self = self else { return }
-                    self.loadingWheel.stopAnimating()
-                    self.messages = messages
-                    self.chatTableView.isHidden = false
-                    self.emptyLabel.isHidden = !messages.isEmpty
-                    self.chatTableView.reloadData()
-                    if !messages.isEmpty { self.scrollToBottom(animated: false) }
-                    self.task.podId = podId
-                    self.releasePodButton.isHidden = (podId == nil)
+                // Alamofire fires this callback on the main queue, so we must explicitly
+                // jump to a background thread for the expensive precompute work.
+                // Capture UIScreen.main.bounds.width here on the main thread.
+                let screenWidth = UIScreen.main.bounds.width
+                DispatchQueue.global(qos: .userInitiated).async {
+                    var precomputed = messages
+                    HiveChatMessage.precompute(&precomputed, screenWidth: screenWidth)
+                    DispatchQueue.main.async {
+                        guard let self = self else { return }
+                        self.loadingWheel.stopAnimating()
+                        self.messages = precomputed
+                        self.chatTableView.isHidden = false
+                        self.emptyLabel.isHidden = !precomputed.isEmpty
+                        self.chatTableView.reloadData()
+                        if !precomputed.isEmpty { self.scrollToBottom(animated: false) }
+                        self.task.podId = podId
+                        self.releasePodButton.isHidden = (podId == nil)
+                    }
                 }
             },
             errorCallback: { [weak self] in
@@ -1303,23 +1311,36 @@ extension TaskChatViewController: HivePusherDelegate {
 
         guard message.taskId == task.id else { return }
         guard !messages.contains(where: { $0.id == message.id }) else { return }
-        messages.append(message)
-        guard message.isDisplayable else { return }
-        let indexPath = IndexPath(row: displayMessages.count - 1, section: 0)
-        UIView.performWithoutAnimation {
-            chatTableView.insertRows(at: [indexPath], with: .none)
-        }
-        // If it's a CQ answer, also reload the CQ cell to show answered state
-        if cqMessageIds.contains(message.replyId ?? "") {
-            if let displayIdx = displayMessages.firstIndex(where: { $0.id == message.replyId }) {
-                chatTableView.reloadRows(at: [IndexPath(row: displayIdx, section: 0)], with: .none)
+
+        // Pre-compute segment parsing + column widths off the main thread so
+        // insertRows never triggers expensive work on scroll.
+        // Capture UIScreen.main.bounds.width here on the main thread.
+        let screenWidth = UIScreen.main.bounds.width
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            var arr = [message]
+            HiveChatMessage.precompute(&arr, screenWidth: screenWidth)
+            let precomputed = arr[0]
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                self.messages.append(precomputed)
+                guard precomputed.isDisplayable else { return }
+                let indexPath = IndexPath(row: self.displayMessages.count - 1, section: 0)
+                UIView.performWithoutAnimation {
+                    self.chatTableView.insertRows(at: [indexPath], with: .none)
+                }
+                // If it's a CQ answer, also reload the CQ cell to show answered state
+                if self.cqMessageIds.contains(precomputed.replyId ?? "") {
+                    if let displayIdx = self.displayMessages.firstIndex(where: { $0.id == precomputed.replyId }) {
+                        self.chatTableView.reloadRows(at: [IndexPath(row: displayIdx, section: 0)], with: .none)
+                    }
+                }
+                self.scrollToBottom()
+                // Update diagram if a new WORKFLOW artifact arrived
+                if self.task.mode == "workflow_editor",
+                   precomputed.artifacts.contains(where: { $0.isWorkflow }) {
+                    self.refreshDiagram()
+                }
             }
-        }
-        scrollToBottom()
-        // Update diagram if a new WORKFLOW artifact arrived
-        if task.mode == "workflow_editor",
-           message.artifacts.contains(where: { $0.isWorkflow }) {
-            refreshDiagram()
         }
     }
 
@@ -1432,6 +1453,10 @@ extension TaskChatViewController: AgentEventsSSEDelegate {
 extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         displayMessages.count
+    }
+
+    func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
+        return displayMessages[indexPath.row].estimatedCellHeight ?? 80
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {

@@ -10,7 +10,7 @@ import Foundation
 
 // MARK: - Segment type
 
-enum MessageContentSegment {
+enum MessageContentSegment: Sendable {
     case text(String)
     case table(headers: [String], rows: [[String]])
 }

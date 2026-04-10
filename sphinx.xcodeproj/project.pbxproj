@@ -691,6 +691,7 @@
 		A1B2C3D4E5F6A7B8C9D0E1F2 /* TaskProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6A7B8C9D0E1F2A3 /* TaskProgress.swift */; };
 		A5F3D5A533984995ADE1BADF /* WorkspaceFeatureTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = C638608884A0403797B98830 /* WorkspaceFeatureTableViewCell.xib */; };
 		A748D979E2F14560BF39E4A7 /* HiveChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8ABF62A347844ECEB2FC60A4 /* HiveChatMessage.swift */; };
+		HC01PP22QQ33RR44SS55TT02 /* HiveChatMessage+Precompute.swift in Sources */ = {isa = PBXBuildFile; fileRef = HC01PP22QQ33RR44SS55TT01 /* HiveChatMessage+Precompute.swift */; };
 		A9F9FCD16AAC4DCD96AD35C4 /* HiveAnyCableManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E9262D0931349B5946161EE /* HiveAnyCableManager.swift */; };
 		AA001CQ12F9A0001000CQ001 /* ClarifyingQuestionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA001CQ02F9A0001000CQ001 /* ClarifyingQuestionsView.swift */; };
 		AA001CQ32F9A0001000CQ001 /* ClarifyingQuestionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA001CQ22F9A0001000CQ001 /* ClarifyingQuestionsTests.swift */; };
@@ -1998,6 +1999,7 @@
 		7734ED4D2D66C733003276BA /* sphinx 53.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 53.xcdatamodel"; sourceTree = "<group>"; };
 		87516064474D4E7BB35029E5 /* TaskDependencyDiagramViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskDependencyDiagramViewTests.swift; sourceTree = "<group>"; };
 		8ABF62A347844ECEB2FC60A4 /* HiveChatMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveChatMessage.swift; sourceTree = "<group>"; };
+		HC01PP22QQ33RR44SS55TT01 /* HiveChatMessage+Precompute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HiveChatMessage+Precompute.swift"; sourceTree = "<group>"; };
 		90FA80AA7B584833953F22B2 /* HiveAnyCableDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveAnyCableDelegate.swift; sourceTree = "<group>"; };
 		9386C2882BB25C2200ABDEF3 /* AddTagsButtonCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = AddTagsButtonCell.xib; sourceTree = "<group>"; };
 		9386C28A2BB25EDC00ABDEF3 /* AddedTagsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddedTagsView.swift; sourceTree = "<group>"; };
@@ -4174,6 +4176,7 @@
 				BB22CC33DD44EE55FF6677BB /* HiveSearchResultCell.xib */,
 				BB22CC33DD44EE55FF6677DD /* WorkspaceSearchViewController.swift */,
 				8ABF62A347844ECEB2FC60A4 /* HiveChatMessage.swift */,
+				HC01PP22QQ33RR44SS55TT01 /* HiveChatMessage+Precompute.swift */,
 				47AABB00FF00BEEF00000003 /* WorkspaceMember.swift */,
 				47AABB00FF00BEEF00000005 /* WorkspacePod.swift */,
 				47AABB00FF00BEEF00000008 /* WorkspacePodTableViewCell.swift */,
@@ -5629,6 +5632,7 @@
 				BB22CC33DD44EE55FF667788 /* HiveSearchResultCell.swift in Sources */,
 				BB22CC33DD44EE55FF6677CC /* WorkspaceSearchViewController.swift in Sources */,
 				A748D979E2F14560BF39E4A7 /* HiveChatMessage.swift in Sources */,
+				HC01PP22QQ33RR44SS55TT02 /* HiveChatMessage+Precompute.swift in Sources */,
 				47AABB00FF00BEEF00000004 /* WorkspaceMember.swift in Sources */,
 				47AABB00FF00BEEF00000006 /* WorkspacePod.swift in Sources */,
 				47AABB00FF00BEEF00000007 /* WorkspacePodTableViewCell.swift in Sources */,
