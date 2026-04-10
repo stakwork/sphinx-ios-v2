@@ -31,6 +31,7 @@ typealias HiveCallLinkCallback = ((String) -> ())
 typealias HivePoolWorkspacesCallback = ((_ pods: [WorkspacePod], _ hasWarning: Bool) -> ())
 typealias HiveRepositoriesCallback = (([WorkspaceRepository]) -> ())
 typealias HiveBranchesCallback = (([WorkspaceBranch]) -> ())
+typealias HiveWorkflowVersionsCallback = (([WorkflowVersion]) -> ())
 typealias HiveWorkspaceMembersCallback = (([WorkspaceMember]) -> ())
 
 // MARK: - WorkspaceRepository
@@ -3723,6 +3724,451 @@ extension API {
                 guard let token = token else { errorCallback(); return }
                 UserDefaults.Keys.hiveToken.set(token)
                 self?.fetchWorkspaceMembers(slug: slug, authToken: token, callback: callback, errorCallback: errorCallback)
+            },
+            errorCallback: errorCallback
+        )
+    }
+
+    // MARK: - Create Workflow Task
+
+    func createWorkflowTask(
+        title: String,
+        description: String,
+        workspaceSlug: String,
+        authToken: String,
+        callback: @escaping HiveTaskCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        let urlString = "\(API.kHiveBaseUrl)/tasks"
+        let params: [String: AnyObject] = [
+            "title": title as AnyObject,
+            "description": description as AnyObject,
+            "status": "active" as AnyObject,
+            "workspaceSlug": workspaceSlug as AnyObject,
+            "mode": "workflow_editor" as AnyObject
+        ]
+        guard let request = createRequest(urlString, bodyParams: params as NSDictionary, method: "POST", token: authToken) else {
+            errorCallback()
+            return
+        }
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                print("[HiveAPI] createWorkflowTask unauthorized (401)")
+                errorCallback()
+                return
+            }
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+                if let error = json["error"].string {
+                    print("[HiveAPI] createWorkflowTask error: \(error)")
+                    errorCallback()
+                    return
+                }
+                let task = WorkspaceTask(json: json["data"])
+                callback(task)
+            case .failure(let error):
+                print("[HiveAPI] createWorkflowTask failed: \(error.localizedDescription)")
+                errorCallback()
+            }
+        }
+    }
+
+    func createWorkflowTaskWithAuth(
+        title: String,
+        description: String,
+        workspaceSlug: String,
+        callback: @escaping HiveTaskCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
+            createWorkflowTask(
+                title: title,
+                description: description,
+                workspaceSlug: workspaceSlug,
+                authToken: storedToken,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateAndCreateWorkflowTask(
+                        title: title,
+                        description: description,
+                        workspaceSlug: workspaceSlug,
+                        callback: callback,
+                        errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateAndCreateWorkflowTask(
+                title: title,
+                description: description,
+                workspaceSlug: workspaceSlug,
+                callback: callback,
+                errorCallback: errorCallback
+            )
+        }
+    }
+
+    private func authenticateAndCreateWorkflowTask(
+        title: String,
+        description: String,
+        workspaceSlug: String,
+        callback: @escaping HiveTaskCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback(); return }
+                UserDefaults.Keys.hiveToken.set(token)
+                self?.createWorkflowTask(
+                    title: title,
+                    description: description,
+                    workspaceSlug: workspaceSlug,
+                    authToken: token,
+                    callback: callback,
+                    errorCallback: errorCallback
+                )
+            },
+            errorCallback: errorCallback
+        )
+    }
+
+    // MARK: - Save Task Message
+
+    func saveTaskMessage(
+        taskId: String,
+        message: String,
+        role: String,
+        artifacts: [[String: AnyObject]],
+        authToken: String,
+        callback: @escaping HiveChatMessageCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        let encodedTaskId = taskId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? taskId
+        let urlString = "\(API.kHiveBaseUrl)/tasks/\(encodedTaskId)/messages/save"
+        let params: [String: AnyObject] = [
+            "message": message as AnyObject,
+            "role": role as AnyObject,
+            "artifacts": artifacts as AnyObject
+        ]
+        guard let request = createRequest(urlString, bodyParams: params as NSDictionary, method: "POST", token: authToken) else {
+            errorCallback()
+            return
+        }
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                print("[HiveAPI] saveTaskMessage unauthorized (401)")
+                errorCallback()
+                return
+            }
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+                if let error = json["error"].string {
+                    print("[HiveAPI] saveTaskMessage error: \(error)")
+                    errorCallback()
+                    return
+                }
+                guard json["success"].bool == true else {
+                    print("[HiveAPI] saveTaskMessage returned success=false")
+                    errorCallback()
+                    return
+                }
+                let savedMessage = HiveChatMessage(json: json["message"])
+                callback(savedMessage)
+            case .failure(let error):
+                print("[HiveAPI] saveTaskMessage failed: \(error.localizedDescription)")
+                errorCallback()
+            }
+        }
+    }
+
+    func saveTaskMessageWithAuth(
+        taskId: String,
+        message: String,
+        role: String,
+        artifacts: [[String: AnyObject]],
+        callback: @escaping HiveChatMessageCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
+            saveTaskMessage(
+                taskId: taskId,
+                message: message,
+                role: role,
+                artifacts: artifacts,
+                authToken: storedToken,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateAndSaveTaskMessage(
+                        taskId: taskId,
+                        message: message,
+                        role: role,
+                        artifacts: artifacts,
+                        callback: callback,
+                        errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateAndSaveTaskMessage(
+                taskId: taskId,
+                message: message,
+                role: role,
+                artifacts: artifacts,
+                callback: callback,
+                errorCallback: errorCallback
+            )
+        }
+    }
+
+    private func authenticateAndSaveTaskMessage(
+        taskId: String,
+        message: String,
+        role: String,
+        artifacts: [[String: AnyObject]],
+        callback: @escaping HiveChatMessageCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback(); return }
+                UserDefaults.Keys.hiveToken.set(token)
+                self?.saveTaskMessage(
+                    taskId: taskId,
+                    message: message,
+                    role: role,
+                    artifacts: artifacts,
+                    authToken: token,
+                    callback: callback,
+                    errorCallback: errorCallback
+                )
+            },
+            errorCallback: errorCallback
+        )
+    }
+
+    // MARK: - Workflow Editor Debug Message
+
+    func sendWorkflowEditorDebugMessage(
+        taskId: String,
+        message: String,
+        workflowId: Int,
+        workflowName: String,
+        workflowRefId: String,
+        workflowVersionId: String,
+        authToken: String,
+        callback: @escaping HiveChatMessageCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        let urlString = "\(API.kHiveBaseUrl)/workflow-editor"
+        let params: [String: AnyObject] = [
+            "taskId": taskId as AnyObject,
+            "message": message as AnyObject,
+            "workflowId": workflowId as AnyObject,
+            "workflowName": workflowName as AnyObject,
+            "workflowRefId": workflowRefId as AnyObject,
+            "workflowVersionId": workflowVersionId as AnyObject
+        ]
+        guard let request = createRequest(urlString, bodyParams: params as NSDictionary, method: "POST", token: authToken) else {
+            errorCallback()
+            return
+        }
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                print("[HiveAPI] sendWorkflowEditorDebugMessage unauthorized (401)")
+                errorCallback()
+                return
+            }
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+                if let error = json["error"].string {
+                    print("[HiveAPI] sendWorkflowEditorDebugMessage error: \(error)")
+                    errorCallback()
+                    return
+                }
+                guard json["success"].bool == true else {
+                    print("[HiveAPI] sendWorkflowEditorDebugMessage returned success=false")
+                    errorCallback()
+                    return
+                }
+                guard let sentMessage = HiveChatMessage(json: json["message"]) else {
+                    print("[HiveAPI] sendWorkflowEditorDebugMessage - failed to parse returned message")
+                    errorCallback()
+                    return
+                }
+                callback(sentMessage)
+            case .failure(let error):
+                print("[HiveAPI] sendWorkflowEditorDebugMessage failed: \(error.localizedDescription)")
+                errorCallback()
+            }
+        }
+    }
+
+    func sendWorkflowEditorDebugMessageWithAuth(
+        taskId: String,
+        message: String,
+        workflowId: Int,
+        workflowName: String,
+        workflowRefId: String,
+        workflowVersionId: String,
+        callback: @escaping HiveChatMessageCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
+            sendWorkflowEditorDebugMessage(
+                taskId: taskId,
+                message: message,
+                workflowId: workflowId,
+                workflowName: workflowName,
+                workflowRefId: workflowRefId,
+                workflowVersionId: workflowVersionId,
+                authToken: storedToken,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateAndSendWorkflowEditorDebugMessage(
+                        taskId: taskId,
+                        message: message,
+                        workflowId: workflowId,
+                        workflowName: workflowName,
+                        workflowRefId: workflowRefId,
+                        workflowVersionId: workflowVersionId,
+                        callback: callback,
+                        errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateAndSendWorkflowEditorDebugMessage(
+                taskId: taskId,
+                message: message,
+                workflowId: workflowId,
+                workflowName: workflowName,
+                workflowRefId: workflowRefId,
+                workflowVersionId: workflowVersionId,
+                callback: callback,
+                errorCallback: errorCallback
+            )
+        }
+    }
+
+    private func authenticateAndSendWorkflowEditorDebugMessage(
+        taskId: String,
+        message: String,
+        workflowId: Int,
+        workflowName: String,
+        workflowRefId: String,
+        workflowVersionId: String,
+        callback: @escaping HiveChatMessageCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback(); return }
+                UserDefaults.Keys.hiveToken.set(token)
+                self?.sendWorkflowEditorDebugMessage(
+                    taskId: taskId,
+                    message: message,
+                    workflowId: workflowId,
+                    workflowName: workflowName,
+                    workflowRefId: workflowRefId,
+                    workflowVersionId: workflowVersionId,
+                    authToken: token,
+                    callback: callback,
+                    errorCallback: errorCallback
+                )
+            },
+            errorCallback: errorCallback
+        )
+    }
+
+    // MARK: - Fetch Workflow Versions
+
+    func fetchWorkflowVersions(
+        workspaceSlug: String,
+        workflowId: Int,
+        authToken: String,
+        callback: @escaping HiveWorkflowVersionsCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        let encodedSlug = workspaceSlug.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? workspaceSlug
+        let urlString = "\(API.kHiveBaseUrl)/workspaces/\(encodedSlug)/workflows/\(workflowId)/versions"
+        guard let request = createRequest(urlString, bodyParams: nil, method: "GET", token: authToken) else {
+            errorCallback()
+            return
+        }
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                print("[HiveAPI] fetchWorkflowVersions unauthorized (401)")
+                errorCallback()
+                return
+            }
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+                if let error = json["error"].string {
+                    print("[HiveAPI] fetchWorkflowVersions error: \(error)")
+                    errorCallback()
+                    return
+                }
+                let versions = (json["data"]["versions"].array ?? []).compactMap { WorkflowVersion(json: $0) }
+                callback(versions)
+            case .failure(let error):
+                print("[HiveAPI] fetchWorkflowVersions failed: \(error.localizedDescription)")
+                errorCallback()
+            }
+        }
+    }
+
+    func fetchWorkflowVersionsWithAuth(
+        workspaceSlug: String,
+        workflowId: Int,
+        callback: @escaping HiveWorkflowVersionsCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
+            fetchWorkflowVersions(
+                workspaceSlug: workspaceSlug,
+                workflowId: workflowId,
+                authToken: storedToken,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateAndFetchWorkflowVersions(
+                        workspaceSlug: workspaceSlug,
+                        workflowId: workflowId,
+                        callback: callback,
+                        errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateAndFetchWorkflowVersions(
+                workspaceSlug: workspaceSlug,
+                workflowId: workflowId,
+                callback: callback,
+                errorCallback: errorCallback
+            )
+        }
+    }
+
+    private func authenticateAndFetchWorkflowVersions(
+        workspaceSlug: String,
+        workflowId: Int,
+        callback: @escaping HiveWorkflowVersionsCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback(); return }
+                UserDefaults.Keys.hiveToken.set(token)
+                self?.fetchWorkflowVersions(
+                    workspaceSlug: workspaceSlug,
+                    workflowId: workflowId,
+                    authToken: token,
+                    callback: callback,
+                    errorCallback: errorCallback
+                )
             },
             errorCallback: errorCallback
         )
