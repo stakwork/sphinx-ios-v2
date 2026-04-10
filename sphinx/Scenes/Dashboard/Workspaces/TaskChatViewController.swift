@@ -1258,6 +1258,20 @@ class TaskChatViewController: UIViewController {
         workflowStatusHeightConstraint.constant = workflowStatusView.hasDetailText ? 48 : 32
     }
 
+    /// Makes the status bar visible with the "Working" state if it isn't already showing.
+    /// Called by SSE/AnyCable step events so the bar appears as soon as the agent starts working,
+    /// even if the Pusher `workflow-status-update` hasn't fired yet.
+    private func ensureStatusBarVisible() {
+        guard workflowStatusHeightConstraint.constant == 0 else { return }
+        workflowStatusView.status = .IN_PROGRESS
+        updateStatusViewHeight()
+        if workflowStatusView.isHidden {
+            workflowStatusView.show(animated: true)
+        }
+        setInputEnabled(false)
+        UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
+    }
+
     private func applyWorkflowStatus(_ status: WorkflowStatus, animated: Bool = true) {
         workflowStatusView.status = status
         switch status {
@@ -1421,7 +1435,10 @@ extension TaskChatViewController: HivePusherDelegate {
             )
         }
 
-        guard message.taskId == task.id else { return }
+        // taskId may be nil when the message is fetched from the single-message endpoint
+        // (which doesn't always include taskId). The Pusher channel is already scoped to
+        // this task, so skip the taskId check when nil.
+        if let msgTaskId = message.taskId, msgTaskId != task.id { return }
         guard !messages.contains(where: { $0.id == message.id }) else { return }
         messages.append(message)
         guard message.isDisplayable else { return }
@@ -1477,6 +1494,7 @@ extension TaskChatViewController: HivePusherDelegate {
 // MARK: - HiveAnyCableDelegate
 extension TaskChatViewController: HiveAnyCableDelegate {
     func workflowStepTextReceived(stepText: String) {
+        ensureStatusBarVisible()
         workflowStatusView.setStatusText(stepText)
         UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
     }
@@ -1501,6 +1519,7 @@ extension TaskChatViewController {
 extension TaskChatViewController: AgentEventsSSEDelegate {
 
     func agentEventToolCall(toolName: String, input: [String: Any]?) {
+        ensureStatusBarVisible()
         let display = agentToolDisplayText(toolName: toolName, input: input)
         workflowStatusView.setStepDetail(display)
         updateStatusViewHeight()
@@ -1508,6 +1527,7 @@ extension TaskChatViewController: AgentEventsSSEDelegate {
     }
 
     func agentEventText(_ text: String) {
+        ensureStatusBarVisible()
         let sanitised = text
             .replacingOccurrences(of: "\r\n", with: " ")
             .replacingOccurrences(of: "\n", with: " ")
