@@ -1244,6 +1244,10 @@ class TaskChatViewController: UIViewController {
                         if updated.status != "TODO" && updated.workflowStatus != "PENDING" {
                             self.dismissDescriptionOverlay(animated: false)
                         }
+                        // Reconcile UI with latest workflow status from server
+                        if let raw = updated.workflowStatus, let status = WorkflowStatus(rawValue: raw) {
+                            self.applyWorkflowStatus(status)
+                        }
                     }
                     self.connectAnyCable()
                 }
