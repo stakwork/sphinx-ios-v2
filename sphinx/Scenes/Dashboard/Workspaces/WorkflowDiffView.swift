@@ -32,6 +32,10 @@ final class WorkflowDiffView: UIView {
     // MARK: - State
 
     private var diffLines: [DiffLine] = []
+    
+    var hasDiffLines: Bool {
+        !diffLines.isEmpty
+    }
 
     /// True when the current diff contains at least one added or removed line.
     var hasDiffContent: Bool {

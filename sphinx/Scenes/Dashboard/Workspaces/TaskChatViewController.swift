@@ -79,7 +79,7 @@ class TaskChatViewController: UIViewController {
     private var changesContainerView: UIView?
     private var workflowDiffView: WorkflowDiffView?
     private var changesEmptyStack: UIStackView?
-    private var diffWorkItem: DispatchWorkItem?
+    private var diffTask: Task<Void, Never>?
 
     private lazy var changesLoadingWheel: UIActivityIndicatorView = {
         let indicator = UIActivityIndicatorView(style: .medium)
@@ -655,6 +655,8 @@ class TaskChatViewController: UIViewController {
     // MARK: - Panel switching (tab bar)
 
     private func showChatPanel() {
+        diffTask?.cancel()
+        diffTask = nil
         chatTableView.isHidden = false
         pendingAttachmentsBar.isHidden = false
         selectedStepChip.isHidden = (selectedStep == nil)
@@ -675,6 +677,8 @@ class TaskChatViewController: UIViewController {
     }
 
     private func showWorkflowPanel() {
+        diffTask?.cancel()
+        diffTask = nil
         chatTableView.isHidden = true
         workflowStatusView.isHidden = true
         pendingAttachmentsBar.isHidden = true
@@ -733,10 +737,14 @@ class TaskChatViewController: UIViewController {
         }
     }
 
-    private func refreshDiff() {
+    private func refreshDiff(forceUpdate: Bool = false) {
+        if !forceUpdate && (workflowDiffView == nil || workflowDiffView?.hasDiffLines == true) {
+            return
+        }
+        
         // Cancel any in-flight work
-        diffWorkItem?.cancel()
-        diffWorkItem = nil
+        diffTask?.cancel()
+        diffTask = nil
 
         // Immediately show spinner, hide content
         changesLoadingWheel.startAnimating()
@@ -766,14 +774,16 @@ class TaskChatViewController: UIViewController {
             return
         }
 
-        // Dispatch heavy work to background
-        let workItem = DispatchWorkItem { [weak self] in
+        // Dispatch heavy work to background via Task.detached (nonisolated — safe in Swift 6)
+        diffTask = Task.detached(priority: .utility) { [weak self] in
+            guard !Task.isCancelled else { return }
             let cleanedOriginal = cleanJsonForDiff(orig) ?? orig
             let cleanedUpdated  = cleanJsonForDiff(updated) ?? updated
             let lines = computeDiff(original: cleanedOriginal, updated: cleanedUpdated)
 
-            DispatchQueue.main.async { [weak self] in
-                guard let self = self, !(workItem.isCancelled) else { return }
+            guard !Task.isCancelled else { return }
+            await MainActor.run { [weak self] in
+                guard let self = self, !Task.isCancelled else { return }
                 self.changesLoadingWheel.stopAnimating()
                 if lines.isEmpty {
                     self.changesEmptyStack?.isHidden = false
@@ -785,8 +795,6 @@ class TaskChatViewController: UIViewController {
                 }
             }
         }
-        diffWorkItem = workItem
-        DispatchQueue.global(qos: .userInitiated).async(execute: workItem)
     }
 
     // MARK: - Step selection
@@ -1533,10 +1541,9 @@ extension TaskChatViewController: HivePusherDelegate {
         }
         scrollToBottom()
         // Update diagram and diff if a new WORKFLOW artifact arrived
-        if task.mode == "workflow_editor",
-           message.artifacts.contains(where: { $0.isWorkflow }) {
+        if task.mode == "workflow_editor", message.artifacts.contains(where: { $0.isWorkflow }) {
             refreshDiagram()
-            refreshDiff()
+            refreshDiff(forceUpdate: true)
             // Badge WORKFLOW (1) and CHANGES (2) tabs if not currently active
             setBadgeOnInactiveTab(index: 1)
             setBadgeOnInactiveTab(index: 2)
