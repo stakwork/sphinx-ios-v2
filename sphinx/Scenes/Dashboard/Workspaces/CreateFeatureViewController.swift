@@ -518,7 +518,7 @@ class CreateFeatureViewController: UIViewController {
                                         return
                                     }
 
-                                    // Step 4: Save ASSISTANT WORKFLOW artifact (fire-and-forget)
+                                    // Step 4: Save ASSISTANT WORKFLOW artifact
                                     let workflowArtifact: [String: AnyObject] = [
                                         "type": "WORKFLOW" as AnyObject,
                                         "content": [
@@ -534,26 +534,38 @@ class CreateFeatureViewController: UIViewController {
                                         message: artifactMessage,
                                         role: "ASSISTANT",
                                         artifacts: [workflowArtifact],
-                                        callback: { _ in },
-                                        errorCallback: {}
-                                    )
+                                        callback: { [weak self] _ in
+                                            guard let self else { return }
 
-                                    // Step 5: Auto-send debug message (fire-and-forget)
-                                    API.sharedInstance.sendWorkflowEditorDebugMessageWithAuth(
-                                        taskId: task.id,
-                                        message: "Debug this run \(runId)",
-                                        workflowId: workflowId,
-                                        workflowName: workflowName,
-                                        workflowRefId: workflowRefId,
-                                        workflowVersionId: workflowVersionId,
-                                        callback: { _ in },
-                                        errorCallback: {}
+                                            // Step 5: Auto-send debug message
+                                            API.sharedInstance.sendWorkflowEditorDebugMessageWithAuth(
+                                                taskId: task.id,
+                                                message: "Debug this run \(runId)",
+                                                workflowId: workflowId,
+                                                workflowName: workflowName,
+                                                workflowRefId: workflowRefId,
+                                                workflowVersionId: workflowVersionId,
+                                                callback: { [weak self] _ in
+                                                    // Step 6: Navigate to new task
+                                                    DispatchQueue.main.async {
+                                                        self?.finishDebugRunCreation(task: task)
+                                                    }
+                                                },
+                                                errorCallback: { [weak self] in
+                                                    DispatchQueue.main.async {
+                                                        self?.resetSendButton()
+                                                        AlertHelper.showAlert(title: "Error", message: "Failed to send debug message.")
+                                                    }
+                                                }
+                                            )
+                                        },
+                                        errorCallback: { [weak self] in
+                                            DispatchQueue.main.async {
+                                                self?.resetSendButton()
+                                                AlertHelper.showAlert(title: "Error", message: "Failed to save workflow artifact.")
+                                            }
+                                        }
                                     )
-
-                                    // Step 6: Navigate to new task
-                                    DispatchQueue.main.async {
-                                        self.finishDebugRunCreation(task: task)
-                                    }
                                 },
                                 errorCallback: { [weak self] in
                                     DispatchQueue.main.async {
