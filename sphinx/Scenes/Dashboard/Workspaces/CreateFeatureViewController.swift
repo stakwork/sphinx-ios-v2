@@ -335,6 +335,13 @@ class CreateFeatureViewController: UIViewController {
         case .loadWorkflow: sendButton.setTitle("Load Workflow", for: .normal)
         default: break
         }
+        switch newMode {
+        case .debugRun, .loadWorkflow:
+            messageTextView.keyboardType = .numberPad
+        case .feature, .task:
+            messageTextView.keyboardType = .default
+        }
+        messageTextView.reloadInputViews()
         updateSendButtonState()
     }
 
@@ -461,8 +468,121 @@ class CreateFeatureViewController: UIViewController {
             return
         }
 
+        // MARK: Debug Run mode
+        if mode == .debugRun {
+            let runId = message
+            sendButton.isEnabled = false
+            loadingWheel.startAnimating()
+
+            // Step 1: Verify project exists and get workflow_id
+            API.sharedInstance.fetchStakworkProjectWithAuth(
+                projectId: runId,
+                callback: { [weak self] projectData in
+                    guard let self else { return }
+                    guard let workflowId = projectData["workflow_id"] as? Int else {
+                        DispatchQueue.main.async {
+                            self.resetSendButton()
+                            AlertHelper.showAlert(title: "Error", message: "Project has no workflow_id.")
+                        }
+                        return
+                    }
+
+                    // Step 2: Fetch latest workflow version
+                    API.sharedInstance.fetchWorkflowVersionsWithAuth(
+                        workspaceSlug: self.workspaceSlug,
+                        workflowId: workflowId,
+                        callback: { [weak self] versions in
+                            guard let self, let latestVersion = versions.first else {
+                                DispatchQueue.main.async {
+                                    self?.resetSendButton()
+                                    AlertHelper.showAlert(title: "Error", message: "No workflow versions found.")
+                                }
+                                return
+                            }
+                            let workflowName = latestVersion.workflowName ?? "Workflow \(workflowId)"
+                            let workflowRefId = latestVersion.refId ?? ""
+                            let workflowVersionId = String(latestVersion.versionId)
+                            let taskTitle = "Debug run \(runId)"
+
+                            // Step 3: Create workflow_editor task
+                            API.sharedInstance.createWorkflowTaskWithAuth(
+                                title: taskTitle,
+                                description: taskTitle,
+                                workspaceSlug: self.workspaceSlug,
+                                callback: { [weak self] task in
+                                    guard let self, let task else {
+                                        DispatchQueue.main.async {
+                                            self?.resetSendButton()
+                                            AlertHelper.showAlert(title: "Error", message: "Failed to create task.")
+                                        }
+                                        return
+                                    }
+
+                                    // Step 4: Save ASSISTANT WORKFLOW artifact (fire-and-forget)
+                                    let workflowArtifact: [String: AnyObject] = [
+                                        "type": "WORKFLOW" as AnyObject,
+                                        "content": [
+                                            "workflowId": workflowId,
+                                            "workflowName": workflowName,
+                                            "workflowRefId": workflowRefId,
+                                            "workflowVersionId": workflowVersionId
+                                        ] as AnyObject
+                                    ]
+                                    let artifactMessage = "Loaded: \(workflowName)\nSelect a step on the right as a starting point."
+                                    API.sharedInstance.saveTaskMessageWithAuth(
+                                        taskId: task.id,
+                                        message: artifactMessage,
+                                        role: "ASSISTANT",
+                                        artifacts: [workflowArtifact],
+                                        callback: { _ in },
+                                        errorCallback: {}
+                                    )
+
+                                    // Step 5: Auto-send debug message (fire-and-forget)
+                                    API.sharedInstance.sendWorkflowEditorDebugMessageWithAuth(
+                                        taskId: task.id,
+                                        message: "Debug this run \(runId)",
+                                        workflowId: workflowId,
+                                        workflowName: workflowName,
+                                        workflowRefId: workflowRefId,
+                                        workflowVersionId: workflowVersionId,
+                                        callback: { _ in },
+                                        errorCallback: {}
+                                    )
+
+                                    // Step 6: Navigate to new task
+                                    DispatchQueue.main.async {
+                                        self.finishDebugRunCreation(task: task)
+                                    }
+                                },
+                                errorCallback: { [weak self] in
+                                    DispatchQueue.main.async {
+                                        self?.resetSendButton()
+                                        AlertHelper.showAlert(title: "Error", message: "Failed to create task.")
+                                    }
+                                }
+                            )
+                        },
+                        errorCallback: { [weak self] in
+                            DispatchQueue.main.async {
+                                self?.resetSendButton()
+                                AlertHelper.showAlert(title: "Error", message: "Failed to fetch workflow versions.")
+                            }
+                        }
+                    )
+                },
+                errorCallback: { [weak self] errorMessage in
+                    DispatchQueue.main.async {
+                        self?.resetSendButton()
+                        AlertHelper.showAlert(title: "Error", message: "Run not found: \(errorMessage)")
+                    }
+                }
+            )
+            return
+        }
+
         // MARK: Stub modes
-        if mode == .debugRun || mode == .loadWorkflow {
+        if mode == .loadWorkflow {
             AlertHelper.showAlert(title: "Info", message: "Action not implemented yet")
             return
         }
@@ -580,6 +700,11 @@ class CreateFeatureViewController: UIViewController {
     }
 
     private func finishTaskCreation(task: WorkspaceTask) {
+        delegate?.didCreateTask(task)
+        dismiss(animated: true)
+    }
+
+    private func finishDebugRunCreation(task: WorkspaceTask) {
         delegate?.didCreateTask(task)
         dismiss(animated: true)
     }

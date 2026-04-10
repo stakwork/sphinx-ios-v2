@@ -33,6 +33,7 @@ typealias HiveRepositoriesCallback = (([WorkspaceRepository]) -> ())
 typealias HiveBranchesCallback = (([WorkspaceBranch]) -> ())
 typealias HiveWorkflowVersionsCallback = (([WorkflowVersion]) -> ())
 typealias HiveWorkspaceMembersCallback = (([WorkspaceMember]) -> ())
+typealias HiveProjectErrorCallback = ((String) -> ())
 
 // MARK: - WorkspaceRepository
 
@@ -4171,6 +4172,86 @@ extension API {
                 )
             },
             errorCallback: errorCallback
+        )
+    }
+
+
+    // MARK: - Fetch Stakwork Project
+
+    func fetchStakworkProject(
+        projectId: String,
+        authToken: String,
+        callback: @escaping ([String: Any]) -> Void,
+        errorCallback: @escaping (String) -> Void
+    ) {
+        let urlString = "\(API.kHiveBaseUrl)/stakwork/projects/\(projectId)"
+        guard let request = createRequest(urlString, bodyParams: nil, method: "GET", token: authToken) else {
+            errorCallback("Invalid request"); return
+        }
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                errorCallback("Unauthorized"); return
+            }
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+                guard json["success"].bool == true,
+                      let project = json["data"]["project"].dictionaryObject else {
+                    errorCallback(json["error"].string ?? "Failed to load project"); return
+                }
+                var result = project
+                result["current_transition_completion"] = json["data"]["current_transition_completion"].doubleValue
+                callback(result)
+            case .failure(let error):
+                errorCallback(error.localizedDescription)
+            }
+        }
+    }
+
+    func fetchStakworkProjectWithAuth(
+        projectId: String,
+        callback: @escaping ([String: Any]) -> Void,
+        errorCallback: @escaping (String) -> Void
+    ) {
+        if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
+            fetchStakworkProject(
+                projectId: projectId,
+                authToken: storedToken,
+                callback: callback,
+                errorCallback: { [weak self] _ in
+                    self?.authenticateAndFetchStakworkProject(
+                        projectId: projectId,
+                        callback: callback,
+                        errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateAndFetchStakworkProject(
+                projectId: projectId,
+                callback: callback,
+                errorCallback: errorCallback
+            )
+        }
+    }
+
+    private func authenticateAndFetchStakworkProject(
+        projectId: String,
+        callback: @escaping ([String: Any]) -> Void,
+        errorCallback: @escaping (String) -> Void
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback("Authentication failed"); return }
+                UserDefaults.Keys.hiveToken.set(token)
+                self?.fetchStakworkProject(
+                    projectId: projectId,
+                    authToken: token,
+                    callback: callback,
+                    errorCallback: errorCallback
+                )
+            },
+            errorCallback: { errorCallback("Authentication failed") }
         )
     }
 
