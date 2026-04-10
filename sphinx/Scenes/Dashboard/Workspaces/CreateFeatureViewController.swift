@@ -41,6 +41,10 @@ class CreateFeatureViewController: UIViewController {
 
     private var workspaceId: String = ""
 
+    private var workflowVersions: [WorkflowVersion] = []
+    private var selectedVersion: WorkflowVersion? = nil
+    private var debounceTimer: Timer? = nil
+
     private var promptLabel: UILabel!
     private var closeIconLabel: UILabel!
     private var closeButton: UIButton!
@@ -174,6 +178,7 @@ class CreateFeatureViewController: UIViewController {
         versionComboButton.alpha = 0.5
         versionComboButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
         versionComboButton.isHidden = true
+        versionComboButton.addTarget(self, action: #selector(versionComboTapped), for: .touchUpInside)
 
         // comboStackView holds the pickers; hidden = collapses to zero height in outer stack
         comboStackView = UIStackView(arrangedSubviews: [modeSelectorButton, repositoryComboButton, branchComboButton, versionComboButton])
@@ -313,7 +318,10 @@ class CreateFeatureViewController: UIViewController {
     private func updateSendButtonState() {
         let hasMessage = !(messageTextView.text?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
         let hasRepo = selectedRepository != nil
-        sendButton.isEnabled = hasMessage && (mode == .feature || (mode == .task && hasRepo) || mode == .debugRun || mode == .loadWorkflow)
+        let isLoadWorkflowReady = mode == .loadWorkflow
+            && Int(messageTextView.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "") != nil
+            && selectedVersion != nil
+        sendButton.isEnabled = hasMessage && (mode == .feature || (mode == .task && hasRepo) || mode == .debugRun || isLoadWorkflowReady)
     }
 
     // MARK: - Mode Management
@@ -501,7 +509,7 @@ class CreateFeatureViewController: UIViewController {
                             }
                             let workflowName = latestVersion.workflowName ?? "Workflow \(workflowId)"
                             let workflowRefId = latestVersion.refId ?? ""
-                            let workflowVersionId = String(latestVersion.versionId)
+                            let workflowVersionId = latestVersion.versionId
                             let taskTitle = "Debug run \(runId)"
 
                             // Step 3: Create workflow_editor task
@@ -597,9 +605,65 @@ class CreateFeatureViewController: UIViewController {
             return
         }
 
-        // MARK: Stub modes
+        // MARK: Load Workflow mode
         if mode == .loadWorkflow {
-            AlertHelper.showAlert(title: "Info", message: "Action not implemented yet")
+            guard let workflowId = Int(message), let version = selectedVersion else { return }
+            let workflowName = version.workflowName ?? "Workflow \(workflowId)"
+            let versionShort = String(version.versionId.prefix(8))
+            let taskTitle = "\(workflowName) v\(versionShort)"
+            let taskDescription = "Editing workflow \(workflowId) version \(versionShort)"
+
+            sendButton.isEnabled = false
+            loadingWheel.startAnimating()
+
+            API.sharedInstance.createWorkflowTaskWithAuth(
+                title: taskTitle,
+                description: taskDescription,
+                workspaceSlug: workspaceSlug,
+                callback: { [weak self] task in
+                    guard let self, let task else {
+                        DispatchQueue.main.async {
+                            self?.resetSendButton()
+                            AlertHelper.showAlert(title: "Error", message: "Failed to create task.")
+                        }
+                        return
+                    }
+                    var artifactContent: [String: AnyObject] = [
+                        "workflowId": workflowId as AnyObject,
+                        "workflowName": workflowName as AnyObject,
+                        "workflowRefId": (version.refId ?? "") as AnyObject,
+                        "workflowVersionId": version.versionId as AnyObject
+                    ]
+                    if let wfJson = version.workflowJson {
+                        artifactContent["workflowJson"] = wfJson as AnyObject
+                    }
+                    let artifact: [String: AnyObject] = [
+                        "type": "WORKFLOW" as AnyObject,
+                        "content": artifactContent as AnyObject
+                    ]
+                    API.sharedInstance.saveTaskMessageWithAuth(
+                        taskId: task.id,
+                        message: "Loaded: \(taskTitle)\nSelect a step on the right as a starting point.",
+                        role: "ASSISTANT",
+                        artifacts: [artifact],
+                        callback: { [weak self] _ in
+                            DispatchQueue.main.async { self?.finishLoadWorkflowCreation(task: task) }
+                        },
+                        errorCallback: { [weak self] in
+                            DispatchQueue.main.async {
+                                self?.resetSendButton()
+                                AlertHelper.showAlert(title: "Error", message: "Failed to save workflow artifact.")
+                            }
+                        }
+                    )
+                },
+                errorCallback: { [weak self] in
+                    DispatchQueue.main.async {
+                        self?.resetSendButton()
+                        AlertHelper.showAlert(title: "Error", message: "Failed to create task.")
+                    }
+                }
+            )
             return
         }
 
@@ -724,6 +788,79 @@ class CreateFeatureViewController: UIViewController {
         delegate?.didCreateTask(task)
         dismiss(animated: true)
     }
+
+    private func finishLoadWorkflowCreation(task: WorkspaceTask) {
+        delegate?.didCreateTask(task)
+        dismiss(animated: true)
+    }
+
+    // MARK: - Version Combo Actions
+
+    @objc private func versionComboTapped() {
+        guard !workflowVersions.isEmpty else { return }
+        let sheet = UIAlertController(title: "Select a version", message: nil, preferredStyle: .actionSheet)
+        for (i, version) in workflowVersions.enumerated() {
+            sheet.addAction(UIAlertAction(title: displayTitle(for: version, index: i), style: .default) { [weak self] _ in
+                guard let self else { return }
+                self.selectedVersion = version
+                self.versionComboButton.setTitle(self.displayTitle(for: version, index: i), for: .normal)
+                self.updateSendButtonState()
+            })
+        }
+        sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        if let popover = sheet.popoverPresentationController {
+            popover.sourceView = versionComboButton
+            popover.sourceRect = versionComboButton.bounds
+        }
+        present(sheet, animated: true)
+    }
+
+    private func fetchVersions(for workflowId: Int) {
+        API.sharedInstance.fetchWorkflowVersionsWithAuth(
+            workspaceSlug: workspaceSlug,
+            workflowId: workflowId,
+            callback: { [weak self] versions in
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    self.workflowVersions = versions
+                    self.selectedVersion = versions.first
+                    if let first = versions.first {
+                        self.versionComboButton.setTitle(self.displayTitle(for: first, index: 0), for: .normal)
+                        self.versionComboButton.isEnabled = true
+                        self.versionComboButton.alpha = 1.0
+                    } else {
+                        self.versionComboButton.setTitle("No versions found", for: .normal)
+                        self.versionComboButton.isEnabled = false
+                        self.versionComboButton.alpha = 0.5
+                    }
+                    self.updateSendButtonState()
+                }
+            },
+            errorCallback: { [weak self] in
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    self.versionComboButton.setTitle("Failed to load versions", for: .normal)
+                    self.versionComboButton.isEnabled = false
+                    self.versionComboButton.alpha = 0.5
+                    self.updateSendButtonState()
+                }
+            }
+        )
+    }
+
+    private func displayTitle(for version: WorkflowVersion, index: Int) -> String {
+        let short = String(version.versionId.prefix(8))
+        let dateStr: String = {
+            guard let date = version.dateAddedToGraph else { return "" }
+            let f = DateFormatter()
+            f.dateStyle = .medium
+            f.timeStyle = .none
+            return "  \(f.string(from: date))"
+        }()
+        let latest = index == 0 ? "  [Latest]" : ""
+        let published = version.published ? "  [Published]" : ""
+        return "\(short)\(dateStr)\(latest)\(published)"
+    }
 }
 
 // MARK: - UITextViewDelegate
@@ -731,5 +868,24 @@ class CreateFeatureViewController: UIViewController {
 extension CreateFeatureViewController: UITextViewDelegate {
     func textViewDidChange(_ textView: UITextView) {
         updateSendButtonState()
+        guard mode == .loadWorkflow else { return }
+
+        // Reset state on every keystroke
+        debounceTimer?.invalidate()
+        debounceTimer = nil
+        workflowVersions = []
+        selectedVersion = nil
+        versionComboButton.setTitle("Select Version", for: .normal)
+        versionComboButton.isEnabled = false
+        versionComboButton.alpha = 0.5
+        updateSendButtonState()
+
+        let text = textView.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !text.isEmpty, let workflowId = Int(text) else { return }
+
+        versionComboButton.setTitle("Loading versions…", for: .normal)
+        debounceTimer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: false) { [weak self] _ in
+            self?.fetchVersions(for: workflowId)
+        }
     }
 }
