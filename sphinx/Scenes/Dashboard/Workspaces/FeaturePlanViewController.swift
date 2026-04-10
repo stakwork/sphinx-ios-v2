@@ -1277,8 +1277,7 @@ class FeaturePlanViewController: UIViewController {
 
     private func applyInitialWorkflowStatus() {
         guard let raw = feature.workflowStatus,
-              let status = WorkflowStatus(rawValue: raw),
-              status == .IN_PROGRESS || status == .PENDING || status == .HALTED else { return }
+              let status = WorkflowStatus(rawValue: raw) else { return }
         applyWorkflowStatus(status)
     }
 
