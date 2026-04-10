@@ -17,7 +17,7 @@ class MarkdownTableView: UIView {
     private static let rowHeight: CGFloat = 36
     /// 8pt each side + 8pt safety buffer to prevent truncation
     private static let cellPadding: CGFloat = 24
-    private static let horizontalMargin: CGFloat = 8
+    private static let horizontalMargin: CGFloat = 0
     private static let headerFont = UIFont.boldSystemFont(ofSize: 13)
     private static let bodyFont   = UIFont.systemFont(ofSize: 13)
 
@@ -102,7 +102,9 @@ class MarkdownTableView: UIView {
         let columnWidths = calculateColumnWidths(headers: headers, rows: rows, totalColumns: totalColumns)
         let totalWidth   = columnWidths.reduce(0, +)
 
-        // Set content width so horizontal scroll activates when table is wider than the container
+        // Minimum width = scroll view width (fills container); grows wider when content needs it (enables horizontal scroll)
+        let minWidthConstraint = contentView.widthAnchor.constraint(greaterThanOrEqualTo: scrollView.widthAnchor)
+        minWidthConstraint.isActive = true
         let contentWidthConstraint = contentView.widthAnchor.constraint(equalToConstant: totalWidth)
         contentWidthConstraint.priority = .defaultHigh
         contentWidthConstraint.isActive = true
@@ -117,7 +119,7 @@ class MarkdownTableView: UIView {
         contentView.addSubview(divider)
         NSLayoutConstraint.activate([
             divider.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            divider.widthAnchor.constraint(equalToConstant: totalWidth),
+            divider.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             divider.topAnchor.constraint(equalTo: contentView.topAnchor, constant: MarkdownTableView.rowHeight),
             divider.heightAnchor.constraint(equalToConstant: 1)
         ])
@@ -175,8 +177,8 @@ class MarkdownTableView: UIView {
         contentView.addSubview(rowBG)
         NSLayoutConstraint.activate([
             rowBG.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            rowBG.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             rowBG.topAnchor.constraint(equalTo: contentView.topAnchor, constant: yOffset),
-            rowBG.widthAnchor.constraint(equalToConstant: totalWidth),
             rowBG.heightAnchor.constraint(equalToConstant: MarkdownTableView.rowHeight)
         ])
 

@@ -103,7 +103,7 @@ class WorkflowStepDetailViewController: UIViewController {
 
         let aliasValueLabel = UILabel()
         aliasValueLabel.translatesAutoresizingMaskIntoConstraints = false
-        aliasValueLabel.text = step.displayId ?? step.uniqueId ?? step.id
+        aliasValueLabel.text = step.id
         aliasValueLabel.font = UIFont(name: "Roboto-Regular", size: 14) ?? UIFont.systemFont(ofSize: 14)
         aliasValueLabel.textColor = UIColor.Sphinx.Text
         aliasValueLabel.numberOfLines = 1
@@ -126,21 +126,16 @@ class WorkflowStepDetailViewController: UIViewController {
         contentStack.translatesAutoresizingMaskIntoConstraints = false
         contentScrollView.addSubview(contentStack)
 
-        // Variables section
-        if let attrs = step.rawJSON["attributes"] as? [String: Any],
-           let vars = attrs["vars"] as? [String: Any],
-           !vars.isEmpty {
-            let rows = vars.sorted(by: { $0.key < $1.key }).map { ($0.key, formatValue($0.value)) }
-            contentStack.addArrangedSubview(makeSectionView(title: "Variables", rows: rows))
+        // Variables section — raw JSON values captured in scanner, order fully preserved
+        if !step.orderedVars.isEmpty {
+            let rows = step.orderedVars.map { [$0.0, displayRawJSON($0.1)] }
+            contentStack.addArrangedSubview(makeSectionTable(title: "Variables", rows: rows))
         }
 
-        // Attributes section (all keys except "vars")
-        if let attrs = step.rawJSON["attributes"] as? [String: Any] {
-            let filtered = attrs.filter { $0.key != "vars" }
-            if !filtered.isEmpty {
-                let rows = filtered.sorted(by: { $0.key < $1.key }).map { ($0.key, formatValue($0.value)) }
-                contentStack.addArrangedSubview(makeSectionView(title: "Attributes", rows: rows))
-            }
+        // Attributes section — raw JSON values captured in scanner, order fully preserved
+        if !step.orderedAttributes.isEmpty {
+            let rows = step.orderedAttributes.map { [$0.0, displayRawJSON($0.1)] }
+            contentStack.addArrangedSubview(makeSectionTable(title: "Attributes", rows: rows))
         }
 
         // ---- Divider ----
@@ -185,43 +180,50 @@ class WorkflowStepDetailViewController: UIViewController {
             iconImageView.widthAnchor.constraint(equalToConstant: 32),
             iconImageView.heightAnchor.constraint(equalToConstant: 32),
 
+            // Top: icon + name row
             topRow.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
             topRow.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             topRow.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
 
+            // Step Alias below top row
             aliasSection.topAnchor.constraint(equalTo: topRow.bottomAnchor, constant: 16),
             aliasSection.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             aliasSection.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
 
+            // Buttons pinned to bottom of safe area
+            buttonStack.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20),
+            buttonStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            buttonStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            buttonStack.heightAnchor.constraint(equalToConstant: 44),
+
+            // Divider above button stack
+            divider.bottomAnchor.constraint(equalTo: buttonStack.topAnchor, constant: -16),
+            divider.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            divider.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            divider.heightAnchor.constraint(equalToConstant: 1),
+
+            // Scroll view fills the space between alias and divider
             contentScrollView.topAnchor.constraint(equalTo: aliasSection.bottomAnchor, constant: 16),
             contentScrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             contentScrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            contentScrollView.bottomAnchor.constraint(equalTo: divider.topAnchor, constant: -8),
 
+            // Content stack inside scroll view
             contentStack.topAnchor.constraint(equalTo: contentScrollView.topAnchor, constant: 0),
             contentStack.bottomAnchor.constraint(equalTo: contentScrollView.bottomAnchor, constant: 0),
             contentStack.leadingAnchor.constraint(equalTo: contentScrollView.leadingAnchor, constant: 20),
             contentStack.trailingAnchor.constraint(equalTo: contentScrollView.trailingAnchor, constant: -20),
             contentStack.widthAnchor.constraint(equalTo: contentScrollView.widthAnchor, constant: -40),
-
-            divider.topAnchor.constraint(equalTo: contentScrollView.bottomAnchor, constant: 8),
-            divider.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            divider.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            divider.heightAnchor.constraint(equalToConstant: 1),
-
-            buttonStack.topAnchor.constraint(equalTo: divider.bottomAnchor, constant: 16),
-            buttonStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            buttonStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            buttonStack.heightAnchor.constraint(equalToConstant: 44),
-            buttonStack.bottomAnchor.constraint(lessThanOrEqualTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20)
         ])
     }
 
     // MARK: - Section Builder
 
-    private func makeSectionView(title: String, rows: [(String, String)]) -> UIView {
+    private func makeSectionTable(title: String, rows: [[String]]) -> UIView {
         let container = UIStackView()
         container.axis = .vertical
-        container.spacing = 0
+        container.spacing = 8
+        container.translatesAutoresizingMaskIntoConstraints = false
 
         // Section title
         let titleLabel = UILabel()
@@ -230,73 +232,35 @@ class WorkflowStepDetailViewController: UIViewController {
         titleLabel.textColor = UIColor.Sphinx.SecondaryText
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         container.addArrangedSubview(titleLabel)
-        container.setCustomSpacing(8, after: titleLabel)
 
-        // Rows
-        for (key, value) in rows {
-            let rowStack = UIStackView()
-            rowStack.axis = .horizontal
-            rowStack.spacing = 8
-            rowStack.alignment = .top
+        // MarkdownTableView with Name / Value header row
+        let tableView = MarkdownTableView()
+        tableView.translatesAutoresizingMaskIntoConstraints = false
+        tableView.configure(headers: ["Name", "Value"], rows: rows)
 
-            let keyLabel = UILabel()
-            keyLabel.text = key
-            keyLabel.font = UIFont(name: "Roboto-Regular", size: 13) ?? UIFont.systemFont(ofSize: 13)
-            keyLabel.textColor = UIColor.Sphinx.SecondaryText
-            keyLabel.numberOfLines = 1
-            keyLabel.lineBreakMode = .byTruncatingTail
-            keyLabel.setContentHuggingPriority(.defaultHigh, for: .horizontal)
-            keyLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-            NSLayoutConstraint.activate([
-                keyLabel.widthAnchor.constraint(lessThanOrEqualToConstant: 120)
-            ])
+        let rowCount = rows.count
+        let tableHeight = tableView.intrinsicContentHeight
+        tableView.heightAnchor.constraint(equalToConstant: tableHeight).isActive = true
 
-            let valueLabel = UILabel()
-            valueLabel.text = value
-            valueLabel.font = UIFont(name: "Roboto-Regular", size: 13) ?? UIFont.systemFont(ofSize: 13)
-            valueLabel.textColor = UIColor.Sphinx.Text
-            valueLabel.numberOfLines = 4
-            valueLabel.lineBreakMode = .byTruncatingTail
-            valueLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
-
-            rowStack.addArrangedSubview(keyLabel)
-            rowStack.addArrangedSubview(valueLabel)
-
-            let rowWrapper = UIView()
-            rowWrapper.translatesAutoresizingMaskIntoConstraints = false
-            rowStack.translatesAutoresizingMaskIntoConstraints = false
-            rowWrapper.addSubview(rowStack)
-            NSLayoutConstraint.activate([
-                rowStack.topAnchor.constraint(equalTo: rowWrapper.topAnchor, constant: 8),
-                rowStack.bottomAnchor.constraint(equalTo: rowWrapper.bottomAnchor, constant: -8),
-                rowStack.leadingAnchor.constraint(equalTo: rowWrapper.leadingAnchor),
-                rowStack.trailingAnchor.constraint(equalTo: rowWrapper.trailingAnchor)
-            ])
-
-            container.addArrangedSubview(rowWrapper)
-
-            // Separator
-            let sep = UIView()
-            sep.backgroundColor = UIColor.Sphinx.LightDivider
-            sep.translatesAutoresizingMaskIntoConstraints = false
-            sep.heightAnchor.constraint(equalToConstant: 1).isActive = true
-            container.addArrangedSubview(sep)
-        }
+        container.addArrangedSubview(tableView)
 
         return container
     }
 
     // MARK: - Helpers
 
-    private func formatValue(_ value: Any) -> String {
-        if let str = value as? String { return str }
-        if let num = value as? NSNumber { return num.stringValue }
-        if let data = try? JSONSerialization.data(withJSONObject: value, options: [.prettyPrinted]),
-           let str = String(data: data, encoding: .utf8) {
-            let trimmed = str.trimmingCharacters(in: .whitespacesAndNewlines)
-            return trimmed.count > 120 ? String(trimmed.prefix(120)) + "…" : trimmed
+    /// Strips surrounding quotes from plain JSON strings; leaves objects/arrays/numbers as-is.
+    private func displayRawJSON(_ raw: String) -> String {
+        let s = raw.trimmingCharacters(in: .whitespaces)
+        if s.hasPrefix("\"") && s.hasSuffix("\"") && s.count >= 2 {
+            // Unescape: remove outer quotes and decode \" inside
+            let inner = String(s.dropFirst().dropLast())
+            return inner.replacingOccurrences(of: "\\\"", with: "\"")
+                        .replacingOccurrences(of: "\\\\", with: "\\")
+                        .replacingOccurrences(of: "\\n",  with: "\n")
+                        .replacingOccurrences(of: "\\t",  with: "\t")
         }
-        return "\(value)"
+        return s
     }
 
     private func nodeTypeColor(_ type: WorkflowNodeType) -> UIColor {

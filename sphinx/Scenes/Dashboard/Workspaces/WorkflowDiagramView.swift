@@ -175,6 +175,13 @@ private class WorkflowStepNodeView: UIView {
     // MARK: Condition (diamond) node
     // Uses a CAShapeLayer diamond drawn inside a plain view — no CGAffineTransform on the view.
 
+    private func conditionDisplayText(for step: WorkflowStep) -> String {
+        if let d = step.displayName, !d.isEmpty { return d }
+        if step.name == "IfElseCondition" { return "If / Else" }
+        if step.name.hasPrefix("If") { return "If Condition" }
+        return step.name.isEmpty ? "Condition" : step.name
+    }
+
     private func setupConditionNode() {
         backgroundColor = .clear   // diamond shape will paint itself
         layer.cornerRadius = 0
@@ -187,20 +194,21 @@ private class WorkflowStepNodeView: UIView {
         layer.addSublayer(dl)
         diamondLayer = dl
 
-        // Label centred in the view
+        // Label centred in the view — always use black since the diamond fill is always white
         let nameLabel = UILabel()
-        nameLabel.text = step.displayName ?? step.name
-        nameLabel.textColor = UIColor.Sphinx.Text
+        nameLabel.text = conditionDisplayText(for: step)
+        nameLabel.textColor = .black
         nameLabel.font = UIFont(name: "Roboto-Medium", size: 10) ?? UIFont.systemFont(ofSize: 10, weight: .medium)
         nameLabel.textAlignment = .center
         nameLabel.numberOfLines = 3
         nameLabel.lineBreakMode = .byTruncatingTail
         nameLabel.translatesAutoresizingMaskIntoConstraints = false
         addSubview(nameLabel)
+        bringSubviewToFront(nameLabel)
 
         // Keep label inside the "inner" diamond area (approx 50% of each dimension)
-        let insetX = Self.conditionWidth  * 0.25
-        let insetY = Self.conditionHeight * 0.25
+        let insetX = Self.conditionWidth  * 0.15
+        let insetY = Self.conditionHeight * 0.15
         NSLayoutConstraint.activate([
             nameLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
             nameLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
@@ -362,7 +370,7 @@ class WorkflowDiagramView: UIView, UIScrollViewDelegate {
 
         guard !diagram.steps.isEmpty else { return }
 
-        let hPadding: CGFloat  = 60
+        let hPadding: CGFloat  = 120
         let vPadding: CGFloat  = 80   // space above/below nodes
         let positionScale: CGFloat = 0.5
 
