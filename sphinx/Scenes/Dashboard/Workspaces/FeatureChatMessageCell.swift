@@ -234,7 +234,8 @@ class FeatureChatMessageCell: UITableViewCell {
                 renderSegmentedContent(
                     message.resolvedDisplayText,
                     cachedSegments: message.cachedSegments,
-                    cachedColumnWidths: message.cachedColumnWidths
+                    cachedColumnWidths: message.cachedColumnWidths,
+                    cachedRenderedText: message.cachedRenderedText
                 )
             }
             // For logs messages, configureLogsViews() already manages messageTextView visibility.
@@ -273,7 +274,8 @@ class FeatureChatMessageCell: UITableViewCell {
                 renderSegmentedContent(
                     message.resolvedDisplayText,
                     cachedSegments: message.cachedSegments,
-                    cachedColumnWidths: message.cachedColumnWidths
+                    cachedColumnWidths: message.cachedColumnWidths,
+                    cachedRenderedText: message.cachedRenderedText
                 )
             }
             bubbleView.backgroundColor      = UIColor.Sphinx.ReceivedMsgBG
@@ -367,7 +369,8 @@ class FeatureChatMessageCell: UITableViewCell {
     private func renderSegmentedContent(
         _ rawText: String,
         cachedSegments: [MessageContentSegment]? = nil,
-        cachedColumnWidths: [[CGFloat]]? = nil
+        cachedColumnWidths: [[CGFloat]]? = nil,
+        cachedRenderedText: [NSAttributedString?]? = nil
     ) {
         let segments = cachedSegments ?? MarkdownContentSplitter.split(rawText)
 
@@ -383,14 +386,20 @@ class FeatureChatMessageCell: UITableViewCell {
         var usedMessageTextView = false
         var tableSegmentIndex = 0
 
-        for segment in segments {
+        for (segmentIndex, segment) in segments.enumerated() {
             switch segment {
             case .text(let txt):
-                let rendered = FeatureChatMessageCell.markdownRenderer.render(txt)
-                let mutable = NSMutableAttributedString(attributedString: rendered)
-                mutable.enumerateAttribute(.foregroundColor, in: NSRange(location: 0, length: mutable.length)) { value, range, _ in
-                    if let color = value as? UIColor, color == UIColor.Sphinx.Text {
-                        mutable.addAttribute(.foregroundColor, value: UIColor.Sphinx.TextMessages, range: range)
+                // Use pre-rendered attributed string when available — avoids regex on main thread
+                let mutable: NSMutableAttributedString
+                if let preRendered = cachedRenderedText?[segmentIndex] {
+                    mutable = NSMutableAttributedString(attributedString: preRendered)
+                } else {
+                    let rendered = FeatureChatMessageCell.markdownRenderer.render(txt)
+                    mutable = NSMutableAttributedString(attributedString: rendered)
+                    mutable.enumerateAttribute(.foregroundColor, in: NSRange(location: 0, length: mutable.length)) { value, range, _ in
+                        if let color = value as? UIColor, color == UIColor.Sphinx.Text {
+                            mutable.addAttribute(.foregroundColor, value: UIColor.Sphinx.TextMessages, range: range)
+                        }
                     }
                 }
 

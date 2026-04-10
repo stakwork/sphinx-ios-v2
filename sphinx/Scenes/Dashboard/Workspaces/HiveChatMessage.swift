@@ -354,6 +354,11 @@ struct HiveChatMessage: @unchecked Sendable {
     /// `nil` means column widths have not been pre-measured yet.
     var cachedColumnWidths: [[CGFloat]]? = nil
 
+    /// Pre-rendered `NSAttributedString` for each segment in `cachedSegments`.
+    /// Index is parallel to `cachedSegments`: non-nil for `.text` segments, nil for `.table` segments.
+    /// `nil` outer optional means the cache has not been populated yet.
+    var cachedRenderedText: [NSAttributedString?]? = nil
+
     /// Returns true when this message should be shown in the chat table.
     /// Mirrors the filter applied by `displayMessages` in all chat view controllers.
     var isDisplayable: Bool {
