@@ -359,6 +359,6 @@ struct HiveChatMessage: @unchecked Sendable {
     var isDisplayable: Bool {
         !message.isEmpty ||
         !attachments.isEmpty ||
-        artifacts.contains(where: { $0.type != "STREAM" })
+        artifacts.contains(where: { $0.type != "STREAM" && $0.type != "WORKFLOW" })
     }
 }

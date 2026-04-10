@@ -822,14 +822,59 @@ class TaskChatViewController: UIViewController {
     @objc private func backTapped() {
         navigationController?.popViewController(animated: true)
     }
-
-    // MARK: - Workflow context
-
-    private var latestWorkflowContent: WorkflowContent? {
-        messages
-            .flatMap { $0.artifacts }
-            .last(where: { $0.isWorkflow })?
-            .workflowContent
+    
+    func extractWorkflowContext(
+        from messages: [HiveChatMessage],
+        taskMode: String
+    ) -> WorkflowContent? {
+        var workflowId: Int?
+        var workflowName: String?
+        var workflowRefId: String?
+        var workflowVersionId: String?
+        var workflowJson: String?
+        var projectId: String?
+        var webhook: String?
+        
+        for message in messages.reversed() {
+            for artifact in message.artifacts where artifact.type == "WORKFLOW" {
+                guard let content = artifact.workflowContent else { continue }
+                
+                workflowId = workflowId ?? content.workflowId
+                workflowName = workflowName ?? content.workflowName
+                workflowRefId = workflowRefId ?? content.workflowRefId
+                workflowVersionId = workflowVersionId ?? content.workflowVersionId
+                workflowJson = workflowJson ?? content.workflowJson
+                projectId = projectId ?? content.projectId
+                webhook = webhook ?? content.webhook
+                
+                // Early exit based on mode
+                let hasWorkflowEditorMinimum = workflowId != nil && workflowRefId != nil
+                let hasProjectDebuggerMinimum = projectId != nil
+                
+                if (taskMode == "workflow_editor" && hasWorkflowEditorMinimum) ||
+                   (taskMode == "project_debugger" && hasProjectDebuggerMinimum) {
+                    break
+                }
+            }
+        }
+        
+        // Validate minimum required fields per mode
+        if taskMode == "workflow_editor" && (workflowId == nil || workflowRefId == nil) {
+            return nil
+        }
+        if taskMode == "project_debugger" && projectId == nil {
+            return nil
+        }
+        
+        return WorkflowContent(
+            workflowId: workflowId,
+            workflowName: workflowName ?? (workflowId.map { "Workflow \($0)" }),
+            workflowRefId: workflowRefId,
+            workflowVersionId: workflowVersionId,
+            projectId: projectId,
+            webhook: webhook,
+            workflowJson: workflowJson
+        )
     }
 
     // MARK: - Send routing
@@ -858,11 +903,11 @@ class TaskChatViewController: UIViewController {
     private func sendMessage(_ message: String, replyId: String? = nil, attachments: [[String: AnyObject]] = []) {
         switch task.mode {
         case "workflow_editor":
-            guard let wf = latestWorkflowContent,
+            guard let wf = extractWorkflowContext(from: messages, taskMode: "workflow_editor"),
                   let workflowId = wf.workflowId,
                   let workflowName = wf.workflowName,
                   let workflowRefId = wf.workflowRefId else {
-                sendStandardMessage(message, replyId: replyId, attachments: attachments)
+                DispatchQueue.main.async { self.showSendMessageError() }
                 return
             }
             let step = selectedStep
@@ -874,6 +919,7 @@ class TaskChatViewController: UIViewController {
                 workflowRefId: workflowRefId,
                 workflowVersionId: wf.workflowVersionId,
                 webhook: wf.webhook,
+                workflowJson: wf.workflowJson,
                 stepName: step?.name,
                 stepUniqueId: step?.uniqueId,
                 stepDisplayName: step?.displayName,
@@ -891,17 +937,16 @@ class TaskChatViewController: UIViewController {
                 }
             )
         case "project_debugger":
-            let projectId = latestWorkflowContent?.projectId
-                ?? cachedStakworkProjectId.map { String($0) }
-            guard let projectId else {
-                sendStandardMessage(message, replyId: replyId, attachments: attachments)
+            guard let wf = extractWorkflowContext(from: messages, taskMode: "project_debugger"),
+                  let projectId = wf.projectId ?? (cachedStakworkProjectId.map { String($0) }) else {
+                      DispatchQueue.main.async { self.showSendMessageError() }
                 return
             }
             API.sharedInstance.sendProjectDebuggerMessageWithAuth(
                 taskId: task.id,
                 message: message,
                 projectId: projectId,
-                webhook: latestWorkflowContent?.webhook,
+                webhook: wf.webhook,
                 callback: { [weak self] sentMessage in
                     DispatchQueue.main.async {
                         guard let self, let sentMessage else { return }
