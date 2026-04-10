@@ -12,15 +12,17 @@ import UIKit
 extension HiveChatMessage {
 
     /// Shared renderer used exclusively for background pre-rendering.
-    /// Created once — `MarkdownRenderer` is a pure value transformer with no UIKit mutation.
-    private static let backgroundRenderer: MarkdownRenderer = {
+    /// Created once — `MarkdownRenderer` is a pure value transformer with no mutable state.
+    /// `nonisolated(unsafe)` satisfies Swift 6 strict concurrency: this is safe because
+    /// `MarkdownRenderer` is read-only after initialisation and never mutated.
+    nonisolated(unsafe) private static let backgroundRenderer: MarkdownRenderer = {
         var style = MarkdownStyle()
         style.baseFontSize = 15
         return MarkdownRenderer(style: style)
     }()
 
     /// Bubble max-width multiplier (mirrors FeatureChatMessageCell bubbleWidthConstraint).
-    private static let bubbleWidthRatio: CGFloat = 0.85
+    nonisolated(unsafe) private static let bubbleWidthRatio: CGFloat = 0.85
 
     /// Pre-computes all expensive non-UI work for every message:
     ///   - `cachedSegments`     — avoids re-parsing in `cellForRowAt`
