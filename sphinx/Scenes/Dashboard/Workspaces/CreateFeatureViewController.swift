@@ -519,14 +519,18 @@ class CreateFeatureViewController: UIViewController {
                                     }
 
                                     // Step 4: Save ASSISTANT WORKFLOW artifact
+                                    var artifactContent: [String: AnyObject] = [
+                                        "workflowId": workflowId as AnyObject,
+                                        "workflowName": workflowName as AnyObject,
+                                        "workflowRefId": workflowRefId as AnyObject,
+                                        "workflowVersionId": workflowVersionId as AnyObject
+                                    ]
+                                    if let workflowJson = latestVersion.workflowJson {
+                                        artifactContent["workflowJson"] = workflowJson as AnyObject
+                                    }
                                     let workflowArtifact: [String: AnyObject] = [
                                         "type": "WORKFLOW" as AnyObject,
-                                        "content": [
-                                            "workflowId": workflowId,
-                                            "workflowName": workflowName,
-                                            "workflowRefId": workflowRefId,
-                                            "workflowVersionId": workflowVersionId
-                                        ] as AnyObject
+                                        "content": artifactContent as AnyObject
                                     ]
                                     let artifactMessage = "Loaded: \(workflowName)\nSelect a step on the right as a starting point."
                                     API.sharedInstance.saveTaskMessageWithAuth(
