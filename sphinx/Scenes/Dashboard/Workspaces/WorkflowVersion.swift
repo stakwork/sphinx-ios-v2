@@ -18,8 +18,14 @@ struct WorkflowVersion: Sendable {
     let dateAddedToGraph: Date?
 
     init?(json: JSON) {
-        guard let versionId = json["workflow_version_id"].string,
-              let workflowId = json["workflow_id"].int else { return nil }
+        guard let workflowId = json["workflow_id"].int else { return nil }
+        var versionId: String? = nil
+        if let versionIdString = json["workflow_version_id"].string {
+            versionId = versionIdString
+        } else if let versionIdInt = json["workflow_version_id"].int {
+            versionId = String(versionIdInt)
+        }
+            guard let versionId = versionId else { return nil }
         self.versionId = versionId
         self.workflowId = workflowId
         self.workflowName = json["workflow_name"].string

@@ -884,7 +884,7 @@ extension CreateFeatureViewController: UITextViewDelegate {
         guard !text.isEmpty, let workflowId = Int(text) else { return }
 
         versionComboButton.setTitle("Loading versions…", for: .normal)
-        debounceTimer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: false) { [weak self] _ in
+        debounceTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: false) { [weak self] _ in
             self?.fetchVersions(for: workflowId)
         }
     }
