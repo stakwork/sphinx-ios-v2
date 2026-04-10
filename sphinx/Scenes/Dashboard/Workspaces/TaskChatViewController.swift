@@ -1026,11 +1026,12 @@ class TaskChatViewController: UIViewController {
             callback: { [weak self] messages, podId in
                 // Alamofire fires this callback on the main queue, so we must explicitly
                 // jump to a background thread for the expensive precompute work.
-                // Capture UIScreen.main.bounds.width here on the main thread.
+                // Capture UIScreen properties here on the main thread.
                 let screenWidth = UIScreen.main.bounds.width
+                let screenScale = UIScreen.main.scale
                 DispatchQueue.global(qos: .userInitiated).async {
                     var precomputed = messages
-                    HiveChatMessage.precompute(&precomputed, screenWidth: screenWidth)
+                    HiveChatMessage.precompute(&precomputed, screenWidth: screenWidth, scale: screenScale)
                     DispatchQueue.main.async {
                         guard let self = self else { return }
                         self.loadingWheel.stopAnimating()
@@ -1314,11 +1315,12 @@ extension TaskChatViewController: HivePusherDelegate {
 
         // Pre-compute segment parsing + column widths off the main thread so
         // insertRows never triggers expensive work on scroll.
-        // Capture UIScreen.main.bounds.width here on the main thread.
+        // Capture UIScreen properties here on the main thread.
         let screenWidth = UIScreen.main.bounds.width
+        let screenScale = UIScreen.main.scale
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             var arr = [message]
-            HiveChatMessage.precompute(&arr, screenWidth: screenWidth)
+            HiveChatMessage.precompute(&arr, screenWidth: screenWidth, scale: screenScale)
             let precomputed = arr[0]
             DispatchQueue.main.async {
                 guard let self = self else { return }

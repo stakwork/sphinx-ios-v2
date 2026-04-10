@@ -235,7 +235,8 @@ class FeatureChatMessageCell: UITableViewCell {
                     message.resolvedDisplayText,
                     cachedSegments: message.cachedSegments,
                     cachedColumnWidths: message.cachedColumnWidths,
-                    cachedRenderedText: message.cachedRenderedText
+                    cachedRenderedText: message.cachedRenderedText,
+                    cachedTableImages: message.cachedTableImages
                 )
             }
             // For logs messages, configureLogsViews() already manages messageTextView visibility.
@@ -275,7 +276,8 @@ class FeatureChatMessageCell: UITableViewCell {
                     message.resolvedDisplayText,
                     cachedSegments: message.cachedSegments,
                     cachedColumnWidths: message.cachedColumnWidths,
-                    cachedRenderedText: message.cachedRenderedText
+                    cachedRenderedText: message.cachedRenderedText,
+                    cachedTableImages: message.cachedTableImages
                 )
             }
             bubbleView.backgroundColor      = UIColor.Sphinx.ReceivedMsgBG
@@ -370,7 +372,8 @@ class FeatureChatMessageCell: UITableViewCell {
         _ rawText: String,
         cachedSegments: [MessageContentSegment]? = nil,
         cachedColumnWidths: [[CGFloat]]? = nil,
-        cachedRenderedText: [NSAttributedString?]? = nil
+        cachedRenderedText: [NSAttributedString?]? = nil,
+        cachedTableImages: [UIImage]? = nil
     ) {
         let segments = cachedSegments ?? MarkdownContentSplitter.split(rawText)
 
@@ -433,13 +436,17 @@ class FeatureChatMessageCell: UITableViewCell {
 
             case .table(let headers, let rows):
                 if !usedMessageTextView {
-                    // No text segment came before this table — hide the messageTextView
                     messageTextView.isHidden = true
                     usedMessageTextView = true
                 }
                 let tableView = MarkdownTableView()
-                // Use pre-computed widths when available to avoid measuring on the main thread
-                if let widths = cachedColumnWidths, tableSegmentIndex < widths.count {
+                // Fast path: use pre-rendered UIImage (zero view creation, just imageView.image =)
+                if let images = cachedTableImages, tableSegmentIndex < images.count,
+                   let widths = cachedColumnWidths, tableSegmentIndex < widths.count {
+                    let tableW = widths[tableSegmentIndex].reduce(0, +)
+                    let tableH = CGFloat(rows.count + 1) * 36
+                    tableView.configure(image: images[tableSegmentIndex], tableWidth: tableW, tableHeight: tableH)
+                } else if let widths = cachedColumnWidths, tableSegmentIndex < widths.count {
                     tableView.configure(headers: headers, rows: rows, precomputedColumnWidths: widths[tableSegmentIndex])
                 } else {
                     tableView.configure(headers: headers, rows: rows)

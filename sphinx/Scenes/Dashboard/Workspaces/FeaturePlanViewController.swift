@@ -1389,11 +1389,12 @@ class FeaturePlanViewController: UIViewController {
             callback: { [weak self] messages in
                 // Alamofire fires this callback on the main queue, so we must explicitly
                 // jump to a background thread for the expensive precompute work.
-                // Capture UIScreen.main.bounds.width here on the main thread.
+                // Capture UIScreen properties here on the main thread.
                 let screenWidth = UIScreen.main.bounds.width
+                let screenScale = UIScreen.main.scale
                 DispatchQueue.global(qos: .userInitiated).async {
                     var displayable = messages.filter { $0.isDisplayable }
-                    HiveChatMessage.precompute(&displayable, screenWidth: screenWidth)
+                    HiveChatMessage.precompute(&displayable, screenWidth: screenWidth, scale: screenScale)
                     DispatchQueue.main.async {
                         guard let self = self else { return }
                         self.chatLoadingWheel.stopAnimating()
@@ -1994,11 +1995,12 @@ extension FeaturePlanViewController: HivePusherDelegate {
 
         // Pre-compute segment parsing + column widths off the main thread so
         // insertRows never triggers expensive work on scroll.
-        // Capture UIScreen.main.bounds.width here on the main thread.
+        // Capture UIScreen properties here on the main thread.
         let screenWidth = UIScreen.main.bounds.width
+        let screenScale = UIScreen.main.scale
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             var arr = [message]
-            HiveChatMessage.precompute(&arr, screenWidth: screenWidth)
+            HiveChatMessage.precompute(&arr, screenWidth: screenWidth, scale: screenScale)
             let precomputed = arr[0]
             DispatchQueue.main.async {
                 guard let self = self else { return }

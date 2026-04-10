@@ -359,6 +359,10 @@ struct HiveChatMessage: @unchecked Sendable {
     /// `nil` outer optional means the cache has not been populated yet.
     var cachedRenderedText: [NSAttributedString?]? = nil
 
+    /// Pre-rendered UIImages for each `.table` segment, in document order.
+    /// Rendered on the background thread via Core Graphics — zero view creation in cellForRowAt.
+    var cachedTableImages: [UIImage]? = nil
+
     /// Pre-computed estimated row height for `UITableView.estimatedHeightForRowAt`.
     /// Populated by `precompute()` on the background thread so the table view never
     /// has to measure a cell to produce an estimate.
