@@ -359,6 +359,11 @@ struct HiveChatMessage: @unchecked Sendable {
     /// `nil` outer optional means the cache has not been populated yet.
     var cachedRenderedText: [NSAttributedString?]? = nil
 
+    /// Pre-computed estimated row height for `UITableView.estimatedHeightForRowAt`.
+    /// Populated by `precompute()` on the background thread so the table view never
+    /// has to measure a cell to produce an estimate.
+    var estimatedCellHeight: CGFloat? = nil
+
     /// Returns true when this message should be shown in the chat table.
     /// Mirrors the filter applied by `displayMessages` in all chat view controllers.
     var isDisplayable: Bool {

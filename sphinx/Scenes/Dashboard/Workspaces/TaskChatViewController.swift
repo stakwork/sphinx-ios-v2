@@ -1024,20 +1024,24 @@ class TaskChatViewController: UIViewController {
         API.sharedInstance.fetchTaskMessagesWithAuth(
             taskId: task.id,
             callback: { [weak self] messages, podId in
-                // Pre-compute segment parsing + column widths on this background thread
-                // before jumping to main, so cellForRowAt never blocks scroll.
-                var precomputed = messages
-                HiveChatMessage.precompute(&precomputed)
-                DispatchQueue.main.async {
-                    guard let self = self else { return }
-                    self.loadingWheel.stopAnimating()
-                    self.messages = precomputed
-                    self.chatTableView.isHidden = false
-                    self.emptyLabel.isHidden = !precomputed.isEmpty
-                    self.chatTableView.reloadData()
-                    if !precomputed.isEmpty { self.scrollToBottom(animated: false) }
-                    self.task.podId = podId
-                    self.releasePodButton.isHidden = (podId == nil)
+                // Alamofire fires this callback on the main queue, so we must explicitly
+                // jump to a background thread for the expensive precompute work.
+                // Capture UIScreen.main.bounds.width here on the main thread.
+                let screenWidth = UIScreen.main.bounds.width
+                DispatchQueue.global(qos: .userInitiated).async {
+                    var precomputed = messages
+                    HiveChatMessage.precompute(&precomputed, screenWidth: screenWidth)
+                    DispatchQueue.main.async {
+                        guard let self = self else { return }
+                        self.loadingWheel.stopAnimating()
+                        self.messages = precomputed
+                        self.chatTableView.isHidden = false
+                        self.emptyLabel.isHidden = !precomputed.isEmpty
+                        self.chatTableView.reloadData()
+                        if !precomputed.isEmpty { self.scrollToBottom(animated: false) }
+                        self.task.podId = podId
+                        self.releasePodButton.isHidden = (podId == nil)
+                    }
                 }
             },
             errorCallback: { [weak self] in
@@ -1310,9 +1314,11 @@ extension TaskChatViewController: HivePusherDelegate {
 
         // Pre-compute segment parsing + column widths off the main thread so
         // insertRows never triggers expensive work on scroll.
+        // Capture UIScreen.main.bounds.width here on the main thread.
+        let screenWidth = UIScreen.main.bounds.width
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             var arr = [message]
-            HiveChatMessage.precompute(&arr)
+            HiveChatMessage.precompute(&arr, screenWidth: screenWidth)
             let precomputed = arr[0]
             DispatchQueue.main.async {
                 guard let self = self else { return }
@@ -1447,6 +1453,10 @@ extension TaskChatViewController: AgentEventsSSEDelegate {
 extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         displayMessages.count
+    }
+
+    func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
+        return displayMessages[indexPath.row].estimatedCellHeight ?? 80
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {

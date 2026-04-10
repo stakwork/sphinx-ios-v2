@@ -1387,25 +1387,30 @@ class FeaturePlanViewController: UIViewController {
         API.sharedInstance.fetchFeatureChatWithAuth(
             featureId: feature.id,
             callback: { [weak self] messages in
-                // Pre-compute segment parsing + column widths on this background thread
-                var displayable = messages.filter { $0.isDisplayable }
-                HiveChatMessage.precompute(&displayable)
-                DispatchQueue.main.async {
-                    guard let self = self else { return }
-                    self.chatLoadingWheel.stopAnimating()
-                    self.chatTableView.isHidden = false
-                    self.messages = displayable
-                    self.chatTableView.reloadData()
-                    self.scrollToBottom()
+                // Alamofire fires this callback on the main queue, so we must explicitly
+                // jump to a background thread for the expensive precompute work.
+                // Capture UIScreen.main.bounds.width here on the main thread.
+                let screenWidth = UIScreen.main.bounds.width
+                DispatchQueue.global(qos: .userInitiated).async {
+                    var displayable = messages.filter { $0.isDisplayable }
+                    HiveChatMessage.precompute(&displayable, screenWidth: screenWidth)
+                    DispatchQueue.main.async {
+                        guard let self = self else { return }
+                        self.chatLoadingWheel.stopAnimating()
+                        self.chatTableView.isHidden = false
+                        self.messages = displayable
+                        self.chatTableView.reloadData()
+                        self.scrollToBottom()
 
-                    if let streamInfo = messages.filter({
-                        $0.artifacts.first(where: { $0.isStream })?.streamInfo != nil
-                    }).first?.artifacts.first(where: { $0.isStream })?.streamInfo {
-                        self.connectAgentEventsStream(
-                            requestId: streamInfo.requestId,
-                            eventsToken: streamInfo.eventsToken,
-                            baseUrl: streamInfo.baseUrl
-                        )
+                        if let streamInfo = messages.filter({
+                            $0.artifacts.first(where: { $0.isStream })?.streamInfo != nil
+                        }).first?.artifacts.first(where: { $0.isStream })?.streamInfo {
+                            self.connectAgentEventsStream(
+                                requestId: streamInfo.requestId,
+                                eventsToken: streamInfo.eventsToken,
+                                baseUrl: streamInfo.baseUrl
+                            )
+                        }
                     }
                 }
             },
@@ -1598,7 +1603,12 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
         }
         return displayMessages.count
     }
-    
+
+    func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
+        guard tableView === chatTableView else { return 80 }
+        return displayMessages[indexPath.row].estimatedCellHeight ?? 80
+    }
+
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         if tableView === tasksTableView {
             // Row 0: dependency diagram (only when at least one task has a dependency)
@@ -1984,9 +1994,11 @@ extension FeaturePlanViewController: HivePusherDelegate {
 
         // Pre-compute segment parsing + column widths off the main thread so
         // insertRows never triggers expensive work on scroll.
+        // Capture UIScreen.main.bounds.width here on the main thread.
+        let screenWidth = UIScreen.main.bounds.width
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             var arr = [message]
-            HiveChatMessage.precompute(&arr)
+            HiveChatMessage.precompute(&arr, screenWidth: screenWidth)
             let precomputed = arr[0]
             DispatchQueue.main.async {
                 guard let self = self else { return }
