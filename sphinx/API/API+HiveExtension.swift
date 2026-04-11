@@ -1100,7 +1100,7 @@ extension API {
         params["stepUniqueId"] = (stepUniqueId ?? "") as AnyObject
         params["stepDisplayName"] = (stepDisplayName ?? "") as AnyObject
         params["stepType"] = (stepType ?? "") as AnyObject
-        params["stepData"] = (stepData as [String: AnyObject]? ?? [:]) as AnyObject
+        params["stepData"] = (stepData ?? [:]) as AnyObject
 
         guard let request = createRequest(urlString, bodyParams: params as NSDictionary, method: "POST", token: authToken) else {
             errorCallback()

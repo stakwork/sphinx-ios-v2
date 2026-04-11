@@ -346,8 +346,14 @@ class CreateFeatureViewController: UIViewController {
         switch newMode {
         case .debugRun, .loadWorkflow:
             messageTextView.keyboardType = .numberPad
+            let toolbar = UIToolbar()
+            toolbar.sizeToFit()
+            let done = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(dismissKeyboard))
+            toolbar.items = [UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil), done]
+            messageTextView.inputAccessoryView = toolbar
         case .feature, .task:
             messageTextView.keyboardType = .default
+            messageTextView.inputAccessoryView = nil
         }
         messageTextView.reloadInputViews()
         updateSendButtonState()
@@ -461,6 +467,10 @@ class CreateFeatureViewController: UIViewController {
 
     @objc private func closeButtonTouched() {
         dismiss(animated: true, completion: nil)
+    }
+
+    @objc private func dismissKeyboard() {
+        view.endEditing(true)
     }
 
     @objc private func sendButtonTouched() {
