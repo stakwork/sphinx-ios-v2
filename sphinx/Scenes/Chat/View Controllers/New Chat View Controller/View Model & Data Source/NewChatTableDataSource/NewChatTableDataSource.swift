@@ -138,6 +138,9 @@ import CoreData
     let dataSourceQueue = DispatchQueue(label: "chat.datasourceQueue", qos: .userInteractive)
     let mediaReloadQueue = DispatchQueue(label: "chat.media.datasourceQueue", qos: .userInteractive)
     
+    ///Debounce work item for coalescing rapid NSFetchedResultsController callbacks
+    var pendingProcessWork: DispatchWorkItem?
+    
     var isThread: Bool {
         get {
             return false

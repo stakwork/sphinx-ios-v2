@@ -64,16 +64,17 @@ extension NewChatTableDataSource {
     
     func updateSnapshot() {
         let snapshot = makeSnapshotForCurrentState()
-        DispatchQueue.main.async {
+        
+        DispatchQueue.global(qos: .background).async {
             CoreDataManager.sharedManager.saveContext()
-            
+        }
+        
+        DispatchQueue.main.async {
             self.saveSnapshotCurrentState()
-            self.dataSource.apply(snapshot, animatingDifferences: false)
+            self.dataSource.apply(snapshot, animatingDifferences: false) { [weak self] in
+                self?.loadingMoreItems = false
+            }
             self.restoreScrollLastPosition()
-            
-            DelayPerformedHelper.performAfterDelay(seconds: 1.0, completion: {
-                self.loadingMoreItems = false
-            })
         }
     }    
     
@@ -136,166 +137,173 @@ extension NewChatTableDataSource {
         showLoadingMore: Bool
     ) {
         let sortedMessages = messages
-        //let sortedMessages = messages.sorted(by: {$0.id < $1.id})
         let chat = chat ?? contact?.getFakeChat()
-        
+
         guard let chat = chat, let owner = owner else {
             return
         }
-        
+
         startSearchProcess()
-                
-        var newMsgCount = 0
-        var array: [MessageTableCellState] = []
-        var searchM: [(Int, MessageTableCellState)] = []
-        
+
+        // --- Phase 1: Fast Core Data fetches on the calling (main) thread ---
         let admin = chat.getAdmin()
         let contact = chat.getConversationContact()
-        
-        let replyingMessagesMap = getReplyingMessagesMapFor(messages: messages)
-        
-        let boostMessagesMap = getBoostMessagesMapFor(messages: messages)
-        let requestResponsesMap = getMemberRequestResponsesMapFor(messages: messages)
-        let purchaseMessagesMap = getPurchaseMessagesMapFor(messages: messages)
-        
-        let threadMessagesMap = isSearching ? [:] : getThreadMessagesFor(messages: messages)
-        let linkContactsArray = getLinkContactsArrayFor(messages: messages)
-        let linkTribesArray = getLinkTribesArrayFor(messages: messages)
-        let webLinksArray = getWebLinksArrayFor(messages: messages)
-        
-        var groupingDate: Date? = nil
-        var invoiceData: (Int, Int) = (0, 0)
-        
+
+        let replyingMessagesMap   = getReplyingMessagesMapFor(messages: messages)
+        let boostMessagesMap      = getBoostMessagesMapFor(messages: messages)
+        let requestResponsesMap   = getMemberRequestResponsesMapFor(messages: messages)
+        let purchaseMessagesMap   = getPurchaseMessagesMapFor(messages: messages)
+        let threadMessagesMap     = isSearching ? [:] : getThreadMessagesFor(messages: messages)
+        let linkContactsArray     = getLinkContactsArrayFor(messages: messages)
+        let linkTribesArray       = getLinkTribesArrayFor(messages: messages)
+        let webLinksArray         = getWebLinksArrayFor(messages: messages)
+
         let filteredThreadMessages: [TransactionMessage] = isSearching ? sortedMessages : filterThreadMessagesFrom(
             messages: sortedMessages,
             threadMessagesMap: threadMessagesMap
         )
-        
+
         let originalMessagesMap = getOriginalMessagesFor(
             threadMessages: filteredThreadMessages,
             threadMessagesMap: threadMessagesMap
         )
-        
-        if showLoadingMore {
-            array.insert(
-                MessageTableCellState(
-                    chat: chat,
-                    owner: owner,
-                    contact: contact,
-                    tribeAdmin: admin,
-                    isLoadingMoreMessages: true
-                ),
-                at: 0
-            )
-        }
 
-        for (index, message) in filteredThreadMessages.enumerated() {
-            
-            if message.isGroupKickMessage() && chat.isTribeICreated {
-                continue
+        let isSearchingSnapshot = isSearching
+        let headerImage = self.headerImage
+        let timezoneData = chat.timezoneData
+        let isTribeICreated = chat.isTribeICreated
+        let ownerId = owner.id
+
+        // --- Phase 2: Debounced background compute ---
+        pendingProcessWork?.cancel()
+        let work = DispatchWorkItem { [weak self] in
+            guard let self = self else { return }
+
+            // processAliasesFrom only reads already-fetched TransactionMessage values
+            if !self.isThread {
+                self.chat?.processAliasesFrom(messages: messages.reversed())
             }
-            
-            invoiceData = (
-                invoiceData.0 + ((message.isPayment() && message.isIncoming(ownerId: owner.id)) ? -1 : 0),
-                invoiceData.1 + ((message.isPayment() && message.isOutgoing(ownerId: owner.id)) ? -1 : 0)
-            )
-            
-            let replyingMessage = (message.replyUUID != nil) ? replyingMessagesMap[message.replyUUID!] : nil
-            let boostsMessages = (message.uuid != nil) ? (boostMessagesMap[message.uuid!] ?? []) : []
-            let memberRequestResponses = (message.uuid != nil) ? (requestResponsesMap[message.uuid!] ?? []) : []
-            let threadMessages = (message.threadUUID != nil) ? (threadMessagesMap[message.threadUUID!] ?? []) : []
-            let threadOriginalMsg = (message.threadUUID != nil) ? originalMessagesMap[message.threadUUID!] : nil
-            let purchaseMessages = purchaseMessagesMap[message.getMUID()] ?? [:]
-            let linkContact = linkContactsArray[message.id]
-            let linkTribe = linkTribesArray[message.id]
-            let linkWeb = webLinksArray[message.id]
-            
-            let bubbleStateAndDate = getBubbleBackgroundForMessage(
-                msg: threadMessages.last ?? message,
-                with: index,
-                in: filteredThreadMessages,
-                and: originalMessagesMap,
-                groupingDate: &groupingDate,
-                isThreadRow: threadMessages.count > 1,
-                showLoadingMore: showLoadingMore
-            )
-            
-            if let separatorDate = bubbleStateAndDate.1 {
+
+            var newMsgCount = 0
+            var array: [MessageTableCellState] = []
+            var searchM: [(Int, MessageTableCellState)] = []
+
+            var groupingDate: Date? = nil
+            var invoiceData: (Int, Int) = (0, 0)
+
+            if showLoadingMore {
                 array.insert(
                     MessageTableCellState(
                         chat: chat,
                         owner: owner,
                         contact: contact,
                         tribeAdmin: admin,
-                        separatorDate: separatorDate,
-                        invoiceData: (invoiceData.0 > 0, invoiceData.1 > 0),
-                        timezoneData: chat.timezoneData
+                        isLoadingMoreMessages: true
                     ),
                     at: 0
                 )
             }
-            
-            let messageTableCellState = MessageTableCellState(
-                message: message,
-                threadOriginalMessage: threadOriginalMsg,
-                chat: chat,
-                owner: owner,
-                contact: contact,
-                tribeAdmin: admin,
-                separatorDate: nil,
-                bubbleState: bubbleStateAndDate.0,
-                contactImage: headerImage,
-                replyingMessage: replyingMessage,
-                threadMessages: threadMessages,
-                boostMessages: boostsMessages,
-                memberRequestResponse: memberRequestResponses.first,
-                purchaseMessages: purchaseMessages,
-                linkContact: linkContact,
-                linkTribe: linkTribe,
-                linkWeb: linkWeb,
-                invoiceData: (invoiceData.0 > 0, invoiceData.1 > 0),
-                timezoneData: chat.timezoneData
-            )
-            
-            array.insert(messageTableCellState, at: 0)
-            
-            invoiceData = (
-                invoiceData.0 + ((message.isInvoice() && message.isPaid() && message.isOutgoing(ownerId: owner.id)) ? 1 : 0),
-                invoiceData.1 + ((message.isInvoice() && message.isPaid() && message.isIncoming(ownerId: owner.id)) ? 1 : 0)
-            )
-            
-            newMsgCount += getNewMessageCountFor(
-                message: message,
-                and: owner,
-                threadMessages: threadMessages
-            )
-            
-             if let match = processForSearch(
-                message: message,
-                messageTableCellState: messageTableCellState,
-                index: array.count - 1
-             ) {
-                 searchM.append(match)
-             }
-        }
-        
-        messageTableCellStateArray = array
-        
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else {
-                return
+
+            for (index, message) in filteredThreadMessages.enumerated() {
+
+                if message.isGroupKickMessage() && isTribeICreated {
+                    continue
+                }
+
+                invoiceData = (
+                    invoiceData.0 + ((message.isPayment() && message.isIncoming(ownerId: ownerId)) ? -1 : 0),
+                    invoiceData.1 + ((message.isPayment() && message.isOutgoing(ownerId: ownerId)) ? -1 : 0)
+                )
+
+                let replyingMessage        = (message.replyUUID != nil) ? replyingMessagesMap[message.replyUUID!] : nil
+                let boostsMessages         = (message.uuid != nil) ? (boostMessagesMap[message.uuid!] ?? []) : []
+                let memberRequestResponses = (message.uuid != nil) ? (requestResponsesMap[message.uuid!] ?? []) : []
+                let threadMessages         = (message.threadUUID != nil) ? (threadMessagesMap[message.threadUUID!] ?? []) : []
+                let threadOriginalMsg      = (message.threadUUID != nil) ? originalMessagesMap[message.threadUUID!] : nil
+                let purchaseMessages       = purchaseMessagesMap[message.getMUID()] ?? [:]
+                let linkContact            = linkContactsArray[message.id]
+                let linkTribe              = linkTribesArray[message.id]
+                let linkWeb                = webLinksArray[message.id]
+
+                let bubbleStateAndDate = self.getBubbleBackgroundForMessage(
+                    msg: threadMessages.last ?? message,
+                    with: index,
+                    in: filteredThreadMessages,
+                    and: originalMessagesMap,
+                    groupingDate: &groupingDate,
+                    isThreadRow: threadMessages.count > 1,
+                    showLoadingMore: showLoadingMore
+                )
+
+                if let separatorDate = bubbleStateAndDate.1 {
+                    array.insert(
+                        MessageTableCellState(
+                            chat: chat,
+                            owner: owner,
+                            contact: contact,
+                            tribeAdmin: admin,
+                            separatorDate: separatorDate,
+                            invoiceData: (invoiceData.0 > 0, invoiceData.1 > 0),
+                            timezoneData: timezoneData
+                        ),
+                        at: 0
+                    )
+                }
+
+                let messageTableCellState = MessageTableCellState(
+                    message: message,
+                    threadOriginalMessage: threadOriginalMsg,
+                    chat: chat,
+                    owner: owner,
+                    contact: contact,
+                    tribeAdmin: admin,
+                    separatorDate: nil,
+                    bubbleState: bubbleStateAndDate.0,
+                    contactImage: headerImage,
+                    replyingMessage: replyingMessage,
+                    threadMessages: threadMessages,
+                    boostMessages: boostsMessages,
+                    memberRequestResponse: memberRequestResponses.first,
+                    purchaseMessages: purchaseMessages,
+                    linkContact: linkContact,
+                    linkTribe: linkTribe,
+                    linkWeb: linkWeb,
+                    invoiceData: (invoiceData.0 > 0, invoiceData.1 > 0),
+                    timezoneData: timezoneData
+                )
+
+                array.insert(messageTableCellState, at: 0)
+
+                invoiceData = (
+                    invoiceData.0 + ((message.isInvoice() && message.isPaid() && message.isOutgoing(ownerId: ownerId)) ? 1 : 0),
+                    invoiceData.1 + ((message.isInvoice() && message.isPaid() && message.isIncoming(ownerId: ownerId)) ? 1 : 0)
+                )
+
+                newMsgCount += self.getNewMessageCountFor(
+                    message: message,
+                    and: owner,
+                    threadMessages: threadMessages
+                )
+
+                if let match = self.processForSearch(
+                    message: message,
+                    messageTableCellState: messageTableCellState,
+                    index: array.count - 1
+                ) {
+                    searchM.append(match)
+                }
             }
+
+            self.messageTableCellStateArray = array
             self.updateSnapshot()
-            
-//            self.delegate?.configureNewMessagesIndicatorWith(
-//                newMsgCount: newMsgCount
-//            )
-            self.delegate?.configureNewMessagesIndicatorWith(
-                newMsgCount: 0
-            )
-            
-            self.finishSearchProcess(matches: searchM)
+
+            DispatchQueue.main.async {
+                self.delegate?.configureNewMessagesIndicatorWith(newMsgCount: 0)
+                self.finishSearchProcess(matches: searchM)
+            }
         }
+        pendingProcessWork = work
+        dataSourceQueue.asyncAfter(deadline: .now() + 0.1, execute: work)
     }
     
     func filterThreadMessagesFrom(
@@ -862,10 +870,7 @@ extension NewChatTableDataSource : @preconcurrency NSFetchedResultsControllerDel
             
             if controller == messagesResultsController {
                 if let messages = firstSection.objects as? [TransactionMessage] {
-                    if !self.isThread {
-                        ///Do not processes aliases and timezone on thread since it came from chat
-                        self.chat?.processAliasesFrom(messages: messages.reversed())
-                    }
+                    // processAliasesFrom is now dispatched inside the background work item in processMessages
                     
                     self.messagesCountFetched = messages.count
                     self.messagesArray = messages.filter({ !$0.isApprovedRequest() }).reversed()
