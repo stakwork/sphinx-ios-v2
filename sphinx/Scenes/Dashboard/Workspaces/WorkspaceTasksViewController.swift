@@ -176,6 +176,7 @@ extension WorkspaceTasksViewController: UITableViewDataSource, UITableViewDelega
         guard let cell = tableView.dequeueReusableCell(
             withIdentifier: WorkspaceTaskTableViewCell.reuseID, for: indexPath
         ) as? WorkspaceTaskTableViewCell else { return UITableViewCell() }
+        let task = tasks[indexPath.row]
         cell.configure(with: tasks[indexPath.row], isLastRow: indexPath.row == tasks.count - 1)
         cell.onPRBadgeTapped = { url in UIApplication.shared.open(url) }
         cell.onRetryWorkflowTapped = { [weak self] in

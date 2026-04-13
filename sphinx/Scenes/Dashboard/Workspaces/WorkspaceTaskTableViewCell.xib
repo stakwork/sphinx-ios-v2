@@ -51,54 +51,54 @@
                         <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <nil key="highlightedColor"/>
                     </label>
-                    <stackView opaque="NO" contentMode="scaleToFill" axis="horizontal" alignment="center" spacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="toggles-stack-01">
-                        <rect key="frame" x="16" y="68" width="320" height="22"/>
+                    <stackView opaque="NO" contentMode="scaleToFill" alignment="center" spacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="toggles-stack-01">
+                        <rect key="frame" x="16" y="39" width="263.66666666666669" height="22"/>
                         <subviews>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="249" text="Auto Merge" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="auto-merge-lbl-01">
-                                <rect key="frame" x="0.0" y="0.0" width="67.333333333333329" height="22"/>
+                                <rect key="frame" x="0.0" y="0.0" width="57" height="22"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="22" id="SyM-S6-HEs"/>
                                 </constraints>
-                                <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="13"/>
+                                <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="11"/>
                                 <color key="textColor" name="SecondaryText"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="auto-merge-toggle-01" customClass="SphinxToggleView" customModule="sphinx" customModuleProvider="target">
-                                <rect key="frame" x="75.333333333333329" y="0.0" width="38" height="22"/>
+                                <rect key="frame" x="65" y="0.0" width="38" height="22"/>
                                 <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="22" id="toggle-height-01"/>
                                     <constraint firstAttribute="width" constant="38" id="toggle-width-01"/>
                                 </constraints>
                             </view>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="249" text="Run Build" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="run-build-lbl-01">
-                                <rect key="frame" x="121.333333333333329" y="0.0" width="60" height="22"/>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="249" text="Build" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="run-build-lbl-01">
+                                <rect key="frame" x="111" y="0.0" width="25.333333333333343" height="22"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="22" id="run-build-lbl-height-01"/>
                                 </constraints>
-                                <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="13"/>
+                                <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="11"/>
                                 <color key="textColor" name="SecondaryText"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="run-build-toggle-01" customClass="SphinxToggleView" customModule="sphinx" customModuleProvider="target">
-                                <rect key="frame" x="189.333333333333343" y="0.0" width="38" height="22"/>
+                                <rect key="frame" x="144.33333333333334" y="0.0" width="38" height="22"/>
                                 <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="22" id="run-build-toggle-height-01"/>
                                     <constraint firstAttribute="width" constant="38" id="run-build-toggle-width-01"/>
                                 </constraints>
                             </view>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="249" text="Run Tests" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="run-test-lbl-01">
-                                <rect key="frame" x="235.333333333333343" y="0.0" width="60" height="22"/>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="249" text="Tests" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="run-test-lbl-01">
+                                <rect key="frame" x="190.33333333333334" y="0.0" width="27.333333333333343" height="22"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="22" id="run-test-lbl-height-01"/>
                                 </constraints>
-                                <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="13"/>
+                                <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="11"/>
                                 <color key="textColor" name="SecondaryText"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="run-test-toggle-01" customClass="SphinxToggleView" customModule="sphinx" customModuleProvider="target">
-                                <rect key="frame" x="303.333333333333343" y="0.0" width="38" height="22"/>
+                                <rect key="frame" x="225.66666666666666" y="0.0" width="37.999999999999972" height="22"/>
                                 <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="22" id="run-test-toggle-height-01"/>
@@ -107,12 +107,66 @@
                             </view>
                         </subviews>
                     </stackView>
-                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Repository" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="repo-lbl-01">
-                        <rect key="frame" x="16" y="111" width="63" height="16"/>
-                        <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="13"/>
-                        <color key="textColor" name="SecondaryText"/>
-                        <nil key="highlightedColor"/>
-                    </label>
+                    <stackView opaque="NO" contentMode="scaleToFill" alignment="center" spacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="8if-eY-qbC">
+                        <rect key="frame" x="16" y="107.66666666666667" width="361" height="20.333333333333329"/>
+                        <subviews>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Repository" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="repo-lbl-01">
+                                <rect key="frame" x="0.0" y="2.6666666666666581" width="0.0" height="15.333333333333336"/>
+                                <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="13"/>
+                                <color key="textColor" name="SecondaryText"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="bsI-D9-wx8">
+                                <rect key="frame" x="8" y="2.6666666666666572" width="139.33333333333334" height="15"/>
+                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="15" id="zK5-E4-6r9"/>
+                                </constraints>
+                            </view>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="L" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Ntl-0A-4o4">
+                                <rect key="frame" x="155.33333333333334" y="0.0" width="9.3333333333333428" height="20.333333333333332"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="L" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="hIf-h2-aBe">
+                                <rect key="frame" x="172.66666666666666" y="0.0" width="9.3333333333333428" height="20.333333333333332"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="sP1-LA-Tga">
+                                <rect key="frame" x="190" y="0.3333333333333286" width="20" height="20"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="20" id="6y4-iQ-CwX"/>
+                                    <constraint firstAttribute="width" constant="20" id="Kxl-w1-nsc"/>
+                                </constraints>
+                                <state key="normal" title="Button"/>
+                                <buttonConfiguration key="configuration" style="plain"/>
+                            </button>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="L" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="QQV-MO-WT8">
+                                <rect key="frame" x="218" y="0.3333333333333286" width="55" height="20"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="55" id="kyx-ap-LJd"/>
+                                    <constraint firstAttribute="height" constant="20" id="wJv-Hu-Diw"/>
+                                </constraints>
+                                <fontDescription key="fontDescription" name="Roboto-Medium" family="Roboto" pointSize="16"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Etg-6L-I7f">
+                                <rect key="frame" x="281" y="0.3333333333333286" width="80" height="20"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="20" id="ieY-lC-LOZ"/>
+                                    <constraint firstAttribute="width" constant="80" id="jvK-13-faB"/>
+                                </constraints>
+                                <state key="normal" title="Button"/>
+                                <buttonConfiguration key="configuration" style="plain" title="MERGED">
+                                    <fontDescription key="titleFontDescription" name="Roboto-Medium" family="Roboto" pointSize="11"/>
+                                </buttonConfiguration>
+                            </button>
+                        </subviews>
+                    </stackView>
                     <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="sep-view-01">
                         <rect key="frame" x="16" y="139" width="377" height="1"/>
                         <color key="backgroundColor" name="Divider"/>
@@ -123,13 +177,14 @@
                 </subviews>
                 <color key="backgroundColor" name="Body"/>
                 <constraints>
-                    <constraint firstItem="sep-view-01" firstAttribute="top" secondItem="repo-lbl-01" secondAttribute="bottom" constant="12" id="0Qw-aZ-bza"/>
-                    <constraint firstItem="toggles-stack-01" firstAttribute="top" secondItem="priority-badge-01" secondAttribute="bottom" constant="8" id="toggles-stack-top-01"/>
-                    <constraint firstItem="toggles-stack-01" firstAttribute="leading" secondItem="content-view-01" secondAttribute="leading" constant="16" id="toggles-stack-lead-01"/>
+                    <constraint firstItem="8if-eY-qbC" firstAttribute="leading" secondItem="content-view-01" secondAttribute="leading" constant="16" id="HlN-CH-jpt"/>
+                    <constraint firstAttribute="bottom" secondItem="8if-eY-qbC" secondAttribute="bottom" constant="12" id="MSr-du-Wzv"/>
+                    <constraint firstItem="toggles-stack-01" firstAttribute="top" secondItem="title-lbl-01" secondAttribute="bottom" constant="9" id="Rv2-qf-QzY"/>
+                    <constraint firstItem="priority-badge-01" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="toggles-stack-01" secondAttribute="trailing" constant="8" id="e2b-ZN-iZm"/>
+                    <constraint firstItem="8if-eY-qbC" firstAttribute="top" relation="greaterThanOrEqual" secondItem="toggles-stack-01" secondAttribute="bottom" constant="12" id="eVa-Ku-X2G"/>
+                    <constraint firstAttribute="trailing" secondItem="8if-eY-qbC" secondAttribute="trailing" constant="16" id="hLn-ic-p4j"/>
                     <constraint firstItem="priority-badge-01" firstAttribute="top" secondItem="status-badge-01" secondAttribute="bottom" constant="8" id="priority-top-01"/>
                     <constraint firstAttribute="trailing" secondItem="priority-badge-01" secondAttribute="trailing" constant="16" id="priority-trail-01"/>
-                    <constraint firstItem="repo-lbl-01" firstAttribute="leading" secondItem="content-view-01" secondAttribute="leading" constant="16" id="repo-lead-01"/>
-                    <constraint firstItem="repo-lbl-01" firstAttribute="top" relation="greaterThanOrEqual" secondItem="toggles-stack-01" secondAttribute="bottom" constant="8" id="repo-top-01"/>
                     <constraint firstAttribute="bottom" secondItem="sep-view-01" secondAttribute="bottom" id="sep-bot-01"/>
                     <constraint firstItem="sep-view-01" firstAttribute="leading" secondItem="content-view-01" secondAttribute="leading" constant="16" id="sep-lead-01"/>
                     <constraint firstAttribute="trailing" secondItem="sep-view-01" secondAttribute="trailing" id="sep-trail-01"/>
@@ -138,13 +193,19 @@
                     <constraint firstAttribute="trailing" secondItem="status-badge-01" secondAttribute="trailing" constant="16" id="status-trail-01"/>
                     <constraint firstItem="title-lbl-01" firstAttribute="leading" secondItem="content-view-01" secondAttribute="leading" constant="16" id="title-lead-01"/>
                     <constraint firstItem="title-lbl-01" firstAttribute="top" secondItem="content-view-01" secondAttribute="top" constant="12" id="title-top-01"/>
+                    <constraint firstItem="toggles-stack-01" firstAttribute="leading" secondItem="content-view-01" secondAttribute="leading" constant="16" id="toggles-stack-lead-01"/>
                 </constraints>
             </tableViewCellContentView>
             <connections>
                 <outlet property="autoMergeLabel" destination="auto-merge-lbl-01" id="auto-merge-lbl-out-01"/>
                 <outlet property="autoMergeToggle" destination="auto-merge-toggle-01" id="auto-merge-toggle-out-01"/>
+                <outlet property="deploymentPill" destination="hIf-h2-aBe" id="Vxm-lB-CCC"/>
+                <outlet property="haltedWorkflowBadge" destination="QQV-MO-WT8" id="i1x-Mm-lGL"/>
+                <outlet property="prBadgeButton" destination="Etg-6L-I7f" id="mHG-az-MSM"/>
                 <outlet property="priorityBadge" destination="priority-badge-01" id="priority-out-01"/>
                 <outlet property="repositoryLabel" destination="repo-lbl-01" id="repo-out-01"/>
+                <outlet property="retryWorkflowButton" destination="sP1-LA-Tga" id="Kzw-47-ncO"/>
+                <outlet property="rightPillStack" destination="8if-eY-qbC" id="iNA-OK-C4V"/>
                 <outlet property="runBuildLabel" destination="run-build-lbl-01" id="run-build-lbl-out-01"/>
                 <outlet property="runBuildToggle" destination="run-build-toggle-01" id="run-build-toggle-out-01"/>
                 <outlet property="runTestSuiteLabel" destination="run-test-lbl-01" id="run-test-lbl-out-01"/>
@@ -152,6 +213,7 @@
                 <outlet property="separatorView" destination="sep-view-01" id="sep-out-01"/>
                 <outlet property="statusBadge" destination="status-badge-01" id="status-out-01"/>
                 <outlet property="titleLabel" destination="title-lbl-01" id="title-out-01"/>
+                <outlet property="updatedAtLabel" destination="Ntl-0A-4o4" id="X6F-Gz-Qk4"/>
             </connections>
             <point key="canvasLocation" x="131.29771" y="73.239436999999995"/>
         </tableViewCell>
