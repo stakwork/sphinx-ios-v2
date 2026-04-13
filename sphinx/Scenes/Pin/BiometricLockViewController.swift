@@ -8,6 +8,7 @@ import UIKit
 class BiometricLockViewController: UIViewController {
 
     let authHelper = BiometricAuthenticationHelper()
+    var loggingCompletion: (() -> ())? = nil
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -41,6 +42,7 @@ class BiometricLockViewController: UIViewController {
         authHelper.authenticationAction(policy: .deviceOwnerAuthentication) { [weak self] success in
             guard let self = self else { return }
             if success {
+                self.loggingCompletion?()
                 WindowsManager.sharedInstance.removeCoveringWindow()
             }
             // On failure or cancel: stay on lock screen, user must re-attempt or leave

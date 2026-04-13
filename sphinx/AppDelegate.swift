@@ -400,16 +400,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         if GroupsPinManager.sharedInstance.shouldAskForPin() {
             let pinVC = PinCodeViewController.instantiate()
             pinVC.loggingCompletion = {
-                
-                self.updateDefaultTribe()
-                
-                if let currentVC = self.getCurrentVC() {
-                    let _ = DeepLinksHandlerHelper.joinJitsiCall(vc: currentVC, forceJoin: true)
-                    
-                    if let currentVC = currentVC as? DashboardRootViewController {
-                        currentVC.connectToServer()
-                    }
-                }
+                self.onLoggingCompletion()
             }
             WindowsManager.sharedInstance.showConveringWindowWith(
                 rootVC: pinVC,
@@ -425,10 +416,25 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         guard BiometricAuthenticationHelper().canUseBiometricAuthentication() else { return }
 
         let biometricLockVC = BiometricLockViewController()
+        biometricLockVC.loggingCompletion = {
+            self.onLoggingCompletion()
+        }
         WindowsManager.sharedInstance.showConveringWindowWith(
             rootVC: biometricLockVC,
             passthroughWindow: false
         )
+    }
+    
+    private func onLoggingCompletion() {
+        self.updateDefaultTribe()
+        
+        if let currentVC = self.getCurrentVC() {
+            let _ = DeepLinksHandlerHelper.joinJitsiCall(vc: currentVC, forceJoin: true)
+            
+            if let currentVC = currentVC as? DashboardRootViewController {
+                currentVC.connectToServer()
+            }
+        }
     }
 
     func takeUserToInitialVC(
