@@ -224,6 +224,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
         Chat.processTimezoneChanges()
         presentPINIfNeeded()
+        presentBiometricIfNeeded()
 
         feedsManager.restoreContentFeedStatusInBackground()
         podcastPlayerController.finishAndSaveContentConsumed()
@@ -415,6 +416,19 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 passthroughWindow: false
             )
         }
+    }
+
+    func presentBiometricIfNeeded() {
+        guard UserData.sharedInstance.isUserLogged() else { return }
+        guard UserDefaults.Keys.biometricAuthEnabled.get(defaultValue: false) else { return }
+        guard !GroupsPinManager.sharedInstance.shouldAskForPin() else { return } // PIN takes priority
+        guard BiometricAuthenticationHelper().canUseBiometricAuthentication() else { return }
+
+        let biometricLockVC = BiometricLockViewController()
+        WindowsManager.sharedInstance.showConveringWindowWith(
+            rootVC: biometricLockVC,
+            passthroughWindow: false
+        )
     }
 
     func takeUserToInitialVC(
