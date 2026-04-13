@@ -364,6 +364,32 @@
                                                             <constraint firstAttribute="bottom" secondItem="qRs-Jn-mP5" secondAttribute="bottom" constant="10" id="fRs-Tu-vW2"/>
                                                         </constraints>
                                                     </view>
+                                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="bAt-Cx-dYe">
+                                                        <rect key="frame" x="30" y="572" width="354" height="60"/>
+                                                        <subviews>
+                                                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" text="Use Face ID / Touch ID" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="gHm-Jk-nPq">
+                                                                <rect key="frame" x="0.0" y="26" width="268.5" height="20"/>
+                                                                <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="17"/>
+                                                                <color key="textColor" name="Text"/>
+                                                                <nil key="highlightedColor"/>
+                                                            </label>
+                                                            <switch opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="751" verticalHuggingPriority="750" horizontalCompressionResistancePriority="751" contentHorizontalAlignment="center" contentVerticalAlignment="center" on="NO" translatesAutoresizingMaskIntoConstraints="NO" id="kLo-Mn-pRs">
+                                                                <rect key="frame" x="293" y="22" width="63" height="28"/>
+                                                                <connections>
+                                                                    <action selector="biometricAuthSwitchChanged:" destination="54b-ve-hAY" eventType="valueChanged" id="tUv-Wx-yZ0"/>
+                                                                </connections>
+                                                            </switch>
+                                                        </subviews>
+                                                        <color key="backgroundColor" name="Body"/>
+                                                        <constraints>
+                                                            <constraint firstItem="kLo-Mn-pRs" firstAttribute="leading" secondItem="gHm-Jk-nPq" secondAttribute="trailing" constant="24.5" id="aB1-Cd-eF2"/>
+                                                            <constraint firstAttribute="trailing" secondItem="kLo-Mn-pRs" secondAttribute="trailing" id="gH3-Ij-kL4"/>
+                                                            <constraint firstItem="gHm-Jk-nPq" firstAttribute="centerY" secondItem="kLo-Mn-pRs" secondAttribute="centerY" id="mN5-Op-qR6"/>
+                                                            <constraint firstItem="gHm-Jk-nPq" firstAttribute="leading" secondItem="bAt-Cx-dYe" secondAttribute="leading" id="sT7-Uv-wX8"/>
+                                                            <constraint firstAttribute="height" constant="60" id="yZ9-Ab-cD0"/>
+                                                            <constraint firstAttribute="bottom" secondItem="kLo-Mn-pRs" secondAttribute="bottom" constant="10" id="eF1-Gh-iJ2"/>
+                                                        </constraints>
+                                                    </view>
                                                 </subviews>
                                                 <color key="backgroundColor" name="Body"/>
                                                 <constraints>
@@ -388,8 +414,11 @@
                                                     <constraint firstItem="hNt-xK-vR2" firstAttribute="top" secondItem="eUD-XV-KkF" secondAttribute="bottom" id="gHi-Jk-lM3"/>
                                                     <constraint firstItem="hNt-xK-vR2" firstAttribute="leading" secondItem="faZ-Dw-u7B" secondAttribute="leading" id="hNv-Op-qR4"/>
                                                     <constraint firstItem="hNt-xK-vR2" firstAttribute="trailing" secondItem="faZ-Dw-u7B" secondAttribute="trailing" id="iSt-Uv-wX5"/>
-                                                    <constraint firstAttribute="height" constant="587" id="oW8-qt-2vC"/>
-                                                    <constraint firstAttribute="bottom" secondItem="hNt-xK-vR2" secondAttribute="bottom" constant="15" id="rjc-1b-ERU"/>
+                                                    <constraint firstItem="bAt-Cx-dYe" firstAttribute="top" secondItem="hNt-xK-vR2" secondAttribute="bottom" id="jKl-Mn-oP1"/>
+                                                    <constraint firstItem="bAt-Cx-dYe" firstAttribute="leading" secondItem="faZ-Dw-u7B" secondAttribute="leading" id="qR2-St-uV3"/>
+                                                    <constraint firstItem="bAt-Cx-dYe" firstAttribute="trailing" secondItem="faZ-Dw-u7B" secondAttribute="trailing" id="wX4-Yz-aB5"/>
+                                                    <constraint firstAttribute="height" constant="647" id="oW8-qt-2vC"/>
+                                                    <constraint firstAttribute="bottom" secondItem="bAt-Cx-dYe" secondAttribute="bottom" constant="15" id="rjc-1b-ERU"/>
                                                     <constraint firstItem="eUD-XV-KkF" firstAttribute="leading" secondItem="faZ-Dw-u7B" secondAttribute="leading" id="vEp-Nl-geY"/>
                                                     <constraint firstAttribute="trailing" secondItem="HfE-mv-qcA" secondAttribute="trailing" constant="30" id="w18-mJ-qXj"/>
                                                     <constraint firstItem="lQg-ws-ahO" firstAttribute="top" secondItem="pTG-7e-gt6" secondAttribute="bottom" id="zLL-Qa-CTX"/>
@@ -1077,6 +1106,7 @@
                         <outlet property="exportKeyButton" destination="sX0-os-LQi" id="ieu-vq-UPU"/>
                         <outlet property="exportKeysContainer" destination="9IK-kw-3J3" id="ovO-Qu-39r"/>
                         <outlet property="hiveNotificationsSwitch" destination="qRs-Jn-mP5" id="hNs-Wt-xZ6"/>
+                        <outlet property="biometricAuthSwitch" destination="kLo-Mn-pRs" id="cDe-Fg-bA1"/>
                         <outlet property="inviteServerTextField" destination="X0I-XW-Ay8" id="jgY-Yv-w0m"/>
                         <outlet property="keyboardAccessoryView" destination="uQ5-92-gBu" id="MI3-86-sD3"/>
                         <outlet property="manageStorageChevronLabel" destination="UO6-iY-Vsy" id="7ff-d8-vNc"/>

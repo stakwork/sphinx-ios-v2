@@ -22,6 +22,7 @@ class ProfileViewController: NewKeyboardHandlerViewController {
     @IBOutlet weak var trackRecommendationsSwitch: UISwitch!
     @IBOutlet weak var autoDownloadSubscribedPodsSwitch: UISwitch!
     @IBOutlet weak var hiveNotificationsSwitch: UISwitch!
+    @IBOutlet weak var biometricAuthSwitch: UISwitch!
     @IBOutlet weak var notificationSoundButton: UIButton!
     @IBOutlet weak var inviteServerTextField: UITextField!
     @IBOutlet weak var memesServerTextField: UITextField!
@@ -109,6 +110,7 @@ class ProfileViewController: NewKeyboardHandlerViewController {
         trackRecommendationsSwitch.onTintColor = UIColor.Sphinx.PrimaryBlue
         autoDownloadSubscribedPodsSwitch.onTintColor = UIColor.Sphinx.PrimaryBlue
         hiveNotificationsSwitch.onTintColor = UIColor.Sphinx.PrimaryBlue
+        biometricAuthSwitch.onTintColor = UIColor.Sphinx.PrimaryBlue
         
         exportKeyButton.layer.cornerRadius = exportKeyButton.frame.height / 2
         
@@ -190,6 +192,11 @@ class ProfileViewController: NewKeyboardHandlerViewController {
             trackRecommendationsSwitch.isOn =  UserDefaults.Keys.shouldTrackActions.get(defaultValue: false)
             autoDownloadSubscribedPodsSwitch.isOn = UserDefaults.Keys.shouldAutoDownloadSubscribedPods.get(defaultValue: false)
             hiveNotificationsSwitch.isOn = UserDefaults.Keys.hiveNotificationsEnabled.get(defaultValue: true)
+            
+            let biometricHelper = BiometricAuthenticationHelper()
+            biometricAuthSwitch.isOn = UserDefaults.Keys.biometricAuthEnabled.get(defaultValue: false)
+            biometricAuthSwitch.isEnabled = biometricHelper.canUseBiometricAuthentication()
+            biometricAuthSwitch.alpha = biometricHelper.canUseBiometricAuthentication() ? 1.0 : 0.5
             
             let nickname = profile.nickname ?? ""
             nameLabel.text = nickname.getNameStyleString()
@@ -338,6 +345,10 @@ class ProfileViewController: NewKeyboardHandlerViewController {
     
     @IBAction func autoDownloadSubscribedPodsChanged(_ sender: Any) {
         UserDefaults.Keys.shouldAutoDownloadSubscribedPods.set(autoDownloadSubscribedPodsSwitch.isOn)
+    }
+    
+    @IBAction func biometricAuthSwitchChanged(_ sender: UISwitch) {
+        UserDefaults.Keys.biometricAuthEnabled.set(sender.isOn)
     }
     
     @IBAction func hiveNotificationsSwitchChanged(_ sender: UISwitch) {
