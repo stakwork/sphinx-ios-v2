@@ -35,7 +35,10 @@ class BiometricLockViewController: UIViewController {
     }
 
     func triggerBiometric() {
-        authHelper.authenticationAction { [weak self] success in
+        // Use .deviceOwnerAuthentication so that when biometrics fail and the user
+        // taps "Enter Passcode", iOS handles device passcode entry natively and
+        // still calls back with success = true on correct entry.
+        authHelper.authenticationAction(policy: .deviceOwnerAuthentication) { [weak self] success in
             guard let self = self else { return }
             if success {
                 WindowsManager.sharedInstance.removeCoveringWindow()
