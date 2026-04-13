@@ -67,7 +67,7 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
     private(set) var runBuildToggle: SphinxToggleView = SphinxToggleView()
     private(set) var runTestSuiteLabel: UILabel = {
         let label = UILabel()
-        label.text = "Run Test Suite"
+        label.text = "Run Tests"
         label.font = UIFont(name: "Roboto-Regular", size: 13)
         label.textColor = .Sphinx.SecondaryText
         return label
@@ -126,19 +126,9 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         runBuildToggle.addTarget(self, action: #selector(runBuildToggleChanged), for: .valueChanged)
         runTestSuiteToggle.addTarget(self, action: #selector(runTestSuiteToggleChanged), for: .valueChanged)
 
-        let buildRow = UIStackView(arrangedSubviews: [runBuildLabel, runBuildToggle])
-        buildRow.axis = .horizontal
-        buildRow.alignment = .center
-        buildRow.spacing = 8
-
-        let testRow = UIStackView(arrangedSubviews: [runTestSuiteLabel, runTestSuiteToggle])
-        testRow.axis = .horizontal
-        testRow.alignment = .center
-        testRow.spacing = 8
-
-        let toggleRowsStack = UIStackView(arrangedSubviews: [buildRow, testRow])
-        toggleRowsStack.axis = .vertical
-        toggleRowsStack.alignment = .leading
+        let toggleRowsStack = UIStackView(arrangedSubviews: [runBuildLabel, runBuildToggle, runTestSuiteLabel, runTestSuiteToggle])
+        toggleRowsStack.axis = .horizontal
+        toggleRowsStack.alignment = .center
         toggleRowsStack.spacing = 8
         toggleRowsStack.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(toggleRowsStack)
