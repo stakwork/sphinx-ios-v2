@@ -176,12 +176,39 @@ extension WorkspaceTasksViewController: UITableViewDataSource, UITableViewDelega
         guard let cell = tableView.dequeueReusableCell(
             withIdentifier: WorkspaceTaskTableViewCell.reuseID, for: indexPath
         ) as? WorkspaceTaskTableViewCell else { return UITableViewCell() }
+        let task = tasks[indexPath.row]
         cell.configure(with: tasks[indexPath.row], isLastRow: indexPath.row == tasks.count - 1)
         cell.onPRBadgeTapped = { url in UIApplication.shared.open(url) }
         cell.onRetryWorkflowTapped = { [weak self] in
             guard let self else { return }
             let task = self.tasks[indexPath.row]
             API.sharedInstance.retryTaskWorkflowWithAuth(taskId: task.id, callback: {}, errorCallback: {})
+        }
+        cell.onRunBuildToggled = { [weak self] isOn in
+            guard let self else { return }
+            self.tasks[indexPath.row].runBuild = isOn
+            API.sharedInstance.updateTaskBuildSettingsWithAuth(
+                taskId: task.id, runBuild: isOn,
+                callback: {},
+                errorCallback: { [weak self] in
+                    guard let self else { return }
+                    self.tasks[indexPath.row].runBuild = !isOn
+                    DispatchQueue.main.async { self.tableView.reloadRows(at: [indexPath], with: .none) }
+                }
+            )
+        }
+        cell.onRunTestSuiteToggled = { [weak self] isOn in
+            guard let self else { return }
+            self.tasks[indexPath.row].runTestSuite = isOn
+            API.sharedInstance.updateTaskBuildSettingsWithAuth(
+                taskId: task.id, runTestSuite: isOn,
+                callback: {},
+                errorCallback: { [weak self] in
+                    guard let self else { return }
+                    self.tasks[indexPath.row].runTestSuite = !isOn
+                    DispatchQueue.main.async { self.tableView.reloadRows(at: [indexPath], with: .none) }
+                }
+            )
         }
         return cell
     }

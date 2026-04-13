@@ -1643,6 +1643,36 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
                     }
                 )
             }
+            cell.onRunBuildToggled = { [weak self] isOn in
+                guard let self else { return }
+                feature.updateTask(task.id) { $0.runBuild = isOn }
+                API.sharedInstance.updateTaskBuildSettingsWithAuth(
+                    taskId: task.id, runBuild: isOn,
+                    callback: {},
+                    errorCallback: { [weak self] in
+                        guard let self else { return }
+                        feature.updateTask(task.id) { $0.runBuild = !isOn }
+                        DispatchQueue.main.async {
+                            self.tasksTableView.reloadRows(at: [indexPath], with: .none)
+                        }
+                    }
+                )
+            }
+            cell.onRunTestSuiteToggled = { [weak self] isOn in
+                guard let self else { return }
+                feature.updateTask(task.id) { $0.runTestSuite = isOn }
+                API.sharedInstance.updateTaskBuildSettingsWithAuth(
+                    taskId: task.id, runTestSuite: isOn,
+                    callback: {},
+                    errorCallback: { [weak self] in
+                        guard let self else { return }
+                        feature.updateTask(task.id) { $0.runTestSuite = !isOn }
+                        DispatchQueue.main.async {
+                            self.tasksTableView.reloadRows(at: [indexPath], with: .none)
+                        }
+                    }
+                )
+            }
             return cell
         }
 

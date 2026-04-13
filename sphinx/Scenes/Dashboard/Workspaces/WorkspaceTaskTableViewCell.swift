@@ -17,21 +17,11 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
     }
 
     @IBOutlet weak var titleLabel: UILabel!
-    @IBOutlet weak var repositoryLabel: UILabel!
     @IBOutlet weak var statusBadge: UILabel!
     @IBOutlet weak var priorityBadge: UILabel!
     @IBOutlet weak var separatorView: UIView!
     @IBOutlet weak var autoMergeLabel: UILabel!
     @IBOutlet weak var autoMergeToggle: SphinxToggleView!
-
-    // Programmatic — no longer an @IBOutlet (removed from XIB)
-    var updatedAtLabel: UILabel = {
-        let label = UILabel()
-        label.textAlignment = .right
-        label.lineBreakMode = .byTruncatingTail
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
 
     // Programmatic numbered status circle
     private(set) var taskIndexCircle: UILabel = {
@@ -54,11 +44,20 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
     var onPRBadgeTapped: ((URL) -> Void)?
     var onRetryWorkflowTapped: (() -> Void)?
     var onAutoMergeToggled: ((Bool) -> Void)?
-    private(set) var prBadgeButton: UIButton!
-    private(set) var haltedWorkflowBadge: UILabel!
-    private(set) var retryWorkflowButton: UIButton!
-    private(set) var rightPillStack: UIStackView!
-    private(set) var deploymentPill: UILabel!
+    var onRunBuildToggled: ((Bool) -> Void)?
+    var onRunTestSuiteToggled: ((Bool) -> Void)?
+
+    @IBOutlet weak var runBuildLabel: UILabel!
+    @IBOutlet weak var runBuildToggle: SphinxToggleView!
+    @IBOutlet weak var runTestSuiteLabel: UILabel!
+    @IBOutlet weak var runTestSuiteToggle: SphinxToggleView!
+    @IBOutlet weak var rightPillStack: UIStackView!
+    @IBOutlet weak var repositoryLabel: UILabel!
+    @IBOutlet weak var updatedAtLabel: UILabel!
+    @IBOutlet weak var deploymentPill: UILabel!
+    @IBOutlet weak var retryWorkflowButton: UIButton!
+    @IBOutlet weak var haltedWorkflowBadge: UILabel!
+    @IBOutlet weak var prBadgeButton: UIButton!
     private var prBadgeURL: URL?
 
     override func awakeFromNib() {
@@ -104,6 +103,14 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         autoMergeLabel.textColor = .Sphinx.SecondaryText
         autoMergeToggle.addTarget(self, action: #selector(autoMergeToggleChanged), for: .valueChanged)
 
+        runBuildLabel.font = UIFont(name: "Roboto-Regular", size: 13)
+        runBuildLabel.textColor = .Sphinx.SecondaryText
+        runBuildToggle.addTarget(self, action: #selector(runBuildToggleChanged), for: .valueChanged)
+
+        runTestSuiteLabel.font = UIFont(name: "Roboto-Regular", size: 13)
+        runTestSuiteLabel.textColor = .Sphinx.SecondaryText
+        runTestSuiteToggle.addTarget(self, action: #selector(runTestSuiteToggleChanged), for: .valueChanged)
+
         updatedAtLabel.textColor = .Sphinx.SecondaryText
         updatedAtLabel.font = UIFont(name: "Roboto-Regular", size: 13)
 
@@ -121,11 +128,9 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         setupHaltedWorkflowBadge()
         setupRetryWorkflowButton()
         setupDeploymentPill()
-        setupRightPillStack()
     }
 
     private func setupPRBadgeButton() {
-        prBadgeButton = UIButton(type: .system)
         prBadgeButton.layer.cornerRadius = 10
         prBadgeButton.clipsToBounds = true
         prBadgeButton.titleLabel?.font = UIFont(name: "Roboto-Medium", size: 11)
@@ -133,12 +138,9 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         prBadgeButton.isHidden = true
         prBadgeButton.translatesAutoresizingMaskIntoConstraints = false
         prBadgeButton.addTarget(self, action: #selector(prBadgeTapped), for: .touchUpInside)
-        // Height constraint only — stack handles trailing positioning
-        prBadgeButton.heightAnchor.constraint(equalToConstant: 22).isActive = true
     }
 
     private func setupHaltedWorkflowBadge() {
-        haltedWorkflowBadge = UILabel()
         haltedWorkflowBadge.layer.cornerRadius = 10
         haltedWorkflowBadge.clipsToBounds = true
         haltedWorkflowBadge.textColor = .white
@@ -148,30 +150,17 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         haltedWorkflowBadge.text = "HALTED"
         haltedWorkflowBadge.translatesAutoresizingMaskIntoConstraints = false
         haltedWorkflowBadge.isHidden = true
-        haltedWorkflowBadge.heightAnchor.constraint(equalToConstant: 22).isActive = true
-        haltedWorkflowBadge.widthAnchor.constraint(equalToConstant: 55).isActive = true
     }
 
     private func setupRetryWorkflowButton() {
-        retryWorkflowButton = UIButton(type: .system)
         let config = UIImage.SymbolConfiguration(pointSize: 14, weight: .regular)
         retryWorkflowButton.setImage(UIImage(systemName: "arrow.counterclockwise", withConfiguration: config), for: .normal)
         retryWorkflowButton.tintColor = .Sphinx.SphinxOrange
-        retryWorkflowButton.translatesAutoresizingMaskIntoConstraints = false
         retryWorkflowButton.isHidden = true
-        // Size constraints at defaultHigh so UIStackView's collapse constraint can win when hidden
-        let retryW = retryWorkflowButton.widthAnchor.constraint(equalToConstant: 20)
-        retryW.priority = .defaultHigh
-        retryW.isActive = true
-        let retryH = retryWorkflowButton.heightAnchor.constraint(equalToConstant: 20)
-        retryH.priority = .defaultHigh
-        retryH.isActive = true
         retryWorkflowButton.addTarget(self, action: #selector(retryWorkflowButtonTapped), for: .touchUpInside)
-        // NOTE: do NOT addSubview here — setupRightPillStack adds it as an arranged subview
     }
 
     private func setupDeploymentPill() {
-        deploymentPill = UILabel()
         deploymentPill.layer.cornerRadius = 10
         deploymentPill.clipsToBounds = true
         deploymentPill.font = UIFont(name: "Roboto-Medium", size: 11)
@@ -183,33 +172,20 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         deploymentPill.widthAnchor.constraint(equalToConstant: 90).isActive = true
     }
 
-    private func setupRightPillStack() {
-        // retryWorkflowButton lives here, immediately after haltedWorkflowBadge,
-        // so they always share the same vertical axis via .alignment = .center
-        rightPillStack = UIStackView(arrangedSubviews: [updatedAtLabel, deploymentPill, retryWorkflowButton, haltedWorkflowBadge, prBadgeButton])
-        rightPillStack.axis = .horizontal
-        rightPillStack.alignment = .center
-        rightPillStack.distribution = .fill
-        rightPillStack.spacing = 8
-        rightPillStack.translatesAutoresizingMaskIntoConstraints = false
-        contentView.addSubview(rightPillStack)
-
-        // Anchor to repositoryLabel's centerY so the pill row always tracks the repo label,
-        // never overlapping the status/priority badges above it.
-        NSLayoutConstraint.activate([
-            rightPillStack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            rightPillStack.leadingAnchor.constraint(greaterThanOrEqualTo: repositoryLabel.trailingAnchor, constant: 8),
-            rightPillStack.topAnchor.constraint(greaterThanOrEqualTo: priorityBadge.bottomAnchor, constant: 12),
-            rightPillStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -10)
-        ])
-    }
-
     @objc private func retryWorkflowButtonTapped() {
         onRetryWorkflowTapped?()
     }
 
     @objc private func autoMergeToggleChanged() {
         onAutoMergeToggled?(autoMergeToggle.isOn)
+    }
+
+    @objc private func runBuildToggleChanged() {
+        onRunBuildToggled?(runBuildToggle.isOn)
+    }
+
+    @objc private func runTestSuiteToggleChanged() {
+        onRunTestSuiteToggled?(runTestSuiteToggle.isOn)
     }
 
     @objc private func prBadgeTapped() {
@@ -277,11 +253,23 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         deploymentPill.isHidden = true
         prBadgeURL = nil
         onAutoMergeToggled = nil
+        onRunBuildToggled = nil
+        onRunTestSuiteToggled = nil
 
         // ── Auto-merge toggle ────────────────────────────────────────────
         autoMergeToggle.isOn      = task.autoMerge
         autoMergeToggle.isEnabled = task.status == "TODO"
         autoMergeLabel.alpha      = task.status == "TODO" ? 1.0 : 0.4
+
+        // ── Run Build toggle ─────────────────────────────────────────────
+        runBuildToggle.isOn      = task.runBuild
+        runBuildToggle.isEnabled = task.status == "TODO"
+        runBuildLabel.alpha      = task.status == "TODO" ? 1.0 : 0.4
+
+        // ── Run Test Suite toggle ────────────────────────────────────────
+        runTestSuiteToggle.isOn      = task.runTestSuite
+        runTestSuiteToggle.isEnabled = task.status == "TODO"
+        runTestSuiteLabel.alpha      = task.status == "TODO" ? 1.0 : 0.4
 
         // ── Exclusive pill logic: PR wins, then HALTED, then neither ─────
         let prIsMerged = task.prStatus == "MERGED" || task.prStatus == "DONE"
@@ -290,8 +278,13 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         if let urlStr = task.prUrl, let url = URL(string: urlStr) {
             prBadgeURL = url
             prBadgeButton.isHidden = false
-            prBadgeButton.setTitle(prIsMerged ? "  MERGED  " : "  OPEN PR  ", for: .normal)
             prBadgeButton.backgroundColor = prIsMerged ? UIColor(hex: "#8B5CF6") : UIColor.Sphinx.PrimaryBlue
+            let attributes: [NSAttributedString.Key: Any] = [
+                .font: UIFont(name: "Roboto-Medium", size: 11) ?? .systemFont(ofSize: 11),
+                .foregroundColor: UIColor.white
+            ]
+            let title = NSAttributedString(string: prIsMerged ? "MERGED" : "OPEN PR", attributes: attributes)
+            prBadgeButton.setAttributedTitle(title, for: .normal)
         } else if isHalted {
             haltedWorkflowBadge.isHidden = false
             retryWorkflowButton.isHidden = false

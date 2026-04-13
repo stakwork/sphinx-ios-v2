@@ -44,6 +44,8 @@ struct WorkspaceTask {
     var deployedToProductionAt: String? // ISO 8601
     let systemAssigneeType: String?     // e.g. "TASK_COORDINATOR"
     var autoMerge: Bool
+    var runBuild: Bool
+    var runTestSuite: Bool
     var dependsOnTaskIds: [String]
 
     init?(json: JSON) {
@@ -83,6 +85,8 @@ struct WorkspaceTask {
         self.deployedToProductionAt = json["deployedToProductionAt"].string
         self.systemAssigneeType = json["systemAssigneeType"].string
         self.autoMerge = json["autoMerge"].bool ?? false
+        self.runBuild = json["runBuild"].bool ?? true
+        self.runTestSuite = json["runTestSuite"].bool ?? true
         self.dependsOnTaskIds = json["dependsOnTaskIds"].arrayValue.compactMap { $0.string }
     }
 }
