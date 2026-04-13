@@ -51,23 +51,62 @@
                         <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <nil key="highlightedColor"/>
                     </label>
-                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="249" text="Auto Merge" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="auto-merge-lbl-01">
-                        <rect key="frame" x="16" y="38" width="67.333333333333329" height="22"/>
-                        <constraints>
-                            <constraint firstAttribute="height" constant="22" id="SyM-S6-HEs"/>
-                        </constraints>
-                        <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="13"/>
-                        <color key="textColor" name="SecondaryText"/>
-                        <nil key="highlightedColor"/>
-                    </label>
-                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="auto-merge-toggle-01" customClass="SphinxToggleView" customModule="sphinx" customModuleProvider="target">
-                        <rect key="frame" x="91.333333333333329" y="38" width="37.999999999999986" height="22"/>
-                        <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                        <constraints>
-                            <constraint firstAttribute="height" constant="22" id="toggle-height-01"/>
-                            <constraint firstAttribute="width" constant="38" id="toggle-width-01"/>
-                        </constraints>
-                    </view>
+                    <stackView opaque="NO" contentMode="scaleToFill" axis="horizontal" alignment="center" spacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="toggles-stack-01">
+                        <rect key="frame" x="16" y="68" width="320" height="22"/>
+                        <subviews>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="249" text="Auto Merge" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="auto-merge-lbl-01">
+                                <rect key="frame" x="0.0" y="0.0" width="67.333333333333329" height="22"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="22" id="SyM-S6-HEs"/>
+                                </constraints>
+                                <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="13"/>
+                                <color key="textColor" name="SecondaryText"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="auto-merge-toggle-01" customClass="SphinxToggleView" customModule="sphinx" customModuleProvider="target">
+                                <rect key="frame" x="75.333333333333329" y="0.0" width="38" height="22"/>
+                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="22" id="toggle-height-01"/>
+                                    <constraint firstAttribute="width" constant="38" id="toggle-width-01"/>
+                                </constraints>
+                            </view>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="249" text="Run Build" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="run-build-lbl-01">
+                                <rect key="frame" x="121.333333333333329" y="0.0" width="60" height="22"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="22" id="run-build-lbl-height-01"/>
+                                </constraints>
+                                <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="13"/>
+                                <color key="textColor" name="SecondaryText"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="run-build-toggle-01" customClass="SphinxToggleView" customModule="sphinx" customModuleProvider="target">
+                                <rect key="frame" x="189.333333333333343" y="0.0" width="38" height="22"/>
+                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="22" id="run-build-toggle-height-01"/>
+                                    <constraint firstAttribute="width" constant="38" id="run-build-toggle-width-01"/>
+                                </constraints>
+                            </view>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="249" text="Run Tests" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="run-test-lbl-01">
+                                <rect key="frame" x="235.333333333333343" y="0.0" width="60" height="22"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="22" id="run-test-lbl-height-01"/>
+                                </constraints>
+                                <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="13"/>
+                                <color key="textColor" name="SecondaryText"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="run-test-toggle-01" customClass="SphinxToggleView" customModule="sphinx" customModuleProvider="target">
+                                <rect key="frame" x="303.333333333333343" y="0.0" width="38" height="22"/>
+                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="22" id="run-test-toggle-height-01"/>
+                                    <constraint firstAttribute="width" constant="38" id="run-test-toggle-width-01"/>
+                                </constraints>
+                            </view>
+                        </subviews>
+                    </stackView>
                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Repository" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="repo-lbl-01">
                         <rect key="frame" x="16" y="111" width="63" height="16"/>
                         <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="13"/>
@@ -85,15 +124,12 @@
                 <color key="backgroundColor" name="Body"/>
                 <constraints>
                     <constraint firstItem="sep-view-01" firstAttribute="top" secondItem="repo-lbl-01" secondAttribute="bottom" constant="12" id="0Qw-aZ-bza"/>
-                    <constraint firstItem="auto-merge-lbl-01" firstAttribute="centerY" secondItem="auto-merge-toggle-01" secondAttribute="centerY" id="auto-merge-lbl-cy-01"/>
-                    <constraint firstItem="auto-merge-lbl-01" firstAttribute="leading" secondItem="content-view-01" secondAttribute="leading" constant="16" id="auto-merge-lbl-lead-01"/>
-                    <constraint firstItem="auto-merge-lbl-01" firstAttribute="top" secondItem="title-lbl-01" secondAttribute="bottom" constant="8" id="auto-merge-lbl-top-01"/>
-                    <constraint firstItem="auto-merge-toggle-01" firstAttribute="centerY" secondItem="auto-merge-lbl-01" secondAttribute="centerY" id="auto-merge-toggle-cy-01"/>
-                    <constraint firstItem="auto-merge-toggle-01" firstAttribute="leading" secondItem="auto-merge-lbl-01" secondAttribute="trailing" constant="8" id="auto-merge-toggle-lead-01"/>
+                    <constraint firstItem="toggles-stack-01" firstAttribute="top" secondItem="priority-badge-01" secondAttribute="bottom" constant="8" id="toggles-stack-top-01"/>
+                    <constraint firstItem="toggles-stack-01" firstAttribute="leading" secondItem="content-view-01" secondAttribute="leading" constant="16" id="toggles-stack-lead-01"/>
                     <constraint firstItem="priority-badge-01" firstAttribute="top" secondItem="status-badge-01" secondAttribute="bottom" constant="8" id="priority-top-01"/>
                     <constraint firstAttribute="trailing" secondItem="priority-badge-01" secondAttribute="trailing" constant="16" id="priority-trail-01"/>
                     <constraint firstItem="repo-lbl-01" firstAttribute="leading" secondItem="content-view-01" secondAttribute="leading" constant="16" id="repo-lead-01"/>
-                    <constraint firstItem="repo-lbl-01" firstAttribute="top" relation="greaterThanOrEqual" secondItem="auto-merge-lbl-01" secondAttribute="bottom" constant="8" id="repo-top-01"/>
+                    <constraint firstItem="repo-lbl-01" firstAttribute="top" relation="greaterThanOrEqual" secondItem="toggles-stack-01" secondAttribute="bottom" constant="8" id="repo-top-01"/>
                     <constraint firstAttribute="bottom" secondItem="sep-view-01" secondAttribute="bottom" id="sep-bot-01"/>
                     <constraint firstItem="sep-view-01" firstAttribute="leading" secondItem="content-view-01" secondAttribute="leading" constant="16" id="sep-lead-01"/>
                     <constraint firstAttribute="trailing" secondItem="sep-view-01" secondAttribute="trailing" id="sep-trail-01"/>
@@ -109,6 +145,10 @@
                 <outlet property="autoMergeToggle" destination="auto-merge-toggle-01" id="auto-merge-toggle-out-01"/>
                 <outlet property="priorityBadge" destination="priority-badge-01" id="priority-out-01"/>
                 <outlet property="repositoryLabel" destination="repo-lbl-01" id="repo-out-01"/>
+                <outlet property="runBuildLabel" destination="run-build-lbl-01" id="run-build-lbl-out-01"/>
+                <outlet property="runBuildToggle" destination="run-build-toggle-01" id="run-build-toggle-out-01"/>
+                <outlet property="runTestSuiteLabel" destination="run-test-lbl-01" id="run-test-lbl-out-01"/>
+                <outlet property="runTestSuiteToggle" destination="run-test-toggle-01" id="run-test-toggle-out-01"/>
                 <outlet property="separatorView" destination="sep-view-01" id="sep-out-01"/>
                 <outlet property="statusBadge" destination="status-badge-01" id="status-out-01"/>
                 <outlet property="titleLabel" destination="title-lbl-01" id="title-out-01"/>

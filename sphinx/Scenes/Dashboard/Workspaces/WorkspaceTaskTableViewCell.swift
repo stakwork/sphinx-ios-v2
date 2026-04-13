@@ -57,22 +57,10 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
     var onRunBuildToggled: ((Bool) -> Void)?
     var onRunTestSuiteToggled: ((Bool) -> Void)?
 
-    private(set) var runBuildLabel: UILabel = {
-        let label = UILabel()
-        label.text = "Run Build"
-        label.font = UIFont(name: "Roboto-Regular", size: 13)
-        label.textColor = .Sphinx.SecondaryText
-        return label
-    }()
-    private(set) var runBuildToggle: SphinxToggleView = SphinxToggleView()
-    private(set) var runTestSuiteLabel: UILabel = {
-        let label = UILabel()
-        label.text = "Run Tests"
-        label.font = UIFont(name: "Roboto-Regular", size: 13)
-        label.textColor = .Sphinx.SecondaryText
-        return label
-    }()
-    private(set) var runTestSuiteToggle: SphinxToggleView = SphinxToggleView()
+    @IBOutlet weak var runBuildLabel: UILabel!
+    @IBOutlet weak var runBuildToggle: SphinxToggleView!
+    @IBOutlet weak var runTestSuiteLabel: UILabel!
+    @IBOutlet weak var runTestSuiteToggle: SphinxToggleView!
     private(set) var prBadgeButton: UIButton!
     private(set) var haltedWorkflowBadge: UILabel!
     private(set) var retryWorkflowButton: UIButton!
@@ -123,29 +111,13 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         autoMergeLabel.textColor = .Sphinx.SecondaryText
         autoMergeToggle.addTarget(self, action: #selector(autoMergeToggleChanged), for: .valueChanged)
 
+        runBuildLabel.font = UIFont(name: "Roboto-Regular", size: 13)
+        runBuildLabel.textColor = .Sphinx.SecondaryText
         runBuildToggle.addTarget(self, action: #selector(runBuildToggleChanged), for: .valueChanged)
+
+        runTestSuiteLabel.font = UIFont(name: "Roboto-Regular", size: 13)
+        runTestSuiteLabel.textColor = .Sphinx.SecondaryText
         runTestSuiteToggle.addTarget(self, action: #selector(runTestSuiteToggleChanged), for: .valueChanged)
-
-        let toggleRowsStack = UIStackView(arrangedSubviews: [runBuildLabel, runBuildToggle, runTestSuiteLabel, runTestSuiteToggle])
-        toggleRowsStack.axis = .horizontal
-        toggleRowsStack.alignment = .center
-        toggleRowsStack.spacing = 8
-        toggleRowsStack.translatesAutoresizingMaskIntoConstraints = false
-        contentView.addSubview(toggleRowsStack)
-
-        NSLayoutConstraint.activate([
-            toggleRowsStack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            toggleRowsStack.topAnchor.constraint(equalTo: autoMergeToggle.bottomAnchor, constant: 8)
-        ])
-
-        // Deactivate the XIB constraint that pins repositoryLabel.top >= autoMergeLabel.bottom
-        // and replace it with one pinning to toggleRowsStack.bottom
-        for c in contentView.constraints {
-            let involveRepo = (c.firstItem === repositoryLabel || c.secondItem === repositoryLabel)
-            let involveAutoMerge = (c.firstItem === autoMergeLabel || c.secondItem === autoMergeLabel)
-            if involveRepo && involveAutoMerge { c.isActive = false }
-        }
-        repositoryLabel.topAnchor.constraint(greaterThanOrEqualTo: toggleRowsStack.bottomAnchor, constant: 8).isActive = true
 
         updatedAtLabel.textColor = .Sphinx.SecondaryText
         updatedAtLabel.font = UIFont(name: "Roboto-Regular", size: 13)
