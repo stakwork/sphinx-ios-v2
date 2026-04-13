@@ -205,6 +205,7 @@
 		474680812940DD8000F51457 /* RecommendationsHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 474680802940DD7F00F51457 /* RecommendationsHelper.swift */; };
 		47468FCE233131B40072124A /* NSManagedObjectContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47468FCD233131B40072124A /* NSManagedObjectContext.swift */; };
 		47468FD323314EE80072124A /* PinCodeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47468FD223314EE80072124A /* PinCodeViewController.swift */; };
+		AA00B10C000000000000001A /* BiometricLockViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00B10C000000000000001B /* BiometricLockViewController.swift */; };
 		47468FD5233162D40072124A /* AlertHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47468FD4233162D40072124A /* AlertHelper.swift */; };
 		47468FD723353C880072124A /* LeftMenuOptionTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47468FD623353C880072124A /* LeftMenuOptionTableViewCell.swift */; };
 		47468FD923353E460072124A /* MediaLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47468FD823353E460072124A /* MediaLoader.swift */; };
@@ -1431,6 +1432,7 @@
 		474680802940DD7F00F51457 /* RecommendationsHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendationsHelper.swift; sourceTree = "<group>"; };
 		47468FCD233131B40072124A /* NSManagedObjectContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSManagedObjectContext.swift; sourceTree = "<group>"; };
 		47468FD223314EE80072124A /* PinCodeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinCodeViewController.swift; sourceTree = "<group>"; };
+		AA00B10C000000000000001B /* BiometricLockViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiometricLockViewController.swift; sourceTree = "<group>"; };
 		47468FD4233162D40072124A /* AlertHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertHelper.swift; sourceTree = "<group>"; };
 		47468FD623353C880072124A /* LeftMenuOptionTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeftMenuOptionTableViewCell.swift; sourceTree = "<group>"; };
 		47468FD823353E460072124A /* MediaLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaLoader.swift; sourceTree = "<group>"; };
@@ -2961,6 +2963,7 @@
 				4797E7C324B8F3FA00D13270 /* Pin.storyboard */,
 				47468FD223314EE80072124A /* PinCodeViewController.swift */,
 				477C57E4234545D700BB4E04 /* SetPinCodeViewController.swift */,
+				AA00B10C000000000000001B /* BiometricLockViewController.swift */,
 			);
 			path = Pin;
 			sourceTree = "<group>";
@@ -5860,6 +5863,7 @@
 				CE3D8CA329B10FA500EDB637 /* FeedItemDetailVM.swift in Sources */,
 				4752324D2A8AA4940009E75D /* ThreadListTableViewCell+MessageTypesExtension.swift in Sources */,
 				47468FD323314EE80072124A /* PinCodeViewController.swift in Sources */,
+				AA00B10C000000000000001A /* BiometricLockViewController.swift in Sources */,
 				470DB25423FAE43400D29FA5 /* SphinxCache.swift in Sources */,
 				475962232F5714D100564B7F /* WorkspaceTasksViewController.swift in Sources */,
 				BC229678E479BF4D62942DCD /* TaskChatViewController.swift in Sources */,

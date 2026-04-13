@@ -224,6 +224,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
         Chat.processTimezoneChanges()
         presentPINIfNeeded()
+        presentBiometricIfNeeded()
 
         feedsManager.restoreContentFeedStatusInBackground()
         podcastPlayerController.finishAndSaveContentConsumed()
@@ -399,21 +400,40 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         if GroupsPinManager.sharedInstance.shouldAskForPin() {
             let pinVC = PinCodeViewController.instantiate()
             pinVC.loggingCompletion = {
-                
-                self.updateDefaultTribe()
-                
-                if let currentVC = self.getCurrentVC() {
-                    let _ = DeepLinksHandlerHelper.joinJitsiCall(vc: currentVC, forceJoin: true)
-                    
-                    if let currentVC = currentVC as? DashboardRootViewController {
-                        currentVC.connectToServer()
-                    }
-                }
+                self.onLoggingCompletion()
             }
             WindowsManager.sharedInstance.showConveringWindowWith(
                 rootVC: pinVC,
                 passthroughWindow: false
             )
+        }
+    }
+
+    func presentBiometricIfNeeded() {
+        guard UserData.sharedInstance.isUserLogged() else { return }
+        guard UserDefaults.Keys.biometricAuthEnabled.get(defaultValue: false) else { return }
+        guard !GroupsPinManager.sharedInstance.shouldAskForPin() else { return } // PIN takes priority
+        guard BiometricAuthenticationHelper().canUseBiometricAuthentication() else { return }
+
+        let biometricLockVC = BiometricLockViewController()
+        biometricLockVC.loggingCompletion = {
+            self.onLoggingCompletion()
+        }
+        WindowsManager.sharedInstance.showConveringWindowWith(
+            rootVC: biometricLockVC,
+            passthroughWindow: false
+        )
+    }
+    
+    private func onLoggingCompletion() {
+        self.updateDefaultTribe()
+        
+        if let currentVC = self.getCurrentVC() {
+            let _ = DeepLinksHandlerHelper.joinJitsiCall(vc: currentVC, forceJoin: true)
+            
+            if let currentVC = currentVC as? DashboardRootViewController {
+                currentVC.connectToServer()
+            }
         }
     }
 
