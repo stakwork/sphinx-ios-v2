@@ -119,7 +119,18 @@ extension WorkspaceTask {
             "updatedAt": "2026-03-03T09:00:00Z"
         ] as [String: Any])
 
-        return [json1, json2, json3, json4].compactMap { WorkspaceTask(json: $0) }
+        let json5 = JSON([
+            "id": "task-halted-001",
+            "title": "Fix authentication token refresh",
+            "status": "IN_PROGRESS",
+            "priority": "HIGH",
+            "workflowStatus": "HALTED",
+            "chatMessageCount": 2,
+            "repository": ["name": "sphinx-ios-v2"],
+            "updatedAt": "2026-03-04T11:00:00Z"
+        ] as [String: Any])
+
+        return [json1, json2, json3, json4, json5].compactMap { WorkspaceTask(json: $0) }
     }
 }
 
