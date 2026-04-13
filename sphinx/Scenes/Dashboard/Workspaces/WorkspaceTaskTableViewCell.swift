@@ -54,6 +54,25 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
     var onPRBadgeTapped: ((URL) -> Void)?
     var onRetryWorkflowTapped: (() -> Void)?
     var onAutoMergeToggled: ((Bool) -> Void)?
+    var onRunBuildToggled: ((Bool) -> Void)?
+    var onRunTestSuiteToggled: ((Bool) -> Void)?
+
+    private(set) var runBuildLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Run Build"
+        label.font = UIFont(name: "Roboto-Regular", size: 13)
+        label.textColor = .Sphinx.SecondaryText
+        return label
+    }()
+    private(set) var runBuildToggle: SphinxToggleView = SphinxToggleView()
+    private(set) var runTestSuiteLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Run Test Suite"
+        label.font = UIFont(name: "Roboto-Regular", size: 13)
+        label.textColor = .Sphinx.SecondaryText
+        return label
+    }()
+    private(set) var runTestSuiteToggle: SphinxToggleView = SphinxToggleView()
     private(set) var prBadgeButton: UIButton!
     private(set) var haltedWorkflowBadge: UILabel!
     private(set) var retryWorkflowButton: UIButton!
@@ -103,6 +122,40 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         autoMergeLabel.font = UIFont(name: "Roboto-Regular", size: 13)
         autoMergeLabel.textColor = .Sphinx.SecondaryText
         autoMergeToggle.addTarget(self, action: #selector(autoMergeToggleChanged), for: .valueChanged)
+
+        runBuildToggle.addTarget(self, action: #selector(runBuildToggleChanged), for: .valueChanged)
+        runTestSuiteToggle.addTarget(self, action: #selector(runTestSuiteToggleChanged), for: .valueChanged)
+
+        let buildRow = UIStackView(arrangedSubviews: [runBuildLabel, runBuildToggle])
+        buildRow.axis = .horizontal
+        buildRow.alignment = .center
+        buildRow.spacing = 8
+
+        let testRow = UIStackView(arrangedSubviews: [runTestSuiteLabel, runTestSuiteToggle])
+        testRow.axis = .horizontal
+        testRow.alignment = .center
+        testRow.spacing = 8
+
+        let toggleRowsStack = UIStackView(arrangedSubviews: [buildRow, testRow])
+        toggleRowsStack.axis = .vertical
+        toggleRowsStack.alignment = .leading
+        toggleRowsStack.spacing = 8
+        toggleRowsStack.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(toggleRowsStack)
+
+        NSLayoutConstraint.activate([
+            toggleRowsStack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            toggleRowsStack.topAnchor.constraint(equalTo: autoMergeToggle.bottomAnchor, constant: 8)
+        ])
+
+        // Deactivate the XIB constraint that pins repositoryLabel.top >= autoMergeLabel.bottom
+        // and replace it with one pinning to toggleRowsStack.bottom
+        for c in contentView.constraints {
+            let involveRepo = (c.firstItem === repositoryLabel || c.secondItem === repositoryLabel)
+            let involveAutoMerge = (c.firstItem === autoMergeLabel || c.secondItem === autoMergeLabel)
+            if involveRepo && involveAutoMerge { c.isActive = false }
+        }
+        repositoryLabel.topAnchor.constraint(greaterThanOrEqualTo: toggleRowsStack.bottomAnchor, constant: 8).isActive = true
 
         updatedAtLabel.textColor = .Sphinx.SecondaryText
         updatedAtLabel.font = UIFont(name: "Roboto-Regular", size: 13)
@@ -212,6 +265,14 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         onAutoMergeToggled?(autoMergeToggle.isOn)
     }
 
+    @objc private func runBuildToggleChanged() {
+        onRunBuildToggled?(runBuildToggle.isOn)
+    }
+
+    @objc private func runTestSuiteToggleChanged() {
+        onRunTestSuiteToggled?(runTestSuiteToggle.isOn)
+    }
+
     @objc private func prBadgeTapped() {
         guard let url = prBadgeURL else { return }
         onPRBadgeTapped?(url)
@@ -277,11 +338,23 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         deploymentPill.isHidden = true
         prBadgeURL = nil
         onAutoMergeToggled = nil
+        onRunBuildToggled = nil
+        onRunTestSuiteToggled = nil
 
         // ── Auto-merge toggle ────────────────────────────────────────────
         autoMergeToggle.isOn      = task.autoMerge
         autoMergeToggle.isEnabled = task.status == "TODO"
         autoMergeLabel.alpha      = task.status == "TODO" ? 1.0 : 0.4
+
+        // ── Run Build toggle ─────────────────────────────────────────────
+        runBuildToggle.isOn      = task.runBuild
+        runBuildToggle.isEnabled = task.status == "TODO"
+        runBuildLabel.alpha      = task.status == "TODO" ? 1.0 : 0.4
+
+        // ── Run Test Suite toggle ────────────────────────────────────────
+        runTestSuiteToggle.isOn      = task.runTestSuite
+        runTestSuiteToggle.isEnabled = task.status == "TODO"
+        runTestSuiteLabel.alpha      = task.status == "TODO" ? 1.0 : 0.4
 
         // ── Exclusive pill logic: PR wins, then HALTED, then neither ─────
         let prIsMerged = task.prStatus == "MERGED" || task.prStatus == "DONE"

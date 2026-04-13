@@ -2492,6 +2492,68 @@ extension API {
         }, errorCallback: errorCallback)
     }
 
+    // MARK: - Update Task Build Settings (PATCH /api/tickets/{taskId})
+
+    private func updateTaskBuildSettings(
+        taskId: String,
+        runBuild: Bool?,
+        runTestSuite: Bool?,
+        authToken: String,
+        callback: @escaping EmptyCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        guard let encoded = taskId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+            errorCallback(); return
+        }
+        let urlString = "\(API.kHiveBaseUrl)/tickets/\(encoded)"
+        var body: [String: Any] = [:]
+        if let v = runBuild { body["runBuild"] = v }
+        if let v = runTestSuite { body["runTestSuite"] = v }
+        guard let request = createRequest(urlString, bodyParams: body as NSDictionary, method: "PATCH", token: authToken) else {
+            errorCallback(); return
+        }
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 { errorCallback(); return }
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+                if json["success"].bool == true { callback() } else { errorCallback() }
+            case .failure: errorCallback()
+            }
+        }
+    }
+
+    func updateTaskBuildSettingsWithAuth(
+        taskId: String,
+        runBuild: Bool? = nil,
+        runTestSuite: Bool? = nil,
+        callback: @escaping EmptyCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let token: String = UserDefaults.Keys.hiveToken.get() {
+            updateTaskBuildSettings(taskId: taskId, runBuild: runBuild, runTestSuite: runTestSuite, authToken: token, callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateAndUpdateTaskBuildSettings(taskId: taskId, runBuild: runBuild, runTestSuite: runTestSuite,
+                        callback: callback, errorCallback: errorCallback)
+                })
+        } else {
+            authenticateAndUpdateTaskBuildSettings(taskId: taskId, runBuild: runBuild, runTestSuite: runTestSuite,
+                callback: callback, errorCallback: errorCallback)
+        }
+    }
+
+    private func authenticateAndUpdateTaskBuildSettings(
+        taskId: String, runBuild: Bool?, runTestSuite: Bool?,
+        callback: @escaping EmptyCallback, errorCallback: @escaping EmptyCallback
+    ) {
+        authenticateWithHive(callback: { [weak self] token in
+            guard let token = token else { errorCallback(); return }
+            UserDefaults.Keys.hiveToken.set(token)
+            self?.updateTaskBuildSettings(taskId: taskId, runBuild: runBuild, runTestSuite: runTestSuite, authToken: token,
+                callback: callback, errorCallback: errorCallback)
+        }, errorCallback: errorCallback)
+    }
+
     // MARK: - Release Pod (POST /api/pool-manager/drop-pod/{workspaceId})
 
     func releasePod(

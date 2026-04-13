@@ -183,6 +183,32 @@ extension WorkspaceTasksViewController: UITableViewDataSource, UITableViewDelega
             let task = self.tasks[indexPath.row]
             API.sharedInstance.retryTaskWorkflowWithAuth(taskId: task.id, callback: {}, errorCallback: {})
         }
+        cell.onRunBuildToggled = { [weak self] isOn in
+            guard let self else { return }
+            self.tasks[indexPath.row].runBuild = isOn
+            API.sharedInstance.updateTaskBuildSettingsWithAuth(
+                taskId: task.id, runBuild: isOn,
+                callback: {},
+                errorCallback: { [weak self] in
+                    guard let self else { return }
+                    self.tasks[indexPath.row].runBuild = !isOn
+                    DispatchQueue.main.async { self.tableView.reloadRows(at: [indexPath], with: .none) }
+                }
+            )
+        }
+        cell.onRunTestSuiteToggled = { [weak self] isOn in
+            guard let self else { return }
+            self.tasks[indexPath.row].runTestSuite = isOn
+            API.sharedInstance.updateTaskBuildSettingsWithAuth(
+                taskId: task.id, runTestSuite: isOn,
+                callback: {},
+                errorCallback: { [weak self] in
+                    guard let self else { return }
+                    self.tasks[indexPath.row].runTestSuite = !isOn
+                    DispatchQueue.main.async { self.tableView.reloadRows(at: [indexPath], with: .none) }
+                }
+            )
+        }
         return cell
     }
 
