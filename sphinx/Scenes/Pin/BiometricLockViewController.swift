@@ -1,7 +1,6 @@
 //
 //  BiometricLockViewController.swift
 //  sphinx
-//
 
 import UIKit
 
@@ -12,6 +11,7 @@ class BiometricLockViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         view.backgroundColor = UIColor.Sphinx.Body
         setupLockIcon()
     }
@@ -36,16 +36,16 @@ class BiometricLockViewController: UIViewController {
     }
 
     func triggerBiometric() {
-        // Use .deviceOwnerAuthentication so that when biometrics fail and the user
-        // taps "Enter Passcode", iOS handles device passcode entry natively and
-        // still calls back with success = true on correct entry.
-        authHelper.authenticationAction(policy: .deviceOwnerAuthentication) { [weak self] success in
+        authHelper.authenticationAction(policy: .deviceOwnerAuthenticationWithBiometrics) { [weak self] success in
             guard let self = self else { return }
             if success {
                 self.loggingCompletion?()
                 WindowsManager.sharedInstance.removeCoveringWindow()
+            } else {
+                let pinVC = PinCodeViewController.instantiate()
+                pinVC.loggingCompletion = self.loggingCompletion
+                WindowsManager.sharedInstance.coveringWindow?.rootViewController = pinVC
             }
-            // On failure or cancel: stay on lock screen, user must re-attempt or leave
         }
     }
 }
