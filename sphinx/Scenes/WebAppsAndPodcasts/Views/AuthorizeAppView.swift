@@ -108,7 +108,12 @@ class AuthorizeAppView: UIView {
         fieldTopLabel.isHidden = false
         amountFieldContainer.isHidden = false
         fieldBottomLabel.isHidden = false
-        confirmButtonEnabled = false
+        // Enable button if a valid pre-filled amount already exists
+        if let amount = getAmountFrom(string: amountTextField.text) {
+            confirmButtonEnabled = (amount > 0)
+        } else {
+            confirmButtonEnabled = false
+        }
     }
     
     func configureView() {
