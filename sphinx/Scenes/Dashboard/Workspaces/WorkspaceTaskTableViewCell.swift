@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import SDWebImage
 
 class WorkspaceTaskTableViewCell: UITableViewCell {
 
@@ -53,6 +54,8 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
     @IBOutlet weak var runTestSuiteToggle: SphinxToggleView!
     @IBOutlet weak var rightPillStack: UIStackView!
     @IBOutlet weak var repositoryLabel: UILabel!
+    @IBOutlet weak var userAvatarImageView: UIImageView!
+    @IBOutlet weak var userNameLabel: UILabel!
     @IBOutlet weak var updatedAtLabel: UILabel!
     @IBOutlet weak var deploymentPill: UILabel!
     @IBOutlet weak var retryWorkflowButton: UIButton!
@@ -98,6 +101,15 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
 
         repositoryLabel.textColor = .Sphinx.SecondaryText
         repositoryLabel.font = UIFont(name: "Roboto-Regular", size: 13)
+
+        userAvatarImageView.layer.cornerRadius = 9
+        userAvatarImageView.clipsToBounds = true
+        userAvatarImageView.contentMode = .scaleAspectFill
+        userAvatarImageView.isHidden = true
+
+        userNameLabel.textColor = .Sphinx.SecondaryText
+        userNameLabel.font = UIFont(name: "Roboto-Regular", size: 13)
+        userNameLabel.isHidden = true
 
         autoMergeLabel.font = UIFont(name: "Roboto-Regular", size: 13)
         autoMergeLabel.textColor = .Sphinx.SecondaryText
@@ -255,6 +267,46 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         onAutoMergeToggled = nil
         onRunBuildToggled = nil
         onRunTestSuiteToggled = nil
+
+        // ── Resolve user: assignee first, then createdBy ─────────────────
+        let imageURL: String?
+        let displayName: String?
+
+        if let name = task.assigneeName, !name.isEmpty {
+            displayName = name
+            imageURL = task.assigneeImage
+        } else if let email = task.assigneeEmail, !email.isEmpty {
+            displayName = email
+            imageURL = task.assigneeImage
+        } else if let name = task.createdByName, !name.isEmpty {
+            displayName = name
+            imageURL = task.createdByImage
+        } else if let email = task.createdByEmail, !email.isEmpty {
+            displayName = email
+            imageURL = task.createdByImage
+        } else {
+            displayName = nil
+            imageURL = nil
+        }
+
+        if let name = displayName {
+            userNameLabel.text = name
+            userNameLabel.isHidden = false
+            if let urlStr = imageURL, let url = URL(string: urlStr) {
+                userAvatarImageView.isHidden = false
+                userAvatarImageView.sd_setImage(with: url, placeholderImage: UIImage(named: "profile_avatar"))
+            } else {
+                userAvatarImageView.isHidden = true
+                userAvatarImageView.sd_cancelCurrentImageLoad()
+                userAvatarImageView.image = nil
+            }
+        } else {
+            userNameLabel.isHidden = true
+            userNameLabel.text = nil
+            userAvatarImageView.isHidden = true
+            userAvatarImageView.sd_cancelCurrentImageLoad()
+            userAvatarImageView.image = nil
+        }
 
         // ── Auto-merge toggle ────────────────────────────────────────────
         autoMergeToggle.isOn      = task.autoMerge

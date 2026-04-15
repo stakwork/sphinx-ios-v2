@@ -116,6 +116,19 @@
                                 <color key="textColor" name="SecondaryText"/>
                                 <nil key="highlightedColor"/>
                             </label>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFill" translatesAutoresizingMaskIntoConstraints="NO" id="user-avatar-img-01">
+                                <rect key="frame" x="0.0" y="0.0" width="18" height="18"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="18" id="user-avatar-width-01"/>
+                                    <constraint firstAttribute="height" constant="18" id="user-avatar-height-01"/>
+                                </constraints>
+                            </imageView>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="user-name-lbl-01">
+                                <rect key="frame" x="0.0" y="0.0" width="0.0" height="15.333333333333336"/>
+                                <fontDescription key="fontDescription" name="Roboto-Regular" family="Roboto" pointSize="13"/>
+                                <color key="textColor" name="SecondaryText"/>
+                                <nil key="highlightedColor"/>
+                            </label>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="bsI-D9-wx8">
                                 <rect key="frame" x="8" y="2.6666666666666572" width="139.33333333333334" height="15"/>
                                 <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
@@ -204,6 +217,8 @@
                 <outlet property="prBadgeButton" destination="Etg-6L-I7f" id="mHG-az-MSM"/>
                 <outlet property="priorityBadge" destination="priority-badge-01" id="priority-out-01"/>
                 <outlet property="repositoryLabel" destination="repo-lbl-01" id="repo-out-01"/>
+                <outlet property="userAvatarImageView" destination="user-avatar-img-01" id="user-avatar-out-01"/>
+                <outlet property="userNameLabel" destination="user-name-lbl-01" id="user-name-out-01"/>
                 <outlet property="retryWorkflowButton" destination="sP1-LA-Tga" id="Kzw-47-ncO"/>
                 <outlet property="rightPillStack" destination="8if-eY-qbC" id="iNA-OK-C4V"/>
                 <outlet property="runBuildLabel" destination="run-build-lbl-01" id="run-build-lbl-out-01"/>
