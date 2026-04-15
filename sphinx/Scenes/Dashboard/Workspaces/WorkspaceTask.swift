@@ -33,6 +33,7 @@ struct WorkspaceTask {
     let repositoryUrl: String?
     let createdById: String?
     let createdByName: String?
+    let createdByEmail: String?
     let createdByImage: String?
     let chatMessageCount: Int
     var prArtifactId: String?
@@ -73,6 +74,7 @@ struct WorkspaceTask {
         self.repositoryUrl = json["repository"]["repositoryUrl"].string ?? json["repository"]["url"].string
         self.createdById = json["createdBy"]["id"].string
         self.createdByName = json["createdBy"]["name"].string
+        self.createdByEmail = json["createdBy"]["email"].string
         self.createdByImage = json["createdBy"]["image"].string
         self.chatMessageCount = json["chatMessageCount"].int ?? 0
         self.archived = json["archived"].bool ?? false

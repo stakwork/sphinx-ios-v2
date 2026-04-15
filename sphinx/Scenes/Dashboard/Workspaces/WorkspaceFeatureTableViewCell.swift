@@ -35,10 +35,10 @@ class WorkspaceFeatureTableViewCell: UITableViewCell {
             titleLabel.numberOfLines = 2
 
             createdByLabel.textColor = .Sphinx.SecondaryText
-            createdByLabel.font = UIFont(name: "Roboto-Regular", size: 13)
+            createdByLabel.font = UIFont(name: "Roboto-Regular", size: 11)
 
             updatedAtLabel.textColor = .Sphinx.SecondaryText
-            updatedAtLabel.font = UIFont(name: "Roboto-Regular", size: 13)
+            updatedAtLabel.font = UIFont(name: "Roboto-Regular", size: 11)
 
             [statusBadge, priorityBadge].forEach {
                 $0?.layer.cornerRadius = 10
