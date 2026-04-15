@@ -100,7 +100,7 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         titleLabel.numberOfLines = 2
 
         repositoryLabel.textColor = .Sphinx.SecondaryText
-        repositoryLabel.font = UIFont(name: "Roboto-Regular", size: 13)
+        repositoryLabel.font = UIFont(name: "Roboto-Regular", size: 11)
 
         userAvatarImageView.layer.cornerRadius = 9
         userAvatarImageView.clipsToBounds = true
@@ -108,7 +108,7 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         userAvatarImageView.isHidden = true
 
         userNameLabel.textColor = .Sphinx.SecondaryText
-        userNameLabel.font = UIFont(name: "Roboto-Regular", size: 13)
+        userNameLabel.font = UIFont(name: "Roboto-Regular", size: 11)
         userNameLabel.isHidden = true
 
         autoMergeLabel.font = UIFont(name: "Roboto-Regular", size: 13)
@@ -124,7 +124,7 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         runTestSuiteToggle.addTarget(self, action: #selector(runTestSuiteToggleChanged), for: .valueChanged)
 
         updatedAtLabel.textColor = .Sphinx.SecondaryText
-        updatedAtLabel.font = UIFont(name: "Roboto-Regular", size: 13)
+        updatedAtLabel.font = UIFont(name: "Roboto-Regular", size: 12)
 
         [statusBadge, priorityBadge].forEach {
             $0?.layer.cornerRadius = 10
