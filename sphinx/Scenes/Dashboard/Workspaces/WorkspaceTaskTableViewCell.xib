@@ -222,6 +222,7 @@
                 <outlet property="haltedWorkflowBadge" destination="QQV-MO-WT8" id="i1x-Mm-lGL"/>
                 <outlet property="prBadgeButton" destination="Etg-6L-I7f" id="mHG-az-MSM"/>
                 <outlet property="priorityBadge" destination="priority-badge-01" id="priority-out-01"/>
+                <outlet property="repoUserSeparator" destination="ss2-sm-bSL" id="ZYC-om-4M6"/>
                 <outlet property="repositoryLabel" destination="repo-lbl-01" id="repo-out-01"/>
                 <outlet property="retryWorkflowButton" destination="sP1-LA-Tga" id="Kzw-47-ncO"/>
                 <outlet property="rightPillStack" destination="8if-eY-qbC" id="iNA-OK-C4V"/>

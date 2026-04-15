@@ -54,6 +54,7 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
     @IBOutlet weak var runTestSuiteToggle: SphinxToggleView!
     @IBOutlet weak var rightPillStack: UIStackView!
     @IBOutlet weak var repositoryLabel: UILabel!
+    @IBOutlet weak var repoUserSeparator: UILabel!
     @IBOutlet weak var userAvatarImageView: UIImageView!
     @IBOutlet weak var userNameLabel: UILabel!
     @IBOutlet weak var updatedAtLabel: UILabel!
@@ -233,7 +234,11 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
             titleLabel.textColor = .Sphinx.Text
         }
 
+        let isRepoEmpty = task.repositoryName?.isEmpty ?? true
         repositoryLabel.text = task.repositoryName
+        repositoryLabel.isHidden = isRepoEmpty
+        repoUserSeparator.isHidden = isRepoEmpty
+        
         updatedAtLabel.text = formatDate(task.updatedAt)
         separatorView.isHidden = isLastRow
 
