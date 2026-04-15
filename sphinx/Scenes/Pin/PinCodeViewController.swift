@@ -15,6 +15,7 @@ class PinCodeViewController: UIViewController {
     @IBOutlet var dotViews: [UIView]!
     @IBOutlet var keyPadButtons: [UIButton]!
     @IBOutlet weak var subtitleLabel: UILabel!
+    @IBOutlet weak var biometricButton: UIButton!
     
     @IBOutlet weak var loadingWheel: UIActivityIndicatorView!
     
@@ -185,32 +186,16 @@ class PinCodeViewController: UIViewController {
         reloadDots()
     }
     
-    func shouldUseBiometricAuthentication() -> Bool {
-        return authenticationHelper.canUseBiometricAuthentication() && doneCompletion == nil
-    }
-    
     func setupBiometricButtonIfNeeded() {
-        guard authenticationHelper.canUseBiometricAuthentication() else { return }
+        guard authenticationHelper.canUseBiometricAuthentication(), doneCompletion == nil else { return }
         
         let biometricType = LAContext().biometricType
         let iconName = biometricType == .faceID ? "faceid" : "touchid"
         guard let icon = UIImage(systemName: iconName) else { return }
         
-        let button = UIButton(type: .system)
-        button.setImage(icon, for: .normal)
-        button.tintColor = .white
-        button.translatesAutoresizingMaskIntoConstraints = false
-        button.addTarget(self, action: #selector(biometricButtonTouched), for: .touchUpInside)
-        view.addSubview(button)
-        
-        if let keypadContainer = loadingWheel.superview {
-            NSLayoutConstraint.activate([
-                button.leadingAnchor.constraint(equalTo: keypadContainer.leadingAnchor),
-                button.bottomAnchor.constraint(equalTo: keypadContainer.bottomAnchor),
-                button.widthAnchor.constraint(equalTo: keypadContainer.widthAnchor, multiplier: 0.333333),
-                button.heightAnchor.constraint(equalTo: keypadContainer.heightAnchor, multiplier: 0.25)
-            ])
-        }
+        biometricButton.setImage(icon, for: .normal)
+        biometricButton.addTarget(self, action: #selector(biometricButtonTouched), for: .touchUpInside)
+        biometricButton.isHidden = false
     }
     
     @objc func biometricButtonTouched() {
