@@ -89,6 +89,8 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
     var tribeMembersCallback: (([String: AnyObject]) -> ())? = nil
     var paymentsHistoryCallback: ((String?, String?) -> ())? = nil
     var inviteCreationCallback: ((String?) -> ())? = nil
+    var invoiceGeneratedCallback: ((String?) -> Void)? = nil
+    var invoiceGeneratedTimeoutTimer: Timer? = nil
     
     ///Session Pin to decrypt mnemonic and seed
     var appSessionPin : String? = nil
