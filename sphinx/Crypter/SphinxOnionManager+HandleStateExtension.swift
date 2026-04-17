@@ -122,6 +122,9 @@ extension SphinxOnionManager {
 
             ///Handling topics subscription
             handleTopicsToSubscribe(topics: rr.subscriptionTopics)
+
+            ///Handling generated invoice
+            handleInvoiceGenerated(invoice: rr.invoice)
         }
         
         //Publishing to topics
@@ -171,6 +174,14 @@ extension SphinxOnionManager {
         }
     }
     
+    func handleInvoiceGenerated(invoice: String?) {
+        guard let invoice = invoice else { return }
+        invoiceGeneratedTimeoutTimer?.invalidate()
+        invoiceGeneratedTimeoutTimer = nil
+        invoiceGeneratedCallback?(invoice)
+        invoiceGeneratedCallback = nil
+    }
+
     func handlePaymentsHistory(payments: String?) {
         if let payments = payments, payments != "[]" {
             if let paymentsHistoryCallback = paymentsHistoryCallback {
