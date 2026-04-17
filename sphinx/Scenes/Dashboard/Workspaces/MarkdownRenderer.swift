@@ -302,7 +302,7 @@ final class MarkdownRenderer {
         while !s.isEmpty {
             // Bold-italic: ***text***
             if let range = firstRange(in: s, pattern: #"\*\*\*(.+?)\*\*\*"#) {
-                appendLiteral(s[s.startIndex..<range.lowerBound], attrs: base, to: result)
+                result.append(renderInline(String(s[s.startIndex..<range.lowerBound]), font: font, color: color))
                 let inner = String(s[range].dropFirst(3).dropLast(3))
                 result.append(renderInline(inner, font: style.boldItalicFont, color: color))
                 s = String(s[range.upperBound...])
@@ -310,7 +310,7 @@ final class MarkdownRenderer {
             }
             // Bold: **text** or __text__
             if let range = firstRange(in: s, pattern: #"(\*\*|__)(.+?)(\*\*|__)"#) {
-                appendLiteral(s[s.startIndex..<range.lowerBound], attrs: base, to: result)
+                result.append(renderInline(String(s[s.startIndex..<range.lowerBound]), font: font, color: color))
                 let full = String(s[range])
                 let inner = String(full.dropFirst(2).dropLast(2))
                 result.append(renderInline(inner, font: style.boldFont, color: color))
@@ -319,7 +319,7 @@ final class MarkdownRenderer {
             }
             // Italic: *text*
             if let range = firstRange(in: s, pattern: #"\*([^*]+?)\*"#) {
-                appendLiteral(s[s.startIndex..<range.lowerBound], attrs: base, to: result)
+                result.append(renderInline(String(s[s.startIndex..<range.lowerBound]), font: font, color: color))
                 let inner = String(s[range].dropFirst(1).dropLast(1))
                 result.append(NSAttributedString(string: inner, attributes: [.font: style.italicFont, .foregroundColor: color]))
                 s = String(s[range.upperBound...])
@@ -327,7 +327,7 @@ final class MarkdownRenderer {
             }
             // Italic: _text_ (only when _ is not flanked by a word character)
             if let range = firstRange(in: s, pattern: #"(?<!\w)_([^_]+?)_(?!\w)"#) {
-                appendLiteral(s[s.startIndex..<range.lowerBound], attrs: base, to: result)
+                result.append(renderInline(String(s[s.startIndex..<range.lowerBound]), font: font, color: color))
                 let inner = String(s[range].dropFirst(1).dropLast(1))
                 result.append(NSAttributedString(string: inner, attributes: [.font: style.italicFont, .foregroundColor: color]))
                 s = String(s[range.upperBound...])
@@ -335,7 +335,7 @@ final class MarkdownRenderer {
             }
             // Strikethrough: ~~text~~
             if let range = firstRange(in: s, pattern: #"~~(.+?)~~"#) {
-                appendLiteral(s[s.startIndex..<range.lowerBound], attrs: base, to: result)
+                result.append(renderInline(String(s[s.startIndex..<range.lowerBound]), font: font, color: color))
                 let inner = String(s[range].dropFirst(2).dropLast(2))
                 result.append(NSAttributedString(string: inner, attributes: [
                     .font: font,
@@ -347,7 +347,7 @@ final class MarkdownRenderer {
             }
             // Inline code: `code`
             if let range = firstRange(in: s, pattern: #"`(.+?)`"#) {
-                appendLiteral(s[s.startIndex..<range.lowerBound], attrs: base, to: result)
+                result.append(renderInline(String(s[s.startIndex..<range.lowerBound]), font: font, color: color))
                 let inner = String(s[range].dropFirst(1).dropLast(1))
                 result.append(NSAttributedString(string: " \(inner) ", attributes: [
                     .font: style.codeFont,
@@ -359,7 +359,7 @@ final class MarkdownRenderer {
             }
             // Link: [text](url)
             if let range = firstRange(in: s, pattern: #"\[(.+?)\]\((.+?)\)"#) {
-                appendLiteral(s[s.startIndex..<range.lowerBound], attrs: base, to: result)
+                result.append(renderInline(String(s[s.startIndex..<range.lowerBound]), font: font, color: color))
                 let full = String(s[range])
                 // Extract text and url
                 if let textEnd = full.firstIndex(of: "]"),
@@ -378,10 +378,25 @@ final class MarkdownRenderer {
                 s = String(s[range.upperBound...])
                 continue
             }
+            // Email: user@example.com — must be checked before mention so that
+            // the @-character in an email address is not matched as a mention
+            if let range = firstRange(in: s, pattern: #"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}"#) {
+                result.append(renderInline(String(s[s.startIndex..<range.lowerBound]), font: font, color: color))
+                let emailStr = String(s[range])
+                var emailAttrs: [NSAttributedString.Key: Any] = [
+                    .font: font,
+                    .foregroundColor: style.linkColor,
+                    .underlineStyle: NSUnderlineStyle.single.rawValue
+                ]
+                if let url = URL(string: "mailto:\(emailStr)") { emailAttrs[.sphinxURL] = url }
+                result.append(NSAttributedString(string: emailStr, attributes: emailAttrs))
+                s = String(s[range.upperBound...])
+                continue
+            }
             // Mention: @alias — must be checked before bare URL so that
             // "@Name ... https://..." doesn't swallow the mention as plain text
             if let range = firstRange(in: s, pattern: #"(?<!\w)@\S+"#) {
-                appendLiteral(s[s.startIndex..<range.lowerBound], attrs: base, to: result)
+                result.append(renderInline(String(s[s.startIndex..<range.lowerBound]), font: font, color: color))
                 let mention = String(s[range])
                 result.append(NSAttributedString(string: mention, attributes: [
                     .font: font,
@@ -392,7 +407,7 @@ final class MarkdownRenderer {
             }
             // Bare URL: https://... or http://...
             if let range = firstRange(in: s, pattern: #"https?://[^\s]+"#) {
-                appendLiteral(s[s.startIndex..<range.lowerBound], attrs: base, to: result)
+                result.append(renderInline(String(s[s.startIndex..<range.lowerBound]), font: font, color: color))
                 let urlStr = String(s[range])
                 // Use .sphinxURL instead of .link so UILabel respects foregroundColor
                 let linkAttrs: [NSAttributedString.Key: Any] = [
