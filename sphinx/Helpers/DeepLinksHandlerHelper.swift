@@ -51,9 +51,9 @@ class DeepLinksHandlerHelper {
             return false
         }
         
-        if DeepLinksHandlerHelper.goToSignerHardwareSetup(vc: vc) {
-            return true
-        }
+//        if DeepLinksHandlerHelper.goToSignerHardwareSetup(vc: vc) {
+//            return true
+//        }
         
         if DeepLinksHandlerHelper.joinJitsiCall(vc: vc) {
             return true
@@ -80,21 +80,21 @@ class DeepLinksHandlerHelper {
         return false
     }
     
-    @MainActor static func goToSignerHardwareSetup(vc: UIViewController) -> Bool {
-        if let glyphQuery = UserDefaults.Keys.glyphQuery.get(defaultValue: ""), glyphQuery.isNotEmpty {
-            
-            UserDefaults.Keys.glyphQuery.removeValue()
-            
-            if let hardwareLink = CrypterManager.HardwareLink.getHardwareLinkFrom(
-                query: glyphQuery
-            ) {
-                let cryptedManager = CrypterManager.sharedInstance
-                cryptedManager.setupSigningDevice(vc: vc, hardwareLink: hardwareLink, callback: {_ in }) //TODO: review with @Tom, do we need to do the same workflow where we query the relay here? If so this is where to do it
-            }
-
-        }
-        return false
-    }
+//    @MainActor static func goToSignerHardwareSetup(vc: UIViewController) -> Bool {
+//        if let glyphQuery = UserDefaults.Keys.glyphQuery.get(defaultValue: ""), glyphQuery.isNotEmpty {
+//            
+//            UserDefaults.Keys.glyphQuery.removeValue()
+//            
+//            if let hardwareLink = CrypterManager.HardwareLink.getHardwareLinkFrom(
+//                query: glyphQuery
+//            ) {
+//                let cryptedManager = CrypterManager.sharedInstance
+//                cryptedManager.setupSigningDevice(vc: vc, hardwareLink: hardwareLink, callback: {_ in }) //TODO: review with @Tom, do we need to do the same workflow where we query the relay here? If so this is where to do it
+//            }
+//
+//        }
+//        return false
+//    }
     
     static func storeLinkQueryFrom(url: URL) -> Bool {
         var shouldSetVC = false

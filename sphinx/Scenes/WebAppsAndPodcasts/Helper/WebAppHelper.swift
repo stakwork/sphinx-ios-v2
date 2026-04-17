@@ -304,8 +304,11 @@ extension WebAppHelper : WKScriptMessageHandler {
                 return
             }
             
+            let routeHint = dict["route_hint"] as? String
+            
             SphinxOnionManager.sharedInstance.keysend(
                 pubkey: dest,
+                routeHint: routeHint,
                 amt: Double(amt)
             ) { (success, _) in
                 if success {

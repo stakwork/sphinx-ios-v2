@@ -123,29 +123,29 @@ class ChatListHeader: UIView {
     }
     
     @IBAction func signStatusCheckButtonTouched(){
-        var message = "signer.not.connected".localized
-        if let mqtt = CrypterManager.sharedInstance.mqtt{
-            let status = mqtt.connState
-            let connected = status == CocoaMQTTConnState.connected
-            mqttCheckButton.setTitleColor(connected ? ChatListHeader.kConnectedColor : ChatListHeader.kNotConnectedColor, for: .normal)
-            switch(status) {
-            case .connected:
-                message = "signer.connected".localized
-                break
-            case .connecting:
-                message = "signer.connecting".localized
-                break
-            case .disconnected:
-                message = "signer.not.connected".localized
-                break
-            default:
-                message = "signer.not.connected".localized
-                break
-            }
-        }
-        DelayPerformedHelper.performAfterDelay(seconds: 0.5, completion: {
-            self.messageBubbleHelper.showGenericMessageView(text:message, delay: 3)
-        })
+//        var message = "signer.not.connected".localized
+//        if let mqtt = CrypterManager.sharedInstance.mqtt{
+//            let status = mqtt.connState
+//            let connected = status == CocoaMQTTConnState.connected
+//            mqttCheckButton.setTitleColor(connected ? ChatListHeader.kConnectedColor : ChatListHeader.kNotConnectedColor, for: .normal)
+//            switch(status) {
+//            case .connected:
+//                message = "signer.connected".localized
+//                break
+//            case .connecting:
+//                message = "signer.connecting".localized
+//                break
+//            case .disconnected:
+//                message = "signer.not.connected".localized
+//                break
+//            default:
+//                message = "signer.not.connected".localized
+//                break
+//            }
+//        }
+//        DelayPerformedHelper.performAfterDelay(seconds: 0.5, completion: {
+//            self.messageBubbleHelper.showGenericMessageView(text:message, delay: 3)
+//        })
     }
     
     @IBAction func healthCheckButtonTouched() {
