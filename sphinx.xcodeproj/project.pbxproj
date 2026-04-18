@@ -960,6 +960,7 @@
 		T4U5V6W7X8Y9Z0A1B2C3D4E5 /* StakworkWorkflowData.swift in Sources */ = {isa = PBXBuildFile; fileRef = U5V6W7X8Y9Z0A1B2C3D4E5F6 /* StakworkWorkflowData.swift */; };
 		WV0000000000000000000001 /* WorkflowVersion.swift in Sources */ = {isa = PBXBuildFile; fileRef = WV0000000000000000000002 /* WorkflowVersion.swift */; };
 		WV0000000000000000000003 /* WorkflowVersionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = WV0000000000000000000004 /* WorkflowVersionTests.swift */; };
+		47BB2CFC2D000001000000AA /* NSException+Catcher.m in Sources */ = {isa = PBXBuildFile; fileRef = 47BB2CFB2D000001000000AA /* NSException+Catcher.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -2352,6 +2353,8 @@
 		U5V6W7X8Y9Z0A1B2C3D4E5F6 /* StakworkWorkflowData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StakworkWorkflowData.swift; sourceTree = "<group>"; };
 		WV0000000000000000000002 /* WorkflowVersion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkflowVersion.swift; sourceTree = "<group>"; };
 		WV0000000000000000000004 /* WorkflowVersionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkflowVersionTests.swift; sourceTree = "<group>"; };
+		47BB2CFA2D000001000000AA /* NSException+Catcher.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSException+Catcher.h"; sourceTree = "<group>"; };
+		47BB2CFB2D000001000000AA /* NSException+Catcher.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSException+Catcher.m"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -3729,6 +3732,7 @@
 				475BDD74232BF90C00C5BBD6 /* Services */,
 				F331199E268E99FE005082EB /* StoreKit */,
 				47F6CA0728786A13005EBCB6 /* Crypter */,
+				47BB2CF92D000001000000AA /* Objective-C */,
 				475BDD35232ACF8700C5BBD6 /* Supporting Files */,
 				47E19DE92BB718A700A0E596 /* PrivacyInfo.xcprivacy */,
 			);
@@ -4556,6 +4560,15 @@
 				AABB11221DEF456700AABBBB /* SphinxrsExtensions.swift */,
 			);
 			path = Crypter;
+			sourceTree = "<group>";
+		};
+		47BB2CF92D000001000000AA /* Objective-C */ = {
+			isa = PBXGroup;
+			children = (
+				47BB2CFA2D000001000000AA /* NSException+Catcher.h */,
+				47BB2CFB2D000001000000AA /* NSException+Catcher.m */,
+			);
+			path = "Objective-C";
 			sourceTree = "<group>";
 		};
 		47FA18C324253BEC00469C8F /* Manager */ = {
@@ -6316,6 +6329,7 @@
 				E63B82C04D5080098BD7DDBA /* WorkspaceTaskTableViewCell.swift in Sources */,
 				BC156E8B9FC640DAB0D6E3A1 /* TaskDependencyDiagramCell.swift in Sources */,
 				0F3FA12DF80F42E88DAC8AA9 /* TaskDependencyDiagramView.swift in Sources */,
+				47BB2CFC2D000001000000AA /* NSException+Catcher.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

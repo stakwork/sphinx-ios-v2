@@ -466,9 +466,16 @@ public class Chat: NSManagedObject, @unchecked Sendable {
         shouldSync: Bool = true,
         shouldSave: Bool = true
     ) {
+        // Skip all background work if the chat is already fully seen with no unseen messages.
+        // This prevents a main-thread freeze on empty chats where didScrollToBottom() always
+        // fires and would otherwise call performAndWait on a potentially-busy background context.
+        if unseenMessagesCount == 0 && seen {
+            return
+        }
+
         let backgroundContext = CoreDataManager.sharedManager.getBackgroundContext()
-        
-        backgroundContext.performAndWait { [weak self] in
+
+        backgroundContext.performSafely { [weak self] in
             guard let self = self else {
                 return
             }
@@ -1150,7 +1157,7 @@ public class Chat: NSManagedObject, @unchecked Sendable {
             timezoneData[tuple.0] == nil ? tuple.0 : nil
         }
 
-        let newTimezoneMap = TransactionMessage.getTimezonesByAlias(for: aliasesWithoutTimezone, in: self)
+        let newTimezoneMap = TransactionMessage.getTimezonesByAlias(for: aliasesWithoutTimezone, in: self, context: managedObjectContext)
 
         timezoneData = timezoneData.merging(newTimezoneMap) { (existing, new) in
             return existing  // Keep original value

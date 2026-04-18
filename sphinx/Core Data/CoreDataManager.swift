@@ -274,4 +274,33 @@ extension NSManagedObjectContext {
             }
         }
     }
+
+    /// Synchronous version - blocks the calling thread until the block completes.
+    /// Uses performAndWait wrapped in @try/@catch so that Objective-C exceptions
+    /// (e.g. NSInternalInconsistencyException from Core Data) cannot propagate
+    /// through C++ libdispatch frames and trigger std::terminate / SIGABRT.
+    func performSafely(_ block: () throws -> Void) {
+        self.performAndWait {
+            withoutActuallyEscaping(block) { escapableBlock in
+                var exceptionReason: NSString? = nil
+                let succeeded = NSExceptionCatcher.tryExecute({
+                    do {
+                        try escapableBlock()
+                    } catch let error as NSError {
+                        print("❌ CoreData error in performSafely: \(error)")
+                    }
+                }, exceptionReason: &exceptionReason)
+                if !succeeded, let reason = exceptionReason {
+                    print("❌ ObjC exception caught in performSafely: \(reason)")
+                }
+            }
+        }
+    }
+
+    /// Async version - schedules the block on the context's queue without blocking.
+    func performSafely(_ block: @escaping () -> Void) async {
+        await perform {
+            block()
+        }
+    }
 }

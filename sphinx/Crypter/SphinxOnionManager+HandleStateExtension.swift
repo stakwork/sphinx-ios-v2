@@ -51,25 +51,25 @@ extension SphinxOnionManager {
                 }
             
                 let context = backgroundContext
-                context.perform { [weak self] in
+                context.performSafely { [weak self] in
                     guard let self = self else {
                         return
                     }
-                    
+
                     ///handling tribes restore
                     self.restoreTribesFrom(dictionary: dictionary, rr: rr)
-                    
+
                     ///handling contacts restore
                     self.restoreContactsFrom(messages: rr.msgs)
-                    
+
                     ///Handling key exchange msgs restore
                     self.processKeyExchangeMessages(rr: rr)
-                    
+
                     ///Handling generic msgs restore
                     self.processGenericMessages(topic: topic, rr: rr)
-                    
+
                     context.saveContext()
-                    
+
                     ///Handling restore callbacks
                     self.handleRestoreCallbacks(topic: topic, messages: rr.msgs)
                 }

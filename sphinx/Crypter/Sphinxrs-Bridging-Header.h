@@ -10,6 +10,7 @@
 #define Sphinxrs_Bridging_Header_h
 
 #import "sphinxrsFFI.h"
+#import "NSException+Catcher.h"
 
 
 #endif /* Sphinxrs_Bridging_Header_h */
