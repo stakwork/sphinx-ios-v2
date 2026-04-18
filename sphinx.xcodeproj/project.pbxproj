@@ -529,6 +529,7 @@
 		47BACB1B2D63AD52006A4879 /* TimezoneSharingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47BACB1A2D63AD52006A4879 /* TimezoneSharingView.swift */; };
 		47BACB1F2D63AD80006A4879 /* TimezoneSharingView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 47BACB1E2D63AD80006A4879 /* TimezoneSharingView.xib */; };
 		47BB1D5C239572A30049802B /* NewContactDelegatesExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47BB1D5B239572A30049802B /* NewContactDelegatesExtension.swift */; };
+		47BB2CFC2D000001000000AA /* NSException+Catcher.m in Sources */ = {isa = PBXBuildFile; fileRef = 47BB2CFB2D000001000000AA /* NSException+Catcher.m */; };
 		47BE85502465E09B00BE4AE8 /* BiometricAuthenticationHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47BE854F2465E09B00BE4AE8 /* BiometricAuthenticationHelper.swift */; };
 		47BF27EF2A375EAA00F15EE9 /* NewChatTableDataSource+CellDelegateExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47BF27EE2A375EAA00F15EE9 /* NewChatTableDataSource+CellDelegateExtension.swift */; };
 		47BF27F12A37782E00F15EE9 /* NewChatTableDataSource+PreloaderExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47BF27F02A37782E00F15EE9 /* NewChatTableDataSource+PreloaderExtension.swift */; };
@@ -960,7 +961,6 @@
 		T4U5V6W7X8Y9Z0A1B2C3D4E5 /* StakworkWorkflowData.swift in Sources */ = {isa = PBXBuildFile; fileRef = U5V6W7X8Y9Z0A1B2C3D4E5F6 /* StakworkWorkflowData.swift */; };
 		WV0000000000000000000001 /* WorkflowVersion.swift in Sources */ = {isa = PBXBuildFile; fileRef = WV0000000000000000000002 /* WorkflowVersion.swift */; };
 		WV0000000000000000000003 /* WorkflowVersionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = WV0000000000000000000004 /* WorkflowVersionTests.swift */; };
-		47BB2CFC2D000001000000AA /* NSException+Catcher.m in Sources */ = {isa = PBXBuildFile; fileRef = 47BB2CFB2D000001000000AA /* NSException+Catcher.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1841,6 +1841,8 @@
 		47BACB1E2D63AD80006A4879 /* TimezoneSharingView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = TimezoneSharingView.xib; sourceTree = "<group>"; };
 		47BB1D5B239572A30049802B /* NewContactDelegatesExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewContactDelegatesExtension.swift; sourceTree = "<group>"; };
 		47BB1D6B23994F9E0049802B /* sphinx 4.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 4.xcdatamodel"; sourceTree = "<group>"; };
+		47BB2CFA2D000001000000AA /* NSException+Catcher.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSException+Catcher.h"; sourceTree = "<group>"; };
+		47BB2CFB2D000001000000AA /* NSException+Catcher.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSException+Catcher.m"; sourceTree = "<group>"; };
 		47BE854F2465E09B00BE4AE8 /* BiometricAuthenticationHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiometricAuthenticationHelper.swift; sourceTree = "<group>"; };
 		47BF27EE2A375EAA00F15EE9 /* NewChatTableDataSource+CellDelegateExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NewChatTableDataSource+CellDelegateExtension.swift"; sourceTree = "<group>"; };
 		47BF27F02A37782E00F15EE9 /* NewChatTableDataSource+PreloaderExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NewChatTableDataSource+PreloaderExtension.swift"; sourceTree = "<group>"; };
@@ -2353,8 +2355,6 @@
 		U5V6W7X8Y9Z0A1B2C3D4E5F6 /* StakworkWorkflowData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StakworkWorkflowData.swift; sourceTree = "<group>"; };
 		WV0000000000000000000002 /* WorkflowVersion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkflowVersion.swift; sourceTree = "<group>"; };
 		WV0000000000000000000004 /* WorkflowVersionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkflowVersionTests.swift; sourceTree = "<group>"; };
-		47BB2CFA2D000001000000AA /* NSException+Catcher.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSException+Catcher.h"; sourceTree = "<group>"; };
-		47BB2CFB2D000001000000AA /* NSException+Catcher.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSException+Catcher.m"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -4247,6 +4247,15 @@
 			path = "Messages Encryption";
 			sourceTree = "<group>";
 		};
+		47BB2CF92D000001000000AA /* Objective-C */ = {
+			isa = PBXGroup;
+			children = (
+				47BB2CFA2D000001000000AA /* NSException+Catcher.h */,
+				47BB2CFB2D000001000000AA /* NSException+Catcher.m */,
+			);
+			path = "Objective-C";
+			sourceTree = "<group>";
+		};
 		47C52C4327F49E8E007B43E2 /* Requests Signing */ = {
 			isa = PBXGroup;
 			children = (
@@ -4560,15 +4569,6 @@
 				AABB11221DEF456700AABBBB /* SphinxrsExtensions.swift */,
 			);
 			path = Crypter;
-			sourceTree = "<group>";
-		};
-		47BB2CF92D000001000000AA /* Objective-C */ = {
-			isa = PBXGroup;
-			children = (
-				47BB2CFA2D000001000000AA /* NSException+Catcher.h */,
-				47BB2CFB2D000001000000AA /* NSException+Catcher.m */,
-			);
-			path = "Objective-C";
 			sourceTree = "<group>";
 		};
 		47FA18C324253BEC00469C8F /* Manager */ = {
@@ -7255,7 +7255,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sphinx/sphinx.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 286;
+				CURRENT_PROJECT_VERSION = 287;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 8297M44YTW;
 				ENABLE_BITCODE = NO;
@@ -7345,7 +7345,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sphinx/sphinx.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 286;
+				CURRENT_PROJECT_VERSION = 287;
 				DEVELOPMENT_TEAM = 8297M44YTW;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
