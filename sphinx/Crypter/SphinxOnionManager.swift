@@ -86,6 +86,7 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
     var contactRestoreCallback: RestoreProgressCallback? = nil
     var hideRestoreCallback: ((Bool) -> ())? = nil
     var errorCallback: (() -> ())? = nil
+    var backgroundDisconnectCompletion: (() -> ())?
     var tribeMembersCallback: (([String: AnyObject]) -> ())? = nil
     var paymentsHistoryCallback: ((String?, String?) -> ())? = nil
     var inviteCreationCallback: ((String?) -> ())? = nil
@@ -402,6 +403,7 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
         paymentTimeoutTimers.removeAll()
 
         if let mqtt = self.mqtt, mqtt.connState == .connected {
+            backgroundDisconnectCompletion = callback.map { cb in { cb(0.0) } }
             mqtt.disconnect()
         } else {
             callback?(0.0)
@@ -552,6 +554,8 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
         mqtt.didDisconnect = { [weak self] _, _ in
             self?.isConnected = false
             self?.mqtt = nil
+            self?.backgroundDisconnectCompletion?()
+            self?.backgroundDisconnectCompletion = nil
             self?.startReconnectionTimer()
         }
     }
@@ -773,6 +777,8 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
             mqtt.didDisconnect = { [weak self] _, _ in
                 self?.isConnected = false
                 self?.mqtt = nil
+                self?.backgroundDisconnectCompletion?()
+                self?.backgroundDisconnectCompletion = nil
                 self?.startReconnectionTimer()
             }
             
