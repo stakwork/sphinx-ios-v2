@@ -533,9 +533,8 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
             }
              
             if self.isV2Restore {
-                self.hideRestoreCallback = { _ in
-                    self.isV2Restore = false
-                    
+                self.hideRestoreCallback = { [weak self] _ in
+                    self?.isV2Restore = false
                     hideRestoreViewCallback?(true)
                 }
                 self.syncContactsAndMessages()

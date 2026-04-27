@@ -1027,7 +1027,24 @@ extension SphinxOnionManager {
         restoredContactInfoTracker = []
         
         endWatchdogTime()
-        resetFromRestore()
+        
+        let isAppActive: Bool
+        if Thread.isMainThread {
+            isAppActive = (UIApplication.shared.delegate as? AppDelegate)?.isActive == true
+        } else {
+            isAppActive = DispatchQueue.main.sync {
+                (UIApplication.shared.delegate as? AppDelegate)?.isActive == true
+            }
+        }
+        
+        if isAppActive {
+            resetFromRestore()
+        } else {
+            disconnectMqtt(callback: { [weak self] _ in
+                print("[Background] Watchdog: MQTT disconnected, firing fetchCompletionHandler")
+                self?.resetFromRestore()
+            })
+        }
     }
     
     func finishMessagesFetch(

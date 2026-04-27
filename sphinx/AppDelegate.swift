@@ -185,7 +185,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
         // Perform quick, essential background operations only
         podcastPlayerController.finishAndSaveContentConsumed()
-        actionsManager.syncActionsInBackground()
+        // actionsManager.syncActionsInBackground()
         CoreDataManager.sharedManager.saveContext()
 
         // Clear memory caches
@@ -632,15 +632,15 @@ extension AppDelegate: @preconcurrency UNUserNotificationCenterDelegate {
         
         var didEndFetch = false
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 20) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 25) {
             guard !didEndFetch else {
                 return
             }
             didEndFetch = true
-            completionHandler(.noData)
+            completionHandler(.newData)
         }
         
-        som.reconnectToServer(hideRestoreViewCallback: { _ in
+        som.reconnectToServer(hideRestoreViewCallback: { [weak som] _ in
             guard !didEndFetch else {
                 return
             }
