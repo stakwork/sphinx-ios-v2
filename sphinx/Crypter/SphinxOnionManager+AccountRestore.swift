@@ -1027,7 +1027,24 @@ extension SphinxOnionManager {
         restoredContactInfoTracker = []
         
         endWatchdogTime()
-        resetFromRestore()
+        
+        let isAppActive: Bool
+        if Thread.isMainThread {
+            isAppActive = (UIApplication.shared.delegate as? AppDelegate)?.isActive == true
+        } else {
+            isAppActive = DispatchQueue.main.sync {
+                (UIApplication.shared.delegate as? AppDelegate)?.isActive == true
+            }
+        }
+        
+        if isAppActive {
+            resetFromRestore()
+        } else {
+            disconnectMqtt(callback: { [weak self] _ in
+                print("[Background] Watchdog: MQTT disconnected, firing fetchCompletionHandler")
+                self?.resetFromRestore()
+            })
+        }
     }
     
     func finishMessagesFetch(
@@ -1056,8 +1073,15 @@ extension SphinxOnionManager {
             requestPings()
             updateRoutingInfo()
         } else {
-            ///Disconnect MQTT if it's a background process
-            disconnectMqtt()
+            ///Disconnect MQTT if it's a background process, then run post-fetch logic
+            let maxIdx = isRestore ? TransactionMessage.getMaxIndex() : nil
+            disconnectMqtt(callback: { [weak self] _ in
+                print("[Background] MQTT disconnected, firing fetchCompletionHandler")
+                if let maxIdx = maxIdx { self?.maxMessageIndex = maxIdx }
+                self?.endWatchdogTime()
+                self?.resetFromRestore()
+            })
+            return  // prevent fall-through to synchronous resetFromRestore below
         }
         
         if isRestore, let maxIndex = TransactionMessage.getMaxIndex() {
@@ -1092,14 +1116,28 @@ extension SphinxOnionManager {
         
         CoreDataManager.sharedManager.saveContext()
 
-        // Sync preferences with server after restore completes
-        DataSyncManager.sharedInstance.syncWithServerInBackground()
+        let isAppActive: Bool
+        if Thread.isMainThread {
+            isAppActive = (UIApplication.shared.delegate as? AppDelegate)?.isActive == true
+        } else {
+            isAppActive = DispatchQueue.main.sync {
+                (UIApplication.shared.delegate as? AppDelegate)?.isActive == true
+            }
+        }
+
+        // Only run network-dependent operations in foreground
+        if isAppActive {
+            DataSyncManager.sharedInstance.syncWithServerInBackground()
+        }
 
         isV2InitialSetup = false
         contactRestoreCallback = nil
         messageRestoreCallback = nil
         
-        joinInitialTribe()
+        // Only join tribe when foreground — makes network calls
+        if isAppActive {
+            joinInitialTribe()
+        }
         
         if let hideRestoreCallback = hideRestoreCallback {
             hideRestoreCallback(false)
