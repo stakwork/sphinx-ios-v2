@@ -268,8 +268,9 @@ class ChatHeaderView: UIView {
     }
     
     func configureThreadsButton() {
-        let isTribe = chat?.isPublicGroup() == true
-        showThreadsButton.isHidden = !isTribe
+//        let isTribe = chat?.isPublicGroup() == true
+//        showThreadsButton.isHidden = !isTribe
+        showThreadsButton.isHidden = true
     }
     
     func setVolumeState(muted: Bool) {
