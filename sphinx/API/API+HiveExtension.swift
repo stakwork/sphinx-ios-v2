@@ -29,6 +29,7 @@ typealias HiveReleasePodCallback = (() -> ())
 typealias HivePoolStatusCallback = ((_ queuedCount: Int, _ unusedVms: Int) -> ())
 typealias HiveCallLinkCallback = ((String) -> ())
 typealias HivePoolWorkspacesCallback = ((_ pods: [WorkspacePod], _ hasWarning: Bool) -> ())
+typealias HiveBasicPoolWorkspacesCallback = ((_ pods: [WorkspacePod]) -> ())
 typealias HiveRepositoriesCallback = (([WorkspaceRepository]) -> ())
 typealias HiveBranchesCallback = (([WorkspaceBranch]) -> ())
 typealias HiveWorkflowVersionsCallback = (([WorkflowVersion]) -> ())
@@ -2950,6 +2951,86 @@ extension API {
                 errorCallback: errorCallback
             )
         }
+    }
+
+    // MARK: - Basic Pool Workspaces (fast identity + task data, no live metrics)
+
+    func fetchBasicPoolWorkspaces(
+        workspaceSlug: String,
+        authToken: String,
+        callback: @escaping HiveBasicPoolWorkspacesCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        guard let encodedSlug = workspaceSlug.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+            errorCallback(); return
+        }
+        let urlString = "https://hive.sphinx.chat/api/w/\(encodedSlug)/pool/basic-workspaces"
+        guard let request = createRequest(urlString, bodyParams: nil, method: "GET", token: authToken) else {
+            errorCallback(); return
+        }
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                errorCallback(); return
+            }
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+                guard json["success"].bool == true else {
+                    errorCallback(); return
+                }
+                let pods: [WorkspacePod] = json["data"]["workspaces"].arrayValue.compactMap { WorkspacePod(json: $0) }
+                callback(pods)
+            case .failure:
+                errorCallback()
+            }
+        }
+    }
+
+    func fetchBasicPoolWorkspacesWithAuth(
+        workspaceSlug: String,
+        callback: @escaping HiveBasicPoolWorkspacesCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
+            fetchBasicPoolWorkspaces(
+                workspaceSlug: workspaceSlug,
+                authToken: storedToken,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateAndFetchBasicPoolWorkspaces(
+                        workspaceSlug: workspaceSlug,
+                        callback: callback,
+                        errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateAndFetchBasicPoolWorkspaces(
+                workspaceSlug: workspaceSlug,
+                callback: callback,
+                errorCallback: errorCallback
+            )
+        }
+    }
+
+    private func authenticateAndFetchBasicPoolWorkspaces(
+        workspaceSlug: String,
+        callback: @escaping HiveBasicPoolWorkspacesCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback(); return }
+                UserDefaults.Keys.hiveToken.set(token)
+                self?.fetchBasicPoolWorkspaces(
+                    workspaceSlug: workspaceSlug,
+                    authToken: token,
+                    callback: callback,
+                    errorCallback: errorCallback
+                )
+            },
+            errorCallback: errorCallback
+        )
     }
 
     // MARK: - Pool Workspaces

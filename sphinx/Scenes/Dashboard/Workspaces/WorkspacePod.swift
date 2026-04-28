@@ -46,7 +46,9 @@ struct WorkspacePod {
     let repositories: [String]
     let branches: [String]
     let created: String?
-    let resourceUsage: ResourceUsage
+    var resourceUsage: ResourceUsage
+    let assignedTaskTitle: String?
+    let assignedTaskCreatorImageUrl: String?
 
     // MARK: - Computed: CPU
 
@@ -145,5 +147,8 @@ struct WorkspacePod {
             ? json["resource_usage"]
             : json["resourceUsage"]
         self.resourceUsage = ResourceUsage(json: usageJSON)
+
+        self.assignedTaskTitle           = json["assignedTask"]["title"].string
+        self.assignedTaskCreatorImageUrl = json["assignedTask"]["creator"]["image"].string
     }
 }

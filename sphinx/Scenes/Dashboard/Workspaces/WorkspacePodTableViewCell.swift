@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import SDWebImage
 
 class WorkspacePodTableViewCell: UITableViewCell {
 
@@ -31,6 +32,17 @@ class WorkspacePodTableViewCell: UITableViewCell {
         return l
     }()
 
+    // Subtitle row: avatar (hidden when no task) + subtitle text
+    private let creatorAvatarImageView: UIImageView = {
+        let iv = UIImageView()
+        iv.translatesAutoresizingMaskIntoConstraints = false
+        iv.contentMode = .scaleAspectFill
+        iv.clipsToBounds = true
+        iv.layer.cornerRadius = 10
+        iv.isHidden = true
+        return iv
+    }()
+
     private let subtitleLabel: UILabel = {
         let l = UILabel()
         l.translatesAutoresizingMaskIntoConstraints = false
@@ -38,6 +50,16 @@ class WorkspacePodTableViewCell: UITableViewCell {
         l.textColor = .Sphinx.SecondaryText
         l.numberOfLines = 1
         return l
+    }()
+
+    private lazy var subtitleStackView: UIStackView = {
+        let sv = UIStackView(arrangedSubviews: [creatorAvatarImageView, subtitleLabel])
+        sv.translatesAutoresizingMaskIntoConstraints = false
+        sv.axis = .horizontal
+        sv.spacing = 6
+        sv.alignment = .center
+        sv.isHidden = true
+        return sv
     }()
 
     // CPU row
@@ -125,7 +147,6 @@ class WorkspacePodTableViewCell: UITableViewCell {
     private var currentPod: WorkspacePod?
 
     // MARK: - Toggling Constraints
-    private var subtitleHeightConstraint: NSLayoutConstraint!
     private var cpuTopToSubtitle: NSLayoutConstraint!
     private var cpuTopToPodName: NSLayoutConstraint!
 
@@ -149,7 +170,7 @@ class WorkspacePodTableViewCell: UITableViewCell {
 
         contentView.addSubview(statusDot)
         contentView.addSubview(podNameLabel)
-        contentView.addSubview(subtitleLabel)
+        contentView.addSubview(subtitleStackView)
         contentView.addSubview(cpuTitleLabel)
         contentView.addSubview(cpuProgressView)
         contentView.addSubview(cpuPercentLabel)
@@ -165,21 +186,25 @@ class WorkspacePodTableViewCell: UITableViewCell {
 
     private func setupConstraints() {
         NSLayoutConstraint.activate([
-            // Status dot — top-left
+            // Status dot — top-left, aligned to pod name
             statusDot.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             statusDot.topAnchor.constraint(equalTo: podNameLabel.topAnchor, constant: 3),
             statusDot.widthAnchor.constraint(equalToConstant: 10),
             statusDot.heightAnchor.constraint(equalToConstant: 10),
 
-            // Pod name label — next to dot
+            // Pod name label — always shows subdomain
             podNameLabel.leadingAnchor.constraint(equalTo: statusDot.trailingAnchor, constant: 8),
             podNameLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             podNameLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
 
-            // Subtitle label — below pod name
-            subtitleLabel.leadingAnchor.constraint(equalTo: podNameLabel.leadingAnchor),
-            subtitleLabel.trailingAnchor.constraint(equalTo: podNameLabel.trailingAnchor),
-            subtitleLabel.topAnchor.constraint(equalTo: podNameLabel.bottomAnchor, constant: 2),
+            // Subtitle stack (avatar + text) — below pod name
+            subtitleStackView.leadingAnchor.constraint(equalTo: podNameLabel.leadingAnchor),
+            subtitleStackView.trailingAnchor.constraint(equalTo: podNameLabel.trailingAnchor),
+            subtitleStackView.topAnchor.constraint(equalTo: podNameLabel.bottomAnchor, constant: 2),
+
+            // Avatar size within the subtitle stack
+            creatorAvatarImageView.widthAnchor.constraint(equalToConstant: 20),
+            creatorAvatarImageView.heightAnchor.constraint(equalToConstant: 20),
 
             // CPU row — title
             cpuTitleLabel.leadingAnchor.constraint(equalTo: podNameLabel.leadingAnchor),
@@ -221,12 +246,21 @@ class WorkspacePodTableViewCell: UITableViewCell {
             openIDEButton.centerYAnchor.constraint(equalTo: copyPasswordButton.centerYAnchor),
         ])
 
-        subtitleHeightConstraint = subtitleLabel.heightAnchor.constraint(equalToConstant: 0)
-        cpuTopToSubtitle = cpuTitleLabel.topAnchor.constraint(equalTo: subtitleLabel.bottomAnchor, constant: 8)
+        cpuTopToSubtitle = cpuTitleLabel.topAnchor.constraint(equalTo: subtitleStackView.bottomAnchor, constant: 8)
         cpuTopToPodName  = cpuTitleLabel.topAnchor.constraint(equalTo: podNameLabel.bottomAnchor, constant: 8)
         // Default state: no subtitle
-        subtitleHeightConstraint.isActive = true
         cpuTopToPodName.isActive = true
+    }
+
+    // MARK: - Reuse
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        creatorAvatarImageView.sd_cancelCurrentImageLoad()
+        creatorAvatarImageView.image = UIImage(named: "profileImageIcon")
+        creatorAvatarImageView.isHidden = true
+        subtitleStackView.isHidden = true
+        subtitleLabel.text = nil
     }
 
     // MARK: - Configure
@@ -234,19 +268,39 @@ class WorkspacePodTableViewCell: UITableViewCell {
     func configure(with pod: WorkspacePod) {
         currentPod = pod
 
+        // Title always shows the subdomain
         statusDot.backgroundColor = pod.statusDotColor
         podNameLabel.text = pod.subdomain
 
-        if let sub = pod.subtitle {
+        // Subtitle row: task assignment takes priority, then pod state subtitle
+        if let taskTitle = pod.assignedTaskTitle {
+            subtitleLabel.text = taskTitle
+            creatorAvatarImageView.isHidden = false
+            if let urlString = pod.assignedTaskCreatorImageUrl, let url = URL(string: urlString) {
+                creatorAvatarImageView.sd_setImage(
+                    with: url,
+                    placeholderImage: UIImage(named: "profileImageIcon")
+                )
+            } else {
+                creatorAvatarImageView.image = UIImage(named: "profileImageIcon")
+            }
+            subtitleStackView.isHidden = false
+            cpuTopToPodName.isActive = false
+            cpuTopToSubtitle.isActive = true
+        } else if let sub = pod.subtitle {
             subtitleLabel.text = sub
-            subtitleHeightConstraint.isActive = false
+            creatorAvatarImageView.isHidden = true
+            creatorAvatarImageView.sd_cancelCurrentImageLoad()
+            subtitleStackView.isHidden = false
             cpuTopToPodName.isActive = false
             cpuTopToSubtitle.isActive = true
         } else {
             subtitleLabel.text = nil
+            creatorAvatarImageView.isHidden = true
+            creatorAvatarImageView.sd_cancelCurrentImageLoad()
+            subtitleStackView.isHidden = true
             cpuTopToSubtitle.isActive = false
             cpuTopToPodName.isActive = true
-            subtitleHeightConstraint.isActive = true
         }
 
         // CPU
