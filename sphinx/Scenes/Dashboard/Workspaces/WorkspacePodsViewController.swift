@@ -215,12 +215,20 @@ class WorkspacePodsViewController: UIViewController {
 
     private func mergeMetrics(_ updatedPods: [WorkspacePod]) {
         let metricsById = Dictionary(uniqueKeysWithValues: updatedPods.map { ($0.id, $0) })
-        for i in 0..<pods.count {
-            if let updated = metricsById[pods[i].id] {
-                pods[i].resourceUsage = updated.resourceUsage
-            }
+        // Keep only pods confirmed by the pool manager; overlay their live metrics
+        pods = pods.compactMap { pod in
+            guard let updated = metricsById[pod.id] else { return nil }
+            var merged = pod
+            merged.resourceUsage = updated.resourceUsage
+            return merged
         }
-        tableView.reloadData()
+        if pods.isEmpty {
+            tableView.isHidden = true
+            emptyStateLabel.text = "No pods found"
+            emptyStateLabel.isHidden = false
+        } else {
+            tableView.reloadData()
+        }
     }
 
     private func fetchPoolStatus(slug: String) {
