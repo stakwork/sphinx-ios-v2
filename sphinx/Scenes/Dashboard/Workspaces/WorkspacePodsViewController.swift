@@ -151,12 +151,23 @@ class WorkspacePodsViewController: UIViewController {
         activityIndicator.startAnimating()
         loadingLabel.isHidden = false
 
-        API.sharedInstance.fetchPoolWorkspacesWithAuth(
+        // Phase 1: fetch basic workspaces (identity + task data) quickly
+        API.sharedInstance.fetchBasicPoolWorkspacesWithAuth(
             workspaceSlug: slug,
-            callback: { [weak self] pods, hasWarning in
+            callback: { [weak self] pods in
                 DispatchQueue.main.async {
-                    self?.handlePodsLoaded(pods, hasWarning)
+                    self?.handlePodsLoaded(pods, false)
                 }
+                // Phase 2: overlay live metrics on top
+                API.sharedInstance.fetchPoolWorkspacesWithAuth(
+                    workspaceSlug: slug,
+                    callback: { [weak self] updatedPods, _ in
+                        DispatchQueue.main.async {
+                            self?.mergeMetrics(updatedPods)
+                        }
+                    },
+                    errorCallback: {}
+                )
             },
             errorCallback: { [weak self] in
                 DispatchQueue.main.async {
@@ -174,13 +185,24 @@ class WorkspacePodsViewController: UIViewController {
             return
         }
         fetchPoolStatus(slug: slug)
-        API.sharedInstance.fetchPoolWorkspacesWithAuth(
+        // Phase 1
+        API.sharedInstance.fetchBasicPoolWorkspacesWithAuth(
             workspaceSlug: slug,
-            callback: { [weak self] pods, hasWarning in
+            callback: { [weak self] pods in
                 DispatchQueue.main.async {
                     sender.endRefreshing()
-                    self?.handlePodsLoaded(pods, hasWarning)
+                    self?.handlePodsLoaded(pods, false)
                 }
+                // Phase 2
+                API.sharedInstance.fetchPoolWorkspacesWithAuth(
+                    workspaceSlug: slug,
+                    callback: { [weak self] updatedPods, _ in
+                        DispatchQueue.main.async {
+                            self?.mergeMetrics(updatedPods)
+                        }
+                    },
+                    errorCallback: {}
+                )
             },
             errorCallback: { [weak self] in
                 DispatchQueue.main.async {
@@ -189,6 +211,16 @@ class WorkspacePodsViewController: UIViewController {
                 }
             }
         )
+    }
+
+    private func mergeMetrics(_ updatedPods: [WorkspacePod]) {
+        let metricsById = Dictionary(uniqueKeysWithValues: updatedPods.map { ($0.id, $0) })
+        for i in 0..<pods.count {
+            if let updated = metricsById[pods[i].id] {
+                pods[i].resourceUsage = updated.resourceUsage
+            }
+        }
+        tableView.reloadData()
     }
 
     private func fetchPoolStatus(slug: String) {
