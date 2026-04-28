@@ -70,10 +70,15 @@ struct WorkspacePod {
         return min((usage / requests) * 100, 100)
     }
 
-    /// Mirrors JS parseFloat(): strips any trailing unit suffix and returns the numeric prefix.
-    /// e.g. "500m" → 500, "1Gi" → 1, "256Mi" → 256, "0.5" → 0.5
+    /// Parses a Kubernetes resource string into a Double in base units.
+    /// "123m" → 0.123 (millicores → cores)
+    /// "256Mi" → 256, "0.5" → 0.5 (unchanged)
     private func parseLeadingNumber(_ raw: String) -> Double {
-        let numeric = raw.prefix(while: { $0.isNumber || $0 == "." })
+        let trimmed = raw.trimmingCharacters(in: .whitespaces)
+        if trimmed.hasSuffix("m"), let value = Double(trimmed.dropLast()) {
+            return value / 1000.0
+        }
+        let numeric = trimmed.prefix(while: { $0.isNumber || $0 == "." })
         return Double(numeric) ?? 0
     }
 
