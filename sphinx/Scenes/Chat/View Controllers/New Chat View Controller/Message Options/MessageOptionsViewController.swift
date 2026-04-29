@@ -8,7 +8,7 @@
 
 import UIKit
 
-@MainActor @objc protocol MessageOptionsVCDelegate: class {
+@MainActor @objc protocol MessageOptionsVCDelegate: AnyObject {
     func shouldDeleteMessage(message: TransactionMessage)
     func shouldReplyToMessage(message: TransactionMessage)
     func shouldBoostMessage(message: TransactionMessage)
@@ -37,6 +37,18 @@ class MessageOptionsViewController: UIViewController {
     
     var isThreadRow: Bool = false
     
+    // Rebuild context for live tracking
+    var rebuildIndexPath: IndexPath? = nil
+    var rebuildBubbleViewRect: CGRect? = nil
+    weak var rebuildTableView: UITableView? = nil
+    weak var rebuildContentView: UIView? = nil
+    
+    // Live-tracking state — updated in-place every display frame
+    private var displayLink: CADisplayLink?
+    private var blurMaskShapeLayer: CAShapeLayer?
+    private var currentMenuView: MessageOptionsView?
+    private var lastBubbleRect: CGRect = .zero
+    
     static func instantiate(
         message: TransactionMessage?,
         chat: Chat?,
@@ -64,6 +76,18 @@ class MessageOptionsViewController: UIViewController {
     func setBubblePath(bubblePath: (CGRect, CGPath)) {
         self.bubblePath = bubblePath
     }
+    
+    func setRebuildContext(
+        indexPath: IndexPath,
+        bubbleViewRect: CGRect,
+        tableView: UITableView,
+        contentView: UIView
+    ) {
+        self.rebuildIndexPath = indexPath
+        self.rebuildBubbleViewRect = bubbleViewRect
+        self.rebuildTableView = tableView
+        self.rebuildContentView = contentView
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -74,7 +98,95 @@ class MessageOptionsViewController: UIViewController {
         self.view.addGestureRecognizer(tap)
         
         highlightMessage()
+        startDisplayLink()
     }
+    
+    // MARK: - CADisplayLink live tracking
+    
+    private func startDisplayLink() {
+        guard rebuildTableView != nil, rebuildIndexPath != nil else { return }
+        let link = CADisplayLink(target: self, selector: #selector(displayLinkFired))
+        link.add(to: .main, forMode: .common)
+        displayLink = link
+    }
+    
+    @objc private func displayLinkFired() {
+        guard
+            let tableView = rebuildTableView,
+            let contentView = rebuildContentView,
+            let indexPath = rebuildIndexPath,
+            let storedBubbleViewRect = rebuildBubbleViewRect
+        else { return }
+        
+        // Always read the live bubble frame from the actual cell so size changes
+        // (e.g. a boost row being added) are reflected immediately.
+        let liveBubbleViewRect: CGRect
+        if let cell = tableView.cellForRow(at: indexPath) as? CommonNewMessageTableViewCell,
+           let liveFrame = cell.getBubbleView()?.frame {
+            liveBubbleViewRect = liveFrame
+        } else {
+            liveBubbleViewRect = storedBubbleViewRect
+        }
+        
+        guard let (newRect, newPath) = ChatHelper.getMessageBubbleRectAndPath(
+            tableView: tableView,
+            indexPath: indexPath,
+            contentView: contentView,
+            bubbleViewRect: liveBubbleViewRect
+        ) else {
+            shouldDismissViewController()
+            return
+        }
+        
+        guard newRect != lastBubbleRect else { return }
+        lastBubbleRect = newRect
+        
+        updateBlurMask(bubbleRect: newRect, bubbleCGPath: newPath)
+        updateMenuPosition(bubbleRect: newRect)
+    }
+    
+    private func updateBlurMask(bubbleRect: CGRect, bubbleCGPath: CGPath) {
+        guard let maskLayer = blurMaskShapeLayer else { return }
+        
+        let windowSize = WindowsManager.getWindowSize()
+        let fullPath = UIBezierPath(rect: CGRect(x: 0, y: 0, width: windowSize.width, height: windowSize.height))
+        
+        let holePath = UIBezierPath(cgPath: bubbleCGPath)
+        holePath.apply(CGAffineTransform(translationX: bubbleRect.origin.x, y: bubbleRect.origin.y))
+        fullPath.append(holePath)
+        fullPath.usesEvenOddFillRule = true
+        
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        maskLayer.path = fullPath.cgPath
+        CATransaction.commit()
+    }
+    
+    private func updateMenuPosition(bubbleRect: CGRect) {
+        guard let menuView = currentMenuView else { return }
+        let leftTopCorner = CGPoint(x: bubbleRect.origin.x, y: bubbleRect.origin.y)
+        let rightBottomCorner = CGPoint(
+            x: bubbleRect.origin.x + bubbleRect.width,
+            y: bubbleRect.origin.y + bubbleRect.height
+        )
+        menuView.updatePosition(
+            leftTopCorner: leftTopCorner,
+            rightBottomCorner: rightBottomCorner,
+            incoming: message?.isIncoming() ?? true
+        )
+    }
+    
+    private func stopDisplayLink() {
+        displayLink?.invalidate()
+        displayLink = nil
+    }
+    
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        stopDisplayLink()
+    }
+    
+    // MARK: - Initial render
     
     func highlightMessage() {
         let windowSize = WindowsManager.getWindowSize()
@@ -103,6 +215,7 @@ class MessageOptionsViewController: UIViewController {
                                               height: bubblePath.0.height)
             
             saveRectPosition(bubbleRect: rectangleMessageRect)
+            lastBubbleRect = rectangleMessageRect
             
             let messageViewPath = UIBezierPath(cgPath: bubblePath.1)
             messageViewPath.apply(CGAffineTransform(translationX: rectangleMessageRect.origin.x, y: rectangleMessageRect.origin.y))
@@ -136,6 +249,7 @@ class MessageOptionsViewController: UIViewController {
         entireViewLayer.fillRule = .evenOdd
         entireViewLayer.fillColor = UIColor.black.resolvedCGColor(with: self.view)
         entireView.layer.addSublayer(entireViewLayer)
+        blurMaskShapeLayer = entireViewLayer
         
         let blurEffect = UIBlurEffect(style: UIBlurEffect.Style.dark)
         let blurEffectView = UIVisualEffectView(effect: blurEffect)
@@ -144,7 +258,7 @@ class MessageOptionsViewController: UIViewController {
         blurEffectView.mask = entireView
         view.addSubview(blurEffectView)
         
-        addMenuView(leftTopCorner: leftTopCorner, rightBottomCorner: rightBottomCorner)
+        currentMenuView = addMenuView(leftTopCorner: leftTopCorner, rightBottomCorner: rightBottomCorner)
     }
     
     func addMessageBubbleBorder(messageViewPath: UIBezierPath) {
@@ -159,10 +273,11 @@ class MessageOptionsViewController: UIViewController {
         view.addSubview(messagesView)
     }
     
+    @discardableResult
     func addMenuView(
         leftTopCorner: CGPoint,
         rightBottomCorner: CGPoint
-    ) {
+    ) -> MessageOptionsView {
         let menuView = MessageOptionsView(
             message: message,
             chat: chat,
@@ -173,6 +288,7 @@ class MessageOptionsViewController: UIViewController {
             delegate: self
         )
         self.view.addSubview(menuView)
+        return menuView
     }
     
     func addMessageShadow(layer: CALayer) {
