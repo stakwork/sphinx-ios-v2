@@ -115,14 +115,24 @@ class MessageOptionsViewController: UIViewController {
             let tableView = rebuildTableView,
             let contentView = rebuildContentView,
             let indexPath = rebuildIndexPath,
-            let bubbleViewRect = rebuildBubbleViewRect
+            let storedBubbleViewRect = rebuildBubbleViewRect
         else { return }
+        
+        // Always read the live bubble frame from the actual cell so size changes
+        // (e.g. a boost row being added) are reflected immediately.
+        let liveBubbleViewRect: CGRect
+        if let cell = tableView.cellForRow(at: indexPath) as? CommonNewMessageTableViewCell,
+           let liveFrame = cell.getBubbleView()?.frame {
+            liveBubbleViewRect = liveFrame
+        } else {
+            liveBubbleViewRect = storedBubbleViewRect
+        }
         
         guard let (newRect, newPath) = ChatHelper.getMessageBubbleRectAndPath(
             tableView: tableView,
             indexPath: indexPath,
             contentView: contentView,
-            bubbleViewRect: bubbleViewRect
+            bubbleViewRect: liveBubbleViewRect
         ) else {
             shouldDismissViewController()
             return
