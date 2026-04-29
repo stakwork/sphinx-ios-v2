@@ -8,7 +8,7 @@
 
 import UIKit
 
-@MainActor @objc protocol MessageOptionsVCDelegate: class {
+@MainActor @objc protocol MessageOptionsVCDelegate: AnyObject {
     func shouldDeleteMessage(message: TransactionMessage)
     func shouldReplyToMessage(message: TransactionMessage)
     func shouldBoostMessage(message: TransactionMessage)
