@@ -35,6 +35,7 @@ class MessageOptionsView : UIView {
     var message: TransactionMessage? = nil
     var chat: Chat? = nil
     var contact: UserContact? = nil
+    var isThreadRow: Bool = false
     
     public enum VerticalPosition: Int {
         case Top
@@ -66,6 +67,7 @@ class MessageOptionsView : UIView {
         self.message = message
         self.chat = chat
         self.contact = contact
+        self.isThreadRow = isThreadRow
         
         let incoming = message?.isIncoming() ?? true
         let coordinates = getCoordinates(leftTopCorner: leftTopCorner, rightBottomCorner: rightBottomCorner)
@@ -92,7 +94,7 @@ class MessageOptionsView : UIView {
     /// Repositions the menu view in-place without rebuilding any subviews.
     func updatePosition(leftTopCorner: CGPoint, rightBottomCorner: CGPoint, incoming: Bool) {
         let coordinates = getCoordinates(leftTopCorner: leftTopCorner, rightBottomCorner: rightBottomCorner)
-        let optionsCount = getActionsMenuOptions(isThreadRow: false).count
+        let optionsCount = getActionsMenuOptions(isThreadRow: isThreadRow).count
         guard optionsCount > 0 else { return }
         let (menuRect, _, _) = getMenuRectAndPosition(
             coordinates: coordinates,
