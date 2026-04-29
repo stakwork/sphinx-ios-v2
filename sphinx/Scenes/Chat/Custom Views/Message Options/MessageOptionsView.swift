@@ -89,6 +89,19 @@ class MessageOptionsView : UIView {
         addMenuOptions(options: messageOptions)
     }
     
+    /// Repositions the menu view in-place without rebuilding any subviews.
+    func updatePosition(leftTopCorner: CGPoint, rightBottomCorner: CGPoint, incoming: Bool) {
+        let coordinates = getCoordinates(leftTopCorner: leftTopCorner, rightBottomCorner: rightBottomCorner)
+        let optionsCount = getActionsMenuOptions(isThreadRow: false).count
+        guard optionsCount > 0 else { return }
+        let (menuRect, _, _) = getMenuRectAndPosition(
+            coordinates: coordinates,
+            optionsCount: optionsCount,
+            incoming: incoming
+        )
+        self.frame = menuRect
+    }
+    
     func getCoordinates(leftTopCorner: CGPoint, rightBottomCorner: CGPoint) -> (CGFloat, CGFloat, CGFloat, CGFloat) {
         return (leftTopCorner.x, rightBottomCorner.x, leftTopCorner.y, rightBottomCorner.y)
     }
