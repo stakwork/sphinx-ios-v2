@@ -347,6 +347,12 @@ extension NewChatViewController {
             )
             
             messageOptionsVC.setBubblePath(bubblePath: bubbleRectAndPath)
+            messageOptionsVC.setRebuildContext(
+                indexPath: indexPath,
+                bubbleViewRect: bubbleViewRect,
+                tableView: self.chatTableView,
+                contentView: self.view
+            )
             messageOptionsVC.modalPresentationStyle = .overCurrentContext
             self.navigationController?.present(messageOptionsVC, animated: false)
             

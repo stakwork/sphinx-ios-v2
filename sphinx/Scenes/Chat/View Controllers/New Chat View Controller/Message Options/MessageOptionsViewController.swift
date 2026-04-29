@@ -37,6 +37,16 @@ class MessageOptionsViewController: UIViewController {
     
     var isThreadRow: Bool = false
     
+    // Rebuild context for dynamic overlay updates
+    var rebuildIndexPath: IndexPath? = nil
+    var rebuildBubbleViewRect: CGRect? = nil
+    weak var rebuildTableView: UITableView? = nil
+    weak var rebuildContentView: UIView? = nil
+    
+    private var contentOffsetObservation: NSKeyValueObservation?
+    private var contentSizeObservation: NSKeyValueObservation?
+    private var rebuildWorkItem: DispatchWorkItem? = nil
+    
     static func instantiate(
         message: TransactionMessage?,
         chat: Chat?,
@@ -64,6 +74,18 @@ class MessageOptionsViewController: UIViewController {
     func setBubblePath(bubblePath: (CGRect, CGPath)) {
         self.bubblePath = bubblePath
     }
+    
+    func setRebuildContext(
+        indexPath: IndexPath,
+        bubbleViewRect: CGRect,
+        tableView: UITableView,
+        contentView: UIView
+    ) {
+        self.rebuildIndexPath = indexPath
+        self.rebuildBubbleViewRect = bubbleViewRect
+        self.rebuildTableView = tableView
+        self.rebuildContentView = contentView
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -74,6 +96,69 @@ class MessageOptionsViewController: UIViewController {
         self.view.addGestureRecognizer(tap)
         
         highlightMessage()
+        startObservingTableView()
+    }
+    
+    func startObservingTableView() {
+        guard let tableView = rebuildTableView else { return }
+        contentOffsetObservation = tableView.observe(\.contentOffset, options: [.new, .old]) { [weak self] _, change in
+            guard change.newValue != change.oldValue else { return }
+            self?.scheduleOverlayRebuild()
+        }
+        contentSizeObservation = tableView.observe(\.contentSize, options: [.new, .old]) { [weak self] _, change in
+            guard change.newValue != change.oldValue else { return }
+            self?.scheduleOverlayRebuild()
+        }
+    }
+    
+    func scheduleOverlayRebuild() {
+        rebuildWorkItem?.cancel()
+        let workItem = DispatchWorkItem { [weak self] in
+            self?.rebuildOverlayIfNeeded()
+        }
+        rebuildWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05, execute: workItem)
+    }
+    
+    func rebuildOverlayIfNeeded() {
+        guard
+            let tableView = rebuildTableView,
+            let contentView = rebuildContentView,
+            let indexPath = rebuildIndexPath,
+            let bubbleViewRect = rebuildBubbleViewRect
+        else { return }
+        
+        guard let newBubbleRectAndPath = ChatHelper.getMessageBubbleRectAndPath(
+            tableView: tableView,
+            indexPath: indexPath,
+            contentView: contentView,
+            bubbleViewRect: bubbleViewRect
+        ) else {
+            shouldDismissViewController()
+            return
+        }
+        
+        view.subviews.forEach { $0.removeFromSuperview() }
+        setBubblePath(bubblePath: newBubbleRectAndPath)
+        highlightMessage()
+    }
+    
+    func stopObservingTableView() {
+        rebuildWorkItem?.cancel()
+        rebuildWorkItem = nil
+        contentOffsetObservation?.invalidate()
+        contentOffsetObservation = nil
+        contentSizeObservation?.invalidate()
+        contentSizeObservation = nil
+    }
+    
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        stopObservingTableView()
+    }
+    
+    deinit {
+        stopObservingTableView()
     }
     
     func highlightMessage() {
