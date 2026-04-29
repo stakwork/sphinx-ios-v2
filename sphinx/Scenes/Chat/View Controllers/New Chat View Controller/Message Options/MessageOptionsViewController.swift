@@ -176,11 +176,6 @@ class MessageOptionsViewController: UIViewController {
         stopDisplayLink()
     }
     
-    deinit {
-        displayLink?.invalidate()
-        displayLink = nil
-    }
-    
     // MARK: - Initial render
     
     func highlightMessage() {
