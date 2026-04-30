@@ -998,55 +998,6 @@ extension SphinxOnionManager {
         messagePerContactFetchParams = nil
     }
     
-    func endWatchdogTime() {
-        watchdogTimer?.invalidate()
-        watchdogTimer = nil
-    }
-    
-    func startWatchdogTimer() {
-        watchdogTimer?.invalidate()
-        
-        watchdogTimer = Timer.scheduledTimer(
-            timeInterval: 10.0,
-            target: self,
-            selector: #selector(watchdogTimerFired),
-            userInfo: nil,
-            repeats: false
-        )
-    }
-    
-    @objc func watchdogTimerFired() {
-        onMessageRestoredCallback = nil
-        firstSCIDMsgsCallback = nil
-        totalMsgsCountCallback = nil
-        
-        messageFetchParams = nil
-        chatsFetchParams = nil
-        messagePerContactFetchParams = nil
-        
-        restoredContactInfoTracker = []
-        
-        endWatchdogTime()
-        
-        let isAppActive: Bool
-        if Thread.isMainThread {
-            isAppActive = (UIApplication.shared.delegate as? AppDelegate)?.isActive == true
-        } else {
-            isAppActive = DispatchQueue.main.sync {
-                (UIApplication.shared.delegate as? AppDelegate)?.isActive == true
-            }
-        }
-        
-        if isAppActive {
-            resetFromRestore()
-        } else {
-            disconnectMqtt(callback: { [weak self] _ in
-                print("[Background] Watchdog: MQTT disconnected, firing fetchCompletionHandler")
-                self?.resetFromRestore()
-            })
-        }
-    }
-    
     func finishMessagesFetch(
         isRestore: Bool = false
     ) {
@@ -1078,7 +1029,6 @@ extension SphinxOnionManager {
             disconnectMqtt(callback: { [weak self] _ in
                 print("[Background] MQTT disconnected, firing fetchCompletionHandler")
                 if let maxIdx = maxIdx { self?.maxMessageIndex = maxIdx }
-                self?.endWatchdogTime()
                 self?.resetFromRestore()
             })
             return  // prevent fall-through to synchronous resetFromRestore below
@@ -1088,7 +1038,6 @@ extension SphinxOnionManager {
             maxMessageIndex = maxIndex
         }
         
-        endWatchdogTime()
         resetFromRestore()
     }
     

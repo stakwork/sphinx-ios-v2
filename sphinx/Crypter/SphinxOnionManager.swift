@@ -36,7 +36,6 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
     var stashedInviteCode: String? = nil
     var stashedInviterAlias: String? = nil
     
-    var watchdogTimer: Timer? = nil
     var reconnectionTimer: Timer? = nil
     var sendTimeoutTimers: [String: Timer] = [:]
     var paymentTimeoutTimers: [String: Timer] = [:]
@@ -391,10 +390,6 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
     ) {
         // Cancel reconnection timer to prevent background reconnection attempts
         endReconnectionTimer()
-
-        // Cancel all pending timers to prevent background DB writes and network calls
-        watchdogTimer?.invalidate()
-        watchdogTimer = nil
 
         delayedRRTimers.values.forEach { $0.invalidate() }
         delayedRRTimers.removeAll()
