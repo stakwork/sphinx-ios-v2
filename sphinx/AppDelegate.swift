@@ -411,6 +411,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func presentBiometricIfNeeded() {
+        if let _ = WindowsManager.sharedInstance.getCurrentCoveringWindowVC() as? BiometricLockViewController {
+            return
+        }
+        
         guard UserData.sharedInstance.isUserLogged() else { return }
         guard UserDefaults.Keys.biometricAuthEnabled.get(defaultValue: false) else { return }
         guard !GroupsPinManager.sharedInstance.shouldAskForPin() else { return } // PIN takes priority
@@ -429,6 +433,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func tryBiometricAuth() {
         if let biometricLockVC = WindowsManager.sharedInstance.getCurrentCoveringWindowVC() as? BiometricLockViewController {
             biometricLockVC.triggerBiometric()
+            return
         }
     }
     
