@@ -191,6 +191,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Clear memory caches
         SDImageCache.shared.clearMemory()
         SDWebImageManager.shared.cancelAll()
+        presentBiometricIfNeeded()
 
         // Don't run garbage cleanup on background - it takes too long
         // and causes iOS to kill the app. Schedule it for next foreground instead.
@@ -224,7 +225,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
         Chat.processTimezoneChanges()
         presentPINIfNeeded()
-        presentBiometricIfNeeded()
+        tryBiometricAuth()
 
         feedsManager.restoreContentFeedStatusInBackground()
         podcastPlayerController.finishAndSaveContentConsumed()
@@ -423,6 +424,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             rootVC: biometricLockVC,
             passthroughWindow: false
         )
+    }
+    
+    func tryBiometricAuth() {
+        if let biometricLockVC = WindowsManager.sharedInstance.getCurrentCoveringWindowVC() as? BiometricLockViewController {
+            biometricLockVC.triggerBiometric()
+        }
     }
     
     private func onLoggingCompletion() {

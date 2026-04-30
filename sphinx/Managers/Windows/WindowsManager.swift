@@ -153,6 +153,10 @@ import UIKit
         }
         return false
     }
+    
+    func getCurrentCoveringWindowVC() -> UIViewController? {
+        return coveringWindow?.rootViewController
+    }
 }
 
 class PassthroughWindow: UIWindow {

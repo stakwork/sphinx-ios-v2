@@ -18,7 +18,6 @@ class BiometricLockViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        triggerBiometric()
     }
 
     private func setupLockIcon() {
