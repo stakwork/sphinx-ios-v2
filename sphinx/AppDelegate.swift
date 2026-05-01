@@ -42,6 +42,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     let som = SphinxOnionManager.sharedInstance
     
     var isActive = false
+    private var pendingFetchWorkItem: DispatchWorkItem?
     
     public enum BuildType: Int {
         case Sideload
@@ -642,29 +643,17 @@ extension AppDelegate: @preconcurrency UNUserNotificationCenterDelegate {
             return
         }
         
-        var didEndFetch = false
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 25) {
-            guard !didEndFetch else {
-                return
-            }
-            didEndFetch = true
-            completionHandler(.newData)
+        // Cancel any pending debounced fetch
+        pendingFetchWorkItem?.cancel()
+        print("[BGFetch] Notification received — debouncing 1.5s")
+
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self = self else { return }
+            print("[BGFetch] Debounce elapsed — starting fetch")
+            self.som.beginBackgroundFetch(completionHandler: completionHandler)
         }
-        
-        som.reconnectToServer(hideRestoreViewCallback: { [weak som] _ in
-            guard !didEndFetch else {
-                return
-            }
-            didEndFetch = true
-            completionHandler(.newData)
-        }, errorCallback: {
-            guard !didEndFetch else {
-                return
-            }
-            didEndFetch = true
-            completionHandler(.noData)
-        })
+        pendingFetchWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5, execute: workItem)
     }
 
     func userNotificationCenter(

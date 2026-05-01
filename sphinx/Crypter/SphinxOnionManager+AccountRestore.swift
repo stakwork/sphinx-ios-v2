@@ -1030,6 +1030,7 @@ extension SphinxOnionManager {
                 print("[Background] MQTT disconnected, firing fetchCompletionHandler")
                 if let maxIdx = maxIdx { self?.maxMessageIndex = maxIdx }
                 self?.resetFromRestore()
+                self?.endBackgroundFetch(result: .newData)
             })
             return  // prevent fall-through to synchronous resetFromRestore below
         }
