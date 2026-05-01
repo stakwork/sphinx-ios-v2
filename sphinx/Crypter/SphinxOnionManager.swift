@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import UIKit
 import CocoaMQTT
 import ObjectMapper
 import SwiftyJSON
@@ -245,6 +246,13 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
     let kTestDefaultTribe = "0213ddd7df0077abe11d6ec9753679eeef9f444447b70f2980e44445b3f7959ad1"
     let kTestRouterUrl = "mixer.router1.sphinx.chat"
     
+    // MARK: Background Fetch
+    private let backgroundFetchQueue = DispatchQueue(label: "com.sphinx.backgroundFetch")
+    private let fetchLock = NSLock()
+    private(set) var backgroundFetchInProgress = false
+    var backgroundFetchCompletionHandler: ((UIBackgroundFetchResult) -> Void)?
+    var activeFetchBackgroundTaskID: UIBackgroundTaskIdentifier = .invalid
+
     //MARK: Callback
     ///Restore
     var totalMsgsCountCallback: (() -> ())? = nil
@@ -406,7 +414,64 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
     }
     
     func isFetchingContent() -> Bool {
-        return onMessageRestoredCallback != nil || firstSCIDMsgsCallback != nil || totalMsgsCountCallback != nil
+        fetchLock.lock()
+        defer { fetchLock.unlock() }
+        return backgroundFetchInProgress || onMessageRestoredCallback != nil || firstSCIDMsgsCallback != nil || totalMsgsCountCallback != nil
+    }
+
+    func beginBackgroundFetch(completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
+        fetchLock.lock()
+        guard !backgroundFetchInProgress else {
+            fetchLock.unlock()
+            print("[BGFetch] Fetch already in progress — skipping duplicate")
+            backgroundFetchCompletionHandler = completionHandler
+            return
+        }
+        backgroundFetchInProgress = true
+        backgroundFetchCompletionHandler = completionHandler
+        fetchLock.unlock()
+
+        activeFetchBackgroundTaskID = UIApplication.shared.beginBackgroundTask(withName: "MessageFetch") { [weak self] in
+            self?.expireBackgroundFetch()
+        }
+        print("[BGFetch] UIBackgroundTask started: \(activeFetchBackgroundTaskID)")
+
+        reconnectToServer(
+            hideRestoreViewCallback: { _ in
+                print("[BGFetch] reconnect hideRestoreViewCallback fired")
+            },
+            errorCallback: { [weak self] in
+                print("[BGFetch] reconnect errorCallback — ending fetch")
+                self?.endBackgroundFetch(result: .noData)
+            }
+        )
+    }
+
+    func endBackgroundFetch(result: UIBackgroundFetchResult = .newData) {
+        fetchLock.lock()
+        guard backgroundFetchInProgress else {
+            fetchLock.unlock()
+            return
+        }
+        backgroundFetchInProgress = false
+        let handler = backgroundFetchCompletionHandler
+        backgroundFetchCompletionHandler = nil
+        let taskID = activeFetchBackgroundTaskID
+        activeFetchBackgroundTaskID = .invalid
+        fetchLock.unlock()
+
+        print("[BGFetch] completionHandler firing with result: \(result)")
+        handler?(result)
+
+        if taskID != .invalid {
+            UIApplication.shared.endBackgroundTask(taskID)
+            print("[BGFetch] UIBackgroundTask ended: \(taskID)")
+        }
+    }
+
+    private func expireBackgroundFetch() {
+        print("[BGFetch] UIBackgroundTask expired by iOS — ending fetch early")
+        endBackgroundFetch(result: .newData)
     }
     
     func reconnectToServer(
