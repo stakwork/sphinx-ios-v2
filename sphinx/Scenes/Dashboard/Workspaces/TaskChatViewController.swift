@@ -407,7 +407,9 @@ class TaskChatViewController: UIViewController {
 
         workflowStatusView.onRetryTapped = { [weak self] in
             guard let self else { return }
-            API.sharedInstance.retryTaskWorkflowWithAuth(taskId: self.task.id, callback: {}, errorCallback: {})
+            API.sharedInstance.retryTaskWorkflowWithAuth(taskId: self.task.id, callback: { [weak self] in
+                DispatchQueue.main.async { self?.applyWorkflowStatus(.IN_PROGRESS) }
+            }, errorCallback: {})
         }
 
         chatTableView.keyboardDismissMode = .interactive
@@ -1347,7 +1349,7 @@ class TaskChatViewController: UIViewController {
     private func applyWorkflowStatus(_ status: WorkflowStatus, animated: Bool = true) {
         workflowStatusView.status = status
         switch status {
-        case .IN_PROGRESS, .HALTED:
+        case .IN_PROGRESS:
             updateStatusViewHeight()
             workflowStatusView.show(animated: animated)
             if animated {
@@ -1356,6 +1358,15 @@ class TaskChatViewController: UIViewController {
                 self.view.layoutIfNeeded()
             }
             setInputEnabled(false)
+        case .HALTED:
+            updateStatusViewHeight()
+            workflowStatusView.show(animated: animated)
+            if animated {
+                UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
+            } else {
+                self.view.layoutIfNeeded()
+            }
+            setInputEnabled(true)
         case .PENDING, .COMPLETED, .ERROR, .FAILED:
             workflowStatusView.setStepDetail(nil)
             workflowStatusHeightConstraint.constant = 0
