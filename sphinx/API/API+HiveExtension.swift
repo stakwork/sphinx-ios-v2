@@ -74,17 +74,14 @@ struct WorkspaceBranch {
 
 struct HiveLlmModel {
     let id: String
-    let name: String           // e.g. "claude-sonnet-4" — sent in POST body
-    let providerLabel: String  // e.g. "Claude Sonnet 4" — shown in UI
+    let name: String        // e.g. "Claude 3.5 Sonnet" — shown in UI and sent in POST body
     let isPlanDefault: Bool
 
     init?(json: JSON) {
         guard let id = json["id"].string,
-              let name = json["name"].string,
-              let providerLabel = json["providerLabel"].string else { return nil }
+              let name = json["name"].string else { return nil }
         self.id = id
         self.name = name
-        self.providerLabel = providerLabel
         self.isPlanDefault = json["isPlanDefault"].bool ?? false
     }
 }
@@ -678,15 +675,19 @@ extension API {
     func createFeature(
         workspaceId: String,
         title: String,
+        model: String? = nil,
         authToken: String,
         callback: @escaping HiveFeatureCallback,
         errorCallback: @escaping EmptyCallback
     ) {
         let urlString = "\(API.kHiveBaseUrl)/features"
-        let params: [String: AnyObject] = [
+        var params: [String: AnyObject] = [
             "title": title as AnyObject,
             "workspaceId": workspaceId as AnyObject
         ]
+        if let model = model {
+            params["model"] = model as AnyObject
+        }
 
         guard let request = createRequest(urlString, bodyParams: params as NSDictionary, method: "POST", token: authToken) else {
             errorCallback()
@@ -722,6 +723,7 @@ extension API {
     func createFeatureWithAuth(
         workspaceId: String,
         title: String,
+        model: String? = nil,
         callback: @escaping HiveFeatureCallback,
         errorCallback: @escaping EmptyCallback
     ) {
@@ -729,12 +731,14 @@ extension API {
             createFeature(
                 workspaceId: workspaceId,
                 title: title,
+                model: model,
                 authToken: storedToken,
                 callback: callback,
                 errorCallback: { [weak self] in
                     self?.authenticateAndCreateFeature(
                         workspaceId: workspaceId,
                         title: title,
+                        model: model,
                         callback: callback,
                         errorCallback: errorCallback
                     )
@@ -744,6 +748,7 @@ extension API {
             authenticateAndCreateFeature(
                 workspaceId: workspaceId,
                 title: title,
+                model: model,
                 callback: callback,
                 errorCallback: errorCallback
             )
@@ -753,6 +758,7 @@ extension API {
     private func authenticateAndCreateFeature(
         workspaceId: String,
         title: String,
+        model: String? = nil,
         callback: @escaping HiveFeatureCallback,
         errorCallback: @escaping EmptyCallback
     ) {
@@ -763,6 +769,7 @@ extension API {
                 self?.createFeature(
                     workspaceId: workspaceId,
                     title: title,
+                    model: model,
                     authToken: token,
                     callback: callback,
                     errorCallback: errorCallback

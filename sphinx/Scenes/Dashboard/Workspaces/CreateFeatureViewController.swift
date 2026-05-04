@@ -98,9 +98,8 @@ class CreateFeatureViewController: UIViewController {
                         guard let self, !models.isEmpty else { return }
                         self.availableModels = models
                         self.selectedModel = models.first(where: { $0.isPlanDefault }) ?? models.first
-                        self.modelComboButton.setTitle(self.selectedModel?.providerLabel ?? "Select Model", for: .normal)
+                        self.modelComboButton.setTitle(self.selectedModel?.name ?? "Select Model", for: .normal)
                         self.modelComboButton.isHidden = false
-                        self.comboStackView.isHidden = false
                     }
                 },
                 errorCallback: { /* silent — selector stays hidden, creation proceeds without model */ }
@@ -417,7 +416,7 @@ class CreateFeatureViewController: UIViewController {
             sheet.addAction(UIAlertAction(title: model.providerLabel, style: .default) { [weak self] _ in
                 guard let self else { return }
                 self.selectedModel = model
-                self.modelComboButton.setTitle(model.providerLabel, for: .normal)
+                self.modelComboButton.setTitle(model.name, for: .normal)
             })
         }
         sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
@@ -777,6 +776,7 @@ class CreateFeatureViewController: UIViewController {
         API.sharedInstance.createFeatureWithAuth(
             workspaceId: workspaceId,
             title: title,
+            model: selectedModel?.name,
             callback: { [weak self] feature in
                 guard let self = self else { return }
 
