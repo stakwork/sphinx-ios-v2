@@ -185,17 +185,19 @@ class CreateFeatureViewController: UIViewController {
         modeSelectorButton = makeComboButton(title: "Create Task")
         modeSelectorButton.addTarget(self, action: #selector(modeSelectorTapped), for: .touchUpInside)
         modeSelectorButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
-        modeSelectorButton.isHidden = !isStakworkMode
+        modeSelectorButton.isHidden = true
 
         // Repository Button
         repositoryComboButton = makeComboButton(title: "Select Repository")
         repositoryComboButton.addTarget(self, action: #selector(repositoryComboTapped), for: .touchUpInside)
         repositoryComboButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        repositoryComboButton.isHidden = true
 
         // Branch Button
         branchComboButton = makeComboButton(title: "Select Branch")
         branchComboButton.isEnabled = false
         branchComboButton.alpha = 0.5
+        branchComboButton.isHidden = true
         branchComboButton.addTarget(self, action: #selector(branchComboTapped), for: .touchUpInside)
         branchComboButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
 
@@ -362,6 +364,7 @@ class CreateFeatureViewController: UIViewController {
         default: break
         }
         comboStackView.isHidden = false
+        modeSelectorButton.isHidden = !isStakworkMode
         modelComboButton.isHidden      = true
         repositoryComboButton.isHidden = (newMode != .task)
         branchComboButton.isHidden     = (newMode != .task)
@@ -416,7 +419,7 @@ class CreateFeatureViewController: UIViewController {
         guard !availableModels.isEmpty else { return }
         let sheet = UIAlertController(title: "Select Model", message: nil, preferredStyle: .actionSheet)
         for model in availableModels {
-            sheet.addAction(UIAlertAction(title: model.providerLabel, style: .default) { [weak self] _ in
+            sheet.addAction(UIAlertAction(title: model.name, style: .default) { [weak self] _ in
                 guard let self else { return }
                 self.selectedModel = model
                 self.modelComboButton.setTitle(model.name, for: .normal)
