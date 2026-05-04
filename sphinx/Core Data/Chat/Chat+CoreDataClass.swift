@@ -523,6 +523,60 @@ public class Chat: NSManagedObject, @unchecked Sendable {
         }
     }
     
+    func setThreadMessagesAsSeen(threadUUID: String) {
+        let backgroundContext = CoreDataManager.sharedManager.getBackgroundContext()
+
+        backgroundContext.performSafely { [weak self] in
+            guard let self = self else { return }
+            guard let chat = Chat.getChatWith(id: self.id, managedContext: backgroundContext) else { return }
+
+            let userId = UserData.sharedInstance.getUserId()
+            let predicate = NSPredicate(
+                format: "(senderId != %d || type == %d) AND chat == %@ AND threadUUID == %@ AND seen == %@",
+                userId,
+                TransactionMessage.TransactionMessageType.groupJoin.rawValue,
+                chat,
+                threadUUID,
+                NSNumber(booleanLiteral: false)
+            )
+            let unseenThreadMessages: [TransactionMessage] = CoreDataManager.sharedManager.getObjectsOfTypeWith(
+                predicate: predicate,
+                sortDescriptors: [],
+                entityName: "TransactionMessage",
+                context: backgroundContext
+            )
+
+            guard unseenThreadMessages.count > 0 else { return }
+
+            for m in unseenThreadMessages {
+                m.seen = true
+            }
+
+            // Check if the thread's last message is also the chat's last message
+            let maxThreadMsgId = unseenThreadMessages.map { $0.id }.max() ?? 0
+            if let lastChatMessage = chat.getLastMessageToShow(
+                includeContactKeyTypes: true,
+                sortById: true,
+                context: backgroundContext
+            ), lastChatMessage.id == maxThreadMsgId, !chat.seen {
+                chat.seen = true
+                if SphinxOnionManager.sharedInstance.messageIdIsFromHashed(msgId: lastChatMessage.id) == false {
+                    let _ = SphinxOnionManager.sharedInstance.setReadLevel(
+                        index: UInt64(lastChatMessage.id),
+                        chat: chat,
+                        recipContact: chat.getConversationContact(context: backgroundContext)
+                    )
+                }
+            }
+
+            backgroundContext.saveContext()
+
+            DispatchQueue.main.async { [weak self] in
+                self?.calculateBadge()
+            }
+        }
+    }
+
     func getReceivedUnseenMessages(
         context: NSManagedObjectContext
     ) -> [TransactionMessage] {
