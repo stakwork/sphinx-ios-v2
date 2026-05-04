@@ -175,6 +175,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         som.endReconnectionTimer()
         som.disconnectMqtt()
         NetworkMonitor.shared.stopMonitoring()
+        getDashboardVC()?.suspendNetworkObservers()
 
         // Use background task to ensure critical operations complete
         var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
@@ -215,6 +216,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     ) {
         isActive = true
         notificationUserInfo = nil
+        NetworkMonitor.shared.startMonitoring()
+        getDashboardVC()?.resumeNetworkObservers()
 
         // Remove any LiveKit PiP view that became orphaned while the app was in the background
         // (e.g. call ended via network error while suspended, teardown animation never completed).

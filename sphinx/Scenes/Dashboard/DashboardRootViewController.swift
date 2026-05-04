@@ -387,6 +387,18 @@ extension DashboardRootViewController {
         contactsService.forceUpdate()
     }
 
+    func suspendNetworkObservers() {
+        NotificationCenter.default.removeObserver(self, name: .connectedToInternet, object: nil)
+        NotificationCenter.default.removeObserver(self, name: .disconnectedFromInternet, object: nil)
+    }
+
+    func resumeNetworkObservers() {
+        NotificationCenter.default.removeObserver(self, name: .connectedToInternet, object: nil)
+        NotificationCenter.default.removeObserver(self, name: .disconnectedFromInternet, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(didConnectToInternet), name: .connectedToInternet, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(didDisconnectFromInternet), name: .disconnectedFromInternet, object: nil)
+    }
+
     @objc private func didConnectToInternet() {
 //        DispatchQueue.main.async {
 //            if (UIApplication.shared.delegate as? AppDelegate)?.isActive == false {
