@@ -460,6 +460,7 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
         activeFetchBackgroundTaskID = .invalid
         fetchLock.unlock()
 
+        endReconnectionTimer() // Disarm any timer armed during fetch before signalling the system
         print("[BGFetch] completionHandler firing with result: \(result)")
         handler?(result)
 
@@ -615,6 +616,9 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
             self?.mqtt = nil
             self?.backgroundDisconnectCompletion?()
             self?.backgroundDisconnectCompletion = nil
+            // Guard before any dispatch — if backgrounded, do not schedule reconnection
+            let appIsActive = (UIApplication.shared.delegate as? AppDelegate)?.isActive ?? false
+            guard appIsActive else { return }
             self?.startReconnectionTimer()
         }
     }
@@ -838,6 +842,9 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
                 self?.mqtt = nil
                 self?.backgroundDisconnectCompletion?()
                 self?.backgroundDisconnectCompletion = nil
+                // Guard before any dispatch — if backgrounded, do not schedule reconnection
+                let appIsActive = (UIApplication.shared.delegate as? AppDelegate)?.isActive ?? false
+                guard appIsActive else { return }
                 self?.startReconnectionTimer()
             }
             
