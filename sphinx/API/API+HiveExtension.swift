@@ -35,6 +35,7 @@ typealias HiveBranchesCallback = (([WorkspaceBranch]) -> ())
 typealias HiveWorkflowVersionsCallback = (([WorkflowVersion]) -> ())
 typealias HiveWorkspaceMembersCallback = (([WorkspaceMember]) -> ())
 typealias HiveProjectErrorCallback = ((String) -> ())
+typealias HiveLlmModelsCallback = (([HiveLlmModel]) -> ())
 
 // MARK: - WorkspaceRepository
 
@@ -66,6 +67,22 @@ struct WorkspaceBranch {
     init(json: JSON) {
         self.name = json["name"].string ?? ""
         self.sha = json["sha"].string
+    }
+}
+
+// MARK: - HiveLlmModel
+
+struct HiveLlmModel {
+    let id: String
+    let name: String        // e.g. "Claude 3.5 Sonnet" — shown in UI and sent in POST body
+    let isPlanDefault: Bool
+
+    init?(json: JSON) {
+        guard let id = json["id"].string,
+              let name = json["name"].string else { return nil }
+        self.id = id
+        self.name = name
+        self.isPlanDefault = json["isPlanDefault"].bool ?? false
     }
 }
 
@@ -600,18 +617,77 @@ extension API {
         )
     }
 
+    func fetchLlmModels(
+        authToken: String,
+        callback: @escaping HiveLlmModelsCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        let urlString = "\(API.kHiveBaseUrl)/llm-models"
+        guard let request = createRequest(urlString, bodyParams: nil, method: "GET", token: authToken) else {
+            errorCallback(); return
+        }
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                errorCallback(); return
+            }
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+                let models = json["models"].arrayValue.compactMap { HiveLlmModel(json: $0) }
+                callback(models)
+            case .failure:
+                errorCallback()
+            }
+        }
+    }
+
+    func fetchLlmModelsWithAuth(
+        callback: @escaping HiveLlmModelsCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
+            fetchLlmModels(
+                authToken: storedToken,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateWithHive(
+                        callback: { token in
+                            guard let token = token else { errorCallback(); return }
+                            UserDefaults.Keys.hiveToken.set(token)
+                            self?.fetchLlmModels(authToken: token, callback: callback, errorCallback: errorCallback)
+                        },
+                        errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateWithHive(
+                callback: { [weak self] token in
+                    guard let token = token else { errorCallback(); return }
+                    UserDefaults.Keys.hiveToken.set(token)
+                    self?.fetchLlmModels(authToken: token, callback: callback, errorCallback: errorCallback)
+                },
+                errorCallback: errorCallback
+            )
+        }
+    }
+
     func createFeature(
         workspaceId: String,
         title: String,
+        model: String? = nil,
         authToken: String,
         callback: @escaping HiveFeatureCallback,
         errorCallback: @escaping EmptyCallback
     ) {
         let urlString = "\(API.kHiveBaseUrl)/features"
-        let params: [String: AnyObject] = [
+        var params: [String: AnyObject] = [
             "title": title as AnyObject,
             "workspaceId": workspaceId as AnyObject
         ]
+        if let model = model {
+            params["model"] = model as AnyObject
+        }
 
         guard let request = createRequest(urlString, bodyParams: params as NSDictionary, method: "POST", token: authToken) else {
             errorCallback()
@@ -647,6 +723,7 @@ extension API {
     func createFeatureWithAuth(
         workspaceId: String,
         title: String,
+        model: String? = nil,
         callback: @escaping HiveFeatureCallback,
         errorCallback: @escaping EmptyCallback
     ) {
@@ -654,12 +731,14 @@ extension API {
             createFeature(
                 workspaceId: workspaceId,
                 title: title,
+                model: model,
                 authToken: storedToken,
                 callback: callback,
                 errorCallback: { [weak self] in
                     self?.authenticateAndCreateFeature(
                         workspaceId: workspaceId,
                         title: title,
+                        model: model,
                         callback: callback,
                         errorCallback: errorCallback
                     )
@@ -669,6 +748,7 @@ extension API {
             authenticateAndCreateFeature(
                 workspaceId: workspaceId,
                 title: title,
+                model: model,
                 callback: callback,
                 errorCallback: errorCallback
             )
@@ -678,6 +758,7 @@ extension API {
     private func authenticateAndCreateFeature(
         workspaceId: String,
         title: String,
+        model: String? = nil,
         callback: @escaping HiveFeatureCallback,
         errorCallback: @escaping EmptyCallback
     ) {
@@ -688,6 +769,7 @@ extension API {
                 self?.createFeature(
                     workspaceId: workspaceId,
                     title: title,
+                    model: model,
                     authToken: token,
                     callback: callback,
                     errorCallback: errorCallback
@@ -797,6 +879,7 @@ extension API {
     func sendFeatureChatMessage(
         featureId: String,
         message: String,
+        model: String? = nil,
         replyId: String? = nil,
         socketId: String? = nil,
         authToken: String,
@@ -809,12 +892,15 @@ extension API {
         }
 
         let urlString = "\(API.kHiveBaseUrl)/features/\(encodedFeatureId)/chat"
-        let params: [String: AnyObject] = [
+        var params: [String: AnyObject] = [
             "message": message as AnyObject,
             "contextTags": [] as AnyObject,
             "sourceWebsocketID": (socketId as AnyObject? ?? NSNull() as AnyObject),
             "replyId": (replyId as AnyObject? ?? NSNull() as AnyObject)
         ]
+        if let model = model {
+            params["model"] = model as AnyObject
+        }
 
         guard let request = createRequest(urlString, bodyParams: params as NSDictionary, method: "POST", token: authToken) else {
             errorCallback()
@@ -861,6 +947,7 @@ extension API {
     func sendFeatureChatMessageWithAuth(
         featureId: String,
         message: String,
+        model: String? = nil,
         replyId: String? = nil,
         socketId: String? = nil,
         callback: @escaping HiveChatMessageCallback,
@@ -870,6 +957,7 @@ extension API {
             sendFeatureChatMessage(
                 featureId: featureId,
                 message: message,
+                model: model,
                 replyId: replyId,
                 socketId: socketId,
                 authToken: storedToken,
@@ -878,6 +966,7 @@ extension API {
                     self?.authenticateAndSendFeatureChatMessage(
                         featureId: featureId,
                         message: message,
+                        model: model,
                         replyId: replyId,
                         socketId: socketId,
                         callback: callback,
@@ -889,6 +978,7 @@ extension API {
             authenticateAndSendFeatureChatMessage(
                 featureId: featureId,
                 message: message,
+                model: model,
                 replyId: replyId,
                 socketId: socketId,
                 callback: callback,
@@ -900,6 +990,7 @@ extension API {
     private func authenticateAndSendFeatureChatMessage(
         featureId: String,
         message: String,
+        model: String? = nil,
         replyId: String? = nil,
         socketId: String? = nil,
         callback: @escaping HiveChatMessageCallback,
@@ -912,6 +1003,7 @@ extension API {
                 self?.sendFeatureChatMessage(
                     featureId: featureId,
                     message: message,
+                    model: model,
                     replyId: replyId,
                     socketId: socketId,
                     authToken: token,
