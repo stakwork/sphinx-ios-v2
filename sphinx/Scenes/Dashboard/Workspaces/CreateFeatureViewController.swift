@@ -100,6 +100,7 @@ class CreateFeatureViewController: UIViewController {
                         self.selectedModel = models.first(where: { $0.isPlanDefault }) ?? models.first
                         self.modelComboButton.setTitle(self.selectedModel?.name ?? "Select Model", for: .normal)
                         self.modelComboButton.isHidden = false
+                        self.comboStackView.isHidden = false
                     }
                 },
                 errorCallback: { /* silent — selector stays hidden, creation proceeds without model */ }
@@ -210,7 +211,7 @@ class CreateFeatureViewController: UIViewController {
         comboStackView = UIStackView(arrangedSubviews: [modelComboButton, modeSelectorButton, repositoryComboButton, branchComboButton, versionComboButton])
         comboStackView.axis = .vertical
         comboStackView.spacing = 8
-        comboStackView.isHidden = (mode == .feature)
+        comboStackView.isHidden = true
 
         // Bottom Container (send button row)
         let bottomContainer = UIView()
@@ -360,6 +361,8 @@ class CreateFeatureViewController: UIViewController {
         case .loadWorkflow: promptLabel.text = "Paste Workflow ID"
         default: break
         }
+        comboStackView.isHidden = false
+        modelComboButton.isHidden      = true
         repositoryComboButton.isHidden = (newMode != .task)
         branchComboButton.isHidden     = (newMode != .task)
         versionComboButton.isHidden    = (newMode != .loadWorkflow)
