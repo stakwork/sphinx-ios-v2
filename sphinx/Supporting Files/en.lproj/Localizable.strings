@@ -714,6 +714,12 @@
 "send.payment" = "Send Payment";
 "request.payment" = "Request Payment";
 
+//DIAGNOSTICS
+"left-menu.diagnostics" = "Diagnostics";
+"diagnostics.title" = "Diagnostics";
+"diagnostics.export-button" = "Export Logs";
+"diagnostics.clear-button" = "Clear Logs";
+
 //THREAD
 "more-replies" = "more replies";
 "show-more" = "SHOW MORE";

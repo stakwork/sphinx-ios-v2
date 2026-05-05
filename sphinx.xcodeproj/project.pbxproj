@@ -149,6 +149,7 @@
 		4733ED232CA4889600078EF2 /* NewUnifiedEpisodeView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 4733ED222CA4889600078EF2 /* NewUnifiedEpisodeView.xib */; };
 		4733ED272CA72AA200078EF2 /* SphinxOnionManager+PeopleExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4733ED262CA72AA200078EF2 /* SphinxOnionManager+PeopleExtension.swift */; };
 		4733ED2F2CB556F500078EF2 /* ColorsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4733ED2E2CB556F500078EF2 /* ColorsManager.swift */; };
+		A29D9AD9B5C845C4A57CF79D /* AppLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = B763D8DC52CC4B6A9F12A9FB /* AppLogger.swift */; };
 		4733ED312CB5572700078EF2 /* SphinxOnionManager+OnionStateExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4733ED302CB5572700078EF2 /* SphinxOnionManager+OnionStateExtension.swift */; };
 		47341E8428C79A8B00426055 /* CustomAlertController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47341E8328C79A8B00426055 /* CustomAlertController.swift */; };
 		4734D3C9241AA24C00D6957E /* PaymentTemplateViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4734D3C8241AA24C00D6957E /* PaymentTemplateViewController.swift */; };
@@ -1363,6 +1364,7 @@
 		4733ED222CA4889600078EF2 /* NewUnifiedEpisodeView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = NewUnifiedEpisodeView.xib; sourceTree = "<group>"; };
 		4733ED262CA72AA200078EF2 /* SphinxOnionManager+PeopleExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SphinxOnionManager+PeopleExtension.swift"; sourceTree = "<group>"; };
 		4733ED2E2CB556F500078EF2 /* ColorsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorsManager.swift; sourceTree = "<group>"; };
+		B763D8DC52CC4B6A9F12A9FB /* AppLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLogger.swift; sourceTree = "<group>"; };
 		4733ED302CB5572700078EF2 /* SphinxOnionManager+OnionStateExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SphinxOnionManager+OnionStateExtension.swift"; sourceTree = "<group>"; };
 		47341E8028C642DC00426055 /* sphinx 34.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 34.xcdatamodel"; sourceTree = "<group>"; };
 		47341E8328C79A8B00426055 /* CustomAlertController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomAlertController.swift; sourceTree = "<group>"; };
@@ -2693,6 +2695,7 @@
 				47BB1D68239933B20049802B /* Messages Encryption */,
 				47AAFC83238F009D00E30BDA /* Attachments */,
 				47352E4D2440FEBC00E5CC7F /* Windows */,
+				40452B09CCE44CBDAB3BA0C5 /* Logging */,
 			);
 			path = Managers;
 			sourceTree = "<group>";
@@ -2861,6 +2864,14 @@
 				47352E4B2440FEB800E5CC7F /* WindowsManager.swift */,
 			);
 			path = Windows;
+			sourceTree = "<group>";
+		};
+		40452B09CCE44CBDAB3BA0C5 /* Logging */ = {
+			isa = PBXGroup;
+			children = (
+				B763D8DC52CC4B6A9F12A9FB /* AppLogger.swift */,
+			);
+			path = Logging;
 			sourceTree = "<group>";
 		};
 		47357A082729A0BB00A49EEE /* NewsletterFeed */ = {
@@ -5777,6 +5788,7 @@
 				F38744E1271FD7CB00E28C84 /* Video+DisplayUtils.swift in Sources */,
 				F358212F2698BE6800A314F1 /* API+HubError.swift in Sources */,
 				4733ED2F2CB556F500078EF2 /* ColorsManager.swift in Sources */,
+				A29D9AD9B5C845C4A57CF79D /* AppLogger.swift in Sources */,
 				472161CD293A67A50088B87B /* YoutubeRecommendationFeedPlayerViewController.swift in Sources */,
 				475962212F5210E500564B7F /* HivePusherManager.swift in Sources */,
 				F1112586252F49F6B6476409 /* HiveAnyCableDelegate.swift in Sources */,

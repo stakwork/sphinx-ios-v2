@@ -77,6 +77,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
         
+        AppLogger.shared.start()
+        
         isActive = true
         
         if #available(iOS 15.0, *) {
@@ -165,6 +167,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func applicationDidEnterBackground(
         _ application: UIApplication
     ) {
+        AppLogger.shared.flush()
+        
         isActive = false
         notificationUserInfo = nil
         saveCurrentStyle()
@@ -300,6 +304,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func applicationWillTerminate(
         _ application: UIApplication
     ) {
+        AppLogger.shared.flush()
+        
         setBadge(application: application)
 
 //        SKPaymentQueue.default().remove(StoreKitService.shared)
