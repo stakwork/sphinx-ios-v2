@@ -36,12 +36,14 @@ class LeftMenuViewController: UIViewController {
         case Dashboard
         case Contacts
         case Profile
+        case Diagnostics
     }
     
     let menuOptions: [MenuOption] = [
         MenuOption(tag: MenuOptions.Dashboard, iconCharacter: "", optionTitle: "left-menu.dashboard".localized),
         MenuOption(tag: MenuOptions.Contacts, iconCharacter: "", optionTitle: "left-menu.contacts".localized),
-        MenuOption(tag: MenuOptions.Profile, iconCharacter: "", optionTitle: "left-menu.profile".localized)
+        MenuOption(tag: MenuOptions.Profile, iconCharacter: "", optionTitle: "left-menu.profile".localized),
+        MenuOption(tag: MenuOptions.Diagnostics, iconCharacter: "", optionTitle: "left-menu.diagnostics".localized)
     ]
     
     let kMenuRowHeight: CGFloat = 65
@@ -244,6 +246,9 @@ extension LeftMenuViewController : UITableViewDelegate {
         case MenuOptions.Dashboard:
             let dashboardRootVC = DashboardRootViewController.instantiate(leftMenuDelegate: self)
             goTo(vc: dashboardRootVC)
+        case MenuOptions.Diagnostics:
+            let diagnosticsVC = DiagnosticsViewController.instantiate()
+            push(vc: diagnosticsVC)
         }
     }
 }
