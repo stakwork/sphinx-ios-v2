@@ -91,7 +91,7 @@ class DiagnosticsViewController: UIViewController {
             string: "[\(ts)] ",
             attributes: [
                 .font: mono,
-                .foregroundColor: UIColor.Sphinx.Text
+                .foregroundColor: UIColor.Sphinx.PrimaryBlue
             ]
         )
 
@@ -99,7 +99,7 @@ class DiagnosticsViewController: UIViewController {
         let levelColor: UIColor
         switch entry.level {
         case .debug:   levelColor = UIColor.Sphinx.SecondaryText
-        case .info:    levelColor = UIColor.Sphinx.PrimaryBlue
+        case .info:    levelColor = UIColor.Sphinx.SecondaryText
         case .warning: levelColor = UIColor.Sphinx.SphinxOrange
         case .error:   levelColor = UIColor.Sphinx.PrimaryRed
         }
