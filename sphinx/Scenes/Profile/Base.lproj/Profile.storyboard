@@ -2247,6 +2247,98 @@
             </objects>
             <point key="canvasLocation" x="4200" y="206"/>
         </scene>
+        <scene sceneID="DVC-sc-001">
+            <objects>
+                <viewController storyboardIdentifier="DiagnosticsViewController" id="DVC-vc-001" customClass="DiagnosticsViewController" customModule="sphinx" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="DVC-vw-001">
+                        <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="DVC-status-bar">
+                                <rect key="frame" x="0.0" y="0.0" width="414" height="96"/>
+                                <color key="backgroundColor" name="Body"/>
+                            </view>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="DVC-header-view">
+                                <rect key="frame" x="0.0" y="96" width="414" height="50"/>
+                                <subviews>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="DVC-back-btn">
+                                        <rect key="frame" x="0.0" y="0.0" width="50" height="50"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="50" id="DVC-back-w"/>
+                                        </constraints>
+                                        <fontDescription key="fontDescription" name="MaterialIcons-Regular" family="Material Icons" pointSize="21"/>
+                                        <state key="normal" title="&#xE5C4;">
+                                            <color key="titleColor" name="WashedOutReceivedText"/>
+                                        </state>
+                                        <connections>
+                                            <action selector="backButtonTouched" destination="DVC-vc-001" eventType="touchUpInside" id="DVC-back-act"/>
+                                        </connections>
+                                    </button>
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="DIAGNOSTICS" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="DVC-title-lbl">
+                                        <rect key="frame" x="128" y="16.5" width="158.5" height="17"/>
+                                        <fontDescription key="fontDescription" name="Montserrat-SemiBold" family="Montserrat" pointSize="14"/>
+                                        <color key="textColor" name="Text"/>
+                                        <nil key="highlightedColor"/>
+                                    </label>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="DVC-export-btn">
+                                        <rect key="frame" x="354" y="5" width="50" height="40"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="50" id="DVC-export-w"/>
+                                            <constraint firstAttribute="height" constant="40" id="DVC-export-h"/>
+                                        </constraints>
+                                        <fontDescription key="fontDescription" name="Roboto-Bold" family="Roboto" pointSize="11"/>
+                                        <state key="normal" title="Export">
+                                            <color key="titleColor" name="PrimaryBlue"/>
+                                        </state>
+                                        <connections>
+                                            <action selector="exportTapped" destination="DVC-vc-001" eventType="touchUpInside" id="DVC-export-act"/>
+                                        </connections>
+                                    </button>
+                                </subviews>
+                                <color key="backgroundColor" name="Body"/>
+                                <constraints>
+                                    <constraint firstItem="DVC-back-btn" firstAttribute="leading" secondItem="DVC-header-view" secondAttribute="leading" id="DVC-hdr-c1"/>
+                                    <constraint firstItem="DVC-back-btn" firstAttribute="top" secondItem="DVC-header-view" secondAttribute="top" id="DVC-hdr-c2"/>
+                                    <constraint firstAttribute="bottom" secondItem="DVC-back-btn" secondAttribute="bottom" id="DVC-hdr-c3"/>
+                                    <constraint firstItem="DVC-title-lbl" firstAttribute="centerY" secondItem="DVC-header-view" secondAttribute="centerY" id="DVC-hdr-c4"/>
+                                    <constraint firstItem="DVC-title-lbl" firstAttribute="centerX" secondItem="DVC-header-view" secondAttribute="centerX" id="DVC-hdr-c5"/>
+                                    <constraint firstAttribute="height" constant="50" id="DVC-hdr-h"/>
+                                    <constraint firstAttribute="trailing" secondItem="DVC-export-btn" secondAttribute="trailing" constant="10" id="DVC-hdr-c6"/>
+                                    <constraint firstItem="DVC-export-btn" firstAttribute="centerY" secondItem="DVC-header-view" secondAttribute="centerY" id="DVC-hdr-c7"/>
+                                </constraints>
+                            </view>
+                            <textView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" editable="NO" selectable="YES" translatesAutoresizingMaskIntoConstraints="NO" id="DVC-tv-001">
+                                <rect key="frame" x="0.0" y="146" width="414" height="750"/>
+                                <color key="backgroundColor" name="Body"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="11"/>
+                                <textInputTraits key="textInputTraits" autocapitalizationType="none" autocorrectionType="no"/>
+                            </textView>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="DVC-safe-area"/>
+                        <color key="backgroundColor" name="Body"/>
+                        <constraints>
+                            <constraint firstItem="DVC-status-bar" firstAttribute="top" secondItem="DVC-vw-001" secondAttribute="top" id="DVC-c1"/>
+                            <constraint firstItem="DVC-status-bar" firstAttribute="leading" secondItem="DVC-vw-001" secondAttribute="leading" id="DVC-c2"/>
+                            <constraint firstAttribute="trailing" secondItem="DVC-status-bar" secondAttribute="trailing" id="DVC-c3"/>
+                            <constraint firstItem="DVC-header-view" firstAttribute="top" secondItem="DVC-safe-area" secondAttribute="top" id="DVC-c4"/>
+                            <constraint firstItem="DVC-header-view" firstAttribute="leading" secondItem="DVC-vw-001" secondAttribute="leading" id="DVC-c5"/>
+                            <constraint firstAttribute="trailing" secondItem="DVC-header-view" secondAttribute="trailing" id="DVC-c6"/>
+                            <constraint firstItem="DVC-tv-001" firstAttribute="top" secondItem="DVC-header-view" secondAttribute="bottom" id="DVC-c7"/>
+                            <constraint firstItem="DVC-tv-001" firstAttribute="leading" secondItem="DVC-vw-001" secondAttribute="leading" id="DVC-c8"/>
+                            <constraint firstAttribute="trailing" secondItem="DVC-tv-001" secondAttribute="trailing" id="DVC-c9"/>
+                            <constraint firstAttribute="bottomMargin" secondItem="DVC-tv-001" secondAttribute="bottom" id="DVC-c10"/>
+                        </constraints>
+                    </view>
+                    <connections>
+                        <outlet property="exportButton" destination="DVC-export-btn" id="DVC-out-export"/>
+                        <outlet property="headerView" destination="DVC-header-view" id="DVC-out-header"/>
+                        <outlet property="textView" destination="DVC-tv-001" id="DVC-out-tv"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="DVC-fr-001" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="5400" y="206"/>
+        </scene>
     </scenes>
     <resources>
         <image name="deleteIcon" width="38" height="38"/>

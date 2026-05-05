@@ -10,104 +10,38 @@ import UIKit
 
 class DiagnosticsViewController: UIViewController {
 
-    // MARK: - UI
+    // MARK: - IBOutlets
 
-    private let textView: UITextView = {
-        let tv = UITextView()
-        tv.isEditable = false
-        tv.isSelectable = true
-        tv.backgroundColor = UIColor.Sphinx.Body
-        tv.textColor = UIColor.Sphinx.Text
-        tv.font = UIFont.monospacedSystemFont(ofSize: 11, weight: .regular)
-        tv.translatesAutoresizingMaskIntoConstraints = false
-        return tv
-    }()
+    @IBOutlet weak var headerView: UIView!
+    @IBOutlet weak var textView: UITextView!
+    @IBOutlet weak var exportButton: UIButton!
 
     // MARK: - Factory
 
     static func instantiate() -> DiagnosticsViewController {
-        return DiagnosticsViewController()
+        return StoryboardScene.Profile.diagnosticsViewController.instantiate()
     }
 
     // MARK: - Lifecycle
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupUI()
         loadExistingEntries()
         subscribeToNewEntries()
     }
 
-    // MARK: - Setup
-
-    private func setupUI() {
-        title = "diagnostics.title".localized
-        view.backgroundColor = UIColor.Sphinx.Body
-
-        // Export button (right)
-        navigationItem.rightBarButtonItem = UIBarButtonItem(
-            title: "diagnostics.export-button".localized,
-            style: .plain,
-            target: self,
-            action: #selector(exportTapped)
-        )
-
-        // Clear button (left)
-        navigationItem.leftBarButtonItem = UIBarButtonItem(
-            title: "diagnostics.clear-button".localized,
-            style: .plain,
-            target: self,
-            action: #selector(clearTapped)
-        )
-
-        view.addSubview(textView)
-        NSLayoutConstraint.activate([
-            textView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            textView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            textView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            textView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
-        ])
-    }
-
-    private func loadExistingEntries() {
-        let lines = AppLogger.shared.entries.map { formattedLine($0) }.joined(separator: "\n")
-        textView.text = lines.isEmpty ? "" : lines + "\n"
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
         scrollToBottom(animated: false)
     }
 
-    private func subscribeToNewEntries() {
-        AppLogger.shared.onNewEntry = { [weak self] entry in
-            guard let self else { return }
-            DispatchQueue.main.async {
-                self.appendLine(self.formattedLine(entry))
-            }
-        }
+    // MARK: - IBActions
+
+    @IBAction func backButtonTouched() {
+        navigationController?.popViewController(animated: true)
     }
 
-    // MARK: - Helpers
-
-    private func formattedLine(_ entry: LogEntry) -> String {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime]
-        let ts = formatter.string(from: entry.timestamp)
-        return "[\(ts)] [\(entry.level.rawValue)] \(entry.message)"
-    }
-
-    private func appendLine(_ line: String) {
-        let current = textView.text ?? ""
-        textView.text = current + line + "\n"
-        scrollToBottom(animated: true)
-    }
-
-    private func scrollToBottom(animated: Bool) {
-        guard !textView.text.isEmpty else { return }
-        let range = NSRange(location: textView.text.utf16.count - 1, length: 1)
-        textView.scrollRangeToVisible(range)
-    }
-
-    // MARK: - Actions
-
-    @objc private func exportTapped() {
+    @IBAction func exportTapped() {
         guard let url = AppLogger.shared.exportedFileURL() else {
             let alert = UIAlertController(
                 title: "Export Failed",
@@ -119,12 +53,73 @@ class DiagnosticsViewController: UIViewController {
             return
         }
         let activityVC = UIActivityViewController(activityItems: [url], applicationActivities: nil)
-        activityVC.popoverPresentationController?.barButtonItem = navigationItem.rightBarButtonItem
+        activityVC.popoverPresentationController?.sourceView = exportButton
         present(activityVC, animated: true)
     }
 
-    @objc private func clearTapped() {
-        AppLogger.shared.clear()
-        textView.text = ""
+    // MARK: - Private helpers
+
+    private func loadExistingEntries() {
+        let attrStr = NSMutableAttributedString()
+        for entry in AppLogger.shared.entries {
+            attrStr.append(attributedLine(for: entry))
+        }
+        textView.attributedText = attrStr
+    }
+
+    private func subscribeToNewEntries() {
+        AppLogger.shared.onNewEntry = { [weak self] entry in
+            guard let self else { return }
+            DispatchQueue.main.async {
+                let current = NSMutableAttributedString(attributedString: self.textView.attributedText ?? NSAttributedString())
+                current.append(self.attributedLine(for: entry))
+                self.textView.attributedText = current
+                self.scrollToBottom(animated: true)
+            }
+        }
+    }
+
+    private func attributedLine(for entry: LogEntry) -> NSAttributedString {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm:ss.SSS"
+        let ts = formatter.string(from: entry.timestamp)
+
+        let mono = UIFont.monospacedSystemFont(ofSize: 11, weight: .regular)
+
+        // Timestamp part – always Sphinx.Text colour
+        let tsAttr = NSAttributedString(
+            string: "[\(ts)] ",
+            attributes: [
+                .font: mono,
+                .foregroundColor: UIColor.Sphinx.Text
+            ]
+        )
+
+        // Level + message – coloured by level
+        let levelColor: UIColor
+        switch entry.level {
+        case .debug:   levelColor = UIColor.Sphinx.SecondaryText
+        case .info:    levelColor = UIColor.Sphinx.PrimaryBlue
+        case .warning: levelColor = UIColor.Sphinx.SphinxOrange
+        case .error:   levelColor = UIColor.Sphinx.PrimaryRed
+        }
+
+        let body = NSAttributedString(
+            string: "[\(entry.level.rawValue)] \(entry.message)\n",
+            attributes: [
+                .font: mono,
+                .foregroundColor: levelColor
+            ]
+        )
+
+        let line = NSMutableAttributedString(attributedString: tsAttr)
+        line.append(body)
+        return line
+    }
+
+    private func scrollToBottom(animated: Bool) {
+        guard let text = textView.text, !text.isEmpty else { return }
+        let bottom = NSRange(location: textView.text.utf16.count - 1, length: 1)
+        textView.scrollRangeToVisible(bottom)
     }
 }
