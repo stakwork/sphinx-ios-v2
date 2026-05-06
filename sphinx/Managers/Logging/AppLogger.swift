@@ -42,8 +42,7 @@ final class AppLogger: @unchecked Sendable {
     /// Read only from the main thread after initial load; mutated only on `queue`.
     private(set) var entries: [LogEntry] = []
 
-    /// Called on the main thread whenever a new entry is added.
-    var onNewEntry: (@Sendable (LogEntry) -> Void)?
+    private var entryObservers: [UUID: (LogEntry) -> Void] = [:]
 
     private let queue = DispatchQueue(label: "com.sphinx.applogger", qos: .utility)
     private var isStarted = false
@@ -66,6 +65,22 @@ final class AppLogger: @unchecked Sendable {
     private init() {}
 
     // MARK: - Public API
+
+    /// Register a callback invoked on the main thread for every new log entry.
+    /// Returns a token that must be passed to `removeObserver` to unsubscribe.
+    func addObserver(_ handler: @escaping (LogEntry) -> Void) -> UUID {
+        let id = UUID()
+        queue.async { [weak self] in
+            self?.entryObservers[id] = handler
+        }
+        return id
+    }
+
+    func removeObserver(_ id: UUID) {
+        queue.async { [weak self] in
+            self?.entryObservers.removeValue(forKey: id)
+        }
+    }
 
     /// Call as the very first thing in application(_:didFinishLaunchingWithOptions:)
     func start() {
@@ -127,9 +142,9 @@ final class AppLogger: @unchecked Sendable {
     private func append(message: String, level: LogLevel = .info) {
         let entry = LogEntry(id: UUID(), timestamp: Date(), level: level, message: message)
         entries.append(entry)
-        let callback = onNewEntry
+        let observers = entryObservers
         DispatchQueue.main.async {
-            callback?(entry)
+            observers.values.forEach { $0(entry) }
         }
     }
 

@@ -15,6 +15,7 @@ class DiagnosticsViewController: UIViewController {
     @IBOutlet weak var headerView: UIView!
     @IBOutlet weak var textView: UITextView!
     @IBOutlet weak var exportButton: UIButton!
+    private var logObserverID: UUID?
 
     // MARK: - Factory
 
@@ -61,21 +62,27 @@ class DiagnosticsViewController: UIViewController {
 
     private func loadExistingEntries() {
         let attrStr = NSMutableAttributedString()
-        for entry in AppLogger.shared.entries {
+        for entry in AppLogger.shared.entries.suffix(10000) {
             attrStr.append(attributedLine(for: entry))
         }
         textView.attributedText = attrStr
     }
 
     private func subscribeToNewEntries() {
-        AppLogger.shared.onNewEntry = { [weak self] entry in
+        logObserverID = AppLogger.shared.addObserver { [weak self] entry in
             guard let self else { return }
-            DispatchQueue.main.async {
-                let current = NSMutableAttributedString(attributedString: self.textView.attributedText ?? NSAttributedString())
-                current.append(self.attributedLine(for: entry))
-                self.textView.attributedText = current
-                self.scrollToBottom(animated: true)
-            }
+            let current = NSMutableAttributedString(attributedString: self.textView.attributedText ?? NSAttributedString())
+            current.append(self.attributedLine(for: entry))
+            self.textView.attributedText = current
+            self.scrollToBottom(animated: true)
+        }
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        if let id = logObserverID {
+            AppLogger.shared.removeObserver(id)
+            logObserverID = nil
         }
     }
 

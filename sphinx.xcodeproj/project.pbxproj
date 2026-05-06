@@ -149,8 +149,6 @@
 		4733ED232CA4889600078EF2 /* NewUnifiedEpisodeView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 4733ED222CA4889600078EF2 /* NewUnifiedEpisodeView.xib */; };
 		4733ED272CA72AA200078EF2 /* SphinxOnionManager+PeopleExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4733ED262CA72AA200078EF2 /* SphinxOnionManager+PeopleExtension.swift */; };
 		4733ED2F2CB556F500078EF2 /* ColorsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4733ED2E2CB556F500078EF2 /* ColorsManager.swift */; };
-		A29D9AD9B5C845C4A57CF79D /* AppLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = B763D8DC52CC4B6A9F12A9FB /* AppLogger.swift */; };
-		C1A2B3D4E5F60718293A4B5D /* DiagnosticsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A2B3D4E5F60718293A4B5C /* DiagnosticsViewController.swift */; };
 		4733ED312CB5572700078EF2 /* SphinxOnionManager+OnionStateExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4733ED302CB5572700078EF2 /* SphinxOnionManager+OnionStateExtension.swift */; };
 		47341E8428C79A8B00426055 /* CustomAlertController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47341E8328C79A8B00426055 /* CustomAlertController.swift */; };
 		4734D3C9241AA24C00D6957E /* PaymentTemplateViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4734D3C8241AA24C00D6957E /* PaymentTemplateViewController.swift */; };
@@ -692,6 +690,7 @@
 		A1B2C3D4E5F6A1B2 /* WorkflowDiffData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A1B3 /* WorkflowDiffData.swift */; };
 		A1B2C3D4E5F6A1B4 /* WorkflowDiffView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A1B5 /* WorkflowDiffView.swift */; };
 		A1B2C3D4E5F6A7B8C9D0E1F2 /* TaskProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6A7B8C9D0E1F2A3 /* TaskProgress.swift */; };
+		A29D9AD9B5C845C4A57CF79D /* AppLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = B763D8DC52CC4B6A9F12A9FB /* AppLogger.swift */; };
 		A5F3D5A533984995ADE1BADF /* WorkspaceFeatureTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = C638608884A0403797B98830 /* WorkspaceFeatureTableViewCell.xib */; };
 		A748D979E2F14560BF39E4A7 /* HiveChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8ABF62A347844ECEB2FC60A4 /* HiveChatMessage.swift */; };
 		A9F9FCD16AAC4DCD96AD35C4 /* HiveAnyCableManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E9262D0931349B5946161EE /* HiveAnyCableManager.swift */; };
@@ -708,6 +707,7 @@
 		BC156E8B9FC640DAB0D6E3A1 /* TaskDependencyDiagramCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1426B8E2ACCC4781BB119239 /* TaskDependencyDiagramCell.swift */; };
 		BC229678E479BF4D62942DCD /* TaskChatViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD09FC96699AA4977BB011A /* TaskChatViewController.swift */; };
 		BE880A27BE0E704666995737 /* PRArtifactCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD1BE98930F1EB41308524E1 /* PRArtifactCardView.swift */; };
+		C1A2B3D4E5F60718293A4B5D /* DiagnosticsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A2B3D4E5F60718293A4B5C /* DiagnosticsViewController.swift */; };
 		C3D4E5F6A7B8C9D0E1F2A3B4 /* TaskProgressBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9D0E1F2A3B4C5 /* TaskProgressBarView.swift */; };
 		C4D5E6F7A8B949C0D1E2F3A4 /* WorkspaceTaskTableViewCellTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5E6F7A8B9CA4A01E2F3A4B5 /* WorkspaceTaskTableViewCellTests.swift */; };
 		CE030A6B2B97C0860067F9F1 /* SphinxOnionManager+InvoicesExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE030A6A2B97C0860067F9F1 /* SphinxOnionManager+InvoicesExtension.swift */; };
@@ -1365,8 +1365,6 @@
 		4733ED222CA4889600078EF2 /* NewUnifiedEpisodeView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = NewUnifiedEpisodeView.xib; sourceTree = "<group>"; };
 		4733ED262CA72AA200078EF2 /* SphinxOnionManager+PeopleExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SphinxOnionManager+PeopleExtension.swift"; sourceTree = "<group>"; };
 		4733ED2E2CB556F500078EF2 /* ColorsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorsManager.swift; sourceTree = "<group>"; };
-		B763D8DC52CC4B6A9F12A9FB /* AppLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLogger.swift; sourceTree = "<group>"; };
-		C1A2B3D4E5F60718293A4B5C /* DiagnosticsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticsViewController.swift; sourceTree = "<group>"; };
 		4733ED302CB5572700078EF2 /* SphinxOnionManager+OnionStateExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SphinxOnionManager+OnionStateExtension.swift"; sourceTree = "<group>"; };
 		47341E8028C642DC00426055 /* sphinx 34.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 34.xcdatamodel"; sourceTree = "<group>"; };
 		47341E8328C79A8B00426055 /* CustomAlertController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomAlertController.swift; sourceTree = "<group>"; };
@@ -2037,11 +2035,13 @@
 		B2C3D4E5F60002I9J0K1L2M3 /* HiveLinkNavigator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveLinkNavigator.swift; sourceTree = "<group>"; };
 		B2C3D4E5F6A7B8C9D0E1F2A3 /* TaskProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskProgress.swift; sourceTree = "<group>"; };
 		B4D0E0284E4B436180B0BAAF /* HivePusherManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HivePusherManagerTests.swift; sourceTree = "<group>"; };
+		B763D8DC52CC4B6A9F12A9FB /* AppLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLogger.swift; sourceTree = "<group>"; };
 		BB22CC33DD44EE55FF667799 /* HiveSearchResultCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveSearchResultCell.swift; sourceTree = "<group>"; };
 		BB22CC33DD44EE55FF6677BB /* HiveSearchResultCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = HiveSearchResultCell.xib; sourceTree = "<group>"; };
 		BB22CC33DD44EE55FF6677DD /* WorkspaceSearchViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceSearchViewController.swift; sourceTree = "<group>"; };
 		BBD09FC96699AA4977BB011A /* TaskChatViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskChatViewController.swift; sourceTree = "<group>"; };
 		BD1BE98930F1EB41308524E1 /* PRArtifactCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PRArtifactCardView.swift; sourceTree = "<group>"; };
+		C1A2B3D4E5F60718293A4B5C /* DiagnosticsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticsViewController.swift; sourceTree = "<group>"; };
 		C4D6CE7267E74E279F16D1AB /* AgentEventsSSEManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentEventsSSEManager.swift; sourceTree = "<group>"; };
 		C638608884A0403797B98830 /* WorkspaceFeatureTableViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = WorkspaceFeatureTableViewCell.xib; sourceTree = "<group>"; };
 		CE030A6A2B97C0860067F9F1 /* SphinxOnionManager+InvoicesExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "SphinxOnionManager+InvoicesExtension.swift"; sourceTree = "<group>"; };
@@ -2447,6 +2447,14 @@
 				418E7C0432271F8419FEF643 /* Pods-SphinxNotificationExtensionService.release.xcconfig */,
 			);
 			path = Pods;
+			sourceTree = "<group>";
+		};
+		40452B09CCE44CBDAB3BA0C5 /* Logging */ = {
+			isa = PBXGroup;
+			children = (
+				B763D8DC52CC4B6A9F12A9FB /* AppLogger.swift */,
+			);
+			path = Logging;
 			sourceTree = "<group>";
 		};
 		4701460D2A3B79AD00A00DF8 /* NewMessageTableViewCell */ = {
@@ -2866,14 +2874,6 @@
 				47352E4B2440FEB800E5CC7F /* WindowsManager.swift */,
 			);
 			path = Windows;
-			sourceTree = "<group>";
-		};
-		40452B09CCE44CBDAB3BA0C5 /* Logging */ = {
-			isa = PBXGroup;
-			children = (
-				B763D8DC52CC4B6A9F12A9FB /* AppLogger.swift */,
-			);
-			path = Logging;
 			sourceTree = "<group>";
 		};
 		47357A082729A0BB00A49EEE /* NewsletterFeed */ = {
@@ -3459,14 +3459,6 @@
 				4707089824AE46FA00A98DCA /* UserContact */,
 			);
 			path = "Core Data";
-			sourceTree = "<group>";
-		};
-		C1A2B3D4E5F60718293A4B5E /* Diagnostics */ = {
-			isa = PBXGroup;
-			children = (
-				C1A2B3D4E5F60718293A4B5C /* DiagnosticsViewController.swift */,
-			);
-			path = Diagnostics;
 			sourceTree = "<group>";
 		};
 		475BDD62232BEE7C00C5BBD6 /* Left Menu */ = {
@@ -4679,6 +4671,14 @@
 				31C8F6F4C52D48F59440969F /* AIAgentManager.swift */,
 			);
 			path = "AI Agent";
+			sourceTree = "<group>";
+		};
+		C1A2B3D4E5F60718293A4B5E /* Diagnostics */ = {
+			isa = PBXGroup;
+			children = (
+				C1A2B3D4E5F60718293A4B5C /* DiagnosticsViewController.swift */,
+			);
+			path = Diagnostics;
 			sourceTree = "<group>";
 		};
 		CE3133A32977747E00E91E3A /* Badges */ = {
@@ -7279,7 +7279,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sphinx/sphinx.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 295;
+				CURRENT_PROJECT_VERSION = 296;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 8297M44YTW;
 				ENABLE_BITCODE = NO;
@@ -7369,7 +7369,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sphinx/sphinx.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 295;
+				CURRENT_PROJECT_VERSION = 296;
 				DEVELOPMENT_TEAM = 8297M44YTW;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
