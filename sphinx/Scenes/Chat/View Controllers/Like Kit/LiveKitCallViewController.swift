@@ -18,6 +18,8 @@ class LiveKitCallViewController: UIViewController {
     var startRecording: Bool = false
     var token: String? = nil
     var audioOnly: Bool = true
+    var isAdmin: Bool = false
+    var adminToken: String = ""
     
     var appCtx = AppContext(store: sync)
     var roomCtx = RoomContext(store: sync)
@@ -33,6 +35,8 @@ class LiveKitCallViewController: UIViewController {
         roomCtx.startRecording = startRecording
         roomCtx.token = token
         roomCtx.audioOnly = audioOnly
+        roomCtx.isAdmin = isAdmin
+        roomCtx.adminToken = adminToken
         
         self.view.backgroundColor = UIColor.clear
         

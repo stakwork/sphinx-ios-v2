@@ -124,7 +124,8 @@ extension NewChatViewModel {
                 VideoCallManager.sharedInstance.startVideoCall(
                     link: link,
                     shouldStartRecording: chat?.hasSecondBrainApp() == true || chat?.hasWebApp() == true,
-                    audioOnly: link.contains("startAudioOnly=true")
+                    audioOnly: link.contains("startAudioOnly=true"),
+                    isHost: true
                 )
             }
         }
