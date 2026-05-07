@@ -114,7 +114,8 @@ import AVKit
     func startVideoCall(
         link: String,
         shouldStartRecording: Bool = false,
-        audioOnly: Bool? = nil
+        audioOnly: Bool? = nil,
+        isHost: Bool = false
     ) {
         guard let owner = UserContact.getOwner() else {
             return
@@ -137,6 +138,7 @@ import AVKit
                 alias: owner.nickname ?? "",
                 profilePicture: owner.avatarUrl,
                 hiveToken: linkUrl.liveKitHiveToken,
+                isHost: isHost,
                 callback: { url, token in
                     Task { @MainActor [weak self] in
                         guard let self = self else { return }
@@ -145,6 +147,11 @@ import AVKit
                         liveKitVC.startRecording = linkUrl.contains("record=true") || shouldStartRecording
                         liveKitVC.token = token
                         liveKitVC.audioOnly = audioOnly ?? false
+
+                        if isHost {
+                            liveKitVC.isAdmin = true
+                            liveKitVC.adminToken = token
+                        }
 
                         guard let window = self.getKeyWindow() else {
                             self.isStartingCall = false

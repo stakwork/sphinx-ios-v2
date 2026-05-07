@@ -1090,14 +1090,34 @@ struct RoomView: View {
                     }
                 }.frame(width: 32.0, height: 32.0)
                 
-                if !(participant is LocalParticipant) {
+                if !(participant is LocalParticipant) && roomCtx.isAdmin {
                     Menu {
                         Button(role: .destructive) {
+                            DispatchQueue.main.async {
+                                self.newMessageBubbleHelper.showGenericMessageView(
+                                    text: "Removing participant, please wait…",
+                                    delay: 3,
+                                    textColor: UIColor.white,
+                                    backColor: UIColor.Sphinx.Text,
+                                    backAlpha: 1.0
+                                )
+                            }
                             API.sharedInstance.removeParticipant(
                                 room: room.name ?? "",
-                                participantIdentity: participant.identity?.stringValue ?? ""
+                                participantIdentity: participant.identity?.stringValue ?? "",
+                                adminToken: roomCtx.adminToken
                             ) { success in
-                                if !success {
+                                if success {
+                                    DispatchQueue.main.async {
+                                        self.newMessageBubbleHelper.showGenericMessageView(
+                                            text: "Participant removed successfully. They will leave the call shortly.",
+                                            delay: 5,
+                                            textColor: UIColor.white,
+                                            backColor: UIColor.Sphinx.PrimaryGreen,
+                                            backAlpha: 1.0
+                                        )
+                                    }
+                                } else {
                                     DispatchQueue.main.async {
                                         self.newMessageBubbleHelper.showGenericMessageView(
                                             text: "Failed to remove participant. Please try again.",

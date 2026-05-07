@@ -97,6 +97,9 @@ final class RoomContext: ObservableObject, @unchecked Sendable {
     @Published var shouldAnimate = false
     @Published private var timer: Timer?
 
+    @Published var isAdmin: Bool = false
+    var adminToken: String = ""
+
     @Published var showMessagesView: Bool = false
     @Published var messages: [ExampleRoomMessage] = []
     @Published var textFieldString: String = ""
