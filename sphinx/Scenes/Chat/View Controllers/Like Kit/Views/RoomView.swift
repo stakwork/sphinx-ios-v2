@@ -865,12 +865,14 @@ struct RoomView: View {
             VStack(spacing: 0) {
                 Spacer()
                 
-                let height: CGFloat = CGFloat(min((76 + 64 * room.participantCount), 500))
+                let count = room.remoteParticipants.count + 1
+                let contentHeight: CGFloat = CGFloat(min((76 + 64 * count), 500))
+                let totalHeight: CGFloat = contentHeight + geometry.safeAreaInsets.bottom
                 
                 ZStack() {
                     VStack(spacing: 0) {
                         HStack(spacing: 0) {
-                            Text(room.participantCount == 1 ? ("\(room.participantCount)  Participant") : ("\(room.participantCount)  Participants"))
+                            Text(count == 1 ? ("\(count)  Participant") : ("\(count)  Participants"))
                                 .foregroundColor(Color(UIColor.Sphinx.Text))
                                 .font(Font(UIFont(name: "Roboto-Bold", size: 18.0)!))
                             Spacer()
@@ -915,16 +917,18 @@ struct RoomView: View {
                         }
                         .padding(.trailing, 23)
                         .padding(.leading, 30)
+                        
+                        Spacer()
+                            .frame(height: geometry.safeAreaInsets.bottom)
                     }
-                    .frame(height: height + 100)
+                    .frame(height: totalHeight + 100)
                     .frame(maxWidth: .infinity)
                     .background(Color(UIColor.Sphinx.HeaderBG).opacity(0.3))
                     .background(Blur(style: .prominent))
                     .cornerRadius(8.0)
                 }
-                .frame(height: height)
+                .frame(height: totalHeight)
                 .frame(maxWidth: .infinity)
-                .padding(.bottom, geometry.safeAreaInsets.bottom)
             }
             .offset(y: publishParticipantsView ? 0 : UIScreen.main.bounds.height) // Start off-screen
             .animation(.easeInOut(duration: 0.5), value: publishParticipantsView)
