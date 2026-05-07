@@ -60,6 +60,11 @@ class CreateFeatureViewController: UIViewController {
     private var versionComboButton: UIButton!
     private var comboStackView: UIStackView!
 
+    // Model selector (feature mode only)
+    private var availableModels: [HiveLlmModel] = []
+    private var selectedModel: HiveLlmModel? = nil
+    private var modelComboButton: UIButton!
+
     // MARK: - Instantiation
 
     static func instantiate(workspaceId: String) -> CreateFeatureViewController {
@@ -85,6 +90,22 @@ class CreateFeatureViewController: UIViewController {
         super.viewDidLoad()
         setupViews()
         configureView()
+
+        if mode == .feature {
+            API.sharedInstance.fetchLlmModelsWithAuth(
+                callback: { [weak self] models in
+                    DispatchQueue.main.async {
+                        guard let self, !models.isEmpty else { return }
+                        self.availableModels = models
+                        self.selectedModel = models.first(where: { $0.isPlanDefault }) ?? models.first
+                        self.modelComboButton.setTitle(self.selectedModel?.name ?? "Select Model", for: .normal)
+                        self.modelComboButton.isHidden = false
+                        self.comboStackView.isHidden = false
+                    }
+                },
+                errorCallback: { /* silent — selector stays hidden, creation proceeds without model */ }
+            )
+        }
 
         if mode == .task {
             applyMode(.task)
@@ -154,21 +175,29 @@ class CreateFeatureViewController: UIViewController {
 
         // MARK: Combo Stack (task mode only — collapses when hidden)
 
+        // Model selector (feature mode — hidden until models load)
+        modelComboButton = makeComboButton(title: "Select Model")
+        modelComboButton.addTarget(self, action: #selector(modelComboTapped), for: .touchUpInside)
+        modelComboButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        modelComboButton.isHidden = true
+
         // Mode Selector Button (stakwork only)
         modeSelectorButton = makeComboButton(title: "Create Task")
         modeSelectorButton.addTarget(self, action: #selector(modeSelectorTapped), for: .touchUpInside)
         modeSelectorButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
-        modeSelectorButton.isHidden = !isStakworkMode
+        modeSelectorButton.isHidden = true
 
         // Repository Button
         repositoryComboButton = makeComboButton(title: "Select Repository")
         repositoryComboButton.addTarget(self, action: #selector(repositoryComboTapped), for: .touchUpInside)
         repositoryComboButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        repositoryComboButton.isHidden = true
 
         // Branch Button
         branchComboButton = makeComboButton(title: "Select Branch")
         branchComboButton.isEnabled = false
         branchComboButton.alpha = 0.5
+        branchComboButton.isHidden = true
         branchComboButton.addTarget(self, action: #selector(branchComboTapped), for: .touchUpInside)
         branchComboButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
 
@@ -181,10 +210,10 @@ class CreateFeatureViewController: UIViewController {
         versionComboButton.addTarget(self, action: #selector(versionComboTapped), for: .touchUpInside)
 
         // comboStackView holds the pickers; hidden = collapses to zero height in outer stack
-        comboStackView = UIStackView(arrangedSubviews: [modeSelectorButton, repositoryComboButton, branchComboButton, versionComboButton])
+        comboStackView = UIStackView(arrangedSubviews: [modelComboButton, modeSelectorButton, repositoryComboButton, branchComboButton, versionComboButton])
         comboStackView.axis = .vertical
         comboStackView.spacing = 8
-        comboStackView.isHidden = (mode == .feature)
+        comboStackView.isHidden = true
 
         // Bottom Container (send button row)
         let bottomContainer = UIView()
@@ -334,6 +363,9 @@ class CreateFeatureViewController: UIViewController {
         case .loadWorkflow: promptLabel.text = "Paste Workflow ID"
         default: break
         }
+        comboStackView.isHidden = false
+        modeSelectorButton.isHidden = !isStakworkMode
+        modelComboButton.isHidden      = true
         repositoryComboButton.isHidden = (newMode != .task)
         branchComboButton.isHidden     = (newMode != .task)
         versionComboButton.isHidden    = (newMode != .loadWorkflow)
@@ -382,6 +414,24 @@ class CreateFeatureViewController: UIViewController {
     }
 
     // MARK: - Combo Actions
+
+    @objc private func modelComboTapped() {
+        guard !availableModels.isEmpty else { return }
+        let sheet = UIAlertController(title: "Select Model", message: nil, preferredStyle: .actionSheet)
+        for model in availableModels {
+            sheet.addAction(UIAlertAction(title: model.name, style: .default) { [weak self] _ in
+                guard let self else { return }
+                self.selectedModel = model
+                self.modelComboButton.setTitle(model.name, for: .normal)
+            })
+        }
+        sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        if let popover = sheet.popoverPresentationController {
+            popover.sourceView = modelComboButton
+            popover.sourceRect = modelComboButton.bounds
+        }
+        present(sheet, animated: true)
+    }
 
     @objc private func repositoryComboTapped() {
         guard !repositories.isEmpty else { return }
@@ -732,6 +782,7 @@ class CreateFeatureViewController: UIViewController {
         API.sharedInstance.createFeatureWithAuth(
             workspaceId: workspaceId,
             title: title,
+            model: selectedModel?.name,
             callback: { [weak self] feature in
                 guard let self = self else { return }
 
@@ -751,6 +802,7 @@ class CreateFeatureViewController: UIViewController {
                 API.sharedInstance.sendFeatureChatMessageWithAuth(
                     featureId: feature.id,
                     message: message,
+                    model: self.selectedModel?.name,
                     callback: { [weak self] _ in
                         DispatchQueue.main.async {
                             self?.finishCreation(feature: feature)

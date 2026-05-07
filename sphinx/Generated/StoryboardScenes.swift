@@ -200,6 +200,8 @@ internal enum StoryboardScene {
         internal static let notificationSoundViewController = SceneType<NotificationSoundViewController>(storyboard: Profile.self, identifier: "NotificationSoundViewController")
         
         internal static let setupAIAgentViewController = SceneType<SetupAIAgentViewController>(storyboard: Profile.self, identifier: "SetupAIAgentViewController")
+
+        internal static let diagnosticsViewController = SceneType<DiagnosticsViewController>(storyboard: Profile.self, identifier: "DiagnosticsViewController")
     }
     
     internal enum Invite: StoryboardType {
