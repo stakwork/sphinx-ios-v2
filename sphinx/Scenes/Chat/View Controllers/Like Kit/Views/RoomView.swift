@@ -924,6 +924,7 @@ struct RoomView: View {
                 }
                 .frame(height: height)
                 .frame(maxWidth: .infinity)
+                .padding(.bottom, geometry.safeAreaInsets.bottom)
             }
             .offset(y: publishParticipantsView ? 0 : UIScreen.main.bounds.height) // Start off-screen
             .animation(.easeInOut(duration: 0.5), value: publishParticipantsView)
@@ -1091,53 +1092,48 @@ struct RoomView: View {
                 }.frame(width: 32.0, height: 32.0)
                 
                 if !(participant is LocalParticipant) && roomCtx.isAdmin {
-                    Menu {
-                        Button(role: .destructive) {
-                            DispatchQueue.main.async {
-                                self.newMessageBubbleHelper.showGenericMessageView(
-                                    text: "Removing participant, please wait…",
-                                    delay: 3,
-                                    textColor: UIColor.white,
-                                    backColor: UIColor.Sphinx.Text,
-                                    backAlpha: 1.0
-                                )
-                            }
-                            API.sharedInstance.removeParticipant(
-                                room: room.name ?? "",
-                                participantIdentity: participant.identity?.stringValue ?? "",
-                                adminToken: roomCtx.adminToken
-                            ) { success in
-                                if success {
-                                    DispatchQueue.main.async {
-                                        self.newMessageBubbleHelper.showGenericMessageView(
-                                            text: "Participant removed successfully. They will leave the call shortly.",
-                                            delay: 5,
-                                            textColor: UIColor.white,
-                                            backColor: UIColor.Sphinx.PrimaryGreen,
-                                            backAlpha: 1.0
-                                        )
-                                    }
-                                } else {
-                                    DispatchQueue.main.async {
-                                        self.newMessageBubbleHelper.showGenericMessageView(
-                                            text: "Failed to remove participant. Please try again.",
-                                            delay: 5,
-                                            textColor: UIColor.white,
-                                            backColor: UIColor.Sphinx.BadgeRed,
-                                            backAlpha: 1.0
-                                        )
-                                    }
+                    Button {
+                        DispatchQueue.main.async {
+                            self.newMessageBubbleHelper.showGenericMessageView(
+                                text: "Removing participant, please wait…",
+                                delay: 3,
+                                textColor: UIColor.white,
+                                backColor: UIColor.Sphinx.SecondaryText,
+                                backAlpha: 1.0
+                            )
+                        }
+                        API.sharedInstance.removeParticipant(
+                            room: room.name ?? "",
+                            participantIdentity: participant.identity?.stringValue ?? "",
+                            adminToken: roomCtx.adminToken
+                        ) { success in
+                            if success {
+                                DispatchQueue.main.async {
+                                    self.newMessageBubbleHelper.showGenericMessageView(
+                                        text: "Participant removed successfully. They will leave the call shortly.",
+                                        delay: 5,
+                                        textColor: UIColor.white,
+                                        backColor: UIColor.Sphinx.PrimaryGreen,
+                                        backAlpha: 1.0
+                                    )
+                                }
+                            } else {
+                                DispatchQueue.main.async {
+                                    self.newMessageBubbleHelper.showGenericMessageView(
+                                        text: "Failed to remove participant. Please try again.",
+                                        delay: 5,
+                                        textColor: UIColor.white,
+                                        backColor: UIColor.Sphinx.BadgeRed,
+                                        backAlpha: 1.0
+                                    )
                                 }
                             }
-                        } label: {
-                            Label("Remove from call", systemImage: "person.fill.xmark")
                         }
                     } label: {
                         Image(systemName: "person.fill.xmark")
                             .foregroundColor(Color(UIColor.Sphinx.BadgeRed))
                             .font(.system(size: 18))
                     }
-                    .menuStyle(BorderlessButtonMenuStyle())
                     .fixedSize()
                     .frame(width: 32, height: 32)
                     .background(Color(UIColor.Sphinx.BadgeRed).opacity(0.15))
