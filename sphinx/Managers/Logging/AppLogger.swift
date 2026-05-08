@@ -10,7 +10,7 @@ import Foundation
 
 // MARK: - Constants
 
-private let kLogRetentionHours: Double = 24
+private let kLogRetentionHours: Double = 72
 
 // MARK: - LogLevel
 
