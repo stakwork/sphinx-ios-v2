@@ -45,7 +45,7 @@ final class AppLogger: @unchecked Sendable {
     static let shared = AppLogger()
 
     /// Shared ISO8601 formatter — used externally by tools that need to format/parse dates.
-    static let isoFormatter: ISO8601DateFormatter = {
+    nonisolated(unsafe) static let isoFormatter: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime]
         return f

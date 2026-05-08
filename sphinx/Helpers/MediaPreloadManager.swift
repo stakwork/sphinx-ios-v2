@@ -119,7 +119,7 @@ class MediaPreloadManager: @unchecked Sendable {
         data: Data,
         url: URL,
         messageId: Int,
-        fileName: String,
+        fileName: String?,
         mediaKey: String?,
         urlString: String
     ) {
@@ -273,7 +273,7 @@ class MediaPreloadManager: @unchecked Sendable {
         data: Data,
         url: URL,
         messageId: Int,
-        fileName: String,
+        fileName: String?,
         mediaKey: String?,
         urlString: String
     ) {
@@ -432,7 +432,7 @@ class MediaPreloadManager: @unchecked Sendable {
         url: URL,
         isPdf: Bool,
         messageId: Int,
-        fileName: String,
+        fileName: String?,
         mediaKey: String?,
         urlString: String
     ) {
