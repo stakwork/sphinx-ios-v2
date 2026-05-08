@@ -80,7 +80,7 @@ public class Chat: NSManagedObject, @unchecked Sendable {
             let data = try JSONSerialization.data(withJSONObject: array)
             if let jsonString = String(data: data, encoding: .utf8) {
                 membersAliasesData = jsonString
-                managedObjectContext?.saveContext()
+                // no save — dirty mark committed by next upstream saveContext()
             }
         } catch {
             print("Failed to encode membersAliasesData: \(error)")
