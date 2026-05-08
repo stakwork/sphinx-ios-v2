@@ -263,6 +263,13 @@ struct BubbleMessageLayoutState {
         }
     }
     
+    struct CallParticipantInfo {
+        let identity: String
+        let name: String
+        let profilePictureUrl: String?
+        let isActive: Bool // true = currently in call, false = left the call
+    }
+    
     struct GenericFile {
         var url: URL?
         var mediaKey: String?

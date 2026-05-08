@@ -135,11 +135,24 @@ extension NewMessageTableViewCell {
     }
     
     func configureWith(
-        callLink: BubbleMessageLayoutState.CallLink?
+        callLink: BubbleMessageLayoutState.CallLink?,
+        participantsData: MessageTableCellState.ParticipantsData? = nil
     ) {
         if let callLink = callLink {
             callLinkView.configureWith(callLink: callLink, and: self)
+            callLinkView.configureWith(participantsData: participantsData)
             callLinkView.isHidden = false
+            
+            // Extract room name from link URL (last non-empty path component)
+            if let messageId = self.messageId,
+               let url = URL(string: callLink.link),
+               let roomName = url.pathComponents.last(where: { !$0.isEmpty && $0 != "/" }) {
+                delegate?.shouldLoadCallParticipantsFor(
+                    messageId: messageId,
+                    roomName: roomName,
+                    and: rowIndex
+                )
+            }
         }
     }
     

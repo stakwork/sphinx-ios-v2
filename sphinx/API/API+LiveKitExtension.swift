@@ -106,6 +106,54 @@ extension API {
         task.resume()
     }
     
+    func getCallParticipants(
+        roomName: String,
+        callback: @escaping ([BubbleMessageLayoutState.CallParticipantInfo]) -> Void,
+        errorCallback: ((String) -> Void)? = nil
+    ) {
+        let url = "\(self.kVideoCallServer)/api/participants?roomName=\(roomName)"
+        
+        let request: URLRequest? = createRequest(
+            url,
+            bodyParams: nil,
+            method: "GET"
+        )
+        
+        guard let request = request else {
+            errorCallback?("Error creating request")
+            callback([])
+            return
+        }
+        
+        sphinxRequest(request) { response in
+            switch response.result {
+            case .success(let data):
+                var participants: [BubbleMessageLayoutState.CallParticipantInfo] = []
+                if let dictionary = data as? NSDictionary,
+                   let participantsArray = dictionary["participants"] as? [[String: Any]] {
+                    for item in participantsArray {
+                        let identity = item["identity"] as? String ?? ""
+                        let name = item["name"] as? String ?? identity
+                        let profilePictureUrl = item["profilePictureUrl"] as? String
+                        let isActive = item["isActive"] as? Bool ?? true
+                        participants.append(
+                            BubbleMessageLayoutState.CallParticipantInfo(
+                                identity: identity,
+                                name: name,
+                                profilePictureUrl: profilePictureUrl,
+                                isActive: isActive
+                            )
+                        )
+                    }
+                }
+                callback(participants)
+            case .failure(let error):
+                errorCallback?(error.localizedDescription)
+                callback([])
+            }
+        }
+    }
+    
     func removeParticipant(
         room: String,
         participantIdentity: String,

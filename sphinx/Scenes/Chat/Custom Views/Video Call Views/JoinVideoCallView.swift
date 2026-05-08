@@ -16,11 +16,33 @@ import UIKit
 
 class JoinVideoCallView: UIView {
     
+    static let kParticipantsRowHeight: CGFloat = 52
+    
     weak var delegate: JoinCallViewDelegate?
     
     @IBOutlet private var contentView: UIView!
     @IBOutlet weak var audioButtonContainer: UIView!
     @IBOutlet weak var videoButtonContainer: UIView!
+    
+    private lazy var participantsScrollView: UIScrollView = {
+        let sv = UIScrollView()
+        sv.showsHorizontalScrollIndicator = false
+        sv.showsVerticalScrollIndicator = false
+        sv.translatesAutoresizingMaskIntoConstraints = false
+        return sv
+    }()
+    
+    private lazy var participantsStackView: UIStackView = {
+        let sv = UIStackView()
+        sv.axis = .horizontal
+        sv.alignment = .center
+        sv.distribution = .fill
+        sv.spacing = 6
+        sv.translatesAutoresizingMaskIntoConstraints = false
+        return sv
+    }()
+    
+    private var participantsScrollViewHeightConstraint: NSLayoutConstraint?
     
     public enum CallButton: Int {
         case Audio
@@ -48,6 +70,58 @@ class JoinVideoCallView: UIView {
         
         videoButtonContainer.layer.cornerRadius = 8
         videoButtonContainer.addShadow(location: VerticalLocation.bottom, color: UIColor.Sphinx.GreenBorder, opacity: 1, radius: 0.5, bottomhHeight: 1.5)
+        
+        setupParticipantsStrip()
+    }
+    
+    private func setupParticipantsStrip() {
+        participantsScrollView.addSubview(participantsStackView)
+        contentView.addSubview(participantsScrollView)
+        
+        let heightConstraint = participantsScrollView.heightAnchor.constraint(equalToConstant: 0)
+        participantsScrollViewHeightConstraint = heightConstraint
+        
+        NSLayoutConstraint.activate([
+            participantsScrollView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 8),
+            participantsScrollView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -8),
+            participantsScrollView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8),
+            heightConstraint,
+            
+            participantsStackView.leadingAnchor.constraint(equalTo: participantsScrollView.leadingAnchor),
+            participantsStackView.trailingAnchor.constraint(equalTo: participantsScrollView.trailingAnchor),
+            participantsStackView.topAnchor.constraint(equalTo: participantsScrollView.topAnchor),
+            participantsStackView.bottomAnchor.constraint(equalTo: participantsScrollView.bottomAnchor),
+            participantsStackView.heightAnchor.constraint(equalTo: participantsScrollView.heightAnchor),
+        ])
+    }
+    
+    func configureWith(participantsData: MessageTableCellState.ParticipantsData?) {
+        // Clear existing participant views
+        participantsStackView.arrangedSubviews.forEach {
+            participantsStackView.removeArrangedSubview($0)
+            $0.removeFromSuperview()
+        }
+        
+        guard let participantsData = participantsData, !participantsData.participants.isEmpty else {
+            participantsScrollViewHeightConstraint?.constant = 0
+            participantsScrollView.isHidden = true
+            return
+        }
+        
+        for participant in participantsData.participants {
+            let boxView = ParticipantBoxView()
+            boxView.configure(with: participant)
+            boxView.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                boxView.widthAnchor.constraint(greaterThanOrEqualToConstant: 80),
+                boxView.widthAnchor.constraint(lessThanOrEqualToConstant: 120),
+                boxView.heightAnchor.constraint(equalToConstant: JoinVideoCallView.kParticipantsRowHeight - 8),
+            ])
+            participantsStackView.addArrangedSubview(boxView)
+        }
+        
+        participantsScrollViewHeightConstraint?.constant = JoinVideoCallView.kParticipantsRowHeight
+        participantsScrollView.isHidden = false
     }
     
     func configureWith(

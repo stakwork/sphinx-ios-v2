@@ -552,6 +552,27 @@ extension NewChatTableDataSource : NewMessageTableViewCellDelegate {
             )
         }
     }
+    func shouldLoadCallParticipantsFor(messageId: Int, roomName: String, and rowIndex: Int) {
+        API.sharedInstance.getCallParticipants(roomName: roomName) { [weak self] participants in
+            guard let self = self else { return }
+            
+            self.participantsDataCached[messageId] = MessageTableCellState.ParticipantsData(
+                participants: participants
+            )
+            
+            if let tableCellState = self.getTableCellStateFor(messageId: messageId, and: rowIndex) {
+                let cellState = tableCellState.1
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    var snapshot = self.dataSource.snapshot()
+                    if snapshot.itemIdentifiers.contains(cellState) {
+                        snapshot.reloadItems([cellState])
+                        self.dataSource.apply(snapshot, animatingDifferences: false)
+                    }
+                }
+            }
+        }
+    }
 }
 
 ///Updating rows after content loaded

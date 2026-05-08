@@ -112,6 +112,7 @@ import CoreData
     var messageTableCellStateArray: [MessageTableCellState] = []
     var mediaCached: [Int: MessageTableCellState.MediaData] = [:]
     var uploadingProgress: [Int: MessageTableCellState.UploadProgressData] = [:]
+    var participantsDataCached: [Int: MessageTableCellState.ParticipantsData] = [:]
     var replyViewHeight: [Int: CGFloat] = [:]
     
     var searchingTerm: String? = nil
