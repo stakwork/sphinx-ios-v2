@@ -28,6 +28,12 @@ struct LogEntry: Codable, Sendable {
     let timestamp: Date
     let level: LogLevel
     let message: String
+
+    /// Human-readable formatted string, e.g. "[2025-05-08T07:02:13Z] [ERROR] Payment failed"
+    var formatted: String {
+        let ts = AppLogger.isoFormatter.string(from: timestamp)
+        return "[\(ts)] [\(level.rawValue)] \(message)"
+    }
 }
 
 // MARK: - AppLogger
@@ -37,6 +43,13 @@ struct LogEntry: Codable, Sendable {
 final class AppLogger: @unchecked Sendable {
 
     static let shared = AppLogger()
+
+    /// Shared ISO8601 formatter — used externally by tools that need to format/parse dates.
+    static let isoFormatter: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime]
+        return f
+    }()
 
     /// All retained log entries (last kLogRetentionHours hours).
     /// Read only from the main thread after initial load; mutated only on `queue`.
