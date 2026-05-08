@@ -73,6 +73,12 @@ final class AIAgentManager: @unchecked Sendable {
 
     - create_tribe: Create a new Sphinx tribe with a name and description. IMPORTANT: Before invoking this tool, describe the tribe details and ask for explicit confirmation. Only invoke after the user confirms.
 
+    - read_app_logs: Query and optionally analyse app diagnostic logs (last 24 hours). \
+    Filter by: limit, start_date/end_date (ISO8601), level (debug/info/warning/error), keyword. \
+    Add analyze_for to trigger structured analysis — use this whenever the user asks \
+    a diagnostic question like "any MQTT errors?" or "what caused the crash at 8AM?". \
+    Current device time is always injected in the tool description to resolve relative time references.
+
     CRITICAL TOOL RESULT RULES:
     - When read_recent_messages returns a list of messages, present them clearly to the user. \
     Do NOT say there was a format issue or that you couldn't read them.
@@ -88,6 +94,9 @@ final class AIAgentManager: @unchecked Sendable {
     - Tool results starting with "Connection request sent" mean the friend request is queued — report success.
     - Tool results starting with "Tribe '" and containing "created successfully" mean the tribe was created.
     - Tool results starting with "Multiple matches found:" mean the name was ambiguous — list the options and ask the user which one they meant before retrying the tool with the exact name.
+    - Results starting with "App logs" contain filtered log entries — present them clearly; summarise patterns if the list is long.
+    - Results starting with "Log analysis for" contain a structured summary — present it directly; do not re-list raw lines.
+    - Results starting with "No entries matching" mean filters returned nothing — tell the user and suggest broader filters.
 
     Always be concise and helpful. When you're unsure about a contact's name, ask for clarification.
     """
@@ -265,7 +274,8 @@ final class AIAgentManager: @unchecked Sendable {
             "set_tip_amount":          buildSetTipAmountTool().eraseToTool(),
             "mark_chat_as_seen":       buildMarkChatAsSeenTool().eraseToTool(),
             "connect_with_user":       buildConnectWithUserTool().eraseToTool(),
-            "create_tribe":            buildCreateTribeTool().eraseToTool()
+            "create_tribe":            buildCreateTribeTool().eraseToTool(),
+            "read_app_logs":           buildReadAppLogsTool().eraseToTool()
         ]
         switch activeProvider {
         case .anthropic:
@@ -748,6 +758,130 @@ final class AIAgentManager: @unchecked Sendable {
                     }
                 }
                 return .value(.string(result))
+            }
+        )
+    }
+
+    // MARK: - Tool: read_app_logs
+
+    private func buildReadAppLogsTool() -> TypedTool<JSONValue, JSONValue> {
+        let now = AppLogger.isoFormatter.string(from: Date())
+        let tz  = TimeZone.current.abbreviation() ?? "UTC"
+        let description = """
+            Query and optionally analyse app diagnostic logs (last 24 hours). \
+            Current device time: \(now) (\(tz)). \
+            Filter by: limit (int, default 100, max 500), start_date/end_date (ISO8601), \
+            level (debug/info/warning/error), keyword (substring). \
+            Add analyze_for to get a structured analysis instead of raw lines.
+            """
+        let inputSchema = FlexibleSchema<JSONValue>(
+            jsonSchema(.object([
+                "type": .string("object"),
+                "properties": .object([
+                    "limit":       .object(["type": .string("integer")]),
+                    "start_date":  .object(["type": .string("string")]),
+                    "end_date":    .object(["type": .string("string")]),
+                    "level":       .object(["type": .string("string")]),
+                    "keyword":     .object(["type": .string("string")]),
+                    "analyze_for": .object(["type": .string("string")])
+                ]),
+                "required": .array([])
+            ]))
+        )
+        return tool(
+            description: description,
+            inputSchema: inputSchema,
+            execute: { (input: JSONValue, _: ToolCallOptions) async throws -> ToolExecutionResult<JSONValue> in
+                // Parse optional parameters
+                var requestedLimit: Int? = nil
+                var startDate: Date?     = nil
+                var endDate: Date?       = nil
+                var levelFilter: String? = nil
+                var keyword: String?     = nil
+                var analyzeFor: String?  = nil
+
+                if case .object(let dict) = input {
+                    if case .number(let n) = dict["limit"]       { requestedLimit = Int(n) }
+                    if case .string(let s) = dict["start_date"]  { startDate = AppLogger.isoFormatter.date(from: s) }
+                    if case .string(let s) = dict["end_date"]    { endDate = AppLogger.isoFormatter.date(from: s) }
+                    if case .string(let s) = dict["level"]       { levelFilter = s.lowercased() }
+                    if case .string(let s) = dict["keyword"]     { keyword = s }
+                    if case .string(let s) = dict["analyze_for"] { analyzeFor = s }
+                }
+
+                let limit = min(requestedLimit ?? 100, 500)
+
+                // Filter pipeline — AppLogger.shared.entries is safe to read on any thread
+                var filtered = AppLogger.shared.entries
+
+                if let start = startDate {
+                    filtered = filtered.filter { $0.timestamp >= start }
+                }
+                if let end = endDate {
+                    filtered = filtered.filter { $0.timestamp <= end }
+                }
+                if let lvl = levelFilter {
+                    filtered = filtered.filter { $0.level.rawValue.lowercased() == lvl }
+                }
+                if let kw = keyword {
+                    let kwLower = kw.lowercased()
+                    filtered = filtered.filter { $0.message.lowercased().contains(kwLower) }
+                }
+
+                // Apply suffix(limit) — most-recent N entries
+                let capped = Array(filtered.suffix(limit))
+                let wasTruncated = capped.count < filtered.count && filtered.count > limit
+
+                // Build date-range string for analysis header
+                let rangeString: String = {
+                    guard let first = capped.first, let last = capped.last else { return "" }
+                    let f = AppLogger.isoFormatter.string(from: first.timestamp)
+                    let l = AppLogger.isoFormatter.string(from: last.timestamp)
+                    return f == l ? f : "\(f) – \(l)"
+                }()
+
+                let output: String
+
+                if let analyzeFor = analyzeFor {
+                    // Structured analysis mode
+                    let analyzeLower = analyzeFor.lowercased()
+                    let matches = capped.filter { $0.message.lowercased().contains(analyzeLower) }
+
+                    guard !matches.isEmpty else {
+                        output = "No entries matching '\(analyzeFor)' found in the filtered log set (\(capped.count) entries scanned)."
+                        return .value(.string(output))
+                    }
+
+                    let pct = capped.isEmpty ? 0.0 : Double(matches.count) / Double(capped.count) * 100.0
+                    let pctStr = String(format: "%.1f", pct)
+
+                    let firstTs = AppLogger.isoFormatter.string(from: matches.first!.timestamp)
+                    let lastTs  = AppLogger.isoFormatter.string(from: matches.last!.timestamp)
+
+                    let excerpts = matches.prefix(30).map { "  \($0.formatted)" }.joined(separator: "\n")
+                    let showingNote = matches.count > 30 ? "Showing 30 of \(matches.count) matching lines:" : "Showing \(matches.count) of \(matches.count) matching lines:"
+
+                    let header = rangeString.isEmpty
+                        ? "Log analysis for \"\(analyzeFor)\" in \(capped.count) entries:"
+                        : "Log analysis for \"\(analyzeFor)\" in \(capped.count) entries (\(rangeString)):"
+
+                    output = """
+                    \(header)
+                      Matches: \(matches.count) (\(pctStr)% of entries)
+                      First: \(firstTs)
+                      Last:  \(lastTs)
+                      \(showingNote)
+                    \(excerpts)
+                    """
+                } else {
+                    // Raw lines mode
+                    let headerSuffix = wasTruncated ? " — results capped at 500" : ""
+                    let header = "App logs (showing \(capped.count) of \(filtered.count) matched entries, oldest first)\(headerSuffix):"
+                    let lines = capped.map { $0.formatted }.joined(separator: "\n")
+                    output = lines.isEmpty ? "\(header)\n(no entries)" : "\(header)\n\(lines)"
+                }
+
+                return .value(.string(output))
             }
         )
     }
