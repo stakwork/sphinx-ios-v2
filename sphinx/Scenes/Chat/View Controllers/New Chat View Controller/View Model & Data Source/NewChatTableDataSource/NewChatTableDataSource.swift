@@ -113,6 +113,8 @@ import CoreData
     var mediaCached: [Int: MessageTableCellState.MediaData] = [:]
     var uploadingProgress: [Int: MessageTableCellState.UploadProgressData] = [:]
     var participantsDataCached: [Int: MessageTableCellState.ParticipantsData] = [:]
+    var pendingParticipantRooms: Set<String> = []
+    nonisolated(unsafe) var participantsCacheTimer: Timer?
     var replyViewHeight: [Int: CGFloat] = [:]
     
     var searchingTerm: String? = nil
@@ -172,6 +174,10 @@ import CoreData
         processChatAliases()
     }
     
+    deinit {
+        participantsCacheTimer?.invalidate()
+    }
+
     func processChatAliases() {
         if isThread {
             return

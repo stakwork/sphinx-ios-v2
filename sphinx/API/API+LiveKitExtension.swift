@@ -111,40 +111,76 @@ extension API {
         callback: @escaping ([BubbleMessageLayoutState.CallParticipantInfo]) -> Void,
         errorCallback: ((String) -> Void)? = nil
     ) {
-        let url = "\(self.kVideoCallServer)/api/participants?roomName=\(roomName)"
-        
+        let url = "\(self.kVideoCallServer)/api/participants?roomName=\(roomName.urlEncode() ?? roomName)"
+
         let request: URLRequest? = createRequest(
             url,
             bodyParams: nil,
             method: "GET"
         )
-        
+
         guard let request = request else {
             errorCallback?("Error creating request")
             callback([])
             return
         }
-        
+
         sphinxRequest(request) { response in
             switch response.result {
             case .success(let data):
+                let json = JSON(data)
                 var participants: [BubbleMessageLayoutState.CallParticipantInfo] = []
-                if let dictionary = data as? NSDictionary,
-                   let participantsArray = dictionary["participants"] as? [[String: Any]] {
-                    for item in participantsArray {
-                        let identity = item["identity"] as? String ?? ""
-                        let name = item["name"] as? String ?? identity
-                        let profilePictureUrl = item["profilePictureUrl"] as? String
-                        let isActive = item["isActive"] as? Bool ?? true
-                        participants.append(
-                            BubbleMessageLayoutState.CallParticipantInfo(
-                                identity: identity,
-                                name: name,
-                                profilePictureUrl: profilePictureUrl,
-                                isActive: isActive
-                            )
-                        )
-                    }
+                for (_, item) in json {
+                    let name = item["nickname"].stringValue
+                    let profilePictureUrl = item["avatarUrl"].string
+                    participants.append(BubbleMessageLayoutState.CallParticipantInfo(
+                        identity: name,
+                        name: name,
+                        profilePictureUrl: profilePictureUrl,
+                        isActive: true
+                    ))
+                    
+                    participants.append(BubbleMessageLayoutState.CallParticipantInfo(
+                        identity: "Paul",
+                        name: "Paul",
+                        profilePictureUrl: nil,
+                        isActive: true
+                    ))
+                    
+                    participants.append(BubbleMessageLayoutState.CallParticipantInfo(
+                        identity: "Evan",
+                        name: "Evan",
+                        profilePictureUrl: nil,
+                        isActive: true
+                    ))
+                    
+                    participants.append(BubbleMessageLayoutState.CallParticipantInfo(
+                        identity: "Gonza",
+                        name: "Gonza",
+                        profilePictureUrl: nil,
+                        isActive: true
+                    ))
+                    
+                    participants.append(BubbleMessageLayoutState.CallParticipantInfo(
+                        identity: "Tom Smith",
+                        name: "Tom Smith",
+                        profilePictureUrl: nil,
+                        isActive: true
+                    ))
+                    
+                    participants.append(BubbleMessageLayoutState.CallParticipantInfo(
+                        identity: "Nicols",
+                        name: "Nicols",
+                        profilePictureUrl: nil,
+                        isActive: true
+                    ))
+                    
+                    participants.append(BubbleMessageLayoutState.CallParticipantInfo(
+                        identity: "Tom 1",
+                        name: "Tom 1",
+                        profilePictureUrl: nil,
+                        isActive: true
+                    ))
                 }
                 callback(participants)
             case .failure(let error):

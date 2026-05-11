@@ -35,7 +35,7 @@ class ParticipantBoxView: UIView {
     
     private let nameLabel: UILabel = {
         let label = UILabel()
-        label.font = UIFont.systemFont(ofSize: 11, weight: .regular)
+        label.font = UIFont.systemFont(ofSize: 9, weight: .regular)
         label.textColor = UIColor.Sphinx.Text
         label.numberOfLines = 1
         label.lineBreakMode = .byTruncatingTail
@@ -45,7 +45,7 @@ class ParticipantBoxView: UIView {
     
     private let stackView: UIStackView = {
         let sv = UIStackView()
-        sv.axis = .horizontal
+        sv.axis = .vertical
         sv.alignment = .center
         sv.spacing = 4
         sv.translatesAutoresizingMaskIntoConstraints = false
@@ -79,10 +79,12 @@ class ParticipantBoxView: UIView {
         NSLayoutConstraint.activate([
             avatarContainer.widthAnchor.constraint(equalToConstant: avatarSize),
             avatarContainer.heightAnchor.constraint(equalToConstant: avatarSize),
+            
             initialsLabel.leadingAnchor.constraint(equalTo: avatarContainer.leadingAnchor),
             initialsLabel.trailingAnchor.constraint(equalTo: avatarContainer.trailingAnchor),
             initialsLabel.topAnchor.constraint(equalTo: avatarContainer.topAnchor),
             initialsLabel.bottomAnchor.constraint(equalTo: avatarContainer.bottomAnchor),
+            
             avatarImageView.leadingAnchor.constraint(equalTo: avatarContainer.leadingAnchor),
             avatarImageView.trailingAnchor.constraint(equalTo: avatarContainer.trailingAnchor),
             avatarImageView.topAnchor.constraint(equalTo: avatarContainer.topAnchor),
@@ -128,19 +130,5 @@ class ParticipantBoxView: UIView {
         
         // Dim for participants who have left
         alpha = participant.isActive ? 1.0 : 0.5
-    }
-}
-
-// MARK: - UIColor random for initials avatar
-private extension UIColor {
-    static func random() -> UIColor {
-        let colors: [UIColor] = [
-            UIColor.Sphinx.PrimaryBlue,
-            UIColor.Sphinx.PrimaryGreen,
-            UIColor(red: 0.6, green: 0.3, blue: 0.7, alpha: 1.0),
-            UIColor(red: 0.9, green: 0.4, blue: 0.2, alpha: 1.0),
-            UIColor(red: 0.2, green: 0.6, blue: 0.6, alpha: 1.0),
-        ]
-        return colors[Int.random(in: 0..<colors.count)]
     }
 }

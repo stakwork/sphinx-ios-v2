@@ -553,13 +553,18 @@ extension NewChatTableDataSource : NewMessageTableViewCellDelegate {
         }
     }
     func shouldLoadCallParticipantsFor(messageId: Int, roomName: String, and rowIndex: Int) {
+        guard !pendingParticipantRooms.contains(roomName) else { return }
+        pendingParticipantRooms.insert(roomName)
+
         API.sharedInstance.getCallParticipants(roomName: roomName) { [weak self] participants in
             guard let self = self else { return }
-            
+
+            self.pendingParticipantRooms.remove(roomName)
             self.participantsDataCached[messageId] = MessageTableCellState.ParticipantsData(
                 participants: participants
             )
-            
+            self.startParticipantsCacheTimer()
+
             if let tableCellState = self.getTableCellStateFor(messageId: messageId, and: rowIndex) {
                 let cellState = tableCellState.1
                 Task { @MainActor [weak self] in
@@ -571,6 +576,24 @@ extension NewChatTableDataSource : NewMessageTableViewCellDelegate {
                     }
                 }
             }
+        }
+    }
+
+    func startParticipantsCacheTimer() {
+        guard participantsCacheTimer == nil else { return }
+        participantsCacheTimer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: true) { [weak self] _ in
+            self?.refreshParticipantsCache()
+        }
+    }
+
+    func refreshParticipantsCache() {
+        guard !participantsDataCached.isEmpty else {
+            participantsCacheTimer?.invalidate()
+            participantsCacheTimer = nil
+            return
+        }
+        for messageId in participantsDataCached.keys {
+            participantsDataCached[messageId]?.isStale = true
         }
     }
 }

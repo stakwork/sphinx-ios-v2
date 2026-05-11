@@ -143,8 +143,10 @@ extension NewMessageTableViewCell {
             callLinkView.configureWith(participantsData: participantsData)
             callLinkView.isHidden = false
             
-            // Extract room name from link URL (last non-empty path component)
-            if let messageId = self.messageId,
+            // Fetch when no data yet, or when the timer has marked existing data stale.
+            // Stale data stays visible until the fresh response arrives — no blink.
+            if (participantsData == nil || participantsData?.isStale == true),
+               let messageId = self.messageId,
                let url = URL(string: callLink.link),
                let roomName = url.pathComponents.last(where: { !$0.isEmpty && $0 != "/" }) {
                 delegate?.shouldLoadCallParticipantsFor(
