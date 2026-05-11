@@ -355,7 +355,7 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
     }
     
     func getOrCreateMqttSessionId() -> String {
-        if let existing = UserDefaults.Keys.mqttSessionId.get(), !existing.isEmpty {
+        if let existing: String = UserDefaults.Keys.mqttSessionId.get(), !existing.isEmpty {
             return existing
         }
         let newId = UUID().uuidString
@@ -378,7 +378,7 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
             
             if let existing = self.mqtt {
                 print("[MQTT] Force-closing existing connection (state: \(existing.connState)) before opening new one")
-                existing.didDisconnect = nil
+                existing.didDisconnect = {(_, _) in }
                 existing.disconnect()
                 self.mqtt = nil
             }
