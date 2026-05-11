@@ -471,8 +471,10 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
     }
 
     private func expireBackgroundFetch() {
-        print("[BGFetch] UIBackgroundTask expired by iOS — ending fetch early")
-        endBackgroundFetch(result: .newData)
+        print("[BGFetch] expire triggered — disconnecting MQTT before signalling system")
+        disconnectMqtt(callback: { [weak self] _ in
+            self?.endBackgroundFetch(result: .noData)
+        })
     }
     
     func reconnectToServer(
@@ -618,7 +620,13 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
             self?.backgroundDisconnectCompletion = nil
             // Guard before any dispatch — if backgrounded, do not schedule reconnection
             let appIsActive = (UIApplication.shared.delegate as? AppDelegate)?.isActive ?? false
-            guard appIsActive else { return }
+            if !appIsActive {
+                if self?.backgroundFetchInProgress == true {
+                    print("[BGFetch] MQTT dropped mid-fetch — ending background task")
+                    self?.endBackgroundFetch(result: .noData)
+                }
+                return
+            }
             self?.startReconnectionTimer()
         }
     }
