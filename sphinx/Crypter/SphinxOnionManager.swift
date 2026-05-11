@@ -354,6 +354,15 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
         return randomString
     }
     
+    func getOrCreateMqttSessionId() -> String {
+        if let existing: String = UserDefaults.Keys.mqttSessionId.get(), !existing.isEmpty {
+            return existing
+        }
+        let newId = UUID().uuidString
+        UserDefaults.Keys.mqttSessionId.set(newId)
+        return newId
+    }
+
     func connectToBroker(
         seed: String,
         xpub: String
@@ -366,6 +375,13 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
                 time: now,
                 network: network
             )
+            
+            if let existing = self.mqtt {
+                print("[MQTT] Force-closing existing connection (state: \(existing.connState)) before opening new one")
+                existing.didDisconnect = {(_, _) in }
+                existing.disconnect()
+                self.mqtt = nil
+            }
             
             mqtt = CocoaMQTT(
                 clientID: xpub,
@@ -405,7 +421,10 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
         paymentTimeoutTimers.values.forEach { $0.invalidate() }
         paymentTimeoutTimers.removeAll()
 
-        if let mqtt = self.mqtt, mqtt.connState == .connected {
+        if let mqtt = self.mqtt, mqtt.connState == .connected || mqtt.connState == .connecting {
+            if mqtt.connState == .connecting {
+                print("[MQTT] Disconnecting mid-handshake connection (state: .connecting)")
+            }
             backgroundDisconnectCompletion = callback.map { cb in { cb(0.0) } }
             mqtt.disconnect()
         } else {
@@ -471,8 +490,10 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
     }
 
     private func expireBackgroundFetch() {
-        print("[BGFetch] UIBackgroundTask expired by iOS — ending fetch early")
-        endBackgroundFetch(result: .newData)
+        print("[BGFetch] expire triggered — disconnecting MQTT before signalling system")
+        disconnectMqtt(callback: { [weak self] _ in
+            self?.endBackgroundFetch(result: .noData)
+        })
     }
     
     func reconnectToServer(
@@ -562,6 +583,18 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
             return
         }
         
+        if let mqtt = self.mqtt {
+            if mqtt.connState == .connecting {
+                print("[MQTT] connectToServer skipped — already connecting")
+                return
+            }
+            if mqtt.connState == .connected && isConnected {
+                print("[MQTT] connectToServer skipped — already connected")
+                startNewMsgsSync()
+                return
+            }
+        }
+        
         self.hideRestoreCallback = hideRestoreViewCallback
         self.contactRestoreCallback = contactRestoreCallback
         self.messageRestoreCallback = messageRestoreCallback
@@ -618,7 +651,13 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
             self?.backgroundDisconnectCompletion = nil
             // Guard before any dispatch — if backgrounded, do not schedule reconnection
             let appIsActive = (UIApplication.shared.delegate as? AppDelegate)?.isActive ?? false
-            guard appIsActive else { return }
+            if !appIsActive {
+                if self?.backgroundFetchInProgress == true {
+                    print("[BGFetch] MQTT dropped mid-fetch — ending background task")
+                    self?.endBackgroundFetch(result: .noData)
+                }
+                return
+            }
             self?.startReconnectionTimer()
         }
     }
@@ -693,7 +732,7 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
                 seed: seed,
                 uniqueTime: getTimeWithEntropy(),
                 state: loadOnionStateAsData(),
-                device: UUID().uuidString,
+                device: getOrCreateMqttSessionId(),
                 inviteCode: inviteCode
             )
             
