@@ -11,6 +11,7 @@ import Foundation
 // MARK: - Constants
 
 private let kLogRetentionHours: Double = 72
+private let kMaxLogFileBytes: Int = 5 * 1024 * 1024  // 5 MB hard cap
 
 // MARK: - LogLevel
 
@@ -100,7 +101,10 @@ final class AppLogger: @unchecked Sendable {
         guard !isStarted else { return }
         isStarted = true
 
-        loadAndPrunePersistedEntries()
+        // Load previous logs asynchronously — never block launch
+        queue.async { [weak self] in
+            self?.loadAndPrunePersistedEntries()
+        }
         redirectStdStreams()
         registerSignalHandlers()
     }
@@ -178,17 +182,34 @@ final class AppLogger: @unchecked Sendable {
     }
 
     private func loadAndPrunePersistedEntries() {
-        queue.sync {
-            let url = logFileURL()
+        let url = logFileURL()
+        guard FileManager.default.fileExists(atPath: url.path) else { return }
+
+        let fileSize = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+        let rawContent: String
+        if fileSize > kMaxLogFileBytes {
+            guard let handle = try? FileHandle(forReadingFrom: url) else { return }
+            let offset = UInt64(max(0, fileSize - kMaxLogFileBytes))
+            try? handle.seek(toOffset: offset)
+            let data = handle.readDataToEndOfFile()
+            try? handle.close()
+            guard var tail = String(data: data, encoding: .utf8) else { return }
+            if let nl = tail.range(of: "\n") { tail = String(tail[nl.upperBound...]) }
+            rawContent = tail
+        } else {
             guard let content = try? String(contentsOf: url, encoding: .utf8) else { return }
-            let cutoff = Date().addingTimeInterval(-kLogRetentionHours * 3600)
-            let retained: [LogEntry] = content
-                .components(separatedBy: "\n")
-                .filter { !$0.isEmpty }
-                .compactMap { parseLine($0) }
-                .filter { $0.timestamp >= cutoff }
-            entries = retained
+            rawContent = content
         }
+
+        let cutoff = Date().addingTimeInterval(-kLogRetentionHours * 3600)
+        let retained: [LogEntry] = rawContent
+            .components(separatedBy: "\n")
+            .filter { !$0.isEmpty }
+            .compactMap { parseLine($0) }
+            .filter { $0.timestamp >= cutoff }
+        entries = retained
+
+        persistEntriesToDisk()
     }
 
     private func persistEntriesToDisk() {
