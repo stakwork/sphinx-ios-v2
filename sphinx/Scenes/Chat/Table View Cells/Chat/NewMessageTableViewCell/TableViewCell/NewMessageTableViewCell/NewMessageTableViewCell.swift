@@ -33,6 +33,7 @@ extension NewMessageTableViewCell {
         tribeData: MessageTableCellState.TribeData?,
         linkData: MessageTableCellState.LinkData?,
         uploadProgressData: MessageTableCellState.UploadProgressData?,
+        participantsData: MessageTableCellState.ParticipantsData?,
         delegate: NewMessageTableViewCellDelegate?,
         searchingTerm: String?,
         indexPath: IndexPath,
@@ -53,6 +54,7 @@ extension NewMessageTableViewCell {
     func shouldLoadLinkDataFor(messageId: Int, and rowIndex: Int)
     func shouldLoadAudioDataFor(messageId: Int, and rowIndex: Int)
     func shouldPodcastCommentDataFor(messageId: Int, and rowIndex: Int)
+    func shouldLoadCallParticipantsFor(messageId: Int, roomName: String, and rowIndex: Int)
     
     //Actions handling
     ///Message reply
@@ -170,6 +172,7 @@ class NewMessageTableViewCell: CommonNewMessageTableViewCell, ChatTableViewCellP
         tribeData: MessageTableCellState.TribeData?,
         linkData: MessageTableCellState.LinkData?,
         uploadProgressData: MessageTableCellState.UploadProgressData?,
+        participantsData: MessageTableCellState.ParticipantsData?,
         delegate: NewMessageTableViewCellDelegate?,
         searchingTerm: String?,
         indexPath: IndexPath,
@@ -231,7 +234,7 @@ class NewMessageTableViewCell: CommonNewMessageTableViewCell, ChatTableViewCellP
         configureWith(payment: mutableMessageCellState.payment, and: bubble)
         configureWith(invoice: mutableMessageCellState.invoice, and: bubble)
         configureWith(directPayment: mutableMessageCellState.directPayment, and: bubble)
-        configureWith(callLink: mutableMessageCellState.callLink)
+        configureWith(callLink: mutableMessageCellState.callLink, participantsData: participantsData)
         configureWith(podcastBoost: mutableMessageCellState.podcastBoost)
         configureWith(messageMedia: mutableMessageCellState.messageMedia, mediaData: mediaData, and: bubble)
         configureWith(genericFile: mutableMessageCellState.genericFile, mediaData: mediaData)

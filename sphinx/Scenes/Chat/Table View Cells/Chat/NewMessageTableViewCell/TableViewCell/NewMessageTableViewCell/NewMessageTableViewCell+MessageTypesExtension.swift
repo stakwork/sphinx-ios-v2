@@ -135,11 +135,26 @@ extension NewMessageTableViewCell {
     }
     
     func configureWith(
-        callLink: BubbleMessageLayoutState.CallLink?
+        callLink: BubbleMessageLayoutState.CallLink?,
+        participantsData: MessageTableCellState.ParticipantsData? = nil
     ) {
         if let callLink = callLink {
             callLinkView.configureWith(callLink: callLink, and: self)
+            callLinkView.configureWith(participantsData: participantsData)
             callLinkView.isHidden = false
+            
+            // Fetch when no data yet, or when the timer has marked existing data stale.
+            // Stale data stays visible until the fresh response arrives — no blink.
+            if (participantsData == nil || participantsData?.isStale == true),
+               let messageId = self.messageId,
+               let url = URL(string: callLink.link),
+               let roomName = url.pathComponents.last(where: { !$0.isEmpty && $0 != "/" }) {
+                delegate?.shouldLoadCallParticipantsFor(
+                    messageId: messageId,
+                    roomName: roomName,
+                    and: rowIndex
+                )
+            }
         }
     }
     

@@ -15,18 +15,31 @@ import UIKit
 }
 
 class JoinVideoCallView: UIView {
-    
+
+    static let kParticipantsRowHeight: CGFloat = 54
+
     weak var delegate: JoinCallViewDelegate?
-    
+
     @IBOutlet private var contentView: UIView!
     @IBOutlet weak var audioButtonContainer: UIView!
     @IBOutlet weak var videoButtonContainer: UIView!
+    @IBOutlet weak var participantsStackView: UIStackView!
+    @IBOutlet weak var participantsScrollView: UIScrollView!
     
+    private let participantsCountLabel: UILabel = {
+        let label = UILabel()
+        label.font = UIFont.systemFont(ofSize: 11)
+        label.textColor = UIColor.Sphinx.Text
+        label.textAlignment = .center
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+
     public enum CallButton: Int {
         case Audio
         case Video
     }
-    
+
     override init(frame: CGRect) {
         super.init(frame: frame)
         setup()
@@ -42,35 +55,69 @@ class JoinVideoCallView: UIView {
         addSubview(contentView)
         contentView.frame = self.bounds
         contentView.autoresizingMask = [.flexibleHeight, .flexibleWidth]
-        
+
         audioButtonContainer.layer.cornerRadius = 8
         audioButtonContainer.addShadow(location: VerticalLocation.bottom, color: UIColor.Sphinx.PrimaryBlueBorder, opacity: 1, radius: 0.5, bottomhHeight: 1.5)
-        
+
         videoButtonContainer.layer.cornerRadius = 8
         videoButtonContainer.addShadow(location: VerticalLocation.bottom, color: UIColor.Sphinx.GreenBorder, opacity: 1, radius: 0.5, bottomhHeight: 1.5)
+        
+        participantsScrollView.contentInset = .zero
+        participantsScrollView.contentInsetAdjustmentBehavior = .never
+        participantsScrollView.showsHorizontalScrollIndicator = false
+        participantsScrollView.showsVerticalScrollIndicator = false
+//        participantsScrollView.panGestureRecognizer.require(toFail: tableView.panGestureRecognizer)
+
+        participantsScrollView.isHidden = true
     }
-    
+
+    func configureWith(participantsData: MessageTableCellState.ParticipantsData?) {
+        participantsStackView.arrangedSubviews.forEach {
+            participantsStackView.removeArrangedSubview($0)
+            $0.removeFromSuperview()
+        }
+
+        guard let participantsData = participantsData, !participantsData.participants.isEmpty else {
+            participantsScrollView.isHidden = true
+            return
+        }
+
+        for participant in participantsData.participants {
+            let boxView = ParticipantBoxView()
+            boxView.configure(with: participant)
+            boxView.translatesAutoresizingMaskIntoConstraints = false
+            
+            NSLayoutConstraint.activate([
+                boxView.widthAnchor.constraint(equalToConstant: 42),
+                boxView.heightAnchor.constraint(equalToConstant: JoinVideoCallView.kParticipantsRowHeight),
+            ])
+            participantsStackView.addArrangedSubview(boxView)
+        }
+        
+        participantsScrollView.isHidden = false
+    }
+
     func configureWith(
         callLink: BubbleMessageLayoutState.CallLink,
         and delegate: JoinCallViewDelegate
     ) {
         self.delegate = delegate
-        
+
         videoButtonContainer.isHidden = callLink.callMode == .Audio
     }
-    
+
     func configure(delegate: JoinCallViewDelegate, link: String) {
         self.delegate = delegate
-        
+
         configureWith(link: link)
     }
-    
+
     func configureWith(link: String) {
         let mode = VideoCallHelper.getCallMode(link: link)
-        
+
         audioButtonContainer.isHidden = false
         videoButtonContainer.isHidden = false
-        
+
         switch (mode) {
         case .Audio:
             videoButtonContainer.isHidden = true
@@ -79,14 +126,14 @@ class JoinVideoCallView: UIView {
             break
         }
     }
-    
+
     @IBAction func callButtonTouched(_ sender: Any) {
         callButtonDeselected(sender)
-        
+
         guard let sender = sender as? UIButton else {
             return
         }
-        
+
         switch(sender.tag) {
         case CallButton.Audio.rawValue:
             delegate?.didTapAudioButton()
@@ -98,12 +145,12 @@ class JoinVideoCallView: UIView {
             break
         }
     }
-    
+
     @IBAction func callButtonSelected(_ sender: Any) {
         guard let sender = sender as? UIButton else {
             return
         }
-        
+
         switch(sender.tag) {
         case CallButton.Audio.rawValue:
             audioButtonContainer.backgroundColor = UIColor.Sphinx.PrimaryBlueBorder
@@ -115,12 +162,12 @@ class JoinVideoCallView: UIView {
             break
         }
     }
-    
+
     @IBAction func callButtonDeselected(_ sender: Any) {
         guard let sender = sender as? UIButton else {
             return
         }
-        
+
         switch(sender.tag) {
         case CallButton.Audio.rawValue:
             audioButtonContainer.backgroundColor = UIColor.Sphinx.PrimaryBlue
@@ -132,7 +179,7 @@ class JoinVideoCallView: UIView {
             break
         }
     }
-    
+
     @IBAction func copyLinkButtonTouched() {
         delegate?.didTapCopyLink()
     }
