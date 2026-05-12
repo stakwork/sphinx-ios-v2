@@ -24,7 +24,8 @@ class JoinVideoCallView: UIView {
     @IBOutlet weak var audioButtonContainer: UIView!
     @IBOutlet weak var videoButtonContainer: UIView!
     @IBOutlet weak var participantsStackView: UIStackView!
-
+    @IBOutlet weak var participantsScrollView: UIScrollView!
+    
     private let participantsCountLabel: UILabel = {
         let label = UILabel()
         label.font = UIFont.systemFont(ofSize: 11)
@@ -60,8 +61,14 @@ class JoinVideoCallView: UIView {
 
         videoButtonContainer.layer.cornerRadius = 8
         videoButtonContainer.addShadow(location: VerticalLocation.bottom, color: UIColor.Sphinx.GreenBorder, opacity: 1, radius: 0.5, bottomhHeight: 1.5)
+        
+        participantsScrollView.contentInset = .zero
+        participantsScrollView.contentInsetAdjustmentBehavior = .never
+        participantsScrollView.showsHorizontalScrollIndicator = false
+        participantsScrollView.showsVerticalScrollIndicator = false
+//        participantsScrollView.panGestureRecognizer.require(toFail: tableView.panGestureRecognizer)
 
-        participantsStackView.isHidden = true
+        participantsScrollView.isHidden = true
     }
 
     func configureWith(participantsData: MessageTableCellState.ParticipantsData?) {
@@ -71,34 +78,23 @@ class JoinVideoCallView: UIView {
         }
 
         guard let participantsData = participantsData, !participantsData.participants.isEmpty else {
-            participantsStackView.isHidden = true
+            participantsScrollView.isHidden = true
             return
         }
 
-        let displayedParticipants = participantsData.participants.prefix(5)
-        for participant in displayedParticipants {
+        for participant in participantsData.participants {
             let boxView = ParticipantBoxView()
             boxView.configure(with: participant)
             boxView.translatesAutoresizingMaskIntoConstraints = false
             
             NSLayoutConstraint.activate([
-                boxView.widthAnchor.constraint(greaterThanOrEqualToConstant: 30),
-                boxView.widthAnchor.constraint(lessThanOrEqualToConstant: 120),
-                boxView.heightAnchor.constraint(equalToConstant: JoinVideoCallView.kParticipantsRowHeight - 8),
+                boxView.widthAnchor.constraint(equalToConstant: 42),
+                boxView.heightAnchor.constraint(equalToConstant: JoinVideoCallView.kParticipantsRowHeight),
             ])
             participantsStackView.addArrangedSubview(boxView)
         }
-
-        if participantsData.participants.count > 5 {
-            participantsCountLabel.text = "+\(participantsData.participants.count - 5)"
-            participantsStackView.addArrangedSubview(participantsCountLabel)
-        }
         
-        let spacer = UIView()
-        spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        participantsStackView.addArrangedSubview(spacer)
-
-        participantsStackView.isHidden = false
+        participantsScrollView.isHidden = false
     }
 
     func configureWith(

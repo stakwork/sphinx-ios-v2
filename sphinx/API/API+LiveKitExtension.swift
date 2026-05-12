@@ -139,48 +139,6 @@ extension API {
                         profilePictureUrl: profilePictureUrl,
                         isActive: true
                     ))
-                    
-                    participants.append(BubbleMessageLayoutState.CallParticipantInfo(
-                        identity: "Paul",
-                        name: "Paul",
-                        profilePictureUrl: nil,
-                        isActive: true
-                    ))
-                    
-                    participants.append(BubbleMessageLayoutState.CallParticipantInfo(
-                        identity: "Evan",
-                        name: "Evan",
-                        profilePictureUrl: nil,
-                        isActive: true
-                    ))
-                    
-                    participants.append(BubbleMessageLayoutState.CallParticipantInfo(
-                        identity: "Gonza",
-                        name: "Gonza",
-                        profilePictureUrl: nil,
-                        isActive: true
-                    ))
-                    
-                    participants.append(BubbleMessageLayoutState.CallParticipantInfo(
-                        identity: "Tom Smith",
-                        name: "Tom Smith",
-                        profilePictureUrl: nil,
-                        isActive: true
-                    ))
-                    
-                    participants.append(BubbleMessageLayoutState.CallParticipantInfo(
-                        identity: "Nicols",
-                        name: "Nicols",
-                        profilePictureUrl: nil,
-                        isActive: true
-                    ))
-                    
-                    participants.append(BubbleMessageLayoutState.CallParticipantInfo(
-                        identity: "Tom 1",
-                        name: "Tom 1",
-                        profilePictureUrl: nil,
-                        isActive: true
-                    ))
                 }
                 callback(participants)
             case .failure(let error):

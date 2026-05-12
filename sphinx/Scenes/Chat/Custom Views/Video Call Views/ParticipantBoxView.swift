@@ -40,6 +40,7 @@ class ParticipantBoxView: UIView {
         label.numberOfLines = 1
         label.lineBreakMode = .byTruncatingTail
         label.translatesAutoresizingMaskIntoConstraints = false
+        label.textAlignment = .center
         return label
     }()
     
@@ -91,13 +92,17 @@ class ParticipantBoxView: UIView {
             avatarImageView.bottomAnchor.constraint(equalTo: avatarContainer.bottomAnchor),
         ])
         
+        
         stackView.addArrangedSubview(avatarContainer)
         stackView.addArrangedSubview(nameLabel)
         
         addSubview(stackView)
+        
         NSLayoutConstraint.activate([
-            stackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 6),
-            stackView.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -6),
+            stackView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            stackView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            nameLabel.centerXAnchor.constraint(equalTo: stackView.centerXAnchor),
+            avatarContainer.centerXAnchor.constraint(equalTo: stackView.centerXAnchor),
             stackView.centerYAnchor.constraint(equalTo: centerYAnchor),
         ])
     }
@@ -108,7 +113,7 @@ class ParticipantBoxView: UIView {
         // Show initials placeholder by default
         let displayName = participant.name.isEmpty ? participant.identity : participant.name
         initialsLabel.text = displayName.getInitialsFromName()
-        initialsLabel.backgroundColor = UIColor.random()
+        initialsLabel.backgroundColor = UIColor.getColorFor(key: participant.identity)
         avatarImageView.image = nil
         avatarImageView.isHidden = true
         

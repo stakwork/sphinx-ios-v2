@@ -29,6 +29,11 @@ class ChatHelper {
         return UIColor.Sphinx.SecondaryText
     }
     
+    public static func getColorFor(participantName: String) -> UIColor {
+        var key = "\(participantName.trim())-color"
+        return UIColor.getColorFor(key: key)
+    }
+    
     public static func getRecipientColorFor(
         message: TransactionMessage
     ) -> UIColor {
