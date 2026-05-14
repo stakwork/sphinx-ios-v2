@@ -583,6 +583,11 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
             return
         }
         
+        self.hideRestoreCallback = hideRestoreViewCallback
+        self.contactRestoreCallback = contactRestoreCallback
+        self.messageRestoreCallback = messageRestoreCallback
+        self.errorCallback = errorCallback
+        
         if let mqtt = self.mqtt {
             if mqtt.connState == .connecting {
                 print("[MQTT] connectToServer skipped — already connecting")
@@ -590,15 +595,14 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
             }
             if mqtt.connState == .connected && isConnected {
                 print("[MQTT] connectToServer skipped — already connected")
-                startNewMsgsSync()
+                if isV2Restore {
+                    syncContactsAndMessages()
+                } else {
+                    startNewMsgsSync()
+                }
                 return
             }
         }
-        
-        self.hideRestoreCallback = hideRestoreViewCallback
-        self.contactRestoreCallback = contactRestoreCallback
-        self.messageRestoreCallback = messageRestoreCallback
-        self.errorCallback = errorCallback
         
         if isV2Restore {
             contactRestoreCallback?(2)
