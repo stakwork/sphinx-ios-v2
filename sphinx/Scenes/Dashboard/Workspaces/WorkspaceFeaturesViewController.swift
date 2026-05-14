@@ -13,6 +13,7 @@ class WorkspaceFeaturesViewController: UIViewController {
     private var currentPage = 1
     private var totalPages = 1
     private weak var paginationView: PaginationControlView?
+    private var paginationHeightConstraint: NSLayoutConstraint?
     private var paginationHasBeenBuilt = false
     
     private lazy var refreshControl: UIRefreshControl = {
@@ -87,11 +88,14 @@ class WorkspaceFeaturesViewController: UIViewController {
         pagination.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(pagination)
         
+        let heightConstraint = pagination.heightAnchor.constraint(equalToConstant: 56)
+        heightConstraint.isActive = true
+        paginationHeightConstraint = heightConstraint
+
         NSLayoutConstraint.activate([
             pagination.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
             pagination.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
             pagination.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-            pagination.heightAnchor.constraint(equalToConstant: 56)
         ])
         
         // Re-pin tableView bottom to pagination top instead of safe area bottom
@@ -175,6 +179,7 @@ class WorkspaceFeaturesViewController: UIViewController {
                     self.features = features
                     self.tableView.reloadData()
                     self.paginationView?.configure(currentPage: self.currentPage, totalPages: info.totalPages)
+                    self.paginationHeightConstraint?.constant = (self.paginationView?.isHidden == true) ? 0 : 56
                     self.paginationHasBeenBuilt = true
                     self.isLoading = false
                     self.refreshControl.endRefreshing()
