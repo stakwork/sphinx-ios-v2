@@ -140,8 +140,9 @@ extension SphinxOnionManager {
     }
     
     func getInvoiceDetails(invoice: String) -> ParseInvoiceResult? {
+        let normalizedInvoice = invoice.components(separatedBy: .whitespacesAndNewlines).joined()
         do {
-            let rawInvoiceDetails = try parseInvoice(invoiceJson: invoice)
+            let rawInvoiceDetails = try parseInvoice(invoiceJson: normalizedInvoice)
             let parsedInvoiceDetails = ParseInvoiceResult(JSONString: rawInvoiceDetails)
             return parsedInvoiceDetails
         } catch {
@@ -154,6 +155,7 @@ extension SphinxOnionManager {
         overPayAmountMsat: UInt64? = nil,
         callback: ((Bool, String?) -> ())? = nil
     ){
+        let invoice = invoice.components(separatedBy: .whitespacesAndNewlines).joined()
         guard let invoiceDict = getInvoiceDetails(invoice: invoice),
               let pubkey = invoiceDict.pubkey,
               let amount = invoiceDict.value else
@@ -196,6 +198,7 @@ extension SphinxOnionManager {
         invoice: String,
         callback: ((Bool, String?) -> ())? = nil
     ) {
+        let invoice = invoice.components(separatedBy: .whitespacesAndNewlines).joined()
         guard let seed = getAccountSeed() else{
             callback?(false, "Account seed not found")
             return
@@ -224,6 +227,7 @@ extension SphinxOnionManager {
         amount: UInt64,
         callback: ((Bool, String?) -> ())? = nil
     ) {
+        let invoice = invoice.components(separatedBy: .whitespacesAndNewlines).joined()
         guard let seed = getAccountSeed() else{
             callback?(false, "Account seed not found")
             return
@@ -323,14 +327,16 @@ extension SphinxOnionManager {
         message: TransactionMessage
     ) {
         guard message.type == TransactionMessage.TransactionMessageType.invoice.rawValue,
-              let invoice = message.invoice,
+              let rawInvoice = message.invoice,
               let seed = getAccountSeed(),
               let owner = UserContact.getOwner(),
               let nickname = owner.nickname else
         {
             return
         }
-        
+
+        let invoice = rawInvoice.components(separatedBy: .whitespacesAndNewlines).joined()
+
         do {
             let rr = try sphinx.payContactInvoice(
                 seed: seed,
