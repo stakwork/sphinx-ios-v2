@@ -171,7 +171,13 @@ extension API {
             return
         }
 
-        session()?.request(request).validate().responseData { response in
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                print("[HiveAPI] fetchChatMessage unauthorized (401) - token may be expired")
+                errorCallback()
+                return
+            }
+            
             switch response.result {
             case .success(let data):
                 let json = JSON(data)
