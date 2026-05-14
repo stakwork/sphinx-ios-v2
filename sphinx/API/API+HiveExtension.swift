@@ -112,8 +112,11 @@ extension API {
         callback: @escaping HiveAuthTokenCallback,
         errorCallback: @escaping EmptyCallback
     ) {
+        print("[Hive] authenticateWithHive: attempting...")
+
         guard let signedToken = SphinxOnionManager.sharedInstance.getSignedToken(),
               let pubkey = UserData.sharedInstance.getUserPubKey() else {
+            print("[Hive] authenticateWithHive: failed — could not get signed token or pubkey")
             errorCallback()
             return
         }
@@ -140,11 +143,14 @@ extension API {
             case .success(let data):
                 let json = JSON(data)
                 if let token = json["token"].string {
+                    print("[Hive] authenticateWithHive: success — token obtained")
                     callback(token)
                 } else {
+                    print("[Hive] authenticateWithHive: failed — status: \(response.response?.statusCode ?? -1)")
                     errorCallback()
                 }
             case .failure:
+                print("[Hive] authenticateWithHive: failed — status: \(response.response?.statusCode ?? -1)")
                 errorCallback()
             }
         }
@@ -165,7 +171,7 @@ extension API {
             return
         }
 
-        session()?.request(request).responseData { response in
+        session()?.request(request).validate().responseData { response in
             switch response.result {
             case .success(let data):
                 let json = JSON(data)
@@ -179,8 +185,10 @@ extension API {
                     }
                 }
 
+                print("[Hive] fetchWorkspaces: \(workspaces.count) workspace(s) returned")
                 callback(workspaces)
-            case .failure:
+            case .failure(let error):
+                print("[Hive] fetchWorkspaces failed — status: \(response.response?.statusCode ?? -1), error: \(error.localizedDescription)")
                 errorCallback()
             }
         }
