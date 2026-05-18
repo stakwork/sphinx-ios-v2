@@ -17,6 +17,7 @@ class FeaturePlanViewController: UIViewController {
     private var feature: HiveFeature
     private var workspace: Workspace
     private var messages: [HiveChatMessage] = []
+    private var currentSuggestions: [String] = []
 
     private var cqMessageIds: Set<String> {
         Set(messages.filter { $0.artifacts.contains(where: { $0.isClarifyingQuestions }) }.map { $0.id })
@@ -1391,6 +1392,7 @@ class FeaturePlanViewController: UIViewController {
                     self.chatLoadingWheel.stopAnimating()
                     self.chatTableView.isHidden = false
                     self.messages = messages.filter { $0.isDisplayable }
+                    self.currentSuggestions = []
                     self.chatTableView.reloadData()
                     self.scrollToBottom()
                     
@@ -1416,7 +1418,35 @@ class FeaturePlanViewController: UIViewController {
         )
     }
     
+    private func fetchSuggestions() {
+        let last5 = Array(displayMessages.suffix(5))
+            .filter { !$0.message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        guard !last5.isEmpty else { return }
+        let payload = last5.map { ["role": $0.isUserMessage ? "user" : "assistant", "message": $0.message] }
+        API.sharedInstance.fetchFeatureSuggestionsWithAuth(
+            featureId: feature.id,
+            messages: payload,
+            callback: { [weak self] suggestions in
+                DispatchQueue.main.async {
+                    guard let self = self else { return }
+                    self.currentSuggestions = suggestions
+                    self.reloadLastAssistantCell()
+                }
+            },
+            errorCallback: { /* silent fail */ }
+        )
+    }
+
+    private func reloadLastAssistantCell() {
+        guard let idx = displayMessages.lastIndex(where: { !$0.isUserMessage }) else { return }
+        UIView.performWithoutAnimation {
+            chatTableView.reloadRows(at: [IndexPath(row: idx, section: 0)], with: .none)
+        }
+    }
+
     private func sendChatMessage(_ message: String) {
+        currentSuggestions = []
+        reloadLastAssistantCell()
         chatInputTextView.text = ""
         chatInputTextView.typingAttributes = [
             .foregroundColor: UIColor.Sphinx.Text,
@@ -1706,7 +1736,15 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
         }
         // If this message is a CQ answer, show italic summary instead of raw text
         let italic = cqAnswerItalicText(for: message)
-        cell.configure(with: message, isLastMessage: isLast, italicText: italic)
+        cell.configure(
+            with: message,
+            isLastMessage: isLast,
+            italicText: italic,
+            suggestions: (isLast && !message.isUserMessage) ? currentSuggestions : []
+        )
+        cell.onSuggestionTapped = { [weak self] text in
+            self?.sendChatMessage(text)
+        }
         cell.onHeightChanged = { [weak tableView] in
             UIView.performWithoutAnimation {
                     tableView?.beginUpdates()
@@ -2026,6 +2064,9 @@ extension FeaturePlanViewController: HivePusherDelegate {
         DispatchQueue.main.async {
             self.applyWorkflowStatus(status)
             self.fetchFeatureDetail()
+            if status == .COMPLETED {
+                self.fetchSuggestions()
+            }
 //            if status == .IN_PROGRESS || status == .PENDING {
 //                self.showProcessingBubble()
 //                self.fetchAndUpdateWorkflowStep()
