@@ -696,6 +696,7 @@
 		A748D979E2F14560BF39E4A7 /* HiveChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8ABF62A347844ECEB2FC60A4 /* HiveChatMessage.swift */; };
 		A9F9FCD16AAC4DCD96AD35C4 /* HiveAnyCableManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E9262D0931349B5946161EE /* HiveAnyCableManager.swift */; };
 		AA001CQ12F9A0001000CQ001 /* ClarifyingQuestionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA001CQ02F9A0001000CQ001 /* ClarifyingQuestionsView.swift */; };
+		BB001SC02F9A0001000SC001 /* SuggestionChipsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB001SC01F9A0001000SC001 /* SuggestionChipsView.swift */; };
 		AA001CQ32F9A0001000CQ001 /* ClarifyingQuestionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA001CQ22F9A0001000CQ001 /* ClarifyingQuestionsTests.swift */; };
 		AA00B10C000000000000001A /* BiometricLockViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00B10C000000000000001B /* BiometricLockViewController.swift */; };
 		AA11BB22CC33DD44EE55FF67 /* HiveSearchResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11BB22CC33DD44EE55FF66 /* HiveSearchResult.swift */; };
@@ -2029,6 +2030,7 @@
 		A1B2C3D4E5F6A1B5 /* WorkflowDiffView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkflowDiffView.swift; sourceTree = "<group>"; };
 		A8F00239BAA5413399F184E6 /* WorkflowStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkflowStatus.swift; sourceTree = "<group>"; };
 		AA001CQ02F9A0001000CQ001 /* ClarifyingQuestionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClarifyingQuestionsView.swift; sourceTree = "<group>"; };
+		BB001SC01F9A0001000SC001 /* SuggestionChipsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuggestionChipsView.swift; sourceTree = "<group>"; };
 		AA001CQ22F9A0001000CQ001 /* ClarifyingQuestionsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClarifyingQuestionsTests.swift; sourceTree = "<group>"; };
 		AA00B10C000000000000001B /* BiometricLockViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiometricLockViewController.swift; sourceTree = "<group>"; };
 		AA11BB22CC33DD44EE55FF66 /* HiveSearchResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveSearchResult.swift; sourceTree = "<group>"; };
@@ -4228,6 +4230,7 @@
 				MC01AA11BB22CC33DD44EE01 /* MarkdownContentSplitter.swift */,
 				MT01AA11BB22CC33DD44EE01 /* MarkdownTableView.swift */,
 				AA001CQ02F9A0001000CQ001 /* ClarifyingQuestionsView.swift */,
+				BB001SC01F9A0001000SC001 /* SuggestionChipsView.swift */,
 				47B9CBFB2F460C7B007527B4 /* WorkspaceTableViewCell.swift */,
 				47B9CBFC2F460C7B007527B4 /* WorkspaceTableViewCell.xib */,
 				EB71680A85C46EAF9E7DD25B /* WorkspaceTaskTableViewCell.swift */,
@@ -5673,6 +5676,7 @@
 				MC01AA11BB22CC33DD44EE02 /* MarkdownContentSplitter.swift in Sources */,
 				MT01AA11BB22CC33DD44EE02 /* MarkdownTableView.swift in Sources */,
 				AA001CQ12F9A0001000CQ001 /* ClarifyingQuestionsView.swift in Sources */,
+				BB001SC02F9A0001000SC001 /* SuggestionChipsView.swift in Sources */,
 				A1B2C3D4E5F60001I9J0K1L2 /* HiveLinkNavigator.swift in Sources */,
 				P1Q2R3S4T5U6V7W8X9Y0Z1A2 /* PaginationControlView.swift in Sources */,
 				T4U5V6W7X8Y9Z0A1B2C3D4E5 /* StakworkWorkflowData.swift in Sources */,
