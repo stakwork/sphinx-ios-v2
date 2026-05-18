@@ -140,6 +140,17 @@ class FeatureChatMessageCell: UITableViewCell {
         return iv
     }()
 
+    // MARK: - Suggestion chips
+    private let suggestionChipsView = SuggestionChipsView()
+    private var chipsTopConstraint:      NSLayoutConstraint!
+    private var chipsLeadingConstraint:  NSLayoutConstraint!
+    private var chipsTrailingConstraint: NSLayoutConstraint!
+    private var chipsBottomConstraint:   NSLayoutConstraint!
+
+    var onSuggestionTapped: ((String) -> Void)? {
+        didSet { suggestionChipsView.onChipTapped = onSuggestionTapped }
+    }
+
     // MARK: - Alignment constraints (toggled per message role)
     private var bubbleLeadingConstraint: NSLayoutConstraint!
     private var bubbleTrailingConstraint: NSLayoutConstraint!
@@ -147,6 +158,7 @@ class FeatureChatMessageCell: UITableViewCell {
     private var timestampLeadingConstraint: NSLayoutConstraint!
     private var timestampTrailingConstraint: NSLayoutConstraint!
     private var bubbleWidthConstraint: NSLayoutConstraint!
+    private var timestampBottomConstraint: NSLayoutConstraint!
 
     // MARK: - Init
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
@@ -176,6 +188,7 @@ class FeatureChatMessageCell: UITableViewCell {
         bubbleView.addSubview(bubbleStack)
         contentView.addSubview(timestampLabel)
         contentView.addSubview(senderAvatarImageView)
+        contentView.addSubview(suggestionChipsView)
 
         bubbleLeadingConstraint  = bubbleView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16)
         bubbleTrailingConstraint = bubbleView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16)
@@ -186,6 +199,14 @@ class FeatureChatMessageCell: UITableViewCell {
         timestampTrailingConstraint = timestampLabel.trailingAnchor.constraint(equalTo: bubbleView.trailingAnchor)
 
         bubbleWidthConstraint = bubbleView.widthAnchor.constraint(lessThanOrEqualTo: contentView.widthAnchor, multiplier: 0.85)
+
+        timestampBottomConstraint = timestampLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -4)
+
+        chipsTopConstraint      = suggestionChipsView.topAnchor.constraint(equalTo: timestampLabel.bottomAnchor, constant: 6)
+        chipsLeadingConstraint  = suggestionChipsView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16)
+        chipsTrailingConstraint = suggestionChipsView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16)
+        chipsBottomConstraint   = suggestionChipsView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8)
+        // Chip constraints are NOT activated here — toggled in configure/prepareForReuse
 
         NSLayoutConstraint.activate([
             senderAvatarImageView.widthAnchor.constraint(equalToConstant: 20),
@@ -199,7 +220,7 @@ class FeatureChatMessageCell: UITableViewCell {
             bubbleStack.trailingAnchor.constraint(equalTo: bubbleView.trailingAnchor),
             bubbleStack.bottomAnchor.constraint(equalTo: bubbleView.bottomAnchor),
             timestampLabel.topAnchor.constraint(equalTo: bubbleView.bottomAnchor, constant: 4),
-            timestampLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -4),
+            timestampBottomConstraint,
             // textBackgroundView covers only the text area (top of bubble → bottom of text view)
             textBackgroundView.topAnchor.constraint(equalTo: bubbleView.topAnchor),
             textBackgroundView.leadingAnchor.constraint(equalTo: bubbleView.leadingAnchor),
@@ -209,7 +230,7 @@ class FeatureChatMessageCell: UITableViewCell {
     }
 
     // MARK: - Configure
-    func configure(with message: HiveChatMessage, isLastMessage: Bool = false, italicText: String? = nil) {
+    func configure(with message: HiveChatMessage, isLastMessage: Bool = false, italicText: String? = nil, suggestions: [String] = []) {
         let isUser = message.isUserMessage
 
         // --- Clean up any dynamically inserted segment views from previous use ---
@@ -349,6 +370,25 @@ class FeatureChatMessageCell: UITableViewCell {
         } else {
             attachmentGridView.isHidden = true
         }
+
+        // --- Suggestion chips ---
+        let showChips = !message.isUserMessage && !suggestions.isEmpty
+        if showChips {
+            suggestionChipsView.configure(with: suggestions)
+            timestampBottomConstraint.isActive  = false
+            chipsTopConstraint.isActive         = true
+            chipsLeadingConstraint.isActive     = true
+            chipsTrailingConstraint.isActive    = true
+            chipsBottomConstraint.isActive      = true
+        } else {
+            suggestionChipsView.clear()
+            chipsTopConstraint.isActive         = false
+            chipsLeadingConstraint.isActive     = false
+            chipsTrailingConstraint.isActive    = false
+            chipsBottomConstraint.isActive      = false
+            timestampBottomConstraint.isActive  = true
+        }
+        onHeightChanged?()
     }
 
     // MARK: - Segmented content rendering
@@ -537,6 +577,13 @@ class FeatureChatMessageCell: UITableViewCell {
         messageTextView.isHidden = false
         messageTextView.textContainerInset = UIEdgeInsets(top: 10, left: 8, bottom: 10, right: 8)
         prCardView.isHidden = true
+        suggestionChipsView.clear()
+        chipsTopConstraint.isActive         = false
+        chipsLeadingConstraint.isActive     = false
+        chipsTrailingConstraint.isActive    = false
+        chipsBottomConstraint.isActive      = false
+        timestampBottomConstraint.isActive  = true
+        onSuggestionTapped = nil
         onHeightChanged = nil
         attachmentGridView.reset()
         attachmentGridView.isHidden = true
