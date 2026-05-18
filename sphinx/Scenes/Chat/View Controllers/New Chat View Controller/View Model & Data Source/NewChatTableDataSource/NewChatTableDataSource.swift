@@ -28,6 +28,7 @@ import CoreData
     ///LinkPreviews
     func didTapOnContactWith(pubkey: String, and routeHint: String?)
     func didTapOnTribeWith(joinLink: String)
+    func didTapOnSphinxDeepLink(deepLinkURL: String)
     
     ///Tribes
     func didDeleteTribe()

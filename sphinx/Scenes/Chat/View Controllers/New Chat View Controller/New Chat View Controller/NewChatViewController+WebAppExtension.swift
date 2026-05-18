@@ -37,4 +37,17 @@ extension NewChatViewController {
             headerView.toggleSBIcon(showChatIcon: shouldShow)
         }
     }
+    
+    func openWebAppWithDeepLink(url: String) {
+        guard let chat = chat else { return }
+        if let existing = webAppVC {
+            removeChildVC(child: existing)
+        }
+        guard let vc = WebAppViewController.instantiate(chat: chat, overrideURL: url) else { return }
+        webAppVC = vc
+        addChildVC(child: vc, container: webAppContainerView)
+        bottomView.isHidden = true
+        webAppContainerView.isHidden = false
+        headerView.toggleWebAppIcon(showChatIcon: true)
+    }
 }

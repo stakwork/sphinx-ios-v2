@@ -891,6 +891,10 @@ extension NewChatTableDataSource {
     }
     
     func didTapOnLink(_ link: String) {
+        if link.starts(with: "sphinx.chat://") {
+            delegate?.didTapOnSphinxDeepLink(deepLinkURL: link)
+            return
+        }
         if
             !link.stringLinks.isEmpty ||
             !link.pubKeyMatches.isEmpty
