@@ -553,6 +553,7 @@ extension NewChatTableDataSource : NewMessageTableViewCellDelegate {
         }
     }
     func shouldLoadCallParticipantsFor(messageId: Int, roomName: String, and rowIndex: Int) {
+        guard activeParticipantPollingTimers[messageId] == nil else { return }
         guard !pendingParticipantRooms.contains(roomName) else { return }
         pendingParticipantRooms.insert(roomName)
 
@@ -563,7 +564,10 @@ extension NewChatTableDataSource : NewMessageTableViewCellDelegate {
             self.participantsDataCached[messageId] = MessageTableCellState.ParticipantsData(
                 participants: participants
             )
-            self.startParticipantsCacheTimer()
+
+            if !participants.isEmpty {
+                self.startParticipantsPollingTimer(messageId: messageId, roomName: roomName)
+            }
 
             if let tableCellState = self.getTableCellStateFor(messageId: messageId, and: rowIndex) {
                 let cellState = tableCellState.1
@@ -579,21 +583,64 @@ extension NewChatTableDataSource : NewMessageTableViewCellDelegate {
         }
     }
 
-    func startParticipantsCacheTimer() {
-        guard participantsCacheTimer == nil else { return }
-        participantsCacheTimer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: true) { [weak self] _ in
-            self?.refreshParticipantsCache()
+    func startParticipantsPollingTimer(messageId: Int, roomName: String) {
+        guard activeParticipantPollingTimers[messageId] == nil else { return }
+        activeParticipantPollingTimers[messageId] = Timer.scheduledTimer(withTimeInterval: 15.0, repeats: true) { [weak self] _ in
+            self?.pollParticipants(messageId: messageId, roomName: roomName)
         }
     }
 
-    func refreshParticipantsCache() {
-        guard !participantsDataCached.isEmpty else {
-            participantsCacheTimer?.invalidate()
-            participantsCacheTimer = nil
+    func stopParticipantsPollingTimer(for messageId: Int) {
+        activeParticipantPollingTimers[messageId]?.invalidate()
+        activeParticipantPollingTimers.removeValue(forKey: messageId)
+    }
+
+    func pollParticipants(messageId: Int, roomName: String) {
+        guard let (rowIndex, _) = getTableCellStateFor(messageId: messageId) else { return }
+
+        let isVisible = tableView.cellForRow(at: IndexPath(row: rowIndex, section: 0)) != nil
+        guard isVisible else {
+            stopParticipantsPollingTimer(for: messageId)
             return
         }
-        for messageId in participantsDataCached.keys {
-            participantsDataCached[messageId]?.isStale = true
+
+        guard !pendingParticipantRooms.contains(roomName) else { return }
+        pendingParticipantRooms.insert(roomName)
+
+        API.sharedInstance.getCallParticipants(roomName: roomName) { [weak self] participants in
+            guard let self = self else { return }
+            self.pendingParticipantRooms.remove(roomName)
+
+            if !participants.isEmpty {
+                self.participantsDataCached[messageId] = MessageTableCellState.ParticipantsData(
+                    participants: participants
+                )
+                if let tableCellState = self.getTableCellStateFor(messageId: messageId) {
+                    let cellState = tableCellState.1
+                    Task { @MainActor [weak self] in
+                        guard let self else { return }
+                        var snapshot = self.dataSource.snapshot()
+                        if snapshot.itemIdentifiers.contains(cellState) {
+                            snapshot.reloadItems([cellState])
+                            self.dataSource.apply(snapshot, animatingDifferences: false)
+                        }
+                    }
+                }
+            } else {
+                self.participantsDataCached.removeValue(forKey: messageId)
+                self.stopParticipantsPollingTimer(for: messageId)
+                if let tableCellState = self.getTableCellStateFor(messageId: messageId) {
+                    let cellState = tableCellState.1
+                    Task { @MainActor [weak self] in
+                        guard let self else { return }
+                        var snapshot = self.dataSource.snapshot()
+                        if snapshot.itemIdentifiers.contains(cellState) {
+                            snapshot.reloadItems([cellState])
+                            self.dataSource.apply(snapshot, animatingDifferences: false)
+                        }
+                    }
+                }
+            }
         }
     }
 }
