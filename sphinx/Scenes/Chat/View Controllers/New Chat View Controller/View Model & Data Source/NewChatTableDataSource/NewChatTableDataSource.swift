@@ -114,7 +114,7 @@ import CoreData
     var uploadingProgress: [Int: MessageTableCellState.UploadProgressData] = [:]
     var participantsDataCached: [Int: MessageTableCellState.ParticipantsData] = [:]
     var pendingParticipantRooms: Set<String> = []
-    var activeParticipantPollingTimers: [Int: Timer] = [:]
+    nonisolated(unsafe) var activeParticipantPollingTimers: [Int: Timer] = [:]
     var replyViewHeight: [Int: CGFloat] = [:]
     
     var searchingTerm: String? = nil
