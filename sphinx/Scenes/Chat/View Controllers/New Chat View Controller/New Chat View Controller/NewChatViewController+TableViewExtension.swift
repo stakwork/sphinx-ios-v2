@@ -182,31 +182,42 @@ extension NewChatViewController : NewChatTableDataSourceDelegate {
         }
     }
     
-    func didTapOnWebAppDeepLink(deepLinkURL: String) {
-        guard let chat = chat,
-              let fallbackURLString = URL(string: deepLinkURL)?.getWebAppUrl(),
-              let openURL = URL(string: fallbackURLString) else { return }
-        
-        if !chat.hasWebApp() {
-            UIApplication.shared.open(openURL, options: [:], completionHandler: nil)
+    func didTapOnSphinxDeepLink(deepLinkURL: String) {
+        guard let url = URL(string: deepLinkURL) else { return }
+
+        // webapp deep link: special in-app handling
+        if deepLinkURL.isWebAppLink {
+            guard let chat = chat,
+                  let fallbackURLString = url.getWebAppUrl(),
+                  let openURL = URL(string: fallbackURLString) else { return }
+
+            if !chat.hasWebApp() {
+                UIApplication.shared.open(openURL, options: [:], completionHandler: nil)
+                return
+            }
+
+            let alert = CustomAlertController(
+                title: "open.web.app".localized,
+                message: "select.option".localized,
+                preferredStyle: .actionSheet
+            )
+            alert.addAction(UIAlertAction(title: "open.in.browser".localized, style: .default) { _ in
+                UIApplication.shared.open(openURL, options: [:], completionHandler: nil)
+            })
+            alert.addAction(UIAlertAction(title: "open.inside.sphinx".localized, style: .default) { [weak self] _ in
+                self?.openWebAppWithDeepLink(url: fallbackURLString)
+            })
+            alert.addAction(UIAlertAction(title: "cancel".localized, style: .cancel))
+            alert.popoverPresentationController?.sourceView = view
+            alert.popoverPresentationController?.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 0, height: 0)
+            present(alert, animated: true)
             return
         }
-        
-        let alert = CustomAlertController(
-            title: "open.web.app".localized,
-            message: "select.option".localized,
-            preferredStyle: .actionSheet
-        )
-        alert.addAction(UIAlertAction(title: "open.in.browser".localized, style: .default) { _ in
-            UIApplication.shared.open(openURL, options: [:], completionHandler: nil)
-        })
-        alert.addAction(UIAlertAction(title: "open.inside.sphinx".localized, style: .default) { [weak self] _ in
-            self?.openWebAppWithDeepLink(url: fallbackURLString)
-        })
-        alert.addAction(UIAlertAction(title: "cancel".localized, style: .cancel))
-        alert.popoverPresentationController?.sourceView = view
-        alert.popoverPresentationController?.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 0, height: 0)
-        present(alert, animated: true)
+
+        // all other sphinx.chat:// deep links: route through the standard handler
+        if DeepLinksHandlerHelper.storeLinkQueryFrom(url: url) {
+            DeepLinksHandlerHelper.didHandleLinkQuery(vc: self, delegate: self as? PaymentInvoiceDelegate)
+        }
     }
     
     func goToChatWith(
