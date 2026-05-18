@@ -891,6 +891,10 @@ extension NewChatTableDataSource {
     }
     
     func didTapOnLink(_ link: String) {
+        if link.isWebAppLink {
+            delegate?.didTapOnWebAppDeepLink(deepLinkURL: link)
+            return
+        }
         if
             !link.stringLinks.isEmpty ||
             !link.pubKeyMatches.isEmpty

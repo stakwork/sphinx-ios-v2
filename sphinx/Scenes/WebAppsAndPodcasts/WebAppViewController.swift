@@ -20,6 +20,9 @@ class WebAppViewController: KeyboardEventsViewController {
     var gameURL: String! = nil
     var chat: Chat! = nil
     
+    var navBackButton: UIButton!
+    var navForwardButton: UIButton!
+    
     let webAppHelper = WebAppHelper()
     
     static func instantiate(
@@ -37,6 +40,16 @@ class WebAppViewController: KeyboardEventsViewController {
         
         return viewController
     }
+    
+    static func instantiate(
+        chat: Chat,
+        overrideURL: String
+    ) -> WebAppViewController? {
+        let viewController = StoryboardScene.WebApps.webAppViewController.instantiate()
+        viewController.chat = chat
+        viewController.gameURL = overrideURL
+        return viewController
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -45,6 +58,7 @@ class WebAppViewController: KeyboardEventsViewController {
         authorizeModalView.clipsToBounds = true
         
         addWebView()
+        addNavToolbar()
         loadPage()
     }
 
@@ -61,6 +75,74 @@ class WebAppViewController: KeyboardEventsViewController {
     func toggleModalPosition(keyboardShown: Bool) {
         authorizeViewVerticalConstraint.constant = keyboardShown ? -160 : 0
         authorizeModalView.superview?.layoutIfNeeded()
+    }
+    
+    func addNavToolbar() {
+        let toolbar = UIView()
+        toolbar.backgroundColor = UIColor.Sphinx.Body
+        toolbar.translatesAutoresizingMaskIntoConstraints = false
+        self.view.addSubview(toolbar)
+        
+        NSLayoutConstraint.activate([
+            toolbar.leadingAnchor.constraint(equalTo: self.view.leadingAnchor),
+            toolbar.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
+            toolbar.bottomAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.bottomAnchor),
+            toolbar.heightAnchor.constraint(equalToConstant: 44)
+        ])
+        
+        let backButton = UIButton(type: .system)
+        backButton.setImage(UIImage(systemName: "chevron.left"), for: .normal)
+        backButton.isEnabled = false
+        backButton.addTarget(self, action: #selector(navBackTapped), for: .touchUpInside)
+        backButton.translatesAutoresizingMaskIntoConstraints = false
+        toolbar.addSubview(backButton)
+        
+        let forwardButton = UIButton(type: .system)
+        forwardButton.setImage(UIImage(systemName: "chevron.right"), for: .normal)
+        forwardButton.isEnabled = false
+        forwardButton.addTarget(self, action: #selector(navForwardTapped), for: .touchUpInside)
+        forwardButton.translatesAutoresizingMaskIntoConstraints = false
+        toolbar.addSubview(forwardButton)
+        
+        NSLayoutConstraint.activate([
+            backButton.leadingAnchor.constraint(equalTo: toolbar.leadingAnchor, constant: 20),
+            backButton.centerYAnchor.constraint(equalTo: toolbar.centerYAnchor),
+            backButton.widthAnchor.constraint(equalToConstant: 44),
+            backButton.heightAnchor.constraint(equalToConstant: 44),
+            
+            forwardButton.leadingAnchor.constraint(equalTo: backButton.trailingAnchor, constant: 16),
+            forwardButton.centerYAnchor.constraint(equalTo: toolbar.centerYAnchor),
+            forwardButton.widthAnchor.constraint(equalToConstant: 44),
+            forwardButton.heightAnchor.constraint(equalToConstant: 44)
+        ])
+        
+        navBackButton = backButton
+        navForwardButton = forwardButton
+        
+        // Re-pin webView bottom to toolbar top
+        for constraint in self.view.constraints {
+            if constraint.firstItem === webView && constraint.firstAttribute == .bottom {
+                constraint.isActive = false
+            } else if constraint.secondItem === webView && constraint.secondAttribute == .bottom {
+                constraint.isActive = false
+            }
+        }
+        webView.bottomAnchor.constraint(equalTo: toolbar.topAnchor).isActive = true
+    }
+    
+    @objc func navBackTapped() {
+        webView.goBack()
+        updateNavButtons()
+    }
+    
+    @objc func navForwardTapped() {
+        webView.goForward()
+        updateNavButtons()
+    }
+    
+    func updateNavButtons() {
+        navBackButton?.isEnabled = webView.canGoBack
+        navForwardButton?.isEnabled = webView.canGoForward
     }
     
     func addWebView() {
@@ -143,6 +225,18 @@ extension WebAppViewController : WKNavigationDelegate {
             decisionHandler(.allow)
             return
         }
+    }
+    
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        updateNavButtons()
+    }
+    
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        updateNavButtons()
+    }
+    
+    func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        updateNavButtons()
     }
 }
 

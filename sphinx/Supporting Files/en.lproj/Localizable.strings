@@ -724,3 +724,8 @@
 "more-replies" = "more replies";
 "show-more" = "SHOW MORE";
 "show-less" = "SHOW LESS";
+
+//WEB APP DEEP LINK
+"open.web.app" = "Open Web App";
+"open.in.browser" = "Open in Browser";
+"open.inside.sphinx" = "Open inside Sphinx";

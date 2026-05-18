@@ -182,6 +182,33 @@ extension NewChatViewController : NewChatTableDataSourceDelegate {
         }
     }
     
+    func didTapOnWebAppDeepLink(deepLinkURL: String) {
+        guard let chat = chat,
+              let fallbackURLString = URL(string: deepLinkURL)?.getWebAppUrl(),
+              let openURL = URL(string: fallbackURLString) else { return }
+        
+        if !chat.hasWebApp() {
+            UIApplication.shared.open(openURL, options: [:], completionHandler: nil)
+            return
+        }
+        
+        let alert = CustomAlertController(
+            title: "open.web.app".localized,
+            message: "select.option".localized,
+            preferredStyle: .actionSheet
+        )
+        alert.addAction(UIAlertAction(title: "open.in.browser".localized, style: .default) { _ in
+            UIApplication.shared.open(openURL, options: [:], completionHandler: nil)
+        })
+        alert.addAction(UIAlertAction(title: "open.inside.sphinx".localized, style: .default) { [weak self] _ in
+            self?.openWebAppWithDeepLink(url: fallbackURLString)
+        })
+        alert.addAction(UIAlertAction(title: "cancel".localized, style: .cancel))
+        alert.popoverPresentationController?.sourceView = view
+        alert.popoverPresentationController?.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 0, height: 0)
+        present(alert, animated: true)
+    }
+    
     func goToChatWith(
         contactId: Int?,
         chatId: Int?
