@@ -114,7 +114,7 @@ import CoreData
     var uploadingProgress: [Int: MessageTableCellState.UploadProgressData] = [:]
     var participantsDataCached: [Int: MessageTableCellState.ParticipantsData] = [:]
     var pendingParticipantRooms: Set<String> = []
-    nonisolated(unsafe) var participantsCacheTimer: Timer?
+    nonisolated(unsafe) var activeParticipantPollingTimers: [Int: Timer] = [:]
     var replyViewHeight: [Int: CGFloat] = [:]
     
     var searchingTerm: String? = nil
@@ -175,7 +175,8 @@ import CoreData
     }
     
     deinit {
-        participantsCacheTimer?.invalidate()
+        activeParticipantPollingTimers.values.forEach { $0.invalidate() }
+        activeParticipantPollingTimers.removeAll()
     }
 
     func processChatAliases() {
