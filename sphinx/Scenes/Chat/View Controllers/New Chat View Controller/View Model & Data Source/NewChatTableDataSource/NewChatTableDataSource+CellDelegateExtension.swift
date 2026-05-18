@@ -586,7 +586,10 @@ extension NewChatTableDataSource : NewMessageTableViewCellDelegate {
     func startParticipantsPollingTimer(messageId: Int, roomName: String) {
         guard activeParticipantPollingTimers[messageId] == nil else { return }
         activeParticipantPollingTimers[messageId] = Timer.scheduledTimer(withTimeInterval: 15.0, repeats: true) { [weak self] _ in
-            self?.pollParticipants(messageId: messageId, roomName: roomName)
+            guard let self else { return }
+            MainActor.assumeIsolated {
+                self.pollParticipants(messageId: messageId, roomName: roomName)
+            }
         }
     }
 
