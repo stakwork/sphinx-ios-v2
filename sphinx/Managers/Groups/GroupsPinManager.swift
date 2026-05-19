@@ -24,13 +24,13 @@ class GroupsPinManager {
     }
 
     @MainActor func hasPINTimeoutElapsed() -> Bool {
-        guard UserData.sharedInstance.isUserLogged() else { return false }
+        guard UserData.sharedInstance.isSignupCompleted() else { return false }
         guard !userData.getPINNeverOverride() else { return false }
         if let date: Date = UserDefaults.Keys.lastPinDate.get() {
             let timeSeconds = Double(UserData.sharedInstance.getPINHours() * 3600)
             return Date().timeIntervalSince(date) > timeSeconds
         }
-        return UserData.sharedInstance.isSignupCompleted()
+        return true
     }
 
     @MainActor func shouldAskForPin() -> Bool {

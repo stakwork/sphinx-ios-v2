@@ -412,7 +412,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         let neverRequirePin = GroupsPinManager.sharedInstance.isPINNeverRequired()
         let pinTimeoutElapsed = GroupsPinManager.sharedInstance.hasPINTimeoutElapsed()
 
-        guard UserData.sharedInstance.isUserLogged() else { return }
+        guard UserData.sharedInstance.isSignupCompleted() else { return }
 
         // PIN timeout elapsed → always show PIN, regardless of Face ID
         if pinTimeoutElapsed {
