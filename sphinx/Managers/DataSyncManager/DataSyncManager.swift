@@ -59,6 +59,22 @@ class DataSyncManager: NSObject, @unchecked Sendable {
         )
     }
 
+    func savePinTimeout(value: String) {
+        saveDataSyncItemWith(
+            key: SettingKey.pinTimeout.rawValue,
+            identifier: "0",
+            value: value
+        )
+    }
+
+    func saveBiometricEnabled(value: String) {
+        saveDataSyncItemWith(
+            key: SettingKey.biometricEnabled.rawValue,
+            identifier: "0",
+            value: value
+        )
+    }
+
     func saveTimezoneFor(
         chatPubkey: String,
         timezone: TimezoneSetting
@@ -480,6 +496,16 @@ class DataSyncManager: NSObject, @unchecked Sendable {
                         colorHex: colorHex,
                         key: serverItem.identifier
                     )
+                }
+
+            case .pinTimeout:
+                if let intValue = serverItem.value.asInt {
+                    UserData.sharedInstance.setPINHours(hours: intValue)
+                }
+
+            case .biometricEnabled:
+                if let boolValue = serverItem.value.asBool {
+                    UserDefaults.Keys.biometricAuthEnabled.set(boolValue)
                 }
             }
         }

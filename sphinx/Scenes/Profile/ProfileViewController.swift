@@ -349,6 +349,7 @@ class ProfileViewController: NewKeyboardHandlerViewController {
     
     @IBAction func biometricAuthSwitchChanged(_ sender: UISwitch) {
         UserDefaults.Keys.biometricAuthEnabled.set(sender.isOn)
+        DataSyncManager.sharedInstance.saveBiometricEnabled(value: "\(sender.isOn)")
     }
     
     @IBAction func hiveNotificationsSwitchChanged(_ sender: UISwitch) {
