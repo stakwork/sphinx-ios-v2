@@ -408,16 +408,26 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func presentPINIfNeeded() {
-        if GroupsPinManager.sharedInstance.shouldAskForPin() {
-            let pinVC = PinCodeViewController.instantiate()
-            pinVC.loggingCompletion = {
-                self.onLoggingCompletion()
-            }
-            WindowsManager.sharedInstance.showConveringWindowWith(
-                rootVC: pinVC,
-                passthroughWindow: false
-            )
+        guard GroupsPinManager.sharedInstance.shouldAskForPin() else { return }
+
+        // If biometric is enabled and we have a stored auto-login PIN, show biometric lock
+        if UserDefaults.Keys.biometricAuthEnabled.get(defaultValue: false),
+           UserData.sharedInstance.getAutoLoginPin() != nil {
+            let biometricLockVC = BiometricLockViewController()
+            biometricLockVC.loggingCompletion = { self.onLoggingCompletion() }
+            WindowsManager.sharedInstance.showConveringWindowWith(rootVC: biometricLockVC, passthroughWindow: false)
+            // viewDidAppear handles the cold-launch trigger automatically
+            return
         }
+
+        let pinVC = PinCodeViewController.instantiate()
+        pinVC.loggingCompletion = {
+            self.onLoggingCompletion()
+        }
+        WindowsManager.sharedInstance.showConveringWindowWith(
+            rootVC: pinVC,
+            passthroughWindow: false
+        )
     }
 
     func presentBiometricIfNeeded() {
@@ -647,7 +657,7 @@ extension AppDelegate: @preconcurrency UNUserNotificationCenterDelegate {
         // Skip reconnect if PIN is required but not available in memory
         // (process was silently relaunched in background after being killed)
         if UserData.sharedInstance.isPinSet() &&
-           SphinxOnionManager.sharedInstance.appSessionPin == nil {
+           UserData.sharedInstance.getAppPin() == nil {
             completionHandler(.noData)
             return
         }

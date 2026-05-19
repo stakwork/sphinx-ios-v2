@@ -58,5 +58,12 @@ class PinTimeSlider: UIView {
         let intValue = Int(sender.value)
         hoursLabel.text = getHoursLabel(intValue)
         userData.setPINHours(hours: intValue)
+
+        if intValue != Constants.kMaxPinTimeoutValue {
+            let biometricEnabled = UserDefaults.Keys.biometricAuthEnabled.get(defaultValue: false)
+            if !biometricEnabled {
+                UserData.sharedInstance.clearAutoLoginPin()
+            }
+        }
     }
 }

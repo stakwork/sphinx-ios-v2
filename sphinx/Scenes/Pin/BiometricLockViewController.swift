@@ -8,6 +8,7 @@ class BiometricLockViewController: UIViewController {
 
     let authHelper = BiometricAuthenticationHelper()
     var loggingCompletion: (() -> ())? = nil
+    private var isAuthenticating = false
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -18,6 +19,7 @@ class BiometricLockViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        triggerBiometric()
     }
 
     private func setupLockIcon() {
@@ -35,8 +37,11 @@ class BiometricLockViewController: UIViewController {
     }
 
     func triggerBiometric() {
+        guard !isAuthenticating else { return }
+        isAuthenticating = true
         authHelper.authenticationAction(policy: .deviceOwnerAuthenticationWithBiometrics) { [weak self] success in
             guard let self = self else { return }
+            self.isAuthenticating = false
             if success {
                 self.loggingCompletion?()
                 WindowsManager.sharedInstance.removeCoveringWindow()
