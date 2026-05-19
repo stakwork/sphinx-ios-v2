@@ -16,7 +16,7 @@ public enum MessagesSize: Int {
 
 @MainActor class Constants {
     
-    public static var kMaxPinTimeoutValue : Int = 25
+    public nonisolated static let kMaxPinTimeoutValue: Int = 25
     
     public static var kMargin: CGFloat = 16.0
     public static var kMarginForAllThreads: CGFloat = 48.0
