@@ -408,36 +408,42 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func presentPINIfNeeded() {
-        guard GroupsPinManager.sharedInstance.shouldAskForPin() else { return }
+        let biometricEnabled = UserDefaults.Keys.biometricAuthEnabled.get(defaultValue: false)
+        let neverRequirePin = GroupsPinManager.sharedInstance.isPINNeverRequired()
+        let pinTimeoutElapsed = GroupsPinManager.sharedInstance.hasPINTimeoutElapsed()
 
-        // If biometric is enabled and we have a stored auto-login PIN, show biometric lock
-        if UserDefaults.Keys.biometricAuthEnabled.get(defaultValue: false),
-           UserData.sharedInstance.getAutoLoginPin() != nil {
-            let biometricLockVC = BiometricLockViewController()
-            biometricLockVC.loggingCompletion = { self.onLoggingCompletion() }
-            WindowsManager.sharedInstance.showConveringWindowWith(rootVC: biometricLockVC, passthroughWindow: false)
-            // viewDidAppear handles the cold-launch trigger automatically
+        guard UserData.sharedInstance.isUserLogged() else { return }
+
+        // PIN timeout elapsed → always show PIN, regardless of Face ID
+        if pinTimeoutElapsed {
+            let pinVC = PinCodeViewController.instantiate()
+            pinVC.loggingCompletion = { self.onLoggingCompletion() }
+            WindowsManager.sharedInstance.showConveringWindowWith(rootVC: pinVC, passthroughWindow: false)
             return
         }
 
-        let pinVC = PinCodeViewController.instantiate()
-        pinVC.loggingCompletion = {
-            self.onLoggingCompletion()
+        // Never require PIN + Face ID enabled → show biometric on every app entry
+        if neverRequirePin && biometricEnabled {
+            guard let _ = WindowsManager.sharedInstance.getCurrentCoveringWindowVC() as? BiometricLockViewController else {
+                let biometricLockVC = BiometricLockViewController()
+                biometricLockVC.loggingCompletion = { self.onLoggingCompletion() }
+                WindowsManager.sharedInstance.showConveringWindowWith(rootVC: biometricLockVC, passthroughWindow: false)
+                return
+            }
+            return
         }
-        WindowsManager.sharedInstance.showConveringWindowWith(
-            rootVC: pinVC,
-            passthroughWindow: false
-        )
+
+        // Never require PIN + no Face ID → no auth needed
     }
 
     func presentBiometricIfNeeded() {
         if let _ = WindowsManager.sharedInstance.getCurrentCoveringWindowVC() as? BiometricLockViewController {
             return
         }
-        
+
         guard UserData.sharedInstance.isUserLogged() else { return }
         guard UserDefaults.Keys.biometricAuthEnabled.get(defaultValue: false) else { return }
-        guard !GroupsPinManager.sharedInstance.shouldAskForPin() else { return } // PIN takes priority
+        guard GroupsPinManager.sharedInstance.isPINNeverRequired() else { return } // only lock with biometric when PIN is never required
         guard BiometricAuthenticationHelper().canUseBiometricAuthentication() else { return }
 
         let biometricLockVC = BiometricLockViewController()

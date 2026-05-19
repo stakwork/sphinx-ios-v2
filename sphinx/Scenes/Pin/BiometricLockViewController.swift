@@ -19,7 +19,11 @@ class BiometricLockViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        triggerBiometric()
+        // Only auto-trigger on cold launch (active state).
+        // Background presentation is triggered later by tryBiometricAuth() on foreground resume.
+        if UIApplication.shared.applicationState == .active {
+            triggerBiometric()
+        }
     }
 
     private func setupLockIcon() {
