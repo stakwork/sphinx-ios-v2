@@ -595,17 +595,20 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
             }
             if mqtt.connState == .connected && isConnected {
                 print("[MQTT] connectToServer skipped — already connected")
-                if isV2Restore {
+                if isV2Restore && !UserDefaults.Keys.isRestoreCompleted.get(defaultValue: false) {
                     syncContactsAndMessages()
                 } else {
+                    isV2Restore = false
                     startNewMsgsSync()
                 }
                 return
             }
         }
         
-        if isV2Restore {
+        if isV2Restore && !UserDefaults.Keys.isRestoreCompleted.get(defaultValue: false) {
             contactRestoreCallback?(2)
+        } else {
+            isV2Restore = false
         }
         
         let success = connectToBroker(seed: seed, xpub: my_xpub)
@@ -630,13 +633,15 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
                 self.doInitialInviteSetup()
             }
              
-            if self.isV2Restore {
+            if self.isV2Restore && !UserDefaults.Keys.isRestoreCompleted.get(defaultValue: false) {
                 self.hideRestoreCallback = { [weak self] _ in
                     self?.isV2Restore = false
+                    UserDefaults.Keys.isRestoreCompleted.set(true)
                     hideRestoreViewCallback?(true)
                 }
                 self.syncContactsAndMessages()
             } else {
+                self.isV2Restore = false
                 self.contactRestoreCallback = nil
                 self.messageRestoreCallback = nil
                 

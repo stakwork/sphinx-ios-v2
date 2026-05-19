@@ -80,6 +80,7 @@ extension UserDefaults {
         public static let skipAds = DefaultKey<Bool>("skipAds")
         public static let didMigrateToTZ = DefaultKey<Bool>("didMigrateToTZ")
         public static let systemTimezone = DefaultKey<String>("systemTimezone")
+        public static let isRestoreCompleted = DefaultKey<Bool>("isRestoreCompleted")
     }
     
     class func resetUserDefaults() {
