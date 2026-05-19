@@ -27,6 +27,7 @@ class KeychainManager {
         case pushKey = "push_key"
         case aiAgentProvider = "ios.ai_agent_provider"
         case aiAgentApiKey = "ios.ai_agent_api_key"
+        case autoLoginPin = "auto_login_pin"
     }
     
     let keychain = Keychain(service: "sphinx-app", accessGroup: KeychainManager.kKeychainGroup)

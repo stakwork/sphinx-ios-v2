@@ -39,6 +39,13 @@ class GroupsPinManager {
     ) -> Bool {
         if let mnemonic = UserData.sharedInstance.getMnemonic(enteredPin: pin), SphinxOnionManager.sharedInstance.isMnemonic(code: mnemonic) {
             SphinxOnionManager.sharedInstance.appSessionPin = pin
+            // Persist PIN for auto-login if the user has opted into low-friction auth
+            let biometricEnabled = UserDefaults.Keys.biometricAuthEnabled.get(defaultValue: false)
+            let neverRequire = UserDefaults.Keys.pinHours.get(defaultValue: Constants.kMaxPinTimeoutValue) == Constants.kMaxPinTimeoutValue
+            if biometricEnabled || neverRequire {
+                UserData.sharedInstance.saveAutoLoginPin(pin: pin)
+                print("[AutoLogin] PIN saved to keychain (biometric: \(biometricEnabled), neverRequire: \(neverRequire))")
+            }
             return true
         }
         return false
