@@ -65,5 +65,7 @@ class PinTimeSlider: UIView {
                 UserData.sharedInstance.clearAutoLoginPin()
             }
         }
+        
+        DataSyncManager.sharedInstance.savePinTimeout(value: "\(intValue)")
     }
 }
