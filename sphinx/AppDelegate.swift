@@ -43,6 +43,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     
     var isActive = false
     private var pendingFetchWorkItem: DispatchWorkItem?
+    private var pendingFetchCompletionHandler: ((UIBackgroundFetchResult) -> Void)?
     
     public enum BuildType: Int {
         case Sideload
@@ -652,16 +653,19 @@ extension AppDelegate: @preconcurrency UNUserNotificationCenterDelegate {
             return
         }
         
-        // Cancel any pending debounced fetch
+        // Complete any superseded debounced fetch before replacing it.
         pendingFetchWorkItem?.cancel()
+        pendingFetchCompletionHandler?(.noData)
         print("[BGFetch] Notification received — debouncing 1.5s")
 
         let workItem = DispatchWorkItem { [weak self] in
             guard let self = self else { return }
             print("[BGFetch] Debounce elapsed — starting fetch")
+            self.pendingFetchCompletionHandler = nil
             self.som.beginBackgroundFetch(completionHandler: completionHandler)
         }
         pendingFetchWorkItem = workItem
+        pendingFetchCompletionHandler = completionHandler
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5, execute: workItem)
     }
 
@@ -774,4 +778,3 @@ extension AppDelegate : @preconcurrency PKPushRegistryDelegate {
         print("invalidated token")
     }
 }
-
