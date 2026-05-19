@@ -227,14 +227,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // (e.g. call ended via network error while suspended, teardown animation never completed).
         VideoCallManager.sharedInstance.cleanUpIfStale()
 
-        if !UserData.sharedInstance.isUserLogged() {
-            return
-        }
+        // Auth gates must run regardless of session-PIN state — if the process was
+        // killed, appSessionPin is nil and isUserLogged() would return false, but
+        // we still need to show the PIN / biometric screen.
+        guard UserData.sharedInstance.isSignupCompleted() else { return }
 
-        Chat.processTimezoneChanges()
         presentPINIfNeeded()
         tryBiometricAuth()
 
+        // Sync and other foreground work require a valid session (mnemonic accessible).
+        guard UserData.sharedInstance.isUserLogged() else { return }
+
+        Chat.processTimezoneChanges()
         feedsManager.restoreContentFeedStatusInBackground()
         podcastPlayerController.finishAndSaveContentConsumed()
 
