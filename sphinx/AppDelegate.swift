@@ -219,6 +219,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         _ application: UIApplication
     ) {
         isActive = true
+        pendingFetchWorkItem?.cancel()
+        pendingFetchWorkItem = nil
         notificationUserInfo = nil
         NetworkMonitor.shared.startMonitoring()
         getDashboardVC()?.resumeNetworkObservers()
@@ -227,14 +229,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // (e.g. call ended via network error while suspended, teardown animation never completed).
         VideoCallManager.sharedInstance.cleanUpIfStale()
 
-        if !UserData.sharedInstance.isUserLogged() {
-            return
-        }
+        // Auth gates must run regardless of session-PIN state — if the process was
+        // killed, appSessionPin is nil and isUserLogged() would return false, but
+        // we still need to show the PIN / biometric screen.
+        guard UserData.sharedInstance.isSignupCompleted() else { return }
 
-        Chat.processTimezoneChanges()
         presentPINIfNeeded()
         tryBiometricAuth()
 
+        // Sync and other foreground work require a valid session (mnemonic accessible).
+        guard UserData.sharedInstance.isUserLogged() else { return }
+
+        Chat.processTimezoneChanges()
         feedsManager.restoreContentFeedStatusInBackground()
         podcastPlayerController.finishAndSaveContentConsumed()
 
@@ -408,26 +414,42 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func presentPINIfNeeded() {
-        if GroupsPinManager.sharedInstance.shouldAskForPin() {
+        let biometricEnabled = UserDefaults.Keys.biometricAuthEnabled.get(defaultValue: false)
+        let neverRequirePin = GroupsPinManager.sharedInstance.isPINNeverRequired()
+        let pinTimeoutElapsed = GroupsPinManager.sharedInstance.hasPINTimeoutElapsed()
+
+        guard UserData.sharedInstance.isSignupCompleted() else { return }
+
+        // PIN timeout elapsed → always show PIN, regardless of Face ID
+        if pinTimeoutElapsed {
             let pinVC = PinCodeViewController.instantiate()
-            pinVC.loggingCompletion = {
-                self.onLoggingCompletion()
-            }
-            WindowsManager.sharedInstance.showConveringWindowWith(
-                rootVC: pinVC,
-                passthroughWindow: false
-            )
+            pinVC.loggingCompletion = { self.onLoggingCompletion() }
+            WindowsManager.sharedInstance.showConveringWindowWith(rootVC: pinVC, passthroughWindow: false)
+            return
         }
+
+        // Face ID enabled → show biometric on every app entry (covers both neverRequire and specific-timeout cases)
+        if biometricEnabled {
+            guard WindowsManager.sharedInstance.getCurrentCoveringWindowVC() is BiometricLockViewController else {
+                let biometricLockVC = BiometricLockViewController()
+                biometricLockVC.loggingCompletion = { self.onLoggingCompletion() }
+                WindowsManager.sharedInstance.showConveringWindowWith(rootVC: biometricLockVC, passthroughWindow: false)
+                return
+            }
+            return
+        }
+
+        // No Face ID + no timeout elapsed (or never require) → no auth needed
     }
 
     func presentBiometricIfNeeded() {
         if let _ = WindowsManager.sharedInstance.getCurrentCoveringWindowVC() as? BiometricLockViewController {
             return
         }
-        
+
         guard UserData.sharedInstance.isUserLogged() else { return }
         guard UserDefaults.Keys.biometricAuthEnabled.get(defaultValue: false) else { return }
-        guard !GroupsPinManager.sharedInstance.shouldAskForPin() else { return } // PIN takes priority
+        guard !GroupsPinManager.sharedInstance.hasPINTimeoutElapsed() else { return } // PIN takes over when timeout has elapsed
         guard BiometricAuthenticationHelper().canUseBiometricAuthentication() else { return }
 
         let biometricLockVC = BiometricLockViewController()
@@ -647,7 +669,7 @@ extension AppDelegate: @preconcurrency UNUserNotificationCenterDelegate {
         // Skip reconnect if PIN is required but not available in memory
         // (process was silently relaunched in background after being killed)
         if UserData.sharedInstance.isPinSet() &&
-           SphinxOnionManager.sharedInstance.appSessionPin == nil {
+           UserData.sharedInstance.getAppPin() == nil {
             completionHandler(.noData)
             return
         }

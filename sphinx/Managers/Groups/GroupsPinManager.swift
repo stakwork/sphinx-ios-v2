@@ -19,19 +19,22 @@ class GroupsPinManager {
     
     var userData = UserData.sharedInstance
     
-    @MainActor func shouldAskForPin() -> Bool {
-        if UserData.sharedInstance.isUserLogged() {
-            if userData.getPINNeverOverride() {
-                return false
-            }
-            if let date: Date = UserDefaults.Keys.lastPinDate.get() {
-                let timeSeconds = Double(UserData.sharedInstance.getPINHours() * 3600)
-                if Date().timeIntervalSince(date) > timeSeconds {
-                    return true
-                }
-            }
+    @MainActor func isPINNeverRequired() -> Bool {
+        return userData.getPINNeverOverride()
+    }
+
+    @MainActor func hasPINTimeoutElapsed() -> Bool {
+        guard UserData.sharedInstance.isSignupCompleted() else { return false }
+        guard !userData.getPINNeverOverride() else { return false }
+        if let date: Date = UserDefaults.Keys.lastPinDate.get() {
+            let timeSeconds = Double(UserData.sharedInstance.getPINHours() * 3600)
+            return Date().timeIntervalSince(date) > timeSeconds
         }
-        return UserData.sharedInstance.isSignupCompleted()
+        return true
+    }
+
+    @MainActor func shouldAskForPin() -> Bool {
+        return hasPINTimeoutElapsed()
     }
     
     func isValidPin(

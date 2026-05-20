@@ -1081,6 +1081,8 @@ extension SphinxOnionManager {
         }
 
         isV2InitialSetup = false
+        isV2Restore = false
+        UserDefaults.Keys.isRestoreCompleted.set(true)
         contactRestoreCallback = nil
         messageRestoreCallback = nil
         

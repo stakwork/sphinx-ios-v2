@@ -87,6 +87,7 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
     var hideRestoreCallback: ((Bool) -> ())? = nil
     var errorCallback: (() -> ())? = nil
     var backgroundDisconnectCompletion: (() -> ())?
+    private var connectionInProgress: Bool = false
     var tribeMembersCallback: (([String: AnyObject]) -> ())? = nil
     var paymentsHistoryCallback: ((String?, String?) -> ())? = nil
     var inviteCreationCallback: ((String?) -> ())? = nil
@@ -439,6 +440,12 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
     }
 
     func beginBackgroundFetch(completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
+        if (UIApplication.shared.delegate as? AppDelegate)?.isActive == true {
+            print("[BGFetch] App already active — skipping background fetch")
+            completionHandler(.noData)
+            return
+        }
+
         fetchLock.lock()
         guard !backgroundFetchInProgress else {
             fetchLock.unlock()
@@ -595,22 +602,32 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
             }
             if mqtt.connState == .connected && isConnected {
                 print("[MQTT] connectToServer skipped — already connected")
-                if isV2Restore {
+                if isV2Restore && !UserDefaults.Keys.isRestoreCompleted.get(defaultValue: false) {
                     syncContactsAndMessages()
                 } else {
+                    isV2Restore = false
                     startNewMsgsSync()
                 }
                 return
             }
         }
         
-        if isV2Restore {
-            contactRestoreCallback?(2)
+        guard !connectionInProgress else {
+            print("[MQTT] connectToServer skipped — connection already in progress")
+            return
         }
-        
+        connectionInProgress = true
+
+        if isV2Restore && !UserDefaults.Keys.isRestoreCompleted.get(defaultValue: false) {
+            contactRestoreCallback?(2)
+        } else {
+            isV2Restore = false
+        }
+
         let success = connectToBroker(seed: seed, xpub: my_xpub)
-        
+
         if (success == false) {
+            connectionInProgress = false
             hideRestoreViewCallback?(false)
             return
         }
@@ -619,7 +636,8 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
             guard let self = self else {
                 return
             }
-            
+
+            self.connectionInProgress = false
             self.endReconnectionTimer()
             self.isConnected = true
             
@@ -630,13 +648,15 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
                 self.doInitialInviteSetup()
             }
              
-            if self.isV2Restore {
+            if self.isV2Restore && !UserDefaults.Keys.isRestoreCompleted.get(defaultValue: false) {
                 self.hideRestoreCallback = { [weak self] _ in
                     self?.isV2Restore = false
+                    UserDefaults.Keys.isRestoreCompleted.set(true)
                     hideRestoreViewCallback?(true)
                 }
                 self.syncContactsAndMessages()
             } else {
+                self.isV2Restore = false
                 self.contactRestoreCallback = nil
                 self.messageRestoreCallback = nil
                 
@@ -649,6 +669,7 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
         }
         
         mqtt.didDisconnect = { [weak self] _, _ in
+            self?.connectionInProgress = false
             self?.isConnected = false
             self?.mqtt = nil
             self?.backgroundDisconnectCompletion?()

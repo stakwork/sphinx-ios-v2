@@ -166,6 +166,7 @@ extension RestoreUserFormViewController : @preconcurrency NSFetchedResultsContro
         if let _ = UserContact.getOwner() {
             som.isV2InitialSetup = true
             som.isV2Restore = true
+            UserDefaults.Keys.isRestoreCompleted.set(false)
             
             proceedToNewUserWelcome()
         } else {
