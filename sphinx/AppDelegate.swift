@@ -219,6 +219,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         _ application: UIApplication
     ) {
         isActive = true
+        pendingFetchWorkItem?.cancel()
+        pendingFetchWorkItem = nil
         notificationUserInfo = nil
         NetworkMonitor.shared.startMonitoring()
         getDashboardVC()?.resumeNetworkObservers()
