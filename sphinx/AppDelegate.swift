@@ -427,9 +427,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             WindowsManager.sharedInstance.showConveringWindowWith(rootVC: pinVC, passthroughWindow: false)
             return
         }
+        
+        let autoLoginPinSet = UserData.sharedInstance.getAutoLoginPin() != nil
 
         // Face ID enabled → show biometric on every app entry (covers both neverRequire and specific-timeout cases)
-        if biometricEnabled {
+        if biometricEnabled && autoLoginPinSet {
             guard WindowsManager.sharedInstance.getCurrentCoveringWindowVC() is BiometricLockViewController else {
                 let biometricLockVC = BiometricLockViewController()
                 biometricLockVC.loggingCompletion = { self.onLoggingCompletion() }
@@ -440,6 +442,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         }
 
         // No Face ID + no timeout elapsed (or never require) → no auth needed
+
+        // One-time migration: "Never require PIN" users who updated before autoLoginPin
+        // was persisted to keychain have no keychain entry yet. Without it, getMnemonic()
+        // silently fails on the next cold launch (appSessionPin is nil and keychain is empty).
+        // Force a single PIN prompt to seed keychain; subsequent launches restore silently.
+        if UserData.sharedInstance.getAutoLoginPin() == nil {
+            let pinVC = PinCodeViewController.instantiate()
+            pinVC.loggingCompletion = { self.onLoggingCompletion() }
+            WindowsManager.sharedInstance.showConveringWindowWith(rootVC: pinVC, passthroughWindow: false)
+        }
     }
 
     func presentBiometricIfNeeded() {
