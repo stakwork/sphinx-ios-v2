@@ -25,7 +25,7 @@ class ParticipantBoxView: UIView {
     private let initialsLabel: UILabel = {
         let label = UILabel()
         label.textAlignment = .center
-        label.font = UIFont.systemFont(ofSize: 10, weight: .medium)
+        label.font = UIFont(name: "Roboto-Regular", size: 10.0) ?? UIFont.systemFont(ofSize: 10, weight: .medium)
         label.textColor = .white
         label.adjustsFontSizeToFitWidth = true
         label.minimumScaleFactor = 0.5
@@ -64,7 +64,7 @@ class ParticipantBoxView: UIView {
     }
     
     private func setup() {
-        backgroundColor = UIColor.Sphinx.Body.withAlphaComponent(0.08)
+        backgroundColor = UIColor.Sphinx.Text.withAlphaComponent(0.05)
         layer.cornerRadius = 8
         clipsToBounds = true
         
