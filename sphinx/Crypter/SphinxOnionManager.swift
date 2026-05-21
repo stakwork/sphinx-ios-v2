@@ -594,7 +594,14 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
         self.contactRestoreCallback = contactRestoreCallback
         self.messageRestoreCallback = messageRestoreCallback
         self.errorCallback = errorCallback
-        
+
+        // Show 2% immediately after storing callbacks so the progress view appears
+        // even if an early-return guard fires below (e.g. already connecting from
+        // a parallel reconnectToServer call triggered by applicationWillEnterForeground).
+        if isV2Restore && !UserDefaults.Keys.isRestoreCompleted.get(defaultValue: false) {
+            self.contactRestoreCallback?(2)
+        }
+
         if let mqtt = self.mqtt {
             if mqtt.connState == .connecting {
                 print("[MQTT] connectToServer skipped — already connecting")
@@ -611,16 +618,14 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
                 return
             }
         }
-        
+
         guard !connectionInProgress else {
             print("[MQTT] connectToServer skipped — connection already in progress")
             return
         }
         connectionInProgress = true
 
-        if isV2Restore && !UserDefaults.Keys.isRestoreCompleted.get(defaultValue: false) {
-            contactRestoreCallback?(2)
-        } else {
+        if !isV2Restore || UserDefaults.Keys.isRestoreCompleted.get(defaultValue: false) {
             isV2Restore = false
         }
 
