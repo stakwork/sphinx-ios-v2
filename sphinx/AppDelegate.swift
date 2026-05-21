@@ -430,6 +430,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
         // Face ID enabled → show biometric on every app entry (covers both neverRequire and specific-timeout cases)
         if biometricEnabled {
+            // Migration guard: if autoLoginPin is missing, biometric success would still fail getMnemonic().
+            // Force a one-time PIN prompt to seed keychain; biometric resumes on subsequent launches.
+            if UserData.sharedInstance.getAutoLoginPin() == nil {
+                guard !(WindowsManager.sharedInstance.getCurrentCoveringWindowVC() is PinCodeViewController) else { return }
+                let pinVC = PinCodeViewController.instantiate()
+                pinVC.loggingCompletion = { self.onLoggingCompletion() }
+                WindowsManager.sharedInstance.showConveringWindowWith(rootVC: pinVC, passthroughWindow: false)
+                return
+            }
             guard WindowsManager.sharedInstance.getCurrentCoveringWindowVC() is BiometricLockViewController else {
                 let biometricLockVC = BiometricLockViewController()
                 biometricLockVC.loggingCompletion = { self.onLoggingCompletion() }
