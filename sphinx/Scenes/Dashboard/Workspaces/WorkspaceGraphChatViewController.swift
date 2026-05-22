@@ -30,7 +30,6 @@ class WorkspaceGraphChatViewController: UIViewController {
             updateEmptyState()
         }
     }
-    private var processingStepText: String? = nil
     private var sseManager: GraphChatSSEManager?
     /// Accumulates all text-delta chunks; committed to `messages` as one bubble on `onFinish`.
     private var streamingBuffer: String = ""
@@ -64,6 +63,8 @@ class WorkspaceGraphChatViewController: UIViewController {
     private var chatInputTextViewHeightConstraint: NSLayoutConstraint!
     private var bottomFillView: UIView!
     private var emptyStateLabel: UILabel!
+    private var workflowStatusView: WorkflowStatusView!
+    private var workflowStatusHeightConstraint: NSLayoutConstraint!
 
     // MARK: - Init
 
@@ -137,7 +138,6 @@ class WorkspaceGraphChatViewController: UIViewController {
         chatTableView.dataSource = self
         chatTableView.register(FeatureChatMessageCell.self, forCellReuseIdentifier: "FeatureChatMessageCell")
         chatTableView.register(ClarifyingQuestionMessageCell.self, forCellReuseIdentifier: "ClarifyingQuestionMessageCell")
-        chatTableView.register(HiveProcessingBubbleCell.self, forCellReuseIdentifier: "HiveProcessingBubbleCell")
         chatTableView.rowHeight = UITableView.automaticDimension
         chatTableView.estimatedRowHeight = 80
         chatTableView.contentInset = UIEdgeInsets(top: 16, left: 0, bottom: 16, right: 0)
@@ -164,6 +164,12 @@ class WorkspaceGraphChatViewController: UIViewController {
         chatInputContainer.translatesAutoresizingMaskIntoConstraints = false
         chatInputContainer.backgroundColor = UIColor.Sphinx.HeaderBG
         view.addSubview(chatInputContainer)
+
+        // Workflow status view — sits between table and input container
+        workflowStatusView = WorkflowStatusView()
+        workflowStatusView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(workflowStatusView)
+        workflowStatusHeightConstraint = workflowStatusView.heightAnchor.constraint(equalToConstant: 0)
 
         // Text view
         chatInputTextView = UITextView()
@@ -213,11 +219,17 @@ class WorkspaceGraphChatViewController: UIViewController {
             emptyStateLabel.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 32),
             emptyStateLabel.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -32),
 
-            // Table view
+            // Table view — bottom now anchors to workflowStatusView.top
             chatTableView.topAnchor.constraint(equalTo: view.topAnchor),
             chatTableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             chatTableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            chatTableView.bottomAnchor.constraint(equalTo: chatInputContainer.topAnchor),
+            chatTableView.bottomAnchor.constraint(equalTo: workflowStatusView.topAnchor),
+
+            // Workflow status view — between table and input container
+            workflowStatusView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            workflowStatusView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            workflowStatusView.bottomAnchor.constraint(equalTo: chatInputContainer.topAnchor),
+            workflowStatusHeightConstraint,
 
             // Input container
             chatInputContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -315,6 +327,20 @@ class WorkspaceGraphChatViewController: UIViewController {
         micButton.alpha = isStreaming ? 0.5 : 1.0
     }
 
+    // MARK: - Workflow Status View Helpers
+
+    private func updateStatusViewHeight() {
+        workflowStatusHeightConstraint.constant = workflowStatusView.hasDetailText ? 48 : 32
+    }
+
+    private func ensureStatusBarVisible() {
+        guard workflowStatusHeightConstraint.constant == 0 else { return }
+        workflowStatusView.status = .IN_PROGRESS
+        updateStatusViewHeight()
+        if workflowStatusView.isHidden { workflowStatusView.show(animated: true) }
+        UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
+    }
+
     // MARK: - Mic Recording
 
     @objc private func micLongPressed(_ gesture: UILongPressGestureRecognizer) {
@@ -410,6 +436,7 @@ class WorkspaceGraphChatViewController: UIViewController {
         }
         let slug = workspace.slug ?? ""
         isStreaming = true
+        ensureStatusBarVisible()
         API.sharedInstance.resolveHiveToken(
             callback: { [weak self] token in
                 guard let self = self else { return }
@@ -467,6 +494,7 @@ class WorkspaceGraphChatViewController: UIViewController {
         scrollToBottom()
 
         isStreaming = true
+        ensureStatusBarVisible()
 
         // Build payload with ALL messages (stateless API)
         let messagesPayload: [[String: String]] = messages.map {
@@ -492,28 +520,6 @@ class WorkspaceGraphChatViewController: UIViewController {
                 self.newBubbleHelper.showGenericMessageView(text: "Authentication failed. Please try again.")
             }
         )
-    }
-
-    // MARK: - Processing Bubble
-
-    private func updateProcessingBubble(stepText: String) {
-        if processingStepText == nil {
-            processingStepText = stepText
-            let indexPath = IndexPath(row: displayMessages.count, section: 0)
-            chatTableView.insertRows(at: [indexPath], with: .automatic)
-            scrollToBottom()
-        } else {
-            processingStepText = stepText
-            let indexPath = IndexPath(row: displayMessages.count, section: 0)
-            chatTableView.reloadRows(at: [indexPath], with: .none)
-        }
-    }
-
-    private func hideProcessingBubble() {
-        guard processingStepText != nil else { return }
-        let indexPath = IndexPath(row: displayMessages.count, section: 0)
-        processingStepText = nil
-        chatTableView.deleteRows(at: [indexPath], with: .automatic)
     }
 
     // MARK: - Input Bar Sizing Helpers
@@ -555,7 +561,7 @@ class WorkspaceGraphChatViewController: UIViewController {
     // MARK: - Scroll
 
     private func scrollToBottom() {
-        let totalRows = displayMessages.count + (processingStepText != nil ? 1 : 0)
+        let totalRows = displayMessages.count
         guard totalRows > 0 else { return }
         let lastIndexPath = IndexPath(row: totalRows - 1, section: 0)
         chatTableView.scrollToRow(at: lastIndexPath, at: .bottom, animated: true)
@@ -572,7 +578,10 @@ extension WorkspaceGraphChatViewController: @preconcurrency GraphChatSSEDelegate
     }
 
     func onToolInputAvailable(toolName: String) {
-        updateProcessingBubble(stepText: toolDisplayName(toolName))
+        ensureStatusBarVisible()
+        workflowStatusView.setStepDetail(toolDisplayName(toolName))
+        updateStatusViewHeight()
+        UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
     }
 
     private func toolDisplayName(_ toolName: String) -> String {
@@ -591,6 +600,7 @@ extension WorkspaceGraphChatViewController: @preconcurrency GraphChatSSEDelegate
     }
 
     func onToolCall(toolName: String, input: [String: Any]?) {
+        ensureStatusBarVisible()
         var display = toolDisplayName(toolName)
         if let input = input, let first = input.first {
             let value = String(describing: first.value)
@@ -598,18 +608,23 @@ extension WorkspaceGraphChatViewController: @preconcurrency GraphChatSSEDelegate
             let combined = "\(display) — \(detail)"
             display = combined.count > 60 ? String(combined.prefix(60)) + "…" : combined
         }
-        updateProcessingBubble(stepText: display)
+        workflowStatusView.setStepDetail(display)
+        updateStatusViewHeight()
+        UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
     }
 
     func onToolOutputAvailable() {
-        // Keep the processing bubble visible — it will be dismissed in onFinish
+        // Keep the status bar visible — it will be dismissed in onFinish
         // once the completed assistant message is ready to take its place.
     }
 
     func onFinish() {
         guard !streamingBuffer.isEmpty else {
-            // Nothing to show — just clean up the bubble if present.
-            hideProcessingBubble()
+            // Nothing to show — just hide the status bar.
+            workflowStatusView.status = .PENDING
+            workflowStatusHeightConstraint.constant = 0
+            workflowStatusView.hide(animated: true)
+            UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
             streamingBuffer = ""
             isStreaming = false
             sseManager?.stopStream()
@@ -624,28 +639,21 @@ extension WorkspaceGraphChatViewController: @preconcurrency GraphChatSSEDelegate
         )
         messages.append(assistantMsg)
         GraphChatHistory.shared.save(messages, forWorkspaceId: workspace.id)
+
+        // Hide status bar
+        workflowStatusView.status = .PENDING
+        workflowStatusHeightConstraint.constant = 0
+        workflowStatusView.hide(animated: true)
+        UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
+
         guard assistantMsg.isDisplayable else {
             streamingBuffer = ""
             updateEmptyState()
             return
         }
         let insertIndexPath = IndexPath(row: displayMessages.count - 1, section: 0)
-
-        if processingStepText != nil {
-            // Atomically swap the processing bubble out and the assistant message in —
-            // no visible gap between the two.
-            let bubbleIndexPath = IndexPath(row: displayMessages.count - 1, section: 0)
-            processingStepText = nil
-            chatTableView.performBatchUpdates({
-                chatTableView.deleteRows(at: [bubbleIndexPath], with: .fade)
-                chatTableView.insertRows(at: [insertIndexPath], with: .automatic)
-            }, completion: { [weak self] _ in
-                self?.scrollToBottom()
-            })
-        } else {
-            chatTableView.insertRows(at: [insertIndexPath], with: .automatic)
-            scrollToBottom()
-        }
+        chatTableView.insertRows(at: [insertIndexPath], with: .automatic)
+        scrollToBottom()
 
         updateEmptyState()
         streamingBuffer = ""
@@ -656,7 +664,10 @@ extension WorkspaceGraphChatViewController: @preconcurrency GraphChatSSEDelegate
     func onError(_ text: String) {
         // Discard any partial buffer — nothing was shown, nothing to remove
         streamingBuffer = ""
-        hideProcessingBubble()
+        workflowStatusView.status = .PENDING
+        workflowStatusHeightConstraint.constant = 0
+        workflowStatusView.hide(animated: true)
+        UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
         isStreaming = false
         newBubbleHelper.showGenericMessageView(text: text.isEmpty ? "An error occurred. Please try again." : text)
     }
@@ -667,20 +678,10 @@ extension WorkspaceGraphChatViewController: @preconcurrency GraphChatSSEDelegate
 extension WorkspaceGraphChatViewController: UITableViewDataSource, UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return displayMessages.count + (processingStepText != nil ? 1 : 0)
+        return displayMessages.count
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        // Processing bubble row
-        if processingStepText != nil && indexPath.row == displayMessages.count {
-            let cell = tableView.dequeueReusableCell(
-                withIdentifier: "HiveProcessingBubbleCell",
-                for: indexPath
-            ) as! HiveProcessingBubbleCell
-            cell.configure(stepText: processingStepText ?? "Processing...")
-            return cell
-        }
-
         // Message row
         let message = displayMessages[indexPath.row]
         let isLast = indexPath.row == displayMessages.count - 1
