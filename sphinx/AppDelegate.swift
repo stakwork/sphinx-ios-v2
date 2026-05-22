@@ -43,6 +43,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     
     var isActive = false
     private var pendingFetchWorkItem: DispatchWorkItem?
+    private var pendingFetchCompletion: ((UIBackgroundFetchResult) -> Void)?
     
     public enum BuildType: Int {
         case Sideload
@@ -221,6 +222,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         isActive = true
         pendingFetchWorkItem?.cancel()
         pendingFetchWorkItem = nil
+        pendingFetchCompletion?(.noData)
+        pendingFetchCompletion = nil
         notificationUserInfo = nil
         NetworkMonitor.shared.startMonitoring()
         getDashboardVC()?.resumeNetworkObservers()
@@ -686,13 +689,19 @@ extension AppDelegate: @preconcurrency UNUserNotificationCenterDelegate {
             return
         }
         
-        // Cancel any pending debounced fetch
+        // Cancel any pending debounced fetch, immediately satisfying its completion
+        // handler so iOS doesn't warn about a handler that was never called.
         pendingFetchWorkItem?.cancel()
+        pendingFetchWorkItem = nil
+        pendingFetchCompletion?(.noData)
+        pendingFetchCompletion = nil
         print("[BGFetch] Notification received — debouncing 1.5s")
 
+        pendingFetchCompletion = completionHandler
         let workItem = DispatchWorkItem { [weak self] in
             guard let self = self else { return }
             print("[BGFetch] Debounce elapsed — starting fetch")
+            self.pendingFetchCompletion = nil
             self.som.beginBackgroundFetch(completionHandler: completionHandler)
         }
         pendingFetchWorkItem = workItem
