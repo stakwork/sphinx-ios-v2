@@ -420,7 +420,6 @@ class StorageManager: @unchecked Sendable {
             do {
                 let imagePath = (diskCachePath as NSString).appendingPathComponent(filePath)
                 let attributes = try fileManager.attributesOfItem(atPath: imagePath)
-                print(attributes)
                 if let fileSize = attributes[FileAttributeKey.size] as? NSNumber {
                     size = fileSize.uint64Value
                 }
