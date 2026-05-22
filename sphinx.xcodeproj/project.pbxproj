@@ -12,7 +12,6 @@
 		12075275C652A9404FC48EBC /* Pods_sphinx.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 487E10CEB3D07B0840A84681 /* Pods_sphinx.framework */; };
 		1F39660E66CB4BCB9D3ED292 /* ParticipantBoxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCA3CBE7EE324E7B8B07B278 /* ParticipantBoxView.swift */; };
 		32F9995B0ED442D596599316 /* GraphChatSSEManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F614A7D4B2634279808DD387 /* GraphChatSSEManager.swift */; };
-		8D8DE2E602B243F384FA1165 /* GraphChatHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F9935DA8372449F9F39A27B /* GraphChatHistory.swift */; };
 		34409291F9084619ADFBFDD1 /* WorkflowDiagramModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60E020F2675C40F7ADDF3C84 /* WorkflowDiagramModel.swift */; };
 		462138747AB14C0FB68E5636 /* WorkspaceGraphChatViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 375B098280F54131B374AEA8 /* WorkspaceGraphChatViewController.swift */; };
 		470125C02373255C0013C57B /* TransactionMessage+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 470125BF2373255C0013C57B /* TransactionMessage+CoreDataProperties.swift */; };
@@ -676,6 +675,7 @@
 		87BC1E0C10D34B4AB9519D57 /* SelectedStepChipView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DA529CF166A42808FC3A554 /* SelectedStepChipView.swift */; };
 		8846460B606C49A09D11D185 /* HiveAnyCableManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 667BC9B05F7A484EB3EE6CB7 /* HiveAnyCableManagerTests.swift */; };
 		8A76E71FD2044567BAC32D0D /* HiveFeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B5504520C1B4722A0EBFA00 /* HiveFeatureTests.swift */; };
+		8D8DE2E602B243F384FA1165 /* GraphChatHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F9935DA8372449F9F39A27B /* GraphChatHistory.swift */; };
 		911C33D7996D4895912C076E /* WorkflowStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5BD9804E22A4372A9E191D5 /* WorkflowStatusView.swift */; };
 		9344269DACF491E8A3F8651C /* Pods_SphinxNotificationExtensionService.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3867EC056CA5757264104904 /* Pods_SphinxNotificationExtensionService.framework */; };
 		9386C2892BB25C2200ABDEF3 /* AddTagsButtonCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9386C2882BB25C2200ABDEF3 /* AddTagsButtonCell.xib */; };
@@ -1008,6 +1008,7 @@
 
 /* Begin PBXFileReference section */
 		009A40E65F444529AAD5F256 /* NewChatViewController+AgentExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NewChatViewController+AgentExtension.swift"; sourceTree = "<group>"; };
+		0F9935DA8372449F9F39A27B /* GraphChatHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GraphChatHistory.swift; sourceTree = "<group>"; };
 		101C5A13C28347DF905BBCEE /* TaskDependencyDiagramView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskDependencyDiagramView.swift; sourceTree = "<group>"; };
 		1426B8E2ACCC4781BB119239 /* TaskDependencyDiagramCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskDependencyDiagramCell.swift; sourceTree = "<group>"; };
 		1DA529CF166A42808FC3A554 /* SelectedStepChipView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectedStepChipView.swift; sourceTree = "<group>"; };
@@ -2346,7 +2347,6 @@
 		F3EF52C426B2823700F06668 /* FeedFilterChipsCollectionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedFilterChipsCollectionViewController.swift; sourceTree = "<group>"; };
 		F3EF52C626B28DBD00F06668 /* PodcastFeedCollectionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastFeedCollectionViewController.swift; sourceTree = "<group>"; };
 		F614A7D4B2634279808DD387 /* GraphChatSSEManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GraphChatSSEManager.swift; sourceTree = "<group>"; };
-		0F9935DA8372449F9F39A27B /* GraphChatHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GraphChatHistory.swift; sourceTree = "<group>"; };
 		F6A7B8C9D0E1F2A3B4C5D6E7 /* TaskProgressTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskProgressTests.swift; sourceTree = "<group>"; };
 		F8A9B0C1D2E3F4A5B6C7D8E9 /* StakworkRun.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StakworkRun.swift; sourceTree = "<group>"; };
 		FDF1E0A8EFE1D98BD5A99505 /* Pods-sphinx.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-sphinx.release.xcconfig"; path = "Target Support Files/Pods-sphinx/Pods-sphinx.release.xcconfig"; sourceTree = "<group>"; };
@@ -7291,7 +7291,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sphinx/sphinx.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 306;
+				CURRENT_PROJECT_VERSION = 307;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 8297M44YTW;
 				ENABLE_BITCODE = NO;
@@ -7381,7 +7381,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sphinx/sphinx.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 306;
+				CURRENT_PROJECT_VERSION = 307;
 				DEVELOPMENT_TEAM = 8297M44YTW;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
