@@ -1278,7 +1278,8 @@ class FeaturePlanViewController: UIViewController {
 
     private func applyInitialWorkflowStatus() {
         guard let raw = feature.workflowStatus,
-              let status = WorkflowStatus(rawValue: raw) else { return }
+              let status = WorkflowStatus(rawValue: raw),
+              status == .IN_PROGRESS || status == .HALTED else { return }
         applyWorkflowStatus(status)
     }
 
@@ -1303,7 +1304,7 @@ class FeaturePlanViewController: UIViewController {
     }
     
     // MARK: - API Methods
-    private func fetchFeatureDetail() {
+    private func fetchFeatureDetail(skipWorkflowStatusUpdate: Bool = false) {
         API.sharedInstance.fetchFeatureDetailWithAuth(
             featureId: feature.id,
             callback: { [weak self] updatedFeature in
@@ -1338,7 +1339,9 @@ class FeaturePlanViewController: UIViewController {
                     self.connectAnyCable()
                     HivePusherManager.shared.subscribeToFeatureTasks(updatedFeature.allTasks.map { $0.id })
                     // Apply workflow status from freshly fetched feature data
-                    self.applyInitialWorkflowStatus()
+                    if !skipWorkflowStatusUpdate {
+                        self.applyInitialWorkflowStatus()
+                    }
                     // Refresh plan panel if currently visible
                     if !self.planContainerView.isHidden {
                         self.updatePlanText()
@@ -2018,7 +2021,7 @@ extension FeaturePlanViewController: HivePusherDelegate {
     }
 
     func featureUpdateReceived(featureId: String) {
-        fetchFeatureDetail()
+        fetchFeatureDetail(skipWorkflowStatusUpdate: true)
         updateTasksPanel()
 
         // Badge the PLAN tab (index 1) if not currently on it
@@ -2063,7 +2066,7 @@ extension FeaturePlanViewController: HivePusherDelegate {
     func workflowStatusChanged(status: WorkflowStatus) {
         DispatchQueue.main.async {
             self.applyWorkflowStatus(status)
-            self.fetchFeatureDetail()
+            self.fetchFeatureDetail(skipWorkflowStatusUpdate: true)
             if status == .COMPLETED {
                 self.fetchSuggestions()
             }
