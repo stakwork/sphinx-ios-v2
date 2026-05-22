@@ -87,6 +87,11 @@ class WorkspaceGraphChatViewController: UIViewController {
         view.backgroundColor = UIColor.Sphinx.Body
         setupUI()
         setupKeyboardObservers()
+        let cached = GraphChatHistory.shared.load(forWorkspaceId: workspace.id)
+        if !cached.isEmpty {
+            messages = cached
+            chatTableView.reloadData()
+        }
         updateEmptyState()
         speechManager.requestPermission { [weak self] granted in
             Task { @MainActor [weak self] in
@@ -98,6 +103,13 @@ class WorkspaceGraphChatViewController: UIViewController {
                         backColor: UIColor.Sphinx.PrimaryRed, backAlpha: 1.0)
                 }
             }
+        }
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        if !messages.isEmpty {
+            scrollToBottom()
         }
     }
 
@@ -380,6 +392,7 @@ class WorkspaceGraphChatViewController: UIViewController {
             replyId: replyId
         )
         messages.append(userMessage)
+        GraphChatHistory.shared.save(messages, forWorkspaceId: workspace.id)
         // Insert the answer row (shown as italic summary text)
         let answerIndexPath = IndexPath(row: displayMessages.count - 1, section: 0)
         UIView.performWithoutAnimation {
@@ -447,6 +460,7 @@ class WorkspaceGraphChatViewController: UIViewController {
             createdBy: ownerCreatedBy
         )
         messages.append(userMessage)
+        GraphChatHistory.shared.save(messages, forWorkspaceId: workspace.id)
         let userIndexPath = IndexPath(row: displayMessages.count - 1, section: 0)
         chatTableView.insertRows(at: [userIndexPath], with: .automatic)
         updateEmptyState()
@@ -609,6 +623,7 @@ extension WorkspaceGraphChatViewController: @preconcurrency GraphChatSSEDelegate
             createdAt: nowISO()
         )
         messages.append(assistantMsg)
+        GraphChatHistory.shared.save(messages, forWorkspaceId: workspace.id)
         guard assistantMsg.isDisplayable else {
             streamingBuffer = ""
             updateEmptyState()
