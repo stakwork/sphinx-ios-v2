@@ -91,7 +91,6 @@ class WorkspaceGraphChatViewController: UIViewController {
         if !cached.isEmpty {
             messages = cached
             chatTableView.reloadData()
-            scrollToBottom()
         }
         updateEmptyState()
         speechManager.requestPermission { [weak self] granted in
@@ -104,6 +103,13 @@ class WorkspaceGraphChatViewController: UIViewController {
                         backColor: UIColor.Sphinx.PrimaryRed, backAlpha: 1.0)
                 }
             }
+        }
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        if !messages.isEmpty {
+            scrollToBottom()
         }
     }
 
