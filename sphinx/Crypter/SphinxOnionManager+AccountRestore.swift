@@ -1011,14 +1011,10 @@ extension SphinxOnionManager {
         
         restoredContactInfoTracker = []
         
-        let isAppActive: Bool
-        if Thread.isMainThread {
-            isAppActive = (UIApplication.shared.delegate as? AppDelegate)?.isActive == true
-        } else {
-            isAppActive = DispatchQueue.main.sync {
-                (UIApplication.shared.delegate as? AppDelegate)?.isActive == true
-            }
-        }
+        // Read isActive directly without dispatching to main — DispatchQueue.main.sync
+        // can deadlock if the main thread is blocked during app termination, which
+        // combined with a background task timeout produces a 0x8BADF00D watchdog kill.
+        let isAppActive = (UIApplication.shared.delegate as? AppDelegate)?.isActive == true
         if isAppActive {
             ///Avoid processes that will run after the completion handler is called
             requestPings()
@@ -1066,14 +1062,10 @@ extension SphinxOnionManager {
         
         CoreDataManager.sharedManager.saveContext()
 
-        let isAppActive: Bool
-        if Thread.isMainThread {
-            isAppActive = (UIApplication.shared.delegate as? AppDelegate)?.isActive == true
-        } else {
-            isAppActive = DispatchQueue.main.sync {
-                (UIApplication.shared.delegate as? AppDelegate)?.isActive == true
-            }
-        }
+        // Read isActive directly without dispatching to main — DispatchQueue.main.sync
+        // can deadlock if the main thread is blocked during app termination, which
+        // combined with a background task timeout produces a 0x8BADF00D watchdog kill.
+        let isAppActive = (UIApplication.shared.delegate as? AppDelegate)?.isActive == true
 
         // Only run network-dependent operations in foreground
         if isAppActive {

@@ -149,6 +149,12 @@ class TaskChatViewController: UIViewController {
             name: UIApplication.willEnterForegroundNotification,
             object: nil
         )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(appDidEnterBackground),
+            name: .appDidEnterBackground,
+            object: nil
+        )
         API.sharedInstance.fetchWorkspacesWithAuth(
             callback: { [weak self] workspaces in
                 DispatchQueue.main.async { self?.availableWorkspaces = workspaces }
@@ -179,6 +185,13 @@ class TaskChatViewController: UIViewController {
 
     @objc private func appWillEnterForeground() {
         reconnectAndRefresh()
+    }
+
+    @objc private func appDidEnterBackground() {
+        anyCableManager?.disconnect()
+        anyCableManager = nil
+        agentEventsManager?.stopStream()
+        agentEventsManager = nil
     }
 
     private func reconnectAndRefresh() {
