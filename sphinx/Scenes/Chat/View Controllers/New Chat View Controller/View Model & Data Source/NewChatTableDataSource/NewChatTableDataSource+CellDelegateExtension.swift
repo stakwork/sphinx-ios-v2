@@ -561,6 +561,11 @@ extension NewChatTableDataSource : NewMessageTableViewCellDelegate {
             guard let self = self else { return }
 
             self.pendingParticipantRooms.remove(roomName)
+
+            let newIdentities = Set(participants.map { $0.identity })
+            let cachedIdentities = Set((self.participantsDataCached[messageId]?.participants ?? []).map { $0.identity })
+            let hasChanged = newIdentities != cachedIdentities
+
             self.participantsDataCached[messageId] = MessageTableCellState.ParticipantsData(
                 participants: participants
             )
@@ -568,6 +573,8 @@ extension NewChatTableDataSource : NewMessageTableViewCellDelegate {
             if !participants.isEmpty {
                 self.startParticipantsPollingTimer(messageId: messageId, roomName: roomName)
             }
+
+            guard hasChanged else { return }
 
             if let tableCellState = self.getTableCellStateFor(messageId: messageId, and: rowIndex) {
                 let cellState = tableCellState.1
@@ -615,9 +622,16 @@ extension NewChatTableDataSource : NewMessageTableViewCellDelegate {
             self.pendingParticipantRooms.remove(roomName)
 
             if !participants.isEmpty {
+                let newIdentities = Set(participants.map { $0.identity })
+                let cachedIdentities = Set((self.participantsDataCached[messageId]?.participants ?? []).map { $0.identity })
+                let hasChanged = newIdentities != cachedIdentities
+
                 self.participantsDataCached[messageId] = MessageTableCellState.ParticipantsData(
                     participants: participants
                 )
+
+                guard hasChanged else { return }
+
                 if let tableCellState = self.getTableCellStateFor(messageId: messageId) {
                     let cellState = tableCellState.1
                     Task { @MainActor [weak self] in

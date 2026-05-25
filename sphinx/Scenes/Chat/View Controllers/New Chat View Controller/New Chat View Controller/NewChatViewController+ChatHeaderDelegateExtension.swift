@@ -173,6 +173,17 @@ extension NewChatViewController : ChatHeaderViewDelegate, ThreadHeaderViewDelega
         }
     }
     
+    func shouldShowThreadOptions(from button: UIButton) {
+        let alert = CustomAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        alert.addAction(UIAlertAction(title: "create.call".localized, style: .default) { _ in
+            self.chatViewModel.createCallMessage(sender: button)
+        })
+        alert.addAction(UIAlertAction(title: "cancel".localized, style: .cancel))
+        alert.popoverPresentationController?.sourceView = button
+        alert.popoverPresentationController?.sourceRect = button.bounds
+        present(alert, animated: true)
+    }
+    
     func didTapShowThreadsButton(){
         guard let chatId = self.chat?.id else {
             return
