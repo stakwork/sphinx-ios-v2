@@ -7,6 +7,7 @@
 
 import Foundation
 import UIKit
+import Network
 import CocoaMQTT
 import ObjectMapper
 import SwiftyJSON
@@ -462,15 +463,29 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
         }
         print("[BGFetch] UIBackgroundTask started: \(activeFetchBackgroundTaskID)")
 
-        reconnectToServer(
-            hideRestoreViewCallback: { _ in
-                print("[BGFetch] reconnect hideRestoreViewCallback fired")
-            },
-            errorCallback: { [weak self] in
-                print("[BGFetch] reconnect errorCallback — ending fetch")
+        // One-shot network check before attempting MQTT reconnect. NWPathMonitor fires
+        // its first update immediately, so this adds no meaningful latency on a good
+        // connection but prevents hanging indefinitely when the network is not ready.
+        let netCheck = NWPathMonitor()
+        netCheck.pathUpdateHandler = { [weak self] path in
+            netCheck.cancel()
+            guard path.status == .satisfied else {
+                print("[BGFetch] No network available — aborting fetch")
                 self?.endBackgroundFetch(result: .noData)
+                return
             }
-        )
+            print("[BGFetch] Network available — starting reconnect")
+            self?.reconnectToServer(
+                hideRestoreViewCallback: { _ in
+                    print("[BGFetch] reconnect hideRestoreViewCallback fired")
+                },
+                errorCallback: { [weak self] in
+                    print("[BGFetch] reconnect errorCallback — ending fetch")
+                    self?.endBackgroundFetch(result: .noData)
+                }
+            )
+        }
+        netCheck.start(queue: DispatchQueue(label: "com.sphinx.bgfetch.netcheck"))
     }
 
     func endBackgroundFetch(result: UIBackgroundFetchResult = .newData) {
@@ -497,10 +512,13 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
     }
 
     private func expireBackgroundFetch() {
-        print("[BGFetch] expire triggered — disconnecting MQTT before signalling system")
-        disconnectMqtt(callback: { [weak self] _ in
-            self?.endBackgroundFetch(result: .noData)
-        })
+        // End the task and fire the completion handler synchronously. The background
+        // task expiration handler must return quickly — waiting for an async MQTT
+        // disconnect callback that may never arrive (flaky network) leaves
+        // endBackgroundTask uncalled and the watchdog kills the process (0x8BADF00D).
+        print("[BGFetch] expire triggered — ending task immediately")
+        endBackgroundFetch(result: .noData)
+        disconnectMqtt()
     }
     
     func reconnectToServer(

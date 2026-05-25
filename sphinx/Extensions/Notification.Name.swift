@@ -34,4 +34,6 @@ extension Notification.Name {
     static let connectedToInternet = Notification.Name("connectedToInternet")
     static let disconnectedFromInternet = Notification.Name("disconnectedFromInternet")
     static let onKeysendStatusReceived = Notification.Name("onKeysendStatusReceived")
+    static let appDidEnterBackground = Notification.Name("appDidEnterBackground")
+    static let appWillEnterForeground = Notification.Name("appWillEnterForeground")
 }

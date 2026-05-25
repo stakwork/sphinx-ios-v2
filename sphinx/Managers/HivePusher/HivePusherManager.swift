@@ -140,6 +140,30 @@ class HivePusherManager: NSObject, @unchecked Sendable {
         print("[HivePusher] Disconnected from Pusher")
     }
 
+    /// Closes the Pusher socket without clearing stored channel IDs.
+    /// Call when entering background so the socket is not held open at suspension.
+    func pauseForBackground() {
+        pusher?.disconnect()
+        pusher = nil
+        print("[HivePusher] Paused for background")
+    }
+
+    /// Reconnects Pusher and resubscribes to whatever channels were active before
+    /// `pauseForBackground()` was called. No-ops if nothing was connected.
+    func resumeFromBackground() {
+        guard featureId != nil || taskId != nil || workspaceId != nil || featureWorkspaceId != nil else {
+            return
+        }
+        setupPusher()
+        if let id = featureId        { subscribeToFeatureChannel(id) }
+        if let id = taskId           { subscribeToTaskChannel(id) }
+        if let slug = workspaceSlug  { subscribeToWorkspaceChannel(slug) }
+        if let id = workspaceId      { subscribeToWorkspaceTaskChannel(id) }
+        if let id = featureWorkspaceId { subscribeToWorkspaceTaskChannel(id) }
+        for id in featureTaskIds     { subscribeToTaskChannel(id) }
+        print("[HivePusher] Resumed from background")
+    }
+
     func subscribeToFeatureTasks(_ taskIds: [String]) {
         let newIds = Set(taskIds)
         for id in featureTaskIds.subtracting(newIds) {

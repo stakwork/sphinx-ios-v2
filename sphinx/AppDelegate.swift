@@ -175,40 +175,37 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         saveCurrentStyle()
         setBadge(application: application)
 
-        // Cancel MQTT reconnection timer before disconnecting to prevent
-        // background reconnection attempts that cause iOS to kill the app
-        som.endReconnectionTimer()
-        som.disconnectMqtt()
         NetworkMonitor.shared.stopMonitoring()
         getDashboardVC()?.suspendNetworkObservers()
+        HivePusherManager.shared.pauseForBackground()
+        NotificationCenter.default.post(name: .appDidEnterBackground, object: nil)
 
-        // Use background task to ensure critical operations complete
-        var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
-        backgroundTaskID = application.beginBackgroundTask(withName: "BackgroundCleanup") {
-            // Expiration handler - cleanup if we run out of time
-            application.endBackgroundTask(backgroundTaskID)
-            backgroundTaskID = .invalid
-        }
-
-        // Perform quick, essential background operations only
+        // Perform synchronous cleanup before starting the background task.
         podcastPlayerController.finishAndSaveContentConsumed()
-        // actionsManager.syncActionsInBackground()
         CoreDataManager.sharedManager.saveContext()
-
-        // Clear memory caches
         SDImageCache.shared.clearMemory()
         SDWebImageManager.shared.cancelAll()
         presentBiometricIfNeeded()
 
-        // Don't run garbage cleanup on background - it takes too long
-        // and causes iOS to kill the app. Schedule it for next foreground instead.
-        // storageManager.processGarbageCleanup()
-
-        // End background task
-        if backgroundTaskID != .invalid {
-            application.endBackgroundTask(backgroundTaskID)
-            backgroundTaskID = .invalid
+        // Hold a background task open until the MQTT socket is fully closed.
+        // disconnectMqtt() is async — ending the task before the socket closes
+        // leaves an open network connection at suspension, which causes iOS to
+        // kill the process silently (no crash report, no push needed).
+        var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
+        let endTask = {
+            if backgroundTaskID != .invalid {
+                application.endBackgroundTask(backgroundTaskID)
+                backgroundTaskID = .invalid
+            }
         }
+        backgroundTaskID = application.beginBackgroundTask(withName: "MQTTDisconnect") {
+            endTask()
+        }
+
+        som.endReconnectionTimer()
+        som.disconnectMqtt(callback: { _ in
+            endTask()
+        })
     }
     
     func applicationDidReceiveMemoryWarning(_ application: UIApplication) {
@@ -227,6 +224,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         notificationUserInfo = nil
         NetworkMonitor.shared.startMonitoring()
         getDashboardVC()?.resumeNetworkObservers()
+        HivePusherManager.shared.resumeFromBackground()
+        NotificationCenter.default.post(name: .appWillEnterForeground, object: nil)
 
         // Remove any LiveKit PiP view that became orphaned while the app was in the background
         // (e.g. call ended via network error while suspended, teardown animation never completed).
