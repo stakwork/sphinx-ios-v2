@@ -28,6 +28,7 @@
                 <outlet property="messageBoostView" destination="GRW-cL-HOU" id="RHA-4Z-98g"/>
                 <outlet property="messageLabel" destination="8kj-a0-Pez" id="uZe-eq-IIO"/>
                 <outlet property="messageLabelContainer" destination="R9e-fE-0M9" id="nvv-Zq-6CA"/>
+                <outlet property="moreOptionsButton" destination="A1B-2C-3DE" id="F4G-5H-6IJ"/>
                 <outlet property="senderAvatarView" destination="YqN-bc-nSd" id="nWo-hv-blu"/>
                 <outlet property="senderContainer" destination="mps-4c-Doc" id="3SM-yc-JkQ"/>
                 <outlet property="senderNameLabel" destination="dKq-lH-jNS" id="2Y7-Dq-2vw"/>
@@ -107,7 +108,7 @@
                                     </constraints>
                                 </view>
                                 <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="QsA-KQ-QXF">
-                                    <rect key="frame" x="45" y="0.0" width="363" height="65"/>
+                                    <rect key="frame" x="45" y="0.0" width="318" height="65"/>
                                     <fontDescription key="fontDescription" name="MaterialIcons-Regular" family="Material Icons" pointSize="21"/>
                                     <state key="normal">
                                         <color key="titleColor" name="WashedOutReceivedText"/>
@@ -116,16 +117,28 @@
                                         <action selector="headerButtonTouched" destination="-1" eventType="touchUpInside" id="AX3-cT-ajz"/>
                                     </connections>
                                 </button>
+                                <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="A1B-2C-3DE">
+                                    <rect key="frame" x="363" y="0.0" width="45" height="65"/>
+                                    <constraints>
+                                        <constraint firstAttribute="width" constant="45" id="K7L-8M-9NO"/>
+                                    </constraints>
+                                    <state key="normal">
+                                        <color key="titleColor" name="WashedOutReceivedText"/>
+                                    </state>
+                                    <connections>
+                                        <action selector="moreOptionsButtonTouched:" destination="-1" eventType="touchUpInside" id="P0Q-1R-2ST"/>
+                                    </connections>
+                                </button>
                             </subviews>
                             <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                             <constraints>
                                 <constraint firstItem="QsA-KQ-QXF" firstAttribute="top" secondItem="i11-ZJ-k0w" secondAttribute="top" id="0g5-DI-dDp"/>
-                                <constraint firstAttribute="trailing" secondItem="mps-4c-Doc" secondAttribute="trailing" id="56n-oL-CDa"/>
+                                <constraint firstAttribute="trailing" secondItem="mps-4c-Doc" secondAttribute="trailing" constant="45" id="56n-oL-CDa"/>
                                 <constraint firstItem="mps-4c-Doc" firstAttribute="centerY" secondItem="i11-ZJ-k0w" secondAttribute="centerY" id="5sh-Dr-0au"/>
                                 <constraint firstAttribute="bottom" secondItem="6Xa-sS-gwA" secondAttribute="bottom" id="7Qb-m0-x0g"/>
                                 <constraint firstItem="QsA-KQ-QXF" firstAttribute="leading" secondItem="6Xa-sS-gwA" secondAttribute="trailing" id="8Dt-7a-Vgb"/>
                                 <constraint firstAttribute="height" constant="65" id="ClF-sS-OSa"/>
-                                <constraint firstAttribute="trailing" secondItem="QsA-KQ-QXF" secondAttribute="trailing" id="DfR-u3-ulv"/>
+                                <constraint firstItem="A1B-2C-3DE" firstAttribute="trailing" secondItem="i11-ZJ-k0w" secondAttribute="trailing" id="DfR-u3-ulv"/>
                                 <constraint firstItem="bKH-QF-Xex" firstAttribute="centerY" secondItem="6Xa-sS-gwA" secondAttribute="centerY" id="OcA-cl-kWK"/>
                                 <constraint firstAttribute="bottom" secondItem="QsA-KQ-QXF" secondAttribute="bottom" id="Ybh-gv-EhN"/>
                                 <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="bKH-QF-Xex" secondAttribute="trailing" constant="20" symbolic="YES" id="e4U-X7-ORx"/>
@@ -133,6 +146,9 @@
                                 <constraint firstItem="bKH-QF-Xex" firstAttribute="leading" secondItem="6Xa-sS-gwA" secondAttribute="trailing" constant="15" id="imF-iT-4Qm"/>
                                 <constraint firstItem="6Xa-sS-gwA" firstAttribute="leading" secondItem="i11-ZJ-k0w" secondAttribute="leading" id="wgI-Sa-RmR"/>
                                 <constraint firstItem="6Xa-sS-gwA" firstAttribute="top" secondItem="i11-ZJ-k0w" secondAttribute="top" id="wzE-lZ-mm8"/>
+                                <constraint firstItem="A1B-2C-3DE" firstAttribute="top" secondItem="i11-ZJ-k0w" secondAttribute="top" id="U3V-4W-5XY"/>
+                                <constraint firstItem="A1B-2C-3DE" firstAttribute="bottom" secondItem="i11-ZJ-k0w" secondAttribute="bottom" id="Z6A-7B-8CD"/>
+                                <constraint firstItem="QsA-KQ-QXF" firstAttribute="trailing" secondItem="A1B-2C-3DE" secondAttribute="leading" id="E9F-0G-1HI"/>
                             </constraints>
                         </view>
                         <view hidden="YES" alpha="0.0" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="R9e-fE-0M9">

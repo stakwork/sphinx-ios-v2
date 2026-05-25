@@ -13,6 +13,7 @@ import SDWebImage
     func didTapBackButton()
     
     @objc optional func didTapThreadHeaderButton()
+    @objc optional func shouldShowThreadOptions(from button: UIButton)
     
     @objc optional func shouldLoadImageDataFor(messageId: Int, and rowIndex: Int)
     @objc optional func shouldLoadPdfDataFor(messageId: Int, and rowIndex: Int)
@@ -30,6 +31,8 @@ class ThreadHeaderView : UIView {
     var messageId: Int?
     
     @IBOutlet var contentView: UIView!
+    
+    @IBOutlet weak var moreOptionsButton: UIButton!
     
     @IBOutlet weak var messageLabelContainer: UIView!
     @IBOutlet weak var messageLabel: UILabel!
@@ -74,6 +77,10 @@ class ThreadHeaderView : UIView {
         mediaView.clipsToBounds = true
         
         tap = UITapGestureRecognizer(target: self, action: #selector(labelTapped(gesture:)))
+        
+        let ellipsisImage = UIImage(systemName: "ellipsis")
+        moreOptionsButton.setImage(ellipsisImage, for: .normal)
+        moreOptionsButton.tintColor = UIColor(named: "WashedOutReceivedText")
     }
     
     func configureWith(
@@ -409,5 +416,9 @@ class ThreadHeaderView : UIView {
     
     @IBAction func backButtonTouched() {
         delegate?.didTapBackButton()
+    }
+    
+    @IBAction func moreOptionsButtonTouched(_ sender: UIButton) {
+        delegate?.shouldShowThreadOptions?(from: sender)
     }
 }
