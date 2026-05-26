@@ -89,6 +89,7 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
     var errorCallback: (() -> ())? = nil
     var backgroundDisconnectCompletion: (() -> ())?
     private var connectionInProgress: Bool = false
+    private let connectionLock = NSLock()
     private var connectionTimeoutTimer: Timer?
     var tribeMembersCallback: (([String: AnyObject]) -> ())? = nil
     var paymentsHistoryCallback: ((String?, String?) -> ())? = nil
@@ -525,6 +526,21 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
         disconnectMqtt()
     }
     
+    func prepareForForeground() {
+        // Called from applicationWillEnterForeground before reconnectToServer.
+        // Tears down any in-flight BGFetch connection so the foreground reconnect
+        // isn't blocked by connectionInProgress or a stale .connecting MQTT state.
+        endBackgroundFetch(result: .noData)
+        connectionInProgress = false
+        isConnected = false
+        if let existing = self.mqtt {
+            existing.didDisconnect = { _, _ in }
+            existing.didConnectAck = { _, _ in }
+            existing.disconnect()
+            self.mqtt = nil
+        }
+    }
+
     func reconnectToServer(
         connectingCallback: (() -> ())? = nil,
         contactRestoreCallback: RestoreProgressCallback? = nil,
@@ -641,11 +657,15 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
             }
         }
 
-        guard !connectionInProgress else {
+        connectionLock.lock()
+        let alreadyConnecting = connectionInProgress
+        if !alreadyConnecting { connectionInProgress = true }
+        connectionLock.unlock()
+
+        guard !alreadyConnecting else {
             print("[MQTT] connectToServer skipped — connection already in progress")
             return
         }
-        connectionInProgress = true
 
         if !isV2Restore || UserDefaults.Keys.isRestoreCompleted.get(defaultValue: false) {
             isV2Restore = false

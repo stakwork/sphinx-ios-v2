@@ -246,6 +246,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         feedsManager.restoreContentFeedStatusInBackground()
         podcastPlayerController.finishAndSaveContentConsumed()
 
+        som.prepareForForeground()
         getDashboardVC()?.reconnectToServer()
 
         DataSyncManager.sharedInstance.syncWithServerInBackground()
