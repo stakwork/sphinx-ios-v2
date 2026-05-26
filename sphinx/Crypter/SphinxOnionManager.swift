@@ -89,6 +89,7 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
     var errorCallback: (() -> ())? = nil
     var backgroundDisconnectCompletion: (() -> ())?
     private var connectionInProgress: Bool = false
+    private var connectionTimeoutTimer: Timer?
     var tribeMembersCallback: (([String: AnyObject]) -> ())? = nil
     var paymentsHistoryCallback: ((String?, String?) -> ())? = nil
     var inviteCreationCallback: ((String?) -> ())? = nil
@@ -393,7 +394,8 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
             
             mqtt.username = now
             mqtt.password = sig
-            
+            mqtt.keepAlive = 30
+
             if UserDefaults.Keys.isProductionEnv.get(defaultValue: false) {
                 mqtt.enableSSL = true
                 mqtt.allowUntrustCACertificate = true
@@ -416,6 +418,8 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
     ) {
         // Cancel reconnection timer to prevent background reconnection attempts
         endReconnectionTimer()
+        connectionTimeoutTimer?.invalidate()
+        connectionTimeoutTimer = nil
 
         delayedRRTimers.values.forEach { $0.invalidate() }
         delayedRRTimers.removeAll()
@@ -654,15 +658,36 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
             hideRestoreViewCallback?(false)
             return
         }
+
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.connectionTimeoutTimer?.invalidate()
+            self.connectionTimeoutTimer = Timer.scheduledTimer(withTimeInterval: 30.0, repeats: false) { [weak self] _ in
+                guard let self = self, self.connectionInProgress else { return }
+                print("[MQTT] Connection timed out after 30s — force-closing and retrying")
+                self.connectionInProgress = false
+                let dead = self.mqtt
+                self.mqtt = nil
+                dead?.didDisconnect = { _, _ in }
+                dead?.didConnectAck = { _, _ in }
+                dead?.disconnect()
+                let appIsActive = (UIApplication.shared.delegate as? AppDelegate)?.isActive ?? false
+                if appIsActive {
+                    self.startReconnectionTimer(delay: 2.0)
+                }
+            }
+        }
         
         mqtt.didConnectAck = { [weak self] _, _ in
             guard let self = self else {
                 return
             }
 
+            self.connectionTimeoutTimer?.invalidate()
+            self.connectionTimeoutTimer = nil
+            self.isConnected = true
             self.connectionInProgress = false
             self.endReconnectionTimer()
-            self.isConnected = true
             
             self.subscribeAndPublishMyTopics(pubkey: myPubkey, idx: 0)
             
@@ -692,6 +717,8 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
         }
         
         mqtt.didDisconnect = { [weak self] _, _ in
+            self?.connectionTimeoutTimer?.invalidate()
+            self?.connectionTimeoutTimer = nil
             self?.connectionInProgress = false
             self?.isConnected = false
             self?.mqtt = nil
