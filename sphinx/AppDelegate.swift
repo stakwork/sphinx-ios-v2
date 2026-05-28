@@ -99,7 +99,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         connectMQTT()
         
         StorageManager.sharedManager.deleteOldMedia()
-        NetworkMonitor.shared.startMonitoring()
         ColorsManager.sharedInstance.storeColorsInMemory()
         SphinxOnionManager.sharedInstance.storeOnionStateInMemory()
         
@@ -226,7 +225,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         pendingFetchCompletion?(.noData)
         pendingFetchCompletion = nil
         notificationUserInfo = nil
-        NetworkMonitor.shared.startMonitoring()
         getDashboardVC()?.resumeNetworkObservers()
         HivePusherManager.shared.resumeFromBackground()
         NotificationCenter.default.post(name: .appWillEnterForeground, object: nil)

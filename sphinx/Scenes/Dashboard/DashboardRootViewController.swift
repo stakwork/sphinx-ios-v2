@@ -426,6 +426,8 @@ extension DashboardRootViewController {
             }
             
             self.chatsListViewModel.askForNotificationPermissions()
+            
+            NetworkMonitor.shared.startMonitoring()
         }
     }
     
