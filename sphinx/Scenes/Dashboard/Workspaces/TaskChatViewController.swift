@@ -1790,6 +1790,7 @@ extension TaskChatViewController: UITextViewDelegate {
             let query = String(upToCursor[atRange.upperBound...])
             if query.contains(" ") || query.contains("\n") {
                 hideAutocomplete()
+                updateInputBarHeight()
                 return
             }
             let atNSIdx = upToCursor.distance(from: upToCursor.startIndex, to: atRange.lowerBound)
@@ -1916,6 +1917,7 @@ extension TaskChatViewController: UITextViewDelegate {
         chatInputTextView.selectedRange = newCursor
         chatInputTextView.typingAttributes = [.foregroundColor: UIColor.Sphinx.Text, .font: defaultFont]
         hideAutocomplete()
+        updateInputBarHeight()
         chatInputTextView.becomeFirstResponder()
     }
 
