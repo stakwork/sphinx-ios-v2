@@ -103,6 +103,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         ColorsManager.sharedInstance.storeColorsInMemory()
         SphinxOnionManager.sharedInstance.storeOnionStateInMemory()
         
+//        deleteLogs()
+        
         setInitialVC()
         
         return true
@@ -216,6 +218,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func applicationWillEnterForeground(
         _ application: UIApplication
     ) {
+        print("[Lifecycle] applicationWillEnterForeground")
+        
         isActive = true
         pendingFetchWorkItem?.cancel()
         pendingFetchWorkItem = nil
@@ -234,20 +238,35 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Auth gates must run regardless of session-PIN state — if the process was
         // killed, appSessionPin is nil and isUserLogged() would return false, but
         // we still need to show the PIN / biometric screen.
-        guard UserData.sharedInstance.isSignupCompleted() else { return }
+        guard UserData.sharedInstance.isSignupCompleted() else {
+            return
+        }
 
         presentPINIfNeeded()
         tryBiometricAuth()
 
+        // Always tear down any in-flight background connection before reconnecting.
+        // This must run even when the user is not yet logged in (PIN timeout case)
+        // so that onLoggingCompletion's reconnect starts from a clean slate.
+
         // Sync and other foreground work require a valid session (mnemonic accessible).
-        guard UserData.sharedInstance.isUserLogged() else { return }
+        guard UserData.sharedInstance.isUserLogged() else {
+            // PIN was not available in keychain — user must enter it manually.
+            // onLoggingCompletion will call reconnectToServer once the PIN is saved.
+            return
+        }
 
         Chat.processTimezoneChanges()
         feedsManager.restoreContentFeedStatusInBackground()
         podcastPlayerController.finishAndSaveContentConsumed()
 
-        som.prepareForForeground()
-        getDashboardVC()?.reconnectToServer()
+        // Call reconnect directly on the SOM — don't route through the VC, which may
+        // not be in the hierarchy when willEnterForeground fires (e.g. PIN screen showing).
+        // For biometric users: PIN is already in keychain so we start the reconnect here
+        // in parallel while Face ID is displayed, gaining time before auth completes.
+        som.prepareForForeground() {
+            self.getDashboardVC()?.connectToServer()
+        }
 
         DataSyncManager.sharedInstance.syncWithServerInBackground()
 
@@ -326,6 +345,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         som.disconnectMqtt()
     }
     
+    /// Call once to wipe all persisted logs and start fresh. Remove the call after use.
+    func deleteLogs() {
+        AppLogger.shared.clear()
+        print("[AppLogger] Logs cleared")
+    }
+
     ///On app launch
     func setAppConfiguration() {
         Constants.setSize()
@@ -486,12 +511,19 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     
     private func onLoggingCompletion() {
         self.updateDefaultTribe()
-        
+
         if let currentVC = self.getCurrentVC() {
             let _ = DeepLinksHandlerHelper.joinJitsiCall(vc: currentVC, forceJoin: true)
-            
+
             if let currentVC = currentVC as? DashboardRootViewController {
-                currentVC.connectToServer()
+                // Only reconnect if willEnterForeground didn't already start a connection.
+                // When PIN is in keychain (biometric / never-require users), willEnterForeground
+                // calls reconnectToServer and mqtt is already in flight; skip here to avoid a
+                // redundant sync. When PIN was required from the user (timeout case), mqtt is
+                // nil because willEnterForeground returned early — connect now.
+                if som.mqtt == nil {
+                    currentVC.connectToServer()
+                }
             }
         }
     }

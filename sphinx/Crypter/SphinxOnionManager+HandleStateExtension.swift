@@ -25,7 +25,7 @@ extension SphinxOnionManager {
     ) -> String? {
         
         if let topic = topic {
-            print("V2 Received topic: \(topic)")
+            print("V2 Received topic: \(topic) date \(Date().timeIntervalSince1970)")
         }
 
         ///If re-processing delayed RR Object then all inside this IF has been run already. Then skip

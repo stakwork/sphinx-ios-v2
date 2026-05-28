@@ -256,6 +256,7 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
     private(set) var backgroundFetchInProgress = false
     var backgroundFetchCompletionHandler: ((UIBackgroundFetchResult) -> Void)?
     var activeFetchBackgroundTaskID: UIBackgroundTaskIdentifier = .invalid
+    private var bgFetchTimeoutTimer: Timer?
 
     //MARK: Callback
     ///Restore
@@ -373,26 +374,26 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
     ) -> Bool {
         do {
             let now = getTimeWithEntropy()
-            
+
             let sig = try rootSignMs(
                 seed: seed,
                 time: now,
                 network: network
             )
-            
+
             if let existing = self.mqtt {
                 print("[MQTT] Force-closing existing connection (state: \(existing.connState)) before opening new one")
                 existing.didDisconnect = {(_, _) in }
                 existing.disconnect()
                 self.mqtt = nil
             }
-            
+
             mqtt = CocoaMQTT(
                 clientID: xpub,
                 host: serverIP,
                 port: serverPORT
             )
-            
+
             mqtt.username = now
             mqtt.password = sig
             mqtt.keepAlive = 30
@@ -400,12 +401,12 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
             if UserDefaults.Keys.isProductionEnv.get(defaultValue: false) {
                 mqtt.enableSSL = true
                 mqtt.allowUntrustCACertificate = true
-                
+
                 mqtt.sslSettings = [
                     "kCFStreamSSLPeerName": "\(serverIP)" as NSObject
                 ] as [String: NSObject]
             }
-            
+
             let success = mqtt.connect()
             print("mqtt.connect success:\(success)")
             return success
@@ -489,6 +490,15 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
                     self?.endBackgroundFetch(result: .noData)
                 }
             )
+            // Hard cap: end the fetch after 25s regardless. Prevents the background task
+            // from staying open for minutes/hours waiting on a slow server MQTT response.
+            DispatchQueue.main.async { [weak self] in
+                self?.bgFetchTimeoutTimer?.invalidate()
+                self?.bgFetchTimeoutTimer = Timer.scheduledTimer(withTimeInterval: 25.0, repeats: false) { [weak self] _ in
+                    print("[BGFetch] Hard timeout fired after 25s — ending background fetch")
+                    self?.endBackgroundFetch(result: .noData)
+                }
+            }
         }
         netCheck.start(queue: DispatchQueue(label: "com.sphinx.bgfetch.netcheck"))
     }
@@ -505,6 +515,10 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
         let taskID = activeFetchBackgroundTaskID
         activeFetchBackgroundTaskID = .invalid
         fetchLock.unlock()
+        DispatchQueue.main.async { [weak self] in
+            self?.bgFetchTimeoutTimer?.invalidate()
+            self?.bgFetchTimeoutTimer = nil
+        }
 
         endReconnectionTimer() // Disarm any timer armed during fetch before signalling the system
         print("[BGFetch] completionHandler firing with result: \(result)")
@@ -526,7 +540,8 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
         disconnectMqtt()
     }
     
-    func prepareForForeground() {
+    func prepareForForeground(disconnectCallback: @escaping (() -> ())) {
+        print("[Lifecycle] prepareForForeground")
         // Called from applicationWillEnterForeground before reconnectToServer.
         // Tears down any in-flight BGFetch connection so the foreground reconnect
         // isn't blocked by connectionInProgress or a stale .connecting MQTT state.
@@ -534,10 +549,14 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
         connectionInProgress = false
         isConnected = false
         if let existing = self.mqtt {
-            existing.didDisconnect = { _, _ in }
+            existing.didDisconnect = { [weak self] _, _ in
+                self?.mqtt = nil
+                disconnectCallback()
+            }
             existing.didConnectAck = { _, _ in }
             existing.disconnect()
-            self.mqtt = nil
+        } else {
+            disconnectCallback()
         }
     }
 
@@ -602,7 +621,7 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
     
     func syncNewMessages() {
         let maxIndex = maxMessageIndex
-        
+
         startAllMsgBlockFetch(
             startIndex: (maxIndex != nil) ? maxIndex! + 1 : 0,
             itemsPerPage: SphinxOnionManager.kMessageBatchSize,
@@ -619,7 +638,7 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
         errorCallback: (()->())? = nil
     ){
         connectingCallback?()
-        
+
         guard let seed = getAccountSeed(),
               let myPubkey = getAccountOnlyKeysendPubkey(seed: seed),
               let my_xpub = getAccountXpub(seed: seed) else
@@ -676,6 +695,10 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
         if (success == false) {
             connectionInProgress = false
             hideRestoreViewCallback?(false)
+            let appIsActive = (UIApplication.shared.delegate as? AppDelegate)?.isActive ?? false
+            if appIsActive {
+                startReconnectionTimer(delay: 2.0)
+            }
             return
         }
 
@@ -702,7 +725,6 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
             guard let self = self else {
                 return
             }
-
             self.connectionTimeoutTimer?.invalidate()
             self.connectionTimeoutTimer = nil
             self.isConnected = true
