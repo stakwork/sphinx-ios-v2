@@ -2007,6 +2007,7 @@ extension FeaturePlanViewController: UITextViewDelegate {
         chatInputTextView.selectedRange = newCursor
         chatInputTextView.typingAttributes = [.foregroundColor: UIColor.Sphinx.Text, .font: defaultFont]
         hideAutocomplete()
+        updateInputBarHeight()
         chatInputTextView.becomeFirstResponder()
     }
 
