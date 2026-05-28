@@ -102,6 +102,12 @@ extension NewChatTableDataSource: UITableViewDelegate {
                     
                     if let minIndex = minIndex {
                         if (minIndex - 1) <= 0 {
+                            Task { @MainActor [weak self] in
+                                guard let self else { return }
+                                self.allItemsLoaded = true
+                                self.loadingMoreItems = false
+                                self.processMessages(messages: self.messagesArray, showLoadingMore: false)
+                            }
                             return
                         }
                         SphinxOnionManager.sharedInstance.startChatMsgBlockFetch(
@@ -127,6 +133,13 @@ extension NewChatTableDataSource: UITableViewDelegate {
                                     self.loadMoreItems(itemsCount: messagesCount)
                                 }
                             }
+                        }
+                    } else {
+                        Task { @MainActor [weak self] in
+                            guard let self else { return }
+                            self.allItemsLoaded = true
+                            self.loadingMoreItems = false
+                            self.processMessages(messages: self.messagesArray, showLoadingMore: false)
                         }
                     }
                 }
