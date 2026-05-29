@@ -591,13 +591,14 @@ extension SphinxOnionManager {
     ) -> Bool {
         if let topic = topic, let payload = payload {
             let byteArray: [UInt8] = [UInt8](payload)
-            
+
             let message = CocoaMQTTMessage(
                 topic: topic,
                 payload: byteArray
             )
             message.qos = .qos0
-            
+
+            print("V2 Publishing topic: \(topic) date \(Date().timeIntervalSince1970)")
             self.mqtt?.publish(
                 message
             )
@@ -612,15 +613,16 @@ extension SphinxOnionManager {
         callback: @escaping @Sendable (RunReturn, Bool) -> ()
     ) {
         if let topic = rr.registerTopic, let payload = rr.registerPayload {
-            
+
             let byteArray: [UInt8] = [UInt8](payload)
-            
+
             let message = CocoaMQTTMessage(
                 topic: topic,
                 payload: byteArray
             )
             message.qos = .qos0
-            
+
+            print("V2 Publishing topic: \(topic) date \(Date().timeIntervalSince1970)")
             self.mqtt?.publish(message)
             
             Task { @MainActor in
