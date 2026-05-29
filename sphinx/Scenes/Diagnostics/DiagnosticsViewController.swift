@@ -14,7 +14,8 @@ class DiagnosticsViewController: UIViewController {
 
     @IBOutlet weak var headerView: UIView!
     @IBOutlet weak var textView: UITextView!
-    @IBOutlet weak var exportButton: UIButton!
+    @IBOutlet weak var shareButton: UIButton!
+    @IBOutlet weak var deleteButton: UIButton!
     private var logObserverID: UUID?
 
     // MARK: - Factory
@@ -27,8 +28,20 @@ class DiagnosticsViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        configureHeaderButtons()
         loadExistingEntries()
         subscribeToNewEntries()
+    }
+
+    private func configureHeaderButtons() {
+        let config = UIImage.SymbolConfiguration(pointSize: 18, weight: .regular)
+        let shareImage = UIImage(systemName: "square.and.arrow.up", withConfiguration: config)
+        shareButton.setImage(shareImage, for: .normal)
+        shareButton.tintColor = UIColor.Sphinx.PrimaryBlue
+
+        let trashImage = UIImage(systemName: "trash", withConfiguration: config)
+        deleteButton.setImage(trashImage, for: .normal)
+        deleteButton.tintColor = UIColor.Sphinx.PrimaryRed
     }
 
     override func viewDidLayoutSubviews() {
@@ -54,8 +67,22 @@ class DiagnosticsViewController: UIViewController {
             return
         }
         let activityVC = UIActivityViewController(activityItems: [url], applicationActivities: nil)
-        activityVC.popoverPresentationController?.sourceView = exportButton
+        activityVC.popoverPresentationController?.sourceView = shareButton
         present(activityVC, animated: true)
+    }
+
+    @IBAction func deleteTapped() {
+        let alert = UIAlertController(
+            title: "Delete Logs",
+            message: "This will permanently delete all diagnostic logs. Are you sure?",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        alert.addAction(UIAlertAction(title: "Delete", style: .destructive) { [weak self] _ in
+            AppLogger.shared.clear()
+            self?.textView.attributedText = nil
+        })
+        present(alert, animated: true)
     }
 
     // MARK: - Private helpers
