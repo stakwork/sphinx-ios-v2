@@ -28,8 +28,20 @@ class DiagnosticsViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        configureHeaderButtons()
         loadExistingEntries()
         subscribeToNewEntries()
+    }
+
+    private func configureHeaderButtons() {
+        let config = UIImage.SymbolConfiguration(pointSize: 18, weight: .regular)
+        let shareImage = UIImage(systemName: "square.and.arrow.up", withConfiguration: config)
+        shareButton.setImage(shareImage, for: .normal)
+        shareButton.tintColor = UIColor.Sphinx.PrimaryBlue
+
+        let trashImage = UIImage(systemName: "trash", withConfiguration: config)
+        deleteButton.setImage(trashImage, for: .normal)
+        deleteButton.tintColor = UIColor.Sphinx.PrimaryRed
     }
 
     override func viewDidLayoutSubviews() {

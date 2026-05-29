@@ -2287,8 +2287,6 @@
                                             <constraint firstAttribute="height" constant="44" id="DVC-export-h"/>
                                             <constraint firstAttribute="width" constant="44" id="DVC-export-w"/>
                                         </constraints>
-                                        <color key="tintColor" name="PrimaryBlue"/>
-                                        <state key="normal" image="square.and.arrow.up"/>
                                         <connections>
                                             <action selector="exportTapped" destination="DVC-vc-001" eventType="touchUpInside" id="DVC-export-act"/>
                                         </connections>
@@ -2299,8 +2297,6 @@
                                             <constraint firstAttribute="height" constant="44" id="DVC-delete-h"/>
                                             <constraint firstAttribute="width" constant="44" id="DVC-delete-w"/>
                                         </constraints>
-                                        <color key="tintColor" name="PrimaryRed"/>
-                                        <state key="normal" image="trash"/>
                                         <connections>
                                             <action selector="deleteTapped" destination="DVC-vc-001" eventType="touchUpInside" id="DVC-delete-act"/>
                                         </connections>
@@ -2355,8 +2351,6 @@
         </scene>
     </scenes>
     <resources>
-        <image name="square.and.arrow.up" catalog="system"/>
-        <image name="trash" catalog="system"/>
         <image name="deleteIcon" width="38" height="38"/>
         <image name="qr_code" width="21" height="21"/>
         <namedColor name="Body">
