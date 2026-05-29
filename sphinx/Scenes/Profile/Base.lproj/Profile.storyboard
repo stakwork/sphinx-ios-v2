@@ -2282,17 +2282,27 @@
                                         <nil key="highlightedColor"/>
                                     </label>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="DVC-export-btn">
-                                        <rect key="frame" x="344" y="5" width="60" height="40"/>
+                                        <rect key="frame" x="360" y="3" width="44" height="44"/>
                                         <constraints>
-                                            <constraint firstAttribute="height" constant="40" id="DVC-export-h"/>
-                                            <constraint firstAttribute="width" constant="60" id="DVC-export-w"/>
+                                            <constraint firstAttribute="height" constant="44" id="DVC-export-h"/>
+                                            <constraint firstAttribute="width" constant="44" id="DVC-export-w"/>
                                         </constraints>
-                                        <fontDescription key="fontDescription" name="Roboto-Bold" family="Roboto" pointSize="13"/>
-                                        <state key="normal" title="Export">
-                                            <color key="titleColor" name="PrimaryBlue"/>
-                                        </state>
+                                        <color key="tintColor" name="PrimaryBlue"/>
+                                        <state key="normal" image="square.and.arrow.up"/>
                                         <connections>
                                             <action selector="exportTapped" destination="DVC-vc-001" eventType="touchUpInside" id="DVC-export-act"/>
+                                        </connections>
+                                    </button>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="DVC-delete-btn">
+                                        <rect key="frame" x="308" y="3" width="44" height="44"/>
+                                        <constraints>
+                                            <constraint firstAttribute="height" constant="44" id="DVC-delete-h"/>
+                                            <constraint firstAttribute="width" constant="44" id="DVC-delete-w"/>
+                                        </constraints>
+                                        <color key="tintColor" name="PrimaryRed"/>
+                                        <state key="normal" image="trash"/>
+                                        <connections>
+                                            <action selector="deleteTapped" destination="DVC-vc-001" eventType="touchUpInside" id="DVC-delete-act"/>
                                         </connections>
                                     </button>
                                 </subviews>
@@ -2305,6 +2315,8 @@
                                     <constraint firstItem="DVC-title-lbl" firstAttribute="centerX" secondItem="DVC-header-view" secondAttribute="centerX" id="DVC-hdr-c5"/>
                                     <constraint firstAttribute="trailing" secondItem="DVC-export-btn" secondAttribute="trailing" constant="10" id="DVC-hdr-c6"/>
                                     <constraint firstItem="DVC-export-btn" firstAttribute="centerY" secondItem="DVC-header-view" secondAttribute="centerY" id="DVC-hdr-c7"/>
+                                    <constraint firstAttribute="leading" secondItem="DVC-delete-btn" secondAttribute="trailing" constant="8" id="DVC-hdr-c8" firstItem="DVC-export-btn"/>
+                                    <constraint firstItem="DVC-delete-btn" firstAttribute="centerY" secondItem="DVC-header-view" secondAttribute="centerY" id="DVC-hdr-c9"/>
                                     <constraint firstAttribute="height" constant="50" id="DVC-hdr-h"/>
                                 </constraints>
                             </view>
@@ -2331,7 +2343,8 @@
                         </constraints>
                     </view>
                     <connections>
-                        <outlet property="exportButton" destination="DVC-export-btn" id="DVC-out-export"/>
+                        <outlet property="shareButton" destination="DVC-export-btn" id="DVC-out-export"/>
+                        <outlet property="deleteButton" destination="DVC-delete-btn" id="DVC-out-delete"/>
                         <outlet property="headerView" destination="DVC-header-view" id="DVC-out-header"/>
                         <outlet property="textView" destination="DVC-tv-001" id="DVC-out-tv"/>
                     </connections>
@@ -2342,6 +2355,8 @@
         </scene>
     </scenes>
     <resources>
+        <image name="square.and.arrow.up" catalog="system"/>
+        <image name="trash" catalog="system"/>
         <image name="deleteIcon" width="38" height="38"/>
         <image name="qr_code" width="21" height="21"/>
         <namedColor name="Body">
