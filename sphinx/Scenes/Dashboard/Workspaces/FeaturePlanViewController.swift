@@ -1472,6 +1472,7 @@ class FeaturePlanViewController: UIViewController {
         UIView.performWithoutAnimation {
             chatTableView.reloadRows(at: [IndexPath(row: idx, section: 0)], with: .none)
         }
+        scrollToBottom()
     }
 
     private func sendChatMessage(_ message: String) {
