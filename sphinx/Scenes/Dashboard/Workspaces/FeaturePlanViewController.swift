@@ -1421,6 +1421,8 @@ class FeaturePlanViewController: UIViewController {
                             baseUrl: streamInfo.baseUrl
                         )
                     }
+                    
+                    self.checkAndFetchSuggestionsIfNeeded()
                 }
             },
             errorCallback: { [weak self] in
@@ -1432,6 +1434,18 @@ class FeaturePlanViewController: UIViewController {
                 }
             }
         )
+    }
+    
+    private func checkAndFetchSuggestionsIfNeeded() {
+        guard
+            let raw = feature.workflowStatus,
+            WorkflowStatus(rawValue: raw) == .COMPLETED,
+            let lastMsg = displayMessages.last,
+            !lastMsg.isUserMessage,
+            !feature.hasTasks,
+            currentSuggestions.isEmpty
+        else { return }
+        fetchSuggestions()
     }
     
     private func fetchSuggestions() {
