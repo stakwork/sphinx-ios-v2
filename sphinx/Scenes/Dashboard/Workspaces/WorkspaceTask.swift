@@ -48,6 +48,9 @@ struct WorkspaceTask {
     var runBuild: Bool
     var runTestSuite: Bool
     var dependsOnTaskIds: [String]
+    let workflowId: Int?
+    let workflowName: String?
+    let workflowRefId: String?
 
     init?(json: JSON) {
         guard let id = json["id"].string,
@@ -90,5 +93,8 @@ struct WorkspaceTask {
         self.runBuild = json["runBuild"].bool ?? true
         self.runTestSuite = json["runTestSuite"].bool ?? true
         self.dependsOnTaskIds = json["dependsOnTaskIds"].arrayValue.compactMap { $0.string }
+        self.workflowId = json["workflowId"].int
+        self.workflowName = json["workflowName"].string
+        self.workflowRefId = json["workflowRefId"].string
     }
 }
