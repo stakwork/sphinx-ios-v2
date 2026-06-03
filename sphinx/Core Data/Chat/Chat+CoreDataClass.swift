@@ -954,8 +954,18 @@ public class Chat: NSManagedObject, @unchecked Sendable {
                 host: host,
                 uuid: uuid,
                 callback: { chatJson in
+                    let oldAppUrl = self.tribeInfo?.appUrl
+                    let oldSecondBrainUrl = self.tribeInfo?.secondBrainUrl
+                    
                     self.tribeInfo = GroupsManager.sharedInstance.getTribesInfoFrom(json: chatJson)
                     self.updateChatFromTribesInfo()
+                    
+                    if oldAppUrl != self.tribeInfo?.appUrl {
+                        WebAppSessionManager.sharedInstance.evict(chatId: self.id, isAppURL: true)
+                    }
+                    if oldSecondBrainUrl != self.tribeInfo?.secondBrainUrl {
+                        WebAppSessionManager.sharedInstance.evict(chatId: self.id, isAppURL: false)
+                    }
                     
                     if let feedUrl = self.tribeInfo?.feedUrl, !feedUrl.isEmpty {
                         let myChatId = self.id

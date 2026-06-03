@@ -22,6 +22,9 @@ class WebAppViewController: KeyboardEventsViewController {
     
     let webAppHelper = WebAppHelper()
     
+    private var isPageLoaded = false
+    private var loadingOverlay: UIView?
+    
     static func instantiate(
         chat: Chat,
         isAppURL: Bool = true
@@ -71,8 +74,13 @@ class WebAppViewController: KeyboardEventsViewController {
         webView.customUserAgent = "Sphinx"
         webView.navigationDelegate = self
         
+        webView.isHidden = true
         self.view.addSubview(webView)
         addWebViewConstraints()
+        
+        if !isPageLoaded {
+            showLoadingView()
+        }
         
         webAppHelper.setWebView(webView, authorizeHandler: configureAuthorizeView, authorizeBudgetHandler: configureBudgetView)
     }
@@ -118,6 +126,42 @@ class WebAppViewController: KeyboardEventsViewController {
         }
     }
     
+    func showLoadingView() {
+        guard loadingOverlay == nil else { return }
+        let overlay = UIView()
+        overlay.backgroundColor = UIColor.Sphinx.Body
+        overlay.translatesAutoresizingMaskIntoConstraints = false
+        let loadingWheel = UIActivityIndicatorView(style: .medium)
+        loadingWheel.translatesAutoresizingMaskIntoConstraints = false
+        loadingWheel.startAnimating()
+        overlay.addSubview(loadingWheel)
+        NSLayoutConstraint.activate([
+            loadingWheel.centerXAnchor.constraint(equalTo: overlay.centerXAnchor),
+            loadingWheel.centerYAnchor.constraint(equalTo: overlay.centerYAnchor)
+        ])
+        view.insertSubview(overlay, belowSubview: authorizeModalContainer)
+        NSLayoutConstraint.activate([
+            overlay.topAnchor.constraint(equalTo: view.topAnchor),
+            overlay.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            overlay.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            overlay.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+        ])
+        loadingOverlay = overlay
+    }
+
+    func hideLoadingView() {
+        loadingOverlay?.removeFromSuperview()
+        loadingOverlay = nil
+        webView?.isHidden = false
+    }
+    
+    func teardown() {
+        webView?.stopLoading()
+        webView?.configuration.userContentController.removeScriptMessageHandler(forName: webAppHelper.messageHandler)
+        webView?.removeFromSuperview()
+        webView = nil
+    }
+    
     func stopWebView() {
         webView.configuration.userContentController.removeAllUserScripts()
         webView.loadHTMLString("", baseURL: Bundle.main.bundleURL)
@@ -125,6 +169,19 @@ class WebAppViewController: KeyboardEventsViewController {
 }
 
 extension WebAppViewController : WKNavigationDelegate {
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        isPageLoaded = true
+        hideLoadingView()
+    }
+    
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        hideLoadingView()
+    }
+    
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        hideLoadingView()
+    }
+    
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
         if navigationAction.navigationType == .linkActivated  {
             if let url = navigationAction.request.url, url.absoluteString.contains("open=system") {

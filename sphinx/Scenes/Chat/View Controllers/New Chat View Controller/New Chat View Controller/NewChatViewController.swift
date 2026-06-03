@@ -152,6 +152,10 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         
         if self.isMovingFromParent {
             chat?.setChatMessagesAsSeen()
+            // Clean up web app child VC if currently embedded (session manager retains the VC)
+            if !webAppContainerView.isHidden, let webAppVC = webAppVC {
+                removeChildVC(child: webAppVC)
+            }
         }
     }
     
@@ -308,7 +312,7 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         DispatchQueue.main.async {
             self.emptyAvatarPlaceholderView.configureWith(chat: chat)
             self.emptyAvatarPlaceholderView.isHidden = false
-            self.bottomView.isHidden = false
+            self.bottomView.isHidden = !self.webAppContainerView.isHidden
         }
     }
 
@@ -334,7 +338,7 @@ class NewChatViewController: NewKeyboardHandlerViewController {
                 setupEmptyChatPlaceholder()
             } else {
                 emptyAvatarPlaceholderView.isHidden = true
-                bottomView.isHidden = false
+                bottomView.isHidden = !webAppContainerView.isHidden
             }
         }
     }
