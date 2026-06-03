@@ -152,6 +152,10 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         
         if self.isMovingFromParent {
             chat?.setChatMessagesAsSeen()
+            // Clean up web app child VC if currently embedded (session manager retains the VC)
+            if !webAppContainerView.isHidden, let webAppVC = webAppVC {
+                removeChildVC(child: webAppVC)
+            }
         }
     }
     

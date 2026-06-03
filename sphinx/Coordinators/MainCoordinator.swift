@@ -37,6 +37,7 @@ import KYDrawerController
 //        }
         
         UserData.sharedInstance.clearData()
+        WebAppSessionManager.sharedInstance.evictAll()
         presentInitialWelcomeViewController()
     }
     
