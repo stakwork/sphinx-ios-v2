@@ -47,19 +47,7 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
     var onAutoMergeToggled: ((Bool) -> Void)?
     var onRunBuildToggled: ((Bool) -> Void)?
     var onRunTestSuiteToggled: ((Bool) -> Void)?
-    var onMenuTapped: (() -> Void)?
 
-    // Programmatic more (ellipsis) button in top-trailing corner
-    private(set) var moreButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.translatesAutoresizingMaskIntoConstraints = false
-        let config = UIImage.SymbolConfiguration(pointSize: 14, weight: .regular)
-        button.setImage(UIImage(systemName: "ellipsis.vertical", withConfiguration: config), for: .normal)
-        button.tintColor = .Sphinx.SecondaryText
-        button.widthAnchor.constraint(equalToConstant: 24).isActive = true
-        button.heightAnchor.constraint(equalToConstant: 24).isActive = true
-        return button
-    }()
 
     @IBOutlet weak var runBuildLabel: UILabel!
     @IBOutlet weak var runBuildToggle: SphinxToggleView!
@@ -82,33 +70,9 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         setupCell()
     }
 
-    override func prepareForReuse() {
-        super.prepareForReuse()
-        onMenuTapped = nil
-    }
-
     private func setupCell() {
         backgroundColor = .Sphinx.Body
         contentView.backgroundColor = .Sphinx.Body
-
-        // Add and constrain the more button (ellipsis) in top-trailing corner
-        contentView.addSubview(moreButton)
-        NSLayoutConstraint.activate([
-            moreButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -12),
-            moreButton.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12)
-        ])
-        moreButton.addTarget(self, action: #selector(moreButtonTapped), for: .touchUpInside)
-
-        // Push status/priority badges left to make room for the moreButton (24pt + 12pt gap + 4pt = 40pt from trailing)
-        for c in contentView.constraints {
-            let isStatusTrail = (c.firstItem === statusBadge && c.firstAttribute == .trailing) ||
-                                (c.secondItem === statusBadge && c.secondAttribute == .trailing)
-            let isPriorityTrail = (c.firstItem === priorityBadge && c.firstAttribute == .trailing) ||
-                                  (c.secondItem === priorityBadge && c.secondAttribute == .trailing)
-            if isStatusTrail || isPriorityTrail {
-                c.constant = 40
-            }
-        }
 
         // Add and constrain the numbered status circle
         contentView.addSubview(taskIndexCircle)
@@ -220,10 +184,6 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         deploymentPill.isHidden = true
         deploymentPill.heightAnchor.constraint(equalToConstant: 22).isActive = true
         deploymentPill.widthAnchor.constraint(equalToConstant: 90).isActive = true
-    }
-
-    @objc private func moreButtonTapped() {
-        onMenuTapped?()
     }
 
     @objc private func retryWorkflowButtonTapped() {
