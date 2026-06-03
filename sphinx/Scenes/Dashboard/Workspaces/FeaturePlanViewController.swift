@@ -1734,6 +1734,10 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
                     }
                 )
             }
+            cell.onMenuTapped = { [weak self, weak cell] in
+                guard let self, let cell else { return }
+                self.showTaskMenu(for: task, taskIndex: taskIndex, indexPath: indexPath, sourceView: cell.moreButton)
+            }
             return cell
         }
 
@@ -2265,5 +2269,83 @@ extension FeaturePlanViewController: AgentEventsSSEDelegate {
         let detail = "\(first.key): \(value)"
         let combined = "\(icon) — \(detail)"
         return combined
+    }
+}
+
+// MARK: - Task Action Menu
+
+extension FeaturePlanViewController {
+    private func showTaskMenu(for task: WorkspaceTask, taskIndex: Int, indexPath: IndexPath, sourceView: UIView) {
+        let alert = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        alert.popoverPresentationController?.sourceView = sourceView
+        alert.popoverPresentationController?.sourceRect = sourceView.bounds
+
+        // Start Task — TODO only
+        if task.status == "TODO" {
+            alert.addAction(UIAlertAction(title: "Start Task", style: .default) { [weak self] _ in
+                guard let self else { return }
+                API.sharedInstance.updateTaskStatusWithAuth(
+                    taskId: task.id,
+                    status: "IN_PROGRESS",
+                    callback: { [weak self] in
+                        DispatchQueue.main.async {
+                            guard let self else { return }
+                            self.feature.updateTask(task.id) { $0.status = "IN_PROGRESS" }
+                            self.tasksTableView.reloadRows(at: [indexPath], with: .none)
+                        }
+                    },
+                    errorCallback: {}
+                )
+            })
+        }
+
+        // View Task — always
+        alert.addAction(UIAlertAction(title: "View Task", style: .default) { [weak self] _ in
+            guard let self else { return }
+            let chatVC = TaskChatViewController.instantiate(
+                task: task,
+                workspaceSlug: self.workspace.slug ?? "",
+                workspaceId: self.workspace.id
+            )
+            self.navigationController?.pushViewController(chatVC, animated: true)
+        })
+
+        // Duplicate — always
+        alert.addAction(UIAlertAction(title: "Duplicate", style: .default) { [weak self] _ in
+            guard let self else { return }
+            API.sharedInstance.duplicateTaskWithAuth(
+                task: task,
+                callback: { [weak self] newTask in
+                    DispatchQueue.main.async {
+                        guard let self, let newTask else { return }
+                        self.feature.looseTasks.append(newTask)
+                        self.tasksTableView.reloadData()
+                    }
+                },
+                errorCallback: {}
+            )
+        })
+
+        // Mark Complete — TODO or IN_PROGRESS only
+        if task.status == "TODO" || task.status == "IN_PROGRESS" {
+            alert.addAction(UIAlertAction(title: "Mark Complete", style: .default) { [weak self] _ in
+                guard let self else { return }
+                API.sharedInstance.updateTaskStatusWithAuth(
+                    taskId: task.id,
+                    status: "DONE",
+                    callback: { [weak self] in
+                        DispatchQueue.main.async {
+                            guard let self else { return }
+                            self.feature.updateTask(task.id) { $0.status = "DONE" }
+                            self.tasksTableView.reloadRows(at: [indexPath], with: .none)
+                        }
+                    },
+                    errorCallback: {}
+                )
+            })
+        }
+
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        present(alert, animated: true)
     }
 }

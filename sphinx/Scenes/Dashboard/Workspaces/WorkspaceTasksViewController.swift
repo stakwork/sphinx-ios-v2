@@ -215,6 +215,10 @@ extension WorkspaceTasksViewController: UITableViewDataSource, UITableViewDelega
                 }
             )
         }
+        cell.onMenuTapped = { [weak self, weak cell] in
+            guard let self, let cell else { return }
+            self.showTaskMenu(for: task, at: indexPath, sourceView: cell.moreButton)
+        }
         return cell
     }
 
@@ -313,6 +317,86 @@ extension WorkspaceTasksViewController: CreateFeatureViewControllerDelegate {
             workspaceId: workspace.id
         )
         navigationController?.pushViewController(chatVC, animated: true)
+    }
+}
+
+// MARK: - Task Action Menu
+
+extension WorkspaceTasksViewController {
+    private func showTaskMenu(for task: WorkspaceTask, at indexPath: IndexPath, sourceView: UIView) {
+        let alert = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        alert.popoverPresentationController?.sourceView = sourceView
+        alert.popoverPresentationController?.sourceRect = sourceView.bounds
+
+        // Start Task — TODO only
+        if task.status == "TODO" {
+            alert.addAction(UIAlertAction(title: "Start Task", style: .default) { [weak self] _ in
+                guard let self else { return }
+                API.sharedInstance.updateTaskStatusWithAuth(
+                    taskId: task.id,
+                    status: "IN_PROGRESS",
+                    callback: { [weak self] in
+                        DispatchQueue.main.async {
+                            guard let self else { return }
+                            if self.tasks.indices.contains(indexPath.row) && self.tasks[indexPath.row].id == task.id {
+                                self.tasks[indexPath.row].status = "IN_PROGRESS"
+                                self.tableView.reloadRows(at: [indexPath], with: .none)
+                            }
+                        }
+                    },
+                    errorCallback: {}
+                )
+            })
+        }
+
+        // View Task — always
+        alert.addAction(UIAlertAction(title: "View Task", style: .default) { [weak self] _ in
+            guard let self else { return }
+            let chatVC = TaskChatViewController.instantiate(
+                task: task,
+                workspaceSlug: self.workspace.slug ?? "",
+                workspaceId: self.workspace.id
+            )
+            self.navigationController?.pushViewController(chatVC, animated: true)
+        })
+
+        // Duplicate — always
+        alert.addAction(UIAlertAction(title: "Duplicate", style: .default) { [weak self] _ in
+            guard let self else { return }
+            API.sharedInstance.duplicateTaskWithAuth(
+                task: task,
+                callback: { [weak self] _ in
+                    DispatchQueue.main.async {
+                        self?.loadTasks(showLoading: false)
+                    }
+                },
+                errorCallback: {}
+            )
+        })
+
+        // Mark Complete — TODO or IN_PROGRESS only
+        if task.status == "TODO" || task.status == "IN_PROGRESS" {
+            alert.addAction(UIAlertAction(title: "Mark Complete", style: .default) { [weak self] _ in
+                guard let self else { return }
+                API.sharedInstance.updateTaskStatusWithAuth(
+                    taskId: task.id,
+                    status: "DONE",
+                    callback: { [weak self] in
+                        DispatchQueue.main.async {
+                            guard let self else { return }
+                            if self.tasks.indices.contains(indexPath.row) && self.tasks[indexPath.row].id == task.id {
+                                self.tasks[indexPath.row].status = "DONE"
+                                self.tableView.reloadRows(at: [indexPath], with: .none)
+                            }
+                        }
+                    },
+                    errorCallback: {}
+                )
+            })
+        }
+
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        present(alert, animated: true)
     }
 }
 
