@@ -103,6 +103,8 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
     
     public static let kContactsBatchSize = 100
     public static let kMessageBatchSize = 100
+    static let kMqttKeepAlive: UInt16 = 15
+    static let kConnectionTimeoutInterval: TimeInterval = 15.0
 
     public static let kCompleteStatus = "COMPLETE"
     public static let kFailedStatus = "FAILED"
@@ -396,7 +398,7 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
 
             mqtt.username = now
             mqtt.password = sig
-            mqtt.keepAlive = 30
+            mqtt.keepAlive = SphinxOnionManager.kMqttKeepAlive
 
             if UserDefaults.Keys.isProductionEnv.get(defaultValue: false) {
                 mqtt.enableSSL = true
@@ -549,12 +551,11 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
         connectionInProgress = false
         isConnected = false
         if let existing = self.mqtt {
-            existing.didDisconnect = { [weak self] _, _ in
-                self?.mqtt = nil
-                disconnectCallback()
-            }
+            self.mqtt = nil
+            existing.didDisconnect = { _, _ in }
             existing.didConnectAck = { _, _ in }
-            existing.disconnect()
+            existing.disconnect() // fire-and-forget
+            disconnectCallback()  // don't wait — call immediately
         } else {
             disconnectCallback()
         }
@@ -705,7 +706,7 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             self.connectionTimeoutTimer?.invalidate()
-            self.connectionTimeoutTimer = Timer.scheduledTimer(withTimeInterval: 30.0, repeats: false) { [weak self] _ in
+            self.connectionTimeoutTimer = Timer.scheduledTimer(withTimeInterval: SphinxOnionManager.kConnectionTimeoutInterval, repeats: false) { [weak self] _ in
                 guard let self = self, self.connectionInProgress else { return }
                 print("[MQTT] Connection timed out after 30s — force-closing and retrying")
                 self.connectionInProgress = false
