@@ -158,6 +158,7 @@
 		4734D3D5241AADD900D6957E /* PaymentTemplateCollectionViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 4734D3D3241AADD900D6957E /* PaymentTemplateCollectionViewCell.xib */; };
 		47352E4A2440F54300E5CC7F /* MessageOptionsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47352E492440F54300E5CC7F /* MessageOptionsViewController.swift */; };
 		47352E4C2440FEB800E5CC7F /* WindowsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47352E4B2440FEB800E5CC7F /* WindowsManager.swift */; };
+		AA1234560000000000000001 /* WebAppSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1234560000000000000002 /* WebAppSessionManager.swift */; };
 		47357A0B2729A11300A49EEE /* NewsletterFeed+Computeds.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47357A0A2729A11300A49EEE /* NewsletterFeed+Computeds.swift */; };
 		47357A0F2729A12A00A49EEE /* NewsletterFeed+Properties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47357A0E2729A12A00A49EEE /* NewsletterFeed+Properties.swift */; };
 		47357A112729A13600A49EEE /* NewsletterFeed+DisplayUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47357A102729A13600A49EEE /* NewsletterFeed+DisplayUtils.swift */; };
@@ -1378,6 +1379,7 @@
 		4734D3D3241AADD900D6957E /* PaymentTemplateCollectionViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = PaymentTemplateCollectionViewCell.xib; sourceTree = "<group>"; };
 		47352E492440F54300E5CC7F /* MessageOptionsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageOptionsViewController.swift; sourceTree = "<group>"; };
 		47352E4B2440FEB800E5CC7F /* WindowsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowsManager.swift; sourceTree = "<group>"; };
+		AA1234560000000000000002 /* WebAppSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppSessionManager.swift; sourceTree = "<group>"; };
 		47357A0727299E0900A49EEE /* sphinx 31.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 31.xcdatamodel"; sourceTree = "<group>"; };
 		47357A0A2729A11300A49EEE /* NewsletterFeed+Computeds.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NewsletterFeed+Computeds.swift"; sourceTree = "<group>"; };
 		47357A0E2729A12A00A49EEE /* NewsletterFeed+Properties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NewsletterFeed+Properties.swift"; sourceTree = "<group>"; };
@@ -2697,6 +2699,7 @@
 		471FACD623E89E19007DE1C8 /* Managers */ = {
 			isa = PBXGroup;
 			children = (
+				AA1234560000000000000003 /* WebApp */,
 				5DF2DCE5F5AE4D99A76A5485 /* AI Agent */,
 				1B845352803C4566A0C34DFA /* HiveAnyCable */,
 				4759621F2F5210D700564B7F /* HivePusher */,
@@ -2882,6 +2885,14 @@
 				47352E4B2440FEB800E5CC7F /* WindowsManager.swift */,
 			);
 			path = Windows;
+			sourceTree = "<group>";
+		};
+		AA1234560000000000000003 /* WebApp */ = {
+			isa = PBXGroup;
+			children = (
+				AA1234560000000000000002 /* WebAppSessionManager.swift */,
+			);
+			path = WebApp;
 			sourceTree = "<group>";
 		};
 		47357A082729A0BB00A49EEE /* NewsletterFeed */ = {
@@ -5964,6 +5975,7 @@
 				F38744DF271FD7B100E28C84 /* Video+Computeds.swift in Sources */,
 				47D46A34237C83900005A548 /* UserInvite+CoreDataProperties.swift in Sources */,
 				47352E4C2440FEB800E5CC7F /* WindowsManager.swift in Sources */,
+				AA1234560000000000000001 /* WebAppSessionManager.swift in Sources */,
 				47183CB22548AA4400E6FD19 /* PodcastPlayerView.swift in Sources */,
 				47978EFD2F040D3D0092B516 /* DataSyncManager.swift in Sources */,
 				47978EFE2F040D420092B516 /* DataSyncModels.swift in Sources */,
