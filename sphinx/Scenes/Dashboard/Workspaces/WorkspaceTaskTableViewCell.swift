@@ -54,7 +54,7 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
         let button = UIButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
         let config = UIImage.SymbolConfiguration(pointSize: 14, weight: .regular)
-        button.setImage(UIImage(systemName: "ellipsis", withConfiguration: config), for: .normal)
+        button.setImage(UIImage(systemName: "ellipsis.vertical", withConfiguration: config), for: .normal)
         button.tintColor = .Sphinx.SecondaryText
         button.widthAnchor.constraint(equalToConstant: 24).isActive = true
         button.heightAnchor.constraint(equalToConstant: 24).isActive = true
