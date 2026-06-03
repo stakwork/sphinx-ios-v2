@@ -19,32 +19,13 @@ import CoreGraphics
     }
     
     struct ScrollState {
-        var bottomFirstVisibleRow: Int
-        var bottomFirstVisibleRowOffset: CGFloat
-        var bottomFirstVisibleRowUniqueID: Int?
-        var numberOfItems: Int
-        var shouldAdjustScroll: Bool
-        var shouldPreventSetMessagesAsSeen: Bool
-        
-        init(
-            bottomFirstVisibleRow: Int,
-            bottomFirstVisibleRowOffset: CGFloat,
-            bottomFirstVisibleRowUniqueID: Int?,
-            numberOfItems: Int,
-            shouldAdjustScroll: Bool,
-            shouldPreventSetMessagesAsSeen: Bool
-        ) {
-            self.bottomFirstVisibleRow = bottomFirstVisibleRow
-            self.bottomFirstVisibleRowOffset = bottomFirstVisibleRowOffset
-            self.bottomFirstVisibleRowUniqueID = bottomFirstVisibleRowUniqueID
-            self.numberOfItems = numberOfItems
-            self.shouldAdjustScroll = shouldAdjustScroll
-            self.shouldPreventSetMessagesAsSeen = shouldPreventSetMessagesAsSeen
-        }
+        var firstRowId: Int      // message.id of the topmost visible row
+        var difference: CGFloat  // pixel offset of that row from the top of the viewport
+        var isAtBottom: Bool
     }
     
     var chatMessages: [Int: [MessageTableCellState]] = [:]
-    var chatLastPositions: [Int: ScrollState] = [:]
+    var chatScrollState: [Int: ScrollState] = [:]
     
     var tribesData: [String: MessageTableCellState.TribeData] = [:]
     var linksData: [String: MessageTableCellState.LinkData] = [:]
@@ -67,47 +48,18 @@ import CoreGraphics
         return nil
     }
     
-    func save(
-        bottomFirstVisibleRow: Int,
-        bottomFirstVisibleRowOffset: CGFloat,
-        bottomFirstVisibleRowUniqueID: Int?,
-        numberOfItems: Int,
-        for chatId: Int
-    ) {
-        self.chatLastPositions[chatId] = ScrollState(
-            bottomFirstVisibleRow: bottomFirstVisibleRow,
-            bottomFirstVisibleRowOffset: bottomFirstVisibleRowOffset,
-            bottomFirstVisibleRowUniqueID: bottomFirstVisibleRowUniqueID,
-            numberOfItems: numberOfItems,
-            shouldAdjustScroll: true,
-            shouldPreventSetMessagesAsSeen: true
-        )
+    func save(firstRowId: Int, difference: CGFloat, isAtBottom: Bool, for chatId: Int) {
+        chatScrollState[chatId] = ScrollState(firstRowId: firstRowId, difference: difference, isAtBottom: isAtBottom)
     }
     
-    func getScrollState(
-        for chatId: Int,
-        with newItemIdentifiers: [MessageTableCellState]
-    ) -> ScrollState? {
-        
-        if let scrollState = chatLastPositions[chatId] {
-            
-            if let firstItemBeforeUpdate = scrollState.bottomFirstVisibleRowUniqueID {
-                
-                let itemUniqueIdentifiers = newItemIdentifiers.map({ $0.getUniqueIdentifier() })
-                let difference = itemUniqueIdentifiers.index(of: firstItemBeforeUpdate) ?? 0
-                let destinationRow = scrollState.bottomFirstVisibleRow + difference
-                let shouldAdjustScroll = destinationRow > 1 || (destinationRow > 0 && scrollState.bottomFirstVisibleRowOffset > 0)
-                
-                return ScrollState(
-                    bottomFirstVisibleRow: destinationRow,
-                    bottomFirstVisibleRowOffset: scrollState.bottomFirstVisibleRowOffset,
-                    bottomFirstVisibleRowUniqueID: scrollState.bottomFirstVisibleRowUniqueID,
-                    numberOfItems: scrollState.numberOfItems,
-                    shouldAdjustScroll: shouldAdjustScroll,
-                    shouldPreventSetMessagesAsSeen: scrollState.numberOfItems == newItemIdentifiers.count
-                )
-            }
+    func getScrollState(for chatId: Int, pinnedMessageId: Int? = nil) -> ScrollState? {
+        if let pinnedMessageId = pinnedMessageId {
+            return ScrollState(firstRowId: pinnedMessageId, difference: 0, isAtBottom: false)
         }
-        return nil
+        return chatScrollState[chatId]
+    }
+    
+    func reset(for chatId: Int) {
+        chatScrollState.removeValue(forKey: chatId)
     }
 }
