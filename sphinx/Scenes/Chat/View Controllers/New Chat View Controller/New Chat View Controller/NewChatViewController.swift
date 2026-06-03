@@ -312,7 +312,7 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         DispatchQueue.main.async {
             self.emptyAvatarPlaceholderView.configureWith(chat: chat)
             self.emptyAvatarPlaceholderView.isHidden = false
-            self.bottomView.isHidden = false
+            self.bottomView.isHidden = !self.webAppContainerView.isHidden
         }
     }
 
@@ -338,7 +338,7 @@ class NewChatViewController: NewKeyboardHandlerViewController {
                 setupEmptyChatPlaceholder()
             } else {
                 emptyAvatarPlaceholderView.isHidden = true
-                bottomView.isHidden = false
+                bottomView.isHidden = !webAppContainerView.isHidden
             }
         }
     }
