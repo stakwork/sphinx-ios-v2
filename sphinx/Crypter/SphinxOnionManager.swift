@@ -39,6 +39,9 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
     var stashedInviterAlias: String? = nil
     
     var reconnectionTimer: Timer? = nil
+    var watchdogTimer: Timer? = nil
+    var lastInboundTime: Date? = nil
+    var reconnectAttemptCount: Int = 0
     var sendTimeoutTimers: [String: Timer] = [:]
     var paymentTimeoutTimers: [String: Timer] = [:]
     
@@ -420,8 +423,9 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
     func disconnectMqtt(
         callback: ((Double) -> ())? = nil
     ) {
-        // Cancel reconnection timer to prevent background reconnection attempts
+        // Cancel reconnection timer and watchdog to prevent background reconnection attempts
         endReconnectionTimer()
+        stopWatchdog()
         connectionTimeoutTimer?.invalidate()
         connectionTimeoutTimer = nil
 
@@ -548,6 +552,8 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
         // Tears down any in-flight BGFetch connection so the foreground reconnect
         // isn't blocked by connectionInProgress or a stale .connecting MQTT state.
         endBackgroundFetch(result: .noData)
+        stopWatchdog()
+        reconnectAttemptCount = 0
         connectionInProgress = false
         isConnected = false
         if let existing = self.mqtt {
@@ -698,7 +704,7 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
             hideRestoreViewCallback?(false)
             let appIsActive = (UIApplication.shared.delegate as? AppDelegate)?.isActive ?? false
             if appIsActive {
-                startReconnectionTimer(delay: 2.0)
+                startReconnectionTimer()
             }
             return
         }
@@ -717,7 +723,7 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
                 dead?.disconnect()
                 let appIsActive = (UIApplication.shared.delegate as? AppDelegate)?.isActive ?? false
                 if appIsActive {
-                    self.startReconnectionTimer(delay: 2.0)
+                    self.startReconnectionTimer()
                 }
             }
         }
@@ -731,6 +737,8 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
             self.isConnected = true
             self.connectionInProgress = false
             self.endReconnectionTimer()
+            self.reconnectAttemptCount = 0
+            self.startWatchdog()
             
             self.subscribeAndPublishMyTopics(pubkey: myPubkey, idx: 0)
             
@@ -776,6 +784,7 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
                 }
                 return
             }
+            self?.stopWatchdog()
             self?.startReconnectionTimer()
         }
     }
@@ -785,9 +794,12 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
         reconnectionTimer = nil
     }
     
-    func startReconnectionTimer(
-        delay: Double = 0.0
-    ) {
+    func startReconnectionTimer() {
+        let factor = pow(2.0, Double(reconnectAttemptCount))
+        let jitter = Double.random(in: 0.75...1.25)
+        let delay = min(1.0 * factor * jitter, 60.0)
+        reconnectAttemptCount += 1
+
         DispatchQueue.main.async {
             MainActor.assumeIsolated {
                 if (UIApplication.shared.delegate as? AppDelegate)?.isActive == false {
@@ -805,6 +817,37 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
                 )
             }
         }
+    }
+    
+    // MARK: - Watchdog Helpers
+
+    func startWatchdog() {
+        stopWatchdog()
+        lastInboundTime = Date()
+        let interval = Double(SphinxOnionManager.kMqttKeepAlive) * 2  // 30s
+        DispatchQueue.main.async {
+            self.watchdogTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
+                guard let self = self, self.isConnected else { return }
+                guard let last = self.lastInboundTime else { return }
+                if Date().timeIntervalSince(last) >= 30.0 {
+                    print("[MQTT] Watchdog: silent for 30s — forcing reconnect")
+                    self.stopWatchdog()
+                    let dead = self.mqtt
+                    self.mqtt = nil
+                    dead?.didDisconnect = { _, _ in }
+                    dead?.didConnectAck = { _, _ in }
+                    dead?.disconnect()
+                    self.isConnected = false
+                    self.connectionInProgress = false
+                    self.startReconnectionTimer()
+                }
+            }
+        }
+    }
+
+    func stopWatchdog() {
+        watchdogTimer?.invalidate()
+        watchdogTimer = nil
     }
 
     @objc func reconnectionTimerFired() {
@@ -843,6 +886,7 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
             
             mqtt.didReceiveMessage = { [weak self] mqtt, receivedMessage, id in
                 self?.isConnected = true
+                self?.lastInboundTime = Date()
                 self?.processMqttMessages(message: receivedMessage)
             }
             
@@ -991,6 +1035,7 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
         if success {
             mqtt.didReceiveMessage = { [weak self] mqtt, receivedMessage, id in
                 self?.isConnected = true
+                self?.lastInboundTime = Date()
                 self?.processMqttMessages(message: receivedMessage)
             }
             
@@ -1002,6 +1047,7 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
                 // Guard before any dispatch — if backgrounded, do not schedule reconnection
                 let appIsActive = (UIApplication.shared.delegate as? AppDelegate)?.isActive ?? false
                 guard appIsActive else { return }
+                self?.stopWatchdog()
                 self?.startReconnectionTimer()
             }
             
