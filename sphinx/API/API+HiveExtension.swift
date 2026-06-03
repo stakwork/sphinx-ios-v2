@@ -2487,6 +2487,164 @@ extension API {
         )
     }
 
+    // MARK: - Update Task Status (PATCH /api/tasks/{taskId})
+
+    private func updateTaskStatus(
+        taskId: String,
+        status: String,
+        authToken: String,
+        callback: @escaping EmptyCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        guard let encodedTaskId = taskId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+            errorCallback(); return
+        }
+        let urlString = "\(API.kHiveBaseUrl)/tasks/\(encodedTaskId)"
+        let body: NSDictionary = ["status": status]
+        guard let request = createRequest(urlString, bodyParams: body, method: "PATCH", token: authToken) else {
+            errorCallback(); return
+        }
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                errorCallback(); return
+            }
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+                if json["success"].bool == true {
+                    callback()
+                } else {
+                    print("[HiveAPI] updateTaskStatus returned success=false: \(json)")
+                    errorCallback()
+                }
+            case .failure(let error):
+                print("[HiveAPI] updateTaskStatus failed: \(error.localizedDescription)")
+                errorCallback()
+            }
+        }
+    }
+
+    func updateTaskStatusWithAuth(
+        taskId: String,
+        status: String,
+        callback: @escaping EmptyCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
+            updateTaskStatus(
+                taskId: taskId,
+                status: status,
+                authToken: storedToken,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateAndUpdateTaskStatus(
+                        taskId: taskId,
+                        status: status,
+                        callback: callback,
+                        errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateAndUpdateTaskStatus(taskId: taskId, status: status, callback: callback, errorCallback: errorCallback)
+        }
+    }
+
+    private func authenticateAndUpdateTaskStatus(
+        taskId: String,
+        status: String,
+        callback: @escaping EmptyCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback(); return }
+                UserDefaults.Keys.hiveToken.set(token)
+                self?.updateTaskStatus(taskId: taskId, status: status, authToken: token, callback: callback, errorCallback: errorCallback)
+            },
+            errorCallback: errorCallback
+        )
+    }
+
+    // MARK: - Duplicate Task (POST /api/tasks)
+
+    private func duplicateTask(
+        task: WorkspaceTask,
+        authToken: String,
+        callback: @escaping HiveTaskCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        let urlString = "\(API.kHiveBaseUrl)/tasks"
+        var body: [String: Any] = [
+            "title": "Copy of \(task.title)",
+            "status": "TODO"
+        ]
+        if let featureId = task.featureId { body["featureId"] = featureId }
+        if let repositoryId = task.repositoryId { body["repositoryId"] = repositoryId }
+        if let workflowId = task.workflowId { body["workflowId"] = workflowId }
+        if let workflowName = task.workflowName { body["workflowName"] = workflowName }
+        if let workflowRefId = task.workflowRefId { body["workflowRefId"] = workflowRefId }
+        guard let request = createRequest(urlString, bodyParams: body as NSDictionary, method: "POST", token: authToken) else {
+            errorCallback(); return
+        }
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                errorCallback(); return
+            }
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+                if let newTask = WorkspaceTask(json: json["data"]) {
+                    callback(newTask)
+                } else {
+                    print("[HiveAPI] duplicateTask failed to parse response: \(json)")
+                    errorCallback()
+                }
+            case .failure(let error):
+                print("[HiveAPI] duplicateTask failed: \(error.localizedDescription)")
+                errorCallback()
+            }
+        }
+    }
+
+    func duplicateTaskWithAuth(
+        task: WorkspaceTask,
+        callback: @escaping HiveTaskCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
+            duplicateTask(
+                task: task,
+                authToken: storedToken,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateAndDuplicateTask(
+                        task: task,
+                        callback: callback,
+                        errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateAndDuplicateTask(task: task, callback: callback, errorCallback: errorCallback)
+        }
+    }
+
+    private func authenticateAndDuplicateTask(
+        task: WorkspaceTask,
+        callback: @escaping HiveTaskCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback(); return }
+                UserDefaults.Keys.hiveToken.set(token)
+                self?.duplicateTask(task: task, authToken: token, callback: callback, errorCallback: errorCallback)
+            },
+            errorCallback: errorCallback
+        )
+    }
+
     // MARK: - Unarchive Task (PATCH /api/tasks/{taskId})
 
     private func unarchiveTask(
