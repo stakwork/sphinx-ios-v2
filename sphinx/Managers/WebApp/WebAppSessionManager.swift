@@ -18,7 +18,14 @@ struct WebAppSessionEntry {
 }
 
 class WebAppSessionManager {
-    static let sharedInstance = WebAppSessionManager()
+    
+    class var sharedInstance: WebAppSessionManager {
+        struct Static {
+            nonisolated(unsafe) static let instance = WebAppSessionManager()
+        }
+        return Static.instance
+    }
+    
     private init() {}
 
     private var sessions: [WebAppSessionKey: WebAppSessionEntry] = [:]
