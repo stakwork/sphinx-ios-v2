@@ -402,6 +402,7 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
             mqtt.username = now
             mqtt.password = sig
             mqtt.keepAlive = SphinxOnionManager.kMqttKeepAlive
+            mqtt.backgroundOnSocket = false
 
             if UserDefaults.Keys.isProductionEnv.get(defaultValue: false) {
                 mqtt.enableSSL = true
