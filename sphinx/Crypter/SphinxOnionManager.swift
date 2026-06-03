@@ -573,13 +573,13 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
             }
             if mqtt.connState == .connected && isConnected {
                 ///If already fetching content, then process is already running
-                if !isFetchingContent() {
-                    hideRestoreCallback = hideRestoreViewCallback
-                    startNewMsgsSync()
-                    listAndUpdateContacts()
-                } else {
+//                if !isFetchingContent() {
+//                    hideRestoreCallback = hideRestoreViewCallback
+//                    startNewMsgsSync()
+//                    listAndUpdateContacts()
+//                } else {
                     errorCallback?()
-                }
+//                }
                 return
             }
         }
@@ -594,8 +594,8 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
     
     func startNewMsgsSync() {
         self.syncNewMessages()
-        self.getReads()
-        self.getMuteLevels()
+//        self.getReads()
+//        self.getMuteLevels()
 //        // Run these operations in parallel for faster sync
 //        let syncGroup = DispatchGroup()
 //        let syncQueue = DispatchQueue(label: "com.sphinx.newMsgsSync", attributes: .concurrent)
