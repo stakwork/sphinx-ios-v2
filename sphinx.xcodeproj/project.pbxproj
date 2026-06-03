@@ -158,7 +158,6 @@
 		4734D3D5241AADD900D6957E /* PaymentTemplateCollectionViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 4734D3D3241AADD900D6957E /* PaymentTemplateCollectionViewCell.xib */; };
 		47352E4A2440F54300E5CC7F /* MessageOptionsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47352E492440F54300E5CC7F /* MessageOptionsViewController.swift */; };
 		47352E4C2440FEB800E5CC7F /* WindowsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47352E4B2440FEB800E5CC7F /* WindowsManager.swift */; };
-		AA1234560000000000000001 /* WebAppSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1234560000000000000002 /* WebAppSessionManager.swift */; };
 		47357A0B2729A11300A49EEE /* NewsletterFeed+Computeds.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47357A0A2729A11300A49EEE /* NewsletterFeed+Computeds.swift */; };
 		47357A0F2729A12A00A49EEE /* NewsletterFeed+Properties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47357A0E2729A12A00A49EEE /* NewsletterFeed+Properties.swift */; };
 		47357A112729A13600A49EEE /* NewsletterFeed+DisplayUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47357A102729A13600A49EEE /* NewsletterFeed+DisplayUtils.swift */; };
@@ -701,6 +700,7 @@
 		AA001CQ32F9A0001000CQ001 /* ClarifyingQuestionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA001CQ22F9A0001000CQ001 /* ClarifyingQuestionsTests.swift */; };
 		AA00B10C000000000000001A /* BiometricLockViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00B10C000000000000001B /* BiometricLockViewController.swift */; };
 		AA11BB22CC33DD44EE55FF67 /* HiveSearchResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11BB22CC33DD44EE55FF66 /* HiveSearchResult.swift */; };
+		AA1234560000000000000001 /* WebAppSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1234560000000000000002 /* WebAppSessionManager.swift */; };
 		AA7F6F17A0F74FF18EC160CC /* AttachmentGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 745A54A4B69B4D74B9F96B6F /* AttachmentGridView.swift */; };
 		AABB11221DEF456700AABBCC /* SphinxrsExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB11221DEF456700AABBBB /* SphinxrsExtensions.swift */; };
 		AE87DA2C30C34E7BBDFDBA56 /* HivePusherManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4D0E0284E4B436180B0BAAF /* HivePusherManagerTests.swift */; };
@@ -1379,7 +1379,6 @@
 		4734D3D3241AADD900D6957E /* PaymentTemplateCollectionViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = PaymentTemplateCollectionViewCell.xib; sourceTree = "<group>"; };
 		47352E492440F54300E5CC7F /* MessageOptionsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageOptionsViewController.swift; sourceTree = "<group>"; };
 		47352E4B2440FEB800E5CC7F /* WindowsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowsManager.swift; sourceTree = "<group>"; };
-		AA1234560000000000000002 /* WebAppSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppSessionManager.swift; sourceTree = "<group>"; };
 		47357A0727299E0900A49EEE /* sphinx 31.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 31.xcdatamodel"; sourceTree = "<group>"; };
 		47357A0A2729A11300A49EEE /* NewsletterFeed+Computeds.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NewsletterFeed+Computeds.swift"; sourceTree = "<group>"; };
 		47357A0E2729A12A00A49EEE /* NewsletterFeed+Properties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NewsletterFeed+Properties.swift"; sourceTree = "<group>"; };
@@ -2037,6 +2036,7 @@
 		AA001CQ22F9A0001000CQ001 /* ClarifyingQuestionsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClarifyingQuestionsTests.swift; sourceTree = "<group>"; };
 		AA00B10C000000000000001B /* BiometricLockViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiometricLockViewController.swift; sourceTree = "<group>"; };
 		AA11BB22CC33DD44EE55FF66 /* HiveSearchResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveSearchResult.swift; sourceTree = "<group>"; };
+		AA1234560000000000000002 /* WebAppSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppSessionManager.swift; sourceTree = "<group>"; };
 		AABB11221DEF456700AABBBB /* SphinxrsExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SphinxrsExtensions.swift; sourceTree = "<group>"; };
 		B2C3D4E5F60002I9J0K1L2M3 /* HiveLinkNavigator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveLinkNavigator.swift; sourceTree = "<group>"; };
 		B2C3D4E5F6A7B8C9D0E1F2A3 /* TaskProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskProgress.swift; sourceTree = "<group>"; };
@@ -2885,14 +2885,6 @@
 				47352E4B2440FEB800E5CC7F /* WindowsManager.swift */,
 			);
 			path = Windows;
-			sourceTree = "<group>";
-		};
-		AA1234560000000000000003 /* WebApp */ = {
-			isa = PBXGroup;
-			children = (
-				AA1234560000000000000002 /* WebAppSessionManager.swift */,
-			);
-			path = WebApp;
 			sourceTree = "<group>";
 		};
 		47357A082729A0BB00A49EEE /* NewsletterFeed */ = {
@@ -4691,6 +4683,14 @@
 				31C8F6F4C52D48F59440969F /* AIAgentManager.swift */,
 			);
 			path = "AI Agent";
+			sourceTree = "<group>";
+		};
+		AA1234560000000000000003 /* WebApp */ = {
+			isa = PBXGroup;
+			children = (
+				AA1234560000000000000002 /* WebAppSessionManager.swift */,
+			);
+			path = WebApp;
 			sourceTree = "<group>";
 		};
 		C1A2B3D4E5F60718293A4B5E /* Diagnostics */ = {
@@ -7303,7 +7303,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sphinx/sphinx.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 316;
+				CURRENT_PROJECT_VERSION = 317;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 8297M44YTW;
 				ENABLE_BITCODE = NO;
@@ -7393,7 +7393,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sphinx/sphinx.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 316;
+				CURRENT_PROJECT_VERSION = 317;
 				DEVELOPMENT_TEAM = 8297M44YTW;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
