@@ -13,7 +13,8 @@ class NetworkMonitor: @unchecked Sendable {
     nonisolated(unsafe) static let shared = NetworkMonitor()
     private var nwMonitor: NWPathMonitor?
     private var isNwMonitoring = false
-    
+    private var skipInitialUpdate = false
+
     private(set) var isConnected: Bool = false
     var connectionType: NWInterface.InterfaceType?
 
@@ -25,9 +26,10 @@ class NetworkMonitor: @unchecked Sendable {
     // This method should be called first to start monitoring the network connection.
     func startMonitoring() {
         if isNwMonitoring { return }
-        
+
         nwMonitor = NWPathMonitor()
-        
+        skipInitialUpdate = true
+
         // Network changes have to be monitored on the background as the changes are to be continuously monitored
         let queue = DispatchQueue(label: "NWMonitor")
         nwMonitor?.start(queue: queue)
@@ -60,7 +62,19 @@ class NetworkMonitor: @unchecked Sendable {
         } else if path.usesInterfaceType(.wiredEthernet) {
             newConnectionType = .wiredEthernet
         } else {
-            newConnectionType = nil // Connection type is unknown
+            newConnectionType = nil
+        }
+
+        // On first callback after startMonitoring(), seed state without notifying.
+        // NWPathMonitor always fires immediately on start; we don't want that initial
+        // fire to trigger a reconnect if the network type changed while we were stopped.
+        if skipInitialUpdate {
+            skipInitialUpdate = false
+            isConnected = newIsConnected
+            connectionType = newConnectionType
+            lastIsConnected = newIsConnected
+            lastConnectionType = newConnectionType
+            return
         }
 
         // Deduplicate: skip if state hasn't changed

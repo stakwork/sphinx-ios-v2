@@ -520,7 +520,7 @@ extension SphinxOnionManager {
                         onMessagePerPublicKeyRestoredCallback(messages.count)
                     }
                     
-                    self.getReads()
+//                    self.getReads()
                 }
             }
         }
