@@ -227,6 +227,7 @@ extension WorkspaceTasksViewController: UITableViewDataSource, UITableViewDelega
 
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
         let task = tasks[indexPath.row]
+
         if includeArchived {
             let unarchiveAction = UIContextualAction(style: .normal, title: "Unarchive") { [weak self] _, _, completionHandler in
                 guard let self else { completionHandler(false); return }
@@ -242,29 +243,86 @@ extension WorkspaceTasksViewController: UITableViewDataSource, UITableViewDelega
             unarchiveAction.image = UIImage(systemName: "arrow.uturn.left")
             unarchiveAction.backgroundColor = UIColor.Sphinx.PrimaryBlue
             return UISwipeActionsConfiguration(actions: [unarchiveAction])
-        } else {
-            let archiveAction = UIContextualAction(style: .normal, title: "Archive") { [weak self] _, _, completionHandler in
+        }
+
+        var actions: [UIContextualAction] = []
+
+        // Archive — always (rightmost, shown first in the array = leftmost when swiping)
+        let archiveAction = UIContextualAction(style: .normal, title: "Archive") { [weak self] _, _, completionHandler in
+            guard let self else { completionHandler(false); return }
+            AlertHelper.showTwoOptionsAlert(
+                title: "Archive Task",
+                message: "Archive \"\(task.title)\"?",
+                confirmButtonTitle: "Archive",
+                confirm: {
+                    self.tasks.remove(at: indexPath.row)
+                    self.tableView.deleteRows(at: [indexPath], with: .automatic)
+                    API.sharedInstance.archiveTaskWithAuth(taskId: task.id) {
+                        DispatchQueue.main.async { self.loadTasks(showLoading: false) }
+                    } errorCallback: {
+                        DispatchQueue.main.async { self.loadTasks(showLoading: false) }
+                    }
+                }
+            )
+            completionHandler(true)
+        }
+        archiveAction.image = UIImage(systemName: "archivebox")
+        archiveAction.backgroundColor = UIColor.Sphinx.SphinxOrange
+        actions.append(archiveAction)
+
+        // Duplicate — always
+        let duplicateAction = UIContextualAction(style: .normal, title: "Duplicate") { [weak self] _, _, completionHandler in
+            guard let self else { completionHandler(false); return }
+            API.sharedInstance.duplicateTaskWithAuth(task: task, callback: { [weak self] _ in
+                DispatchQueue.main.async { self?.loadTasks(showLoading: false) }
+            }, errorCallback: {})
+            completionHandler(true)
+        }
+        duplicateAction.image = UIImage(systemName: "doc.on.doc")
+        duplicateAction.backgroundColor = UIColor.Sphinx.PrimaryBlue
+        actions.append(duplicateAction)
+
+        // Mark Complete — TODO or IN_PROGRESS only
+        if task.status == "TODO" || task.status == "IN_PROGRESS" {
+            let completeAction = UIContextualAction(style: .normal, title: "Complete") { [weak self] _, _, completionHandler in
                 guard let self else { completionHandler(false); return }
-                AlertHelper.showTwoOptionsAlert(
-                    title: "Archive Task",
-                    message: "Archive \"\(task.title)\"?",
-                    confirmButtonTitle: "Archive",
-                    confirm: {
-                        self.tasks.remove(at: indexPath.row)
-                        self.tableView.deleteRows(at: [indexPath], with: .automatic)
-                        API.sharedInstance.archiveTaskWithAuth(taskId: task.id) {
-                            DispatchQueue.main.async { self.loadTasks(showLoading: false) }
-                        } errorCallback: {
-                            DispatchQueue.main.async { self.loadTasks(showLoading: false) }
+                API.sharedInstance.updateTaskStatusWithAuth(taskId: task.id, status: "DONE", callback: { [weak self] in
+                    DispatchQueue.main.async {
+                        guard let self else { return }
+                        if self.tasks.indices.contains(indexPath.row) && self.tasks[indexPath.row].id == task.id {
+                            self.tasks[indexPath.row].status = "DONE"
+                            self.tableView.reloadRows(at: [indexPath], with: .none)
                         }
                     }
-                )
+                }, errorCallback: {})
                 completionHandler(true)
             }
-            archiveAction.image = UIImage(systemName: "archivebox")
-            archiveAction.backgroundColor = UIColor.Sphinx.SphinxOrange
-            return UISwipeActionsConfiguration(actions: [archiveAction])
+            completeAction.image = UIImage(systemName: "checkmark.circle")
+            completeAction.backgroundColor = UIColor.Sphinx.GreenBorder
+            actions.append(completeAction)
         }
+
+        // Start Task — TODO only
+        if task.status == "TODO" {
+            let startAction = UIContextualAction(style: .normal, title: "Start") { [weak self] _, _, completionHandler in
+                guard let self else { completionHandler(false); return }
+                API.sharedInstance.updateTaskStatusWithAuth(taskId: task.id, status: "IN_PROGRESS", callback: { [weak self] in
+                    DispatchQueue.main.async {
+                        guard let self else { return }
+                        if self.tasks.indices.contains(indexPath.row) && self.tasks[indexPath.row].id == task.id {
+                            self.tasks[indexPath.row].status = "IN_PROGRESS"
+                            self.tableView.reloadRows(at: [indexPath], with: .none)
+                        }
+                    }
+                }, errorCallback: {})
+                completionHandler(true)
+            }
+            startAction.image = UIImage(systemName: "play.circle")
+            startAction.backgroundColor = UIColor.systemIndigo
+            actions.append(startAction)
+        }
+
+        return UISwipeActionsConfiguration(actions: actions)
     }
 }
 

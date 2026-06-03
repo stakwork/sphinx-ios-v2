@@ -48,6 +48,7 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
     var onRunBuildToggled: ((Bool) -> Void)?
     var onRunTestSuiteToggled: ((Bool) -> Void)?
 
+
     @IBOutlet weak var runBuildLabel: UILabel!
     @IBOutlet weak var runBuildToggle: SphinxToggleView!
     @IBOutlet weak var runTestSuiteLabel: UILabel!

@@ -1851,6 +1851,9 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
         guard !hasDependencies || indexPath.row > 0 else { return nil }
         let taskIndex = hasDependencies ? indexPath.row - 1 : indexPath.row
         let task = feature.allTasks[taskIndex]
+        var actions: [UIContextualAction] = []
+
+        // Delete — always (destructive, rightmost)
         let deleteAction = UIContextualAction(style: .destructive, title: "Delete") { [weak self] _, _, completionHandler in
             guard let self else { completionHandler(false); return }
             AlertHelper.showTwoOptionsAlert(
@@ -1872,7 +1875,61 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
             completionHandler(true)
         }
         deleteAction.image = UIImage(systemName: "trash")
-        return UISwipeActionsConfiguration(actions: [deleteAction])
+        actions.append(deleteAction)
+
+        // Duplicate — always
+        let duplicateAction = UIContextualAction(style: .normal, title: "Duplicate") { [weak self] _, _, completionHandler in
+            guard let self else { completionHandler(false); return }
+            API.sharedInstance.duplicateTaskWithAuth(task: task, callback: { [weak self] newTask in
+                DispatchQueue.main.async {
+                    guard let self, let newTask else { return }
+                    self.feature.looseTasks.append(newTask)
+                    self.tasksTableView.reloadData()
+                }
+            }, errorCallback: {})
+            completionHandler(true)
+        }
+        duplicateAction.image = UIImage(systemName: "doc.on.doc")
+        duplicateAction.backgroundColor = UIColor.Sphinx.PrimaryBlue
+        actions.append(duplicateAction)
+
+        // Mark Complete — TODO or IN_PROGRESS only
+        if task.status == "TODO" || task.status == "IN_PROGRESS" {
+            let completeAction = UIContextualAction(style: .normal, title: "Complete") { [weak self] _, _, completionHandler in
+                guard let self else { completionHandler(false); return }
+                API.sharedInstance.updateTaskStatusWithAuth(taskId: task.id, status: "DONE", callback: { [weak self] in
+                    DispatchQueue.main.async {
+                        guard let self else { return }
+                        self.feature.updateTask(task.id) { $0.status = "DONE" }
+                        self.tasksTableView.reloadRows(at: [indexPath], with: .none)
+                    }
+                }, errorCallback: {})
+                completionHandler(true)
+            }
+            completeAction.image = UIImage(systemName: "checkmark.circle")
+            completeAction.backgroundColor = UIColor.Sphinx.GreenBorder
+            actions.append(completeAction)
+        }
+
+        // Start Task — TODO only
+        if task.status == "TODO" {
+            let startAction = UIContextualAction(style: .normal, title: "Start") { [weak self] _, _, completionHandler in
+                guard let self else { completionHandler(false); return }
+                API.sharedInstance.updateTaskStatusWithAuth(taskId: task.id, status: "IN_PROGRESS", callback: { [weak self] in
+                    DispatchQueue.main.async {
+                        guard let self else { return }
+                        self.feature.updateTask(task.id) { $0.status = "IN_PROGRESS" }
+                        self.tasksTableView.reloadRows(at: [indexPath], with: .none)
+                    }
+                }, errorCallback: {})
+                completionHandler(true)
+            }
+            startAction.image = UIImage(systemName: "play.circle")
+            startAction.backgroundColor = UIColor.systemIndigo
+            actions.append(startAction)
+        }
+
+        return UISwipeActionsConfiguration(actions: actions)
     }
 }
 
@@ -2267,3 +2324,5 @@ extension FeaturePlanViewController: AgentEventsSSEDelegate {
         return combined
     }
 }
+
+
