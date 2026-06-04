@@ -222,6 +222,7 @@ extension DashboardRootViewController {
         
         setupHeaderViews()
         listenForEvents()
+        setupSwipeGestures()
         setupPlayerBar()
         setupAddTribeButton()
         
