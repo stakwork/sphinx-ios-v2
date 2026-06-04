@@ -905,6 +905,7 @@
 		F38744E1271FD7CB00E28C84 /* Video+DisplayUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = F38744E0271FD7CB00E28C84 /* Video+DisplayUtils.swift */; };
 		F38744E3271FDA9200E28C84 /* VideoFeed+DisplayUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = F38744E2271FDA9200E28C84 /* VideoFeed+DisplayUtils.swift */; };
 		F38744E527202DBC00E28C84 /* DashboardRootViewController+CustomSegmentedControlDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F38744E427202DBC00E28C84 /* DashboardRootViewController+CustomSegmentedControlDelegate.swift */; };
+		AA0000AA00000AA000AA0AA1 /* DashboardRootViewController+SwipeGesture.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000AA00000AA000AA0AA0 /* DashboardRootViewController+SwipeGesture.swift */; };
 		F394ECA12682064100529038 /* NewUserSignup.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = F394ECA32682064100529038 /* NewUserSignup.storyboard */; };
 		F394ECA92682099000529038 /* NewUserSignupDescriptionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F394ECA82682098F00529038 /* NewUserSignupDescriptionViewController.swift */; };
 		F394ECAB2682218F00529038 /* NewUserSignupFormViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F394ECAA2682218F00529038 /* NewUserSignupFormViewController.swift */; };
@@ -2295,6 +2296,7 @@
 		F38744E0271FD7CB00E28C84 /* Video+DisplayUtils.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Video+DisplayUtils.swift"; sourceTree = "<group>"; };
 		F38744E2271FDA9200E28C84 /* VideoFeed+DisplayUtils.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "VideoFeed+DisplayUtils.swift"; sourceTree = "<group>"; };
 		F38744E427202DBC00E28C84 /* DashboardRootViewController+CustomSegmentedControlDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DashboardRootViewController+CustomSegmentedControlDelegate.swift"; sourceTree = "<group>"; };
+		AA0000AA00000AA000AA0AA0 /* DashboardRootViewController+SwipeGesture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DashboardRootViewController+SwipeGesture.swift"; sourceTree = "<group>"; };
 		F394ECA22682064100529038 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/NewUserSignup.storyboard; sourceTree = "<group>"; };
 		F394ECA52682064400529038 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/NewUserSignup.strings; sourceTree = "<group>"; };
 		F394ECA72682064800529038 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/NewUserSignup.strings; sourceTree = "<group>"; };
@@ -5044,6 +5046,7 @@
 				F3531C3C26BD505F00E9586C /* DashboardChatsListDelegate.swift */,
 				F373BF0026A9CE1B0093C886 /* DashboardRootViewController.swift */,
 				F38744E427202DBC00E28C84 /* DashboardRootViewController+CustomSegmentedControlDelegate.swift */,
+				AA0000AA00000AA000AA0AA0 /* DashboardRootViewController+SwipeGesture.swift */,
 				F3531C3E26BD511300E9586C /* DashboardRootViewController+DashboardChatsListDelegate.swift */,
 				F3B2519426DFA1E800C96D42 /* DashboardRootViewController+DashboardFeedsListContainerViewControllerDelegate.swift */,
 				F3CE637626AFC44C006E37A0 /* DashboardRootViewController+MiscDelegateUtils.swift */,
@@ -6062,6 +6065,7 @@
 				F385D49B26ECFEC500A789E8 /* DashboardRootViewController+PodcastFeedSearchResultsViewControllerDelegate.swift in Sources */,
 				F360A42727030F4400097CE4 /* DashboardRootViewController+PodcastPlayerVCDelegate.swift in Sources */,
 				F38744E527202DBC00E28C84 /* DashboardRootViewController+CustomSegmentedControlDelegate.swift in Sources */,
+				AA0000AA00000AA000AA0AA1 /* DashboardRootViewController+SwipeGesture.swift in Sources */,
 				CEBF0D052975C367006C1F21 /* DiscoverTribesTagSelectionVM.swift in Sources */,
 				471940AF2339515A00F1BF5B /* QRCodeDetailViewController.swift in Sources */,
 				470146272A3F9AB500A00DF8 /* PaymentsViewModel.swift in Sources */,
