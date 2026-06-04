@@ -303,6 +303,37 @@ extension ChatListCollectionViewCell {
             inviteIcon.isHidden = true
             failedMessageIcon.isHidden = true
             
+            let chatId = chatListObject.getChat()?.id
+            if let draft = ChatTrackingHandler.shared.getOngoingMessageFor(chatId: chatId), !draft.isEmpty {
+                let attributed = NSMutableAttributedString()
+                let font = messageLabel.font ?? Constants.kMessagePreviewFont
+                let draftPrefix = NSAttributedString(
+                    string: "Draft: ",
+                    attributes: [.foregroundColor: UIColor.Sphinx.PrimaryGreen, .font: font]
+                )
+                let draftBody = NSAttributedString(
+                    string: draft,
+                    attributes: [.foregroundColor: UIColor.Sphinx.SecondaryText, .font: font]
+                )
+                attributed.append(draftPrefix)
+                attributed.append(draftBody)
+                
+                messageLabel.attributedText = attributed
+                messageLabel.superview?.isHidden = false
+                failedMessageIcon.isHidden = true
+                inviteIcon.isHidden = true
+                
+                if let draftDate = ChatTrackingHandler.shared.getDraftTimestampFor(chatId: chatId) {
+                    dateLabel.text = draftDate.getLastMessageDateFormat()
+                    dateLabel.isHidden = false
+                } else {
+                    dateLabel.isHidden = true
+                }
+                return
+            }
+            
+            messageLabel.attributedText = nil
+            
             if let lastMessage = chatListObject.lastMessage {
                 
                 let isFailedMessage = lastMessage.failed()
