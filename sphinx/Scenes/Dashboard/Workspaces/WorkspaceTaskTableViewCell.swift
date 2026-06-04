@@ -252,11 +252,14 @@ class WorkspaceTaskTableViewCell: UITableViewCell {
             if isQueueTask {
                 statusBadge.text = "QUEUE"
                 statusBadge.backgroundColor = .systemGray
+            } else if task.workflowStatus == "FAILED" {
+                statusBadge.text = "FAILED"
+                statusBadge.backgroundColor = .Sphinx.PrimaryRed
             } else {
                 let displayStatus = task.status
                     .replacingOccurrences(of: "_", with: " ")
                     .replacingOccurrences(of: "-", with: " ")
-                statusBadge.text = "  \(displayStatus)  "
+                statusBadge.text = "\(displayStatus)"
                 statusBadge.backgroundColor = statusColor(for: task.status)
             }
         }

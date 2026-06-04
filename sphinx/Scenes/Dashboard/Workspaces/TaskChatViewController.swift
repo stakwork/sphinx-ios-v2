@@ -683,11 +683,12 @@ class TaskChatViewController: UIViewController {
         
         guard let raw = task.workflowStatus,
               let status = WorkflowStatus(rawValue: raw),
-              status == .IN_PROGRESS || status == .HALTED else {
+              status != .COMPLETED else
+        {
             workflowStatusView.isHidden = true
             return
         }
-        workflowStatusView.isHidden = false
+        applyWorkflowStatus(status, animated: false)
     }
 
     private func showWorkflowPanel() {
@@ -1361,7 +1362,7 @@ class TaskChatViewController: UIViewController {
     private func applyWorkflowStatus(_ status: WorkflowStatus, animated: Bool = true) {
         workflowStatusView.status = status
         switch status {
-        case .IN_PROGRESS, .HALTED:
+        case .IN_PROGRESS, .PENDING, .HALTED, .ERROR, .FAILED:
             updateStatusViewHeight()
             workflowStatusView.show(animated: animated)
             if animated {
@@ -1370,7 +1371,7 @@ class TaskChatViewController: UIViewController {
                 self.view.layoutIfNeeded()
             }
             setInputEnabled(false)
-        case .PENDING, .COMPLETED, .ERROR, .FAILED:
+        case .COMPLETED:
             workflowStatusView.setStepDetail(nil)
             workflowStatusHeightConstraint.constant = 0
             workflowStatusView.hide(animated: animated)
