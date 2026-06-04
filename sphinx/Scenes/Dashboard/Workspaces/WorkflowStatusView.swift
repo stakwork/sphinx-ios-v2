@@ -83,12 +83,16 @@ class WorkflowStatusView: UIView {
 
     private let retryButton: UIButton = {
         let btn = UIButton(type: .system)
-        let config = UIImage.SymbolConfiguration(pointSize: 16, weight: .medium)
-        btn.setImage(UIImage(systemName: "arrow.counterclockwise.circle.fill", withConfiguration: config), for: .normal)
-        btn.tintColor = UIColor.Sphinx.SphinxOrange
+        var config = UIButton.Configuration.plain()
+        let symbolConfig = UIImage.SymbolConfiguration(pointSize: 12, weight: .medium)
+        config.image = UIImage(systemName: "arrow.counterclockwise", withConfiguration: symbolConfig)
+        config.title = "Retry"
+        config.imagePlacement = .leading
+        config.imagePadding = 4
+        config.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 10, bottom: 6, trailing: 10)
+        config.baseForegroundColor = UIColor.Sphinx.Text
+        btn.configuration = config
         btn.translatesAutoresizingMaskIntoConstraints = false
-        btn.widthAnchor.constraint(equalToConstant: 20).isActive = true
-        btn.heightAnchor.constraint(equalToConstant: 20).isActive = true
         btn.isHidden = true
         return btn
     }()
@@ -155,6 +159,7 @@ class WorkflowStatusView: UIView {
         topRowStack.addArrangedSubview(iconView)
         topRowStack.addArrangedSubview(statusLabel)
         topRowStack.addArrangedSubview(retryButton)
+        topRowStack.setCustomSpacing(12, after: statusLabel)
 
         outerStackView.addArrangedSubview(topRowStack)
         outerStackView.addArrangedSubview(detailLabel)
@@ -169,7 +174,7 @@ class WorkflowStatusView: UIView {
     private func updateAppearance() {
         removePulseAnimation()
 
-        retryButton.isHidden = (status != .HALTED)
+        retryButton.isHidden = (status != .HALTED && status != .FAILED && status != .ERROR)
 
         switch status {
         case .PENDING:

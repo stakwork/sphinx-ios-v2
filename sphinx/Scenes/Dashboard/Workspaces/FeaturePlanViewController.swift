@@ -393,6 +393,7 @@ class FeaturePlanViewController: UIViewController {
         workflowStatusView.onRetryTapped = { [weak self] in
             guard let self else { return }
             guard let lastUserMsg = self.messages.last(where: { $0.isUserMessage }) else { return }
+            self.workflowStatusView.hide(animated: false)
             self.sendChatMessage(lastUserMsg.message)
         }
 
@@ -1292,7 +1293,7 @@ class FeaturePlanViewController: UIViewController {
     private func applyInitialWorkflowStatus() {
         guard let raw = feature.workflowStatus,
               let status = WorkflowStatus(rawValue: raw),
-              status == .IN_PROGRESS || status == .HALTED else { return }
+              status != .COMPLETED else { return }
         applyWorkflowStatus(status)
     }
 
@@ -1303,15 +1304,15 @@ class FeaturePlanViewController: UIViewController {
     private func applyWorkflowStatus(_ status: WorkflowStatus) {
         workflowStatusView.status = status
         switch status {
-        case .IN_PROGRESS, .PENDING, .HALTED:
+        case .IN_PROGRESS, .PENDING, .HALTED, .ERROR, .FAILED:
             updateStatusViewHeight()
-            workflowStatusView.show(animated: true)
-            UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
-        case .COMPLETED, .ERROR, .FAILED:
+            workflowStatusView.show(animated: false)
+            view.layoutIfNeeded()
+        case .COMPLETED:
             workflowStatusView.setStepDetail(nil)
             workflowStatusHeightConstraint.constant = 0
-            workflowStatusView.hide(animated: true)
-            UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
+            workflowStatusView.hide(animated: false)
+            view.layoutIfNeeded()
         }
         isAIWorking = (status == .IN_PROGRESS)
     }
