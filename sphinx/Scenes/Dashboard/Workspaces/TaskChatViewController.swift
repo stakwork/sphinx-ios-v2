@@ -420,6 +420,7 @@ class TaskChatViewController: UIViewController {
 
         workflowStatusView.onRetryTapped = { [weak self] in
             guard let self else { return }
+            self.workflowStatusView.hide(animated: false)
             API.sharedInstance.retryTaskWorkflowWithAuth(taskId: self.task.id, callback: {}, errorCallback: {})
         }
 
