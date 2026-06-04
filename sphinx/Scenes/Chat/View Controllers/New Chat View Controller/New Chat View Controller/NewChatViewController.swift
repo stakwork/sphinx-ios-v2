@@ -11,6 +11,7 @@ import CoreData
 
 @MainActor protocol NewChatViewControllerDelegate: AnyObject {
     func shouldReloadRowFor(chatId: Int)
+    func shouldReloadChatList()
 }
 
 class NewChatViewController: NewKeyboardHandlerViewController {
@@ -32,6 +33,8 @@ class NewChatViewController: NewKeyboardHandlerViewController {
     var threadUUID: String? = nil
     var owner: UserContact!
     var isAgentChat: Bool = false
+    
+    private var hadDraftOnAppear: Bool = false
     
     var isThread: Bool {
         get {
@@ -134,6 +137,9 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         
         headerView.checkRoute()
         chatTableDataSource?.startListeningToResultsController()
+        
+        let existingDraft = ChatTrackingHandler.shared.getOngoingMessageFor(chatId: chat?.id)
+        hadDraftOnAppear = existingDraft != nil && !existingDraft!.isEmpty
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -155,6 +161,12 @@ class NewChatViewController: NewKeyboardHandlerViewController {
             // Clean up web app child VC if currently embedded (session manager retains the VC)
             if !webAppContainerView.isHidden, let webAppVC = webAppVC {
                 removeChildVC(child: webAppVC)
+            }
+            
+            let currentDraft = ChatTrackingHandler.shared.getOngoingMessageFor(chatId: chat?.id)
+            let hasDraftNow = currentDraft != nil && !currentDraft!.isEmpty
+            if hasDraftNow || hadDraftOnAppear {
+                delegate?.shouldReloadChatList()
             }
         }
     }

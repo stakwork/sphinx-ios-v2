@@ -13,11 +13,6 @@ extension NewChatViewController : ChatMessageTextFieldViewDelegate {
         DispatchQueue.global(qos: .userInitiated).async {
             ChatTrackingHandler.shared.saveOngoingMessage(with: text, chatId: self.chat?.id)
         }
-        DispatchQueue.main.async {
-            if let chatId = self.chat?.id {
-                self.delegate?.shouldReloadRowFor(chatId: chatId)
-            }
-        }
     }
     
     func shouldSendMessage(

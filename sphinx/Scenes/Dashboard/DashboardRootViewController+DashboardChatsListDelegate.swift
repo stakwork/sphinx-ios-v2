@@ -69,4 +69,8 @@ extension DashboardRootViewController: NewChatViewControllerDelegate {
         contactChatsContainerViewController.shouldReloadRowFor(chatId: chatId)
         tribeChatsContainerViewController.shouldReloadRowFor(chatId: chatId)
     }
+    
+    func shouldReloadChatList() {
+        dataDidChange()
+    }
 }
