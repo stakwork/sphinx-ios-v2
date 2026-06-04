@@ -1397,7 +1397,7 @@ class TaskChatViewController: UIViewController {
     private func applyInitialWorkflowStatus() {
         guard let raw = task.workflowStatus,
               let status = WorkflowStatus(rawValue: raw),
-              status == .IN_PROGRESS || status == .HALTED else { return }
+              status != .COMPLETED else { return }
         applyWorkflowStatus(status, animated: false)
     }
 

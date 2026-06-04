@@ -174,7 +174,7 @@ class WorkflowStatusView: UIView {
     private func updateAppearance() {
         removePulseAnimation()
 
-        retryButton.isHidden = (status != .HALTED)
+        retryButton.isHidden = (status != .HALTED && status != .FAILED && status != .ERROR)
 
         switch status {
         case .PENDING:
