@@ -336,7 +336,10 @@ extension NewChatTableDataSource {
     }
     
     func forceReload() {
-        processMessages(messages: messagesArray, showLoadingMore: !allItemsLoaded)
+        processMessages(
+            messages: messagesArray,
+            showLoadingMore: !self.allItemsLoaded && self.chat?.conversationContact?.isAgent != true
+        )
     }
     
     func getMessagesCount() -> Int {
@@ -870,17 +873,13 @@ extension NewChatTableDataSource : @preconcurrency NSFetchedResultsControllerDel
                     self.messagesCountFetched = messages.count
                     self.messagesArray = messages.filter({ !$0.isApprovedRequest() }).reversed()
                     
-                    if !self.allItemsLoaded && messages.count < self.messagesCountRequested {
-                        self.allItemsLoaded = true
-                    }
-                    
                     self.processTimezoneNotSentRecently()
 
                     self.updateMessagesStatusesFrom(messages: self.messagesArray)
                     
                     self.processMessages(
                         messages: self.messagesArray,
-                        showLoadingMore: !self.allItemsLoaded
+                        showLoadingMore: !self.allItemsLoaded && self.chat?.conversationContact?.isAgent != true
                     )
                     
                     self.configureSecondaryMessagesResultsController()
@@ -894,7 +893,7 @@ extension NewChatTableDataSource : @preconcurrency NSFetchedResultsControllerDel
                 
                 self.processMessages(
                     messages: self.messagesArray,
-                    showLoadingMore: !self.allItemsLoaded
+                    showLoadingMore: !self.allItemsLoaded && self.chat?.conversationContact?.isAgent != true
                 )
             }
             
