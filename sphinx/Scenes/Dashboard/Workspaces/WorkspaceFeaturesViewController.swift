@@ -122,7 +122,7 @@ class WorkspaceFeaturesViewController: UIViewController {
     // MARK: - Actions
 
     func createButtonTapped() {
-        let vc = CreateFeatureViewController.instantiate(workspaceId: workspace.id)
+        let vc = CreateFeatureViewController.instantiate(workspaceId: workspace.id, workspaceSlug: workspace.slug ?? "")
         vc.delegate = self
         present(vc, animated: true)
     }

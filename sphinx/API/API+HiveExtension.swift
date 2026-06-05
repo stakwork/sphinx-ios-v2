@@ -896,6 +896,7 @@ extension API {
         model: String? = nil,
         replyId: String? = nil,
         socketId: String? = nil,
+        selectedRepositoryIds: [String]? = nil,
         authToken: String,
         callback: @escaping HiveChatMessageCallback,
         errorCallback: @escaping EmptyCallback
@@ -910,7 +911,8 @@ extension API {
             "message": message as AnyObject,
             "contextTags": [] as AnyObject,
             "sourceWebsocketID": (socketId as AnyObject? ?? NSNull() as AnyObject),
-            "replyId": (replyId as AnyObject? ?? NSNull() as AnyObject)
+            "replyId": (replyId as AnyObject? ?? NSNull() as AnyObject),
+            "selectedRepositoryIds": (selectedRepositoryIds ?? []) as AnyObject
         ]
         if let model = model {
             params["model"] = model as AnyObject
@@ -964,6 +966,7 @@ extension API {
         model: String? = nil,
         replyId: String? = nil,
         socketId: String? = nil,
+        selectedRepositoryIds: [String]? = nil,
         callback: @escaping HiveChatMessageCallback,
         errorCallback: @escaping EmptyCallback
     ) {
@@ -974,6 +977,7 @@ extension API {
                 model: model,
                 replyId: replyId,
                 socketId: socketId,
+                selectedRepositoryIds: selectedRepositoryIds,
                 authToken: storedToken,
                 callback: callback,
                 errorCallback: { [weak self] in
@@ -983,6 +987,7 @@ extension API {
                         model: model,
                         replyId: replyId,
                         socketId: socketId,
+                        selectedRepositoryIds: selectedRepositoryIds,
                         callback: callback,
                         errorCallback: errorCallback
                     )
@@ -995,6 +1000,7 @@ extension API {
                 model: model,
                 replyId: replyId,
                 socketId: socketId,
+                selectedRepositoryIds: selectedRepositoryIds,
                 callback: callback,
                 errorCallback: errorCallback
             )
@@ -1007,6 +1013,7 @@ extension API {
         model: String? = nil,
         replyId: String? = nil,
         socketId: String? = nil,
+        selectedRepositoryIds: [String]? = nil,
         callback: @escaping HiveChatMessageCallback,
         errorCallback: @escaping EmptyCallback
     ) {
@@ -1020,6 +1027,7 @@ extension API {
                     model: model,
                     replyId: replyId,
                     socketId: socketId,
+                    selectedRepositoryIds: selectedRepositoryIds,
                     authToken: token,
                     callback: callback,
                     errorCallback: errorCallback
