@@ -13,7 +13,10 @@ extension NewChatTableDataSource {
         message: TransactionMessage
     ) {
         if messagesArray.isEmpty {
-            processMessages(messages: [message], showLoadingMore: !allItemsLoaded)
+            processMessages(
+                messages: [message],
+                showLoadingMore: !allItemsLoaded && chat?.conversationContact?.isAgent != true
+            )
         }
     }
 }
