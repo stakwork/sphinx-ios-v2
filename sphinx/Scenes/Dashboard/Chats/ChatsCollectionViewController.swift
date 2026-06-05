@@ -34,20 +34,21 @@ class ChatsCollectionViewController: UICollectionViewController {
             guard let self, let dataSource = self.dataSource else { return }
 
             var snapshot = dataSource.snapshot()
-            var itemIdentifiers: [DataSourceItem] = []
 
-            let indexes = self.chatListObjects.indices.filter {
-                if let chatId = self.chatListObjects[$0].getChat()?.id {
-                    return chatIds.contains(chatId)
-                }
-                return false
+            let objectIdsToReload = Set(
+                self.chatListObjects
+                    .filter { obj in
+                        if let chatId = obj.getChat()?.id { return chatIds.contains(chatId) }
+                        return false
+                    }
+                    .map { $0.getObjectId() }
+            )
+
+            let itemIdentifiers = snapshot.itemIdentifiers.filter {
+                objectIdsToReload.contains($0.objectId)
             }
 
-            for index in indexes {
-                if index < snapshot.itemIdentifiers.count {
-                    itemIdentifiers.append(snapshot.itemIdentifiers[index])
-                }
-            }
+            guard !itemIdentifiers.isEmpty else { return }
 
             snapshot.reloadItems(itemIdentifiers)
             self.dataSource.apply(snapshot, animatingDifferences: true)

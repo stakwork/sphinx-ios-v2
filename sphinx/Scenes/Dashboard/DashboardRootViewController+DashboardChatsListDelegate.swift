@@ -71,6 +71,6 @@ extension DashboardRootViewController: NewChatViewControllerDelegate {
     }
     
     func shouldReloadChatList() {
-        dataDidChange()
+        contactsService.processChatListObjects()
     }
 }
