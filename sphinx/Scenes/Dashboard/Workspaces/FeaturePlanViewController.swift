@@ -87,6 +87,9 @@ class FeaturePlanViewController: UIViewController {
     private var bottomFillView: UIView!
     private var tasksEmptyLabel: UILabel!
 
+    // Selected repository IDs for AI scoping
+    private var selectedRepositoryIds: [String] = []
+
     // Autocomplete
     private var availableWorkspaces: [Workspace] = []
     private var filteredWorkspaces: [Workspace] = []
@@ -151,6 +154,7 @@ class FeaturePlanViewController: UIViewController {
                 }
             }
         }
+        selectedRepositoryIds = UserDefaults.standard.object([String].self, with: "hiveFeatureRepos_\(feature.id)") ?? []
         cachedStakworkProjectId = feature.stakworkProjectId
         connectWebSocket()   // connect Pusher immediately with known featureId
         fetchFeatureDetail() // will also call connectAnyCable() once projectId is known
@@ -1495,6 +1499,7 @@ class FeaturePlanViewController: UIViewController {
             featureId: feature.id,
             message: message,
             socketId: HivePusherManager.shared.socketId,
+            selectedRepositoryIds: selectedRepositoryIds,
             callback: { [weak self] sentMessage in
                 DispatchQueue.main.async {
                     guard let self = self, let sentMessage = sentMessage else { return }
@@ -1517,6 +1522,7 @@ class FeaturePlanViewController: UIViewController {
             message: joined,
             replyId: replyId,
             socketId: HivePusherManager.shared.socketId,
+            selectedRepositoryIds: selectedRepositoryIds,
             callback: { [weak self] sentMessage in
                 DispatchQueue.main.async {
                     guard let self = self, let sentMessage = sentMessage else { return }

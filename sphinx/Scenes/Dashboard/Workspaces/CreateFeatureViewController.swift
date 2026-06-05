@@ -65,11 +65,16 @@ class CreateFeatureViewController: UIViewController {
     private var selectedModel: HiveLlmModel? = nil
     private var modelComboButton: UIButton!
 
+    // Repository multi-select (feature mode only)
+    private var selectedRepositoryIds: [String] = []
+    private var repositoriesMultiSelectButton: UIButton!
+
     // MARK: - Instantiation
 
-    static func instantiate(workspaceId: String) -> CreateFeatureViewController {
+    static func instantiate(workspaceId: String, workspaceSlug: String = "") -> CreateFeatureViewController {
         let vc = StoryboardScene.Dashboard.createFeatureViewController.instantiate()
         vc.workspaceId = workspaceId
+        vc.workspaceSlug = workspaceSlug
         vc.modalPresentationStyle = .automatic
         return vc
     }
@@ -105,6 +110,25 @@ class CreateFeatureViewController: UIViewController {
                 },
                 errorCallback: { /* silent — selector stays hidden, creation proceeds without model */ }
             )
+
+            if !workspaceSlug.isEmpty {
+                API.sharedInstance.fetchWorkspaceDetailWithAuth(
+                    slug: workspaceSlug,
+                    callback: { [weak self] repos in
+                        DispatchQueue.main.async {
+                            guard let self else { return }
+                            self.repositories = repos
+                            // Pre-fill from workspace-level cache
+                            let cached = UserDefaults.standard.object([String].self, with: "hiveWorkspaceRepos_\(self.workspaceId)") ?? []
+                            let valid = cached.filter { id in repos.contains { $0.id == id } }
+                            self.applyRepositorySelection(valid)
+                            self.repositoriesMultiSelectButton.isHidden = false
+                            self.comboStackView.isHidden = false
+                        }
+                    },
+                    errorCallback: { /* silent — picker stays hidden */ }
+                )
+            }
         }
 
         if mode == .task {
@@ -181,6 +205,12 @@ class CreateFeatureViewController: UIViewController {
         modelComboButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
         modelComboButton.isHidden = true
 
+        // Repository multi-select (feature mode — hidden until repos load)
+        repositoriesMultiSelectButton = makeComboButton(title: "All Repositories")
+        repositoriesMultiSelectButton.addTarget(self, action: #selector(repositoriesMultiSelectTapped), for: .touchUpInside)
+        repositoriesMultiSelectButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        repositoriesMultiSelectButton.isHidden = true
+
         // Mode Selector Button (stakwork only)
         modeSelectorButton = makeComboButton(title: "Create Task")
         modeSelectorButton.addTarget(self, action: #selector(modeSelectorTapped), for: .touchUpInside)
@@ -210,7 +240,7 @@ class CreateFeatureViewController: UIViewController {
         versionComboButton.addTarget(self, action: #selector(versionComboTapped), for: .touchUpInside)
 
         // comboStackView holds the pickers; hidden = collapses to zero height in outer stack
-        comboStackView = UIStackView(arrangedSubviews: [modelComboButton, modeSelectorButton, repositoryComboButton, branchComboButton, versionComboButton])
+        comboStackView = UIStackView(arrangedSubviews: [modelComboButton, repositoriesMultiSelectButton, modeSelectorButton, repositoryComboButton, branchComboButton, versionComboButton])
         comboStackView.axis = .vertical
         comboStackView.spacing = 8
         comboStackView.isHidden = true
@@ -364,11 +394,12 @@ class CreateFeatureViewController: UIViewController {
         default: break
         }
         comboStackView.isHidden = false
-        modeSelectorButton.isHidden = !isStakworkMode
-        modelComboButton.isHidden      = true
-        repositoryComboButton.isHidden = (newMode != .task)
-        branchComboButton.isHidden     = (newMode != .task)
-        versionComboButton.isHidden    = (newMode != .loadWorkflow)
+        modeSelectorButton.isHidden          = !isStakworkMode
+        modelComboButton.isHidden            = true
+        repositoriesMultiSelectButton.isHidden = true
+        repositoryComboButton.isHidden       = (newMode != .task)
+        branchComboButton.isHidden           = (newMode != .task)
+        versionComboButton.isHidden          = (newMode != .loadWorkflow)
         switch newMode {
         case .task:         sendButton.setTitle("SEND", for: .normal)
         case .debugRun:     sendButton.setTitle("Debug this run", for: .normal)
@@ -431,6 +462,27 @@ class CreateFeatureViewController: UIViewController {
             popover.sourceRect = modelComboButton.bounds
         }
         present(sheet, animated: true)
+    }
+
+    @objc private func repositoriesMultiSelectTapped() {
+        guard !repositories.isEmpty else { return }
+        let sheet = MultiSelectRepositorySheet(
+            repositories: repositories,
+            selectedIds: selectedRepositoryIds
+        ) { [weak self] ids in
+            self?.applyRepositorySelection(ids)
+        }
+        sheet.modalPresentationStyle = .pageSheet
+        present(sheet, animated: true)
+    }
+
+    private func applyRepositorySelection(_ ids: [String]) {
+        selectedRepositoryIds = ids
+        if ids.isEmpty {
+            repositoriesMultiSelectButton.setTitle("All Repositories", for: .normal)
+        } else {
+            repositoriesMultiSelectButton.setTitle("\(ids.count) repositor\(ids.count == 1 ? "y" : "ies") selected", for: .normal)
+        }
     }
 
     @objc private func repositoryComboTapped() {
@@ -803,6 +855,7 @@ class CreateFeatureViewController: UIViewController {
                     featureId: feature.id,
                     message: message,
                     model: self.selectedModel?.name,
+                    selectedRepositoryIds: self.selectedRepositoryIds,
                     callback: { [weak self] _ in
                         DispatchQueue.main.async {
                             self?.finishCreation(feature: feature)
@@ -837,6 +890,8 @@ class CreateFeatureViewController: UIViewController {
     }
 
     private func finishCreation(feature: HiveFeature) {
+        UserDefaults.standard.set(object: selectedRepositoryIds, forKey: "hiveFeatureRepos_\(feature.id)")
+        UserDefaults.standard.set(object: selectedRepositoryIds, forKey: "hiveWorkspaceRepos_\(workspaceId)")
         delegate?.didCreateFeature(feature)
         dismiss(animated: true, completion: nil)
     }
