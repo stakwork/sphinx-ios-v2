@@ -869,6 +869,11 @@ extension NewChatTableDataSource : @preconcurrency NSFetchedResultsControllerDel
                     
                     self.messagesCountFetched = messages.count
                     self.messagesArray = messages.filter({ !$0.isApprovedRequest() }).reversed()
+                    
+                    if !self.allItemsLoaded && messages.count < self.messagesCountRequested {
+                        self.allItemsLoaded = true
+                    }
+                    
                     self.processTimezoneNotSentRecently()
 
                     self.updateMessagesStatusesFrom(messages: self.messagesArray)
