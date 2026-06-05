@@ -70,14 +70,14 @@ class MultiSelectRepositorySheet: UIViewController {
         // Separator
         let separator = UIView()
         separator.translatesAutoresizingMaskIntoConstraints = false
-        separator.backgroundColor = UIColor.Sphinx.DividerColor
+        separator.backgroundColor = UIColor.Sphinx.LightDivider
         headerView.addSubview(separator)
 
         // Table View
         tableView = UITableView()
         tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.backgroundColor = UIColor.Sphinx.Body
-        tableView.separatorColor = UIColor.Sphinx.DividerColor
+        tableView.separatorColor = UIColor.Sphinx.LightDivider
         tableView.dataSource = self
         tableView.delegate = self
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "RepoCell")
