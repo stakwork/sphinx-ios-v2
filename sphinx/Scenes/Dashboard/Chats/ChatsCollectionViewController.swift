@@ -98,7 +98,7 @@ extension ChatsCollectionViewController {
         var contactStatus: Int?
         var inviteStatus: Int?
         var muted: Bool
-        var hasDraft: Bool
+        var draftText: String?
 
         init(
             objectId: String,
@@ -110,7 +110,7 @@ extension ChatsCollectionViewController {
             contactStatus: Int?,
             inviteStatus: Int?,
             muted: Bool,
-            hasDraft: Bool
+            draftText: String?
         )
         {
             self.objectId = objectId
@@ -122,7 +122,7 @@ extension ChatsCollectionViewController {
             self.contactStatus = contactStatus
             self.inviteStatus = inviteStatus
             self.muted = muted
-            self.hasDraft = hasDraft
+            self.draftText = draftText
         }
         
         static func == (lhs: DataSourceItem, rhs: DataSourceItem) -> Bool {
@@ -136,7 +136,7 @@ extension ChatsCollectionViewController {
                 lhs.contactStatus == rhs.contactStatus &&
                 lhs.inviteStatus == rhs.inviteStatus &&
                 lhs.muted == rhs.muted &&
-                lhs.hasDraft == rhs.hasDraft
+                lhs.draftText == rhs.draftText
          }
 
         func hash(into hasher: inout Hasher) {
@@ -385,6 +385,7 @@ extension ChatsCollectionViewController {
                 let items = self.chatListObjects.filter({ $0.getContact()?.isOwner != true }).map { obj -> DataSourceItem in
                     let chatId = obj.getChat()?.id
                     let draft = ChatTrackingHandler.shared.getOngoingMessageFor(chatId: chatId)
+                    let nonEmptyDraft = (draft?.isEmpty == false) ? draft : nil
                     return DataSourceItem(
                         objectId: obj.getObjectId(),
                         messageId: obj.lastMessage?.id,
@@ -395,7 +396,7 @@ extension ChatsCollectionViewController {
                         contactStatus: obj.getContactStatus(),
                         inviteStatus: obj.getInviteStatus(),
                         muted: obj.isMuted(),
-                        hasDraft: draft != nil && !draft!.isEmpty
+                        draftText: nonEmptyDraft
                     )
                 }
 
