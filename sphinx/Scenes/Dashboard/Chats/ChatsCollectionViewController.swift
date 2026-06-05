@@ -98,6 +98,7 @@ extension ChatsCollectionViewController {
         var contactStatus: Int?
         var inviteStatus: Int?
         var muted: Bool
+        var hasDraft: Bool
 
         init(
             objectId: String,
@@ -108,7 +109,8 @@ extension ChatsCollectionViewController {
             unseenCount: Int,
             contactStatus: Int?,
             inviteStatus: Int?,
-            muted: Bool
+            muted: Bool,
+            hasDraft: Bool
         )
         {
             self.objectId = objectId
@@ -120,10 +122,11 @@ extension ChatsCollectionViewController {
             self.contactStatus = contactStatus
             self.inviteStatus = inviteStatus
             self.muted = muted
+            self.hasDraft = hasDraft
         }
         
         static func == (lhs: DataSourceItem, rhs: DataSourceItem) -> Bool {
-            let isEqual =
+            return
                 lhs.objectId == rhs.objectId &&
                 lhs.messageId == rhs.messageId &&
                 lhs.messageStatus == rhs.messageStatus &&
@@ -132,14 +135,11 @@ extension ChatsCollectionViewController {
                 lhs.unseenCount == rhs.unseenCount &&
                 lhs.contactStatus == rhs.contactStatus &&
                 lhs.inviteStatus == rhs.inviteStatus &&
-                lhs.muted == rhs.muted
-            
-            return isEqual
+                lhs.muted == rhs.muted &&
+                lhs.hasDraft == rhs.hasDraft
          }
 
         func hash(into hasher: inout Hasher) {
-            // Only hash objectId for identity - other properties are for change detection in ==
-            // This prevents duplicates when the same chat has different states between updates
             hasher.combine(objectId)
         }
     }
@@ -342,7 +342,7 @@ extension ChatsCollectionViewController {
                 ) as? CollectionViewCell else { return nil }
 
                 cell.owner = self.owner
-                cell.chatListObject = self.chatListObjects[indexPath.row]
+                cell.chatListObject = self.chatListObjects.first(where: { $0.getObjectId() == chatItem.objectId })
                 cell.delegate = self
 
                 return cell
@@ -382,17 +382,20 @@ extension ChatsCollectionViewController {
 
                 snapshot.appendSections(CollectionViewSection.allCases)
 
-                let items = self.chatListObjects.filter({ $0.getContact()?.isOwner != true }).map {
-                    DataSourceItem(
-                        objectId: $0.getObjectId(),
-                        messageId: $0.lastMessage?.id,
-                        messageStatus: $0.lastMessage?.status,
-                        message30SecOld: ($0.lastMessage?.date ?? Date()) < Date().addingTimeInterval(-30),
-                        messageSeen: $0.isSeen(ownerId: self.owner.id),
-                        unseenCount: $0.getUnseenMessagesCount(ownerId: self.owner.id),
-                        contactStatus: $0.getContactStatus(),
-                        inviteStatus: $0.getInviteStatus(),
-                        muted: $0.isMuted()
+                let items = self.chatListObjects.filter({ $0.getContact()?.isOwner != true }).map { obj -> DataSourceItem in
+                    let chatId = obj.getChat()?.id
+                    let draft = ChatTrackingHandler.shared.getOngoingMessageFor(chatId: chatId)
+                    return DataSourceItem(
+                        objectId: obj.getObjectId(),
+                        messageId: obj.lastMessage?.id,
+                        messageStatus: obj.lastMessage?.status,
+                        message30SecOld: (obj.lastMessage?.date ?? Date()) < Date().addingTimeInterval(-30),
+                        messageSeen: obj.isSeen(ownerId: self.owner.id),
+                        unseenCount: obj.getUnseenMessagesCount(ownerId: self.owner.id),
+                        contactStatus: obj.getContactStatus(),
+                        inviteStatus: obj.getInviteStatus(),
+                        muted: obj.isMuted(),
+                        hasDraft: draft != nil && !draft!.isEmpty
                     )
                 }
 
