@@ -69,6 +69,8 @@ class CreateFeatureViewController: UIViewController {
     private var selectedRepositoryIds: [String] = []
     private var repositoriesMultiSelectButton: UIButton!
 
+    private let bubbleHelper = NewMessageBubbleHelper()
+
     // MARK: - Instantiation
 
     static func instantiate(workspaceId: String, workspaceSlug: String = "") -> CreateFeatureViewController {
@@ -119,9 +121,15 @@ class CreateFeatureViewController: UIViewController {
                             guard let self else { return }
                             self.repositories = repos
                             // Pre-fill from workspace-level cache
-                            let cached = UserDefaults.standard.object([String].self, with: "hiveWorkspaceRepos_\(self.workspaceId)") ?? []
-                            let valid = cached.filter { id in repos.contains { $0.id == id } }
-                            self.applyRepositorySelection(valid)
+                            let cached = UserDefaults.standard.object([String].self, with: "hiveWorkspaceRepos_\(self.workspaceId)")
+                            if let cached = cached {
+                                // Cache exists — restore, filtering out any stale IDs
+                                let valid = cached.filter { id in repos.contains { $0.id == id } }
+                                self.applyRepositorySelection(valid)
+                            } else {
+                                // No cache entry — first use for this workspace, select all by default
+                                self.applyRepositorySelection(repos.map { $0.id })
+                            }
                             self.repositoriesMultiSelectButton.isHidden = false
                             self.comboStackView.isHidden = false
                         }
@@ -823,6 +831,17 @@ class CreateFeatureViewController: UIViewController {
         }
 
         // MARK: Feature mode (existing path)
+
+        if mode == .feature && !repositories.isEmpty && selectedRepositoryIds.isEmpty {
+            bubbleHelper.showGenericMessageView(
+                text: "Please select at least one repository.",
+                delay: 3,
+                textColor: .white,
+                backColor: UIColor.Sphinx.PrimaryRed,
+                backAlpha: 1.0
+            )
+            return
+        }
 
         // Disable button and start loading
         sendButton.isEnabled = false
