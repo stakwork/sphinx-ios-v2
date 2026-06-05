@@ -105,6 +105,11 @@ extension NewChatTableDataSource {
         if tableView.contentOffset.y <= Constants.kChatTableContentInset {
             delegate?.didScrollToBottom()
         }
+        
+        let allContentVisible = tableView.contentSize.height <= tableView.frame.size.height
+        if allContentVisible && !allItemsLoaded && !loadingMoreItems {
+            didScrollToTop()
+        }
     }
 }
 

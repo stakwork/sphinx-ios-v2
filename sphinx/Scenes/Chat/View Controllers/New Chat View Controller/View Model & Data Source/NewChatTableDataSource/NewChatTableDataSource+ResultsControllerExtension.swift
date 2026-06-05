@@ -876,7 +876,7 @@ extension NewChatTableDataSource : @preconcurrency NSFetchedResultsControllerDel
                     
                     self.processMessages(
                         messages: self.messagesArray,
-                        showLoadingMore: self.loadingMoreItems && !self.allItemsLoaded
+                        showLoadingMore: !self.allItemsLoaded
                     )
                     
                     self.configureSecondaryMessagesResultsController()
@@ -890,7 +890,7 @@ extension NewChatTableDataSource : @preconcurrency NSFetchedResultsControllerDel
                 
                 self.processMessages(
                     messages: self.messagesArray,
-                    showLoadingMore: self.loadingMoreItems && !self.allItemsLoaded
+                    showLoadingMore: !self.allItemsLoaded
                 )
             }
             
