@@ -30,6 +30,10 @@ extension Chat: ChatListCommonObject {
             }
         }
         
+        if let draftDate = ChatTrackingHandler.shared.getDraftTimestampFor(chatId: self.id) {
+            if date == nil || draftDate > date! { date = draftDate }
+        }
+        
         return date ?? createdAt
     }
     

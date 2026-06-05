@@ -19,6 +19,7 @@ class ChatTrackingHandler: @unchecked Sendable {
     
     var replyableMessages: [Int: Int] = [:]
     var ongoingMessages : [Int: String] = [:]
+    var draftTimestamps: [Int: Date] = [:]
     
     func deleteReplyableMessage(with chatId: Int?) {
         guard let chatId = chatId else { return }
@@ -49,6 +50,7 @@ class ChatTrackingHandler: @unchecked Sendable {
         guard let chatId = chatId else { return }
         
         ongoingMessages.removeValue(forKey: chatId)
+        draftTimestamps.removeValue(forKey: chatId)
     }
     
     func saveOngoingMessage(
@@ -58,6 +60,17 @@ class ChatTrackingHandler: @unchecked Sendable {
         guard let chatId = chatId else { return }
         
         ongoingMessages[chatId] = message
+        
+        if message.isEmpty {
+            draftTimestamps.removeValue(forKey: chatId)
+        } else {
+            draftTimestamps[chatId] = Date()
+        }
+    }
+    
+    func getDraftTimestampFor(chatId: Int?) -> Date? {
+        guard let chatId = chatId else { return nil }
+        return draftTimestamps[chatId]
     }
     
     func getOngoingMessageFor(chatId: Int?) -> String? {
