@@ -697,6 +697,8 @@
 		A5F3D5A533984995ADE1BADF /* WorkspaceFeatureTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = C638608884A0403797B98830 /* WorkspaceFeatureTableViewCell.xib */; };
 		A748D979E2F14560BF39E4A7 /* HiveChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8ABF62A347844ECEB2FC60A4 /* HiveChatMessage.swift */; };
 		A9F9FCD16AAC4DCD96AD35C4 /* HiveAnyCableManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E9262D0931349B5946161EE /* HiveAnyCableManager.swift */; };
+		AA0001110000000000000001 /* CallParticipantsSocketDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001100000000000000001 /* CallParticipantsSocketDelegate.swift */; };
+		AA0001130000000000000001 /* CallParticipantsSocketManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001120000000000000001 /* CallParticipantsSocketManager.swift */; };
 		AA001CQ12F9A0001000CQ001 /* ClarifyingQuestionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA001CQ02F9A0001000CQ001 /* ClarifyingQuestionsView.swift */; };
 		AA001CQ32F9A0001000CQ001 /* ClarifyingQuestionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA001CQ22F9A0001000CQ001 /* ClarifyingQuestionsTests.swift */; };
 		AA00B10C000000000000001A /* BiometricLockViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00B10C000000000000001B /* BiometricLockViewController.swift */; };
@@ -2014,6 +2016,8 @@
 		667BC9B05F7A484EB3EE6CB7 /* HiveAnyCableManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveAnyCableManagerTests.swift; sourceTree = "<group>"; };
 		6957C94054A8404294F1E644 /* WorkspaceFeatureTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceFeatureTableViewCell.swift; sourceTree = "<group>"; };
 		6E9262D0931349B5946161EE /* HiveAnyCableManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveAnyCableManager.swift; sourceTree = "<group>"; };
+		AA0001100000000000000001 /* CallParticipantsSocketDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallParticipantsSocketDelegate.swift; sourceTree = "<group>"; };
+		AA0001120000000000000001 /* CallParticipantsSocketManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallParticipantsSocketManager.swift; sourceTree = "<group>"; };
 		745A54A4B69B4D74B9F96B6F /* AttachmentGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentGridView.swift; sourceTree = "<group>"; };
 		7734ED4D2D66C733003276BA /* sphinx 53.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "sphinx 53.xcdatamodel"; sourceTree = "<group>"; };
 		87516064474D4E7BB35029E5 /* TaskDependencyDiagramViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskDependencyDiagramViewTests.swift; sourceTree = "<group>"; };
@@ -2423,6 +2427,15 @@
 			path = HiveAnyCable;
 			sourceTree = "<group>";
 		};
+		AA0001140000000000000001 /* CallParticipantsSocket */ = {
+			isa = PBXGroup;
+			children = (
+				AA0001100000000000000001 /* CallParticipantsSocketDelegate.swift */,
+				AA0001120000000000000001 /* CallParticipantsSocketManager.swift */,
+			);
+			path = CallParticipantsSocket;
+			sourceTree = "<group>";
+		};
 		29CA57C9FD66D9C3750CE036 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -2704,6 +2717,7 @@
 				AA1234560000000000000003 /* WebApp */,
 				5DF2DCE5F5AE4D99A76A5485 /* AI Agent */,
 				1B845352803C4566A0C34DFA /* HiveAnyCable */,
+				AA0001140000000000000001 /* CallParticipantsSocket */,
 				4759621F2F5210D700564B7F /* HivePusher */,
 				2B29A8C121864AB29BF6E3F1 /* GraphChat */,
 				47978EFB2F040D300092B516 /* DataSyncManager */,
@@ -5830,6 +5844,8 @@
 				475962212F5210E500564B7F /* HivePusherManager.swift in Sources */,
 				F1112586252F49F6B6476409 /* HiveAnyCableDelegate.swift in Sources */,
 				A9F9FCD16AAC4DCD96AD35C4 /* HiveAnyCableManager.swift in Sources */,
+				AA0001110000000000000001 /* CallParticipantsSocketDelegate.swift in Sources */,
+				AA0001130000000000000001 /* CallParticipantsSocketManager.swift in Sources */,
 				47A79D3A2444A15C005CD72F /* MessageOptionsView.swift in Sources */,
 				47E6A4CC2A2E68A700A9509E /* DeletedMessageView.swift in Sources */,
 				47C45E012D806E0A007A9BD7 /* EpisodeChapterView.swift in Sources */,
