@@ -107,7 +107,9 @@ extension NewChatTableDataSource {
         let linkData = (dataSourceItem.linkWeb?.link != nil) ? self.preloaderHelper.linksData[dataSourceItem.linkWeb!.link] : nil
         let uploadProgressData = (dataSourceItem.messageId != nil) ? self.uploadingProgress[dataSourceItem.messageId!] : nil
         let replyViewHeight = (dataSourceItem.messageId != nil) ? self.replyViewHeight[dataSourceItem.messageId!] : nil
-        let participantsData = (dataSourceItem.messageId != nil) ? self.participantsDataCached[dataSourceItem.messageId!] : nil
+        let roomName = dataSourceItem.messageId.flatMap { self.messageIdToRoomName[$0] }
+        let participants = roomName.flatMap { self.callParticipantsStore[$0] } ?? []
+        let participantsData = participants.isEmpty ? nil : MessageTableCellState.ParticipantsData(participants: participants)
         
         cell?.configureWith(
             messageCellState: dataSourceItem,
