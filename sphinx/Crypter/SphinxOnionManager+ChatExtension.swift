@@ -866,6 +866,13 @@ extension SphinxOnionManager {
                 ///Show if is incoming, and topic is stream which means message coming in in real time
                 let shouldShowIncomingMsgNotification = !(message.fromMe ?? false) && topic?.isMessageInRealTimeTopic == true
 
+                let isRealTime = topic?.isMessageInRealTimeTopic == true
+                let isFromMe = message.fromMe ?? false
+                let isUnconfirmed = newMessage.status != TransactionMessage.TransactionMessageStatus.received.rawValue
+                if isRealTime && isFromMe && isUnconfirmed, let tag = newMessage.tag {
+                    scheduleStatusCheckForUnconfirmedSentMessage(tag: tag)
+                }
+
                 if shouldShowIncomingMsgNotification {
                     let msgId = newMessage.id
                     Task { @MainActor [weak self] in
@@ -2056,6 +2063,16 @@ extension SphinxOnionManager {
 //        sendTimeoutTimers[omuuid] = nil
 //    }
     
+    func scheduleStatusCheckForUnconfirmedSentMessage(tag: String) {
+        pendingSentStatusWorkItem?.cancel()
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            self.getMessagesStatusFor(tags: [tag])
+        }
+        pendingSentStatusWorkItem = workItem
+        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 3.0, execute: workItem)
+    }
+
     func getMessagesStatusForPendingMessages() {
         let dispatchQueue = DispatchQueue.global(qos: .utility)
         dispatchQueue.async {
