@@ -118,7 +118,7 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
     
     var notificationsResultsController: NSFetchedResultsController<NotificationData>!
 
-    private var pendingSentStatusWorkItem: DispatchWorkItem?
+    var pendingSentStatusWorkItem: DispatchWorkItem?
     
     let kHostedTorrentBaseURL = "https://files.bt2.bard.garden:21433"
     let kAllTorrentLookupBaseURL = "https://tome.bt2.bard.garden:21433"

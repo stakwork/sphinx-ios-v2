@@ -868,7 +868,7 @@ extension SphinxOnionManager {
 
                 let isRealTime = topic?.isMessageInRealTimeTopic == true
                 let isFromMe = message.fromMe ?? false
-                let isUnconfirmed = newMessage.status != TransactionMessage.TransactionMessageStatus.confirmed.rawValue
+                let isUnconfirmed = newMessage.status != TransactionMessage.TransactionMessageStatus.received.rawValue
                 if isRealTime && isFromMe && isUnconfirmed, let tag = newMessage.tag {
                     scheduleStatusCheckForUnconfirmedSentMessage(tag: tag)
                 }
