@@ -75,12 +75,12 @@ class DataSyncManager: NSObject, @unchecked Sendable {
         )
     }
 
-    func saveAIAgentConfig(provider: String, apiKey: String) {
+    func saveAIAgentConfig(provider: String, apiKey: String, agentName: String) {
         guard !apiKey.isEmpty else { return }
         saveDataSyncItemWith(
             key: SettingKey.aiAgentConfig.rawValue,
             identifier: "0",
-            value: "\(provider)|\(apiKey)"
+            value: "\(provider)|\(apiKey)|\(agentName)"
         )
     }
 
@@ -522,11 +522,17 @@ class DataSyncManager: NSObject, @unchecked Sendable {
                 let parts = composed.components(separatedBy: "|")
                 guard parts.count >= 2 else { return }
                 let provider = parts[0]
-                let apiKey = parts.dropFirst().joined(separator: "|")
+                let agentName = parts.count >= 3 ? parts[parts.count - 1] : nil
+                let apiKey = parts.dropFirst().dropLast(agentName != nil ? 1 : 0).joined(separator: "|")
                 guard !apiKey.isEmpty else { return }
                 UserData.sharedInstance.save(aiAgentValue: provider, for: .aiAgentProvider)
                 UserData.sharedInstance.save(aiAgentValue: apiKey, for: .aiAgentApiKey)
                 AIAgentManager.sharedInstance.reconfigure()
+                if let name = agentName, !name.isEmpty,
+                   let contact = UserContact.getContactWith(id: AIAgentManager.agentLocalId) {
+                    contact.nickname = name
+                    contact.managedObjectContext?.saveContext()
+                }
             }
         }
     }
