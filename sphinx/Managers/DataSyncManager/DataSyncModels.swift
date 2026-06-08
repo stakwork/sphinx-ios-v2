@@ -19,6 +19,7 @@ enum DataSyncSettingKey: String, CaseIterable {
     case chatColor = "chat_color"
     case pinTimeout = "pin_timeout"
     case biometricEnabled = "biometric_enabled"
+    case aiAgentConfig = "ai_agent_config"
 }
 
 // MARK: - Items Response
@@ -339,6 +340,9 @@ enum SettingValue: Codable {
                 return nil
             }
             return .bool(boolValue)
+
+        case .aiAgentConfig:
+            return .string(string)
         }
     }
 
