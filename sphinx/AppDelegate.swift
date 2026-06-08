@@ -224,7 +224,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         pendingFetchWorkItem = nil
         pendingFetchCompletion?(.noData)
         pendingFetchCompletion = nil
-        notificationUserInfo = nil
         getDashboardVC()?.resumeNetworkObservers()
         HivePusherManager.shared.resumeFromBackground()
         NotificationCenter.default.post(name: .appWillEnterForeground, object: nil)
@@ -287,26 +286,24 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func handlePushAndFetchData() {
-        guard let notificationUserInfo,
-              let timestamp = notificationTimestamp,
-              Date().timeIntervalSince(timestamp) < 3 else
-        {
-            return
-        }
+        guard let notificationUserInfo else { return }
 
         if let hiveLink = SphinxOnionManager.sharedInstance.getHiveLinkFrom(notification: notificationUserInfo),
            let navigatableURL = buildHiveURL(from: hiveLink),
            let currentVC = getCurrentVC() {
+            print("[PushNav] navigating to hive link on first attempt")
             HiveLinkNavigator.navigate(hiveLink: navigatableURL, from: currentVC)
             self.notificationUserInfo = nil
             return
         }
 
         if let chat = SphinxOnionManager.sharedInstance.mapNotificationToChat(notificationUserInfo: notificationUserInfo)?.0 {
+            print("[PushNav] navigating to chat on first attempt")
             goTo(chat: chat)
+            self.notificationUserInfo = nil
+        } else {
+            print("[PushNav] chat not resolved yet — holding intent for retry")
         }
-        
-        self.notificationUserInfo = nil
     }
 
     /// Converts "my-workspace/feature:abc123" → "https://hive.sphinx.chat/w/my-workspace/plan/abc123"
