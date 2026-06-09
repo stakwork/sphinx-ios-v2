@@ -133,10 +133,11 @@ class CallParticipantsSocketManager: NSObject, @unchecked Sendable {
 
     private func parseParticipant(from json: JSON) -> BubbleMessageLayoutState.CallParticipantInfo? {
         let nickname = json["nickname"].stringValue
+        let identity = json["identity"].string
         guard !nickname.isEmpty else { return nil }
         let avatarUrl = json["avatarUrl"].string
         return BubbleMessageLayoutState.CallParticipantInfo(
-            identity: nickname,
+            identity: identity ?? nickname,
             name: nickname,
             profilePictureUrl: avatarUrl,
             isActive: true

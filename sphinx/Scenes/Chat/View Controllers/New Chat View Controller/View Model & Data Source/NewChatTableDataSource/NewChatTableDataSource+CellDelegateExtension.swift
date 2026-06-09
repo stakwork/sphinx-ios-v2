@@ -553,14 +553,15 @@ extension NewChatTableDataSource : NewMessageTableViewCellDelegate {
         }
     }
     func shouldLoadCallParticipantsFor(messageId: Int, roomName: String, and rowIndex: Int) {
-        guard !subscribedRooms.contains(roomName) else { return }
-        if callParticipantsSocketManager == nil {
-            callParticipantsSocketManager = CallParticipantsSocketManager()
-            callParticipantsSocketManager?.delegate = self
-        }
         messageIdToRoomName[messageId] = roomName
-        subscribedRooms.insert(roomName)
-        callParticipantsSocketManager?.subscribe(roomName: roomName)
+        if !subscribedRooms.contains(roomName) {
+            if callParticipantsSocketManager == nil {
+                callParticipantsSocketManager = CallParticipantsSocketManager()
+                callParticipantsSocketManager?.delegate = self
+            }
+            subscribedRooms.insert(roomName)
+            callParticipantsSocketManager?.subscribe(roomName: roomName)
+        }
     }
 }
 
