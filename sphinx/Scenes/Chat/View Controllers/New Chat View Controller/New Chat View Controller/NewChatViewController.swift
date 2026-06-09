@@ -175,6 +175,7 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         super.viewDidDisappear(animated)
         
         if self.isMovingFromParent {
+            chatTableDataSource?.unsubscribeAllRooms()
             chatTableDataSource?.saveSnapshotCurrentState()
             chatTableDataSource?.stopListeningToResultsController()
 

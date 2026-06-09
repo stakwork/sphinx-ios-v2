@@ -553,30 +553,53 @@ extension NewChatTableDataSource : NewMessageTableViewCellDelegate {
         }
     }
     func shouldLoadCallParticipantsFor(messageId: Int, roomName: String, and rowIndex: Int) {
-        guard activeParticipantPollingTimers[messageId] == nil else { return }
-        guard !pendingParticipantRooms.contains(roomName) else { return }
-        pendingParticipantRooms.insert(roomName)
-
-        API.sharedInstance.getCallParticipants(roomName: roomName) { [weak self] participants in
-            guard let self = self else { return }
-
-            self.pendingParticipantRooms.remove(roomName)
-
-            let newIdentities = Set(participants.map { $0.identity })
-            let cachedIdentities = Set((self.participantsDataCached[messageId]?.participants ?? []).map { $0.identity })
-            let hasChanged = newIdentities != cachedIdentities
-
-            self.participantsDataCached[messageId] = MessageTableCellState.ParticipantsData(
-                participants: participants
-            )
-
-            if !participants.isEmpty {
-                self.startParticipantsPollingTimer(messageId: messageId, roomName: roomName)
+        messageIdToRoomName[messageId] = roomName
+        if !subscribedRooms.contains(roomName) {
+            if callParticipantsSocketManager == nil {
+                callParticipantsSocketManager = CallParticipantsSocketManager()
+                callParticipantsSocketManager?.delegate = self
             }
+            subscribedRooms.insert(roomName)
+            callParticipantsSocketManager?.subscribe(roomName: roomName)
+        }
+    }
+}
 
-            guard hasChanged else { return }
+// MARK: - CallParticipantsSocketDelegate
 
-            if let tableCellState = self.getTableCellStateFor(messageId: messageId, and: rowIndex) {
+extension NewChatTableDataSource {
+
+    func didReceiveCurrentParticipants(roomName: String, participants: [BubbleMessageLayoutState.CallParticipantInfo]) {
+        callParticipantsStore[roomName] = participants
+        reloadCells(forRoomName: roomName)
+    }
+
+    func participantJoined(roomName: String, participant: BubbleMessageLayoutState.CallParticipantInfo) {
+        var current = callParticipantsStore[roomName] ?? []
+        current.append(participant)
+        callParticipantsStore[roomName] = current
+        reloadCells(forRoomName: roomName)
+    }
+
+    func participantLeft(roomName: String, identity: String) {
+        var current = callParticipantsStore[roomName] ?? []
+        current.removeAll { $0.identity == identity }
+        callParticipantsStore[roomName] = current
+        reloadCells(forRoomName: roomName)
+    }
+
+    func roomFinished(roomName: String) {
+        callParticipantsStore.removeValue(forKey: roomName)
+        reloadCells(forRoomName: roomName)
+    }
+
+    private func reloadCells(forRoomName roomName: String) {
+        let affectedMessageIds = messageIdToRoomName
+            .filter { $0.value == roomName }
+            .map { $0.key }
+
+        for messageId in affectedMessageIds {
+            if let tableCellState = getTableCellStateFor(messageId: messageId) {
                 let cellState = tableCellState.1
                 Task { @MainActor [weak self] in
                     guard let self else { return }
@@ -590,75 +613,12 @@ extension NewChatTableDataSource : NewMessageTableViewCellDelegate {
         }
     }
 
-    func startParticipantsPollingTimer(messageId: Int, roomName: String) {
-        guard activeParticipantPollingTimers[messageId] == nil else { return }
-        activeParticipantPollingTimers[messageId] = Timer.scheduledTimer(withTimeInterval: 15.0, repeats: true) { [weak self] _ in
-            guard let self else { return }
-            MainActor.assumeIsolated {
-                self.pollParticipants(messageId: messageId, roomName: roomName)
-            }
-        }
-    }
-
-    func stopParticipantsPollingTimer(for messageId: Int) {
-        activeParticipantPollingTimers[messageId]?.invalidate()
-        activeParticipantPollingTimers.removeValue(forKey: messageId)
-    }
-
-    func pollParticipants(messageId: Int, roomName: String) {
-        guard let (rowIndex, _) = getTableCellStateFor(messageId: messageId) else { return }
-
-        let isVisible = tableView.cellForRow(at: IndexPath(row: rowIndex, section: 0)) != nil
-        guard isVisible else {
-            stopParticipantsPollingTimer(for: messageId)
-            return
-        }
-
-        guard !pendingParticipantRooms.contains(roomName) else { return }
-        pendingParticipantRooms.insert(roomName)
-
-        API.sharedInstance.getCallParticipants(roomName: roomName) { [weak self] participants in
-            guard let self = self else { return }
-            self.pendingParticipantRooms.remove(roomName)
-
-            if !participants.isEmpty {
-                let newIdentities = Set(participants.map { $0.identity })
-                let cachedIdentities = Set((self.participantsDataCached[messageId]?.participants ?? []).map { $0.identity })
-                let hasChanged = newIdentities != cachedIdentities
-
-                self.participantsDataCached[messageId] = MessageTableCellState.ParticipantsData(
-                    participants: participants
-                )
-
-                guard hasChanged else { return }
-
-                if let tableCellState = self.getTableCellStateFor(messageId: messageId) {
-                    let cellState = tableCellState.1
-                    Task { @MainActor [weak self] in
-                        guard let self else { return }
-                        var snapshot = self.dataSource.snapshot()
-                        if snapshot.itemIdentifiers.contains(cellState) {
-                            snapshot.reloadItems([cellState])
-                            self.dataSource.apply(snapshot, animatingDifferences: false)
-                        }
-                    }
-                }
-            } else {
-                self.participantsDataCached.removeValue(forKey: messageId)
-                self.stopParticipantsPollingTimer(for: messageId)
-                if let tableCellState = self.getTableCellStateFor(messageId: messageId) {
-                    let cellState = tableCellState.1
-                    Task { @MainActor [weak self] in
-                        guard let self else { return }
-                        var snapshot = self.dataSource.snapshot()
-                        if snapshot.itemIdentifiers.contains(cellState) {
-                            snapshot.reloadItems([cellState])
-                            self.dataSource.apply(snapshot, animatingDifferences: false)
-                        }
-                    }
-                }
-            }
-        }
+    func unsubscribeAllRooms() {
+        subscribedRooms.forEach { callParticipantsSocketManager?.unsubscribe(roomName: $0) }
+        subscribedRooms.removeAll()
+        callParticipantsStore.removeAll()
+        messageIdToRoomName.removeAll()
+        callParticipantsSocketManager = nil
     }
 }
 

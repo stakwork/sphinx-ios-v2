@@ -75,7 +75,7 @@ import CoreData
     func updateEmptyView()
 }
 
-@MainActor class NewChatTableDataSource : NSObject {
+@MainActor class NewChatTableDataSource : NSObject, CallParticipantsSocketDelegate {
     
     ///Delegate
     weak var delegate: NewChatTableDataSourceDelegate?
@@ -112,9 +112,10 @@ import CoreData
     var messageTableCellStateArray: [MessageTableCellState] = []
     var mediaCached: [Int: MessageTableCellState.MediaData] = [:]
     var uploadingProgress: [Int: MessageTableCellState.UploadProgressData] = [:]
-    var participantsDataCached: [Int: MessageTableCellState.ParticipantsData] = [:]
-    var pendingParticipantRooms: Set<String> = []
-    nonisolated(unsafe) var activeParticipantPollingTimers: [Int: Timer] = [:]
+    var callParticipantsStore: [String: [BubbleMessageLayoutState.CallParticipantInfo]] = [:]
+    var subscribedRooms: Set<String> = []
+    var messageIdToRoomName: [Int: String] = [:]
+    var callParticipantsSocketManager: CallParticipantsSocketManager?
     var replyViewHeight: [Int: CGFloat] = [:]
     
     var searchingTerm: String? = nil
@@ -174,11 +175,6 @@ import CoreData
         processChatAliases()
     }
     
-    deinit {
-        activeParticipantPollingTimers.values.forEach { $0.invalidate() }
-        activeParticipantPollingTimers.removeAll()
-    }
-
     func processChatAliases() {
         if isThread {
             return
