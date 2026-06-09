@@ -71,6 +71,9 @@ class CreateFeatureViewController: UIViewController {
 
     private let bubbleHelper = NewMessageBubbleHelper()
 
+    // Mention autocomplete (feature mode only)
+    private let mentionHandler = WorkspaceMentionHandler()
+
     // MARK: - Instantiation
 
     static func instantiate(workspaceId: String, workspaceSlug: String = "") -> CreateFeatureViewController {
@@ -136,6 +139,33 @@ class CreateFeatureViewController: UIViewController {
                     },
                     errorCallback: { /* silent — picker stays hidden */ }
                 )
+            }
+        }
+
+        if mode == .feature {
+            API.sharedInstance.fetchWorkspacesWithAuth(
+                callback: { [weak self] workspaces in
+                    DispatchQueue.main.async { self?.mentionHandler.availableWorkspaces = workspaces }
+                },
+                errorCallback: { /* silent — autocomplete just won't show */ }
+            )
+            mentionHandler.onWorkspaceSelected = { [weak self] ws, triggerRange in
+                guard let self else { return }
+                let slug = ws.slug ?? ws.name
+                let insertText = "@\(slug) "
+                let nsText = (self.messageTextView.text ?? "") as NSString
+                let safeLength = min(triggerRange.length, nsText.length - triggerRange.location)
+                guard triggerRange.location >= 0,
+                      triggerRange.location + safeLength <= nsText.length else { return }
+                let newText = nsText.replacingCharacters(
+                    in: NSRange(location: triggerRange.location, length: safeLength),
+                    with: insertText
+                )
+                let newCursor = NSRange(location: triggerRange.location + insertText.count, length: 0)
+                let defaultFont = UIFont(name: "Roboto-Regular", size: 17) ?? UIFont.systemFont(ofSize: 17)
+                self.messageTextView.text = newText
+                self.mentionHandler.applyMentionColoring(to: self.messageTextView, preservingCursor: newCursor, font: defaultFont)
+                self.updateSendButtonState()
             }
         }
 
@@ -291,6 +321,10 @@ class CreateFeatureViewController: UIViewController {
         outerStack.spacing = 0
         view.addSubview(outerStack)
 
+        // Mention autocomplete overlay (sits above outerStack, anchored to promptFieldView bottom)
+        view.addSubview(mentionHandler.container)
+        view.bringSubviewToFront(mentionHandler.container)
+
         // Layout Constraints
         NSLayoutConstraint.activate([
             // Header View
@@ -332,6 +366,12 @@ class CreateFeatureViewController: UIViewController {
             outerStack.topAnchor.constraint(equalTo: promptFieldView.bottomAnchor, constant: 12),
             outerStack.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
             outerStack.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
+
+            // Mention autocomplete dropdown — overlays outerStack, anchored to promptFieldView bottom
+            mentionHandler.container.topAnchor.constraint(equalTo: promptFieldView.bottomAnchor, constant: 4),
+            mentionHandler.container.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
+            mentionHandler.container.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
+            mentionHandler.heightConstraint,
         ])
     }
 
@@ -1004,6 +1044,12 @@ class CreateFeatureViewController: UIViewController {
 extension CreateFeatureViewController: UITextViewDelegate {
     func textViewDidChange(_ textView: UITextView) {
         updateSendButtonState()
+
+        // @mention autocomplete — feature mode only
+        if mode == .feature {
+            mentionHandler.processTextChange(in: textView)
+        }
+
         guard mode == .loadWorkflow else { return }
 
         // Reset state on every keystroke
