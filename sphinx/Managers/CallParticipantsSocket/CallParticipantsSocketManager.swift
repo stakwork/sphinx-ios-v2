@@ -166,6 +166,6 @@ extension CallParticipantsSocketManager: WebSocketDelegate {
     }
 
     func websocketDidReceiveData(socket: WebSocketClient, data: Data) {
-        // Not used
+        print(data)
     }
 }
