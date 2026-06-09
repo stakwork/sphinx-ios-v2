@@ -12,6 +12,7 @@ import UIKit
 
 /// Composable helper that owns all `@workspace` autocomplete state and UI.
 /// Callers add `container` to their own view hierarchy and set its constraints.
+@MainActor
 final class WorkspaceMentionHandler {
 
     // MARK: - Shared regex
