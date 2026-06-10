@@ -525,9 +525,18 @@ class DataSyncManager: NSObject, @unchecked Sendable {
                 let agentName = parts.count >= 3 ? parts[parts.count - 1] : nil
                 let apiKey = parts.dropFirst().dropLast(agentName != nil ? 1 : 0).joined(separator: "|")
                 guard !apiKey.isEmpty else { return }
+
+                let currentProvider = UserData.sharedInstance.getAIAgentValue(with: .aiAgentProvider) ?? ""
+                let currentApiKey   = UserData.sharedInstance.getAIAgentValue(with: .aiAgentApiKey)   ?? ""
+                let credentialsChanged = (provider != currentProvider || apiKey != currentApiKey)
+
                 UserData.sharedInstance.save(aiAgentValue: provider, for: .aiAgentProvider)
                 UserData.sharedInstance.save(aiAgentValue: apiKey, for: .aiAgentApiKey)
-                AIAgentManager.sharedInstance.reconfigure()
+
+                if credentialsChanged {
+                    AIAgentManager.sharedInstance.reconfigure(clearHistory: true)
+                }
+
                 if let name = agentName, !name.isEmpty,
                    let contact = UserContact.getContactWith(id: AIAgentManager.agentLocalId) {
                     contact.nickname = name
