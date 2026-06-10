@@ -100,7 +100,7 @@ class SetupAIAgentViewController: UIViewController {
         userData.save(aiAgentValue: apiKey, for: .aiAgentApiKey)
         
         // Reconfigure the AI engine (updates provider + key)
-        AIAgentManager.sharedInstance.reconfigure()
+        AIAgentManager.sharedInstance.reconfigure(clearHistory: true)
         DataSyncManager.sharedInstance.saveAIAgentConfig(provider: provider, apiKey: apiKey, agentName: agentName)
         
         // Create agent contact + chat if not already present
