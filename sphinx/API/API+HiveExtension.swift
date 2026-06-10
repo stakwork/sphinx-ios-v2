@@ -2582,16 +2582,26 @@ extension API {
         callback: @escaping HiveTaskCallback,
         errorCallback: @escaping EmptyCallback
     ) {
-        let urlString = "\(API.kHiveBaseUrl)/tasks"
+        guard let featureId = task.featureId,
+              let encodedFeatureId = featureId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+            errorCallback(); return
+        }
+        let urlString = "\(API.kHiveBaseUrl)/features/\(encodedFeatureId)/tickets"
         var body: [String: Any] = [
-            "title": "Copy of \(task.title)",
-            "status": "TODO"
+            "title": task.title,
+            "status": "TODO",
+            "autoMerge": false,
+            "priority": task.priority
         ]
-        if let featureId = task.featureId { body["featureId"] = featureId }
-        if let repositoryId = task.repositoryId { body["repositoryId"] = repositoryId }
-        if let workflowId = task.workflowId { body["workflowId"] = workflowId }
-        if let workflowName = task.workflowName { body["workflowName"] = workflowName }
-        if let workflowRefId = task.workflowRefId { body["workflowRefId"] = workflowRefId }
+        if let v = task.description       { body["description"]       = v }
+        if let v = task.phaseId           { body["phaseId"]           = v }
+        if let v = task.repositoryId      { body["repositoryId"]      = v }
+        if !task.dependsOnTaskIds.isEmpty { body["dependsOnTaskIds"]  = task.dependsOnTaskIds }
+        if let v = task.workflowId        { body["workflowId"]        = v }
+        if let v = task.workflowName      { body["workflowName"]      = v }
+        if let v = task.workflowRefId     { body["workflowRefId"]     = v }
+        if let v = task.workflowTaskType  { body["workflowTaskType"]  = v }
+        if let v = task.workflowVersionId { body["workflowVersionId"] = v }
         guard let request = createRequest(urlString, bodyParams: body as NSDictionary, method: "POST", token: authToken) else {
             errorCallback(); return
         }
@@ -2613,6 +2623,64 @@ extension API {
                 errorCallback()
             }
         }
+    }
+
+    // MARK: - Update Task Dependencies (PATCH /api/tickets/{taskId})
+
+    private func updateTaskDependencies(
+        taskId: String,
+        dependsOnTaskIds: [String],
+        authToken: String,
+        callback: @escaping EmptyCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        guard let encoded = taskId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+            errorCallback(); return
+        }
+        let urlString = "\(API.kHiveBaseUrl)/tickets/\(encoded)"
+        let body: [String: Any] = ["dependsOnTaskIds": dependsOnTaskIds]
+        guard let request = createRequest(urlString, bodyParams: body as NSDictionary, method: "PATCH", token: authToken) else {
+            errorCallback(); return
+        }
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 { errorCallback(); return }
+            switch response.result {
+            case .success: callback()
+            case .failure: errorCallback()
+            }
+        }
+    }
+
+    func updateTaskDependenciesWithAuth(
+        taskId: String,
+        dependsOnTaskIds: [String],
+        callback: @escaping EmptyCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let token: String = UserDefaults.Keys.hiveToken.get() {
+            updateTaskDependencies(taskId: taskId, dependsOnTaskIds: dependsOnTaskIds, authToken: token, callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateAndUpdateTaskDependencies(taskId: taskId, dependsOnTaskIds: dependsOnTaskIds,
+                        callback: callback, errorCallback: errorCallback)
+                })
+        } else {
+            authenticateAndUpdateTaskDependencies(taskId: taskId, dependsOnTaskIds: dependsOnTaskIds,
+                callback: callback, errorCallback: errorCallback)
+        }
+    }
+
+    private func authenticateAndUpdateTaskDependencies(
+        taskId: String,
+        dependsOnTaskIds: [String],
+        callback: @escaping EmptyCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        authenticateWithHive(callback: { [weak self] token in
+            guard let token = token else { errorCallback(); return }
+            UserDefaults.Keys.hiveToken.set(token)
+            self?.updateTaskDependencies(taskId: taskId, dependsOnTaskIds: dependsOnTaskIds, authToken: token,
+                callback: callback, errorCallback: errorCallback)
+        }, errorCallback: errorCallback)
     }
 
     func duplicateTaskWithAuth(
