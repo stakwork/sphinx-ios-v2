@@ -2064,10 +2064,13 @@ extension SphinxOnionManager {
 //    }
     
     func scheduleStatusCheckForUnconfirmedSentMessage(tag: String) {
+        pendingStatusCheckTags.insert(tag)
         pendingSentStatusWorkItem?.cancel()
+        let tagsSnapshot = pendingStatusCheckTags
         let workItem = DispatchWorkItem { [weak self] in
             guard let self else { return }
-            self.getMessagesStatusFor(tags: [tag])
+            self.getMessagesStatusFor(tags: Array(tagsSnapshot))
+            self.pendingStatusCheckTags.removeAll()
         }
         pendingSentStatusWorkItem = workItem
         DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 3.0, execute: workItem)
