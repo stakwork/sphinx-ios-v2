@@ -1903,7 +1903,7 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
         if task.status == "TODO" {
             let startAction = UIContextualAction(style: .normal, title: "Start") { [weak self] _, _, completionHandler in
                 guard let self else { completionHandler(false); return }
-                API.sharedInstance.updateTaskStatusWithAuth(taskId: task.id, status: "IN_PROGRESS", callback: { [weak self] in
+                API.sharedInstance.startTaskWithAuth(taskId: task.id, callback: { [weak self] in
                     DispatchQueue.main.async {
                         guard let self else { return }
                         self.feature.updateTask(task.id) { $0.status = "IN_PROGRESS" }

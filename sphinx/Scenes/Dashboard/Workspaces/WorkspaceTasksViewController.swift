@@ -306,7 +306,7 @@ extension WorkspaceTasksViewController: UITableViewDataSource, UITableViewDelega
         if task.status == "TODO" {
             let startAction = UIContextualAction(style: .normal, title: "Start") { [weak self] _, _, completionHandler in
                 guard let self else { completionHandler(false); return }
-                API.sharedInstance.updateTaskStatusWithAuth(taskId: task.id, status: "IN_PROGRESS", callback: { [weak self] in
+                API.sharedInstance.startTaskWithAuth(taskId: task.id, callback: { [weak self] in
                     DispatchQueue.main.async {
                         guard let self else { return }
                         if self.tasks.indices.contains(indexPath.row) && self.tasks[indexPath.row].id == task.id {
