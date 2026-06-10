@@ -1871,8 +1871,29 @@ extension FeaturePlanViewController: UITableViewDelegate, UITableViewDataSource 
             API.sharedInstance.duplicateTaskWithAuth(task: task, callback: { [weak self] newTask in
                 DispatchQueue.main.async {
                     guard let self, let newTask else { return }
+
+                    // Step 1 — optimistic local update
                     self.feature.looseTasks.append(newTask)
                     self.tasksTableView.reloadData()
+
+                    // Step 2 — rewire downstream dependencies in parallel
+                    let downstream = self.feature.allTasks.filter { $0.dependsOnTaskIds.contains(task.id) }
+                    guard !downstream.isEmpty else { return }
+
+                    let group = DispatchGroup()
+                    for downstreamTask in downstream {
+                        group.enter()
+                        let updatedDeps = downstreamTask.dependsOnTaskIds + [newTask.id]
+                        API.sharedInstance.updateTaskDependenciesWithAuth(
+                            taskId: downstreamTask.id,
+                            dependsOnTaskIds: updatedDeps,
+                            callback: { group.leave() },
+                            errorCallback: { group.leave() }
+                        )
+                    }
+                    group.notify(queue: .main) { [weak self] in
+                        self?.fetchFeatureDetail()
+                    }
                 }
             }, errorCallback: {})
             completionHandler(true)

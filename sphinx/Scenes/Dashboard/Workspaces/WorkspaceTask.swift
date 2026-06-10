@@ -51,6 +51,9 @@ struct WorkspaceTask {
     let workflowId: Int?
     let workflowName: String?
     let workflowRefId: String?
+    var phaseId: String?           // injected post-init by HivePhase; nil for loose tasks
+    var workflowTaskType: String?  // parsed from JSON
+    var workflowVersionId: String? // parsed from JSON
 
     init?(json: JSON) {
         guard let id = json["id"].string,
@@ -96,5 +99,8 @@ struct WorkspaceTask {
         self.workflowId = json["workflowId"].int
         self.workflowName = json["workflowName"].string
         self.workflowRefId = json["workflowRefId"].string
+        self.workflowTaskType = json["workflowTaskType"].string
+        self.workflowVersionId = json["workflowVersionId"].string
+        self.phaseId = nil  // populated by HivePhase after init
     }
 }

@@ -36,7 +36,11 @@ struct HivePhase {
         self.id = id
         self.name = json["name"].string ?? ""
         self.order = json["order"].int ?? 0
-        self.tasks = json["tasks"].arrayValue.compactMap { WorkspaceTask(json: $0) }
+        self.tasks = json["tasks"].arrayValue.compactMap { taskJson -> WorkspaceTask? in
+            guard var t = WorkspaceTask(json: taskJson) else { return nil }
+            t.phaseId = id
+            return t
+        }
     }
 }
 
