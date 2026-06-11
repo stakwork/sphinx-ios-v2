@@ -26,7 +26,8 @@ final class ClarifyingQuestionsView: UIView {
     private var questions: [ClarifyingQuestion] = []
     private var currentIndex: Int = 0
     private var selectedIndices: Set<Int> = []
-    private var collectedAnswers: [String] = []
+    private var collectedAnswers: [Int: String] = [:]
+    private var draftStates: [Int: (selectedIndices: Set<Int>, contextText: String)] = [:]
     private var parsedAnswers: [(selectedOptions: [String], additionalText: String?)] = []
 
     // MARK: - Dynamic Layout Constraints
@@ -143,6 +144,21 @@ final class ClarifyingQuestionsView: UIView {
         return b
     }()
 
+    private let activeBackButton: UIButton = {
+        let b = UIButton(type: .system)
+        b.translatesAutoresizingMaskIntoConstraints = false
+        b.setTitle("← Prev", for: .normal)
+        b.titleLabel?.font = UIFont(name: "Roboto-Medium", size: 14) ?? UIFont.boldSystemFont(ofSize: 14)
+        b.setTitleColor(.white, for: .normal)
+        b.setTitleColor(UIColor.white.withAlphaComponent(0.4), for: .disabled)
+        b.backgroundColor = UIColor.Sphinx.PrimaryBlue
+        b.layer.cornerRadius = 10
+        b.layer.masksToBounds = true
+        b.contentEdgeInsets = UIEdgeInsets(top: 0, left: 12, bottom: 0, right: 12)
+        b.isHidden = true
+        return b
+    }()
+
     private let navigationStackView: UIStackView = {
         let sv = UIStackView()
         sv.translatesAutoresizingMaskIntoConstraints = false
@@ -192,11 +208,13 @@ final class ClarifyingQuestionsView: UIView {
         navigationStackView.addArrangedSubview(nextButton)
         containerView.addSubview(navigationStackView)
         containerView.addSubview(actionButton)
+        containerView.addSubview(activeBackButton)
 
         additionalContextTextView.delegate = self
         actionButton.addTarget(self, action: #selector(actionButtonTapped), for: .touchUpInside)
         prevButton.addTarget(self, action: #selector(prevTapped), for: .touchUpInside)
         nextButton.addTarget(self, action: #selector(nextTapped), for: .touchUpInside)
+        activeBackButton.addTarget(self, action: #selector(activeBackTapped), for: .touchUpInside)
 
         // Dynamic constraints — created here but activated/deactivated at runtime
         actionButtonTopConstraint = actionButton.topAnchor.constraint(
@@ -259,6 +277,12 @@ final class ClarifyingQuestionsView: UIView {
             actionButton.heightAnchor.constraint(equalToConstant: 36),
             actionButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 90),
 
+            // Active back button — left-aligned, vertically centered with actionButton
+            activeBackButton.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
+            activeBackButton.centerYAnchor.constraint(equalTo: actionButton.centerYAnchor),
+            activeBackButton.heightAnchor.constraint(equalToConstant: 36),
+            activeBackButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 90),
+
             // Navigation stack (answered state) — right-aligned, height fixed
             navigationStackView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
             navigationStackView.leadingAnchor.constraint(greaterThanOrEqualTo: containerView.leadingAnchor, constant: 12),
@@ -277,7 +301,8 @@ final class ClarifyingQuestionsView: UIView {
         guard !questions.isEmpty else { return }
         self.questions = questions
         self.currentIndex = 0
-        self.collectedAnswers = []
+        self.collectedAnswers = [:]
+        self.draftStates = [:]
         self.selectedIndices = []
         additionalContextTextView.text = ""
         placeholderLabel.isHidden = false
@@ -308,7 +333,8 @@ final class ClarifyingQuestionsView: UIView {
         questions = []
         currentIndex = 0
         selectedIndices = []
-        collectedAnswers = []
+        collectedAnswers = [:]
+        draftStates = [:]
         parsedAnswers = []
         counterLabel.text = nil
         questionLabel.text = nil
@@ -319,6 +345,7 @@ final class ClarifyingQuestionsView: UIView {
         additionalContextLabel.isHidden = true
         navigationStackView.isHidden = true
         actionButton.isHidden = false
+        activeBackButton.isHidden = true
         optionsStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
         isUserInteractionEnabled = true
         alpha = 1.0
@@ -369,6 +396,23 @@ final class ClarifyingQuestionsView: UIView {
         for (i, option) in q.options.enumerated() {
             let optionView = makeOptionView(title: option, tag: i)
             optionsStackView.addArrangedSubview(optionView)
+        }
+
+        // Show back button only when not on the first question
+        activeBackButton.isHidden = (index == 0)
+
+        // Restore any previously entered draft state for this question
+        if let draft = draftStates[index] {
+            selectedIndices = draft.selectedIndices
+            additionalContextTextView.text = draft.contextText
+            placeholderLabel.isHidden = !draft.contextText.isEmpty
+            optionsStackView.arrangedSubviews.forEach { view in
+                if draft.selectedIndices.contains(view.tag) {
+                    applySelectedStyle(to: view)
+                } else {
+                    applyUnselectedStyle(to: view)
+                }
+            }
         }
 
         activateActiveStateConstraints()
@@ -627,14 +671,26 @@ final class ClarifyingQuestionsView: UIView {
                 answerString = "Q: \(q.question)\nA: \(contextText)"
             }
         }
-        collectedAnswers.append(answerString)
+        collectedAnswers[currentIndex] = answerString
+        draftStates[currentIndex] = nil
 
         if currentIndex == questions.count - 1 {
-            onSubmit?(collectedAnswers)
+            onSubmit?((0..<questions.count).compactMap { collectedAnswers[$0] })
         } else {
             currentIndex += 1
             showQuestion(at: currentIndex)
         }
+    }
+
+    @objc private func activeBackTapped() {
+        guard currentIndex > 0 else { return }
+        // Persist current in-progress state before navigating back
+        draftStates[currentIndex] = (
+            selectedIndices: selectedIndices,
+            contextText: additionalContextTextView.text ?? ""
+        )
+        currentIndex -= 1
+        showQuestion(at: currentIndex)
     }
 
     @objc private func prevTapped() {
@@ -662,6 +718,7 @@ extension ClarifyingQuestionsView {
     var nextButtonForTesting: UIButton? { nextButton }
     var counterLabelForTesting: UILabel? { counterLabel }
     var navigationStackViewForTesting: UIStackView? { navigationStackView }
+    var activeBackButtonForTesting: UIButton? { activeBackButton }
 
     /// Direct option selection for unit tests — fires the tap gesture on the option view at the given index.
     func selectOptionForTesting(at index: Int) {
