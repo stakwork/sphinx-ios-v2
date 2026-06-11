@@ -26,10 +26,15 @@ class CallParticipantsSocketManager: NSObject, @unchecked Sendable {
         subscribedRooms.insert(roomName)
         sendSubscribe(roomName: roomName)
     }
+    
+    func sendSubscribeTo(roomName: String) {
+        sendSubscribe(roomName: roomName)
+    }
 
     func unsubscribe(roomName: String) {
         sendUnsubscribe(roomName: roomName)
         subscribedRooms.remove(roomName)
+        
         if subscribedRooms.isEmpty {
             disconnect()
         }

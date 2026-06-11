@@ -583,18 +583,20 @@ extension NewChatTableDataSource {
         reloadCells(forRoomName: roomName)
         // LiveKit may not have resolved the display name yet — refresh after 2s
         if participant.name.isEmpty {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [weak self] in
                 self?.refreshParticipants(for: roomName)
             }
         }
     }
 
     private func refreshParticipants(for roomName: String) {
-        API.sharedInstance.getCallParticipants(roomName: roomName) { [weak self] fresh in
-            guard let self = self, !fresh.isEmpty else { return }
-            self.callParticipantsStore[roomName] = fresh
-            self.reloadCells(forRoomName: roomName)
-        }
+        callParticipantsSocketManager?.sendSubscribeTo(roomName: roomName)
+        
+//        API.sharedInstance.getCallParticipants(roomName: roomName) { [weak self] fresh in
+//            guard let self = self, !fresh.isEmpty else { return }
+//            self.callParticipantsStore[roomName] = fresh
+//            self.reloadCells(forRoomName: roomName)
+//        }
     }
 
     func participantLeft(roomName: String, identity: String) {
