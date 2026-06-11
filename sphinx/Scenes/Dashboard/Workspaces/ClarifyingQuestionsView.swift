@@ -672,7 +672,10 @@ final class ClarifyingQuestionsView: UIView {
             }
         }
         collectedAnswers[currentIndex] = answerString
-        draftStates[currentIndex] = nil
+        draftStates[currentIndex] = (
+            selectedIndices: selectedIndices,
+            contextText: contextText
+        )
 
         if currentIndex == questions.count - 1 {
             onSubmit?((0..<questions.count).compactMap { collectedAnswers[$0] })
