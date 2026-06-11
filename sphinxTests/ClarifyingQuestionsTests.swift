@@ -486,6 +486,96 @@ class ClarifyingQuestionsViewTests: XCTestCase {
         XCTAssertEqual(view.alpha, 1.0, accuracy: 0.001)
     }
 
+    // MARK: - Back navigation (active answering state)
+
+    func testActiveBackButton_HiddenOnFirstQuestion() {
+        let view = makeView(questions: [singleChoiceQuestion(), multiChoiceQuestion()])
+        XCTAssertTrue(view.activeBackButtonForTesting?.isHidden ?? true,
+                      "activeBackButton must be hidden on Q1")
+    }
+
+    func testActiveBackButton_VisibleAfterAdvancing() {
+        let view = ClarifyingQuestionsView()
+        let q1 = singleChoiceQuestion()
+        let q2 = multiChoiceQuestion()
+        view.configure(with: [q1, q2])
+
+        view.simulateTapOption(at: 0)
+        view.simulateTapActionButton() // advance to Q2
+
+        XCTAssertFalse(view.activeBackButtonForTesting?.isHidden ?? true,
+                       "activeBackButton must be visible on Q2+")
+    }
+
+    func testBackNavigation_RestoresPreviousSelectionsAndContext() {
+        let view = ClarifyingQuestionsView()
+        let q1 = singleChoiceQuestion(options: ["A", "B", "C"])
+        let q2 = multiChoiceQuestion()
+        view.configure(with: [q1, q2])
+
+        // Answer Q1 with option B + extra context
+        view.simulateTapOption(at: 1) // B
+        view.simulateTypeAdditionalContext("extra info")
+        view.simulateTapActionButton() // advance to Q2
+
+        // Go back to Q1
+        view.simulateTapActiveBack()
+
+        // Counter should show Q1
+        XCTAssertEqual(view.counterLabelForTesting?.text, "1 of 2")
+        // Additional context should be restored
+        XCTAssertEqual(view.additionalContextTextViewForTesting?.text, "extra info")
+    }
+
+    func testBackNavigation_OverwritesAnswerOnResubmit() {
+        var capturedAnswers: [String] = []
+        let view = ClarifyingQuestionsView()
+        view.onSubmit = { capturedAnswers = $0 }
+
+        let q1 = singleChoiceQuestion(options: ["A", "B", "C"])
+        let q2 = singleChoiceQuestion(options: ["X", "Y"])
+        view.configure(with: [q1, q2])
+
+        // Answer Q1 with A, advance
+        view.simulateTapOption(at: 0)
+        view.simulateTapActionButton()
+
+        // Go back, change to B
+        view.simulateTapActiveBack()
+        view.simulateTapOption(at: 1)
+        view.simulateTapActionButton() // re-advance to Q2
+
+        // Answer Q2 and submit
+        view.simulateTapOption(at: 0)
+        view.simulateTapActionButton()
+
+        XCTAssertEqual(capturedAnswers.count, 2, "Must have exactly one answer per question")
+        XCTAssertEqual(capturedAnswers[0], "Q: Pick one\nA: B",
+                       "Q1 answer must reflect the updated selection (B), not the original (A)")
+        XCTAssertEqual(capturedAnswers[1], "Q: Pick one\nA: X")
+    }
+
+    func testBackNavigation_SubmitFiresExactlyOnce() {
+        var submitCount = 0
+        let view = ClarifyingQuestionsView()
+        view.onSubmit = { _ in submitCount += 1 }
+
+        let q1 = singleChoiceQuestion()
+        let q2 = multiChoiceQuestion()
+        view.configure(with: [q1, q2])
+
+        // Forward, back, forward, submit
+        view.simulateTapOption(at: 0)
+        view.simulateTapActionButton()        // to Q2
+        view.simulateTapActiveBack()          // back to Q1
+        view.simulateTapOption(at: 1)
+        view.simulateTapActionButton()        // to Q2 again
+        view.simulateTapOption(at: 0)
+        view.simulateTapActionButton()        // Submit
+
+        XCTAssertEqual(submitCount, 1, "onSubmit must fire exactly once regardless of back-navigation")
+    }
+
     // MARK: - onSubmit callback
 
     func testOnSubmit_NotFiredOnNext() {
@@ -548,6 +638,11 @@ extension ClarifyingQuestionsView {
     /// Simulate a tap on the Prev button (test-only).
     func simulateTapPrev() {
         prevButtonForTesting?.sendActions(for: .touchUpInside)
+    }
+
+    /// Simulate a tap on the active back button (test-only).
+    func simulateTapActiveBack() {
+        activeBackButtonForTesting?.sendActions(for: .touchUpInside)
     }
 
     /// Simulate a tap on the Next button (test-only).
