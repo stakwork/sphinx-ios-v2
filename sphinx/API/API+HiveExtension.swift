@@ -108,6 +108,16 @@ extension API {
 
     static let kHiveBaseUrl = "https://hive.sphinx.chat/api"
 
+    /// Stores the Hive auth token in both UserDefaults (existing) and the shared
+    /// keychain access group so the sphinx-vision visionOS app can read it.
+    func storeHiveToken(_ token: String) {
+        UserDefaults.Keys.hiveToken.set(token)
+        KeychainManager.sharedInstance.save(
+            value: token,
+            forComposedKey: "com.sphinx.hiveToken"
+        )
+    }
+
     func authenticateWithHive(
         callback: @escaping HiveAuthTokenCallback,
         errorCallback: @escaping EmptyCallback
@@ -239,7 +249,7 @@ extension API {
                 }
 
                 // Store the new token
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
 
                 self?.fetchWorkspaces(
                     authToken: token,
@@ -347,7 +357,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.fetchTasks(
                     workspaceId: workspaceId,
                     authToken: token,
@@ -451,7 +461,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.fetchWorkspaceImage(
                     slug: slug,
                     authToken: token,
@@ -502,7 +512,7 @@ extension API {
                     // Token may be expired — re-auth and retry once
                     self?.authenticateWithHive(callback: { newToken in
                         guard let newToken = newToken else { callback(nil); return }
-                        UserDefaults.Keys.hiveToken.set(newToken)
+                        self?.storeHiveToken(newToken)
                         self?.fetchPresignedUrl(s3Key: s3Key, authToken: newToken, callback: callback)
                     }, errorCallback: { callback(nil) })
                 }
@@ -510,7 +520,7 @@ extension API {
         } else {
             authenticateWithHive(callback: { [weak self] token in
                 guard let token = token else { callback(nil); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.fetchPresignedUrl(s3Key: s3Key, authToken: token, callback: callback)
             }, errorCallback: { callback(nil) })
         }
@@ -618,7 +628,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.fetchFeatures(
                     workspaceId: workspaceId,
                     authToken: token,
@@ -667,7 +677,7 @@ extension API {
                     self?.authenticateWithHive(
                         callback: { token in
                             guard let token = token else { errorCallback(); return }
-                            UserDefaults.Keys.hiveToken.set(token)
+                            storeHiveToken(token)
                             self?.fetchLlmModels(authToken: token, callback: callback, errorCallback: errorCallback)
                         },
                         errorCallback: errorCallback
@@ -678,7 +688,7 @@ extension API {
             authenticateWithHive(
                 callback: { [weak self] token in
                     guard let token = token else { errorCallback(); return }
-                    UserDefaults.Keys.hiveToken.set(token)
+                    storeHiveToken(token)
                     self?.fetchLlmModels(authToken: token, callback: callback, errorCallback: errorCallback)
                 },
                 errorCallback: errorCallback
@@ -779,7 +789,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.createFeature(
                     workspaceId: workspaceId,
                     title: title,
@@ -878,7 +888,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.fetchFeatureChat(
                     featureId: featureId,
                     authToken: token,
@@ -1020,7 +1030,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.sendFeatureChatMessage(
                     featureId: featureId,
                     message: message,
@@ -1118,7 +1128,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.fetchFeatureSuggestions(
                     featureId: featureId,
                     messages: messages,
@@ -1252,7 +1262,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.sendTaskChatMessage(
                     taskId: taskId,
                     message: message,
@@ -1442,7 +1452,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.sendWorkflowEditorMessage(
                     taskId: taskId,
                     message: message,
@@ -1566,7 +1576,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.sendProjectDebuggerMessage(
                     taskId: taskId, message: message,
                     projectId: projectId, webhook: webhook,
@@ -1654,7 +1664,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.triggerTaskGeneration(
                     workspaceId: workspaceId, featureId: featureId, includeHistory: includeHistory,
                     authToken: token, callback: callback, errorCallback: errorCallback
@@ -1726,7 +1736,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.fetchTaskGenerationRuns(
                     workspaceId: workspaceId, featureId: featureId, authToken: token,
                     callback: callback, errorCallback: errorCallback
@@ -1817,7 +1827,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.fetchFeatureDetail(
                     featureId: featureId,
                     authToken: token,
@@ -1896,7 +1906,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.fetchFeatureAttachments(
                     featureId: featureId,
                     authToken: token,
@@ -1971,7 +1981,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.fetchTaskMessages(
                     taskId: taskId,
                     authToken: token,
@@ -2064,7 +2074,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.fetchChatMessage(
                     messageId: messageId,
                     authToken: token,
@@ -2140,7 +2150,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.assignAllFeatureTasks(
                     featureId: featureId,
                     authToken: token,
@@ -2222,7 +2232,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.deleteFeature(
                     featureId: featureId,
                     authToken: token,
@@ -2325,7 +2335,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.updateFeature(
                     featureId: featureId,
                     status: status,
@@ -2410,7 +2420,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.archiveTask(
                     taskId: taskId,
                     authToken: token,
@@ -2488,7 +2498,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.deleteTask(taskId: taskId, authToken: token, callback: callback, errorCallback: errorCallback)
             },
             errorCallback: errorCallback
@@ -2567,7 +2577,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.updateTaskStatus(taskId: taskId, status: status, authToken: token, callback: callback, errorCallback: errorCallback)
             },
             errorCallback: errorCallback
@@ -2618,7 +2628,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.startTask(taskId: taskId, authToken: token, callback: callback, errorCallback: errorCallback)
             },
             errorCallback: errorCallback
@@ -2751,7 +2761,7 @@ extension API {
     ) {
         authenticateWithHive(callback: { [weak self] token in
             guard let token = token else { errorCallback(); return }
-            UserDefaults.Keys.hiveToken.set(token)
+            storeHiveToken(token)
             self?.updateTaskDependencies(taskId: taskId, dependsOnTaskIds: dependsOnTaskIds, authToken: token,
                 callback: callback, errorCallback: errorCallback)
         }, errorCallback: errorCallback)
@@ -2788,7 +2798,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.duplicateTask(task: task, authToken: token, callback: callback, errorCallback: errorCallback)
             },
             errorCallback: errorCallback
@@ -2852,7 +2862,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.unarchiveTask(taskId: taskId, authToken: token, callback: callback, errorCallback: errorCallback)
             },
             errorCallback: errorCallback
@@ -2930,7 +2940,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.retryTaskWorkflow(
                     taskId: taskId,
                     authToken: token,
@@ -2995,7 +3005,7 @@ extension API {
     ) {
         authenticateWithHive(callback: { [weak self] token in
             guard let token = token else { errorCallback(); return }
-            UserDefaults.Keys.hiveToken.set(token)
+            storeHiveToken(token)
             self?.updateTaskAutoMerge(taskId: taskId, autoMerge: autoMerge, authToken: token,
                 callback: callback, errorCallback: errorCallback)
         }, errorCallback: errorCallback)
@@ -3057,7 +3067,7 @@ extension API {
     ) {
         authenticateWithHive(callback: { [weak self] token in
             guard let token = token else { errorCallback(); return }
-            UserDefaults.Keys.hiveToken.set(token)
+            storeHiveToken(token)
             self?.updateTaskBuildSettings(taskId: taskId, runBuild: runBuild, runTestSuite: runTestSuite, authToken: token,
                 callback: callback, errorCallback: errorCallback)
         }, errorCallback: errorCallback)
@@ -3156,7 +3166,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.releasePod(
                     workspaceId: workspaceId,
                     podId: podId,
@@ -3235,7 +3245,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.fetchTaskDetail(
                     taskId: taskId,
                     authToken: token,
@@ -3314,7 +3324,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.searchWorkspace(
                     slug: slug,
                     query: query,
@@ -3388,7 +3398,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.fetchStakworkWorkflow(
                     projectId: projectId,
                     authToken: token,
@@ -3529,7 +3539,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.fetchBasicPoolWorkspaces(
                     workspaceSlug: workspaceSlug,
                     authToken: token,
@@ -3610,7 +3620,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.fetchPoolWorkspaces(
                     workspaceSlug: workspaceSlug,
                     authToken: token,
@@ -3687,7 +3697,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.generateTribeCallLink(
                     swarmName: swarmName,
                     authToken: token,
@@ -3707,7 +3717,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.fetchPoolStatus(
                     workspaceSlug: workspaceSlug,
                     authToken: token,
@@ -3768,7 +3778,7 @@ extension API {
                     self?.authenticateWithHive(
                         callback: { [weak self] newToken in
                             guard let newToken = newToken else { errorCallback(); return }
-                            UserDefaults.Keys.hiveToken.set(newToken)
+                            self?.storeHiveToken(newToken)
                             self?.registerDeviceToken(
                                 token: token,
                                 authToken: newToken,
@@ -3784,7 +3794,7 @@ extension API {
             authenticateWithHive(
                 callback: { [weak self] newToken in
                     guard let newToken = newToken else { errorCallback(); return }
-                    UserDefaults.Keys.hiveToken.set(newToken)
+                    self?.storeHiveToken(newToken)
                     self?.registerDeviceToken(
                         token: token,
                         authToken: newToken,
@@ -3810,7 +3820,7 @@ extension API {
             authenticateWithHive(
                 callback: { token in
                     guard let token = token else { errorCallback(); return }
-                    UserDefaults.Keys.hiveToken.set(token)
+                    storeHiveToken(token)
                     callback(token)
                 },
                 errorCallback: errorCallback
@@ -3893,7 +3903,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.fetchWorkspaceDetail(
                     slug: slug,
                     authToken: token,
@@ -4019,7 +4029,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.fetchBranches(
                     repoUrl: repoUrl,
                     workspaceSlug: workspaceSlug,
@@ -4130,7 +4140,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.createTask(
                     title: title,
                     workspaceSlug: workspaceSlug,
@@ -4251,7 +4261,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.requestUploadPresignedUrl(
                     taskId: taskId,
                     filename: filename,
@@ -4374,7 +4384,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.fetchWorkspaceMembers(slug: slug, authToken: token, callback: callback, errorCallback: errorCallback)
             },
             errorCallback: errorCallback
@@ -4471,7 +4481,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.createWorkflowTask(
                     title: title,
                     description: description,
@@ -4585,7 +4595,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.saveTaskMessage(
                     taskId: taskId,
                     message: message,
@@ -4718,7 +4728,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.sendWorkflowEditorDebugMessage(
                     taskId: taskId,
                     message: message,
@@ -4813,7 +4823,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback(); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.fetchWorkflowVersions(
                     workspaceSlug: workspaceSlug,
                     workflowId: workflowId,
@@ -4894,7 +4904,7 @@ extension API {
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { errorCallback("Authentication failed"); return }
-                UserDefaults.Keys.hiveToken.set(token)
+                storeHiveToken(token)
                 self?.fetchStakworkProject(
                     projectId: projectId,
                     authToken: token,
