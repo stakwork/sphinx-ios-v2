@@ -522,9 +522,10 @@ class MediaLoader {
             DispatchQueue.global().async {
                 let avAssetImageGenerator = AVAssetImageGenerator(asset: asset)
                 avAssetImageGenerator.appliesPreferredTrackTransform = true
-                let thumnailTime = CMTimeMake(value: 5, timescale: 1)
+                avAssetImageGenerator.requestedTimeToleranceBefore = .positiveInfinity
+                avAssetImageGenerator.requestedTimeToleranceAfter = .positiveInfinity
                 do {
-                    let cgThumbImage = try avAssetImageGenerator.copyCGImage(at: thumnailTime, actualTime: nil)
+                    let cgThumbImage = try avAssetImageGenerator.copyCGImage(at: .zero, actualTime: nil)
                     let thumbImage = UIImage(cgImage: cgThumbImage)
                     deleteItemAt(url: url)
                     

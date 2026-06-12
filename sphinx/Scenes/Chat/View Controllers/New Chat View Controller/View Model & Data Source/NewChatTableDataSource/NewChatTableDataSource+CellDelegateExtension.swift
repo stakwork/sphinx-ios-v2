@@ -656,12 +656,14 @@ extension NewChatTableDataSource {
             if rowIndex < 0 {
                 self.delegate?.shouldReloadThreadHeaderView()
             } else {
-                let cellState = tableCellState.1
+                let targetMessageId = messageId
                 Task { @MainActor [weak self] in
                     guard let self else { return }
                     var snapshot = self.dataSource.snapshot()
-                    if snapshot.itemIdentifiers.contains(cellState) {
-                        snapshot.reloadItems([cellState])
+                    if let currentCellState = snapshot.itemIdentifiers.first(where: {
+                        $0.message?.id == targetMessageId
+                    }) {
+                        snapshot.reloadItems([currentCellState])
                         self.dataSource.apply(snapshot, animatingDifferences: false)
                     }
                 }
