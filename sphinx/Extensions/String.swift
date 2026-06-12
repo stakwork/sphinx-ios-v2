@@ -594,6 +594,10 @@ extension String {
         }
     }
     
+    var isWebAppLink: Bool {
+        return self.starts(with: "sphinx.chat://?action=webapp")
+    }
+    
     var isPubKey : Bool {
         get {
             let pubkeyRegex = try? NSRegularExpression(pattern: "^[A-F0-9a-f]{66}$")

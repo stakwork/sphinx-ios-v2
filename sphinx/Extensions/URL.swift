@@ -39,6 +39,17 @@ extension URL {
     }
 }
 
+extension URL {
+    func getWebAppUrl() -> String? {
+        let link = self.absoluteString
+        let components = link.components(separatedBy: "url=")
+        if components.count > 1 {
+            return components[1]
+        }
+        return nil
+    }
+}
+
 extension String {
     func getLinkAction() -> String? {
         let components = self.components(separatedBy: "&")
