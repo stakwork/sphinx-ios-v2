@@ -524,8 +524,9 @@ class MediaLoader {
                 avAssetImageGenerator.appliesPreferredTrackTransform = true
                 avAssetImageGenerator.requestedTimeToleranceBefore = .positiveInfinity
                 avAssetImageGenerator.requestedTimeToleranceAfter = .positiveInfinity
+                let thumnailTime = CMTimeMake(value: 2, timescale: 1)
                 do {
-                    let cgThumbImage = try avAssetImageGenerator.copyCGImage(at: .zero, actualTime: nil)
+                    let cgThumbImage = try avAssetImageGenerator.copyCGImage(at: thumnailTime, actualTime: nil)
                     let thumbImage = UIImage(cgImage: cgThumbImage)
                     deleteItemAt(url: url)
                     
