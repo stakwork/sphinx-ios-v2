@@ -520,13 +520,10 @@ public class UserContact: NSManagedObject, @unchecked Sendable {
     public static func syncVoipDeviceId(
         pushKitToken: String? = nil
     ) {
-//        if let currentVoipDeviceId = pushKitToken ?? UserDefaults.Keys.voipDeviceId.get(), !currentVoipDeviceId.isEmpty {
-//            
-//            let parameters : [String: AnyObject] = ["push_kit_token" : currentVoipDeviceId as AnyObject]
-//            let id = UserData.sharedInstance.getUserId()
-//            
-//            //TODO: @Jim reimplement VoIP in V2
-//        }
+        if let token = pushKitToken ?? UserDefaults.Keys.voipDeviceId.get(), !token.isEmpty {
+            UserDefaults.Keys.voipDeviceId.set(token)
+            // TODO: call new VoIP token sync endpoint here
+        }
     }
     
     public static func updateTipAmount(amount: Int) {
