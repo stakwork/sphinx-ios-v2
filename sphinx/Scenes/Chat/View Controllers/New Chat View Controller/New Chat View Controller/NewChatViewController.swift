@@ -37,6 +37,7 @@ class NewChatViewController: NewKeyboardHandlerViewController {
     /// Processing bar shown above the input while the Sphinx Agent is awaiting a response.
     var agentProcessingBar: WorkflowStatusView?
     var agentBarHeightConstraint: NSLayoutConstraint?
+    var agentProcessingBarTimer: Timer?
     
     private var hadDraftOnAppear: Bool = false
     
@@ -286,9 +287,18 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         chatTableViewHeightConstraint.constant -= 32
         bar.show(animated: true)
         UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
+        chatTableView.contentInset.bottom += 32
+        chatTableView.verticalScrollIndicatorInsets.bottom += 32
+        // 5-minute auto-dismiss timeout
+        agentProcessingBarTimer?.invalidate()
+        agentProcessingBarTimer = Timer.scheduledTimer(withTimeInterval: 300, repeats: false) { [weak self] _ in
+            DispatchQueue.main.async { self?.hideAgentProcessingBar() }
+        }
     }
 
     func hideAgentProcessingBar() {
+        agentProcessingBarTimer?.invalidate()
+        agentProcessingBarTimer = nil
         guard let bar = agentProcessingBar,
               let heightConstraint = agentBarHeightConstraint,
               heightConstraint.constant > 0 else { return }
@@ -296,6 +306,9 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         chatTableViewHeightConstraint.constant = max(0, chatTableViewHeightConstraint.constant + 32)
         bar.hide(animated: true)
         UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
+        let baseInset = Constants.kChatTableContentInset
+        chatTableView.contentInset.bottom = max(baseInset, chatTableView.contentInset.bottom - 32)
+        chatTableView.verticalScrollIndicatorInsets.bottom = max(0, chatTableView.verticalScrollIndicatorInsets.bottom - 32)
     }
     
     func setupLayouts() {

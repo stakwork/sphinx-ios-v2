@@ -66,7 +66,11 @@ class GraphChatSSEManager: EventHandler, @unchecked Sendable {
 
     func onOpened() {}
 
-    func onClosed() {}
+    func onClosed() {
+        DispatchQueue.main.async { [weak self] in
+            self?.delegate?.onFinish()
+        }
+    }
 
     func onMessage(eventType: String, messageEvent: MessageEvent) {
         guard let data = messageEvent.data.data(using: .utf8) else { return }
