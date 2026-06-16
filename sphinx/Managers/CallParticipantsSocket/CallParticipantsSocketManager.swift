@@ -111,9 +111,10 @@ class CallParticipantsSocketManager: NSObject, @unchecked Sendable {
             }
 
         case "participant_left":
-            let identity = json["identity"].stringValue
-            DispatchQueue.main.async { [weak self] in
-                self?.delegate?.participantLeft(roomName: roomName, identity: identity)
+            if let identity = json["identity"].string {
+                DispatchQueue.main.async { [weak self] in
+                    self?.delegate?.participantLeft(roomName: roomName, identity: identity)
+                }
             }
 
         case "room_finished":
@@ -137,11 +138,14 @@ class CallParticipantsSocketManager: NSObject, @unchecked Sendable {
     }
 
     private func parseParticipant(from json: JSON) -> BubbleMessageLayoutState.CallParticipantInfo? {
+        guard let identity = json["identity"].string else {
+            return nil
+        }
+        
         let nickname = json["nickname"].stringValue
-        let identity = json["identity"].string
         let avatarUrl = json["avatarUrl"].string
         return BubbleMessageLayoutState.CallParticipantInfo(
-            identity: identity ?? nickname,
+            identity: identity,
             name: nickname,
             profilePictureUrl: avatarUrl,
             isActive: true
