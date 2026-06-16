@@ -170,6 +170,10 @@ class ChatMessageTextFieldView: UIView {
                 return
             }
             
+            if textView.text == text {
+                return
+            }
+            
             textView.text = text
             textView.textColor = UIColor.Sphinx.TextMessages
             textViewDidChange(textView)
