@@ -147,9 +147,9 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         let existingDraft = ChatTrackingHandler.shared.getOngoingMessageFor(chatId: chat?.id)
         hadDraftOnAppear = existingDraft != nil && !existingDraft!.isEmpty
         
-        if isAgentChat && AIAgentManager.sharedInstance.isProcessing {
-            showAgentProcessingBar()
-        }
+//        if isAgentChat && AIAgentManager.sharedInstance.isProcessing {
+//            showAgentProcessingBar()
+//        }
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -265,6 +265,7 @@ class NewChatViewController: NewKeyboardHandlerViewController {
     func setupAgentProcessingBar() {
         guard isAgentChat else { return }
         let bar = WorkflowStatusView()
+        bar.backgroundColor = UIColor.Sphinx.Body
         view.addSubview(bar)
         bar.translatesAutoresizingMaskIntoConstraints = false
         let heightConstraint = bar.heightAnchor.constraint(equalToConstant: 0)
@@ -284,11 +285,10 @@ class NewChatViewController: NewKeyboardHandlerViewController {
               heightConstraint.constant == 0 else { return }
         bar.status = .IN_PROGRESS
         heightConstraint.constant = 32
-        chatTableViewHeightConstraint.constant -= 32
         bar.show(animated: true)
         UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
-        chatTableView.contentInset.bottom += 32
-        chatTableView.verticalScrollIndicatorInsets.bottom += 32
+        chatTableView.contentInset.top += 32
+        chatTableView.verticalScrollIndicatorInsets.top += 32
         // 5-minute auto-dismiss timeout
         agentProcessingBarTimer?.invalidate()
         agentProcessingBarTimer = Timer.scheduledTimer(withTimeInterval: 300, repeats: false) { [weak self] _ in
@@ -303,12 +303,11 @@ class NewChatViewController: NewKeyboardHandlerViewController {
               let heightConstraint = agentBarHeightConstraint,
               heightConstraint.constant > 0 else { return }
         heightConstraint.constant = 0
-        chatTableViewHeightConstraint.constant = max(0, chatTableViewHeightConstraint.constant + 32)
         bar.hide(animated: true)
         UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
         let baseInset = Constants.kChatTableContentInset
-        chatTableView.contentInset.bottom = max(baseInset, chatTableView.contentInset.bottom - 32)
-        chatTableView.verticalScrollIndicatorInsets.bottom = max(0, chatTableView.verticalScrollIndicatorInsets.bottom - 32)
+        chatTableView.contentInset.top = max(baseInset, chatTableView.contentInset.top - 32)
+        chatTableView.verticalScrollIndicatorInsets.top = max(0, chatTableView.verticalScrollIndicatorInsets.top - 32)
     }
     
     func setupLayouts() {

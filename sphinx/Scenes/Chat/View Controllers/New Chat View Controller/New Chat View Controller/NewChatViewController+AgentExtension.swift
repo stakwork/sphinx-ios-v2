@@ -36,7 +36,8 @@ extension NewChatViewController {
         CoreDataManager.sharedManager.saveContext()
         completion(true, nil)
         
-        showAgentProcessingBar()
+//        showAgentProcessingBar()
+        
         Task {
             let reply = await AIAgentManager.sharedInstance.chat(text)
             await MainActor.run { self.insertAgentReply(reply) }
