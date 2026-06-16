@@ -304,7 +304,13 @@ extension ChatListCollectionViewCell {
             failedMessageIcon.isHidden = true
             
             let chatId = chatListObject.getChat()?.id
-            if let draft = ChatTrackingHandler.shared.getOngoingMessageFor(chatId: chatId), !draft.isEmpty {
+            let lastMessageDate = chatListObject.lastMessage?.date ?? .distantPast
+            let draftDate = ChatTrackingHandler.shared.getDraftTimestampFor(chatId: chatId)
+
+            if let draft = ChatTrackingHandler.shared.getOngoingMessageFor(chatId: chatId),
+               !draft.isEmpty,
+               let draftDate = draftDate,
+               draftDate > lastMessageDate {
                 let attributed = NSMutableAttributedString()
                 let font = messageLabel.font ?? Constants.kMessagePreviewFont
                 let draftPrefix = NSAttributedString(
@@ -317,18 +323,13 @@ extension ChatListCollectionViewCell {
                 )
                 attributed.append(draftPrefix)
                 attributed.append(draftBody)
-                
+
                 messageLabel.attributedText = attributed
                 messageLabel.superview?.isHidden = false
                 failedMessageIcon.isHidden = true
                 inviteIcon.isHidden = true
-                
-                if let draftDate = ChatTrackingHandler.shared.getDraftTimestampFor(chatId: chatId) {
-                    dateLabel.text = draftDate.getLastMessageDateFormat()
-                    dateLabel.isHidden = false
-                } else {
-                    dateLabel.isHidden = true
-                }
+                dateLabel.text = draftDate.getLastMessageDateFormat()
+                dateLabel.isHidden = false
                 return
             }
             
