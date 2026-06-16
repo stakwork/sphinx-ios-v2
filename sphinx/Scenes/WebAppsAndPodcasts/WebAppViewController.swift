@@ -110,7 +110,7 @@ class WebAppViewController: KeyboardEventsViewController {
     }
     
     func loadPage() {
-        var url: String = gameURL
+        var url: String = gameURL.trimmingCharacters(in: .whitespaces)
         
         if let tribeUUID = chat.tribeInfo?.uuid {
             url = url.withURLParam(key: "uuid", value: tribeUUID)
