@@ -36,6 +36,7 @@ extension NewChatViewController {
         CoreDataManager.sharedManager.saveContext()
         completion(true, nil)
         
+        showAgentProcessingBar()
         Task {
             let reply = await AIAgentManager.sharedInstance.chat(text)
             await MainActor.run { self.insertAgentReply(reply) }
@@ -43,6 +44,7 @@ extension NewChatViewController {
     }
     
     func insertAgentReply(_ text: String) {
+        hideAgentProcessingBar()
         guard let chat = self.chat, let owner = self.owner else { return }
         
         let incoming = TransactionMessage(context: CoreDataManager.sharedManager.persistentContainer.viewContext)
@@ -82,6 +84,7 @@ extension NewChatViewController {
 • 🏕️ Create new tribes
 • 🔍 Search the web for current info
 • 🪵 Read and analyze app logs (filter by time, level, or keyword)
+• 🧠 Query any Hive workspace knowledge graph
 """
         } else {
             introText = "👋 Welcome to Sphinx AI! To get started, go to Profile → Configure AI Agent and enter your Anthropic or OpenAI API key."

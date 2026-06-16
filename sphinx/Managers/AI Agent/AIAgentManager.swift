@@ -44,6 +44,9 @@ final class AIAgentManager: @unchecked Sendable {
     /// Retained OpenAI provider instance (needed to access .tools.webSearch())
     private var openAIProvider: OpenAIProvider?
 
+    /// True while a chat() request is in-flight; used by the UI to restore the processing bar.
+    private(set) var isProcessing: Bool = false
+
     // MARK: - System Prompt
 
     private let systemPrompt = """
@@ -79,6 +82,10 @@ final class AIAgentManager: @unchecked Sendable {
     a diagnostic question like "any MQTT errors?" or "what caused the crash at 8AM?". \
     Current device time is always injected in the tool description to resolve relative time references.
 
+    - query_hive_graph: Query a Hive workspace knowledge graph by workspace name and question. \
+    Use this when the user asks about their codebase, project structure, recent commits, \
+    or any information that lives in a Hive workspace graph.
+
     CRITICAL TOOL RESULT RULES:
     - When read_recent_messages returns a list of messages, present them clearly to the user. \
     Do NOT say there was a format issue or that you couldn't read them.
@@ -97,6 +104,8 @@ final class AIAgentManager: @unchecked Sendable {
     - Results starting with "App logs" contain filtered log entries — present them clearly; summarise patterns if the list is long.
     - Results starting with "Log analysis for" contain a structured summary — present it directly; do not re-list raw lines.
     - Results starting with "No entries matching" mean filters returned nothing — tell the user and suggest broader filters.
+    - Results from query_hive_graph that don't start with "Hive graph error" or "Failed to fetch" or "Ambiguous" or "No Hive workspace" contain the knowledge graph response — present it clearly to the user.
+    - Results starting with "Hive graph error" or "Failed to fetch" mean the tool failed — report the issue and suggest checking Hive configuration.
 
     Always be concise and helpful. When you're unsure about a contact's name, ask for clarification.
     """
@@ -255,8 +264,11 @@ final class AIAgentManager: @unchecked Sendable {
         // Re-attempt configuration if activeModel is nil (e.g. first call after login)
         if activeModel == nil { reconfigure() }
         guard let model = activeModel else {
+            isProcessing = false
             return "AI agent is not configured. Please set your provider and API key in Profile → Advanced → Configure AI Agent."
         }
+
+        isProcessing = true
 
         // Track incoming messages timestamp silently
         if let incoming = lastIncomingMessageDate, incoming != lastCheckedIncomingDate {
@@ -277,7 +289,8 @@ final class AIAgentManager: @unchecked Sendable {
             "mark_chat_as_seen":       buildMarkChatAsSeenTool().eraseToTool(),
             "connect_with_user":       buildConnectWithUserTool().eraseToTool(),
             "create_tribe":            buildCreateTribeTool().eraseToTool(),
-            "read_app_logs":           buildReadAppLogsTool().eraseToTool()
+            "read_app_logs":           buildReadAppLogsTool().eraseToTool(),
+            "query_hive_graph":        buildQueryHiveGraphTool().eraseToTool()
         ]
         switch activeProvider {
         case .anthropic:
@@ -302,6 +315,7 @@ final class AIAgentManager: @unchecked Sendable {
             let errText = "Sorry, I encountered an error: \(error.localizedDescription)"
             conversationHistory.append(.assistant(errText))
             saveHistory()
+            isProcessing = false
             return errText
         }
 
@@ -331,6 +345,7 @@ final class AIAgentManager: @unchecked Sendable {
 
         conversationHistory.append(.assistant(responseText))
         saveHistory()
+        isProcessing = false
         return responseText
     }
 
@@ -365,7 +380,7 @@ final class AIAgentManager: @unchecked Sendable {
     }
 
     /// Normalise a name: trim, replace underscores with spaces, collapse whitespace, lowercase.
-    private static func normalizeName(_ name: String) -> String {
+    static func normalizeName(_ name: String) -> String {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         let underscoresAsSpaces = trimmed.replacingOccurrences(of: "_", with: " ")
         let components = underscoresAsSpaces.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
@@ -378,7 +393,7 @@ final class AIAgentManager: @unchecked Sendable {
     }
 
     /// Levenshtein edit distance between two strings.
-    private static func levenshteinDistance(_ a: String, _ b: String) -> Int {
+    static func levenshteinDistance(_ a: String, _ b: String) -> Int {
         let aChars = Array(a), bChars = Array(b)
         let m = aChars.count, n = bChars.count
         if m == 0 { return n }
