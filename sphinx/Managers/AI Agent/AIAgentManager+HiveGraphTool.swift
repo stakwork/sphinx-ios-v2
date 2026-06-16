@@ -170,15 +170,16 @@ extension AIAgentManager {
 
         print("AIAgent [HiveGraph] querying workspace '\(slug)': \(question)")
 
-        sseManager.startStream(
-            messages: [["role": "user", "content": question]],
-            workspaceSlug: slug,
-            token: token
-        )
-
         // Step 5: Await completion via continuation
+        // continuation is set BEFORE startStream to avoid race condition where
+        // SSE response arrives before the continuation is registered
         let result: String = await withCheckedContinuation { continuation in
             bridge.continuation = continuation
+            sseManager.startStream(
+                messages: [["role": "user", "content": question]],
+                workspaceSlug: slug,
+                token: token
+            )
         }
 
         return .value(.string(result))
