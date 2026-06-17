@@ -96,6 +96,31 @@ final class AIAgentManager: @unchecked Sendable {
     required to connect to the correct graph chat. Only invoke query_hive_graph once \
     you have a workspace name.
 
+    HIVE PROJECT MANAGEMENT TOOLS (use for browsing and managing Hive workspaces, features, and tasks):
+
+    Read tools (safe to call without confirmation):
+    - list_hive_workspaces: List all Hive workspaces the user has access to.
+    - get_workspace_detail: Get repos and members for a named workspace.
+    - search_workspace: Full-text search across features and tasks in a workspace.
+    - list_features: List features in a workspace (first page of up to 20).
+    - get_feature_detail: Get full details of a named feature (status, priority, tasks, assignee).
+    - list_tasks: List tasks in a workspace. Pass include_archived=true to include archived tasks.
+    - get_task_detail: Get full details of a named task (status, priority, PR, deployment, assignee).
+    - get_task_messages: Read the last 20 agent chat messages for a named task.
+
+    Write tools (ALWAYS ask the user for explicit confirmation before invoking):
+    - create_feature: Create a new feature in a workspace.
+    - update_feature: Update status or priority of a feature.
+    - trigger_task_generation: Trigger AI task breakdown for a feature.
+    - update_task_status: Update a task's status (TODO, IN_PROGRESS, DONE, CANCELLED, BLOCKED).
+    - start_task: Start the AI coding workflow for a task.
+    - retry_task_workflow: Retry a halted or failed task workflow.
+    - archive_task: Archive a task.
+
+    Ambiguity rules for Hive tools:
+    - When a workspace/feature/task name is ambiguous (multiple matches), list the options and ask the user to be more specific before retrying.
+    - Never silently pick one match when multiple names could fit.
+
     CRITICAL TOOL RESULT RULES:
     - When read_recent_messages returns a list of messages, present them clearly to the user. \
     Do NOT say there was a format issue or that you couldn't read them.
@@ -116,6 +141,13 @@ final class AIAgentManager: @unchecked Sendable {
     - Results starting with "No entries matching" mean filters returned nothing — tell the user and suggest broader filters.
     - Results from query_hive_graph that don't start with "Hive graph error" or "Failed to fetch" or "Ambiguous" or "No Hive workspace" contain the knowledge graph response — present it clearly to the user.
     - Results starting with "Hive graph error" or "Failed to fetch" mean the tool failed — report the issue and suggest checking Hive configuration.
+    - Results starting with a number followed by ". " from list_hive_workspaces, list_features, or list_tasks are numbered lists — present them clearly.
+    - Results starting with "Workspace:", "Feature:", or "Task:" from detail tools contain structured info — present it clearly.
+    - Results starting with "Search results for" contain search matches — present features and tasks sections clearly.
+    - Results starting with "[" from get_task_messages contain chat message lines — present them clearly.
+    - Results starting with "Feature '" or "Task '" followed by "created", "updated", "status updated", "workflow started", "workflow retry triggered", or "archived" indicate success — report success.
+    - Results starting with "No workspace found", "No feature found", "No task found" mean the name wasn't matched — report and ask the user to clarify.
+    - Results starting with "Multiple workspaces match", "Multiple features match", "Multiple tasks match" mean the name was ambiguous — list the options and ask the user which one they meant.
 
     Always be concise and helpful. When you're unsure about a contact's name, ask for clarification.
     """
@@ -300,7 +332,22 @@ final class AIAgentManager: @unchecked Sendable {
             "connect_with_user":       buildConnectWithUserTool().eraseToTool(),
             "create_tribe":            buildCreateTribeTool().eraseToTool(),
             "read_app_logs":           buildReadAppLogsTool().eraseToTool(),
-            "query_hive_graph":        buildQueryHiveGraphTool().eraseToTool()
+            "query_hive_graph":        buildQueryHiveGraphTool().eraseToTool(),
+            "list_hive_workspaces":    buildListHiveWorkspacesTool().eraseToTool(),
+            "get_workspace_detail":    buildGetWorkspaceDetailTool().eraseToTool(),
+            "search_workspace":        buildSearchWorkspaceTool().eraseToTool(),
+            "list_features":           buildListFeaturesTool().eraseToTool(),
+            "get_feature_detail":      buildGetFeatureDetailTool().eraseToTool(),
+            "list_tasks":              buildListTasksTool().eraseToTool(),
+            "get_task_detail":         buildGetTaskDetailTool().eraseToTool(),
+            "get_task_messages":       buildGetTaskMessagesTool().eraseToTool(),
+            "create_feature":          buildCreateFeatureTool().eraseToTool(),
+            "update_feature":          buildUpdateFeatureTool().eraseToTool(),
+            "trigger_task_generation": buildTriggerTaskGenerationTool().eraseToTool(),
+            "update_task_status":      buildUpdateTaskStatusTool().eraseToTool(),
+            "start_task":              buildStartTaskTool().eraseToTool(),
+            "retry_task_workflow":     buildRetryTaskWorkflowTool().eraseToTool(),
+            "archive_task":            buildArchiveTaskTool().eraseToTool()
         ]
         switch activeProvider {
         case .anthropic:
