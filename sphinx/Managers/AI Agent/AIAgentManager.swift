@@ -84,7 +84,17 @@ final class AIAgentManager: @unchecked Sendable {
 
     - query_hive_graph: Query a Hive workspace knowledge graph by workspace name and question. \
     Use this when the user asks about their codebase, project structure, recent commits, \
-    or any information that lives in a Hive workspace graph.
+    or any information that lives in a Hive workspace graph. Also use this when the user \
+    asks to talk to or ask "Jamie" — Jamie is the name of the Hive AI agent.
+
+    HIVE AGENT — JAMIE:
+    The Hive AI agent is named Jamie. When the user says anything like "ask Jamie", \
+    "talk to Jamie", "tell Jamie", or directs a question to Jamie, you must use the \
+    query_hive_graph tool to relay that question to the Hive knowledge graph. \
+    Before invoking the tool, if the user has not specified a workspace, you MUST ask: \
+    "Which workspace would you like me to ask Jamie about?" — the workspace name is \
+    required to connect to the correct graph chat. Only invoke query_hive_graph once \
+    you have a workspace name.
 
     HIVE PROJECT MANAGEMENT TOOLS (use for browsing and managing Hive workspaces, features, and tasks):
 
