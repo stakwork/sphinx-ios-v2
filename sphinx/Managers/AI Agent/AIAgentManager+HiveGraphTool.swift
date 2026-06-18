@@ -73,27 +73,13 @@ extension AIAgentManager {
                     return .value(.string("Hive org ID not found. Please reconfigure your Hive connection."))
                 }
 
-                // 2. Read or create a persisted conversationId for this org.
-                // The /api/ask/quick endpoint always requires conversationId (server-history mode).
-                // If none exists yet, generate a UUID now, persist it, and send it on the first call.
-                let conversationId: String = {
-                    if let data: Data = UserDefaults.Keys.hiveConversationIdByOrg.get(),
-                       let dict = try? JSONDecoder().decode([String: String].self, from: data),
-                       let existing = dict[orgId] {
-                        return existing
-                    }
-                    // First call — generate a stable UUID and persist it immediately
-                    let newCid = UUID().uuidString
-                    var dict: [String: String] = [:]
-                    if let data: Data = UserDefaults.Keys.hiveConversationIdByOrg.get(),
-                       let existing = try? JSONDecoder().decode([String: String].self, from: data) {
-                        dict = existing
-                    }
-                    dict[orgId] = newCid
-                    if let encoded = try? JSONEncoder().encode(dict) {
-                        UserDefaults.Keys.hiveConversationIdByOrg.set(encoded)
-                    }
-                    return newCid
+                // 2. Read persisted conversationId for this org (nil on first call).
+                // First call sends messages array; server returns X-Conversation-Id which is then stored.
+                // Subsequent calls send message + conversationId (server-history mode).
+                let conversationId: String? = {
+                    guard let data: Data = UserDefaults.Keys.hiveConversationIdByOrg.get(),
+                          let dict = try? JSONDecoder().decode([String: String].self, from: data) else { return nil }
+                    return dict[orgId]
                 }()
 
                 // 3. Resolve auth token
