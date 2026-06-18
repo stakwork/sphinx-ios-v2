@@ -75,7 +75,7 @@ class GraphChatSSEManager: EventHandler, @unchecked Sendable {
         question: String,
         orgSlugs: [String],
         orgId: String,
-        conversationId: String?,
+        conversationId: String,
         token: String,
         onConversationId: @escaping (String) -> Void
     ) {
@@ -89,13 +89,13 @@ class GraphChatSSEManager: EventHandler, @unchecked Sendable {
             return
         }
 
-        var body: [String: Any] = [
+        let body: [String: Any] = [
             "workspaceSlugs": orgSlugs,
             "orgId": orgId,
             "message": question,
-            "skipEnrichments": true
+            "skipEnrichments": true,
+            "conversationId": conversationId
         ]
-        if let cid = conversationId { body["conversationId"] = cid }
 
         guard let bodyData = try? JSONSerialization.data(withJSONObject: body) else {
             delegate?.onError("Failed to serialize request body.")
