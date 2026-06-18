@@ -23,7 +23,7 @@ protocol GraphChatSSEDelegate: AnyObject {
 
 // MARK: - Manager
 
-class GraphChatSSEManager: EventHandler, @unchecked Sendable {
+class GraphChatSSEManager: NSObject, EventHandler, @unchecked Sendable {
 
     weak var delegate: GraphChatSSEDelegate?
     private var eventSource: EventSource?
@@ -187,7 +187,6 @@ class GraphChatSSEManager: EventHandler, @unchecked Sendable {
 // MARK: - URLSessionDataDelegate (Org Stream)
 
 extension GraphChatSSEManager: URLSessionDataDelegate {
-
     func urlSession(
         _ session: URLSession,
         dataTask: URLSessionDataTask,
@@ -238,9 +237,12 @@ extension GraphChatSSEManager: URLSessionDataDelegate {
             guard line.hasPrefix("data: ") else { continue }
             let payload = String(line.dropFirst(6))
             guard payload != "[DONE]",
-                  let data = payload.data(using: .utf8),
-                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { continue }
-            DispatchQueue.main.async { self.handleOrgSSEJson(json) }
+                  let _ = payload.data(using: .utf8) else { continue }
+            DispatchQueue.main.async {
+                guard let data = payload.data(using: .utf8),
+                      let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return }
+                self.handleOrgSSEJson(json)
+            }
         }
     }
 
