@@ -28,6 +28,12 @@ class GraphChatSSEManager: EventHandler, @unchecked Sendable {
     weak var delegate: GraphChatSSEDelegate?
     private var eventSource: EventSource?
 
+    // MARK: - Org Stream state (URLSession-based)
+    private var orgDataTask: URLSessionDataTask?
+    private var orgSSEBuffer = ""
+    private var orgConversationIdFired = false
+    private var onConversationId: ((String) -> Void)?
+
     func startStream(
         messages: [[String: String]],
         workspaceSlug: String,
@@ -60,6 +66,57 @@ class GraphChatSSEManager: EventHandler, @unchecked Sendable {
 
     deinit {
         stopStream()
+        stopOrgStream()
+    }
+
+    // MARK: - Org Stream (URLSession-based, to access X-Conversation-Id header)
+
+    func startOrgStream(
+        question: String,
+        orgSlugs: [String],
+        orgId: String,
+        conversationId: String?,
+        token: String,
+        onConversationId: @escaping (String) -> Void
+    ) {
+        stopOrgStream()
+        orgSSEBuffer = ""
+        orgConversationIdFired = false
+        self.onConversationId = onConversationId
+
+        guard let url = URL(string: "https://hive.sphinx.chat/api/ask/quick") else {
+            delegate?.onError("Invalid endpoint URL.")
+            return
+        }
+
+        var body: [String: Any] = [
+            "workspaceSlugs": orgSlugs,
+            "orgId": orgId,
+            "message": question,
+            "skipEnrichments": true
+        ]
+        if let cid = conversationId { body["conversationId"] = cid }
+
+        guard let bodyData = try? JSONSerialization.data(withJSONObject: body) else {
+            delegate?.onError("Failed to serialize request body.")
+            return
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.httpBody = bodyData
+
+        let session = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
+        orgDataTask = session.dataTask(with: request)
+        orgDataTask?.resume()
+    }
+
+    func stopOrgStream() {
+        orgDataTask?.cancel()
+        orgDataTask = nil
+        onConversationId = nil
     }
 
     // MARK: - EventHandler Conformance
@@ -115,6 +172,92 @@ class GraphChatSSEManager: EventHandler, @unchecked Sendable {
     func onError(error: Error) {
         DispatchQueue.main.async { [weak self] in
             self?.delegate?.onError(error.localizedDescription)
+        }
+    }
+}
+
+// MARK: - URLSessionDataDelegate (Org Stream)
+
+extension GraphChatSSEManager: URLSessionDataDelegate {
+
+    func urlSession(
+        _ session: URLSession,
+        dataTask: URLSessionDataTask,
+        didReceive response: URLResponse,
+        completionHandler: @escaping (URLSession.ResponseDisposition) -> Void
+    ) {
+        if let http = response as? HTTPURLResponse,
+           let cid = http.allHeaderFields["X-Conversation-Id"] as? String,
+           !orgConversationIdFired {
+            orgConversationIdFired = true
+            DispatchQueue.main.async { self.onConversationId?(cid) }
+        }
+        completionHandler(.allow)
+    }
+
+    func urlSession(
+        _ session: URLSession,
+        dataTask: URLSessionDataTask,
+        didReceive data: Data
+    ) {
+        guard let chunk = String(data: data, encoding: .utf8) else { return }
+        orgSSEBuffer += chunk
+        let events = orgSSEBuffer.components(separatedBy: "\n\n")
+        orgSSEBuffer = events.last ?? ""
+        for event in events.dropLast() {
+            parseOrgSSEEvent(event)
+        }
+    }
+
+    func urlSession(
+        _ session: URLSession,
+        task: URLSessionTask,
+        didCompleteWithError error: Error?
+    ) {
+        DispatchQueue.main.async {
+            if let error = error {
+                self.delegate?.onError(error.localizedDescription)
+            } else {
+                self.delegate?.onFinish()
+            }
+        }
+    }
+
+    private func parseOrgSSEEvent(_ event: String) {
+        for line in event.components(separatedBy: "\n") {
+            guard line.hasPrefix("data: ") else { continue }
+            let payload = String(line.dropFirst(6))
+            guard payload != "[DONE]",
+                  let data = payload.data(using: .utf8),
+                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { continue }
+            DispatchQueue.main.async { self.handleOrgSSEJson(json) }
+        }
+    }
+
+    private func handleOrgSSEJson(_ json: [String: Any]) {
+        let type = json["type"] as? String ?? ""
+        switch type {
+        case "text-delta":
+            let delta = (json["delta"] as? String) ?? (json["text"] as? String) ?? ""
+            if !delta.isEmpty { delegate?.onTextDelta(delta) }
+        case "finish", "done":
+            delegate?.onFinish()
+        case "error":
+            let msg = (json["errorText"] as? String) ?? (json["message"] as? String) ?? "An error occurred"
+            delegate?.onError(msg)
+        case "tool-input-available":
+            if let name = json["toolName"] as? String { delegate?.onToolInputAvailable(toolName: name) }
+        case "tool-call":
+            if let name = json["toolName"] as? String {
+                let input = json["args"] as? [String: Any] ?? json["input"] as? [String: Any]
+                delegate?.onToolCall(toolName: name, input: input)
+            }
+        case "tool-output-available", "tool-result":
+            delegate?.onToolOutputAvailable()
+        default:
+            if let text = json["delta"] as? String ?? json["text"] as? String, !text.isEmpty {
+                delegate?.onTextDelta(text)
+            }
         }
     }
 }

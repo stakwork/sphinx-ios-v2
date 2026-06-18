@@ -36,6 +36,25 @@ typealias HiveWorkflowVersionsCallback = (([WorkflowVersion]) -> ())
 typealias HiveWorkspaceMembersCallback = (([WorkspaceMember]) -> ())
 typealias HiveProjectErrorCallback = ((String) -> ())
 typealias HiveLlmModelsCallback = (([HiveLlmModel]) -> ())
+typealias HiveOrgCallback = ((HiveOrg) -> ())
+typealias HiveOrgSlugsCallback = (([String]) -> ())
+
+// MARK: - HiveOrg
+
+struct HiveOrg {
+    let id: String           // DB UUID — used as orgId
+    let githubLogin: String  // used in GET /api/orgs/<login>/workspaces
+    let name: String
+
+    init?(json: JSON) {
+        guard let id = json["id"].string,
+              let githubLogin = json["githubLogin"].string,
+              let name = json["name"].string else { return nil }
+        self.id = id
+        self.githubLogin = githubLogin
+        self.name = name
+    }
+}
 
 // MARK: - WorkspaceRepository
 
@@ -4913,6 +4932,167 @@ extension API {
                 )
             },
             errorCallback: { errorCallback("Authentication failed") }
+        )
+    }
+
+    // MARK: - fetchOrgs
+
+    func fetchOrgs(
+        authToken: String,
+        callback: @escaping HiveOrgCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        let urlString = "\(API.kHiveBaseUrl)/orgs"
+        guard let request = createRequest(urlString, bodyParams: nil, method: "GET", token: authToken) else {
+            errorCallback()
+            return
+        }
+
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                print("[HiveAPI] fetchOrgs unauthorized (401) - token may be expired")
+                errorCallback()
+                return
+            }
+
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+                guard let orgsArray = json.array, !orgsArray.isEmpty,
+                      let org = HiveOrg(json: orgsArray[0]) else {
+                    print("[Hive] fetchOrgs: empty or invalid response")
+                    errorCallback()
+                    return
+                }
+                print("[Hive] fetchOrgs: got org '\(org.name)' (id: \(org.id))")
+                callback(org)
+            case .failure(let error):
+                print("[Hive] fetchOrgs failed — status: \(response.response?.statusCode ?? -1), error: \(error.localizedDescription)")
+                errorCallback()
+            }
+        }
+    }
+
+    func fetchOrgsWithAuth(
+        callback: @escaping HiveOrgCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
+            fetchOrgs(
+                authToken: storedToken,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateAndFetchOrgs(callback: callback, errorCallback: errorCallback)
+                }
+            )
+        } else {
+            authenticateAndFetchOrgs(callback: callback, errorCallback: errorCallback)
+        }
+    }
+
+    private func authenticateAndFetchOrgs(
+        callback: @escaping HiveOrgCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback(); return }
+                self?.storeHiveToken(token)
+                self?.fetchOrgs(authToken: token, callback: callback, errorCallback: errorCallback)
+            },
+            errorCallback: errorCallback
+        )
+    }
+
+    // MARK: - fetchOrgWorkspaces
+
+    func fetchOrgWorkspaces(
+        githubLogin: String,
+        authToken: String,
+        callback: @escaping HiveOrgSlugsCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        guard let encodedLogin = githubLogin.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+            errorCallback()
+            return
+        }
+        let urlString = "\(API.kHiveBaseUrl)/orgs/\(encodedLogin)/workspaces"
+        guard let request = createRequest(urlString, bodyParams: nil, method: "GET", token: authToken) else {
+            errorCallback()
+            return
+        }
+
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                print("[HiveAPI] fetchOrgWorkspaces unauthorized (401) - token may be expired")
+                errorCallback()
+                return
+            }
+
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+                var slugs: [String] = []
+                if let workspacesArray = json.array {
+                    for ws in workspacesArray {
+                        if let slug = ws["slug"].string {
+                            slugs.append(slug)
+                        }
+                    }
+                }
+                print("[Hive] fetchOrgWorkspaces: \(slugs.count) slug(s)")
+                callback(slugs)
+            case .failure(let error):
+                print("[Hive] fetchOrgWorkspaces failed — status: \(response.response?.statusCode ?? -1), error: \(error.localizedDescription)")
+                errorCallback()
+            }
+        }
+    }
+
+    func fetchOrgWorkspacesWithAuth(
+        githubLogin: String,
+        callback: @escaping HiveOrgSlugsCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
+            fetchOrgWorkspaces(
+                githubLogin: githubLogin,
+                authToken: storedToken,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateAndFetchOrgWorkspaces(
+                        githubLogin: githubLogin,
+                        callback: callback,
+                        errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateAndFetchOrgWorkspaces(
+                githubLogin: githubLogin,
+                callback: callback,
+                errorCallback: errorCallback
+            )
+        }
+    }
+
+    private func authenticateAndFetchOrgWorkspaces(
+        githubLogin: String,
+        callback: @escaping HiveOrgSlugsCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback(); return }
+                self?.storeHiveToken(token)
+                self?.fetchOrgWorkspaces(
+                    githubLogin: githubLogin,
+                    authToken: token,
+                    callback: callback,
+                    errorCallback: errorCallback
+                )
+            },
+            errorCallback: errorCallback
         )
     }
 

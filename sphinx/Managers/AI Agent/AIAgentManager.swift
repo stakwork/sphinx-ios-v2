@@ -82,19 +82,17 @@ final class AIAgentManager: @unchecked Sendable {
     a diagnostic question like "any MQTT errors?" or "what caused the crash at 8AM?". \
     Current device time is always injected in the tool description to resolve relative time references.
 
-    - query_hive_graph: Query a Hive workspace knowledge graph by workspace name and question. \
-    Use this when the user asks about their codebase, project structure, recent commits, \
-    or any information that lives in a Hive workspace graph. Also use this when the user \
-    asks to talk to or ask "Jamie" — Jamie is the name of the Hive AI agent.
+    - query_hive_graph: Query the Hive org knowledge graph (Jamie). Use this when the user \
+    asks about their org's codebase, project structure, recent commits, features, tasks, \
+    or asks to talk to Jamie. No workspace name is needed — Jamie has full access to the \
+    entire organization.
 
     HIVE AGENT — JAMIE:
-    The Hive AI agent is named Jamie. When the user says anything like "ask Jamie", \
-    "talk to Jamie", "tell Jamie", or directs a question to Jamie, you must use the \
-    query_hive_graph tool to relay that question to the Hive knowledge graph. \
-    Before invoking the tool, if the user has not specified a workspace, you MUST ask: \
-    "Which workspace would you like me to ask Jamie about?" — the workspace name is \
-    required to connect to the correct graph chat. Only invoke query_hive_graph once \
-    you have a workspace name.
+    Jamie is the Hive org AI agent. When the user says anything like "ask Jamie", \
+    "talk to Jamie", "tell Jamie", mentions Jamie, or asks about their org's projects, \
+    features, tasks, or codebase, call query_hive_graph immediately with their question. \
+    No workspace name is needed — Jamie has full access to the entire organization. \
+    Do NOT ask for a workspace name before invoking query_hive_graph.
 
     HIVE PROJECT MANAGEMENT TOOLS (use for browsing and managing Hive workspaces, features, and tasks):
 
@@ -139,8 +137,8 @@ final class AIAgentManager: @unchecked Sendable {
     - Results starting with "App logs" contain filtered log entries — present them clearly; summarise patterns if the list is long.
     - Results starting with "Log analysis for" contain a structured summary — present it directly; do not re-list raw lines.
     - Results starting with "No entries matching" mean filters returned nothing — tell the user and suggest broader filters.
-    - Results from query_hive_graph that don't start with "Hive graph error" or "Failed to fetch" or "Ambiguous" or "No Hive workspace" contain the knowledge graph response — present it clearly to the user.
-    - Results starting with "Hive graph error" or "Failed to fetch" mean the tool failed — report the issue and suggest checking Hive configuration.
+    - Results from query_hive_graph that don't start with "Hive graph error" or "Hive org not configured" or "Hive org ID not found" or "Hive authentication failed" contain the knowledge graph response — present it clearly to the user.
+    - Results starting with "Hive graph error" or "Hive org not configured" or "Hive org ID not found" or "Hive authentication failed" mean the tool failed — report the issue and suggest checking Hive configuration.
     - Results starting with a number followed by ". " from list_hive_workspaces, list_features, or list_tasks are numbered lists — present them clearly.
     - Results starting with "Workspace:", "Feature:", or "Task:" from detail tools contain structured info — present it clearly.
     - Results starting with "Search results for" contain search matches — present features and tasks sections clearly.
@@ -235,6 +233,12 @@ final class AIAgentManager: @unchecked Sendable {
         // Reset history when credentials change
         if clearHistory {
             reset()
+        }
+
+        // Pre-fetch and cache Hive org info for Jamie org-wide context
+        Task {
+            await AIAgentManager.fetchAndCacheHiveOrg()
+            await AIAgentManager.fetchAndCacheOrgSlugs()
         }
 
         // Create agent contact + chat if not already present

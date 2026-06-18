@@ -96,6 +96,74 @@ extension AIAgentManager {
         let status: String
     }
 
+    // MARK: - Org Cache Helpers
+
+    /// Fetches the first Hive org and caches orgId + githubLogin in UserDefaults.
+    static func fetchAndCacheHiveOrg() async {
+        let org: HiveOrg? = await withCheckedContinuation { continuation in
+            API.sharedInstance.fetchOrgsWithAuth(
+                callback: { org in continuation.resume(returning: org) },
+                errorCallback: { continuation.resume(returning: nil) }
+            )
+        }
+        guard let org = org else {
+            print("[AIAgent] fetchAndCacheHiveOrg: failed to fetch org")
+            return
+        }
+        UserDefaults.Keys.hiveOrgId.set(org.id)
+        UserDefaults.Keys.hiveGithubLogin.set(org.githubLogin)
+        print("[AIAgent] fetchAndCacheHiveOrg: cached orgId=\(org.id) login=\(org.githubLogin)")
+    }
+
+    /// Fetches org workspace slugs and caches them. Clears conversationId map if slugs changed.
+    static func fetchAndCacheOrgSlugs() async {
+        // Ensure githubLogin is available
+        if UserDefaults.Keys.hiveGithubLogin.get() == nil {
+            await fetchAndCacheHiveOrg()
+        }
+        guard let githubLogin: String = UserDefaults.Keys.hiveGithubLogin.get() else {
+            print("[AIAgent] fetchAndCacheOrgSlugs: no githubLogin available")
+            return
+        }
+
+        let slugs: [String]? = await withCheckedContinuation { continuation in
+            API.sharedInstance.fetchOrgWorkspacesWithAuth(
+                githubLogin: githubLogin,
+                callback: { slugs in continuation.resume(returning: slugs) },
+                errorCallback: { continuation.resume(returning: nil) }
+            )
+        }
+        guard let slugs = slugs else {
+            print("[AIAgent] fetchAndCacheOrgSlugs: failed to fetch org workspaces")
+            return
+        }
+
+        // Check if slugs changed — if so, clear conversationId map
+        if let existingData: Data = UserDefaults.Keys.hiveOrgSlugs.get(),
+           let existingSlugs = try? JSONDecoder().decode([String].self, from: existingData),
+           Set(existingSlugs) != Set(slugs) {
+            print("[AIAgent] fetchAndCacheOrgSlugs: slug list changed, clearing conversationId cache")
+            UserDefaults.Keys.hiveConversationIdByOrg.set(nil as Data?)
+        }
+
+        if let encoded = try? JSONEncoder().encode(slugs) {
+            UserDefaults.Keys.hiveOrgSlugs.set(encoded)
+        }
+        UserDefaults.Keys.hiveOrgSlugsCacheDate.set(Date().timeIntervalSince1970)
+        print("[AIAgent] fetchAndCacheOrgSlugs: cached \(slugs.count) slug(s)")
+    }
+
+    /// Returns cached org slugs if the cache is less than 24 hours old, otherwise nil.
+    static func cachedOrgSlugs() -> [String]? {
+        guard let cacheDate: Double = UserDefaults.Keys.hiveOrgSlugsCacheDate.get(),
+              Date().timeIntervalSince1970 - cacheDate < 86400,
+              let data: Data = UserDefaults.Keys.hiveOrgSlugs.get(),
+              let slugs = try? JSONDecoder().decode([String].self, from: data) else {
+            return nil
+        }
+        return slugs
+    }
+
     // MARK: - Helper: fetch workspaces async
 
     private func fetchWorkspacesAsync() async -> [Workspace]? {
