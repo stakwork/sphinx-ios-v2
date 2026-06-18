@@ -198,7 +198,9 @@ extension GraphChatSSEManager: URLSessionDataDelegate {
            let cid = http.allHeaderFields["X-Conversation-Id"] as? String,
            !orgConversationIdFired {
             orgConversationIdFired = true
-            DispatchQueue.main.async { self.onConversationId?(cid) }
+            // Store synchronously on the current delegate queue before allowing data to flow,
+            // so the conversationId is persisted before any didReceive data fires.
+            onConversationId?(cid)
         }
         completionHandler(.allow)
     }
