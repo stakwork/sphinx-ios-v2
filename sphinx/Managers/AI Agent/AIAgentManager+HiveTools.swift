@@ -13,6 +13,78 @@ import SwiftAISDK
 
 extension AIAgentManager {
 
+    // MARK: - Org Workspace Cache
+
+    /// Returns cached org slugs if the cache is less than 24 hours old, otherwise nil.
+    static func orgSlugsIfFresh() -> [String]? {
+        let maxAge: Double = 86_400 // 24 hours
+        guard let cacheDate = UserDefaults.Keys.hiveOrgSlugsCacheDate.get() else { return nil }
+        guard Date().timeIntervalSince1970 - cacheDate < maxAge else { return nil }
+        guard let data = UserDefaults.Keys.hiveOrgSlugs.get(),
+              let slugs = try? JSONDecoder().decode([String].self, from: data),
+              !slugs.isEmpty else { return nil }
+        return slugs
+    }
+
+    /// Fetches all org workspace slugs + orgId from Hive and caches them in UserDefaults.
+    /// Safe to call multiple times — skips the network request if the cache is still fresh.
+    static func fetchAndCacheOrgWorkspaces() {
+        // Skip if cache is still fresh
+        if orgSlugsIfFresh() != nil {
+            print("[AIAgentManager] Org workspace cache is fresh — skipping fetch")
+            return
+        }
+
+        API.sharedInstance.resolveHiveToken(
+            callback: { token in
+                API.sharedInstance.fetchHiveMe(
+                    authToken: token,
+                    callback: { login in
+                        API.sharedInstance.fetchOrgWorkspaces(
+                            login: login,
+                            authToken: token,
+                            callback: { orgWorkspaces in
+                                guard !orgWorkspaces.isEmpty else {
+                                    print("[AIAgentManager] fetchAndCacheOrgWorkspaces: no workspaces returned")
+                                    return
+                                }
+
+                                let newSlugs = orgWorkspaces.map { $0.slug }
+                                let orgId = orgWorkspaces.first?.sourceControlOrgId ?? login
+
+                                // Detect slug changes — clear conversationId cache if changed
+                                if let existingData = UserDefaults.Keys.hiveOrgSlugs.get(),
+                                   let existingSlugs = try? JSONDecoder().decode([String].self, from: existingData),
+                                   Set(existingSlugs) != Set(newSlugs) {
+                                    print("[AIAgentManager] Org slugs changed — clearing conversationId cache")
+                                    UserDefaults.Keys.hiveConversationIdByOrg.set(nil)
+                                }
+
+                                // Persist slugs, orgId, and cache timestamp
+                                if let encoded = try? JSONEncoder().encode(newSlugs) {
+                                    UserDefaults.Keys.hiveOrgSlugs.set(encoded)
+                                }
+                                UserDefaults.Keys.hiveOrgId.set(orgId)
+                                UserDefaults.Keys.hiveOrgSlugsCacheDate.set(Date().timeIntervalSince1970)
+
+                                print("[AIAgentManager] Cached \(newSlugs.count) org workspace slug(s), orgId=\(orgId)")
+                            },
+                            errorCallback: {
+                                print("[AIAgentManager] fetchAndCacheOrgWorkspaces: fetchOrgWorkspaces failed")
+                            }
+                        )
+                    },
+                    errorCallback: {
+                        print("[AIAgentManager] fetchAndCacheOrgWorkspaces: fetchHiveMe failed")
+                    }
+                )
+            },
+            errorCallback: {
+                print("[AIAgentManager] fetchAndCacheOrgWorkspaces: resolveHiveToken failed")
+            }
+        )
+    }
+
     // MARK: - Shared Helpers
 
     /// Resolves a named Hive item (feature or task) from a list using 3-pass fuzzy match.

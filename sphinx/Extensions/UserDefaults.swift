@@ -29,6 +29,10 @@ extension UserDefaults {
         public static let hiveToken = DefaultKey<String>("hiveToken")
         public static let hiveDeviceToken = DefaultKey<String>("hiveDeviceToken")
         public static let hiveNotificationPrompt = DefaultKey<String>("hiveNotificationPrompt")
+        public static let hiveOrgSlugs = DefaultKey<Data>("hiveOrgSlugs")                         // JSON [String]
+        public static let hiveOrgId = DefaultKey<String>("hiveOrgId")
+        public static let hiveOrgSlugsCacheDate = DefaultKey<Double>("hiveOrgSlugsCacheDate")     // timeIntervalSince1970
+        public static let hiveConversationIdByOrg = DefaultKey<Data>("hiveConversationIdByOrg")   // JSON [String:String]
         public static let inviterNickname = DefaultKey<String>("inviterNickname")
         public static let inviterPubkey = DefaultKey<String>("inviterPubkey")
         public static let inviterRouteHint = DefaultKey<String>("inviterRouteHint")

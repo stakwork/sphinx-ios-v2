@@ -225,6 +225,15 @@ class HiveConfigurationViewController: UIViewController {
 
         UserDefaults.Keys.hiveNotificationPrompt.set(promptText)
 
+        // Clear stale org cache and conversation history so Jamie starts fresh
+        UserDefaults.Keys.hiveOrgSlugs.set(nil)
+        UserDefaults.Keys.hiveOrgId.set(nil)
+        UserDefaults.Keys.hiveOrgSlugsCacheDate.set(nil)
+        UserDefaults.Keys.hiveConversationIdByOrg.set(nil)
+
+        // Trigger background re-fetch of org workspaces
+        Task { AIAgentManager.fetchAndCacheOrgWorkspaces() }
+
         closeButtonTouched()
     }
 

@@ -37,6 +37,21 @@ typealias HiveWorkspaceMembersCallback = (([WorkspaceMember]) -> ())
 typealias HiveProjectErrorCallback = ((String) -> ())
 typealias HiveLlmModelsCallback = (([HiveLlmModel]) -> ())
 
+// MARK: - OrgWorkspace
+
+struct OrgWorkspace {
+    let slug: String
+    let sourceControlOrgId: String
+
+    init?(json: JSON) {
+        guard let slug = json["slug"].string else { return nil }
+        self.slug = slug
+        self.sourceControlOrgId = json["sourceControlOrgId"].string
+            ?? json["ownerId"].string
+            ?? ""
+    }
+}
+
 // MARK: - WorkspaceRepository
 
 struct WorkspaceRepository {
@@ -3825,6 +3840,128 @@ extension API {
                 },
                 errorCallback: errorCallback
             )
+        }
+    }
+
+    // MARK: - Hive Me (resolve login/orgId)
+
+    /// Fetches the authenticated user profile from Hive.
+    /// Falls back to the first workspace's ownerId if /api/me is unavailable.
+    func fetchHiveMe(
+        authToken: String,
+        callback: @escaping (String) -> Void,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        guard let request = createRequest(
+            "\(API.kHiveBaseUrl)/me",
+            bodyParams: nil,
+            method: "GET",
+            token: authToken
+        ) else {
+            errorCallback()
+            return
+        }
+
+        session()?.request(request).responseData { [weak self] response in
+            if let statusCode = response.response?.statusCode, (200..<300).contains(statusCode),
+               let data = try? response.result.get() {
+                let json = JSON(data)
+                // Try common login/username fields
+                if let login = json["login"].string ?? json["username"].string ?? json["id"].string {
+                    callback(login)
+                    return
+                }
+            }
+            // Fallback: use ownerId from first workspace
+            self?.fetchWorkspaces(
+                authToken: authToken,
+                callback: { workspaces in
+                    if let ownerId = workspaces.first?.ownerId, !ownerId.isEmpty {
+                        callback(ownerId)
+                    } else {
+                        errorCallback()
+                    }
+                },
+                errorCallback: errorCallback
+            )
+        }
+    }
+
+    // MARK: - Fetch Org Workspaces
+
+    /// Fetches all workspaces for the given org login from GET /api/orgs/<login>/workspaces.
+    /// Falls back to fetchWorkspacesWithAuth if the endpoint is unavailable.
+    func fetchOrgWorkspaces(
+        login: String,
+        authToken: String,
+        callback: @escaping ([OrgWorkspace]) -> Void,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        guard let encodedLogin = login.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
+              let request = createRequest(
+                "\(API.kHiveBaseUrl)/orgs/\(encodedLogin)/workspaces",
+                bodyParams: nil,
+                method: "GET",
+                token: authToken
+              ) else {
+            errorCallback()
+            return
+        }
+
+        session()?.request(request).responseData { [weak self] response in
+            guard let self = self else { return }
+
+            let statusCode = response.response?.statusCode ?? -1
+
+            // If endpoint doesn't exist, fall back to regular workspace list
+            if statusCode == 404 || statusCode == 405 {
+                print("[HiveAPI] /orgs endpoint unavailable (\(statusCode)), falling back to /workspaces")
+                self.fetchWorkspaces(
+                    authToken: authToken,
+                    callback: { workspaces in
+                        let orgWorkspaces: [OrgWorkspace] = workspaces.compactMap { ws in
+                            guard let slug = ws.slug else { return nil }
+                            return OrgWorkspace(json: JSON(["slug": slug, "sourceControlOrgId": ws.ownerId ?? ""]))
+                        }
+                        callback(orgWorkspaces)
+                    },
+                    errorCallback: errorCallback
+                )
+                return
+            }
+
+            if statusCode == 401 {
+                errorCallback()
+                return
+            }
+
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+                // Try both array root and nested "workspaces" key
+                let array = json.array ?? json["workspaces"].array ?? []
+                let orgWorkspaces = array.compactMap { OrgWorkspace(json: $0) }
+                print("[HiveAPI] fetchOrgWorkspaces: \(orgWorkspaces.count) workspace(s) for org '\(login)'")
+                if orgWorkspaces.isEmpty {
+                    // Empty result — fall back to regular workspaces
+                    self.fetchWorkspaces(
+                        authToken: authToken,
+                        callback: { workspaces in
+                            let fallback: [OrgWorkspace] = workspaces.compactMap { ws in
+                                guard let slug = ws.slug else { return nil }
+                                return OrgWorkspace(json: JSON(["slug": slug, "sourceControlOrgId": ws.ownerId ?? ""]))
+                            }
+                            callback(fallback)
+                        },
+                        errorCallback: errorCallback
+                    )
+                } else {
+                    callback(orgWorkspaces)
+                }
+            case .failure(let error):
+                print("[HiveAPI] fetchOrgWorkspaces failed: \(error.localizedDescription)")
+                errorCallback()
+            }
         }
     }
 

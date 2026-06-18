@@ -241,6 +241,13 @@ final class AIAgentManager: @unchecked Sendable {
         Task { @MainActor in
             self.createAgentContactAndChatIfNeeded()
         }
+
+        // Background fetch of org workspace slugs for Jamie (no-op if cache is fresh)
+        Task {
+            if AIAgentManager.orgSlugsIfFresh() == nil {
+                AIAgentManager.fetchAndCacheOrgWorkspaces()
+            }
+        }
     }
 
     // MARK: - Agent Contact + Chat Creation
