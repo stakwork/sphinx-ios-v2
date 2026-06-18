@@ -225,6 +225,17 @@ class HiveConfigurationViewController: UIViewController {
 
         UserDefaults.Keys.hiveNotificationPrompt.set(promptText)
 
+        // Clear org cache so Jamie picks up any new Hive configuration
+        UserDefaults.Keys.hiveOrgId.removeValue()
+        UserDefaults.Keys.hiveGithubLogin.removeValue()
+        UserDefaults.Keys.hiveOrgSlugs.removeValue()
+        UserDefaults.Keys.hiveOrgSlugsCacheDate.removeValue()
+        UserDefaults.Keys.hiveConversationIdByOrg.removeValue()
+        Task {
+            await AIAgentManager.fetchAndCacheHiveOrg()
+            await AIAgentManager.fetchAndCacheOrgSlugs()
+        }
+
         closeButtonTouched()
     }
 
