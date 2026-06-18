@@ -159,19 +159,33 @@ class ChatHelper {
             }
         }
         
-        // Pass 2 — bare pubkeys: 66-char hex strings with no existing link attribute
-        // → add blue/underline styling + .sphinxURL pointing to shareContactDeepLink
-        guard let regex = try? NSRegularExpression(pattern: "[A-F0-9a-f]{66}") else { return }
-        regex.enumerateMatches(in: text, range: NSRange(text.startIndex..., in: text)) { match, _, _ in
-            guard let range = match?.range else { return }
-            guard attrStr.attribute(.sphinxURL, at: range.location, effectiveRange: nil) == nil else { return }
+        // Pass 2 — sphinx identities and bare pubkeys
+        // Full sphinx identity (pubkey_mixerPubkey_channelId) is matched first so the entire
+        // compound string gets a single link; isolated 66-char pubkeys are matched second and
+        // skip any range already attributed by the identity pass.
+        let linkAttrs: (URL) -> [NSAttributedString.Key: Any] = { url in [
+            .sphinxURL: url,
+            .foregroundColor: UIColor.Sphinx.PrimaryBlue,
+            .underlineStyle: NSUnderlineStyle.single.rawValue
+        ]}
+        guard let identityRegex = try? NSRegularExpression(pattern: "[A-F0-9a-f]{66}_[A-F0-9a-f]{66}_[0-9]+"),
+              let pubkeyRegex   = try? NSRegularExpression(pattern: "[A-F0-9a-f]{66}") else { return }
+        let fullRange2 = NSRange(text.startIndex..., in: text)
+        identityRegex.enumerateMatches(in: text, range: fullRange2) { match, _, _ in
+            guard let range = match?.range,
+                  attrStr.attribute(.sphinxURL, at: range.location, effectiveRange: nil) == nil else { return }
+            let identity = (text as NSString).substring(with: range)
+            if let deepURL = URL(string: identity.shareContactDeepLink) {
+                attrStr.addAttributes(linkAttrs(deepURL), range: range)
+            }
+        }
+        pubkeyRegex.enumerateMatches(in: text, range: fullRange2) { match, _, _ in
+            guard let range = match?.range,
+                  attrStr.attribute(.sphinxURL, at: range.location, effectiveRange: nil) == nil else { return }
             let pubkey = (text as NSString).substring(with: range)
-            guard let deepURL = URL(string: pubkey.shareContactDeepLink) else { return }
-            attrStr.addAttributes([
-                .sphinxURL: deepURL,
-                .foregroundColor: UIColor.Sphinx.PrimaryBlue,
-                .underlineStyle: NSUnderlineStyle.single.rawValue
-            ], range: range)
+            if let deepURL = URL(string: pubkey.shareContactDeepLink) {
+                attrStr.addAttributes(linkAttrs(deepURL), range: range)
+            }
         }
     }
 }
