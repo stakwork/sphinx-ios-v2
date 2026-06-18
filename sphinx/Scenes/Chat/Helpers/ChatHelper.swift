@@ -142,6 +142,52 @@ class ChatHelper {
         
         return ranges
     }
+    
+    @MainActor
+    static func applySphinxLinkTransforms(to attrStr: NSMutableAttributedString) {
+        let fullRange = NSRange(location: 0, length: attrStr.length)
+        let text = attrStr.string
+        
+        // Pass 1 — video call links: existing .sphinxURL attributes pointing to kVideoCallServer
+        // → replace the attribute URL with callLinkDeepLink (display text unchanged)
+        attrStr.enumerateAttribute(.sphinxURL, in: fullRange) { value, range, _ in
+            guard let url = value as? URL,
+                  url.absoluteString.hasPrefix(API.sharedInstance.kVideoCallServer) else { return }
+            let deepLink = url.absoluteString.callLinkDeepLink
+            if let deepURL = URL(string: deepLink) {
+                attrStr.addAttribute(.sphinxURL, value: deepURL, range: range)
+            }
+        }
+        
+        // Pass 2 — sphinx identities and bare pubkeys
+        // Full sphinx identity (pubkey_mixerPubkey_channelId) is matched first so the entire
+        // compound string gets a single link; isolated 66-char pubkeys are matched second and
+        // skip any range already attributed by the identity pass.
+        let linkAttrs: (URL) -> [NSAttributedString.Key: Any] = { url in [
+            .sphinxURL: url,
+            .foregroundColor: UIColor.Sphinx.PrimaryBlue,
+            .underlineStyle: NSUnderlineStyle.single.rawValue
+        ]}
+        guard let identityRegex = try? NSRegularExpression(pattern: "[A-F0-9a-f]{66}_[A-F0-9a-f]{66}_[0-9]+"),
+              let pubkeyRegex   = try? NSRegularExpression(pattern: "[A-F0-9a-f]{66}") else { return }
+        let fullRange2 = NSRange(text.startIndex..., in: text)
+        identityRegex.enumerateMatches(in: text, range: fullRange2) { match, _, _ in
+            guard let range = match?.range,
+                  attrStr.attribute(.sphinxURL, at: range.location, effectiveRange: nil) == nil else { return }
+            let identity = (text as NSString).substring(with: range)
+            if let deepURL = URL(string: identity.shareContactDeepLink) {
+                attrStr.addAttributes(linkAttrs(deepURL), range: range)
+            }
+        }
+        pubkeyRegex.enumerateMatches(in: text, range: fullRange2) { match, _, _ in
+            guard let range = match?.range,
+                  attrStr.attribute(.sphinxURL, at: range.location, effectiveRange: nil) == nil else { return }
+            let pubkey = (text as NSString).substring(with: range)
+            if let deepURL = URL(string: pubkey.shareContactDeepLink) {
+                attrStr.addAttributes(linkAttrs(deepURL), range: range)
+            }
+        }
+    }
 }
 
 @MainActor func getWindowInsets() -> UIEdgeInsets {
