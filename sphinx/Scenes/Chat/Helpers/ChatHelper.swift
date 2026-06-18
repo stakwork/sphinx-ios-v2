@@ -142,6 +142,38 @@ class ChatHelper {
         
         return ranges
     }
+    
+    @MainActor
+    static func applySphinxLinkTransforms(to attrStr: NSMutableAttributedString) {
+        let fullRange = NSRange(location: 0, length: attrStr.length)
+        let text = attrStr.string
+        
+        // Pass 1 — video call links: existing .sphinxURL attributes pointing to kVideoCallServer
+        // → replace the attribute URL with callLinkDeepLink (display text unchanged)
+        attrStr.enumerateAttribute(.sphinxURL, in: fullRange) { value, range, _ in
+            guard let url = value as? URL,
+                  url.absoluteString.hasPrefix(API.sharedInstance.kVideoCallServer) else { return }
+            let deepLink = url.absoluteString.callLinkDeepLink
+            if let deepURL = URL(string: deepLink) {
+                attrStr.addAttribute(.sphinxURL, value: deepURL, range: range)
+            }
+        }
+        
+        // Pass 2 — bare pubkeys: 66-char hex strings with no existing link attribute
+        // → add blue/underline styling + .sphinxURL pointing to shareContactDeepLink
+        guard let regex = try? NSRegularExpression(pattern: "[A-F0-9a-f]{66}") else { return }
+        regex.enumerateMatches(in: text, range: NSRange(text.startIndex..., in: text)) { match, _, _ in
+            guard let range = match?.range else { return }
+            guard attrStr.attribute(.sphinxURL, at: range.location, effectiveRange: nil) == nil else { return }
+            let pubkey = (text as NSString).substring(with: range)
+            guard let deepURL = URL(string: pubkey.shareContactDeepLink) else { return }
+            attrStr.addAttributes([
+                .sphinxURL: deepURL,
+                .foregroundColor: UIColor.Sphinx.PrimaryBlue,
+                .underlineStyle: NSUnderlineStyle.single.rawValue
+            ], range: range)
+        }
+    }
 }
 
 @MainActor func getWindowInsets() -> UIEdgeInsets {

@@ -133,102 +133,19 @@ class ThreadHeaderView : UIView {
         messageLabel.attributedText = nil
         messageLabel.text = nil
         
-        if threadOriginalMessage.hasNoMarkdown {
-            messageAndMediaLabel.text = threadOriginalMessage.text
-            messageAndMediaLabel.font = UIFont.getThreadHeaderFont()
-            
-            messageLabel.text = threadOriginalMessage.text
-            messageLabel.font = UIFont.getThreadHeaderFont()
-        } else {
-            let messageC = threadOriginalMessage.text
-            
-            let attributedString = NSMutableAttributedString(string: messageC)
-            attributedString.addAttributes(
-                [NSAttributedString.Key.font: UIFont.getThreadHeaderFont()], range: messageC.nsRange
-            )
-            
-            ///Highlighted text formatting
-            let highlightedNsRanges = threadOriginalMessage.highlightedMatches.map {
-                return $0.range
-            }
-            
-            for nsRange in highlightedNsRanges {
-                
-                let adaptedRange = NSRange(
-                    location: nsRange.location,
-                    length: nsRange.length
-                )
-                
-                attributedString.addAttributes(
-                    [
-                        NSAttributedString.Key.foregroundColor: UIColor.Sphinx.HighlightedText,
-                        NSAttributedString.Key.backgroundColor: UIColor.Sphinx.HighlightedTextBackground,
-                        NSAttributedString.Key.font: UIFont.getThreadHeaderHightlightedFont()
-                    ],
-                    range: adaptedRange
-                )
-            }
-            
-            ///Bold text formatting
-            let boldNsRanges = threadOriginalMessage.boldMatches.map {
-                return $0.range
-            }
-            
-            for nsRange in boldNsRanges {
-                
-                let adaptedRange = NSRange(
-                    location: nsRange.location,
-                    length: nsRange.length
-                )
-                
-                attributedString.addAttributes(
-                    [
-                        NSAttributedString.Key.font: UIFont.getThreadHeaderBoldFont()
-                    ],
-                    range: adaptedRange
-                )
-            }
-            
-            ///Links formatting
-            for match in threadOriginalMessage.linkMatches {
-                
-                attributedString.addAttributes(
-                    [
-                        NSAttributedString.Key.foregroundColor: UIColor.Sphinx.PrimaryBlue,
-                        NSAttributedString.Key.underlineStyle: NSUnderlineStyle.single.rawValue,
-                        NSAttributedString.Key.font: UIFont.getThreadHeaderFont()
-                    ],
-                    range: match.range
-                )
-                
-                urlRanges.append(match.range)
-            }
-            
-            ///Markdown Links formatting
-            for (textCheckingResult, _, link, _) in threadOriginalMessage.linkMarkdownMatches {
-                
-                let nsRange = textCheckingResult.range
-                
-                if let url = URL(string: link) {
-                    attributedString.addAttributes(
-                        [
-                            NSAttributedString.Key.link: url,
-                            NSAttributedString.Key.foregroundColor: UIColor.Sphinx.PrimaryBlue,
-                            NSAttributedString.Key.underlineStyle: NSUnderlineStyle.single.rawValue,
-                            NSAttributedString.Key.font: UIFont.getThreadHeaderFont()
-                        ],
-                        range: nsRange
-                    )
-                }
-                
-                urlRanges.append(nsRange)
-            }
-            
-            messageAndMediaLabel.attributedText = attributedString
-            messageLabel.attributedText = attributedString
-            messageAndMediaLabel.isUserInteractionEnabled = true
-            messageLabel.isUserInteractionEnabled = true
+        let rendered = NSMutableAttributedString(
+            attributedString: ChatHelper.markdownRenderer.render(threadOriginalMessage.text)
+        )
+        ChatHelper.applySphinxLinkTransforms(to: rendered)
+        
+        rendered.enumerateAttribute(.sphinxURL, in: NSRange(location: 0, length: rendered.length)) { value, range, _ in
+            if value != nil { urlRanges.append(range) }
         }
+        
+        messageAndMediaLabel.attributedText = rendered
+        messageLabel.attributedText = rendered
+        messageAndMediaLabel.isUserInteractionEnabled = true
+        messageLabel.isUserInteractionEnabled = true
         
         if urlRanges.isEmpty {
             messageAndMediaLabel.removeGestureRecognizer(tap)
@@ -250,11 +167,13 @@ class ThreadHeaderView : UIView {
                     label,
                     inRange: range
                 ) {
-                    if let link = (attributedText.attribute(.link, at: range.location, effectiveRange: nil) as? URL)?.absoluteString {
-                        UIApplication.shared.open(URL(string: link)!, options: [:], completionHandler: nil)
+                    if let url = attributedText.attribute(.sphinxURL, at: range.location, effectiveRange: nil) as? URL {
+                        UIApplication.shared.open(url, options: [:], completionHandler: nil)
                     } else {
                         let link = (attributedText.string as NSString).substring(with: range)
-                        UIApplication.shared.open(URL(string: link)!, options: [:], completionHandler: nil)
+                        if let url = URL(string: link) {
+                            UIApplication.shared.open(url, options: [:], completionHandler: nil)
+                        }
                     }
                 }
             }

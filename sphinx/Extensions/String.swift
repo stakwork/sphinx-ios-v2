@@ -1324,4 +1324,12 @@ extension String {
             return self.replacingOccurrences(of: "/v/", with: "/watch?v=")
         }
     }
+    
+    var shareContactDeepLink: String {
+        "sphinx.chat://?action=share_contact&pubKey=\(self)"
+    }
+    
+    var callLinkDeepLink: String {
+        "sphinx.chat://?action=call&link=\(self)"
+    }
 }

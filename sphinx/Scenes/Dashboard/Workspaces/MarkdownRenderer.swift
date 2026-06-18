@@ -405,6 +405,20 @@ final class MarkdownRenderer {
                 s = String(s[range.upperBound...])
                 continue
             }
+            // Sphinx deep links: sphinx.chat://... — must be checked before bare https?:// URLs
+            if let range = firstRange(in: s, pattern: #"sphinx\.chat://[^\s]*"#) {
+                result.append(renderInline(String(s[s.startIndex..<range.lowerBound]), font: font, color: color))
+                let urlStr = String(s[range])
+                let linkAttrs: [NSAttributedString.Key: Any] = [
+                    .font: font,
+                    .foregroundColor: style.linkColor,
+                    .underlineStyle: NSUnderlineStyle.single.rawValue,
+                    .sphinxURL: URL(string: urlStr) as Any
+                ]
+                result.append(NSAttributedString(string: urlStr, attributes: linkAttrs))
+                s = String(s[range.upperBound...])
+                continue
+            }
             // Bare URL: https://... or http://...
             if let range = firstRange(in: s, pattern: #"https?://[^\s]+"#) {
                 result.append(renderInline(String(s[s.startIndex..<range.lowerBound]), font: font, color: color))
