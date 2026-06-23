@@ -5155,15 +5155,14 @@ extension API {
         }
     }
 
-    private func updateNotificationPreference(
-        key: String,
-        value: Bool,
+    private func updateNotificationPreferences(
+        preferences: [String: Bool],
         authToken: String,
         callback: @escaping EmptyCallback,
         errorCallback: @escaping EmptyCallback
     ) {
         let urlString = "\(API.kHiveBaseUrl)/api/auth/notification-preferences"
-        let body: NSDictionary = [key: value]
+        let body = preferences as NSDictionary
         guard let request = createRequest(urlString, bodyParams: body, method: "PATCH", token: authToken) else {
             errorCallback(); return
         }
@@ -5180,16 +5179,14 @@ extension API {
         }
     }
 
-    func updateNotificationPreferenceWithAuth(
-        key: String,
-        value: Bool,
+    func updateNotificationPreferencesWithAuth(
+        preferences: [String: Bool],
         callback: @escaping EmptyCallback,
         errorCallback: @escaping EmptyCallback
     ) {
         if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
-            updateNotificationPreference(
-                key: key,
-                value: value,
+            updateNotificationPreferences(
+                preferences: preferences,
                 authToken: storedToken,
                 callback: callback,
                 errorCallback: { [weak self] in
@@ -5197,7 +5194,7 @@ extension API {
                         callback: { token in
                             guard let token = token else { errorCallback(); return }
                             self?.storeHiveToken(token)
-                            self?.updateNotificationPreference(key: key, value: value, authToken: token, callback: callback, errorCallback: errorCallback)
+                            self?.updateNotificationPreferences(preferences: preferences, authToken: token, callback: callback, errorCallback: errorCallback)
                         },
                         errorCallback: errorCallback
                     )
@@ -5208,7 +5205,7 @@ extension API {
                 callback: { [weak self] token in
                     guard let token = token else { errorCallback(); return }
                     self?.storeHiveToken(token)
-                    self?.updateNotificationPreference(key: key, value: value, authToken: token, callback: callback, errorCallback: errorCallback)
+                    self?.updateNotificationPreferences(preferences: preferences, authToken: token, callback: callback, errorCallback: errorCallback)
                 },
                 errorCallback: errorCallback
             )

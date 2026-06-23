@@ -46,6 +46,8 @@ class HiveNotificationPreferencesViewController: UIViewController {
     private var loadingWheel: UIActivityIndicatorView!
     private var errorLabel: UILabel!
     private var tableView: UITableView!
+    private var saveButton: UIButton!
+    private var saveLoadingWheel: UIActivityIndicatorView!
 
     // MARK: - State
     private var preferences: [String: Bool] = [:]
@@ -95,7 +97,7 @@ class HiveNotificationPreferencesViewController: UIViewController {
         closeButton.addTarget(self, action: #selector(closeButtonTouched), for: .touchUpInside)
         headerView.addSubview(closeButton)
 
-        // Loading Wheel
+        // Loading Wheel (fetch)
         loadingWheel = UIActivityIndicatorView(style: .medium)
         loadingWheel.translatesAutoresizingMaskIntoConstraints = false
         loadingWheel.hidesWhenStopped = true
@@ -123,6 +125,26 @@ class HiveNotificationPreferencesViewController: UIViewController {
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "PreferenceCell")
         view.addSubview(tableView)
 
+        // Save Button
+        saveButton = UIButton()
+        saveButton.translatesAutoresizingMaskIntoConstraints = false
+        saveButton.setTitle("SAVE", for: .normal)
+        saveButton.setTitleColor(.white, for: .normal)
+        saveButton.titleLabel?.font = UIFont(name: "Montserrat-SemiBold", size: 14)
+        saveButton.backgroundColor = UIColor.Sphinx.PrimaryBlue
+        saveButton.layer.cornerRadius = 25
+        saveButton.clipsToBounds = true
+        saveButton.isHidden = true
+        saveButton.addTarget(self, action: #selector(saveButtonTouched), for: .touchUpInside)
+        view.addSubview(saveButton)
+
+        // Save Loading Wheel (overlaid on save button)
+        saveLoadingWheel = UIActivityIndicatorView(style: .medium)
+        saveLoadingWheel.translatesAutoresizingMaskIntoConstraints = false
+        saveLoadingWheel.hidesWhenStopped = true
+        saveLoadingWheel.color = .white
+        view.addSubview(saveLoadingWheel)
+
         // Layout Constraints
         NSLayoutConstraint.activate([
             // Header View
@@ -145,7 +167,7 @@ class HiveNotificationPreferencesViewController: UIViewController {
             closeIconLabel.centerXAnchor.constraint(equalTo: closeButton.centerXAnchor),
             closeIconLabel.centerYAnchor.constraint(equalTo: closeButton.centerYAnchor),
 
-            // Loading Wheel
+            // Loading Wheel (fetch)
             loadingWheel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             loadingWheel.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: 25),
 
@@ -155,11 +177,21 @@ class HiveNotificationPreferencesViewController: UIViewController {
             errorLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 32),
             errorLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -32),
 
-            // Table View
+            // Save Button
+            saveButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 32),
+            saveButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -32),
+            saveButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20),
+            saveButton.heightAnchor.constraint(equalToConstant: 50),
+
+            // Save Loading Wheel
+            saveLoadingWheel.centerXAnchor.constraint(equalTo: saveButton.centerXAnchor),
+            saveLoadingWheel.centerYAnchor.constraint(equalTo: saveButton.centerYAnchor),
+
+            // Table View (above save button)
             tableView.topAnchor.constraint(equalTo: headerView.bottomAnchor),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            tableView.bottomAnchor.constraint(equalTo: saveButton.topAnchor, constant: -8),
         ])
 
         viewTitle.addTextSpacing(value: 2)
@@ -170,6 +202,7 @@ class HiveNotificationPreferencesViewController: UIViewController {
     private func loadPreferences() {
         loadingWheel.startAnimating()
         tableView.isHidden = true
+        saveButton.isHidden = true
         errorLabel.isHidden = true
 
         API.sharedInstance.fetchNotificationPreferencesWithAuth(
@@ -181,6 +214,7 @@ class HiveNotificationPreferencesViewController: UIViewController {
                     for (k, v) in prefs { merged[k] = v }
                     self.preferences = merged
                     self.tableView.isHidden = false
+                    self.saveButton.isHidden = false
                     self.tableView.reloadData()
                 }
             },
@@ -194,30 +228,38 @@ class HiveNotificationPreferencesViewController: UIViewController {
         )
     }
 
-    // MARK: - Toggle Handling
+    // MARK: - Actions
 
-    private func handleToggle(key: String, newValue: Bool) {
-        let previousValue = preferences[key] ?? Self.defaultPreferences[key] ?? true
-        preferences[key] = newValue
+    @objc private func saveButtonTouched() {
+        saveButton.setTitle("", for: .normal)
+        saveButton.isEnabled = false
+        saveLoadingWheel.startAnimating()
 
-        API.sharedInstance.updateNotificationPreferenceWithAuth(
-            key: key,
-            value: newValue,
-            callback: { /* success — no-op, UI already updated */ },
+        API.sharedInstance.updateNotificationPreferencesWithAuth(
+            preferences: preferences,
+            callback: { [weak self] in
+                DispatchQueue.main.async {
+                    self?.dismiss(animated: true)
+                }
+            },
             errorCallback: { [weak self] in
                 DispatchQueue.main.async {
                     guard let self = self else { return }
-                    self.preferences[key] = previousValue
-                    self.tableView.reloadData()
-                    NewMessageBubbleHelper().showGenericMessageView(
-                        text: "Failed to update preference"
+                    self.saveLoadingWheel.stopAnimating()
+                    self.saveButton.setTitle("SAVE", for: .normal)
+                    self.saveButton.isEnabled = true
+
+                    let alert = UIAlertController(
+                        title: "Error",
+                        message: "Failed to save preferences. Please try again.",
+                        preferredStyle: .alert
                     )
+                    alert.addAction(UIAlertAction(title: "OK", style: .default))
+                    self.present(alert, animated: true)
                 }
             }
         )
     }
-
-    // MARK: - Actions
 
     @objc func closeButtonTouched() {
         dismiss(animated: true)
@@ -239,14 +281,13 @@ extension HiveNotificationPreferencesViewController: UITableViewDataSource, UITa
         cell.backgroundColor = UIColor.Sphinx.Body
         cell.selectionStyle = .none
 
-        // Label
         cell.textLabel?.text = entry.label
         cell.textLabel?.font = UIFont(name: "Roboto-Regular", size: 16)
         cell.textLabel?.textColor = UIColor.Sphinx.Text
 
-        // Switch
         let toggle = UISwitch()
         toggle.isOn = preferences[entry.key] ?? Self.defaultPreferences[entry.key] ?? true
+        toggle.onTintColor = UIColor.Sphinx.PrimaryBlue
         toggle.tag = indexPath.row
         toggle.addTarget(self, action: #selector(switchValueChanged(_:)), for: .valueChanged)
         cell.accessoryView = toggle
@@ -260,6 +301,6 @@ extension HiveNotificationPreferencesViewController: UITableViewDataSource, UITa
 
     @objc private func switchValueChanged(_ sender: UISwitch) {
         let entry = Self.notificationKeys[sender.tag]
-        handleToggle(key: entry.key, newValue: sender.isOn)
+        preferences[entry.key] = sender.isOn
     }
 }
