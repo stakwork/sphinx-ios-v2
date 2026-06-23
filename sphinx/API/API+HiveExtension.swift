@@ -5096,6 +5096,125 @@ extension API {
         )
     }
 
+    // MARK: - Notification Preferences
+
+    private func fetchNotificationPreferences(
+        authToken: String,
+        callback: @escaping ([String: Bool]) -> Void,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        let urlString = "\(API.kHiveBaseUrl)/api/auth/notification-preferences"
+        guard let request = createRequest(urlString, bodyParams: nil, method: "GET", token: authToken) else {
+            errorCallback(); return
+        }
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                errorCallback(); return
+            }
+            switch response.result {
+            case .success(let data):
+                if let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Bool] {
+                    callback(dict)
+                } else {
+                    callback([:])
+                }
+            case .failure:
+                errorCallback()
+            }
+        }
+    }
+
+    func fetchNotificationPreferencesWithAuth(
+        callback: @escaping ([String: Bool]) -> Void,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
+            fetchNotificationPreferences(
+                authToken: storedToken,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateWithHive(
+                        callback: { token in
+                            guard let token = token else { errorCallback(); return }
+                            self?.storeHiveToken(token)
+                            self?.fetchNotificationPreferences(authToken: token, callback: callback, errorCallback: errorCallback)
+                        },
+                        errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateWithHive(
+                callback: { [weak self] token in
+                    guard let token = token else { errorCallback(); return }
+                    self?.storeHiveToken(token)
+                    self?.fetchNotificationPreferences(authToken: token, callback: callback, errorCallback: errorCallback)
+                },
+                errorCallback: errorCallback
+            )
+        }
+    }
+
+    private func updateNotificationPreference(
+        key: String,
+        value: Bool,
+        authToken: String,
+        callback: @escaping EmptyCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        let urlString = "\(API.kHiveBaseUrl)/api/auth/notification-preferences"
+        let body: NSDictionary = [key: value]
+        guard let request = createRequest(urlString, bodyParams: body, method: "PATCH", token: authToken) else {
+            errorCallback(); return
+        }
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                errorCallback(); return
+            }
+            switch response.result {
+            case .success:
+                callback()
+            case .failure:
+                errorCallback()
+            }
+        }
+    }
+
+    func updateNotificationPreferenceWithAuth(
+        key: String,
+        value: Bool,
+        callback: @escaping EmptyCallback,
+        errorCallback: @escaping EmptyCallback
+    ) {
+        if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
+            updateNotificationPreference(
+                key: key,
+                value: value,
+                authToken: storedToken,
+                callback: callback,
+                errorCallback: { [weak self] in
+                    self?.authenticateWithHive(
+                        callback: { token in
+                            guard let token = token else { errorCallback(); return }
+                            self?.storeHiveToken(token)
+                            self?.updateNotificationPreference(key: key, value: value, authToken: token, callback: callback, errorCallback: errorCallback)
+                        },
+                        errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateWithHive(
+                callback: { [weak self] token in
+                    guard let token = token else { errorCallback(); return }
+                    self?.storeHiveToken(token)
+                    self?.updateNotificationPreference(key: key, value: value, authToken: token, callback: callback, errorCallback: errorCallback)
+                },
+                errorCallback: errorCallback
+            )
+        }
+    }
+
 }
 
 // MARK: - Workspace Image Cache
