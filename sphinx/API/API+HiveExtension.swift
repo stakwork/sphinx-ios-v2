@@ -5103,12 +5103,12 @@ extension API {
         callback: @escaping ([String: Bool]) -> Void,
         errorCallback: @escaping EmptyCallback
     ) {
-        let urlString = "\(API.kHiveBaseUrl)/api/auth/notification-preferences"
+        let urlString = "\(API.kHiveBaseUrl)/user/notification-preferences"
         guard let request = createRequest(urlString, bodyParams: nil, method: "GET", token: authToken) else {
             errorCallback(); return
         }
         session()?.request(request).responseData { response in
-            if let statusCode = response.response?.statusCode, statusCode == 401 {
+            if let statusCode = response.response?.statusCode, statusCode != 200 {
                 errorCallback(); return
             }
             switch response.result {
@@ -5161,13 +5161,13 @@ extension API {
         callback: @escaping EmptyCallback,
         errorCallback: @escaping EmptyCallback
     ) {
-        let urlString = "\(API.kHiveBaseUrl)/api/auth/notification-preferences"
+        let urlString = "\(API.kHiveBaseUrl)/user/notification-preferences"
         let body = preferences as NSDictionary
         guard let request = createRequest(urlString, bodyParams: body, method: "PATCH", token: authToken) else {
             errorCallback(); return
         }
         session()?.request(request).responseData { response in
-            if let statusCode = response.response?.statusCode, statusCode == 401 {
+            if let statusCode = response.response?.statusCode, statusCode != 200 {
                 errorCallback(); return
             }
             switch response.result {
