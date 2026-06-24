@@ -287,7 +287,7 @@ final class AppLogger: @unchecked Sendable {
     // MARK: - Private: Signal Handlers
 
     private func registerSignalHandlers() {
-        AppLoggerSignalBridge.logFilePath = logFileURL().path
+        AppLoggerSignalBridge.setLogFilePath(logFileURL().path)
 
         let handler: @convention(c) (Int32) -> Void = { signum in
             AppLoggerSignalBridge.writeCrashSentinel(signal: signum)
@@ -306,31 +306,64 @@ final class AppLogger: @unchecked Sendable {
 // MARK: - Signal-Safe Bridge
 
 /// C-compatible helpers for signal handlers.
-/// `nonisolated(unsafe)` opts the static var out of Swift 6's global-actor isolation
-/// checking — it is set exactly once (at start) before any signal can fire.
+/// The log-file path is kept in a fixed C buffer so the signal handler never
+/// touches the Swift heap (which may be corrupted after SIGSEGV/SIGBUS).
+/// `nonisolated(unsafe)` opts these globals out of Swift 6 actor-isolation
+/// checking — both are written exactly once at startup before any signal fires.
 enum AppLoggerSignalBridge {
-    nonisolated(unsafe) static var logFilePath: String = ""
+
+    /// Set this once at startup via `setLogFilePath(_:)`.
+    static func setLogFilePath(_ path: String) {
+        path.withCString { src in
+            withUnsafeMutablePointer(to: &gSignalLogPath.0) { dst in
+                _ = Darwin.strncpy(dst, src, MemoryLayout.size(ofValue: gSignalLogPath) - 1)
+            }
+        }
+    }
 
     /// Writes a crash-sentinel line using only async-signal-safe POSIX calls.
+    /// No Swift heap allocation, no ObjC, no Foundation.
     static func writeCrashSentinel(signal signum: Int32) {
-        let name: StaticString
-        switch signum {
-        case SIGSEGV: name = "SIGSEGV"
-        case SIGABRT: name = "SIGABRT"
-        case SIGILL:  name = "SIGILL"
-        case SIGBUS:  name = "SIGBUS"
-        case SIGFPE:  name = "SIGFPE"
-        default:      name = "SIGUNKNOWN"
+        withUnsafePointer(to: gSignalLogPath) { ptr in
+            let pathPtr = UnsafeRawPointer(ptr).assumingMemoryBound(to: CChar.self)
+            guard pathPtr.pointee != 0 else { return }
+            let fd = Darwin.open(pathPtr, O_WRONLY | O_APPEND | O_CREAT, 0o644)
+            guard fd >= 0 else { return }
+            let marker: StaticString = "CRASH — signal received\n"
+            marker.withUTF8Buffer { buf in
+                _ = Darwin.write(fd, buf.baseAddress!, buf.count)
+            }
+            Darwin.close(fd)
         }
-
-        let sentinel = "💥 CRASH — signal \(name) (signal-safe write)\n"
-        let fd = logFilePath.withCString { path in
-            Darwin.open(path, O_WRONLY | O_APPEND | O_CREAT, 0o644)
-        }
-        guard fd >= 0 else { return }
-        sentinel.withCString { ptr in
-            _ = Darwin.write(fd, ptr, strlen(ptr))
-        }
-        Darwin.close(fd)
     }
 }
+
+/// 1 KB C buffer for the log-file path — allocated in the data segment,
+/// never on the Swift heap, safe to read from a signal handler.
+nonisolated(unsafe) private var gSignalLogPath: (
+    CChar, CChar, CChar, CChar, CChar, CChar, CChar, CChar,
+    CChar, CChar, CChar, CChar, CChar, CChar, CChar, CChar,
+    CChar, CChar, CChar, CChar, CChar, CChar, CChar, CChar,
+    CChar, CChar, CChar, CChar, CChar, CChar, CChar, CChar,
+    CChar, CChar, CChar, CChar, CChar, CChar, CChar, CChar,
+    CChar, CChar, CChar, CChar, CChar, CChar, CChar, CChar,
+    CChar, CChar, CChar, CChar, CChar, CChar, CChar, CChar,
+    CChar, CChar, CChar, CChar, CChar, CChar, CChar, CChar,
+    CChar, CChar, CChar, CChar, CChar, CChar, CChar, CChar,
+    CChar, CChar, CChar, CChar, CChar, CChar, CChar, CChar,
+    CChar, CChar, CChar, CChar, CChar, CChar, CChar, CChar,
+    CChar, CChar, CChar, CChar, CChar, CChar, CChar, CChar,
+    CChar, CChar, CChar, CChar, CChar, CChar, CChar, CChar,
+    CChar, CChar, CChar, CChar, CChar, CChar, CChar, CChar,
+    CChar, CChar, CChar, CChar, CChar, CChar, CChar, CChar,
+    CChar, CChar, CChar, CChar, CChar, CChar, CChar, CChar
+) = (
+    0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0
+)
