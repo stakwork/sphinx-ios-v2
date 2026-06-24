@@ -5212,6 +5212,89 @@ extension API {
         }
     }
 
+
+    // MARK: - Proposal Approval / Rejection
+
+    func sendApprovalIntent(
+        orgId: String,
+        conversationId: String,
+        turnId: String,
+        proposalId: String,
+        canvasChatMessages: [[String: Any]],
+        token: String,
+        completion: @escaping (AIAgentManager.ApprovalResult?) -> Void
+    ) {
+        guard let url = URL(string: "https://hive.sphinx.chat/api/ask/quick") else {
+            completion(nil); return
+        }
+        let body: [String: Any] = [
+            "orgId": orgId,
+            "conversationId": conversationId,
+            "turnId": turnId,
+            "approvalIntent": ["proposalId": proposalId],
+            "canvasChatMessages": canvasChatMessages
+        ]
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+
+        print("AIAgent [HiveGraph] approval POST fired — turnId: \(turnId)")
+
+        URLSession.shared.dataTask(with: request) { _, response, error in
+            if let error = error {
+                print("AIAgent [HiveGraph] approval POST failed: \(error.localizedDescription)")
+                completion(nil); return
+            }
+            var result: AIAgentManager.ApprovalResult? = nil
+            if let http = response as? HTTPURLResponse,
+               let header = http.allHeaderFields["X-Approval-Result"] as? String,
+               let data = header.data(using: .utf8) {
+                result = try? JSONDecoder().decode(AIAgentManager.ApprovalResult.self, from: data)
+                print("AIAgent [HiveGraph] X-Approval-Result parsed: \(header)")
+            }
+            completion(result)
+        }.resume()
+    }
+
+    func sendRejectionIntent(
+        orgId: String,
+        conversationId: String,
+        turnId: String,
+        proposalId: String,
+        canvasChatMessages: [[String: Any]],
+        token: String,
+        completion: @escaping (Bool) -> Void
+    ) {
+        guard let url = URL(string: "https://hive.sphinx.chat/api/ask/quick") else {
+            completion(false); return
+        }
+        let body: [String: Any] = [
+            "orgId": orgId,
+            "conversationId": conversationId,
+            "turnId": turnId,
+            "rejectionIntent": ["proposalId": proposalId],
+            "canvasChatMessages": canvasChatMessages
+        ]
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+
+        print("AIAgent [HiveGraph] rejection POST fired — turnId: \(turnId)")
+
+        URLSession.shared.dataTask(with: request) { _, response, error in
+            if let error = error {
+                print("AIAgent [HiveGraph] rejection POST failed: \(error.localizedDescription)")
+                completion(false); return
+            }
+            print("AIAgent [HiveGraph] rejection POST succeeded")
+            completion(true)
+        }.resume()
+    }
+
 }
 
 // MARK: - Workspace Image Cache

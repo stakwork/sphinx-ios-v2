@@ -277,6 +277,7 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         ])
         agentBarHeightConstraint = heightConstraint
         agentProcessingBar = bar
+        setupProposalCardObservers()
     }
 
     func showAgentProcessingBar() {

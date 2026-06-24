@@ -613,7 +613,7 @@ extension WorkspaceGraphChatViewController: @preconcurrency GraphChatSSEDelegate
         UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
     }
 
-    func onToolOutputAvailable() {
+    func onToolOutputAvailable(toolName: String, output: [String: Any]?) {
         // Keep the status bar visible — it will be dismissed in onFinish
         // once the completed assistant message is ready to take its place.
     }
