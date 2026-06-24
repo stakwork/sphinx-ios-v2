@@ -167,7 +167,6 @@ class ItemDescriptionTableViewHeaderCell: UITableViewCell {
     }
     
     @IBAction func downloadButtonTapped(_ sender: Any) {
-        print("download tapped")
         if let episode = episode,
            !episode.isDownloaded{
             downloadProgressBar.progressAnimation(to: 0, active: true)
