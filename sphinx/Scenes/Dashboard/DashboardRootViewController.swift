@@ -278,8 +278,8 @@ extension DashboardRootViewController {
     }
 
     @IBAction func didTapWorkspaceSettingsButton() {
-        let hiveConfigVC = HiveConfigurationViewController.instantiate()
-        present(hiveConfigVC, animated: true)
+        let prefsVC = HiveNotificationPreferencesViewController.instantiate()
+        present(prefsVC, animated: true)
     }
     
     func setupPlayerBar() {

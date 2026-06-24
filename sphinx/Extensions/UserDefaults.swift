@@ -28,7 +28,6 @@ extension UserDefaults {
         public static let attachmentsTokenExpDate = DefaultKey<Date>("attachmentsTokenExpDate")
         public static let hiveToken = DefaultKey<String>("hiveToken")
         public static let hiveDeviceToken = DefaultKey<String>("hiveDeviceToken")
-        public static let hiveNotificationPrompt = DefaultKey<String>("hiveNotificationPrompt")
         public static let hiveOrgId               = DefaultKey<String>("hiveOrgId")
         public static let hiveGithubLogin         = DefaultKey<String>("hiveGithubLogin")
         public static let hiveOrgSlugs            = DefaultKey<Data>("hiveOrgSlugs")            // JSON-encoded [String]
