@@ -122,7 +122,6 @@ extension TribeMemberProfileViewController: TribeMemberProfileViewDelegate {
         view: UIView
     ) {
         let y = gestureRecognizer.translation(in: view).y
-        print(y)
         
         switch(gestureRecognizer.state) {
         case .changed:

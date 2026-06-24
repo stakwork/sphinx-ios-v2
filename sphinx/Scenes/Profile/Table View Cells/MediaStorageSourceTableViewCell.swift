@@ -115,7 +115,6 @@ class MediaStorageSourceTableViewCell: UITableViewCell {
 
         if let stringURL = forChat.getPhotoUrl(),
            let imageURL = URL(string:  stringURL){
-            print(name)
             squareImageView.sd_setImage(with: imageURL)
             initialsLabel.isHidden = true
         }

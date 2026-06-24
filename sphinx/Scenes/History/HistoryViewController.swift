@@ -105,9 +105,6 @@ class HistoryViewController: UIViewController {
                 
                 if let localHistoryMessage = messages.filter({ $0.paymentHash == result.rhash ?? "" }).first {
                     let paymentTransaction = PaymentTransaction(fromTransactionMessage: localHistoryMessage, transaction: result)
-                    if localHistoryMessage.id == 48379 {
-                        print("test")
-                    }
                     history.append(paymentTransaction)
                     continue
                 }

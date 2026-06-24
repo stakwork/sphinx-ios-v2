@@ -264,7 +264,6 @@ extension YouTubeVideoFeedEpisodePlayerViewController {
             if let assetTrack = assetTrack {
                 let videoSize = assetTrack.naturalSize
                 let aspectRatio = videoSize.width / videoSize.height
-                print("Video Aspect Ratio: \(aspectRatio)")
                 if(aspectRatio < 1.0){
                     playerViewController?.videoGravity = .resizeAspect
                 }

@@ -1688,7 +1688,6 @@ extension SphinxOnionManager {
             if (type == TransactionMessage.TransactionMessageType.attachment.rawValue) {
                 AttachmentsManager.sharedInstance.cacheImageAndMediaData(message: sentMessage, attachmentObject: attachmentObject)
             } else if (type == TransactionMessage.TransactionMessageType.purchase.rawValue) {
-                print(sentMessage)
             }
             
             return (sentMessage, nil)

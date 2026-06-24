@@ -53,7 +53,6 @@ final class AppContext: ObservableObject, @unchecked Sendable {
     @Published var outputDevice: AudioDevice = AudioManager.shared.defaultOutputDevice {
         didSet {
             guard AudioManager.shared.outputDevice.deviceId != outputDevice.deviceId else { return }
-            print("didSet outputDevice: \(String(describing: outputDevice))")
             AudioManager.shared.outputDevice = outputDevice
         }
     }
@@ -61,7 +60,6 @@ final class AppContext: ObservableObject, @unchecked Sendable {
     @Published var inputDevice: AudioDevice = AudioManager.shared.defaultInputDevice {
         didSet {
             guard AudioManager.shared.inputDevice.deviceId != inputDevice.deviceId else { return }
-            print("didSet inputDevice: \(String(describing: inputDevice))")
             AudioManager.shared.inputDevice = inputDevice
         }
     }
@@ -84,7 +82,6 @@ final class AppContext: ObservableObject, @unchecked Sendable {
 
         AudioManager.shared.onDeviceUpdate = { [weak self] audioManager in
             guard let self else { return }
-            print("devices did update")
             // force UI update for outputDevice / inputDevice
             let outputDevice = audioManager.outputDevice
             let inputDevice = audioManager.inputDevice

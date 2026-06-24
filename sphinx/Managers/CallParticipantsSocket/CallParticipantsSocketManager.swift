@@ -175,6 +175,5 @@ extension CallParticipantsSocketManager: WebSocketDelegate {
     }
 
     func websocketDidReceiveData(socket: WebSocketClient, data: Data) {
-        print(data)
     }
 }
