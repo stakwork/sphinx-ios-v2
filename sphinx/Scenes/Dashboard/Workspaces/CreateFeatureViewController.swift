@@ -234,6 +234,7 @@ class CreateFeatureViewController: UIViewController {
         messageTextView.isScrollEnabled = true
         messageTextView.delegate = self
         promptFieldView.addSubview(messageTextView)
+        addKeyboardToolbar(to: messageTextView)
 
         // MARK: Combo Stack (task mode only — collapses when hidden)
 
@@ -374,6 +375,26 @@ class CreateFeatureViewController: UIViewController {
             mentionHandler.heightConstraint,
         ])
     }
+    
+    func addKeyboardToolbar(to textView: UITextView) {
+        let toolbar = UIToolbar()
+        toolbar.sizeToFit()
+        
+        toolbar.barTintColor = UIColor.Sphinx.HeaderBG
+        toolbar.tintColor = UIColor.Sphinx.Text
+        toolbar.isTranslucent = false
+        
+        let flexSpace = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
+        let doneButton = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(dismissKeyboard))
+        doneButton.tintColor = UIColor.Sphinx.HeaderBG
+        
+        toolbar.items = [flexSpace, doneButton]
+        textView.inputAccessoryView = toolbar
+    }
+
+    @objc func dismissKeyboard() {
+        view.endEditing(true)
+    }
 
     /// Creates a styled combo-select button (chevron on right, left-aligned title).
     private func makeComboButton(title: String) -> UIButton {
@@ -457,14 +478,8 @@ class CreateFeatureViewController: UIViewController {
         switch newMode {
         case .debugRun, .loadWorkflow:
             messageTextView.keyboardType = .numberPad
-            let toolbar = UIToolbar()
-            toolbar.sizeToFit()
-            let done = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(dismissKeyboard))
-            toolbar.items = [UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil), done]
-            messageTextView.inputAccessoryView = toolbar
         case .feature, .task:
             messageTextView.keyboardType = .default
-            messageTextView.inputAccessoryView = nil
         }
         messageTextView.reloadInputViews()
         updateSendButtonState()
@@ -617,10 +632,6 @@ class CreateFeatureViewController: UIViewController {
 
     @objc private func closeButtonTouched() {
         dismiss(animated: true, completion: nil)
-    }
-
-    @objc private func dismissKeyboard() {
-        view.endEditing(true)
     }
 
     @objc private func sendButtonTouched() {
