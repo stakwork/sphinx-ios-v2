@@ -15,7 +15,7 @@ import SwiftyJSON
 protocol GraphChatSSEDelegate: AnyObject {
     func onTextDelta(_ delta: String)
     func onToolInputAvailable(toolName: String)
-    func onToolOutputAvailable()
+    func onToolOutputAvailable(toolName: String, output: [String: Any]?)
     func onFinish()
     func onError(_ text: String)
     func onToolCall(toolName: String, input: [String: Any]?)
@@ -160,7 +160,9 @@ class GraphChatSSEManager: NSObject, EventHandler, @unchecked Sendable {
                 self.delegate?.onToolCall(toolName: toolName, input: input)
 
             case "tool-output-available", "tool-result":
-                self.delegate?.onToolOutputAvailable()
+                let toolName = json["toolName"].string ?? ""
+                let output   = json["output"].dictionaryObject ?? json["result"].dictionaryObject
+                self.delegate?.onToolOutputAvailable(toolName: toolName, output: output)
 
             case "finish":
                 self.delegate?.onFinish()
@@ -265,7 +267,9 @@ extension GraphChatSSEManager: URLSessionDataDelegate {
                 delegate?.onToolCall(toolName: name, input: input)
             }
         case "tool-output-available", "tool-result":
-            delegate?.onToolOutputAvailable()
+            let toolName = json["toolName"] as? String ?? ""
+            let output   = json["output"] as? [String: Any] ?? json["result"] as? [String: Any]
+            delegate?.onToolOutputAvailable(toolName: toolName, output: output)
         default:
             if let text = json["delta"] as? String ?? json["text"] as? String, !text.isEmpty {
                 delegate?.onTextDelta(text)

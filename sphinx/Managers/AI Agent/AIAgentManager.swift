@@ -47,6 +47,13 @@ final class AIAgentManager: @unchecked Sendable {
     /// True while a chat() request is in-flight; used by the UI to restore the processing bar.
     private(set) var isProcessing: Bool = false
 
+    // MARK: - Canvas / Proposal state (backing storage for extension computed vars)
+    var _canvasChatHistory: [CanvasChatMessage] = []
+    var _pendingProposal: PendingProposal?
+
+    /// Convenience accessor (read-only from outside)
+    var pendingProposal: PendingProposal? { _pendingProposal }
+
     // MARK: - System Prompt
 
     private let systemPrompt = """
@@ -164,6 +171,18 @@ final class AIAgentManager: @unchecked Sendable {
     - Results starting with "Feature '" or "Task '" followed by "created", "updated", "status updated", "workflow started", "workflow retry triggered", or "archived" indicate success — report success.
     - Results starting with "No workspace found", "No feature found", "No task found" mean the name wasn't matched — report and ask the user to clarify.
     - Results starting with "Multiple workspaces match", "Multiple features match", "Multiple tasks match" mean the name was ambiguous — list the options and ask the user which one they meant.
+    - Results starting with "Proposal approved successfully" mean the approval succeeded — report success.
+    - Results starting with "Proposal rejected" mean the rejection succeeded — report success.
+    - Results starting with "Approval failed" or "Rejection failed" mean the action failed — report and instruct the user to try again using the card buttons.
+    - Results starting with "Proposal not found" or "Missing org context" or "Authentication failed" mean the tool could not proceed — report the issue.
+    - Results starting with "This proposal has already been actioned" mean the proposal was already approved or rejected — inform the user.
+
+    PROPOSAL APPROVALS:
+    When Jamie proposes a feature, initiative, or milestone (visible as a proposal card in the chat), \
+    the user can approve or reject it. If the user says "approve", "yes", "go ahead", "reject", "no", \
+    "don't do it" in context of a visible proposal card, call approve_proposal or reject_proposal \
+    with the proposalId. Do NOT fabricate proposalIds — only use ones present in the current \
+    conversation history.
 
     Always be concise and helpful. When you're unsure about a contact's name, ask for clarification.
     """
@@ -370,7 +389,9 @@ final class AIAgentManager: @unchecked Sendable {
             "update_task_status":      buildUpdateTaskStatusTool().eraseToTool(),
             "start_task":              buildStartTaskTool().eraseToTool(),
             "retry_task_workflow":     buildRetryTaskWorkflowTool().eraseToTool(),
-            "archive_task":            buildArchiveTaskTool().eraseToTool()
+            "archive_task":            buildArchiveTaskTool().eraseToTool(),
+            "approve_proposal":        buildApproveProposalTool().eraseToTool(),
+            "reject_proposal":         buildRejectProposalTool().eraseToTool()
         ]
         switch activeProvider {
         case .anthropic:
