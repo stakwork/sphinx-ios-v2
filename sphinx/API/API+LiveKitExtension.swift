@@ -14,7 +14,7 @@ extension API {
         room: String,
         alias: String,
         profilePicture: String?,
-        hiveToken: String? = nil,
+        hiveCallKey: String? = nil,
         isHost: Bool = false,
         callback: @escaping LiveKitTokenCallback,
         errorCallback: @escaping ErrorCallback
@@ -26,8 +26,8 @@ extension API {
             url = url + "&metadata=\(metaData.urlEncode() ?? metaData)"
         }
         
-        if let hiveToken = hiveToken {
-            url = url + "&hiveToken=\(hiveToken.urlEncode() ?? hiveToken)"
+        if let hiveCallKey = hiveCallKey {
+            url = url + "&callKey=\(hiveCallKey.urlEncode() ?? hiveCallKey)"
         }
         
         if isHost {

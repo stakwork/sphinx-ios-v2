@@ -137,7 +137,7 @@ import AVKit
                 room: room,
                 alias: owner.nickname ?? "",
                 profilePicture: owner.avatarUrl,
-                hiveToken: linkUrl.liveKitHiveToken,
+                hiveCallKey: linkUrl.hiveCallKey,
                 isHost: isHost,
                 callback: { url, token in
                     Task { @MainActor [weak self] in
