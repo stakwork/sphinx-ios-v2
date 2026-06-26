@@ -73,7 +73,9 @@ extension NewChatViewController: ChatMentionAutocompleteDelegate {
         let time = Date.timeIntervalSinceReferenceDate
         let room = "\(API.sharedInstance.kVideoCallServer)/rooms\(TransactionMessage.kCallRoomName).\(time)"
         let link = audioOnly ? (room + "?startAudioOnly=true") : room
-        self.chatViewModel.sendCallMessage(link: link)
+        self.chatViewModel.sendCallMessage(link: link) { success, errorMsg in
+            if !success { self.chatViewModel.showCallLinkSendError(errorMsg: errorMsg) }
+        }
         self.bottomView.messageFieldView.shouldDismissKeyboard()
     }
     

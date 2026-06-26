@@ -191,7 +191,9 @@ extension NewChatViewModel {
                             link: link,
                             button: sender,
                             callback: { finalLink in
-                                self.sendCallMessage(link: finalLink)
+                                self.sendCallMessage(link: finalLink) { success, errorMsg in
+                                    if !success { self.showCallLinkSendError(errorMsg: errorMsg) }
+                                }
                             }
                         )
                     }
@@ -203,7 +205,9 @@ extension NewChatViewModel {
                         secondBrainUrl: secondBrainUrl,
                         appUrl: appUrl,
                         callback: { link in
-                            self.sendCallMessage(link: link)
+                            self.sendCallMessage(link: link) { success, errorMsg in
+                                if !success { self.showCallLinkSendError(errorMsg: errorMsg) }
+                            }
                         }
                     )
                 }
@@ -214,25 +218,34 @@ extension NewChatViewModel {
                 secondBrainUrl: secondBrainUrl,
                 appUrl: appUrl,
                 callback: { link in
-                    self.sendCallMessage(link: link)
+                    self.sendCallMessage(link: link) { success, errorMsg in
+                        if !success { self.showCallLinkSendError(errorMsg: errorMsg) }
+                    }
                 }
             )
         }
     }
-    
-    func sendCallMessage(link: String) {
-        let voipRequestMessage = VoIPRequestMessage()
-        voipRequestMessage.recurring = false
-        voipRequestMessage.link = link
-        voipRequestMessage.cron = ""
-        
-        let messageText = voipRequestMessage.getCallLinkMessage() ?? link
+
+    func sendCallMessage(link: String, completion: ((Bool, String?) -> Void)? = nil) {
+//        let voipRequestMessage = VoIPRequestMessage()
+//        voipRequestMessage.recurring = false
+//        voipRequestMessage.link = link
+//        voipRequestMessage.cron = ""
+//        
+//        let messageText = voipRequestMessage.getCallLinkMessage() ?? link
         
         self.shouldSendMessage(
-            text: messageText,
+            text: link,
             type: TransactionMessage.TransactionMessageType.call.rawValue,
             provisionalMessage: nil,
-            completion: { _, _ in }
+            completion: { success, errorMsg in completion?(success, errorMsg) }
+        )
+    }
+
+    func showCallLinkSendError(errorMsg: String? = nil) {
+        AlertHelper.showAlert(
+            title: "generic.error.title".localized,
+            message: errorMsg ?? "generic.error.message".localized
         )
     }
 }
