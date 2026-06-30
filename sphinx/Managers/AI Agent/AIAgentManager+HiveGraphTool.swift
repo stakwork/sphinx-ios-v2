@@ -357,6 +357,7 @@ To reject it, call reject_proposal with proposalId "\(proposalId)".
         )
     }
 
+    @discardableResult
     func executeApproveProposal(proposalId: String) async -> ToolExecutionResult<JSONValue> {
         // IDOR Guard: atomically verify proposalId matches pendingProposal AND retrieve it.
         // A single MainActor.run prevents a TOCTOU race where pendingProposal is swapped
@@ -474,6 +475,7 @@ To reject it, call reject_proposal with proposalId "\(proposalId)".
         )
     }
 
+    @discardableResult
     func executeRejectProposal(proposalId: String) async -> ToolExecutionResult<JSONValue> {
         // IDOR Guard: atomically verify proposalId matches pendingProposal AND retrieve it.
         guard let proposal = await MainActor.run(body: {

@@ -151,6 +151,8 @@ class NewChatViewController: NewKeyboardHandlerViewController {
 //        if isAgentChat && AIAgentManager.sharedInstance.isProcessing {
 //            showAgentProcessingBar()
 //        }
+        
+        restoreProposalCardIfNeeded()
     }
     
     override func viewDidAppear(_ animated: Bool) {

@@ -172,3 +172,79 @@ extension NewChatAccessoryView : ChatSearchResultsBarDelegate {
         searchDelegate?.didTapNavigateArrowButton(button: button)
     }
 }
+
+// MARK: - Proposal Card Management
+
+extension NewChatAccessoryView {
+
+    private(set) var proposalCard: ProposalApprovalCardView? {
+        get { objc_getAssociatedObject(self, &AssociatedKeys.proposalCard) as? ProposalApprovalCardView }
+        set { objc_setAssociatedObject(self, &AssociatedKeys.proposalCard, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC) }
+    }
+
+    var hasProposalCard: Bool { proposalCard != nil }
+
+    func showProposalCard(
+        _ proposal: AIAgentManager.PendingProposal,
+        onApprove: @escaping (String) -> Void,
+        onReject:  @escaping (String) -> Void,
+        onDismiss: @escaping () -> Void
+    ) {
+        hideProposalCard()
+
+        let card = ProposalApprovalCardView(proposal: proposal)
+        card.translatesAutoresizingMaskIntoConstraints = false
+        card.alpha = 0
+
+        card.onApprove = onApprove
+        card.onReject  = onReject
+        card.onDismiss = { [weak self] in
+            self?.hideProposalCard()
+            onDismiss()
+        }
+
+        normalModeStackView.insertArrangedSubview(card, at: 0)
+
+        // Pin width to stack minus 32pt padding (16 each side)
+        NSLayoutConstraint.activate([
+            card.widthAnchor.constraint(
+                equalTo: normalModeStackView.widthAnchor,
+                constant: -32
+            )
+        ])
+
+        proposalCard = card
+
+        UIView.animate(withDuration: 0.2) {
+            card.alpha = 1
+        }
+    }
+
+    func hideProposalCard() {
+        guard let card = proposalCard else { return }
+        proposalCard = nil
+        UIView.animate(withDuration: 0.2, animations: {
+            card.alpha = 0
+        }, completion: { _ in
+            card.removeFromSuperview()
+        })
+    }
+
+    func handleProposalActioned(
+        result: AIAgentManager.ApprovalResult?,
+        error: String?
+    ) {
+        guard let card = proposalCard else { return }
+        if let result = result {
+            card.showStamp(approved: result.approved)
+        } else if let error = error {
+            card.showError(error)
+        }
+    }
+}
+
+// MARK: - Associated Object Keys
+
+private enum AssociatedKeys {
+    static var proposalCard: UInt8 = 0
+}
