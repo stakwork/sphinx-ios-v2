@@ -66,6 +66,43 @@ extension NewChatViewController {
         NotificationCenter.default.post(name: .onContactsAndChatsChanged, object: nil)
     }
     
+    // MARK: - Proposal Card Observers
+
+    func setupProposalCardObservers() {
+        guard isAgentChat else { return }
+
+        NotificationCenter.default.addObserver(
+            forName: .aiAgentProposalDetected,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            // Proposal detected — UI card display is handled elsewhere (not part of this task).
+            // Reserved for future proposal card insertion.
+            _ = notification.userInfo?["proposal"] as? AIAgentManager.PendingProposal
+        }
+
+        NotificationCenter.default.addObserver(
+            forName: .aiAgentProposalActioned,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self = self else { return }
+            if let result = notification.userInfo?["result"] as? AIAgentManager.ApprovalResult {
+                self.handleProposalActioned(result: result, error: nil)
+            } else if let errorMsg = notification.userInfo?["error"] as? String {
+                self.handleProposalActioned(result: nil, error: errorMsg)
+            }
+        }
+    }
+
+    func handleProposalActioned(result: AIAgentManager.ApprovalResult?, error: String?) {
+        if let result = result, let summaryText = result.summaryText, !summaryText.isEmpty {
+            insertAgentReply(summaryText)
+        } else if let error = error {
+            insertAgentReply("Approval failed: \(error)")
+        }
+    }
+
     func insertIntroMessageIfNeeded() {
         guard isAgentChat,
               let chat = self.chat,

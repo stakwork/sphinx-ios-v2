@@ -47,6 +47,9 @@ final class AIAgentManager: @unchecked Sendable {
     /// True while a chat() request is in-flight; used by the UI to restore the processing bar.
     private(set) var isProcessing: Bool = false
 
+    /// The currently pending Jamie proposal awaiting approval or rejection.
+    var pendingProposal: PendingProposal?
+
     // MARK: - System Prompt
 
     private let systemPrompt = """
@@ -112,32 +115,36 @@ final class AIAgentManager: @unchecked Sendable {
     When in doubt, prefer query_hive_graph. Never ask the user which tool to use. \
     Do NOT ask for a workspace name before calling query_hive_graph.
 
-    HIVE PROJECT MANAGEMENT TOOLS (use for browsing and managing Hive workspaces, features, and tasks):
+    ## Hive Workspace / Feature / Task Tools
 
-    Read tools (safe to call without confirmation):
-    - list_hive_workspaces: List all Hive workspaces the user has access to.
-    - get_workspace_detail: Get repos and members for a named workspace.
-    - search_workspace: Full-text search across features and tasks in a workspace.
-    - list_features: List features in a workspace (first page of up to 20).
-    - get_feature_detail: Get full details of a named feature (status, priority, tasks, assignee).
-    - list_tasks: List tasks in a workspace. Pass include_archived=true to include archived tasks.
-    - get_task_detail: Get full details of a named task (status, priority, PR, deployment, assignee).
-    - get_task_messages: Read the last 20 agent chat messages for a named task.
+    ### Read Tools (no confirmation required)
+    - list_hive_workspaces: List all Hive workspaces the user has access to with name, slug, role, and member count.
+    - get_workspace_detail: Get full details about a workspace (description, members list) by workspace name.
+    - search_workspace: Search within a workspace for tasks, features, or content matching a query string.
+    - list_features: List all features in a workspace. Includes feature title, status, and ID. Shows a hint if more exist.
+    - get_feature_detail: Get detailed info about a specific feature (title, status, priority, description, task count) by name.
+    - list_tasks: List tasks in a workspace. Optionally pass include_archived=true to include archived tasks. Shows up to 50 with a hint if more exist.
+    - get_task_detail: Get full details about a specific task (status, priority, assignee, feature, workflow status, repo, timestamps) by name.
+    - get_task_messages: Get the last 20 chat messages for a specific task, formatted as [role]: message.
 
-    Write tools (ALWAYS ask the user for explicit confirmation before invoking):
-    - create_feature: Create a new feature in a workspace.
-    - update_feature: Update status or priority of a feature.
-    - trigger_task_generation: Trigger AI task breakdown for a feature.
-    - update_task_status: Update a task's status (TODO, IN_PROGRESS, DONE, CANCELLED, BLOCKED).
-    - start_task: Start the AI coding workflow for a task.
-    - retry_task_workflow: Retry a halted or failed task workflow.
-    - archive_task: Archive a task.
+    ### Write Tools (ALL require explicit user confirmation before invocation)
+    - create_feature: Create a new feature in a workspace. Requires workspace_name, title, and optional description.
+    - update_feature: Update an existing feature's title or description. Requires workspace_name and feature_name.
+    - trigger_task_generation: Trigger automatic AI task generation for a feature. Requires workspace_name and feature_name.
+    - update_task_status: Change a task's status. Valid values: TODO, IN_PROGRESS, DONE, CANCELLED, BLOCKED.
+    - start_task: Start (assign and begin) a task. Requires workspace_name and task_name.
+    - retry_task_workflow: Retry the workflow for a failed or stalled task.
+    - archive_task: Archive a task so it no longer appears in active task lists.
 
-    Ambiguity rules for Hive tools:
-    - When a workspace/feature/task name is ambiguous (multiple matches), list the options and ask the user to be more specific before retrying.
-    - Never silently pick one match when multiple names could fit.
+    ### Hive Ambiguity Behaviour
+    - If a workspace/feature/task name is ambiguous, the tool returns a list of candidates — ask the user to clarify before retrying.
+    - All workspace/feature/task lookups use fuzzy name matching (exact → contains → Levenshtein).
+    - Write tools must never be called until the user has explicitly confirmed the action.
 
     CRITICAL TOOL RESULT RULES:
+    // - Tool results that start with "Message sent successfully" mean the message was delivered. \
+    //   Always report this as a success. Do NOT say there was an error or that you're unsure.
+    // - Tool results that start with "Send failed" or "No contact" or "No tribe" mean genuine failure.
     - When read_recent_messages returns a list of messages, present them clearly to the user. \
     Do NOT say there was a format issue or that you couldn't read them.
     - Never assume failure unless the tool result explicitly contains the word "failed" or "error".
@@ -155,17 +162,52 @@ final class AIAgentManager: @unchecked Sendable {
     - Results starting with "App logs" contain filtered log entries — present them clearly; summarise patterns if the list is long.
     - Results starting with "Log analysis for" contain a structured summary — present it directly; do not re-list raw lines.
     - Results starting with "No entries matching" mean filters returned nothing — tell the user and suggest broader filters.
-    - Results from query_hive_graph that don't start with "Hive graph error" or "Hive org not configured" or "Hive org ID not found" or "Hive authentication failed" contain the knowledge graph response — present it clearly to the user.
-    - Results starting with "Hive graph error" or "Hive org not configured" or "Hive org ID not found" or "Hive authentication failed" mean the tool failed — report the issue and suggest checking Hive configuration.
-    - Results starting with a number followed by ". " from list_hive_workspaces, list_features, or list_tasks are numbered lists — present them clearly.
-    - Results starting with "Workspace:", "Feature:", or "Task:" from detail tools contain structured info — present it clearly.
-    - Results starting with "Search results for" contain search matches — present features and tasks sections clearly.
-    - Results starting with "[" from get_task_messages contain chat message lines — present them clearly.
-    - Results starting with "Feature '" or "Task '" followed by "created", "updated", "status updated", "workflow started", "workflow retry triggered", or "archived" indicate success — report success.
-    - Results starting with "No workspace found", "No feature found", "No task found" mean the name wasn't matched — report and ask the user to clarify.
-    - Results starting with "Multiple workspaces match", "Multiple features match", "Multiple tasks match" mean the name was ambiguous — list the options and ask the user which one they meant.
+    - Results starting with "Graph answer:" or any non-error text from query_hive_graph contain the knowledge graph response — present it clearly.
+    - Results starting with "Hive graph error" or "Failed to fetch" from query_hive_graph mean the tool failed — report the issue and suggest checking Hive configuration.
+    - Results starting with "Hive workspaces" contain the workspace list — present it clearly.
+    - Results starting with "Workspace:" contain workspace detail — present it clearly.
+    - Results starting with "Search results in" contain search hits — present them clearly.
+    - Results starting with "Features in" contain the feature list — present it clearly.
+    - Results starting with "Feature:" contain feature detail — present it clearly.
+    - Results starting with "Tasks in" contain the task list — present it clearly.
+    - Results starting with "Task:" contain task detail — present it clearly.
+    - Results starting with "Messages for task" contain task chat messages — present them clearly.
+    - Results starting with "Feature '" and containing "created successfully" mean the feature was created — report success.
+    - Results starting with "Feature '" and containing "updated successfully" mean the feature was updated — report success.
+    - Results starting with "Task generation triggered" mean the generation started — report success.
+    - Results starting with "Task '" and containing "status updated" mean the status change succeeded — report success.
+    - Results starting with "Task '" and containing "started" mean the task was started — report success.
+    - Results starting with "Workflow retry triggered" mean the retry was initiated — report success.
+    - Results starting with "Task '" and containing "archived" mean the task was archived — report success.
+    - Results starting with "Multiple features match" or "Multiple tasks match" mean the name was ambiguous — list the candidates and ask the user to clarify before retrying with the exact name.
+    - Results starting with "No feature found" or "No task found" mean the item was not found — tell the user and list the available options.
 
     Always be concise and helpful. When you're unsure about a contact's name, ask for clarification.
+
+    PROPOSAL APPROVALS:
+    When Jamie proposes a feature, initiative, or milestone, the query_hive_graph tool result will \
+    contain a [PROPOSAL CARD DISPLAYED] block like this:
+
+    [PROPOSAL CARD DISPLAYED — A native approval card has been shown to the user.]
+    proposalId: prop_xyz123
+    kind: feature
+    title: Some Title
+
+    When you see this block in the tool result, a card is showing in the UI. The proposalId is \
+    the exact string on the "proposalId:" line — copy it verbatim.
+
+    If the user then says "approve", "yes", "go ahead", "reject", "no", or similar:
+    - Call approve_proposal with that exact proposalId string
+    - Or call reject_proposal with that exact proposalId string
+
+    NEVER ask the user to provide the proposalId. NEVER look for it in Hive Canvas or the web. \
+    It is always present in the [PROPOSAL CARD DISPLAYED] block from the tool result above.
+    Do NOT fabricate proposalIds — use only the one shown in [PROPOSAL CARD DISPLAYED].
+    - Results starting with "Proposal approved successfully" mean the approval succeeded — report success.
+    - Results starting with "Proposal rejected" mean the rejection succeeded — report success.
+    - Results starting with "Approval failed" or "Rejection failed" mean the request failed — tell the user to try again.
+    - Results starting with "Proposal not found" mean the proposalId is invalid — do not retry.
+    - Results starting with "This proposal has already been actioned" mean it was already handled — inform the user.
     """
 
     // MARK: - History persistence
@@ -218,6 +260,7 @@ final class AIAgentManager: @unchecked Sendable {
         observeIncomingMessages()
         reconfigure()
         loadHistory()
+        pendingProposal = loadPersistedPendingProposal()
     }
 
     // MARK: - Reconfigure
@@ -370,7 +413,9 @@ final class AIAgentManager: @unchecked Sendable {
             "update_task_status":      buildUpdateTaskStatusTool().eraseToTool(),
             "start_task":              buildStartTaskTool().eraseToTool(),
             "retry_task_workflow":     buildRetryTaskWorkflowTool().eraseToTool(),
-            "archive_task":            buildArchiveTaskTool().eraseToTool()
+            "archive_task":            buildArchiveTaskTool().eraseToTool(),
+            "approve_proposal":        buildApproveProposalTool().eraseToTool(),
+            "reject_proposal":         buildRejectProposalTool().eraseToTool()
         ]
         switch activeProvider {
         case .anthropic:
