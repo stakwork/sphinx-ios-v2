@@ -36,4 +36,6 @@ extension Notification.Name {
     static let onKeysendStatusReceived = Notification.Name("onKeysendStatusReceived")
     static let appDidEnterBackground = Notification.Name("appDidEnterBackground")
     static let appWillEnterForeground = Notification.Name("appWillEnterForeground")
+    static let aiAgentProposalDetected = Notification.Name("aiAgentProposalDetected")
+    static let aiAgentProposalActioned = Notification.Name("aiAgentProposalActioned")
 }

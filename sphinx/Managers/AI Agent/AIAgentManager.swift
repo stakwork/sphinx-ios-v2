@@ -47,6 +47,9 @@ final class AIAgentManager: @unchecked Sendable {
     /// True while a chat() request is in-flight; used by the UI to restore the processing bar.
     private(set) var isProcessing: Bool = false
 
+    /// The currently pending Jamie proposal awaiting approval or rejection.
+    var pendingProposal: PendingProposal?
+
     // MARK: - System Prompt
 
     private let systemPrompt = """
@@ -133,6 +136,10 @@ final class AIAgentManager: @unchecked Sendable {
     - retry_task_workflow: Retry a halted or failed task workflow.
     - archive_task: Archive a task.
 
+    Proposal tools (use ONLY when user explicitly approves or rejects a pending Jamie proposal):
+    - approve_proposal: Approve a pending Jamie proposal surfaced in the chat. Pass the proposal_id.
+    - reject_proposal: Reject a pending Jamie proposal surfaced in the chat. Pass the proposal_id.
+
     Ambiguity rules for Hive tools:
     - When a workspace/feature/task name is ambiguous (multiple matches), list the options and ask the user to be more specific before retrying.
     - Never silently pick one match when multiple names could fit.
@@ -218,6 +225,7 @@ final class AIAgentManager: @unchecked Sendable {
         observeIncomingMessages()
         reconfigure()
         loadHistory()
+        pendingProposal = loadPersistedPendingProposal()
     }
 
     // MARK: - Reconfigure
@@ -370,7 +378,9 @@ final class AIAgentManager: @unchecked Sendable {
             "update_task_status":      buildUpdateTaskStatusTool().eraseToTool(),
             "start_task":              buildStartTaskTool().eraseToTool(),
             "retry_task_workflow":     buildRetryTaskWorkflowTool().eraseToTool(),
-            "archive_task":            buildArchiveTaskTool().eraseToTool()
+            "archive_task":            buildArchiveTaskTool().eraseToTool(),
+            "approve_proposal":        buildApproveProposalTool().eraseToTool(),
+            "reject_proposal":         buildRejectProposalTool().eraseToTool()
         ]
         switch activeProvider {
         case .anthropic:

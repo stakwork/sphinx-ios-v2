@@ -85,6 +85,7 @@ extension UserDefaults {
         public static let didMigrateToTZ = DefaultKey<Bool>("didMigrateToTZ")
         public static let systemTimezone = DefaultKey<String>("systemTimezone")
         public static let isRestoreCompleted = DefaultKey<Bool>("isRestoreCompleted")
+        public static let pendingProposal = DefaultKey<Data>("pendingProposal") // JSON-encoded PendingProposal
     }
     
     class func resetUserDefaults() {

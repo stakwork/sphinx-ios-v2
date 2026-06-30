@@ -5212,6 +5212,148 @@ extension API {
         }
     }
 
+    // MARK: - Proposal Approval Intent
+
+    typealias HiveApprovalCallback = ((AIAgentManager.ApprovalResult) -> Void)
+    typealias HiveApprovalErrorCallback = ((String) -> Void)
+
+    /// POST /api/orgs/{orgId}/proposals/{proposalId}/approve
+    /// Sends an approval intent for a Jamie-generated proposal.
+    func sendApprovalIntent(
+        orgId: String,
+        conversationId: String,
+        turnId: String,
+        proposalId: String,
+        workspaceSlugs: [String],
+        workspaceSlug: String,
+        orgGithubLogin: String,
+        token: String,
+        callback: @escaping HiveApprovalCallback,
+        errorCallback: @escaping HiveApprovalErrorCallback
+    ) {
+        let urlString = "\(API.kHiveBaseUrl)/orgs/\(orgId)/proposals/\(proposalId)/approve"
+        let body: [String: AnyObject] = [
+            "turnId":         turnId as AnyObject,
+            "workspaceSlugs": workspaceSlugs as AnyObject,
+            "workspaceSlug":  workspaceSlug as AnyObject,
+            "orgGithubLogin": orgGithubLogin as AnyObject
+        ]
+        let headers: [String: String] = conversationId.isEmpty ? [:] : ["Conversation-Id": conversationId]
+        guard let request = createRequest(
+            urlString,
+            bodyParams: body as NSDictionary,
+            headers: headers,
+            method: "POST",
+            token: token
+        ) else {
+            errorCallback("Failed to build approval request.")
+            return
+        }
+
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                print("[HiveAPI] sendApprovalIntent unauthorized (401) — proposalId: \(proposalId)")
+                errorCallback("Unauthorized (401).")
+                return
+            }
+            switch response.result {
+            case .success(let data):
+                let json = SwiftyJSON.JSON(data)
+                if let errorMsg = json["error"].string {
+                    print("[HiveAPI] sendApprovalIntent error response — proposalId: \(proposalId), error: \(errorMsg)")
+                    errorCallback(errorMsg)
+                    return
+                }
+                // Decode ApprovalResult with proposalId injected
+                var decoded = try? JSONDecoder().decode(AIAgentManager.ApprovalResult.self, from: data)
+                if decoded == nil {
+                    // Fallback: synthesize from JSON
+                    let approved = json["approved"].bool ?? (json["status"].string == "approved")
+                    let featureUrl = json["featureUrl"].string
+                    let summaryText = json["summaryText"].string ?? json["message"].string
+                    decoded = AIAgentManager.ApprovalResult(
+                        proposalId: proposalId,
+                        approved: approved,
+                        featureUrl: featureUrl,
+                        summaryText: summaryText
+                    )
+                }
+                let result = decoded ?? AIAgentManager.ApprovalResult(proposalId: proposalId, approved: true)
+                print("[HiveAPI] sendApprovalIntent success — proposalId: \(proposalId)")
+                callback(result)
+            case .failure(let error):
+                print("[HiveAPI] sendApprovalIntent failed — proposalId: \(proposalId), error: \(error.localizedDescription)")
+                errorCallback(error.localizedDescription)
+            }
+        }
+    }
+
+    // MARK: - Proposal Rejection Intent
+
+    /// POST /api/orgs/{orgId}/proposals/{proposalId}/reject
+    /// Sends a rejection intent for a Jamie-generated proposal.
+    func sendRejectionIntent(
+        orgId: String,
+        conversationId: String,
+        turnId: String,
+        proposalId: String,
+        workspaceSlugs: [String],
+        token: String,
+        callback: @escaping HiveApprovalCallback,
+        errorCallback: @escaping HiveApprovalErrorCallback
+    ) {
+        let urlString = "\(API.kHiveBaseUrl)/orgs/\(orgId)/proposals/\(proposalId)/reject"
+        let body: [String: AnyObject] = [
+            "turnId":         turnId as AnyObject,
+            "workspaceSlugs": workspaceSlugs as AnyObject
+        ]
+        let headers: [String: String] = conversationId.isEmpty ? [:] : ["Conversation-Id": conversationId]
+        guard let request = createRequest(
+            urlString,
+            bodyParams: body as NSDictionary,
+            headers: headers,
+            method: "POST",
+            token: token
+        ) else {
+            errorCallback("Failed to build rejection request.")
+            return
+        }
+
+        session()?.request(request).responseData { response in
+            if let statusCode = response.response?.statusCode, statusCode == 401 {
+                print("[HiveAPI] sendRejectionIntent unauthorized (401) — proposalId: \(proposalId)")
+                errorCallback("Unauthorized (401).")
+                return
+            }
+            switch response.result {
+            case .success(let data):
+                let json = SwiftyJSON.JSON(data)
+                if let errorMsg = json["error"].string {
+                    print("[HiveAPI] sendRejectionIntent error response — proposalId: \(proposalId), error: \(errorMsg)")
+                    errorCallback(errorMsg)
+                    return
+                }
+                var decoded = try? JSONDecoder().decode(AIAgentManager.ApprovalResult.self, from: data)
+                if decoded == nil {
+                    let approved = json["approved"].bool ?? false
+                    let summaryText = json["summaryText"].string ?? json["message"].string
+                    decoded = AIAgentManager.ApprovalResult(
+                        proposalId: proposalId,
+                        approved: approved,
+                        featureUrl: nil,
+                        summaryText: summaryText
+                    )
+                }
+                let result = decoded ?? AIAgentManager.ApprovalResult(proposalId: proposalId, approved: false)
+                print("[HiveAPI] sendRejectionIntent success — proposalId: \(proposalId)")
+                callback(result)
+            case .failure(let error):
+                print("[HiveAPI] sendRejectionIntent failed — proposalId: \(proposalId), error: \(error.localizedDescription)")
+                errorCallback(error.localizedDescription)
+            }
+        }
+    }
+
 }
 
 // MARK: - Workspace Image Cache
