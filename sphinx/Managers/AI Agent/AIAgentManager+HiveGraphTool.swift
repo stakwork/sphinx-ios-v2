@@ -19,8 +19,8 @@ private class HiveGraphBridge: GraphChatSSEDelegate {
     var buffer: String = ""
     var resumed: Bool = false
 
-    /// Captured propose_* tool calls from the SSE stream.
-    var capturedToolCalls: [(name: String, toolCallId: String, inputStr: String)] = []
+    /// Captured tool calls from the SSE stream (including empty-toolName canvas entry).
+    var capturedToolCalls: [(name: String, toolCallId: String, inputStr: String, outputStr: String)] = []
 
     func onTextDelta(_ delta: String) {
         buffer += delta
@@ -43,34 +43,36 @@ private class HiveGraphBridge: GraphChatSSEDelegate {
         continuation?.resume(returning: "Hive graph error: \(text)")
     }
 
-    func onToolInputAvailable(toolName: String) {
-        // Capture propose_* tool inputs as they arrive
+    func onToolInputAvailable(_ toolName: String, _ toolCallId: String, _ input: String) {
         let proposalPrefixes = ["propose_feature", "propose_initiative", "propose_milestone"]
         guard proposalPrefixes.contains(where: { toolName.hasPrefix($0) }) else { return }
-        if !capturedToolCalls.contains(where: { $0.name == toolName }) {
-            capturedToolCalls.append((name: toolName, toolCallId: "", inputStr: ""))
+        // Upsert: avoid duplicates if both tool-input-available and tool-call fire.
+        if let idx = capturedToolCalls.indices.last(where: { capturedToolCalls[$0].name == toolName && capturedToolCalls[$0].toolCallId.isEmpty }) {
+            capturedToolCalls[idx] = (name: toolName, toolCallId: toolCallId, inputStr: input, outputStr: capturedToolCalls[idx].outputStr)
+        } else if !capturedToolCalls.contains(where: { $0.name == toolName && $0.toolCallId == toolCallId }) {
+            capturedToolCalls.append((name: toolName, toolCallId: toolCallId, inputStr: input, outputStr: ""))
         }
+        print("AIAgent [HiveGraph] onToolInputAvailable captured propose tool: \(toolName) id: \(toolCallId)")
     }
 
-    func onToolCall(toolName: String, input: [String: Any]?) {
-        let proposalPrefixes = ["propose_feature", "propose_initiative", "propose_milestone"]
-        guard proposalPrefixes.contains(where: { toolName.hasPrefix($0) }) else { return }
-        let inputStr: String
-        if let input = input,
-           let data = try? JSONSerialization.data(withJSONObject: input),
-           let str = String(data: data, encoding: .utf8) {
-            inputStr = str
-        } else {
-            inputStr = ""
-        }
+    func onToolCall(_ toolName: String, _ input: String) {
+        // Upsert: if a slot already exists for this name (from a prior event), update it; otherwise append.
         if let idx = capturedToolCalls.indices.last(where: { capturedToolCalls[$0].name == toolName && capturedToolCalls[$0].inputStr.isEmpty }) {
-            capturedToolCalls[idx] = (name: toolName, toolCallId: capturedToolCalls[idx].toolCallId, inputStr: inputStr)
+            capturedToolCalls[idx] = (name: toolName, toolCallId: capturedToolCalls[idx].toolCallId, inputStr: input, outputStr: capturedToolCalls[idx].outputStr)
         } else {
-            capturedToolCalls.append((name: toolName, toolCallId: "", inputStr: inputStr))
+            capturedToolCalls.append((name: toolName, toolCallId: "", inputStr: input, outputStr: ""))
         }
     }
 
-    func onToolOutputAvailable() {}
+    func onToolOutputAvailable(_ toolName: String, _ output: String) {
+        if let idx = capturedToolCalls.indices.last(where: { capturedToolCalls[$0].name == toolName }) {
+            capturedToolCalls[idx] = (name: toolName, toolCallId: capturedToolCalls[idx].toolCallId, inputStr: capturedToolCalls[idx].inputStr, outputStr: output)
+        } else {
+            // tool-result arrived before tool-call (or tool-call was missing) — create an entry.
+            // This also captures the empty-toolName canvas entry.
+            capturedToolCalls.append((name: toolName, toolCallId: "", inputStr: "", outputStr: output))
+        }
+    }
 }
 
 // MARK: - AIAgentManager + Proposal Models
@@ -98,6 +100,10 @@ extension AIAgentManager {
     struct ApprovalResult: Codable, Sendable {
         let proposalId: String
         let approved: Bool
+        let kind: String?
+        let createdEntityId: String?
+        let landedOn: String?
+        let landedOnName: String?
         let featureUrl: String?
         let summaryText: String?
 
@@ -106,14 +112,22 @@ extension AIAgentManager {
             case proposalId
             case approved
             case status
+            case kind
+            case createdEntityId
+            case landedOn
+            case landedOnName
             case featureUrl
             case summaryText
             case message
         }
 
-        init(proposalId: String, approved: Bool, featureUrl: String? = nil, summaryText: String? = nil) {
+        init(proposalId: String, approved: Bool, kind: String? = nil, createdEntityId: String? = nil, landedOn: String? = nil, landedOnName: String? = nil, featureUrl: String? = nil, summaryText: String? = nil) {
             self.proposalId = proposalId
             self.approved = approved
+            self.kind = kind
+            self.createdEntityId = createdEntityId
+            self.landedOn = landedOn
+            self.landedOnName = landedOnName
             self.featureUrl = featureUrl
             self.summaryText = summaryText
         }
@@ -129,6 +143,10 @@ extension AIAgentManager {
             } else {
                 approved = false
             }
+            kind = try? c.decode(String.self, forKey: .kind)
+            createdEntityId = try? c.decode(String.self, forKey: .createdEntityId)
+            landedOn = try? c.decode(String.self, forKey: .landedOn)
+            landedOnName = try? c.decode(String.self, forKey: .landedOnName)
             featureUrl = try? c.decode(String.self, forKey: .featureUrl)
             summaryText = (try? c.decode(String.self, forKey: .summaryText))
                 ?? (try? c.decode(String.self, forKey: .message))
@@ -138,6 +156,10 @@ extension AIAgentManager {
             var c = encoder.container(keyedBy: CodingKeys.self)
             try c.encode(proposalId, forKey: .proposalId)
             try c.encode(approved, forKey: .approved)
+            try? c.encode(kind, forKey: .kind)
+            try? c.encode(createdEntityId, forKey: .createdEntityId)
+            try? c.encode(landedOn, forKey: .landedOn)
+            try? c.encode(landedOnName, forKey: .landedOnName)
             try? c.encode(featureUrl, forKey: .featureUrl)
             try? c.encode(summaryText, forKey: .summaryText)
         }
@@ -150,11 +172,11 @@ extension AIAgentManager {
     }
 
     struct RejectProposalInput: Codable, Sendable {
-        let proposal_id: String
+        let proposalId: String
     }
 
     struct ApproveProposalInput: Codable, Sendable {
-        let proposal_id: String
+        let proposalId: String
     }
 }
 
@@ -244,6 +266,18 @@ extension AIAgentManager {
 
         // 5. Proposal detection — surface card in chat
         let proposalPrefixSet = ["propose_feature", "propose_initiative", "propose_milestone"]
+
+        // Extract workspaceSlug from canvas entry's meta (for feature URL building)
+        let proposalWorkspaceSlug: String? = bridge.capturedToolCalls
+            .first(where: { $0.name.isEmpty })
+            .flatMap { canvas -> String? in
+                guard !canvas.outputStr.isEmpty,
+                      let data = canvas.outputStr.data(using: .utf8),
+                      let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                      let meta = obj["meta"] as? [String: Any] else { return nil }
+                return meta["workspaceSlug"] as? String
+            }
+
         if let tc = bridge.capturedToolCalls.first(where: { captured in
             proposalPrefixSet.contains(where: { captured.name.hasPrefix($0) })
         }) {
@@ -275,7 +309,7 @@ extension AIAgentManager {
                 conversationId: resolvedConvId,
                 orgId: orgId,
                 workspaceSlugs: orgSlugs,
-                workspaceSlug: orgSlugs.first,
+                workspaceSlug: proposalWorkspaceSlug ?? orgSlugs.first,
                 orgGithubLogin: githubLogin
             )
 
@@ -291,6 +325,21 @@ extension AIAgentManager {
                     userInfo: ["proposal": proposal]
                 )
             }
+
+            // Inject proposal context into the tool result so the agent LLM
+            // knows the proposalId and can call approve_proposal/reject_proposal
+            // when the user says "approve it" or "reject it".
+            let proposalContext = """
+
+[PROPOSAL CARD DISPLAYED — A native approval card has been shown to the user.]
+proposalId: \(proposalId)
+kind: \(kind)
+title: \(title)\(description.map { "\ndescription: \($0)" } ?? "")
+
+To approve this proposal, call approve_proposal with proposalId "\(proposalId)".
+To reject it, call reject_proposal with proposalId "\(proposalId)".
+"""
+            return result + proposalContext
         }
 
         return result
@@ -300,16 +349,15 @@ extension AIAgentManager {
 
     func buildApproveProposalTool() -> TypedTool<ApproveProposalInput, JSONValue> {
         tool(
-            description: "Approve a Jamie proposal (feature, initiative, or milestone) that was previously surfaced in the chat. Provide the proposal_id from the pending proposal. Only use this when the user explicitly approves a proposal.",
+            description: "Approve a Jamie proposal. Call this when the user says 'approve', 'yes', 'go ahead', or similar after Jamie proposed a feature/initiative/milestone. The proposalId is shown in the [PROPOSAL CARD DISPLAYED] block that appeared in the query_hive_graph tool result earlier in this conversation — copy it exactly. Never fabricate a proposalId.",
             execute: { [weak self] (input: ApproveProposalInput, _: ToolCallOptions) async throws -> ToolExecutionResult<JSONValue> in
                 guard let self = self else { return .value(.string("Agent unavailable.")) }
-                let resultText = await self.executeApproveProposal(proposalId: input.proposal_id)
-                return .value(.string(resultText))
+                return await self.executeApproveProposal(proposalId: input.proposalId)
             }
         )
     }
 
-    func executeApproveProposal(proposalId: String) async -> String {
+    func executeApproveProposal(proposalId: String) async -> ToolExecutionResult<JSONValue> {
         // IDOR Guard: atomically verify proposalId matches pendingProposal AND retrieve it.
         // A single MainActor.run prevents a TOCTOU race where pendingProposal is swapped
         // between a separate check and fetch, which would let a caller-supplied ID act on
@@ -326,7 +374,7 @@ extension AIAgentManager {
                     userInfo: ["error": "Proposal not found or already actioned."]
                 )
             }
-            return "Error: proposal not found or already actioned."
+            return .value(.string("Proposal not found in current conversation. Cannot approve."))
         }
 
         // Org context validation
@@ -339,7 +387,7 @@ extension AIAgentManager {
                     userInfo: ["error": "Hive org not configured."]
                 )
             }
-            return "Error: Hive org not configured."
+            return .value(.string("Missing org context. Cannot approve."))
         }
 
         let convId = proposal.conversationId ?? {
@@ -364,7 +412,7 @@ extension AIAgentManager {
                     userInfo: ["error": "Hive authentication failed."]
                 )
             }
-            return "Error: Hive authentication failed."
+            return .value(.string("Authentication failed. Cannot approve."))
         }
 
         // POST approval
@@ -373,7 +421,7 @@ extension AIAgentManager {
         let workspaceSlug = proposal.workspaceSlug ?? workspaceSlugs.first ?? ""
         let orgGithubLogin = proposal.orgGithubLogin ?? UserDefaults.Keys.hiveGithubLogin.get() ?? ""
 
-        let apiResult: Result<ApprovalResult, String> = await withCheckedContinuation { cont in
+        let apiResult: (result: ApprovalResult?, error: String?) = await withCheckedContinuation { cont in
             API.sharedInstance.sendApprovalIntent(
                 orgId: orgId,
                 conversationId: convId ?? "",
@@ -383,13 +431,12 @@ extension AIAgentManager {
                 workspaceSlug: workspaceSlug,
                 orgGithubLogin: orgGithubLogin,
                 token: token,
-                callback: { result in cont.resume(returning: .success(result)) },
-                errorCallback: { err in cont.resume(returning: .failure(err)) }
+                callback: { result in cont.resume(returning: (result, nil)) },
+                errorCallback: { err in cont.resume(returning: (nil, err)) }
             )
         }
 
-        switch apiResult {
-        case .success(let approvalResult):
+        if let approvalResult = apiResult.result {
             print("AIAgent [HiveGraph] approve POST success — proposalId: \(proposalId), featureUrl: \(approvalResult.featureUrl ?? "nil")")
             await MainActor.run {
                 self.pendingProposal = nil
@@ -400,10 +447,9 @@ extension AIAgentManager {
                     userInfo: ["result": approvalResult]
                 )
             }
-            let summary = approvalResult.summaryText ?? "Proposal approved successfully."
-            return summary
-
-        case .failure(let errMsg):
+            return .value(.string("Proposal approved successfully."))
+        } else {
+            let errMsg = apiResult.error ?? "Approval failed. Please try again."
             print("AIAgent [HiveGraph] approve POST failure — proposalId: \(proposalId), error: \(errMsg)")
             await MainActor.run {
                 NotificationCenter.default.post(
@@ -412,7 +458,7 @@ extension AIAgentManager {
                     userInfo: ["error": errMsg]
                 )
             }
-            return "Error approving proposal: \(errMsg)"
+            return .value(.string("Approval failed. Please try again — the card is still actionable."))
         }
     }
 
@@ -420,16 +466,15 @@ extension AIAgentManager {
 
     func buildRejectProposalTool() -> TypedTool<RejectProposalInput, JSONValue> {
         tool(
-            description: "Reject a Jamie proposal (feature, initiative, or milestone) that was previously surfaced in the chat. Provide the proposal_id from the pending proposal. Only use this when the user explicitly rejects a proposal.",
+            description: "Reject a Jamie proposal. Call this when the user says 'reject', 'no', 'cancel', or similar after Jamie proposed a feature/initiative/milestone. The proposalId is shown in the [PROPOSAL CARD DISPLAYED] block that appeared in the query_hive_graph tool result earlier in this conversation — copy it exactly. Never fabricate a proposalId.",
             execute: { [weak self] (input: RejectProposalInput, _: ToolCallOptions) async throws -> ToolExecutionResult<JSONValue> in
                 guard let self = self else { return .value(.string("Agent unavailable.")) }
-                let resultText = await self.executeRejectProposal(proposalId: input.proposal_id)
-                return .value(.string(resultText))
+                return await self.executeRejectProposal(proposalId: input.proposalId)
             }
         )
     }
 
-    func executeRejectProposal(proposalId: String) async -> String {
+    func executeRejectProposal(proposalId: String) async -> ToolExecutionResult<JSONValue> {
         // IDOR Guard: atomically verify proposalId matches pendingProposal AND retrieve it.
         guard let proposal = await MainActor.run(body: {
             guard pendingProposal?.proposalId == proposalId else { return nil as PendingProposal? }
@@ -443,7 +488,7 @@ extension AIAgentManager {
                     userInfo: ["error": "Proposal not found or already actioned."]
                 )
             }
-            return "Error: proposal not found or already actioned."
+            return .value(.string("Proposal not found in current conversation. Cannot reject."))
         }
 
         guard let orgId = proposal.orgId ?? UserDefaults.Keys.hiveOrgId.get(), !orgId.isEmpty else {
@@ -455,7 +500,7 @@ extension AIAgentManager {
                     userInfo: ["error": "Hive org not configured."]
                 )
             }
-            return "Error: Hive org not configured."
+            return .value(.string("Missing org context. Cannot reject."))
         }
 
         let convId = proposal.conversationId ?? {
@@ -479,13 +524,13 @@ extension AIAgentManager {
                     userInfo: ["error": "Hive authentication failed."]
                 )
             }
-            return "Error: Hive authentication failed."
+            return .value(.string("Authentication failed. Cannot reject."))
         }
 
         let turnId = proposal.turnId ?? UUID().uuidString
         let workspaceSlugs = proposal.workspaceSlugs ?? AIAgentManager.cachedOrgSlugs() ?? []
 
-        let apiResult: Result<ApprovalResult, String> = await withCheckedContinuation { cont in
+        let apiResult: (result: ApprovalResult?, error: String?) = await withCheckedContinuation { cont in
             API.sharedInstance.sendRejectionIntent(
                 orgId: orgId,
                 conversationId: convId ?? "",
@@ -493,13 +538,12 @@ extension AIAgentManager {
                 proposalId: proposalId,
                 workspaceSlugs: workspaceSlugs,
                 token: token,
-                callback: { result in cont.resume(returning: .success(result)) },
-                errorCallback: { err in cont.resume(returning: .failure(err)) }
+                callback: { result in cont.resume(returning: (result, nil)) },
+                errorCallback: { err in cont.resume(returning: (nil, err)) }
             )
         }
 
-        switch apiResult {
-        case .success(let rejectionResult):
+        if let rejectionResult = apiResult.result {
             print("AIAgent [HiveGraph] reject POST success — proposalId: \(proposalId)")
             await MainActor.run {
                 self.pendingProposal = nil
@@ -510,10 +554,9 @@ extension AIAgentManager {
                     userInfo: ["result": rejectionResult]
                 )
             }
-            let summary = rejectionResult.summaryText ?? "Proposal rejected."
-            return summary
-
-        case .failure(let errMsg):
+            return .value(.string("Proposal rejected."))
+        } else {
+            let errMsg = apiResult.error ?? "Rejection failed. Please try again."
             print("AIAgent [HiveGraph] reject POST failure — proposalId: \(proposalId), error: \(errMsg)")
             await MainActor.run {
                 NotificationCenter.default.post(
@@ -522,7 +565,7 @@ extension AIAgentManager {
                     userInfo: ["error": errMsg]
                 )
             }
-            return "Error rejecting proposal: \(errMsg)"
+            return .value(.string("Rejection failed. Please try again — the card is still actionable."))
         }
     }
 
@@ -542,6 +585,32 @@ extension AIAgentManager {
     func clearPersistedPendingProposal() {
         UserDefaults.Keys.pendingProposal.removeValue()
     }
+
+    // MARK: - Debug Mock Injector
+
+    #if DEBUG
+    func injectMockProposal(kind: String = "feature") {
+        let mockProposalId = "mock-\(UUID().uuidString)"
+        let mock = PendingProposal(
+            proposalId: mockProposalId,
+            kind: kind,
+            title: "[MOCK] Build \(kind) dashboard",
+            description: "A mock proposal for UI development.",
+            turnId: nil,
+            conversationId: nil,
+            orgId: nil,
+            workspaceSlugs: nil,
+            workspaceSlug: nil,
+            orgGithubLogin: nil
+        )
+        pendingProposal = mock
+        NotificationCenter.default.post(
+            name: .aiAgentProposalDetected,
+            object: nil,
+            userInfo: ["proposal": mock]
+        )
+    }
+    #endif
 
     // MARK: - Private JSON Helper
 

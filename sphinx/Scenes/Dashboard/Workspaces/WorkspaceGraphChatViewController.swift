@@ -577,7 +577,7 @@ extension WorkspaceGraphChatViewController: @preconcurrency GraphChatSSEDelegate
         streamingBuffer += delta
     }
 
-    func onToolInputAvailable(toolName: String) {
+    func onToolInputAvailable(_ toolName: String, _ toolCallId: String, _ input: String) {
         ensureStatusBarVisible()
         workflowStatusView.setStepDetail(toolDisplayName(toolName))
         updateStatusViewHeight()
@@ -599,10 +599,14 @@ extension WorkspaceGraphChatViewController: @preconcurrency GraphChatSSEDelegate
         }
     }
 
-    func onToolCall(toolName: String, input: [String: Any]?) {
+    func onToolCall(_ toolName: String, _ input: String) {
         ensureStatusBarVisible()
         var display = toolDisplayName(toolName)
-        if let input = input, let first = input.first {
+        // Parse input string to extract first key/value for display
+        if !input.isEmpty,
+           let data = input.data(using: .utf8),
+           let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let first = obj.first {
             let value = String(describing: first.value)
             let detail = "\(first.key): \(value)"
             let combined = "\(display) — \(detail)"
@@ -613,7 +617,7 @@ extension WorkspaceGraphChatViewController: @preconcurrency GraphChatSSEDelegate
         UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
     }
 
-    func onToolOutputAvailable() {
+    func onToolOutputAvailable(_ toolName: String, _ output: String) {
         // Keep the status bar visible — it will be dismissed in onFinish
         // once the completed assistant message is ready to take its place.
     }

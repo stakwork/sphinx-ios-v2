@@ -136,6 +136,7 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         configureTableView()
         initializeMacros()
         setupAgentProcessingBar()
+        setupProposalCardObservers()
     }
     
     override func viewWillAppear(_ animated: Bool) {

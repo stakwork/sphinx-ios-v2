@@ -5212,10 +5212,30 @@ extension API {
         }
     }
 
-    // MARK: - Proposal Approval Intent
+    // MARK: - Proposal Approval / Rejection
 
     typealias HiveApprovalCallback = ((AIAgentManager.ApprovalResult) -> Void)
     typealias HiveApprovalErrorCallback = ((String) -> Void)
+
+    private func buildEntityUrl(
+        result: AIAgentManager.ApprovalResult,
+        orgGithubLogin: String,
+        workspaceSlug: String?
+    ) -> String {
+        let base = "https://hive.sphinx.chat"
+        switch result.kind?.lowercased() {
+        case "feature":
+            if let slug = workspaceSlug, !slug.isEmpty, let entityId = result.createdEntityId, !entityId.isEmpty {
+                return "\(base)/w/\(slug)/plan/\(entityId)"
+            }
+            return "\(base)/org/\(orgGithubLogin)"
+        case "milestone":
+            let canvas = (result.landedOn.flatMap { $0.isEmpty ? nil : $0 }).map { "?canvas=\($0)" } ?? ""
+            return "\(base)/org/\(orgGithubLogin)\(canvas)"
+        default:
+            return "\(base)/org/\(orgGithubLogin)"
+        }
+    }
 
     /// POST /api/orgs/{orgId}/proposals/{proposalId}/approve
     /// Sends an approval intent for a Jamie-generated proposal.
@@ -5250,7 +5270,8 @@ extension API {
             return
         }
 
-        session()?.request(request).responseData { response in
+        session()?.request(request).responseData { [weak self] response in
+            guard let self = self else { return }
             if let statusCode = response.response?.statusCode, statusCode == 401 {
                 print("[HiveAPI] sendApprovalIntent unauthorized (401) — proposalId: \(proposalId)")
                 errorCallback("Unauthorized (401).")
@@ -5264,23 +5285,57 @@ extension API {
                     errorCallback(errorMsg)
                     return
                 }
-                // Decode ApprovalResult with proposalId injected
+                // Decode ApprovalResult (fields: proposalId, kind, createdEntityId, landedOn, landedOnName)
                 var decoded = try? JSONDecoder().decode(AIAgentManager.ApprovalResult.self, from: data)
                 if decoded == nil {
                     // Fallback: synthesize from JSON
                     let approved = json["approved"].bool ?? (json["status"].string == "approved")
-                    let featureUrl = json["featureUrl"].string
-                    let summaryText = json["summaryText"].string ?? json["message"].string
+                    let kind = json["kind"].string
+                    let createdEntityId = json["createdEntityId"].string
+                    let landedOn = json["landedOn"].string
+                    let landedOnName = json["landedOnName"].string
                     decoded = AIAgentManager.ApprovalResult(
                         proposalId: proposalId,
                         approved: approved,
-                        featureUrl: featureUrl,
-                        summaryText: summaryText
+                        kind: kind,
+                        createdEntityId: createdEntityId,
+                        landedOn: landedOn,
+                        landedOnName: landedOnName
                     )
                 }
                 let result = decoded ?? AIAgentManager.ApprovalResult(proposalId: proposalId, approved: true)
-                print("[HiveAPI] sendApprovalIntent success — proposalId: \(proposalId)")
-                callback(result)
+
+                // Build entity URL based on kind
+                let entityUrl = self.buildEntityUrl(
+                    result: result,
+                    orgGithubLogin: orgGithubLogin,
+                    workspaceSlug: workspaceSlug.isEmpty ? nil : workspaceSlug
+                )
+                let featureUrl: String? = entityUrl.isEmpty ? nil : entityUrl
+
+                // Build display text
+                let kindLabel = result.kind.map { $0.capitalized } ?? "Entity"
+                let fallback = "\(kindLabel) created successfully."
+                let baseText = result.summaryText.flatMap { $0.isEmpty ? nil : $0 } ?? fallback
+                let displayText: String
+                if let url = featureUrl, !url.isEmpty {
+                    displayText = "\(baseText)\n\n🔗 \(url)"
+                } else {
+                    displayText = baseText
+                }
+
+                print("[HiveAPI] sendApprovalIntent success — proposalId: \(proposalId), entity: \(result.createdEntityId ?? "?"), landedOn: \(result.landedOn ?? "?")")
+                let enriched = AIAgentManager.ApprovalResult(
+                    proposalId: result.proposalId,
+                    approved: result.approved,
+                    kind: result.kind,
+                    createdEntityId: result.createdEntityId,
+                    landedOn: result.landedOn,
+                    landedOnName: result.landedOnName,
+                    featureUrl: featureUrl,
+                    summaryText: displayText
+                )
+                callback(enriched)
             case .failure(let error):
                 print("[HiveAPI] sendApprovalIntent failed — proposalId: \(proposalId), error: \(error.localizedDescription)")
                 errorCallback(error.localizedDescription)
@@ -5333,18 +5388,12 @@ extension API {
                     errorCallback(errorMsg)
                     return
                 }
-                var decoded = try? JSONDecoder().decode(AIAgentManager.ApprovalResult.self, from: data)
-                if decoded == nil {
-                    let approved = json["approved"].bool ?? false
-                    let summaryText = json["summaryText"].string ?? json["message"].string
-                    decoded = AIAgentManager.ApprovalResult(
-                        proposalId: proposalId,
-                        approved: approved,
-                        featureUrl: nil,
-                        summaryText: summaryText
-                    )
-                }
-                let result = decoded ?? AIAgentManager.ApprovalResult(proposalId: proposalId, approved: false)
+                let summaryText = json["summaryText"].string ?? json["message"].string
+                let result = AIAgentManager.ApprovalResult(
+                    proposalId: proposalId,
+                    approved: false,
+                    summaryText: summaryText
+                )
                 print("[HiveAPI] sendRejectionIntent success — proposalId: \(proposalId)")
                 callback(result)
             case .failure(let error):
