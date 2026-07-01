@@ -686,6 +686,7 @@
 		9386C28D2BB25F2700ABDEF3 /* AddedTagsView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9386C28C2BB25F2700ABDEF3 /* AddedTagsView.xib */; };
 		93D7B5472BAE0FEA007C53A9 /* AddTagsButtonCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93D7B5462BAE0FEA007C53A9 /* AddTagsButtonCell.swift */; };
 		93FCEA782B91AF3B0069B344 /* DashboardUITest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93FCEA772B91AF3B0069B344 /* DashboardUITest.swift */; };
+		9ED6D430912B439496D47B6B /* ProposalApprovalCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D3D01957AEB49A4B50A5180 /* ProposalApprovalCardView.swift */; };
 		A1B2C3D4E5F60001I9J0K1L2 /* HiveLinkNavigator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F60002I9J0K1L2M3 /* HiveLinkNavigator.swift */; };
 		A1B2C3D4E5F60002A1B2C3D4 /* SphinxToggleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60001A1B2C3D4 /* SphinxToggleView.swift */; };
 		A1B2C3D4E5F601020304050B /* PendingAttachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F601020304050A /* PendingAttachment.swift */; };
@@ -840,7 +841,6 @@
 		CQ1A2B3C4D5E6F7A8B9C0D1E /* ClarifyingQuestionMessageCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = CQ2B3C4D5E6F7A8B9C0D1E2F /* ClarifyingQuestionMessageCell.swift */; };
 		D2789CFCCA3E453295F15A2E /* HiveFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44EC6EC0EE1C4D6B8B5FADB2 /* HiveFeature.swift */; };
 		D30E5DF5BD6E4A209227EEB5 /* NewChatViewController+AgentExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 009A40E65F444529AAD5F256 /* NewChatViewController+AgentExtension.swift */; };
-		9ED6D430912B439496D47B6B /* ProposalApprovalCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D3D01957AEB49A4B50A5180 /* ProposalApprovalCardView.swift */; };
 		E5F6A7B8C9D0E1F2A3B4C5D6 /* TaskProgressTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6A7B8C9D0E1F2A3B4C5D6E7 /* TaskProgressTests.swift */; };
 		E63B82C04D5080098BD7DDBA /* WorkspaceTaskTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB71680A85C46EAF9E7DD25B /* WorkspaceTaskTableViewCell.swift */; };
 		E7F8A9B0C1D2E3F4A5B6C7D8 /* StakworkRun.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A9B0C1D2E3F4A5B6C7D8E9 /* StakworkRun.swift */; };
@@ -1016,7 +1016,6 @@
 
 /* Begin PBXFileReference section */
 		009A40E65F444529AAD5F256 /* NewChatViewController+AgentExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NewChatViewController+AgentExtension.swift"; sourceTree = "<group>"; };
-		4D3D01957AEB49A4B50A5180 /* ProposalApprovalCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProposalApprovalCardView.swift; sourceTree = "<group>"; };
 		0F9935DA8372449F9F39A27B /* GraphChatHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GraphChatHistory.swift; sourceTree = "<group>"; };
 		101C5A13C28347DF905BBCEE /* TaskDependencyDiagramView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskDependencyDiagramView.swift; sourceTree = "<group>"; };
 		1426B8E2ACCC4781BB119239 /* TaskDependencyDiagramCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskDependencyDiagramCell.swift; sourceTree = "<group>"; };
@@ -2017,6 +2016,7 @@
 		47FE9A3D23C381A20090913F /* UITapGestureRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITapGestureRecognizer.swift; sourceTree = "<group>"; };
 		487E10CEB3D07B0840A84681 /* Pods_sphinx.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_sphinx.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C31187BFB7EDD28A632A1FD /* FeaturePlanViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeaturePlanViewController.swift; sourceTree = "<group>"; };
+		4D3D01957AEB49A4B50A5180 /* ProposalApprovalCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProposalApprovalCardView.swift; sourceTree = "<group>"; };
 		60E020F2675C40F7ADDF3C84 /* WorkflowDiagramModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkflowDiagramModel.swift; sourceTree = "<group>"; };
 		667BC9B05F7A484EB3EE6CB7 /* HiveAnyCableManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveAnyCableManagerTests.swift; sourceTree = "<group>"; };
 		67772AC47A65482197752799 /* AIAgentManager+HiveGraphTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AIAgentManager+HiveGraphTool.swift"; sourceTree = "<group>"; };
@@ -7339,7 +7339,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sphinx/sphinx.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 332;
+				CURRENT_PROJECT_VERSION = 333;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 8297M44YTW;
 				ENABLE_BITCODE = NO;
@@ -7429,7 +7429,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sphinx/sphinx.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 332;
+				CURRENT_PROJECT_VERSION = 333;
 				DEVELOPMENT_TEAM = 8297M44YTW;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
