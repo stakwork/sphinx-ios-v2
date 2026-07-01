@@ -9,6 +9,155 @@
 import Foundation
 import SwiftAISDK
 
+// MARK: - JSON Value (supports nested objects for tool call output)
+
+/// Minimal recursive Codable value supporting strings and nested dicts.
+/// Used for ToolCall.output so `payload` / `meta` can be nested objects.
+enum CodableJSONValue: Codable {
+    case string(String)
+    case object([String: CodableJSONValue])
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.singleValueContainer()
+        if let d = try? c.decode([String: CodableJSONValue].self) { self = .object(d) }
+        else { self = .string(try c.decode(String.self)) }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.singleValueContainer()
+        switch self {
+        case .string(let s): try c.encode(s)
+        case .object(let d): try c.encode(d)
+        }
+    }
+
+    var stringValue: String? { if case .string(let s) = self { return s }; return nil }
+}
+
+extension Dictionary where Key == String, Value == CodableJSONValue {
+    func string(for key: String) -> String? { self[key]?.stringValue }
+}
+
+// MARK: - Codable Models
+
+extension AIAgentManager {
+
+    struct CanvasChatMessage: Codable {
+        let role: String           // "user" or "assistant"
+        let content: String
+        var toolCalls: [ToolCall]?
+        var approvalResult: ApprovalResult?
+    }
+
+    struct ToolCall: Codable {
+        let id: String?            // toolCallId from SSE (e.g. "toulu_01RZ8...")
+        let toolName: String
+        let status: String?        // "output-available" once output is known
+        var input: [String: String]?
+        var output: [String: CodableJSONValue]?
+
+        // Custom encoding: omit nil-optional fields entirely (avoid sending JSON null to server)
+        func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encodeIfPresent(id, forKey: .id)
+            try container.encode(toolName, forKey: .toolName)
+            try container.encodeIfPresent(status, forKey: .status)
+            try container.encodeIfPresent(input, forKey: .input)
+            try container.encodeIfPresent(output, forKey: .output)
+        }
+    }
+
+    struct ProposalOutput: Codable {
+        let proposalId: String
+        let kind: String
+        let title: String
+        let description: String?
+    }
+
+    struct ApprovalIntent: Codable {
+        let proposalId: String
+        let currentRef: String?
+    }
+
+    struct PendingProposal: Codable, Sendable {
+        let proposalId: String
+        let kind: String       // "feature" | "initiative" | "milestone"
+        let title: String
+        let description: String?
+        let toolCallId: String?       // SSE toolCallId, used when building the approval transcript
+        let rawInput: [String: String]? // Full input dict from tool-input-available event
+    }
+
+    // MARK: - ApprovalResult
+
+    struct ApprovalResult: Codable, Sendable {
+        let approved: Bool
+        let proposalId: String
+        let kind: String?
+        let createdEntityId: String?
+        let landedOn: String?
+        let landedOnName: String?
+        let featureUrl: String?       // built client-side from createdEntityId + workspace slug
+        let summaryText: String?      // extracted from SSE body + feature URL
+
+        // CodingKeys excludes client-side fields (approved, featureUrl, summaryText)
+        enum CodingKeys: String, CodingKey {
+            case proposalId, kind, createdEntityId, landedOn, landedOnName
+        }
+
+        // Server response has no `approved` field — presence of a valid decode = success.
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            proposalId      = try c.decode(String.self, forKey: .proposalId)
+            kind            = try? c.decode(String.self, forKey: .kind)
+            createdEntityId = try? c.decode(String.self, forKey: .createdEntityId)
+            landedOn        = try? c.decode(String.self, forKey: .landedOn)
+            landedOnName    = try? c.decode(String.self, forKey: .landedOnName)
+            approved        = true
+            featureUrl      = nil
+            summaryText     = nil
+        }
+
+        // Enrich a decoded result with client-side URL and summary text
+        init(enriching result: ApprovalResult, featureUrl: String?, summaryText: String?) {
+            approved        = result.approved
+            proposalId      = result.proposalId
+            kind            = result.kind
+            createdEntityId = result.createdEntityId
+            landedOn        = result.landedOn
+            landedOnName    = result.landedOnName
+            self.featureUrl  = featureUrl
+            self.summaryText = summaryText
+        }
+
+        // Synthetic constructor used for rejection (no server body)
+        init(approved: Bool, proposalId: String) {
+            self.approved        = approved
+            self.proposalId      = proposalId
+            self.kind            = nil
+            self.createdEntityId = nil
+            self.landedOn        = nil
+            self.landedOnName    = nil
+            self.featureUrl      = nil
+            self.summaryText     = nil
+        }
+    }
+
+    // MARK: - Approve/Reject input structs
+
+    struct RejectionIntent: Codable, Sendable {
+        let proposalId: String
+    }
+
+    struct RejectProposalInput: Codable, Sendable {
+        let proposalId: String
+    }
+
+    struct ApproveProposalInput: Codable, Sendable {
+        let proposalId: String
+    }
+}
+
 // MARK: - HiveGraphBridge
 
 /// Bridges GraphChatSSEDelegate callbacks to a CheckedContinuation<String, Never>.
@@ -75,114 +224,157 @@ private class HiveGraphBridge: GraphChatSSEDelegate {
     }
 }
 
-// MARK: - AIAgentManager + Proposal Models
-
-extension AIAgentManager {
-
-    // MARK: - PendingProposal
-
-    struct PendingProposal: Codable, Sendable {
-        let proposalId: String
-        let kind: String       // "feature" | "initiative" | "milestone"
-        let title: String
-        let description: String?
-        /// Tool call context – optional fields carried through for approve/reject
-        let turnId: String?
-        let conversationId: String?
-        let orgId: String?
-        let workspaceSlugs: [String]?
-        let workspaceSlug: String?
-        let orgGithubLogin: String?
-    }
-
-    // MARK: - ApprovalResult
-
-    struct ApprovalResult: Codable, Sendable {
-        let proposalId: String
-        let approved: Bool
-        let kind: String?
-        let createdEntityId: String?
-        let landedOn: String?
-        let landedOnName: String?
-        let featureUrl: String?
-        let summaryText: String?
-
-        // Allow flexible server response decoding
-        enum CodingKeys: String, CodingKey {
-            case proposalId
-            case approved
-            case status
-            case kind
-            case createdEntityId
-            case landedOn
-            case landedOnName
-            case featureUrl
-            case summaryText
-            case message
-        }
-
-        init(proposalId: String, approved: Bool, kind: String? = nil, createdEntityId: String? = nil, landedOn: String? = nil, landedOnName: String? = nil, featureUrl: String? = nil, summaryText: String? = nil) {
-            self.proposalId = proposalId
-            self.approved = approved
-            self.kind = kind
-            self.createdEntityId = createdEntityId
-            self.landedOn = landedOn
-            self.landedOnName = landedOnName
-            self.featureUrl = featureUrl
-            self.summaryText = summaryText
-        }
-
-        init(from decoder: Decoder) throws {
-            let c = try decoder.container(keyedBy: CodingKeys.self)
-            proposalId = (try? c.decode(String.self, forKey: .proposalId)) ?? ""
-            // Server may return "approved" bool or "status" string
-            if let bool = try? c.decode(Bool.self, forKey: .approved) {
-                approved = bool
-            } else if let status = try? c.decode(String.self, forKey: .status) {
-                approved = (status == "approved")
-            } else {
-                approved = false
-            }
-            kind = try? c.decode(String.self, forKey: .kind)
-            createdEntityId = try? c.decode(String.self, forKey: .createdEntityId)
-            landedOn = try? c.decode(String.self, forKey: .landedOn)
-            landedOnName = try? c.decode(String.self, forKey: .landedOnName)
-            featureUrl = try? c.decode(String.self, forKey: .featureUrl)
-            summaryText = (try? c.decode(String.self, forKey: .summaryText))
-                ?? (try? c.decode(String.self, forKey: .message))
-        }
-
-        func encode(to encoder: Encoder) throws {
-            var c = encoder.container(keyedBy: CodingKeys.self)
-            try c.encode(proposalId, forKey: .proposalId)
-            try c.encode(approved, forKey: .approved)
-            try? c.encode(kind, forKey: .kind)
-            try? c.encode(createdEntityId, forKey: .createdEntityId)
-            try? c.encode(landedOn, forKey: .landedOn)
-            try? c.encode(landedOnName, forKey: .landedOnName)
-            try? c.encode(featureUrl, forKey: .featureUrl)
-            try? c.encode(summaryText, forKey: .summaryText)
-        }
-    }
-
-    // MARK: - RejectionIntent / RejectProposalInput
-
-    struct RejectionIntent: Codable, Sendable {
-        let proposalId: String
-    }
-
-    struct RejectProposalInput: Codable, Sendable {
-        let proposalId: String
-    }
-
-    struct ApproveProposalInput: Codable, Sendable {
-        let proposalId: String
-    }
-}
-
 // MARK: - AIAgentManager + query_hive_graph tool
 
 extension AIAgentManager {
+
+    // MARK: - JSON Helpers
+
+    /// Convert a [String: Any] dict (from JSONSerialization) into [String: CodableJSONValue],
+    /// preserving nested dicts as .object cases. Booleans are stored as "true"/"false" strings
+    /// to distinguish them from integers (CFGetTypeID check avoids NSNumber ambiguity).
+    static func anyDictToCodableJSON(_ dict: [String: Any]) -> [String: CodableJSONValue] {
+        var result: [String: CodableJSONValue] = [:]
+        for (key, value) in dict {
+            if let s = value as? String { result[key] = .string(s) }
+            else if let d = value as? [String: Any] { result[key] = .object(anyDictToCodableJSON(d)) }
+            else if let n = value as? NSNumber {
+                if CFGetTypeID(n) == CFBooleanGetTypeID() {
+                    result[key] = .string(n.boolValue ? "true" : "false")
+                } else {
+                    result[key] = .string(n.stringValue)
+                }
+            }
+        }
+        return result
+    }
+
+    /// For each assistant message in `messages`, finds the empty-toolName sibling entry
+    /// (which carries the full canvas payload with workspaceId) and merges its payload
+    /// onto the propose_* entry's output before sending to the approval endpoint.
+    static func mergeCanvasPayloads(into messages: [[String: Any]]) -> [[String: Any]] {
+        let proposalPrefixes = ["propose_feature", "propose_initiative", "propose_milestone"]
+        let booleanPayloadKeys = ["autoRespond"]
+
+        func normalizeBooleans(in payload: inout [String: Any]) {
+            for key in booleanPayloadKeys {
+                guard let v = payload[key] else { continue }
+                switch v {
+                case let b as Bool: payload[key] = b
+                case let n as NSNumber: payload[key] = n.boolValue
+                case let s as String: payload[key] = (s == "1" || s.lowercased() == "true")
+                default: payload[key] = false
+                }
+            }
+        }
+
+        return messages.map { msg in
+            guard var toolCalls = msg["toolCalls"] as? [[String: Any]] else { return msg }
+
+            // Find the canvas (empty-toolName) sibling and its payload
+            let canvasEntry = toolCalls.first(where: { ($0["toolName"] as? String) == "" })
+            let canvasOutput = canvasEntry?["output"] as? [String: Any]
+            let canvasPayload = canvasOutput?["payload"] as? [String: Any]
+
+            var changed = false
+            toolCalls = toolCalls.map { tc in
+                guard var output = tc["output"] as? [String: Any] else { return tc }
+                var payload = output["payload"] as? [String: Any] ?? [:]
+                let tn = tc["toolName"] as? String ?? ""
+                let isProposalTool = proposalPrefixes.contains(where: { tn.hasPrefix($0) })
+
+                // Merge canvas payload into propose_* entries
+                if isProposalTool, let canvasPayload = canvasPayload {
+                    canvasPayload.forEach { payload[$0.key] = $0.value }
+                    if let meta = canvasOutput?["meta"] { output["meta"] = meta }
+                }
+
+                // Normalize boolean fields across ALL tool call entries
+                normalizeBooleans(in: &payload)
+
+                output["payload"] = payload
+                var t = tc; t["output"] = output; changed = true
+                return t
+            }
+            if !changed { return msg }
+            var m = msg; m["toolCalls"] = toolCalls; return m
+        }
+    }
+
+    /// Parse a JSON string (possibly double-encoded) into a flat [String: String] dict.
+    /// Nested objects/arrays are re-serialised as JSON strings so no data is lost.
+    static func jsonStringToStringDict(_ jsonStr: String) -> [String: String]? {
+        guard !jsonStr.isEmpty else { return nil }
+        let trimmed = jsonStr.trimmingCharacters(in: .whitespaces)
+
+        func parseDict(from data: Data) -> [String: String]? {
+            guard let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
+            var result: [String: String] = [:]
+            for (key, value) in obj {
+                if let str = value as? String {
+                    result[key] = str
+                } else if let num = value as? NSNumber {
+                    result[key] = num.stringValue
+                } else if let nested = try? JSONSerialization.data(withJSONObject: value),
+                          let nestedStr = String(data: nested, encoding: .utf8) {
+                    result[key] = nestedStr
+                }
+            }
+            return result.isEmpty ? nil : result
+        }
+
+        if let data = trimmed.data(using: .utf8) {
+            if let dict = parseDict(from: data) { return dict }
+            // Handle double-encoded: the string is itself a JSON-encoded string wrapping an object
+            if let inner = try? JSONSerialization.jsonObject(with: data) as? String,
+               let innerData = inner.data(using: .utf8),
+               let dict = parseDict(from: innerData) { return dict }
+        }
+        return nil
+    }
+
+    // MARK: - Canvas History
+
+    func loadCanvasHistory(orgId: String) {
+        guard let data: Data = UserDefaults.Keys.hiveCanvasChatHistoryByOrg.get(),
+              let dict = try? JSONDecoder().decode([String: [CanvasChatMessage]].self, from: data)
+        else { return }
+        canvasChatHistory = dict[orgId] ?? []
+    }
+
+    func persistCanvasHistory(orgId: String) {
+        let capped = canvasChatHistory.count > 30 ? Array(canvasChatHistory.suffix(30)) : canvasChatHistory
+        var dict: [String: [CanvasChatMessage]] = [:]
+        if let data: Data = UserDefaults.Keys.hiveCanvasChatHistoryByOrg.get(),
+           let existing = try? JSONDecoder().decode([String: [CanvasChatMessage]].self, from: data) {
+            dict = existing
+        }
+        dict[orgId] = capped
+        if let encoded = try? JSONEncoder().encode(dict) {
+            UserDefaults.Keys.hiveCanvasChatHistoryByOrg.set(encoded)
+            print("AIAgent [HiveGraph] canvas history persisted — \(capped.count) messages")
+        }
+    }
+
+    func persistPendingProposal() {
+        guard let proposal = pendingProposal,
+              let data = try? JSONEncoder().encode(proposal) else { return }
+        UserDefaults.Keys.hivePendingProposal.set(data)
+    }
+
+    func loadPersistedPendingProposal() {
+        guard pendingProposal == nil,
+              let data: Data = UserDefaults.Keys.hivePendingProposal.get(),
+              let proposal = try? JSONDecoder().decode(PendingProposal.self, from: data) else { return }
+        pendingProposal = proposal
+    }
+
+    func clearPersistedPendingProposal() {
+        UserDefaults.Keys.hivePendingProposal.removeValue()
+        pendingProposal = nil
+    }
+
+    // MARK: - Query Hive Graph Tool Builder
 
     struct QueryHiveGraphInput: Codable, Sendable {
         let question: String
@@ -214,6 +406,9 @@ extension AIAgentManager {
             return "Hive org ID not found. Please reconfigure your Hive connection."
         }
 
+        // Load persisted canvas history for this org
+        loadCanvasHistory(orgId: orgId)
+
         // 2. Read persisted conversationId for this org (nil on first call).
         let conversationId: String? = {
             guard let data: Data = UserDefaults.Keys.hiveConversationIdByOrg.get(),
@@ -240,8 +435,6 @@ extension AIAgentManager {
 
         print("AIAgent [HiveGraph] querying org '\(orgId)' with \(orgSlugs.count) slug(s): \(question)")
 
-        let newTurnId = UUID().uuidString
-
         let result: String = await withCheckedContinuation { cont in
             bridge.continuation = cont
             sseManager.startOrgStream(
@@ -264,61 +457,102 @@ extension AIAgentManager {
             )
         }
 
-        // 5. Proposal detection — surface card in chat
-        let proposalPrefixSet = ["propose_feature", "propose_initiative", "propose_milestone"]
+        // 5. Append user turn to canvas history
+        canvasChatHistory.append(CanvasChatMessage(role: "user", content: question))
 
-        // Extract workspaceSlug from canvas entry's meta (for feature URL building)
-        let proposalWorkspaceSlug: String? = bridge.capturedToolCalls
-            .first(where: { $0.name.isEmpty })
-            .flatMap { canvas -> String? in
-                guard !canvas.outputStr.isEmpty,
-                      let data = canvas.outputStr.data(using: .utf8),
-                      let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                      let meta = obj["meta"] as? [String: Any] else { return nil }
-                return meta["workspaceSlug"] as? String
+        // Convert captured tool calls from bridge.
+        // For propose_* tools that arrived via tool-input-available (no tool-result follows),
+        // synthesise an output dict from the input fields so the server's handleApproval can
+        // locate the proposal by proposalId.
+        let proposalPrefixSet = ["propose_feature", "propose_initiative", "propose_milestone"]
+        let toolCalls: [ToolCall]? = bridge.capturedToolCalls.isEmpty ? nil :
+            bridge.capturedToolCalls.map { tc in
+                let inputDict = AIAgentManager.jsonStringToStringDict(tc.inputStr)
+                // Parse raw output into CodableJSONValue dict (preserves nested objects)
+                var outputDict: [String: CodableJSONValue]? = {
+                    guard !tc.outputStr.isEmpty,
+                          let data = tc.outputStr.data(using: .utf8),
+                          let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+                    else { return nil }
+                    let d = AIAgentManager.anyDictToCodableJSON(obj)
+                    return d.isEmpty ? nil : d
+                }()
+                // For proposal tools: ensure output.payload contains workspaceId.
+                // The server's tool-result event only sends {proposalId, kind, title, description}
+                // — no workspaceId. The companion empty-toolName entry carries the full payload.
+                // Trigger on missing payload.workspaceId, not on empty output.
+                if proposalPrefixSet.contains(where: { tc.name.hasPrefix($0) }),
+                   let inputD = inputDict {
+                    let hasWorkspaceId: Bool = {
+                        guard let payloadVal = outputDict?["payload"],
+                              case .object(let p) = payloadVal else { return false }
+                        return p["workspaceId"] != nil
+                    }()
+                    if !hasWorkspaceId {
+                        if let companion = bridge.capturedToolCalls.first(where: { $0.name.isEmpty }),
+                           !companion.outputStr.isEmpty,
+                           let compData = companion.outputStr.data(using: .utf8),
+                           let compObj = try? JSONSerialization.jsonObject(with: compData) as? [String: Any] {
+                            // Merge companion's payload and meta into existing output
+                            var enriched = outputDict ?? [:]
+                            let comp = AIAgentManager.anyDictToCodableJSON(compObj)
+                            if let payload = comp["payload"] { enriched["payload"] = payload }
+                            if let meta = comp["meta"] { enriched["meta"] = meta }
+                            if enriched["proposalId"] == nil, let pid = inputD["proposalId"] { enriched["proposalId"] = .string(pid) }
+                            if enriched["kind"] == nil {
+                                if let rawKind = inputD["kind"] { enriched["kind"] = .string(rawKind) }
+                                else if tc.name.hasPrefix("propose_") { enriched["kind"] = .string(String(tc.name.dropFirst("propose_".count))) }
+                            }
+                            outputDict = enriched.isEmpty ? nil : enriched
+                        } else {
+                            // No companion — keep existing output but ensure proposalId/kind
+                            var enriched = outputDict ?? [:]
+                            if enriched["proposalId"] == nil, let pid = inputD["proposalId"] { enriched["proposalId"] = .string(pid) }
+                            if enriched["kind"] == nil {
+                                if let rawKind = inputD["kind"] { enriched["kind"] = .string(rawKind) }
+                                else if tc.name.hasPrefix("propose_") { enriched["kind"] = .string(String(tc.name.dropFirst("propose_".count))) }
+                            }
+                            outputDict = enriched.isEmpty ? nil : enriched
+                        }
+                    }
+                }
+                let tcId = tc.toolCallId.isEmpty ? nil : tc.toolCallId
+                let status: String? = (outputDict != nil) ? "output-available" : nil
+                return ToolCall(id: tcId, toolName: tc.name, status: status, input: inputDict, output: outputDict)
             }
 
-        if let tc = bridge.capturedToolCalls.first(where: { captured in
-            proposalPrefixSet.contains(where: { captured.name.hasPrefix($0) })
-        }) {
-            // Parse proposal fields from tool input
-            let inputDict = parseJsonStringToDict(tc.inputStr)
-            let proposalId = inputDict?["proposalId"] ?? inputDict?["proposal_id"] ?? UUID().uuidString
-            let title       = inputDict?["title"] ?? "Proposal"
-            let description = inputDict?["description"]
-            let kind: String = {
-                if tc.name.contains("initiative") { return "initiative" }
-                if tc.name.contains("milestone")  { return "milestone" }
-                return "feature"
-            }()
+        let assistantMsg = CanvasChatMessage(role: "assistant", content: result, toolCalls: toolCalls)
+        canvasChatHistory.append(assistantMsg)
+        persistCanvasHistory(orgId: orgId)
+        print("AIAgent [HiveGraph] canvas history updated — \(canvasChatHistory.count) messages")
 
-            // Build context for approve/reject calls
-            let resolvedConvId: String? = {
-                guard let data: Data = UserDefaults.Keys.hiveConversationIdByOrg.get(),
-                      let dict = try? JSONDecoder().decode([String: String].self, from: data) else { return nil }
-                return dict[orgId]
-            }()
-            let githubLogin: String? = UserDefaults.Keys.hiveGithubLogin.get()
+        // Log all captured tool calls for diagnostics
+        for tc in bridge.capturedToolCalls {
+            print("AIAgent [HiveGraph] captured tool: \(tc.name) | inputStr: \(tc.inputStr.prefix(200)) | outputStr: \(tc.outputStr.prefix(200))")
+        }
 
+        // 6. Proposal detection — surface card in chat
+        let proposalNames: Set<String> = ["propose_feature", "propose_initiative", "propose_milestone"]
+        if let tc = assistantMsg.toolCalls?.first(where: { call in
+            proposalPrefixSet.contains(where: { call.toolName.hasPrefix($0) }) || proposalNames.contains(call.toolName)
+        }),
+           let pid   = tc.output?.string(for: "proposalId") ?? tc.input?["proposalId"],
+           let kind  = tc.output?.string(for: "kind")       ?? tc.input?["kind"],
+           let title = tc.output?.string(for: "title")      ?? tc.input?["title"] {
+            let desc = tc.output?.string(for: "description") ?? tc.input?["description"]
             let proposal = PendingProposal(
-                proposalId: proposalId,
-                kind: kind,
-                title: title,
-                description: description,
-                turnId: newTurnId,
-                conversationId: resolvedConvId,
-                orgId: orgId,
-                workspaceSlugs: orgSlugs,
-                workspaceSlug: proposalWorkspaceSlug ?? orgSlugs.first,
-                orgGithubLogin: githubLogin
+                proposalId: pid, kind: kind, title: title,
+                description: desc,
+                toolCallId: tc.id,
+                rawInput: tc.input
             )
 
-            print("AIAgent [HiveGraph] proposal detected — kind: \(kind), title: \(title), id: \(proposalId)")
+            print("AIAgent [HiveGraph] proposal detected — kind: \(kind), title: \(title), id: \(pid)")
 
             // Persist + broadcast on main actor
             await MainActor.run {
                 self.pendingProposal = proposal
-                self.persistPendingProposal(proposal)
+                self.persistPendingProposal()
                 NotificationCenter.default.post(
                     name: .aiAgentProposalDetected,
                     object: nil,
@@ -332,12 +566,12 @@ extension AIAgentManager {
             let proposalContext = """
 
 [PROPOSAL CARD DISPLAYED — A native approval card has been shown to the user.]
-proposalId: \(proposalId)
+proposalId: \(pid)
 kind: \(kind)
-title: \(title)\(description.map { "\ndescription: \($0)" } ?? "")
+title: \(title)\(desc.map { "\ndescription: \($0)" } ?? "")
 
-To approve this proposal, call approve_proposal with proposalId "\(proposalId)".
-To reject it, call reject_proposal with proposalId "\(proposalId)".
+To approve this proposal, call approve_proposal with proposalId "\(pid)".
+To reject it, call reject_proposal with proposalId "\(pid)".
 """
             return result + proposalContext
         }
@@ -359,107 +593,134 @@ To reject it, call reject_proposal with proposalId "\(proposalId)".
 
     @discardableResult
     func executeApproveProposal(proposalId: String) async -> ToolExecutionResult<JSONValue> {
-        // IDOR Guard: atomically verify proposalId matches pendingProposal AND retrieve it.
-        // A single MainActor.run prevents a TOCTOU race where pendingProposal is swapped
-        // between a separate check and fetch, which would let a caller-supplied ID act on
-        // a different proposal's org/conversation context.
-        guard let proposal = await MainActor.run(body: {
-            guard pendingProposal?.proposalId == proposalId else { return nil as PendingProposal? }
-            return pendingProposal
-        }) else {
-            print("AIAgent [HiveGraph] proposal-not-found: unknown proposalId '\(proposalId)' — rejecting approve")
-            await MainActor.run {
-                NotificationCenter.default.post(
-                    name: .aiAgentProposalActioned,
-                    object: nil,
-                    userInfo: ["error": "Proposal not found or already actioned."]
-                )
+        let proposalNames: Set<String> = ["propose_feature", "propose_initiative", "propose_milestone"]
+
+        // IDOR guard: proposalId must match the server-originated pendingProposal
+        // OR exist in canvasChatHistory (for proposals loaded from persistence on restart).
+        let inPending = pendingProposal?.proposalId == proposalId
+        let inHistory = canvasChatHistory.contains(where: {
+            $0.toolCalls?.contains(where: {
+                proposalNames.contains($0.toolName) &&
+                ($0.output?.string(for: "proposalId") == proposalId || $0.input?["proposalId"] == proposalId)
+            }) == true
+        })
+        guard inPending || inHistory else {
+            print("AIAgent [HiveGraph] approve_proposal: proposal not found — proposalId: \(proposalId)")
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: .aiAgentProposalActioned, object: nil, userInfo: ["error": "Proposal not found in current conversation."])
             }
             return .value(.string("Proposal not found in current conversation. Cannot approve."))
         }
 
-        // Org context validation
-        guard let orgId = proposal.orgId ?? UserDefaults.Keys.hiveOrgId.get(), !orgId.isEmpty else {
-            print("AIAgent [HiveGraph] missing-org: no orgId available for proposal '\(proposalId)'")
-            await MainActor.run {
-                NotificationCenter.default.post(
-                    name: .aiAgentProposalActioned,
-                    object: nil,
-                    userInfo: ["error": "Hive org not configured."]
-                )
+        // Idempotency: already actioned?
+        if let idx = canvasChatHistory.indices.last(where: {
+            canvasChatHistory[$0].toolCalls?.contains(where: {
+                proposalNames.contains($0.toolName) &&
+                ($0.output?.string(for: "proposalId") == proposalId || $0.input?["proposalId"] == proposalId)
+            }) == true
+        }), canvasChatHistory[idx].approvalResult != nil {
+            print("AIAgent [HiveGraph] approve_proposal: already actioned — proposalId: \(proposalId)")
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: .aiAgentProposalActioned, object: nil, userInfo: ["error": "This proposal has already been actioned."])
+            }
+            return .value(.string("This proposal has already been actioned."))
+        }
+
+        guard let orgId: String = UserDefaults.Keys.hiveOrgId.get(), !orgId.isEmpty,
+              let convData: Data = UserDefaults.Keys.hiveConversationIdByOrg.get(),
+              let convDict = try? JSONDecoder().decode([String: String].self, from: convData),
+              let conversationId = convDict[orgId]
+        else {
+            print("AIAgent [HiveGraph] approve_proposal: missing org context — proposalId: \(proposalId)")
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: .aiAgentProposalActioned, object: nil, userInfo: ["error": "Missing org context. Please try again."])
             }
             return .value(.string("Missing org context. Cannot approve."))
         }
 
-        let convId = proposal.conversationId ?? {
-            guard let data: Data = UserDefaults.Keys.hiveConversationIdByOrg.get(),
-                  let dict = try? JSONDecoder().decode([String: String].self, from: data) else { return nil }
-            return dict[orgId]
-        }()
-
-        // Resolve auth token
+        let turnId = UUID().uuidString
         let token: String? = await withCheckedContinuation { cont in
-            API.sharedInstance.resolveHiveToken(
-                callback: { cont.resume(returning: $0) },
-                errorCallback: { cont.resume(returning: nil) }
-            )
+            API.sharedInstance.resolveHiveToken(callback: { cont.resume(returning: $0) }, errorCallback: { cont.resume(returning: nil) })
         }
         guard let token = token else {
-            print("AIAgent [HiveGraph] auth-failed: could not resolve Hive token for proposal approve '\(proposalId)'")
-            await MainActor.run {
-                NotificationCenter.default.post(
-                    name: .aiAgentProposalActioned,
-                    object: nil,
-                    userInfo: ["error": "Hive authentication failed."]
-                )
+            print("AIAgent [HiveGraph] approve_proposal: authentication failed — proposalId: \(proposalId)")
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: .aiAgentProposalActioned, object: nil, userInfo: ["error": "Authentication failed. Please try again."])
             }
             return .value(.string("Authentication failed. Cannot approve."))
         }
 
-        // POST approval
-        let turnId = proposal.turnId ?? UUID().uuidString
-        let workspaceSlugs = proposal.workspaceSlugs ?? AIAgentManager.cachedOrgSlugs() ?? []
-        let workspaceSlug = proposal.workspaceSlug ?? workspaceSlugs.first ?? ""
-        let orgGithubLogin = proposal.orgGithubLogin ?? UserDefaults.Keys.hiveGithubLogin.get() ?? ""
+        print("AIAgent [HiveGraph] approve_proposal firing — proposalId: \(proposalId), turnId: \(turnId)")
 
-        let apiResult: (result: ApprovalResult?, error: String?) = await withCheckedContinuation { cont in
+        let workspaceSlugs = await fetchWorkspacesAsync()?.compactMap { $0.slug } ?? []
+        let messages = AIAgentManager.mergeCanvasPayloads(
+            into: (try? JSONEncoder().encode(canvasChatHistory)).flatMap {
+                try? JSONSerialization.jsonObject(with: $0) as? [[String: Any]]
+            } ?? []
+        )
+
+        // Extract workspaceSlug from the canvas entry's meta (features only)
+        let proposalWorkspaceSlug: String? = messages.lazy.compactMap { msg -> String? in
+            guard let toolCalls = msg["toolCalls"] as? [[String: Any]],
+                  let canvas = toolCalls.first(where: { ($0["toolName"] as? String) == "" }),
+                  let output = canvas["output"] as? [String: Any],
+                  let meta = output["meta"] as? [String: Any] else { return nil }
+            return meta["workspaceSlug"] as? String
+        }.first
+
+        let orgGithubLogin: String = UserDefaults.Keys.hiveGithubLogin.get() ?? ""
+
+        return await withCheckedContinuation { cont in
             API.sharedInstance.sendApprovalIntent(
                 orgId: orgId,
-                conversationId: convId ?? "",
+                conversationId: conversationId,
                 turnId: turnId,
                 proposalId: proposalId,
+                canvasChatMessages: messages,
                 workspaceSlugs: workspaceSlugs,
-                workspaceSlug: workspaceSlug,
+                workspaceSlug: proposalWorkspaceSlug,
                 orgGithubLogin: orgGithubLogin,
-                token: token,
-                callback: { result in cont.resume(returning: (result, nil)) },
-                errorCallback: { err in cont.resume(returning: (nil, err)) }
-            )
-        }
-
-        if let approvalResult = apiResult.result {
-            print("AIAgent [HiveGraph] approve POST success — proposalId: \(proposalId), featureUrl: \(approvalResult.featureUrl ?? "nil")")
-            await MainActor.run {
-                self.pendingProposal = nil
-                self.clearPersistedPendingProposal()
-                NotificationCenter.default.post(
-                    name: .aiAgentProposalActioned,
-                    object: nil,
-                    userInfo: ["result": approvalResult]
-                )
+                token: token
+            ) { [weak self] result, errorMsg in
+                guard let self = self else {
+                    print("AIAgent [HiveGraph] approve_proposal: agent unavailable — proposalId: \(proposalId)")
+                    DispatchQueue.main.async {
+                        NotificationCenter.default.post(name: .aiAgentProposalActioned, object: nil, userInfo: ["error": "Agent unavailable. Please try again."])
+                    }
+                    cont.resume(returning: .value(.string("Agent unavailable.")))
+                    return
+                }
+                if let result = result {
+                    // Stamp approval result onto the matching assistant message
+                    if let idx = self.canvasChatHistory.indices.last(where: {
+                        self.canvasChatHistory[$0].toolCalls?.contains(where: {
+                            proposalNames.contains($0.toolName) &&
+                            ($0.output?.string(for: "proposalId") == proposalId || $0.input?["proposalId"] == proposalId)
+                        }) == true
+                    }) {
+                        let existing = self.canvasChatHistory[idx]
+                        self.canvasChatHistory[idx] = CanvasChatMessage(
+                            role: existing.role,
+                            content: existing.content,
+                            toolCalls: existing.toolCalls,
+                            approvalResult: result
+                        )
+                        self.persistCanvasHistory(orgId: orgId)
+                    }
+                    self.clearPersistedPendingProposal()
+                    DispatchQueue.main.async {
+                        NotificationCenter.default.post(name: .aiAgentProposalActioned, object: nil, userInfo: ["result": result])
+                    }
+                    cont.resume(returning: .value(.string("Proposal approved successfully.")))
+                } else {
+                    let msg = errorMsg ?? "Approval failed. Please try again."
+                    print("AIAgent [HiveGraph] approval POST failed: \(msg) — leaving card actionable")
+                    DispatchQueue.main.async {
+                        NotificationCenter.default.post(name: .aiAgentProposalActioned, object: nil, userInfo: ["error": msg])
+                    }
+                    cont.resume(returning: .value(.string("Approval failed. Please try again — the card is still actionable.")))
+                }
             }
-            return .value(.string("Proposal approved successfully."))
-        } else {
-            let errMsg = apiResult.error ?? "Approval failed. Please try again."
-            print("AIAgent [HiveGraph] approve POST failure — proposalId: \(proposalId), error: \(errMsg)")
-            await MainActor.run {
-                NotificationCenter.default.post(
-                    name: .aiAgentProposalActioned,
-                    object: nil,
-                    userInfo: ["error": errMsg]
-                )
-            }
-            return .value(.string("Approval failed. Please try again — the card is still actionable."))
         }
     }
 
@@ -477,115 +738,121 @@ To reject it, call reject_proposal with proposalId "\(proposalId)".
 
     @discardableResult
     func executeRejectProposal(proposalId: String) async -> ToolExecutionResult<JSONValue> {
-        // IDOR Guard: atomically verify proposalId matches pendingProposal AND retrieve it.
-        guard let proposal = await MainActor.run(body: {
-            guard pendingProposal?.proposalId == proposalId else { return nil as PendingProposal? }
-            return pendingProposal
-        }) else {
-            print("AIAgent [HiveGraph] proposal-not-found: unknown proposalId '\(proposalId)' — rejecting reject")
-            await MainActor.run {
-                NotificationCenter.default.post(
-                    name: .aiAgentProposalActioned,
-                    object: nil,
-                    userInfo: ["error": "Proposal not found or already actioned."]
-                )
+        let proposalNames: Set<String> = ["propose_feature", "propose_initiative", "propose_milestone"]
+
+        // IDOR guard: match against server-originated pendingProposal or persisted canvasChatHistory
+        let inPending = pendingProposal?.proposalId == proposalId
+        let inHistory = canvasChatHistory.contains(where: {
+            $0.toolCalls?.contains(where: {
+                proposalNames.contains($0.toolName) &&
+                ($0.output?.string(for: "proposalId") == proposalId || $0.input?["proposalId"] == proposalId)
+            }) == true
+        })
+        guard inPending || inHistory else {
+            print("AIAgent [HiveGraph] reject_proposal: proposal not found — proposalId: \(proposalId)")
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: .aiAgentProposalActioned, object: nil, userInfo: ["error": "Proposal not found in current conversation."])
             }
             return .value(.string("Proposal not found in current conversation. Cannot reject."))
         }
 
-        guard let orgId = proposal.orgId ?? UserDefaults.Keys.hiveOrgId.get(), !orgId.isEmpty else {
-            print("AIAgent [HiveGraph] missing-org: no orgId available for proposal rejection '\(proposalId)'")
-            await MainActor.run {
-                NotificationCenter.default.post(
-                    name: .aiAgentProposalActioned,
-                    object: nil,
-                    userInfo: ["error": "Hive org not configured."]
-                )
+        // Idempotency
+        if let idx = canvasChatHistory.indices.last(where: {
+            canvasChatHistory[$0].toolCalls?.contains(where: {
+                proposalNames.contains($0.toolName) &&
+                ($0.output?.string(for: "proposalId") == proposalId || $0.input?["proposalId"] == proposalId)
+            }) == true
+        }), canvasChatHistory[idx].approvalResult != nil {
+            print("AIAgent [HiveGraph] reject_proposal: already actioned — proposalId: \(proposalId)")
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: .aiAgentProposalActioned, object: nil, userInfo: ["error": "This proposal has already been actioned."])
+            }
+            return .value(.string("This proposal has already been actioned."))
+        }
+
+        guard let orgId: String = UserDefaults.Keys.hiveOrgId.get(), !orgId.isEmpty,
+              let convData: Data = UserDefaults.Keys.hiveConversationIdByOrg.get(),
+              let convDict = try? JSONDecoder().decode([String: String].self, from: convData),
+              let conversationId = convDict[orgId]
+        else {
+            print("AIAgent [HiveGraph] reject_proposal: missing org context — proposalId: \(proposalId)")
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: .aiAgentProposalActioned, object: nil, userInfo: ["error": "Missing org context. Please try again."])
             }
             return .value(.string("Missing org context. Cannot reject."))
         }
 
-        let convId = proposal.conversationId ?? {
-            guard let data: Data = UserDefaults.Keys.hiveConversationIdByOrg.get(),
-                  let dict = try? JSONDecoder().decode([String: String].self, from: data) else { return nil }
-            return dict[orgId]
-        }()
-
+        let turnId = UUID().uuidString
         let token: String? = await withCheckedContinuation { cont in
-            API.sharedInstance.resolveHiveToken(
-                callback: { cont.resume(returning: $0) },
-                errorCallback: { cont.resume(returning: nil) }
-            )
+            API.sharedInstance.resolveHiveToken(callback: { cont.resume(returning: $0) }, errorCallback: { cont.resume(returning: nil) })
         }
         guard let token = token else {
-            print("AIAgent [HiveGraph] auth-failed: could not resolve Hive token for proposal reject '\(proposalId)'")
-            await MainActor.run {
-                NotificationCenter.default.post(
-                    name: .aiAgentProposalActioned,
-                    object: nil,
-                    userInfo: ["error": "Hive authentication failed."]
-                )
+            print("AIAgent [HiveGraph] reject_proposal: authentication failed — proposalId: \(proposalId)")
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: .aiAgentProposalActioned, object: nil, userInfo: ["error": "Authentication failed. Please try again."])
             }
             return .value(.string("Authentication failed. Cannot reject."))
         }
 
-        let turnId = proposal.turnId ?? UUID().uuidString
-        let workspaceSlugs = proposal.workspaceSlugs ?? AIAgentManager.cachedOrgSlugs() ?? []
+        print("AIAgent [HiveGraph] reject_proposal firing — proposalId: \(proposalId), turnId: \(turnId)")
 
-        let apiResult: (result: ApprovalResult?, error: String?) = await withCheckedContinuation { cont in
+        let workspaceSlugs = await fetchWorkspacesAsync()?.compactMap { $0.slug } ?? []
+        let messages = AIAgentManager.mergeCanvasPayloads(
+            into: (try? JSONEncoder().encode(canvasChatHistory)).flatMap {
+                try? JSONSerialization.jsonObject(with: $0) as? [[String: Any]]
+            } ?? []
+        )
+
+        return await withCheckedContinuation { cont in
             API.sharedInstance.sendRejectionIntent(
                 orgId: orgId,
-                conversationId: convId ?? "",
+                conversationId: conversationId,
                 turnId: turnId,
                 proposalId: proposalId,
+                canvasChatMessages: messages,
                 workspaceSlugs: workspaceSlugs,
-                token: token,
-                callback: { result in cont.resume(returning: (result, nil)) },
-                errorCallback: { err in cont.resume(returning: (nil, err)) }
-            )
-        }
-
-        if let rejectionResult = apiResult.result {
-            print("AIAgent [HiveGraph] reject POST success — proposalId: \(proposalId)")
-            await MainActor.run {
-                self.pendingProposal = nil
-                self.clearPersistedPendingProposal()
-                NotificationCenter.default.post(
-                    name: .aiAgentProposalActioned,
-                    object: nil,
-                    userInfo: ["result": rejectionResult]
-                )
+                token: token
+            ) { [weak self] success, errorMsg in
+                guard let self = self else {
+                    print("AIAgent [HiveGraph] reject_proposal: agent unavailable — proposalId: \(proposalId)")
+                    DispatchQueue.main.async {
+                        NotificationCenter.default.post(name: .aiAgentProposalActioned, object: nil, userInfo: ["error": "Agent unavailable. Please try again."])
+                    }
+                    cont.resume(returning: .value(.string("Agent unavailable.")))
+                    return
+                }
+                if success {
+                    let rejectionResult = ApprovalResult(approved: false, proposalId: proposalId)
+                    if let idx = self.canvasChatHistory.indices.last(where: {
+                        self.canvasChatHistory[$0].toolCalls?.contains(where: {
+                            proposalNames.contains($0.toolName) &&
+                            ($0.output?.string(for: "proposalId") == proposalId || $0.input?["proposalId"] == proposalId)
+                        }) == true
+                    }) {
+                        let existing = self.canvasChatHistory[idx]
+                        self.canvasChatHistory[idx] = CanvasChatMessage(
+                            role: existing.role,
+                            content: existing.content,
+                            toolCalls: existing.toolCalls,
+                            approvalResult: rejectionResult
+                        )
+                        self.persistCanvasHistory(orgId: orgId)
+                    }
+                    self.clearPersistedPendingProposal()
+                    DispatchQueue.main.async {
+                        NotificationCenter.default.post(name: .aiAgentProposalActioned, object: nil, userInfo: ["result": rejectionResult])
+                    }
+                    cont.resume(returning: .value(.string("Proposal rejected.")))
+                } else {
+                    let msg = errorMsg ?? "Rejection failed. Please try again."
+                    print("AIAgent [HiveGraph] rejection POST failed: \(msg) — leaving card actionable")
+                    DispatchQueue.main.async {
+                        NotificationCenter.default.post(name: .aiAgentProposalActioned, object: nil, userInfo: ["error": msg])
+                    }
+                    cont.resume(returning: .value(.string("Rejection failed. Please try again — the card is still actionable.")))
+                }
             }
-            return .value(.string("Proposal rejected."))
-        } else {
-            let errMsg = apiResult.error ?? "Rejection failed. Please try again."
-            print("AIAgent [HiveGraph] reject POST failure — proposalId: \(proposalId), error: \(errMsg)")
-            await MainActor.run {
-                NotificationCenter.default.post(
-                    name: .aiAgentProposalActioned,
-                    object: nil,
-                    userInfo: ["error": errMsg]
-                )
-            }
-            return .value(.string("Rejection failed. Please try again — the card is still actionable."))
         }
-    }
-
-    // MARK: - PendingProposal Persistence
-
-    func persistPendingProposal(_ proposal: PendingProposal) {
-        if let data = try? JSONEncoder().encode(proposal) {
-            UserDefaults.Keys.pendingProposal.set(data)
-        }
-    }
-
-    func loadPersistedPendingProposal() -> PendingProposal? {
-        guard let data: Data = UserDefaults.Keys.pendingProposal.get() else { return nil }
-        return try? JSONDecoder().decode(PendingProposal.self, from: data)
-    }
-
-    func clearPersistedPendingProposal() {
-        UserDefaults.Keys.pendingProposal.removeValue()
     }
 
     // MARK: - Debug Mock Injector
@@ -598,12 +865,8 @@ To reject it, call reject_proposal with proposalId "\(proposalId)".
             kind: kind,
             title: "[MOCK] Build \(kind) dashboard",
             description: "A mock proposal for UI development.",
-            turnId: nil,
-            conversationId: nil,
-            orgId: nil,
-            workspaceSlugs: nil,
-            workspaceSlug: nil,
-            orgGithubLogin: nil
+            toolCallId: nil,
+            rawInput: ["proposalId": mockProposalId, "kind": kind, "title": "[MOCK] Build \(kind) dashboard"]
         )
         pendingProposal = mock
         NotificationCenter.default.post(
@@ -613,24 +876,4 @@ To reject it, call reject_proposal with proposalId "\(proposalId)".
         )
     }
     #endif
-
-    // MARK: - Private JSON Helper
-
-    private func parseJsonStringToDict(_ jsonStr: String) -> [String: String]? {
-        guard !jsonStr.isEmpty,
-              let data = jsonStr.data(using: .utf8),
-              let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
-        var result: [String: String] = [:]
-        for (key, value) in obj {
-            if let str = value as? String {
-                result[key] = str
-            } else if let num = value as? NSNumber {
-                result[key] = num.stringValue
-            } else if let nested = try? JSONSerialization.data(withJSONObject: value),
-                      let nestedStr = String(data: nested, encoding: .utf8) {
-                result[key] = nestedStr
-            }
-        }
-        return result.isEmpty ? nil : result
-    }
 }

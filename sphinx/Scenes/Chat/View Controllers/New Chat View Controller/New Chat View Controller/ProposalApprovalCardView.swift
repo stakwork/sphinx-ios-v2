@@ -97,6 +97,7 @@ final class ProposalApprovalCardView: UIView {
         approveButton.titleLabel?.font = UIFont(name: "Roboto-Medium", size: 12) ?? .systemFont(ofSize: 12, weight: .medium)
         approveButton.layer.cornerRadius = 8
         approveButton.layer.masksToBounds = true
+        approveButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 12, bottom: 0, right: 12)
         approveButton.addTarget(self, action: #selector(approveTapped), for: .touchUpInside)
 
         // Reject button
@@ -107,6 +108,7 @@ final class ProposalApprovalCardView: UIView {
         rejectButton.titleLabel?.font = UIFont(name: "Roboto-Medium", size: 12) ?? .systemFont(ofSize: 12, weight: .medium)
         rejectButton.layer.cornerRadius = 8
         rejectButton.layer.masksToBounds = true
+        rejectButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 12, bottom: 0, right: 12)
         rejectButton.addTarget(self, action: #selector(rejectTapped), for: .touchUpInside)
 
         // Spinner
@@ -147,11 +149,12 @@ final class ProposalApprovalCardView: UIView {
             dismissButton.widthAnchor.constraint(equalToConstant: 28),
             dismissButton.heightAnchor.constraint(equalToConstant: 28),
 
-            // Badge — top-left
-            badgeLabel.topAnchor.constraint(equalTo: topAnchor, constant: 12),
+            // Badge — vertically centered with dismiss button row
+            badgeLabel.centerYAnchor.constraint(equalTo: dismissButton.centerYAnchor),
             badgeLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
             badgeLabel.trailingAnchor.constraint(lessThanOrEqualTo: dismissButton.leadingAnchor, constant: -8),
             badgeLabel.heightAnchor.constraint(greaterThanOrEqualToConstant: 20),
+            badgeLabel.widthAnchor.constraint(greaterThanOrEqualToConstant: 55),
 
             // Title — below badge
             titleLabel.topAnchor.constraint(equalTo: badgeLabel.bottomAnchor, constant: 6),
@@ -173,12 +176,11 @@ final class ProposalApprovalCardView: UIView {
             approveButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
             approveButton.heightAnchor.constraint(equalToConstant: 36),
 
-            // Reject button — trailing approve
+            // Reject button — trailing approve, sized to its own content
             rejectButton.topAnchor.constraint(equalTo: approveButton.topAnchor),
             rejectButton.leadingAnchor.constraint(equalTo: approveButton.trailingAnchor, constant: 8),
             rejectButton.trailingAnchor.constraint(lessThanOrEqualTo: spinner.leadingAnchor, constant: -8),
             rejectButton.heightAnchor.constraint(equalToConstant: 36),
-            rejectButton.widthAnchor.constraint(equalTo: approveButton.widthAnchor),
 
             // Spinner — trailing reject button
             spinner.centerYAnchor.constraint(equalTo: rejectButton.centerYAnchor),
@@ -205,7 +207,7 @@ final class ProposalApprovalCardView: UIView {
             badgeText  = "Feature"
             badgeColor = UIColor.Sphinx.PrimaryBlue
         }
-        badgeLabel.text            = "  \(badgeText)  "
+        badgeLabel.text            = "\(badgeText)"
         badgeLabel.backgroundColor = badgeColor
 
         // Title

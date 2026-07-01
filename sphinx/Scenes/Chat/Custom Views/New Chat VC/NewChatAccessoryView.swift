@@ -203,17 +203,23 @@ extension NewChatAccessoryView {
             onDismiss()
         }
 
-        normalModeStackView.insertArrangedSubview(card, at: 0)
-
-        // Pin width to stack minus 32pt padding (16 each side)
+        // Wrap in a transparent container so the stack item fills full width while the card
+        // has 8pt side margins and 8pt bottom gap from the message field.
+        let container = UIView()
+        container.backgroundColor = .clear
+        container.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(card)
         NSLayoutConstraint.activate([
-            card.widthAnchor.constraint(
-                equalTo: normalModeStackView.widthAnchor,
-                constant: -32
-            )
+            card.topAnchor.constraint(equalTo: container.topAnchor),
+            card.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 8),
+            card.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -8),
+            card.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -8)
         ])
 
+        normalModeStackView.insertArrangedSubview(container, at: 0)
         proposalCard = card
+
+        invalidateIntrinsicContentSize()
 
         UIView.animate(withDuration: 0.2) {
             card.alpha = 1
@@ -222,11 +228,13 @@ extension NewChatAccessoryView {
 
     func hideProposalCard() {
         guard let card = proposalCard else { return }
+        let container = card.superview
         proposalCard = nil
         UIView.animate(withDuration: 0.2, animations: {
             card.alpha = 0
-        }, completion: { _ in
-            card.removeFromSuperview()
+        }, completion: { [weak self] _ in
+            container?.removeFromSuperview()
+            self?.invalidateIntrinsicContentSize()
         })
     }
 
@@ -246,5 +254,5 @@ extension NewChatAccessoryView {
 // MARK: - Associated Object Keys
 
 private enum AssociatedKeys {
-    static var proposalCard: UInt8 = 0
+    nonisolated(unsafe) static var proposalCard: UInt8 = 0
 }

@@ -140,20 +140,24 @@ extension NewChatViewController {
 
     func restoreProposalCardIfNeeded() {
         guard isAgentChat else { return }
-
-        guard let proposal = AIAgentManager.sharedInstance.loadPersistedPendingProposal() else { return }
-
-        // If the proposal was already actioned (approve/reject result exists in manager state),
-        // do not restore the card.
-        if AIAgentManager.sharedInstance.pendingProposal == nil {
-            // Proposal was cleared (actioned) — skip restore
-            return
+        // Belt-and-suspenders reload in case init ran before UserDefaults was populated
+        AIAgentManager.sharedInstance.loadPersistedPendingProposal()
+        guard let pending = AIAgentManager.sharedInstance.pendingProposal else { return }
+        // Load canvas history so the idempotency check in executeApproveProposal/executeRejectProposal works
+        guard let orgId: String = UserDefaults.Keys.hiveOrgId.get(), !orgId.isEmpty else { return }
+        AIAgentManager.sharedInstance.loadCanvasHistory(orgId: orgId)
+        // Skip restore if the proposal was already actioned in a previous session
+        let proposalNames: Set<String> = ["propose_feature", "propose_initiative", "propose_milestone"]
+        let alreadyActioned = AIAgentManager.sharedInstance.canvasChatHistory.contains(where: {
+            guard let toolCalls = $0.toolCalls else { return false }
+            return toolCalls.contains(where: {
+                proposalNames.contains($0.toolName) &&
+                ($0.output?.string(for: "proposalId") == pending.proposalId || $0.input?["proposalId"] == pending.proposalId)
+            }) && $0.approvalResult != nil
+        })
+        if !alreadyActioned {
+            showProposalCard(pending)
         }
-
-        // Ensure the manager's in-memory state is in sync
-        AIAgentManager.sharedInstance.pendingProposal = proposal
-
-        showProposalCard(proposal)
     }
 
     func insertIntroMessageIfNeeded() {
