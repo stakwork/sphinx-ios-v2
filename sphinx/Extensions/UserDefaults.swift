@@ -33,6 +33,8 @@ extension UserDefaults {
         public static let hiveOrgSlugs            = DefaultKey<Data>("hiveOrgSlugs")            // JSON-encoded [String]
         public static let hiveOrgSlugsCacheDate   = DefaultKey<Double>("hiveOrgSlugsCacheDate") // Date.timeIntervalSince1970
         public static let hiveConversationIdByOrg = DefaultKey<Data>("hiveConversationIdByOrg") // JSON-encoded [String: String]
+        public static let hiveCanvasChatHistoryByOrg = DefaultKey<Data>("hiveCanvasChatHistoryByOrg") // JSON-encoded [String: [CanvasChatMessage]]
+        public static let hivePendingProposal = DefaultKey<Data>("hivePendingProposal")         // JSON-encoded PendingProposal
         public static let inviterNickname = DefaultKey<String>("inviterNickname")
         public static let inviterPubkey = DefaultKey<String>("inviterPubkey")
         public static let inviterRouteHint = DefaultKey<String>("inviterRouteHint")
@@ -85,7 +87,6 @@ extension UserDefaults {
         public static let didMigrateToTZ = DefaultKey<Bool>("didMigrateToTZ")
         public static let systemTimezone = DefaultKey<String>("systemTimezone")
         public static let isRestoreCompleted = DefaultKey<Bool>("isRestoreCompleted")
-        public static let pendingProposal = DefaultKey<Data>("pendingProposal") // JSON-encoded PendingProposal
     }
     
     class func resetUserDefaults() {

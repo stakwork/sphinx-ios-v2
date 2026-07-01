@@ -5214,9 +5214,6 @@ extension API {
 
     // MARK: - Proposal Approval / Rejection
 
-    typealias HiveApprovalCallback = ((AIAgentManager.ApprovalResult) -> Void)
-    typealias HiveApprovalErrorCallback = ((String) -> Void)
-
     private func buildEntityUrl(
         result: AIAgentManager.ApprovalResult,
         orgGithubLogin: String,
@@ -5237,170 +5234,159 @@ extension API {
         }
     }
 
-    /// POST /api/orgs/{orgId}/proposals/{proposalId}/approve
-    /// Sends an approval intent for a Jamie-generated proposal.
     func sendApprovalIntent(
         orgId: String,
         conversationId: String,
         turnId: String,
         proposalId: String,
+        canvasChatMessages: [[String: Any]],
         workspaceSlugs: [String],
-        workspaceSlug: String,
+        workspaceSlug: String?,
         orgGithubLogin: String,
         token: String,
-        callback: @escaping HiveApprovalCallback,
-        errorCallback: @escaping HiveApprovalErrorCallback
+        completion: @escaping (AIAgentManager.ApprovalResult?, String?) -> Void
     ) {
-        let urlString = "\(API.kHiveBaseUrl)/orgs/\(orgId)/proposals/\(proposalId)/approve"
-        let body: [String: AnyObject] = [
-            "turnId":         turnId as AnyObject,
-            "workspaceSlugs": workspaceSlugs as AnyObject,
-            "workspaceSlug":  workspaceSlug as AnyObject,
-            "orgGithubLogin": orgGithubLogin as AnyObject
+        guard let url = URL(string: "https://hive.sphinx.chat/api/ask/quick") else {
+            completion(nil, "Invalid request URL."); return
+        }
+        let messages = canvasChatMessages.compactMap { msg -> [String: Any]? in
+            guard let role = msg["role"] as? String,
+                  let content = msg["content"] as? String else { return nil }
+            return ["role": role, "content": content]
+        }
+        let body: [String: Any] = [
+            "orgId": orgId,
+            "conversationId": conversationId,
+            "turnId": turnId,
+            "approvalIntent": ["proposalId": proposalId],
+            "canvasChatMessages": canvasChatMessages,
+            "messages": messages,
+            "workspaceSlugs": workspaceSlugs
         ]
-        let headers: [String: String] = conversationId.isEmpty ? [:] : ["Conversation-Id": conversationId]
-        guard let request = createRequest(
-            urlString,
-            bodyParams: body as NSDictionary,
-            headers: headers,
-            method: "POST",
-            token: token
-        ) else {
-            errorCallback("Failed to build approval request.")
-            return
-        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
-        session()?.request(request).responseData { [weak self] response in
-            guard let self = self else { return }
-            if let statusCode = response.response?.statusCode, statusCode == 401 {
-                print("[HiveAPI] sendApprovalIntent unauthorized (401) — proposalId: \(proposalId)")
-                errorCallback("Unauthorized (401).")
-                return
+        print("AIAgent [HiveGraph] approval POST fired — turnId: \(turnId)")
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                print("AIAgent [HiveGraph] approval POST failed: \(error.localizedDescription)")
+                completion(nil, error.localizedDescription); return
             }
-            switch response.result {
-            case .success(let data):
-                let json = SwiftyJSON.JSON(data)
-                if let errorMsg = json["error"].string {
-                    print("[HiveAPI] sendApprovalIntent error response — proposalId: \(proposalId), error: \(errorMsg)")
-                    errorCallback(errorMsg)
-                    return
+            let http = response as? HTTPURLResponse
+            let status = http?.statusCode ?? 0
+            guard (200..<300).contains(status) else {
+                let serverMsg = data.flatMap { d in
+                    (try? JSONSerialization.jsonObject(with: d) as? [String: Any])
+                        .flatMap { $0["error"] as? String ?? $0["message"] as? String }
                 }
-                // Decode ApprovalResult (fields: proposalId, kind, createdEntityId, landedOn, landedOnName)
-                var decoded = try? JSONDecoder().decode(AIAgentManager.ApprovalResult.self, from: data)
-                if decoded == nil {
-                    // Fallback: synthesize from JSON
-                    let approved = json["approved"].bool ?? (json["status"].string == "approved")
-                    let kind = json["kind"].string
-                    let createdEntityId = json["createdEntityId"].string
-                    let landedOn = json["landedOn"].string
-                    let landedOnName = json["landedOnName"].string
-                    decoded = AIAgentManager.ApprovalResult(
-                        proposalId: proposalId,
-                        approved: approved,
-                        kind: kind,
-                        createdEntityId: createdEntityId,
-                        landedOn: landedOn,
-                        landedOnName: landedOnName
-                    )
-                }
-                let result = decoded ?? AIAgentManager.ApprovalResult(proposalId: proposalId, approved: true)
-
-                // Build entity URL based on kind
-                let entityUrl = self.buildEntityUrl(
-                    result: result,
-                    orgGithubLogin: orgGithubLogin,
-                    workspaceSlug: workspaceSlug.isEmpty ? nil : workspaceSlug
-                )
-                let featureUrl: String? = entityUrl.isEmpty ? nil : entityUrl
-
-                // Build display text
-                let kindLabel = result.kind.map { $0.capitalized } ?? "Entity"
-                let fallback = "\(kindLabel) created successfully."
-                let baseText = result.summaryText.flatMap { $0.isEmpty ? nil : $0 } ?? fallback
-                let displayText: String
-                if let url = featureUrl, !url.isEmpty {
-                    displayText = "\(baseText)\n\n🔗 \(url)"
-                } else {
-                    displayText = baseText
-                }
-
-                print("[HiveAPI] sendApprovalIntent success — proposalId: \(proposalId), entity: \(result.createdEntityId ?? "?"), landedOn: \(result.landedOn ?? "?")")
-                let enriched = AIAgentManager.ApprovalResult(
-                    proposalId: result.proposalId,
-                    approved: result.approved,
-                    kind: result.kind,
-                    createdEntityId: result.createdEntityId,
-                    landedOn: result.landedOn,
-                    landedOnName: result.landedOnName,
-                    featureUrl: featureUrl,
-                    summaryText: displayText
-                )
-                callback(enriched)
-            case .failure(let error):
-                print("[HiveAPI] sendApprovalIntent failed — proposalId: \(proposalId), error: \(error.localizedDescription)")
-                errorCallback(error.localizedDescription)
+                let errorMsg = serverMsg ?? "Server error (\(status))."
+                print("AIAgent [HiveGraph] approval failed with status \(status): \(errorMsg)")
+                completion(nil, errorMsg); return
             }
-        }
+            // Case-insensitive header lookup (HTTP headers are case-insensitive)
+            let headerValue = http?.allHeaderFields
+                .first(where: { ($0.key as? String)?.lowercased() == "x-approval-result" })
+                .flatMap { $0.value as? String }
+            guard let header = headerValue else {
+                print("AIAgent [HiveGraph] approval: 200 but missing X-Approval-Result header")
+                completion(nil, "Approval could not be confirmed. Please check Hive."); return
+            }
+            print("AIAgent [HiveGraph] X-Approval-Result: \(header)")
+            guard let headerData = header.data(using: .utf8),
+                  let result = try? JSONDecoder().decode(AIAgentManager.ApprovalResult.self, from: headerData) else {
+                print("AIAgent [HiveGraph] approval: failed to decode X-Approval-Result")
+                completion(nil, "Approval response could not be parsed."); return
+            }
+            // Build entity URL based on kind
+            let entityUrl = self.buildEntityUrl(result: result, orgGithubLogin: orgGithubLogin, workspaceSlug: workspaceSlug)
+            let featureUrl: String? = entityUrl.isEmpty ? nil : entityUrl
+
+            // Concatenate all text-delta SSE events from the buffered body
+            var summaryText = ""
+            if let data = data, let bodyStr = String(data: data, encoding: .utf8) {
+                for line in bodyStr.components(separatedBy: "\n") {
+                    guard line.hasPrefix("data: "),
+                          let lineData = line.dropFirst(6).data(using: .utf8),
+                          let json = try? JSONSerialization.jsonObject(with: lineData) as? [String: Any],
+                          json["type"] as? String == "text-delta",
+                          let delta = json["delta"] as? String else { continue }
+                    summaryText += delta
+                }
+            }
+
+            let kindLabel = result.kind.map { $0.capitalized } ?? "Entity"
+            let fallback = "\(kindLabel) created successfully."
+            let displayText: String
+            if let url = featureUrl {
+                let base = summaryText.isEmpty ? fallback : summaryText
+                displayText = "\(base)\n\n🔗 \(url)"
+            } else {
+                displayText = summaryText.isEmpty ? fallback : summaryText
+            }
+
+            print("AIAgent [HiveGraph] approval succeeded — entity: \(result.createdEntityId ?? "?"), landedOn: \(result.landedOn ?? "?")")
+            completion(AIAgentManager.ApprovalResult(enriching: result, featureUrl: featureUrl, summaryText: displayText), nil)
+        }.resume()
     }
 
-    // MARK: - Proposal Rejection Intent
-
-    /// POST /api/orgs/{orgId}/proposals/{proposalId}/reject
-    /// Sends a rejection intent for a Jamie-generated proposal.
     func sendRejectionIntent(
         orgId: String,
         conversationId: String,
         turnId: String,
         proposalId: String,
+        canvasChatMessages: [[String: Any]],
         workspaceSlugs: [String],
         token: String,
-        callback: @escaping HiveApprovalCallback,
-        errorCallback: @escaping HiveApprovalErrorCallback
+        completion: @escaping (Bool, String?) -> Void
     ) {
-        let urlString = "\(API.kHiveBaseUrl)/orgs/\(orgId)/proposals/\(proposalId)/reject"
-        let body: [String: AnyObject] = [
-            "turnId":         turnId as AnyObject,
-            "workspaceSlugs": workspaceSlugs as AnyObject
+        guard let url = URL(string: "https://hive.sphinx.chat/api/ask/quick") else {
+            completion(false, "Invalid request URL."); return
+        }
+        let messages = canvasChatMessages.compactMap { msg -> [String: Any]? in
+            guard let role = msg["role"] as? String,
+                  let content = msg["content"] as? String else { return nil }
+            return ["role": role, "content": content]
+        }
+        let body: [String: Any] = [
+            "orgId": orgId,
+            "conversationId": conversationId,
+            "turnId": turnId,
+            "rejectionIntent": ["proposalId": proposalId],
+            "canvasChatMessages": canvasChatMessages,
+            "messages": messages,
+            "workspaceSlugs": workspaceSlugs
         ]
-        let headers: [String: String] = conversationId.isEmpty ? [:] : ["Conversation-Id": conversationId]
-        guard let request = createRequest(
-            urlString,
-            bodyParams: body as NSDictionary,
-            headers: headers,
-            method: "POST",
-            token: token
-        ) else {
-            errorCallback("Failed to build rejection request.")
-            return
-        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
-        session()?.request(request).responseData { response in
-            if let statusCode = response.response?.statusCode, statusCode == 401 {
-                print("[HiveAPI] sendRejectionIntent unauthorized (401) — proposalId: \(proposalId)")
-                errorCallback("Unauthorized (401).")
-                return
+        print("AIAgent [HiveGraph] rejection POST fired — turnId: \(turnId)")
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                print("AIAgent [HiveGraph] rejection POST failed: \(error.localizedDescription)")
+                completion(false, error.localizedDescription); return
             }
-            switch response.result {
-            case .success(let data):
-                let json = SwiftyJSON.JSON(data)
-                if let errorMsg = json["error"].string {
-                    print("[HiveAPI] sendRejectionIntent error response — proposalId: \(proposalId), error: \(errorMsg)")
-                    errorCallback(errorMsg)
-                    return
+            let http = response as? HTTPURLResponse
+            if let status = http?.statusCode, (200..<300).contains(status) {
+                print("AIAgent [HiveGraph] rejection POST succeeded")
+                completion(true, nil)
+            } else {
+                let serverMsg = data.flatMap { d in
+                    (try? JSONSerialization.jsonObject(with: d) as? [String: Any])
+                        .flatMap { $0["error"] as? String ?? $0["message"] as? String }
                 }
-                let summaryText = json["summaryText"].string ?? json["message"].string
-                let result = AIAgentManager.ApprovalResult(
-                    proposalId: proposalId,
-                    approved: false,
-                    summaryText: summaryText
-                )
-                print("[HiveAPI] sendRejectionIntent success — proposalId: \(proposalId)")
-                callback(result)
-            case .failure(let error):
-                print("[HiveAPI] sendRejectionIntent failed — proposalId: \(proposalId), error: \(error.localizedDescription)")
-                errorCallback(error.localizedDescription)
+                let status = http?.statusCode
+                let errorMsg = serverMsg ?? (status.map { "Server error (\($0))." } ?? "Rejection failed. Please try again.")
+                completion(false, errorMsg)
             }
-        }
+        }.resume()
     }
 
 }

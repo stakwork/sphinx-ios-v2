@@ -50,6 +50,9 @@ final class AIAgentManager: @unchecked Sendable {
     /// The currently pending Jamie proposal awaiting approval or rejection.
     var pendingProposal: PendingProposal?
 
+    /// Full canvas chat history for the active org (persisted across sessions).
+    var canvasChatHistory: [CanvasChatMessage] = []
+
     // MARK: - System Prompt
 
     private let systemPrompt = """
@@ -260,7 +263,7 @@ final class AIAgentManager: @unchecked Sendable {
         observeIncomingMessages()
         reconfigure()
         loadHistory()
-        pendingProposal = loadPersistedPendingProposal()
+        loadPersistedPendingProposal()
     }
 
     // MARK: - Reconfigure

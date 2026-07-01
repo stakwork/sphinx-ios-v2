@@ -172,3 +172,87 @@ extension NewChatAccessoryView : ChatSearchResultsBarDelegate {
         searchDelegate?.didTapNavigateArrowButton(button: button)
     }
 }
+
+// MARK: - Proposal Card Management
+
+extension NewChatAccessoryView {
+
+    private(set) var proposalCard: ProposalApprovalCardView? {
+        get { objc_getAssociatedObject(self, &AssociatedKeys.proposalCard) as? ProposalApprovalCardView }
+        set { objc_setAssociatedObject(self, &AssociatedKeys.proposalCard, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC) }
+    }
+
+    var hasProposalCard: Bool { proposalCard != nil }
+
+    func showProposalCard(
+        _ proposal: AIAgentManager.PendingProposal,
+        onApprove: @escaping (String) -> Void,
+        onReject:  @escaping (String) -> Void,
+        onDismiss: @escaping () -> Void
+    ) {
+        hideProposalCard()
+
+        let card = ProposalApprovalCardView(proposal: proposal)
+        card.translatesAutoresizingMaskIntoConstraints = false
+        card.alpha = 0
+
+        card.onApprove = onApprove
+        card.onReject  = onReject
+        card.onDismiss = { [weak self] in
+            self?.hideProposalCard()
+            onDismiss()
+        }
+
+        // Wrap in a transparent container so the stack item fills full width while the card
+        // has 8pt side margins and 8pt bottom gap from the message field.
+        let container = UIView()
+        container.backgroundColor = .clear
+        container.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(card)
+        NSLayoutConstraint.activate([
+            card.topAnchor.constraint(equalTo: container.topAnchor),
+            card.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 8),
+            card.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -8),
+            card.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -8)
+        ])
+
+        normalModeStackView.insertArrangedSubview(container, at: 0)
+        proposalCard = card
+
+        invalidateIntrinsicContentSize()
+
+        UIView.animate(withDuration: 0.2) {
+            card.alpha = 1
+        }
+    }
+
+    func hideProposalCard() {
+        guard let card = proposalCard else { return }
+        let container = card.superview
+        proposalCard = nil
+        UIView.animate(withDuration: 0.2, animations: {
+            card.alpha = 0
+        }, completion: { [weak self] _ in
+            container?.removeFromSuperview()
+            self?.invalidateIntrinsicContentSize()
+        })
+    }
+
+    func handleProposalActioned(
+        result: AIAgentManager.ApprovalResult?,
+        error: String?
+    ) {
+        guard let card = proposalCard else { return }
+        if let result = result {
+            card.showStamp(approved: result.approved)
+        } else if let error = error {
+            card.showError(error)
+        }
+    }
+}
+
+// MARK: - Associated Object Keys
+
+private enum AssociatedKeys {
+    nonisolated(unsafe) static var proposalCard: UInt8 = 0
+}

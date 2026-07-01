@@ -16,7 +16,10 @@ extension NewChatViewController {
             completion(false, nil)
             return
         }
-        
+
+        // Dismiss any pending proposal card when the user sends a new message
+        removeProposalCard()
+
         bottomView.resetReplyView()
         ChatTrackingHandler.shared.deleteReplyableMessage(with: chat.id)
         
@@ -76,9 +79,10 @@ extension NewChatViewController {
             object: nil,
             queue: .main
         ) { [weak self] notification in
-            // Proposal detected — UI card display is handled elsewhere (not part of this task).
-            // Reserved for future proposal card insertion.
-            _ = notification.userInfo?["proposal"] as? AIAgentManager.PendingProposal
+            guard let self = self,
+                  let proposal = notification.userInfo?["proposal"] as? AIAgentManager.PendingProposal
+            else { return }
+            self.showProposalCard(proposal)
         }
 
         NotificationCenter.default.addObserver(
@@ -95,11 +99,64 @@ extension NewChatViewController {
         }
     }
 
+    // MARK: - Proposal Card Lifecycle
+
+    func showProposalCard(_ proposal: AIAgentManager.PendingProposal) {
+        bottomView.showProposalCard(
+            proposal,
+            onApprove: { [weak self] proposalId in
+                guard let self = self else { return }
+                self.bottomView.proposalCard?.showLoading()
+                Task {
+                    await AIAgentManager.sharedInstance.executeApproveProposal(proposalId: proposalId)
+                }
+                self.scrollToBottomAfterSend()
+            },
+            onReject: { [weak self] proposalId in
+                guard let self = self else { return }
+                self.bottomView.proposalCard?.showLoading()
+                Task {
+                    await AIAgentManager.sharedInstance.executeRejectProposal(proposalId: proposalId)
+                }
+                self.scrollToBottomAfterSend()
+            },
+            onDismiss: { [weak self] in
+                self?.bottomView.hideProposalCard()
+            }
+        )
+    }
+
     func handleProposalActioned(result: AIAgentManager.ApprovalResult?, error: String?) {
+        bottomView.handleProposalActioned(result: result, error: error)
+
         if let result = result, let summaryText = result.summaryText, !summaryText.isEmpty {
             insertAgentReply(summaryText)
-        } else if let error = error {
-            insertAgentReply("Approval failed: \(error)")
+        }
+    }
+
+    func removeProposalCard() {
+        bottomView.hideProposalCard()
+    }
+
+    func restoreProposalCardIfNeeded() {
+        guard isAgentChat else { return }
+        // Belt-and-suspenders reload in case init ran before UserDefaults was populated
+        AIAgentManager.sharedInstance.loadPersistedPendingProposal()
+        guard let pending = AIAgentManager.sharedInstance.pendingProposal else { return }
+        // Load canvas history so the idempotency check in executeApproveProposal/executeRejectProposal works
+        guard let orgId: String = UserDefaults.Keys.hiveOrgId.get(), !orgId.isEmpty else { return }
+        AIAgentManager.sharedInstance.loadCanvasHistory(orgId: orgId)
+        // Skip restore if the proposal was already actioned in a previous session
+        let proposalNames: Set<String> = ["propose_feature", "propose_initiative", "propose_milestone"]
+        let alreadyActioned = AIAgentManager.sharedInstance.canvasChatHistory.contains(where: {
+            guard let toolCalls = $0.toolCalls else { return false }
+            return toolCalls.contains(where: {
+                proposalNames.contains($0.toolName) &&
+                ($0.output?.string(for: "proposalId") == pending.proposalId || $0.input?["proposalId"] == pending.proposalId)
+            }) && $0.approvalResult != nil
+        })
+        if !alreadyActioned {
+            showProposalCard(pending)
         }
     }
 
