@@ -268,7 +268,7 @@ extension DashboardRootViewController {
         workspaceSettingsButton.tintColor = UIColor.Sphinx.MainBottomIcons
 
         let config = UIImage.SymbolConfiguration(pointSize: 18, weight: .medium)
-        let gearImage = UIImage(systemName: "gearshape.fill", withConfiguration: config)
+        let gearImage = UIImage(systemName: "bell.badge", withConfiguration: config)
         workspaceSettingsButton.setImage(gearImage, for: .normal)
     }
 
