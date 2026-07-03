@@ -1,0 +1,16 @@
+{
+  "exceptionType": "NSRangeException",
+  "message": "index out of range",
+  "stackTrace": "0   sphinx   0x0000000100abc123 sphinx.SomeClass.method() + 42",
+  "frames": [
+    {
+      "filename": "SomeClass.method()",
+      "function": "sphinx.SomeClass.method()",
+      "inApp": true
+    }
+  ],
+  "environment": "production",
+  "release": "1.0.0",
+  "commitSha": "abc1234",
+  "repository": "stakwork/sphinx-ios-v2"
+}

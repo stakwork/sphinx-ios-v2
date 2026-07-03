@@ -18,6 +18,7 @@ import SDWebImageSVGCoder
 import PushKit
 import CoreData
 import Bugsnag
+import SphinxErrorReporter
 //import BugsnagPerformance
 
 
@@ -93,6 +94,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         setAppConfiguration()
         configureGiphy()
         configureBugsnag()
+        configureSphinxErrorReporter()
         configureNotificationCenter()
         configureSVGRendering()
         configureSDWebImage()
@@ -373,6 +375,20 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         Giphy.configure(apiKey: Config.giphyApiKey)
     }
     
+    func configureSphinxErrorReporter() {
+        guard let hiveBaseURL = URL(string: API.kHiveBaseUrl) else { return }
+        let ingestKey: String = UserDefaults.Keys.hiveToken.get() ?? ""
+        guard !ingestKey.isEmpty else { return }
+
+        let config = SphinxErrorReporter.Config(
+            hiveBaseURL: hiveBaseURL,
+            ingestKey: ingestKey,
+            mainRepo: "stakwork/sphinx-ios-v2",
+            environment: "production"
+        )
+        SphinxErrorReporter.start(config)
+    }
+
     func configureBugsnag() {
         Bugsnag.start()
 //        BugsnagPerformance.start()
