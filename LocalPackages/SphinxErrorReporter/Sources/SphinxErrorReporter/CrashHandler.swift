@@ -7,6 +7,22 @@
 
 import Foundation
 
+// MARK: - Helpers
+
+// Function types can't conform to Equatable in Swift, so compare C signal
+// handler pointers by their raw bit pattern instead of using == / !=.
+private func signalPtrEqual(
+    _ lhs: (@convention(c) (Int32) -> Void)?,
+    _ rhs: (@convention(c) (Int32) -> Void)?
+) -> Bool {
+    switch (lhs, rhs) {
+    case (.none, .none): return true
+    case (.some(let l), .some(let r)):
+        return unsafeBitCast(l, to: UInt.self) == unsafeBitCast(r, to: UInt.self)
+    default: return false
+    }
+}
+
 // MARK: - Signal handler C context (signal-handler safe — no heap allocation)
 
 private struct SignalContext {
@@ -106,7 +122,7 @@ final class CrashHandler {
         previous: inout (@convention(c) (Int32) -> Void)?
     ) {
         let old = signal(sig, handleSignal)
-        if old != SIG_DFL && old != SIG_IGN && old != SIG_ERR {
+        if !signalPtrEqual(old, SIG_DFL) && !signalPtrEqual(old, SIG_IGN) && !signalPtrEqual(old, SIG_ERR) {
             previous = old
         }
     }

@@ -5,7 +5,7 @@ import Foundation
 
 /// Configuration for the SphinxErrorReporter SDK.
 /// All values are injected — the SDK never reads from UserDefaults, app singletons, or Info.plist.
-public struct Config {
+public struct SphinxErrorReporterConfig {
     /// Base URL of the Hive instance (e.g. `https://hive.sphinx.chat/api`). The SDK will POST to `<hiveBaseURL>/webhook/errors`.
     public let hiveBaseURL: URL
     /// Hive ingest API key (`hive_...`). Sent as `Authorization: Bearer` and as `x-api-key`.
@@ -39,3 +39,6 @@ public struct Config {
         self.debug = debug
     }
 }
+
+// Module-level alias so internal files and tests can still write `Config`.
+public typealias Config = SphinxErrorReporterConfig

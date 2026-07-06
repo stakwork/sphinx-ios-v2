@@ -22,6 +22,11 @@ import Foundation
 /// ```
 public final class SphinxErrorReporter {
 
+    // Expose Config as a member of this class so callers can write
+    // `SphinxErrorReporter.Config(...)` without ambiguity between the
+    // module name and this class name.
+    public typealias Config = SphinxErrorReporterConfig
+
     // MARK: - Private state
 
     private static let lock = NSLock()

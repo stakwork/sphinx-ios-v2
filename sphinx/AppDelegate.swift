@@ -382,7 +382,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
         let config = SphinxErrorReporter.Config(
             hiveBaseURL: hiveBaseURL,
-            ingestKey: ingestKey,
+            ingestKey: Config.sphinxErrorReporterApiKey,
             mainRepo: "stakwork/sphinx-ios-v2",
             environment: "production"
         )
