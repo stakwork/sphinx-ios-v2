@@ -48,7 +48,6 @@ target 'sphinx' do
     pod 'MessagePack.swift', '~> 4.0'
     pod 'EPUBKit'
     pod 'MobileVLCKit'
-    pod 'Bugsnag'
     pod 'LDSwiftEventSource', '~> 3.3'
 end
 

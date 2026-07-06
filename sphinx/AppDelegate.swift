@@ -17,9 +17,7 @@ import AVFAudio
 import SDWebImageSVGCoder
 import PushKit
 import CoreData
-import Bugsnag
 import SphinxErrorReporter
-//import BugsnagPerformance
 
 
 @main
@@ -93,7 +91,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         setAppConfiguration()
         configureGiphy()
-        configureBugsnag()
         configureSphinxErrorReporter()
         configureNotificationCenter()
         configureSVGRendering()
@@ -389,15 +386,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         SphinxErrorReporter.start(config)
     }
 
-    func configureBugsnag() {
-        Bugsnag.start()
-//        BugsnagPerformance.start()
-        
-        if let ownerName = UserContact.getOwner()?.nickname {
-            Bugsnag.setUser(nil, withEmail: nil, andName: ownerName)
-        }
-    }
-    
     func configureNotificationCenter() {
         notificationUserInfo = nil
         UNUserNotificationCenter.current().delegate = self
