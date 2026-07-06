@@ -17,8 +17,6 @@ import AVFAudio
 import SDWebImageSVGCoder
 import PushKit
 import CoreData
-import Bugsnag
-//import BugsnagPerformance
 
 
 @main
@@ -92,7 +90,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         setAppConfiguration()
         configureGiphy()
-        configureBugsnag()
         configureNotificationCenter()
         configureSVGRendering()
         configureSDWebImage()
@@ -371,15 +368,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     
     func configureGiphy() {
         Giphy.configure(apiKey: Config.giphyApiKey)
-    }
-    
-    func configureBugsnag() {
-        Bugsnag.start()
-//        BugsnagPerformance.start()
-        
-        if let ownerName = UserContact.getOwner()?.nickname {
-            Bugsnag.setUser(nil, withEmail: nil, andName: ownerName)
-        }
     }
     
     func configureNotificationCenter() {

@@ -12,7 +12,6 @@
 
 enum Config {
     static let giphyApiKey = "YOUR_GIPHY_API_KEY_HERE"
-    static let bugsnagApiKey = "YOUR_BUGSNAG_API_KEY_HERE"
     static let workflowId = 0
     static let workflowToken = "YOUR_WORKFLOW_TOKEN_HERE"
     static let pusherKey = "YOUR_PUSHER_KEY_HERE"
