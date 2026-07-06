@@ -5264,6 +5264,7 @@
 				47B3B4CC2F8460B400317A05 /* AnthropicProvider */,
 				47B3B4CE2F8460B400317A05 /* OpenAIProvider */,
 				47B3B4D02F8473B500317A05 /* SwiftAISDK */,
+				CESER002000000000000BBBB /* SphinxErrorReporter */,
 			);
 			productName = sphinx;
 			productReference = 4779F15E232AA0F200D35E81 /* sphinx.app */;
@@ -5368,6 +5369,7 @@
 				473873AC2CD906C500CBBC28 /* XCRemoteSwiftPackageReference "client-sdk-swift" */,
 				4730EF432CDA91CF0014581F /* XCRemoteSwiftPackageReference "SFSafeSymbols" */,
 				47B3B4CB2F8460B400317A05 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */,
+				CESER001000000000000AAAA /* XCLocalSwiftPackageReference "SphinxErrorReporter" */,
 			);
 			productRefGroup = 4779F15F232AA0F200D35E81 /* Products */;
 			projectDirPath = "";
@@ -7719,6 +7721,13 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		CESER001000000000000AAAA /* XCLocalSwiftPackageReference "SphinxErrorReporter" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = LocalPackages/SphinxErrorReporter;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCRemoteSwiftPackageReference section */
 		4730EF432CDA91CF0014581F /* XCRemoteSwiftPackageReference "SFSafeSymbols" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -7771,6 +7780,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 47B3B4CB2F8460B400317A05 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */;
 			productName = SwiftAISDK;
+		};
+		CESER002000000000000BBBB /* SphinxErrorReporter */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CESER001000000000000AAAA /* XCLocalSwiftPackageReference "SphinxErrorReporter" */;
+			productName = SphinxErrorReporter;
 		};
 /* End XCSwiftPackageProductDependency section */
 

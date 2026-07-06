@@ -17,6 +17,7 @@ import AVFAudio
 import SDWebImageSVGCoder
 import PushKit
 import CoreData
+import SphinxErrorReporter
 
 
 @main
@@ -90,6 +91,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         setAppConfiguration()
         configureGiphy()
+        configureSphinxErrorReporter()
         configureNotificationCenter()
         configureSVGRendering()
         configureSDWebImage()
@@ -370,6 +372,20 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         Giphy.configure(apiKey: Config.giphyApiKey)
     }
     
+    func configureSphinxErrorReporter() {
+        guard let hiveBaseURL = URL(string: API.kHiveBaseUrl) else { return }
+        let ingestKey: String = UserDefaults.Keys.hiveToken.get() ?? ""
+        guard !ingestKey.isEmpty else { return }
+
+        let config = SphinxErrorReporter.Config(
+            hiveBaseURL: hiveBaseURL,
+            ingestKey: Config.sphinxErrorReporterApiKey,
+            mainRepo: "stakwork/sphinx-ios-v2",
+            environment: "production"
+        )
+        SphinxErrorReporter.start(config)
+    }
+
     func configureNotificationCenter() {
         notificationUserInfo = nil
         UNUserNotificationCenter.current().delegate = self
