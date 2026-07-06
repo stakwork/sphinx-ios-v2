@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 54;
+	objectVersion = 60;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -475,6 +475,7 @@
 		479A03E92583A7180093DB30 /* LocalNetworkPermissionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 479A03E82583A7180093DB30 /* LocalNetworkPermissionService.swift */; };
 		479A39D7244E26FA00A37899 /* AttachmentObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = 479A39D6244E26FA00A37899 /* AttachmentObject.swift */; };
 		479A39DA244F237F00A37899 /* PaidMessagePreviewViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 479A39D9244F237F00A37899 /* PaidMessagePreviewViewController.swift */; };
+		479AB48D2FFBFE1900220667 /* SphinxErrorReporter in Frameworks */ = {isa = PBXBuildFile; productRef = CESER002000000000000BBBB /* SphinxErrorReporter */; };
 		479EAB6323E30BAC001013AB /* HistoryDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 479EAB6223E30BAC001013AB /* HistoryDataSource.swift */; };
 		47A06CA624A3AC9A00BE468C /* DeepLinksHandlerHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47A06CA524A3AC9A00BE468C /* DeepLinksHandlerHelper.swift */; };
 		47A79D3824424D19005CD72F /* UITableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47A79D3724424D19005CD72F /* UITableViewCell.swift */; };
@@ -2387,6 +2388,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				479AB48D2FFBFE1900220667 /* SphinxErrorReporter in Frameworks */,
 				4730EF452CDA91CF0014581F /* SFSafeSymbols in Frameworks */,
 				474C7A5128D3A765007A3E17 /* universal-sphinxrs.a in Frameworks */,
 				47B3B4D12F8473B500317A05 /* SwiftAISDK in Frameworks */,
@@ -5369,7 +5371,7 @@
 				473873AC2CD906C500CBBC28 /* XCRemoteSwiftPackageReference "client-sdk-swift" */,
 				4730EF432CDA91CF0014581F /* XCRemoteSwiftPackageReference "SFSafeSymbols" */,
 				47B3B4CB2F8460B400317A05 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */,
-				CESER001000000000000AAAA /* XCLocalSwiftPackageReference "SphinxErrorReporter" */,
+				CESER001000000000000AAAA /* XCLocalSwiftPackageReference "LocalPackages/SphinxErrorReporter" */,
 			);
 			productRefGroup = 4779F15F232AA0F200D35E81 /* Products */;
 			projectDirPath = "";
@@ -7339,7 +7341,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sphinx/sphinx.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 333;
+				CURRENT_PROJECT_VERSION = 334;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 8297M44YTW;
 				ENABLE_BITCODE = NO;
@@ -7429,7 +7431,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sphinx/sphinx.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 333;
+				CURRENT_PROJECT_VERSION = 334;
 				DEVELOPMENT_TEAM = 8297M44YTW;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
@@ -7722,7 +7724,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		CESER001000000000000AAAA /* XCLocalSwiftPackageReference "SphinxErrorReporter" */ = {
+		CESER001000000000000AAAA /* XCLocalSwiftPackageReference "LocalPackages/SphinxErrorReporter" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = LocalPackages/SphinxErrorReporter;
 		};
@@ -7783,7 +7785,7 @@
 		};
 		CESER002000000000000BBBB /* SphinxErrorReporter */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = CESER001000000000000AAAA /* XCLocalSwiftPackageReference "SphinxErrorReporter" */;
+			package = CESER001000000000000AAAA /* XCLocalSwiftPackageReference "LocalPackages/SphinxErrorReporter" */;
 			productName = SphinxErrorReporter;
 		};
 /* End XCSwiftPackageProductDependency section */
