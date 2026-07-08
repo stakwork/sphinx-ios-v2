@@ -711,6 +711,7 @@
 		AA7F6F17A0F74FF18EC160CC /* AttachmentGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 745A54A4B69B4D74B9F96B6F /* AttachmentGridView.swift */; };
 		AABB11221DEF456700AABBCC /* SphinxrsExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB11221DEF456700AABBBB /* SphinxrsExtensions.swift */; };
 		AE87DA2C30C34E7BBDFDBA56 /* HivePusherManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4D0E0284E4B436180B0BAAF /* HivePusherManagerTests.swift */; };
+		LC001TEST0001000000000001 /* LiveCallBannerFoundationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC001TEST0001000000000002 /* LiveCallBannerFoundationTests.swift */; };
 		BB001SC02F9A0001000SC001 /* SuggestionChipsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB001SC01F9A0001000SC001 /* SuggestionChipsView.swift */; };
 		BB22CC33DD44EE55FF667788 /* HiveSearchResultCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB22CC33DD44EE55FF667799 /* HiveSearchResultCell.swift */; };
 		BB22CC33DD44EE55FF6677AA /* HiveSearchResultCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = BB22CC33DD44EE55FF6677BB /* HiveSearchResultCell.xib */; };
@@ -2053,6 +2054,7 @@
 		B2C3D4E5F60002I9J0K1L2M3 /* HiveLinkNavigator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveLinkNavigator.swift; sourceTree = "<group>"; };
 		B2C3D4E5F6A7B8C9D0E1F2A3 /* TaskProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskProgress.swift; sourceTree = "<group>"; };
 		B4D0E0284E4B436180B0BAAF /* HivePusherManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HivePusherManagerTests.swift; sourceTree = "<group>"; };
+		LC001TEST0001000000000002 /* LiveCallBannerFoundationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveCallBannerFoundationTests.swift; sourceTree = "<group>"; };
 		B763D8DC52CC4B6A9F12A9FB /* AppLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLogger.swift; sourceTree = "<group>"; };
 		BB001SC01F9A0001000SC001 /* SuggestionChipsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuggestionChipsView.swift; sourceTree = "<group>"; };
 		BB22CC33DD44EE55FF667799 /* HiveSearchResultCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveSearchResultCell.swift; sourceTree = "<group>"; };
@@ -3787,6 +3789,7 @@
 				WV0000000000000000000004 /* WorkflowVersionTests.swift */,
 				AA001CQ22F9A0001000CQ001 /* ClarifyingQuestionsTests.swift */,
 				B4D0E0284E4B436180B0BAAF /* HivePusherManagerTests.swift */,
+				LC001TEST0001000000000002 /* LiveCallBannerFoundationTests.swift */,
 				667BC9B05F7A484EB3EE6CB7 /* HiveAnyCableManagerTests.swift */,
 				D5E6F7A8B9CA4A01E2F3A4B5 /* WorkspaceTaskTableViewCellTests.swift */,
 				F6A7B8C9D0E1F2A3B4C5D6E7 /* TaskProgressTests.swift */,
@@ -6431,6 +6434,7 @@
 				CE8161392B21124D00600C81 /* sphinxOnionPlaintextMessagesTests.swift in Sources */,
 				CE167B572B0BAF6A00A9238E /* sphinxOnionAccountCreateUnitTests.swift in Sources */,
 				AE87DA2C30C34E7BBDFDBA56 /* HivePusherManagerTests.swift in Sources */,
+				LC001TEST0001000000000001 /* LiveCallBannerFoundationTests.swift in Sources */,
 				8846460B606C49A09D11D185 /* HiveAnyCableManagerTests.swift in Sources */,
 				C4D5E6F7A8B949C0D1E2F3A4 /* WorkspaceTaskTableViewCellTests.swift in Sources */,
 				E5F6A7B8C9D0E1F2A3B4C5D6 /* TaskProgressTests.swift in Sources */,
