@@ -167,6 +167,15 @@ class ThreadHeaderTableViewCell: UITableViewCell {
         
         messageLabel.numberOfLines = isHeaderExpanded ? 0 : 12
         
+        // Ensure the label knows its layout width for correct intrinsic-size
+        // calculation when numberOfLines > 0 and Auto Layout needs to resolve the
+        // multi-line height.  We set it here (after numberOfLines is assigned) so
+        // it is always current for the content being displayed.
+        let labelWidth: CGFloat = messageLabel.bounds.width > 0
+            ? messageLabel.bounds.width
+            : UIScreen.main.bounds.width - 32
+        messageLabel.preferredMaxLayoutWidth = labelWidth
+        
         timestampLabel.text = threadOriginalMessage.timestamp
         senderNameLabel.text = threadOriginalMessage.senderAlias
         
@@ -363,15 +372,38 @@ class ThreadHeaderTableViewCell: UITableViewCell {
         return !isHeaderExpanded && isLabelTruncated() && (messageLabel.text ?? "").isNotEmpty
     }
     
-    lazy var labelHeight: CGFloat = {
+    /// Non-cached: recomputes every call from the rendered attributedText (or plain text
+    /// fallback) so cell reuse always reflects the current message's content.
+    var labelHeight: CGFloat {
+        // Prefer measuring the actual rendered attributed string (mixed fonts, code
+        // blocks, line spacing) over the plain-text single-font estimate, which
+        // systematically under-counts the real rendered height.
+        let measureWidth: CGFloat
+        if messageLabel.bounds.width > 0 {
+            measureWidth = messageLabel.bounds.width
+        } else {
+            // Before the first layout pass use the container width minus horizontal
+            // padding (16 pt leading + 16 pt trailing inside the outer stack).
+            measureWidth = UIScreen.main.bounds.width - 32
+        }
+        
+        if let attributed = messageLabel.attributedText, attributed.length > 0 {
+            let boundingRect = attributed.boundingRect(
+                with: CGSize(width: measureWidth, height: .greatestFiniteMagnitude),
+                options: [.usesLineFragmentOrigin, .usesFontLeading],
+                context: nil
+            )
+            return ceil(boundingRect.height)
+        }
+        
+        // Fallback: plain-text measurement (used when attributedText is not set yet).
         return UILabel.getTextSize(
-            width: UIScreen.main.bounds.width - 32,
+            width: measureWidth,
             text: messageLabel.text ?? "",
             font: messageLabel.font
         ).height
-    }()
+    }
 
-    
     func isLabelTruncated() -> Bool {
         guard let text = messageLabel.text, text.isNotEmpty else {
             return false
@@ -380,6 +412,14 @@ class ThreadHeaderTableViewCell: UITableViewCell {
         let maximumHeight: CGFloat = 240
         
         return labelHeight > maximumHeight
+    }
+    
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        // Reset attributed text so labelHeight (now a computed var) returns a fresh
+        // value on the next configuration rather than measuring stale content.
+        messageLabel.attributedText = nil
+        messageLabel.text = nil
     }
     
     @IBAction func showMoreButtonTouched() {

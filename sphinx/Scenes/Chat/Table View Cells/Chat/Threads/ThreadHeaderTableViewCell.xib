@@ -116,7 +116,7 @@
                                                 <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                                 <constraints>
                                                     <constraint firstItem="NmQ-7f-GFw" firstAttribute="top" secondItem="51d-af-xpA" secondAttribute="top" id="1Yt-pa-i5X"/>
-                                                    <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="NmQ-7f-GFw" secondAttribute="trailing" id="EJU-mU-kX6"/>
+                                                    <constraint firstAttribute="trailing" secondItem="NmQ-7f-GFw" secondAttribute="trailing" id="EJU-mU-kX6"/>
                                                     <constraint firstItem="NmQ-7f-GFw" firstAttribute="leading" secondItem="51d-af-xpA" secondAttribute="leading" id="Ygj-QP-ddj"/>
                                                     <constraint firstAttribute="bottom" secondItem="NmQ-7f-GFw" secondAttribute="bottom" constant="4" id="v2e-iv-2Fz"/>
                                                 </constraints>
