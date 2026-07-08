@@ -374,8 +374,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     
     func configureSphinxErrorReporter() {
         guard let hiveBaseURL = URL(string: API.kHiveBaseUrl) else { return }
-        let ingestKey: String = UserDefaults.Keys.hiveToken.get() ?? ""
-        guard !ingestKey.isEmpty else { return }
 
         let config = SphinxErrorReporter.Config(
             hiveBaseURL: hiveBaseURL,

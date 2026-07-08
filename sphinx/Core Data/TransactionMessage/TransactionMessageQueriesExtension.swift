@@ -791,6 +791,55 @@ extension TransactionMessage {
         return message
     }
     
+    /// Returns recent call-type messages for a given chat, newest-first, bounded by limit and/or a
+    /// time-window predicate. Used by the Live Call banner to subscribe to active call rooms without
+    /// opening unbounded WebSocket connections in long-lived public tribes.
+    ///
+    /// - Parameters:
+    ///   - chatId: The Core Data `id` of the target `Chat`.
+    ///   - limit: Maximum number of results. Defaults to 20 to stay well clear of the banner's 3-cap.
+    ///   - withinDays: Only messages newer than this many days are considered. Defaults to 7.
+    ///   - context: Managed object context — injectable for unit tests (defaults to the shared view context).
+    /// - Returns: Call-type messages sorted newest-first.
+    static func getRecentCallMessages(
+        for chatId: Int,
+        limit: Int = 20,
+        withinDays: Int = 7,
+        context: NSManagedObjectContext = CoreDataManager.sharedManager.persistentContainer.viewContext
+    ) -> [TransactionMessage] {
+        let cutoff = Date().addingTimeInterval(-Double(withinDays) * 24 * 60 * 60) as NSDate
+
+        // A message is a "call" if it is the explicit call type (32) OR if its content
+        // is a call-link URL (matches kCallRoomName).  The iOS isCallLink() instance
+        // method encodes exactly this rule — we mirror it in the predicate:
+        //   type == 32  OR  messageContent CONTAINS kCallRoomName
+        // TransactionMessage has a `chat` relationship (not a bare chatId attribute),
+        // so we traverse it: chat.id == chatId.
+        let callType = TransactionMessage.TransactionMessageType.call.rawValue
+        let predicate = NSPredicate(
+            format: "(type == %d OR messageContent CONTAINS[c] %@) AND chat.id == %d AND date >= %@",
+            callType,
+            TransactionMessage.kCallRoomName,
+            chatId,
+            cutoff
+        )
+
+        let sortDescriptors = [
+            NSSortDescriptor(key: "date", ascending: false),
+            NSSortDescriptor(key: "id", ascending: false)
+        ]
+
+        let messages: [TransactionMessage] = CoreDataManager.sharedManager.getObjectsOfTypeWith(
+            predicate: predicate,
+            sortDescriptors: sortDescriptors,
+            entityName: "TransactionMessage",
+            fetchLimit: limit,
+            context: context
+        )
+
+        return messages
+    }
+
     static func getTimezonesByAlias(
         for senderAliases: [String],
         in chat: Chat,

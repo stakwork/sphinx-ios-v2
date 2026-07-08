@@ -10,6 +10,13 @@ import Foundation
 import JitsiMeetSDK
 import AVKit
 
+extension Notification.Name {
+    /// Posted (on the main thread) whenever `VideoCallManager.currentRoomName` changes —
+    /// i.e. when a call starts (non-nil) or ends (nil).  Observers use this to flip
+    /// Live Call banner buttons between "Join" and "Open".
+    static let videoCallStateDidChange = Notification.Name("videoCallStateDidChange")
+}
+
 @MainActor class VideoCallManager : NSObject {
 
     nonisolated(unsafe) class var sharedInstance : VideoCallManager {
@@ -38,6 +45,17 @@ import AVKit
     var onPiP = false
     var activeCall = false
 
+    /// The LiveKit room name currently in use, or `nil` when no call is active.
+    /// Derived the same way call rooms are keyed elsewhere (`liveKitRoomName` on a URL string).
+    /// Set when a LiveKit call starts; cleared on all teardown paths (LiveKit and Jitsi).
+    /// Posts `.videoCallStateDidChange` whenever it transitions.
+    var currentRoomName: String? {
+        didSet {
+            guard currentRoomName != oldValue else { return }
+            NotificationCenter.default.post(name: .videoCallStateDidChange, object: nil)
+        }
+    }
+
     func configure(chat: Chat? = nil, videoCallDelegate: VideoCallDelegate) {
         self.chat = chat
         self.videoCallDelegate = videoCallDelegate
@@ -60,12 +78,14 @@ import AVKit
             // pipViewCoordinator already gone — ensure liveKitVC is still removed
             onPiP = false
             activeCall = false
+            currentRoomName = nil
             teardownLiveKitVC()
             return
         }
         coordinator.hide() { _ in
             self.onPiP = false
             self.activeCall = false
+            self.currentRoomName = nil
             self.pipViewCoordinator = nil
             self.teardownLiveKitVC()
         }
@@ -126,8 +146,19 @@ import AVKit
 
         let linkUrl = VoIPRequestMessage.getFromString(link)?.link ?? link
 
+        // Derive the requested room name using the same keying logic used everywhere else.
+        let requestedRoom = linkUrl.liveKitRoomName
+
         if activeCall {
-            return
+            // If the user is already in the same room, treat as a no-op / return-to-call.
+            if let requestedRoom = requestedRoom, requestedRoom == currentRoomName {
+                // Bring the existing call forward by exiting PiP (if in PiP).
+                if onPiP { togglePip(pipEnabled: false) }
+                return
+            }
+            // Different room — tear down the current call before starting the new one.
+            // Mirror Mac's closeActiveCallWindow() intent: end the old call first.
+            closePipController()
         }
         
         if linkUrl.isLiveKitCallLink, let room = linkUrl.liveKitRoomName {
@@ -173,6 +204,7 @@ import AVKit
                         self.pipViewCoordinator?.show()
 
                         self.activeCall = true
+                        self.currentRoomName = room   // triggers .videoCallStateDidChange
                         self.isStartingCall = false
                     }
                 },
@@ -266,6 +298,7 @@ import AVKit
         onPiP = false
         activeCall = false
         isStartingCall = false
+        currentRoomName = nil   // triggers .videoCallStateDidChange (once, via didSet guard)
 
         videoCallPayButton?.removeFromSuperview()
         videoCallPayButton = nil
