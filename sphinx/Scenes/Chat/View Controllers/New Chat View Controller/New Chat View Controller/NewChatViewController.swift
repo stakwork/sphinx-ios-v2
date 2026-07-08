@@ -137,6 +137,10 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         initializeMacros()
         setupAgentProcessingBar()
         setupProposalCardObservers()
+
+        // Install the live-call banner notification observer.
+        // Banner polling itself is started in viewWillAppear once the data source is ready.
+        installActiveCallBannerIfNeeded()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -153,6 +157,10 @@ class NewChatViewController: NewKeyboardHandlerViewController {
 //        }
         
         restoreProposalCardIfNeeded()
+
+        // Start banner polling whenever the chat becomes visible.
+        // Guarded inside startLiveCallBannerPolling to public-group, non-thread chats.
+        startLiveCallBannerPolling()
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -186,6 +194,11 @@ class NewChatViewController: NewKeyboardHandlerViewController {
     
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
+
+        // Stop banner polling whenever the chat disappears (covers both chat-switch
+        // and full pop-from-parent).  Safe teardown: does NOT call unsubscribeAllRooms(),
+        // preserving the shared socket manager and cell participant stores.
+        stopLiveCallBannerPolling()
         
         if self.isMovingFromParent {
             chatTableDataSource?.unsubscribeAllRooms()

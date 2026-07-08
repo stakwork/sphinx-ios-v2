@@ -319,6 +319,25 @@ extension NewChatViewController : NewChatTableDataSourceDelegate {
             delegate?.shouldReloadRowFor(chatId: chatId)
         }
     }
+
+    // MARK: - Live Call Banner fan-out
+
+    /// A socket event delivered an updated participant list for `roomName`.
+    /// Forward to the banner lifecycle so the banner stays in sync with cell UI.
+    func shouldUpdateLiveCallBannerFor(roomName: String, participants: [BubbleMessageLayoutState.CallParticipantInfo]) {
+        shouldUpdateLiveCallBanner(roomName: roomName, participants: participants)
+    }
+
+    /// The room finished — hide its banner.
+    func shouldHideLiveCallBannerFor(roomName: String) {
+        headerView.hideCallBanner(roomName: roomName)
+    }
+
+    /// A new call-type message was inserted by the results controller while this
+    /// chat was already open.  Restart banner polling so the new room is picked up.
+    func didInsertNewCallTypeMessage() {
+        didReceiveNewCallMessage()
+    }
 }
 
 extension NewChatViewController {

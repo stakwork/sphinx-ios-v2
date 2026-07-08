@@ -572,6 +572,8 @@ extension NewChatTableDataSource {
     func didReceiveCurrentParticipants(roomName: String, participants: [BubbleMessageLayoutState.CallParticipantInfo]) {
         callParticipantsStore[roomName] = participants
         reloadCells(forRoomName: roomName)
+        // Fan-out: also update the live-call banner for this room.
+        delegate?.shouldUpdateLiveCallBannerFor(roomName: roomName, participants: participants)
     }
 
     func participantJoined(roomName: String, participant: BubbleMessageLayoutState.CallParticipantInfo) {
@@ -581,6 +583,8 @@ extension NewChatTableDataSource {
         current.append(participant)
         callParticipantsStore[roomName] = current
         reloadCells(forRoomName: roomName)
+        // Fan-out: also update the live-call banner for this room.
+        delegate?.shouldUpdateLiveCallBannerFor(roomName: roomName, participants: current)
         // LiveKit may not have resolved the display name yet — refresh after 2s
         if participant.name.isEmpty {
             DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [weak self] in
@@ -604,11 +608,15 @@ extension NewChatTableDataSource {
         current.removeAll { $0.identity == identity }
         callParticipantsStore[roomName] = current
         reloadCells(forRoomName: roomName)
+        // Fan-out: also update the live-call banner for this room.
+        delegate?.shouldUpdateLiveCallBannerFor(roomName: roomName, participants: current)
     }
 
     func roomFinished(roomName: String) {
         callParticipantsStore.removeValue(forKey: roomName)
         reloadCells(forRoomName: roomName)
+        // Fan-out: hide the banner for this room since the call has ended.
+        delegate?.shouldHideLiveCallBannerFor(roomName: roomName)
     }
 
     private func reloadCells(forRoomName roomName: String) {
