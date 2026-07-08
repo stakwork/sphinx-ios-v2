@@ -1702,7 +1702,69 @@ extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
         cell.onAttachmentTap = { [weak self] attachment in
             self?.handleAttachmentTap(attachment)
         }
+        cell.onPublishScriptTapped = { [weak self] artifact in
+            self?.handlePublishScript(artifact: artifact, at: indexPath)
+        }
+        cell.onOpenScriptVersionTapped = { [weak self] _ in
+            guard let self else { return }
+            let urlStr = "https://hive.sphinx.chat/w/\(self.workspaceSlug)/task/\(self.task.id)"
+            if let url = URL(string: urlStr) {
+                UIApplication.shared.open(url)
+            }
+        }
         return cell
+    }
+
+    private func handlePublishScript(artifact: HiveChatMessageArtifact, at indexPath: IndexPath) {
+        guard let content = artifact.publishScriptContent,
+              let scriptId = content.scriptId,
+              let versionId = content.scriptVersionId,
+              let artifactId = artifact.id else {
+            bubbleHelper.showGenericMessageView(
+                text: "Unable to publish: missing script information.",
+                delay: 3, textColor: .white,
+                backColor: UIColor.Sphinx.PrimaryRed, backAlpha: 1.0)
+            return
+        }
+        API.sharedInstance.publishScriptVersionWithAuth(
+            scriptId: scriptId,
+            versionId: versionId,
+            artifactId: artifactId,
+            callback: { [weak self] in
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    // Flip the in-memory artifact's published state
+                    if let msgIdx = self.messages.firstIndex(where: { $0.id == self.displayMessages[indexPath.row].id }) {
+                        for artIdx in self.messages[msgIdx].artifacts.indices {
+                            if self.messages[msgIdx].artifacts[artIdx].id == artifactId {
+                                self.messages[msgIdx].artifacts[artIdx].publishScriptContent?.published = true
+                            }
+                        }
+                    }
+                    // Flip the card in-place without full reload
+                    if let cell = self.chatTableView.cellForRow(at: indexPath) as? FeatureChatMessageCell {
+                        cell.flipPublishScriptToPublished()
+                    }
+                }
+            },
+            errorCallback: { [weak self] error in
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    switch error {
+                    case .forbidden:
+                        self.bubbleHelper.showGenericMessageView(
+                            text: "You don't have permission to publish this script.",
+                            delay: 3, textColor: .white,
+                            backColor: UIColor.Sphinx.PrimaryRed, backAlpha: 1.0)
+                    case .generic:
+                        self.bubbleHelper.showGenericMessageView(
+                            text: "Failed to publish script. Please try again.",
+                            delay: 3, textColor: .white,
+                            backColor: UIColor.Sphinx.PrimaryRed, backAlpha: 1.0)
+                    }
+                }
+            }
+        )
     }
 
     private func cqAnswerItalicText(for message: HiveChatMessage) -> String? {

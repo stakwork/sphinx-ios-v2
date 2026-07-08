@@ -65,6 +65,15 @@ struct StreamArtifactInfo: Sendable {
 
 // MARK: - Workflow Content
 
+// MARK: - Publish Script Content
+
+struct PublishScriptContent: Sendable {
+    let scriptId: Int?
+    let scriptVersionId: Int?
+    let scriptName: String?
+    var published: Bool
+}
+
 struct WorkflowContent: Sendable {
     let workflowId: Int?
     let workflowName: String?
@@ -93,11 +102,14 @@ struct HiveChatMessageArtifact: @unchecked Sendable {
     let streamInfo: StreamArtifactInfo?
     /// Parsed workflow content when type == "WORKFLOW"
     let workflowContent: WorkflowContent?
+    /// Parsed publish script content when type == "PUBLISH_SCRIPT"
+    var publishScriptContent: PublishScriptContent?
 
     var isPullRequest: Bool { type == "PULL_REQUEST" }
     var isLongform: Bool { type == "LONGFORM" }
     var isStream: Bool { type == "STREAM" }
     var isWorkflow: Bool { type == "WORKFLOW" }
+    var isPublishScript: Bool { type == "PUBLISH_SCRIPT" }
 
     var isClarifyingQuestions: Bool {
         return type == "PLAN" && contentJSON?["tool_use"].string == "ask_clarifying_questions"
@@ -114,6 +126,7 @@ struct HiveChatMessageArtifact: @unchecked Sendable {
             self.contentJSON = nil
             self.clarifyingQuestions = nil
             self.workflowContent = nil
+            self.publishScriptContent = nil
             // Content may be a JSON object or a JSON string that needs decoding
             let rawContent = json["content"]
             let contentJSON: JSON
@@ -161,6 +174,7 @@ struct HiveChatMessageArtifact: @unchecked Sendable {
             self.clarifyingQuestions = nil
             self.streamInfo = nil
             self.workflowContent = nil
+            self.publishScriptContent = nil
         } else if json["type"].string == "LONGFORM" {
             let c = json["content"]
             self.longformContent = LongformContent(title: c["title"].string, text: c["text"].string)
@@ -170,6 +184,7 @@ struct HiveChatMessageArtifact: @unchecked Sendable {
             self.clarifyingQuestions = nil
             self.streamInfo = nil
             self.workflowContent = nil
+            self.publishScriptContent = nil
         } else if json["type"].string == "PLAN" {
             self.prContent = nil
             self.content = nil
@@ -188,6 +203,7 @@ struct HiveChatMessageArtifact: @unchecked Sendable {
             }
             self.streamInfo = nil
             self.workflowContent = nil
+            self.publishScriptContent = nil
         } else if json["type"].string == "WORKFLOW" {
             let c = json["content"]
             self.workflowContent = WorkflowContent(
@@ -206,6 +222,22 @@ struct HiveChatMessageArtifact: @unchecked Sendable {
             self.contentJSON = nil
             self.clarifyingQuestions = nil
             self.streamInfo = nil
+            self.publishScriptContent = nil
+        } else if json["type"].string == "PUBLISH_SCRIPT" {
+            let c = json["content"]
+            self.publishScriptContent = PublishScriptContent(
+                scriptId:        c["scriptId"].int,
+                scriptVersionId: c["scriptVersionId"].int,
+                scriptName:      c["scriptName"].string,
+                published:       c["published"].bool ?? false
+            )
+            self.content = nil
+            self.prContent = nil
+            self.longformContent = nil
+            self.contentJSON = nil
+            self.clarifyingQuestions = nil
+            self.streamInfo = nil
+            self.workflowContent = nil
         } else {
             self.prContent = nil
             self.contentJSON = nil
@@ -214,6 +246,7 @@ struct HiveChatMessageArtifact: @unchecked Sendable {
             self.content = json["content"].string
             self.streamInfo = nil
             self.workflowContent = nil
+            self.publishScriptContent = nil
         }
     }
 }

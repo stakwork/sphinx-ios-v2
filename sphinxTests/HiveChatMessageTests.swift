@@ -498,4 +498,198 @@ class HiveChatMessageTests: XCTestCase {
         XCTAssertNotNil(message)
         XCTAssertTrue(message?.isDisplayable == true)
     }
+
+    // MARK: - PUBLISH_SCRIPT Artifact Tests
+
+    func testArtifact_PublishScriptType_AllFieldsPresent() {
+        let jsonDict: [String: Any] = [
+            "id": "artifact-ps-001",
+            "type": "PUBLISH_SCRIPT",
+            "content": [
+                "scriptId": 42,
+                "scriptVersionId": 926,
+                "scriptName": "harvey-lab-guard-completeness",
+                "published": false
+            ] as [String: Any]
+        ]
+        let artifact = HiveChatMessageArtifact(json: JSON(jsonDict))
+
+        XCTAssertTrue(artifact.isPublishScript, "Artifact with type PUBLISH_SCRIPT should have isPublishScript == true")
+        XCTAssertNotNil(artifact.publishScriptContent, "PUBLISH_SCRIPT artifact should have publishScriptContent populated")
+        XCTAssertEqual(artifact.publishScriptContent?.scriptId, 42)
+        XCTAssertEqual(artifact.publishScriptContent?.scriptVersionId, 926)
+        XCTAssertEqual(artifact.publishScriptContent?.scriptName, "harvey-lab-guard-completeness")
+        XCTAssertFalse(artifact.publishScriptContent?.published ?? true)
+
+        // Other type-specific fields must be nil
+        XCTAssertNil(artifact.prContent, "PUBLISH_SCRIPT artifact should not populate prContent")
+        XCTAssertNil(artifact.longformContent, "PUBLISH_SCRIPT artifact should not populate longformContent")
+        XCTAssertNil(artifact.workflowContent, "PUBLISH_SCRIPT artifact should not populate workflowContent")
+        XCTAssertNil(artifact.content, "PUBLISH_SCRIPT artifact should not populate plain content string")
+    }
+
+    func testArtifact_PublishScriptType_Published_True() {
+        let jsonDict: [String: Any] = [
+            "id": "artifact-ps-002",
+            "type": "PUBLISH_SCRIPT",
+            "content": [
+                "scriptId": 10,
+                "scriptVersionId": 100,
+                "scriptName": "my-script",
+                "published": true
+            ] as [String: Any]
+        ]
+        let artifact = HiveChatMessageArtifact(json: JSON(jsonDict))
+
+        XCTAssertTrue(artifact.isPublishScript)
+        XCTAssertTrue(artifact.publishScriptContent?.published ?? false,
+                      "published field should be true when JSON has published: true")
+    }
+
+    func testArtifact_PublishScriptType_MissingScriptName_GracefullyNil() {
+        let jsonDict: [String: Any] = [
+            "id": "artifact-ps-003",
+            "type": "PUBLISH_SCRIPT",
+            "content": [
+                "scriptId": 42,
+                "scriptVersionId": 926
+                // scriptName omitted
+                // published omitted → defaults to false
+            ] as [String: Any]
+        ]
+        let artifact = HiveChatMessageArtifact(json: JSON(jsonDict))
+
+        XCTAssertTrue(artifact.isPublishScript)
+        XCTAssertNotNil(artifact.publishScriptContent)
+        XCTAssertNil(artifact.publishScriptContent?.scriptName, "Missing scriptName should produce nil, not crash")
+        XCTAssertFalse(artifact.publishScriptContent?.published ?? true,
+                       "Missing published field should default to false")
+    }
+
+    func testArtifact_PublishScriptType_MissingIds_GracefullyNil() {
+        let jsonDict: [String: Any] = [
+            "id": "artifact-ps-004",
+            "type": "PUBLISH_SCRIPT",
+            "content": [
+                "scriptName": "some-script",
+                "published": false
+                // scriptId and scriptVersionId omitted
+            ] as [String: Any]
+        ]
+        let artifact = HiveChatMessageArtifact(json: JSON(jsonDict))
+
+        XCTAssertTrue(artifact.isPublishScript)
+        XCTAssertNotNil(artifact.publishScriptContent)
+        XCTAssertNil(artifact.publishScriptContent?.scriptId, "Missing scriptId should produce nil, not crash")
+        XCTAssertNil(artifact.publishScriptContent?.scriptVersionId, "Missing scriptVersionId should produce nil, not crash")
+    }
+
+    func testArtifact_PublishScriptType_EmptyContent_DoesNotCrash() {
+        let jsonDict: [String: Any] = [
+            "id": "artifact-ps-005",
+            "type": "PUBLISH_SCRIPT",
+            "content": [:] as [String: Any]
+        ]
+        let artifact = HiveChatMessageArtifact(json: JSON(jsonDict))
+
+        XCTAssertTrue(artifact.isPublishScript, "Type should still be recognized")
+        XCTAssertNotNil(artifact.publishScriptContent, "publishScriptContent should be non-nil (with all optional fields nil)")
+        XCTAssertNil(artifact.publishScriptContent?.scriptId)
+        XCTAssertNil(artifact.publishScriptContent?.scriptVersionId)
+        XCTAssertNil(artifact.publishScriptContent?.scriptName)
+        XCTAssertFalse(artifact.publishScriptContent?.published ?? true)
+    }
+
+    func testArtifact_NonPublishScriptType_HasNilPublishScriptContent() {
+        let jsonDict: [String: Any] = [
+            "id": "artifact-pr-001",
+            "type": "PULL_REQUEST",
+            "content": ["url": "https://github.com/org/repo/pull/1", "status": "OPEN"] as [String: Any]
+        ]
+        let artifact = HiveChatMessageArtifact(json: JSON(jsonDict))
+
+        XCTAssertFalse(artifact.isPublishScript)
+        XCTAssertNil(artifact.publishScriptContent, "Non-PUBLISH_SCRIPT artifact must have nil publishScriptContent")
+    }
+
+    func testIsPublishScript_FalseForOtherTypes() {
+        let types = ["PULL_REQUEST", "LONGFORM", "PLAN", "STREAM", "WORKFLOW", "CODE", "DIFF"]
+        for typeStr in types {
+            let jsonDict: [String: Any] = [
+                "id": "artifact-type-\(typeStr)",
+                "type": typeStr,
+                "content": ""
+            ]
+            let artifact = HiveChatMessageArtifact(json: JSON(jsonDict))
+            XCTAssertFalse(artifact.isPublishScript, "isPublishScript should be false for type \(typeStr)")
+        }
+    }
+
+    func testIsDisplayable_PublishScriptArtifact_ReturnsTrue() {
+        // PUBLISH_SCRIPT is not STREAM or WORKFLOW, so isDisplayable must be true
+        let jsonDict: [String: Any] = [
+            "id": "msg-ps-001",
+            "message": "",
+            "role": "ASSISTANT",
+            "artifacts": [
+                [
+                    "id": "artifact-ps-display",
+                    "type": "PUBLISH_SCRIPT",
+                    "content": [
+                        "scriptId": 42,
+                        "scriptVersionId": 926,
+                        "scriptName": "my-script",
+                        "published": false
+                    ] as [String: Any]
+                ] as [String: Any]
+            ] as [Any]
+        ]
+        let message = HiveChatMessage(json: JSON(jsonDict))
+        XCTAssertNotNil(message)
+        XCTAssertTrue(message?.isDisplayable == true,
+                      "A message with a PUBLISH_SCRIPT artifact should be displayable")
+    }
+
+    func testArtifact_PublishScriptType_WrongTypeForFields_GracefullyHandled() {
+        // Pass wrong types for fields — should not crash, fields degrade to nil/false
+        let jsonDict: [String: Any] = [
+            "id": "artifact-ps-006",
+            "type": "PUBLISH_SCRIPT",
+            "content": [
+                "scriptId": "not-an-int",      // wrong type
+                "scriptVersionId": "also-wrong",
+                "scriptName": 12345,           // wrong type
+                "published": "yes"             // wrong type
+            ] as [String: Any]
+        ]
+        let artifact = HiveChatMessageArtifact(json: JSON(jsonDict))
+
+        XCTAssertTrue(artifact.isPublishScript, "Type should still be recognized despite bad field types")
+        XCTAssertNotNil(artifact.publishScriptContent)
+        // Fields with wrong types should gracefully return nil / default
+        XCTAssertNil(artifact.publishScriptContent?.scriptId, "scriptId with wrong type should be nil")
+        XCTAssertNil(artifact.publishScriptContent?.scriptVersionId, "scriptVersionId with wrong type should be nil")
+        XCTAssertFalse(artifact.publishScriptContent?.published ?? true,
+                       "published with wrong type should default to false")
+    }
+
+    func testPublishScriptContent_MutablePublished_CanBeFlipped() {
+        // Verify published is a var and can be mutated (for local state flip after success)
+        let jsonDict: [String: Any] = [
+            "id": "artifact-ps-007",
+            "type": "PUBLISH_SCRIPT",
+            "content": [
+                "scriptId": 42,
+                "scriptVersionId": 926,
+                "scriptName": "my-script",
+                "published": false
+            ] as [String: Any]
+        ]
+        var artifact = HiveChatMessageArtifact(json: JSON(jsonDict))
+
+        XCTAssertFalse(artifact.publishScriptContent?.published ?? true)
+        artifact.publishScriptContent?.published = true
+        XCTAssertTrue(artifact.publishScriptContent?.published ?? false,
+                      "publishScriptContent.published should be mutable and reflect the flip")
+    }
 }

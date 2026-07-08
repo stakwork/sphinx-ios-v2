@@ -105,6 +105,13 @@ struct HiveLlmModel {
     }
 }
 
+// MARK: - PublishScriptError
+
+enum PublishScriptError: Error {
+    case forbidden
+    case generic
+}
+
 // MARK: - PaginationInfo
 
 struct PaginationInfo {
@@ -5387,6 +5394,113 @@ extension API {
                 completion(false, errorMsg)
             }
         }.resume()
+    }
+
+    // MARK: - Publish Script Version
+
+    private func publishScriptVersion(
+        scriptId: Int,
+        versionId: Int,
+        artifactId: String,
+        authToken: String,
+        callback: @escaping EmptyCallback,
+        errorCallback: @escaping (PublishScriptError) -> Void
+    ) {
+        let urlString = "\(API.kHiveBaseUrl)/workflow/scripts/\(scriptId)/versions/\(versionId)/publish"
+        print("[HiveAPI] publishScriptVersion: requesting POST \(urlString) artifactId=\(artifactId)")
+        let body: NSDictionary = ["artifactId": artifactId]
+        guard let request = createRequest(urlString, bodyParams: body, method: "POST", token: authToken) else {
+            print("[HiveAPI] publishScriptVersion: failed to create request")
+            errorCallback(.generic)
+            return
+        }
+        session()?.request(request).responseData { response in
+            let statusCode = response.response?.statusCode ?? -1
+            print("[HiveAPI] publishScriptVersion: HTTP status \(statusCode)")
+            if statusCode == 403 {
+                print("[HiveAPI] publishScriptVersion: forbidden (403)")
+                errorCallback(.forbidden)
+                return
+            }
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+                if json["success"].bool == true {
+                    print("[HiveAPI] publishScriptVersion: success")
+                    callback()
+                } else {
+                    print("[HiveAPI] publishScriptVersion: returned success=false: \(json)")
+                    errorCallback(.generic)
+                }
+            case .failure(let error):
+                print("[HiveAPI] publishScriptVersion: failed — \(error.localizedDescription)")
+                errorCallback(.generic)
+            }
+        }
+    }
+
+    func publishScriptVersionWithAuth(
+        scriptId: Int,
+        versionId: Int,
+        artifactId: String,
+        callback: @escaping EmptyCallback,
+        errorCallback: @escaping (PublishScriptError) -> Void
+    ) {
+        if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
+            publishScriptVersion(
+                scriptId: scriptId,
+                versionId: versionId,
+                artifactId: artifactId,
+                authToken: storedToken,
+                callback: callback,
+                errorCallback: { [weak self] err in
+                    if case .forbidden = err {
+                        errorCallback(.forbidden)
+                        return
+                    }
+                    // On generic error, refresh token and retry once
+                    self?.authenticateAndPublishScriptVersion(
+                        scriptId: scriptId,
+                        versionId: versionId,
+                        artifactId: artifactId,
+                        callback: callback,
+                        errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateAndPublishScriptVersion(
+                scriptId: scriptId,
+                versionId: versionId,
+                artifactId: artifactId,
+                callback: callback,
+                errorCallback: errorCallback
+            )
+        }
+    }
+
+    private func authenticateAndPublishScriptVersion(
+        scriptId: Int,
+        versionId: Int,
+        artifactId: String,
+        callback: @escaping EmptyCallback,
+        errorCallback: @escaping (PublishScriptError) -> Void
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback(.generic); return }
+                self?.storeHiveToken(token)
+                self?.publishScriptVersion(
+                    scriptId: scriptId,
+                    versionId: versionId,
+                    artifactId: artifactId,
+                    authToken: token,
+                    callback: callback,
+                    errorCallback: errorCallback
+                )
+            },
+            errorCallback: { errorCallback(.generic) }
+        )
     }
 
 }

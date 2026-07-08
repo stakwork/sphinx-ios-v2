@@ -101,6 +101,16 @@ class FeatureChatMessageCell: UITableViewCell {
         return v
     }()
 
+    /// Publish script card — only shown when a PUBLISH_SCRIPT artifact is present.
+    private let publishScriptCardView: PublishScriptCardView = {
+        let v = PublishScriptCardView()
+        v.isHidden = true
+        return v
+    }()
+
+    /// Retains the current PUBLISH_SCRIPT artifact for closure bridging.
+    private var currentPublishScriptArtifact: HiveChatMessageArtifact?
+
     // MARK: - Callbacks
 
     /// Called when the clarifying questions view changes its content height
@@ -111,6 +121,11 @@ class FeatureChatMessageCell: UITableViewCell {
     var onAttachmentTap: ((HiveChatMessageAttachment) -> Void)? {
         didSet { attachmentGridView.onTapAttachment = onAttachmentTap }
     }
+
+    /// Called when the user taps "Publish" on the publish script card.
+    var onPublishScriptTapped: ((_ artifact: HiveChatMessageArtifact) -> Void)?
+    /// Called when the user taps the version badge on the publish script card.
+    var onOpenScriptVersionTapped: ((_ artifact: HiveChatMessageArtifact) -> Void)?
 
     // MARK: - Attachment grid
     private let attachmentGridView: AttachmentGridView = {
@@ -176,8 +191,8 @@ class FeatureChatMessageCell: UITableViewCell {
         // Wire logs header tap
         logsHeaderButton.addTarget(self, action: #selector(logsHeaderTapped), for: .touchUpInside)
 
-        // Vertical stack inside bubble: text + logs header + logs body + optional PR card + optional attachment grid
-        bubbleStack = UIStackView(arrangedSubviews: [messageTextView, logsHeaderButton, logsBodyTextView, prCardView, attachmentGridView])
+        // Vertical stack inside bubble: text + logs header + logs body + optional PR card + optional publish script card + optional attachment grid
+        bubbleStack = UIStackView(arrangedSubviews: [messageTextView, logsHeaderButton, logsBodyTextView, prCardView, publishScriptCardView, attachmentGridView])
         bubbleStack.translatesAutoresizingMaskIntoConstraints = false
         bubbleStack.axis = .vertical
         bubbleStack.spacing = 0
@@ -338,6 +353,45 @@ class FeatureChatMessageCell: UITableViewCell {
             bubbleView.layer.masksToBounds = true
             // textBackgroundView not needed — clear it
             textBackgroundView.backgroundColor = .clear
+        }
+
+        // --- Publish Script artifact card ---
+        if let psArtifact = message.artifacts.first(where: { $0.isPublishScript }),
+           let psContent = psArtifact.publishScriptContent {
+            currentPublishScriptArtifact = psArtifact
+            publishScriptCardView.configure(with: psContent)
+            publishScriptCardView.isHidden = false
+            // Expand bubble to 60% fixed width for the card
+            bubbleWidthConstraint.isActive = false
+            bubbleWidthConstraint = bubbleView.widthAnchor.constraint(equalTo: contentView.widthAnchor, multiplier: 0.60)
+            bubbleWidthConstraint.isActive = true
+            // Only round top corners; disable masksToBounds so card's own corners/border show
+            bubbleView.layer.cornerRadius = 18
+            bubbleView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+            bubbleView.layer.masksToBounds = false
+            // Move bubble colour onto textBackgroundView
+            bubbleView.backgroundColor = .clear
+            let roleColour: UIColor = isUser ? UIColor.Sphinx.SentMsgBG : UIColor.Sphinx.ReceivedMsgBG
+            textBackgroundView.backgroundColor = roleColour
+            textBackgroundView.layer.maskedCorners = [
+                .layerMinXMinYCorner, .layerMaxXMinYCorner,
+                .layerMinXMaxYCorner, .layerMaxXMaxYCorner
+            ]
+            textBackgroundView.layer.masksToBounds = true
+            // Wire card closures to cell-level callbacks
+            publishScriptCardView.onPublishTapped = { [weak self] in
+                guard let self, let artifact = self.currentPublishScriptArtifact else { return }
+                self.onPublishScriptTapped?(artifact)
+            }
+            publishScriptCardView.onOpenVersionTapped = { [weak self] in
+                guard let self, let artifact = self.currentPublishScriptArtifact else { return }
+                self.onOpenScriptVersionTapped?(artifact)
+            }
+        } else {
+            publishScriptCardView.isHidden = true
+            currentPublishScriptArtifact = nil
+            publishScriptCardView.onPublishTapped = nil
+            publishScriptCardView.onOpenVersionTapped = nil
         }
 
         // --- LONGFORM border ---
@@ -557,6 +611,13 @@ class FeatureChatMessageCell: UITableViewCell {
         }
     }
 
+    // MARK: - Publish Script helpers
+
+    /// Flips the publish script card to the "Published ✓" state in-place without a full reload.
+    func flipPublishScriptToPublished() {
+        publishScriptCardView.setPublished(true)
+    }
+
     override func prepareForReuse() {
         super.prepareForReuse()
 
@@ -577,6 +638,12 @@ class FeatureChatMessageCell: UITableViewCell {
         messageTextView.isHidden = false
         messageTextView.textContainerInset = UIEdgeInsets(top: 10, left: 8, bottom: 10, right: 8)
         prCardView.isHidden = true
+        publishScriptCardView.isHidden = true
+        publishScriptCardView.onPublishTapped = nil
+        publishScriptCardView.onOpenVersionTapped = nil
+        currentPublishScriptArtifact = nil
+        onPublishScriptTapped = nil
+        onOpenScriptVersionTapped = nil
         suggestionChipsView.clear()
         chipsTopConstraint.isActive         = false
         chipsLeadingConstraint.isActive     = false
