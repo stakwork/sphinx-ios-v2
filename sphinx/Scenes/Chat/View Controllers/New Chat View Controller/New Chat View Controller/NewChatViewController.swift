@@ -321,6 +321,12 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         if !isThread {
             headerView.addShadow(location: .bottom, color: UIColor.black, opacity: 0.1)
         }
+        
+        // Re-compute table height whenever the live-call banner stack grows or shrinks.
+        headerView.onBannerStackHeightChanged = { [weak self] in
+            self?.setTableViewHeight()
+            self?.shouldAdjustTableViewTopInset()
+        }
     }
     
     func setupData() {

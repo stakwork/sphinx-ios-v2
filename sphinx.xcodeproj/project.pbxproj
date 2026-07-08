@@ -12,6 +12,8 @@
 		0F3FA12DF80F42E88DAC8AA9 /* TaskDependencyDiagramView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 101C5A13C28347DF905BBCEE /* TaskDependencyDiagramView.swift */; };
 		12075275C652A9404FC48EBC /* Pods_sphinx.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 487E10CEB3D07B0840A84681 /* Pods_sphinx.framework */; };
 		1F39660E66CB4BCB9D3ED292 /* ParticipantBoxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCA3CBE7EE324E7B8B07B278 /* ParticipantBoxView.swift */; };
+		AC1B2C3D4E5F6A7B8C9D0E1F /* ActiveCallBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC2C3D4E5F6A7B8C9D0E1F2A /* ActiveCallBannerView.swift */; };
+		CD3D4E5F6A7B8C9D0E1F2A3B /* ActiveCallBannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE4E5F6A7B8C9D0E1F2A3B4C /* ActiveCallBannerTests.swift */; };
 		32F9995B0ED442D596599316 /* GraphChatSSEManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F614A7D4B2634279808DD387 /* GraphChatSSEManager.swift */; };
 		34409291F9084619ADFBFDD1 /* WorkflowDiagramModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60E020F2675C40F7ADDF3C84 /* WorkflowDiagramModel.swift */; };
 		462138747AB14C0FB68E5636 /* WorkspaceGraphChatViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 375B098280F54131B374AEA8 /* WorkspaceGraphChatViewController.swift */; };
@@ -2236,6 +2238,8 @@
 		D5D5C9BE1416497D9EEB9877 /* MarkdownRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownRenderer.swift; sourceTree = "<group>"; };
 		D5E6F7A8B9CA4A01E2F3A4B5 /* WorkspaceTaskTableViewCellTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceTaskTableViewCellTests.swift; sourceTree = "<group>"; };
 		DCA3CBE7EE324E7B8B07B278 /* ParticipantBoxView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParticipantBoxView.swift; sourceTree = "<group>"; };
+		BC2C3D4E5F6A7B8C9D0E1F2A /* ActiveCallBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveCallBannerView.swift; sourceTree = "<group>"; };
+		DE4E5F6A7B8C9D0E1F2A3B4C /* ActiveCallBannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveCallBannerTests.swift; sourceTree = "<group>"; };
 		E2BA36BB571A4DCAA10EAFBB /* HiveFeatureMocks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveFeatureMocks.swift; sourceTree = "<group>"; };
 		E36EF502A7E64ABA8FCF503E /* SetupAIAgentViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupAIAgentViewController.swift; sourceTree = "<group>"; };
 		E5BD9804E22A4372A9E191D5 /* WorkflowStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkflowStatusView.swift; sourceTree = "<group>"; };
@@ -2677,6 +2681,7 @@
 				470F5CAC243E8823007E054F /* VideoCallPayButton.xib */,
 				470F5CAE243E8881007E054F /* VideoCallPayButton.swift */,
 				DCA3CBE7EE324E7B8B07B278 /* ParticipantBoxView.swift */,
+				BC2C3D4E5F6A7B8C9D0E1F2A /* ActiveCallBannerView.swift */,
 			);
 			path = "Video Call Views";
 			sourceTree = "<group>";
@@ -3797,6 +3802,7 @@
 				H8I9J0K1L2M3N4O5P6Q7R8S9 /* WorkspaceTaskTests.swift */,
 				J0K1L2M3N4O5P6Q7R8S9T0U1 /* WorkspaceTasksViewControllerTests.swift */,
 				S4T5U6V7W8X9Y0Z1A2B3C4D5 /* PaginationControlViewTests.swift */,
+				DE4E5F6A7B8C9D0E1F2A3B4C /* ActiveCallBannerTests.swift */,
 				4779F179232AA0F300D35E81 /* sphinxOnionAddContactTests.swift */,
 				CE8161382B21124D00600C81 /* sphinxOnionPlaintextMessagesTests.swift */,
 				CE167B562B0BAF6A00A9238E /* sphinxOnionAccountCreateUnitTests.swift */,
@@ -6042,6 +6048,7 @@
 				47BF27F32A3795CE00F15EE9 /* MessageTableCellState+DataTypeExtension.swift in Sources */,
 				475154BB2423FA4100477384 /* JoinVideoCallView.swift in Sources */,
 				1F39660E66CB4BCB9D3ED292 /* ParticipantBoxView.swift in Sources */,
+				AC1B2C3D4E5F6A7B8C9D0E1F /* ActiveCallBannerView.swift in Sources */,
 				47E6A4C02A2E591900A9509E /* NewMessageTableViewCell+GeneralSetup.swift in Sources */,
 				47018F9727D1079800797E0B /* FeedLoaderHelper.swift in Sources */,
 				47B690DD24A2CF6000F07B73 /* AppAppearenceView.swift in Sources */,
@@ -6442,6 +6449,7 @@
 				G7H8I9J0K1L2M3N4O5P6Q7R8 /* WorkspaceTaskTests.swift in Sources */,
 				I9J0K1L2M3N4O5P6Q7R8S9T0 /* WorkspaceTasksViewControllerTests.swift in Sources */,
 				R3S4T5U6V7W8X9Y0Z1A2B3C4 /* PaginationControlViewTests.swift in Sources */,
+				CD3D4E5F6A7B8C9D0E1F2A3B /* ActiveCallBannerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
