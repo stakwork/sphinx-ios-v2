@@ -873,7 +873,22 @@ extension NewChatTableDataSource : @preconcurrency NSFetchedResultsControllerDel
                     }
                     
                     self.messagesCountFetched = messages.count
-                    self.messagesArray = messages.filter({ !$0.isApprovedRequest() }).reversed()
+                    let updatedMessages = messages.filter({ !$0.isApprovedRequest() }).reversed()
+                    
+                    // Restart-on-new-call trigger: if any newly inserted messages are call-type,
+                    // notify the delegate (the chat VC) so it can restart banner polling and pick
+                    // up the new room — without the user having to leave and re-enter the chat.
+                    let previousIds = Set(self.messagesArray.map { $0.id })
+                    let insertedCallMessages = updatedMessages.filter { msg in
+                        !previousIds.contains(msg.id) && msg.isCallLink()
+                    }
+                    if !insertedCallMessages.isEmpty && !self.isThread {
+                        DispatchQueue.main.async {
+                            self.delegate?.didInsertNewCallTypeMessage()
+                        }
+                    }
+                    
+                    self.messagesArray = Array(updatedMessages)
                     
                     self.processTimezoneNotSentRecently()
 

@@ -845,6 +845,7 @@
 		CQ1A2B3C4D5E6F7A8B9C0D1E /* ClarifyingQuestionMessageCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = CQ2B3C4D5E6F7A8B9C0D1E2F /* ClarifyingQuestionMessageCell.swift */; };
 		D2789CFCCA3E453295F15A2E /* HiveFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44EC6EC0EE1C4D6B8B5FADB2 /* HiveFeature.swift */; };
 		D30E5DF5BD6E4A209227EEB5 /* NewChatViewController+AgentExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 009A40E65F444529AAD5F256 /* NewChatViewController+AgentExtension.swift */; };
+		64CDB65F07D741A49647B221 /* NewChatViewController+LiveCallBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30E251FCC194421EAB4B8997 /* NewChatViewController+LiveCallBanner.swift */; };
 		E5F6A7B8C9D0E1F2A3B4C5D6 /* TaskProgressTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6A7B8C9D0E1F2A3B4C5D6E7 /* TaskProgressTests.swift */; };
 		E63B82C04D5080098BD7DDBA /* WorkspaceTaskTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB71680A85C46EAF9E7DD25B /* WorkspaceTaskTableViewCell.swift */; };
 		E7F8A9B0C1D2E3F4A5B6C7D8 /* StakworkRun.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A9B0C1D2E3F4A5B6C7D8E9 /* StakworkRun.swift */; };
@@ -1020,6 +1021,7 @@
 
 /* Begin PBXFileReference section */
 		009A40E65F444529AAD5F256 /* NewChatViewController+AgentExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NewChatViewController+AgentExtension.swift"; sourceTree = "<group>"; };
+		30E251FCC194421EAB4B8997 /* NewChatViewController+LiveCallBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NewChatViewController+LiveCallBanner.swift"; sourceTree = "<group>"; };
 		0F9935DA8372449F9F39A27B /* GraphChatHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GraphChatHistory.swift; sourceTree = "<group>"; };
 		101C5A13C28347DF905BBCEE /* TaskDependencyDiagramView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskDependencyDiagramView.swift; sourceTree = "<group>"; };
 		1426B8E2ACCC4781BB119239 /* TaskDependencyDiagramCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskDependencyDiagramCell.swift; sourceTree = "<group>"; };
@@ -4447,6 +4449,7 @@
 				470146152A3B962E00A00DF8 /* NewChatViewController+MessageMenuDelegate.swift */,
 				470146222A3F93DA00A00DF8 /* NewChatViewController+AttachmentsExtension.swift */,
 				009A40E65F444529AAD5F256 /* NewChatViewController+AgentExtension.swift */,
+				30E251FCC194421EAB4B8997 /* NewChatViewController+LiveCallBanner.swift */,
 				4D3D01957AEB49A4B50A5180 /* ProposalApprovalCardView.swift */,
 			);
 			path = "New Chat View Controller";
@@ -5958,6 +5961,7 @@
 				4705D39F2799C339009C0729 /* UITextField.swift in Sources */,
 				470146232A3F93DA00A00DF8 /* NewChatViewController+AttachmentsExtension.swift in Sources */,
 				D30E5DF5BD6E4A209227EEB5 /* NewChatViewController+AgentExtension.swift in Sources */,
+				64CDB65F07D741A49647B221 /* NewChatViewController+LiveCallBanner.swift in Sources */,
 				9ED6D430912B439496D47B6B /* ProposalApprovalCardView.swift in Sources */,
 				47FA727C2A32373900FB4535 /* NewOnlyTextMessageTableViewCell.swift in Sources */,
 				F32A697926D515AB0004B8B3 /* PodcastFeed+Computeds.swift in Sources */,
