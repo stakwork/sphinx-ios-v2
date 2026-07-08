@@ -724,3 +724,7 @@
 "more-replies" = "more replies";
 "show-more" = "SHOW MORE";
 "show-less" = "SHOW LESS";
+
+//LIVE CALL BANNER
+"open.call" = "Open";
+"live.call" = "LIVE";
