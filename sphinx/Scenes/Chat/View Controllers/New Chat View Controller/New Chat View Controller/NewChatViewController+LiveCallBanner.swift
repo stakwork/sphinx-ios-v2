@@ -22,45 +22,9 @@
 
 import UIKit
 
-// MARK: - Stored State Keys
-
-private enum LiveCallBannerKeys {
-    // We store banner state as @objc associated objects because Swift does not
-    // allow stored properties in extensions.
-    static var bannerRooms     = "bannerRooms"     // Set<String>
-    static var liveCallRooms   = "liveCallRooms"   // [String: String]  room → callLink
-    static var liveCallRoomDates = "liveCallRoomDates" // [String: Date] room → messageDate
-    static var isObservingVideoState = "isObservingVideoState"
-}
-
 // MARK: - NewChatViewController Live Call Banner Extension
 
 extension NewChatViewController {
-
-    // MARK: - Accessors (via associated objects)
-
-    /// Rooms currently subscribed by the banner path.
-    var bannerRooms: Set<String> {
-        get { (objc_getAssociatedObject(self, &LiveCallBannerKeys.bannerRooms) as? Set<String>) ?? [] }
-        set { objc_setAssociatedObject(self, &LiveCallBannerKeys.bannerRooms, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC) }
-    }
-
-    /// Map: room name → call link URL string.
-    var liveCallRooms: [String: String] {
-        get { (objc_getAssociatedObject(self, &LiveCallBannerKeys.liveCallRooms) as? [String: String]) ?? [:] }
-        set { objc_setAssociatedObject(self, &LiveCallBannerKeys.liveCallRooms, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC) }
-    }
-
-    /// Map: room name → message date (used for newest-first sorting in the banner stack).
-    var liveCallRoomDates: [String: Date] {
-        get { (objc_getAssociatedObject(self, &LiveCallBannerKeys.liveCallRoomDates) as? [String: Date]) ?? [:] }
-        set { objc_setAssociatedObject(self, &LiveCallBannerKeys.liveCallRoomDates, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC) }
-    }
-
-    private var isObservingVideoState: Bool {
-        get { (objc_getAssociatedObject(self, &LiveCallBannerKeys.isObservingVideoState) as? Bool) ?? false }
-        set { objc_setAssociatedObject(self, &LiveCallBannerKeys.isObservingVideoState, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC) }
-    }
 
     // MARK: - Public Entry Points
 
@@ -102,7 +66,7 @@ extension NewChatViewController {
             return
         }
 
-        guard let chatId = chat.id else { return }
+        let chatId = chat.id
 
         print("[LiveCallBanner] startLiveCallBannerPolling for chat \(chatId)")
 
@@ -154,7 +118,7 @@ extension NewChatViewController {
         print("[LiveCallBanner] stopLiveCallBannerPolling — unsubscribing banner-only rooms")
 
         // Rooms that visible cells still need — must not be unsubscribed.
-        let cellOwnedRooms = Set(chatTableDataSource?.messageIdToRoomName.values ?? [])
+        let cellOwnedRooms = chatTableDataSource.map { Set($0.messageIdToRoomName.values) } ?? []
 
         for roomName in bannerRooms {
             if cellOwnedRooms.contains(roomName) {

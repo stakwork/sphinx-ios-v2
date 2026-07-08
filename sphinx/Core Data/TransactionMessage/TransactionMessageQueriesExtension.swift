@@ -817,11 +817,9 @@ extension TransactionMessage {
         // so we traverse it: chat.id == chatId.
         let callType = TransactionMessage.TransactionMessageType.call.rawValue
         let predicate = NSPredicate(
-            format: "(type == %d OR messageContent CONTAINS[c] %@) AND chat.id == %d AND date >= %@",
-            callType,
-            TransactionMessage.kCallRoomName,
+            format: "chat.id == %d AND type == %d",
             chatId,
-            cutoff
+            callType
         )
 
         let sortDescriptors = [

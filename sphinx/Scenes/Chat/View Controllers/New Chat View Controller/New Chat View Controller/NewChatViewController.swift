@@ -57,6 +57,12 @@ class NewChatViewController: NewKeyboardHandlerViewController {
     
     var chatTableDataSource: NewChatTableDataSource? = nil
     var chatMentionAutocompleteDataSource : ChatMentionAutocompleteDataSource? = nil
+
+    // Live call banner state (managed by NewChatViewController+LiveCallBanner)
+    var bannerRooms: Set<String> = []
+    var liveCallRooms: [String: String] = [:]
+    var liveCallRoomDates: [String: Date] = [:]
+    var isObservingVideoState: Bool = false
     let messageBubbleHelper = NewMessageBubbleHelper()
     
     let newMessageBubbleHelper = NewMessageBubbleHelper()

@@ -65,7 +65,7 @@ final class ActiveCallBannerView: UIView {
 
     private let liveDot: UIView = {
         let v = UIView()
-        v.backgroundColor = UIColor.Sphinx.PrimaryGreen
+        v.backgroundColor = UIColor.Sphinx.PrimaryRed
         v.layer.cornerRadius = Layout.liveIndicatorSize / 2
         v.translatesAutoresizingMaskIntoConstraints = false
         return v
@@ -111,7 +111,7 @@ final class ActiveCallBannerView: UIView {
     // MARK: - Setup
 
     private func setupViews() {
-        backgroundColor = UIColor.Sphinx.HeaderBG
+        backgroundColor = UIColor.Sphinx.Body
 
         // Separator at bottom
         addSubview(separatorLine)
@@ -207,6 +207,7 @@ final class ActiveCallBannerView: UIView {
             box.translatesAutoresizingMaskIntoConstraints = false
             NSLayoutConstraint.activate([
                 box.widthAnchor.constraint(equalToConstant: Layout.participantBoxWidth),
+                box.heightAnchor.constraint(equalToConstant: Layout.participantBoxHeight),
             ])
             participantsStackView.addArrangedSubview(box)
         }
