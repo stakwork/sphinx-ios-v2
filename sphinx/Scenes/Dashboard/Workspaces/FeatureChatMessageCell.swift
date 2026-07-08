@@ -365,19 +365,20 @@ class FeatureChatMessageCell: UITableViewCell {
             bubbleWidthConstraint.isActive = false
             bubbleWidthConstraint = bubbleView.widthAnchor.constraint(equalTo: contentView.widthAnchor, multiplier: 0.60)
             bubbleWidthConstraint.isActive = true
-            // Only round top corners; disable masksToBounds so card's own corners/border show
+            // Disable masksToBounds on bubbleView so card's own corners/border show
             bubbleView.layer.cornerRadius = 18
             bubbleView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
             bubbleView.layer.masksToBounds = false
-            // Move bubble colour onto textBackgroundView
+            // Move bubble colour onto textBackgroundView; only round its TOP corners so
+            // the join with the card below is a clean flat edge (one-piece appearance).
             bubbleView.backgroundColor = .clear
             let roleColour: UIColor = isUser ? UIColor.Sphinx.SentMsgBG : UIColor.Sphinx.ReceivedMsgBG
             textBackgroundView.backgroundColor = roleColour
-            textBackgroundView.layer.maskedCorners = [
-                .layerMinXMinYCorner, .layerMaxXMinYCorner,
-                .layerMinXMaxYCorner, .layerMaxXMaxYCorner
-            ]
+            textBackgroundView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
             textBackgroundView.layer.masksToBounds = true
+            // Round only the BOTTOM corners of the card so the join with the text above is flat.
+            publishScriptCardView.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
+            publishScriptCardView.layer.masksToBounds = true
             // Wire card closures to cell-level callbacks
             publishScriptCardView.onPublishTapped = { [weak self] in
                 guard let self, let artifact = self.currentPublishScriptArtifact else { return }
@@ -641,6 +642,11 @@ class FeatureChatMessageCell: UITableViewCell {
         publishScriptCardView.isHidden = true
         publishScriptCardView.onPublishTapped = nil
         publishScriptCardView.onOpenVersionTapped = nil
+        publishScriptCardView.layer.maskedCorners = [
+            .layerMinXMinYCorner, .layerMaxXMinYCorner,
+            .layerMinXMaxYCorner, .layerMaxXMaxYCorner
+        ]
+        publishScriptCardView.layer.masksToBounds = true
         currentPublishScriptArtifact = nil
         onPublishScriptTapped = nil
         onOpenScriptVersionTapped = nil
