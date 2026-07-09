@@ -108,8 +108,18 @@ class FeatureChatMessageCell: UITableViewCell {
         return v
     }()
 
+    /// Publish workflow card — only shown when a PUBLISH_WORKFLOW artifact is present.
+    private let publishWorkflowCardView: PublishWorkflowCardView = {
+        let v = PublishWorkflowCardView()
+        v.isHidden = true
+        return v
+    }()
+
     /// Retains the current PUBLISH_SCRIPT artifact for closure bridging.
     private var currentPublishScriptArtifact: HiveChatMessageArtifact?
+
+    /// Retains the current PUBLISH_WORKFLOW artifact for closure bridging.
+    private var currentPublishWorkflowArtifact: HiveChatMessageArtifact?
 
     // MARK: - Callbacks
 
@@ -126,6 +136,8 @@ class FeatureChatMessageCell: UITableViewCell {
     var onPublishScriptTapped: ((_ artifact: HiveChatMessageArtifact) -> Void)?
     /// Called when the user taps the version badge on the publish script card.
     var onOpenScriptVersionTapped: ((_ artifact: HiveChatMessageArtifact) -> Void)?
+    /// Called when the user taps "Publish" on the publish workflow card.
+    var onPublishWorkflowTapped: ((_ artifact: HiveChatMessageArtifact) -> Void)?
 
     // MARK: - Attachment grid
     private let attachmentGridView: AttachmentGridView = {
@@ -191,8 +203,8 @@ class FeatureChatMessageCell: UITableViewCell {
         // Wire logs header tap
         logsHeaderButton.addTarget(self, action: #selector(logsHeaderTapped), for: .touchUpInside)
 
-        // Vertical stack inside bubble: text + logs header + logs body + optional PR card + optional publish script card + optional attachment grid
-        bubbleStack = UIStackView(arrangedSubviews: [messageTextView, logsHeaderButton, logsBodyTextView, prCardView, publishScriptCardView, attachmentGridView])
+        // Vertical stack inside bubble: text + logs header + logs body + optional PR card + optional publish script/workflow card + optional attachment grid
+        bubbleStack = UIStackView(arrangedSubviews: [messageTextView, logsHeaderButton, logsBodyTextView, prCardView, publishScriptCardView, publishWorkflowCardView, attachmentGridView])
         bubbleStack.translatesAutoresizingMaskIntoConstraints = false
         bubbleStack.axis = .vertical
         bubbleStack.spacing = 0
@@ -322,64 +334,24 @@ class FeatureChatMessageCell: UITableViewCell {
            let prContent = prArtifact.prContent {
             prCardView.configure(with: prContent)
             prCardView.isHidden = false
-            // Fix 1: expand bubble to 60% fixed width for PR card
-            bubbleWidthConstraint.isActive = false
-            bubbleWidthConstraint = bubbleView.widthAnchor.constraint(equalTo: contentView.widthAnchor, multiplier: 0.60)
-            bubbleWidthConstraint.isActive = true
-            // Fix 2: only round top corners; disable masksToBounds so card's own corners/border show
-            bubbleView.layer.cornerRadius = 18
-            bubbleView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
-            bubbleView.layer.masksToBounds = false
-            // Move bubble colour onto textBackgroundView so the bottom corners clip correctly
-            bubbleView.backgroundColor = .clear
-            let roleColour: UIColor = isUser ? UIColor.Sphinx.SentMsgBG : UIColor.Sphinx.ReceivedMsgBG
-            textBackgroundView.backgroundColor = roleColour
-            textBackgroundView.layer.maskedCorners = [
-                .layerMinXMinYCorner, .layerMaxXMinYCorner,
-                .layerMinXMaxYCorner, .layerMaxXMaxYCorner
-            ]
-            textBackgroundView.layer.masksToBounds = true
+            configureBottomJoinedCard(isUser: isUser, bottomCard: prCardView)
         } else {
             prCardView.isHidden = true
-            // Restore default width constraint
-            bubbleWidthConstraint.isActive = false
-            bubbleWidthConstraint = bubbleView.widthAnchor.constraint(lessThanOrEqualTo: contentView.widthAnchor, multiplier: 0.85)
-            bubbleWidthConstraint.isActive = true
-            // Restore full corner masking
-            bubbleView.layer.maskedCorners = [
-                .layerMinXMinYCorner, .layerMaxXMinYCorner,
-                .layerMinXMaxYCorner, .layerMaxXMaxYCorner
-            ]
-            bubbleView.layer.masksToBounds = true
-            // textBackgroundView not needed — clear it
-            textBackgroundView.backgroundColor = .clear
         }
 
-        // --- Publish Script artifact card ---
-        if let psArtifact = message.artifacts.first(where: { $0.isPublishScript }),
-           let psContent = psArtifact.publishScriptContent {
+        // --- Publish Script / Publish Workflow artifact cards ---
+        // A message will carry at most one of these; script takes precedence if both appear.
+        let psArtifact = message.artifacts.first(where: { $0.isPublishScript })
+        let pwArtifact = message.artifacts.first(where: { $0.isPublishWorkflow })
+
+        if let psArtifact, let psContent = psArtifact.publishScriptContent {
+            // Publish Script card
             currentPublishScriptArtifact = psArtifact
             publishScriptCardView.configure(with: psContent)
             publishScriptCardView.isHidden = false
-            // Expand bubble to 60% fixed width for the card
-            bubbleWidthConstraint.isActive = false
-            bubbleWidthConstraint = bubbleView.widthAnchor.constraint(equalTo: contentView.widthAnchor, multiplier: 0.60)
-            bubbleWidthConstraint.isActive = true
-            // Disable masksToBounds on bubbleView so card's own corners/border show
-            bubbleView.layer.cornerRadius = 18
-            bubbleView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
-            bubbleView.layer.masksToBounds = false
-            // Move bubble colour onto textBackgroundView; only round its TOP corners so
-            // the join with the card below is a clean flat edge (one-piece appearance).
-            bubbleView.backgroundColor = .clear
-            let roleColour: UIColor = isUser ? UIColor.Sphinx.SentMsgBG : UIColor.Sphinx.ReceivedMsgBG
-            textBackgroundView.backgroundColor = roleColour
-            textBackgroundView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
-            textBackgroundView.layer.masksToBounds = true
-            // Round only the BOTTOM corners of the card so the join with the text above is flat.
-            publishScriptCardView.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
-            publishScriptCardView.layer.masksToBounds = true
-            // Wire card closures to cell-level callbacks
+            publishWorkflowCardView.isHidden = true
+            currentPublishWorkflowArtifact = nil
+            configureBottomJoinedCard(isUser: isUser, bottomCard: publishScriptCardView)
             publishScriptCardView.onPublishTapped = { [weak self] in
                 guard let self, let artifact = self.currentPublishScriptArtifact else { return }
                 self.onPublishScriptTapped?(artifact)
@@ -388,11 +360,32 @@ class FeatureChatMessageCell: UITableViewCell {
                 guard let self, let artifact = self.currentPublishScriptArtifact else { return }
                 self.onOpenScriptVersionTapped?(artifact)
             }
-        } else {
+        } else if let pwArtifact, let pwContent = pwArtifact.publishWorkflowContent {
+            // Publish Workflow card
+            currentPublishWorkflowArtifact = pwArtifact
+            publishWorkflowCardView.configure(with: pwContent)
+            publishWorkflowCardView.isHidden = false
             publishScriptCardView.isHidden = true
             currentPublishScriptArtifact = nil
+            configureBottomJoinedCard(isUser: isUser, bottomCard: publishWorkflowCardView)
+            publishWorkflowCardView.onPublishTapped = { [weak self] in
+                guard let self, let artifact = self.currentPublishWorkflowArtifact else { return }
+                self.onPublishWorkflowTapped?(artifact)
+            }
+        } else {
+            // No publish card — hide both, clear state
+            publishScriptCardView.isHidden = true
+            publishWorkflowCardView.isHidden = true
+            currentPublishScriptArtifact = nil
+            currentPublishWorkflowArtifact = nil
             publishScriptCardView.onPublishTapped = nil
             publishScriptCardView.onOpenVersionTapped = nil
+            publishWorkflowCardView.onPublishTapped = nil
+            // Only restore default bubble geometry when there's also no PR card.
+            // If a PR card is present it already called configureBottomJoinedCard above.
+            if message.artifacts.first(where: { $0.isPullRequest }) == nil {
+                restoreDefaultBubbleGeometry()
+            }
         }
 
         // --- LONGFORM border ---
@@ -612,11 +605,56 @@ class FeatureChatMessageCell: UITableViewCell {
         }
     }
 
+    // MARK: - Bottom-joined card geometry helpers
+
+    /// Applies the shared bubble layout for any bottom-joined card (PR, Publish Script, Publish Workflow).
+    /// Expands bubble to 60%, disables masksToBounds on bubbleView, moves colour to textBackgroundView
+    /// (top-corners only), and rounds only the bottom corners of the given card view.
+    private func configureBottomJoinedCard(isUser: Bool, bottomCard: UIView) {
+        bubbleWidthConstraint.isActive = false
+        bubbleWidthConstraint = bubbleView.widthAnchor.constraint(equalTo: contentView.widthAnchor, multiplier: 0.60)
+        bubbleWidthConstraint.isActive = true
+
+        bubbleView.layer.cornerRadius = 18
+        bubbleView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        bubbleView.layer.masksToBounds = false
+        bubbleView.backgroundColor = .clear
+
+        let roleColour: UIColor = isUser ? UIColor.Sphinx.SentMsgBG : UIColor.Sphinx.ReceivedMsgBG
+        textBackgroundView.backgroundColor = roleColour
+        textBackgroundView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        textBackgroundView.layer.masksToBounds = true
+
+        bottomCard.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
+        bottomCard.layer.masksToBounds = true
+    }
+
+    /// Restores the default bubble geometry (no bottom-joined card present).
+    private func restoreDefaultBubbleGeometry() {
+        bubbleWidthConstraint.isActive = false
+        bubbleWidthConstraint = bubbleView.widthAnchor.constraint(lessThanOrEqualTo: contentView.widthAnchor, multiplier: 0.85)
+        bubbleWidthConstraint.isActive = true
+
+        bubbleView.layer.maskedCorners = [
+            .layerMinXMinYCorner, .layerMaxXMinYCorner,
+            .layerMinXMaxYCorner, .layerMaxXMaxYCorner
+        ]
+        bubbleView.layer.masksToBounds = true
+        textBackgroundView.backgroundColor = .clear
+    }
+
     // MARK: - Publish Script helpers
 
     /// Flips the publish script card to the "Published ✓" state in-place without a full reload.
     func flipPublishScriptToPublished() {
         publishScriptCardView.setPublished(true)
+    }
+
+    // MARK: - Publish Workflow helpers
+
+    /// Flips the publish workflow card to the "Published ✓" state in-place without a full reload.
+    func flipPublishWorkflowToPublished() {
+        publishWorkflowCardView.setPublished(true)
     }
 
     override func prepareForReuse() {
@@ -650,6 +688,15 @@ class FeatureChatMessageCell: UITableViewCell {
         currentPublishScriptArtifact = nil
         onPublishScriptTapped = nil
         onOpenScriptVersionTapped = nil
+        publishWorkflowCardView.isHidden = true
+        publishWorkflowCardView.onPublishTapped = nil
+        publishWorkflowCardView.layer.maskedCorners = [
+            .layerMinXMinYCorner, .layerMaxXMinYCorner,
+            .layerMinXMaxYCorner, .layerMaxXMaxYCorner
+        ]
+        publishWorkflowCardView.layer.masksToBounds = true
+        currentPublishWorkflowArtifact = nil
+        onPublishWorkflowTapped = nil
         suggestionChipsView.clear()
         chipsTopConstraint.isActive         = false
         chipsLeadingConstraint.isActive     = false
