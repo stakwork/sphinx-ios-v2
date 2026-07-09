@@ -5503,6 +5503,115 @@ extension API {
         )
     }
 
+    // MARK: - Publish Workflow
+
+    private func publishWorkflow(
+        workflowId: Int,
+        workflowRefId: String?,
+        artifactId: String,
+        authToken: String,
+        callback: @escaping EmptyCallback,
+        errorCallback: @escaping (PublishScriptError) -> Void
+    ) {
+        let urlString = "\(API.kHiveBaseUrl)/workflow/publish"
+        print("[HiveAPI] publishWorkflow: requesting POST \(urlString) workflowId=\(workflowId) artifactId=\(artifactId)")
+        var bodyDict: [String: Any] = ["workflowId": workflowId, "artifactId": artifactId]
+        if let refId = workflowRefId { bodyDict["workflowRefId"] = refId }
+        let body = NSDictionary(dictionary: bodyDict)
+        guard let request = createRequest(urlString, bodyParams: body, method: "POST", token: authToken) else {
+            print("[HiveAPI] publishWorkflow: failed to create request")
+            errorCallback(.generic)
+            return
+        }
+        session()?.request(request).responseData { response in
+            let statusCode = response.response?.statusCode ?? -1
+            print("[HiveAPI] publishWorkflow: HTTP status \(statusCode)")
+            if statusCode == 403 {
+                print("[HiveAPI] publishWorkflow: forbidden (403)")
+                errorCallback(.forbidden)
+                return
+            }
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+                if json["success"].bool == true {
+                    print("[HiveAPI] publishWorkflow: success")
+                    callback()
+                } else {
+                    print("[HiveAPI] publishWorkflow: returned success=false: \(json)")
+                    errorCallback(.generic)
+                }
+            case .failure(let error):
+                print("[HiveAPI] publishWorkflow: failed — \(error.localizedDescription)")
+                errorCallback(.generic)
+            }
+        }
+    }
+
+    func publishWorkflowWithAuth(
+        workflowId: Int,
+        workflowRefId: String?,
+        artifactId: String,
+        callback: @escaping EmptyCallback,
+        errorCallback: @escaping (PublishScriptError) -> Void
+    ) {
+        if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
+            publishWorkflow(
+                workflowId: workflowId,
+                workflowRefId: workflowRefId,
+                artifactId: artifactId,
+                authToken: storedToken,
+                callback: callback,
+                errorCallback: { [weak self] err in
+                    if case .forbidden = err {
+                        errorCallback(.forbidden)
+                        return
+                    }
+                    // On generic error, refresh token and retry once
+                    self?.authenticateAndPublishWorkflow(
+                        workflowId: workflowId,
+                        workflowRefId: workflowRefId,
+                        artifactId: artifactId,
+                        callback: callback,
+                        errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateAndPublishWorkflow(
+                workflowId: workflowId,
+                workflowRefId: workflowRefId,
+                artifactId: artifactId,
+                callback: callback,
+                errorCallback: errorCallback
+            )
+        }
+    }
+
+    private func authenticateAndPublishWorkflow(
+        workflowId: Int,
+        workflowRefId: String?,
+        artifactId: String,
+        callback: @escaping EmptyCallback,
+        errorCallback: @escaping (PublishScriptError) -> Void
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback(.generic); return }
+                self?.storeHiveToken(token)
+                self?.publishWorkflow(
+                    workflowId: workflowId,
+                    workflowRefId: workflowRefId,
+                    artifactId: artifactId,
+                    authToken: token,
+                    callback: callback,
+                    errorCallback: errorCallback
+                )
+            },
+            errorCallback: { errorCallback(.generic) }
+        )
+    }
+
 }
 
 // MARK: - Workspace Image Cache

@@ -692,4 +692,135 @@ class HiveChatMessageTests: XCTestCase {
         XCTAssertTrue(artifact.publishScriptContent?.published ?? false,
                       "publishScriptContent.published should be mutable and reflect the flip")
     }
+
+    // MARK: - PUBLISH_WORKFLOW Artifact Tests
+
+    func testArtifact_PublishWorkflowType_AllFieldsPresent() {
+        let jsonDict: [String: Any] = [
+            "id": "artifact-pw-001",
+            "type": "PUBLISH_WORKFLOW",
+            "content": [
+                "workflowId": 99,
+                "workflowName": "my-workflow",
+                "workflowRefId": "wf-ref-abc",
+                "published": false
+            ] as [String: Any]
+        ]
+        let artifact = HiveChatMessageArtifact(json: JSON(jsonDict))
+
+        XCTAssertTrue(artifact.isPublishWorkflow, "Artifact with type PUBLISH_WORKFLOW should have isPublishWorkflow == true")
+        XCTAssertNotNil(artifact.publishWorkflowContent, "PUBLISH_WORKFLOW artifact should have publishWorkflowContent populated")
+        XCTAssertEqual(artifact.publishWorkflowContent?.workflowId, 99)
+        XCTAssertEqual(artifact.publishWorkflowContent?.workflowName, "my-workflow")
+        XCTAssertEqual(artifact.publishWorkflowContent?.workflowRefId, "wf-ref-abc")
+        XCTAssertFalse(artifact.publishWorkflowContent?.published ?? true)
+
+        // Sibling content properties must be nil
+        XCTAssertNil(artifact.prContent, "PUBLISH_WORKFLOW artifact should not populate prContent")
+        XCTAssertNil(artifact.longformContent, "PUBLISH_WORKFLOW artifact should not populate longformContent")
+        XCTAssertNil(artifact.workflowContent, "PUBLISH_WORKFLOW artifact should not populate workflowContent")
+        XCTAssertNil(artifact.publishScriptContent, "PUBLISH_WORKFLOW artifact should not populate publishScriptContent")
+        XCTAssertNil(artifact.content, "PUBLISH_WORKFLOW artifact should not populate plain content string")
+    }
+
+    func testArtifact_PublishWorkflowType_Published_True() {
+        let jsonDict: [String: Any] = [
+            "id": "artifact-pw-002",
+            "type": "PUBLISH_WORKFLOW",
+            "content": [
+                "workflowId": 99,
+                "workflowName": "my-workflow",
+                "workflowRefId": "wf-ref-abc",
+                "published": true
+            ] as [String: Any]
+        ]
+        let artifact = HiveChatMessageArtifact(json: JSON(jsonDict))
+
+        XCTAssertTrue(artifact.isPublishWorkflow)
+        XCTAssertTrue(artifact.publishWorkflowContent?.published ?? false,
+                      "published: true should parse as true")
+    }
+
+    func testArtifact_PublishWorkflowType_MissingIds_GracefullyNil() {
+        let jsonDict: [String: Any] = [
+            "id": "artifact-pw-003",
+            "type": "PUBLISH_WORKFLOW",
+            "content": [
+                "published": false
+            ] as [String: Any]
+        ]
+        let artifact = HiveChatMessageArtifact(json: JSON(jsonDict))
+
+        XCTAssertTrue(artifact.isPublishWorkflow)
+        XCTAssertNotNil(artifact.publishWorkflowContent)
+        XCTAssertNil(artifact.publishWorkflowContent?.workflowId, "Missing workflowId should produce nil, not crash")
+        XCTAssertNil(artifact.publishWorkflowContent?.workflowName, "Missing workflowName should produce nil, not crash")
+        XCTAssertNil(artifact.publishWorkflowContent?.workflowRefId, "Missing workflowRefId should produce nil, not crash")
+        XCTAssertFalse(artifact.publishWorkflowContent?.published ?? true)
+    }
+
+    func testArtifact_PublishWorkflowType_StringEncodedWorkflowId_Coerced() {
+        // workflowId arrives as a string-encoded integer — defensive parse must coerce it to Int
+        let jsonDict: [String: Any] = [
+            "id": "artifact-pw-004",
+            "type": "PUBLISH_WORKFLOW",
+            "content": [
+                "workflowId": "123",
+                "workflowName": "string-id-workflow",
+                "workflowRefId": "wf-ref-xyz",
+                "published": false
+            ] as [String: Any]
+        ]
+        let artifact = HiveChatMessageArtifact(json: JSON(jsonDict))
+
+        XCTAssertTrue(artifact.isPublishWorkflow)
+        XCTAssertNotNil(artifact.publishWorkflowContent)
+        XCTAssertEqual(artifact.publishWorkflowContent?.workflowId, 123,
+                       "String-encoded workflowId should be coerced to Int(123) via defensive fallback")
+    }
+
+    func testIsDisplayable_PublishWorkflowArtifact_ReturnsTrue() {
+        // PUBLISH_WORKFLOW is not STREAM or WORKFLOW, so isDisplayable must be true
+        let jsonDict: [String: Any] = [
+            "id": "msg-pw-001",
+            "message": "",
+            "role": "ASSISTANT",
+            "artifacts": [
+                [
+                    "id": "artifact-pw-display",
+                    "type": "PUBLISH_WORKFLOW",
+                    "content": [
+                        "workflowId": 99,
+                        "workflowName": "my-workflow",
+                        "workflowRefId": "wf-ref-abc",
+                        "published": false
+                    ] as [String: Any]
+                ] as [String: Any]
+            ] as [Any]
+        ]
+        let message = HiveChatMessage(json: JSON(jsonDict))
+        XCTAssertNotNil(message)
+        XCTAssertTrue(message?.isDisplayable == true,
+                      "A message with a PUBLISH_WORKFLOW artifact should be displayable")
+    }
+
+    func testPublishWorkflowContent_MutablePublished_CanBeFlipped() {
+        // Verify published is a var and can be mutated (for local state flip after success)
+        let jsonDict: [String: Any] = [
+            "id": "artifact-pw-005",
+            "type": "PUBLISH_WORKFLOW",
+            "content": [
+                "workflowId": 99,
+                "workflowName": "my-workflow",
+                "workflowRefId": "wf-ref-abc",
+                "published": false
+            ] as [String: Any]
+        ]
+        var artifact = HiveChatMessageArtifact(json: JSON(jsonDict))
+
+        XCTAssertFalse(artifact.publishWorkflowContent?.published ?? true)
+        artifact.publishWorkflowContent?.published = true
+        XCTAssertTrue(artifact.publishWorkflowContent?.published ?? false,
+                      "publishWorkflowContent.published should be mutable and reflect the flip")
+    }
 }
