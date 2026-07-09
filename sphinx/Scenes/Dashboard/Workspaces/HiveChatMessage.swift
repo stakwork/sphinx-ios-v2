@@ -74,6 +74,15 @@ struct PublishWorkflowContent: Sendable {
     var published: Bool
 }
 
+// MARK: - Publish Prompt Content
+
+struct PublishPromptContent: Sendable {
+    let promptId: String?
+    let promptVersionId: String?
+    let promptName: String?
+    var published: Bool
+}
+
 // MARK: - Publish Script Content
 
 struct PublishScriptContent: Sendable {
@@ -115,6 +124,8 @@ struct HiveChatMessageArtifact: @unchecked Sendable {
     var publishScriptContent: PublishScriptContent?
     /// Parsed publish workflow content when type == "PUBLISH_WORKFLOW"
     var publishWorkflowContent: PublishWorkflowContent?
+    /// Parsed publish prompt content when type == "PUBLISH_PROMPT"
+    var publishPromptContent: PublishPromptContent?
 
     var isPullRequest: Bool { type == "PULL_REQUEST" }
     var isLongform: Bool { type == "LONGFORM" }
@@ -122,6 +133,7 @@ struct HiveChatMessageArtifact: @unchecked Sendable {
     var isWorkflow: Bool { type == "WORKFLOW" }
     var isPublishScript: Bool { type == "PUBLISH_SCRIPT" }
     var isPublishWorkflow: Bool { type == "PUBLISH_WORKFLOW" }
+    var isPublishPrompt: Bool { type == "PUBLISH_PROMPT" }
 
     var isClarifyingQuestions: Bool {
         return type == "PLAN" && contentJSON?["tool_use"].string == "ask_clarifying_questions"
@@ -140,6 +152,7 @@ struct HiveChatMessageArtifact: @unchecked Sendable {
             self.workflowContent = nil
             self.publishScriptContent = nil
             self.publishWorkflowContent = nil
+            self.publishPromptContent = nil
             // Content may be a JSON object or a JSON string that needs decoding
             let rawContent = json["content"]
             let contentJSON: JSON
@@ -189,6 +202,7 @@ struct HiveChatMessageArtifact: @unchecked Sendable {
             self.workflowContent = nil
             self.publishScriptContent = nil
             self.publishWorkflowContent = nil
+            self.publishPromptContent = nil
         } else if json["type"].string == "LONGFORM" {
             let c = json["content"]
             self.longformContent = LongformContent(title: c["title"].string, text: c["text"].string)
@@ -200,6 +214,7 @@ struct HiveChatMessageArtifact: @unchecked Sendable {
             self.workflowContent = nil
             self.publishScriptContent = nil
             self.publishWorkflowContent = nil
+            self.publishPromptContent = nil
         } else if json["type"].string == "PLAN" {
             self.prContent = nil
             self.content = nil
@@ -220,6 +235,7 @@ struct HiveChatMessageArtifact: @unchecked Sendable {
             self.workflowContent = nil
             self.publishScriptContent = nil
             self.publishWorkflowContent = nil
+            self.publishPromptContent = nil
         } else if json["type"].string == "WORKFLOW" {
             let c = json["content"]
             self.workflowContent = WorkflowContent(
@@ -240,6 +256,7 @@ struct HiveChatMessageArtifact: @unchecked Sendable {
             self.streamInfo = nil
             self.publishScriptContent = nil
             self.publishWorkflowContent = nil
+            self.publishPromptContent = nil
         } else if json["type"].string == "PUBLISH_SCRIPT" {
             let c = json["content"]
             self.publishScriptContent = PublishScriptContent(
@@ -256,6 +273,7 @@ struct HiveChatMessageArtifact: @unchecked Sendable {
             self.streamInfo = nil
             self.workflowContent = nil
             self.publishWorkflowContent = nil
+            self.publishPromptContent = nil
         } else if json["type"].string == "PUBLISH_WORKFLOW" {
             let c = json["content"]
             let workflowId = c["workflowId"].int ?? Int(c["workflowId"].stringValue)
@@ -273,6 +291,24 @@ struct HiveChatMessageArtifact: @unchecked Sendable {
             self.streamInfo = nil
             self.workflowContent = nil
             self.publishScriptContent = nil
+            self.publishPromptContent = nil
+        } else if json["type"].string == "PUBLISH_PROMPT" {
+            let c = json["content"]
+            self.publishPromptContent = PublishPromptContent(
+                promptId:        c["promptId"].string,
+                promptVersionId: c["promptVersionId"].string,
+                promptName:      c["promptName"].string,
+                published:       c["published"].bool ?? false
+            )
+            self.content = nil
+            self.prContent = nil
+            self.longformContent = nil
+            self.contentJSON = nil
+            self.clarifyingQuestions = nil
+            self.streamInfo = nil
+            self.workflowContent = nil
+            self.publishScriptContent = nil
+            self.publishWorkflowContent = nil
         } else {
             self.prContent = nil
             self.contentJSON = nil
@@ -283,6 +319,7 @@ struct HiveChatMessageArtifact: @unchecked Sendable {
             self.workflowContent = nil
             self.publishScriptContent = nil
             self.publishWorkflowContent = nil
+            self.publishPromptContent = nil
         }
     }
 }
