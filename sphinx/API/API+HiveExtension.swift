@@ -5612,6 +5612,113 @@ extension API {
         )
     }
 
+    // MARK: - Publish Prompt Version
+
+    private func publishPromptVersion(
+        promptId: String,
+        versionId: String,
+        artifactId: String,
+        authToken: String,
+        callback: @escaping EmptyCallback,
+        errorCallback: @escaping (PublishScriptError) -> Void
+    ) {
+        let urlString = "\(API.kHiveBaseUrl)/workflow/prompts/\(promptId)/versions/\(versionId)/publish"
+        print("[HiveAPI] publishPromptVersion: requesting POST \(urlString) artifactId=\(artifactId)")
+        let body: NSDictionary = ["artifactId": artifactId]
+        guard let request = createRequest(urlString, bodyParams: body, method: "POST", token: authToken) else {
+            print("[HiveAPI] publishPromptVersion: failed to create request")
+            errorCallback(.generic)
+            return
+        }
+        session()?.request(request).responseData { response in
+            let statusCode = response.response?.statusCode ?? -1
+            print("[HiveAPI] publishPromptVersion: HTTP status \(statusCode)")
+            if statusCode == 403 {
+                print("[HiveAPI] publishPromptVersion: forbidden (403)")
+                errorCallback(.forbidden)
+                return
+            }
+            switch response.result {
+            case .success(let data):
+                let json = JSON(data)
+                if json["success"].bool == true {
+                    print("[HiveAPI] publishPromptVersion: success")
+                    callback()
+                } else {
+                    print("[HiveAPI] publishPromptVersion: returned success=false: \(json)")
+                    errorCallback(.generic)
+                }
+            case .failure(let error):
+                print("[HiveAPI] publishPromptVersion: failed — \(error.localizedDescription)")
+                errorCallback(.generic)
+            }
+        }
+    }
+
+    func publishPromptVersionWithAuth(
+        promptId: String,
+        versionId: String,
+        artifactId: String,
+        callback: @escaping EmptyCallback,
+        errorCallback: @escaping (PublishScriptError) -> Void
+    ) {
+        if let storedToken: String = UserDefaults.Keys.hiveToken.get() {
+            publishPromptVersion(
+                promptId: promptId,
+                versionId: versionId,
+                artifactId: artifactId,
+                authToken: storedToken,
+                callback: callback,
+                errorCallback: { [weak self] err in
+                    if case .forbidden = err {
+                        errorCallback(.forbidden)
+                        return
+                    }
+                    // On generic error, refresh token and retry once
+                    self?.authenticateAndPublishPromptVersion(
+                        promptId: promptId,
+                        versionId: versionId,
+                        artifactId: artifactId,
+                        callback: callback,
+                        errorCallback: errorCallback
+                    )
+                }
+            )
+        } else {
+            authenticateAndPublishPromptVersion(
+                promptId: promptId,
+                versionId: versionId,
+                artifactId: artifactId,
+                callback: callback,
+                errorCallback: errorCallback
+            )
+        }
+    }
+
+    private func authenticateAndPublishPromptVersion(
+        promptId: String,
+        versionId: String,
+        artifactId: String,
+        callback: @escaping EmptyCallback,
+        errorCallback: @escaping (PublishScriptError) -> Void
+    ) {
+        authenticateWithHive(
+            callback: { [weak self] token in
+                guard let token = token else { errorCallback(.generic); return }
+                self?.storeHiveToken(token)
+                self?.publishPromptVersion(
+                    promptId: promptId,
+                    versionId: versionId,
+                    artifactId: artifactId,
+                    authToken: token,
+                    callback: callback,
+                    errorCallback: errorCallback
+                )
+            },
+            errorCallback: { errorCallback(.generic) }
+        )
+    }
+
 }
 
 // MARK: - Workspace Image Cache
