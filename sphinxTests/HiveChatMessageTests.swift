@@ -823,4 +823,197 @@ class HiveChatMessageTests: XCTestCase {
         XCTAssertTrue(artifact.publishWorkflowContent?.published ?? false,
                       "publishWorkflowContent.published should be mutable and reflect the flip")
     }
+
+    // MARK: - PUBLISH_PROMPT Artifact Tests
+
+    func testArtifact_PublishPromptType_AllFieldsPresent_PublishedFalse() {
+        let jsonDict: [String: Any] = [
+            "id": "artifact-pp-001",
+            "type": "PUBLISH_PROMPT",
+            "content": [
+                "promptId": "clprompt000000000000001",
+                "promptVersionId": "clversion000000000000007",
+                "promptName": "my-cool-prompt",
+                "published": false
+            ] as [String: Any]
+        ]
+        let artifact = HiveChatMessageArtifact(json: JSON(jsonDict))
+
+        XCTAssertTrue(artifact.isPublishPrompt, "Artifact with type PUBLISH_PROMPT should have isPublishPrompt == true")
+        XCTAssertNotNil(artifact.publishPromptContent, "PUBLISH_PROMPT artifact should have publishPromptContent populated")
+        XCTAssertEqual(artifact.publishPromptContent?.promptId, "clprompt000000000000001")
+        XCTAssertEqual(artifact.publishPromptContent?.promptVersionId, "clversion000000000000007")
+        XCTAssertEqual(artifact.publishPromptContent?.promptName, "my-cool-prompt")
+        XCTAssertFalse(artifact.publishPromptContent?.published ?? true,
+                       "published: false should parse as false")
+
+        // Sibling content properties must be nil
+        XCTAssertNil(artifact.prContent, "PUBLISH_PROMPT artifact should not populate prContent")
+        XCTAssertNil(artifact.longformContent, "PUBLISH_PROMPT artifact should not populate longformContent")
+        XCTAssertNil(artifact.workflowContent, "PUBLISH_PROMPT artifact should not populate workflowContent")
+        XCTAssertNil(artifact.publishScriptContent, "PUBLISH_PROMPT artifact should not populate publishScriptContent")
+        XCTAssertNil(artifact.publishWorkflowContent, "PUBLISH_PROMPT artifact should not populate publishWorkflowContent")
+        XCTAssertNil(artifact.content, "PUBLISH_PROMPT artifact should not populate plain content string")
+    }
+
+    func testArtifact_PublishPromptType_Published_True() {
+        let jsonDict: [String: Any] = [
+            "id": "artifact-pp-002",
+            "type": "PUBLISH_PROMPT",
+            "content": [
+                "promptId": "clprompt000000000000001",
+                "promptVersionId": "clversion000000000000007",
+                "promptName": "my-cool-prompt",
+                "published": true
+            ] as [String: Any]
+        ]
+        let artifact = HiveChatMessageArtifact(json: JSON(jsonDict))
+
+        XCTAssertTrue(artifact.isPublishPrompt)
+        XCTAssertTrue(artifact.publishPromptContent?.published ?? false,
+                      "published: true should parse as true")
+    }
+
+    func testArtifact_PublishPromptType_MissingPromptName_GracefullyNil() {
+        // Fallback text ("Prompt v{id}") is a UI concern; model must surface nil for missing name
+        let jsonDict: [String: Any] = [
+            "id": "artifact-pp-003",
+            "type": "PUBLISH_PROMPT",
+            "content": [
+                "promptId": "clprompt000000000000001",
+                "promptVersionId": "clversion000000000000007"
+                // promptName omitted
+                // published omitted → defaults to false
+            ] as [String: Any]
+        ]
+        let artifact = HiveChatMessageArtifact(json: JSON(jsonDict))
+
+        XCTAssertTrue(artifact.isPublishPrompt)
+        XCTAssertNotNil(artifact.publishPromptContent)
+        XCTAssertNil(artifact.publishPromptContent?.promptName,
+                     "Missing promptName should produce nil, not crash")
+        XCTAssertFalse(artifact.publishPromptContent?.published ?? true,
+                       "Missing published field should default to false")
+    }
+
+    func testArtifact_PublishPromptType_EmptyStringIds_ArePreservedNotNil() {
+        // Empty-string IDs must remain as present-but-empty strings so the publish-handler
+        // guard (which checks .isEmpty) can detect and reject them correctly.
+        let jsonDict: [String: Any] = [
+            "id": "artifact-pp-004",
+            "type": "PUBLISH_PROMPT",
+            "content": [
+                "promptId": "",
+                "promptVersionId": "",
+                "promptName": "some-prompt",
+                "published": false
+            ] as [String: Any]
+        ]
+        let artifact = HiveChatMessageArtifact(json: JSON(jsonDict))
+
+        XCTAssertTrue(artifact.isPublishPrompt)
+        XCTAssertNotNil(artifact.publishPromptContent)
+        // Must be non-nil empty strings, NOT nil — guards elsewhere key off isEmpty
+        XCTAssertNotNil(artifact.publishPromptContent?.promptId,
+                        "Empty-string promptId should be present (non-nil) for guard to detect it as empty")
+        XCTAssertEqual(artifact.publishPromptContent?.promptId, "",
+                       "Empty-string promptId should be preserved as empty string, not converted to nil")
+        XCTAssertNotNil(artifact.publishPromptContent?.promptVersionId,
+                        "Empty-string promptVersionId should be present (non-nil) for guard to detect it as empty")
+        XCTAssertEqual(artifact.publishPromptContent?.promptVersionId, "",
+                       "Empty-string promptVersionId should be preserved as empty string, not converted to nil")
+    }
+
+    func testArtifact_PublishPromptType_IdsAreStrings_NotInts() {
+        // Prompt IDs are cuid strings, not integers — verify the model reads them as .string
+        let jsonDict: [String: Any] = [
+            "id": "artifact-pp-005",
+            "type": "PUBLISH_PROMPT",
+            "content": [
+                "promptId": "clxyz1234567890abcdefghi",
+                "promptVersionId": "clver987654321zyxwvutsrq",
+                "promptName": "string-id-prompt",
+                "published": false
+            ] as [String: Any]
+        ]
+        let artifact = HiveChatMessageArtifact(json: JSON(jsonDict))
+
+        XCTAssertTrue(artifact.isPublishPrompt)
+        XCTAssertEqual(artifact.publishPromptContent?.promptId, "clxyz1234567890abcdefghi",
+                       "promptId should be stored as the full cuid string")
+        XCTAssertEqual(artifact.publishPromptContent?.promptVersionId, "clver987654321zyxwvutsrq",
+                       "promptVersionId should be stored as the full cuid string")
+    }
+
+    func testPublishPromptContent_MutablePublished_CanBeFlipped() {
+        // Verify published is a var and can be mutated (for local state flip after success)
+        let jsonDict: [String: Any] = [
+            "id": "artifact-pp-006",
+            "type": "PUBLISH_PROMPT",
+            "content": [
+                "promptId": "clprompt000000000000001",
+                "promptVersionId": "clversion000000000000007",
+                "promptName": "my-cool-prompt",
+                "published": false
+            ] as [String: Any]
+        ]
+        var artifact = HiveChatMessageArtifact(json: JSON(jsonDict))
+
+        XCTAssertFalse(artifact.publishPromptContent?.published ?? true)
+        artifact.publishPromptContent?.published = true
+        XCTAssertTrue(artifact.publishPromptContent?.published ?? false,
+                      "publishPromptContent.published should be mutable and reflect the flip")
+    }
+
+    func testArtifact_NonPublishPromptType_HasNilPublishPromptContent() {
+        let jsonDict: [String: Any] = [
+            "id": "artifact-pr-002",
+            "type": "PULL_REQUEST",
+            "content": ["url": "https://github.com/org/repo/pull/1", "status": "OPEN"] as [String: Any]
+        ]
+        let artifact = HiveChatMessageArtifact(json: JSON(jsonDict))
+
+        XCTAssertFalse(artifact.isPublishPrompt)
+        XCTAssertNil(artifact.publishPromptContent, "Non-PUBLISH_PROMPT artifact must have nil publishPromptContent")
+    }
+
+    func testIsPublishPrompt_FalseForOtherTypes() {
+        let types = ["PULL_REQUEST", "LONGFORM", "PLAN", "STREAM", "WORKFLOW",
+                     "CODE", "DIFF", "PUBLISH_SCRIPT", "PUBLISH_WORKFLOW"]
+        for typeStr in types {
+            let jsonDict: [String: Any] = [
+                "id": "artifact-type-pp-\(typeStr)",
+                "type": typeStr,
+                "content": ""
+            ]
+            let artifact = HiveChatMessageArtifact(json: JSON(jsonDict))
+            XCTAssertFalse(artifact.isPublishPrompt,
+                           "isPublishPrompt should be false for type \(typeStr)")
+        }
+    }
+
+    func testIsDisplayable_PublishPromptArtifact_ReturnsTrue() {
+        // PUBLISH_PROMPT is not STREAM or WORKFLOW, so isDisplayable must be true
+        let jsonDict: [String: Any] = [
+            "id": "msg-pp-001",
+            "message": "",
+            "role": "ASSISTANT",
+            "artifacts": [
+                [
+                    "id": "artifact-pp-display",
+                    "type": "PUBLISH_PROMPT",
+                    "content": [
+                        "promptId": "clprompt000000000000001",
+                        "promptVersionId": "clversion000000000000007",
+                        "promptName": "my-cool-prompt",
+                        "published": false
+                    ] as [String: Any]
+                ] as [String: Any]
+            ] as [Any]
+        ]
+        let message = HiveChatMessage(json: JSON(jsonDict))
+        XCTAssertNotNil(message)
+        XCTAssertTrue(message?.isDisplayable == true,
+                      "A message with a PUBLISH_PROMPT artifact should be displayable")
+    }
 }
