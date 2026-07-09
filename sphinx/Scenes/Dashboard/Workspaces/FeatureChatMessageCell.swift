@@ -370,7 +370,7 @@ class FeatureChatMessageCell: UITableViewCell {
             currentPublishPromptArtifact = nil
             publishPromptCardView.onPublishTapped = nil
             publishPromptCardView.onOpenVersionTapped = nil
-            configureBottomJoinedCard(isUser: isUser, bottomCard: publishScriptCardView)
+            configureBottomJoinedCard(isUser: isUser, bottomCard: publishScriptCardView, widthMultiplier: 0.78, useLeqConstraint: true)
             publishScriptCardView.onPublishTapped = { [weak self] in
                 guard let self, let artifact = self.currentPublishScriptArtifact else { return }
                 self.onPublishScriptTapped?(artifact)
@@ -390,7 +390,7 @@ class FeatureChatMessageCell: UITableViewCell {
             currentPublishPromptArtifact = nil
             publishPromptCardView.onPublishTapped = nil
             publishPromptCardView.onOpenVersionTapped = nil
-            configureBottomJoinedCard(isUser: isUser, bottomCard: publishWorkflowCardView)
+            configureBottomJoinedCard(isUser: isUser, bottomCard: publishWorkflowCardView, widthMultiplier: 0.78, useLeqConstraint: true)
             publishWorkflowCardView.onPublishTapped = { [weak self] in
                 guard let self, let artifact = self.currentPublishWorkflowArtifact else { return }
                 self.onPublishWorkflowTapped?(artifact)
@@ -407,7 +407,7 @@ class FeatureChatMessageCell: UITableViewCell {
             publishWorkflowCardView.isHidden = true
             currentPublishWorkflowArtifact = nil
             publishWorkflowCardView.onPublishTapped = nil
-            configureBottomJoinedCard(isUser: isUser, bottomCard: publishPromptCardView)
+            configureBottomJoinedCard(isUser: isUser, bottomCard: publishPromptCardView, widthMultiplier: 0.78, useLeqConstraint: true)
             publishPromptCardView.onPublishTapped = { [weak self] in
                 guard let self, let artifact = self.currentPublishPromptArtifact else { return }
                 self.onPublishPromptTapped?(artifact)
@@ -656,11 +656,27 @@ class FeatureChatMessageCell: UITableViewCell {
     // MARK: - Bottom-joined card geometry helpers
 
     /// Applies the shared bubble layout for any bottom-joined card (PR, Publish Script, Publish Workflow).
-    /// Expands bubble to 60%, disables masksToBounds on bubbleView, moves colour to textBackgroundView
-    /// (top-corners only), and rounds only the bottom corners of the given card view.
-    private func configureBottomJoinedCard(isUser: Bool, bottomCard: UIView) {
+    /// Expands bubble to `widthMultiplier` of contentView width.  PR card uses the default 0.60 equality
+    /// constraint; publish cards pass 0.78 with `useLeqConstraint: true` so short-text cards hug their
+    /// content while long messages expand up to the cap.
+    private func configureBottomJoinedCard(
+        isUser: Bool,
+        bottomCard: UIView,
+        widthMultiplier: CGFloat = 0.60,
+        useLeqConstraint: Bool = false
+    ) {
         bubbleWidthConstraint.isActive = false
-        bubbleWidthConstraint = bubbleView.widthAnchor.constraint(equalTo: contentView.widthAnchor, multiplier: 0.60)
+        if useLeqConstraint {
+            bubbleWidthConstraint = bubbleView.widthAnchor.constraint(
+                lessThanOrEqualTo: contentView.widthAnchor,
+                multiplier: widthMultiplier
+            )
+        } else {
+            bubbleWidthConstraint = bubbleView.widthAnchor.constraint(
+                equalTo: contentView.widthAnchor,
+                multiplier: widthMultiplier
+            )
+        }
         bubbleWidthConstraint.isActive = true
 
         bubbleView.layer.cornerRadius = 18
@@ -719,6 +735,7 @@ class FeatureChatMessageCell: UITableViewCell {
     var _publishWorkflowCardViewIsHidden: Bool { publishWorkflowCardView.isHidden }
     var _currentPublishPromptArtifact: HiveChatMessageArtifact? { currentPublishPromptArtifact }
     var _publishPromptCardView: PublishPromptCardView { publishPromptCardView }
+    var _bubbleWidthConstraint: NSLayoutConstraint { bubbleWidthConstraint }
     #endif
 
     override func prepareForReuse() {
