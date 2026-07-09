@@ -1744,6 +1744,24 @@ extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
                 backColor: UIColor.Sphinx.PrimaryRed, backAlpha: 1.0)
             return
         }
+
+        // Bail early if a publish is already in flight for this artifact (duplicate-tap guard).
+        if content.loading { return }
+
+        // Set model loading flag and update the card immediately.
+        for msgIdx in messages.indices {
+            for artIdx in messages[msgIdx].artifacts.indices {
+                if messages[msgIdx].artifacts[artIdx].id == artifactId {
+                    messages[msgIdx].artifacts[artIdx].publishScriptContent?.loading = true
+                }
+            }
+        }
+        // Re-resolve current row by stable artifactId (rows may shift due to SSE reindexing).
+        if let resolvedRow = displayMessages.firstIndex(where: { $0.artifacts.contains(where: { $0.id == artifactId }) }),
+           let cell = chatTableView.cellForRow(at: IndexPath(row: resolvedRow, section: 0)) as? FeatureChatMessageCell {
+            cell.setPublishScriptLoading(true, for: artifactId)
+        }
+
         API.sharedInstance.publishScriptVersionWithAuth(
             scriptId: scriptId,
             versionId: versionId,
@@ -1751,16 +1769,24 @@ extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
             callback: { [weak self] in
                 DispatchQueue.main.async {
                     guard let self else { return }
-                    // Flip the in-memory artifact's published state
-                    if let msgIdx = self.messages.firstIndex(where: { $0.id == self.displayMessages[indexPath.row].id }) {
+                    // Re-resolve the target message by stable artifact id to avoid stale-indexPath race.
+                    var resolvedRow: Int? = nil
+                    for (msgIdx, msg) in self.messages.enumerated() {
                         for artIdx in self.messages[msgIdx].artifacts.indices {
                             if self.messages[msgIdx].artifacts[artIdx].id == artifactId {
                                 self.messages[msgIdx].artifacts[artIdx].publishScriptContent?.published = true
+                                self.messages[msgIdx].artifacts[artIdx].publishScriptContent?.loading = false
+                                if let dispIdx = self.displayMessages.firstIndex(where: { $0.id == msg.id }) {
+                                    resolvedRow = dispIdx
+                                }
                             }
                         }
                     }
-                    // Flip the card in-place without full reload
-                    if let cell = self.chatTableView.cellForRow(at: indexPath) as? FeatureChatMessageCell {
+                    // Flip the card in-place only if the cell at the resolved row still hosts this artifact
+                    if let row = resolvedRow,
+                       row < self.displayMessages.count,
+                       self.displayMessages[row].artifacts.contains(where: { $0.id == artifactId }),
+                       let cell = self.chatTableView.cellForRow(at: IndexPath(row: row, section: 0)) as? FeatureChatMessageCell {
                         cell.flipPublishScriptToPublished()
                     }
                 }
@@ -1780,6 +1806,24 @@ extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
                             delay: 3, textColor: .white,
                             backColor: UIColor.Sphinx.PrimaryRed, backAlpha: 1.0)
                     }
+                    // Reset loading flag on model and revert card to tappable state.
+                    var resolvedRow: Int? = nil
+                    for (msgIdx, msg) in self.messages.enumerated() {
+                        for artIdx in self.messages[msgIdx].artifacts.indices {
+                            if self.messages[msgIdx].artifacts[artIdx].id == artifactId {
+                                self.messages[msgIdx].artifacts[artIdx].publishScriptContent?.loading = false
+                                if let dispIdx = self.displayMessages.firstIndex(where: { $0.id == msg.id }) {
+                                    resolvedRow = dispIdx
+                                }
+                            }
+                        }
+                    }
+                    if let row = resolvedRow,
+                       row < self.displayMessages.count,
+                       self.displayMessages[row].artifacts.contains(where: { $0.id == artifactId }),
+                       let cell = self.chatTableView.cellForRow(at: IndexPath(row: row, section: 0)) as? FeatureChatMessageCell {
+                        cell.setPublishScriptLoading(false, for: artifactId)
+                    }
                 }
             }
         )
@@ -1795,6 +1839,24 @@ extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
                 backColor: UIColor.Sphinx.PrimaryRed, backAlpha: 1.0)
             return
         }
+
+        // Bail early if a publish is already in flight for this artifact (duplicate-tap guard).
+        if content.loading { return }
+
+        // Set model loading flag and update the card immediately.
+        for msgIdx in messages.indices {
+            for artIdx in messages[msgIdx].artifacts.indices {
+                if messages[msgIdx].artifacts[artIdx].id == artifactId {
+                    messages[msgIdx].artifacts[artIdx].publishWorkflowContent?.loading = true
+                }
+            }
+        }
+        // Re-resolve current row by stable artifactId (rows may shift due to SSE reindexing).
+        if let resolvedRow = displayMessages.firstIndex(where: { $0.artifacts.contains(where: { $0.id == artifactId }) }),
+           let cell = chatTableView.cellForRow(at: IndexPath(row: resolvedRow, section: 0)) as? FeatureChatMessageCell {
+            cell.setPublishWorkflowLoading(true, for: artifactId)
+        }
+
         API.sharedInstance.publishWorkflowWithAuth(
             workflowId: workflowId,
             workflowRefId: content.workflowRefId,
@@ -1808,9 +1870,8 @@ extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
                     for (msgIdx, msg) in self.messages.enumerated() {
                         for artIdx in msg.artifacts.indices {
                             if self.messages[msgIdx].artifacts[artIdx].id == artifactId {
-                                // Flip the in-memory published flag
                                 self.messages[msgIdx].artifacts[artIdx].publishWorkflowContent?.published = true
-                                // Try to find its current row in displayMessages
+                                self.messages[msgIdx].artifacts[artIdx].publishWorkflowContent?.loading = false
                                 if let dispIdx = self.displayMessages.firstIndex(where: { $0.id == msg.id }) {
                                     resolvedRow = dispIdx
                                 }
@@ -1842,6 +1903,24 @@ extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
                             delay: 3, textColor: .white,
                             backColor: UIColor.Sphinx.PrimaryRed, backAlpha: 1.0)
                     }
+                    // Reset loading flag on model and revert card to tappable state.
+                    var resolvedRow: Int? = nil
+                    for (msgIdx, msg) in self.messages.enumerated() {
+                        for artIdx in self.messages[msgIdx].artifacts.indices {
+                            if self.messages[msgIdx].artifacts[artIdx].id == artifactId {
+                                self.messages[msgIdx].artifacts[artIdx].publishWorkflowContent?.loading = false
+                                if let dispIdx = self.displayMessages.firstIndex(where: { $0.id == msg.id }) {
+                                    resolvedRow = dispIdx
+                                }
+                            }
+                        }
+                    }
+                    if let row = resolvedRow,
+                       row < self.displayMessages.count,
+                       self.displayMessages[row].artifacts.contains(where: { $0.id == artifactId }),
+                       let cell = self.chatTableView.cellForRow(at: IndexPath(row: row, section: 0)) as? FeatureChatMessageCell {
+                        cell.setPublishWorkflowLoading(false, for: artifactId)
+                    }
                 }
             }
         )
@@ -1861,6 +1940,24 @@ extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
                 backColor: UIColor.Sphinx.PrimaryRed, backAlpha: 1.0)
             return
         }
+
+        // Bail early if a publish is already in flight for this artifact (duplicate-tap guard).
+        if content.loading { return }
+
+        // Set model loading flag and update the card immediately.
+        for msgIdx in messages.indices {
+            for artIdx in messages[msgIdx].artifacts.indices {
+                if messages[msgIdx].artifacts[artIdx].id == artifactId {
+                    messages[msgIdx].artifacts[artIdx].publishPromptContent?.loading = true
+                }
+            }
+        }
+        // Re-resolve current row by stable artifactId (rows may shift due to SSE reindexing).
+        if let resolvedRow = displayMessages.firstIndex(where: { $0.artifacts.contains(where: { $0.id == artifactId }) }),
+           let cell = chatTableView.cellForRow(at: IndexPath(row: resolvedRow, section: 0)) as? FeatureChatMessageCell {
+            cell.setPublishPromptLoading(true, for: artifactId)
+        }
+
         API.sharedInstance.publishPromptVersionWithAuth(
             promptId: promptId,
             versionId: versionId,
@@ -1871,9 +1968,10 @@ extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
                     // Flip in-memory artifact's published state; resolve by stable artifact id
                     var resolvedRow: Int? = nil
                     for (msgIdx, msg) in self.messages.enumerated() {
-                        for artIdx in msg.artifacts.indices {
+                        for artIdx in self.messages[msgIdx].artifacts.indices {
                             if self.messages[msgIdx].artifacts[artIdx].id == artifactId {
                                 self.messages[msgIdx].artifacts[artIdx].publishPromptContent?.published = true
+                                self.messages[msgIdx].artifacts[artIdx].publishPromptContent?.loading = false
                                 if let dispIdx = self.displayMessages.firstIndex(where: { $0.id == msg.id }) {
                                     resolvedRow = dispIdx
                                 }
@@ -1903,6 +2001,24 @@ extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
                             text: "Failed to publish prompt. Please try again.",
                             delay: 3, textColor: .white,
                             backColor: UIColor.Sphinx.PrimaryRed, backAlpha: 1.0)
+                    }
+                    // Reset loading flag on model and revert card to tappable state.
+                    var resolvedRow: Int? = nil
+                    for (msgIdx, msg) in self.messages.enumerated() {
+                        for artIdx in self.messages[msgIdx].artifacts.indices {
+                            if self.messages[msgIdx].artifacts[artIdx].id == artifactId {
+                                self.messages[msgIdx].artifacts[artIdx].publishPromptContent?.loading = false
+                                if let dispIdx = self.displayMessages.firstIndex(where: { $0.id == msg.id }) {
+                                    resolvedRow = dispIdx
+                                }
+                            }
+                        }
+                    }
+                    if let row = resolvedRow,
+                       row < self.displayMessages.count,
+                       self.displayMessages[row].artifacts.contains(where: { $0.id == artifactId }),
+                       let cell = self.chatTableView.cellForRow(at: IndexPath(row: row, section: 0)) as? FeatureChatMessageCell {
+                        cell.setPublishPromptLoading(false, for: artifactId)
                     }
                 }
             }

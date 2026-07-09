@@ -714,11 +714,25 @@ class FeatureChatMessageCell: UITableViewCell {
         publishScriptCardView.setPublished(true)
     }
 
+    /// Sets the loading state on the publish script card if this cell currently hosts the given artifactId.
+    /// Guards against mutating a recycled/off-screen cell that no longer owns this artifact.
+    func setPublishScriptLoading(_ loading: Bool, for artifactId: String) {
+        guard let artifact = currentPublishScriptArtifact, artifact.id == artifactId else { return }
+        publishScriptCardView.setLoading(loading)
+    }
+
     // MARK: - Publish Workflow helpers
 
     /// Flips the publish workflow card to the "Published ✓" state in-place without a full reload.
     func flipPublishWorkflowToPublished() {
         publishWorkflowCardView.setPublished(true)
+    }
+
+    /// Sets the loading state on the publish workflow card if this cell currently hosts the given artifactId.
+    /// Guards against mutating a recycled/off-screen cell that no longer owns this artifact.
+    func setPublishWorkflowLoading(_ loading: Bool, for artifactId: String) {
+        guard let artifact = currentPublishWorkflowArtifact, artifact.id == artifactId else { return }
+        publishWorkflowCardView.setLoading(loading)
     }
 
     // MARK: - Publish Prompt helpers
@@ -728,13 +742,24 @@ class FeatureChatMessageCell: UITableViewCell {
         publishPromptCardView.setPublished(true)
     }
 
+    /// Sets the loading state on the publish prompt card if this cell currently hosts the given artifactId.
+    /// Guards against mutating a recycled/off-screen cell that no longer owns this artifact.
+    func setPublishPromptLoading(_ loading: Bool, for artifactId: String) {
+        guard let artifact = currentPublishPromptArtifact, artifact.id == artifactId else { return }
+        publishPromptCardView.setLoading(loading)
+    }
+
     // MARK: - Test seams (DEBUG only)
     #if DEBUG
     var _publishPromptCardViewIsHidden: Bool { publishPromptCardView.isHidden }
     var _publishScriptCardViewIsHidden: Bool { publishScriptCardView.isHidden }
     var _publishWorkflowCardViewIsHidden: Bool { publishWorkflowCardView.isHidden }
     var _currentPublishPromptArtifact: HiveChatMessageArtifact? { currentPublishPromptArtifact }
+    var _currentPublishScriptArtifact: HiveChatMessageArtifact? { currentPublishScriptArtifact }
+    var _currentPublishWorkflowArtifact: HiveChatMessageArtifact? { currentPublishWorkflowArtifact }
     var _publishPromptCardView: PublishPromptCardView { publishPromptCardView }
+    var _publishScriptCardView: PublishScriptCardView { publishScriptCardView }
+    var _publishWorkflowCardView: PublishWorkflowCardView { publishWorkflowCardView }
     var _bubbleWidthConstraint: NSLayoutConstraint { bubbleWidthConstraint }
     #endif
 
