@@ -216,11 +216,9 @@ final class ActiveCallBannerView: UIView {
     private func updateActionButton(isAlreadyInCall: Bool) {
         let title = isAlreadyInCall
             ? "open.call".localized
-            : "join.call".localized
+            : "join.call.short".localized
         actionButton.setTitle(title, for: .normal)
-        actionButton.backgroundColor = isAlreadyInCall
-            ? UIColor.Sphinx.PrimaryBlue
-            : UIColor.Sphinx.PrimaryGreen
+        actionButton.backgroundColor = UIColor.Sphinx.PrimaryBlue
         actionButton.setTitleColor(.white, for: .normal)
     }
 
