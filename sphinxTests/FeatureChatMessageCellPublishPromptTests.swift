@@ -301,4 +301,79 @@ class FeatureChatMessageCellPublishPromptTests: XCTestCase {
         XCTAssertTrue(cell._publishPromptCardViewIsHidden,
                       "Prompt card should be hidden when script takes precedence")
     }
+
+    // MARK: - Tests: Bubble width constraints for publish cards vs PR card
+
+    /// Helper that builds a minimal PR artifact message.
+    private func makePRMessage() -> HiveChatMessage? {
+        let jsonDict: [String: Any] = [
+            "id": "msg-pr-test-001",
+            "message": "PR created",
+            "role": "ASSISTANT",
+            "artifacts": [
+                [
+                    "id": "artifact-pr-test-001",
+                    "type": "GITHUB_PR",
+                    "content": [
+                        "pullRequestUrl": "https://github.com/org/repo/pull/1",
+                        "title": "Fix bug",
+                        "status": "open"
+                    ] as [String: Any]
+                ] as [String: Any]
+            ] as [Any]
+        ]
+        return HiveChatMessage(json: JSON(jsonDict))
+    }
+
+    func testPublishPromptCard_BubbleWidthIsLeqConstraint() {
+        let cell = makeCell()
+        guard let message = makePublishPromptMessage() else {
+            XCTFail("Failed to create PUBLISH_PROMPT message fixture"); return
+        }
+        cell.configure(with: message)
+        let constraint = cell._bubbleWidthConstraint
+        XCTAssertEqual(constraint.relation, .lessThanOrEqual,
+                       "Publish prompt bubble width should use a lessThanOrEqual constraint")
+        XCTAssertEqual(constraint.multiplier, 0.78, accuracy: 0.001,
+                       "Publish prompt bubble width multiplier should be ~0.78")
+    }
+
+    func testPublishScriptCard_BubbleWidthIsLeqConstraint() {
+        let cell = makeCell()
+        guard let message = makePublishScriptMessage() else {
+            XCTFail("Failed to create PUBLISH_SCRIPT message fixture"); return
+        }
+        cell.configure(with: message)
+        let constraint = cell._bubbleWidthConstraint
+        XCTAssertEqual(constraint.relation, .lessThanOrEqual,
+                       "Publish script bubble width should use a lessThanOrEqual constraint")
+        XCTAssertEqual(constraint.multiplier, 0.78, accuracy: 0.001,
+                       "Publish script bubble width multiplier should be ~0.78")
+    }
+
+    func testPublishWorkflowCard_BubbleWidthIsLeqConstraint() {
+        let cell = makeCell()
+        guard let message = makePublishWorkflowMessage() else {
+            XCTFail("Failed to create PUBLISH_WORKFLOW message fixture"); return
+        }
+        cell.configure(with: message)
+        let constraint = cell._bubbleWidthConstraint
+        XCTAssertEqual(constraint.relation, .lessThanOrEqual,
+                       "Publish workflow bubble width should use a lessThanOrEqual constraint")
+        XCTAssertEqual(constraint.multiplier, 0.78, accuracy: 0.001,
+                       "Publish workflow bubble width multiplier should be ~0.78")
+    }
+
+    func testPRCard_BubbleWidthIsEqualConstraintAt060() {
+        let cell = makeCell()
+        guard let message = makePRMessage() else {
+            XCTFail("Failed to create PR message fixture"); return
+        }
+        cell.configure(with: message)
+        let constraint = cell._bubbleWidthConstraint
+        XCTAssertEqual(constraint.relation, .equal,
+                       "PR card bubble width should use an equality constraint (unchanged)")
+        XCTAssertEqual(constraint.multiplier, 0.60, accuracy: 0.001,
+                       "PR card bubble width multiplier should remain 0.60")
+    }
 }
