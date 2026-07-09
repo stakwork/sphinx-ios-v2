@@ -115,11 +115,21 @@ class FeatureChatMessageCell: UITableViewCell {
         return v
     }()
 
+    /// Publish prompt card — only shown when a PUBLISH_PROMPT artifact is present.
+    private let publishPromptCardView: PublishPromptCardView = {
+        let v = PublishPromptCardView()
+        v.isHidden = true
+        return v
+    }()
+
     /// Retains the current PUBLISH_SCRIPT artifact for closure bridging.
     private var currentPublishScriptArtifact: HiveChatMessageArtifact?
 
     /// Retains the current PUBLISH_WORKFLOW artifact for closure bridging.
     private var currentPublishWorkflowArtifact: HiveChatMessageArtifact?
+
+    /// Retains the current PUBLISH_PROMPT artifact for closure bridging.
+    private var currentPublishPromptArtifact: HiveChatMessageArtifact?
 
     // MARK: - Callbacks
 
@@ -138,6 +148,10 @@ class FeatureChatMessageCell: UITableViewCell {
     var onOpenScriptVersionTapped: ((_ artifact: HiveChatMessageArtifact) -> Void)?
     /// Called when the user taps "Publish" on the publish workflow card.
     var onPublishWorkflowTapped: ((_ artifact: HiveChatMessageArtifact) -> Void)?
+    /// Called when the user taps "Publish" on the publish prompt card.
+    var onPublishPromptTapped: ((_ artifact: HiveChatMessageArtifact) -> Void)?
+    /// Called when the user taps the version row / external-link on the publish prompt card.
+    var onOpenPromptVersionTapped: ((_ artifact: HiveChatMessageArtifact) -> Void)?
 
     // MARK: - Attachment grid
     private let attachmentGridView: AttachmentGridView = {
@@ -203,8 +217,8 @@ class FeatureChatMessageCell: UITableViewCell {
         // Wire logs header tap
         logsHeaderButton.addTarget(self, action: #selector(logsHeaderTapped), for: .touchUpInside)
 
-        // Vertical stack inside bubble: text + logs header + logs body + optional PR card + optional publish script/workflow card + optional attachment grid
-        bubbleStack = UIStackView(arrangedSubviews: [messageTextView, logsHeaderButton, logsBodyTextView, prCardView, publishScriptCardView, publishWorkflowCardView, attachmentGridView])
+        // Vertical stack inside bubble: text + logs header + logs body + optional PR card + optional publish script/workflow/prompt card + optional attachment grid
+        bubbleStack = UIStackView(arrangedSubviews: [messageTextView, logsHeaderButton, logsBodyTextView, prCardView, publishScriptCardView, publishWorkflowCardView, publishPromptCardView, attachmentGridView])
         bubbleStack.translatesAutoresizingMaskIntoConstraints = false
         bubbleStack.axis = .vertical
         bubbleStack.spacing = 0
@@ -339,10 +353,11 @@ class FeatureChatMessageCell: UITableViewCell {
             prCardView.isHidden = true
         }
 
-        // --- Publish Script / Publish Workflow artifact cards ---
-        // A message will carry at most one of these; script takes precedence if both appear.
+        // --- Publish Script / Publish Workflow / Publish Prompt artifact cards ---
+        // A message carries at most one of these; precedence order is script → workflow → prompt.
         let psArtifact = message.artifacts.first(where: { $0.isPublishScript })
         let pwArtifact = message.artifacts.first(where: { $0.isPublishWorkflow })
+        let ppArtifact = message.artifacts.first(where: { $0.isPublishPrompt })
 
         if let psArtifact, let psContent = psArtifact.publishScriptContent {
             // Publish Script card
@@ -351,6 +366,10 @@ class FeatureChatMessageCell: UITableViewCell {
             publishScriptCardView.isHidden = false
             publishWorkflowCardView.isHidden = true
             currentPublishWorkflowArtifact = nil
+            publishPromptCardView.isHidden = true
+            currentPublishPromptArtifact = nil
+            publishPromptCardView.onPublishTapped = nil
+            publishPromptCardView.onOpenVersionTapped = nil
             configureBottomJoinedCard(isUser: isUser, bottomCard: publishScriptCardView)
             publishScriptCardView.onPublishTapped = { [weak self] in
                 guard let self, let artifact = self.currentPublishScriptArtifact else { return }
@@ -367,20 +386,49 @@ class FeatureChatMessageCell: UITableViewCell {
             publishWorkflowCardView.isHidden = false
             publishScriptCardView.isHidden = true
             currentPublishScriptArtifact = nil
+            publishPromptCardView.isHidden = true
+            currentPublishPromptArtifact = nil
+            publishPromptCardView.onPublishTapped = nil
+            publishPromptCardView.onOpenVersionTapped = nil
             configureBottomJoinedCard(isUser: isUser, bottomCard: publishWorkflowCardView)
             publishWorkflowCardView.onPublishTapped = { [weak self] in
                 guard let self, let artifact = self.currentPublishWorkflowArtifact else { return }
                 self.onPublishWorkflowTapped?(artifact)
             }
+        } else if let ppArtifact, let ppContent = ppArtifact.publishPromptContent {
+            // Publish Prompt card
+            currentPublishPromptArtifact = ppArtifact
+            publishPromptCardView.configure(with: ppContent)
+            publishPromptCardView.isHidden = false
+            publishScriptCardView.isHidden = true
+            currentPublishScriptArtifact = nil
+            publishScriptCardView.onPublishTapped = nil
+            publishScriptCardView.onOpenVersionTapped = nil
+            publishWorkflowCardView.isHidden = true
+            currentPublishWorkflowArtifact = nil
+            publishWorkflowCardView.onPublishTapped = nil
+            configureBottomJoinedCard(isUser: isUser, bottomCard: publishPromptCardView)
+            publishPromptCardView.onPublishTapped = { [weak self] in
+                guard let self, let artifact = self.currentPublishPromptArtifact else { return }
+                self.onPublishPromptTapped?(artifact)
+            }
+            publishPromptCardView.onOpenVersionTapped = { [weak self] in
+                guard let self, let artifact = self.currentPublishPromptArtifact else { return }
+                self.onOpenPromptVersionTapped?(artifact)
+            }
         } else {
-            // No publish card — hide both, clear state
+            // No publish card — hide all three, clear state
             publishScriptCardView.isHidden = true
             publishWorkflowCardView.isHidden = true
+            publishPromptCardView.isHidden = true
             currentPublishScriptArtifact = nil
             currentPublishWorkflowArtifact = nil
+            currentPublishPromptArtifact = nil
             publishScriptCardView.onPublishTapped = nil
             publishScriptCardView.onOpenVersionTapped = nil
             publishWorkflowCardView.onPublishTapped = nil
+            publishPromptCardView.onPublishTapped = nil
+            publishPromptCardView.onOpenVersionTapped = nil
             // Only restore default bubble geometry when there's also no PR card.
             // If a PR card is present it already called configureBottomJoinedCard above.
             if message.artifacts.first(where: { $0.isPullRequest }) == nil {
@@ -657,6 +705,22 @@ class FeatureChatMessageCell: UITableViewCell {
         publishWorkflowCardView.setPublished(true)
     }
 
+    // MARK: - Publish Prompt helpers
+
+    /// Flips the publish prompt card to the "Published ✓" state in-place without a full reload.
+    func flipPublishPromptToPublished() {
+        publishPromptCardView.setPublished(true)
+    }
+
+    // MARK: - Test seams (DEBUG only)
+    #if DEBUG
+    var _publishPromptCardViewIsHidden: Bool { publishPromptCardView.isHidden }
+    var _publishScriptCardViewIsHidden: Bool { publishScriptCardView.isHidden }
+    var _publishWorkflowCardViewIsHidden: Bool { publishWorkflowCardView.isHidden }
+    var _currentPublishPromptArtifact: HiveChatMessageArtifact? { currentPublishPromptArtifact }
+    var _publishPromptCardView: PublishPromptCardView { publishPromptCardView }
+    #endif
+
     override func prepareForReuse() {
         super.prepareForReuse()
 
@@ -697,6 +761,17 @@ class FeatureChatMessageCell: UITableViewCell {
         publishWorkflowCardView.layer.masksToBounds = true
         currentPublishWorkflowArtifact = nil
         onPublishWorkflowTapped = nil
+        publishPromptCardView.isHidden = true
+        publishPromptCardView.onPublishTapped = nil
+        publishPromptCardView.onOpenVersionTapped = nil
+        publishPromptCardView.layer.maskedCorners = [
+            .layerMinXMinYCorner, .layerMaxXMinYCorner,
+            .layerMinXMaxYCorner, .layerMaxXMaxYCorner
+        ]
+        publishPromptCardView.layer.masksToBounds = true
+        currentPublishPromptArtifact = nil
+        onPublishPromptTapped = nil
+        onOpenPromptVersionTapped = nil
         suggestionChipsView.clear()
         chipsTopConstraint.isActive         = false
         chipsLeadingConstraint.isActive     = false
