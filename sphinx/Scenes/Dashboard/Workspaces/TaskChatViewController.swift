@@ -1712,6 +1712,9 @@ extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
                 UIApplication.shared.open(url)
             }
         }
+        cell.onPublishWorkflowTapped = { [weak self] artifact in
+            self?.handlePublishWorkflow(artifact: artifact, at: indexPath)
+        }
         return cell
     }
 
@@ -1759,6 +1762,68 @@ extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
                     case .generic:
                         self.bubbleHelper.showGenericMessageView(
                             text: "Failed to publish script. Please try again.",
+                            delay: 3, textColor: .white,
+                            backColor: UIColor.Sphinx.PrimaryRed, backAlpha: 1.0)
+                    }
+                }
+            }
+        )
+    }
+
+    private func handlePublishWorkflow(artifact: HiveChatMessageArtifact, at indexPath: IndexPath) {
+        guard let content = artifact.publishWorkflowContent,
+              let workflowId = content.workflowId,
+              let artifactId = artifact.id else {
+            bubbleHelper.showGenericMessageView(
+                text: "Unable to publish: missing workflow information.",
+                delay: 3, textColor: .white,
+                backColor: UIColor.Sphinx.PrimaryRed, backAlpha: 1.0)
+            return
+        }
+        API.sharedInstance.publishWorkflowWithAuth(
+            workflowId: workflowId,
+            workflowRefId: content.workflowRefId,
+            artifactId: artifactId,
+            callback: { [weak self] in
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    // Re-resolve the target message by stable artifact id to avoid stale-indexPath race.
+                    // SSE/WebSocket updates can reload and reindex displayMessages between tap and callback.
+                    var resolvedRow: Int? = nil
+                    for (msgIdx, msg) in self.messages.enumerated() {
+                        for artIdx in msg.artifacts.indices {
+                            if self.messages[msgIdx].artifacts[artIdx].id == artifactId {
+                                // Flip the in-memory published flag
+                                self.messages[msgIdx].artifacts[artIdx].publishWorkflowContent?.published = true
+                                // Try to find its current row in displayMessages
+                                if let dispIdx = self.displayMessages.firstIndex(where: { $0.id == msg.id }) {
+                                    resolvedRow = dispIdx
+                                }
+                            }
+                        }
+                    }
+                    // Flip the card in-place only if the cell at the resolved row still hosts this artifact
+                    if let row = resolvedRow,
+                       row < self.displayMessages.count,
+                       self.displayMessages[row].artifacts.contains(where: { $0.id == artifactId }),
+                       let cell = self.chatTableView.cellForRow(at: IndexPath(row: row, section: 0)) as? FeatureChatMessageCell {
+                        cell.flipPublishWorkflowToPublished()
+                    }
+                    // If not visible, model update above will reflect on next render.
+                }
+            },
+            errorCallback: { [weak self] error in
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    switch error {
+                    case .forbidden:
+                        self.bubbleHelper.showGenericMessageView(
+                            text: "You don't have permission to publish this workflow.",
+                            delay: 3, textColor: .white,
+                            backColor: UIColor.Sphinx.PrimaryRed, backAlpha: 1.0)
+                    case .generic:
+                        self.bubbleHelper.showGenericMessageView(
+                            text: "Failed to publish workflow. Please try again.",
                             delay: 3, textColor: .white,
                             backColor: UIColor.Sphinx.PrimaryRed, backAlpha: 1.0)
                     }
