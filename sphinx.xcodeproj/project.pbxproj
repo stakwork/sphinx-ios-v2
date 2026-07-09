@@ -669,6 +669,7 @@
 		4AC66B19341A44DA8F5A0F1E /* MarkdownRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5D5C9BE1416497D9EEB9877 /* MarkdownRenderer.swift */; };
 		5010E69969BC4B008CB1B8DB /* HiveChatMessageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F4B101D1E0946E1A2ED0FCA /* HiveChatMessageTests.swift */; };
 		FC01AA11BB22CC33DD44EE01 /* FeatureChatMessageCellPublishPromptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC01AA11BB22CC33DD44EE00 /* FeatureChatMessageCellPublishPromptTests.swift */; };
+		PP02BB22CC33DD44EE55FF01 /* PublishPromptHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = PP02BB22CC33DD44EE55FF00 /* PublishPromptHandlerTests.swift */; };
 		5AAB70B77BA445A795F0B858 /* AgentEventsSSEManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4D6CE7267E74E279F16D1AB /* AgentEventsSSEManager.swift */; };
 		5C016925F69F495B8E05C3C9 /* SetupAIAgentViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E36EF502A7E64ABA8FCF503E /* SetupAIAgentViewController.swift */; };
 		64CDB65F07D741A49647B221 /* NewChatViewController+LiveCallBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30E251FCC194421EAB4B8997 /* NewChatViewController+LiveCallBanner.swift */; };
@@ -2045,6 +2046,7 @@
 		9BF56C5719164A1E858E15AA /* WorkspaceFeaturesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceFeaturesViewController.swift; sourceTree = "<group>"; };
 		9F4B101D1E0946E1A2ED0FCA /* HiveChatMessageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveChatMessageTests.swift; sourceTree = "<group>"; };
 		FC01AA11BB22CC33DD44EE00 /* FeatureChatMessageCellPublishPromptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureChatMessageCellPublishPromptTests.swift; sourceTree = "<group>"; };
+		PP02BB22CC33DD44EE55FF00 /* PublishPromptHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublishPromptHandlerTests.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60001A1B2C3D4 /* SphinxToggleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SphinxToggleView.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F601020304050A /* PendingAttachment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingAttachment.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F601020304050C /* PendingAttachmentsBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingAttachmentsBarView.swift; sourceTree = "<group>"; };
@@ -3802,6 +3804,7 @@
 				9B5504520C1B4722A0EBFA00 /* HiveFeatureTests.swift */,
 				9F4B101D1E0946E1A2ED0FCA /* HiveChatMessageTests.swift */,
 				FC01AA11BB22CC33DD44EE00 /* FeatureChatMessageCellPublishPromptTests.swift */,
+				PP02BB22CC33DD44EE55FF00 /* PublishPromptHandlerTests.swift */,
 				WV0000000000000000000004 /* WorkflowVersionTests.swift */,
 				AA001CQ22F9A0001000CQ001 /* ClarifyingQuestionsTests.swift */,
 				B4D0E0284E4B436180B0BAAF /* HivePusherManagerTests.swift */,
@@ -6455,6 +6458,7 @@
 				8A76E71FD2044567BAC32D0D /* HiveFeatureTests.swift in Sources */,
 				5010E69969BC4B008CB1B8DB /* HiveChatMessageTests.swift in Sources */,
 				FC01AA11BB22CC33DD44EE01 /* FeatureChatMessageCellPublishPromptTests.swift in Sources */,
+				PP02BB22CC33DD44EE55FF01 /* PublishPromptHandlerTests.swift in Sources */,
 				WV0000000000000000000003 /* WorkflowVersionTests.swift in Sources */,
 				AA001CQ32F9A0001000CQ001 /* ClarifyingQuestionsTests.swift in Sources */,
 				4779F17A232AA0F300D35E81 /* sphinxOnionAddContactTests.swift in Sources */,

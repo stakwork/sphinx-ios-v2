@@ -1715,6 +1715,21 @@ extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
         cell.onPublishWorkflowTapped = { [weak self] artifact in
             self?.handlePublishWorkflow(artifact: artifact, at: indexPath)
         }
+        cell.onPublishPromptTapped = { [weak self] artifact in
+            self?.handlePublishPrompt(artifact: artifact, at: indexPath)
+        }
+        cell.onOpenPromptVersionTapped = { [weak self] artifact in
+            guard let self,
+                  let content = artifact.publishPromptContent,
+                  let promptId = content.promptId,
+                  let versionId = content.promptVersionId,
+                  !promptId.trimmingCharacters(in: .whitespaces).isEmpty,
+                  !versionId.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+            let urlStr = "https://hive.sphinx.chat/w/\(self.workspaceSlug)/prompts?prompt=\(promptId)&version=\(versionId)"
+            if let url = URL(string: urlStr) {
+                UIApplication.shared.open(url)
+            }
+        }
         return cell
     }
 
@@ -1824,6 +1839,68 @@ extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
                     case .generic:
                         self.bubbleHelper.showGenericMessageView(
                             text: "Failed to publish workflow. Please try again.",
+                            delay: 3, textColor: .white,
+                            backColor: UIColor.Sphinx.PrimaryRed, backAlpha: 1.0)
+                    }
+                }
+            }
+        )
+    }
+
+    private func handlePublishPrompt(artifact: HiveChatMessageArtifact, at indexPath: IndexPath) {
+        guard let content = artifact.publishPromptContent,
+              let promptId = content.promptId,
+              let versionId = content.promptVersionId,
+              let artifactId = artifact.id,
+              !promptId.trimmingCharacters(in: .whitespaces).isEmpty,
+              !versionId.trimmingCharacters(in: .whitespaces).isEmpty,
+              !artifactId.trimmingCharacters(in: .whitespaces).isEmpty else {
+            bubbleHelper.showGenericMessageView(
+                text: "Unable to publish: missing prompt information.",
+                delay: 3, textColor: .white,
+                backColor: UIColor.Sphinx.PrimaryRed, backAlpha: 1.0)
+            return
+        }
+        API.sharedInstance.publishPromptVersionWithAuth(
+            promptId: promptId,
+            versionId: versionId,
+            artifactId: artifactId,
+            callback: { [weak self] in
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    // Flip in-memory artifact's published state; resolve by stable artifact id
+                    var resolvedRow: Int? = nil
+                    for (msgIdx, msg) in self.messages.enumerated() {
+                        for artIdx in msg.artifacts.indices {
+                            if self.messages[msgIdx].artifacts[artIdx].id == artifactId {
+                                self.messages[msgIdx].artifacts[artIdx].publishPromptContent?.published = true
+                                if let dispIdx = self.displayMessages.firstIndex(where: { $0.id == msg.id }) {
+                                    resolvedRow = dispIdx
+                                }
+                            }
+                        }
+                    }
+                    // Flip the card in-place without full reload
+                    if let row = resolvedRow,
+                       row < self.displayMessages.count,
+                       self.displayMessages[row].artifacts.contains(where: { $0.id == artifactId }),
+                       let cell = self.chatTableView.cellForRow(at: IndexPath(row: row, section: 0)) as? FeatureChatMessageCell {
+                        cell.flipPublishPromptToPublished()
+                    }
+                }
+            },
+            errorCallback: { [weak self] error in
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    switch error {
+                    case .forbidden:
+                        self.bubbleHelper.showGenericMessageView(
+                            text: "You don't have permission to publish this prompt.",
+                            delay: 3, textColor: .white,
+                            backColor: UIColor.Sphinx.PrimaryRed, backAlpha: 1.0)
+                    case .generic:
+                        self.bubbleHelper.showGenericMessageView(
+                            text: "Failed to publish prompt. Please try again.",
                             delay: 3, textColor: .white,
                             backColor: UIColor.Sphinx.PrimaryRed, backAlpha: 1.0)
                     }
