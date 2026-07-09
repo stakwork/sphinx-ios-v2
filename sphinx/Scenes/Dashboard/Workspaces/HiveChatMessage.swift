@@ -72,6 +72,9 @@ struct PublishWorkflowContent: Sendable {
     let workflowName: String?
     let workflowRefId: String?
     var published: Bool
+    /// In-flight flag: `true` while the publish API call is in flight.
+    /// Survives table reload / SSE reindex — configure(with:) restores the spinner from this flag.
+    var loading: Bool
 }
 
 // MARK: - Publish Prompt Content
@@ -81,6 +84,9 @@ struct PublishPromptContent: Sendable {
     let promptVersionId: String?
     let promptName: String?
     var published: Bool
+    /// In-flight flag: `true` while the publish API call is in flight.
+    /// Survives table reload / SSE reindex — configure(with:) restores the spinner from this flag.
+    var loading: Bool
 }
 
 // MARK: - Publish Script Content
@@ -90,6 +96,9 @@ struct PublishScriptContent: Sendable {
     let scriptVersionId: Int?
     let scriptName: String?
     var published: Bool
+    /// In-flight flag: `true` while the publish API call is in flight.
+    /// Survives table reload / SSE reindex — configure(with:) restores the spinner from this flag.
+    var loading: Bool
 }
 
 struct WorkflowContent: Sendable {
@@ -263,7 +272,8 @@ struct HiveChatMessageArtifact: @unchecked Sendable {
                 scriptId:        c["scriptId"].int,
                 scriptVersionId: c["scriptVersionId"].int,
                 scriptName:      c["scriptName"].string,
-                published:       c["published"].bool ?? false
+                published:       c["published"].bool ?? false,
+                loading:         false
             )
             self.content = nil
             self.prContent = nil
@@ -281,7 +291,8 @@ struct HiveChatMessageArtifact: @unchecked Sendable {
                 workflowId:    workflowId,
                 workflowName:  c["workflowName"].string,
                 workflowRefId: c["workflowRefId"].string,
-                published:     c["published"].bool ?? false
+                published:     c["published"].bool ?? false,
+                loading:       false
             )
             self.content = nil
             self.prContent = nil
@@ -298,7 +309,8 @@ struct HiveChatMessageArtifact: @unchecked Sendable {
                 promptId:        c["promptId"].string,
                 promptVersionId: c["promptVersionId"].string,
                 promptName:      c["promptName"].string,
-                published:       c["published"].bool ?? false
+                published:       c["published"].bool ?? false,
+                loading:         false
             )
             self.content = nil
             self.prContent = nil

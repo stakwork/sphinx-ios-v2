@@ -83,6 +83,21 @@ class PublishWorkflowCardView: UIView {
         return l
     }()
 
+    /// Spinner shown while the publish API call is in flight.
+    private let loadingIndicator: UIActivityIndicatorView = {
+        let indicator = UIActivityIndicatorView(style: .medium)
+        indicator.translatesAutoresizingMaskIntoConstraints = false
+        indicator.hidesWhenStopped = true
+        indicator.color = UIColor.Sphinx.PrimaryBlue
+        return indicator
+    }()
+
+    // MARK: - State
+
+    /// Persisted published flag so setLoading(false) can decide whether to re-show Publish button
+    /// without relying on publishedLabel.isHidden view state.
+    private var isPublished: Bool = false
+
     // MARK: - Closure
 
     var onPublishTapped: (() -> Void)?
@@ -116,8 +131,8 @@ class PublishWorkflowCardView: UIView {
         topRow.spacing = 8
         topRow.alignment = .center
 
-        // Bottom row: spacer + publish/published
-        let bottomRow = UIStackView(arrangedSubviews: [UIView(), publishButton, publishedLabel])
+        // Bottom row: spacer + spinner + publish/published
+        let bottomRow = UIStackView(arrangedSubviews: [UIView(), loadingIndicator, publishButton, publishedLabel])
         bottomRow.translatesAutoresizingMaskIntoConstraints = false
         bottomRow.axis = .horizontal
         bottomRow.spacing = 8
@@ -171,12 +186,37 @@ class PublishWorkflowCardView: UIView {
             subtitleLabel.text = "Workflow"
         }
         setPublished(content.published)
+        setLoading(content.loading)
     }
+
+    // MARK: - Loading state
+
+    /// Shows a spinner and disables the Publish button while `loading` is true.
+    /// When `false`, hides the spinner and restores the Publish button (unless already published).
+    func setLoading(_ loading: Bool) {
+        if loading {
+            loadingIndicator.startAnimating()
+            publishButton.isHidden = true
+            publishButton.isEnabled = false
+        } else {
+            loadingIndicator.stopAnimating()
+            publishButton.isHidden = isPublished
+            publishButton.isEnabled = true
+        }
+    }
+
+    // MARK: - Published state
 
     /// Flips the card to the Published ✓ state locally without re-configuring the whole card.
     func setPublished(_ published: Bool) {
+        isPublished = published
         publishButton.isHidden = published
         publishedLabel.isHidden = !published
+        // Clear any in-flight loading state on success
+        if published {
+            loadingIndicator.stopAnimating()
+            publishButton.isEnabled = true
+        }
     }
 
     // MARK: - Actions
