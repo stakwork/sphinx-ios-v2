@@ -974,6 +974,7 @@
 		MT01AA11BB22CC33DD44EE02 /* MarkdownTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = MT01AA11BB22CC33DD44EE01 /* MarkdownTableView.swift */; };
 		O5P6Q7R8S9T0U1V2W3X4Y5Z6 /* HiveShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = P6Q7R8S9T0U1V2W3X4Y5Z6A7 /* HiveShareViewController.swift */; };
 		P1Q2R3S4T5U6V7W8X9Y0Z1A2 /* PaginationControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = Q2R3S4T5U6V7W8X9Y0Z1A2B3 /* PaginationControlView.swift */; };
+		PP01AA11BB22CC33DD44EE01 /* PublishPromptCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PP01AA11BB22CC33DD44EE00 /* PublishPromptCardView.swift */; };
 		PS01AA11BB22CC33DD44EE01 /* PublishScriptCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PS01AA11BB22CC33DD44EE00 /* PublishScriptCardView.swift */; };
 		PW01AA11BB22CC33DD44EE01 /* PublishWorkflowCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PW01AA11BB22CC33DD44EE00 /* PublishWorkflowCardView.swift */; };
 		R3S4T5U6V7W8X9Y0Z1A2B3C4 /* PaginationControlViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = S4T5U6V7W8X9Y0Z1A2B3C4D5 /* PaginationControlViewTests.swift */; };
@@ -2385,6 +2386,7 @@
 		MT01AA11BB22CC33DD44EE01 /* MarkdownTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownTableView.swift; sourceTree = "<group>"; };
 		N4O5P6Q7R8S9T0U1V2W3X4Y5 /* HiveProcessingBubbleCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveProcessingBubbleCell.swift; sourceTree = "<group>"; };
 		P6Q7R8S9T0U1V2W3X4Y5Z6A7 /* HiveShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveShareViewController.swift; sourceTree = "<group>"; };
+		PP01AA11BB22CC33DD44EE00 /* PublishPromptCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublishPromptCardView.swift; sourceTree = "<group>"; };
 		PS01AA11BB22CC33DD44EE00 /* PublishScriptCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublishScriptCardView.swift; sourceTree = "<group>"; };
 		PW01AA11BB22CC33DD44EE00 /* PublishWorkflowCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublishWorkflowCardView.swift; sourceTree = "<group>"; };
 		Q2R3S4T5U6V7W8X9Y0Z1A2B3 /* PaginationControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaginationControlView.swift; sourceTree = "<group>"; };
@@ -4264,6 +4266,7 @@
 				A1B2C3D4E5F601020304050C /* PendingAttachmentsBarView.swift */,
 				A1B2C3D4E5F601020304050E /* SpeechTranscriptionManager.swift */,
 				BD1BE98930F1EB41308524E1 /* PRArtifactCardView.swift */,
+				PP01AA11BB22CC33DD44EE00 /* PublishPromptCardView.swift */,
 				PS01AA11BB22CC33DD44EE00 /* PublishScriptCardView.swift */,
 				PW01AA11BB22CC33DD44EE00 /* PublishWorkflowCardView.swift */,
 				MC01AA11BB22CC33DD44EE01 /* MarkdownContentSplitter.swift */,
@@ -5737,6 +5740,7 @@
 				A1B2C3D4E5F601020304050D /* PendingAttachmentsBarView.swift in Sources */,
 				A1B2C3D4E5F601020304050F /* SpeechTranscriptionManager.swift in Sources */,
 				BE880A27BE0E704666995737 /* PRArtifactCardView.swift in Sources */,
+				PP01AA11BB22CC33DD44EE01 /* PublishPromptCardView.swift in Sources */,
 				PS01AA11BB22CC33DD44EE01 /* PublishScriptCardView.swift in Sources */,
 				PW01AA11BB22CC33DD44EE01 /* PublishWorkflowCardView.swift in Sources */,
 				MC01AA11BB22CC33DD44EE02 /* MarkdownContentSplitter.swift in Sources */,
