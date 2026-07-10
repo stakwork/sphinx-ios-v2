@@ -44,19 +44,24 @@ extension PodcastPlayerController {
             return
         }
         let info = notification.userInfo!
-        var intValue: UInt = 0
-        
-        (info[AVAudioSessionInterruptionTypeKey] as! NSValue).getValue(&intValue)
-        
-        if let interruptionType = AVAudioSession.InterruptionType(rawValue: intValue) {
-            switch interruptionType {
-            case .began:
-                if let podcastData = self.podcastData {
-                    self.pause(podcastData)
-                }
-            default:
-                break
+
+        // Safe optional cast — a force-cast here crashes on any absent or
+        // malformed AVAudioSessionInterruptionTypeKey value, regardless of call state.
+        guard let rawValue = (info[AVAudioSessionInterruptionTypeKey] as? NSNumber)?.uintValue,
+              let interruptionType = AVAudioSession.InterruptionType(rawValue: rawValue) else {
+            print("PodcastPlayerController: handleInterruption — missing or malformed interruption type key; ignoring")
+            return
+        }
+
+        print("PodcastPlayerController: handleInterruption — type=\(interruptionType.rawValue)")
+
+        switch interruptionType {
+        case .began:
+            if let podcastData = self.podcastData {
+                self.pause(podcastData)
             }
+        default:
+            break
         }
     }
 }
