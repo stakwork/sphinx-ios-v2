@@ -176,6 +176,13 @@ extension PodcastPlayerController {
     }
     
     func shouldPlay() {
+        // During an active LiveKit call, remote play commands must be fully ignored
+        // (no-op) so that AirPods or other media controls cannot disrupt the call.
+        if VideoCallManager.sharedInstance.activeCall {
+            print("PodcastPlayerController: shouldPlay — suppressed while call is active")
+            return
+        }
+
         if isPlaying {
             return
         }
@@ -186,6 +193,13 @@ extension PodcastPlayerController {
     }
     
     func shouldPause() {
+        // During an active LiveKit call, remote pause commands must be fully ignored
+        // (no-op) so that AirPods or other media controls cannot disrupt the call.
+        if VideoCallManager.sharedInstance.activeCall {
+            print("PodcastPlayerController: shouldPause — suppressed while call is active")
+            return
+        }
+
         if !isPlaying {
             return
         }
