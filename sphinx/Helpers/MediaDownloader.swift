@@ -85,10 +85,17 @@ class MediaDownloader {
                 message: message,
                 mediaKey: purchaseAcceptMessage?.mediaKey ?? message.mediaKey,
                 completion: { _, image in
-                    PHPhotoLibrary.shared().performChanges({
-                        PHAssetChangeRequest.creationRequestForAsset(from: image)
-                    }) { saved, error in
-                        completion(saved)
+                    guard let imageData = image.jpegData(compressionQuality: 1.0) else {
+                        completion(false)
+                        return
+                    }
+                    DispatchQueue.global(qos: .userInitiated).async {
+                        PHPhotoLibrary.shared().performChanges({
+                            let request = PHAssetCreationRequest.forAsset()
+                            request.addResource(with: .photo, data: imageData, options: nil)
+                        }) { saved, _ in
+                            DispatchQueue.main.async { completion(saved) }
+                        }
                     }
                 }, errorCompletion: { _ in
                     completion(false)
@@ -111,11 +118,13 @@ class MediaDownloader {
                 mediaKey: purchaseAcceptMessage?.mediaKey ?? message.mediaKey,
                 completion: { (_, data, _) in
                     if let videoUrl = MediaLoader.saveFileInMemory(data: data, name: "video.mov") {
-                        PHPhotoLibrary.shared().performChanges({
-                            PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: videoUrl)
-                        }) { saved, error in
-                            MediaLoader.deleteItemAt(url: videoUrl)
-                            completion(saved)
+                        DispatchQueue.global(qos: .userInitiated).async {
+                            PHPhotoLibrary.shared().performChanges({
+                                PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: videoUrl)
+                            }) { saved, _ in
+                                MediaLoader.deleteItemAt(url: videoUrl)
+                                DispatchQueue.main.async { completion(saved) }
+                            }
                         }
                         return
                     }
@@ -164,12 +173,14 @@ class MediaDownloader {
                         data: data,
                         name: "image.gif"
                     ) {
-                        PHPhotoLibrary.shared().performChanges({
-                            let request = PHAssetCreationRequest.forAsset()
-                            request.addResource(with: .photo, fileURL: gifUrl, options: nil)
-                        }) { saved, error in
-                            MediaLoader.deleteItemAt(url: gifUrl)
-                            completion(saved)
+                        DispatchQueue.global(qos: .userInitiated).async {
+                            PHPhotoLibrary.shared().performChanges({
+                                let request = PHAssetCreationRequest.forAsset()
+                                request.addResource(with: .photo, fileURL: gifUrl, options: nil)
+                            }) { saved, _ in
+                                MediaLoader.deleteItemAt(url: gifUrl)
+                                DispatchQueue.main.async { completion(saved) }
+                            }
                         }
                         return
                     }
