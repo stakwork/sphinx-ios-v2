@@ -570,19 +570,23 @@ extension NewChatTableDataSource : NewMessageTableViewCellDelegate {
 extension NewChatTableDataSource {
 
     func didReceiveCurrentParticipants(roomName: String, participants: [BubbleMessageLayoutState.CallParticipantInfo]) {
-        callParticipantsStore[roomName] = participants
+        let filteredParticipants = participants.filter { $0.name.isNotEmpty }
+        callParticipantsStore[roomName] = filteredParticipants
         reloadCells(forRoomName: roomName)
         // Fan-out: also update the live-call banner for this room.
-        delegate?.shouldUpdateLiveCallBannerFor(roomName: roomName, participants: participants)
+        delegate?.shouldUpdateLiveCallBannerFor(roomName: roomName, participants: filteredParticipants)
     }
 
     func participantJoined(roomName: String, participant: BubbleMessageLayoutState.CallParticipantInfo) {
         var current = callParticipantsStore[roomName] ?? []
         // Dedup: skip if identity already tracked
         guard !current.contains(where: { $0.identity == participant.identity }) else { return }
-        current.append(participant)
-        callParticipantsStore[roomName] = current
-        reloadCells(forRoomName: roomName)
+        
+        if participant.name.isNotEmpty {
+            current.append(participant)
+            callParticipantsStore[roomName] = current
+            reloadCells(forRoomName: roomName)
+        }
         // Fan-out: also update the live-call banner for this room.
         delegate?.shouldUpdateLiveCallBannerFor(roomName: roomName, participants: current)
         // LiveKit may not have resolved the display name yet — refresh after 2s
