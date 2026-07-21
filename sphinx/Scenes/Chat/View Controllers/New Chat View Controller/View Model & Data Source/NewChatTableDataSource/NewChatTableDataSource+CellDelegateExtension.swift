@@ -659,25 +659,24 @@ extension NewChatTableDataSource {
         messageId: Int,
         with updatedCachedMedia: MessageTableCellState.MediaData
     ) {
-        if let tableCellState = getTableCellStateFor(
+        // Always update cache — even if snapshot reload fails,
+        // next cell reconfiguration will show the correct media
+        mediaCached[messageId] = updatedCachedMedia
+
+        guard let tableCellState = getTableCellStateFor(
             messageId: messageId,
             and: rowIndex
-        ) {
-            mediaCached[messageId] = updatedCachedMedia
-            
-            if rowIndex < 0 {
-                self.delegate?.shouldReloadThreadHeaderView()
-            } else {
-                let targetMessageId = messageId
-                Task { @MainActor [weak self] in
-                    guard let self else { return }
-                    var snapshot = self.dataSource.snapshot()
-                    if let currentCellState = snapshot.itemIdentifiers.first(where: {
-                        $0.message?.id == targetMessageId
-                    }) {
-                        snapshot.reloadItems([currentCellState])
-                        self.dataSource.apply(snapshot, animatingDifferences: false)
-                    }
+        ) else { return }
+
+        if rowIndex < 0 {
+            self.delegate?.shouldReloadThreadHeaderView()
+        } else {
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                var snapshot = self.dataSource.snapshot()
+                if snapshot.itemIdentifiers.contains(tableCellState.1) {
+                    snapshot.reloadItems([tableCellState.1])
+                    self.dataSource.apply(snapshot, animatingDifferences: false)
                 }
             }
         }
