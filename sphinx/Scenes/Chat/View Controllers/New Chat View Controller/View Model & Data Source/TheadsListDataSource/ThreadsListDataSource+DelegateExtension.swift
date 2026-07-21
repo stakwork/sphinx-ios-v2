@@ -292,18 +292,20 @@ extension ThreadsListDataSource {
         messageId: Int,
         with updatedCachedMedia: MessageTableCellState.MediaData
     ) {
-        if let tableCellState = getTableCellStateFor(
+        // Always update cache — even if snapshot reload fails,
+        // next cell reconfiguration will show the correct media
+        mediaCached[messageId] = updatedCachedMedia
+
+        guard let tableCellState = getTableCellStateFor(
             messageId: messageId,
             and: rowIndex
-        ) {
-            mediaCached[messageId] = updatedCachedMedia
+        ) else { return }
 
-            var snapshot = self.dataSource.snapshot()
+        var snapshot = self.dataSource.snapshot()
 
-            if snapshot.itemIdentifiers.contains(tableCellState.1) {
-                snapshot.reloadItems([tableCellState.1])
-                self.dataSource.apply(snapshot, animatingDifferences: false)
-            }
+        if snapshot.itemIdentifiers.contains(tableCellState.1) {
+            snapshot.reloadItems([tableCellState.1])
+            self.dataSource.apply(snapshot, animatingDifferences: false)
         }
     }
     
