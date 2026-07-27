@@ -118,6 +118,9 @@ extension NewChatTableDataSource: UITableViewDelegate {
                         ) { messagesCount in
                             Task { @MainActor [weak self] in
                                 guard let self = self else { return }
+                                // Fetched messages arrive as unconfirmed — check their send status now
+                                // rather than waiting for the next didChangeContentWith cycle.
+                                SphinxOnionManager.sharedInstance.getMessagesStatusForPendingMessages()
                                 if messagesCount < itemsPerPage {
                                     self.allItemsLoaded = true
 

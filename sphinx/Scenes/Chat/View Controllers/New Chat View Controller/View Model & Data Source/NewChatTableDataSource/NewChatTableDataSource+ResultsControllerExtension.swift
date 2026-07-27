@@ -904,8 +904,8 @@ extension NewChatTableDataSource : @preconcurrency NSFetchedResultsControllerDel
                     }
                 }
             } else {
-                let messages = messagesResultsController.sections?.first?.objects as? [TransactionMessage] ?? []
-                
+//                let messages = messagesResultsController.sections?.first?.objects as? [TransactionMessage] ?? []
+//                
                 self.processMessages(
                     messages: self.messagesArray,
                     showLoadingMore: !self.allItemsLoaded && self.chat?.conversationContact?.isAgent != true
