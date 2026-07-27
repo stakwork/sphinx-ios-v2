@@ -21,7 +21,7 @@ import UIKit
 import SDWebImageSwiftUI
 
 let adaptiveMin = 170.0
-let toolbarPlacement: ToolbarItemPlacement = .bottomBar
+@MainActor let toolbarPlacement: ToolbarItemPlacement = .bottomBar
 
 extension CIImage {
     // helper to create a `CIImage` for both platforms
@@ -865,12 +865,14 @@ struct RoomView: View {
             VStack(spacing: 0) {
                 Spacer()
                 
-                let height: CGFloat = CGFloat(min((76 + 64 * room.participantCount), 500))
+                let count = room.remoteParticipants.count + 1
+                let contentHeight: CGFloat = CGFloat(min((76 + 64 * count), 500))
+                let totalHeight: CGFloat = contentHeight + geometry.safeAreaInsets.bottom
                 
                 ZStack() {
                     VStack(spacing: 0) {
                         HStack(spacing: 0) {
-                            Text(room.participantCount == 1 ? ("\(room.participantCount)  Participant") : ("\(room.participantCount)  Participants"))
+                            Text(count == 1 ? ("\(count)  Participant") : ("\(count)  Participants"))
                                 .foregroundColor(Color(UIColor.Sphinx.Text))
                                 .font(Font(UIFont(name: "Roboto-Bold", size: 18.0)!))
                             Spacer()
@@ -915,14 +917,17 @@ struct RoomView: View {
                         }
                         .padding(.trailing, 23)
                         .padding(.leading, 30)
+                        
+                        Spacer()
+                            .frame(height: geometry.safeAreaInsets.bottom)
                     }
-                    .frame(height: height + 100)
+                    .frame(height: totalHeight + 100)
                     .frame(maxWidth: .infinity)
                     .background(Color(UIColor.Sphinx.HeaderBG).opacity(0.3))
                     .background(Blur(style: .prominent))
                     .cornerRadius(8.0)
                 }
-                .frame(height: height)
+                .frame(height: totalHeight)
                 .frame(maxWidth: .infinity)
             }
             .offset(y: publishParticipantsView ? 0 : UIScreen.main.bounds.height) // Start off-screen
@@ -1089,6 +1094,55 @@ struct RoomView: View {
                             .font(.system(size: 18))
                     }
                 }.frame(width: 32.0, height: 32.0)
+                
+                if !(participant is LocalParticipant) && roomCtx.isAdmin {
+                    Button {
+                        DispatchQueue.main.async {
+                            self.newMessageBubbleHelper.showGenericMessageView(
+                                text: "Removing participant, please wait…",
+                                delay: 3,
+                                textColor: UIColor.white,
+                                backColor: UIColor.Sphinx.SecondaryText,
+                                backAlpha: 1.0
+                            )
+                        }
+                        API.sharedInstance.removeParticipant(
+                            room: room.name ?? "",
+                            participantIdentity: participant.identity?.stringValue ?? "",
+                            adminToken: roomCtx.adminToken
+                        ) { success in
+                            if success {
+                                DispatchQueue.main.async {
+                                    self.newMessageBubbleHelper.showGenericMessageView(
+                                        text: "Participant removed successfully. They will leave the call shortly.",
+                                        delay: 5,
+                                        textColor: UIColor.white,
+                                        backColor: UIColor.Sphinx.PrimaryGreen,
+                                        backAlpha: 1.0
+                                    )
+                                }
+                            } else {
+                                DispatchQueue.main.async {
+                                    self.newMessageBubbleHelper.showGenericMessageView(
+                                        text: "Failed to remove participant. Please try again.",
+                                        delay: 5,
+                                        textColor: UIColor.white,
+                                        backColor: UIColor.Sphinx.BadgeRed,
+                                        backAlpha: 1.0
+                                    )
+                                }
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "person.fill.xmark")
+                            .foregroundColor(Color(UIColor.Sphinx.BadgeRed))
+                            .font(.system(size: 18))
+                    }
+                    .fixedSize()
+                    .frame(width: 32, height: 32)
+                    .background(Color(UIColor.Sphinx.BadgeRed).opacity(0.15))
+                    .cornerRadius(6.0)
+                }
             }
             .frame(height: 62)
             .frame(minWidth: 0, maxWidth: .infinity)

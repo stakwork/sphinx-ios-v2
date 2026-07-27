@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol PickerViewDelegate: class {
+@MainActor protocol PickerViewDelegate: class {
     func didSelectValue(value: String)
 }
 

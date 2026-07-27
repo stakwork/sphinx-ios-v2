@@ -18,6 +18,17 @@ class FeatureChatMessageCell: UITableViewCell {
         return MarkdownRenderer(style: style)
     }()
 
+    // MARK: - Logs expand/collapse state
+    private var isLogsExpanded: Bool = false
+    private var currentLogsContent: String? = nil
+
+    // MARK: - Dynamically inserted segment views (tables + extra text views)
+    private var activeTableViews: [MarkdownTableView] = []
+    private var activeSegmentViews: [UIView] = []
+
+    // MARK: - Bubble stack (promoted to stored property for dynamic table insertion)
+    private var bubbleStack: UIStackView = UIStackView()
+
     // MARK: - UI Components
 
     private let bubbleView: UIView = {
@@ -45,9 +56,41 @@ class FeatureChatMessageCell: UITableViewCell {
         tv.translatesAutoresizingMaskIntoConstraints = false
         tv.isEditable = false
         tv.isScrollEnabled = false
+        tv.isSelectable = true
         tv.backgroundColor = .clear
         tv.textContainerInset = UIEdgeInsets(top: 10, left: 8, bottom: 10, right: 8)
         tv.textContainer.lineFragmentPadding = 0
+        tv.linkTextAttributes = [
+            .foregroundColor: UIColor.Sphinx.PrimaryBlue,
+            .underlineStyle: NSUnderlineStyle.single.rawValue
+        ]
+        tv.delegate = LinkTapCoordinator.shared
+        return tv
+    }()
+
+    /// Tappable header shown for logs messages (collapsed: "> Logs", expanded: "▾ Logs").
+    private let logsHeaderButton: UIButton = {
+        let btn = UIButton(type: .system)
+        btn.translatesAutoresizingMaskIntoConstraints = false
+        btn.contentHorizontalAlignment = .left
+        btn.titleLabel?.font = UIFont.boldSystemFont(ofSize: 15)
+        btn.setTitleColor(UIColor.Sphinx.SecondaryText, for: .normal)
+        btn.contentEdgeInsets = UIEdgeInsets(top: 10, left: 12, bottom: 10, right: 12)
+        btn.isHidden = true
+        return btn
+    }()
+
+    /// Non-scrolling text view for the logs body (code-block style). Hidden when collapsed.
+    private let logsBodyTextView: UITextView = {
+        let tv = UITextView()
+        tv.translatesAutoresizingMaskIntoConstraints = false
+        tv.isEditable = false
+        tv.isScrollEnabled = false
+        tv.isSelectable = true
+        tv.backgroundColor = .clear
+        tv.textContainerInset = UIEdgeInsets(top: 4, left: 8, bottom: 10, right: 8)
+        tv.textContainer.lineFragmentPadding = 0
+        tv.isHidden = true
         return tv
     }()
 
@@ -58,17 +101,37 @@ class FeatureChatMessageCell: UITableViewCell {
         return v
     }()
 
-    /// Clarifying questions view — only shown when a PLAN/ask_clarifying_questions artifact is present.
-    private let clarifyingQuestionsView: ClarifyingQuestionsView = {
-        let v = ClarifyingQuestionsView()
+    /// Publish script card — only shown when a PUBLISH_SCRIPT artifact is present.
+    private let publishScriptCardView: PublishScriptCardView = {
+        let v = PublishScriptCardView()
         v.isHidden = true
         return v
     }()
 
-    // MARK: - Callbacks
+    /// Publish workflow card — only shown when a PUBLISH_WORKFLOW artifact is present.
+    private let publishWorkflowCardView: PublishWorkflowCardView = {
+        let v = PublishWorkflowCardView()
+        v.isHidden = true
+        return v
+    }()
 
-    /// Set by the view controller; called when the user submits clarifying answers.
-    var onClarifyingAnswerSubmit: ((_ answers: [String], _ replyId: String) -> Void)?
+    /// Publish prompt card — only shown when a PUBLISH_PROMPT artifact is present.
+    private let publishPromptCardView: PublishPromptCardView = {
+        let v = PublishPromptCardView()
+        v.isHidden = true
+        return v
+    }()
+
+    /// Retains the current PUBLISH_SCRIPT artifact for closure bridging.
+    private var currentPublishScriptArtifact: HiveChatMessageArtifact?
+
+    /// Retains the current PUBLISH_WORKFLOW artifact for closure bridging.
+    private var currentPublishWorkflowArtifact: HiveChatMessageArtifact?
+
+    /// Retains the current PUBLISH_PROMPT artifact for closure bridging.
+    private var currentPublishPromptArtifact: HiveChatMessageArtifact?
+
+    // MARK: - Callbacks
 
     /// Called when the clarifying questions view changes its content height
     /// (e.g. navigating between questions) so the host table view can recalculate row height.
@@ -78,6 +141,17 @@ class FeatureChatMessageCell: UITableViewCell {
     var onAttachmentTap: ((HiveChatMessageAttachment) -> Void)? {
         didSet { attachmentGridView.onTapAttachment = onAttachmentTap }
     }
+
+    /// Called when the user taps "Publish" on the publish script card.
+    var onPublishScriptTapped: ((_ artifact: HiveChatMessageArtifact) -> Void)?
+    /// Called when the user taps the version badge on the publish script card.
+    var onOpenScriptVersionTapped: ((_ artifact: HiveChatMessageArtifact) -> Void)?
+    /// Called when the user taps "Publish" on the publish workflow card.
+    var onPublishWorkflowTapped: ((_ artifact: HiveChatMessageArtifact) -> Void)?
+    /// Called when the user taps "Publish" on the publish prompt card.
+    var onPublishPromptTapped: ((_ artifact: HiveChatMessageArtifact) -> Void)?
+    /// Called when the user taps the version row / external-link on the publish prompt card.
+    var onOpenPromptVersionTapped: ((_ artifact: HiveChatMessageArtifact) -> Void)?
 
     // MARK: - Attachment grid
     private let attachmentGridView: AttachmentGridView = {
@@ -107,6 +181,17 @@ class FeatureChatMessageCell: UITableViewCell {
         return iv
     }()
 
+    // MARK: - Suggestion chips
+    private let suggestionChipsView = SuggestionChipsView()
+    private var chipsTopConstraint:      NSLayoutConstraint!
+    private var chipsLeadingConstraint:  NSLayoutConstraint!
+    private var chipsTrailingConstraint: NSLayoutConstraint!
+    private var chipsBottomConstraint:   NSLayoutConstraint!
+
+    var onSuggestionTapped: ((String) -> Void)? {
+        didSet { suggestionChipsView.onChipTapped = onSuggestionTapped }
+    }
+
     // MARK: - Alignment constraints (toggled per message role)
     private var bubbleLeadingConstraint: NSLayoutConstraint!
     private var bubbleTrailingConstraint: NSLayoutConstraint!
@@ -114,6 +199,7 @@ class FeatureChatMessageCell: UITableViewCell {
     private var timestampLeadingConstraint: NSLayoutConstraint!
     private var timestampTrailingConstraint: NSLayoutConstraint!
     private var bubbleWidthConstraint: NSLayoutConstraint!
+    private var timestampBottomConstraint: NSLayoutConstraint!
 
     // MARK: - Init
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
@@ -128,8 +214,11 @@ class FeatureChatMessageCell: UITableViewCell {
         contentView.backgroundColor = .Sphinx.Body
         selectionStyle = .none
 
-        // Vertical stack inside bubble: text + optional PR card + optional clarifying questions + optional attachment grid
-        let bubbleStack = UIStackView(arrangedSubviews: [messageTextView, prCardView, clarifyingQuestionsView, attachmentGridView])
+        // Wire logs header tap
+        logsHeaderButton.addTarget(self, action: #selector(logsHeaderTapped), for: .touchUpInside)
+
+        // Vertical stack inside bubble: text + logs header + logs body + optional PR card + optional publish script/workflow/prompt card + optional attachment grid
+        bubbleStack = UIStackView(arrangedSubviews: [messageTextView, logsHeaderButton, logsBodyTextView, prCardView, publishScriptCardView, publishWorkflowCardView, publishPromptCardView, attachmentGridView])
         bubbleStack.translatesAutoresizingMaskIntoConstraints = false
         bubbleStack.axis = .vertical
         bubbleStack.spacing = 0
@@ -140,6 +229,7 @@ class FeatureChatMessageCell: UITableViewCell {
         bubbleView.addSubview(bubbleStack)
         contentView.addSubview(timestampLabel)
         contentView.addSubview(senderAvatarImageView)
+        contentView.addSubview(suggestionChipsView)
 
         bubbleLeadingConstraint  = bubbleView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16)
         bubbleTrailingConstraint = bubbleView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16)
@@ -150,6 +240,14 @@ class FeatureChatMessageCell: UITableViewCell {
         timestampTrailingConstraint = timestampLabel.trailingAnchor.constraint(equalTo: bubbleView.trailingAnchor)
 
         bubbleWidthConstraint = bubbleView.widthAnchor.constraint(lessThanOrEqualTo: contentView.widthAnchor, multiplier: 0.85)
+
+        timestampBottomConstraint = timestampLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -4)
+
+        chipsTopConstraint      = suggestionChipsView.topAnchor.constraint(equalTo: timestampLabel.bottomAnchor, constant: 6)
+        chipsLeadingConstraint  = suggestionChipsView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16)
+        chipsTrailingConstraint = suggestionChipsView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16)
+        chipsBottomConstraint   = suggestionChipsView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8)
+        // Chip constraints are NOT activated here — toggled in configure/prepareForReuse
 
         NSLayoutConstraint.activate([
             senderAvatarImageView.widthAnchor.constraint(equalToConstant: 20),
@@ -163,7 +261,7 @@ class FeatureChatMessageCell: UITableViewCell {
             bubbleStack.trailingAnchor.constraint(equalTo: bubbleView.trailingAnchor),
             bubbleStack.bottomAnchor.constraint(equalTo: bubbleView.bottomAnchor),
             timestampLabel.topAnchor.constraint(equalTo: bubbleView.bottomAnchor, constant: 4),
-            timestampLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -4),
+            timestampBottomConstraint,
             // textBackgroundView covers only the text area (top of bubble → bottom of text view)
             textBackgroundView.topAnchor.constraint(equalTo: bubbleView.topAnchor),
             textBackgroundView.leadingAnchor.constraint(equalTo: bubbleView.leadingAnchor),
@@ -173,22 +271,38 @@ class FeatureChatMessageCell: UITableViewCell {
     }
 
     // MARK: - Configure
-    func configure(with message: HiveChatMessage, isLastMessage: Bool = false) {
+    func configure(with message: HiveChatMessage, isLastMessage: Bool = false, italicText: String? = nil, suggestions: [String] = []) {
         let isUser = message.isUserMessage
+
+        // --- Clean up any dynamically inserted segment views from previous use ---
+        activeSegmentViews.forEach { $0.removeFromSuperview() }
+        activeSegmentViews.removeAll()
+        activeTableViews.removeAll()
 
         // --- Text content ---
         if isUser {
-            let rendered = FeatureChatMessageCell.markdownRenderer.render(message.resolvedDisplayText)
-            let mutable  = NSMutableAttributedString(attributedString: rendered)
-            mutable.enumerateAttribute(.foregroundColor, in: NSRange(location: 0, length: mutable.length)) { value, range, _ in
-                if let color = value as? UIColor, color == UIColor.Sphinx.Text {
-                    mutable.addAttribute(.foregroundColor, value: UIColor.Sphinx.TextMessages, range: range)
-                }
+            if let italic = italicText {
+                let font = UIFont(name: "Roboto-Italic", size: 15)
+                    ?? UIFont.italicSystemFont(ofSize: 15)
+                let mutable = NSMutableAttributedString(
+                    string: italic,
+                    attributes: [.font: font, .foregroundColor: UIColor.Sphinx.TextMessages.withAlphaComponent(0.5)]
+                )
+                messageTextView.attributedText = mutable
+            } else if let logsBody = message.logsContent {
+                currentLogsContent = logsBody
+                configureLogsViews()
+            } else {
+                renderSegmentedContent(message.resolvedDisplayText)
             }
-            messageTextView.attributedText = mutable
-            // Fix 3: hide text view when message body is blank
-            let hasText = !message.resolvedDisplayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            messageTextView.isHidden = !hasText
+            // For logs messages, configureLogsViews() already manages messageTextView visibility.
+            // Only touch it for non-logs messages.
+            if message.logsContent == nil && italicText == nil {
+                // messageTextView visibility is handled inside renderSegmentedContent
+            } else if message.logsContent == nil {
+                let hasText = !message.resolvedDisplayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                messageTextView.isHidden = !hasText
+            }
             bubbleView.backgroundColor      = UIColor.Sphinx.SentMsgBG
             timestampLabel.textColor        = UIColor.Sphinx.SecondaryTextSent
             timestampLabel.textAlignment    = .right
@@ -210,18 +324,12 @@ class FeatureChatMessageCell: UITableViewCell {
                 senderAvatarImageView.image = UIImage(named: "profile_avatar")
             }
         } else {
-            let rendered = FeatureChatMessageCell.markdownRenderer.render(message.resolvedDisplayText)
-            let mutable  = NSMutableAttributedString(attributedString: rendered)
-            // Swap base text colour to match the bubble's text style
-            mutable.enumerateAttribute(.foregroundColor, in: NSRange(location: 0, length: mutable.length)) { value, range, _ in
-                if let color = value as? UIColor, color == UIColor.Sphinx.Text {
-                    mutable.addAttribute(.foregroundColor, value: UIColor.Sphinx.TextMessages, range: range)
-                }
+            if let logsBody = message.logsContent {
+                currentLogsContent = logsBody
+                configureLogsViews()
+            } else {
+                renderSegmentedContent(message.resolvedDisplayText)
             }
-            messageTextView.attributedText = mutable
-            // Fix 3: hide text view when message body is blank
-            let hasText = !message.resolvedDisplayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            messageTextView.isHidden = !hasText
             bubbleView.backgroundColor      = UIColor.Sphinx.ReceivedMsgBG
             timestampLabel.textColor        = UIColor.Sphinx.SecondaryText
             timestampLabel.textAlignment    = .left
@@ -240,37 +348,92 @@ class FeatureChatMessageCell: UITableViewCell {
            let prContent = prArtifact.prContent {
             prCardView.configure(with: prContent)
             prCardView.isHidden = false
-            // Fix 1: expand bubble to 60% fixed width for PR card
-            bubbleWidthConstraint.isActive = false
-            bubbleWidthConstraint = bubbleView.widthAnchor.constraint(equalTo: contentView.widthAnchor, multiplier: 0.60)
-            bubbleWidthConstraint.isActive = true
-            // Fix 2: only round top corners; disable masksToBounds so card's own corners/border show
-            bubbleView.layer.cornerRadius = 18
-            bubbleView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
-            bubbleView.layer.masksToBounds = false
-            // Move bubble colour onto textBackgroundView so the bottom corners clip correctly
-            bubbleView.backgroundColor = .clear
-            let roleColour: UIColor = isUser ? UIColor.Sphinx.SentMsgBG : UIColor.Sphinx.ReceivedMsgBG
-            textBackgroundView.backgroundColor = roleColour
-            textBackgroundView.layer.maskedCorners = [
-                .layerMinXMinYCorner, .layerMaxXMinYCorner,
-                .layerMinXMaxYCorner, .layerMaxXMaxYCorner
-            ]
-            textBackgroundView.layer.masksToBounds = true
+            configureBottomJoinedCard(isUser: isUser, bottomCard: prCardView)
         } else {
             prCardView.isHidden = true
-            // Restore default width constraint
-            bubbleWidthConstraint.isActive = false
-            bubbleWidthConstraint = bubbleView.widthAnchor.constraint(lessThanOrEqualTo: contentView.widthAnchor, multiplier: 0.85)
-            bubbleWidthConstraint.isActive = true
-            // Restore full corner masking
-            bubbleView.layer.maskedCorners = [
-                .layerMinXMinYCorner, .layerMaxXMinYCorner,
-                .layerMinXMaxYCorner, .layerMaxXMaxYCorner
-            ]
-            bubbleView.layer.masksToBounds = true
-            // textBackgroundView not needed — clear it
-            textBackgroundView.backgroundColor = .clear
+        }
+
+        // --- Publish Script / Publish Workflow / Publish Prompt artifact cards ---
+        // A message carries at most one of these; precedence order is script → workflow → prompt.
+        let psArtifact = message.artifacts.first(where: { $0.isPublishScript })
+        let pwArtifact = message.artifacts.first(where: { $0.isPublishWorkflow })
+        let ppArtifact = message.artifacts.first(where: { $0.isPublishPrompt })
+
+        if let psArtifact, let psContent = psArtifact.publishScriptContent {
+            // Publish Script card
+            currentPublishScriptArtifact = psArtifact
+            publishScriptCardView.configure(with: psContent)
+            publishScriptCardView.isHidden = false
+            publishWorkflowCardView.isHidden = true
+            currentPublishWorkflowArtifact = nil
+            publishPromptCardView.isHidden = true
+            currentPublishPromptArtifact = nil
+            publishPromptCardView.onPublishTapped = nil
+            publishPromptCardView.onOpenVersionTapped = nil
+            configureBottomJoinedCard(isUser: isUser, bottomCard: publishScriptCardView, widthMultiplier: 0.78, useLeqConstraint: true)
+            publishScriptCardView.onPublishTapped = { [weak self] in
+                guard let self, let artifact = self.currentPublishScriptArtifact else { return }
+                self.onPublishScriptTapped?(artifact)
+            }
+            publishScriptCardView.onOpenVersionTapped = { [weak self] in
+                guard let self, let artifact = self.currentPublishScriptArtifact else { return }
+                self.onOpenScriptVersionTapped?(artifact)
+            }
+        } else if let pwArtifact, let pwContent = pwArtifact.publishWorkflowContent {
+            // Publish Workflow card
+            currentPublishWorkflowArtifact = pwArtifact
+            publishWorkflowCardView.configure(with: pwContent)
+            publishWorkflowCardView.isHidden = false
+            publishScriptCardView.isHidden = true
+            currentPublishScriptArtifact = nil
+            publishPromptCardView.isHidden = true
+            currentPublishPromptArtifact = nil
+            publishPromptCardView.onPublishTapped = nil
+            publishPromptCardView.onOpenVersionTapped = nil
+            configureBottomJoinedCard(isUser: isUser, bottomCard: publishWorkflowCardView, widthMultiplier: 0.78, useLeqConstraint: true)
+            publishWorkflowCardView.onPublishTapped = { [weak self] in
+                guard let self, let artifact = self.currentPublishWorkflowArtifact else { return }
+                self.onPublishWorkflowTapped?(artifact)
+            }
+        } else if let ppArtifact, let ppContent = ppArtifact.publishPromptContent {
+            // Publish Prompt card
+            currentPublishPromptArtifact = ppArtifact
+            publishPromptCardView.configure(with: ppContent)
+            publishPromptCardView.isHidden = false
+            publishScriptCardView.isHidden = true
+            currentPublishScriptArtifact = nil
+            publishScriptCardView.onPublishTapped = nil
+            publishScriptCardView.onOpenVersionTapped = nil
+            publishWorkflowCardView.isHidden = true
+            currentPublishWorkflowArtifact = nil
+            publishWorkflowCardView.onPublishTapped = nil
+            configureBottomJoinedCard(isUser: isUser, bottomCard: publishPromptCardView, widthMultiplier: 0.78, useLeqConstraint: true)
+            publishPromptCardView.onPublishTapped = { [weak self] in
+                guard let self, let artifact = self.currentPublishPromptArtifact else { return }
+                self.onPublishPromptTapped?(artifact)
+            }
+            publishPromptCardView.onOpenVersionTapped = { [weak self] in
+                guard let self, let artifact = self.currentPublishPromptArtifact else { return }
+                self.onOpenPromptVersionTapped?(artifact)
+            }
+        } else {
+            // No publish card — hide all three, clear state
+            publishScriptCardView.isHidden = true
+            publishWorkflowCardView.isHidden = true
+            publishPromptCardView.isHidden = true
+            currentPublishScriptArtifact = nil
+            currentPublishWorkflowArtifact = nil
+            currentPublishPromptArtifact = nil
+            publishScriptCardView.onPublishTapped = nil
+            publishScriptCardView.onOpenVersionTapped = nil
+            publishWorkflowCardView.onPublishTapped = nil
+            publishPromptCardView.onPublishTapped = nil
+            publishPromptCardView.onOpenVersionTapped = nil
+            // Only restore default bubble geometry when there's also no PR card.
+            // If a PR card is present it already called configureBottomJoinedCard above.
+            if message.artifacts.first(where: { $0.isPullRequest }) == nil {
+                restoreDefaultBubbleGeometry()
+            }
         }
 
         // --- LONGFORM border ---
@@ -280,44 +443,6 @@ class FeatureChatMessageCell: UITableViewCell {
         } else {
             bubbleView.layer.borderWidth = 0
             bubbleView.layer.borderColor = UIColor.clear.cgColor
-        }
-
-        // --- Clarifying questions ---
-        if let cqArtifact = message.artifacts.first(where: { $0.isClarifyingQuestions }),
-           let questions = cqArtifact.clarifyingQuestions, !questions.isEmpty {
-            clarifyingQuestionsView.configure(with: questions)
-            if isLastMessage {
-                clarifyingQuestionsView.isUserInteractionEnabled = true
-                clarifyingQuestionsView.alpha = 1.0
-            } else {
-                clarifyingQuestionsView.lock()
-            }
-            clarifyingQuestionsView.isHidden = false
-            clarifyingQuestionsView.onSubmit = { [weak self] answers in
-                self?.onClarifyingAnswerSubmit?(answers, message.id)
-            }
-            clarifyingQuestionsView.onHeightChanged = { [weak self] in
-                self?.onHeightChanged?()
-            }
-            // Hide the text bubble entirely — no text to show, and we don't want
-            // its top/bottom insets bleeding as empty space above/below the card.
-            messageTextView.isHidden = true
-            messageTextView.textContainerInset = .zero
-            bubbleView.backgroundColor = .clear
-            bubbleView.layer.cornerRadius = 0
-        } else {
-            clarifyingQuestionsView.isHidden = true
-            // Derive hasText the same way Fix 3 does — don't override its decision
-            let hasText: Bool
-            if isUser {
-                hasText = !message.resolvedDisplayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            } else {
-                hasText = !message.resolvedDisplayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            }
-            messageTextView.isHidden = !hasText
-            messageTextView.textContainerInset = hasText
-                ? UIEdgeInsets(top: 10, left: 8, bottom: 10, right: 8)
-                : .zero
         }
 
         // --- Timestamp ---
@@ -335,15 +460,166 @@ class FeatureChatMessageCell: UITableViewCell {
             // Keep bubble at same max width as text messages
             bubbleWidthConstraint.isActive = false
             bubbleWidthConstraint = bubbleView.widthAnchor.constraint(
-                lessThanOrEqualTo: contentView.widthAnchor, multiplier: 0.85
+                equalTo: contentView.widthAnchor, multiplier: 0.85
             )
             bubbleWidthConstraint.isActive = true
         } else {
             attachmentGridView.isHidden = true
         }
+
+        // --- Suggestion chips ---
+        let showChips = !message.isUserMessage && !suggestions.isEmpty
+        if showChips {
+            suggestionChipsView.configure(with: suggestions)
+            timestampBottomConstraint.isActive  = false
+            chipsTopConstraint.isActive         = true
+            chipsLeadingConstraint.isActive     = true
+            chipsTrailingConstraint.isActive    = true
+            chipsBottomConstraint.isActive      = true
+        } else {
+            suggestionChipsView.clear()
+            chipsTopConstraint.isActive         = false
+            chipsLeadingConstraint.isActive     = false
+            chipsTrailingConstraint.isActive    = false
+            chipsBottomConstraint.isActive      = false
+            timestampBottomConstraint.isActive  = true
+        }
+        onHeightChanged?()
+    }
+
+    // MARK: - Segmented content rendering
+
+    /// Splits `rawText` into text/table segments and renders each in order into the bubble stack.
+    private func renderSegmentedContent(_ rawText: String) {
+        let segments = MarkdownContentSplitter.split(rawText)
+
+        // Insert all segments in order directly before prCardView.
+        // The first .text segment reuses the existing messageTextView (position 0 in stack).
+        // Every subsequent segment — whether text or table — is a new view inserted after
+        // the previous one, preserving exact document order.
+
+        let prCardIndex = bubbleStack.arrangedSubviews.firstIndex(of: prCardView) ?? bubbleStack.arrangedSubviews.count
+        // We'll track where the *next* new view should be inserted (just before prCardView initially)
+        var nextInsertIndex = prCardIndex
+
+        var usedMessageTextView = false
+
+        for segment in segments {
+            switch segment {
+            case .text(let txt):
+                let rendered = FeatureChatMessageCell.markdownRenderer.render(txt)
+                let mutable = NSMutableAttributedString(attributedString: rendered)
+                mutable.enumerateAttribute(.foregroundColor, in: NSRange(location: 0, length: mutable.length)) { value, range, _ in
+                    if let color = value as? UIColor, color == UIColor.Sphinx.Text {
+                        mutable.addAttribute(.foregroundColor, value: UIColor.Sphinx.TextMessages, range: range)
+                    }
+                }
+
+                if !usedMessageTextView {
+                    // Reuse the pre-existing messageTextView for the first text segment
+                    messageTextView.attributedText = mutable
+                    messageTextView.isHidden = txt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                    usedMessageTextView = true
+                    // messageTextView is already in the stack at index 0 — nextInsertIndex stays
+                    // pointing after it only if we need to insert something before prCardView
+                } else {
+                    // Create an additional text view for subsequent text segments
+                    let tv = UITextView()
+                    tv.translatesAutoresizingMaskIntoConstraints = false
+                    tv.isEditable = false
+                    tv.isScrollEnabled = false
+                    tv.isSelectable = true
+                    tv.backgroundColor = .clear
+                    tv.textContainerInset = UIEdgeInsets(top: 6, left: 8, bottom: 6, right: 8)
+                    tv.textContainer.lineFragmentPadding = 0
+                    tv.linkTextAttributes = [
+                        .foregroundColor: UIColor.Sphinx.PrimaryBlue,
+                        .underlineStyle: NSUnderlineStyle.single.rawValue
+                    ]
+                    tv.attributedText = mutable
+                    tv.isHidden = txt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                    bubbleStack.insertArrangedSubview(tv, at: nextInsertIndex)
+                    nextInsertIndex += 1
+                    activeSegmentViews.append(tv)
+                }
+
+            case .table(let headers, let rows):
+                if !usedMessageTextView {
+                    // No text segment came before this table — hide the messageTextView
+                    messageTextView.isHidden = true
+                    usedMessageTextView = true
+                }
+                let tableView = MarkdownTableView()
+                tableView.configure(headers: headers, rows: rows)
+                tableView.heightAnchor.constraint(equalToConstant: tableView.intrinsicContentHeight).isActive = true
+                bubbleStack.insertArrangedSubview(tableView, at: nextInsertIndex)
+                nextInsertIndex += 1
+                activeTableViews.append(tableView)
+                activeSegmentViews.append(tableView)
+
+                // Post-table spacer so content after the table has clear visual separation
+                let spacer = UIView()
+                spacer.translatesAutoresizingMaskIntoConstraints = false
+                spacer.backgroundColor = .clear
+                spacer.heightAnchor.constraint(equalToConstant: 8).isActive = true
+                bubbleStack.insertArrangedSubview(spacer, at: nextInsertIndex)
+                nextInsertIndex += 1
+                activeSegmentViews.append(spacer)
+            }
+        }
+
+        // If no segments at all, hide the text view
+        if segments.isEmpty {
+            messageTextView.isHidden = true
+        }
+
+        // Notify host table view to recalculate row height
+        if !activeTableViews.isEmpty {
+            onHeightChanged?()
+        }
+    }
+
+    // MARK: - Logs helpers
+
+    /// Configures the logs header button and body text view based on current expand state.
+    private func configureLogsViews() {
+        // Hide the regular message text view — logs use dedicated views
+        messageTextView.isHidden = true
+
+        // Header
+        let title = isLogsExpanded ? "Logs (tap to collapse)" : "Logs (tap to expand)"
+        logsHeaderButton.setTitle(title, for: .normal)
+        logsHeaderButton.isHidden = false
+
+        // Body
+        if isLogsExpanded, let content = currentLogsContent {
+            logsBodyTextView.attributedText = makeLogsBodyAttributedString(content: content)
+            logsBodyTextView.isHidden = false
+        } else {
+            logsBodyTextView.isHidden = true
+        }
+    }
+
+    @objc private func logsHeaderTapped() {
+        isLogsExpanded.toggle()
+        configureLogsViews()
+        onHeightChanged?()
+    }
+
+    private func makeLogsBodyAttributedString(content: String) -> NSAttributedString {
+        let style = FeatureChatMessageCell.markdownRenderer.style
+        let codeAttrs: [NSAttributedString.Key: Any] = [
+            .font: style.codeFont,
+            .foregroundColor: style.codeForeground,
+            .backgroundColor: style.codeBackground
+        ]
+        let paddedLines = content.components(separatedBy: "\n").map { "  \($0)  " }
+        let padded = paddedLines.joined(separator: "\n")
+        return NSAttributedString(string: padded, attributes: codeAttrs)
     }
 
     // MARK: - Helpers
+
     private func formatTimestamp(_ timestamp: String) -> String {
         let iso = ISO8601DateFormatter()
         iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
@@ -358,21 +634,193 @@ class FeatureChatMessageCell: UITableViewCell {
         return fmt.string(from: d)
     }
 
-    /// Lock the clarifying questions view after successful submission.
-    func lockClarifyingQuestionsView() {
-        clarifyingQuestionsView.lock()
+    // MARK: - Link tap coordinator (shared, stateless)
+    private class LinkTapCoordinator: NSObject, UITextViewDelegate {
+        static let shared = LinkTapCoordinator()
+        func textView(_ textView: UITextView,
+                      shouldInteractWith url: URL,
+                      in characterRange: NSRange,
+                      interaction: UITextItemInteraction) -> Bool {
+            let urlString = url.absoluteString
+            if urlString.isHivePlanLink || urlString.isHiveTaskLink {
+                if let topVC = UIApplication.shared.topMostViewController() {
+                    HiveLinkNavigator.navigate(hiveLink: urlString, from: topVC)
+                }
+            } else {
+                UIApplication.shared.open(url)
+            }
+            return false
+        }
     }
+
+    // MARK: - Bottom-joined card geometry helpers
+
+    /// Applies the shared bubble layout for any bottom-joined card (PR, Publish Script, Publish Workflow).
+    /// Expands bubble to `widthMultiplier` of contentView width.  PR card uses the default 0.60 equality
+    /// constraint; publish cards pass 0.78 with `useLeqConstraint: true` so short-text cards hug their
+    /// content while long messages expand up to the cap.
+    private func configureBottomJoinedCard(
+        isUser: Bool,
+        bottomCard: UIView,
+        widthMultiplier: CGFloat = 0.60,
+        useLeqConstraint: Bool = false
+    ) {
+        bubbleWidthConstraint.isActive = false
+        if useLeqConstraint {
+            bubbleWidthConstraint = bubbleView.widthAnchor.constraint(
+                lessThanOrEqualTo: contentView.widthAnchor,
+                multiplier: widthMultiplier
+            )
+        } else {
+            bubbleWidthConstraint = bubbleView.widthAnchor.constraint(
+                equalTo: contentView.widthAnchor,
+                multiplier: widthMultiplier
+            )
+        }
+        bubbleWidthConstraint.isActive = true
+
+        bubbleView.layer.cornerRadius = 18
+        bubbleView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        bubbleView.layer.masksToBounds = false
+        bubbleView.backgroundColor = .clear
+
+        let roleColour: UIColor = isUser ? UIColor.Sphinx.SentMsgBG : UIColor.Sphinx.ReceivedMsgBG
+        textBackgroundView.backgroundColor = roleColour
+        textBackgroundView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        textBackgroundView.layer.masksToBounds = true
+
+        bottomCard.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
+        bottomCard.layer.masksToBounds = true
+    }
+
+    /// Restores the default bubble geometry (no bottom-joined card present).
+    private func restoreDefaultBubbleGeometry() {
+        bubbleWidthConstraint.isActive = false
+        bubbleWidthConstraint = bubbleView.widthAnchor.constraint(lessThanOrEqualTo: contentView.widthAnchor, multiplier: 0.85)
+        bubbleWidthConstraint.isActive = true
+
+        bubbleView.layer.maskedCorners = [
+            .layerMinXMinYCorner, .layerMaxXMinYCorner,
+            .layerMinXMaxYCorner, .layerMaxXMaxYCorner
+        ]
+        bubbleView.layer.masksToBounds = true
+        textBackgroundView.backgroundColor = .clear
+    }
+
+    // MARK: - Publish Script helpers
+
+    /// Flips the publish script card to the "Published ✓" state in-place without a full reload.
+    func flipPublishScriptToPublished() {
+        publishScriptCardView.setPublished(true)
+    }
+
+    /// Sets the loading state on the publish script card if this cell currently hosts the given artifactId.
+    /// Guards against mutating a recycled/off-screen cell that no longer owns this artifact.
+    func setPublishScriptLoading(_ loading: Bool, for artifactId: String) {
+        guard let artifact = currentPublishScriptArtifact, artifact.id == artifactId else { return }
+        publishScriptCardView.setLoading(loading)
+    }
+
+    // MARK: - Publish Workflow helpers
+
+    /// Flips the publish workflow card to the "Published ✓" state in-place without a full reload.
+    func flipPublishWorkflowToPublished() {
+        publishWorkflowCardView.setPublished(true)
+    }
+
+    /// Sets the loading state on the publish workflow card if this cell currently hosts the given artifactId.
+    /// Guards against mutating a recycled/off-screen cell that no longer owns this artifact.
+    func setPublishWorkflowLoading(_ loading: Bool, for artifactId: String) {
+        guard let artifact = currentPublishWorkflowArtifact, artifact.id == artifactId else { return }
+        publishWorkflowCardView.setLoading(loading)
+    }
+
+    // MARK: - Publish Prompt helpers
+
+    /// Flips the publish prompt card to the "Published ✓" state in-place without a full reload.
+    func flipPublishPromptToPublished() {
+        publishPromptCardView.setPublished(true)
+    }
+
+    /// Sets the loading state on the publish prompt card if this cell currently hosts the given artifactId.
+    /// Guards against mutating a recycled/off-screen cell that no longer owns this artifact.
+    func setPublishPromptLoading(_ loading: Bool, for artifactId: String) {
+        guard let artifact = currentPublishPromptArtifact, artifact.id == artifactId else { return }
+        publishPromptCardView.setLoading(loading)
+    }
+
+    // MARK: - Test seams (DEBUG only)
+    #if DEBUG
+    var _publishPromptCardViewIsHidden: Bool { publishPromptCardView.isHidden }
+    var _publishScriptCardViewIsHidden: Bool { publishScriptCardView.isHidden }
+    var _publishWorkflowCardViewIsHidden: Bool { publishWorkflowCardView.isHidden }
+    var _currentPublishPromptArtifact: HiveChatMessageArtifact? { currentPublishPromptArtifact }
+    var _currentPublishScriptArtifact: HiveChatMessageArtifact? { currentPublishScriptArtifact }
+    var _currentPublishWorkflowArtifact: HiveChatMessageArtifact? { currentPublishWorkflowArtifact }
+    var _publishPromptCardView: PublishPromptCardView { publishPromptCardView }
+    var _publishScriptCardView: PublishScriptCardView { publishScriptCardView }
+    var _publishWorkflowCardView: PublishWorkflowCardView { publishWorkflowCardView }
+    var _bubbleWidthConstraint: NSLayoutConstraint { bubbleWidthConstraint }
+    #endif
 
     override func prepareForReuse() {
         super.prepareForReuse()
-        
+
+        // Remove any dynamically inserted segment views (extra text views + table views)
+        activeSegmentViews.forEach { $0.removeFromSuperview() }
+        activeSegmentViews.removeAll()
+        activeTableViews.removeAll()
+
+        // Reset logs state
+        isLogsExpanded = false
+        currentLogsContent = nil
+        logsHeaderButton.isHidden = true
+        logsHeaderButton.setTitle("Logs (tap to expand)", for: .normal)
+        logsBodyTextView.isHidden = true
+        logsBodyTextView.attributedText = nil
+
         messageTextView.attributedText = nil
         messageTextView.isHidden = false
         messageTextView.textContainerInset = UIEdgeInsets(top: 10, left: 8, bottom: 10, right: 8)
         prCardView.isHidden = true
-        clarifyingQuestionsView.reset()
-        clarifyingQuestionsView.isHidden = true
-        onClarifyingAnswerSubmit = nil
+        publishScriptCardView.isHidden = true
+        publishScriptCardView.onPublishTapped = nil
+        publishScriptCardView.onOpenVersionTapped = nil
+        publishScriptCardView.layer.maskedCorners = [
+            .layerMinXMinYCorner, .layerMaxXMinYCorner,
+            .layerMinXMaxYCorner, .layerMaxXMaxYCorner
+        ]
+        publishScriptCardView.layer.masksToBounds = true
+        currentPublishScriptArtifact = nil
+        onPublishScriptTapped = nil
+        onOpenScriptVersionTapped = nil
+        publishWorkflowCardView.isHidden = true
+        publishWorkflowCardView.onPublishTapped = nil
+        publishWorkflowCardView.layer.maskedCorners = [
+            .layerMinXMinYCorner, .layerMaxXMinYCorner,
+            .layerMinXMaxYCorner, .layerMaxXMaxYCorner
+        ]
+        publishWorkflowCardView.layer.masksToBounds = true
+        currentPublishWorkflowArtifact = nil
+        onPublishWorkflowTapped = nil
+        publishPromptCardView.isHidden = true
+        publishPromptCardView.onPublishTapped = nil
+        publishPromptCardView.onOpenVersionTapped = nil
+        publishPromptCardView.layer.maskedCorners = [
+            .layerMinXMinYCorner, .layerMaxXMinYCorner,
+            .layerMinXMaxYCorner, .layerMaxXMaxYCorner
+        ]
+        publishPromptCardView.layer.masksToBounds = true
+        currentPublishPromptArtifact = nil
+        onPublishPromptTapped = nil
+        onOpenPromptVersionTapped = nil
+        suggestionChipsView.clear()
+        chipsTopConstraint.isActive         = false
+        chipsLeadingConstraint.isActive     = false
+        chipsTrailingConstraint.isActive    = false
+        chipsBottomConstraint.isActive      = false
+        timestampBottomConstraint.isActive  = true
+        onSuggestionTapped = nil
         onHeightChanged = nil
         attachmentGridView.reset()
         attachmentGridView.isHidden = true

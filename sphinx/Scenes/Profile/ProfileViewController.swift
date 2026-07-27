@@ -22,6 +22,7 @@ class ProfileViewController: NewKeyboardHandlerViewController {
     @IBOutlet weak var trackRecommendationsSwitch: UISwitch!
     @IBOutlet weak var autoDownloadSubscribedPodsSwitch: UISwitch!
     @IBOutlet weak var hiveNotificationsSwitch: UISwitch!
+    @IBOutlet weak var biometricAuthSwitch: UISwitch!
     @IBOutlet weak var notificationSoundButton: UIButton!
     @IBOutlet weak var inviteServerTextField: UITextField!
     @IBOutlet weak var memesServerTextField: UITextField!
@@ -39,6 +40,7 @@ class ProfileViewController: NewKeyboardHandlerViewController {
     @IBOutlet weak var exportKeyButton: UIButton!
     @IBOutlet weak var changePINContainerView: UIView!
     @IBOutlet weak var setGithubPATContainerView: UIView!
+    @IBOutlet weak var configureAIAgentContainerView: UIView!
     @IBOutlet weak var uploadingLabel: UILabel!
     @IBOutlet weak var uploadLoadingWheel: UIActivityIndicatorView!
     @IBOutlet weak var contentScrollView: UIScrollView!
@@ -108,6 +110,7 @@ class ProfileViewController: NewKeyboardHandlerViewController {
         trackRecommendationsSwitch.onTintColor = UIColor.Sphinx.PrimaryBlue
         autoDownloadSubscribedPodsSwitch.onTintColor = UIColor.Sphinx.PrimaryBlue
         hiveNotificationsSwitch.onTintColor = UIColor.Sphinx.PrimaryBlue
+        biometricAuthSwitch.onTintColor = UIColor.Sphinx.PrimaryBlue
         
         exportKeyButton.layer.cornerRadius = exportKeyButton.frame.height / 2
         
@@ -132,6 +135,7 @@ class ProfileViewController: NewKeyboardHandlerViewController {
         serversContainer.addShadow(location: VerticalLocation.center, color: UIColor.black, opacity: 0.2, radius: 2.0)
         exportKeysContainer.addShadow(location: VerticalLocation.center, color: UIColor.black, opacity: 0.2, radius: 2.0)
         changePINContainerView.addShadow(location: VerticalLocation.center, color: UIColor.black, opacity: 0.2, radius: 2.0)
+        configureAIAgentContainerView.addShadow(location: VerticalLocation.center, color: UIColor.black, opacity: 0.2, radius: 2.0)
         
         setStatusBarColor()
     }
@@ -188,6 +192,11 @@ class ProfileViewController: NewKeyboardHandlerViewController {
             trackRecommendationsSwitch.isOn =  UserDefaults.Keys.shouldTrackActions.get(defaultValue: false)
             autoDownloadSubscribedPodsSwitch.isOn = UserDefaults.Keys.shouldAutoDownloadSubscribedPods.get(defaultValue: false)
             hiveNotificationsSwitch.isOn = UserDefaults.Keys.hiveNotificationsEnabled.get(defaultValue: true)
+            
+            let biometricHelper = BiometricAuthenticationHelper()
+            biometricAuthSwitch.isOn = UserDefaults.Keys.biometricAuthEnabled.get(defaultValue: false)
+            biometricAuthSwitch.isEnabled = biometricHelper.canUseBiometricAuthentication()
+            biometricAuthSwitch.alpha = biometricHelper.canUseBiometricAuthentication() ? 1.0 : 0.5
             
             let nickname = profile.nickname ?? ""
             nameLabel.text = nickname.getNameStyleString()
@@ -338,6 +347,19 @@ class ProfileViewController: NewKeyboardHandlerViewController {
         UserDefaults.Keys.shouldAutoDownloadSubscribedPods.set(autoDownloadSubscribedPodsSwitch.isOn)
     }
     
+    @IBAction func biometricAuthSwitchChanged(_ sender: UISwitch) {
+        UserDefaults.Keys.biometricAuthEnabled.set(sender.isOn)
+
+        if !sender.isOn {
+            let neverRequirePin = UserDefaults.Keys.pinHours.get(defaultValue: Constants.kMaxPinTimeoutValue) == Constants.kMaxPinTimeoutValue
+            if !neverRequirePin {
+                UserData.sharedInstance.clearAutoLoginPin()
+            }
+        }
+
+        DataSyncManager.sharedInstance.saveBiometricEnabled(value: "\(sender.isOn)")
+    }
+    
     @IBAction func hiveNotificationsSwitchChanged(_ sender: UISwitch) {
         let isOn = sender.isOn
         UserDefaults.Keys.hiveNotificationsEnabled.set(isOn)
@@ -402,6 +424,11 @@ class ProfileViewController: NewKeyboardHandlerViewController {
             })
         }
         self.present(setPinVC, animated: true)
+    }
+    
+    @IBAction func configureAIAgentTapped() {
+        let vc = SetupAIAgentViewController.instantiate()
+        navigationController?.pushViewController(vc, animated: true)
     }
     
     @IBAction func setGithubPATButtonTouched() {

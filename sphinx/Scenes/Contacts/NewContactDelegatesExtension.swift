@@ -122,7 +122,7 @@ extension NewContactViewController : QRCodeScannerDelegate {
     }
 }
 
-extension NewContactViewController : SubscriptionFormDelegate {
+extension NewContactViewController : @MainActor SubscriptionFormDelegate {
     func shouldUpdate(contact: UserContact?) {
         if let contactId = contact?.id {
             self.contact = UserContact.getContactWith(id: contactId)

@@ -25,7 +25,7 @@ extension SphinxOnionManager {
     ) -> String? {
         
         if let topic = topic {
-            print("V2 Received topic: \(topic)")
+            print("V2 Received topic: \(topic) date \(Date().timeIntervalSince1970)")
         }
 
         ///If re-processing delayed RR Object then all inside this IF has been run already. Then skip
@@ -51,25 +51,25 @@ extension SphinxOnionManager {
                 }
             
                 let context = backgroundContext
-                context.perform { [weak self] in
+                context.performSafely { [weak self] in
                     guard let self = self else {
                         return
                     }
-                    
+
                     ///handling tribes restore
                     self.restoreTribesFrom(dictionary: dictionary, rr: rr)
-                    
+
                     ///handling contacts restore
                     self.restoreContactsFrom(messages: rr.msgs)
-                    
+
                     ///Handling key exchange msgs restore
                     self.processKeyExchangeMessages(rr: rr)
-                    
+
                     ///Handling generic msgs restore
                     self.processGenericMessages(topic: topic, rr: rr)
-                    
+
                     context.saveContext()
-                    
+
                     ///Handling restore callbacks
                     self.handleRestoreCallbacks(topic: topic, messages: rr.msgs)
                 }
@@ -122,6 +122,9 @@ extension SphinxOnionManager {
 
             ///Handling topics subscription
             handleTopicsToSubscribe(topics: rr.subscriptionTopics)
+
+            ///Handling generated invoice
+            handleInvoiceGenerated(invoice: rr.invoice)
         }
         
         //Publishing to topics
@@ -167,10 +170,18 @@ extension SphinxOnionManager {
     
     func updateStateMap(stateMap: Data?) {
         if let stateMap = stateMap {
-            let _ = storeOnionState(inc: stateMap.bytes)
+            let _ = storeOnionState(inc: [UInt8](stateMap))
         }
     }
     
+    func handleInvoiceGenerated(invoice: String?) {
+        guard let invoice = invoice else { return }
+        invoiceGeneratedTimeoutTimer?.invalidate()
+        invoiceGeneratedTimeoutTimer = nil
+        invoiceGeneratedCallback?(invoice)
+        invoiceGeneratedCallback = nil
+    }
+
     func handlePaymentsHistory(payments: String?) {
         if let payments = payments, payments != "[]" {
             if let paymentsHistoryCallback = paymentsHistoryCallback {
@@ -242,12 +253,12 @@ extension SphinxOnionManager {
             var pendingMembers: [TribeMembersRRObject] = []
             
             // Parse confirmed members
-            if let confirmedArray = jsonDict?["confirmed"] as? [[String: Any]] {
+            if let confirmedArray = jsonDict["confirmed"] as? [[String: Any]] {
                 confirmedMembers = confirmedArray.compactMap { Mapper<TribeMembersRRObject>().map(JSONObject: $0) }
             }
-            
+
             // Parse pending members (assuming a similar structure for actual pending members)
-            if let pendingArray = jsonDict?["pending"] as? [[String: Any]] {
+            if let pendingArray = jsonDict["pending"] as? [[String: Any]] {
                 pendingMembers = pendingArray.compactMap { Mapper<TribeMembersRRObject>().map(JSONObject: $0) }
             }
             
@@ -273,11 +284,14 @@ extension SphinxOnionManager {
                            let preimage = dictionary["preimage"] as? String,
                            !preimage.isEmpty
                         {
-                            NotificationCenter.default.post(
-                                name: .invoiceIPaidSettled,
-                                object: nil,
-                                userInfo: dictionary as [AnyHashable: Any]
-                            )
+                            let userInfo = dictionary as [AnyHashable: Any]
+                            DispatchQueue.main.async {
+                                NotificationCenter.default.post(
+                                    name: .invoiceIPaidSettled,
+                                    object: nil,
+                                    userInfo: userInfo
+                                )
+                            }
                         }
                     }
                 } catch {
@@ -499,14 +513,18 @@ extension SphinxOnionManager {
                     ///Callback to chat when restoring msgs for a specifc chat
                     if let restoringMsgsForPublicKey = self.restoringMsgsForPublicKey,
                         let onMessagePerPublicKeyRestoredCallback = self.onMessagePerPublicKeyRestoredCallback,
-                        messages.allSatisfy({ $0.isMsgInTribeWith(pubkey: restoringMsgsForPublicKey)  })
+                        !messages.isEmpty
                     {
                         self.restoringMsgsForPublicKey = nil
                         self.onMessagePerPublicKeyRestoredCallback = nil
-                        onMessagePerPublicKeyRestoredCallback(messages.count)
+                        // Count only messages for this chat; previously allSatisfy would silently
+                        // drop the callback when even one message belonged to a different chat,
+                        // leaving loadingMoreItems stuck true permanently.
+                        let matchingCount = messages.filter({ $0.isMsgInTribeWith(pubkey: restoringMsgsForPublicKey) }).count
+                        onMessagePerPublicKeyRestoredCallback(matchingCount)
                     }
                     
-                    self.getReads()
+//                    self.getReads()
                 }
             }
         }
@@ -537,16 +555,19 @@ extension SphinxOnionManager {
                         cachedMessage.paymentHash = sentStatus.paymentHash
                     }
                 } else {
-                    NotificationCenter.default.post(
-                        Notification(
-                            name: .onKeysendStatusReceived,
-                            object: nil,
-                            userInfo: [
-                                "tag" : tag,
-                                "status": sentStatus.status ?? SphinxOnionManager.kFailedStatus
-                            ]
+                    let keysendUserInfo: [AnyHashable: Any] = [
+                        "tag": tag,
+                        "status": sentStatus.status ?? SphinxOnionManager.kFailedStatus
+                    ]
+                    DispatchQueue.main.async {
+                        NotificationCenter.default.post(
+                            Notification(
+                                name: .onKeysendStatusReceived,
+                                object: nil,
+                                userInfo: keysendUserInfo
+                            )
                         )
-                    )
+                    }
                     
                     self.onPaymentStatusReceivedFor(tag: tag, status: sentStatus.status ?? SphinxOnionManager.kFailedStatus)
                 }
@@ -556,14 +577,16 @@ extension SphinxOnionManager {
     }
     
     func handleTopicsToPush(topics: [String], payloads: [Data]) {
-        DelayPerformedHelper.performAfterDelay(seconds: 0.5, completion: {
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            guard let self = self else { return }
             for i in 0..<topics.count {
                 let _ = self.handleTopicToPush(
                     topic: topics[i],
                     payload: payloads[i]
                 )
             }
-        })
+        }
     }
     
     func handleTopicToPush(
@@ -572,13 +595,14 @@ extension SphinxOnionManager {
     ) -> Bool {
         if let topic = topic, let payload = payload {
             let byteArray: [UInt8] = [UInt8](payload)
-            
+
             let message = CocoaMQTTMessage(
                 topic: topic,
                 payload: byteArray
             )
             message.qos = .qos0
-            
+
+            print("V2 Publishing topic: \(topic) date \(Date().timeIntervalSince1970)")
             self.mqtt?.publish(
                 message
             )
@@ -590,22 +614,25 @@ extension SphinxOnionManager {
     func handleRegisterTopic(
         rr: RunReturn,
         skipAsyncTopic: Bool,
-        callback: @escaping (RunReturn, Bool) -> ()
+        callback: @escaping @Sendable (RunReturn, Bool) -> ()
     ) {
         if let topic = rr.registerTopic, let payload = rr.registerPayload {
-            
+
             let byteArray: [UInt8] = [UInt8](payload)
-            
-            self.mqtt?.publish(
-                CocoaMQTTMessage(
-                    topic: topic,
-                    payload: byteArray
-                )
+
+            let message = CocoaMQTTMessage(
+                topic: topic,
+                payload: byteArray
             )
+            message.qos = .qos0
+
+            print("V2 Publishing topic: \(topic) date \(Date().timeIntervalSince1970)")
+            self.mqtt?.publish(message)
             
-            DelayPerformedHelper.performAfterDelay(seconds: 0.25, completion: {
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 250_000_000)
                 callback(rr, skipAsyncTopic)
-            })
+            }
             
         } else {
             callback(rr, skipAsyncTopic)
@@ -615,7 +642,7 @@ extension SphinxOnionManager {
     func handleTopicsToSubscribe(topics: [String]) {
         for topic in topics {
             self.mqtt.subscribe([
-                (topic, CocoaMQTTQoS.qos1)
+                (topic, CocoaMQTTQoS.qos0)
             ])
         }
     }
@@ -713,7 +740,9 @@ extension SphinxOnionManager {
                             
                             if !chatIds.isEmpty {
                                 let userInfo: [String: [Int]] = ["chat-ids" : chatIds]
-                                NotificationCenter.default.post(name: .onMessagesStatusChanged, object: nil, userInfo: userInfo)
+                                DispatchQueue.main.async {
+                                    NotificationCenter.default.post(name: .onMessagesStatusChanged, object: nil, userInfo: userInfo)
+                                }
                             }
                         }
                     } catch {

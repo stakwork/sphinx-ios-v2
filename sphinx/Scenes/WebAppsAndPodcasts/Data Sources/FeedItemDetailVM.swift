@@ -9,7 +9,7 @@
 import Foundation
 import UIKit
 
-class FeedItemDetailVM : NSObject {
+@MainActor class FeedItemDetailVM : NSObject {
     
     weak var delegate: PodcastEpisodesDSDelegate?
     

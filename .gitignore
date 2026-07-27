@@ -19,3 +19,5 @@ sphinx/Config.swift
 sphinx/Secrets.debug.xcconfig
 sphinx/Secrets.release.xcconfig
 
+LocalPackages/SphinxErrorReporter/.build/
+

@@ -78,18 +78,19 @@ class StorageManagerItem {
     
 }
 
-class StorageManager {
-    
+class StorageManager: @unchecked Sendable {
+
     private init() {}
-    
+
     class var sharedManager : StorageManager {
         struct Static {
-            static let instance = StorageManager()
+            nonisolated(unsafe) static let instance = StorageManager()
         }
         return Static.instance
     }
-    
+
     var garbageCleanIsInProgress : Bool = false
+    private var garbageWdtFlag: Bool = true
     var downloadedPods = [StorageManagerItem]()//media intentionally stored by user when they dl podcasts
     var cachedMedia = [StorageManagerItem]() //media stored automatically from chat images by SDImage library
     
@@ -221,14 +222,17 @@ class StorageManager {
         return podcastsToItemDict
     }
     
-    func refreshAllStoredData(completion: @escaping ()->()){
+    func refreshAllStoredData(completion: @escaping @MainActor ()->()){
         downloadedPods = getDownloadedPodcastEpisodeList()
         getImageCacheItems(completion: { results in
             self.cachedMedia = results
             self.getSphinxCacheVideos(completion: { videoResults in
                 self.cachedMedia += videoResults
                 self.populateVideoImages()
-                completion()
+                
+                Task { @MainActor in
+                    completion()
+                }
             })
         })
     }
@@ -252,10 +256,16 @@ class StorageManager {
     func processGarbageCleanup() {
         if (garbageCleanIsInProgress == false) {
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0, execute: {
-                self.refreshAllStoredData {
-                    self.cleanupGarbage(completion: {
-                        self.refreshAllStoredData {}
-                    })
+                Task { @MainActor in
+                    self.refreshAllStoredData {
+                        Task { @MainActor in
+                            self.cleanupGarbage(completion: {
+                                Task { @MainActor in
+                                    self.refreshAllStoredData {}
+                                }
+                            })
+                        }
+                    }
                 }
             })
         }
@@ -263,15 +273,16 @@ class StorageManager {
     
     func cleanupGarbage(completion: @escaping ()->()){
         garbageCleanIsInProgress = true
-        var wdt_flag = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 300.0, execute: {
-            wdt_flag = false
+        garbageWdtFlag = true
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 300.0, execute: { [weak self] in
+            self?.garbageWdtFlag = false
         })
         let choppingBlockSnapshot = allItems.sorted(by: {$0.date < $1.date})//static snapshot that never changes
         let changingChoppingBlock = choppingBlockSnapshot//changes so we can compare against limit
         var i = 0
         var semaphore = false
-        while (checkForMemoryOverflow(items: changingChoppingBlock) && wdt_flag) {
+        while (checkForMemoryOverflow(items: changingChoppingBlock) && garbageWdtFlag) {
             if (semaphore == false) {//only allow deletion if semaphore isn't active
                 semaphore = true
                 deleteItem(item: choppingBlockSnapshot[i], completion: {
@@ -280,16 +291,15 @@ class StorageManager {
                     i += 1
                 })
             }
-            wdt_flag = (i >= choppingBlockSnapshot.count - 1) ? false : wdt_flag
+            garbageWdtFlag = (i >= choppingBlockSnapshot.count - 1) ? false : garbageWdtFlag
         }
-        
+
         //now cleanup old chat media
         self.deleteAllOldChatMedia(completion: {
-            wdt_flag = false
+            self.garbageWdtFlag = false
             self.garbageCleanIsInProgress = false
             completion()
         })
-        
     }
     
     func deleteItem(item: StorageManagerItem, completion: @escaping ()->()){
@@ -410,7 +420,6 @@ class StorageManager {
             do {
                 let imagePath = (diskCachePath as NSString).appendingPathComponent(filePath)
                 let attributes = try fileManager.attributesOfItem(atPath: imagePath)
-                print(attributes)
                 if let fileSize = attributes[FileAttributeKey.size] as? NSNumber {
                     size = fileSize.uint64Value
                 }

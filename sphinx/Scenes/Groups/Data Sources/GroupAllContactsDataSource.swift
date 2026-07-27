@@ -8,13 +8,13 @@
 
 import UIKit
 
-protocol GroupAllContactsDataSourceDelegate: class {
+@MainActor protocol GroupAllContactsDataSourceDelegate: class {
     func didAddedContactWith(id: Int)
     func didRemoveContactWith(id: Int)
     func didToggleAll(selected: Bool)
 }
 
-class GroupAllContactsDataSource: NSObject {
+@MainActor class GroupAllContactsDataSource: NSObject {
     
     weak var delegate: GroupAllContactsDataSourceDelegate?
     var tableView: UITableView!

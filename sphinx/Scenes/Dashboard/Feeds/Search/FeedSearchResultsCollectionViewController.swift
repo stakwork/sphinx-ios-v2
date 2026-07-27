@@ -16,7 +16,7 @@ class FeedSearchResultsCollectionViewController: UICollectionViewController {
 
     var onSubscribedFeedCellSelected: ((FeedSearchResult) -> Void)!
     var onFeedSearchResultCellSelected: ((FeedSearchResult) -> Void)!
-    var onContentScrolled: ((UIScrollView) -> Void)?
+    var onContentScrolled: (@MainActor (UIScrollView) -> Void)?
     
     private var currentDataSnapshot: DataSourceSnapshot!
     private var dataSource: DataSource!
@@ -39,7 +39,7 @@ extension FeedSearchResultsCollectionViewController {
         interSectionSpacing: CGFloat = 0.0,
         onSubscribedFeedCellSelected: ((FeedSearchResult) -> Void)!,
         onFeedSearchResultCellSelected: ((FeedSearchResult) -> Void)!,
-        onContentScrolled: ((UIScrollView) -> Void)? = nil
+        onContentScrolled: (@MainActor (UIScrollView) -> Void)? = nil
     ) -> FeedSearchResultsCollectionViewController {
         let viewController = StoryboardScene
             .Dashboard

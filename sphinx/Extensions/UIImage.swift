@@ -68,6 +68,8 @@ extension UIImage {
             break
         case .up, .upMirrored:
             break
+        @unknown default:
+            break
         }
         switch imageOrientation {
         case .upMirrored, .downMirrored:
@@ -78,6 +80,8 @@ extension UIImage {
             transform.translatedBy(x: size.height, y: 0)
             transform.scaledBy(x: -1, y: 1)
         case .up, .down, .left, .right:
+            break
+        @unknown default:
             break
         }
         

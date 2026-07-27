@@ -8,7 +8,7 @@
 import UIKit
 import KYDrawerController
 
-public protocol ContainerViewController: class {
+@MainActor public protocol ContainerViewController: AnyObject {
     var container: UIView? { get }
     var currentViewController: UIViewController? { get set }
     func setContainerContent(_ viewController: UIViewController)

@@ -1,0 +1,5 @@
+0   sphinx   0x0000000100abc123 sphinx.AppDelegate.application(_:didFinishLaunchingWithOptions:) + 42
+1   sphinx   0x0000000100bcd234 sphinx.SomeManager.doWork() + 12
+2   UIKit    0x00000001a0abc456 UIApplicationMain + 136
+3   libdispatch.dylib   0x00000001a1bc5678 _dispatch_main_queue_callback_4CF + 44
+4   CoreFoundation   0x00000001a2cd6789 CFRunLoopRunSpecific + 600

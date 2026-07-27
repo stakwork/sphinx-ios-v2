@@ -13,7 +13,7 @@ import UIKit
 import SDWebImage
 
 @objc(CachedMedia)
-public class CachedMedia: NSManagedObject {
+public class CachedMedia: NSManagedObject, @unchecked Sendable {
     public var image : UIImage?
     public var isVideo : Bool?
     

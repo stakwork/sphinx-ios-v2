@@ -8,7 +8,7 @@
 import Foundation
 import SwiftyJSON
 
-final class ChatListViewModel {
+@MainActor final class ChatListViewModel {
     
     init() {}
     

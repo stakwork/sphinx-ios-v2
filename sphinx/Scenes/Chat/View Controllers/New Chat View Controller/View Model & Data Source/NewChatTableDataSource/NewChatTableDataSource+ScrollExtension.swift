@@ -31,7 +31,8 @@ extension NewChatTableDataSource: UITableViewDelegate {
                 
         if scrolledToTop {
             didScrollToTop()
-        } else if scrolledToBottom {
+        }
+        if scrolledToBottom {
             didScrollToBottom()
         }
         
@@ -101,23 +102,33 @@ extension NewChatTableDataSource: UITableViewDelegate {
                     
                     if let minIndex = minIndex {
                         if (minIndex - 1) <= 0 {
+                            Task { @MainActor [weak self] in
+                                guard let self else { return }
+                                self.allItemsLoaded = true
+                                self.loadingMoreItems = false
+                                self.processMessages(messages: self.messagesArray, showLoadingMore: false)
+                            }
                             return
                         }
-                        DispatchQueue.global(qos: .background).async {
-                            SphinxOnionManager.sharedInstance.startChatMsgBlockFetch(
-                                startIndex: minIndex - 1,
-                                itemsPerPage: itemsPerPage,
-                                stopIndex: 0,
-                                publicKey: publicKey
-                            ) { messagesCount in
+                        SphinxOnionManager.sharedInstance.startChatMsgBlockFetch(
+                            startIndex: minIndex - 1,
+                            itemsPerPage: itemsPerPage,
+                            stopIndex: 0,
+                            publicKey: publicKey
+                        ) { messagesCount in
+                            Task { @MainActor [weak self] in
+                                guard let self = self else { return }
+                                // Fetched messages arrive as unconfirmed — check their send status now
+                                // rather than waiting for the next didChangeContentWith cycle.
+                                SphinxOnionManager.sharedInstance.getMessagesStatusForPendingMessages()
                                 if messagesCount < itemsPerPage {
                                     self.allItemsLoaded = true
-                                    
+
                                     self.processMessages(
                                         messages: self.messagesArray,
                                         showLoadingMore: false
                                     )
-                                    
+
                                     if self.isSearching {
                                         self.delegate?.shouldToggleSearchLoadingWheel(active: false)
                                     }
@@ -125,6 +136,13 @@ extension NewChatTableDataSource: UITableViewDelegate {
                                     self.loadMoreItems(itemsCount: messagesCount)
                                 }
                             }
+                        }
+                    } else {
+                        Task { @MainActor [weak self] in
+                            guard let self else { return }
+                            self.allItemsLoaded = true
+                            self.loadingMoreItems = false
+                            self.processMessages(messages: self.messagesArray, showLoadingMore: false)
                         }
                     }
                 }

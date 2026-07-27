@@ -7,7 +7,7 @@
 //
 
 import UIKit
-private var darkeningViewKey: UInt8 = 21
+nonisolated(unsafe) private var darkeningViewKey: UInt8 = 21
 
 extension UIViewController {
     func presentNavigationControllerWith(vc: UIViewController) {

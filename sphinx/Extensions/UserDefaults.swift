@@ -16,6 +16,7 @@ extension UserDefaults {
         public static let ownerPubKey = DefaultKey<Int>("ownerPubKey")
         public static let inviteString = DefaultKey<String>("inviteString")
         public static let deviceId = DefaultKey<String>("deviceId")
+        public static let mqttSessionId = DefaultKey<String>("mqttSessionId")
         public static let voipDeviceId = DefaultKey<String>("voipDeviceId")
         public static let chatId = DefaultKey<Int>("chatId")
         public static let contactId = DefaultKey<Int>("contactId")
@@ -27,7 +28,13 @@ extension UserDefaults {
         public static let attachmentsTokenExpDate = DefaultKey<Date>("attachmentsTokenExpDate")
         public static let hiveToken = DefaultKey<String>("hiveToken")
         public static let hiveDeviceToken = DefaultKey<String>("hiveDeviceToken")
-        public static let hiveNotificationPrompt = DefaultKey<String>("hiveNotificationPrompt")
+        public static let hiveOrgId               = DefaultKey<String>("hiveOrgId")
+        public static let hiveGithubLogin         = DefaultKey<String>("hiveGithubLogin")
+        public static let hiveOrgSlugs            = DefaultKey<Data>("hiveOrgSlugs")            // JSON-encoded [String]
+        public static let hiveOrgSlugsCacheDate   = DefaultKey<Double>("hiveOrgSlugsCacheDate") // Date.timeIntervalSince1970
+        public static let hiveConversationIdByOrg = DefaultKey<Data>("hiveConversationIdByOrg") // JSON-encoded [String: String]
+        public static let hiveCanvasChatHistoryByOrg = DefaultKey<Data>("hiveCanvasChatHistoryByOrg") // JSON-encoded [String: [CanvasChatMessage]]
+        public static let hivePendingProposal = DefaultKey<Data>("hivePendingProposal")         // JSON-encoded PendingProposal
         public static let inviterNickname = DefaultKey<String>("inviterNickname")
         public static let inviterPubkey = DefaultKey<String>("inviterPubkey")
         public static let inviterRouteHint = DefaultKey<String>("inviterRouteHint")
@@ -56,6 +63,7 @@ extension UserDefaults {
         public static let shouldTrackActions = DefaultKey<Bool>("shouldTrackActions")
         public static let shouldAutoDownloadSubscribedPods = DefaultKey<Bool>("shouldAutoDownloadSubscribedPods")
         public static let hiveNotificationsEnabled = DefaultKey<Bool>("hiveNotificationsEnabled")
+        public static let biometricAuthEnabled = DefaultKey<Bool>("biometricAuthEnabled")
         public static let setupSigningDevice = DefaultKey<Bool>("setupSigningDevice")
         public static let setupPhoneSigner = DefaultKey<Bool>("setupPhoneSigner")
         public static let phoneSignerHost = DefaultKey<String>("phoneSignerHost")
@@ -78,6 +86,7 @@ extension UserDefaults {
         public static let skipAds = DefaultKey<Bool>("skipAds")
         public static let didMigrateToTZ = DefaultKey<Bool>("didMigrateToTZ")
         public static let systemTimezone = DefaultKey<String>("systemTimezone")
+        public static let isRestoreCompleted = DefaultKey<Bool>("isRestoreCompleted")
     }
     
     class func resetUserDefaults() {
@@ -100,7 +109,7 @@ extension UserDefaults {
     }
 }
 
-public class DefaultKey<S> {
+public class DefaultKey<S>: @unchecked Sendable {
     private let name: String
     
     init(_ name: String) {

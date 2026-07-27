@@ -8,17 +8,18 @@
 
 import Foundation
 
-class ChatTrackingHandler {
-    
+class ChatTrackingHandler: @unchecked Sendable {
+
     class var shared : ChatTrackingHandler {
         struct Static {
-            static let instance = ChatTrackingHandler()
+            nonisolated(unsafe) static let instance = ChatTrackingHandler()
         }
         return Static.instance
     }
     
     var replyableMessages: [Int: Int] = [:]
     var ongoingMessages : [Int: String] = [:]
+    var draftTimestamps: [Int: Date] = [:]
     
     func deleteReplyableMessage(with chatId: Int?) {
         guard let chatId = chatId else { return }
@@ -49,6 +50,7 @@ class ChatTrackingHandler {
         guard let chatId = chatId else { return }
         
         ongoingMessages.removeValue(forKey: chatId)
+        draftTimestamps.removeValue(forKey: chatId)
     }
     
     func saveOngoingMessage(
@@ -58,6 +60,17 @@ class ChatTrackingHandler {
         guard let chatId = chatId else { return }
         
         ongoingMessages[chatId] = message
+        
+        if message.isEmpty {
+            draftTimestamps.removeValue(forKey: chatId)
+        } else {
+            draftTimestamps[chatId] = Date()
+        }
+    }
+    
+    func getDraftTimestampFor(chatId: Int?) -> Date? {
+        guard let chatId = chatId else { return nil }
+        return draftTimestamps[chatId]
     }
     
     func getOngoingMessageFor(chatId: Int?) -> String? {

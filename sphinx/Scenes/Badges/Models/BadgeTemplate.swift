@@ -9,7 +9,7 @@
 import Foundation
 import ObjectMapper
 
-public var BadgeRewardsMap : [Int:String] = [
+nonisolated(unsafe) public var BadgeRewardsMap : [Int:String] = [
     1 : "Earn",
     2 : "Spend"
 ]

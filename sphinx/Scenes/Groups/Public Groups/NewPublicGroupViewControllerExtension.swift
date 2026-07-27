@@ -334,28 +334,29 @@ extension NewPublicGroupViewController : UITextFieldDelegate {
         case GroupFields.TimeToStake.rawValue:
             groupsManager.newGroupInfo.timeToStake = Int(textField.text ?? "")
         case GroupFields.AppUrl.rawValue:
-            if let url = textField.text, url.isValidURL || url.isEmpty {
-                groupsManager.newGroupInfo.appUrl = textField.text ?? ""
+            let trimmedAppUrl = (textField.text ?? "").trimmingCharacters(in: .whitespaces)
+            if trimmedAppUrl.isValidURL || trimmedAppUrl.isEmpty {
+                groupsManager.newGroupInfo.appUrl = trimmedAppUrl
             } else {
                 invalidUrl()
             }
             break
         case GroupFields.SecondBrainUrl.rawValue:
-            if let url = textField.text, url.isValidURL || url.isEmpty {
-                groupsManager.newGroupInfo.secondBrainUrl = textField.text ?? ""
+            let trimmedSecondBrainUrl = (textField.text ?? "").trimmingCharacters(in: .whitespaces)
+            if trimmedSecondBrainUrl.isValidURL || trimmedSecondBrainUrl.isEmpty {
+                groupsManager.newGroupInfo.secondBrainUrl = trimmedSecondBrainUrl
             } else {
                 invalidUrl()
             }
             break
         case GroupFields.FeedUrl.rawValue:
-            if let url = textField.text {
-                if url.isValidURL || url.isEmpty {
-                    groupsManager.newGroupInfo.feedUrl = textField.text ?? ""
-                } else {
-                    invalidUrl()
-                }
-                validateFeedUrl(url)
+            let trimmedFeedUrl = (textField.text ?? "").trimmingCharacters(in: .whitespaces)
+            if trimmedFeedUrl.isValidURL || trimmedFeedUrl.isEmpty {
+                groupsManager.newGroupInfo.feedUrl = trimmedFeedUrl
+            } else {
+                invalidUrl()
             }
+            validateFeedUrl(trimmedFeedUrl)
             break
         default:
             break
@@ -382,7 +383,7 @@ extension NewPublicGroupViewController : UITextFieldDelegate {
     }
     
     func completeUrlAndLoadImage(textField: UITextField) {
-        let imgUrl = textField.text ?? ""
+        let imgUrl = (textField.text ?? "").trimmingCharacters(in: .whitespaces)
         
         if imgUrl.isValidURL {
             groupsManager.newGroupInfo.img = imgUrl

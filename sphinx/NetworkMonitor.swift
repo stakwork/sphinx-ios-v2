@@ -9,22 +9,27 @@
 import Foundation
 import Network
 
-class NetworkMonitor {
-    static let shared = NetworkMonitor()
+class NetworkMonitor: @unchecked Sendable {
+    nonisolated(unsafe) static let shared = NetworkMonitor()
     private var nwMonitor: NWPathMonitor?
     private var isNwMonitoring = false
-    
+    private var skipInitialUpdate = false
+
     private(set) var isConnected: Bool = false
     var connectionType: NWInterface.InterfaceType?
-    
+
+    private var lastIsConnected: Bool? = nil
+    private var lastConnectionType: NWInterface.InterfaceType? = nil
+
     private init() {}
 
     // This method should be called first to start monitoring the network connection.
     func startMonitoring() {
         if isNwMonitoring { return }
-        
+
         nwMonitor = NWPathMonitor()
-        
+        skipInitialUpdate = true
+
         // Network changes have to be monitored on the background as the changes are to be continuously monitored
         let queue = DispatchQueue(label: "NWMonitor")
         nwMonitor?.start(queue: queue)
@@ -46,26 +51,53 @@ class NetworkMonitor {
 
     // Use SCNetworkReachability to determine the actual network state
     private func updateConnectionStatus(path: NWPath) {
-        isConnected = path.status == .satisfied
-        
+        let newIsConnected = path.status == .satisfied
+
         // Determine the connection type
+        let newConnectionType: NWInterface.InterfaceType?
         if path.usesInterfaceType(.wifi) {
-            connectionType = .wifi
+            newConnectionType = .wifi
         } else if path.usesInterfaceType(.cellular) {
-            connectionType = .cellular
+            newConnectionType = .cellular
         } else if path.usesInterfaceType(.wiredEthernet) {
-            connectionType = .wiredEthernet
+            newConnectionType = .wiredEthernet
         } else {
-            connectionType = nil // Connection type is unknown
+            newConnectionType = nil
         }
+
+        // On first callback after startMonitoring(), seed state without notifying.
+        // NWPathMonitor always fires immediately on start; we don't want that initial
+        // fire to trigger a reconnect if the network type changed while we were stopped.
+        if skipInitialUpdate {
+            skipInitialUpdate = false
+            isConnected = newIsConnected
+            connectionType = newConnectionType
+            lastIsConnected = newIsConnected
+            lastConnectionType = newConnectionType
+            return
+        }
+
+        // Deduplicate: skip if state hasn't changed
+        if newIsConnected == lastIsConnected && newConnectionType == lastConnectionType {
+            print("[NetMonitor] Duplicate status suppressed")
+            return
+        }
+
+        isConnected = newIsConnected
+        connectionType = newConnectionType
+        lastIsConnected = newIsConnected
+        lastConnectionType = newConnectionType
 
         print("Network status changed - isConnected: \(isConnected), Connection Type: \(String(describing: connectionType))")
 
-        // Example Notification Logic
-        if isConnected {
-            NotificationCenter.default.post(name: .connectedToInternet, object: nil)
-        } else {
-            NotificationCenter.default.post(name: .disconnectedFromInternet, object: nil)
+        // Post notifications on main thread — observers may use MainActor.assumeIsolated
+        let connected = isConnected
+        DispatchQueue.main.async {
+            if connected {
+                NotificationCenter.default.post(name: .connectedToInternet, object: nil)
+            } else {
+                NotificationCenter.default.post(name: .disconnectedFromInternet, object: nil)
+            }
         }
     }
 

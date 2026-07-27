@@ -9,6 +9,7 @@
 import Foundation
 import AVKit
 
+@MainActor
 extension PodcastPlayerController {
     func updatePodcastObject(
         podcastId: String,
@@ -75,8 +76,9 @@ extension PodcastPlayerController {
     }
 }
 
+@MainActor
 extension PodcastPlayerController {
-    
+
     func invalidateTime() {
         playingTimer?.invalidate()
         playingTimer = nil
@@ -198,8 +200,9 @@ extension PodcastPlayerController {
     }
 }
 
+@MainActor
 extension PodcastPlayerController {
-    
+
     var isPlaying: Bool {
         get {
             return player?.timeControlStatus == AVPlayer.TimeControlStatus.playing ||
@@ -220,24 +223,24 @@ extension PodcastPlayerController {
         }
     }
     
-    func isPlaying(
+    nonisolated func isPlaying(
         podcastId: String
     ) -> Bool {
         if let _ = podcastData?.clipInfo {
             return false
         }
-        
-        return isPlaying && podcastData?.podcastId == podcastId
+
+        return isLoadingOrPlaying && podcastData?.podcastId == podcastId
     }
-    
-    func isPlaying(
+
+    nonisolated func isPlaying(
         episodeId: String
     ) -> Bool {
         if let _ = podcastData?.clipInfo {
             return false
         }
-        
-        return isPlaying && podcastData?.episodeId == episodeId
+
+        return isLoadingOrPlaying && podcastData?.episodeId == episodeId
     }
     
     func isPlaying(

@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol NewMessageReplyViewDelegate: class {
+@MainActor protocol NewMessageReplyViewDelegate: class {
     func didTapMessageReplyViewWith(height: CGFloat?)
 }
 

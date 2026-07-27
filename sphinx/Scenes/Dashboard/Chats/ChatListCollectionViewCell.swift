@@ -1,5 +1,6 @@
 import UIKit
 
+@MainActor
 protocol ChatListCollectionViewCellDelegate : NSObject{
     func didLongPressOnCell(
         cell: ChatListCollectionViewCell,
@@ -18,6 +19,7 @@ class ChatListCollectionViewCell: UICollectionViewCell {
     @IBOutlet weak var dateLabel: UILabel!
     @IBOutlet weak var separatorLine: UIView!
     @IBOutlet weak var lockSign: UILabel!
+    @IBOutlet weak var cpuIcon: UILabel!
     @IBOutlet weak var scheduleIcon: UILabel!
     @IBOutlet weak var inviteIcon: UILabel!
     @IBOutlet weak var failedMessageIcon: UILabel!
@@ -52,8 +54,10 @@ extension ChatListCollectionViewCell {
     
     override func awakeFromNib() {
         super.awakeFromNib()
-        
-        setupViews()
+
+        Task { @MainActor in
+            self.setupViews()
+        }
     }
 }
 
@@ -110,6 +114,7 @@ extension ChatListCollectionViewCell {
         messageLabel.text = ""
         dateLabel.text = ""
         lockSign.isHidden = true
+        cpuIcon.isHidden = true
         muteImageView.isHidden = true
         inviteIcon.isHidden = true
         invitePriceContainer.isHidden = true
@@ -143,7 +148,9 @@ extension ChatListCollectionViewCell {
             
             nameLabel.text = chatListObject.getName()
             muteImageView.isHidden = (chatListObject.getChat()?.isMuted() ?? false) == false
-            lockSign.isHidden = chatListObject.isEncrypted() == false
+            let isAgentContact = chatListObject.getContact()?.isAgent == true
+            lockSign.isHidden = isAgentContact || chatListObject.isEncrypted() == false
+            cpuIcon.isHidden = !isAgentContact
         }
         
         renderLastMessage(for: chatListObject)
@@ -295,6 +302,38 @@ extension ChatListCollectionViewCell {
         } else {
             inviteIcon.isHidden = true
             failedMessageIcon.isHidden = true
+            
+            let chatId = chatListObject.getChat()?.id
+            let lastMessageDate = chatListObject.lastMessage?.date ?? .distantPast
+            let draftDate = ChatTrackingHandler.shared.getDraftTimestampFor(chatId: chatId)
+
+            if let draft = ChatTrackingHandler.shared.getOngoingMessageFor(chatId: chatId),
+               !draft.isEmpty,
+               let draftDate = draftDate,
+               draftDate > lastMessageDate {
+                let attributed = NSMutableAttributedString()
+                let font = messageLabel.font ?? Constants.kMessagePreviewFont
+                let draftPrefix = NSAttributedString(
+                    string: "Draft: ",
+                    attributes: [.foregroundColor: UIColor.Sphinx.PrimaryGreen, .font: font]
+                )
+                let draftBody = NSAttributedString(
+                    string: draft,
+                    attributes: [.foregroundColor: UIColor.Sphinx.SecondaryText, .font: font]
+                )
+                attributed.append(draftPrefix)
+                attributed.append(draftBody)
+
+                messageLabel.attributedText = attributed
+                messageLabel.superview?.isHidden = false
+                failedMessageIcon.isHidden = true
+                inviteIcon.isHidden = true
+                dateLabel.text = draftDate.getLastMessageDateFormat()
+                dateLabel.isHidden = false
+                return
+            }
+            
+            messageLabel.attributedText = nil
             
             if let lastMessage = chatListObject.lastMessage {
                 

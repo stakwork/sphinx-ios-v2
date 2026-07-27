@@ -8,7 +8,7 @@
 
 import UIKit
 
-@objc protocol TribeMemberInfoDelegate : class {
+@MainActor @objc protocol TribeMemberInfoDelegate : class {
     func didUpdateUploadProgress(uploadString: String)
     @objc optional func didChangeImageOrAlias()
 }

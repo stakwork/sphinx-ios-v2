@@ -49,7 +49,7 @@ class SwipableReplyCell: UITableViewCell {
     }
     
     func resetButtonZIndex() {
-        if button1 != nil { button1.superview!.sendSubviewToBack(button1)}
+        if let button1 = button1 { button1.superview?.sendSubviewToBack(button1) }
     }
     
     @objc func panAction(_ sender: UIPanGestureRecognizer) {
@@ -73,9 +73,13 @@ class SwipableReplyCell: UITableViewCell {
             self.panStartPoint = recognizer!.translation(in: self.allContentView)
             self.startingRightLayoutConstraintConstant = self.rightConstraint.constant
         case UIGestureRecognizer.State.changed:
+            guard let panStartPoint = self.panStartPoint,
+                  let startingRightLayoutConstraintConstant = self.startingRightLayoutConstraintConstant else {
+                return
+            }
             let currentPoint = recognizer!.translation(in: self.allContentView)
-            let deltaX = currentPoint.x - self.panStartPoint!.x
-            let deltaY = currentPoint.y - self.panStartPoint!.y
+            let deltaX = currentPoint.x - panStartPoint.x
+            let deltaY = currentPoint.y - panStartPoint.y
             
             if panningState == .panningRow {
                 if deltaY > deltaX && deltaY > 20 {
@@ -107,7 +111,7 @@ class SwipableReplyCell: UITableViewCell {
                         }
                     }
                 } else {
-                    let adjustment = self.startingRightLayoutConstraintConstant! - deltaX
+                    let adjustment = startingRightLayoutConstraintConstant - deltaX
                     if panningLeft {
                         let constant = max(adjustment, 0)
                         if constant == 0 {
@@ -237,7 +241,7 @@ class SwipableReplyCell: UITableViewCell {
     }
     
     func bringButtonsToFront() {
-        if button1 != nil { button1.superview!.bringSubviewToFront(button1)}
+        if let button1 = button1 { button1.superview?.bringSubviewToFront(button1) }
     }
     
     override func prepareForReuse() {

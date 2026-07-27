@@ -1,6 +1,14 @@
 import UIKit
 
+@MainActor protocol WorkspaceFeatureTableViewCellDelegate: AnyObject {
+    func cell(_ cell: WorkspaceFeatureTableViewCell, didTapStatusFor featureId: String)
+    func cell(_ cell: WorkspaceFeatureTableViewCell, didTapPriorityFor featureId: String)
+}
+
 class WorkspaceFeatureTableViewCell: UITableViewCell {
+
+    weak var delegate: WorkspaceFeatureTableViewCellDelegate?
+    private var featureId: String?
     
     static let reuseID = "WorkspaceFeatureTableViewCell"
     static var nib: UINib {
@@ -17,37 +25,47 @@ class WorkspaceFeatureTableViewCell: UITableViewCell {
     
     override func awakeFromNib() {
         super.awakeFromNib()
-        
-        backgroundColor = .Sphinx.Body
-        contentView.backgroundColor = .Sphinx.Body
-        
-        titleLabel.textColor = .Sphinx.Text
-        titleLabel.font = UIFont.systemFont(ofSize: 16, weight: .medium)
-        titleLabel.numberOfLines = 2
-        
-        createdByLabel.textColor = .Sphinx.SecondaryText
-        createdByLabel.font = UIFont(name: "Roboto-Regular", size: 13)
-        
-        updatedAtLabel.textColor = .Sphinx.SecondaryText
-        updatedAtLabel.font = UIFont(name: "Roboto-Regular", size: 13)
-        
-        [statusBadge, priorityBadge].forEach {
-            $0?.layer.cornerRadius = 10
-            $0?.clipsToBounds = true
-            $0?.textColor = .white
-            $0?.font = UIFont(name: "Roboto-Medium", size: 11)
-            $0?.textAlignment = .center
+
+        MainActor.assumeIsolated {
+            backgroundColor = .Sphinx.Body
+            contentView.backgroundColor = .Sphinx.Body
+
+            titleLabel.textColor = .Sphinx.Text
+            titleLabel.font = UIFont.systemFont(ofSize: 15, weight: .medium)
+            titleLabel.numberOfLines = 2
+
+            createdByLabel.textColor = .Sphinx.SecondaryText
+            createdByLabel.font = UIFont(name: "Roboto-Regular", size: 11)
+
+            updatedAtLabel.textColor = .Sphinx.SecondaryText
+            updatedAtLabel.font = UIFont(name: "Roboto-Regular", size: 11)
+
+            [statusBadge, priorityBadge].forEach {
+                $0?.layer.cornerRadius = 10
+                $0?.clipsToBounds = true
+                $0?.textColor = .white
+                $0?.font = UIFont(name: "Roboto-Medium", size: 10) ?? UIFont.systemFont(ofSize: 10, weight: .medium)
+                $0?.textAlignment = .center
+                $0?.isUserInteractionEnabled = true
+            }
+
+            let statusTap = UITapGestureRecognizer(target: self, action: #selector(statusBadgeTapped))
+            statusBadge.addGestureRecognizer(statusTap)
+
+            let priorityTap = UITapGestureRecognizer(target: self, action: #selector(priorityBadgeTapped))
+            priorityBadge.addGestureRecognizer(priorityTap)
+
+            separatorView.backgroundColor = .Sphinx.LightDivider
+
+            ownerImageView.layer.cornerRadius = 9
+            ownerImageView.clipsToBounds = true
+            ownerImageView.contentMode = .scaleAspectFill
+            ownerImageView.isHidden = true
         }
-        
-        separatorView.backgroundColor = .Sphinx.LightDivider
-        
-        ownerImageView.layer.cornerRadius = 9
-        ownerImageView.clipsToBounds = true
-        ownerImageView.contentMode = .scaleAspectFill
-        ownerImageView.isHidden = true
     }
     
     func configure(with feature: HiveFeature, isLastRow: Bool) {
+        featureId = feature.id
         titleLabel.text = feature.title
         
         // Created by
@@ -99,6 +117,18 @@ class WorkspaceFeatureTableViewCell: UITableViewCell {
         ownerImageView.sd_cancelCurrentImageLoad()
         ownerImageView.image = nil
         ownerImageView.isHidden = true
+        delegate = nil
+        featureId = nil
+    }
+
+    @objc private func statusBadgeTapped() {
+        guard let featureId = featureId else { return }
+        delegate?.cell(self, didTapStatusFor: featureId)
+    }
+
+    @objc private func priorityBadgeTapped() {
+        guard let featureId = featureId else { return }
+        delegate?.cell(self, didTapPriorityFor: featureId)
     }
     
     private func formatDate(_ dateString: String?) -> String {

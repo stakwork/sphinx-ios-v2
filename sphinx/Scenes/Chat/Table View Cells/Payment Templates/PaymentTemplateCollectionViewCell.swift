@@ -15,9 +15,11 @@ class PaymentTemplateCollectionViewCell: UICollectionViewCell {
     
     override func awakeFromNib() {
         super.awakeFromNib()
-        
-        circularImageBack.layer.cornerRadius = circularImageBack.frame.size.width / 2
-        circularImageView.layer.cornerRadius = circularImageView.frame.size.width / 2
+
+        MainActor.assumeIsolated {
+            circularImageBack.layer.cornerRadius = circularImageBack.frame.size.width / 2
+            circularImageView.layer.cornerRadius = circularImageView.frame.size.width / 2
+        }
     }
     
     func configure(rowIndex: Int, imageTemplate: ImageTemplate?) {

@@ -36,7 +36,7 @@ extension NewChatTableDataSource {
         restorePreloadedMessages()
         
         self.configureResultsController(items: max(self.dataSource.snapshot().numberOfItems, 100))
-        self.fetchMoreItems()
+//        self.fetchMoreItems()
     }
     
     func makeSnapshotForCurrentState() -> DataSourceSnapshot {
@@ -65,8 +65,6 @@ extension NewChatTableDataSource {
     func updateSnapshot() {
         let snapshot = makeSnapshotForCurrentState()
         DispatchQueue.main.async {
-            CoreDataManager.sharedManager.saveContext()
-            
             self.saveSnapshotCurrentState()
             self.dataSource.apply(snapshot, animatingDifferences: false)
             self.restoreScrollLastPosition()
@@ -109,6 +107,9 @@ extension NewChatTableDataSource {
         let linkData = (dataSourceItem.linkWeb?.link != nil) ? self.preloaderHelper.linksData[dataSourceItem.linkWeb!.link] : nil
         let uploadProgressData = (dataSourceItem.messageId != nil) ? self.uploadingProgress[dataSourceItem.messageId!] : nil
         let replyViewHeight = (dataSourceItem.messageId != nil) ? self.replyViewHeight[dataSourceItem.messageId!] : nil
+        let roomName = dataSourceItem.messageId.flatMap { self.messageIdToRoomName[$0] }
+        let participants = roomName.flatMap { self.callParticipantsStore[$0] } ?? []
+        let participantsData = participants.isEmpty ? nil : MessageTableCellState.ParticipantsData(participants: participants)
         
         cell?.configureWith(
             messageCellState: dataSourceItem,
@@ -117,6 +118,7 @@ extension NewChatTableDataSource {
             tribeData: tribeData,
             linkData: linkData,
             uploadProgressData: uploadProgressData,
+            participantsData: participantsData,
             delegate: self,
             searchingTerm: self.searchingTerm,
             indexPath: indexPath,
@@ -336,7 +338,10 @@ extension NewChatTableDataSource {
     }
     
     func forceReload() {
-        processMessages(messages: messagesArray, showLoadingMore: true)
+        processMessages(
+            messages: messagesArray,
+            showLoadingMore: !self.allItemsLoaded && self.chat?.conversationContact?.isAgent != true
+        )
     }
     
     func getMessagesCount() -> Int {
@@ -735,7 +740,7 @@ extension NewChatTableDataSource {
 
 
 
-extension NewChatTableDataSource : NSFetchedResultsControllerDelegate {
+extension NewChatTableDataSource : @preconcurrency NSFetchedResultsControllerDelegate {
     
     func startListeningToResultsController() {
         messagesResultsController?.delegate = self
@@ -868,14 +873,28 @@ extension NewChatTableDataSource : NSFetchedResultsControllerDelegate {
                     }
                     
                     self.messagesCountFetched = messages.count
-                    self.messagesArray = messages.filter({ !$0.isApprovedRequest() }).reversed()
+                    let updatedMessages = messages.filter({ !$0.isApprovedRequest() }).reversed()
+                    
+                    // Restart-on-new-call trigger: if any newly inserted messages are call-type,
+                    // notify the delegate (the chat VC) so it can restart banner polling and pick
+                    // up the new room — without the user having to leave and re-enter the chat.
+                    let previousIds = Set(self.messagesArray.map { $0.id })
+                    let insertedCallMessages = updatedMessages.filter { msg in
+                        !previousIds.contains(msg.id) && msg.isCallLink()
+                    }
+                    if !insertedCallMessages.isEmpty && !self.isThread {
+                        DispatchQueue.main.async {
+                            self.delegate?.didInsertNewCallTypeMessage()
+                        }
+                    }
+                    
+                    self.messagesArray = Array(updatedMessages)
+                    
                     self.processTimezoneNotSentRecently()
 
-                    self.updateMessagesStatusesFrom(messages: self.messagesArray)
-                    
                     self.processMessages(
                         messages: self.messagesArray,
-                        showLoadingMore: !self.allItemsLoaded && messages.count >= 100
+                        showLoadingMore: !self.allItemsLoaded && self.chat?.conversationContact?.isAgent != true
                     )
                     
                     self.configureSecondaryMessagesResultsController()
@@ -885,45 +904,17 @@ extension NewChatTableDataSource : NSFetchedResultsControllerDelegate {
                     }
                 }
             } else {
-                let messages = messagesResultsController.sections?.first?.objects as? [TransactionMessage] ?? []
-                
+//                let messages = messagesResultsController.sections?.first?.objects as? [TransactionMessage] ?? []
+//                
                 self.processMessages(
                     messages: self.messagesArray,
-                    showLoadingMore: !self.allItemsLoaded && messages.count >= 100
+                    showLoadingMore: !self.allItemsLoaded && self.chat?.conversationContact?.isAgent != true
                 )
             }
-        }
-    }
-    
-    func updateMessagesStatusesFrom(messages: [TransactionMessage]) {
-        let dispatchQueue = DispatchQueue.global(qos: .utility)
-        dispatchQueue.async {
-            if messages.isEmpty {
-                return
+            
+            DispatchQueue.main.async {
+                self.delegate?.updateEmptyView()
             }
-
-            let confirmedMessages = messages.filter({
-                return $0.senderId == UserData.sharedInstance.getUserId() &&
-                       ($0.status == TransactionMessage.TransactionMessageStatus.confirmed.rawValue ||
-                        $0.status == TransactionMessage.TransactionMessageStatus.pending.rawValue)
-            })
-            let tags = confirmedMessages.compactMap({ $0.tag })
-
-            if tags.isEmpty {
-                return
-            }
-
-            if !self.messageTableCellStateArray.isEmpty {
-                if !self.loadingMoreItems {
-                    if self.lastMessageTagRestored == tags.last ?? "" {
-                        return
-                    }
-                }
-            }
-
-            self.lastMessageTagRestored = tags.last ?? ""
-
-            SphinxOnionManager.sharedInstance.getMessagesStatusFor(tags: tags)
         }
     }
     

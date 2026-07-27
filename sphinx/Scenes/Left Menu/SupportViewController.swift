@@ -122,11 +122,13 @@ extension SupportViewController : UITextViewDelegate {
 }
 
 extension SupportViewController : MFMailComposeViewControllerDelegate {
-    func mailComposeController(_ controller: MFMailComposeViewController, didFinishWith result: MFMailComposeResult, error: Error?) {
-        controller.dismiss(animated: true, completion: nil)
-        
-        if result == MFMailComposeResult.sent {
-            AlertHelper.showAlert(title: "generic.success.title".localized, message: "message.sent".localized, on: self)
+    nonisolated func mailComposeController(_ controller: MFMailComposeViewController, didFinishWith result: MFMailComposeResult, error: Error?) {
+        Task { @MainActor [weak self] in
+            guard let self = self else { return }
+            controller.dismiss(animated: true, completion: nil)
+            if result == MFMailComposeResult.sent {
+                AlertHelper.showAlert(title: "generic.success.title".localized, message: "message.sent".localized, on: self)
+            }
         }
     }
 }

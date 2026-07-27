@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol GroupActionsViewDelegate: class {
+@MainActor protocol GroupActionsViewDelegate: AnyObject {
     func didTapDeleteTribeButton()
     func didTapApproveRequestButton()
     func didTapRejectRequestButton()

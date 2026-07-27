@@ -129,8 +129,9 @@ class SetPinCodeViewController: UIViewController {
         if pinArray.count >= 6 {
             loading = true
             
-            DelayPerformedHelper.performAfterDelay(seconds: 0.5) {
-                self.didEnterPin()
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(nanoseconds: 500_000_000)
+                self?.didEnterPin()
             }
         }
     }

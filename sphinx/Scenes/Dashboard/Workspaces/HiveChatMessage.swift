@@ -9,7 +9,7 @@
 import Foundation
 import SwiftyJSON
 
-struct HiveChatMessageCreatedBy {
+struct HiveChatMessageCreatedBy: Sendable {
     let id: String
     let name: String?
     let email: String?
@@ -24,14 +24,14 @@ struct HiveChatMessageCreatedBy {
     }
 }
 
-struct PRProgress {
+struct PRProgress: @unchecked Sendable {
     let state: String?
     let mergeable: Bool?
     let ciStatus: String?
     let ciSummary: String?
 }
 
-struct PRContent {
+struct PRContent: Sendable {
     let repo: String?
     var url: String?
     var status: String?
@@ -44,18 +44,75 @@ struct PRContent {
     var state: String?
 }
 
-struct LongformContent {
+struct LongformContent: Sendable {
     let title: String?
     let text: String?
 }
 
-struct ClarifyingQuestion {
+struct ClarifyingQuestion: Sendable {
     let question: String
     let options: [String]
     let type: String // "single_choice" or "multiple_choice"
 }
 
-struct HiveChatMessageArtifact {
+// MARK: - Stream Artifact Info
+
+struct StreamArtifactInfo: Sendable {
+    let requestId: String
+    let eventsToken: String
+    let baseUrl: String
+}
+
+// MARK: - Workflow Content
+
+// MARK: - Publish Workflow Content
+
+struct PublishWorkflowContent: Sendable {
+    let workflowId: Int?
+    let workflowName: String?
+    let workflowRefId: String?
+    var published: Bool
+    /// In-flight flag: `true` while the publish API call is in flight.
+    /// Survives table reload / SSE reindex — configure(with:) restores the spinner from this flag.
+    var loading: Bool
+}
+
+// MARK: - Publish Prompt Content
+
+struct PublishPromptContent: Sendable {
+    let promptId: String?
+    let promptVersionId: String?
+    let promptName: String?
+    var published: Bool
+    /// In-flight flag: `true` while the publish API call is in flight.
+    /// Survives table reload / SSE reindex — configure(with:) restores the spinner from this flag.
+    var loading: Bool
+}
+
+// MARK: - Publish Script Content
+
+struct PublishScriptContent: Sendable {
+    let scriptId: Int?
+    let scriptVersionId: Int?
+    let scriptName: String?
+    var published: Bool
+    /// In-flight flag: `true` while the publish API call is in flight.
+    /// Survives table reload / SSE reindex — configure(with:) restores the spinner from this flag.
+    var loading: Bool
+}
+
+struct WorkflowContent: Sendable {
+    let workflowId: Int?
+    let workflowName: String?
+    let workflowRefId: String?
+    let workflowVersionId: String?
+    let projectId: String?       // covers both projectId and debuggerProjectId
+    let webhook: String?
+    let workflowJson: String?
+    let originalWorkflowJson: String?
+}
+
+struct HiveChatMessageArtifact: @unchecked Sendable {
     let id: String?
     let type: String?
     /// Plain string content (for CODE, DIFF, etc.)
@@ -68,9 +125,24 @@ struct HiveChatMessageArtifact {
     let contentJSON: JSON?
     /// Parsed clarifying questions when type == "PLAN" and tool_use == "ask_clarifying_questions"
     let clarifyingQuestions: [ClarifyingQuestion]?
+    /// Parsed stream info when type == "STREAM"
+    let streamInfo: StreamArtifactInfo?
+    /// Parsed workflow content when type == "WORKFLOW"
+    let workflowContent: WorkflowContent?
+    /// Parsed publish script content when type == "PUBLISH_SCRIPT"
+    var publishScriptContent: PublishScriptContent?
+    /// Parsed publish workflow content when type == "PUBLISH_WORKFLOW"
+    var publishWorkflowContent: PublishWorkflowContent?
+    /// Parsed publish prompt content when type == "PUBLISH_PROMPT"
+    var publishPromptContent: PublishPromptContent?
 
     var isPullRequest: Bool { type == "PULL_REQUEST" }
     var isLongform: Bool { type == "LONGFORM" }
+    var isStream: Bool { type == "STREAM" }
+    var isWorkflow: Bool { type == "WORKFLOW" }
+    var isPublishScript: Bool { type == "PUBLISH_SCRIPT" }
+    var isPublishWorkflow: Bool { type == "PUBLISH_WORKFLOW" }
+    var isPublishPrompt: Bool { type == "PUBLISH_PROMPT" }
 
     var isClarifyingQuestions: Bool {
         return type == "PLAN" && contentJSON?["tool_use"].string == "ask_clarifying_questions"
@@ -80,7 +152,39 @@ struct HiveChatMessageArtifact {
         self.id   = json["id"].string
         self.type = json["type"].string
 
-        if json["type"].string == "PULL_REQUEST" {
+        if json["type"].string == "STREAM" {
+            self.prContent = nil
+            self.content = nil
+            self.longformContent = nil
+            self.contentJSON = nil
+            self.clarifyingQuestions = nil
+            self.workflowContent = nil
+            self.publishScriptContent = nil
+            self.publishWorkflowContent = nil
+            self.publishPromptContent = nil
+            // Content may be a JSON object or a JSON string that needs decoding
+            let rawContent = json["content"]
+            let contentJSON: JSON
+            if rawContent.type == .string,
+               let str = rawContent.string,
+               let data = str.data(using: .utf8),
+               let parsed = try? JSON(data: data) {
+                contentJSON = parsed
+            } else {
+                contentJSON = rawContent
+            }
+            if let requestId = contentJSON["requestId"].string,
+               let eventsToken = contentJSON["eventsToken"].string,
+               let baseUrl = contentJSON["baseUrl"].string {
+                self.streamInfo = StreamArtifactInfo(
+                    requestId: requestId,
+                    eventsToken: eventsToken,
+                    baseUrl: baseUrl
+                )
+            } else {
+                self.streamInfo = nil
+            }
+        } else if json["type"].string == "PULL_REQUEST" {
             let c = json["content"]
             let progress = c["progress"]
             self.prContent = PRContent(
@@ -103,6 +207,11 @@ struct HiveChatMessageArtifact {
             self.longformContent = nil
             self.contentJSON = nil
             self.clarifyingQuestions = nil
+            self.streamInfo = nil
+            self.workflowContent = nil
+            self.publishScriptContent = nil
+            self.publishWorkflowContent = nil
+            self.publishPromptContent = nil
         } else if json["type"].string == "LONGFORM" {
             let c = json["content"]
             self.longformContent = LongformContent(title: c["title"].string, text: c["text"].string)
@@ -110,6 +219,11 @@ struct HiveChatMessageArtifact {
             self.prContent = nil
             self.contentJSON = nil
             self.clarifyingQuestions = nil
+            self.streamInfo = nil
+            self.workflowContent = nil
+            self.publishScriptContent = nil
+            self.publishWorkflowContent = nil
+            self.publishPromptContent = nil
         } else if json["type"].string == "PLAN" {
             self.prContent = nil
             self.content = nil
@@ -126,35 +240,135 @@ struct HiveChatMessageArtifact {
             } else {
                 self.clarifyingQuestions = nil
             }
+            self.streamInfo = nil
+            self.workflowContent = nil
+            self.publishScriptContent = nil
+            self.publishWorkflowContent = nil
+            self.publishPromptContent = nil
+        } else if json["type"].string == "WORKFLOW" {
+            let c = json["content"]
+            self.workflowContent = WorkflowContent(
+                workflowId:           c["workflowId"].int,
+                workflowName:         c["workflowName"].string,
+                workflowRefId:        c["workflowRefId"].string,
+                workflowVersionId:    c["workflowVersionId"].string,
+                projectId:            c["projectId"].string ?? c["debuggerProjectId"].string,
+                webhook:              c["webhook"].string,
+                workflowJson:         c["workflowJson"].string,
+                originalWorkflowJson: c["originalWorkflowJson"].string
+            )
+            self.content = nil
+            self.prContent = nil
+            self.longformContent = nil
+            self.contentJSON = nil
+            self.clarifyingQuestions = nil
+            self.streamInfo = nil
+            self.publishScriptContent = nil
+            self.publishWorkflowContent = nil
+            self.publishPromptContent = nil
+        } else if json["type"].string == "PUBLISH_SCRIPT" {
+            let c = json["content"]
+            self.publishScriptContent = PublishScriptContent(
+                scriptId:        c["scriptId"].int,
+                scriptVersionId: c["scriptVersionId"].int,
+                scriptName:      c["scriptName"].string,
+                published:       c["published"].bool ?? false,
+                loading:         false
+            )
+            self.content = nil
+            self.prContent = nil
+            self.longformContent = nil
+            self.contentJSON = nil
+            self.clarifyingQuestions = nil
+            self.streamInfo = nil
+            self.workflowContent = nil
+            self.publishWorkflowContent = nil
+            self.publishPromptContent = nil
+        } else if json["type"].string == "PUBLISH_WORKFLOW" {
+            let c = json["content"]
+            let workflowId = c["workflowId"].int ?? Int(c["workflowId"].stringValue)
+            self.publishWorkflowContent = PublishWorkflowContent(
+                workflowId:    workflowId,
+                workflowName:  c["workflowName"].string,
+                workflowRefId: c["workflowRefId"].string,
+                published:     c["published"].bool ?? false,
+                loading:       false
+            )
+            self.content = nil
+            self.prContent = nil
+            self.longformContent = nil
+            self.contentJSON = nil
+            self.clarifyingQuestions = nil
+            self.streamInfo = nil
+            self.workflowContent = nil
+            self.publishScriptContent = nil
+            self.publishPromptContent = nil
+        } else if json["type"].string == "PUBLISH_PROMPT" {
+            let c = json["content"]
+            self.publishPromptContent = PublishPromptContent(
+                promptId:        c["promptId"].string,
+                promptVersionId: c["promptVersionId"].string,
+                promptName:      c["promptName"].string,
+                published:       c["published"].bool ?? false,
+                loading:         false
+            )
+            self.content = nil
+            self.prContent = nil
+            self.longformContent = nil
+            self.contentJSON = nil
+            self.clarifyingQuestions = nil
+            self.streamInfo = nil
+            self.workflowContent = nil
+            self.publishScriptContent = nil
+            self.publishWorkflowContent = nil
         } else {
             self.prContent = nil
             self.contentJSON = nil
             self.clarifyingQuestions = nil
             self.longformContent = nil
             self.content = json["content"].string
+            self.streamInfo = nil
+            self.workflowContent = nil
+            self.publishScriptContent = nil
+            self.publishWorkflowContent = nil
+            self.publishPromptContent = nil
         }
     }
 }
 
-struct HiveChatMessageAttachment {
+struct HiveChatMessageAttachment: Sendable {
     let filename: String?
     let path: String?
     let url: String?
     let mimeType: String?
+    /// When `true` the `url` is already a pre-signed S3 URL and should be used directly
+    /// without an additional presign round-trip.
+    let isPresigned: Bool
 
     init(json: JSON) {
         self.filename = json["filename"].string
         self.path = json["path"].string
         self.url = json["url"].string
         self.mimeType = json["mimeType"].string
+        self.isPresigned = false
+    }
+
+    /// Convenience init for pre-signed URLs (e.g. from the /attachments endpoint).
+    init(presignedUrl: String, mimeType: String?, filename: String? = nil) {
+        self.url = presignedUrl
+        self.mimeType = mimeType
+        self.filename = filename
+        self.path = nil
+        self.isPresigned = true
     }
 
     var resolvedUrl: String? { url ?? path }
 }
 
-struct HiveChatMessage {
+struct HiveChatMessage: @unchecked Sendable {
     let id: String
     let featureId: String?
+    let taskId: String?
     var message: String
     let role: String       // "USER" or "ASSISTANT" (uppercase from API)
     let status: String?
@@ -171,6 +385,7 @@ struct HiveChatMessage {
         message: String,
         role: String,
         featureId: String? = nil,
+        taskId: String? = nil,
         status: String? = nil,
         userId: String? = nil,
         createdAt: String? = nil,
@@ -183,6 +398,7 @@ struct HiveChatMessage {
         self.message = message
         self.role = role
         self.featureId = featureId
+        self.taskId = taskId
         self.status = status
         self.userId = userId
         self.createdAt = createdAt
@@ -198,6 +414,7 @@ struct HiveChatMessage {
               let role = json["role"].string else { return nil }
         self.id = id
         self.featureId = json["featureId"].string
+        self.taskId = json["taskId"].string
         self.message = message
         self.role = role
         self.status = json["status"].string
@@ -231,5 +448,27 @@ struct HiveChatMessage {
     var isLongformMessage: Bool {
         return message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             && artifacts.contains(where: { $0.isLongform })
+    }
+
+    /// True when the full message content is a logs block.
+    var isLogsMessage: Bool {
+        let t = resolvedDisplayText.trimmingCharacters(in: .whitespacesAndNewlines)
+        return t.hasPrefix("<logs>") && t.hasSuffix("</logs>")
+    }
+
+    /// Extracts the raw content between <logs>…</logs> tags.
+    var logsContent: String? {
+        guard isLogsMessage else { return nil }
+        let t = resolvedDisplayText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let inner = t.dropFirst("<logs>".count).dropLast("</logs>".count)
+        return String(inner)
+    }
+
+    /// Returns true when this message should be shown in the chat table.
+    /// Mirrors the filter applied by `displayMessages` in all chat view controllers.
+    var isDisplayable: Bool {
+        !message.isEmpty ||
+        !attachments.isEmpty ||
+        artifacts.contains(where: { $0.type != "STREAM" && $0.type != "WORKFLOW" })
     }
 }

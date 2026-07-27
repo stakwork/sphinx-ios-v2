@@ -87,5 +87,14 @@
 
 "Uah-nc-EPN.text" = "Mga Rekomendasyon para sa Feed";
 
-
 "mU1-dY-IRh.text" = "Awtomatikong na-download na mga episode ng podcast";
+
+"AIg-lbl-001.text" = "Configure ang IA Agent";
+
+"SAI-title-lbl.text" = "I-CONFIGURE ANG AI AGENT";
+
+"SAI-prov-lbl.text" = "Tagapagbigay";
+
+"SAI-key-lbl.text" = "API Key";
+
+"SAI-name-lbl.text" = "Pangalan ng Agent";

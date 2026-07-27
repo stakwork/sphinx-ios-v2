@@ -122,7 +122,6 @@ class FeedEpisodeVideoPlayerViewController: UIViewController, VideoFeedEpisodePl
         player.publisher(for: \.rate)
             .removeDuplicates()
             .sink { [weak self] rate in
-                print("Rate changed to: \(rate)x")
                 if rate > 0 {
                     self?.onPlayerStartedPlaying()
                 } else {

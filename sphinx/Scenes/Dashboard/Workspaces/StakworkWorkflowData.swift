@@ -13,6 +13,9 @@ struct StakworkWorkflowTransition {
     let id: String
     let title: String
     let status: String
+    let uniqueId: String?
+    let displayName: String?
+    let stepType: String?
 
     init?(json: JSON) {
         guard let id = json["id"].string,
@@ -21,6 +24,9 @@ struct StakworkWorkflowTransition {
         self.id = id
         self.title = title
         self.status = status
+        self.uniqueId = json["unique_id"].string
+        self.displayName = json["display_name"].string
+        self.stepType = json["type"].string
     }
 }
 

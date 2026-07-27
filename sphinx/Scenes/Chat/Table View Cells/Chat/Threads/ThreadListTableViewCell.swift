@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol ThreadListTableViewCellDelegate: class {
+@MainActor protocol ThreadListTableViewCellDelegate: class {
     func shouldLoadImageDataFor(messageId: Int, and rowIndex: Int)
     func shouldLoadPdfDataFor(messageId: Int, and rowIndex: Int)
     func shouldLoadFileDataFor(messageId: Int, and rowIndex: Int)
@@ -59,13 +59,18 @@ class ThreadListTableViewCell: UITableViewCell {
     
     @IBOutlet weak var repliesCountLabel: UILabel!
     @IBOutlet weak var lastReplyDateLabel: UILabel!
+
+    @IBOutlet weak var mentionsBadgeContainer: UIView!
+    @IBOutlet weak var mentionsBadgeLabel: UILabel!
     
     var urlRanges = [NSRange]()
     
     override func awakeFromNib() {
         super.awakeFromNib()
 
-        setupViews()
+        MainActor.assumeIsolated {
+            setupViews()
+        }
     }
 
     override func prepareForReuse() {
@@ -98,6 +103,9 @@ class ThreadListTableViewCell: UITableViewCell {
         reply5AvatarView.setInitialLabelSize(size: 12)
         reply6AvatarView.setInitialLabelSize(size: 12)
         
+        mentionsBadgeContainer.layer.cornerRadius = 10
+        mentionsBadgeContainer.clipsToBounds = true
+
         mediaMessageView.layer.cornerRadius = 9
         mediaMessageView.clipsToBounds = true
         mediaMessageView.isUserInteractionEnabled = false

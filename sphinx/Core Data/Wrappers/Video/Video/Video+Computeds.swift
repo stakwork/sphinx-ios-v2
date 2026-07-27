@@ -9,7 +9,7 @@ import Foundation
 
 extension Video {
     
-    static let publishDateFormatter: RelativeDateTimeFormatter = {
+    nonisolated(unsafe) static let publishDateFormatter: RelativeDateTimeFormatter = {
         let formatter = RelativeDateTimeFormatter()
         
         return formatter

@@ -10,11 +10,11 @@ import CallKit
 import UIKit
 
 @available(iOS 14.0, *)
-final class JitsiIncomingCallManager: NSObject, CXProviderDelegate {
-    
+final class JitsiIncomingCallManager: NSObject, CXProviderDelegate, @unchecked Sendable {
+
     class var sharedInstance : JitsiIncomingCallManager {
         struct Static {
-            static let instance = JitsiIncomingCallManager()
+            nonisolated(unsafe) static let instance = JitsiIncomingCallManager()
         }
         return Static.instance
     }
@@ -53,16 +53,19 @@ final class JitsiIncomingCallManager: NSObject, CXProviderDelegate {
     func provider(_ provider: CXProvider, perform action: CXAnswerCallAction){
         let hangUpAction = CXEndCallAction(call: action.callUUID)
         hangUpAction.fulfill()
-        
-        if let appDelegate = UIApplication.shared.delegate as? AppDelegate,
-           let callURL = currentJitsiURL {
-            
-            appDelegate.handleAcceptedCall(
-                callLink: callURL,
-                audioOnly: !hasVideo
-            )
+
+        let callURL = currentJitsiURL
+        let audioOnly = !hasVideo
+        Task { @MainActor in
+            if let appDelegate = UIApplication.shared.delegate as? AppDelegate,
+               let callURL = callURL {
+                appDelegate.handleAcceptedCall(
+                    callLink: callURL,
+                    audioOnly: audioOnly
+                )
+            }
         }
-        
+
         finishCall()
     }
     

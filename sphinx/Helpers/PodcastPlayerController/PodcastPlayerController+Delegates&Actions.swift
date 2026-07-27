@@ -8,8 +8,9 @@
 
 import AVFoundation
 
+@MainActor
 extension PodcastPlayerController {
-    
+
     func addDelegate(
         _ delegate: PlayerDelegate,
         withKey key: String
@@ -45,8 +46,9 @@ extension PodcastPlayerController {
     }
 }
 
+@MainActor
 extension PodcastPlayerController {
-    
+
     func preloadAll() {
         
         let context = CoreDataManager.sharedManager.getBackgroundContext()
@@ -99,9 +101,11 @@ extension PodcastPlayerController {
         dispatchSemaphore.wait()
 
         let asset = AVURLAsset(url: url)
-        let item = CachingPlayerItem(asset: asset, automaticallyLoadedAssetKeys: ["playable"])
-        self.allItems[urlPath] = item
-        self.dispatchSemaphore.signal()
+        DispatchQueue.main.async {
+            let item = CachingPlayerItem(asset: asset, automaticallyLoadedAssetKeys: ["playable"])
+            self.allItems[urlPath] = item
+            self.dispatchSemaphore.signal()
+        }
     }
     
     func getPreloadedItem(url: String) -> CachingPlayerItem? {
@@ -196,13 +200,11 @@ extension PodcastPlayerController {
                     }
                     return
                 }
-                
+
                 let asset = AVURLAsset(url: podcastData.episodeUrl)
-                let item = CachingPlayerItem(asset: asset, automaticallyLoadedAssetKeys: nil)
-                
-                self.podcastItems[podcastData.episodeUrl.absoluteString] = item
-                
                 DispatchQueue.main.async {
+                    let item = CachingPlayerItem(asset: asset, automaticallyLoadedAssetKeys: nil)
+                    self.podcastItems[podcastData.episodeUrl.absoluteString] = item
                     playAssetAfterLoad(item)
                 }
             }
@@ -238,13 +240,15 @@ extension PodcastPlayerController {
     }
 
     
-    override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
+    nonisolated override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
         if keyPath == "status" {
-            if self.player?.currentItem?.status == .readyToPlay {
-                self.player?.play()
-                
-                if let playerItem = self.player?.currentItem {
-                    self.didStartPlaying(playerItem)
+            Task { @MainActor in
+                if self.player?.currentItem?.status == .readyToPlay {
+                    self.player?.play()
+
+                    if let playerItem = self.player?.currentItem {
+                        self.didStartPlaying(playerItem)
+                    }
                 }
             }
         }
@@ -281,9 +285,8 @@ extension PodcastPlayerController {
     
     func preloadNextEpisode() {
         if let nextEpisode = podcast?.getNextEpisode() {
-            let dispatchQueue = DispatchQueue.global(qos: .userInitiated)
-            dispatchQueue.async {
-                self.preloadEpisode(nextEpisode)
+            Task.detached(priority: .userInitiated) { [weak self] in
+                await self?.preloadEpisode(nextEpisode)
             }
         }
     }
@@ -373,13 +376,15 @@ extension PodcastPlayerController {
             invalidateTime()
             
             player.seek(to: CMTime(seconds: Double(currentTime), preferredTimescale: 1)) { _ in
-                if self.isPlaying {
-                    self.trackItemStarted(endTimestamp: previousTime)
-                    /// If playing start timer again to update UI every X seconds
-                    self.configureTimer()
-                } else {
-                    /// If not playing run pause state delegate to update UI in case seek was triggered from control center
-                    self.runPausedStateUpdate()
+                Task { @MainActor in
+                    if self.isPlaying {
+                        self.trackItemStarted(endTimestamp: previousTime)
+                        /// If playing start timer again to update UI every X seconds
+                        self.configureTimer()
+                    } else {
+                        /// If not playing run pause state delegate to update UI in case seek was triggered from control center
+                        self.runPausedStateUpdate()
+                    }
                 }
             }
         }
@@ -428,6 +433,7 @@ extension PodcastPlayerController {
     }
 }
 
+@MainActor
 extension PodcastPlayerController {
     func runLoadingStateUpdate() {
         isLoadingOrPlaying = true

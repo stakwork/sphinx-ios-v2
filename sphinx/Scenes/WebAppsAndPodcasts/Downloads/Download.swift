@@ -8,7 +8,7 @@
 
 import Foundation
 
-class Download {
+class Download: @unchecked Sendable {
     var state: State = State.ready
     var progress: Int = 0
     var resumeData: Data?
@@ -47,7 +47,7 @@ class Download {
 }
 
 
-class VideoDownload {
+class VideoDownload: @unchecked Sendable {
     var state: State = State.ready
     var progress: Int = 0
     var resumeData: Data?

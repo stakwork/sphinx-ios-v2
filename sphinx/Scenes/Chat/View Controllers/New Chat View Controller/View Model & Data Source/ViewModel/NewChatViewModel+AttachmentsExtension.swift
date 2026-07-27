@@ -22,7 +22,7 @@ extension NewChatViewModel: AttachmentsManagerDelegate {
             date: Date(),
             chat: chat,
             replyUUID: replyingTo?.uuid,
-            threadUUID: threadUUID ?? replyingTo?.threadUUID ?? replyingTo?.uuid
+            threadUUID: threadUUID ?? replyingTo?.threadUUID ?? replyingTo?.replyUUID ?? replyingTo?.uuid
         ) {
             
             chatDataSource?.setMediaDataForMessageWith(
@@ -50,7 +50,7 @@ extension NewChatViewModel: AttachmentsManagerDelegate {
                 chat: chat,
                 provisionalMessage: message,
                 replyingMessage: replyingTo,
-                threadUUID: threadUUID ?? replyingTo?.threadUUID ?? replyingTo?.uuid
+                threadUUID: threadUUID ?? replyingTo?.threadUUID ?? replyingTo?.replyUUID ?? replyingTo?.uuid
             )
         }
 
@@ -69,8 +69,16 @@ extension NewChatViewModel: AttachmentsManagerDelegate {
         errorMessage: String
     ) {
         if let provisionalMessage = provisionalMessage {
+            let chat = provisionalMessage.chat
+            let isLastMessage = chat?.lastMessage?.id == provisionalMessage.id
+
             CoreDataManager.sharedManager.deleteObject(object: provisionalMessage)
-            
+
+            if isLastMessage, let chat = chat {
+                chat.lastMessage = chat.getLastMessageToShow()
+                chat.managedObjectContext?.saveContext()
+            }
+
             AlertHelper.showAlert(title: "generic.error.title".localized, message: errorMessage)
         }
     }

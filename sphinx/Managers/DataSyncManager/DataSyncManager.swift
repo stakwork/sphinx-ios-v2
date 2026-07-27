@@ -9,11 +9,11 @@
 import Foundation
 import CoreData
 
-class DataSyncManager: NSObject {
+class DataSyncManager: NSObject, @unchecked Sendable {
 
     // MARK: - Singleton
 
-    static let sharedInstance = DataSyncManager()
+    nonisolated(unsafe) static let sharedInstance = DataSyncManager()
 
     // MARK: - Properties
 
@@ -56,6 +56,31 @@ class DataSyncManager: NSObject {
             key: SettingKey.privatePhoto.rawValue,
             identifier: "0",
             value: value
+        )
+    }
+
+    func savePinTimeout(value: String) {
+        saveDataSyncItemWith(
+            key: SettingKey.pinTimeout.rawValue,
+            identifier: "0",
+            value: value
+        )
+    }
+
+    func saveBiometricEnabled(value: String) {
+        saveDataSyncItemWith(
+            key: SettingKey.biometricEnabled.rawValue,
+            identifier: "0",
+            value: value
+        )
+    }
+
+    func saveAIAgentConfig(provider: String, apiKey: String, agentName: String) {
+        guard !apiKey.isEmpty else { return }
+        saveDataSyncItemWith(
+            key: SettingKey.aiAgentConfig.rawValue,
+            identifier: "0",
+            value: "\(provider)|\(apiKey)|\(agentName)"
         )
     }
 
@@ -173,9 +198,9 @@ class DataSyncManager: NSObject {
 
         Task {
             defer {
-                syncLock.lock()
-                isSyncing = false
-                syncLock.unlock()
+                syncLock.withLock {
+                    isSyncing = false
+                }
             }
 
             await syncWithServer()
@@ -480,6 +505,42 @@ class DataSyncManager: NSObject {
                         colorHex: colorHex,
                         key: serverItem.identifier
                     )
+                }
+
+            case .pinTimeout:
+                if let intValue = serverItem.value.asInt {
+                    UserData.sharedInstance.setPINHours(hours: intValue)
+                }
+
+            case .biometricEnabled:
+                if let boolValue = serverItem.value.asBool {
+                    UserDefaults.Keys.biometricAuthEnabled.set(boolValue)
+                }
+
+            case .aiAgentConfig:
+                guard let composed = serverItem.value.asString, !composed.isEmpty else { return }
+                let parts = composed.components(separatedBy: "|")
+                guard parts.count >= 2 else { return }
+                let provider = parts[0]
+                let agentName = parts.count >= 3 ? parts[parts.count - 1] : nil
+                let apiKey = parts.dropFirst().dropLast(agentName != nil ? 1 : 0).joined(separator: "|")
+                guard !apiKey.isEmpty else { return }
+
+                let currentProvider = UserData.sharedInstance.getAIAgentValue(with: .aiAgentProvider) ?? ""
+                let currentApiKey   = UserData.sharedInstance.getAIAgentValue(with: .aiAgentApiKey)   ?? ""
+                let credentialsChanged = (provider != currentProvider || apiKey != currentApiKey)
+
+                UserData.sharedInstance.save(aiAgentValue: provider, for: .aiAgentProvider)
+                UserData.sharedInstance.save(aiAgentValue: apiKey, for: .aiAgentApiKey)
+
+                if credentialsChanged {
+                    AIAgentManager.sharedInstance.reconfigure(clearHistory: true)
+                }
+
+                if let name = agentName, !name.isEmpty,
+                   let contact = UserContact.getContactWith(id: AIAgentManager.agentLocalId) {
+                    contact.nickname = name
+                    contact.managedObjectContext?.saveContext()
                 }
             }
         }

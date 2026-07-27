@@ -262,10 +262,7 @@ extension SphinxOnionManager {
                 isTribe: isTribe
             )
             
-            let tag = handleRunReturn(
-                rr: rr,
-                isSendingMessage: true
-            )
+            let tag = getMessageTag(messages: rr.msgs, isSendingMessage: true)
             
             let sentMessage = processNewOutgoingMessage(
                 rr: rr,
@@ -293,6 +290,13 @@ extension SphinxOnionManager {
                 chat.timezoneUpdated = false
 //                chat.managedObjectContext?.saveContext()
             }
+            
+            (context ?? chat.managedObjectContext)?.saveContext()
+            
+            let _ = handleRunReturn(
+                rr: rr,
+                isSendingMessage: true
+            )
             
             return (sentMessage, nil)
         } catch let error {
@@ -554,11 +558,13 @@ extension SphinxOnionManager {
         if let _ = rr.settleTopic, let _ = rr.settlePayload {
             let paymentHashes = rr.msgs.compactMap({ $0.paymentHash })
             for paymentHash in paymentHashes {
-                NotificationCenter.default.post(
-                    name: .sentInvoiceSettled,
-                    object: nil,
-                    userInfo: ["paymentHash": paymentHash]
-                )
+                DispatchQueue.main.async {
+                    NotificationCenter.default.post(
+                        name: .sentInvoiceSettled,
+                        object: nil,
+                        userInfo: ["paymentHash": paymentHash]
+                    )
+                }
             }
         }
     }
@@ -857,25 +863,35 @@ extension SphinxOnionManager {
             }
             
             if let newMessage = newMessage {
+                ///Show if is incoming, and topic is stream which means message coming in in real time
+                let shouldShowIncomingMsgNotification = !(message.fromMe ?? false) && topic?.isMessageInRealTimeTopic == true
+
+                let isRealTime = topic?.isMessageInRealTimeTopic == true
+                let isFromMe = message.fromMe ?? false
+                let isUnconfirmed = newMessage.status != TransactionMessage.TransactionMessageStatus.received.rawValue
+                if isRealTime && isFromMe && isUnconfirmed, let tag = newMessage.tag {
+                    scheduleStatusCheckForUnconfirmedSentMessage(tag: tag)
+                }
+
+                if shouldShowIncomingMsgNotification {
+                    let msgId = newMessage.id
+                    Task { @MainActor [weak self] in
+                        guard let self,
+                              let msg = TransactionMessage.getMessageWith(id: msgId) else { return }
+                        self.newMessageBubbleHelper.showMessageView(message: msg)
+                    }
+                }
+
                 if !existingMessagesIdMap.keys.contains(newMessage.id) {
                     existingMessagesIdMap[newMessage.id] = newMessage
                 }
-                
+
                 if let uuid = newMessage.uuid, !existingMessagesUUIDMap.keys.contains(uuid) {
                     existingMessagesUUIDMap[uuid] = newMessage
                 }
-                
+
                 if let chat = newMessage.chat, let ownerPubKey = chat.ownerPubkey, chat.isPublicGroup(), !tribesMap.keys.contains(ownerPubKey) {
                     tribesMap[ownerPubKey] = chat
-                }
-                
-                ///Show if is incoming, and topic is stream which means message coming in in real time
-                let shouldShowIncomingMsgNotification = !(message.fromMe ?? false) && topic?.isMessageInRealTimeTopic == true
-                
-                if shouldShowIncomingMsgNotification {
-                    DispatchQueue.main.async {
-                        self.newMessageBubbleHelper.showMessageView(message: newMessage)
-                    }
                 }
             }
             
@@ -1398,7 +1414,7 @@ extension SphinxOnionManager {
         newMessage.paymentHash = message.paymentHash
         newMessage.tag = message.tag
         
-        if let myAlias = chat.myAlias ?? owner?.nickname, chat.isPublicGroup() {
+        if let myAlias = chat.myAlias ?? owner?.nickname?.fixedAlias, chat.isPublicGroup() {
             newMessage.push = content?.contains("@\(myAlias) ") == true
         } else {
             newMessage.push = false
@@ -1672,7 +1688,6 @@ extension SphinxOnionManager {
             if (type == TransactionMessage.TransactionMessageType.attachment.rawValue) {
                 AttachmentsManager.sharedInstance.cacheImageAndMediaData(message: sentMessage, attachmentObject: attachmentObject)
             } else if (type == TransactionMessage.TransactionMessageType.purchase.rawValue) {
-                print(sentMessage)
             }
             
             return (sentMessage, nil)
@@ -1721,10 +1736,12 @@ extension SphinxOnionManager {
                 )
                 completion(message)
             } else {
-                AlertHelper.showAlert(
-                    title: "Routing Error",
-                    message: "There was a routing error. Please try again."
-                )
+                DispatchQueue.main.async {
+                    AlertHelper.showAlert(
+                        title: "Routing Error",
+                        message: "There was a routing error. Please try again."
+                    )
+                }
                 completion(nil)
             }
         }
@@ -2020,32 +2037,50 @@ extension SphinxOnionManager {
 //        sendTimeoutTimers[omuuid] = nil
 //    }
     
+    func scheduleStatusCheckForUnconfirmedSentMessage(tag: String) {
+        pendingStatusCheckTags.insert(tag)
+        pendingSentStatusWorkItem?.cancel()
+        let tagsSnapshot = pendingStatusCheckTags
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            self.getMessagesStatusFor(tags: Array(tagsSnapshot))
+            self.pendingStatusCheckTags.removeAll()
+        }
+        pendingSentStatusWorkItem = workItem
+        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 3.0, execute: workItem)
+    }
+
     func getMessagesStatusForPendingMessages() {
         let dispatchQueue = DispatchQueue.global(qos: .utility)
         dispatchQueue.async {
             let backgroundContext = self.backgroundContext
-            
+
+            var tagChunks: [[String]] = []
+
             backgroundContext.performAndWait {
                 let messages = TransactionMessage.getAllNotConfirmed(context: backgroundContext)
-                
+
                 if messages.isEmpty {
                     return
                 }
-                
-                Task {
-                    for i in stride(from: 0, to: messages.count, by: 200) {
-                        let chunk = Array(messages[i..<min(i + 200, messages.count)])
-                        
-                        let tags = chunk.compactMap({ $0.tag })
-                        
-                        SphinxOnionManager.sharedInstance.getMessagesStatusFor(tags: tags)
-                        
-                        try? await Task.sleep(nanoseconds: 500_000_000)
+
+                for i in stride(from: 0, to: messages.count, by: 200) {
+                    let chunk = Array(messages[i..<min(i + 200, messages.count)])
+                    let tags = chunk.compactMap({ $0.tag })
+                    if !tags.isEmpty {
+                        tagChunks.append(tags)
                     }
                 }
             }
-            
-            backgroundContext.saveContext()
+
+            guard !tagChunks.isEmpty else { return }
+
+            Task {
+                for tags in tagChunks {
+                    SphinxOnionManager.sharedInstance.getMessagesStatusFor(tags: tags)
+                    try? await Task.sleep(nanoseconds: 500_000_000)
+                }
+            }
         }
     }
     
@@ -2098,6 +2133,26 @@ extension SphinxOnionManager {
         return objects.last?.id
     }
     
+    func getFetchMinDate(
+        fetchRequest: NSFetchRequest<TransactionMessage>,
+        count: Int,
+        context: NSManagedObjectContext
+    ) -> Date? {
+        var objects: [TransactionMessage] = [TransactionMessage]()
+
+        do {
+            try objects = context.fetch(fetchRequest)
+        } catch let error as NSError {
+            print("Error: " + error.localizedDescription)
+        }
+
+        if objects.count < count {
+            return nil
+        }
+
+        return objects.last?.date as Date?
+    }
+    
     func batchDeleteOldMessagesInBackground(
         forChat chat: Chat,
         keepingLatest count: Int = 100
@@ -2112,16 +2167,16 @@ extension SphinxOnionManager {
                         with: count
                     )
                     
-                    if let thresholdId = self.getFetchMinIndex(
+                    if let thresholdDate = self.getFetchMinDate(
                         fetchRequest: fetchRequest,
                         count: count,
                         context: backgroundContext
                     ) {
-                        print("🔍 Will delete messages with id < \(thresholdId) from chat \(chat.id)")
+                        print("🔍 Will delete messages with date < \(thresholdDate) from chat \(chat.id)")
                         
                         // Step 2: Create fetch request for messages to delete
                         let deleteRequest: NSFetchRequest<TransactionMessage> = TransactionMessage.fetchRequest()
-                        deleteRequest.predicate = NSPredicate(format: "chat.id == %d AND id < %d", chat.id, thresholdId)
+                        deleteRequest.predicate = NSPredicate(format: "chat.id == %d AND date < %@", chat.id, thresholdDate as NSDate)
                         
                         // Step 3: Create batch delete request with the fetch request
                         let batchDelete = NSBatchDeleteRequest(fetchRequest: deleteRequest as! NSFetchRequest<NSFetchRequestResult>)

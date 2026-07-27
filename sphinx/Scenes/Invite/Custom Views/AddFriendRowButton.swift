@@ -8,7 +8,7 @@
 
 import UIKit
 
-@objc protocol AddFriendRowButtonDelegate: class {
+@MainActor @objc protocol AddFriendRowButtonDelegate: class {
     func didTouchAddFriend()
     @objc optional func didTouchCreateGroup()
 }

@@ -8,21 +8,23 @@
 
 import UIKit
 
-protocol WindowsManagerDelegate: class {
+@MainActor protocol WindowsManagerDelegate: AnyObject {
     func didDismissCoveringWindows()
 }
 
-class WindowsManager {
+@MainActor class WindowsManager {
 
     class var sharedInstance : WindowsManager {
         struct Static {
-            static let instance = WindowsManager()
+            nonisolated(unsafe) static let instance = WindowsManager()
         }
         return Static.instance
     }
-    
+
+    nonisolated init() {}
+
     weak var delegate : WindowsManagerDelegate?
-    
+
     public static func getWindowSize() -> CGSize {
         return UIScreen.main.bounds.size
     }
@@ -150,6 +152,10 @@ class WindowsManager {
             return rootVC is CanRotate
         }
         return false
+    }
+    
+    func getCurrentCoveringWindowVC() -> UIViewController? {
+        return coveringWindow?.rootViewController
     }
 }
 

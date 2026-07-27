@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol TimezoneSharingViewDelegate: class {
+@MainActor protocol TimezoneSharingViewDelegate: class {
     func shouldPresentPickerViewWith(delegate: PickerViewDelegate)
     func timezoneSharingSettingsChanged(enabled: Bool, identifier: String?)
 }

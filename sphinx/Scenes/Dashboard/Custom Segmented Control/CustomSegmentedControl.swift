@@ -6,7 +6,7 @@
 import UIKit
 
 
-@objc protocol CustomSegmentedControlDelegate: AnyObject {
+@MainActor @objc protocol CustomSegmentedControlDelegate: AnyObject {
     
     func segmentedControlDidSwitch(
         _ control: CustomSegmentedControl,

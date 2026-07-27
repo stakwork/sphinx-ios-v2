@@ -8,7 +8,7 @@
 
 import UIKit
 
-class TagsAddedDataSource: NSObject {
+@MainActor class TagsAddedDataSource: NSObject {
     
     var collectionView : UICollectionView!
     

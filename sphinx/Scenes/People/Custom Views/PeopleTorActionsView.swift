@@ -62,17 +62,21 @@ class PeopleTorActionsView: CommonModalView {
     
     private func showErrorAlertAndDismiss(_ error: String) {
         messageBubbleHelper.showGenericMessageView(text: error, textColor: UIColor.white, backColor: UIColor.Sphinx.BadgeRed, backAlpha: 1.0)
-        
+
         DelayPerformedHelper.performAfterDelay(seconds: 2.0, completion: {
-            self.delegate?.shouldDismissVC()
+            MainActor.assumeIsolated {
+                self.delegate?.shouldDismissVC()
+            }
         })
     }
-    
+
     private func showAlertAndDismiss(_ message: String) {
         messageBubbleHelper.showGenericMessageView(text: message)
-        
+
         DelayPerformedHelper.performAfterDelay(seconds: 2.0, completion: {
-            self.delegate?.shouldDismissVC()
+            MainActor.assumeIsolated {
+                self.delegate?.shouldDismissVC()
+            }
         })
     }
     

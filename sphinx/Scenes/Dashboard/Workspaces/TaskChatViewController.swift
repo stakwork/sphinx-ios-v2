@@ -9,6 +9,8 @@
 import UIKit
 import AVKit
 import AVFoundation
+import PhotosUI
+import PusherSwift
 
 class TaskChatViewController: UIViewController {
 
@@ -17,12 +19,23 @@ class TaskChatViewController: UIViewController {
     private var workspaceSlug: String
     private var workspaceId: String
     private var messages: [HiveChatMessage] = []
-    private var processingStepText: String? = nil
+
+    private var cqMessageIds: Set<String> {
+        Set(messages.filter { $0.artifacts.contains(where: { $0.isClarifyingQuestions }) }.map { $0.id })
+    }
+
+    private var displayMessages: [HiveChatMessage] {
+        messages.filter { $0.isDisplayable }
+    }
+
+    private var hasAppeared = false
     private var cachedStakworkProjectId: Int?
     private var anyCableManager: HiveAnyCableManager?
+    private var agentEventsManager: AgentEventsSSEManager?
 
     // MARK: - Header
     private var headerView: UIView!
+    private var headerStackView: UIStackView!
     private var backButton: UIButton!
     private var titleLabel: UILabel!
     private var releasePodButton: UIButton!
@@ -36,18 +49,53 @@ class TaskChatViewController: UIViewController {
     private var chatInputTextView: UITextView!
     private var sendButton: UIButton!
     private var chatInputBottomConstraint: NSLayoutConstraint!
+    private var chatInputContainerHeightConstraint: NSLayoutConstraint!
+    private var chatInputTextViewHeightConstraint: NSLayoutConstraint!
     private var workflowStatusView: WorkflowStatusView!
     private var workflowStatusHeightConstraint: NSLayoutConstraint!
     private var bottomFillView: UIView!
 
+    // MARK: - Attachments
+    private var attachButton: UIButton!
+    private var pendingAttachmentsBar: PendingAttachmentsBarView!
+    private var pendingAttachmentsBarHeightConstraint: NSLayoutConstraint!
+    private var pendingAttachments: [PendingAttachment] = []
+
+    // MARK: - Mic / Speech
+    private var micButton: UIButton!
+    private let speechManager = SpeechTranscriptionManager()
+
+    // MARK: - Agent state
+    private var isAgentWorking: Bool = false
+
+    // MARK: - Description overlay
+    private var taskDescriptionOverlay: UIView?
+
+    // MARK: - Workflow diagram tab (workflow_editor mode only)
+    private var tabSegmentedControl: CustomSegmentedControl?
+    private var workflowContainerView: UIView?
+    private var workflowDiagramView: WorkflowDiagramView?
+    private var mergedDiagram: WorkflowDiagramData?
+    private var changesContainerView: UIView?
+    private var workflowDiffView: WorkflowDiffView?
+    private var changesEmptyStack: UIStackView?
+    private var diffTask: Task<Void, Never>?
+
+    private lazy var changesLoadingWheel: UIActivityIndicatorView = {
+        let indicator = UIActivityIndicatorView(style: .medium)
+        indicator.translatesAutoresizingMaskIntoConstraints = false
+        indicator.hidesWhenStopped = true
+        indicator.color = UIColor.Sphinx.Text
+        return indicator
+    }()
+    private var selectedStep: WorkflowStep?
+    private var selectedStepChip: SelectedStepChipView!
+    private var selectedStepChipHeightConstraint: NSLayoutConstraint!
+    /// Top-anchor constraint for chatTableView — updated when tab bar is present
+    private var chatTableViewTopConstraint: NSLayoutConstraint!
+
     // Autocomplete
-    private var availableWorkspaces: [Workspace] = []
-    private var filteredWorkspaces: [Workspace] = []
-    private var autocompleteContainer: UIView!
-    private var autocompleteStack: UIStackView!
-    private var autocompleteHeightConstraint: NSLayoutConstraint!
-    /// NSRange of "@query" in chatInputTextView at the moment the popup is shown/updated
-    private var atTriggerNSRange: NSRange?
+    private let mentionHandler = WorkspaceMentionHandler()
 
     private var loadingWheel: UIActivityIndicatorView!
     private var emptyLabel: UILabel!
@@ -74,32 +122,95 @@ class TaskChatViewController: UIViewController {
         setupUI()
         applyInitialWorkflowStatus()
         setupKeyboardObservers()
+        speechManager.requestPermission { [weak self] granted in
+            Task { @MainActor [weak self] in
+                self?.micButton.isHidden = !granted
+                if !granted {
+                    self?.bubbleHelper.showGenericMessageView(
+                        text: "Speech recognition permission denied.",
+                        delay: 3, textColor: .white,
+                        backColor: UIColor.Sphinx.PrimaryRed, backAlpha: 1.0)
+                }
+            }
+        }
         cachedStakworkProjectId = task.stakworkProjectId
         connectWebSocket()         // connect Pusher immediately with known taskId
         fetchMessages()
         fetchTaskDetailAndConnect() // will call connectAnyCable() once projectId is known
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(appWillEnterForeground),
+            name: UIApplication.willEnterForegroundNotification,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(appDidEnterBackground),
+            name: .appDidEnterBackground,
+            object: nil
+        )
         API.sharedInstance.fetchWorkspacesWithAuth(
             callback: { [weak self] workspaces in
-                DispatchQueue.main.async { self?.availableWorkspaces = workspaces }
+                DispatchQueue.main.async { self?.mentionHandler.availableWorkspaces = workspaces }
             },
             errorCallback: { /* silent fail — autocomplete just won't show */ }
         )
+        mentionHandler.onWorkspaceSelected = { [weak self] ws, triggerRange in
+            guard let self else { return }
+            let slug = ws.slug ?? ws.name
+            let insertText = "@\(slug) "
+            let nsText = (self.chatInputTextView.text ?? "") as NSString
+            let safeLength = min(triggerRange.length, nsText.length - triggerRange.location)
+            guard triggerRange.location >= 0,
+                  triggerRange.location + safeLength <= nsText.length else { return }
+            let newText = nsText.replacingCharacters(
+                in: NSRange(location: triggerRange.location, length: safeLength),
+                with: insertText
+            )
+            let newCursor = NSRange(location: triggerRange.location + insertText.count, length: 0)
+            let defaultFont = UIFont(name: "Roboto-Regular", size: 16) ?? UIFont.systemFont(ofSize: 16)
+            self.chatInputTextView.text = newText
+            self.mentionHandler.applyMentionColoring(to: self.chatInputTextView, preservingCursor: newCursor, font: defaultFont)
+            self.updateInputBarHeight()
+            self.chatInputTextView.becomeFirstResponder()
+        }
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         view.layoutIfNeeded()   // forces constraint resolution before push transition animates
-        // Always re-point delegate so this VC receives events even if another VC
-        // previously took ownership of the shared Pusher instance.
-        HivePusherManager.shared.delegate = self
+        if hasAppeared {
+            reconnectAndRefresh()
+        } else {
+            hasAppeared = true
+            connectWebSocket()
+        }
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        if isMovingFromParent {
-            HivePusherManager.shared.disconnect()
-            anyCableManager?.disconnect()
-        }
+        HivePusherManager.shared.disconnect()
+        anyCableManager?.disconnect()
+        anyCableManager = nil
+        agentEventsManager?.stopStream()
+        agentEventsManager = nil
+    }
+
+    @objc private func appWillEnterForeground() {
+        reconnectAndRefresh()
+    }
+
+    @objc private func appDidEnterBackground() {
+        anyCableManager?.disconnect()
+        anyCableManager = nil
+        agentEventsManager?.stopStream()
+        agentEventsManager = nil
+    }
+
+    private func reconnectAndRefresh() {
+        connectWebSocket()
+        fetchMessages()
+        fetchTaskDetailAndConnect()
     }
 
     deinit {
@@ -111,6 +222,8 @@ class TaskChatViewController: UIViewController {
         view.backgroundColor = UIColor.Sphinx.Body
         setupHeader()
         setupChatArea()
+        setupTabBarIfNeeded()
+        setupDescriptionOverlayIfNeeded()
     }
 
     private func setupHeader() {
@@ -131,24 +244,23 @@ class TaskChatViewController: UIViewController {
         backButton.setTitle("\u{E5C4}", for: .normal)
         backButton.setTitleColor(UIColor.Sphinx.WashedOutReceivedText, for: .normal)
         backButton.addTarget(self, action: #selector(backTapped), for: .touchUpInside)
-        headerView.addSubview(backButton)
 
         titleLabel = UILabel()
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.text = task.title
         titleLabel.font = UIFont(name: "Roboto-Medium", size: 14)
         titleLabel.textColor = UIColor.Sphinx.Text
-        titleLabel.textAlignment = .center
+        titleLabel.textAlignment = .left
         titleLabel.numberOfLines = 1
         titleLabel.lineBreakMode = .byTruncatingTail
-        headerView.addSubview(titleLabel)
+        titleLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        titleLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
         shareButton = UIButton(type: .system)
         shareButton.translatesAutoresizingMaskIntoConstraints = false
         shareButton.setImage(UIImage(systemName: "square.and.arrow.up"), for: .normal)
         shareButton.tintColor = UIColor.Sphinx.WashedOutReceivedText
         shareButton.addTarget(self, action: #selector(shareTappedAction), for: .touchUpInside)
-        headerView.addSubview(shareButton)
 
         releasePodButton = UIButton(type: .system)
         releasePodButton.translatesAutoresizingMaskIntoConstraints = false
@@ -156,7 +268,26 @@ class TaskChatViewController: UIViewController {
         releasePodButton.tintColor = UIColor.Sphinx.PrimaryGreen
         releasePodButton.addTarget(self, action: #selector(releasePodTapped), for: .touchUpInside)
         releasePodButton.isHidden = true
-        headerView.addSubview(releasePodButton)
+
+        // Fix sizes for icon buttons
+        backButton.widthAnchor.constraint(equalToConstant: 50).isActive = true
+        backButton.heightAnchor.constraint(equalToConstant: 50).isActive = true
+        shareButton.widthAnchor.constraint(equalToConstant: 35).isActive = true
+        shareButton.heightAnchor.constraint(equalToConstant: 35).isActive = true
+        releasePodButton.widthAnchor.constraint(equalToConstant: 35).isActive = true
+        releasePodButton.heightAnchor.constraint(equalToConstant: 35).isActive = true
+
+        // Build the stack
+        headerStackView = UIStackView(arrangedSubviews: [backButton, titleLabel, releasePodButton, shareButton])
+        headerStackView.axis = .horizontal
+        headerStackView.alignment = .center
+        headerStackView.distribution = .fill
+        headerStackView.spacing = 0
+        headerStackView.translatesAutoresizingMaskIntoConstraints = false
+        headerView.addSubview(headerStackView)
+
+        // Custom spacing
+        headerStackView.setCustomSpacing(4, after: titleLabel)
 
         NSLayoutConstraint.activate([
             headerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
@@ -164,25 +295,10 @@ class TaskChatViewController: UIViewController {
             headerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             headerView.heightAnchor.constraint(equalToConstant: 50),
 
-            backButton.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
-            backButton.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
-            backButton.widthAnchor.constraint(equalToConstant: 50),
-            backButton.heightAnchor.constraint(equalToConstant: 50),
-
-            shareButton.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -8),
-            shareButton.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
-            shareButton.widthAnchor.constraint(equalToConstant: 35),
-            shareButton.heightAnchor.constraint(equalToConstant: 35),
-
-            releasePodButton.trailingAnchor.constraint(equalTo: shareButton.leadingAnchor),
-            releasePodButton.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
-            releasePodButton.widthAnchor.constraint(equalToConstant: 35),
-            releasePodButton.heightAnchor.constraint(equalToConstant: 35),
-
-            titleLabel.centerXAnchor.constraint(equalTo: headerView.centerXAnchor),
-            titleLabel.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
-            titleLabel.leadingAnchor.constraint(greaterThanOrEqualTo: backButton.trailingAnchor, constant: 8),
-            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: releasePodButton.leadingAnchor, constant: -8),
+            headerStackView.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
+            headerStackView.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -8),
+            headerStackView.topAnchor.constraint(equalTo: headerView.topAnchor),
+            headerStackView.bottomAnchor.constraint(equalTo: headerView.bottomAnchor),
 
             divider.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
             divider.trailingAnchor.constraint(equalTo: headerView.trailingAnchor),
@@ -218,7 +334,7 @@ class TaskChatViewController: UIViewController {
         chatTableView.dataSource = self
         chatTableView.contentInset = UIEdgeInsets(top: 16, left: 0, bottom: 16, right: 0)
         chatTableView.register(FeatureChatMessageCell.self, forCellReuseIdentifier: "FeatureChatMessageCell")
-        chatTableView.register(HiveProcessingBubbleCell.self, forCellReuseIdentifier: "HiveProcessingBubbleCell")
+        chatTableView.register(ClarifyingQuestionMessageCell.self, forCellReuseIdentifier: "ClarifyingQuestionMessageCell")
         chatTableView.rowHeight = UITableView.automaticDimension
         chatTableView.estimatedRowHeight = 200
         view.addSubview(chatTableView)
@@ -235,6 +351,14 @@ class TaskChatViewController: UIViewController {
         chatInputContainer.backgroundColor = UIColor.Sphinx.HeaderBG
         view.addSubview(chatInputContainer)
 
+        // Attach button
+        attachButton = UIButton(type: .system)
+        attachButton.translatesAutoresizingMaskIntoConstraints = false
+        let paperclipConfig = UIImage.SymbolConfiguration(pointSize: 16, weight: .regular)
+        attachButton.setImage(UIImage(systemName: "paperclip", withConfiguration: paperclipConfig), for: .normal)
+        attachButton.tintColor = UIColor.Sphinx.WashedOutReceivedText
+        attachButton.addTarget(self, action: #selector(attachTapped), for: .touchUpInside)
+
         // Text view
         chatInputTextView = UITextView()
         chatInputTextView.translatesAutoresizingMaskIntoConstraints = false
@@ -245,18 +369,62 @@ class TaskChatViewController: UIViewController {
         chatInputTextView.layer.borderWidth = 1
         chatInputTextView.layer.borderColor = UIColor.Sphinx.LightDivider.cgColor
         chatInputTextView.textContainerInset = UIEdgeInsets(top: 10, left: 12, bottom: 10, right: 12)
-        chatInputContainer.addSubview(chatInputTextView)
+        chatInputTextView.isScrollEnabled = false
 
         // Send button
         sendButton = UIButton()
         sendButton.translatesAutoresizingMaskIntoConstraints = false
         sendButton.setTitle("➤", for: .normal)
         sendButton.setTitleColor(.white, for: .normal)
-        sendButton.titleLabel?.font = UIFont.systemFont(ofSize: 18, weight: .medium)
+        sendButton.titleLabel?.font = UIFont.systemFont(ofSize: 28, weight: .medium)
         sendButton.backgroundColor = UIColor.Sphinx.PrimaryBlue
-        sendButton.layer.cornerRadius = 20
+        sendButton.layer.cornerRadius = singleLineTextViewHeight() / 2
         sendButton.addTarget(self, action: #selector(sendTapped), for: .touchUpInside)
+
+        // Mic button
+        let micConfig = UIImage.SymbolConfiguration(pointSize: 16, weight: .medium)
+        micButton = UIButton(type: .system)
+        micButton.translatesAutoresizingMaskIntoConstraints = false
+        micButton.setImage(UIImage(systemName: "mic.fill", withConfiguration: micConfig), for: .normal)
+        micButton.tintColor = UIColor.Sphinx.WashedOutReceivedText
+        let lp = UILongPressGestureRecognizer(target: self, action: #selector(micLongPressed(_:)))
+        lp.minimumPressDuration = 0.1
+        micButton.addGestureRecognizer(lp)
+
+        // Layout: [chatInputTextView --- flex ---][attachButton 32][micButton 32][sendButton ●]
+        chatInputContainer.addSubview(chatInputTextView)
+        chatInputContainer.addSubview(attachButton)
+        chatInputContainer.addSubview(micButton)
         chatInputContainer.addSubview(sendButton)
+
+        NSLayoutConstraint.activate([
+            // Send button — right edge
+            sendButton.trailingAnchor.constraint(equalTo: chatInputContainer.trailingAnchor, constant: -16),
+            sendButton.centerYAnchor.constraint(equalTo: chatInputContainer.centerYAnchor),
+            sendButton.heightAnchor.constraint(equalToConstant: singleLineTextViewHeight()),
+            sendButton.widthAnchor.constraint(equalTo: sendButton.heightAnchor),
+
+            // Mic button — immediately left of send button
+            micButton.trailingAnchor.constraint(equalTo: sendButton.leadingAnchor, constant: -8),
+            micButton.centerYAnchor.constraint(equalTo: chatInputContainer.centerYAnchor),
+            micButton.widthAnchor.constraint(equalToConstant: 32),
+            micButton.heightAnchor.constraint(equalToConstant: 32),
+
+            // Attach button — immediately left of mic button
+            attachButton.trailingAnchor.constraint(equalTo: micButton.leadingAnchor, constant: -4),
+            attachButton.centerYAnchor.constraint(equalTo: chatInputContainer.centerYAnchor),
+            attachButton.widthAnchor.constraint(equalToConstant: 32),
+            attachButton.heightAnchor.constraint(equalToConstant: 32),
+
+            // Text view — fills from left edge to attach button
+            chatInputTextView.topAnchor.constraint(equalTo: chatInputContainer.topAnchor, constant: 12),
+            chatInputTextView.leadingAnchor.constraint(equalTo: chatInputContainer.leadingAnchor, constant: 16),
+            chatInputTextView.trailingAnchor.constraint(equalTo: attachButton.leadingAnchor, constant: -4),
+            {
+                chatInputTextViewHeightConstraint = chatInputTextView.heightAnchor.constraint(equalToConstant: singleLineTextViewHeight())
+                return chatInputTextViewHeightConstraint
+            }()
+        ])
 
         // Workflow Status View
         workflowStatusView = WorkflowStatusView()
@@ -265,51 +433,42 @@ class TaskChatViewController: UIViewController {
 
         workflowStatusView.onRetryTapped = { [weak self] in
             guard let self else { return }
+            self.workflowStatusView.hide(animated: false)
             API.sharedInstance.retryTaskWorkflowWithAuth(taskId: self.task.id, callback: {}, errorCallback: {})
         }
 
         chatTableView.keyboardDismissMode = .interactive
 
-        // Autocomplete table view
-        // Autocomplete popup (scroll view + stack of buttons — avoids UITableView delegate timing issues)
-        autocompleteContainer = UIView()
-        autocompleteContainer.translatesAutoresizingMaskIntoConstraints = false
-        autocompleteContainer.backgroundColor = UIColor.Sphinx.HeaderBG
-        autocompleteContainer.isHidden = true
-        autocompleteContainer.clipsToBounds = true
-        view.addSubview(autocompleteContainer)
-
-        let autocompleteScrollView = UIScrollView()
-        autocompleteScrollView.translatesAutoresizingMaskIntoConstraints = false
-        autocompleteScrollView.showsVerticalScrollIndicator = true
-        autocompleteScrollView.bounces = true
-        autocompleteContainer.addSubview(autocompleteScrollView)
-
-        autocompleteStack = UIStackView()
-        autocompleteStack.translatesAutoresizingMaskIntoConstraints = false
-        autocompleteStack.axis = .vertical
-        autocompleteStack.spacing = 0
-        autocompleteStack.distribution = .fill
-        autocompleteScrollView.addSubview(autocompleteStack)
-
-        NSLayoutConstraint.activate([
-            autocompleteScrollView.topAnchor.constraint(equalTo: autocompleteContainer.topAnchor),
-            autocompleteScrollView.leadingAnchor.constraint(equalTo: autocompleteContainer.leadingAnchor),
-            autocompleteScrollView.trailingAnchor.constraint(equalTo: autocompleteContainer.trailingAnchor),
-            autocompleteScrollView.bottomAnchor.constraint(equalTo: autocompleteContainer.bottomAnchor),
-
-            autocompleteStack.topAnchor.constraint(equalTo: autocompleteScrollView.topAnchor),
-            autocompleteStack.leadingAnchor.constraint(equalTo: autocompleteScrollView.leadingAnchor),
-            autocompleteStack.trailingAnchor.constraint(equalTo: autocompleteScrollView.trailingAnchor),
-            autocompleteStack.bottomAnchor.constraint(equalTo: autocompleteScrollView.bottomAnchor),
-            autocompleteStack.widthAnchor.constraint(equalTo: autocompleteScrollView.widthAnchor)
-        ])
+        // Autocomplete popup — managed by WorkspaceMentionHandler
+        view.addSubview(mentionHandler.container)
 
         chatInputTextView.delegate = self
 
+        // Pending attachments bar — inserted between workflowStatusView and chatInputContainer
+        pendingAttachmentsBar = PendingAttachmentsBarView()
+        pendingAttachmentsBar.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(pendingAttachmentsBar)
+
+        pendingAttachmentsBar.onRemove = { [weak self] id in
+            guard let self = self else { return }
+            self.pendingAttachments.removeAll { $0.id == id }
+            self.refreshAttachmentsBar()
+            self.updateSendButtonState()
+        }
+
         chatInputBottomConstraint = chatInputContainer.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
         workflowStatusHeightConstraint = workflowStatusView.heightAnchor.constraint(equalToConstant: 0)
-        autocompleteHeightConstraint = autocompleteContainer.heightAnchor.constraint(equalToConstant: 0)
+        pendingAttachmentsBarHeightConstraint = pendingAttachmentsBar.heightAnchor.constraint(equalToConstant: 0)
+
+        // Selected step chip — sits between pendingAttachmentsBar and chatInputContainer
+        selectedStepChip = SelectedStepChipView()
+        selectedStepChip.translatesAutoresizingMaskIntoConstraints = false
+        selectedStepChip.isHidden = true
+        view.addSubview(selectedStepChip)
+        selectedStepChip.onDeselect = { [weak self] in
+            self?.clearSelectedStep()
+        }
+        selectedStepChipHeightConstraint = selectedStepChip.heightAnchor.constraint(equalToConstant: 0)
 
         NSLayoutConstraint.activate([
             loadingWheel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
@@ -318,43 +477,353 @@ class TaskChatViewController: UIViewController {
             emptyLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             emptyLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor),
 
-            chatTableView.topAnchor.constraint(equalTo: headerView.bottomAnchor),
+            {
+                chatTableViewTopConstraint = chatTableView.topAnchor.constraint(equalTo: headerView.bottomAnchor)
+                return chatTableViewTopConstraint
+            }(),
             chatTableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             chatTableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             chatTableView.bottomAnchor.constraint(equalTo: workflowStatusView.topAnchor),
 
             workflowStatusView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             workflowStatusView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            workflowStatusView.bottomAnchor.constraint(equalTo: chatInputContainer.topAnchor),
+            workflowStatusView.bottomAnchor.constraint(equalTo: pendingAttachmentsBar.topAnchor),
             workflowStatusHeightConstraint,
+
+            pendingAttachmentsBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            pendingAttachmentsBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            pendingAttachmentsBar.bottomAnchor.constraint(equalTo: selectedStepChip.topAnchor),
+            pendingAttachmentsBarHeightConstraint,
+
+            selectedStepChip.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            selectedStepChip.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            selectedStepChip.bottomAnchor.constraint(equalTo: chatInputContainer.topAnchor),
+            selectedStepChipHeightConstraint,
 
             chatInputContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             chatInputContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             chatInputBottomConstraint,
-            chatInputContainer.heightAnchor.constraint(equalToConstant: 80),
+            {
+                let oneLine = singleLineTextViewHeight()
+                chatInputContainerHeightConstraint = chatInputContainer.heightAnchor.constraint(equalToConstant: containerHeight(for: oneLine))
+                return chatInputContainerHeightConstraint
+            }(),
 
             bottomFillView.topAnchor.constraint(equalTo: chatInputContainer.bottomAnchor),
             bottomFillView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             bottomFillView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             bottomFillView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
-            chatInputTextView.topAnchor.constraint(equalTo: chatInputContainer.topAnchor, constant: 12),
-            chatInputTextView.leadingAnchor.constraint(equalTo: chatInputContainer.leadingAnchor, constant: 16),
-            chatInputTextView.bottomAnchor.constraint(equalTo: chatInputContainer.bottomAnchor, constant: -12),
-            chatInputTextView.trailingAnchor.constraint(equalTo: sendButton.leadingAnchor, constant: -12),
-
-            sendButton.centerYAnchor.constraint(equalTo: chatInputContainer.centerYAnchor),
-            sendButton.trailingAnchor.constraint(equalTo: chatInputContainer.trailingAnchor, constant: -16),
-            sendButton.widthAnchor.constraint(equalToConstant: 80),
-            sendButton.heightAnchor.constraint(equalToConstant: 40),
-
-            autocompleteContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            autocompleteContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            autocompleteContainer.bottomAnchor.constraint(equalTo: chatInputContainer.topAnchor),
-            autocompleteHeightConstraint
+            mentionHandler.container.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            mentionHandler.container.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            mentionHandler.container.bottomAnchor.constraint(equalTo: chatInputContainer.topAnchor),
+            mentionHandler.heightConstraint
         ])
 
 
+    }
+
+    // MARK: - Workflow Diagram Tab Bar
+
+    private func setupTabBarIfNeeded() {
+        guard task.mode == "workflow_editor" else { return }
+
+        // --- Tab bar ---
+        let seg = CustomSegmentedControl(frame: .zero, buttonTitles: ["CHAT", "WORKFLOW", "CHANGES"])
+        seg.translatesAutoresizingMaskIntoConstraints = false
+        seg.buttonBackgroundColor = UIColor.Sphinx.HeaderBG
+        seg.backgroundColor      = UIColor.Sphinx.HeaderBG
+        seg.selectorViewColor    = UIColor.Sphinx.PrimaryGreen
+        seg.configureFromOutlet(buttonTitles: ["CHAT", "WORKFLOW", "CHANGES"], delegate: self)
+        view.addSubview(seg)
+        tabSegmentedControl = seg
+
+        NSLayoutConstraint.activate([
+            seg.topAnchor.constraint(equalTo: headerView.bottomAnchor),
+            seg.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            seg.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            seg.heightAnchor.constraint(equalToConstant: 50)
+        ])
+
+        // Move chatTableView top anchor to below the tab bar
+        chatTableViewTopConstraint.isActive = false
+        chatTableViewTopConstraint = chatTableView.topAnchor.constraint(equalTo: seg.bottomAnchor)
+        chatTableViewTopConstraint.isActive = true
+
+        // --- Workflow container ---
+        let container = UIView()
+        container.translatesAutoresizingMaskIntoConstraints = false
+        container.backgroundColor = UIColor.Sphinx.Body
+        container.isHidden = true
+        view.addSubview(container)
+        workflowContainerView = container
+
+        NSLayoutConstraint.activate([
+            container.topAnchor.constraint(equalTo: seg.bottomAnchor),
+            container.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            container.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            container.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+        ])
+
+        // --- Diagram view inside container ---
+        let diagram = WorkflowDiagramView()
+        diagram.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(diagram)
+        workflowDiagramView = diagram
+
+        NSLayoutConstraint.activate([
+            diagram.topAnchor.constraint(equalTo: container.topAnchor),
+            diagram.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            diagram.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            diagram.bottomAnchor.constraint(equalTo: container.bottomAnchor)
+        ])
+
+        diagram.onStepTapped = { [weak self] step in
+            self?.handleStepTapped(step)
+        }
+
+        // --- Changes container ---
+        let changesContainer = UIView()
+        changesContainer.translatesAutoresizingMaskIntoConstraints = false
+        changesContainer.backgroundColor = UIColor.Sphinx.Body
+        changesContainer.isHidden = true
+        view.addSubview(changesContainer)
+        changesContainerView = changesContainer
+
+        NSLayoutConstraint.activate([
+            changesContainer.topAnchor.constraint(equalTo: seg.bottomAnchor),
+            changesContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            changesContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            changesContainer.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+        ])
+
+        // --- Diff view inside changes container ---
+        let diffView = WorkflowDiffView()
+        diffView.translatesAutoresizingMaskIntoConstraints = false
+        changesContainer.addSubview(diffView)
+        workflowDiffView = diffView
+
+        NSLayoutConstraint.activate([
+            diffView.topAnchor.constraint(equalTo: changesContainer.topAnchor),
+            diffView.leadingAnchor.constraint(equalTo: changesContainer.leadingAnchor),
+            diffView.trailingAnchor.constraint(equalTo: changesContainer.trailingAnchor),
+            diffView.bottomAnchor.constraint(equalTo: changesContainer.bottomAnchor)
+        ])
+
+        // --- Empty state stack for changes ---
+        let titleLabel = UILabel()
+        titleLabel.text = "No changes detected"
+        titleLabel.font = UIFont(name: "Roboto-Medium", size: 17) ?? UIFont.systemFont(ofSize: 17, weight: .medium)
+        titleLabel.textColor = UIColor.Sphinx.Text
+        titleLabel.textAlignment = .center
+
+        let subtitleLabel = UILabel()
+        subtitleLabel.text = "The workflow JSON is identical"
+        subtitleLabel.font = UIFont(name: "Roboto-Regular", size: 13) ?? UIFont.systemFont(ofSize: 13)
+        subtitleLabel.textColor = UIColor.Sphinx.SecondaryText
+        subtitleLabel.textAlignment = .center
+        subtitleLabel.numberOfLines = 0
+
+        let emptyStack = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
+        emptyStack.axis = .vertical
+        emptyStack.spacing = 6
+        emptyStack.alignment = .center
+        emptyStack.translatesAutoresizingMaskIntoConstraints = false
+        changesContainer.addSubview(emptyStack)
+        changesEmptyStack = emptyStack
+
+        NSLayoutConstraint.activate([
+            emptyStack.centerXAnchor.constraint(equalTo: changesContainer.centerXAnchor),
+            emptyStack.centerYAnchor.constraint(equalTo: changesContainer.centerYAnchor),
+            emptyStack.leadingAnchor.constraint(greaterThanOrEqualTo: changesContainer.leadingAnchor, constant: 32),
+            emptyStack.trailingAnchor.constraint(lessThanOrEqualTo: changesContainer.trailingAnchor, constant: -32)
+        ])
+
+        changesContainer.addSubview(changesLoadingWheel)
+        NSLayoutConstraint.activate([
+            changesLoadingWheel.centerXAnchor.constraint(equalTo: changesContainer.centerXAnchor),
+            changesLoadingWheel.centerYAnchor.constraint(equalTo: changesContainer.centerYAnchor)
+        ])
+    }
+
+    // MARK: - Panel switching (tab bar)
+
+    private func showChatPanel() {
+        diffTask?.cancel()
+        diffTask = nil
+        chatTableView.isHidden = false
+        pendingAttachmentsBar.isHidden = false
+        selectedStepChip.isHidden = (selectedStep == nil)
+        chatInputContainer.isHidden = false
+        bottomFillView.isHidden = false
+        workflowContainerView?.isHidden = true
+        changesContainerView?.isHidden = true
+        // Clear WORKFLOW badge (index 1) when viewing chat — no-op if badge isn't set
+        clearTabBadge(index: 1)
+        
+        guard let raw = task.workflowStatus,
+              let status = WorkflowStatus(rawValue: raw),
+              status != .COMPLETED else
+        {
+            workflowStatusView.isHidden = true
+            return
+        }
+        applyWorkflowStatus(status, animated: false)
+    }
+
+    private func showWorkflowPanel() {
+        diffTask?.cancel()
+        diffTask = nil
+        chatTableView.isHidden = true
+        workflowStatusView.isHidden = true
+        pendingAttachmentsBar.isHidden = true
+        selectedStepChip.isHidden = true
+        chatInputContainer.isHidden = true
+        bottomFillView.isHidden = true
+        workflowContainerView?.isHidden = false
+        changesContainerView?.isHidden = true
+        // Clear WORKFLOW badge (index 1) when tab is opened
+        clearTabBadge(index: 1)
+        refreshDiagram()
+    }
+
+    private func showChangesPanel() {
+        chatTableView.isHidden = true
+        workflowStatusView.isHidden = true
+        pendingAttachmentsBar.isHidden = true
+        selectedStepChip.isHidden = true
+        chatInputContainer.isHidden = true
+        bottomFillView.isHidden = true
+        workflowContainerView?.isHidden = true
+        changesContainerView?.isHidden = false
+        // Clear CHANGES badge (index 2) when tab is opened
+        clearTabBadge(index: 2)
+        refreshDiff()
+    }
+
+    /// Sets a badge dot on the given tab index (only when not currently viewing that tab).
+    private func setBadgeOnInactiveTab(index: Int) {
+        guard let seg = tabSegmentedControl, seg.selectedIndex != index else { return }
+        let existing = Set(seg.indicesOfTitlesWithBadge)
+        seg.indicesOfTitlesWithBadge = Array(existing.union([index]))
+    }
+
+    /// Removes the badge dot from the given tab index.
+    private func clearTabBadge(index: Int) {
+        guard let seg = tabSegmentedControl else { return }
+        seg.indicesOfTitlesWithBadge = seg.indicesOfTitlesWithBadge.filter { $0 != index }
+    }
+
+    // MARK: - Diagram
+
+    private func refreshDiagram() {
+        var latestJson: String? = nil
+        for msg in messages {
+            for artifact in msg.artifacts where artifact.isWorkflow {
+                if let j = artifact.workflowContent?.workflowJson {
+                    latestJson = j
+                }
+            }
+        }
+        guard let json = latestJson else { return }
+        mergedDiagram = WorkflowDiagramData.parse(from: json)
+        if let diagram = mergedDiagram {
+            workflowDiagramView?.configure(with: diagram)
+        }
+    }
+
+    private func refreshDiff(forceUpdate: Bool = false) {
+        if !forceUpdate && (workflowDiffView == nil || workflowDiffView?.hasDiffLines == true) {
+            return
+        }
+        
+        // Cancel any in-flight work
+        diffTask?.cancel()
+        diffTask = nil
+
+        // Immediately show spinner, hide content
+        changesLoadingWheel.startAnimating()
+        workflowDiffView?.isHidden = true
+        changesEmptyStack?.isHidden = true
+
+        // Scan messages on main thread (UI-owned state)
+        var foundOriginal: String? = nil
+        var foundUpdated: String? = nil
+        for msg in messages.reversed() {
+            for artifact in msg.artifacts.reversed() where artifact.isWorkflow {
+                if let orig = artifact.workflowContent?.originalWorkflowJson,
+                   let updated = artifact.workflowContent?.workflowJson {
+                    foundOriginal = orig
+                    foundUpdated = updated
+                    break
+                }
+            }
+            if foundOriginal != nil { break }
+        }
+
+        guard let orig = foundOriginal, let updated = foundUpdated else {
+            // No data — resolve immediately
+            changesLoadingWheel.stopAnimating()
+            changesEmptyStack?.isHidden = false
+            workflowDiffView?.isHidden = true
+            return
+        }
+
+        // Dispatch heavy work to background via Task.detached (nonisolated — safe in Swift 6)
+        diffTask = Task.detached(priority: .utility) { [weak self] in
+            guard !Task.isCancelled else { return }
+            let cleanedOriginal = cleanJsonForDiff(orig) ?? orig
+            let cleanedUpdated  = cleanJsonForDiff(updated) ?? updated
+            let lines = computeDiff(original: cleanedOriginal, updated: cleanedUpdated)
+
+            guard !Task.isCancelled else { return }
+            await MainActor.run { [weak self] in
+                guard let self = self, !Task.isCancelled else { return }
+                self.changesLoadingWheel.stopAnimating()
+                if lines.isEmpty {
+                    self.changesEmptyStack?.isHidden = false
+                    self.workflowDiffView?.isHidden = true
+                } else {
+                    self.workflowDiffView?.applyDiffLines(lines)
+                    self.workflowDiffView?.isHidden = false
+                    self.changesEmptyStack?.isHidden = true
+                }
+            }
+        }
+    }
+
+    // MARK: - Step selection
+
+    private func handleStepTapped(_ step: WorkflowStep) {
+        let vc = WorkflowStepDetailViewController.instantiate(step: step)
+        if let sheet = vc.sheetPresentationController {
+            sheet.detents = [.medium()]
+            sheet.prefersGrabberVisible = true
+        }
+        vc.onSelectStep = { [weak self] selectedStep in
+            self?.applySelectedStep(selectedStep)
+        }
+        present(vc, animated: true)
+    }
+
+    private func applySelectedStep(_ step: WorkflowStep) {
+        selectedStep = step
+        selectedStepChip.configure(with: step)
+        selectedStepChip.isHidden = false
+        selectedStepChipHeightConstraint.constant = 44
+        UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
+
+        // Switch to CHAT tab
+        tabSegmentedControl?.selectTabWith(index: 0)
+        showChatPanel()
+    }
+
+    private func clearSelectedStep() {
+        selectedStep = nil
+        selectedStepChip.clear()
+        selectedStepChip.isHidden = true
+        selectedStepChipHeightConstraint.constant = 0
+        UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
     }
 
     // MARK: - Keyboard
@@ -389,7 +858,94 @@ class TaskChatViewController: UIViewController {
         UIView.animate(withDuration: duration) { self.view.layoutIfNeeded() }
     }
 
+    // MARK: - Mic Recording
+
+    @objc private func micLongPressed(_ gesture: UILongPressGestureRecognizer) {
+        switch gesture.state {
+        case .began: startRecording()
+        case .ended, .cancelled: stopRecording()
+        default: break
+        }
+    }
+
+    private func startRecording() {
+        startRecordingBarAnimation()
+        let prefix = chatInputTextView.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        speechManager.startTranscribing(
+            textHandler: { [weak self] text in
+                guard let self else { return }
+                self.chatInputTextView.text = prefix.isEmpty ? text : prefix + " " + text
+                self.updateInputBarHeight()
+            },
+            errorHandler: { [weak self] _ in
+                self?.stopRecording()
+                self?.bubbleHelper.showGenericMessageView(
+                    text: "Speech recognition unavailable.",
+                    delay: 3, textColor: .white,
+                    backColor: UIColor.Sphinx.PrimaryRed, backAlpha: 1.0)
+            }
+        )
+    }
+
+    private func stopRecording() {
+        speechManager.stopTranscribing()
+        micButton.tintColor = UIColor.Sphinx.WashedOutReceivedText
+        stopRecordingBarAnimation()
+    }
+
+    private func startRecordingBarAnimation() {
+        micButton.tintColor = .white
+        let green = UIColor.Sphinx.PrimaryGreen
+        chatInputContainer.backgroundColor = green
+        bottomFillView.backgroundColor = green
+        UIView.animate(
+            withDuration: 0.7,
+            delay: 0,
+            options: [.repeat, .autoreverse, .allowUserInteraction],
+            animations: { [weak self] in
+                self?.chatInputContainer.alpha = 0.45
+                self?.bottomFillView.alpha = 0.45
+            }
+        )
+    }
+
+    private func stopRecordingBarAnimation() {
+        chatInputContainer.layer.removeAllAnimations()
+        bottomFillView.layer.removeAllAnimations()
+        chatInputContainer.alpha = 1.0
+        bottomFillView.alpha = 1.0
+        chatInputContainer.backgroundColor = UIColor.Sphinx.HeaderBG
+        bottomFillView.backgroundColor = UIColor.Sphinx.HeaderBG
+        micButton.tintColor = UIColor.Sphinx.WashedOutReceivedText
+    }
+
     // MARK: - Actions
+
+    @objc private func attachTapped() {
+        var config = PHPickerConfiguration(photoLibrary: .shared())
+        config.filter = .images
+        config.selectionLimit = 0 // unlimited
+        let picker = PHPickerViewController(configuration: config)
+        picker.delegate = self
+        present(picker, animated: true)
+    }
+
+    private func refreshAttachmentsBar() {
+        pendingAttachmentsBar.configure(with: pendingAttachments)
+        pendingAttachmentsBarHeightConstraint.constant = pendingAttachments.isEmpty ? 0 : 88
+        view.layoutIfNeeded()
+        scrollToBottom(animated: false)
+    }
+
+    private func updateSendButtonState() {
+        let uploading = pendingAttachments.contains { $0.state == .uploading || $0.state == .failed }
+        let blocked = isAgentWorking || uploading
+        sendButton.isEnabled = !blocked
+        sendButton.alpha = blocked ? 0.5 : 1.0
+        micButton.isEnabled = !blocked
+        micButton.alpha = blocked ? 0.5 : 1.0
+    }
+
     @objc private func releasePodTapped() {
         AlertHelper.showTwoOptionsAlert(
             title: "Release Pod",
@@ -433,17 +989,167 @@ class TaskChatViewController: UIViewController {
     @objc private func shareTappedAction() {
         let url = "https://hive.sphinx.chat/w/\(workspaceSlug)/task/\(task.id)"
         let label = "Check out this task: \(task.title) — \(url)"
-        let shareVC = HiveShareViewController.instantiate(url: url, label: label)
+        let shareVC = HiveShareViewController.instantiate(url: url, label: label, workspaceSlug: workspaceSlug)
         present(shareVC, animated: true)
     }
 
     @objc private func backTapped() {
         navigationController?.popViewController(animated: true)
     }
+    
+    func extractWorkflowContext(
+        from messages: [HiveChatMessage],
+        taskMode: String
+    ) -> WorkflowContent? {
+        var workflowId: Int?
+        var workflowName: String?
+        var workflowRefId: String?
+        var workflowVersionId: String?
+        var workflowJson: String?
+        var projectId: String?
+        var webhook: String?
+        var originalWorkflowJson: String?
+        
+        for message in messages.reversed() {
+            for artifact in message.artifacts where artifact.type == "WORKFLOW" {
+                guard let content = artifact.workflowContent else { continue }
+                
+                workflowId = workflowId ?? content.workflowId
+                workflowName = workflowName ?? content.workflowName
+                workflowRefId = workflowRefId ?? content.workflowRefId
+                workflowVersionId = workflowVersionId ?? content.workflowVersionId
+                workflowJson = workflowJson ?? content.workflowJson
+                projectId = projectId ?? content.projectId
+                webhook = webhook ?? content.webhook
+                originalWorkflowJson = originalWorkflowJson ?? content.originalWorkflowJson
+                
+                // Early exit based on mode
+                let hasWorkflowEditorMinimum = workflowId != nil && workflowRefId != nil
+                let hasProjectDebuggerMinimum = projectId != nil
+                
+                if (taskMode == "workflow_editor" && hasWorkflowEditorMinimum) ||
+                   (taskMode == "project_debugger" && hasProjectDebuggerMinimum) {
+                    break
+                }
+            }
+        }
+        
+        // Validate minimum required fields per mode
+        if taskMode == "workflow_editor" && (workflowId == nil || workflowRefId == nil) {
+            return nil
+        }
+        if taskMode == "project_debugger" && projectId == nil {
+            return nil
+        }
+        
+        return WorkflowContent(
+            workflowId: workflowId,
+            workflowName: workflowName ?? (workflowId.map { "Workflow \($0)" }),
+            workflowRefId: workflowRefId,
+            workflowVersionId: workflowVersionId,
+            projectId: projectId,
+            webhook: webhook,
+            workflowJson: workflowJson,
+            originalWorkflowJson: originalWorkflowJson
+        )
+    }
+
+    // MARK: - Send routing
+
+    private func sendStandardMessage(_ message: String, replyId: String? = nil, attachments: [[String: AnyObject]] = []) {
+        API.sharedInstance.sendTaskChatMessageWithAuth(
+            taskId: task.id,
+            message: message,
+            replyId: replyId,
+            socketId: HivePusherManager.shared.socketId,
+            attachments: attachments,
+            callback: { [weak self] sentMessage in
+                DispatchQueue.main.async {
+                    guard let self = self, let sentMessage = sentMessage else { return }
+                    self.newMessageReceived(sentMessage)
+                }
+            },
+            errorCallback: { [weak self] in
+                DispatchQueue.main.async {
+                    self?.showSendMessageError()
+                }
+            }
+        )
+    }
+    
+    private func onWorkflowEditorMessageSent() {
+        self.task.workflowStatus = WorkflowStatus.IN_PROGRESS.rawValue
+        self.applyInitialWorkflowStatus()
+    }
+
+    private func sendMessage(_ message: String, replyId: String? = nil, attachments: [[String: AnyObject]] = []) {
+        switch task.mode {
+        case "workflow_editor":
+            guard let wf = extractWorkflowContext(from: messages, taskMode: "workflow_editor"),
+                  let workflowId = wf.workflowId,
+                  let workflowName = wf.workflowName,
+                  let workflowRefId = wf.workflowRefId else {
+                DispatchQueue.main.async { self.showSendMessageError() }
+                return
+            }
+            let step = selectedStep
+            API.sharedInstance.sendWorkflowEditorMessageWithAuth(
+                taskId: task.id,
+                message: message,
+                workflowId: workflowId,
+                workflowName: workflowName,
+                workflowRefId: workflowRefId,
+                workflowVersionId: wf.workflowVersionId,
+                webhook: wf.webhook,
+                workflowJson: wf.workflowJson,
+                stepName: step?.name,
+                stepUniqueId: step?.uniqueId,
+                stepDisplayName: step?.displayName,
+                stepType: step?.skillType,
+                stepData: step?.rawJSON as? [String: AnyObject],
+                callback: { [weak self] sentMessage in
+                    DispatchQueue.main.async {
+                        guard let self, let sentMessage else { return }
+                        self.onWorkflowEditorMessageSent()
+                        self.newMessageReceived(sentMessage)
+                        if step != nil { self.clearSelectedStep() }
+                    }
+                },
+                errorCallback: { [weak self] in
+                    DispatchQueue.main.async { self?.showSendMessageError() }
+                }
+            )
+        case "project_debugger":
+            guard let wf = extractWorkflowContext(from: messages, taskMode: "project_debugger"),
+                  let projectId = wf.projectId ?? (cachedStakworkProjectId.map { String($0) }) else {
+                      DispatchQueue.main.async { self.showSendMessageError() }
+                return
+            }
+            API.sharedInstance.sendProjectDebuggerMessageWithAuth(
+                taskId: task.id,
+                message: message,
+                projectId: projectId,
+                webhook: wf.webhook,
+                callback: { [weak self] sentMessage in
+                    DispatchQueue.main.async {
+                        guard let self, let sentMessage else { return }
+                        self.newMessageReceived(sentMessage)
+                    }
+                },
+                errorCallback: { [weak self] in
+                    DispatchQueue.main.async { self?.showSendMessageError() }
+                }
+            )
+        default:
+            sendStandardMessage(message, replyId: replyId, attachments: attachments)
+        }
+    }
 
     @objc private func sendTapped() {
-        guard let message = chatInputTextView.text?.trimmingCharacters(in: .whitespacesAndNewlines),
-              !message.isEmpty else {
+        let rawMessage = chatInputTextView.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        // Default to "Modify this step" when input is empty but a step is selected
+        let message = (rawMessage.isEmpty && selectedStep != nil) ? "Modify this step" : rawMessage
+        guard !message.isEmpty else {
             chatInputTextView.resignFirstResponder()
             return
         }
@@ -452,50 +1158,36 @@ class TaskChatViewController: UIViewController {
             .foregroundColor: UIColor.Sphinx.Text,
             .font: UIFont(name: "Roboto-Regular", size: 16) ?? UIFont.systemFont(ofSize: 16)
         ]
+        let oneLine = singleLineTextViewHeight()
+        chatInputTextViewHeightConstraint.constant = oneLine
+        chatInputContainerHeightConstraint.constant = containerHeight(for: oneLine)
+        chatInputTextView.isScrollEnabled = false
+        view.layoutIfNeeded()
         chatInputTextView.resignFirstResponder()
 
-        API.sharedInstance.sendTaskChatMessageWithAuth(
-            taskId: task.id,
-            message: message,
-            socketId: HivePusherManager.shared.socketId,
-            callback: { [weak self] sentMessage in
-                DispatchQueue.main.async {
-                    guard let self = self, let sentMessage = sentMessage else { return }
-                    self.newMessageReceived(sentMessage)
-                }
-            },
-            errorCallback: { [weak self] in
-                DispatchQueue.main.async {
-                    self?.showSendMessageError()
-                }
+        let attachmentsPayload: [[String: AnyObject]] = pendingAttachments
+            .filter { $0.state == .done }
+            .compactMap { pending in
+                guard let s3Path = pending.s3Path else { return nil }
+                return [
+                    "path": s3Path as AnyObject,
+                    "filename": pending.filename as AnyObject,
+                    "mimeType": pending.mimeType as AnyObject,
+                    "size": pending.size as AnyObject
+                ]
             }
-        )
+
+        // Dismiss the attachments preview bar immediately on send tap
+        pendingAttachments = []
+        refreshAttachmentsBar()
+        updateSendButtonState()
+
+        sendMessage(message, attachments: attachmentsPayload)
     }
 
     private func sendClarifyingAnswers(answers: [String], replyId: String) {
         let joined = answers.joined(separator: "\n\n")
-        API.sharedInstance.sendTaskChatMessageWithAuth(
-            taskId: task.id,
-            message: joined,
-            replyId: replyId,
-            socketId: HivePusherManager.shared.socketId,
-            callback: { [weak self] sentMessage in
-                DispatchQueue.main.async {
-                    guard let self = self, let sentMessage = sentMessage else { return }
-                    self.newMessageReceived(sentMessage)
-                    // Lock the cell that triggered the submit
-                    if let idx = self.messages.firstIndex(where: { $0.id == replyId }),
-                       let cell = self.chatTableView.cellForRow(at: IndexPath(row: idx, section: 0)) as? FeatureChatMessageCell {
-                        cell.lockClarifyingQuestionsView()
-                    }
-                }
-            },
-            errorCallback: { [weak self] in
-                DispatchQueue.main.async {
-                    self?.showSendMessageError()
-                }
-            }
-        )
+        sendMessage(joined, replyId: replyId)
     }
 
     private func showSendMessageError() {
@@ -539,32 +1231,44 @@ class TaskChatViewController: UIViewController {
         )
     }
 
-    // MARK: - Processing Bubble
+    // MARK: - Input Bar Sizing Helpers
 
-    private func hideProcessingBubble() {
-        guard processingStepText != nil else { return }
-        let indexPath = IndexPath(row: messages.count, section: 0)
-        processingStepText = nil
-        chatTableView.deleteRows(at: [indexPath], with: .automatic)
+    private func singleLineTextViewHeight() -> CGFloat {
+        let font = UIFont(name: "Roboto-Regular", size: 16) ?? UIFont.systemFont(ofSize: 16)
+        let insets: CGFloat = 10 + 10
+        return ceil(font.lineHeight + insets)
     }
 
-    /// Shows the bubble if not yet visible, or updates its text if already shown.
-    /// Called only when a real socket event (on_step_start / on_step_complete) arrives.
-    private func updateProcessingBubble(stepText: String) {
-        if processingStepText == nil {
-            processingStepText = stepText
-            let indexPath = IndexPath(row: messages.count, section: 0)
-            chatTableView.insertRows(at: [indexPath], with: .automatic)
-            scrollToBottom(animated: true)
-        } else {
-            processingStepText = stepText
-            let indexPath = IndexPath(row: messages.count, section: 0)
-            chatTableView.reloadRows(at: [indexPath], with: .none)
+    private func containerHeight(for textViewHeight: CGFloat) -> CGFloat {
+        return textViewHeight + 12 + 12
+    }
+
+    private func updateInputBarHeight() {
+        let font = chatInputTextView.font ?? UIFont.systemFont(ofSize: 16)
+        let insets = chatInputTextView.textContainerInset.top + chatInputTextView.textContainerInset.bottom
+        let padding = chatInputTextView.textContainer.lineFragmentPadding * 2
+        let fittingSize = chatInputTextView.sizeThatFits(
+            CGSize(width: chatInputTextView.bounds.width, height: .greatestFiniteMagnitude))
+        let maxHeight = ceil(font.lineHeight * 4 + insets + padding)
+        let newTextViewHeight = min(fittingSize.height, maxHeight)
+
+        chatInputTextView.isScrollEnabled = fittingSize.height > maxHeight
+
+        if newTextViewHeight != chatInputTextViewHeightConstraint.constant {
+            chatInputTextViewHeightConstraint.constant = newTextViewHeight
+            chatInputContainerHeightConstraint.constant = containerHeight(for: newTextViewHeight)
+            view.layoutIfNeeded()
+            scrollToBottom(animated: false)
+        }
+
+        if chatInputTextView.isScrollEnabled {
+            let end = NSRange(location: chatInputTextView.text.utf16.count, length: 0)
+            chatInputTextView.scrollRangeToVisible(end)
         }
     }
 
     private func scrollToBottom(animated: Bool = true) {
-        let totalRows = messages.count + (processingStepText != nil ? 1 : 0)
+        let totalRows = displayMessages.count
         guard totalRows > 0 else { return }
         let indexPath = IndexPath(row: totalRows - 1, section: 0)
         chatTableView.scrollToRow(at: indexPath, at: .bottom, animated: animated)
@@ -584,6 +1288,13 @@ class TaskChatViewController: UIViewController {
                         self.task = updated
                         self.task.podId = podId
                         self.cachedStakworkProjectId = updated.stakworkProjectId
+                        if updated.status != "TODO" && updated.workflowStatus != "PENDING" {
+                            self.dismissDescriptionOverlay(animated: false)
+                        }
+                        // Reconcile UI with latest workflow status from server
+                        if let raw = updated.workflowStatus, let status = WorkflowStatus(rawValue: raw) {
+                            self.applyWorkflowStatus(status)
+                        }
                     }
                     self.connectAnyCable()
                 }
@@ -610,18 +1321,38 @@ class TaskChatViewController: UIViewController {
     }
 
     // MARK: - Workflow Status
+    private func updateStatusViewHeight() {
+        workflowStatusHeightConstraint.constant = workflowStatusView.hasDetailText ? 48 : 32
+    }
+
+    /// Makes the status bar visible with the "Working" state if it isn't already showing.
+    /// Called by SSE/AnyCable step events so the bar appears as soon as the agent starts working,
+    /// even if the Pusher `workflow-status-update` hasn't fired yet.
+    private func ensureStatusBarVisible() {
+        guard workflowStatusHeightConstraint.constant == 0 else { return }
+        workflowStatusView.status = .IN_PROGRESS
+        updateStatusViewHeight()
+        if workflowStatusView.isHidden {
+            workflowStatusView.show(animated: true)
+        }
+        setInputEnabled(false)
+        UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
+    }
+
     private func applyWorkflowStatus(_ status: WorkflowStatus, animated: Bool = true) {
         workflowStatusView.status = status
         switch status {
-        case .IN_PROGRESS, .HALTED:
-            workflowStatusHeightConstraint.constant = 32
+        case .IN_PROGRESS, .PENDING, .HALTED, .ERROR, .FAILED:
+            updateStatusViewHeight()
             workflowStatusView.show(animated: animated)
             if animated {
                 UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
             } else {
                 self.view.layoutIfNeeded()
             }
-        case .PENDING, .COMPLETED, .ERROR, .FAILED:
+            setInputEnabled(false)
+        case .COMPLETED:
+            workflowStatusView.setStepDetail(nil)
             workflowStatusHeightConstraint.constant = 0
             workflowStatusView.hide(animated: animated)
             if animated {
@@ -629,28 +1360,128 @@ class TaskChatViewController: UIViewController {
             } else {
                 self.view.layoutIfNeeded()
             }
-            hideProcessingBubble()
+            setInputEnabled(true)
         }
+    }
+
+    /// Enables or disables the input bar (send + attach + mic + text field) when the agent is working.
+    private func setInputEnabled(_ enabled: Bool) {
+        isAgentWorking = !enabled
+        chatInputTextView.isEditable = enabled
+        attachButton.isEnabled = enabled
+        attachButton.alpha = enabled ? 1.0 : 0.5
+        micButton.isEnabled = enabled
+        micButton.alpha = enabled ? 1.0 : 0.5
+        // Let updateSendButtonState handle send button — it checks both workflow + upload state
+        updateSendButtonState()
     }
 
     private func applyInitialWorkflowStatus() {
         guard let raw = task.workflowStatus,
               let status = WorkflowStatus(rawValue: raw),
-              status == .IN_PROGRESS || status == .HALTED else { return }
+              status != .COMPLETED else { return }
         applyWorkflowStatus(status, animated: false)
+    }
+
+    // MARK: - Description Overlay
+
+    private func setupDescriptionOverlayIfNeeded() {
+        let isPending = task.status == "TODO" || task.status == "PENDING"
+        guard isPending,
+              let description = task.description, !description.isEmpty else { return }
+
+        let overlay = UIView()
+        overlay.translatesAutoresizingMaskIntoConstraints = false
+        overlay.backgroundColor = UIColor.Sphinx.Body
+        view.addSubview(overlay)
+
+        NSLayoutConstraint.activate([
+            overlay.topAnchor.constraint(equalTo: headerView.bottomAnchor),
+            overlay.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            overlay.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            overlay.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+
+        let scrollView = UIScrollView()
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        overlay.addSubview(scrollView)
+
+        NSLayoutConstraint.activate([
+            scrollView.topAnchor.constraint(equalTo: overlay.topAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: overlay.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: overlay.trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: overlay.bottomAnchor)
+        ])
+
+        let renderer = MarkdownRenderer(style: MarkdownStyle())
+        let attributed = renderer.render(description)
+
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.numberOfLines = 0
+        label.attributedText = attributed
+        scrollView.addSubview(label)
+
+        NSLayoutConstraint.activate([
+            label.topAnchor.constraint(equalTo: scrollView.topAnchor, constant: 16),
+            label.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor, constant: 16),
+            label.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor, constant: -16),
+            label.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: -16),
+            label.widthAnchor.constraint(equalTo: scrollView.widthAnchor, constant: -32)
+        ])
+
+        chatInputContainer.isHidden = true
+        bottomFillView.isHidden = true
+        workflowStatusView.isHidden = true
+        pendingAttachmentsBar.isHidden = true
+
+        taskDescriptionOverlay = overlay
+    }
+
+    private func dismissDescriptionOverlay(animated: Bool) {
+        guard let overlay = taskDescriptionOverlay else { return }
+
+        let restore = {
+            self.chatInputContainer.isHidden = false
+            self.bottomFillView.isHidden = false
+            self.workflowStatusView.isHidden = false
+            self.pendingAttachmentsBar.isHidden = false
+            overlay.removeFromSuperview()
+            self.taskDescriptionOverlay = nil
+        }
+
+        if animated {
+            UIView.animate(withDuration: 0.25, animations: {
+                overlay.alpha = 0
+            }, completion: { _ in
+                restore()
+            })
+        } else {
+            restore()
+        }
     }
 }
 
 // MARK: - HivePusherDelegate
 extension TaskChatViewController: HivePusherDelegate {
+    func pusherConnectionStateChanged(from old: ConnectionState, to new: ConnectionState) {
+        guard new == .disconnected else { return }
+        DispatchQueue.main.async { [weak self] in
+            self?.reconnectAndRefresh()
+        }
+    }
+
     func taskGenerationStatusChanged(status: String, featureId: String) {
         
     }
     
     func workflowStatusChanged(status: WorkflowStatus) {
         DispatchQueue.main.async {
+            self.task.workflowStatus = status.rawValue
             self.applyWorkflowStatus(status)
-            
+            if status != .PENDING {
+                self.dismissDescriptionOverlay(animated: true)
+            }
 //            if status == .IN_PROGRESS || status == .PENDING {
 //                self.showProcessingBubble()
 //                self.fetchAndUpdateWorkflowStep()
@@ -661,18 +1492,61 @@ extension TaskChatViewController: HivePusherDelegate {
     func featureUpdateReceived(featureId: String) {
         // no-op: TaskChatViewController does not display feature-level updates
     }
+    
+    func taskStatusUpdated(taskId: String, status: String, workflowStatus: String?, archived: Bool) {
+        task.status = status
+        task.workflowStatus = workflowStatus
+        task.archived = archived
+    }
 
     func newMessageReceived(_ message: HiveChatMessage) {
-        guard !messages.contains(where: { $0.id == message.id }) else { return }
-        // Only hide the processing bubble when an AI (non-user) reply arrives,
-        // not when the echo of the sent user message comes back.
-        if !message.isUserMessage {
-            hideProcessingBubble()
+        // STREAM artifact → open agent events SSE for status bar second line
+        if let streamInfo = message.artifacts.first(where: { $0.isStream })?.streamInfo {
+            connectAgentEventsStream(
+                requestId: streamInfo.requestId,
+                eventsToken: streamInfo.eventsToken,
+                baseUrl: streamInfo.baseUrl
+            )
         }
+        
+        if let workflowContent = message.artifacts.first(where: { $0.isWorkflow })?.workflowContent,
+           let projectIdString = workflowContent.projectId,
+           let newProjectId = Int(projectIdString),
+           cachedStakworkProjectId != newProjectId
+        {
+            cachedStakworkProjectId = newProjectId
+            
+            anyCableManager?.disconnect()
+            anyCableManager = nil
+            connectAnyCable()
+        }
+
+        // taskId may be nil when the message is fetched from the single-message endpoint
+        // (which doesn't always include taskId). The Pusher channel is already scoped to
+        // this task, so skip the taskId check when nil.
+        if let msgTaskId = message.taskId, msgTaskId != task.id { return }
+        guard !messages.contains(where: { $0.id == message.id }) else { return }
         messages.append(message)
-        let indexPath = IndexPath(row: messages.count - 1, section: 0)
-        chatTableView.insertRows(at: [indexPath], with: .automatic)
+        guard message.isDisplayable else { return }
+        let indexPath = IndexPath(row: displayMessages.count - 1, section: 0)
+        UIView.performWithoutAnimation {
+            chatTableView.insertRows(at: [indexPath], with: .none)
+        }
+        // If it's a CQ answer, also reload the CQ cell to show answered state
+        if cqMessageIds.contains(message.replyId ?? "") {
+            if let displayIdx = displayMessages.firstIndex(where: { $0.id == message.replyId }) {
+                chatTableView.reloadRows(at: [IndexPath(row: displayIdx, section: 0)], with: .none)
+            }
+        }
         scrollToBottom()
+        // Update diagram and diff if a new WORKFLOW artifact arrived
+        if task.mode == "workflow_editor", message.artifacts.contains(where: { $0.isWorkflow }) {
+            refreshDiagram()
+            refreshDiff(forceUpdate: true)
+            // Badge WORKFLOW (1) and CHANGES (2) tabs if not currently active
+            setBadgeOnInactiveTab(index: 1)
+            setBadgeOnInactiveTab(index: 2)
+        }
     }
 
     func prStatusChanged(taskId: String?, prNumber: Int, state: String, artifactStatus: String, prUrl: String?, problemDetails: String?) {
@@ -684,7 +1558,9 @@ extension TaskChatViewController: HivePusherDelegate {
         messages[idx].artifacts[artifactIdx].prContent?.status = artifactStatus
         if let url = prUrl { messages[idx].artifacts[artifactIdx].prContent?.url = url }
         DispatchQueue.main.async {
-            self.chatTableView.reloadRows(at: [IndexPath(row: idx, section: 0)], with: .none)
+            if let displayIdx = self.displayMessages.firstIndex(where: { $0.id == self.messages[idx].id }) {
+                self.chatTableView.reloadRows(at: [IndexPath(row: displayIdx, section: 0)], with: .none)
+            }
         }
     }
 
@@ -703,23 +1579,109 @@ extension TaskChatViewController: HivePusherDelegate {
 // MARK: - HiveAnyCableDelegate
 extension TaskChatViewController: HiveAnyCableDelegate {
     func workflowStepTextReceived(stepText: String) {
-        updateProcessingBubble(stepText: stepText)
+        ensureStatusBarVisible()
+        workflowStatusView.setStatusText(stepText)
+        UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
+    }
+
+    func anyCableDidDisconnect() {
+        anyCableManager = nil
+        reconnectAndRefresh()
+    }
+}
+
+// MARK: - Agent Events SSE (second stream for working status bar)
+extension TaskChatViewController {
+
+    func connectAgentEventsStream(requestId: String, eventsToken: String, baseUrl: String) {
+        agentEventsManager?.stopStream()
+        agentEventsManager = AgentEventsSSEManager()
+        agentEventsManager?.delegate = self
+        agentEventsManager?.startStream(requestId: requestId, eventsToken: eventsToken, baseUrl: baseUrl)
+    }
+}
+
+extension TaskChatViewController: AgentEventsSSEDelegate {
+
+    func agentEventToolCall(toolName: String, input: [String: Any]?) {
+        ensureStatusBarVisible()
+        let display = agentToolDisplayText(toolName: toolName, input: input)
+        workflowStatusView.setStepDetail(display)
+        updateStatusViewHeight()
+        UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
+    }
+
+    func agentEventText(_ text: String) {
+        ensureStatusBarVisible()
+        let sanitised = text
+            .replacingOccurrences(of: "\r\n", with: " ")
+            .replacingOccurrences(of: "\n", with: " ")
+            .replacingOccurrences(of: "\r", with: " ")
+        workflowStatusView.setStepDetail(sanitised)
+        updateStatusViewHeight()
+        UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
+    }
+
+    func agentEventFinish() {
+        agentEventsManager?.stopStream()
+        agentEventsManager = nil
+    }
+
+    func agentEventError(_ message: String) {
+        print("[AgentEventsSSE] TaskChat error: \(message)")
+        agentEventsManager?.stopStream()
+        agentEventsManager = nil
+    }
+
+    private func agentToolDisplayText(toolName: String, input: [String: Any]?) -> String {
+        let baseTool = toolName.components(separatedBy: "__").last ?? toolName
+        let icon: String
+        switch baseTool {
+        case "list_concepts":        icon = "📚 Browsing concepts"
+        case "learn_concept":        icon = "📖 Reading documentation"
+        case "recent_commits":       icon = "🔍 Checking recent commits"
+        case "recent_contributions": icon = "👤 Reviewing contributions"
+        case "repo_agent":           icon = "🤖 Deep code analysis"
+        case "search_logs":          icon = "📝 Searching logs"
+        case "web_search":           icon = "🌐 Searching the web"
+        default:                     icon = "⚙️ \(baseTool)"
+        }
+        guard let input = input, let first = input.first else { return icon }
+        let value = String(describing: first.value)
+            .replacingOccurrences(of: "\r\n", with: " ")
+            .replacingOccurrences(of: "\n", with: " ")
+            .replacingOccurrences(of: "\r", with: " ")
+        let detail = "\(first.key): \(value)"
+        let combined = "\(icon) — \(detail)"
+        return combined
     }
 }
 
 // MARK: - UITableView
 extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        messages.count + (processingStepText != nil ? 1 : 0)
+        displayMessages.count
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        if processingStepText != nil && indexPath.row == messages.count {
-            let cell = tableView.dequeueReusableCell(
-                withIdentifier: "HiveProcessingBubbleCell",
+        let isLast = indexPath.row == displayMessages.count - 1
+        if displayMessages[indexPath.row].artifacts.contains(where: { $0.isClarifyingQuestions }) {
+            guard let cell = tableView.dequeueReusableCell(
+                withIdentifier: "ClarifyingQuestionMessageCell",
                 for: indexPath
-            ) as! HiveProcessingBubbleCell
-            cell.configure(stepText: processingStepText ?? "Communicating with workflow")
+            ) as? ClarifyingQuestionMessageCell else { return UITableViewCell() }
+            let cqMessage = displayMessages[indexPath.row]
+            let answerMessage = messages.first(where: { $0.replyId == cqMessage.id && $0.isUserMessage })
+            cell.configure(with: cqMessage, isLastMessage: isLast, answerMessage: answerMessage)
+            cell.onClarifyingAnswerSubmit = { [weak self] answers, replyId in
+                self?.sendClarifyingAnswers(answers: answers, replyId: replyId)
+            }
+            cell.onHeightChanged = { [weak tableView] in
+                UIView.performWithoutAnimation {
+                    tableView?.beginUpdates()
+                    tableView?.endUpdates()
+                }
+            }
             return cell
         }
 
@@ -727,19 +1689,348 @@ extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
             withIdentifier: "FeatureChatMessageCell",
             for: indexPath
         ) as? FeatureChatMessageCell else { return UITableViewCell() }
-        let isLast = indexPath.row == messages.count - 1
-        cell.configure(with: messages[indexPath.row], isLastMessage: isLast)
-        cell.onClarifyingAnswerSubmit = { [weak self] answers, replyId in
-            self?.sendClarifyingAnswers(answers: answers, replyId: replyId)
-        }
+        let msg = displayMessages[indexPath.row]
+        // If this message is a CQ answer, show italic summary instead of raw text
+        let italic = cqAnswerItalicText(for: msg)
+        cell.configure(with: msg, isLastMessage: isLast, italicText: italic)
         cell.onHeightChanged = { [weak tableView] in
-            tableView?.beginUpdates()
-            tableView?.endUpdates()
+            UIView.performWithoutAnimation {
+                    tableView?.beginUpdates()
+                    tableView?.endUpdates()
+                }
         }
         cell.onAttachmentTap = { [weak self] attachment in
             self?.handleAttachmentTap(attachment)
         }
+        cell.onPublishScriptTapped = { [weak self] artifact in
+            self?.handlePublishScript(artifact: artifact, at: indexPath)
+        }
+        cell.onOpenScriptVersionTapped = { [weak self] _ in
+            guard let self else { return }
+            let urlStr = "https://hive.sphinx.chat/w/\(self.workspaceSlug)/task/\(self.task.id)"
+            if let url = URL(string: urlStr) {
+                UIApplication.shared.open(url)
+            }
+        }
+        cell.onPublishWorkflowTapped = { [weak self] artifact in
+            self?.handlePublishWorkflow(artifact: artifact, at: indexPath)
+        }
+        cell.onPublishPromptTapped = { [weak self] artifact in
+            self?.handlePublishPrompt(artifact: artifact, at: indexPath)
+        }
+        cell.onOpenPromptVersionTapped = { [weak self] artifact in
+            guard let self,
+                  let content = artifact.publishPromptContent,
+                  let promptId = content.promptId,
+                  let versionId = content.promptVersionId,
+                  !promptId.trimmingCharacters(in: .whitespaces).isEmpty,
+                  !versionId.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+            let urlStr = "https://hive.sphinx.chat/w/\(self.workspaceSlug)/prompts?prompt=\(promptId)&version=\(versionId)"
+            if let url = URL(string: urlStr) {
+                UIApplication.shared.open(url)
+            }
+        }
         return cell
+    }
+
+    private func handlePublishScript(artifact: HiveChatMessageArtifact, at indexPath: IndexPath) {
+        guard let content = artifact.publishScriptContent,
+              let scriptId = content.scriptId,
+              let versionId = content.scriptVersionId,
+              let artifactId = artifact.id else {
+            bubbleHelper.showGenericMessageView(
+                text: "Unable to publish: missing script information.",
+                delay: 3, textColor: .white,
+                backColor: UIColor.Sphinx.PrimaryRed, backAlpha: 1.0)
+            return
+        }
+
+        // Bail early if a publish is already in flight for this artifact (duplicate-tap guard).
+        if content.loading { return }
+
+        // Set model loading flag and update the card immediately.
+        for msgIdx in messages.indices {
+            for artIdx in messages[msgIdx].artifacts.indices {
+                if messages[msgIdx].artifacts[artIdx].id == artifactId {
+                    messages[msgIdx].artifacts[artIdx].publishScriptContent?.loading = true
+                }
+            }
+        }
+        // Re-resolve current row by stable artifactId (rows may shift due to SSE reindexing).
+        if let resolvedRow = displayMessages.firstIndex(where: { $0.artifacts.contains(where: { $0.id == artifactId }) }),
+           let cell = chatTableView.cellForRow(at: IndexPath(row: resolvedRow, section: 0)) as? FeatureChatMessageCell {
+            cell.setPublishScriptLoading(true, for: artifactId)
+        }
+
+        API.sharedInstance.publishScriptVersionWithAuth(
+            scriptId: scriptId,
+            versionId: versionId,
+            artifactId: artifactId,
+            callback: { [weak self] in
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    // Re-resolve the target message by stable artifact id to avoid stale-indexPath race.
+                    var resolvedRow: Int? = nil
+                    for (msgIdx, msg) in self.messages.enumerated() {
+                        for artIdx in self.messages[msgIdx].artifacts.indices {
+                            if self.messages[msgIdx].artifacts[artIdx].id == artifactId {
+                                self.messages[msgIdx].artifacts[artIdx].publishScriptContent?.published = true
+                                self.messages[msgIdx].artifacts[artIdx].publishScriptContent?.loading = false
+                                if let dispIdx = self.displayMessages.firstIndex(where: { $0.id == msg.id }) {
+                                    resolvedRow = dispIdx
+                                }
+                            }
+                        }
+                    }
+                    // Flip the card in-place only if the cell at the resolved row still hosts this artifact
+                    if let row = resolvedRow,
+                       row < self.displayMessages.count,
+                       self.displayMessages[row].artifacts.contains(where: { $0.id == artifactId }),
+                       let cell = self.chatTableView.cellForRow(at: IndexPath(row: row, section: 0)) as? FeatureChatMessageCell {
+                        cell.flipPublishScriptToPublished()
+                    }
+                }
+            },
+            errorCallback: { [weak self] error in
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    switch error {
+                    case .forbidden:
+                        self.bubbleHelper.showGenericMessageView(
+                            text: "You don't have permission to publish this script.",
+                            delay: 3, textColor: .white,
+                            backColor: UIColor.Sphinx.PrimaryRed, backAlpha: 1.0)
+                    case .generic:
+                        self.bubbleHelper.showGenericMessageView(
+                            text: "Failed to publish script. Please try again.",
+                            delay: 3, textColor: .white,
+                            backColor: UIColor.Sphinx.PrimaryRed, backAlpha: 1.0)
+                    }
+                    // Reset loading flag on model and revert card to tappable state.
+                    var resolvedRow: Int? = nil
+                    for (msgIdx, msg) in self.messages.enumerated() {
+                        for artIdx in self.messages[msgIdx].artifacts.indices {
+                            if self.messages[msgIdx].artifacts[artIdx].id == artifactId {
+                                self.messages[msgIdx].artifacts[artIdx].publishScriptContent?.loading = false
+                                if let dispIdx = self.displayMessages.firstIndex(where: { $0.id == msg.id }) {
+                                    resolvedRow = dispIdx
+                                }
+                            }
+                        }
+                    }
+                    if let row = resolvedRow,
+                       row < self.displayMessages.count,
+                       self.displayMessages[row].artifacts.contains(where: { $0.id == artifactId }),
+                       let cell = self.chatTableView.cellForRow(at: IndexPath(row: row, section: 0)) as? FeatureChatMessageCell {
+                        cell.setPublishScriptLoading(false, for: artifactId)
+                    }
+                }
+            }
+        )
+    }
+
+    private func handlePublishWorkflow(artifact: HiveChatMessageArtifact, at indexPath: IndexPath) {
+        guard let content = artifact.publishWorkflowContent,
+              let workflowId = content.workflowId,
+              let artifactId = artifact.id else {
+            bubbleHelper.showGenericMessageView(
+                text: "Unable to publish: missing workflow information.",
+                delay: 3, textColor: .white,
+                backColor: UIColor.Sphinx.PrimaryRed, backAlpha: 1.0)
+            return
+        }
+
+        // Bail early if a publish is already in flight for this artifact (duplicate-tap guard).
+        if content.loading { return }
+
+        // Set model loading flag and update the card immediately.
+        for msgIdx in messages.indices {
+            for artIdx in messages[msgIdx].artifacts.indices {
+                if messages[msgIdx].artifacts[artIdx].id == artifactId {
+                    messages[msgIdx].artifacts[artIdx].publishWorkflowContent?.loading = true
+                }
+            }
+        }
+        // Re-resolve current row by stable artifactId (rows may shift due to SSE reindexing).
+        if let resolvedRow = displayMessages.firstIndex(where: { $0.artifacts.contains(where: { $0.id == artifactId }) }),
+           let cell = chatTableView.cellForRow(at: IndexPath(row: resolvedRow, section: 0)) as? FeatureChatMessageCell {
+            cell.setPublishWorkflowLoading(true, for: artifactId)
+        }
+
+        API.sharedInstance.publishWorkflowWithAuth(
+            workflowId: workflowId,
+            workflowRefId: content.workflowRefId,
+            artifactId: artifactId,
+            callback: { [weak self] in
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    // Re-resolve the target message by stable artifact id to avoid stale-indexPath race.
+                    // SSE/WebSocket updates can reload and reindex displayMessages between tap and callback.
+                    var resolvedRow: Int? = nil
+                    for (msgIdx, msg) in self.messages.enumerated() {
+                        for artIdx in msg.artifacts.indices {
+                            if self.messages[msgIdx].artifacts[artIdx].id == artifactId {
+                                self.messages[msgIdx].artifacts[artIdx].publishWorkflowContent?.published = true
+                                self.messages[msgIdx].artifacts[artIdx].publishWorkflowContent?.loading = false
+                                if let dispIdx = self.displayMessages.firstIndex(where: { $0.id == msg.id }) {
+                                    resolvedRow = dispIdx
+                                }
+                            }
+                        }
+                    }
+                    // Flip the card in-place only if the cell at the resolved row still hosts this artifact
+                    if let row = resolvedRow,
+                       row < self.displayMessages.count,
+                       self.displayMessages[row].artifacts.contains(where: { $0.id == artifactId }),
+                       let cell = self.chatTableView.cellForRow(at: IndexPath(row: row, section: 0)) as? FeatureChatMessageCell {
+                        cell.flipPublishWorkflowToPublished()
+                    }
+                    // If not visible, model update above will reflect on next render.
+                }
+            },
+            errorCallback: { [weak self] error in
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    switch error {
+                    case .forbidden:
+                        self.bubbleHelper.showGenericMessageView(
+                            text: "You don't have permission to publish this workflow.",
+                            delay: 3, textColor: .white,
+                            backColor: UIColor.Sphinx.PrimaryRed, backAlpha: 1.0)
+                    case .generic:
+                        self.bubbleHelper.showGenericMessageView(
+                            text: "Failed to publish workflow. Please try again.",
+                            delay: 3, textColor: .white,
+                            backColor: UIColor.Sphinx.PrimaryRed, backAlpha: 1.0)
+                    }
+                    // Reset loading flag on model and revert card to tappable state.
+                    var resolvedRow: Int? = nil
+                    for (msgIdx, msg) in self.messages.enumerated() {
+                        for artIdx in self.messages[msgIdx].artifacts.indices {
+                            if self.messages[msgIdx].artifacts[artIdx].id == artifactId {
+                                self.messages[msgIdx].artifacts[artIdx].publishWorkflowContent?.loading = false
+                                if let dispIdx = self.displayMessages.firstIndex(where: { $0.id == msg.id }) {
+                                    resolvedRow = dispIdx
+                                }
+                            }
+                        }
+                    }
+                    if let row = resolvedRow,
+                       row < self.displayMessages.count,
+                       self.displayMessages[row].artifacts.contains(where: { $0.id == artifactId }),
+                       let cell = self.chatTableView.cellForRow(at: IndexPath(row: row, section: 0)) as? FeatureChatMessageCell {
+                        cell.setPublishWorkflowLoading(false, for: artifactId)
+                    }
+                }
+            }
+        )
+    }
+
+    private func handlePublishPrompt(artifact: HiveChatMessageArtifact, at indexPath: IndexPath) {
+        guard let content = artifact.publishPromptContent,
+              let promptId = content.promptId,
+              let versionId = content.promptVersionId,
+              let artifactId = artifact.id,
+              !promptId.trimmingCharacters(in: .whitespaces).isEmpty,
+              !versionId.trimmingCharacters(in: .whitespaces).isEmpty,
+              !artifactId.trimmingCharacters(in: .whitespaces).isEmpty else {
+            bubbleHelper.showGenericMessageView(
+                text: "Unable to publish: missing prompt information.",
+                delay: 3, textColor: .white,
+                backColor: UIColor.Sphinx.PrimaryRed, backAlpha: 1.0)
+            return
+        }
+
+        // Bail early if a publish is already in flight for this artifact (duplicate-tap guard).
+        if content.loading { return }
+
+        // Set model loading flag and update the card immediately.
+        for msgIdx in messages.indices {
+            for artIdx in messages[msgIdx].artifacts.indices {
+                if messages[msgIdx].artifacts[artIdx].id == artifactId {
+                    messages[msgIdx].artifacts[artIdx].publishPromptContent?.loading = true
+                }
+            }
+        }
+        // Re-resolve current row by stable artifactId (rows may shift due to SSE reindexing).
+        if let resolvedRow = displayMessages.firstIndex(where: { $0.artifacts.contains(where: { $0.id == artifactId }) }),
+           let cell = chatTableView.cellForRow(at: IndexPath(row: resolvedRow, section: 0)) as? FeatureChatMessageCell {
+            cell.setPublishPromptLoading(true, for: artifactId)
+        }
+
+        API.sharedInstance.publishPromptVersionWithAuth(
+            promptId: promptId,
+            versionId: versionId,
+            artifactId: artifactId,
+            callback: { [weak self] in
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    // Flip in-memory artifact's published state; resolve by stable artifact id
+                    var resolvedRow: Int? = nil
+                    for (msgIdx, msg) in self.messages.enumerated() {
+                        for artIdx in self.messages[msgIdx].artifacts.indices {
+                            if self.messages[msgIdx].artifacts[artIdx].id == artifactId {
+                                self.messages[msgIdx].artifacts[artIdx].publishPromptContent?.published = true
+                                self.messages[msgIdx].artifacts[artIdx].publishPromptContent?.loading = false
+                                if let dispIdx = self.displayMessages.firstIndex(where: { $0.id == msg.id }) {
+                                    resolvedRow = dispIdx
+                                }
+                            }
+                        }
+                    }
+                    // Flip the card in-place without full reload
+                    if let row = resolvedRow,
+                       row < self.displayMessages.count,
+                       self.displayMessages[row].artifacts.contains(where: { $0.id == artifactId }),
+                       let cell = self.chatTableView.cellForRow(at: IndexPath(row: row, section: 0)) as? FeatureChatMessageCell {
+                        cell.flipPublishPromptToPublished()
+                    }
+                }
+            },
+            errorCallback: { [weak self] error in
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    switch error {
+                    case .forbidden:
+                        self.bubbleHelper.showGenericMessageView(
+                            text: "You don't have permission to publish this prompt.",
+                            delay: 3, textColor: .white,
+                            backColor: UIColor.Sphinx.PrimaryRed, backAlpha: 1.0)
+                    case .generic:
+                        self.bubbleHelper.showGenericMessageView(
+                            text: "Failed to publish prompt. Please try again.",
+                            delay: 3, textColor: .white,
+                            backColor: UIColor.Sphinx.PrimaryRed, backAlpha: 1.0)
+                    }
+                    // Reset loading flag on model and revert card to tappable state.
+                    var resolvedRow: Int? = nil
+                    for (msgIdx, msg) in self.messages.enumerated() {
+                        for artIdx in self.messages[msgIdx].artifacts.indices {
+                            if self.messages[msgIdx].artifacts[artIdx].id == artifactId {
+                                self.messages[msgIdx].artifacts[artIdx].publishPromptContent?.loading = false
+                                if let dispIdx = self.displayMessages.firstIndex(where: { $0.id == msg.id }) {
+                                    resolvedRow = dispIdx
+                                }
+                            }
+                        }
+                    }
+                    if let row = resolvedRow,
+                       row < self.displayMessages.count,
+                       self.displayMessages[row].artifacts.contains(where: { $0.id == artifactId }),
+                       let cell = self.chatTableView.cellForRow(at: IndexPath(row: row, section: 0)) as? FeatureChatMessageCell {
+                        cell.setPublishPromptLoading(false, for: artifactId)
+                    }
+                }
+            }
+        )
+    }
+
+    private func cqAnswerItalicText(for message: HiveChatMessage) -> String? {
+        guard let replyId = message.replyId, cqMessageIds.contains(replyId) else { return nil }
+        let count = messages.first(where: { $0.id == replyId })
+            .flatMap { $0.artifacts.first(where: { $0.isClarifyingQuestions }) }
+            .flatMap { $0.clarifyingQuestions }?.count ?? 1
+        return count == 1 ? "1 clarifying question answered" : "\(count) clarifying questions answered"
     }
 
     private func handleAttachmentTap(_ attachment: HiveChatMessageAttachment) {
@@ -779,7 +2070,7 @@ extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
     // Dismiss autocomplete when user scrolls the chat
     func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
         guard scrollView === chatTableView else { return }
-        hideAutocomplete()
+        mentionHandler.hide()
     }
 }
 
@@ -787,150 +2078,108 @@ extension TaskChatViewController: UITableViewDelegate, UITableViewDataSource {
 extension TaskChatViewController: UITextViewDelegate {
     func textViewDidChange(_ textView: UITextView) {
         guard textView == chatInputTextView else { return }
-        let text = textView.text ?? ""
-        let cursor = textView.selectedRange
-
-        applyMentionColoring(to: textView, preservingCursor: cursor)
-
-        let cursorPos = cursor.location
-        guard cursorPos <= (text as NSString).length else { hideAutocomplete(); return }
-        let upToCursor = (text as NSString).substring(to: cursorPos)
-        if let atRange = upToCursor.range(of: "@", options: .backwards),
-           (atRange.lowerBound == upToCursor.startIndex ||
-            upToCursor[upToCursor.index(before: atRange.lowerBound)].isWhitespace) {
-            let query = String(upToCursor[atRange.upperBound...])
-            if query.contains(" ") || query.contains("\n") {
-                hideAutocomplete()
-                return
-            }
-            let atNSIdx = upToCursor.distance(from: upToCursor.startIndex, to: atRange.lowerBound)
-            atTriggerNSRange = NSRange(location: atNSIdx, length: cursorPos - atNSIdx)
-            filteredWorkspaces = availableWorkspaces.filter {
-                query.isEmpty ||
-                $0.name.localizedCaseInsensitiveContains(query) ||
-                ($0.slug ?? "").localizedCaseInsensitiveContains(query)
-            }
-            showAutocomplete()
-        } else {
-            hideAutocomplete()
-        }
-    }
-
-    private static let mentionRegex = try? NSRegularExpression(pattern: "@\\S+")
-
-    /// Recolors the text view: `@word` (@ + non-whitespace) = blue, all else = default text color.
-    private func applyMentionColoring(to textView: UITextView, preservingCursor cursor: NSRange) {
-        let text = textView.text ?? ""
         let defaultFont = UIFont(name: "Roboto-Regular", size: 16) ?? UIFont.systemFont(ofSize: 16)
-        let attr = NSMutableAttributedString(
-            string: text,
-            attributes: [.foregroundColor: UIColor.Sphinx.Text, .font: defaultFont]
-        )
-        if let regex = TaskChatViewController.mentionRegex {
-            let matches = regex.matches(in: text, range: NSRange(text.startIndex..., in: text))
-            for match in matches {
-                attr.addAttribute(.foregroundColor, value: UIColor.Sphinx.PrimaryBlue, range: match.range)
+        mentionHandler.applyMentionColoring(to: textView, preservingCursor: textView.selectedRange, font: defaultFont)
+        mentionHandler.processTextChange(in: textView)
+        updateInputBarHeight()
+    }
+}
+
+// MARK: - PHPickerViewControllerDelegate
+extension TaskChatViewController: PHPickerViewControllerDelegate {
+    func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+        dismiss(animated: true)
+        guard !results.isEmpty else { return }
+
+        let allowedMimes: Set<String> = ["image/jpeg", "image/png", "image/gif", "image/webp"]
+        let maxBytes = 10 * 1024 * 1024 // 10 MB
+
+        for result in results {
+            result.itemProvider.loadObject(ofClass: UIImage.self) { [weak self] object, error in
+                guard let self = self, let image = object as? UIImage else { return }
+
+                let mimeType = "image/jpeg"
+                guard let data = image.jpegData(compressionQuality: 0.85) else { return }
+                let filename = "image_\(UUID().uuidString).jpg"
+                let size = data.count
+
+                guard allowedMimes.contains(mimeType), size <= maxBytes else {
+                    DispatchQueue.main.async {
+                        AlertHelper.showAlert(
+                            title: "Invalid file",
+                            message: size > maxBytes ? "File exceeds 10 MB limit." : "Unsupported file type.",
+                            on: self
+                        )
+                    }
+                    return
+                }
+
+                let pending = PendingAttachment(
+                    id: UUID(),
+                    image: image,
+                    filename: filename,
+                    mimeType: mimeType,
+                    size: size,
+                    state: .uploading,
+                    s3Path: nil
+                )
+                DispatchQueue.main.async {
+                    self.pendingAttachments.append(pending)
+                    self.refreshAttachmentsBar()
+                    self.updateSendButtonState()
+                }
+
+                API.sharedInstance.requestUploadPresignedUrlWithAuth(
+                    taskId: self.task.id,
+                    filename: filename,
+                    contentType: mimeType,
+                    size: size,
+                    callback: { [weak self] presignedUrl, s3Path in
+                        guard let self = self,
+                              let presignedUrl = presignedUrl,
+                              let s3Path = s3Path else {
+                            self?.markPending(id: pending.id, state: .failed)
+                            return
+                        }
+                        API.sharedInstance.uploadFileToS3(
+                            presignedUrl: presignedUrl,
+                            data: data,
+                            contentType: mimeType,
+                            callback: { [weak self] in
+                                self?.markPending(id: pending.id, state: .done, s3Path: s3Path)
+                            },
+                            errorCallback: { [weak self] in
+                                self?.markPending(id: pending.id, state: .failed)
+                            }
+                        )
+                    },
+                    errorCallback: { [weak self] in
+                        self?.markPending(id: pending.id, state: .failed)
+                    }
+                )
             }
         }
-        textView.attributedText = attr
-        textView.selectedRange = cursor
-        textView.typingAttributes = [.foregroundColor: UIColor.Sphinx.Text, .font: defaultFont]
     }
 
-    private func showAutocomplete() {
-        guard !filteredWorkspaces.isEmpty else { hideAutocomplete(); return }
-
-        autocompleteStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        for (i, ws) in filteredWorkspaces.enumerated() {
-            let row = UIView()
-            row.backgroundColor = UIColor.Sphinx.HeaderBG
-
-            let nameLabel = UILabel()
-            nameLabel.text = ws.name
-            nameLabel.textColor = UIColor.Sphinx.Text
-            nameLabel.font = UIFont(name: "Roboto-Medium", size: 14) ?? .systemFont(ofSize: 14, weight: .medium)
-
-            let slugLabel = UILabel()
-            slugLabel.text = ws.slug
-            slugLabel.textColor = UIColor.Sphinx.SecondaryText
-            slugLabel.font = UIFont(name: "Roboto-Regular", size: 12) ?? .systemFont(ofSize: 12)
-
-            let labelStack = UIStackView(arrangedSubviews: [nameLabel, slugLabel])
-            labelStack.axis = .vertical
-            labelStack.spacing = 2
-            labelStack.translatesAutoresizingMaskIntoConstraints = false
-            row.addSubview(labelStack)
-            NSLayoutConstraint.activate([
-                labelStack.leadingAnchor.constraint(equalTo: row.leadingAnchor, constant: 16),
-                labelStack.trailingAnchor.constraint(equalTo: row.trailingAnchor, constant: -16),
-                labelStack.centerYAnchor.constraint(equalTo: row.centerYAnchor)
-            ])
-
-            let btn = UIButton(type: .system)
-            btn.translatesAutoresizingMaskIntoConstraints = false
-            btn.backgroundColor = .clear
-            btn.tag = i
-            btn.addTarget(self, action: #selector(autocompleteRowTapped(_:)), for: .touchUpInside)
-            row.addSubview(btn)
-            NSLayoutConstraint.activate([
-                btn.topAnchor.constraint(equalTo: row.topAnchor),
-                btn.leadingAnchor.constraint(equalTo: row.leadingAnchor),
-                btn.trailingAnchor.constraint(equalTo: row.trailingAnchor),
-                btn.bottomAnchor.constraint(equalTo: row.bottomAnchor)
-            ])
-
-            row.heightAnchor.constraint(equalToConstant: 52).isActive = true
-            autocompleteStack.addArrangedSubview(row)
-
-            if i < filteredWorkspaces.count - 1 {
-                let divider = UIView()
-                divider.backgroundColor = UIColor.Sphinx.LightDivider
-                divider.translatesAutoresizingMaskIntoConstraints = false
-                divider.heightAnchor.constraint(equalToConstant: 1).isActive = true
-                autocompleteStack.addArrangedSubview(divider)
-            }
+    private func markPending(id: UUID, state: PendingAttachmentState, s3Path: String? = nil) {
+        DispatchQueue.main.async {
+            guard let idx = self.pendingAttachments.firstIndex(where: { $0.id == id }) else { return }
+            self.pendingAttachments[idx].state = state
+            if let s3Path = s3Path { self.pendingAttachments[idx].s3Path = s3Path }
+            self.refreshAttachmentsBar()
+            self.updateSendButtonState()
         }
-
-        let maxRows = min(filteredWorkspaces.count, 4)
-        let dividerCount = max(0, maxRows - 1)
-        let visibleHeight = CGFloat(maxRows) * 52 + CGFloat(dividerCount)
-        autocompleteHeightConstraint.constant = visibleHeight
-        autocompleteContainer.isHidden = false
-        view.layoutIfNeeded()
     }
+}
 
-    @objc private func autocompleteRowTapped(_ sender: UIButton) {
-        guard sender.tag < filteredWorkspaces.count,
-              let triggerRange = atTriggerNSRange,
-              let currentText = chatInputTextView.text else { hideAutocomplete(); return }
-        let ws = filteredWorkspaces[sender.tag]
-        let slug = ws.slug ?? ws.name
-        let insertText = "@\(slug) "
-        let nsText = currentText as NSString
-        let safeLength = min(triggerRange.length, nsText.length - triggerRange.location)
-        guard triggerRange.location >= 0, triggerRange.location + safeLength <= nsText.length else {
-            hideAutocomplete(); return
-        }
-        let newText = nsText.replacingCharacters(in: NSRange(location: triggerRange.location, length: safeLength), with: insertText)
-        let newCursor = NSRange(location: triggerRange.location + insertText.count, length: 0)
-        let defaultFont = UIFont(name: "Roboto-Regular", size: 16) ?? UIFont.systemFont(ofSize: 16)
-        let attr = NSMutableAttributedString(string: newText, attributes: [.foregroundColor: UIColor.Sphinx.Text, .font: defaultFont])
-        if let regex = TaskChatViewController.mentionRegex {
-            let matches = regex.matches(in: newText, range: NSRange(newText.startIndex..., in: newText))
-            for match in matches {
-                attr.addAttribute(.foregroundColor, value: UIColor.Sphinx.PrimaryBlue, range: match.range)
-            }
-        }
-        chatInputTextView.attributedText = attr
-        chatInputTextView.selectedRange = newCursor
-        chatInputTextView.typingAttributes = [.foregroundColor: UIColor.Sphinx.Text, .font: defaultFont]
-        hideAutocomplete()
-        chatInputTextView.becomeFirstResponder()
-    }
+// MARK: - CustomSegmentedControlDelegate
 
-    private func hideAutocomplete() {
-        autocompleteContainer.isHidden = true
-        autocompleteHeightConstraint.constant = 0
-        atTriggerNSRange = nil
+extension TaskChatViewController: CustomSegmentedControlDelegate {
+    func segmentedControlDidSwitch(_ control: CustomSegmentedControl, to index: Int) {
+        switch index {
+        case 1: showWorkflowPanel()
+        case 2: showChangesPanel()
+        default: showChatPanel()
+        }
     }
 }

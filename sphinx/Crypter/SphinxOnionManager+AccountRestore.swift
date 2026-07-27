@@ -9,7 +9,7 @@
 import Foundation
 import CoreData
 import ObjectMapper
-import SwiftyJSON
+@preconcurrency import SwiftyJSON
 
 class ChatsFetchParams {
     var restoreInProgress: Bool
@@ -690,7 +690,7 @@ extension SphinxOnionManager {
     func fetchMissingTribesFor(
         rr: RunReturn,
         topic: String?,
-        completion: @escaping (RunReturn, [String: JSON], String?) -> ()
+        completion: @escaping @Sendable (RunReturn, [String: JSON], String?) -> ()
     ) {
         let messages = rr.msgs
         
@@ -998,38 +998,6 @@ extension SphinxOnionManager {
         messagePerContactFetchParams = nil
     }
     
-    func endWatchdogTime() {
-        watchdogTimer?.invalidate()
-        watchdogTimer = nil
-    }
-    
-    func startWatchdogTimer() {
-        watchdogTimer?.invalidate()
-        
-        watchdogTimer = Timer.scheduledTimer(
-            timeInterval: 10.0,
-            target: self,
-            selector: #selector(watchdogTimerFired),
-            userInfo: nil,
-            repeats: false
-        )
-    }
-    
-    @objc func watchdogTimerFired() {
-        onMessageRestoredCallback = nil
-        firstSCIDMsgsCallback = nil
-        totalMsgsCountCallback = nil
-        
-        messageFetchParams = nil
-        chatsFetchParams = nil
-        messagePerContactFetchParams = nil
-        
-        restoredContactInfoTracker = []
-        
-        endWatchdogTime()
-        resetFromRestore()
-    }
-    
     func finishMessagesFetch(
         isRestore: Bool = false
     ) {
@@ -1043,20 +1011,30 @@ extension SphinxOnionManager {
         
         restoredContactInfoTracker = []
         
-        if (UIApplication.shared.delegate as? AppDelegate)?.isActive == true {
+        // Read isActive directly without dispatching to main — DispatchQueue.main.sync
+        // can deadlock if the main thread is blocked during app termination, which
+        // combined with a background task timeout produces a 0x8BADF00D watchdog kill.
+        let isAppActive = (UIApplication.shared.delegate as? AppDelegate)?.isActive == true
+        if isAppActive {
             ///Avoid processes that will run after the completion handler is called
             requestPings()
             updateRoutingInfo()
         } else {
-            ///Disconnect MQTT if it's a background process
-            disconnectMqtt()
+            ///Disconnect MQTT if it's a background process, then run post-fetch logic
+            let maxIdx = isRestore ? TransactionMessage.getMaxIndex() : nil
+            disconnectMqtt(callback: { [weak self] _ in
+                print("[Background] MQTT disconnected, firing fetchCompletionHandler")
+                if let maxIdx = maxIdx { self?.maxMessageIndex = maxIdx }
+                self?.resetFromRestore()
+                self?.endBackgroundFetch(result: .newData)
+            })
+            return  // prevent fall-through to synchronous resetFromRestore below
         }
         
         if isRestore, let maxIndex = TransactionMessage.getMaxIndex() {
             maxMessageIndex = maxIndex
         }
         
-        endWatchdogTime()
         resetFromRestore()
     }
     
@@ -1084,14 +1062,26 @@ extension SphinxOnionManager {
         
         CoreDataManager.sharedManager.saveContext()
 
-        // Sync preferences with server after restore completes
-        DataSyncManager.sharedInstance.syncWithServerInBackground()
+        // Read isActive directly without dispatching to main — DispatchQueue.main.sync
+        // can deadlock if the main thread is blocked during app termination, which
+        // combined with a background task timeout produces a 0x8BADF00D watchdog kill.
+        let isAppActive = (UIApplication.shared.delegate as? AppDelegate)?.isActive == true
+
+        // Only run network-dependent operations in foreground
+        if isAppActive {
+            DataSyncManager.sharedInstance.syncWithServerInBackground()
+        }
 
         isV2InitialSetup = false
+        isV2Restore = false
+        UserDefaults.Keys.isRestoreCompleted.set(true)
         contactRestoreCallback = nil
         messageRestoreCallback = nil
         
-        joinInitialTribe()
+        // Only join tribe when foreground — makes network calls
+        if isAppActive {
+            joinInitialTribe()
+        }
         
         if let hideRestoreCallback = hideRestoreCallback {
             hideRestoreCallback(false)

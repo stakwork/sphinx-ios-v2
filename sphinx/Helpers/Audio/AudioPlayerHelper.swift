@@ -9,13 +9,13 @@
 import UIKit
 import AVFoundation
 
-protocol AudioPlayerHelperDelegate: class {
+@MainActor protocol AudioPlayerHelperDelegate: class {
     func progressCallback(messageId: Int?, rowIndex: Int?, duration: Double, currentTime: Double)
     func pauseCallback(messageId: Int?, rowIndex: Int?)
     func endCallback(messageId: Int?, rowIndex: Int?)
 }
 
-class AudioPlayerHelper : NSObject {
+@MainActor class AudioPlayerHelper : NSObject {
     
     weak var delegate: AudioPlayerHelperDelegate?
     

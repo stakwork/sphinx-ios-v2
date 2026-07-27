@@ -84,6 +84,7 @@ class NewOnlyTextMessageTableViewCell: CommonNewMessageTableViewCell, ChatTableV
         tribeData: MessageTableCellState.TribeData?,
         linkData: MessageTableCellState.LinkData?,
         uploadProgressData: MessageTableCellState.UploadProgressData?,
+        participantsData: MessageTableCellState.ParticipantsData?,
         delegate: NewMessageTableViewCellDelegate?,
         searchingTerm: String?,
         indexPath: IndexPath,

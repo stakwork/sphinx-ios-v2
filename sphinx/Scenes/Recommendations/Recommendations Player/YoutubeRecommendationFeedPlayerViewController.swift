@@ -89,44 +89,36 @@ extension YoutubeRecommendationFeedPlayerViewController {
 
 // MARK: -  YTPlayerViewDelegate
 extension YoutubeRecommendationFeedPlayerViewController: YTPlayerViewDelegate {
-    func playerView(_ playerView: YTPlayerView, didPlayTime playTime: Float) {
-        currentTime = playTime
+    nonisolated func playerView(_ playerView: YTPlayerView, didPlayTime playTime: Float) {
+        Task { @MainActor [weak self] in self?.currentTime = playTime }
     }
     
-    func playerView(_ playerView: YTPlayerView, didChangeTo state: YTPlayerState) {
-        playerView.currentTime({ (time, error) in
-            switch (state) {
-            case .playing:
-                let startTime = self.seekToStartTime()
-                
-                if let episode = self.podcast.getCurrentEpisode() {
-                    self.trackItemStarted(
-                        episode: episode,
-                        startTime ?? time
-                    )
+    nonisolated func playerView(_ playerView: YTPlayerView, didChangeTo state: YTPlayerState) {
+        Task { @MainActor [weak self] in
+            guard let self = self else { return }
+            playerView.currentTime({ (time, error) in
+                Task { @MainActor [weak self] in
+                    guard let self = self else { return }
+                    switch (state) {
+                    case .playing:
+                        let startTime = self.seekToStartTime()
+                        if let episode = self.podcast.getCurrentEpisode() {
+                            self.trackItemStarted(episode: episode, startTime ?? time)
+                        }
+                    case .paused:
+                        if let episode = self.podcast.getCurrentEpisode() {
+                            self.trackItemFinished(episode: episode, time)
+                        }
+                    case .ended:
+                        if let episode = self.podcast.getCurrentEpisode() {
+                            self.trackItemFinished(episode: episode, time, shouldSaveAction: true)
+                        }
+                    default:
+                        break
+                    }
                 }
-                break
-            case .paused:
-                if let episode = self.podcast.getCurrentEpisode() {
-                    self.trackItemFinished(
-                        episode: episode,
-                        time
-                    )
-                }
-                break
-            case .ended:
-                if let episode = self.podcast.getCurrentEpisode() {
-                    self.trackItemFinished(
-                        episode: episode,
-                        time,
-                        shouldSaveAction: true
-                    )
-                }
-                break
-            default:
-                break
-            }
-        })
+            })
+        }
     }
     
     private func seekToStartTime() -> Float? {

@@ -11,7 +11,7 @@ import CoreData
 import SwiftyJSON
 
 @objc(Subscription)
-public class Subscription: NSManagedObject {
+public class Subscription: NSManagedObject, @unchecked Sendable {
     
     public func isPaused() -> Bool {
         return self.paused

@@ -33,6 +33,7 @@ struct WorkspaceTask {
     let repositoryUrl: String?
     let createdById: String?
     let createdByName: String?
+    let createdByEmail: String?
     let createdByImage: String?
     let chatMessageCount: Int
     var prArtifactId: String?
@@ -42,6 +43,17 @@ struct WorkspaceTask {
     var stakworkProjectId: Int?
     var deploymentStatus: String?       // "production" | "staging" | "failed" | nil
     var deployedToProductionAt: String? // ISO 8601
+    let systemAssigneeType: String?     // e.g. "TASK_COORDINATOR"
+    var autoMerge: Bool
+    var runBuild: Bool
+    var runTestSuite: Bool
+    var dependsOnTaskIds: [String]
+    let workflowId: Int?
+    let workflowName: String?
+    let workflowRefId: String?
+    var phaseId: String?           // injected post-init by HivePhase; nil for loose tasks
+    var workflowTaskType: String?  // parsed from JSON
+    var workflowVersionId: String? // parsed from JSON
 
     init?(json: JSON) {
         guard let id = json["id"].string,
@@ -68,6 +80,7 @@ struct WorkspaceTask {
         self.repositoryUrl = json["repository"]["repositoryUrl"].string ?? json["repository"]["url"].string
         self.createdById = json["createdBy"]["id"].string
         self.createdByName = json["createdBy"]["name"].string
+        self.createdByEmail = json["createdBy"]["email"].string
         self.createdByImage = json["createdBy"]["image"].string
         self.chatMessageCount = json["chatMessageCount"].int ?? 0
         self.archived = json["archived"].bool ?? false
@@ -78,5 +91,16 @@ struct WorkspaceTask {
         self.stakworkProjectId = json["stakworkProjectId"].int
         self.deploymentStatus = json["deploymentStatus"].string
         self.deployedToProductionAt = json["deployedToProductionAt"].string
+        self.systemAssigneeType = json["systemAssigneeType"].string
+        self.autoMerge = json["autoMerge"].bool ?? false
+        self.runBuild = json["runBuild"].bool ?? true
+        self.runTestSuite = json["runTestSuite"].bool ?? true
+        self.dependsOnTaskIds = json["dependsOnTaskIds"].arrayValue.compactMap { $0.string }
+        self.workflowId = json["workflowId"].int
+        self.workflowName = json["workflowName"].string
+        self.workflowRefId = json["workflowRefId"].string
+        self.workflowTaskType = json["workflowTaskType"].string
+        self.workflowVersionId = json["workflowVersionId"].string
+        self.phaseId = nil  // populated by HivePhase after init
     }
 }

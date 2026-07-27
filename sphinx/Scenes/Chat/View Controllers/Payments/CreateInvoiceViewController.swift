@@ -321,11 +321,13 @@ class CreateInvoiceViewController: CommonPaymentViewController {
     
     func showPendingAlert() {
         DelayPerformedHelper.performAfterDelay(seconds: 2.0, completion: {
-            AlertHelper.showAlert(
-                title: "processing.payment".localized,
-                message: "processing.payment.description".localized
-            ) {
-                self.dismissView()
+            MainActor.assumeIsolated {
+                AlertHelper.showAlert(
+                    title: "processing.payment".localized,
+                    message: "processing.payment.description".localized
+                ) {
+                    self.dismissView()
+                }
             }
         })
     }
@@ -482,29 +484,38 @@ class CreateInvoiceViewController: CommonPaymentViewController {
             showErrorAlertAndDismiss()
             return
         }
-        
-        if let paymentAmount = paymentsViewModel.payment.amount,
-           let invoice = SphinxOnionManager.sharedInstance.createInvoice(
-                amountMsat: paymentAmount * 1000,
-                description: paymentsViewModel.payment.memo ?? ""
-           ) {
-            if presentationContext == .InChat,
-               let contact = contact,
-               let chat = chat {
-                
-                SphinxOnionManager.sharedInstance.sendInvoiceMessage(
-                    contact: contact,
-                    chat: chat,
-                    invoiceString: invoice,
-                    memo: paymentsViewModel.payment.memo ?? ""
-                )
-                
-                self.dismissView()
-            } else {
-                self.presentInvoiceDetailsVC(invoiceString: invoice)
-            }
-        } else {
+
+        guard let paymentAmount = paymentsViewModel.payment.amount else {
             delegate?.didFailCreatingInvoice?()
+            return
+        }
+
+        SphinxOnionManager.sharedInstance.createInvoice(
+            amountMsat: paymentAmount * 1000,
+            description: paymentsViewModel.payment.memo ?? ""
+        ) { [weak self] invoice in
+            guard let self = self else { return }
+            guard let invoice = invoice else {
+                DispatchQueue.main.async {
+                    self.delegate?.didFailCreatingInvoice?()
+                }
+                return
+            }
+            DispatchQueue.main.async {
+                if self.presentationContext == .InChat,
+                   let contact = self.contact,
+                   let chat = self.chat {
+                    SphinxOnionManager.sharedInstance.sendInvoiceMessage(
+                        contact: contact,
+                        chat: chat,
+                        invoiceString: invoice,
+                        memo: self.paymentsViewModel.payment.memo ?? ""
+                    )
+                    self.dismissView()
+                } else {
+                    self.presentInvoiceDetailsVC(invoiceString: invoice)
+                }
+            }
         }
     }
 }

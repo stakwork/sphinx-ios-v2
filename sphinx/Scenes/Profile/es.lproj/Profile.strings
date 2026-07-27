@@ -62,3 +62,13 @@
 "Uah-nc-EPN.text" = "Recomendaciones";
 
 "mU1-dY-IRh.text" = "Descargar episodios automaticamente";
+
+"AIg-lbl-001.text" = "Configurar Agente de IA";
+
+"SAI-title-lbl.text" = "CONFIGURAR AGENTE DE IA";
+
+"SAI-prov-lbl.text" = "Proveedor";
+
+"SAI-key-lbl.text" = "Clave de API";
+
+"SAI-name-lbl.text" = "Nombre del agente";

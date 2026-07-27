@@ -62,3 +62,13 @@
 "Uah-nc-EPN.text" = "Feed Recommendations";
 
 "mU1-dY-IRh.text" = "Auto downloaded podcast episodes";
+
+"AIg-lbl-001.text" = "Configure AI Agent";
+
+"SAI-title-lbl.text" = "CONFIGURE AI AGENT";
+
+"SAI-prov-lbl.text" = "Provider";
+
+"SAI-key-lbl.text" = "API Key";
+
+"SAI-name-lbl.text" = "Agent Name";

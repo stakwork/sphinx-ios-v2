@@ -13,7 +13,7 @@ final class QRCodeScannerView: UIView {
     private weak var scanRectView: UIView?
     private weak var captureDevice: AVCaptureDevice?
     
-    private var captureSession = AVCaptureSession()
+    private nonisolated(unsafe) var captureSession = AVCaptureSession()
     private var videoPreviewLayer: AVCaptureVideoPreviewLayer?
     private var oldCode: String?
     
@@ -70,14 +70,14 @@ final class QRCodeScannerView: UIView {
     }
 }
 
-extension QRCodeScannerView: AVCaptureMetadataOutputObjectsDelegate {
+extension QRCodeScannerView: @preconcurrency AVCaptureMetadataOutputObjectsDelegate {
     func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection) {
         guard
             let metadataObj = metadataObjects.first as? AVMetadataMachineReadableCodeObject,
             let code = metadataObj.stringValue,
             code != oldCode
             else { return }
-        
+
         oldCode = code
         handler?(code)
     }

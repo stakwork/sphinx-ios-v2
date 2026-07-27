@@ -38,14 +38,14 @@ extension VideoFeed {
             )
         }
         
-        public static let videoFeeds: NSPredicate = {
+        nonisolated(unsafe) public static let videoFeeds: NSPredicate = {
             NSPredicate(
                 format: "feedKindValue == %d",
                 FeedType.Video.rawValue
             )
         }()
         
-        public static let followedVideoFeeds: NSPredicate = {
+        nonisolated(unsafe) public static let followedVideoFeeds: NSPredicate = {
             NSPredicate(
                 format: "(isSubscribedToFromSearch == true OR chat != nil) AND feedKindValue == %d",
                 FeedType.Video.rawValue

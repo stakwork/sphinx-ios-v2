@@ -18,8 +18,10 @@ import Combine
 import LiveKit
 import SwiftUI
 
+extension AudioDevice: @unchecked Sendable {}
+
 // This class contains the logic to control behavior of the whole app.
-final class AppContext: ObservableObject {
+final class AppContext: ObservableObject, @unchecked Sendable {
     private let store: ValueStore<Preferences>
 
     @Published var videoViewVisible: Bool = true {
@@ -50,14 +52,14 @@ final class AppContext: ObservableObject {
 
     @Published var outputDevice: AudioDevice = AudioManager.shared.defaultOutputDevice {
         didSet {
-            print("didSet outputDevice: \(String(describing: outputDevice))")
+            guard AudioManager.shared.outputDevice.deviceId != outputDevice.deviceId else { return }
             AudioManager.shared.outputDevice = outputDevice
         }
     }
 
     @Published var inputDevice: AudioDevice = AudioManager.shared.defaultInputDevice {
         didSet {
-            print("didSet inputDevice: \(String(describing: inputDevice))")
+            guard AudioManager.shared.inputDevice.deviceId != inputDevice.deviceId else { return }
             AudioManager.shared.inputDevice = inputDevice
         }
     }
@@ -80,13 +82,17 @@ final class AppContext: ObservableObject {
 
         AudioManager.shared.onDeviceUpdate = { [weak self] audioManager in
             guard let self else { return }
-            print("devices did update")
             // force UI update for outputDevice / inputDevice
-            Task.detached { @MainActor [weak self] in
-                guard let self else { return }
-                self.outputDevice = audioManager.outputDevice
-                self.inputDevice = audioManager.inputDevice
+            let outputDevice = audioManager.outputDevice
+            let inputDevice = audioManager.inputDevice
+            Task { @MainActor [weak self] in
+                self?.outputDevice = outputDevice
+                self?.inputDevice = inputDevice
             }
         }
+    }
+
+    func cleanup() {
+        AudioManager.shared.onDeviceUpdate = nil
     }
 }

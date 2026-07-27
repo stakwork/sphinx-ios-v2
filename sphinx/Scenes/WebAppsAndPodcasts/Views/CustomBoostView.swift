@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol CustomBoostViewDelegate : class {
+@MainActor protocol CustomBoostViewDelegate : class {
     func didTouchBoostButton(withAmount amount: Int)
     func didStartBoostAmountEdit()
     func didFailToBoost(message:String)

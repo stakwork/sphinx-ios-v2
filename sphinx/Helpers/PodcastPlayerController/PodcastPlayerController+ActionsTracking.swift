@@ -8,6 +8,7 @@
 
 import Foundation
 
+@MainActor
 extension PodcastPlayerController {
     func trackItemStarted(
         endTimestamp: Int? = nil

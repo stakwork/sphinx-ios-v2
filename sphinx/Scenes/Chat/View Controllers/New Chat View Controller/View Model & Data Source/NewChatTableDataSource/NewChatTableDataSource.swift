@@ -9,7 +9,7 @@
 import UIKit
 import CoreData
 
-protocol NewChatTableDataSourceDelegate : class {
+@MainActor protocol NewChatTableDataSourceDelegate : class {
     ///New msgs indicator
     func configureNewMessagesIndicatorWith(newMsgCount: Int)
     
@@ -52,6 +52,17 @@ protocol NewChatTableDataSourceDelegate : class {
     
     ///Calls
     func shouldDismissKeyboard()
+
+    ///Live Call Banner — socket fan-out
+    /// Called from all four `CallParticipantsSocketDelegate` sinks so the banner
+    /// stays in sync with the same real-time events that drive inline cell UI.
+    func shouldUpdateLiveCallBannerFor(roomName: String, participants: [BubbleMessageLayoutState.CallParticipantInfo])
+    func shouldHideLiveCallBannerFor(roomName: String)
+
+    ///Restart-on-new-call trigger
+    /// Called when a new call-type message is inserted by the results controller while
+    /// the chat is already open, so the banner can pick up the new room.
+    func didInsertNewCallTypeMessage()
     
     ///Messages search
     func isOnStandardMode() -> Bool
@@ -70,9 +81,12 @@ protocol NewChatTableDataSourceDelegate : class {
     
     ///Pending outgoing message
     func shouldUpdateHeaderScheduleIcon(message: TransactionMessage?)
+    
+    ///Empty view
+    func updateEmptyView()
 }
 
-class NewChatTableDataSource : NSObject {
+@MainActor class NewChatTableDataSource : NSObject, CallParticipantsSocketDelegate {
     
     ///Delegate
     weak var delegate: NewChatTableDataSourceDelegate?
@@ -109,6 +123,10 @@ class NewChatTableDataSource : NSObject {
     var messageTableCellStateArray: [MessageTableCellState] = []
     var mediaCached: [Int: MessageTableCellState.MediaData] = [:]
     var uploadingProgress: [Int: MessageTableCellState.UploadProgressData] = [:]
+    var callParticipantsStore: [String: [BubbleMessageLayoutState.CallParticipantInfo]] = [:]
+    var subscribedRooms: Set<String> = []
+    var messageIdToRoomName: [Int: String] = [:]
+    var callParticipantsSocketManager: CallParticipantsSocketManager?
     var replyViewHeight: [Int: CGFloat] = [:]
     
     var searchingTerm: String? = nil
@@ -172,8 +190,9 @@ class NewChatTableDataSource : NSObject {
         if isThread {
             return
         }
+        let chat = self.chat
         DispatchQueue.global(qos: .background).async {
-            self.chat?.processAliases()
+            chat?.processAliases()
         }
     }
     

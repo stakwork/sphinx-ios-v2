@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol MaxMemorySliderDelegate: class {
+@MainActor protocol MaxMemorySliderDelegate: class {
     func sliderValueChanged(value: Int)
 }
 

@@ -54,9 +54,10 @@ extension NewChatTableDataSource {
         
         processMessages(messages: messagesArray, showLoadingMore: false)
         
-        DelayPerformedHelper.performAfterDelay(seconds: 1.0, completion: {
-            self.reloadAllVisibleRows()
-        })
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
+            self?.reloadAllVisibleRows()
+        }
     }
     
     func shouldEndSearch() {
@@ -163,11 +164,11 @@ extension NewChatTableDataSource {
     func loadMoreItemForSearch() {
         delegate?.shouldToggleSearchLoadingWheel(active: true)
         
-        DelayPerformedHelper.performAfterDelay(seconds: 1.0, completion: {
-            self.performSearch(
-                term: self.searchingTerm ?? ""
-            )
-        })
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
+            guard let self = self else { return }
+            self.performSearch(term: self.searchingTerm ?? "")
+        }
     }
     
     func reloadAllVisibleRows() {
@@ -177,23 +178,18 @@ extension NewChatTableDataSource {
             return
         }
 
-        self.dataSourceQueue.async {
-            var snapshot = self.dataSource.snapshot()
-            let existingItems = Set(snapshot.itemIdentifiers)
+        var snapshot = self.dataSource.snapshot()
+        let existingItems = Set(snapshot.itemIdentifiers)
 
-            // Only reload items that exist in the snapshot to prevent crashes
-            let validItems = tableCellStates.filter { existingItems.contains($0) }
+        // Only reload items that exist in the snapshot to prevent crashes
+        let validItems = tableCellStates.filter { existingItems.contains($0) }
 
-            guard !validItems.isEmpty else {
-                return
-            }
-
-            snapshot.reloadItems(validItems)
-
-            DispatchQueue.main.async {
-                self.dataSource.apply(snapshot, animatingDifferences: false)
-            }
+        guard !validItems.isEmpty else {
+            return
         }
+
+        snapshot.reloadItems(validItems)
+        self.dataSource.apply(snapshot, animatingDifferences: false)
     }
     
     func shouldNavigateOnSearchResultsWith(

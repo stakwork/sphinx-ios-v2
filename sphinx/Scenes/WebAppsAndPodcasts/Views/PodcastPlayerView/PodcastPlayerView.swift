@@ -9,7 +9,7 @@
 import UIKit
 import AVFoundation
 
-protocol PodcastPlayerViewDelegate: AnyObject {
+@MainActor protocol PodcastPlayerViewDelegate: AnyObject {
     func didTapSubscriptionToggleButton()
     func didFailPlayingPodcast()
     func shouldReloadEpisodesTable()

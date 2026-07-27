@@ -18,15 +18,15 @@ import LiveKit
 import SwiftUI
 
 // This class contains the logic to control behavior of the whole app.
-final class RoomContext: ObservableObject {
+final class RoomContext: ObservableObject, @unchecked Sendable {
     let jsonEncoder = JSONEncoder()
     let jsonDecoder = JSONDecoder()
     
     typealias OnConnected = () -> Void
     typealias OnCallEnded = () -> Void
     
-    private var onConnected: OnConnected? = nil
-    private var onCallEnded: OnCallEnded? = nil
+    nonisolated(unsafe) private var onConnected: OnConnected? = nil
+    nonisolated(unsafe) private var onCallEnded: OnCallEnded? = nil
 
     private let store: ValueStore<Preferences>
 
@@ -86,7 +86,9 @@ final class RoomContext: ObservableObject {
     
     @Published var isInPip: Bool = false {
         didSet {
-            VideoCallManager.sharedInstance.togglePip(pipEnabled: isInPip)
+            Task { @MainActor in
+                VideoCallManager.sharedInstance.togglePip(pipEnabled: self.isInPip)
+            }
         }
     }
     
@@ -94,6 +96,9 @@ final class RoomContext: ObservableObject {
     @Published var isProcessingRecordRequest = false
     @Published var shouldAnimate = false
     @Published private var timer: Timer?
+
+    @Published var isAdmin: Bool = false
+    var adminToken: String = ""
 
     @Published var showMessagesView: Bool = false
     @Published var messages: [ExampleRoomMessage] = []
@@ -249,7 +254,15 @@ final class RoomContext: ObservableObject {
     }
 
     func disconnect() async {
+        if room.connectionState == .connected {
+            try? await room.localParticipant.setMicrophone(enabled: false)
+        }
         await room.disconnect()
+        // Hold a strong reference to Room briefly so LiveKit's background audio
+        // threads (AVAudioEngine, AUVoiceProcessor) finish tearing down before
+        // Room is deallocated. Without this the AUVoiceProcessor property-change
+        // callback can fire concurrently with AVAudioEngine.dealloc → SIGSEGV.
+        try? await Task.sleep(for: .milliseconds(500))
     }
 }
 
@@ -276,6 +289,7 @@ extension RoomContext: RoomDelegate {
                         self.textFieldString = ""
                         self.messages.removeAll()
                     }
+                    onCallEnded?()
                 }
             } else {
                 onCallEnded?()
@@ -330,7 +344,6 @@ extension RoomContext: RoomDelegate {
     }
 
     func room(_: Room, participant _: Participant, trackPublication _: TrackPublication, didReceiveTranscriptionSegments segments: [TranscriptionSegment]) {
-        print("didReceiveTranscriptionSegments: \(segments.map { "(\($0.id): \($0.text), \($0.firstReceivedTime)-\($0.lastReceivedTime), \($0.isFinal))" }.joined(separator: ", "))")
     }
 
     func room(_: Room, trackPublication _: TrackPublication, didUpdateE2EEState state: E2EEState) {

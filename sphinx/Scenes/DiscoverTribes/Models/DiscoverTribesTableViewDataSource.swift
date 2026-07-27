@@ -11,6 +11,7 @@ import UIKit
 import ObjectMapper
 
 
+@MainActor
 class DiscoverTribeTableViewDataSource : NSObject{
     var tableView : UITableView
     var vc : DiscoverTribesWebViewController

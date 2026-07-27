@@ -16,10 +16,17 @@ extension UserContact : ChatListCommonObject {
     }
     
     public func getOrderDate() -> Date? {
+        var date: Date? = nil
+        
         if let lastMessage = lastMessage {
-            return lastMessage.date
+            date = lastMessage.date
         }
-        return createdAt
+        
+        if let draftDate = ChatTrackingHandler.shared.getDraftTimestampFor(chatId: getChat()?.id) {
+            if date == nil || draftDate > date! { date = draftDate }
+        }
+        
+        return date ?? createdAt
     }
     
     public func getName() -> String {

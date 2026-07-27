@@ -121,7 +121,7 @@ extension SphinxOnionManager {
     func downloadTorrentViaMagnet(
         magnetLink:String,
         magnetDetails:MagnetDetailsResponse,
-        completion: @escaping (Bool) -> ()
+        completion: @escaping @Sendable (Bool) -> ()
     ){
         guard let initialPeers = magnetDetails.seenPeers,
         let authDict = btAuthDict,
@@ -158,10 +158,10 @@ extension SphinxOnionManager {
         magnetDetails: MagnetDetailsResponse,
         initialPeers: [String],
         paymentHash: String,
-        callback: @escaping (Bool) -> Void
+        callback: @escaping @Sendable (Bool) -> Void
     ) {
         var paymentObserver: NSObjectProtocol?
-        var finishedFlag = false
+        nonisolated(unsafe) var finishedFlag = false
         paymentObserver = NotificationCenter.default.addObserver(
             forName: .invoiceIPaidSettled,
             object: nil,

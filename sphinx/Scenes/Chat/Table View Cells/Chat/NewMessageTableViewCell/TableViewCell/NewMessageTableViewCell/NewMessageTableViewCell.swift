@@ -23,9 +23,9 @@ extension NewMessageTableViewCell {
     }
 }
 
-protocol ChatTableViewCellProtocol: class {
+@MainActor protocol ChatTableViewCellProtocol: class {
     var contentView: UIView { get }
-    
+
     func configureWith(
         messageCellState: MessageTableCellState,
         mediaData: MessageTableCellState.MediaData?,
@@ -33,6 +33,7 @@ protocol ChatTableViewCellProtocol: class {
         tribeData: MessageTableCellState.TribeData?,
         linkData: MessageTableCellState.LinkData?,
         uploadProgressData: MessageTableCellState.UploadProgressData?,
+        participantsData: MessageTableCellState.ParticipantsData?,
         delegate: NewMessageTableViewCellDelegate?,
         searchingTerm: String?,
         indexPath: IndexPath,
@@ -40,7 +41,7 @@ protocol ChatTableViewCellProtocol: class {
     )
 }
 
-protocol NewMessageTableViewCellDelegate: class {
+@MainActor protocol NewMessageTableViewCellDelegate: class {
     //Loading content in background
     func shouldLoadTribeInfoFor(messageId: Int, and rowIndex: Int)
     func shouldLoadImageDataFor(messageId: Int, and rowIndex: Int)
@@ -53,6 +54,7 @@ protocol NewMessageTableViewCellDelegate: class {
     func shouldLoadLinkDataFor(messageId: Int, and rowIndex: Int)
     func shouldLoadAudioDataFor(messageId: Int, and rowIndex: Int)
     func shouldPodcastCommentDataFor(messageId: Int, and rowIndex: Int)
+    func shouldLoadCallParticipantsFor(messageId: Int, roomName: String, and rowIndex: Int)
     
     //Actions handling
     ///Message reply
@@ -153,8 +155,10 @@ class NewMessageTableViewCell: CommonNewMessageTableViewCell, ChatTableViewCellP
     
     override func awakeFromNib() {
         super.awakeFromNib()
-        
-        setupViews()
+
+        MainActor.assumeIsolated {
+            setupViews()
+        }
     }
 
     override func setSelected(_ selected: Bool, animated: Bool) {
@@ -168,6 +172,7 @@ class NewMessageTableViewCell: CommonNewMessageTableViewCell, ChatTableViewCellP
         tribeData: MessageTableCellState.TribeData?,
         linkData: MessageTableCellState.LinkData?,
         uploadProgressData: MessageTableCellState.UploadProgressData?,
+        participantsData: MessageTableCellState.ParticipantsData?,
         delegate: NewMessageTableViewCellDelegate?,
         searchingTerm: String?,
         indexPath: IndexPath,
@@ -229,7 +234,7 @@ class NewMessageTableViewCell: CommonNewMessageTableViewCell, ChatTableViewCellP
         configureWith(payment: mutableMessageCellState.payment, and: bubble)
         configureWith(invoice: mutableMessageCellState.invoice, and: bubble)
         configureWith(directPayment: mutableMessageCellState.directPayment, and: bubble)
-        configureWith(callLink: mutableMessageCellState.callLink)
+        configureWith(callLink: mutableMessageCellState.callLink, participantsData: participantsData)
         configureWith(podcastBoost: mutableMessageCellState.podcastBoost)
         configureWith(messageMedia: mutableMessageCellState.messageMedia, mediaData: mediaData, and: bubble)
         configureWith(genericFile: mutableMessageCellState.genericFile, mediaData: mediaData)

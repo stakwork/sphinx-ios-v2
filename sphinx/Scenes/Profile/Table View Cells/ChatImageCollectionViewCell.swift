@@ -48,7 +48,6 @@ class ChatImageCollectionViewCell: UICollectionViewCell {
         if(StorageManager.sharedManager.getStorageManagerTypeFromExtension(cm: cachedMedia) == .file
            && cachedMedia.fileExtension != "pdf"){
             //fileNameLabelContainer.isHidden = false
-            print(cachedMedia.filePath)
             fileNameLabel.text = cachedMedia.filePath
         }
         

@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol RestoreProgressViewDelegate: class {
+@MainActor protocol RestoreProgressViewDelegate: AnyObject {
     func shouldFinishRestoring()
 }
 

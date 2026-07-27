@@ -28,6 +28,7 @@ class WorkspaceViewController: PopHandlerViewController {
     private var activeFeaturesVC: WorkspaceFeaturesViewController!
     private var activeTasksVC: WorkspaceTasksViewController!
     private var activeGraphChatVC: WorkspaceGraphChatViewController?
+    private var activePodsVC: WorkspacePodsViewController?
     private var hasAppeared = false
     private var searchVC: WorkspaceSearchViewController?
     private let newBubbleHelper = NewMessageBubbleHelper()
@@ -54,36 +55,55 @@ class WorkspaceViewController: PopHandlerViewController {
         setupSearchBar()
         setupSegmentedControls()
         switchToTab(0)
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(appWillEnterForeground),
+            name: UIApplication.willEnterForegroundNotification,
+            object: nil
+        )
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        // Always re-assert delegate (corrects pointer after returning from FeaturePlanVC)
-        HivePusherManager.shared.delegate = self
-        // Only reconnect if the session is gone or pointing at a different workspace
-        if !HivePusherManager.shared.isConnectedToWorkspace(id: workspace.id) {
-            HivePusherManager.shared.connect(workspaceId: workspace.id, workspaceSlug: workspace.slug)
-        }
         if hasAppeared {
-            // Only reload data; never touch visibility — the search overlay (if active)
-            // already covers the tab/content stack, so its isHidden state must not change.
-            if currentTab == 0 {
-                activeFeaturesVC?.loadFeatures()
-            } else if currentTab == 1 {
-                activeTasksVC?.loadTasks()
-            }
-            // currentTab == 2 (Graph Chat): history is in-memory, stream self-manages — no reload needed
-
+            reconnectAndRefresh()
         } else {
             hasAppeared = true
+            HivePusherManager.shared.delegate = self
+            if !HivePusherManager.shared.isConnectedToWorkspace(id: workspace.id) {
+                HivePusherManager.shared.connect(workspaceId: workspace.id, workspaceSlug: workspace.slug)
+            }
         }
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        if isMovingFromParent {
-            HivePusherManager.shared.disconnect()
+        HivePusherManager.shared.disconnect()
+    }
+
+    @objc private func appWillEnterForeground() {
+        reconnectAndRefresh()
+    }
+
+    private func reconnectAndRefresh() {
+        HivePusherManager.shared.delegate = self
+        if !HivePusherManager.shared.isConnectedToWorkspace(id: workspace.id) {
+            HivePusherManager.shared.connect(workspaceId: workspace.id, workspaceSlug: workspace.slug)
         }
+        // Only reload data; never touch visibility — the search overlay (if active)
+        // already covers the tab/content stack, so its isHidden state must not change.
+        if currentTab == 0 {
+            activeFeaturesVC?.loadFeatures()
+        } else if currentTab == 1 {
+            activeTasksVC?.loadTasks()
+        } else if currentTab == 3 {
+            activePodsVC?.loadPods()
+        }
+        // currentTab == 2 (Graph Chat): history is in-memory, stream self-manages — no reload needed
     }
 
     private func setupHeader() {
@@ -175,7 +195,11 @@ class WorkspaceViewController: PopHandlerViewController {
     }
 
     @objc private func createFeatureButtonTapped() {
-        activeFeaturesVC?.createButtonTapped()
+        if currentTab == 0 {
+            activeFeaturesVC?.createButtonTapped()
+        } else if currentTab == 1 {
+            activeTasksVC?.createButtonTapped()
+        }
     }
 
     @objc private func cancelSearchTapped() {
@@ -190,7 +214,7 @@ class WorkspaceViewController: PopHandlerViewController {
         topTabSegmentedControl.buttonBackgroundColor = .Sphinx.HeaderBG
         topTabSegmentedControl.selectorViewColor = .Sphinx.PrimaryGreen
         topTabSegmentedControl.configureFromOutlet(
-            buttonTitles: ["FEATURES", "TASKS", "GRAPH CHAT"],
+            buttonTitles: ["FEATURES", "TASKS", "GRAPH CHAT", "PODS"],
             initialIndex: 0,
             delegate: self
         )
@@ -230,8 +254,10 @@ class WorkspaceViewController: PopHandlerViewController {
             activeFeaturesVC?.view.isHidden = false
         } else if currentTab == 1 {
             activeTasksVC?.view.isHidden = false
-        } else {
+        } else if currentTab == 2 {
             activeGraphChatVC?.view.isHidden = false
+        } else if currentTab == 3 {
+            activePodsVC?.view.isHidden = false
         }
     }
 }
@@ -343,7 +369,7 @@ extension WorkspaceViewController: CustomSegmentedControlDelegate {
 
     private func switchToTab(_ index: Int) {
         currentTab = index
-        createFeatureButton.isHidden = (index != 0)
+        createFeatureButton.isHidden = (index == 2 || index == 3)
 
         // Instantiate children lazily, but only make them visible when search is inactive
         let searchActive = searchVC != nil
@@ -351,6 +377,7 @@ extension WorkspaceViewController: CustomSegmentedControlDelegate {
         activeFeaturesVC?.view.isHidden = true
         activeTasksVC?.view.isHidden = true
         activeGraphChatVC?.view.isHidden = true
+        activePodsVC?.view.isHidden = true
 
         if index == 0 {
             if activeFeaturesVC == nil {
@@ -369,13 +396,21 @@ extension WorkspaceViewController: CustomSegmentedControlDelegate {
             if !searchActive {
                 activeTasksVC.view.isHidden = false
             }
-        } else {
+        } else if index == 2 {
             if activeGraphChatVC == nil {
                 activeGraphChatVC = WorkspaceGraphChatViewController.instantiate(workspace: workspace)
                 addChildVC(activeGraphChatVC!)
             }
             if !searchActive {
                 activeGraphChatVC?.view.isHidden = false
+            }
+        } else if index == 3 {
+            if activePodsVC == nil {
+                activePodsVC = WorkspacePodsViewController.instantiate(workspace: workspace)
+                addChildVC(activePodsVC!)
+            }
+            if !searchActive {
+                activePodsVC?.view.isHidden = false
             }
         }
     }

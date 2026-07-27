@@ -42,7 +42,7 @@ fileprivate extension URL {
 
 open class CachingPlayerItem: AVPlayerItem {
     
-    class ResourceLoaderDelegate: NSObject, AVAssetResourceLoaderDelegate, URLSessionDelegate, URLSessionDataDelegate, URLSessionTaskDelegate {
+    class ResourceLoaderDelegate: NSObject, AVAssetResourceLoaderDelegate, URLSessionDelegate, URLSessionDataDelegate, URLSessionTaskDelegate, @unchecked Sendable {
         
         var playingFromData = false
         var mimeType: String? // is required when playing from Data
@@ -91,23 +91,35 @@ open class CachingPlayerItem: AVPlayerItem {
         func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
             mediaData?.append(data)
             processPendingRequests()
-            owner?.delegate?.playerItem?(owner!, didDownloadBytesSoFar: mediaData!.count, outOf: Int(dataTask.countOfBytesExpectedToReceive))
+            let owner = owner
+            let bytesSoFar = mediaData!.count
+            let bytesExpected = Int(dataTask.countOfBytesExpectedToReceive)
+            DispatchQueue.main.async {
+                owner?.delegate?.playerItem?(owner!, didDownloadBytesSoFar: bytesSoFar, outOf: bytesExpected)
+            }
         }
-        
+
         func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse, completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
             completionHandler(Foundation.URLSession.ResponseDisposition.allow)
             mediaData = Data()
             self.response = response
             processPendingRequests()
         }
-        
+
         func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
             if let errorUnwrapped = error {
-                owner?.delegate?.playerItem?(owner!, downloadingFailedWith: errorUnwrapped)
+                let owner = owner
+                DispatchQueue.main.async {
+                    owner?.delegate?.playerItem?(owner!, downloadingFailedWith: errorUnwrapped)
+                }
                 return
             }
             processPendingRequests()
-            owner?.delegate?.playerItem?(owner!, didFinishDownloadingData: mediaData!)
+            let owner = owner
+            let mediaData = mediaData!
+            DispatchQueue.main.async {
+                owner?.delegate?.playerItem?(owner!, didFinishDownloadingData: mediaData)
+            }
         }
         
         // MARK: -
@@ -195,7 +207,7 @@ open class CachingPlayerItem: AVPlayerItem {
     convenience init(url: URL) {
         self.init(url: url, customFileExtension: nil)
     }
-    
+
     /// Override/append custom file extension to URL path.
     /// This is required for the player to work correctly with the intended file type.
     init(url: URL, customFileExtension: String?) {
@@ -255,7 +267,10 @@ open class CachingPlayerItem: AVPlayerItem {
     // MARK: KVO
     
     override open func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
-        delegate?.playerItemReadyToPlay?(self)
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.delegate?.playerItemReadyToPlay?(self)
+        }
     }
     
     // MARK: Notification hanlers

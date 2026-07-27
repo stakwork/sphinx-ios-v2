@@ -5,7 +5,7 @@
 
 import UIKit
 
-protocol DashboardFeedHeaderDelegate: class {
+@MainActor protocol DashboardFeedHeaderDelegate: AnyObject {
     func didTapOnRefresh()
 }
 

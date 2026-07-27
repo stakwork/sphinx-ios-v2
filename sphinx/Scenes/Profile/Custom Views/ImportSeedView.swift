@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol ImportSeedViewDelegate : class {
+@MainActor protocol ImportSeedViewDelegate : class {
     func showImportSeedView(network: String, host: String, relay: String)
     func showImportSeedView()
     func didTapCancelImportSeed()

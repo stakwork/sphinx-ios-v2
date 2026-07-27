@@ -210,7 +210,7 @@ class GeneralVideoFeedEpisodePlayerViewController: UIViewController, VideoFeedEp
         contentReadyAttempts = 0
         contentReadyTimer?.invalidate()
         contentReadyTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
-            self?.checkIfContentIsReady()
+            Task { @MainActor [weak self] in self?.checkIfContentIsReady() }
         }
     }
     
@@ -304,11 +304,14 @@ class GeneralVideoFeedEpisodePlayerViewController: UIViewController, VideoFeedEp
 // MARK: -  VLCMediaPlayerDelegate
 extension GeneralVideoFeedEpisodePlayerViewController: VLCMediaPlayerDelegate {
     
-    func mediaPlayerStateChanged(_ aNotification: Notification) {
-        if vlcPlayer.state == .error {
-            handleContentReadyTimeout()
-        } else if vlcPlayer.state == .playing {
-            startPlayingVideo()
+    nonisolated func mediaPlayerStateChanged(_ aNotification: Notification) {
+        Task { @MainActor [weak self] in
+            guard let self = self else { return }
+            if vlcPlayer.state == .error {
+                handleContentReadyTimeout()
+            } else if vlcPlayer.state == .playing {
+                startPlayingVideo()
+            }
         }
     }
 }

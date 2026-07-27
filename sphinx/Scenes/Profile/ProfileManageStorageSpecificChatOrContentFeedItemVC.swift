@@ -9,7 +9,7 @@
 import Foundation
 import UIKit
 
-protocol ProfileManageStorageSpecificChatOrContentFeedItemVCDelegate : class {
+@MainActor protocol ProfileManageStorageSpecificChatOrContentFeedItemVCDelegate : class {
     func finishedDeleteAll(feedID:String)
 }
 

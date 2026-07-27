@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol ItemDescriptionTableViewCellDelegate{
+@MainActor protocol ItemDescriptionTableViewCellDelegate{
     func didExpandCell()
 }
 

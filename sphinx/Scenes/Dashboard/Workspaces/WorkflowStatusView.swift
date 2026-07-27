@@ -12,13 +12,43 @@ class WorkflowStatusView: UIView {
 
     // MARK: - Subviews
 
-    private let stackView: UIStackView = {
+    /// Outer vertical stack (topRowStack + detailLabel)
+    private let outerStackView: UIStackView = {
+        let sv = UIStackView()
+        sv.axis = .vertical
+        sv.alignment = .leading
+        sv.spacing = 2
+        sv.translatesAutoresizingMaskIntoConstraints = false
+        return sv
+    }()
+
+    /// Top row: circle / icon / label / retry
+    private let topRowStack: UIStackView = {
         let sv = UIStackView()
         sv.axis = .horizontal
         sv.alignment = .center
-        sv.spacing = 8
+        sv.spacing = 4
         sv.translatesAutoresizingMaskIntoConstraints = false
         return sv
+    }()
+
+    /// Second line — real-time agent activity detail
+    private let detailLabel: UILabel = {
+        let lbl = UILabel()
+        lbl.font = UIFont(name: "Roboto-Regular", size: 11) ?? UIFont.systemFont(ofSize: 11)
+        lbl.textColor = UIColor.Sphinx.SecondaryText
+        lbl.numberOfLines = 1
+        lbl.lineBreakMode = .byTruncatingTail
+        lbl.isHidden = true
+        lbl.translatesAutoresizingMaskIntoConstraints = false
+        return lbl
+    }()
+    
+    private let circleContainerView: UIView = {
+        let v = UIView()
+        v.translatesAutoresizingMaskIntoConstraints = false
+        v.clipsToBounds = false          // allow ring to overflow
+        return v
     }()
 
     /// Circle indicator (used for PENDING, IN_PROGRESS, COMPLETED)
@@ -53,12 +83,16 @@ class WorkflowStatusView: UIView {
 
     private let retryButton: UIButton = {
         let btn = UIButton(type: .system)
-        let config = UIImage.SymbolConfiguration(pointSize: 16, weight: .medium)
-        btn.setImage(UIImage(systemName: "arrow.counterclockwise.circle.fill", withConfiguration: config), for: .normal)
-        btn.tintColor = UIColor.Sphinx.SphinxOrange
+        var config = UIButton.Configuration.plain()
+        let symbolConfig = UIImage.SymbolConfiguration(pointSize: 12, weight: .medium)
+        config.image = UIImage(systemName: "arrow.counterclockwise", withConfiguration: symbolConfig)
+        config.title = "Retry"
+        config.imagePlacement = .leading
+        config.imagePadding = 4
+        config.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 10, bottom: 6, trailing: 10)
+        config.baseForegroundColor = UIColor.Sphinx.Text
+        btn.configuration = config
         btn.translatesAutoresizingMaskIntoConstraints = false
-        btn.widthAnchor.constraint(equalToConstant: 20).isActive = true
-        btn.heightAnchor.constraint(equalToConstant: 20).isActive = true
         btn.isHidden = true
         return btn
     }()
@@ -92,11 +126,17 @@ class WorkflowStatusView: UIView {
         backgroundColor = .clear
         translatesAutoresizingMaskIntoConstraints = false
 
-        addSubview(stackView)
+        addSubview(outerStackView)
+        // top/bottom pin the stack so it expands the view when a second line appears.
+        // The bottomAnchor uses .defaultHigh (< required) so the height=0 "hidden" state
+        // from the VC's height constraint can win without an unsatisfiable-constraint warning.
+        let bottomPin = outerStackView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -8)
+        bottomPin.priority = .defaultHigh
         NSLayoutConstraint.activate([
-            stackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
-            stackView.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -16),
-            stackView.centerYAnchor.constraint(equalTo: centerYAnchor)
+            outerStackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+            outerStackView.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -16),
+            outerStackView.topAnchor.constraint(equalTo: topAnchor, constant: 8),
+            bottomPin
         ])
 
         // Circle fixed size
@@ -104,11 +144,25 @@ class WorkflowStatusView: UIView {
             circleView.widthAnchor.constraint(equalToConstant: 8),
             circleView.heightAnchor.constraint(equalToConstant: 8)
         ])
+        
+        NSLayoutConstraint.activate([
+            circleContainerView.widthAnchor.constraint(equalToConstant: 14),
+            circleContainerView.heightAnchor.constraint(equalToConstant: 14)
+        ])
+        
+        circleContainerView.addSubview(circleView)
+        
+        circleContainerView.centerYAnchor.constraint(equalTo: circleView.centerYAnchor).isActive = true
+        circleContainerView.centerXAnchor.constraint(equalTo: circleView.centerXAnchor).isActive = true
 
-        stackView.addArrangedSubview(circleView)
-        stackView.addArrangedSubview(iconView)
-        stackView.addArrangedSubview(statusLabel)
-        stackView.addArrangedSubview(retryButton)
+        topRowStack.addArrangedSubview(circleContainerView)
+        topRowStack.addArrangedSubview(iconView)
+        topRowStack.addArrangedSubview(statusLabel)
+        topRowStack.addArrangedSubview(retryButton)
+        topRowStack.setCustomSpacing(12, after: statusLabel)
+
+        outerStackView.addArrangedSubview(topRowStack)
+        outerStackView.addArrangedSubview(detailLabel)
 
         retryButton.addTarget(self, action: #selector(retryButtonTapped), for: .touchUpInside)
 
@@ -120,13 +174,14 @@ class WorkflowStatusView: UIView {
     private func updateAppearance() {
         removePulseAnimation()
 
-        retryButton.isHidden = (status != .HALTED)
+        retryButton.isHidden = (status != .HALTED && status != .FAILED && status != .ERROR)
 
         switch status {
         case .PENDING:
             hideCircle()
             hideIcon()
             statusLabel.isHidden = true
+            clearDetailLabel()
 
         case .IN_PROGRESS:
             showCircle(color: UIColor.Sphinx.PrimaryBlue)
@@ -140,25 +195,68 @@ class WorkflowStatusView: UIView {
             hideIcon()
             statusLabel.text = nil
             statusLabel.isHidden = true
+            clearDetailLabel()
 
         case .ERROR:
             hideCircle()
             showIcon(systemName: "exclamationmark.circle.fill", color: UIColor.Sphinx.SphinxOrange)
             statusLabel.text = "Error"
             statusLabel.isHidden = false
+            clearDetailLabel()
 
         case .HALTED:
             hideCircle()
             showIcon(systemName: "pause.circle.fill", color: UIColor.Sphinx.SphinxOrange)
             statusLabel.text = "Halted"
             statusLabel.isHidden = false
+            clearDetailLabel()
 
         case .FAILED:
             hideCircle()
             showIcon(systemName: "xmark.circle.fill", color: UIColor.Sphinx.SphinxOrange)
             statusLabel.text = "Failed"
             statusLabel.isHidden = false
+            clearDetailLabel()
         }
+    }
+
+    // MARK: - Status / Detail Text
+
+    /// Whether the second-line detail label is currently visible.
+    var hasDetailText: Bool { !detailLabel.isHidden }
+
+    /// Unconditionally hides and clears the detail label (used on terminal states).
+    private func clearDetailLabel() {
+        detailLabel.isHidden = true
+        detailLabel.text = nil
+        detailLabel.layer.removeAnimation(forKey: "detailPulse")
+    }
+
+    /// Update the first-line status label (e.g. from `workflowStepTextReceived`).
+    /// Falls back to "Working…" when `text` is nil. Only effective while IN_PROGRESS.
+    func setStatusText(_ text: String?) {
+        guard status == .IN_PROGRESS else { return }
+        statusLabel.text = text ?? "Working…"
+    }
+
+    /// Show real-time agent activity on the second line below the status label.
+    /// Only shown while IN_PROGRESS; passing nil hides the label and clears its text.
+    func setStepDetail(_ text: String?) {
+        guard let text = text, status == .IN_PROGRESS else {
+            detailLabel.isHidden = true
+            detailLabel.text = nil
+            detailLabel.layer.removeAnimation(forKey: "detailPulse")
+            return
+        }
+        detailLabel.text = text
+        detailLabel.isHidden = false
+        let anim = CABasicAnimation(keyPath: "opacity")
+        anim.fromValue = 0.6
+        anim.toValue = 1.0
+        anim.duration = 0.8
+        anim.repeatCount = .infinity
+        anim.autoreverses = true
+        detailLabel.layer.add(anim, forKey: "detailPulse")
     }
 
     @objc private func retryButtonTapped() {
@@ -166,13 +264,13 @@ class WorkflowStatusView: UIView {
     }
 
     private func showCircle(color: UIColor) {
-        circleView.isHidden = false
+        circleContainerView.isHidden = false
         circleView.backgroundColor = color
         circleView.layer.cornerRadius = 4
     }
 
     private func hideCircle() {
-        circleView.isHidden = true
+        circleContainerView.isHidden = true
     }
 
     private func showIcon(systemName: String, color: UIColor) {

@@ -52,9 +52,11 @@ extension NewsletterItemCollectionViewCell {
     
     override func awakeFromNib() {
         super.awakeFromNib()
-        
-        itemImageView.layer.cornerRadius = 3
-        itemImageView.clipsToBounds = true
+
+        MainActor.assumeIsolated {
+            itemImageView.layer.cornerRadius = 3
+            itemImageView.clipsToBounds = true
+        }
     }
     
     

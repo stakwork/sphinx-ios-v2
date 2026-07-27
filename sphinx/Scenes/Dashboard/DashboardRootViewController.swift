@@ -145,10 +145,7 @@ class DashboardRootViewController: RootViewController {
                 loading: shouldShowHeaderLoadingWheel,
                 loadingWheel: headerView.loadingWheel,
                 loadingWheelColor: UIColor.white,
-                views: [
-                    searchBarContainer,
-                    bottomBarContainer,
-                ]
+                views: []
             )
         }
     }
@@ -271,7 +268,7 @@ extension DashboardRootViewController {
         workspaceSettingsButton.tintColor = UIColor.Sphinx.MainBottomIcons
 
         let config = UIImage.SymbolConfiguration(pointSize: 18, weight: .medium)
-        let gearImage = UIImage(systemName: "gearshape.fill", withConfiguration: config)
+        let gearImage = UIImage(systemName: "bell.badge", withConfiguration: config)
         workspaceSettingsButton.setImage(gearImage, for: .normal)
     }
 
@@ -281,8 +278,8 @@ extension DashboardRootViewController {
     }
 
     @IBAction func didTapWorkspaceSettingsButton() {
-        let hiveConfigVC = HiveConfigurationViewController.instantiate()
-        present(hiveConfigVC, animated: true)
+        let prefsVC = HiveNotificationPreferencesViewController.instantiate()
+        present(prefsVC, animated: true)
     }
     
     func setupPlayerBar() {
@@ -390,13 +387,25 @@ extension DashboardRootViewController {
         contactsService.forceUpdate()
     }
 
+    func suspendNetworkObservers() {
+        NotificationCenter.default.removeObserver(self, name: .connectedToInternet, object: nil)
+        NotificationCenter.default.removeObserver(self, name: .disconnectedFromInternet, object: nil)
+    }
+
+    func resumeNetworkObservers() {
+        NotificationCenter.default.removeObserver(self, name: .connectedToInternet, object: nil)
+        NotificationCenter.default.removeObserver(self, name: .disconnectedFromInternet, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(didConnectToInternet), name: .connectedToInternet, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(didDisconnectFromInternet), name: .disconnectedFromInternet, object: nil)
+    }
+
     @objc private func didConnectToInternet() {
-//        DispatchQueue.main.async {
-//            if (UIApplication.shared.delegate as? AppDelegate)?.isActive == false {
-//                return
-//            }
-//            self.reconnectToServer()
-//        }
+        DispatchQueue.main.async {
+            guard (UIApplication.shared.delegate as? AppDelegate)?.isActive == true else {
+                return
+            }
+            self.reconnectToServer()
+        }
     }
 
     @objc private func didDisconnectFromInternet() {
@@ -410,12 +419,17 @@ extension DashboardRootViewController {
             self.shouldShowHeaderLoadingWheel = false
             
             self.refreshUnreadStatus()
+            AIAgentManager.sharedInstance.createAgentContactAndChatIfNeeded()
             
             if isRestore {
                 self.finishUserInfoSetup()
             }
             
             self.chatsListViewModel.askForNotificationPermissions()
+            
+            NetworkMonitor.shared.startMonitoring()
+            
+            (UIApplication.shared.delegate as? AppDelegate)?.handlePushAndFetchData()
         }
     }
     

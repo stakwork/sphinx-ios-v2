@@ -47,6 +47,14 @@ private class AttachmentTileView: UIView {
         return lbl
     }()
 
+    private let loadingSpinner: UIActivityIndicatorView = {
+        let s = UIActivityIndicatorView(style: .medium)
+        s.translatesAutoresizingMaskIntoConstraints = false
+        s.color = .white
+        s.hidesWhenStopped = true
+        return s
+    }()
+
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupUI()
@@ -61,6 +69,7 @@ private class AttachmentTileView: UIView {
         addSubview(imageView)
         addSubview(playIconView)
         addSubview(fileLabel)
+        addSubview(loadingSpinner)
 
         NSLayoutConstraint.activate([
             imageView.topAnchor.constraint(equalTo: topAnchor),
@@ -76,6 +85,9 @@ private class AttachmentTileView: UIView {
             fileLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 4),
             fileLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -4),
             fileLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
+
+            loadingSpinner.centerXAnchor.constraint(equalTo: centerXAnchor),
+            loadingSpinner.centerYAnchor.constraint(equalTo: centerYAnchor),
         ])
 
         let tap = UITapGestureRecognizer(target: self, action: #selector(handleTap))
@@ -92,16 +104,31 @@ private class AttachmentTileView: UIView {
         imageView.image = nil
 
         if mime.hasPrefix("image/") {
-            imageView.backgroundColor = .darkGray
-            if let s3Key = attachment.resolvedUrl {
+            imageView.backgroundColor = UIColor.Sphinx.Body
+            loadingSpinner.startAnimating()
+            if attachment.isPresigned, let urlStr = attachment.resolvedUrl, let url = URL(string: urlStr) {
+                // Pre-signed URL — use directly, no second presign needed
+                imageView.sd_setImage(with: url, placeholderImage: nil, options: .lowPriority) { [weak self] _, _, _, _ in
+                    DispatchQueue.main.async { self?.loadingSpinner.stopAnimating() }
+                }
+            } else if let s3Key = attachment.resolvedUrl {
                 API.sharedInstance.fetchPresignedUrlWithAuth(s3Key: s3Key) { [weak self] presignedUrlStr in
                     DispatchQueue.main.async {
                         guard let self = self,
                               let urlStr = presignedUrlStr,
-                              let url = URL(string: urlStr) else { return }
-                        self.imageView.sd_setImage(with: url, placeholderImage: nil, options: .lowPriority)
+                              let url = URL(string: urlStr) else {
+                            self?.loadingSpinner.stopAnimating()
+                            return
+                        }
+                        self.imageView.sd_setImage(with: url, placeholderImage: nil, options: .lowPriority) { [weak self] _, _, _, _ in
+                            DispatchQueue.main.async {
+                                self?.loadingSpinner.stopAnimating()
+                            }
+                        }
                     }
                 }
+            } else {
+                loadingSpinner.stopAnimating()
             }
         } else if mime.hasPrefix("video/") {
             imageView.image = nil
@@ -119,6 +146,7 @@ private class AttachmentTileView: UIView {
 
     func cancelLoad() {
         imageView.sd_cancelCurrentImageLoad()
+        loadingSpinner.stopAnimating()
     }
 
     @objc private func handleTap() {

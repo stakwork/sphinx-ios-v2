@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol GroupContactCellDelegate: class {
+@MainActor protocol GroupContactCellDelegate: AnyObject {
     func didDeleteContact(contact: UserContact, cell: UICollectionViewCell)
 }
 
@@ -26,15 +26,17 @@ class GroupContactCollectionViewCell: UICollectionViewCell {
     
     override func awakeFromNib() {
         super.awakeFromNib()
-        
-        contactImageView.contentMode = .scaleAspectFill
-        contactImageView.layer.cornerRadius = contactImageView.frame.size.height / 2
-        
-        contactInitialsLabel.layer.cornerRadius = contactInitialsLabel.frame.size.height / 2
-        contactInitialsLabel.clipsToBounds = true
-        
-        closeLabel.layer.cornerRadius = closeLabel.frame.size.height / 2
-        closeLabel.clipsToBounds = true
+
+        MainActor.assumeIsolated {
+            contactImageView.contentMode = .scaleAspectFill
+            contactImageView.layer.cornerRadius = contactImageView.frame.size.height / 2
+
+            contactInitialsLabel.layer.cornerRadius = contactInitialsLabel.frame.size.height / 2
+            contactInitialsLabel.clipsToBounds = true
+
+            closeLabel.layer.cornerRadius = closeLabel.frame.size.height / 2
+            closeLabel.clipsToBounds = true
+        }
     }
 
     @IBAction func closeButtonTouched() {

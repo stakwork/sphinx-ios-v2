@@ -8,7 +8,6 @@ extension DashboardRootViewController: QRCodeScannerDelegate {
     
     
     func didScanQRCode(string: String) {
-        print("QR Code Scanned: \(string)")
     }
 }
 

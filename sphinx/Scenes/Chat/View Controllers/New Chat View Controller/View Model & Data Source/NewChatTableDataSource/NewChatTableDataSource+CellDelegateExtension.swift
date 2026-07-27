@@ -516,11 +516,13 @@ extension NewChatTableDataSource : NewMessageTableViewCellDelegate {
                         asset.loadValuesAsynchronously(forKeys: ["duration"], completionHandler: {
                             let duration = Int(Double(asset.duration.value) / Double(asset.duration.timescale))
                             episode.duration = duration
-                            
-                            updateWith(
-                                duration: Double(duration),
-                                currentTime: Double(podcastComment.timestamp ?? 0)
-                            )
+
+                            DispatchQueue.main.async {
+                                updateWith(
+                                    duration: Double(duration),
+                                    currentTime: Double(podcastComment.timestamp ?? 0)
+                                )
+                            }
                         })
                     }
                 }
@@ -550,6 +552,104 @@ extension NewChatTableDataSource : NewMessageTableViewCellDelegate {
             )
         }
     }
+    func shouldLoadCallParticipantsFor(messageId: Int, roomName: String, and rowIndex: Int) {
+        messageIdToRoomName[messageId] = roomName
+        if !subscribedRooms.contains(roomName) {
+            if callParticipantsSocketManager == nil {
+                callParticipantsSocketManager = CallParticipantsSocketManager()
+                callParticipantsSocketManager?.delegate = self
+            }
+            subscribedRooms.insert(roomName)
+            callParticipantsSocketManager?.subscribe(roomName: roomName)
+        }
+    }
+}
+
+// MARK: - CallParticipantsSocketDelegate
+
+extension NewChatTableDataSource {
+
+    func didReceiveCurrentParticipants(roomName: String, participants: [BubbleMessageLayoutState.CallParticipantInfo]) {
+        let filteredParticipants = participants.filter { $0.name.isNotEmpty }
+        callParticipantsStore[roomName] = filteredParticipants
+        reloadCells(forRoomName: roomName)
+        // Fan-out: also update the live-call banner for this room.
+        delegate?.shouldUpdateLiveCallBannerFor(roomName: roomName, participants: filteredParticipants)
+    }
+
+    func participantJoined(roomName: String, participant: BubbleMessageLayoutState.CallParticipantInfo) {
+        var current = callParticipantsStore[roomName] ?? []
+        // Dedup: skip if identity already tracked
+        guard !current.contains(where: { $0.identity == participant.identity }) else { return }
+        
+        if participant.name.isNotEmpty {
+            current.append(participant)
+            callParticipantsStore[roomName] = current
+            reloadCells(forRoomName: roomName)
+        }
+        // Fan-out: also update the live-call banner for this room.
+        delegate?.shouldUpdateLiveCallBannerFor(roomName: roomName, participants: current)
+        // LiveKit may not have resolved the display name yet — refresh after 2s
+        if participant.name.isEmpty {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [weak self] in
+                self?.refreshParticipants(for: roomName)
+            }
+        }
+    }
+
+    private func refreshParticipants(for roomName: String) {
+        callParticipantsSocketManager?.sendSubscribeTo(roomName: roomName)
+        
+//        API.sharedInstance.getCallParticipants(roomName: roomName) { [weak self] fresh in
+//            guard let self = self, !fresh.isEmpty else { return }
+//            self.callParticipantsStore[roomName] = fresh
+//            self.reloadCells(forRoomName: roomName)
+//        }
+    }
+
+    func participantLeft(roomName: String, identity: String) {
+        var current = callParticipantsStore[roomName] ?? []
+        current.removeAll { $0.identity == identity }
+        callParticipantsStore[roomName] = current
+        reloadCells(forRoomName: roomName)
+        // Fan-out: also update the live-call banner for this room.
+        delegate?.shouldUpdateLiveCallBannerFor(roomName: roomName, participants: current)
+    }
+
+    func roomFinished(roomName: String) {
+        callParticipantsStore.removeValue(forKey: roomName)
+        reloadCells(forRoomName: roomName)
+        // Fan-out: hide the banner for this room since the call has ended.
+        delegate?.shouldHideLiveCallBannerFor(roomName: roomName)
+    }
+
+    private func reloadCells(forRoomName roomName: String) {
+        let affectedMessageIds = messageIdToRoomName
+            .filter { $0.value == roomName }
+            .map { $0.key }
+
+        for messageId in affectedMessageIds {
+            if let tableCellState = getTableCellStateFor(messageId: messageId) {
+                let cellState = tableCellState.1
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    var snapshot = self.dataSource.snapshot()
+                    if snapshot.itemIdentifiers.contains(cellState) {
+                        snapshot.reloadItems([cellState])
+                        self.dataSource.apply(snapshot, animatingDifferences: false)
+                    }
+                }
+            }
+        }
+    }
+
+    func unsubscribeAllRooms() {
+        subscribedRooms.forEach { callParticipantsSocketManager?.unsubscribe(roomName: $0) }
+        subscribedRooms.removeAll()
+        callParticipantsStore.removeAll()
+        messageIdToRoomName.removeAll()
+        callParticipantsSocketManager = nil
+    }
 }
 
 ///Updating rows after content loaded
@@ -559,25 +659,24 @@ extension NewChatTableDataSource {
         messageId: Int,
         with updatedCachedMedia: MessageTableCellState.MediaData
     ) {
-        if let tableCellState = getTableCellStateFor(
+        // Always update cache — even if snapshot reload fails,
+        // next cell reconfiguration will show the correct media
+        mediaCached[messageId] = updatedCachedMedia
+
+        guard let tableCellState = getTableCellStateFor(
             messageId: messageId,
             and: rowIndex
-        ) {
-            mediaCached[messageId] = updatedCachedMedia
-            
-            if rowIndex < 0 {
-                self.delegate?.shouldReloadThreadHeaderView()
-            } else {
-                mediaReloadQueue.async {
-                    var snapshot = self.dataSource.snapshot()
-                
-                    if snapshot.itemIdentifiers.contains(tableCellState.1) {
-                        snapshot.reloadItems([tableCellState.1])
-                        
-                        DispatchQueue.main.async {
-                            self.dataSource.apply(snapshot, animatingDifferences: false)
-                        }
-                    }
+        ) else { return }
+
+        if rowIndex < 0 {
+            self.delegate?.shouldReloadThreadHeaderView()
+        } else {
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                var snapshot = self.dataSource.snapshot()
+                if snapshot.itemIdentifiers.contains(tableCellState.1) {
+                    snapshot.reloadItems([tableCellState.1])
+                    self.dataSource.apply(snapshot, animatingDifferences: false)
                 }
             }
         }
@@ -602,19 +701,18 @@ extension NewChatTableDataSource {
                     (UIScreen.main.bounds.width - (MessageTableCellState.kRowLeftMargin + MessageTableCellState.kRowRightMargin)) * (MessageTableCellState.kBubbleWidthPercentage)
             )
 
-            dataSourceQueue.async {
+            let cellState = tableCellState.1
+            Task { @MainActor [weak self] in
+                guard let self else { return }
                 var snapshot = self.dataSource.snapshot()
-            
-                if snapshot.itemIdentifiers.contains(tableCellState.1) {
-                    snapshot.reloadItems([tableCellState.1])
-                    DispatchQueue.main.async {
-                        self.dataSource.apply(snapshot, animatingDifferences: true)
-                    }
+                if snapshot.itemIdentifiers.contains(cellState) {
+                    snapshot.reloadItems([cellState])
+                    self.dataSource.apply(snapshot, animatingDifferences: true)
                 }
             }
         }
     }
-    
+
     func updateMessageTableCellStateFor(
         rowIndex: Int?,
         messageId: Int,
@@ -625,21 +723,19 @@ extension NewChatTableDataSource {
             and: rowIndex
         ) {
             uploadingProgress[messageId] = updatedUploadProgressData
-            
-            dataSourceQueue.async {
+
+            let cellState = tableCellState.1
+            Task { @MainActor [weak self] in
+                guard let self else { return }
                 var snapshot = self.dataSource.snapshot()
-            
-                if snapshot.itemIdentifiers.contains(tableCellState.1) {
-                    snapshot.reloadItems([tableCellState.1])
-                    
-                    DispatchQueue.main.async {
-                        self.dataSource.apply(snapshot, animatingDifferences: false)
-                    }
+                if snapshot.itemIdentifiers.contains(cellState) {
+                    snapshot.reloadItems([cellState])
+                    self.dataSource.apply(snapshot, animatingDifferences: false)
                 }
             }
         }
     }
-    
+
     func updateMessageTableCellStateFor(
         rowIndex: Int,
         messageId: Int,
@@ -652,15 +748,13 @@ extension NewChatTableDataSource {
         {
             preloaderHelper.linksData[linkWeb.link] = linkData
 
-            dataSourceQueue.async {
+            let cellState = tableCellState.1
+            Task { @MainActor [weak self] in
+                guard let self else { return }
                 var snapshot = self.dataSource.snapshot()
-            
-                if snapshot.itemIdentifiers.contains(tableCellState.1) {
-                    snapshot.reloadItems([tableCellState.1])
-                    
-                    DispatchQueue.main.async {
-                        self.dataSource.apply(snapshot, animatingDifferences: true)
-                    }
+                if snapshot.itemIdentifiers.contains(cellState) {
+                    snapshot.reloadItems([cellState])
+                    self.dataSource.apply(snapshot, animatingDifferences: true)
                 }
             }
         }
@@ -733,7 +827,8 @@ extension NewChatTableDataSource {
             messageId: messageId,
             and: rowIndex
         ), let link = tableCellState.1.callLink?.link {
-            startVideoCall(link: link, audioOnly: true)
+            let isHost = tableCellState.1.message?.isOutgoing(ownerId: owner?.id ?? -1) == true
+            startVideoCall(link: link, audioOnly: true, isHost: isHost)
         }
         delegate?.shouldDismissKeyboard()
     }
@@ -746,7 +841,8 @@ extension NewChatTableDataSource {
             messageId: messageId,
             and: rowIndex
         ), let link = tableCellState.1.callLink?.link {
-            startVideoCall(link: link, audioOnly: false)
+            let isHost = tableCellState.1.message?.isOutgoing(ownerId: owner?.id ?? -1) == true
+            startVideoCall(link: link, audioOnly: false, isHost: isHost)
         }
         
         delegate?.shouldDismissKeyboard()
@@ -1016,8 +1112,8 @@ extension NewChatTableDataSource {
 }
 
 extension NewChatTableDataSource {
-    func startVideoCall(link: String, audioOnly: Bool) {
-        VideoCallManager.sharedInstance.startVideoCall(link: link, audioOnly: audioOnly)
+    func startVideoCall(link: String, audioOnly: Bool, isHost: Bool = false) {
+        VideoCallManager.sharedInstance.startVideoCall(link: link, audioOnly: audioOnly, isHost: isHost)
     }
 }
 
@@ -1085,7 +1181,9 @@ extension NewChatTableDataSource {
         )
         
         DelayPerformedHelper.performAfterDelay(seconds: 1.0, completion: {
-            self.messageBubbleHelper.hideLoadingWheel()
+            MainActor.assumeIsolated {
+                self.messageBubbleHelper.hideLoadingWheel()
+            }
         })
     }
     

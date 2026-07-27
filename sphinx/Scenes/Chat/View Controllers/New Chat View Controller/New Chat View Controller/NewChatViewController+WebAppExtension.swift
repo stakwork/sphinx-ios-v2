@@ -11,26 +11,35 @@ import UIKit
 extension NewChatViewController {
     func toggleWebAppContainer(isAppURL: Bool = true) {
         let shouldShow = webAppContainerView.isHidden
-        
+        guard let chat = chat else { return }
+
         if shouldShow {
-            if let chat = chat {
-                if webAppVC == nil || self.isAppUrl != isAppURL {
-                    if let webAppVC = WebAppViewController.instantiate(chat: chat, isAppURL: isAppURL) {
-                        self.webAppVC = webAppVC
-                    }
+            // Save existing VC if switching between appURL and secondBrain
+            if let existingVC = webAppVC, self.isAppUrl != isAppURL {
+                WebAppSessionManager.sharedInstance.store(existingVC, chatId: chat.id, isAppURL: self.isAppUrl)
+                webAppVC = nil
+            }
+
+            if webAppVC == nil {
+                if let cached = WebAppSessionManager.sharedInstance.retrieve(chatId: chat.id, isAppURL: isAppURL) {
+                    webAppVC = cached
+                } else if let fresh = WebAppViewController.instantiate(chat: chat, isAppURL: isAppURL) {
+                    WebAppSessionManager.sharedInstance.store(fresh, chatId: chat.id, isAppURL: isAppURL)
+                    webAppVC = fresh
                 }
-                if let webAppVC = webAppVC {
-                    addChildVC(child: webAppVC, container: webAppContainerView)
-                }
+            }
+
+            if let webAppVC = webAppVC {
+                addChildVC(child: webAppVC, container: webAppContainerView)
             }
         } else if let webAppVC = webAppVC {
             removeChildVC(child: webAppVC)
         }
-        
+
         self.isAppUrl = isAppURL
         bottomView.isHidden = shouldShow
         webAppContainerView.isHidden = !webAppContainerView.isHidden
-        
+
         if isAppURL {
             headerView.toggleWebAppIcon(showChatIcon: shouldShow)
         } else {

@@ -13,7 +13,7 @@ enum KeyboardButtons: Int {
     case Done
 }
 
-protocol SubscriptionFormViewDelegate: class {
+@MainActor protocol SubscriptionFormViewDelegate: AnyObject {
     func shouldShowAlert(title: String, text: String)
     func shouldScrollToBottom()
 }

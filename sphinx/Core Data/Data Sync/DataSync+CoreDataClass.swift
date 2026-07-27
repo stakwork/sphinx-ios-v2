@@ -10,7 +10,7 @@ import CoreData
 import SwiftyJSON
 
 @objc(DataSync)
-public class DataSync: NSManagedObject {
+public class DataSync: NSManagedObject, @unchecked Sendable {
 
     public static func getAllDataSync(
         context: NSManagedObjectContext? = nil

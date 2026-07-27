@@ -10,12 +10,12 @@ import Foundation
 import UIKit
 
 
-protocol ChatMentionAutocompleteDelegate : AnyObject {
+@MainActor protocol ChatMentionAutocompleteDelegate : AnyObject {
     func processAutocomplete(text: String )
     func processGeneralPurposeMacro(action: @escaping ()->())
 }
 
-class ChatMentionAutocompleteDataSource : NSObject {
+@MainActor class ChatMentionAutocompleteDataSource : NSObject {
     var mentionSuggestions : [MentionOrMacroItem] = [MentionOrMacroItem]()
     var tableView : UITableView!
     weak var delegate: ChatMentionAutocompleteDelegate!

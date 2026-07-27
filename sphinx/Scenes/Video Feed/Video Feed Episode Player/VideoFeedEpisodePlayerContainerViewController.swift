@@ -8,7 +8,7 @@
 import UIKit
 import CoreData
 
-protocol VideoFeedEpisodePlayerViewControllerDelegate: AnyObject {
+@MainActor protocol VideoFeedEpisodePlayerViewControllerDelegate: AnyObject {
     
     func viewController(
         _ viewController: UIViewController,
@@ -299,7 +299,7 @@ extension VideoFeedEpisodePlayerContainerViewController {
     }
 }
 
-extension VideoFeedEpisodePlayerContainerViewController: VideoFeedEpisodePlayerCollectionViewControllerDelegate{
+extension VideoFeedEpisodePlayerContainerViewController: @MainActor VideoFeedEpisodePlayerCollectionViewControllerDelegate{
     func requestPlay() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.25, execute: {
             self.youtubeVideoPlayerViewController.startPlay()
@@ -316,7 +316,7 @@ extension VideoFeedEpisodePlayerContainerViewController: VideoFeedEpisodePlayerC
     }
 }
 
-extension VideoFeedEpisodePlayerContainerViewController : FeedEpisodeVideoPlayerDelegate {
+extension VideoFeedEpisodePlayerContainerViewController : @MainActor FeedEpisodeVideoPlayerDelegate {
     func didChangePlayingStateFor(videoID: String) {
         if let video = videoFeedEpisodes.first(where: { $0.videoID == videoID }) {
             self.collectionViewController.refreshCellForVideo(video: video)

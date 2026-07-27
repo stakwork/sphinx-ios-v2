@@ -179,10 +179,10 @@ extension YouTubeVideoFeedEpisodePlayerViewController {
             if let url =
             videoPlayerEpisode.getVideoUrl()
             {
-                DispatchQueue.main.sync {
-                    localVideoPlayerContainer.isHidden = false
-                    avPlayer = createVideoPlayerView(withVideoURL: url)
-                    avPlayer?.delegate = self
+                DispatchQueue.main.async {
+                    self.localVideoPlayerContainer.isHidden = false
+                    self.avPlayer = self.createVideoPlayerView(withVideoURL: url)
+                    self.avPlayer?.delegate = self
                 }
             }
         }
@@ -191,7 +191,7 @@ extension YouTubeVideoFeedEpisodePlayerViewController {
             API.sharedInstance.getVideoRemoteStorageStatus(videoID: videoPlayerEpisode.youtubeVideoID, callback: { filePath in
                 if let validPath = filePath,
                    let url = URL(string: validPath){
-                    DispatchQueue.main.sync {
+                    DispatchQueue.main.async {
                         self.localVideoPlayerContainer.isHidden = false
                         self.avPlayer = self.createVideoPlayerView(withVideoURL: url)
                         self.avPlayer?.delegate = self
@@ -264,7 +264,6 @@ extension YouTubeVideoFeedEpisodePlayerViewController {
             if let assetTrack = assetTrack {
                 let videoSize = assetTrack.naturalSize
                 let aspectRatio = videoSize.width / videoSize.height
-                print("Video Aspect Ratio: \(aspectRatio)")
                 if(aspectRatio < 1.0){
                     playerViewController?.videoGravity = .resizeAspect
                 }
@@ -323,7 +322,7 @@ extension YouTubeVideoFeedEpisodePlayerViewController {
 
 
 // MARK: -  YTPlayerViewDelegate
-extension YouTubeVideoFeedEpisodePlayerViewController: YTPlayerViewDelegate {
+extension YouTubeVideoFeedEpisodePlayerViewController: @preconcurrency YTPlayerViewDelegate {
     func playerView(_ playerView: YTPlayerView, didPlayTime playTime: Float) {
         currentTime = playTime
     }
@@ -394,7 +393,7 @@ extension YouTubeVideoFeedEpisodePlayerViewController: YTPlayerViewDelegate {
 }
 
 
-extension YouTubeVideoFeedEpisodePlayerViewController : AVPlayerViewControllerDelegate{
+extension YouTubeVideoFeedEpisodePlayerViewController : @preconcurrency AVPlayerViewControllerDelegate{
     func playerViewController(
         _ playerViewController: AVPlayerViewController,
         willBeginFullScreenPresentationWithAnimationCoordinator coordinator: UIViewControllerTransitionCoordinator

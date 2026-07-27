@@ -11,7 +11,7 @@ import CoreData
 import SwiftyJSON
 
 @objc(ActionTrack)
-public class ActionTrack: NSManagedObject, Encodable {
+public class ActionTrack: NSManagedObject, Encodable, @unchecked Sendable {
     
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)

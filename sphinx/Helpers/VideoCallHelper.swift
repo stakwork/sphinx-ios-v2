@@ -34,6 +34,7 @@ class VideoCallHelper {
     }
 
     /// Shows the audio / video mode popup for an already-built room link.
+    @MainActor
     public static func showCallModePopup(
         link: String,
         button: UIButton,
@@ -58,6 +59,7 @@ class VideoCallHelper {
         )
     }
 
+    @MainActor
     public static func createCallMessage(
         button: UIButton,
         secondBrainUrl: String? = nil,

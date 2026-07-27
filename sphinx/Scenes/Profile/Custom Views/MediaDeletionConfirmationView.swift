@@ -10,7 +10,7 @@ import Foundation
 import UIKit
 
 
-protocol MediaDeletionConfirmationViewDelegate : class {
+@MainActor protocol MediaDeletionConfirmationViewDelegate : class {
     func mediaDeletionCancelTapped()
     func mediaDeletionConfirmTapped()
 }

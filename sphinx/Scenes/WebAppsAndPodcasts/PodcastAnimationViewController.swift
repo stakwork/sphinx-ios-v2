@@ -41,13 +41,17 @@ class PodcastAnimationViewController: UIViewController {
     }
     
     func hideAfterTime(delay: Double = 0) {
-        DelayPerformedHelper.performAfterDelay(seconds: delay, completion: {
+        Task { @MainActor [weak self] in
+            if delay > 0 {
+                try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            }
+            guard let self = self else { return }
             UIView.animate(withDuration: 0.3, animations: {
                 self.view.alpha = 0.0
             }, completion: { _ in
                 WindowsManager.sharedInstance.removeCoveringWindow()
             })
-        })
+        }
     }
 }
 

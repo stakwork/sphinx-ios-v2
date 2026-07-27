@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol ChatSearchTextFieldViewDelegate : class {
+@MainActor protocol ChatSearchTextFieldViewDelegate : class {
     func shouldSearchFor(term: String)
     func didTapSearchCancelButton()
 }

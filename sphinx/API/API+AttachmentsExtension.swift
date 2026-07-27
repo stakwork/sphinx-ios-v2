@@ -204,7 +204,7 @@ extension API {
             switch response.result {
             case .success(let data):
                 if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                   let success = json?["success"] as? Bool,
+                   let success = json["success"] as? Bool,
                    success == false
                 {
                     errorCallback()

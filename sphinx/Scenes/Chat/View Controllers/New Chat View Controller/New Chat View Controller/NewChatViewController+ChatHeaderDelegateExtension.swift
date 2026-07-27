@@ -82,6 +82,22 @@ extension NewChatViewController : ChatHeaderViewDelegate, ThreadHeaderViewDelega
     }
     
     func didTapMoreOptionsButton(sender: UIButton) {
+        if contact?.isAgent == true {
+            let alert = CustomAlertController(
+                title: "chat.options".localized,
+                message: "select.option".localized,
+                preferredStyle: .actionSheet
+            )
+            alert.addAction(UIAlertAction(title: "search.messages".localized, style: .default) { _ in
+                self.toggleSearchMode(active: true)
+            })
+            alert.addAction(UIAlertAction(title: "cancel".localized, style: .cancel))
+            alert.popoverPresentationController?.sourceView = sender
+            alert.popoverPresentationController?.sourceRect = sender.bounds
+            present(alert, animated: true)
+            return
+        }
+        
         let alert = CustomAlertController(
             title: "chat.options".localized,
             message: "select.option".localized,
@@ -155,6 +171,17 @@ extension NewChatViewController : ChatHeaderViewDelegate, ThreadHeaderViewDelega
             
             self.present(viewController, animated: true, completion: nil)
         }
+    }
+    
+    func shouldShowThreadOptions(from button: UIButton) {
+        let alert = CustomAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        alert.addAction(UIAlertAction(title: "create.call".localized, style: .default) { _ in
+            self.chatViewModel.createCallMessage(sender: button)
+        })
+        alert.addAction(UIAlertAction(title: "cancel".localized, style: .cancel))
+        alert.popoverPresentationController?.sourceView = button
+        alert.popoverPresentationController?.sourceRect = button.bounds
+        present(alert, animated: true)
     }
     
     func didTapShowThreadsButton(){

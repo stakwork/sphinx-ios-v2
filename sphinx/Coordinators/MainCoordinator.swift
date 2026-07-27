@@ -9,7 +9,7 @@
 import UIKit
 import KYDrawerController
 
-final class MainCoordinator: NSObject {
+@MainActor final class MainCoordinator: NSObject {
 
     var drawerController : KYDrawerController!
     var rootViewController : RootViewController!
@@ -37,6 +37,7 @@ final class MainCoordinator: NSObject {
 //        }
         
         UserData.sharedInstance.clearData()
+        WebAppSessionManager.sharedInstance.evictAll()
         presentInitialWelcomeViewController()
     }
     
@@ -97,10 +98,11 @@ final class MainCoordinator: NSObject {
         drawerController.mainViewController = navigationController
         drawerController.drawerViewController = leftViewController
 
-        drawerController.setDrawerState(.opened, animated: false)
-        drawerController.setDrawerState(.closed, animated: false)
-        
-        rootViewController.switchToViewController(drawerController)
+        rootViewController.switchToViewController(drawerController) { [weak drawerController] in
+            // Set initial closed state only after the controller is in the window hierarchy
+            // to avoid triggering unbalanced begin/end appearance transitions.
+            drawerController?.setDrawerState(.closed, animated: false)
+        }
     }
 }
 

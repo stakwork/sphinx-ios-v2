@@ -109,11 +109,12 @@ class PayInvoiceViewController: UIViewController {
         guard let message = message, let invoice = message.invoice else {
             return
         }
-        
+
         let prd = PaymentRequestDecoder()
         prd.decodePaymentRequest(paymentRequest: invoice)
-        
+
         guard let _ = prd.getAmount() else {
+            showErrorAlert(errorMessage: "Failed to decode invoice")
             return
         }
         

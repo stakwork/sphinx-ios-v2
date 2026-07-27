@@ -12,7 +12,7 @@ import SwiftyJSON
 
 
 @objc(Server)
-public class Server: NSManagedObject {
+public class Server: NSManagedObject, @unchecked Sendable {
     
     public static func getAllServers(context: NSManagedObjectContext) -> [Server] {
         let fetchRequest = NSFetchRequest<Server>(entityName: "Server")

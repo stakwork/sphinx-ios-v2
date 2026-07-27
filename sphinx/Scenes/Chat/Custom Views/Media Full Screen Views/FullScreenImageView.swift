@@ -163,13 +163,16 @@ class FullScreenImageView: UIView {
         
         let messageContent = message.messageContent ?? ""
         if let url = GiphyHelper.getUrlFrom(message: messageContent, mobile: false) {
-            GiphyHelper.getGiphyDataFrom(url: url, messageId: message.id, completion: { (data, messageId) in
-                self.loading = false
-                
-                if let data = data, let img = UIImage.sd_image(withGIFData: data) {
-                    self.imageScrollView.display(image: img)
-                } else {
-                    self.hideImage()
+            GiphyHelper.getGiphyDataFrom(url: url, messageId: message.id, completion: { [weak self] (data, messageId) in
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    self.loading = false
+
+                    if let data = data, let img = UIImage.sd_image(withGIFData: data) {
+                        self.imageScrollView.display(image: img)
+                    } else {
+                        self.hideImage()
+                    }
                 }
             })
             return

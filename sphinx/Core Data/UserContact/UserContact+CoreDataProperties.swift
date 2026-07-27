@@ -41,6 +41,7 @@ extension UserContact {
     @NSManaged public var scid: String?
     @NSManaged public var index: Int
     @NSManaged public var sentInviteCode : String?
+    @NSManaged public var isAgent: Bool
 
 }
 

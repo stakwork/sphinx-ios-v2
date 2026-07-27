@@ -26,6 +26,7 @@ class WorkspaceTasksViewController: UIViewController {
     private var currentPage = 1
     private var totalPages = 1
     private weak var paginationView: PaginationControlView?
+    private var paginationHeightConstraint: NSLayoutConstraint?
     private var paginationHasBeenBuilt = false
     
     private lazy var refreshControl: UIRefreshControl = {
@@ -54,11 +55,14 @@ class WorkspaceTasksViewController: UIViewController {
         pagination.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(pagination)
 
+        let heightConstraint = pagination.heightAnchor.constraint(equalToConstant: 56)
+        heightConstraint.isActive = true
+        paginationHeightConstraint = heightConstraint
+
         NSLayoutConstraint.activate([
             pagination.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
             pagination.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
             pagination.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-            pagination.heightAnchor.constraint(equalToConstant: 56)
         ])
 
         // Re-pin tableView bottom to pagination view top (storyboard bottom-to-safeArea removed)
@@ -98,7 +102,8 @@ class WorkspaceTasksViewController: UIViewController {
         tableView.dataSource = self
         tableView.backgroundColor = .Sphinx.Body
         tableView.separatorStyle = .none
-        tableView.rowHeight = 110
+        tableView.rowHeight = UITableView.automaticDimension
+        tableView.estimatedRowHeight = 140
         tableView.contentInset = UIEdgeInsets(top: 12, left: 0, bottom: 0, right: 0)
         tableView.tableFooterView = UIView(frame: CGRect(x: 0, y: 0, width: 0, height: 8))
 
@@ -151,6 +156,7 @@ class WorkspaceTasksViewController: UIViewController {
                     self.totalPages = info.totalPages
                     self.tableView.reloadData()
                     self.paginationView?.configure(currentPage: self.currentPage, totalPages: info.totalPages)
+                    self.paginationHeightConstraint?.constant = (self.paginationView?.isHidden == true) ? 0 : 56
                     self.paginationHasBeenBuilt = true
                     self.isLoading = false
                     self.refreshControl.endRefreshing()
@@ -175,12 +181,39 @@ extension WorkspaceTasksViewController: UITableViewDataSource, UITableViewDelega
         guard let cell = tableView.dequeueReusableCell(
             withIdentifier: WorkspaceTaskTableViewCell.reuseID, for: indexPath
         ) as? WorkspaceTaskTableViewCell else { return UITableViewCell() }
+        let task = tasks[indexPath.row]
         cell.configure(with: tasks[indexPath.row], isLastRow: indexPath.row == tasks.count - 1)
         cell.onPRBadgeTapped = { url in UIApplication.shared.open(url) }
         cell.onRetryWorkflowTapped = { [weak self] in
             guard let self else { return }
             let task = self.tasks[indexPath.row]
             API.sharedInstance.retryTaskWorkflowWithAuth(taskId: task.id, callback: {}, errorCallback: {})
+        }
+        cell.onRunBuildToggled = { [weak self] isOn in
+            guard let self else { return }
+            self.tasks[indexPath.row].runBuild = isOn
+            API.sharedInstance.updateTaskBuildSettingsWithAuth(
+                taskId: task.id, runBuild: isOn,
+                callback: {},
+                errorCallback: { [weak self] in
+                    guard let self else { return }
+                    self.tasks[indexPath.row].runBuild = !isOn
+                    DispatchQueue.main.async { self.tableView.reloadRows(at: [indexPath], with: .none) }
+                }
+            )
+        }
+        cell.onRunTestSuiteToggled = { [weak self] isOn in
+            guard let self else { return }
+            self.tasks[indexPath.row].runTestSuite = isOn
+            API.sharedInstance.updateTaskBuildSettingsWithAuth(
+                taskId: task.id, runTestSuite: isOn,
+                callback: {},
+                errorCallback: { [weak self] in
+                    guard let self else { return }
+                    self.tasks[indexPath.row].runTestSuite = !isOn
+                    DispatchQueue.main.async { self.tableView.reloadRows(at: [indexPath], with: .none) }
+                }
+            )
         }
         return cell
     }
@@ -194,6 +227,7 @@ extension WorkspaceTasksViewController: UITableViewDataSource, UITableViewDelega
 
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
         let task = tasks[indexPath.row]
+
         if includeArchived {
             let unarchiveAction = UIContextualAction(style: .normal, title: "Unarchive") { [weak self] _, _, completionHandler in
                 guard let self else { completionHandler(false); return }
@@ -209,29 +243,86 @@ extension WorkspaceTasksViewController: UITableViewDataSource, UITableViewDelega
             unarchiveAction.image = UIImage(systemName: "arrow.uturn.left")
             unarchiveAction.backgroundColor = UIColor.Sphinx.PrimaryBlue
             return UISwipeActionsConfiguration(actions: [unarchiveAction])
-        } else {
-            let archiveAction = UIContextualAction(style: .normal, title: "Archive") { [weak self] _, _, completionHandler in
+        }
+
+        var actions: [UIContextualAction] = []
+
+        // Archive — always (rightmost, shown first in the array = leftmost when swiping)
+        let archiveAction = UIContextualAction(style: .normal, title: "Archive") { [weak self] _, _, completionHandler in
+            guard let self else { completionHandler(false); return }
+            AlertHelper.showTwoOptionsAlert(
+                title: "Archive Task",
+                message: "Archive \"\(task.title)\"?",
+                confirmButtonTitle: "Archive",
+                confirm: {
+                    self.tasks.remove(at: indexPath.row)
+                    self.tableView.deleteRows(at: [indexPath], with: .automatic)
+                    API.sharedInstance.archiveTaskWithAuth(taskId: task.id) {
+                        DispatchQueue.main.async { self.loadTasks(showLoading: false) }
+                    } errorCallback: {
+                        DispatchQueue.main.async { self.loadTasks(showLoading: false) }
+                    }
+                }
+            )
+            completionHandler(true)
+        }
+        archiveAction.image = UIImage(systemName: "archivebox")
+        archiveAction.backgroundColor = UIColor.Sphinx.SphinxOrange
+        actions.append(archiveAction)
+
+        // Duplicate — always
+        let duplicateAction = UIContextualAction(style: .normal, title: "Duplicate") { [weak self] _, _, completionHandler in
+            guard let self else { completionHandler(false); return }
+            API.sharedInstance.duplicateTaskWithAuth(task: task, callback: { [weak self] _ in
+                DispatchQueue.main.async { self?.loadTasks(showLoading: false) }
+            }, errorCallback: {})
+            completionHandler(true)
+        }
+        duplicateAction.image = UIImage(systemName: "doc.on.doc")
+        duplicateAction.backgroundColor = UIColor.Sphinx.PrimaryBlue
+        actions.append(duplicateAction)
+
+        // Mark Complete — TODO or IN_PROGRESS only
+        if task.status == "TODO" || task.status == "IN_PROGRESS" {
+            let completeAction = UIContextualAction(style: .normal, title: "Complete") { [weak self] _, _, completionHandler in
                 guard let self else { completionHandler(false); return }
-                AlertHelper.showTwoOptionsAlert(
-                    title: "Archive Task",
-                    message: "Archive \"\(task.title)\"?",
-                    confirmButtonTitle: "Archive",
-                    confirm: {
-                        self.tasks.remove(at: indexPath.row)
-                        self.tableView.deleteRows(at: [indexPath], with: .automatic)
-                        API.sharedInstance.archiveTaskWithAuth(taskId: task.id) {
-                            DispatchQueue.main.async { self.loadTasks(showLoading: false) }
-                        } errorCallback: {
-                            DispatchQueue.main.async { self.loadTasks(showLoading: false) }
+                API.sharedInstance.updateTaskStatusWithAuth(taskId: task.id, status: "DONE", callback: { [weak self] in
+                    DispatchQueue.main.async {
+                        guard let self else { return }
+                        if self.tasks.indices.contains(indexPath.row) && self.tasks[indexPath.row].id == task.id {
+                            self.tasks[indexPath.row].status = "DONE"
+                            self.tableView.reloadRows(at: [indexPath], with: .none)
                         }
                     }
-                )
+                }, errorCallback: {})
                 completionHandler(true)
             }
-            archiveAction.image = UIImage(systemName: "archivebox")
-            archiveAction.backgroundColor = UIColor.Sphinx.SphinxOrange
-            return UISwipeActionsConfiguration(actions: [archiveAction])
+            completeAction.image = UIImage(systemName: "checkmark.circle")
+            completeAction.backgroundColor = UIColor.Sphinx.GreenBorder
+            actions.append(completeAction)
         }
+
+        // Start Task — TODO only
+        if task.status == "TODO" {
+            let startAction = UIContextualAction(style: .normal, title: "Start") { [weak self] _, _, completionHandler in
+                guard let self else { completionHandler(false); return }
+                API.sharedInstance.startTaskWithAuth(taskId: task.id, callback: { [weak self] in
+                    DispatchQueue.main.async {
+                        guard let self else { return }
+                        if self.tasks.indices.contains(indexPath.row) && self.tasks[indexPath.row].id == task.id {
+                            self.tasks[indexPath.row].status = "IN_PROGRESS"
+                            self.tableView.reloadRows(at: [indexPath], with: .none)
+                        }
+                    }
+                }, errorCallback: {})
+                completionHandler(true)
+            }
+            startAction.image = UIImage(systemName: "play.circle")
+            startAction.backgroundColor = UIColor.systemIndigo
+            actions.append(startAction)
+        }
+
+        return UISwipeActionsConfiguration(actions: actions)
     }
 }
 
@@ -249,6 +340,37 @@ extension WorkspaceTasksViewController: PaginationControlViewDelegate {
         currentPage = page
         loadTasks()
         tableView.setContentOffset(.zero, animated: false)
+    }
+}
+
+// MARK: - Task Creation
+
+extension WorkspaceTasksViewController {
+    func createButtonTapped() {
+        let isStakwork = workspace.slug == "stakwork"
+        let vc = CreateFeatureViewController.instantiateForTask(
+            workspaceId: workspace.id,
+            workspaceSlug: workspace.slug ?? "",
+            isStakwork: isStakwork
+        )
+        vc.delegate = self
+        present(vc, animated: true)
+    }
+}
+
+// MARK: - CreateFeatureViewControllerDelegate
+
+extension WorkspaceTasksViewController: CreateFeatureViewControllerDelegate {
+    func didCreateFeature(_ feature: HiveFeature) {} // no-op
+
+    func didCreateTask(_ task: WorkspaceTask) {
+        loadTasks(showLoading: false)
+        let chatVC = TaskChatViewController.instantiate(
+            task: task,
+            workspaceSlug: workspace.slug ?? "",
+            workspaceId: workspace.id
+        )
+        navigationController?.pushViewController(chatVC, animated: true)
     }
 }
 

@@ -7,7 +7,7 @@ import UIKit
 import CoreData
 
 
-protocol DashboardFeedsListContainerViewControllerDelegate: AnyObject {
+@MainActor protocol DashboardFeedsListContainerViewControllerDelegate: AnyObject {
 
     func viewController(
         _ viewController: UIViewController,
@@ -100,43 +100,43 @@ class DashboardFeedsContainerViewController: UIViewController {
     internal lazy var allTribeFeedsCollectionViewController: AllTribeFeedsCollectionViewController = {
         AllTribeFeedsCollectionViewController.instantiate(
             managedObjectContext: managedObjectContext,
-            onCellSelected: handleAllFeedsCellSelection(_:),
-            onDownloadedItemSelected: handleDownloadedItemCellSelection(_:_:),
-            onRecommendationSelected: handleRecommendationSelection(_:_:),
-            onNewResultsFetched: handleNewResultsFetch(_:),
-            onContentScrolled: handleFeedScroll(scrollView:)
+            onCellSelected: { @MainActor [weak self] x in self?.handleAllFeedsCellSelection(x) },
+            onDownloadedItemSelected: { @MainActor [weak self] x, y in self?.handleDownloadedItemCellSelection(x, y) },
+            onRecommendationSelected: { @MainActor [weak self] x, y in self?.handleRecommendationSelection(x, y) },
+            onNewResultsFetched: { @MainActor [weak self] x in self?.handleNewResultsFetch(x) },
+            onContentScrolled: { @MainActor [weak self] sv in self?.handleFeedScroll(scrollView: sv) }
         )
     }()
-    
-    
+
+
     internal lazy var podcastFeedCollectionViewController: PodcastFeedCollectionViewController = {
         PodcastFeedCollectionViewController.instantiate(
             managedObjectContext: managedObjectContext,
-            onPodcastEpisodeCellSelected: handlePodcastEpisodeCellSelection(_:),
-            onSubscribedPodcastFeedCellSelected: handlePodcastFeedCellSelection(_:),
-            onNewResultsFetched: handleNewResultsFetch(_:),
-            onContentScrolled: handleFeedScroll(scrollView:)
+            onPodcastEpisodeCellSelected: { @MainActor [weak self] x in self?.handlePodcastEpisodeCellSelection(x) },
+            onSubscribedPodcastFeedCellSelected: { @MainActor [weak self] x in self?.handlePodcastFeedCellSelection(x) },
+            onNewResultsFetched: { @MainActor [weak self] x in self?.handleNewResultsFetch(x) },
+            onContentScrolled: { @MainActor [weak self] sv in self?.handleFeedScroll(scrollView: sv) }
         )
     }()
-    
-    
+
+
     internal lazy var videoFeedCollectionViewController: DashboardVideoFeedCollectionViewController = {
         DashboardVideoFeedCollectionViewController.instantiate(
             managedObjectContext: managedObjectContext,
-            onVideoEpisodeCellSelected: handleVideoEpisodeCellSelection(_:),
-            onVideoFeedCellSelected: handleVideoFeedCellSelection(_:),
-            onNewResultsFetched: handleNewResultsFetch(_:),
-            onContentScrolled: handleFeedScroll(scrollView:)
+            onVideoEpisodeCellSelected: { @MainActor [weak self] x in self?.handleVideoEpisodeCellSelection(x) },
+            onVideoFeedCellSelected: { @MainActor [weak self] x in self?.handleVideoFeedCellSelection(x) },
+            onNewResultsFetched: { @MainActor [weak self] x in self?.handleNewResultsFetch(x) },
+            onContentScrolled: { @MainActor [weak self] sv in self?.handleFeedScroll(scrollView: sv) }
         )
     }()
-    
+
     internal lazy var newsletterFeedCollectionViewController: DashboardNewsletterFeedCollectionViewController = {
         DashboardNewsletterFeedCollectionViewController.instantiate(
             managedObjectContext: managedObjectContext,
-            onNewsletterItemCellSelected: handleNewsletterItemCellSelection(_:),
-            onNewsletterFeedCellSelected: handleNewsletterFeedCellSelection(_:),
-            onNewResultsFetched: handleNewResultsFetch(_:),
-            onContentScrolled: handleFeedScroll(scrollView:)
+            onNewsletterItemCellSelected: { @MainActor [weak self] x in self?.handleNewsletterItemCellSelection(x) },
+            onNewsletterFeedCellSelected: { @MainActor [weak self] x in self?.handleNewsletterFeedCellSelection(x) },
+            onNewResultsFetched: { @MainActor [weak self] x in self?.handleNewResultsFetch(x) },
+            onContentScrolled: { @MainActor [weak self] sv in self?.handleFeedScroll(scrollView: sv) }
         )
     }()
     
@@ -180,8 +180,8 @@ class DashboardFeedsContainerViewController: UIViewController {
         
         DelayPerformedHelper.performAfterDelay(
             seconds: 0.5,
-            completion: {
-                self.isLoading = false
+            completion: { [weak self] in
+                Task { @MainActor [weak self] in self?.isLoading = false }
             }
         )
     }

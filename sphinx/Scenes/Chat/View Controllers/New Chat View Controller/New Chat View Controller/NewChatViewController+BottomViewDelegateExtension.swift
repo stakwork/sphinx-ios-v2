@@ -20,6 +20,11 @@ extension NewChatViewController : ChatMessageTextFieldViewDelegate {
         type: Int,
         completion: @escaping (Bool, String?) -> ()
     ) {
+        if isAgentChat {
+            handleAgentMessage(text: text, completion: completion)
+            return
+        }
+        
         bottomView.resetReplyView()
         
         ChatTrackingHandler.shared.deleteReplyableMessage(with: chat?.id)

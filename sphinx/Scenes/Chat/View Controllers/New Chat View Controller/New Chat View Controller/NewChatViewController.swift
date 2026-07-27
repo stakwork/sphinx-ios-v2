@@ -9,8 +9,9 @@
 import UIKit
 import CoreData
 
-protocol NewChatViewControllerDelegate: class {
+@MainActor protocol NewChatViewControllerDelegate: AnyObject {
     func shouldReloadRowFor(chatId: Int)
+    func shouldReloadChatList()
 }
 
 class NewChatViewController: NewKeyboardHandlerViewController {
@@ -31,6 +32,14 @@ class NewChatViewController: NewKeyboardHandlerViewController {
     var chat: Chat?
     var threadUUID: String? = nil
     var owner: UserContact!
+    var isAgentChat: Bool = false
+    
+    /// Processing bar shown above the input while the Sphinx Agent is awaiting a response.
+    var agentProcessingBar: WorkflowStatusView?
+    var agentBarHeightConstraint: NSLayoutConstraint?
+    var agentProcessingBarTimer: Timer?
+    
+    private var hadDraftOnAppear: Bool = false
     
     var isThread: Bool {
         get {
@@ -48,6 +57,12 @@ class NewChatViewController: NewKeyboardHandlerViewController {
     
     var chatTableDataSource: NewChatTableDataSource? = nil
     var chatMentionAutocompleteDataSource : ChatMentionAutocompleteDataSource? = nil
+
+    // Live call banner state (managed by NewChatViewController+LiveCallBanner)
+    var bannerRooms: Set<String> = []
+    var liveCallRooms: [String: String] = [:]
+    var liveCallRoomDates: [String: Date] = [:]
+    var isObservingVideoState: Bool = false
     let messageBubbleHelper = NewMessageBubbleHelper()
     
     let newMessageBubbleHelper = NewMessageBubbleHelper()
@@ -100,6 +115,7 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         }
         
         viewController.owner = UserContact.getOwner()
+        viewController.isAgentChat = viewController.contact?.isAgent == true
         
         viewController.threadUUID = threadUUID
         viewController.chatListViewModel = chatListViewModel
@@ -125,6 +141,12 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         configureFetchResultsController()
         configureTableView()
         initializeMacros()
+        setupAgentProcessingBar()
+        setupProposalCardObservers()
+
+        // Install the live-call banner notification observer.
+        // Banner polling itself is started in viewWillAppear once the data source is ready.
+        installActiveCallBannerIfNeeded()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -132,6 +154,19 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         
         headerView.checkRoute()
         chatTableDataSource?.startListeningToResultsController()
+        
+        let existingDraft = ChatTrackingHandler.shared.getOngoingMessageFor(chatId: chat?.id)
+        hadDraftOnAppear = existingDraft != nil && !existingDraft!.isEmpty
+        
+//        if isAgentChat && AIAgentManager.sharedInstance.isProcessing {
+//            showAgentProcessingBar()
+//        }
+        
+        restoreProposalCardIfNeeded()
+
+        // Start banner polling whenever the chat becomes visible.
+        // Guarded inside startLiveCallBannerPolling to public-group, non-thread chats.
+        startLiveCallBannerPolling()
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -140,6 +175,9 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         fetchTribeData()
         loadReplyableMeesage()
         
+        if isAgentChat {
+            insertIntroMessageIfNeeded()
+        }
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -147,13 +185,29 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         
         if self.isMovingFromParent {
             chat?.setChatMessagesAsSeen()
+            // Clean up web app child VC if currently embedded (session manager retains the VC)
+            if !webAppContainerView.isHidden, let webAppVC = webAppVC {
+                removeChildVC(child: webAppVC)
+            }
+            
+            let currentDraft = ChatTrackingHandler.shared.getOngoingMessageFor(chatId: chat?.id)
+            let hasDraftNow = currentDraft != nil && !currentDraft!.isEmpty
+            if hasDraftNow || hadDraftOnAppear {
+                delegate?.shouldReloadChatList()
+            }
         }
     }
     
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
+
+        // Stop banner polling whenever the chat disappears (covers both chat-switch
+        // and full pop-from-parent).  Safe teardown: does NOT call unsubscribeAllRooms(),
+        // preserving the shared socket manager and cell participant stores.
+        stopLiveCallBannerPolling()
         
         if self.isMovingFromParent {
+            chatTableDataSource?.unsubscribeAllRooms()
             chatTableDataSource?.saveSnapshotCurrentState()
             chatTableDataSource?.stopListeningToResultsController()
 
@@ -163,7 +217,7 @@ class NewChatViewController: NewKeyboardHandlerViewController {
                 return
             }
             
-            if let chat = chat {
+            if let chat = chat, !isAgentChat {
                 SphinxOnionManager.sharedInstance.batchDeleteOldMessagesInBackground(forChat: chat)
             }
         }
@@ -227,6 +281,56 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         chatTableViewHeightConstraint.constant = tableHeight
         chatTableView.layoutIfNeeded()
     }
+
+    // MARK: - Agent Processing Bar
+
+    func setupAgentProcessingBar() {
+        guard isAgentChat else { return }
+        let bar = WorkflowStatusView()
+        bar.backgroundColor = UIColor.Sphinx.Body
+        view.addSubview(bar)
+        bar.translatesAutoresizingMaskIntoConstraints = false
+        let heightConstraint = bar.heightAnchor.constraint(equalToConstant: 0)
+        NSLayoutConstraint.activate([
+            bar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            bar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            bar.bottomAnchor.constraint(equalTo: bottomView.topAnchor),
+            heightConstraint
+        ])
+        agentBarHeightConstraint = heightConstraint
+        agentProcessingBar = bar
+    }
+
+    func showAgentProcessingBar() {
+        guard let bar = agentProcessingBar,
+              let heightConstraint = agentBarHeightConstraint,
+              heightConstraint.constant == 0 else { return }
+        bar.status = .IN_PROGRESS
+        heightConstraint.constant = 32
+        bar.show(animated: true)
+        UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
+        chatTableView.contentInset.top += 32
+        chatTableView.verticalScrollIndicatorInsets.top += 32
+        // 5-minute auto-dismiss timeout
+        agentProcessingBarTimer?.invalidate()
+        agentProcessingBarTimer = Timer.scheduledTimer(withTimeInterval: 300, repeats: false) { [weak self] _ in
+            DispatchQueue.main.async { self?.hideAgentProcessingBar() }
+        }
+    }
+
+    func hideAgentProcessingBar() {
+        agentProcessingBarTimer?.invalidate()
+        agentProcessingBarTimer = nil
+        guard let bar = agentProcessingBar,
+              let heightConstraint = agentBarHeightConstraint,
+              heightConstraint.constant > 0 else { return }
+        heightConstraint.constant = 0
+        bar.hide(animated: true)
+        UIView.animate(withDuration: 0.2) { self.view.layoutIfNeeded() }
+        let baseInset = Constants.kChatTableContentInset
+        chatTableView.contentInset.top = max(baseInset, chatTableView.contentInset.top - 32)
+        chatTableView.verticalScrollIndicatorInsets.top = max(0, chatTableView.verticalScrollIndicatorInsets.top - 32)
+    }
     
     func setupLayouts() {
         headerView.superview?.bringSubviewToFront(headerView)
@@ -235,6 +339,12 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         
         if !isThread {
             headerView.addShadow(location: .bottom, color: UIColor.black, opacity: 0.1)
+        }
+        
+        // Re-compute table height whenever the live-call banner stack grows or shrinks.
+        headerView.onBannerStackHeightChanged = { [weak self] in
+            self?.setTableViewHeight()
+            self?.shouldAdjustTableViewTopInset()
         }
     }
     
@@ -250,6 +360,11 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         configureThreadHeaderAndBottomView()
         
         bottomView.updateFieldStateFrom(chat)
+        
+        if isAgentChat {
+            bottomView.configureForAgentChat()
+        }
+        
         showPendingApprovalMessage()
 
         updateEmptyView()
@@ -298,7 +413,7 @@ class NewChatViewController: NewKeyboardHandlerViewController {
         DispatchQueue.main.async {
             self.emptyAvatarPlaceholderView.configureWith(chat: chat)
             self.emptyAvatarPlaceholderView.isHidden = false
-            self.bottomView.isHidden = false
+            self.bottomView.isHidden = !self.webAppContainerView.isHidden
         }
     }
 
@@ -315,13 +430,17 @@ class NewChatViewController: NewKeyboardHandlerViewController {
     }
 
     func updateEmptyView() {
+        guard !isAgentChat else { return }
         if shouldShowPendingChat {
             setupPendingChatPlaceholder()
-        } else if chat?.lastMessage == nil {
-            setupEmptyChatPlaceholder()
         } else {
-            emptyAvatarPlaceholderView.isHidden = true
-            bottomView.isHidden = false
+            chat?.updateLastMessage()
+            if chat?.lastMessage == nil {
+                setupEmptyChatPlaceholder()
+            } else {
+                emptyAvatarPlaceholderView.isHidden = true
+                bottomView.isHidden = !webAppContainerView.isHidden
+            }
         }
     }
 }

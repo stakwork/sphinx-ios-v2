@@ -8,7 +8,7 @@
 import UIKit
 import AVFoundation
 
-@objc protocol QRCodeScannerDelegate: class {
+@MainActor @objc protocol QRCodeScannerDelegate: class {
     @objc optional func didScanQRCode(string: String)
     @objc optional func willDismissPresentedView(paymentCreated: Bool)
     @objc optional func didScanDeepLink()

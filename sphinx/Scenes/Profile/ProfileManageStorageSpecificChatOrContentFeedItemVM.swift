@@ -375,7 +375,9 @@ extension ProfileManageStorageSpecificChatOrContentFeedItemVM : MediaStorageSour
                     self.handleConfirmDelete(index: index)
                 },
                 failureCompletion: {
-                    AlertHelper.showAlert(title: "Error", message: "Could not delete the content. Please try again later.")
+                    DispatchQueue.main.async {
+                        AlertHelper.showAlert(title: "Error", message: "Could not delete the content. Please try again later.")
+                    }
                 }
             )
         }

@@ -254,9 +254,10 @@ extension GroupMembersDataSource : GroupMemberCellDelegate {
             type: type
         )
         
-        DelayPerformedHelper.performAfterDelay(seconds: 1.0, completion: {
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
             completion(chat)
-        })
+        }
     }
     
     func showErrorAlert() {

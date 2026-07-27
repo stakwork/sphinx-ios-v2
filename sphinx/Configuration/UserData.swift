@@ -12,7 +12,7 @@ class UserData {
     
     class var sharedInstance : UserData {
         struct Static {
-            static let instance = UserData()
+            nonisolated(unsafe) static let instance = UserData()
         }
         return Static.instance
     }
@@ -24,7 +24,7 @@ class UserData {
     let keychainManager = KeychainManager.sharedInstance
     
     public static let kMinimumMemoryFootprintGB : Int = 4
-    public static var kMaximumMemoryFootprintGB : Int = {
+    nonisolated(unsafe) public static var kMaximumMemoryFootprintGB : Int = {
         if let max = getTotalDiskStorage(){
             return Int(Double(max)/1e9)
         }
@@ -102,11 +102,11 @@ class UserData {
         return false
     }
     
-    func getPINNeverOverride() -> Bool{
+    @MainActor func getPINNeverOverride() -> Bool{
         return self.getPINHours() == Constants.kMaxPinTimeoutValue
     }
     
-    func getPINHours() -> Int {
+    @MainActor func getPINHours() -> Int {
         return UserDefaults.Keys.pinHours.get(defaultValue: Constants.kMaxPinTimeoutValue)
     }
     
@@ -152,12 +152,31 @@ class UserData {
             SphinxOnionManager.sharedInstance.appSessionPin = pin
             
             self.save(walletMnemonic: existingMnemonic) //update mnemonic encryption
+            
+            // Keep auto-login PIN in sync if the feature is currently active
+            if getAutoLoginPin() != nil {
+                let biometricEnabled = UserDefaults.Keys.biometricAuthEnabled.get(defaultValue: false)
+                let neverRequire = UserDefaults.Keys.pinHours.get(defaultValue: Constants.kMaxPinTimeoutValue) == Constants.kMaxPinTimeoutValue
+                if biometricEnabled || neverRequire {
+                    saveAutoLoginPin(pin: pin)
+                }
+            }
         }
     }
     
     func getAppPin() -> String? {
         if let appPin = SphinxOnionManager.sharedInstance.appSessionPin {
             return appPin
+        }
+        // Silently restore session PIN from keychain for auto-login users
+        if let autoPin = getAutoLoginPin() {
+            let biometricEnabled = UserDefaults.Keys.biometricAuthEnabled.get(defaultValue: false)
+            let neverRequire = UserDefaults.Keys.pinHours.get(defaultValue: Constants.kMaxPinTimeoutValue) == Constants.kMaxPinTimeoutValue
+            if biometricEnabled || neverRequire {
+                SphinxOnionManager.sharedInstance.appSessionPin = autoPin
+                print("[AutoLogin] Restoring appSessionPin from keychain")
+                return autoPin
+            }
         }
         return nil
     }
@@ -208,6 +227,25 @@ class UserData {
         return nil
     }
     
+    func save(aiAgentValue: String, for key: KeychainManager.KeychainKeys) {
+        if let pin = getAppPin(),
+           let encryptedValue = SymmetricEncryptionManager.sharedInstance.encryptString(text: aiAgentValue, key: pin),
+           !encryptedValue.isEmpty {
+            let composedKey = "\(accountUUID).\(key.rawValue)"
+            let _ = keychainManager.save(value: encryptedValue, forComposedKey: composedKey)
+        }
+    }
+    
+    func getAIAgentValue(with key: KeychainManager.KeychainKeys) -> String? {
+        if let pin = getAppPin() {
+            let composedKey = "\(accountUUID).\(key.rawValue)"
+            if let encryptedValue = keychainManager.getValueFor(composedKey: composedKey), !encryptedValue.isEmpty {
+                return SymmetricEncryptionManager.sharedInstance.decryptString(text: encryptedValue, key: pin)
+            }
+        }
+        return nil
+    }
+    
     func save(balance: UInt64) {
         let _ = keychainManager.save(
             value: String(balance),
@@ -240,6 +278,20 @@ class UserData {
         return ""
     }
 
+    
+    func saveAutoLoginPin(pin: String) {
+        let _ = keychainManager.save(value: pin, forKey: KeychainManager.KeychainKeys.autoLoginPin.rawValue)
+        print("[AutoLogin] PIN saved to keychain")
+    }
+    
+    func getAutoLoginPin() -> String? {
+        return keychainManager.getValueFor(key: KeychainManager.KeychainKeys.autoLoginPin.rawValue)
+    }
+    
+    func clearAutoLoginPin() {
+        let _ = keychainManager.deleteValueFor(key: KeychainManager.KeychainKeys.autoLoginPin.rawValue)
+        print("[AutoLogin] PIN cleared from keychain")
+    }
     
     func getStoredPin() -> String?{
         let pin = getValueFor(keychainKey: KeychainManager.KeychainKeys.pin, userDefaultKey: UserDefaults.Keys.defaultPIN)

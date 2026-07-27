@@ -11,7 +11,7 @@ import CoreData
 import SwiftyJSON
 
 @objc(UserContact)
-public class UserContact: NSManagedObject {
+public class UserContact: NSManagedObject, @unchecked Sendable {
     
     enum Status: Int {
         case Pending
@@ -297,6 +297,13 @@ public class UserContact: NSManagedObject {
         let sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]
         let contact:UserContact? = CoreDataManager.sharedManager.getObjectOfTypeWith(predicate: predicate, sortDescriptors: sortDescriptors, entityName: "UserContact")
         return contact
+    }
+    
+    public static func agentContact() -> UserContact? {
+        let fetchRequest: NSFetchRequest<UserContact> = UserContact.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "isAgent == true")
+        fetchRequest.fetchLimit = 1
+        return (try? CoreDataManager.sharedManager.persistentContainer.viewContext.fetch(fetchRequest))?.first
     }
     
     public static func getContactWithInviteCode(

@@ -11,7 +11,7 @@ import LocalAuthentication
 
 class BiometricAuthenticationHelper {
     func canUseBiometricAuthentication() -> Bool {
-        return LAContext().biometricType != .none
+        return LAContext().biometricType != .none && SphinxOnionManager.sharedInstance.appSessionPin != nil
     }
     
     func authenticationAction(policy: LAPolicy = .deviceOwnerAuthenticationWithBiometrics, completion: @escaping (Bool) -> ()) {

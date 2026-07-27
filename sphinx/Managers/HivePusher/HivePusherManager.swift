@@ -10,7 +10,9 @@ import Foundation
 import PusherSwift
 import SwiftyJSON
 
-protocol HivePusherDelegate: AnyObject {
+extension ConnectionState: @retroactive @unchecked Sendable {}
+
+@MainActor protocol HivePusherDelegate: AnyObject {
     func featureUpdateReceived(featureId: String)
     func newMessageReceived(_ message: HiveChatMessage)
     func workflowStatusChanged(status: WorkflowStatus)
@@ -33,10 +35,10 @@ extension HivePusherDelegate {
     func prStatusChanged(taskId: String?, prNumber: Int, state: String, artifactStatus: String, prUrl: String?, problemDetails: String?) {}
 }
 
-class HivePusherManager: NSObject {
-    static let shared = HivePusherManager()
+class HivePusherManager: NSObject, @unchecked Sendable {
+    nonisolated(unsafe) static let shared = HivePusherManager()
 
-    weak var delegate: HivePusherDelegate?
+    nonisolated(unsafe) weak var delegate: HivePusherDelegate?
 
     private var fetchWorkItem: DispatchWorkItem?
 
@@ -138,6 +140,30 @@ class HivePusherManager: NSObject {
         print("[HivePusher] Disconnected from Pusher")
     }
 
+    /// Closes the Pusher socket without clearing stored channel IDs.
+    /// Call when entering background so the socket is not held open at suspension.
+    func pauseForBackground() {
+        pusher?.disconnect()
+        pusher = nil
+        print("[HivePusher] Paused for background")
+    }
+
+    /// Reconnects Pusher and resubscribes to whatever channels were active before
+    /// `pauseForBackground()` was called. No-ops if nothing was connected.
+    func resumeFromBackground() {
+        guard featureId != nil || taskId != nil || workspaceId != nil || featureWorkspaceId != nil else {
+            return
+        }
+        setupPusher()
+        if let id = featureId        { subscribeToFeatureChannel(id) }
+        if let id = taskId           { subscribeToTaskChannel(id) }
+        if let slug = workspaceSlug  { subscribeToWorkspaceChannel(slug) }
+        if let id = workspaceId      { subscribeToWorkspaceTaskChannel(id) }
+        if let id = featureWorkspaceId { subscribeToWorkspaceTaskChannel(id) }
+        for id in featureTaskIds     { subscribeToTaskChannel(id) }
+        print("[HivePusher] Resumed from background")
+    }
+
     func subscribeToFeatureTasks(_ taskIds: [String]) {
         let newIds = Set(taskIds)
         for id in featureTaskIds.subtracting(newIds) {
@@ -158,6 +184,14 @@ class HivePusherManager: NSObject {
 
     func isConnectedToWorkspace(id: String) -> Bool {
         return isConnected && workspaceId == id
+    }
+
+    func isConnectedToFeature(id: String) -> Bool {
+        return isConnected && featureId == id
+    }
+
+    func isConnectedToTask(id: String) -> Bool {
+        return isConnected && taskId == id
     }
 
     var connectionState: ConnectionState? {
@@ -335,7 +369,9 @@ class HivePusherManager: NSObject {
 
         fetchWorkItem?.cancel()
         let workItem = DispatchWorkItem { [weak self] in
-            self?.delegate?.featureUpdateReceived(featureId: featureId)
+            Task { @MainActor [weak self] in
+                self?.delegate?.featureUpdateReceived(featureId: featureId)
+            }
         }
         fetchWorkItem = workItem
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: workItem)
@@ -360,7 +396,7 @@ class HivePusherManager: NSObject {
                     print("[HivePusher] fetchChatMessage returned nil for id: \(trimmedId)")
                     return
                 }
-                DispatchQueue.main.async {
+                DispatchQueue.main.async { [weak self] in
                     self?.delegate?.newMessageReceived(message)
                 }
             },

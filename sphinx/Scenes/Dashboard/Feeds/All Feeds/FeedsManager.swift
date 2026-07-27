@@ -10,11 +10,11 @@ import UIKit
 import CoreData
 import AVFoundation
 
-class FeedsManager : NSObject {
-    
+class FeedsManager : NSObject, @unchecked Sendable {
+
     class var sharedInstance : FeedsManager {
         struct Static {
-            static let instance = FeedsManager()
+            nonisolated(unsafe) static let instance = FeedsManager()
         }
         return Static.instance
     }
@@ -394,7 +394,7 @@ class FeedsManager : NSObject {
                     
                     ContentFeed.fetchFeedItems(
                         feedUrl: url.absoluteString,
-                        contentFeedId: feed.id,
+                        feedId: feed.id,
                         context: context,
                         completion: { _ in
                             dispatchSemaphore.signal()
@@ -420,7 +420,7 @@ class FeedsManager : NSObject {
             bgContext.perform {
                 ContentFeed.fetchFeedItems(
                     feedUrl: feedUrl,
-                    contentFeedId: feedId,
+                    feedId: feedId,
                     context: bgContext,
                     completion: { result in
                         if case .success(_) = result {
@@ -450,7 +450,7 @@ class FeedsManager : NSObject {
     
     func loadCurrentEpisodeDurationFor(
         feedId: String,
-        completion: @escaping () -> ()
+        completion: @escaping @Sendable () -> ()
     ) {
         if let feed = ContentFeed.getFeedById(feedId: feedId) {
             
@@ -512,7 +512,7 @@ class FeedsManager : NSObject {
     }
     
     //Navigate methods
-    func goToContentFeed(vc: UIViewController) -> Bool {
+    @MainActor func goToContentFeed(vc: UIViewController) -> Bool {
         if let shareContentQuery = UserDefaults.Keys.shareContentQuery.get(defaultValue: ""), shareContentQuery != "" {
             UserDefaults.Keys.shareContentQuery.removeValue()
             
@@ -527,57 +527,59 @@ class FeedsManager : NSObject {
                let feedURL = extractContentDeepLinkMetaData(forKey: "feedURL", components: components){
                 
                 //2. Feed it forward to instantiate the correct VC
-                lookupContentFeedAndItem(feedID: feedID, itemID: itemID, feedURL: feedURL, completion: { feed,item in
-                    if let valid_feed = feed as? PodcastFeed,
-                       let valid_episode = item as? PodcastEpisode,
-                        let drvc = vc as? DashboardRootViewController {
-                        
-                        let podcastFeedVC = NewPodcastPlayerViewController.instantiate(
-                            podcast: valid_feed,
-                            delegate: drvc,
-                            boostDelegate: drvc,
-                            fromDashboard: true
-                        )
-                        
-                        if let currentTime = self.extractContentDeepLinkMetaData(forKey: "atTime", components: components) {
-                            valid_episode.currentTime = Int(currentTime)
-                        }
-                        
-                        valid_feed.currentEpisodeId = valid_episode.itemID
-                        
-                        let navController = UINavigationController()
-                        
-                        navController.viewControllers = [podcastFeedVC]
-                        navController.modalPresentationStyle = .automatic
-                        navController.isNavigationBarHidden = true
-                        drvc.navigationController?.present(navController, animated: true)
-                    }
-                    else if let _ = feed as? VideoFeed,
-                    let video = item as? Video,
-                    let drvc = vc as? DashboardRootViewController {
-                        
-                        let viewController = VideoFeedEpisodePlayerContainerViewController
-                            .instantiate(
-                                videoPlayerEpisode: video,
-                                dismissButtonStyle: .backArrow,
+                lookupContentFeedAndItem(feedID: feedID, itemID: itemID, feedURL: feedURL, completion: { feed, item in
+                    Task { @MainActor in
+                        if let valid_feed = feed as? PodcastFeed,
+                           let valid_episode = item as? PodcastEpisode,
+                            let drvc = vc as? DashboardRootViewController {
+
+                            let podcastFeedVC = NewPodcastPlayerViewController.instantiate(
+                                podcast: valid_feed,
                                 delegate: drvc,
-                                boostDelegate: drvc
+                                boostDelegate: drvc,
+                                fromDashboard: true
                             )
-                        
-                        let timestamp = Int(self.extractContentDeepLinkMetaData(forKey: "atTime", components: components) ?? "-1")
-                        viewController.deeplinkedTimestamp = timestamp
-                        viewController.modalPresentationStyle = .automatic
-                        
-                        drvc.navigationController?
-                            .present(viewController, animated: true)
-                    }
-                    else if let _ = feed as? NewsletterFeed,
-                            let newsletter = item as? NewsletterItem,
-                            let drvc = vc as? DashboardRootViewController{
-                        drvc.presentItemWebView(for: newsletter)
-                    }
-                    else{
-                        AlertHelper.showAlert(title: "Error", message: "There was an issue with the link.")
+
+                            if let currentTime = self.extractContentDeepLinkMetaData(forKey: "atTime", components: components) {
+                                valid_episode.currentTime = Int(currentTime)
+                            }
+
+                            valid_feed.currentEpisodeId = valid_episode.itemID
+
+                            let navController = UINavigationController()
+
+                            navController.viewControllers = [podcastFeedVC]
+                            navController.modalPresentationStyle = .automatic
+                            navController.isNavigationBarHidden = true
+                            drvc.navigationController?.present(navController, animated: true)
+                        }
+                        else if let _ = feed as? VideoFeed,
+                        let video = item as? Video,
+                        let drvc = vc as? DashboardRootViewController {
+
+                            let viewController = VideoFeedEpisodePlayerContainerViewController
+                                .instantiate(
+                                    videoPlayerEpisode: video,
+                                    dismissButtonStyle: .backArrow,
+                                    delegate: drvc,
+                                    boostDelegate: drvc
+                                )
+
+                            let timestamp = Int(self.extractContentDeepLinkMetaData(forKey: "atTime", components: components) ?? "-1")
+                            viewController.deeplinkedTimestamp = timestamp
+                            viewController.modalPresentationStyle = .automatic
+
+                            drvc.navigationController?
+                                .present(viewController, animated: true)
+                        }
+                        else if let _ = feed as? NewsletterFeed,
+                                let newsletter = item as? NewsletterItem,
+                                let drvc = vc as? DashboardRootViewController {
+                            drvc.presentItemWebView(for: newsletter)
+                        }
+                        else {
+                            AlertHelper.showAlert(title: "Error", message: "There was an issue with the link.")
+                        }
                     }
                 })
                 

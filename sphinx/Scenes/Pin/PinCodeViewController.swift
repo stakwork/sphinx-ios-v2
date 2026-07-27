@@ -15,6 +15,7 @@ class PinCodeViewController: UIViewController {
     @IBOutlet var dotViews: [UIView]!
     @IBOutlet var keyPadButtons: [UIButton]!
     @IBOutlet weak var subtitleLabel: UILabel!
+    @IBOutlet weak var biometricButton: UIButton!
     
     @IBOutlet weak var loadingWheel: UIActivityIndicatorView!
     
@@ -48,7 +49,7 @@ class PinCodeViewController: UIViewController {
         
         reloadDots()
         configureButtons()
-        
+        setupBiometricButtonIfNeeded()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -185,25 +186,32 @@ class PinCodeViewController: UIViewController {
         reloadDots()
     }
     
-    func shouldUseBiometricAuthentication() -> Bool {
-//        let isNodeSet = UserData.sharedInstance.getAppPin() != nil
-//        
-//        return authenticationHelper.canUseBiometricAuthentication() && isNodeSet && doneCompletion == nil
-        return false
+    func setupBiometricButtonIfNeeded() {
+        guard authenticationHelper.canUseBiometricAuthentication(), doneCompletion == nil else { return }
+        
+        let biometricType = LAContext().biometricType
+        let iconName = biometricType == .faceID ? "faceid" : "touchid"
+        guard let icon = UIImage(systemName: iconName) else { return }
+        
+        biometricButton.setImage(icon, for: .normal)
+        biometricButton.addTarget(self, action: #selector(biometricButtonTouched), for: .touchUpInside)
+        biometricButton.isHidden = false
+    }
+    
+    @objc func biometricButtonTouched() {
+        biometricAction()
     }
     
     func biometricAction() {
-//        if !shouldUseBiometricAuthentication() || didStartTyping || GroupsPinManager.sharedInstance.shouldAvoidFaceID {
-//            return
-//        }
-//        
-//        authenticationHelper.authenticationAction() { success in
-//            if success {
-//                if let pin =  UserData.sharedInstance.getAppPin() {
-//                    self.setPinArray(pin: pin)
-//                    self.doneButtonTouched()
-//                }
-//            }
-//        }
+        guard authenticationHelper.canUseBiometricAuthentication(), doneCompletion == nil else { return }
+        
+        authenticationHelper.authenticationAction(policy: .deviceOwnerAuthenticationWithBiometrics) { [weak self] success in
+            guard let self = self else { return }
+            if success {
+                WindowsManager.sharedInstance.removeCoveringWindow()
+                self.loggingCompletion?()
+            }
+            // On failure: do nothing, user stays on PIN screen
+        }
     }
 }

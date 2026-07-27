@@ -11,9 +11,9 @@ import RNCryptor
 
 class SymmetricEncryptionManager {
 
-    class var sharedInstance : SymmetricEncryptionManager {
+    nonisolated(unsafe) class var sharedInstance : SymmetricEncryptionManager {
         struct Static {
-            static let instance = SymmetricEncryptionManager()
+            nonisolated(unsafe) static let instance = SymmetricEncryptionManager()
         }
         return Static.instance
     }

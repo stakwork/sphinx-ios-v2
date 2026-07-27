@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol GroupMemberCellDelegate: class {
+@MainActor protocol GroupMemberCellDelegate: class {
     func didKickContact(contact: GroupAllContactsDataSource.GroupContact, cell: UITableViewCell)
     func shouldApproveMember(_ contact: GroupAllContactsDataSource.GroupContact, requestMessage: TransactionMessage)
     func shouldRejectMember(_ contact: GroupAllContactsDataSource.GroupContact, requestMessage: TransactionMessage)
@@ -40,19 +40,20 @@ class GroupContactTableViewCell: SwipableCell {
     
     override func awakeFromNib() {
         super.awakeFromNib()
-        
-        contactImageView.contentMode = .scaleAspectFill
-        contactImageView.backgroundColor = UIColor.Sphinx.OldReceivedMsgBG
-        contactImageView.layer.cornerRadius = contactImageView.frame.size.height / 2
-        contactImageView.clipsToBounds = true
-        
-        contactInitialsLabel.layer.cornerRadius = contactInitialsLabel.frame.size.height / 2
-        contactInitialsLabel.clipsToBounds = true
-        
-        declineButton.layer.cornerRadius = declineButton.frame.size.height / 2
-        acceptButton.layer.cornerRadius = acceptButton.frame.size.height / 2
-        
-        approveButtonsContainer.isHidden = false
+        MainActor.assumeIsolated {
+            contactImageView.contentMode = .scaleAspectFill
+            contactImageView.backgroundColor = UIColor.Sphinx.OldReceivedMsgBG
+            contactImageView.layer.cornerRadius = contactImageView.frame.size.height / 2
+            contactImageView.clipsToBounds = true
+
+            contactInitialsLabel.layer.cornerRadius = contactInitialsLabel.frame.size.height / 2
+            contactInitialsLabel.clipsToBounds = true
+
+            declineButton.layer.cornerRadius = declineButton.frame.size.height / 2
+            acceptButton.layer.cornerRadius = acceptButton.frame.size.height / 2
+
+            approveButtonsContainer.isHidden = false
+        }
     }
 
     override func setSelected(_ selected: Bool, animated: Bool) {

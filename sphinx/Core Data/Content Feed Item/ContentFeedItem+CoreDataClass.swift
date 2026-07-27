@@ -10,7 +10,7 @@ import SwiftyJSON
 
 
 @objc(ContentFeedItem)
-public final class ContentFeedItem: NSManagedObject {
+public final class ContentFeedItem: NSManagedObject, @unchecked Sendable {
     
     public static func createObjectFrom(
         json: JSON,

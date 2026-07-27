@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol WorkspacesViewControllerDelegate: AnyObject {
+@MainActor protocol WorkspacesViewControllerDelegate: AnyObject {
     func viewControllerContentScrolled(scrollView: UIScrollView)
     func didSelectWorkspace(_ workspace: Workspace)
 }
@@ -24,6 +24,8 @@ class WorkspacesViewController: UIViewController {
     private var searchTerm: String? = nil
 
     private let refreshControl = UIRefreshControl()
+
+    private var loadFailed = false
 
     private var isLoading = false {
         didSet {
@@ -132,12 +134,13 @@ class WorkspacesViewController: UIViewController {
     }
 
     private func updateEmptyState() {
-        emptyStateLabel.isHidden = !workspaces.isEmpty || isLoading
+        emptyStateLabel.isHidden = !workspaces.isEmpty || isLoading || loadFailed
     }
 
     // MARK: - Data Loading
 
     private func loadWorkspaces() {
+        loadFailed = false
         guard !isLoading else { return }
 
         isLoading = true
@@ -150,7 +153,17 @@ class WorkspacesViewController: UIViewController {
             },
             errorCallback: { [weak self] in
                 DispatchQueue.main.async {
-                    self?.updateWorkspaces([])
+                    guard let self = self else { return }
+                    self.loadFailed = true
+                    self.isLoading = false
+                    self.refreshControl.endRefreshing()
+                    AlertHelper.showTwoOptionsAlert(
+                        title: "Failed to Load Workspaces",
+                        message: "Could not connect to Hive. Please try again.",
+                        confirmButtonTitle: "Retry",
+                        cancelButtonTitle: "Dismiss",
+                        confirm: { [weak self] in self?.loadWorkspaces() }
+                    )
                 }
             }
         )

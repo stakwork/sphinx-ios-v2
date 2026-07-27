@@ -17,7 +17,7 @@ class EmailHelper : NSObject {
         self.emailBody = emailBody
     }
     
-    func sendEmail(vc: UIViewController) -> MFMailComposeViewController? {
+    @MainActor func sendEmail(vc: UIViewController) -> MFMailComposeViewController? {
         var mail: MFMailComposeViewController?
         
         if MFMailComposeViewController.canSendMail() {

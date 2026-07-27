@@ -8,6 +8,6 @@
 import Foundation
 
 
-protocol LeftMenuDelegate: AnyObject {
+@MainActor protocol LeftMenuDelegate: AnyObject {
     func shouldOpenLeftMenu()
 }

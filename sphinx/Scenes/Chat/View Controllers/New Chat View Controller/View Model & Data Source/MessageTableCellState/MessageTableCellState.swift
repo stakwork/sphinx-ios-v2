@@ -8,7 +8,7 @@
 
 import UIKit
 
-struct MessageTableCellState {
+@MainActor struct MessageTableCellState: @unchecked Sendable {
 
     ///Constants
     static let kBubbleCornerRadius: CGFloat = 8.0
@@ -290,7 +290,7 @@ struct MessageTableCellState {
         
         if let messageContent = message.bubbleMessageContentString, messageContent.isNotEmpty {
             return BubbleMessageLayoutState.MessageContent(
-                text: messageContent.removingMarkdownDelimiters,
+                text: messageContent,
                 linkMatches: messageContent.stringLinks + messageContent.pubKeyMatches + messageContent.mentionMatches,
                 highlightedMatches: messageContent.highlightedMatches,
                 boldMatches: messageContent.boldMatches,
@@ -548,7 +548,8 @@ struct MessageTableCellState {
             originalMessage: originalThreadMessage,
             firstReplySenderIndo: getSenderInfo(message: firstReplyMessage),
             secondReplySenderInfo: secondReplySenderInfo,
-            moreRepliesCount: threadMessages.count - 3
+            moreRepliesCount: threadMessages.count - 3,
+            mentionsCount: (threadOriginalMessage?.push == true ? 1 : 0) + threadMessages.filter({ $0.push }).count
         )
     }()
     
@@ -1017,7 +1018,7 @@ extension MessageTableCellState {
     }
 }
 
-extension MessageTableCellState : Hashable {
+extension MessageTableCellState: @preconcurrency Hashable {
 
     static func == (lhs: MessageTableCellState, rhs: MessageTableCellState) -> Bool {
         var mutableLhs = lhs

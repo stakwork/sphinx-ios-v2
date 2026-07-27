@@ -62,3 +62,13 @@
 "Uah-nc-EPN.text" = "提要推薦";
 
 "mU1-dY-IRh.text" = "自動下載的播客劇集";
+
+"AIg-lbl-001.text" = "配置AI代理";
+
+"SAI-title-lbl.text" = "配置AI代理";
+
+"SAI-prov-lbl.text" = "供應商";
+
+"SAI-key-lbl.text" = "API金鑰";
+
+"SAI-name-lbl.text" = "代理名稱";

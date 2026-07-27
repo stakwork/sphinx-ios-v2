@@ -10,12 +10,12 @@ import UIKit
 
 public typealias AnimationCompletion = (Bool) -> Void
 
-public protocol CustomPipViewCoordinatorDelegate: class {
+@MainActor public protocol CustomPipViewCoordinatorDelegate: AnyObject {
     func enterPictureInPicture()
     func exitPictureInPicture()
 }
 
-public class CustomPipViewCoordinator {
+@MainActor public class CustomPipViewCoordinator {
 
     public var dragBoundInsets: UIEdgeInsets = UIEdgeInsets(top: 35,
                                                             left: 5,
@@ -264,7 +264,7 @@ public class CustomPipViewCoordinator {
     }
 }
 
-final class DragGestureController {
+@MainActor final class DragGestureController {
 
     var insets: UIEdgeInsets = UIEdgeInsets.zero
 

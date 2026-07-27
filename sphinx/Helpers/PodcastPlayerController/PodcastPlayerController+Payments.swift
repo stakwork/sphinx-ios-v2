@@ -8,6 +8,7 @@
 
 import Foundation
 
+@MainActor
 extension PodcastPlayerController {
     func resetPlayedSeconds() {
         self.playedSeconds = 0
@@ -17,9 +18,7 @@ extension PodcastPlayerController {
         playedSeconds = playedSeconds + 1
         
         if playedSeconds > 0 && playedSeconds % kSecondsBeforePMT == 0 {
-            DispatchQueue.global().async {
-                self.processPayment()
-            }
+            processPayment()
         }
     }
     

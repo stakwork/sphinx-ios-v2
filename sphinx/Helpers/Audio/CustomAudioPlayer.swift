@@ -9,21 +9,16 @@
 import UIKit
 import AVFoundation
 
-protocol CustomAudioPlayerDelegate: class {
+@MainActor protocol CustomAudioPlayerDelegate: class {
     func audioDidFinishPlaying()
 }
 
-class CustomAudioPlayer : NSObject {
-    
+@MainActor class CustomAudioPlayer : NSObject {
+
     weak var delegate: CustomAudioPlayerDelegate?
     var backgroundTask: UIBackgroundTaskIdentifier = .invalid
 
-    class var sharedInstance : CustomAudioPlayer {
-        struct Static {
-            static let instance = CustomAudioPlayer()
-        }
-        return Static.instance
-    }
+    static let sharedInstance = CustomAudioPlayer()
     
     var proximityTimer : Timer? = nil
     
@@ -132,18 +127,20 @@ class CustomAudioPlayer : NSObject {
 }
 
 extension CustomAudioPlayer  : AVAudioPlayerDelegate {
-    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
-        endBackgroundTask()
-        if flag {
-            delegate?.audioDidFinishPlaying()
+    nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        Task { @MainActor [weak self] in
+            self?.endBackgroundTask()
+            if flag {
+                self?.delegate?.audioDidFinishPlaying()
+            }
         }
     }
 
-    func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?) {}
+    nonisolated func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?) {}
 
-    func audioPlayerBeginInterruption(_ player: AVAudioPlayer) {}
+    nonisolated func audioPlayerBeginInterruption(_ player: AVAudioPlayer) {}
 
-    func audioPlayerEndInterruption(_ player: AVAudioPlayer, withOptions flags: Int) {
+    nonisolated func audioPlayerEndInterruption(_ player: AVAudioPlayer, withOptions flags: Int) {
         player.play()
     }
 }

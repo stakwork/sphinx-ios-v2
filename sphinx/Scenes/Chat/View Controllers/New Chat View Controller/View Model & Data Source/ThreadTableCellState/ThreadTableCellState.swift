@@ -8,7 +8,7 @@
 
 import UIKit
 
-struct ThreadTableCellState {
+@MainActor struct ThreadTableCellState: @unchecked Sendable {
     
     ///Constants
     let kAudioBubbleMargings: CGFloat = 78
@@ -66,7 +66,8 @@ struct ThreadTableCellState {
             threadPeople: threadPeopleArray.subarray(size: 6),
             threadPeopleCount: threadPeopleArray.count,
             repliesCount: threadMessages.count,
-            lastReplyTimestamp: (threadMessages.last?.date ?? Date()).timeIntervalSince1970.getDayDiffString()
+            lastReplyTimestamp: (threadMessages.last?.date ?? Date()).timeIntervalSince1970.getDayDiffString(),
+            mentionsCount: (originalMessage.push ? 1 : 0) + threadMessages.filter({ $0.push }).count
         )
     }()
     
@@ -167,15 +168,12 @@ extension ThreadTableCellState {
     }
 }
 
-extension ThreadTableCellState : Hashable {
+extension ThreadTableCellState: @preconcurrency Hashable {
 
     static func == (lhs: ThreadTableCellState, rhs: ThreadTableCellState) -> Bool {
-        let mutableLhs = lhs
-        let mutableRhs = rhs
-
         return
-            mutableLhs.originalMessage?.id      == mutableRhs.originalMessage?.id &&
-            mutableLhs.threadMessages.count     == mutableRhs.threadMessages.count
+            lhs.originalMessage?.id      == rhs.originalMessage?.id &&
+            lhs.threadMessages.count     == rhs.threadMessages.count
     }
 
     func hash(into hasher: inout Hasher) {

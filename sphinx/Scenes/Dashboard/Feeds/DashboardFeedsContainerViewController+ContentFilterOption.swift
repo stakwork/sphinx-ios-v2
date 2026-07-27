@@ -13,27 +13,27 @@ extension DashboardFeedsContainerViewController {
             isActive = newValue
         }
         
-        static var allContent: Self = .init(
+        nonisolated(unsafe) static var allContent: Self = .init(
             titleForDisplay: "dashboard.feeds.filters.all".localized,
             displayOrder: 1
         )
-        
-        static var listen: Self = .init(
+
+        nonisolated(unsafe) static var listen: Self = .init(
             titleForDisplay: "dashboard.feeds.filters.listen".localized,
             displayOrder: 2
         )
-        
-        static var watch: Self = .init(
+
+        nonisolated(unsafe) static var watch: Self = .init(
             titleForDisplay: "dashboard.feeds.filters.watch".localized,
             displayOrder: 3
         )
-        
-        static var read: Self = .init(
+
+        nonisolated(unsafe) static var read: Self = .init(
             titleForDisplay: "dashboard.feeds.filters.read".localized,
             displayOrder: 4
         )
-        
-        static var play: Self = .init(
+
+        nonisolated(unsafe) static var play: Self = .init(
             titleForDisplay: "dashboard.feeds.filters.play".localized,
             displayOrder: 5
         )

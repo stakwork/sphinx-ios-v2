@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol AudioMessageViewDelegate: class {
+@MainActor protocol AudioMessageViewDelegate: class {
     func didTapPlayPauseButton(isThreadOriginalMsg: Bool)
     
     func shouldLoadOriginalMessageAudioDataFrom(originalMessageAudio: BubbleMessageLayoutState.Audio)

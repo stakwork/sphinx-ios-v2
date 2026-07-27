@@ -226,7 +226,7 @@ extension ChatAttachmentViewController {
     }
 }
 
-extension ChatAttachmentViewController : AttachmentPriceDelegate {
+extension ChatAttachmentViewController : @MainActor AttachmentPriceDelegate {
     func showPriceVC() {
         priceVC = AttachmentPriceViewController.instantiate(delegate: self, price: price)
         addChildVC(child: priceVC!, container: attachmentPriceVCContainer)
@@ -252,7 +252,8 @@ extension ChatAttachmentViewController : AttachmentPriceDelegate {
     }
 }
 
-extension ChatAttachmentViewController : GiphyDelegate {
+extension ChatAttachmentViewController : @MainActor GiphyDelegate {
+    
     func didSelectMedia(giphyViewController: GiphyUISDK.GiphyViewController, media: GiphyUISDK.GPHMedia) {
         if let url = media.url(rendition: .original, fileType: .gif) {
             hideAllGiphyView(giphyViewController: giphyViewController)
@@ -261,10 +262,10 @@ extension ChatAttachmentViewController : GiphyDelegate {
                 if let data = data {
                     let animated = SDAnimatedImage(data: data)
                     let image = UIImage(data: data)
-                    
-                    self.selectedGiphy = (media, data)
-                    
-                    self.gifSelected(animatedImage: animated, staticImage: image, allowPrice: false)
+                    Task { @MainActor [weak self] in
+                        self?.selectedGiphy = (media, data)
+                        self?.gifSelected(animatedImage: animated, staticImage: image, allowPrice: false)
+                    }
                 }
             })
         }

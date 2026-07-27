@@ -12,7 +12,7 @@ extension NewsletterItem {
     
     var titleForDisplay: String { title ?? "Untitled" }
     
-    
+    @MainActor 
     var publishDateText: String {
         guard let datePublished = datePublished else {
             return "Unknown Publish Date"
@@ -39,6 +39,7 @@ extension NewsletterItem {
         )
     }
     
+    @MainActor
     var updateDateText: String {
         guard let dateUpdated = dateUpdated else {
             return "Unknown Update Date"

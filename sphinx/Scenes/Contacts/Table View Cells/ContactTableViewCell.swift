@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol ContactCellDelegate: class {
+@MainActor protocol ContactCellDelegate: AnyObject {
     func shouldDeleteContact(contact: UserContact?, cell: UITableViewCell)
     func shouldGoToContact(contact: UserContact?, cell: UITableViewCell)
 }
@@ -26,9 +26,11 @@ class ContactTableViewCell: SwipableCell {
 
     override func awakeFromNib() {
         super.awakeFromNib()
-        
-        numberOfButtons = .twoButtons
-        button1.tintColorDidChange()
+
+        MainActor.assumeIsolated {
+            numberOfButtons = .twoButtons
+            button1.tintColorDidChange()
+        }
     }
 
     override func setSelected(_ selected: Bool, animated: Bool) {

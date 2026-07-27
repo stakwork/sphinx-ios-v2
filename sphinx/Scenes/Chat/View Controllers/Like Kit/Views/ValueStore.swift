@@ -72,10 +72,9 @@ class ValueStore<T: Codable & Equatable>: ObservableObject {
         
         value = `default`
 
-        if let data = try? storeWithOptions.getData(key) {
-            if let data = data, let result = try? decoder.decode(T.self, from: data) {
-                value = result
-            }
+        if let data = try? storeWithOptions.getData(key),
+           let result = try? decoder.decode(T.self, from: data) {
+            value = result
         }
     }
 

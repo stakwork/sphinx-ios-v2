@@ -13,6 +13,7 @@ class WorkspaceFeaturesViewController: UIViewController {
     private var currentPage = 1
     private var totalPages = 1
     private weak var paginationView: PaginationControlView?
+    private var paginationHeightConstraint: NSLayoutConstraint?
     private var paginationHasBeenBuilt = false
     
     private lazy var refreshControl: UIRefreshControl = {
@@ -47,7 +48,8 @@ class WorkspaceFeaturesViewController: UIViewController {
         
         tableView.backgroundColor = .Sphinx.Body
         tableView.separatorStyle = .none
-        tableView.rowHeight = 110
+        tableView.rowHeight = UITableView.automaticDimension
+        tableView.estimatedRowHeight = 110
         tableView.contentInset = UIEdgeInsets(top: 12, left: 0, bottom: 0, right: 0)
         tableView.translatesAutoresizingMaskIntoConstraints = false
         
@@ -86,11 +88,14 @@ class WorkspaceFeaturesViewController: UIViewController {
         pagination.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(pagination)
         
+        let heightConstraint = pagination.heightAnchor.constraint(equalToConstant: 56)
+        heightConstraint.isActive = true
+        paginationHeightConstraint = heightConstraint
+
         NSLayoutConstraint.activate([
             pagination.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
             pagination.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
             pagination.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-            pagination.heightAnchor.constraint(equalToConstant: 56)
         ])
         
         // Re-pin tableView bottom to pagination top instead of safe area bottom
@@ -117,7 +122,7 @@ class WorkspaceFeaturesViewController: UIViewController {
     // MARK: - Actions
 
     func createButtonTapped() {
-        let vc = CreateFeatureViewController.instantiate(workspaceId: workspace.id)
+        let vc = CreateFeatureViewController.instantiate(workspaceId: workspace.id, workspaceSlug: workspace.slug ?? "")
         vc.delegate = self
         present(vc, animated: true)
     }
@@ -174,6 +179,7 @@ class WorkspaceFeaturesViewController: UIViewController {
                     self.features = features
                     self.tableView.reloadData()
                     self.paginationView?.configure(currentPage: self.currentPage, totalPages: info.totalPages)
+                    self.paginationHeightConstraint?.constant = (self.paginationView?.isHidden == true) ? 0 : 56
                     self.paginationHasBeenBuilt = true
                     self.isLoading = false
                     self.refreshControl.endRefreshing()
@@ -222,6 +228,93 @@ extension WorkspaceFeaturesViewController: CreateFeatureViewControllerDelegate {
     }
 }
 
+// MARK: - WorkspaceFeatureTableViewCellDelegate
+
+extension WorkspaceFeaturesViewController: WorkspaceFeatureTableViewCellDelegate {
+
+    func cell(_ cell: WorkspaceFeatureTableViewCell, didTapStatusFor featureId: String) {
+        guard let index = features.firstIndex(where: { $0.id == featureId }) else { return }
+        let feature = features[index]
+        let indexPath = IndexPath(row: index, section: 0)
+        let statusOptions = ["BACKLOG", "PLANNED", "IN_PROGRESS", "COMPLETED", "CANCELLED", "ERROR", "BLOCKED"]
+
+        let alert = UIAlertController(title: "Set Status", message: nil, preferredStyle: .actionSheet)
+        for option in statusOptions {
+            let isCurrent = feature.status?.uppercased() == option
+            let displayTitle = option
+                .replacingOccurrences(of: "_", with: " ")
+                .capitalized
+            let title = isCurrent ? "✓ \(displayTitle)" : displayTitle
+            alert.addAction(UIAlertAction(title: title, style: .default) { [weak self] _ in
+                guard let self = self else { return }
+                let previousValue = self.features[index].status
+                self.features[index].status = option
+                self.tableView.reloadRows(at: [indexPath], with: .none)
+                API.sharedInstance.updateFeatureWithAuth(
+                    featureId: featureId,
+                    status: option,
+                    priority: nil,
+                    callback: { _ in },
+                    errorCallback: { [weak self] in
+                        guard let self = self else { return }
+                        DispatchQueue.main.async {
+                            self.features[index].status = previousValue
+                            self.tableView.reloadRows(at: [indexPath], with: .none)
+                            AlertHelper.showAlert(title: "Error", message: "Failed to update feature.")
+                        }
+                    }
+                )
+            })
+        }
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        if let popover = alert.popoverPresentationController {
+            popover.sourceView = cell.contentView
+            popover.sourceRect = cell.contentView.bounds
+        }
+        present(alert, animated: true)
+    }
+
+    func cell(_ cell: WorkspaceFeatureTableViewCell, didTapPriorityFor featureId: String) {
+        guard let index = features.firstIndex(where: { $0.id == featureId }) else { return }
+        let feature = features[index]
+        let indexPath = IndexPath(row: index, section: 0)
+        let priorityOptions = ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
+
+        let alert = UIAlertController(title: "Set Priority", message: nil, preferredStyle: .actionSheet)
+        for option in priorityOptions {
+            let isCurrent = feature.priority?.uppercased() == option
+            let displayTitle = option.capitalized
+            let title = isCurrent ? "✓ \(displayTitle)" : displayTitle
+            alert.addAction(UIAlertAction(title: title, style: .default) { [weak self] _ in
+                guard let self = self else { return }
+                let previousValue = self.features[index].priority
+                self.features[index].priority = option
+                self.tableView.reloadRows(at: [indexPath], with: .none)
+                API.sharedInstance.updateFeatureWithAuth(
+                    featureId: featureId,
+                    status: nil,
+                    priority: option,
+                    callback: { _ in },
+                    errorCallback: { [weak self] in
+                        guard let self = self else { return }
+                        DispatchQueue.main.async {
+                            self.features[index].priority = previousValue
+                            self.tableView.reloadRows(at: [indexPath], with: .none)
+                            AlertHelper.showAlert(title: "Error", message: "Failed to update feature.")
+                        }
+                    }
+                )
+            })
+        }
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        if let popover = alert.popoverPresentationController {
+            popover.sourceView = cell.contentView
+            popover.sourceRect = cell.contentView.bounds
+        }
+        present(alert, animated: true)
+    }
+}
+
 // MARK: - UITableView DataSource & Delegate
 
 extension WorkspaceFeaturesViewController: UITableViewDataSource, UITableViewDelegate {
@@ -240,6 +333,7 @@ extension WorkspaceFeaturesViewController: UITableViewDataSource, UITableViewDel
         let feature = features[indexPath.row]
         let isLastRow = indexPath.row == features.count - 1
         cell.configure(with: feature, isLastRow: isLastRow)
+        cell.delegate = self
         return cell
     }
     

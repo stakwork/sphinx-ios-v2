@@ -18,10 +18,11 @@ class LeftMenuAddFriendTableViewCell: UITableViewCell {
 
     override func awakeFromNib() {
         super.awakeFromNib()
-        
-        addFriendButtonView = AddFriendRowButton(frame: CGRect(x: 0.0, y: 0.0, width: WindowsManager.getWindowWidth(), height: rowHeight))
-        addFriendButtonView.delegate = self
-        contentView.addSubview(addFriendButtonView)
+        MainActor.assumeIsolated {
+            addFriendButtonView = AddFriendRowButton(frame: CGRect(x: 0.0, y: 0.0, width: WindowsManager.getWindowWidth(), height: rowHeight))
+            addFriendButtonView.delegate = self
+            contentView.addSubview(addFriendButtonView)
+        }
     }
     
     func configureForAddFriend() {

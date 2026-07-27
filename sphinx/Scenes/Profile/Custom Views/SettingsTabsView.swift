@@ -8,6 +8,7 @@
 
 import UIKit
 
+@MainActor
 protocol SettingsTabsDelegate: class {
     func didChangeSettingsTab(tag: Int)
 }

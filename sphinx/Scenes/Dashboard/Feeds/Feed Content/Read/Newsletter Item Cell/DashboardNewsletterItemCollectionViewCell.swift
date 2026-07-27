@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol DashboardNewsLetterItemCollectionViewCellDelegate: class {
+@MainActor protocol DashboardNewsLetterItemCollectionViewCellDelegate: class {
     func handleShare(item:NewsletterItem)
 }
 
@@ -55,8 +55,10 @@ extension DashboardNewsletterItemCollectionViewCell {
     
     override func awakeFromNib() {
         super.awakeFromNib()
-        
-        setupViews()
+
+        Task { @MainActor in
+            self.setupViews()
+        }
     }
 }
 

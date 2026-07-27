@@ -9,7 +9,7 @@
 import UIKit
 import UIView_Shimmer
 
-class ShimmeringList: UIView, ShimmeringViewProtocol {
+class ShimmeringList: UIView, @MainActor ShimmeringViewProtocol {
 
     @IBOutlet private var contentView: UIView!
     

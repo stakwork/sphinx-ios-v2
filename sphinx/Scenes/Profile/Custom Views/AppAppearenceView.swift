@@ -8,6 +8,7 @@
 
 import UIKit
 
+@MainActor
 protocol AppearenceViewDelegate: class {
     func didChangeAppearance()
 }

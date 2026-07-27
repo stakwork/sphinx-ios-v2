@@ -129,7 +129,7 @@ class NewKeyPadView: UIView {
         switch sender.state {
         case .began:
             deleteTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] _ in
-                self?.backspaceTapped()
+                Task { @MainActor [weak self] in self?.backspaceTapped() }
             }
             deleteTimer?.fire()
         case .ended:

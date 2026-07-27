@@ -215,15 +215,16 @@ extension NewUserSignupFormViewController : ImportSeedViewDelegate{
             if let code = codeTextField.text, validateCode(code) {
                 handleInviteCode(code: code)
             }
-        } else {
-            let success = CrypterManager.sharedInstance.performWalletFinalization(
-                network: importSeedView.network,
-                host: importSeedView.host,
-                relay: importSeedView.relay,
-                enteredMnemonic: importSeedView.textView.text
-            )
-            importSeedContainer.isHidden = !success
         }
+//        else {
+//            let success = CrypterManager.sharedInstance.performWalletFinalization(
+//                network: importSeedView.network,
+//                host: importSeedView.host,
+//                relay: importSeedView.relay,
+//                enteredMnemonic: importSeedView.textView.text
+//            )
+//            importSeedContainer.isHidden = !success
+//        }
     }
     
 }

@@ -163,9 +163,12 @@ class HiveShareViewController: UIViewController {
     // MARK: - Properties
     private var shareURL: String = ""
     private var shareLabel: String = ""
+    private var workspaceSlug: String = ""
 
-    private var allItems: [ChatListCommonObject] = []
-    private var filteredItems: [ChatListCommonObject] = []
+    private var workspaceContacts: [ChatListCommonObject] = []
+    private var workspaceTribes: [ChatListCommonObject] = []
+    private var filteredContacts: [ChatListCommonObject] = []
+    private var filteredTribes: [ChatListCommonObject] = []
 
     /// Up to 3 selected items, keyed by getObjectId()
     private var selectedItems: [ChatListCommonObject] = []
@@ -184,14 +187,34 @@ class HiveShareViewController: UIViewController {
     private var tableView: UITableView!
     private var confirmButton: UIButton!
 
+    private lazy var loadingIndicator: UIActivityIndicatorView = {
+        let indicator = UIActivityIndicatorView(style: .medium)
+        indicator.color = .Sphinx.SecondaryText
+        indicator.translatesAutoresizingMaskIntoConstraints = false
+        indicator.hidesWhenStopped = true
+        return indicator
+    }()
+
+    private lazy var errorLabel: UILabel = {
+        let lbl = UILabel()
+        lbl.translatesAutoresizingMaskIntoConstraints = false
+        lbl.font = UIFont(name: "Roboto-Regular", size: 15)
+        lbl.textColor = .Sphinx.SecondaryText
+        lbl.textAlignment = .center
+        lbl.numberOfLines = 0
+        lbl.isHidden = true
+        return lbl
+    }()
+
     // MARK: - Instantiate
-    static func instantiate(url: String, label: String) -> HiveShareViewController {
-        return HiveShareViewController(url: url, label: label)
+    static func instantiate(url: String, label: String, workspaceSlug: String) -> HiveShareViewController {
+        return HiveShareViewController(url: url, label: label, workspaceSlug: workspaceSlug)
     }
 
-    private init(url: String, label: String) {
+    private init(url: String, label: String, workspaceSlug: String) {
         self.shareURL = url
         self.shareLabel = label
+        self.workspaceSlug = workspaceSlug
         super.init(nibName: nil, bundle: nil)
         modalPresentationStyle = .pageSheet
     }
@@ -208,7 +231,21 @@ class HiveShareViewController: UIViewController {
         setupSearchRow()
         setupTableView()
         setupConfirmButton()
-        loadItems()
+
+        view.addSubview(loadingIndicator)
+        view.addSubview(errorLabel)
+        NSLayoutConstraint.activate([
+            loadingIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            loadingIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            errorLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            errorLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            errorLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 32),
+            errorLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -32)
+        ])
+        tableView.isHidden = true
+        searchContainer.isHidden = true
+        confirmButton.isHidden = true
+        fetchMembers()
     }
 
     // MARK: - Setup
@@ -353,44 +390,77 @@ class HiveShareViewController: UIViewController {
         ])
     }
 
-    private func loadItems() {
-        let combined = ContactsService.sharedInstance.contactListObjects + ContactsService.sharedInstance.chatListObjects
+    // MARK: - Members Fetch
 
-        // Separate items with lastMessage from those without
-        let withMessage = combined.filter { $0.lastMessage != nil }
-        let withoutMessage = combined.filter { $0.lastMessage == nil }
+    private func fetchMembers() {
+        loadingIndicator.startAnimating()
+        API.sharedInstance.fetchWorkspaceMembersWithAuth(
+            slug: workspaceSlug,
+            callback: { [weak self] members in
+                DispatchQueue.main.async { self?.handleMembersLoaded(members) }
+            },
+            errorCallback: { [weak self] in
+                DispatchQueue.main.async { self?.handleMembersError() }
+            }
+        )
+    }
 
-        // Sort items with lastMessage by date descending (most recent first)
-        let sortedWithMessage = withMessage.sorted { first, second in
-            let date1 = first.lastMessage?.date ?? Date.distantPast
-            let date2 = second.lastMessage?.date ?? Date.distantPast
-            return date1 > date2
+    private func handleMembersLoaded(_ members: [WorkspaceMember]) {
+        let pubkeySet = Set(members.compactMap { $0.lightningPubkey }.filter { !$0.isEmpty })
+
+        let allContacts = ContactsService.sharedInstance.contactListObjects
+        let matched = allContacts.filter { item in
+            guard let contact = item as? Chat else { return false }
+            if let pk = contact.ownerPubkey, pubkeySet.contains(pk) { return true }
+            return false
         }
 
-        // Sort items without lastMessage alphabetically
-        let sortedWithoutMessage = withoutMessage.sorted {
-            $0.getName().lowercased() < $1.getName().lowercased()
-        }
+        workspaceContacts = sortedItems(matched)
+        workspaceTribes = sortedItems(ContactsService.sharedInstance.chatListObjects)
 
-        // Items with messages come first, then alphabetically sorted ones
-        allItems = sortedWithMessage + sortedWithoutMessage
+        loadingIndicator.stopAnimating()
+        tableView.isHidden = false
+        searchContainer.isHidden = false
+        confirmButton.isHidden = false
         applyFilter(searchText: "")
     }
 
-    /// Rebuilds filteredItems: selected items first, then the rest in their sorted order.
+    private func handleMembersError() {
+        loadingIndicator.stopAnimating()
+        errorLabel.text = "Workspace members couldn't be fetched at this moment"
+        errorLabel.isHidden = false
+        // tableView, searchContainer, confirmButton remain hidden
+    }
+
+    private func sortedItems(_ items: [ChatListCommonObject]) -> [ChatListCommonObject] {
+        let withMessage = items.filter { $0.lastMessage != nil }
+        let withoutMessage = items.filter { $0.lastMessage == nil }
+        let sortedWithMessage = withMessage.sorted {
+            ($0.lastMessage?.date ?? .distantPast) > ($1.lastMessage?.date ?? .distantPast)
+        }
+        let sortedWithoutMessage = withoutMessage.sorted {
+            $0.getName().lowercased() < $1.getName().lowercased()
+        }
+        return sortedWithMessage + sortedWithoutMessage
+    }
+
     private func applyFilter(searchText: String) {
-        let base: [ChatListCommonObject]
-        if searchText.isEmpty {
-            base = allItems
-        } else {
-            base = allItems.filter {
+        func filtered(_ source: [ChatListCommonObject]) -> [ChatListCommonObject] {
+            searchText.isEmpty ? source : source.filter {
                 $0.getName().lowercased().contains(searchText.lowercased())
             }
         }
+        let baseContacts = filtered(workspaceContacts)
+        let baseTribes = filtered(workspaceTribes)
 
-        let selected = base.filter { isItemSelected($0) }
-        let unselected = base.filter { !isItemSelected($0) }
-        filteredItems = selected + unselected
+        let selectedContacts = baseContacts.filter { isItemSelected($0) }
+        let unselectedContacts = baseContacts.filter { !isItemSelected($0) }
+        filteredContacts = selectedContacts + unselectedContacts
+
+        let selectedTribes = baseTribes.filter { isItemSelected($0) }
+        let unselectedTribes = baseTribes.filter { !isItemSelected($0) }
+        filteredTribes = selectedTribes + unselectedTribes
+
         tableView.reloadData()
     }
 
@@ -490,8 +560,10 @@ extension HiveShareViewController: UITextFieldDelegate {
 
 extension HiveShareViewController: UITableViewDataSource, UITableViewDelegate {
 
+    func numberOfSections(in tableView: UITableView) -> Int { 2 }
+
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        filteredItems.count
+        section == 0 ? filteredContacts.count : filteredTribes.count
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -501,13 +573,13 @@ extension HiveShareViewController: UITableViewDataSource, UITableViewDelegate {
         ) as? HiveShareContactTableViewCell else {
             return UITableViewCell()
         }
-        let item = filteredItems[indexPath.row]
+        let item = indexPath.section == 0 ? filteredContacts[indexPath.row] : filteredTribes[indexPath.row]
         cell.configure(with: item, isSelected: isItemSelected(item))
         return cell
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let tapped = filteredItems[indexPath.row]
+        let tapped = indexPath.section == 0 ? filteredContacts[indexPath.row] : filteredTribes[indexPath.row]
 
         if isItemSelected(tapped) {
             selectedItems.removeAll(where: { $0.getObjectId() == tapped.getObjectId() })
@@ -521,4 +593,23 @@ extension HiveShareViewController: UITableViewDataSource, UITableViewDelegate {
         applyFilter(searchText: currentSearchText)
         updateConfirmButton()
     }
+
+    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        let container = UIView()
+        container.backgroundColor = UIColor.Sphinx.HeaderBG
+        let label = UILabel()
+        label.text = section == 0 ? "CONTACTS IN THE WORKSPACE" : "TRIBES"
+        label.font = UIFont(name: "Roboto-Medium", size: 12) ?? .systemFont(ofSize: 12, weight: .medium)
+        label.textColor = .Sphinx.SecondaryText
+        label.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(label)
+        NSLayoutConstraint.activate([
+            label.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
+            label.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -16),
+            label.centerYAnchor.constraint(equalTo: container.centerYAnchor)
+        ])
+        return container
+    }
+
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat { 32 }
 }

@@ -9,6 +9,7 @@
 import Foundation
 import ObjectMapper
 
+@MainActor
 class NewChatViewModel {
     
     var chat: Chat?

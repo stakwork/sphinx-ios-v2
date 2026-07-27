@@ -11,7 +11,7 @@ import CoreData
 import SwiftyJSON
 
 @objc(UserInvite)
-public class UserInvite: NSManagedObject {
+public class UserInvite: NSManagedObject, @unchecked Sendable {
     
     enum Status: Int {
         case Pending

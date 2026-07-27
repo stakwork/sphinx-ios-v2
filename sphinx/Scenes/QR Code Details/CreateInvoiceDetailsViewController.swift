@@ -75,13 +75,21 @@ class CreateInvoiceDetailsViewController: CommonPaymentViewController {
     }
     
     private func createPaymentRequest() {
-        guard let amount = invoiceDetails.amount else{
+        guard let amount = invoiceDetails.amount else {
+            loading = false
             return
         }
-        guard let bolt11 = SphinxOnionManager.sharedInstance.createInvoice(amountMsat: amount) else{
-            return
+        SphinxOnionManager.sharedInstance.createInvoice(amountMsat: amount) { [weak self] invoice in
+            guard let self = self, let invoice = invoice else {
+                DispatchQueue.main.async {
+                    self?.loading = false
+                }
+                return
+            }
+            DispatchQueue.main.async {
+                self.presentInvoiceDetailsVC(invoiceString: invoice)
+            }
         }
-        self.presentInvoiceDetailsVC(invoiceString: bolt11)
     }
     
     private func presentInvoiceDetailsVC(invoiceString: String) {

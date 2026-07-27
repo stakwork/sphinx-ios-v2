@@ -1,0 +1,59 @@
+//
+//  BiometricLockViewController.swift
+//  sphinx
+
+import UIKit
+
+class BiometricLockViewController: UIViewController {
+
+    let authHelper = BiometricAuthenticationHelper()
+    var loggingCompletion: (() -> ())? = nil
+    private var isAuthenticating = false
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        view.backgroundColor = UIColor.Sphinx.Body
+        setupLockIcon()
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        // Fire on cold launch (.inactive) and normal active state.
+        // Do NOT fire when app is backgrounded — that path is triggered by tryBiometricAuth() on foreground resume.
+        if UIApplication.shared.applicationState != .background {
+            triggerBiometric()
+        }
+    }
+
+    private func setupLockIcon() {
+        let imageView = UIImageView(image: UIImage(systemName: "lock.fill"))
+        imageView.tintColor = UIColor.Sphinx.PrimaryText
+        imageView.contentMode = .scaleAspectFit
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(imageView)
+        NSLayoutConstraint.activate([
+            imageView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            imageView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            imageView.widthAnchor.constraint(equalToConstant: 80),
+            imageView.heightAnchor.constraint(equalToConstant: 80)
+        ])
+    }
+
+    func triggerBiometric() {
+        guard !isAuthenticating else { return }
+        isAuthenticating = true
+        authHelper.authenticationAction(policy: .deviceOwnerAuthenticationWithBiometrics) { [weak self] success in
+            guard let self = self else { return }
+            self.isAuthenticating = false
+            if success {
+                self.loggingCompletion?()
+                WindowsManager.sharedInstance.removeCoveringWindow()
+            } else {
+                let pinVC = PinCodeViewController.instantiate()
+                pinVC.loggingCompletion = self.loggingCompletion
+                WindowsManager.sharedInstance.coveringWindow?.rootViewController = pinVC
+            }
+        }
+    }
+}

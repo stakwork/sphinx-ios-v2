@@ -6,15 +6,17 @@
 //
 
 import Foundation
+import UIKit
+import Network
 import CocoaMQTT
 import ObjectMapper
 import SwiftyJSON
 import CoreData
 
 
-class SphinxOnionManager : NSObject {
+class SphinxOnionManager : NSObject, @unchecked Sendable {
     
-    private static var _sharedInstance: SphinxOnionManager? = nil
+    nonisolated(unsafe) private static var _sharedInstance: SphinxOnionManager? = nil
 
     static var sharedInstance: SphinxOnionManager {
         if _sharedInstance == nil {
@@ -36,8 +38,10 @@ class SphinxOnionManager : NSObject {
     var stashedInviteCode: String? = nil
     var stashedInviterAlias: String? = nil
     
-    var watchdogTimer: Timer? = nil
     var reconnectionTimer: Timer? = nil
+    var watchdogTimer: Timer? = nil
+    var lastInboundTime: Date? = nil
+    var reconnectAttemptCount: Int = 0
     var sendTimeoutTimers: [String: Timer] = [:]
     var paymentTimeoutTimers: [String: Timer] = [:]
     
@@ -68,7 +72,9 @@ class SphinxOnionManager : NSObject {
     
     var isConnected : Bool = false{
         didSet{
-            NotificationCenter.default.post(name: .onConnectionStatusChanged, object: nil)
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: .onConnectionStatusChanged, object: nil)
+            }
         }
     }
     
@@ -84,9 +90,15 @@ class SphinxOnionManager : NSObject {
     var contactRestoreCallback: RestoreProgressCallback? = nil
     var hideRestoreCallback: ((Bool) -> ())? = nil
     var errorCallback: (() -> ())? = nil
+    var backgroundDisconnectCompletion: (() -> ())?
+    private var connectionInProgress: Bool = false
+    private let connectionLock = NSLock()
+    private var connectionTimeoutTimer: Timer?
     var tribeMembersCallback: (([String: AnyObject]) -> ())? = nil
     var paymentsHistoryCallback: ((String?, String?) -> ())? = nil
     var inviteCreationCallback: ((String?) -> ())? = nil
+    var invoiceGeneratedCallback: ((String?) -> Void)? = nil
+    var invoiceGeneratedTimeoutTimer: Timer? = nil
     
     ///Session Pin to decrypt mnemonic and seed
     var appSessionPin : String? = nil
@@ -94,6 +106,8 @@ class SphinxOnionManager : NSObject {
     
     public static let kContactsBatchSize = 100
     public static let kMessageBatchSize = 100
+    static let kMqttKeepAlive: UInt16 = 15
+    static let kConnectionTimeoutInterval: TimeInterval = 15.0
 
     public static let kCompleteStatus = "COMPLETE"
     public static let kFailedStatus = "FAILED"
@@ -103,6 +117,9 @@ class SphinxOnionManager : NSObject {
     var backgroundContext = CoreDataManager.sharedManager.getBackgroundContext()
     
     var notificationsResultsController: NSFetchedResultsController<NotificationData>!
+
+    var pendingSentStatusWorkItem: DispatchWorkItem?
+    var pendingStatusCheckTags: Set<String> = []
     
     let kHostedTorrentBaseURL = "https://files.bt2.bard.garden:21433"
     let kAllTorrentLookupBaseURL = "https://tome.bt2.bard.garden:21433"
@@ -241,6 +258,14 @@ class SphinxOnionManager : NSObject {
     let kTestDefaultTribe = "0213ddd7df0077abe11d6ec9753679eeef9f444447b70f2980e44445b3f7959ad1"
     let kTestRouterUrl = "mixer.router1.sphinx.chat"
     
+    // MARK: Background Fetch
+    private let backgroundFetchQueue = DispatchQueue(label: "com.sphinx.backgroundFetch")
+    private let fetchLock = NSLock()
+    private(set) var backgroundFetchInProgress = false
+    var backgroundFetchCompletionHandler: ((UIBackgroundFetchResult) -> Void)?
+    var activeFetchBackgroundTaskID: UIBackgroundTaskIdentifier = .invalid
+    private var bgFetchTimeoutTimer: Timer?
+
     //MARK: Callback
     ///Restore
     var totalMsgsCountCallback: (() -> ())? = nil
@@ -288,7 +313,11 @@ class SphinxOnionManager : NSObject {
         var result : String? = nil
         do {
             result = try sphinx.mnemonicFromEntropy(
-                entropy: Data.randomBytes(length: 16).hexString
+                entropy: {
+                    var bytes = [UInt8](repeating: 0, count: 16)
+                    SecRandomCopyBytes(kSecRandomDefault, 16, &bytes)
+                    return Data(bytes).hexString
+                }()
             )
             guard let result = result else {
                 return nil
@@ -338,37 +367,55 @@ class SphinxOnionManager : NSObject {
         return randomString
     }
     
+    func getOrCreateMqttSessionId() -> String {
+        if let existing: String = UserDefaults.Keys.mqttSessionId.get(), !existing.isEmpty {
+            return existing
+        }
+        let newId = UUID().uuidString
+        UserDefaults.Keys.mqttSessionId.set(newId)
+        return newId
+    }
+
     func connectToBroker(
         seed: String,
         xpub: String
     ) -> Bool {
         do {
             let now = getTimeWithEntropy()
-            
+
             let sig = try rootSignMs(
                 seed: seed,
                 time: now,
                 network: network
             )
-            
+
+            if let existing = self.mqtt {
+                print("[MQTT] Force-closing existing connection (state: \(existing.connState)) before opening new one")
+                existing.didDisconnect = {(_, _) in }
+                existing.disconnect()
+                self.mqtt = nil
+            }
+
             mqtt = CocoaMQTT(
                 clientID: xpub,
                 host: serverIP,
                 port: serverPORT
             )
-            
+
             mqtt.username = now
             mqtt.password = sig
-            
+            mqtt.keepAlive = SphinxOnionManager.kMqttKeepAlive
+            mqtt.backgroundOnSocket = false
+
             if UserDefaults.Keys.isProductionEnv.get(defaultValue: false) {
                 mqtt.enableSSL = true
                 mqtt.allowUntrustCACertificate = true
-                
+
                 mqtt.sslSettings = [
                     "kCFStreamSSLPeerName": "\(serverIP)" as NSObject
                 ] as [String: NSObject]
             }
-            
+
             let success = mqtt.connect()
             print("mqtt.connect success:\(success)")
             return success
@@ -380,10 +427,23 @@ class SphinxOnionManager : NSObject {
     func disconnectMqtt(
         callback: ((Double) -> ())? = nil
     ) {
-        // Cancel reconnection timer to prevent background reconnection attempts
+        // Cancel reconnection timer and watchdog to prevent background reconnection attempts
         endReconnectionTimer()
+        stopWatchdog()
+        connectionTimeoutTimer?.invalidate()
+        connectionTimeoutTimer = nil
 
-        if let mqtt = self.mqtt, mqtt.connState == .connected {
+        delayedRRTimers.values.forEach { $0.invalidate() }
+        delayedRRTimers.removeAll()
+
+        paymentTimeoutTimers.values.forEach { $0.invalidate() }
+        paymentTimeoutTimers.removeAll()
+
+        if let mqtt = self.mqtt, mqtt.connState == .connected || mqtt.connState == .connecting {
+            if mqtt.connState == .connecting {
+                print("[MQTT] Disconnecting mid-handshake connection (state: .connecting)")
+            }
+            backgroundDisconnectCompletion = callback.map { cb in { cb(0.0) } }
             mqtt.disconnect()
         } else {
             callback?(0.0)
@@ -391,9 +451,126 @@ class SphinxOnionManager : NSObject {
     }
     
     func isFetchingContent() -> Bool {
-        return onMessageRestoredCallback != nil || firstSCIDMsgsCallback != nil || totalMsgsCountCallback != nil
+        fetchLock.lock()
+        defer { fetchLock.unlock() }
+        return backgroundFetchInProgress || onMessageRestoredCallback != nil || firstSCIDMsgsCallback != nil || totalMsgsCountCallback != nil
+    }
+
+    func beginBackgroundFetch(completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
+        if (UIApplication.shared.delegate as? AppDelegate)?.isActive == true {
+            print("[BGFetch] App already active — skipping background fetch")
+            completionHandler(.noData)
+            return
+        }
+
+        fetchLock.lock()
+        guard !backgroundFetchInProgress else {
+            fetchLock.unlock()
+            print("[BGFetch] Fetch already in progress — skipping duplicate")
+            backgroundFetchCompletionHandler = completionHandler
+            return
+        }
+        backgroundFetchInProgress = true
+        backgroundFetchCompletionHandler = completionHandler
+        fetchLock.unlock()
+
+        activeFetchBackgroundTaskID = UIApplication.shared.beginBackgroundTask(withName: "MessageFetch") { [weak self] in
+            self?.expireBackgroundFetch()
+        }
+        print("[BGFetch] UIBackgroundTask started: \(activeFetchBackgroundTaskID)")
+
+        // One-shot network check before attempting MQTT reconnect. NWPathMonitor fires
+        // its first update immediately, so this adds no meaningful latency on a good
+        // connection but prevents hanging indefinitely when the network is not ready.
+        let netCheck = NWPathMonitor()
+        netCheck.pathUpdateHandler = { [weak self] path in
+            netCheck.cancel()
+            guard path.status == .satisfied else {
+                print("[BGFetch] No network available — aborting fetch")
+                self?.endBackgroundFetch(result: .noData)
+                return
+            }
+            print("[BGFetch] Network available — starting reconnect")
+            self?.reconnectToServer(
+                hideRestoreViewCallback: { _ in
+                    print("[BGFetch] reconnect hideRestoreViewCallback fired")
+                },
+                errorCallback: { [weak self] in
+                    print("[BGFetch] reconnect errorCallback — ending fetch")
+                    self?.endBackgroundFetch(result: .noData)
+                }
+            )
+            // Hard cap: end the fetch after 25s regardless. Prevents the background task
+            // from staying open for minutes/hours waiting on a slow server MQTT response.
+            DispatchQueue.main.async { [weak self] in
+                self?.bgFetchTimeoutTimer?.invalidate()
+                self?.bgFetchTimeoutTimer = Timer.scheduledTimer(withTimeInterval: 25.0, repeats: false) { [weak self] _ in
+                    print("[BGFetch] Hard timeout fired after 25s — ending background fetch")
+                    self?.endBackgroundFetch(result: .noData)
+                }
+            }
+        }
+        netCheck.start(queue: DispatchQueue(label: "com.sphinx.bgfetch.netcheck"))
+    }
+
+    func endBackgroundFetch(result: UIBackgroundFetchResult = .newData) {
+        fetchLock.lock()
+        guard backgroundFetchInProgress else {
+            fetchLock.unlock()
+            return
+        }
+        backgroundFetchInProgress = false
+        let handler = backgroundFetchCompletionHandler
+        backgroundFetchCompletionHandler = nil
+        let taskID = activeFetchBackgroundTaskID
+        activeFetchBackgroundTaskID = .invalid
+        fetchLock.unlock()
+        DispatchQueue.main.async { [weak self] in
+            self?.bgFetchTimeoutTimer?.invalidate()
+            self?.bgFetchTimeoutTimer = nil
+        }
+
+        endReconnectionTimer() // Disarm any timer armed during fetch before signalling the system
+        print("[BGFetch] completionHandler firing with result: \(result)")
+        handler?(result)
+
+        if taskID != .invalid {
+            UIApplication.shared.endBackgroundTask(taskID)
+            print("[BGFetch] UIBackgroundTask ended: \(taskID)")
+        }
+    }
+
+    private func expireBackgroundFetch() {
+        // End the task and fire the completion handler synchronously. The background
+        // task expiration handler must return quickly — waiting for an async MQTT
+        // disconnect callback that may never arrive (flaky network) leaves
+        // endBackgroundTask uncalled and the watchdog kills the process (0x8BADF00D).
+        print("[BGFetch] expire triggered — ending task immediately")
+        endBackgroundFetch(result: .noData)
+        disconnectMqtt()
     }
     
+    func prepareForForeground(disconnectCallback: @escaping (() -> ())) {
+        print("[Lifecycle] prepareForForeground")
+        // Called from applicationWillEnterForeground before reconnectToServer.
+        // Tears down any in-flight BGFetch connection so the foreground reconnect
+        // isn't blocked by connectionInProgress or a stale .connecting MQTT state.
+        endBackgroundFetch(result: .noData)
+        stopWatchdog()
+        reconnectAttemptCount = 0
+        connectionInProgress = false
+        isConnected = false
+        if let existing = self.mqtt {
+            self.mqtt = nil
+            existing.didDisconnect = { _, _ in }
+            existing.didConnectAck = { _, _ in }
+            existing.disconnect() // fire-and-forget
+            disconnectCallback()  // don't wait — call immediately
+        } else {
+            disconnectCallback()
+        }
+    }
+
     func reconnectToServer(
         connectingCallback: (() -> ())? = nil,
         contactRestoreCallback: RestoreProgressCallback? = nil,
@@ -407,13 +584,13 @@ class SphinxOnionManager : NSObject {
             }
             if mqtt.connState == .connected && isConnected {
                 ///If already fetching content, then process is already running
-                if !isFetchingContent() {
-                    hideRestoreCallback = hideRestoreViewCallback
-                    startNewMsgsSync()
-                    listAndUpdateContacts()
-                } else {
+//                if !isFetchingContent() {
+//                    hideRestoreCallback = hideRestoreViewCallback
+//                    startNewMsgsSync()
+//                    listAndUpdateContacts()
+//                } else {
                     errorCallback?()
-                }
+//                }
                 return
             }
         }
@@ -428,8 +605,8 @@ class SphinxOnionManager : NSObject {
     
     func startNewMsgsSync() {
         self.syncNewMessages()
-        self.getReads()
-        self.getMuteLevels()
+//        self.getReads()
+//        self.getMuteLevels()
 //        // Run these operations in parallel for faster sync
 //        let syncGroup = DispatchGroup()
 //        let syncQueue = DispatchQueue(label: "com.sphinx.newMsgsSync", attributes: .concurrent)
@@ -455,7 +632,7 @@ class SphinxOnionManager : NSObject {
     
     func syncNewMessages() {
         let maxIndex = maxMessageIndex
-        
+
         startAllMsgBlockFetch(
             startIndex: (maxIndex != nil) ? maxIndex! + 1 : 0,
             itemsPerPage: SphinxOnionManager.kMessageBatchSize,
@@ -472,7 +649,7 @@ class SphinxOnionManager : NSObject {
         errorCallback: (()->())? = nil
     ){
         connectingCallback?()
-        
+
         guard let seed = getAccountSeed(),
               let myPubkey = getAccountOnlyKeysendPubkey(seed: seed),
               let my_xpub = getAccountXpub(seed: seed) else
@@ -485,25 +662,87 @@ class SphinxOnionManager : NSObject {
         self.contactRestoreCallback = contactRestoreCallback
         self.messageRestoreCallback = messageRestoreCallback
         self.errorCallback = errorCallback
-        
-        if isV2Restore {
-            contactRestoreCallback?(2)
+
+        // Show 2% immediately after storing callbacks so the progress view appears
+        // even if an early-return guard fires below (e.g. already connecting from
+        // a parallel reconnectToServer call triggered by applicationWillEnterForeground).
+        if isV2Restore && !UserDefaults.Keys.isRestoreCompleted.get(defaultValue: false) {
+            self.contactRestoreCallback?(2)
         }
-        
-        let success = connectToBroker(seed: seed, xpub: my_xpub)
-        
-        if (success == false) {
-            hideRestoreViewCallback?(false)
+
+        if let mqtt = self.mqtt {
+            if mqtt.connState == .connecting {
+                print("[MQTT] connectToServer skipped — already connecting")
+                return
+            }
+            if mqtt.connState == .connected && isConnected {
+                print("[MQTT] connectToServer skipped — already connected")
+                if isV2Restore && !UserDefaults.Keys.isRestoreCompleted.get(defaultValue: false) {
+                    syncContactsAndMessages()
+                } else {
+                    isV2Restore = false
+                    startNewMsgsSync()
+                }
+                return
+            }
+        }
+
+        connectionLock.lock()
+        let alreadyConnecting = connectionInProgress
+        if !alreadyConnecting { connectionInProgress = true }
+        connectionLock.unlock()
+
+        guard !alreadyConnecting else {
+            print("[MQTT] connectToServer skipped — connection already in progress")
             return
+        }
+
+        if !isV2Restore || UserDefaults.Keys.isRestoreCompleted.get(defaultValue: false) {
+            isV2Restore = false
+        }
+
+        let success = connectToBroker(seed: seed, xpub: my_xpub)
+
+        if (success == false) {
+            connectionInProgress = false
+            hideRestoreViewCallback?(false)
+            let appIsActive = (UIApplication.shared.delegate as? AppDelegate)?.isActive ?? false
+            if appIsActive {
+                startReconnectionTimer()
+            }
+            return
+        }
+
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.connectionTimeoutTimer?.invalidate()
+            self.connectionTimeoutTimer = Timer.scheduledTimer(withTimeInterval: SphinxOnionManager.kConnectionTimeoutInterval, repeats: false) { [weak self] _ in
+                guard let self = self, self.connectionInProgress else { return }
+                print("[MQTT] Connection timed out after 30s — force-closing and retrying")
+                self.connectionInProgress = false
+                let dead = self.mqtt
+                self.mqtt = nil
+                dead?.didDisconnect = { _, _ in }
+                dead?.didConnectAck = { _, _ in }
+                dead?.disconnect()
+                let appIsActive = (UIApplication.shared.delegate as? AppDelegate)?.isActive ?? false
+                if appIsActive {
+                    self.startReconnectionTimer()
+                }
+            }
         }
         
         mqtt.didConnectAck = { [weak self] _, _ in
             guard let self = self else {
                 return
             }
-            
-            self.endReconnectionTimer()
+            self.connectionTimeoutTimer?.invalidate()
+            self.connectionTimeoutTimer = nil
             self.isConnected = true
+            self.connectionInProgress = false
+            self.endReconnectionTimer()
+            self.reconnectAttemptCount = 0
+            self.startWatchdog()
             
             self.subscribeAndPublishMyTopics(pubkey: myPubkey, idx: 0)
             
@@ -512,14 +751,15 @@ class SphinxOnionManager : NSObject {
                 self.doInitialInviteSetup()
             }
              
-            if self.isV2Restore {
-                self.hideRestoreCallback = { _ in
-                    self.isV2Restore = false
-                    
+            if self.isV2Restore && !UserDefaults.Keys.isRestoreCompleted.get(defaultValue: false) {
+                self.hideRestoreCallback = { [weak self] _ in
+                    self?.isV2Restore = false
+                    UserDefaults.Keys.isRestoreCompleted.set(true)
                     hideRestoreViewCallback?(true)
                 }
                 self.syncContactsAndMessages()
             } else {
+                self.isV2Restore = false
                 self.contactRestoreCallback = nil
                 self.messageRestoreCallback = nil
                 
@@ -532,8 +772,23 @@ class SphinxOnionManager : NSObject {
         }
         
         mqtt.didDisconnect = { [weak self] _, _ in
+            self?.connectionTimeoutTimer?.invalidate()
+            self?.connectionTimeoutTimer = nil
+            self?.connectionInProgress = false
             self?.isConnected = false
             self?.mqtt = nil
+            self?.backgroundDisconnectCompletion?()
+            self?.backgroundDisconnectCompletion = nil
+            // Guard before any dispatch — if backgrounded, do not schedule reconnection
+            let appIsActive = (UIApplication.shared.delegate as? AppDelegate)?.isActive ?? false
+            if !appIsActive {
+                if self?.backgroundFetchInProgress == true {
+                    print("[BGFetch] MQTT dropped mid-fetch — ending background task")
+                    self?.endBackgroundFetch(result: .noData)
+                }
+                return
+            }
+            self?.stopWatchdog()
             self?.startReconnectionTimer()
         }
     }
@@ -543,33 +798,74 @@ class SphinxOnionManager : NSObject {
         reconnectionTimer = nil
     }
     
-    func startReconnectionTimer(
-        delay: Double = 0.0
-    ) {
-        if (UIApplication.shared.delegate as? AppDelegate)?.isActive == false {
-            return
+    func startReconnectionTimer() {
+        let factor = pow(2.0, Double(reconnectAttemptCount))
+        let jitter = Double.random(in: 0.75...1.25)
+        let delay = min(1.0 * factor * jitter, 60.0)
+        reconnectAttemptCount += 1
+
+        DispatchQueue.main.async {
+            MainActor.assumeIsolated {
+                if (UIApplication.shared.delegate as? AppDelegate)?.isActive == false {
+                    return
+                }
+
+                self.reconnectionTimer?.invalidate()
+
+                self.reconnectionTimer = Timer.scheduledTimer(
+                    timeInterval: delay,
+                    target: self,
+                    selector: #selector(self.reconnectionTimerFired),
+                    userInfo: nil,
+                    repeats: false
+                )
+            }
         }
-        
-        reconnectionTimer?.invalidate()
-        
-        reconnectionTimer = Timer.scheduledTimer(
-            timeInterval: delay,
-            target: self,
-            selector: #selector(reconnectionTimerFired),
-            userInfo: nil,
-            repeats: false
-        )
     }
     
+    // MARK: - Watchdog Helpers
+
+    func startWatchdog() {
+        stopWatchdog()
+        lastInboundTime = Date()
+        let interval = Double(SphinxOnionManager.kMqttKeepAlive) * 2  // 30s
+        DispatchQueue.main.async {
+            self.watchdogTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
+                guard let self = self, self.isConnected else { return }
+                guard let last = self.lastInboundTime else { return }
+                if Date().timeIntervalSince(last) >= 30.0 {
+                    print("[MQTT] Watchdog: silent for 30s — forcing reconnect")
+                    self.stopWatchdog()
+                    let dead = self.mqtt
+                    self.mqtt = nil
+                    dead?.didDisconnect = { _, _ in }
+                    dead?.didConnectAck = { _, _ in }
+                    dead?.disconnect()
+                    self.isConnected = false
+                    self.connectionInProgress = false
+                    self.startReconnectionTimer()
+                }
+            }
+        }
+    }
+
+    func stopWatchdog() {
+        watchdogTimer?.invalidate()
+        watchdogTimer = nil
+    }
+
     @objc func reconnectionTimerFired() {
-        if (UIApplication.shared.delegate as? AppDelegate)?.isActive == false {
+        let isActive = MainActor.assumeIsolated {
+            (UIApplication.shared.delegate as? AppDelegate)?.isActive
+        }
+        if isActive == false {
             return
         }
-        
+
         if !NetworkMonitor.shared.isConnected {
             return
         }
-        
+
         reconnectToServer(
             connectingCallback: nil,
             contactRestoreCallback: self.contactRestoreCallback,
@@ -594,6 +890,7 @@ class SphinxOnionManager : NSObject {
             
             mqtt.didReceiveMessage = { [weak self] mqtt, receivedMessage, id in
                 self?.isConnected = true
+                self?.lastInboundTime = Date()
                 self?.processMqttMessages(message: receivedMessage)
             }
             
@@ -601,7 +898,7 @@ class SphinxOnionManager : NSObject {
                 seed: seed,
                 uniqueTime: getTimeWithEntropy(),
                 state: loadOnionStateAsData(),
-                device: UUID().uuidString,
+                device: getOrCreateMqttSessionId(),
                 inviteCode: inviteCode
             )
             
@@ -614,7 +911,7 @@ class SphinxOnionManager : NSObject {
             )
             
             self.mqtt.subscribe([
-                (tribeMgmtTopic, CocoaMQTTQoS.qos1)
+                (tribeMgmtTopic, CocoaMQTTQoS.qos0)
             ])
         } catch {}
     }
@@ -742,12 +1039,19 @@ class SphinxOnionManager : NSObject {
         if success {
             mqtt.didReceiveMessage = { [weak self] mqtt, receivedMessage, id in
                 self?.isConnected = true
+                self?.lastInboundTime = Date()
                 self?.processMqttMessages(message: receivedMessage)
             }
             
             mqtt.didDisconnect = { [weak self] _, _ in
                 self?.isConnected = false
                 self?.mqtt = nil
+                self?.backgroundDisconnectCompletion?()
+                self?.backgroundDisconnectCompletion = nil
+                // Guard before any dispatch — if backgrounded, do not schedule reconnection
+                let appIsActive = (UIApplication.shared.delegate as? AppDelegate)?.isActive ?? false
+                guard appIsActive else { return }
+                self?.stopWatchdog()
                 self?.startReconnectionTimer()
             }
             
@@ -800,7 +1104,7 @@ class SphinxOnionManager : NSObject {
         }
     }
     
-    func showSuccessWithMessage(_ message: String) {
+    @MainActor func showSuccessWithMessage(_ message: String) {
         self.newMessageBubbleHelper.showGenericMessageView(
             text: message,
             delay: 6,
@@ -813,16 +1117,20 @@ class SphinxOnionManager : NSObject {
 
 extension SphinxOnionManager {//Sign Up UI Related:
     func showMnemonicToUser(
-        completion:@escaping (Bool)->()
+        completion: @escaping @MainActor (Bool)->()
     ){
         let generateSeedCallback: (() -> ()) = {
             guard let mnemonic = self.generateMnemonic(), let _ = self.vc as? NewUserSignupFormViewController else {
-                completion(false)
+                Task { @MainActor in
+                    completion(false)
+                }
                 return
             }
             
             self.showMnemonicToUser(mnemonic: mnemonic, callback: {
-                completion(true)
+                Task { @MainActor in
+                    completion(true)
+                }
             })
         }
         
@@ -831,26 +1139,34 @@ extension SphinxOnionManager {//Sign Up UI Related:
     
     func importSeedPhrase(){
         if let vc = self.vc as? ImportSeedViewDelegate {
-            vc.showImportSeedView()
+            Task { @MainActor in
+                vc.showImportSeedView()
+            }
         }
     }
     
-    func showMnemonicToUser(mnemonic: String, callback: @escaping () -> ()) {
+    func showMnemonicToUser(mnemonic: String, callback: @escaping @MainActor () -> ()) {
         guard let _ = vc else {
-            callback()
+            Task { @MainActor in
+                callback()
+            }
             return
         }
         
-        AlertHelper.showAlert(
-            title: "profile.store-mnemonic".localized,
-            message: mnemonic,
-            on: vc,
-            confirmLabel: "Copy",
-            completion: {
-                ClipboardHelper.copyToClipboard(text: mnemonic, message: "profile.mnemonic-copied".localized)
-                callback()
-            }
-        )
+        DispatchQueue.main.async {
+            AlertHelper.showAlert(
+                title: "profile.store-mnemonic".localized,
+                message: mnemonic,
+                on: self.vc,
+                confirmLabel: "Copy",
+                completion: {
+                    Task { @MainActor in
+                        ClipboardHelper.copyToClipboard(text: mnemonic, message: "profile.mnemonic-copied".localized)
+                        callback()
+                    }
+                }
+            )
+        }
     }
     
     func mapNotificationToChat(notificationUserInfo : [String: AnyObject]) -> (Chat, String)? {

@@ -62,10 +62,8 @@ extension ChatMessageTextFieldView : UITextViewDelegate {
         let string = textView.text ?? ""
         let cursorPosition = textView.selectedRange.location
         
-        DispatchQueue.global(qos: .userInitiated).async {
-            self.processMention(text: string, cursorPosition: cursorPosition)
-            self.processMacro(text: string, cursorPosition: cursorPosition)
-        }
+        processMention(text: string, cursorPosition: cursorPosition)
+        processMacro(text: string, cursorPosition: cursorPosition)
     }
     
     func adjustTextViewHeight() {
@@ -90,13 +88,20 @@ extension ChatMessageTextFieldView : UITextViewDelegate {
     ) {
         let forceSendButtonVisible = sendButtonVisible || (mode == .Attachment)
         
-        attachmentButton.backgroundColor = forceSendButtonVisible ? UIColor.Sphinx.ReceivedMsgBG : UIColor.Sphinx.PrimaryBlue
-        attachmentButton.setTitleColor(forceSendButtonVisible ? UIColor.Sphinx.MainBottomIcons : UIColor.white, for: .normal)
-        
-        sendButtonContainer.isHidden = !forceSendButtonVisible
-        audioButtonContainer.isHidden = forceSendButtonVisible
-        
-        attachmentButtonContainer.isHidden = (mode == .Attachment)
+        if !isAgentChat {
+            attachmentButton.backgroundColor = forceSendButtonVisible ? UIColor.Sphinx.ReceivedMsgBG : UIColor.Sphinx.PrimaryBlue
+            attachmentButton.setTitleColor(forceSendButtonVisible ? UIColor.Sphinx.MainBottomIcons : UIColor.white, for: .normal)
+            
+            sendButtonContainer.isHidden = !forceSendButtonVisible
+            audioButtonContainer.isHidden = forceSendButtonVisible
+            
+            attachmentButtonContainer.isHidden = (mode == .Attachment)
+        } else {
+            // Agent chat: send button always visible, enabled only when there is text
+            sendButtonContainer.isHidden = false
+            sendButton.isEnabled = sendButtonVisible
+            sendButton.alpha = sendButtonVisible ? 1.0 : 0.4
+        }
     }
 }
 

@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol ChatHeaderViewDelegate : class {
+@MainActor protocol ChatHeaderViewDelegate : class {
     ///Chat header
     func didTapHeaderButton()
     func didTapBackButton()
@@ -53,6 +53,7 @@ class ChatHeaderView: UIView {
     
     var chat: Chat? = nil
     var contact: UserContact? = nil
+    @IBOutlet weak var agentCpuIconImageView: UIImageView!
     
     public enum RightButtons: Int {
         case SecondBrain
@@ -77,8 +78,8 @@ class ChatHeaderView: UIView {
         contentView.frame = self.bounds
         contentView.autoresizingMask = [.flexibleHeight, .flexibleWidth]
         
-        NotificationCenter.default.addObserver(forName: .onBalanceDidChange, object: nil, queue: OperationQueue.main) { (n: Notification) in
-            self.updateSatsEarned()
+        NotificationCenter.default.addObserver(forName: .onBalanceDidChange, object: nil, queue: OperationQueue.main) { [weak self] (n: Notification) in
+            Task { @MainActor [weak self] in self?.updateSatsEarned() }
         }
     }
     
@@ -109,6 +110,20 @@ class ChatHeaderView: UIView {
         setVolumeState(muted: chat?.isMuted() ?? false)
         configureImageOrInitials()
         setupPendingUI()
+        
+        if contact?.isAgent == true {
+            configureForAgentChat()
+        }
+    }
+    
+    func configureForAgentChat() {
+        volumeButton.isHidden = true
+        lockSign.isHidden = true
+        boltSign.isHidden = true
+        webAppButton.isHidden = true
+        secondBrainButton.isHidden = true
+        showThreadsButton.isHidden = true
+        agentCpuIconImageView.isHidden = false
     }
     
     func configureTimezoneInfo() {
@@ -253,8 +268,9 @@ class ChatHeaderView: UIView {
     }
     
     func configureThreadsButton() {
-        let isTribe = chat?.isPublicGroup() == true
-        showThreadsButton.isHidden = !isTribe
+//        let isTribe = chat?.isPublicGroup() == true
+//        showThreadsButton.isHidden = !isTribe
+        showThreadsButton.isHidden = true
     }
     
     func setVolumeState(muted: Bool) {

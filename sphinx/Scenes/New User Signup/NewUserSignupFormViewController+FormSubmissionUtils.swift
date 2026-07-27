@@ -154,7 +154,7 @@ extension NewUserSignupFormViewController: QRCodeScannerDelegate {
 }
 
 
-extension NewUserSignupFormViewController : NSFetchedResultsControllerDelegate{
+extension NewUserSignupFormViewController : @preconcurrency NSFetchedResultsControllerDelegate {
     
     private func listenForSelfContactRegistration() {
         let managedContext = CoreDataManager.sharedManager.persistentContainer.viewContext
@@ -180,34 +180,37 @@ extension NewUserSignupFormViewController : NSFetchedResultsControllerDelegate{
         }
     }
     
-    func controller(
+    nonisolated func controller(
         _ controller: NSFetchedResultsController<NSFetchRequestResult>,
         didChangeContentWith snapshot: NSDiffableDataSourceSnapshotReference
     ) {
         if let resultController = controller as? NSFetchedResultsController<NSManagedObject>,
            let firstSection = resultController.sections?.first {
-            
+
             if let _ = firstSection.objects?.first {
-                selfContactFetchListener = nil
-                
-                watchdogTimer?.invalidate()
-                watchdogTimer = nil
-                
-                finalizeSignup()
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    self.selfContactFetchListener = nil
+
+                    self.watchdogTimer?.invalidate()
+                    self.watchdogTimer = nil
+
+                    self.finalizeSignup()
+                }
             }
         }
     }
-    
+
     private func setupWatchdogTimer() {
         watchdogTimer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: false) { [weak self] _ in
             guard let self = self else { return }
-            
-            if self.selfContactFetchListener?.fetchedObjects?.first == nil {
-                DispatchQueue.main.async {
+
+            MainActor.assumeIsolated {
+                if self.selfContactFetchListener?.fetchedObjects?.first == nil {
                     self.navigationController?.popViewController(animated: true)
+                } else {
+                    self.finalizeSignup()
                 }
-            } else {
-                self.finalizeSignup()
             }
         }
     }

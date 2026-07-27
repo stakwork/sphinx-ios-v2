@@ -9,7 +9,7 @@
 import UIKit
 import CoreData
 
-protocol ThreadsListDataSourceDelegate : class {
+@MainActor protocol ThreadsListDataSourceDelegate : class {
     ///Threads
     func didSelectThreadWith(uuid: String)
     
@@ -21,7 +21,7 @@ protocol ThreadsListDataSourceDelegate : class {
     func shouldOpenActivityVCFor(url: URL)
 }
 
-class ThreadsListDataSource : NSObject {
+@MainActor class ThreadsListDataSource : NSObject {
     
     ///View references
     var tableView : UITableView!
@@ -241,7 +241,7 @@ extension ThreadsListDataSource: UITableViewDelegate {
     }
 }
 
-extension ThreadsListDataSource : NSFetchedResultsControllerDelegate {
+extension ThreadsListDataSource : @preconcurrency NSFetchedResultsControllerDelegate {
     
     func startListeningToResultsController() {
         threadsResultsController?.delegate = self
@@ -280,7 +280,7 @@ extension ThreadsListDataSource : NSFetchedResultsControllerDelegate {
     ) {
         if let resultController = controller as? NSFetchedResultsController<NSManagedObject>,
             let firstSection = resultController.sections?.first {
-            
+
             if controller == threadsResultsController {
                 if let messages = firstSection.objects as? [TransactionMessage] {
                     processThreadMessages(messages)

@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol MediaMessageViewDelegate: class {
+@MainActor protocol MediaMessageViewDelegate: class {
     func didTapMediaButton(isThreadOriginalMsg: Bool)
     
     func shouldLoadOriginalMessageMediaDataFrom(originalMessageMedia: BubbleMessageLayoutState.MessageMedia)

@@ -8,6 +8,7 @@
 
 import UIKit
 
+@MainActor
 protocol PinMessageDelegate: class {
     func didTapUnpinButton(message: TransactionMessage)
     func willDismissPresentedVC()
@@ -139,7 +140,9 @@ extension PinMessageViewController {
     func setupDismiss() {
         if mode == .MessagePinned || mode == .MessageUnpinned {
             DelayPerformedHelper.performAfterDelay(seconds: 2.0, completion: {
-                self.animateAlphaAndDismiss()
+                Task { @MainActor [weak self] in
+                    self?.animateAlphaAndDismiss()
+                }
             })
         }
     }

@@ -10,7 +10,7 @@ import Foundation
 import UIKit
 
 
-protocol DiscoverTribesWVVCDelegate: class {
+@MainActor protocol DiscoverTribesWVVCDelegate: class {
     func handleDeeplinkClick()
 }
 

@@ -10,9 +10,18 @@ import UIKit
 
 // MARK: - Delegate Protocol
 
-protocol CreateFeatureViewControllerDelegate: AnyObject {
+@MainActor protocol CreateFeatureViewControllerDelegate: AnyObject {
     func didCreateFeature(_ feature: HiveFeature)
+    func didCreateTask(_ task: WorkspaceTask)
 }
+
+extension CreateFeatureViewControllerDelegate {
+    func didCreateTask(_ task: WorkspaceTask) {}
+}
+
+// MARK: - CreationMode
+
+enum CreationMode { case feature, task, debugRun, loadWorkflow }
 
 // MARK: - CreateFeatureViewController
 
@@ -22,7 +31,19 @@ class CreateFeatureViewController: UIViewController {
 
     weak var delegate: CreateFeatureViewControllerDelegate?
 
+    var mode: CreationMode = .feature
+    var isStakworkMode: Bool = false
+    var workspaceSlug: String = ""
+    var repositories: [WorkspaceRepository] = []
+    var selectedRepository: WorkspaceRepository? = nil
+    var selectedBranch: WorkspaceBranch? = nil
+    var branches: [WorkspaceBranch] = []
+
     private var workspaceId: String = ""
+
+    private var workflowVersions: [WorkflowVersion] = []
+    private var selectedVersion: WorkflowVersion? = nil
+    private var debounceTimer: Timer? = nil
 
     private var promptLabel: UILabel!
     private var closeIconLabel: UILabel!
@@ -32,11 +53,43 @@ class CreateFeatureViewController: UIViewController {
     private var sendButton: UIButton!
     private var loadingWheel: UIActivityIndicatorView!
 
+    // Combo UI (task mode only)
+    private var modeSelectorButton: UIButton!
+    private var repositoryComboButton: UIButton!
+    private var branchComboButton: UIButton!
+    private var versionComboButton: UIButton!
+    private var comboStackView: UIStackView!
+
+    // Model selector (feature mode only)
+    private var availableModels: [HiveLlmModel] = []
+    private var selectedModel: HiveLlmModel? = nil
+    private var modelComboButton: UIButton!
+
+    // Repository multi-select (feature mode only)
+    private var selectedRepositoryIds: [String] = []
+    private var repositoriesMultiSelectButton: UIButton!
+
+    private let bubbleHelper = NewMessageBubbleHelper()
+
+    // Mention autocomplete (feature mode only)
+    private let mentionHandler = WorkspaceMentionHandler()
+
     // MARK: - Instantiation
 
-    static func instantiate(workspaceId: String) -> CreateFeatureViewController {
+    static func instantiate(workspaceId: String, workspaceSlug: String = "") -> CreateFeatureViewController {
         let vc = StoryboardScene.Dashboard.createFeatureViewController.instantiate()
         vc.workspaceId = workspaceId
+        vc.workspaceSlug = workspaceSlug
+        vc.modalPresentationStyle = .automatic
+        return vc
+    }
+
+    static func instantiateForTask(workspaceId: String, workspaceSlug: String, isStakwork: Bool = false) -> CreateFeatureViewController {
+        let vc = StoryboardScene.Dashboard.createFeatureViewController.instantiate()
+        vc.workspaceId = workspaceId
+        vc.workspaceSlug = workspaceSlug
+        vc.mode = .task
+        vc.isStakworkMode = isStakwork
         vc.modalPresentationStyle = .automatic
         return vc
     }
@@ -47,6 +100,88 @@ class CreateFeatureViewController: UIViewController {
         super.viewDidLoad()
         setupViews()
         configureView()
+
+        if mode == .feature {
+            API.sharedInstance.fetchLlmModelsWithAuth(
+                callback: { [weak self] models in
+                    DispatchQueue.main.async {
+                        guard let self, !models.isEmpty else { return }
+                        self.availableModels = models
+                        self.selectedModel = models.first(where: { $0.isPlanDefault }) ?? models.first
+                        self.modelComboButton.setTitle(self.selectedModel?.name ?? "Select Model", for: .normal)
+                        self.modelComboButton.isHidden = false
+                        self.comboStackView.isHidden = false
+                    }
+                },
+                errorCallback: { /* silent — selector stays hidden, creation proceeds without model */ }
+            )
+
+            if !workspaceSlug.isEmpty {
+                API.sharedInstance.fetchWorkspaceDetailWithAuth(
+                    slug: workspaceSlug,
+                    callback: { [weak self] repos in
+                        DispatchQueue.main.async {
+                            guard let self else { return }
+                            self.repositories = repos
+                            // Pre-fill from workspace-level cache
+                            let cached = UserDefaults.standard.object([String].self, with: "hiveWorkspaceRepos_\(self.workspaceId)")
+                            if let cached = cached {
+                                // Cache exists — restore, filtering out any stale IDs
+                                let valid = cached.filter { id in repos.contains { $0.id == id } }
+                                self.applyRepositorySelection(valid)
+                            } else {
+                                // No cache entry — first use for this workspace, select all by default
+                                self.applyRepositorySelection(repos.map { $0.id })
+                            }
+                            self.repositoriesMultiSelectButton.isHidden = false
+                            self.comboStackView.isHidden = false
+                        }
+                    },
+                    errorCallback: { /* silent — picker stays hidden */ }
+                )
+            }
+        }
+
+        if mode == .feature {
+            API.sharedInstance.fetchWorkspacesWithAuth(
+                callback: { [weak self] workspaces in
+                    DispatchQueue.main.async { self?.mentionHandler.availableWorkspaces = workspaces }
+                },
+                errorCallback: { /* silent — autocomplete just won't show */ }
+            )
+            mentionHandler.onWorkspaceSelected = { [weak self] ws, triggerRange in
+                guard let self else { return }
+                let slug = ws.slug ?? ws.name
+                let insertText = "@\(slug) "
+                let nsText = (self.messageTextView.text ?? "") as NSString
+                let safeLength = min(triggerRange.length, nsText.length - triggerRange.location)
+                guard triggerRange.location >= 0,
+                      triggerRange.location + safeLength <= nsText.length else { return }
+                let newText = nsText.replacingCharacters(
+                    in: NSRange(location: triggerRange.location, length: safeLength),
+                    with: insertText
+                )
+                let newCursor = NSRange(location: triggerRange.location + insertText.count, length: 0)
+                let defaultFont = UIFont(name: "Roboto-Regular", size: 17) ?? UIFont.systemFont(ofSize: 17)
+                self.messageTextView.text = newText
+                self.mentionHandler.applyMentionColoring(to: self.messageTextView, preservingCursor: newCursor, font: defaultFont)
+                self.updateSendButtonState()
+            }
+        }
+
+        if mode == .task {
+            applyMode(.task)
+            API.sharedInstance.fetchWorkspaceDetailWithAuth(
+                slug: workspaceSlug,
+                callback: { [weak self] repos in
+                    DispatchQueue.main.async {
+                        self?.repositories = repos
+                        self?.repositoryComboButton.setTitle("Select Repository", for: .normal)
+                    }
+                },
+                errorCallback: { /* silently fail, button stays disabled */ }
+            )
+        }
     }
 
     // MARK: - View Setup
@@ -77,7 +212,7 @@ class CreateFeatureViewController: UIViewController {
         // Prompt Label
         promptLabel = UILabel()
         promptLabel.translatesAutoresizingMaskIntoConstraints = false
-        promptLabel.text = "What job are you trying to solve?"
+        promptLabel.text = (mode == .task) ? "Describe a task" : "What job are you trying to solve?"
         promptLabel.textAlignment = .center
         promptLabel.font = UIFont(name: "Roboto-Regular", size: 16)
         promptLabel.textColor = UIColor.Sphinx.Text
@@ -97,13 +232,62 @@ class CreateFeatureViewController: UIViewController {
         messageTextView.textColor = UIColor.Sphinx.Text
         messageTextView.font = UIFont(name: "Roboto-Regular", size: 17)
         messageTextView.isScrollEnabled = true
+        messageTextView.delegate = self
         promptFieldView.addSubview(messageTextView)
+        addKeyboardToolbar(to: messageTextView)
 
-        // Bottom Container
+        // MARK: Combo Stack (task mode only — collapses when hidden)
+
+        // Model selector (feature mode — hidden until models load)
+        modelComboButton = makeComboButton(title: "Select Model")
+        modelComboButton.addTarget(self, action: #selector(modelComboTapped), for: .touchUpInside)
+        modelComboButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        modelComboButton.isHidden = true
+
+        // Repository multi-select (feature mode — hidden until repos load)
+        repositoriesMultiSelectButton = makeComboButton(title: "All Repositories")
+        repositoriesMultiSelectButton.addTarget(self, action: #selector(repositoriesMultiSelectTapped), for: .touchUpInside)
+        repositoriesMultiSelectButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        repositoriesMultiSelectButton.isHidden = true
+
+        // Mode Selector Button (stakwork only)
+        modeSelectorButton = makeComboButton(title: "Create Task")
+        modeSelectorButton.addTarget(self, action: #selector(modeSelectorTapped), for: .touchUpInside)
+        modeSelectorButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        modeSelectorButton.isHidden = true
+
+        // Repository Button
+        repositoryComboButton = makeComboButton(title: "Select Repository")
+        repositoryComboButton.addTarget(self, action: #selector(repositoryComboTapped), for: .touchUpInside)
+        repositoryComboButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        repositoryComboButton.isHidden = true
+
+        // Branch Button
+        branchComboButton = makeComboButton(title: "Select Branch")
+        branchComboButton.isEnabled = false
+        branchComboButton.alpha = 0.5
+        branchComboButton.isHidden = true
+        branchComboButton.addTarget(self, action: #selector(branchComboTapped), for: .touchUpInside)
+        branchComboButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
+
+        // Version Combo Button (loadWorkflow mode only)
+        versionComboButton = makeComboButton(title: "Select Version")
+        versionComboButton.isEnabled = false
+        versionComboButton.alpha = 0.5
+        versionComboButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        versionComboButton.isHidden = true
+        versionComboButton.addTarget(self, action: #selector(versionComboTapped), for: .touchUpInside)
+
+        // comboStackView holds the pickers; hidden = collapses to zero height in outer stack
+        comboStackView = UIStackView(arrangedSubviews: [modelComboButton, repositoriesMultiSelectButton, modeSelectorButton, repositoryComboButton, branchComboButton, versionComboButton])
+        comboStackView.axis = .vertical
+        comboStackView.spacing = 8
+        comboStackView.isHidden = true
+
+        // Bottom Container (send button row)
         let bottomContainer = UIView()
-        bottomContainer.translatesAutoresizingMaskIntoConstraints = false
         bottomContainer.backgroundColor = .clear
-        view.addSubview(bottomContainer)
+        bottomContainer.heightAnchor.constraint(equalToConstant: 100).isActive = true
 
         // Send Button
         sendButton = UIButton()
@@ -120,6 +304,27 @@ class CreateFeatureViewController: UIViewController {
         loadingWheel.translatesAutoresizingMaskIntoConstraints = false
         loadingWheel.hidesWhenStopped = true
         bottomContainer.addSubview(loadingWheel)
+
+        NSLayoutConstraint.activate([
+            sendButton.trailingAnchor.constraint(equalTo: bottomContainer.trailingAnchor),
+            sendButton.centerYAnchor.constraint(equalTo: bottomContainer.centerYAnchor),
+            sendButton.widthAnchor.constraint(equalToConstant: 175),
+            sendButton.heightAnchor.constraint(equalToConstant: 50),
+            loadingWheel.centerYAnchor.constraint(equalTo: sendButton.centerYAnchor),
+            loadingWheel.trailingAnchor.constraint(equalTo: sendButton.leadingAnchor, constant: -20),
+        ])
+
+        // Outer vertical stack: combo pickers + send row.
+        // UIStackView collapses hidden arranged subviews → no phantom gap in feature mode.
+        let outerStack = UIStackView(arrangedSubviews: [comboStackView, bottomContainer])
+        outerStack.translatesAutoresizingMaskIntoConstraints = false
+        outerStack.axis = .vertical
+        outerStack.spacing = 0
+        view.addSubview(outerStack)
+
+        // Mention autocomplete overlay (sits above outerStack, anchored to promptFieldView bottom)
+        view.addSubview(mentionHandler.container)
+        view.bringSubviewToFront(mentionHandler.container)
 
         // Layout Constraints
         NSLayoutConstraint.activate([
@@ -158,22 +363,66 @@ class CreateFeatureViewController: UIViewController {
             messageTextView.bottomAnchor.constraint(equalTo: promptFieldView.bottomAnchor, constant: -8),
             messageTextView.heightAnchor.constraint(greaterThanOrEqualToConstant: 120),
 
-            // Bottom Container
-            bottomContainer.topAnchor.constraint(equalTo: promptFieldView.bottomAnchor),
-            bottomContainer.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
-            bottomContainer.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
-            bottomContainer.heightAnchor.constraint(equalToConstant: 100),
+            // Outer stack anchored below promptFieldView, full width (with 16pt inset)
+            outerStack.topAnchor.constraint(equalTo: promptFieldView.bottomAnchor, constant: 12),
+            outerStack.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
+            outerStack.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
 
-            // Send Button — right-aligned, 175×50
-            sendButton.trailingAnchor.constraint(equalTo: bottomContainer.trailingAnchor),
-            sendButton.centerYAnchor.constraint(equalTo: bottomContainer.centerYAnchor),
-            sendButton.widthAnchor.constraint(equalToConstant: 175),
-            sendButton.heightAnchor.constraint(equalToConstant: 50),
-
-            // Loading Wheel — left of send button
-            loadingWheel.centerYAnchor.constraint(equalTo: sendButton.centerYAnchor),
-            loadingWheel.trailingAnchor.constraint(equalTo: sendButton.leadingAnchor, constant: -20),
+            // Mention autocomplete dropdown — overlays outerStack, anchored to promptFieldView bottom
+            mentionHandler.container.topAnchor.constraint(equalTo: promptFieldView.bottomAnchor, constant: 4),
+            mentionHandler.container.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
+            mentionHandler.container.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
+            mentionHandler.heightConstraint,
         ])
+    }
+    
+    func addKeyboardToolbar(to textView: UITextView) {
+        let toolbar = UIToolbar()
+        toolbar.sizeToFit()
+        
+        toolbar.barTintColor = UIColor.Sphinx.HeaderBG
+        toolbar.tintColor = UIColor.Sphinx.Text
+        toolbar.isTranslucent = false
+        
+        let flexSpace = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
+        let doneButton = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(dismissKeyboard))
+        doneButton.tintColor = UIColor.Sphinx.HeaderBG
+        
+        toolbar.items = [flexSpace, doneButton]
+        textView.inputAccessoryView = toolbar
+    }
+
+    @objc func dismissKeyboard() {
+        view.endEditing(true)
+    }
+
+    /// Creates a styled combo-select button (chevron on right, left-aligned title).
+    private func makeComboButton(title: String) -> UIButton {
+        let btn = UIButton(type: .system)
+        btn.translatesAutoresizingMaskIntoConstraints = false
+        btn.backgroundColor = UIColor.Sphinx.ProfileBG
+        btn.layer.cornerRadius = 5
+        btn.clipsToBounds = true
+        btn.contentHorizontalAlignment = .left
+        btn.titleEdgeInsets = UIEdgeInsets(top: 0, left: 12, bottom: 0, right: 0)
+
+        btn.setTitle(title, for: .normal)
+        btn.setTitleColor(UIColor.Sphinx.Text, for: .normal)
+        btn.titleLabel?.font = UIFont(name: "Roboto-Regular", size: 15) ?? UIFont.systemFont(ofSize: 15)
+
+        // Chevron on the right
+        let chevron = UIImageView(image: UIImage(systemName: "chevron.down"))
+        chevron.translatesAutoresizingMaskIntoConstraints = false
+        chevron.tintColor = UIColor.Sphinx.SecondaryText
+        chevron.contentMode = .scaleAspectFit
+        btn.addSubview(chevron)
+        NSLayoutConstraint.activate([
+            chevron.trailingAnchor.constraint(equalTo: btn.trailingAnchor, constant: -12),
+            chevron.centerYAnchor.constraint(equalTo: btn.centerYAnchor),
+            chevron.widthAnchor.constraint(equalToConstant: 16),
+            chevron.heightAnchor.constraint(equalToConstant: 16),
+        ])
+        return btn
     }
 
     private func configureView() {
@@ -187,6 +436,195 @@ class CreateFeatureViewController: UIViewController {
             opacity: 1,
             radius: 0.5,
             bottomhHeight: 1.5
+        )
+
+        updateSendButtonState()
+    }
+
+    // MARK: - Send Button State
+
+    private func updateSendButtonState() {
+        let hasMessage = !(messageTextView.text?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
+        let hasRepo = selectedRepository != nil
+        let isLoadWorkflowReady = mode == .loadWorkflow
+            && Int(messageTextView.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "") != nil
+            && selectedVersion != nil
+        sendButton.isEnabled = hasMessage && (mode == .feature || (mode == .task && hasRepo) || mode == .debugRun || isLoadWorkflowReady)
+    }
+
+    // MARK: - Mode Management
+
+    private func applyMode(_ newMode: CreationMode) {
+        mode = newMode
+        switch newMode {
+        case .task:         promptLabel.text = "Describe a task"
+        case .debugRun:     promptLabel.text = "Paste Run ID"
+        case .loadWorkflow: promptLabel.text = "Paste Workflow ID"
+        default: break
+        }
+        comboStackView.isHidden = false
+        modeSelectorButton.isHidden          = !isStakworkMode
+        modelComboButton.isHidden            = true
+        repositoriesMultiSelectButton.isHidden = true
+        repositoryComboButton.isHidden       = (newMode != .task)
+        branchComboButton.isHidden           = (newMode != .task)
+        versionComboButton.isHidden          = (newMode != .loadWorkflow)
+        switch newMode {
+        case .task:         sendButton.setTitle("SEND", for: .normal)
+        case .debugRun:     sendButton.setTitle("Debug this run", for: .normal)
+        case .loadWorkflow: sendButton.setTitle("Load Workflow", for: .normal)
+        default: break
+        }
+        switch newMode {
+        case .debugRun, .loadWorkflow:
+            messageTextView.keyboardType = .numberPad
+        case .feature, .task:
+            messageTextView.keyboardType = .default
+        }
+        messageTextView.reloadInputViews()
+        updateSendButtonState()
+    }
+
+    @objc private func modeSelectorTapped() {
+        let sheet = UIAlertController(title: "Select Mode", message: nil, preferredStyle: .actionSheet)
+        let options: [(String, CreationMode)] = [
+            ("Create Task", .task),
+            ("Debug Run", .debugRun),
+            ("Load Workflow", .loadWorkflow)
+        ]
+        for (title, modeCase) in options {
+            sheet.addAction(UIAlertAction(title: title, style: .default) { [weak self] _ in
+                guard let self else { return }
+                self.modeSelectorButton.setTitle(title, for: .normal)
+                self.applyMode(modeCase)
+            })
+        }
+        sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        if let popover = sheet.popoverPresentationController {
+            popover.sourceView = modeSelectorButton
+            popover.sourceRect = modeSelectorButton.bounds
+        }
+        present(sheet, animated: true)
+    }
+
+    // MARK: - Combo Actions
+
+    @objc private func modelComboTapped() {
+        guard !availableModels.isEmpty else { return }
+        let sheet = UIAlertController(title: "Select Model", message: nil, preferredStyle: .actionSheet)
+        for model in availableModels {
+            sheet.addAction(UIAlertAction(title: model.name, style: .default) { [weak self] _ in
+                guard let self else { return }
+                self.selectedModel = model
+                self.modelComboButton.setTitle(model.name, for: .normal)
+            })
+        }
+        sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        if let popover = sheet.popoverPresentationController {
+            popover.sourceView = modelComboButton
+            popover.sourceRect = modelComboButton.bounds
+        }
+        present(sheet, animated: true)
+    }
+
+    @objc private func repositoriesMultiSelectTapped() {
+        guard !repositories.isEmpty else { return }
+        let sheet = MultiSelectRepositorySheet(
+            repositories: repositories,
+            selectedIds: selectedRepositoryIds
+        ) { [weak self] ids in
+            self?.applyRepositorySelection(ids)
+        }
+        sheet.modalPresentationStyle = .pageSheet
+        present(sheet, animated: true)
+    }
+
+    private func applyRepositorySelection(_ ids: [String]) {
+        selectedRepositoryIds = ids
+        if ids.isEmpty {
+            repositoriesMultiSelectButton.setTitle("All Repositories", for: .normal)
+        } else {
+            repositoriesMultiSelectButton.setTitle("\(ids.count) repositor\(ids.count == 1 ? "y" : "ies") selected", for: .normal)
+        }
+    }
+
+    @objc private func repositoryComboTapped() {
+        guard !repositories.isEmpty else { return }
+
+        let sheet = UIAlertController(title: "Select Repository", message: nil, preferredStyle: .actionSheet)
+        for repo in repositories {
+            sheet.addAction(UIAlertAction(title: repo.name, style: .default) { [weak self] _ in
+                guard let self else { return }
+                self.selectedRepository = repo
+                self.repositoryComboButton.setTitle(repo.name, for: .normal)
+                self.fetchBranches(for: repo)
+                self.updateSendButtonState()
+            })
+        }
+        sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+
+        if let popover = sheet.popoverPresentationController {
+            popover.sourceView = repositoryComboButton
+            popover.sourceRect = repositoryComboButton.bounds
+        }
+        present(sheet, animated: true)
+    }
+
+    @objc private func branchComboTapped() {
+        guard !branches.isEmpty else { return }
+
+        let sheet = UIAlertController(title: "Select Branch", message: nil, preferredStyle: .actionSheet)
+        for branch in branches {
+            sheet.addAction(UIAlertAction(title: branch.name, style: .default) { [weak self] _ in
+                guard let self else { return }
+                self.selectedBranch = branch
+                self.branchComboButton.setTitle(branch.name, for: .normal)
+            })
+        }
+        sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+
+        if let popover = sheet.popoverPresentationController {
+            popover.sourceView = branchComboButton
+            popover.sourceRect = branchComboButton.bounds
+        }
+        present(sheet, animated: true)
+    }
+
+    private func fetchBranches(for repo: WorkspaceRepository) {
+        branchComboButton.isEnabled = false
+        branchComboButton.alpha = 0.5
+        branchComboButton.setTitle("Loading branches…", for: .normal)
+
+        API.sharedInstance.fetchBranchesWithAuth(
+            repoUrl: repo.repositoryUrl,
+            workspaceSlug: workspaceSlug,
+            callback: { [weak self] fetchedBranches in
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    self.branchComboButton.isEnabled = true
+                    self.branchComboButton.alpha = 1.0
+                    self.branches = fetchedBranches
+                    // Pre-select master/main, otherwise first branch
+                    let preferred = fetchedBranches.first(where: { $0.name == "master" || $0.name == "main" })
+                        ?? fetchedBranches.first
+                    self.selectedBranch = preferred
+                    self.branchComboButton.setTitle(preferred?.name ?? "Select Branch", for: .normal)
+                    self.updateSendButtonState()
+                }
+            },
+            errorCallback: { [weak self] in
+                // API failed — fall back to just "master"
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    self.branchComboButton.isEnabled = true
+                    self.branchComboButton.alpha = 1.0
+                    let master = WorkspaceBranch(json: ["name": "master"])
+                    self.branches = [master]
+                    self.selectedBranch = master
+                    self.branchComboButton.setTitle("master", for: .normal)
+                    self.updateSendButtonState()
+                }
+            }
         )
     }
 
@@ -209,6 +647,253 @@ class CreateFeatureViewController: UIViewController {
             return
         }
 
+        // MARK: Debug Run mode
+        if mode == .debugRun {
+            let runId = message
+            sendButton.isEnabled = false
+            loadingWheel.startAnimating()
+
+            // Step 1: Verify project exists and get workflow_id
+            API.sharedInstance.fetchStakworkProjectWithAuth(
+                projectId: runId,
+                callback: { [weak self] projectData in
+                    guard let self else { return }
+                    guard let workflowId = projectData["workflow_id"] as? Int else {
+                        DispatchQueue.main.async {
+                            self.resetSendButton()
+                            AlertHelper.showAlert(title: "Error", message: "Project has no workflow_id.")
+                        }
+                        return
+                    }
+
+                    // Step 2: Fetch latest workflow version
+                    API.sharedInstance.fetchWorkflowVersionsWithAuth(
+                        workspaceSlug: self.workspaceSlug,
+                        workflowId: workflowId,
+                        callback: { [weak self] versions in
+                            guard let self, let latestVersion = versions.first else {
+                                DispatchQueue.main.async {
+                                    self?.resetSendButton()
+                                    AlertHelper.showAlert(title: "Error", message: "No workflow versions found.")
+                                }
+                                return
+                            }
+                            let workflowName = latestVersion.workflowName ?? "Workflow \(workflowId)"
+                            let workflowRefId = latestVersion.refId ?? ""
+                            let workflowVersionId = latestVersion.versionId
+                            let taskTitle = "Debug run \(runId)"
+
+                            // Step 3: Create workflow_editor task
+                            API.sharedInstance.createWorkflowTaskWithAuth(
+                                title: taskTitle,
+                                description: taskTitle,
+                                workspaceSlug: self.workspaceSlug,
+                                callback: { [weak self] task in
+                                    guard let self, let task else {
+                                        DispatchQueue.main.async {
+                                            self?.resetSendButton()
+                                            AlertHelper.showAlert(title: "Error", message: "Failed to create task.")
+                                        }
+                                        return
+                                    }
+
+                                    // Step 4: Save ASSISTANT WORKFLOW artifact
+                                    var artifactContent: [String: AnyObject] = [
+                                        "workflowId": workflowId as AnyObject,
+                                        "workflowName": workflowName as AnyObject,
+                                        "workflowRefId": workflowRefId as AnyObject,
+                                        "workflowVersionId": workflowVersionId as AnyObject
+                                    ]
+                                    if let workflowJson = latestVersion.workflowJson {
+                                        artifactContent["workflowJson"] = workflowJson as AnyObject
+                                    }
+                                    let workflowArtifact: [String: AnyObject] = [
+                                        "type": "WORKFLOW" as AnyObject,
+                                        "content": artifactContent as AnyObject
+                                    ]
+                                    let artifactMessage = "Loaded: \(workflowName)\nSelect a step on the right as a starting point."
+                                    API.sharedInstance.saveTaskMessageWithAuth(
+                                        taskId: task.id,
+                                        message: artifactMessage,
+                                        role: "ASSISTANT",
+                                        artifacts: [workflowArtifact],
+                                        callback: { [weak self] _ in
+                                            guard let self else { return }
+
+                                            // Step 5: Auto-send debug message
+                                            API.sharedInstance.sendWorkflowEditorDebugMessageWithAuth(
+                                                taskId: task.id,
+                                                message: "Debug this run \(runId)",
+                                                workflowId: workflowId,
+                                                workflowName: workflowName,
+                                                workflowRefId: workflowRefId,
+                                                workflowVersionId: workflowVersionId,
+                                                callback: { [weak self] _ in
+                                                    // Step 6: Navigate to new task
+                                                    DispatchQueue.main.async {
+                                                        self?.finishDebugRunCreation(task: task)
+                                                    }
+                                                },
+                                                errorCallback: { [weak self] in
+                                                    DispatchQueue.main.async {
+                                                        self?.resetSendButton()
+                                                        AlertHelper.showAlert(title: "Error", message: "Failed to send debug message.")
+                                                    }
+                                                }
+                                            )
+                                        },
+                                        errorCallback: { [weak self] in
+                                            DispatchQueue.main.async {
+                                                self?.resetSendButton()
+                                                AlertHelper.showAlert(title: "Error", message: "Failed to save workflow artifact.")
+                                            }
+                                        }
+                                    )
+                                },
+                                errorCallback: { [weak self] in
+                                    DispatchQueue.main.async {
+                                        self?.resetSendButton()
+                                        AlertHelper.showAlert(title: "Error", message: "Failed to create task.")
+                                    }
+                                }
+                            )
+                        },
+                        errorCallback: { [weak self] in
+                            DispatchQueue.main.async {
+                                self?.resetSendButton()
+                                AlertHelper.showAlert(title: "Error", message: "Failed to fetch workflow versions.")
+                            }
+                        }
+                    )
+                },
+                errorCallback: { [weak self] errorMessage in
+                    DispatchQueue.main.async {
+                        self?.resetSendButton()
+                        AlertHelper.showAlert(title: "Error", message: "Run not found: \(errorMessage)")
+                    }
+                }
+            )
+            return
+        }
+
+        // MARK: Load Workflow mode
+        if mode == .loadWorkflow {
+            guard let workflowId = Int(message), let version = selectedVersion else { return }
+            let workflowName = version.workflowName ?? "Workflow \(workflowId)"
+            let versionShort = String(version.versionId.prefix(8))
+            let taskTitle = "\(workflowName) v\(versionShort)"
+            let taskDescription = "Editing workflow \(workflowId) version \(versionShort)"
+
+            sendButton.isEnabled = false
+            loadingWheel.startAnimating()
+
+            API.sharedInstance.createWorkflowTaskWithAuth(
+                title: taskTitle,
+                description: taskDescription,
+                workspaceSlug: workspaceSlug,
+                callback: { [weak self] task in
+                    guard let self, let task else {
+                        DispatchQueue.main.async {
+                            self?.resetSendButton()
+                            AlertHelper.showAlert(title: "Error", message: "Failed to create task.")
+                        }
+                        return
+                    }
+                    var artifactContent: [String: AnyObject] = [
+                        "workflowId": workflowId as AnyObject,
+                        "workflowName": workflowName as AnyObject,
+                        "workflowRefId": (version.refId ?? "") as AnyObject,
+                        "workflowVersionId": version.versionId as AnyObject
+                    ]
+                    if let wfJson = version.workflowJson {
+                        artifactContent["workflowJson"] = wfJson as AnyObject
+                    }
+                    let artifact: [String: AnyObject] = [
+                        "type": "WORKFLOW" as AnyObject,
+                        "content": artifactContent as AnyObject
+                    ]
+                    API.sharedInstance.saveTaskMessageWithAuth(
+                        taskId: task.id,
+                        message: "Loaded: \(taskTitle)\nSelect a step on the right as a starting point.",
+                        role: "ASSISTANT",
+                        artifacts: [artifact],
+                        callback: { [weak self] _ in
+                            DispatchQueue.main.async { self?.finishLoadWorkflowCreation(task: task) }
+                        },
+                        errorCallback: { [weak self] in
+                            DispatchQueue.main.async {
+                                self?.resetSendButton()
+                                AlertHelper.showAlert(title: "Error", message: "Failed to save workflow artifact.")
+                            }
+                        }
+                    )
+                },
+                errorCallback: { [weak self] in
+                    DispatchQueue.main.async {
+                        self?.resetSendButton()
+                        AlertHelper.showAlert(title: "Error", message: "Failed to create task.")
+                    }
+                }
+            )
+            return
+        }
+
+        // MARK: Task mode
+        if mode == .task {
+            guard let repo = selectedRepository else { return }
+            let branch = selectedBranch?.name ?? repo.branch ?? "main"
+            sendButton.isEnabled = false
+            loadingWheel.startAnimating()
+
+            API.sharedInstance.createTaskWithAuth(
+                title: String(message.prefix(100)),
+                workspaceSlug: workspaceSlug,
+                repositoryId: repo.id,
+                branch: branch,
+                callback: { [weak self] task in
+                    guard let self else { return }
+                    guard let task = task else {
+                        DispatchQueue.main.async {
+                            self.resetSendButton()
+                            AlertHelper.showAlert(title: "Error", message: "Failed to create task.")
+                        }
+                        return
+                    }
+                    // Step 2: Send initial message (fire-and-forget)
+                    API.sharedInstance.sendTaskChatMessageWithAuth(
+                        taskId: task.id,
+                        message: message,
+                        callback: { [weak self] _ in
+                            DispatchQueue.main.async { self?.finishTaskCreation(task: task) }
+                        },
+                        errorCallback: { [weak self] in
+                            DispatchQueue.main.async { self?.finishTaskCreation(task: task) }
+                        }
+                    )
+                },
+                errorCallback: { [weak self] in
+                    DispatchQueue.main.async {
+                        self?.resetSendButton()
+                        AlertHelper.showAlert(title: "Error", message: "Failed to create task. Please try again.")
+                    }
+                }
+            )
+            return
+        }
+
+        // MARK: Feature mode (existing path)
+
+        if mode == .feature && !repositories.isEmpty && selectedRepositoryIds.isEmpty {
+            bubbleHelper.showGenericMessageView(
+                text: "Please select at least one repository.",
+                delay: 3,
+                textColor: .white,
+                backColor: UIColor.Sphinx.PrimaryRed,
+                backAlpha: 1.0
+            )
+            return
+        }
+
         // Disable button and start loading
         sendButton.isEnabled = false
         loadingWheel.startAnimating()
@@ -219,6 +904,7 @@ class CreateFeatureViewController: UIViewController {
         API.sharedInstance.createFeatureWithAuth(
             workspaceId: workspaceId,
             title: title,
+            model: selectedModel?.name,
             callback: { [weak self] feature in
                 guard let self = self else { return }
 
@@ -238,6 +924,8 @@ class CreateFeatureViewController: UIViewController {
                 API.sharedInstance.sendFeatureChatMessageWithAuth(
                     featureId: feature.id,
                     message: message,
+                    model: self.selectedModel?.name,
+                    selectedRepositoryIds: self.selectedRepositoryIds,
                     callback: { [weak self] _ in
                         DispatchQueue.main.async {
                             self?.finishCreation(feature: feature)
@@ -264,8 +952,133 @@ class CreateFeatureViewController: UIViewController {
         )
     }
 
+    // MARK: - Helpers
+
+    private func resetSendButton() {
+        sendButton.isEnabled = true
+        loadingWheel.stopAnimating()
+    }
+
     private func finishCreation(feature: HiveFeature) {
+        UserDefaults.standard.set(object: selectedRepositoryIds, forKey: "hiveFeatureRepos_\(feature.id)")
+        UserDefaults.standard.set(object: selectedRepositoryIds, forKey: "hiveWorkspaceRepos_\(workspaceId)")
         delegate?.didCreateFeature(feature)
         dismiss(animated: true, completion: nil)
+    }
+
+    private func finishTaskCreation(task: WorkspaceTask) {
+        delegate?.didCreateTask(task)
+        dismiss(animated: true)
+    }
+
+    private func finishDebugRunCreation(task: WorkspaceTask) {
+        delegate?.didCreateTask(task)
+        dismiss(animated: true)
+    }
+
+    private func finishLoadWorkflowCreation(task: WorkspaceTask) {
+        delegate?.didCreateTask(task)
+        dismiss(animated: true)
+    }
+
+    // MARK: - Version Combo Actions
+
+    @objc private func versionComboTapped() {
+        guard !workflowVersions.isEmpty else { return }
+        let sheet = UIAlertController(title: "Select a version", message: nil, preferredStyle: .actionSheet)
+        for (i, version) in workflowVersions.enumerated() {
+            sheet.addAction(UIAlertAction(title: displayTitle(for: version, index: i), style: .default) { [weak self] _ in
+                guard let self else { return }
+                self.selectedVersion = version
+                self.versionComboButton.setTitle(self.displayTitle(for: version, index: i), for: .normal)
+                self.updateSendButtonState()
+            })
+        }
+        sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        if let popover = sheet.popoverPresentationController {
+            popover.sourceView = versionComboButton
+            popover.sourceRect = versionComboButton.bounds
+        }
+        present(sheet, animated: true)
+    }
+
+    private func fetchVersions(for workflowId: Int) {
+        API.sharedInstance.fetchWorkflowVersionsWithAuth(
+            workspaceSlug: workspaceSlug,
+            workflowId: workflowId,
+            callback: { [weak self] versions in
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    self.workflowVersions = versions
+                    self.selectedVersion = versions.first
+                    if let first = versions.first {
+                        self.versionComboButton.setTitle(self.displayTitle(for: first, index: 0), for: .normal)
+                        self.versionComboButton.isEnabled = true
+                        self.versionComboButton.alpha = 1.0
+                    } else {
+                        self.versionComboButton.setTitle("No versions found", for: .normal)
+                        self.versionComboButton.isEnabled = false
+                        self.versionComboButton.alpha = 0.5
+                    }
+                    self.updateSendButtonState()
+                }
+            },
+            errorCallback: { [weak self] in
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    self.versionComboButton.setTitle("Failed to load versions", for: .normal)
+                    self.versionComboButton.isEnabled = false
+                    self.versionComboButton.alpha = 0.5
+                    self.updateSendButtonState()
+                }
+            }
+        )
+    }
+
+    private func displayTitle(for version: WorkflowVersion, index: Int) -> String {
+        let short = String(version.versionId.prefix(8))
+        let dateStr: String = {
+            guard let date = version.dateAddedToGraph else { return "" }
+            let f = DateFormatter()
+            f.dateStyle = .medium
+            f.timeStyle = .none
+            return "  \(f.string(from: date))"
+        }()
+        let latest = index == 0 ? "  [Latest]" : ""
+        let published = version.published ? "  [Published]" : ""
+        return "\(short)\(dateStr)\(latest)\(published)"
+    }
+}
+
+// MARK: - UITextViewDelegate
+
+extension CreateFeatureViewController: UITextViewDelegate {
+    func textViewDidChange(_ textView: UITextView) {
+        updateSendButtonState()
+
+        // @mention autocomplete — feature mode only
+        if mode == .feature {
+            mentionHandler.processTextChange(in: textView)
+        }
+
+        guard mode == .loadWorkflow else { return }
+
+        // Reset state on every keystroke
+        debounceTimer?.invalidate()
+        debounceTimer = nil
+        workflowVersions = []
+        selectedVersion = nil
+        versionComboButton.setTitle("Select Version", for: .normal)
+        versionComboButton.isEnabled = false
+        versionComboButton.alpha = 0.5
+        updateSendButtonState()
+
+        let text = textView.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !text.isEmpty, let workflowId = Int(text) else { return }
+
+        versionComboButton.setTitle("Loading versions…", for: .normal)
+        debounceTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: false) { [weak self] _ in
+            self?.fetchVersions(for: workflowId)
+        }
     }
 }

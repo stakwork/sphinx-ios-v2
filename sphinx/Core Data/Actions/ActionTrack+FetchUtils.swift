@@ -56,14 +56,14 @@ extension ActionTrack {
 
     public enum SortDescriptors {
 
-        public static let typeAscending: NSSortDescriptor = NSSortDescriptor(
+        public nonisolated(unsafe) static let typeAscending: NSSortDescriptor = NSSortDescriptor(
             key: #keyPath(ActionTrack.type),
             ascending: true,
             selector: #selector(NSString.localizedStandardCompare(_:))
         )
 
 
-        public static let typeDescending: NSSortDescriptor = {
+        public nonisolated(unsafe) static let typeDescending: NSSortDescriptor = {
             guard let descriptor = typeAscending.reversedSortDescriptor as? NSSortDescriptor else {
                 preconditionFailure("Unable to make reversed sort descriptor")
             }

@@ -10,7 +10,7 @@ import UIKit
 import SwiftyJSON
 import AVFoundation
 
-@objc protocol AttachmentsManagerDelegate: class {
+@MainActor @objc protocol AttachmentsManagerDelegate: AnyObject {
     @objc optional func didUpdateUploadProgressFor(messageId: Int, progress: Int)
     @objc optional func didUpdateUploadProgress(progress: Int)
     @objc optional func didFailSendingMessage(provisionalMessage: TransactionMessage?, errorMessage: String)
@@ -19,11 +19,11 @@ import AVFoundation
     @objc optional func shouldReplaceMediaDataFor(provisionalMessageId: Int, and messageId: Int)
 }
 
-class AttachmentsManager {
-    
-    class var sharedInstance : AttachmentsManager {
+class AttachmentsManager: @unchecked Sendable {
+
+    nonisolated(unsafe) class var sharedInstance : AttachmentsManager {
         struct Static {
-            static let instance = AttachmentsManager()
+            nonisolated(unsafe) static let instance = AttachmentsManager()
         }
         return Static.instance
     }
@@ -44,7 +44,7 @@ class AttachmentsManager {
     var chat: Chat? = nil
     var uploadedImage: UIImage? = nil
     
-    weak var delegate: AttachmentsManagerDelegate?
+    nonisolated(unsafe) weak var delegate: (any AttachmentsManagerDelegate)?
     
     func setData(delegate: AttachmentsManagerDelegate, contact: UserContact?, chat: Chat?, provisionalMessage: TransactionMessage? = nil) {
         self.delegate = delegate
@@ -84,14 +84,16 @@ class AttachmentsManager {
         API.sharedInstance.askAuthentication(callback: { id, challenge in
             if let id = id, let challenge = challenge {
                 
-                self.delegate?.didUpdateUploadProgressFor?(messageId: self.provisionalMessage?.id ?? -1, progress: 10)
-                
+                let progressId1 = self.provisionalMessage?.id ?? -1
+                Task { @MainActor [weak self] in self?.delegate?.didUpdateUploadProgressFor?(messageId: progressId1, progress: 10) }
+
                 guard let sig = SphinxOnionManager.sharedInstance.signChallenge(challenge: challenge) else{
                     errorCompletion()
                     return
                 }
-                
-                self.delegate?.didUpdateUploadProgressFor?(messageId: self.provisionalMessage?.id ?? -1, progress: 15)
+
+                let progressId2 = self.provisionalMessage?.id ?? -1
+                Task { @MainActor [weak self] in self?.delegate?.didUpdateUploadProgressFor?(messageId: progressId2, progress: 15) }
                 
                 API.sharedInstance.verifyAuthentication(id: id, sig: sig, pubkey: pubkey, callback: { token in
                     if let token = token {
@@ -154,10 +156,10 @@ class AttachmentsManager {
     }
     
     func uploadImage(attachmentObject: AttachmentObject, route: String = "file") {
-        delegate?.didUpdateUploadProgress?(progress: 5)
-        
+        Task { @MainActor [weak self] in self?.delegate?.didUpdateUploadProgress?(progress: 5) }
+
         let isAuthenticated = isAuthenticated()
-        
+
         if !isAuthenticated.0 {
             self.authenticate(completion: {
                 self.uploadImage(attachmentObject: attachmentObject, route: route)
@@ -167,7 +169,7 @@ class AttachmentsManager {
             })
             return
         }
-        delegate?.didUpdateUploadProgress?(progress: 10)
+        Task { @MainActor [weak self] in self?.delegate?.didUpdateUploadProgress?(progress: 10) }
         
         guard let token = isAuthenticated.1 else {
             return
@@ -176,7 +178,8 @@ class AttachmentsManager {
         if let _ = attachmentObject.data {
             uploadData(attachmentObject: attachmentObject, route: route, token: token) { fileJSON, _ in
                 if let muid = fileJSON["muid"] as? String {
-                    self.delegate?.didSuccessUploadingImage?(url: "\(API.kAttachmentsServerUrl)/public/\(muid)")
+                    let url = "\(API.kAttachmentsServerUrl)/public/\(muid)"
+                    Task { @MainActor [weak self] in self?.delegate?.didSuccessUploadingImage?(url: url) }
                 }
             }
         }
@@ -190,10 +193,10 @@ class AttachmentsManager {
         threadUUID: String? = nil
     ) {
         uploading = true
-        delegate?.didUpdateUploadProgress?(progress: 5)
-        
+        Task { @MainActor [weak self] in self?.delegate?.didUpdateUploadProgress?(progress: 5) }
+
         let isAuthenticated = isAuthenticated()
-        
+
         if !isAuthenticated.0 {
             self.authenticate(completion: {
                 self.uploadAndSendAttachment(
@@ -208,7 +211,7 @@ class AttachmentsManager {
             })
             return
         }
-        delegate?.didUpdateUploadProgress?(progress: 10)
+        Task { @MainActor [weak self] in self?.delegate?.didUpdateUploadProgress?(progress: 10) }
         
         guard let token = isAuthenticated.1 else {
             return
@@ -243,13 +246,15 @@ class AttachmentsManager {
     func uploadData(attachmentObject: AttachmentObject, route: String, token: String, completion: @escaping (NSDictionary, AttachmentObject) -> ()) {
         API.sharedInstance.uploadData(attachmentObject: attachmentObject, route: route, token: token, progressCallback: { progress in
             let totalProgress = (progress * 85) / 100 + 10
-            self.delegate?.didUpdateUploadProgressFor?(messageId: self.provisionalMessage?.id ?? -1, progress: totalProgress)
+            let msgId = self.provisionalMessage?.id ?? -1
+            Task { @MainActor [weak self] in self?.delegate?.didUpdateUploadProgressFor?(messageId: msgId, progress: totalProgress) }
         }, callback: { success, fileJSON in
             AttachmentsManager.sharedInstance.uploading = false
             if let fileJSON = fileJSON, success {
                 self.uploadedImage = attachmentObject.image
-                
-                self.delegate?.didUpdateUploadProgressFor?(messageId: self.provisionalMessage?.id ?? -1, progress: 100)
+
+                let msgId = self.provisionalMessage?.id ?? -1
+                Task { @MainActor [weak self] in self?.delegate?.didUpdateUploadProgressFor?(messageId: msgId, progress: 100) }
 
                 completion(fileJSON, attachmentObject)
             } else {
@@ -291,17 +296,16 @@ class AttachmentsManager {
         let provisionalMessageId = provisionalMessage?.id
         
         if let provisionalMessage = provisionalMessage {
-            delegate?.shouldReplaceMediaDataFor?(
-                provisionalMessageId: provisionalMessage.id,
-                and: message["id"].intValue
-            )
+            let pmId = provisionalMessage.id
+            let msgId = message["id"].intValue
+            Task { @MainActor [weak self] in self?.delegate?.shouldReplaceMediaDataFor?(provisionalMessageId: pmId, and: msgId) }
         }
-        
+
         if let message = TransactionMessage.insertMessage(
             m: message,
             existingMessage: provisionalMessage
         ).0 {
-            delegate?.didUpdateUploadProgress?(progress: 100)
+            Task { @MainActor [weak self] in self?.delegate?.didUpdateUploadProgress?(progress: 100) }
             cacheImageAndMediaData(message: message, attachmentObject: attachmentObject)
             uploadSucceed(message: message)
             deleteMessageWith(id: provisionalMessageId)
@@ -339,17 +343,25 @@ class AttachmentsManager {
     
     func uploadFailed(errorMessage: String) {
         uploading = false
-        delegate?.didFailSendingMessage?(provisionalMessage: provisionalMessage, errorMessage: errorMessage)
+        let pm = provisionalMessage
+        Task { @MainActor [weak self] in self?.delegate?.didFailSendingMessage?(provisionalMessage: pm, errorMessage: errorMessage) }
     }
-    
+
     func uploadSucceed(message: TransactionMessage) {
         uploading = false
-        
-        delegate?.didSuccessSendingAttachment?(
-            message: message,
-            image: self.uploadedImage,
-            provisionalMessageId: provisionalMessage?.id ?? -1
-        )
+        let img = uploadedImage
+        let pmId = provisionalMessage?.id ?? -1
+        let msgObjectID = message.objectID
+        Task { @MainActor [weak self] in
+            guard let self = self,
+                  let msg = CoreDataManager.sharedManager.persistentContainer.viewContext.object(with: msgObjectID) as? TransactionMessage
+            else { return }
+            self.delegate?.didSuccessSendingAttachment?(
+                message: msg,
+                image: img,
+                provisionalMessageId: pmId
+            )
+        }
     }
     
     func getThumbnailFromVideo(videoURL: URL) -> UIImage? {

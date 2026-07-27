@@ -8,8 +8,8 @@
 
 import UIKit
 
-class LoadingWheelHelper {
-    
+@MainActor class LoadingWheelHelper {
+
     public static func toggleLoadingWheel(
         loading: Bool,
         loadingWheel: UIActivityIndicatorView,

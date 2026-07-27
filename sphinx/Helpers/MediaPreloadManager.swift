@@ -11,9 +11,9 @@ import UIKit
 
 /// Manages media preloading and tracks in-progress downloads to prevent duplicates.
 /// Downloads continue even when views are deallocated, ensuring images are cached.
-class MediaPreloadManager {
+class MediaPreloadManager: @unchecked Sendable {
 
-    static let sharedInstance = MediaPreloadManager()
+    nonisolated(unsafe) static let sharedInstance = MediaPreloadManager()
 
     /// Completion handler type for image loads
     typealias ImageCompletion = (Int, UIImage) -> Void
@@ -47,6 +47,9 @@ class MediaPreloadManager {
     ) {
         let urlString = url.absoluteString
         let messageId = message.id
+        // Extract CoreData scalar properties on the calling thread before crossing queue.async boundary
+        let isGif = message.isGif()
+        let isExpired = message.isMediaExpired()
 
         queue.async { [weak self] in
             guard let self = self else { return }
@@ -65,7 +68,9 @@ class MediaPreloadManager {
             // Perform the actual load
             self.performImageLoad(
                 url: url,
-                message: message,
+                messageId: messageId,
+                isGif: isGif,
+                isExpired: isExpired,
                 mediaKey: mediaKey,
                 urlString: urlString
             )
@@ -74,15 +79,14 @@ class MediaPreloadManager {
 
     private func performImageLoad(
         url: URL,
-        message: TransactionMessage,
+        messageId: Int,
+        isGif: Bool,
+        isExpired: Bool,
         mediaKey: String?,
         urlString: String
     ) {
-        let messageId = message.id
-        let isGif = message.isGif()
-
-        // Check if expired
-        if message.isMediaExpired() {
+        // Check if expired using pre-extracted scalar
+        if isExpired {
             MediaLoader.clearImageCacheFor(url: urlString)
             notifyImageError(for: urlString)
             return
@@ -98,12 +102,11 @@ class MediaPreloadManager {
 
         // Load from network
         MediaLoader.loadDataFrom(URL: url, completion: { [weak self] (data, fileName) in
-            message.saveFileName(fileName)
-
             self?.processImageData(
                 data: data,
                 url: url,
-                message: message,
+                messageId: messageId,
+                fileName: fileName,
                 mediaKey: mediaKey,
                 urlString: urlString
             )
@@ -115,10 +118,18 @@ class MediaPreloadManager {
     private func processImageData(
         data: Data,
         url: URL,
-        message: TransactionMessage,
+        messageId: Int,
+        fileName: String?,
         mediaKey: String?,
         urlString: String
     ) {
+        // Re-fetch managed object fresh on whatever thread this completion runs on
+        guard let message = TransactionMessage.getMessageWith(id: messageId) else {
+            notifyImageError(for: urlString)
+            return
+        }
+        message.saveFileName(fileName)
+
         let isGif = message.isGif()
         let isPDF = message.isPDF()
         var decryptedImage: UIImage? = nil
@@ -191,6 +202,8 @@ class MediaPreloadManager {
     ) {
         let urlString = url.absoluteString
         let messageId = message.id
+        // Extract CoreData scalar property on the calling thread before crossing queue.async boundary
+        let isExpired = message.isMediaExpired()
 
         queue.async { [weak self] in
             guard let self = self else { return }
@@ -205,7 +218,8 @@ class MediaPreloadManager {
 
             self.performVideoLoad(
                 url: url,
-                message: message,
+                messageId: messageId,
+                isExpired: isExpired,
                 mediaKey: mediaKey,
                 urlString: urlString
             )
@@ -214,13 +228,13 @@ class MediaPreloadManager {
 
     private func performVideoLoad(
         url: URL,
-        message: TransactionMessage,
+        messageId: Int,
+        isExpired: Bool,
         mediaKey: String?,
         urlString: String
     ) {
-        let messageId = message.id
-
-        if message.isMediaExpired() {
+        // Check if expired using pre-extracted scalar
+        if isExpired {
             MediaLoader.clearImageCacheFor(url: urlString)
             MediaLoader.clearMediaDataCacheFor(url: urlString)
             notifyVideoError(for: urlString)
@@ -242,12 +256,11 @@ class MediaPreloadManager {
 
         // Load from network
         MediaLoader.loadDataFrom(URL: url, completion: { [weak self] (data, fileName) in
-            message.saveFileName(fileName)
-
             self?.processVideoData(
                 data: data,
                 url: url,
-                message: message,
+                messageId: messageId,
+                fileName: fileName,
                 mediaKey: mediaKey,
                 urlString: urlString
             )
@@ -259,10 +272,18 @@ class MediaPreloadManager {
     private func processVideoData(
         data: Data,
         url: URL,
-        message: TransactionMessage,
+        messageId: Int,
+        fileName: String?,
         mediaKey: String?,
         urlString: String
     ) {
+        // Re-fetch managed object fresh on whatever thread this completion runs on
+        guard let message = TransactionMessage.getMessageWith(id: messageId) else {
+            notifyVideoError(for: urlString)
+            return
+        }
+        message.saveFileName(fileName)
+
         if let mediaKey = mediaKey, mediaKey != "" {
             if let decryptedData = SymmetricEncryptionManager.sharedInstance.decryptData(data: data, key: mediaKey) {
                 message.saveFileSize(decryptedData.count)
@@ -332,6 +353,10 @@ class MediaPreloadManager {
     ) {
         let urlString = url.absoluteString
         let messageId = message.id
+        // Extract CoreData scalar properties on the calling thread before crossing queue.async boundary
+        let isExpired = message.isMediaExpired()
+        let mediaFileSize = message.mediaFileSize
+        let mediaFileName = message.mediaFileName ?? ""
 
         queue.async { [weak self] in
             guard let self = self else { return }
@@ -347,7 +372,10 @@ class MediaPreloadManager {
             self.performFileLoad(
                 url: url,
                 isPdf: isPdf,
-                message: message,
+                messageId: messageId,
+                isExpired: isExpired,
+                mediaFileSize: mediaFileSize,
+                mediaFileName: mediaFileName,
                 mediaKey: mediaKey,
                 urlString: urlString
             )
@@ -357,23 +385,25 @@ class MediaPreloadManager {
     private func performFileLoad(
         url: URL,
         isPdf: Bool,
-        message: TransactionMessage,
+        messageId: Int,
+        isExpired: Bool,
+        mediaFileSize: Int,
+        mediaFileName: String,
         mediaKey: String?,
         urlString: String
     ) {
-        let messageId = message.id
-
-        if message.isMediaExpired() {
+        // Check if expired using pre-extracted scalar
+        if isExpired {
             MediaLoader.clearMediaDataCacheFor(url: urlString)
             notifyFileError(for: urlString)
             return
         }
 
-        // Check cache
+        // Check cache using pre-extracted scalars
         if let data = MediaLoader.getMediaDataFromCachedUrl(url: urlString) {
             let fileInfo = MessageTableCellState.FileInfo(
-                fileSize: message.mediaFileSize,
-                fileName: message.mediaFileName ?? "",
+                fileSize: mediaFileSize,
+                fileName: mediaFileName,
                 pagesCount: isPdf ? data.getPDFPagesCount() : nil,
                 previewImage: isPdf ? data.getPDFThumbnail() : nil
             )
@@ -383,13 +413,12 @@ class MediaPreloadManager {
 
         // Load from network
         MediaLoader.loadDataFrom(URL: url, completion: { [weak self] (data, fileName) in
-            message.saveFileName(fileName)
-
             self?.processFileData(
                 data: data,
                 url: url,
                 isPdf: isPdf,
-                message: message,
+                messageId: messageId,
+                fileName: fileName,
                 mediaKey: mediaKey,
                 urlString: urlString
             )
@@ -402,10 +431,18 @@ class MediaPreloadManager {
         data: Data,
         url: URL,
         isPdf: Bool,
-        message: TransactionMessage,
+        messageId: Int,
+        fileName: String?,
         mediaKey: String?,
         urlString: String
     ) {
+        // Re-fetch managed object fresh on whatever thread this completion runs on
+        guard let message = TransactionMessage.getMessageWith(id: messageId) else {
+            notifyFileError(for: urlString)
+            return
+        }
+        message.saveFileName(fileName)
+
         var finalData: Data? = nil
 
         if let mediaKey = mediaKey, mediaKey != "" {

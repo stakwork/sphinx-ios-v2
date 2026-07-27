@@ -22,106 +22,21 @@ extension NewMessageTableViewCell {
             messageLabel.attributedText = nil
             messageLabel.text = nil
             
-            if messageContent.hasNoMarkdown && searchingTerm == nil {
-                messageLabel.text = messageContent.text
-                messageLabel.font = UIFont.getMessageFont()
-            } else {
+            let rendered = NSMutableAttributedString(
+                attributedString: ChatHelper.markdownRenderer.render(messageContent.text ?? "")
+            )
+            ChatHelper.applySphinxLinkTransforms(to: rendered)
+            if let term = searchingTerm, !term.isEmpty {
                 let messageC = messageContent.text ?? ""
-                
-                let attributedString = NSMutableAttributedString(string: messageC)
-                attributedString.addAttributes(
-                    [NSAttributedString.Key.font: UIFont.getMessageFont()], range: messageC.nsRange
-                )
-                
-                ///Highlighted text formatting
-                let highlightedNsRanges = messageContent.highlightedMatches.map {
-                    return $0.range
-                }
-                
-                for nsRange in highlightedNsRanges {
-                    
-                    let adaptedRange = NSRange(
-                        location: nsRange.location,
-                        length: nsRange.length
-                    )
-                    
-                    attributedString.addAttributes(
-                        [
-                            NSAttributedString.Key.foregroundColor: UIColor.Sphinx.HighlightedText,
-                            NSAttributedString.Key.backgroundColor: UIColor.Sphinx.HighlightedTextBackground,
-                            NSAttributedString.Key.font: UIFont.getHighlightedMessageFont()
-                        ],
-                        range: adaptedRange
-                    )
-                }
-                
-                ///Bold text formatting
-                let boldNsRanges = messageContent.boldMatches.map {
-                    return $0.range
-                }
-                
-                for nsRange in boldNsRanges {
+                let searchRange = (messageC.lowercased() as NSString).range(of: term.lowercased())
+                rendered.addAttributes([.backgroundColor: UIColor.Sphinx.PrimaryGreen], range: searchRange)
+            }
+            messageLabel.attributedText = rendered
+            messageLabel.isUserInteractionEnabled = true
 
-                    let adaptedRange = NSRange(
-                        location: nsRange.location,
-                        length: nsRange.length
-                    )
-                    
-                    attributedString.addAttributes(
-                        [
-                            NSAttributedString.Key.font: UIFont.getMessageBoldFont()
-                        ],
-                        range: adaptedRange
-                    )
-                }
-                
-                ///Links formatting
-                for match in messageContent.linkMatches {
-                    
-                    attributedString.addAttributes(
-                        [
-                            NSAttributedString.Key.foregroundColor: UIColor.Sphinx.PrimaryBlue,
-                            NSAttributedString.Key.underlineStyle: NSUnderlineStyle.single.rawValue,
-                            NSAttributedString.Key.font: UIFont.getMessageFont()
-                        ],
-                        range: match.range
-                    )
-                    
-                    urlRanges.append(match.range)
-                }
-                
-                ///Markdown Links formatting
-                for (textCheckingResult, _, link, _) in messageContent.linkMarkdownMatches {
-                    
-                    let nsRange = textCheckingResult.range
-                    
-                    if let url = URL(string: link) {
-                        attributedString.addAttributes(
-                            [
-                                NSAttributedString.Key.link: url,
-                                NSAttributedString.Key.foregroundColor: UIColor.Sphinx.PrimaryBlue,
-                                NSAttributedString.Key.underlineStyle: NSUnderlineStyle.single.rawValue,
-                                NSAttributedString.Key.font: UIFont.getMessageFont()
-                            ],
-                            range: nsRange
-                        )
-                    }
-                    
-                    urlRanges.append(nsRange)
-                }
-                
-                ///Search term formatting
-                let term = searchingTerm ?? ""
-                let searchingTermRange = (messageC.lowercased() as NSString).range(of: term.lowercased())
-                attributedString.addAttributes(
-                    [
-                        NSAttributedString.Key.backgroundColor: UIColor.Sphinx.PrimaryGreen
-                    ], 
-                    range: searchingTermRange
-                )
-                
-                messageLabel.attributedText = attributedString
-                messageLabel.isUserInteractionEnabled = true
+            // Collect link ranges for tap handling
+            rendered.enumerateAttribute(.sphinxURL, in: NSRange(location: 0, length: rendered.length)) { value, range, _ in
+                if value != nil { urlRanges.append(range) }
             }
 
             if urlRanges.isEmpty {
@@ -130,14 +45,12 @@ extension NewMessageTableViewCell {
                 messageLabel.addGestureRecognizer(tap)
             }
             
-            urlRanges = ChatHelper.removeDuplicatedContainedFrom(urlRanges: urlRanges)
-            
             if let messageId = messageId, messageContent.shouldLoadPaidText {
-                let delayTime = DispatchTime.now() + Double(Int64(0.1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
-                DispatchQueue.global().asyncAfter(deadline: delayTime) {
-                    self.delegate?.shouldLoadTextDataFor(
+                Task { @MainActor [weak self] in
+                    try? await Task.sleep(nanoseconds: 100_000_000)
+                    self?.delegate?.shouldLoadTextDataFor(
                         messageId: messageId,
-                        and: self.rowIndex
+                        and: self?.rowIndex ?? 0
                     )
                 }
             }
@@ -223,11 +136,23 @@ extension NewMessageTableViewCell {
     }
     
     func configureWith(
-        callLink: BubbleMessageLayoutState.CallLink?
+        callLink: BubbleMessageLayoutState.CallLink?,
+        participantsData: MessageTableCellState.ParticipantsData? = nil
     ) {
         if let callLink = callLink {
             callLinkView.configureWith(callLink: callLink, and: self)
+            callLinkView.configureWith(participantsData: participantsData)
             callLinkView.isHidden = false
+            
+            if let messageId = self.messageId,
+               let url = URL(string: callLink.link),
+               let roomName = url.pathComponents.last(where: { !$0.isEmpty && $0 != "/" }) {
+                delegate?.shouldLoadCallParticipantsFor(
+                    messageId: messageId,
+                    roomName: roomName,
+                    and: rowIndex
+                )
+            }
         }
     }
     
@@ -257,11 +182,11 @@ extension NewMessageTableViewCell {
                     )
                     mediaContentView.isHidden = false
                 } else if let messageId = messageId, mediaData == nil {
-                    let delayTime = DispatchTime.now() + Double(Int64(0.1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
-                    DispatchQueue.global().asyncAfter(deadline: delayTime) {
-                        self.delegate?.shouldLoadLinkImageDataFor(
+                    Task { @MainActor [weak self] in
+                        try? await Task.sleep(nanoseconds: 100_000_000)
+                        self?.delegate?.shouldLoadLinkImageDataFor(
                             messageId: messageId,
-                            and: self.rowIndex
+                            and: self?.rowIndex ?? 0
                         )
                     }
                 }
@@ -277,27 +202,28 @@ extension NewMessageTableViewCell {
                 mediaContentView.isHidden = false
                 
                 if let messageId = messageId, mediaData == nil {
-                    let delayTime = DispatchTime.now() + Double(Int64(0.1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
-                    DispatchQueue.global().asyncAfter(deadline: delayTime) {
+                    Task { @MainActor [weak self] in
+                        try? await Task.sleep(nanoseconds: 100_000_000)
+                        let rowIndex = self?.rowIndex ?? 0
                         if messageMedia.isImage {
-                            self.delegate?.shouldLoadImageDataFor(
+                            self?.delegate?.shouldLoadImageDataFor(
                                 messageId: messageId,
-                                and: self.rowIndex
+                                and: rowIndex
                             )
                         } else if messageMedia.isPdf {
-                            self.delegate?.shouldLoadPdfDataFor(
+                            self?.delegate?.shouldLoadPdfDataFor(
                                 messageId: messageId,
-                                and: self.rowIndex
+                                and: rowIndex
                             )
                         } else if messageMedia.isVideo {
-                            self.delegate?.shouldLoadVideoDataFor(
+                            self?.delegate?.shouldLoadVideoDataFor(
                                 messageId: messageId,
-                                and: self.rowIndex
+                                and: rowIndex
                             )
                         } else if messageMedia.isGiphy {
-                            self.delegate?.shouldLoadGiphyDataFor(
+                            self?.delegate?.shouldLoadGiphyDataFor(
                                 messageId: messageId,
-                                and: self.rowIndex
+                                and: rowIndex
                             )
                         }
                     }
@@ -320,11 +246,11 @@ extension NewMessageTableViewCell {
             fileDetailsView.isHidden = false
             
             if let messageId = messageId, mediaData == nil {
-                let delayTime = DispatchTime.now() + Double(Int64(0.1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
-                DispatchQueue.global().asyncAfter(deadline: delayTime) {
-                    self.delegate?.shouldLoadFileDataFor(
+                Task { @MainActor [weak self] in
+                    try? await Task.sleep(nanoseconds: 100_000_000)
+                    self?.delegate?.shouldLoadFileDataFor(
                         messageId: messageId,
-                        and: self.rowIndex
+                        and: self?.rowIndex ?? 0
                     )
                 }
             }
@@ -347,11 +273,11 @@ extension NewMessageTableViewCell {
             audioMessageView.isHidden = false
             
             if let messageId = messageId, mediaData == nil {
-                let delayTime = DispatchTime.now() + Double(Int64(0.1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
-                DispatchQueue.global().asyncAfter(deadline: delayTime) {
-                    self.delegate?.shouldLoadAudioDataFor(
+                Task { @MainActor [weak self] in
+                    try? await Task.sleep(nanoseconds: 100_000_000)
+                    self?.delegate?.shouldLoadAudioDataFor(
                         messageId: messageId,
-                        and: self.rowIndex
+                        and: self?.rowIndex ?? 0
                     )
                 }
             }
@@ -373,11 +299,11 @@ extension NewMessageTableViewCell {
             podcastAudioView.isHidden = false
             
             if let messageId = messageId, mediaData == nil {
-                let delayTime = DispatchTime.now() + Double(Int64(0.1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
-                DispatchQueue.global().asyncAfter(deadline: delayTime) {
-                    self.delegate?.shouldPodcastCommentDataFor(
+                Task { @MainActor [weak self] in
+                    try? await Task.sleep(nanoseconds: 100_000_000)
+                    self?.delegate?.shouldPodcastCommentDataFor(
                         messageId: messageId,
-                        and: self.rowIndex
+                        and: self?.rowIndex ?? 0
                     )
                 }
             }
@@ -440,11 +366,11 @@ extension NewMessageTableViewCell {
                 tribeLinkPreviewView.configureWith(tribeData: tribeData, and: bubble, delegate: self)
                 tribeLinkPreviewView.isHidden = false
             } else if let messageId = messageId {
-                let delayTime = DispatchTime.now() + Double(Int64(0.1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
-                DispatchQueue.global().asyncAfter(deadline: delayTime) {
-                    self.delegate?.shouldLoadTribeInfoFor(
+                Task { @MainActor [weak self] in
+                    try? await Task.sleep(nanoseconds: 100_000_000)
+                    self?.delegate?.shouldLoadTribeInfoFor(
                         messageId: messageId,
-                        and: self.rowIndex
+                        and: self?.rowIndex ?? 0
                     )
                 }
             }
@@ -462,11 +388,11 @@ extension NewMessageTableViewCell {
                     linkPreviewView.isHidden = false
                 }
             } else if let messageId = messageId {
-                let delayTime = DispatchTime.now() + Double(Int64(0.1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
-                DispatchQueue.global().asyncAfter(deadline: delayTime) {
-                    self.delegate?.shouldLoadLinkDataFor(
+                Task { @MainActor [weak self] in
+                    try? await Task.sleep(nanoseconds: 100_000_000)
+                    self?.delegate?.shouldLoadLinkDataFor(
                         messageId: messageId,
-                        and: self.rowIndex
+                        and: self?.rowIndex ?? 0
                     )
                 }
             }

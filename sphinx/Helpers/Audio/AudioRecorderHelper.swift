@@ -9,16 +9,16 @@
 import UIKit
 import AVFoundation
 
-protocol AudioHelperDelegate: class {
+@MainActor protocol AudioHelperDelegate: AnyObject {
     func didStartRecording(_ success: Bool)
     func didFinishRecording(_ success: Bool)
     func audioTooShort()
     func recordingProgress(minutes: String, seconds: String)
 }
 
-class AudioRecorderHelper : NSObject {
-    
-    weak var delegate: AudioHelperDelegate?
+class AudioRecorderHelper : NSObject, @unchecked Sendable {
+
+    nonisolated(unsafe) weak var delegate: AudioHelperDelegate?
     
     var audioRecorder: AVAudioRecorder!
     var recordingTimer : Timer? = nil
@@ -121,42 +121,44 @@ class AudioRecorderHelper : NSObject {
             audioRecorder.record()
             startRecordingTime = Date()
             recordingTimer = Timer.scheduledTimer(timeInterval: 0.1, target: self, selector: #selector(updateRecordingTime), userInfo: nil, repeats: true)
-            
-            delegate?.didStartRecording(true)
+
+            Task { @MainActor [weak self] in self?.delegate?.didStartRecording(true) }
         } catch {
             recordingDidFail()
         }
     }
-    
+
     func recordingDidFail() {
         audioRecorder?.stop()
         audioRecorder = nil
-        delegate?.didStartRecording(false)
+        Task { @MainActor [weak self] in self?.delegate?.didStartRecording(false) }
     }
-    
+
     func finishRecording(success: Bool) {
         if let _ = audioRecorder {
             audioRecorder?.stop()
             audioRecorder = nil
-            
+
             recordingTimer?.invalidate()
             recordingTimer = nil
-            
-            SoundsPlayer.playHaptic()
-            
+
+            Task { @MainActor in SoundsPlayer.playHaptic() }
+
             if Date().timeIntervalSince(startRecordingTime) > 1 {
-                delegate?.didFinishRecording(success)
+                Task { @MainActor [weak self] in self?.delegate?.didFinishRecording(success) }
             } else {
-                delegate?.audioTooShort()
+                Task { @MainActor [weak self] in self?.delegate?.audioTooShort() }
             }
         }
     }
-    
+
     @objc func updateRecordingTime() {
         let timeInterval = Date().timeIntervalSince(startRecordingTime)
         let minutes: Int = Int(timeInterval) / 60
         let seconds: Int = Int(timeInterval) % 60
-        delegate?.recordingProgress(minutes: "\(minutes)", seconds: seconds.timeString)
+        let minutesStr = "\(minutes)"
+        let secondsStr = seconds.timeString
+        Task { @MainActor [weak self] in self?.delegate?.recordingProgress(minutes: minutesStr, seconds: secondsStr) }
     }
 }
 

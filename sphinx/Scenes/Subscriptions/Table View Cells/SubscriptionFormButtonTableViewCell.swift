@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol SubscriptionFormRowDelegate: class {
+@MainActor protocol SubscriptionFormRowDelegate: class {
     func didTapSubscribeButton()
 }
 
@@ -28,14 +28,15 @@ class SubscriptionFormButtonTableViewCell: UITableViewCell {
     
     override func awakeFromNib() {
         super.awakeFromNib()
-        
-        loading = false
-        contentView.clipsToBounds = true
-        
-        subscribeButton.setBackgroundColor(color: UIColor.Sphinx.PrimaryBlueBorder, forUIControlState: .highlighted)
-        subscribeButton.setBackgroundColor(color: UIColor.Sphinx.PrimaryBlueBorder, forUIControlState: .selected)
-        subscribeButton.layer.cornerRadius = subscribeButton.frame.size.height / 2
-        subscribeButton.clipsToBounds = true
+
+        Task { @MainActor in
+            self.loading = false
+            self.contentView.clipsToBounds = true
+            self.subscribeButton.setBackgroundColor(color: UIColor.Sphinx.PrimaryBlueBorder, forUIControlState: .highlighted)
+            self.subscribeButton.setBackgroundColor(color: UIColor.Sphinx.PrimaryBlueBorder, forUIControlState: .selected)
+            self.subscribeButton.layer.cornerRadius = self.subscribeButton.frame.size.height / 2
+            self.subscribeButton.clipsToBounds = true
+        }
     }
     
     func configureButton(editing: Bool) {

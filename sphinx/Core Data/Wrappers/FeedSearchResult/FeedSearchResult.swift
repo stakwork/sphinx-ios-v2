@@ -10,7 +10,7 @@ import Foundation
 import CoreData
 import SwiftyJSON
 
-public class FeedSearchResult: NSObject {
+public class FeedSearchResult: NSObject, @unchecked Sendable {
     
     public var feedId: String
     public var title: String

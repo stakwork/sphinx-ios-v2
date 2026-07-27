@@ -12,7 +12,7 @@ class ColorsManager : NSObject {
     
     class var sharedInstance : ColorsManager {
         struct Static {
-            static let instance = ColorsManager()
+            nonisolated(unsafe) static let instance = ColorsManager()
         }
         return Static.instance
     }

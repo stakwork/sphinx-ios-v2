@@ -75,6 +75,7 @@ extension NewChatViewController : NewChatTableDataSourceDelegate {
     func shouldDismissKeyboard() {
         self.bottomView.messageFieldView.shouldDismissKeyboard()
     }
+    
     func configureNewMessagesIndicatorWith(newMsgCount: Int) {
         DispatchQueue.main.async {
             self.newMsgsIndicatorView.configureWith(
@@ -91,6 +92,13 @@ extension NewChatViewController : NewChatTableDataSourceDelegate {
         )
         
         if isThread {
+            if let threadUUID = threadUUID {
+                DelayPerformedHelper.performAfterDelay(seconds: 0.5, completion: {
+                    MainActor.assumeIsolated {
+                        self.chat?.setThreadMessagesAsSeen(threadUUID: threadUUID)
+                    }
+                })
+            }
             return
         }
         
@@ -101,7 +109,9 @@ extension NewChatViewController : NewChatTableDataSourceDelegate {
         scrolledAtBottom = true
         
         DelayPerformedHelper.performAfterDelay(seconds: 0.5, completion: {
-            self.chat?.setChatMessagesAsSeen()
+            MainActor.assumeIsolated {
+                self.chat?.setChatMessagesAsSeen()
+            }
         })
     }
     
@@ -228,20 +238,22 @@ extension NewChatViewController : NewChatTableDataSourceDelegate {
         }
 
         DelayPerformedHelper.performAfterDelay(seconds: cellOutOfBounds.0 || cellOutOfBounds.1 ? 0.3 : 0.0, completion: {
-            if self.isKeyboardVisible() {
-                self.messageMenuData = MessageTableCellState.MessageMenuData(
-                    messageId: messageId,
-                    bubbleRect: bubbleViewRect,
-                    indexPath: indexPath
-                )
-                self.view.endEditing(true)
-            } else {
-                self.showMessageMenuFor(
-                    messageId: messageId,
-                    indexPath: indexPath,
-                    bubbleViewRect: bubbleViewRect, 
-                    isThreadRow: self.isThread
-                )
+            MainActor.assumeIsolated {
+                if self.isKeyboardVisible() {
+                    self.messageMenuData = MessageTableCellState.MessageMenuData(
+                        messageId: messageId,
+                        bubbleRect: bubbleViewRect,
+                        indexPath: indexPath
+                    )
+                    self.view.endEditing(true)
+                } else {
+                    self.showMessageMenuFor(
+                        messageId: messageId,
+                        indexPath: indexPath,
+                        bubbleViewRect: bubbleViewRect,
+                        isThreadRow: self.isThread
+                    )
+                }
             }
         })
     }
@@ -307,6 +319,25 @@ extension NewChatViewController : NewChatTableDataSourceDelegate {
             delegate?.shouldReloadRowFor(chatId: chatId)
         }
     }
+
+    // MARK: - Live Call Banner fan-out
+
+    /// A socket event delivered an updated participant list for `roomName`.
+    /// Forward to the banner lifecycle so the banner stays in sync with cell UI.
+    func shouldUpdateLiveCallBannerFor(roomName: String, participants: [BubbleMessageLayoutState.CallParticipantInfo]) {
+        shouldUpdateLiveCallBanner(roomName: roomName, participants: participants)
+    }
+
+    /// The room finished — hide its banner.
+    func shouldHideLiveCallBannerFor(roomName: String) {
+        headerView.hideCallBanner(roomName: roomName)
+    }
+
+    /// A new call-type message was inserted by the results controller while this
+    /// chat was already open.  Restart banner polling so the new room is picked up.
+    func didInsertNewCallTypeMessage() {
+        didReceiveNewCallMessage()
+    }
 }
 
 extension NewChatViewController {
@@ -342,6 +373,12 @@ extension NewChatViewController {
             )
             
             messageOptionsVC.setBubblePath(bubblePath: bubbleRectAndPath)
+            messageOptionsVC.setRebuildContext(
+                indexPath: indexPath,
+                bubbleViewRect: bubbleViewRect,
+                tableView: self.chatTableView,
+                contentView: self.view
+            )
             messageOptionsVC.modalPresentationStyle = .overCurrentContext
             self.navigationController?.present(messageOptionsVC, animated: false)
             

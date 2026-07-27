@@ -8,7 +8,7 @@
 import Foundation
 import CoreData
 
-public class Video: NSObject {
+public class Video: NSObject, @unchecked Sendable {
     
     public var videoID: String
     public var datePublished: Date?

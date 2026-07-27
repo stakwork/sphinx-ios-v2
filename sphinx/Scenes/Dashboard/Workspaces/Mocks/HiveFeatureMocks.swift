@@ -233,6 +233,22 @@ extension HiveChatMessage {
             ] as [Any]
         ])
 
-        return [json1, json2, json3, json4, json5, json6, json7, json8, json9, jsonLongform].compactMap { HiveChatMessage(json: $0) }
+        // Single-table message
+        let jsonTable1 = JSON([
+            "id": "msg-table-001",
+            "message": "Here's a summary of the episode attributes:\n\n| Episode | Attribute |\n|---|---|\n| Pilot | Introduction |\n| Episode 2 | Rising Action |\n| Episode 3 | Climax |",
+            "role": "ASSISTANT",
+            "createdAt": "2025-02-22T09:21:00Z"
+        ])
+
+        // Multi-table + text message
+        let jsonTable2 = JSON([
+            "id": "msg-table-002",
+            "message": "Here are two comparison tables:\n\n| Framework | Language |\n|---|---|\n| UIKit | Swift |\n| SwiftUI | Swift |\n\nAnd a wider breakdown:\n\n| Name | Version | Platform | License | Stars |\n|---|---|---|---|---|\n| UIKit | iOS 2+ | iOS/tvOS | Proprietary | N/A |\n| SwiftUI | iOS 13+ | Apple | Proprietary | N/A |\n| React Native | 0.72 | Cross | MIT | 110k |\n| Flutter | 3.x | Cross | BSD | 150k |",
+            "role": "ASSISTANT",
+            "createdAt": "2025-02-22T09:22:00Z"
+        ])
+
+        return [json1, json2, json3, json4, json5, json6, json7, json8, json9, jsonLongform, jsonTable1, jsonTable2].compactMap { HiveChatMessage(json: $0) }
     }
 }

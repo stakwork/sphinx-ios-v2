@@ -265,6 +265,24 @@
                                                 <color key="textColor" name="SecondaryText"/>
                                                 <nil key="highlightedColor"/>
                                             </label>
+                                            <view hidden="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="mBg-X1-abc">
+                                                <rect key="frame" x="160" y="1" width="44" height="20"/>
+                                                <subviews>
+                                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="@ 2" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="mLb-X1-abc">
+                                                        <rect key="frame" x="6" y="3" width="32" height="14"/>
+                                                        <fontDescription key="fontDescription" name="Roboto-Medium" family="Roboto" pointSize="11"/>
+                                                        <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                                        <nil key="highlightedColor"/>
+                                                    </label>
+                                                </subviews>
+                                                <color key="backgroundColor" name="PrimaryBlue"/>
+                                                <constraints>
+                                                    <constraint firstItem="mLb-X1-abc" firstAttribute="leading" secondItem="mBg-X1-abc" secondAttribute="leading" constant="6" id="mC1-X1-abc"/>
+                                                    <constraint firstAttribute="trailing" secondItem="mLb-X1-abc" secondAttribute="trailing" constant="6" id="mC2-X1-abc"/>
+                                                    <constraint firstItem="mLb-X1-abc" firstAttribute="centerY" secondItem="mBg-X1-abc" secondAttribute="centerY" id="mC3-X1-abc"/>
+                                                    <constraint firstAttribute="height" constant="20" id="mC4-X1-abc"/>
+                                                </constraints>
+                                            </view>
                                         </subviews>
                                         <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                         <constraints>
@@ -276,6 +294,8 @@
                                             <constraint firstItem="rD7-X8-Btw" firstAttribute="leading" secondItem="Ewg-ir-2hU" secondAttribute="trailing" constant="16" id="f3W-3I-1rD"/>
                                             <constraint firstItem="ucE-Sh-N7E" firstAttribute="top" secondItem="hNA-xz-xQr" secondAttribute="top" id="jfg-Qe-5gd"/>
                                             <constraint firstAttribute="height" constant="23" id="mIH-QS-7XF"/>
+                                            <constraint firstItem="mBg-X1-abc" firstAttribute="leading" secondItem="rD7-X8-Btw" secondAttribute="trailing" constant="8" id="mC5-X1-abc"/>
+                                            <constraint firstItem="mBg-X1-abc" firstAttribute="centerY" secondItem="hNA-xz-xQr" secondAttribute="centerY" id="mC6-X1-abc"/>
                                         </constraints>
                                     </view>
                                 </subviews>
@@ -342,11 +362,16 @@
                 <outlet property="reply6Container" destination="kNG-UG-hMh" id="CUX-wX-bPo"/>
                 <outlet property="reply6CountContainer" destination="5GN-eG-guT" id="vJU-cS-Ii0"/>
                 <outlet property="reply6CountLabel" destination="U6b-nq-NSj" id="fWd-KL-Tp9"/>
+                <outlet property="mentionsBadgeContainer" destination="mBg-X1-abc" id="mO1-X1-abc"/>
+                <outlet property="mentionsBadgeLabel" destination="mLb-X1-abc" id="mO2-X1-abc"/>
             </connections>
             <point key="canvasLocation" x="85.496183206106863" y="183.45070422535213"/>
         </tableViewCell>
     </objects>
     <resources>
+        <namedColor name="PrimaryBlue">
+            <color red="0.38039215686274508" green="0.54117647058823526" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
         <namedColor name="Body">
             <color red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>

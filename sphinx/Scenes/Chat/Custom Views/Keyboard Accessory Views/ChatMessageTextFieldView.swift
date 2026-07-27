@@ -8,7 +8,7 @@
 
 import UIKit
 
-@objc protocol ChatMessageTextFieldViewDelegate {
+@MainActor @objc protocol ChatMessageTextFieldViewDelegate {
     func didDetectPossibleMention(mentionText: String)
     func didDetectPossibleMacro(macro:String)
     func shouldSendMessage(text: String, type: Int, completion: @escaping (Bool, String?) -> ())
@@ -49,6 +49,8 @@ class ChatMessageTextFieldView: UIView {
     @IBOutlet weak var recordingTimeLabel: UILabel!
     @IBOutlet weak var recordingBlueCircle: UIView!
     @IBOutlet weak var animatedMicLabelView: IntermitentAlphaAnimatedView!
+    
+    var isAgentChat: Bool = false
     
     var textViewHeightConstraint: NSLayoutConstraint? = nil
     
@@ -141,6 +143,15 @@ class ChatMessageTextFieldView: UIView {
         textViewDidChange(textView)
     }
     
+    func configureForAgentChat() {
+        isAgentChat = true
+        attachmentButtonContainer.isHidden = true
+        audioButtonContainer.isHidden = true
+        sendButtonContainer.isHidden = false
+        sendButton.isEnabled = false
+        sendButton.alpha = 0.4
+    }
+    
     func updateFieldStateFrom(_ chat: Chat?) {
         setOngoingMessageFor(chat: chat)
         
@@ -156,6 +167,10 @@ class ChatMessageTextFieldView: UIView {
         if let text = ChatTrackingHandler.shared.getOngoingMessageFor(chatId: chat?.id) {
             if text.isEmpty {
                 clearMessage()
+                return
+            }
+            
+            if textView.text == text {
                 return
             }
             

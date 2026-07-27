@@ -17,11 +17,10 @@ import AVFAudio
 import SDWebImageSVGCoder
 import PushKit
 import CoreData
-import Bugsnag
-//import BugsnagPerformance
+import SphinxErrorReporter
 
 
-@UIApplicationMain
+@main
 class AppDelegate: UIResponder, UIApplicationDelegate {
     
     var window: UIWindow?
@@ -42,6 +41,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     let som = SphinxOnionManager.sharedInstance
     
     var isActive = false
+    private var pendingFetchWorkItem: DispatchWorkItem?
+    private var pendingFetchCompletion: ((UIBackgroundFetchResult) -> Void)?
     
     public enum BuildType: Int {
         case Sideload
@@ -76,29 +77,31 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
         
+        AppLogger.shared.start()
+        
         isActive = true
         
         if #available(iOS 15.0, *) {
             UITableView.appearance().sectionHeaderTopPadding = CGFloat(0)
         }
         
-        try? AVAudioSession.sharedInstance().setCategory(.playback)
-                
         //        registerAppRefresh()
         //        configureStoreKit()
         //        registerForVoIP()
         
         setAppConfiguration()
         configureGiphy()
-        configureBugsnag()
+        configureSphinxErrorReporter()
         configureNotificationCenter()
         configureSVGRendering()
+        configureSDWebImage()
         connectMQTT()
         
         StorageManager.sharedManager.deleteOldMedia()
-        NetworkMonitor.shared.startMonitoring()
         ColorsManager.sharedInstance.storeColorsInMemory()
         SphinxOnionManager.sharedInstance.storeOnionStateInMemory()
+        
+//        deleteLogs()
         
         setInitialVC()
         
@@ -165,43 +168,44 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func applicationDidEnterBackground(
         _ application: UIApplication
     ) {
+        AppLogger.shared.flush()
+        
         isActive = false
         notificationUserInfo = nil
         saveCurrentStyle()
         setBadge(application: application)
 
-        // Cancel MQTT reconnection timer before disconnecting to prevent
-        // background reconnection attempts that cause iOS to kill the app
-        som.endReconnectionTimer()
-        som.disconnectMqtt()
         NetworkMonitor.shared.stopMonitoring()
+        getDashboardVC()?.suspendNetworkObservers()
+        HivePusherManager.shared.pauseForBackground()
+        NotificationCenter.default.post(name: .appDidEnterBackground, object: nil)
 
-        // Use background task to ensure critical operations complete
-        var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
-        backgroundTaskID = application.beginBackgroundTask(withName: "BackgroundCleanup") {
-            // Expiration handler - cleanup if we run out of time
-            application.endBackgroundTask(backgroundTaskID)
-            backgroundTaskID = .invalid
-        }
-
-        // Perform quick, essential background operations only
+        // Perform synchronous cleanup before starting the background task.
         podcastPlayerController.finishAndSaveContentConsumed()
-        actionsManager.syncActionsInBackground()
         CoreDataManager.sharedManager.saveContext()
-
-        // Clear memory caches
         SDImageCache.shared.clearMemory()
         SDWebImageManager.shared.cancelAll()
+        presentBiometricIfNeeded()
 
-        // Don't run garbage cleanup on background - it takes too long
-        // and causes iOS to kill the app. Schedule it for next foreground instead.
-        // storageManager.processGarbageCleanup()
-
-        // End background task
-        if backgroundTaskID != .invalid {
-            application.endBackgroundTask(backgroundTaskID)
-            backgroundTaskID = .invalid
+        // Hold a background task open until the MQTT socket is fully closed.
+        // disconnectMqtt() is async — ending the task before the socket closes
+        // leaves an open network connection at suspension, which causes iOS to
+        // kill the process silently (no crash report, no push needed).
+        var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
+        let endTask = {
+            if backgroundTaskID != .invalid {
+                application.endBackgroundTask(backgroundTaskID)
+                backgroundTaskID = .invalid
+            }
         }
+        backgroundTaskID = application.beginBackgroundTask(withName: "MQTTDisconnect") {
+            endTask()
+        }
+
+        som.endReconnectionTimer()
+        som.disconnectMqtt(callback: { _ in
+            endTask()
+        })
     }
     
     func applicationDidReceiveMemoryWarning(_ application: UIApplication) {
@@ -212,20 +216,53 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func applicationWillEnterForeground(
         _ application: UIApplication
     ) {
+        print("[Lifecycle] applicationWillEnterForeground")
+        
         isActive = true
-        notificationUserInfo = nil
+        pendingFetchWorkItem?.cancel()
+        pendingFetchWorkItem = nil
+        pendingFetchCompletion?(.noData)
+        pendingFetchCompletion = nil
+        getDashboardVC()?.resumeNetworkObservers()
+        HivePusherManager.shared.resumeFromBackground()
+        NotificationCenter.default.post(name: .appWillEnterForeground, object: nil)
 
-        if !UserData.sharedInstance.isUserLogged() {
+        // Remove any LiveKit PiP view that became orphaned while the app was in the background
+        // (e.g. call ended via network error while suspended, teardown animation never completed).
+        VideoCallManager.sharedInstance.cleanUpIfStale()
+
+        // Auth gates must run regardless of session-PIN state — if the process was
+        // killed, appSessionPin is nil and isUserLogged() would return false, but
+        // we still need to show the PIN / biometric screen.
+        guard UserData.sharedInstance.isSignupCompleted() else {
+            return
+        }
+
+        presentPINIfNeeded()
+        tryBiometricAuth()
+
+        // Always tear down any in-flight background connection before reconnecting.
+        // This must run even when the user is not yet logged in (PIN timeout case)
+        // so that onLoggingCompletion's reconnect starts from a clean slate.
+
+        // Sync and other foreground work require a valid session (mnemonic accessible).
+        guard UserData.sharedInstance.isUserLogged() else {
+            // PIN was not available in keychain — user must enter it manually.
+            // onLoggingCompletion will call reconnectToServer once the PIN is saved.
             return
         }
 
         Chat.processTimezoneChanges()
-        presentPINIfNeeded()
-
         feedsManager.restoreContentFeedStatusInBackground()
         podcastPlayerController.finishAndSaveContentConsumed()
 
-        getDashboardVC()?.reconnectToServer()
+        // Call reconnect directly on the SOM — don't route through the VC, which may
+        // not be in the hierarchy when willEnterForeground fires (e.g. PIN screen showing).
+        // For biometric users: PIN is already in keychain so we start the reconnect here
+        // in parallel while Face ID is displayed, gaining time before auth completes.
+        som.prepareForForeground() {
+            self.getDashboardVC()?.connectToServer()
+        }
 
         DataSyncManager.sharedInstance.syncWithServerInBackground()
 
@@ -248,26 +285,24 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func handlePushAndFetchData() {
-        guard let notificationUserInfo,
-              let timestamp = notificationTimestamp,
-              Date().timeIntervalSince(timestamp) < 3 else
-        {
-            return
-        }
+        guard let notificationUserInfo else { return }
 
         if let hiveLink = SphinxOnionManager.sharedInstance.getHiveLinkFrom(notification: notificationUserInfo),
            let navigatableURL = buildHiveURL(from: hiveLink),
            let currentVC = getCurrentVC() {
+            print("[PushNav] navigating to hive link on first attempt")
             HiveLinkNavigator.navigate(hiveLink: navigatableURL, from: currentVC)
             self.notificationUserInfo = nil
             return
         }
 
         if let chat = SphinxOnionManager.sharedInstance.mapNotificationToChat(notificationUserInfo: notificationUserInfo)?.0 {
+            print("[PushNav] navigating to chat on first attempt")
             goTo(chat: chat)
+            self.notificationUserInfo = nil
+        } else {
+            print("[PushNav] chat not resolved yet — holding intent for retry")
         }
-        
-        self.notificationUserInfo = nil
     }
 
     /// Converts "my-workspace/feature:abc123" → "https://hive.sphinx.chat/w/my-workspace/plan/abc123"
@@ -291,6 +326,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func applicationWillTerminate(
         _ application: UIApplication
     ) {
+        AppLogger.shared.flush()
+        
         setBadge(application: application)
 
 //        SKPaymentQueue.default().remove(StoreKitService.shared)
@@ -302,6 +339,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         som.disconnectMqtt()
     }
     
+    /// Call once to wipe all persisted logs and start fresh. Remove the call after use.
+    func deleteLogs() {
+        AppLogger.shared.clear()
+        print("[AppLogger] Logs cleared")
+    }
+
     ///On app launch
     func setAppConfiguration() {
         Constants.setSize()
@@ -315,6 +358,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //        })
 //    }
     
+    func configureSDWebImage() {
+        SDImageCache.shared.config.maxMemoryCost = 75 * 1024 * 1024 // 75 MB
+    }
+    
     func configureSVGRendering(){
         let SVGCoder = SDImageSVGCoder.shared
         SDImageCodersManager.shared.addCoder(SVGCoder)
@@ -325,15 +372,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         Giphy.configure(apiKey: Config.giphyApiKey)
     }
     
-    func configureBugsnag() {
-        Bugsnag.start()
-//        BugsnagPerformance.start()
-        
-        if let ownerName = UserContact.getOwner()?.nickname {
-            Bugsnag.setUser(nil, withEmail: nil, andName: ownerName)
-        }
+    func configureSphinxErrorReporter() {
+        guard let hiveBaseURL = URL(string: API.kHiveBaseUrl) else { return }
+
+        let config = SphinxErrorReporter.Config(
+            hiveBaseURL: hiveBaseURL,
+            ingestKey: Config.sphinxErrorReporterApiKey,
+            mainRepo: "stakwork/sphinx-ios-v2",
+            environment: "production"
+        )
+        SphinxErrorReporter.start(config)
     }
-    
+
     func configureNotificationCenter() {
         notificationUserInfo = nil
         UNUserNotificationCenter.current().delegate = self
@@ -352,12 +402,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
     
     func connectMQTT() {
-        if let phoneSignerSetup: Bool = UserDefaults.Keys.setupPhoneSigner.get(), phoneSignerSetup,
-           let network : String = UserDefaults.Keys.phoneSignerNetwork.get(),
-           let host : String = UserDefaults.Keys.phoneSignerHost.get(),
-           let relay : String = UserDefaults.Keys.phoneSignerRelay.get(){
-            let _ = CrypterManager.sharedInstance.performWalletFinalization(network: network, host: host, relay: relay)
-        }
+//        if let phoneSignerSetup: Bool = UserDefaults.Keys.setupPhoneSigner.get(), phoneSignerSetup,
+//           let network : String = UserDefaults.Keys.phoneSignerNetwork.get(),
+//           let host : String = UserDefaults.Keys.phoneSignerHost.get(),
+//           let relay : String = UserDefaults.Keys.phoneSignerRelay.get(){
+//            let _ = CrypterManager.sharedInstance.performWalletFinalization(network: network, host: host, relay: relay)
+//        }
     }
     
     //Initial VC
@@ -367,6 +417,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         if isUserLogged {
             syncDeviceId()
             feedsManager.restoreContentFeedStatusInBackground()
+            Task { @MainActor in
+                AIAgentManager.sharedInstance.createAgentContactAndChatIfNeeded()
+            }
         }
 
         takeUserToInitialVC(isUserLogged: UserData.sharedInstance.isSignupCompleted())
@@ -386,24 +439,89 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func presentPINIfNeeded() {
-        if GroupsPinManager.sharedInstance.shouldAskForPin() {
+        let biometricEnabled = UserDefaults.Keys.biometricAuthEnabled.get(defaultValue: false)
+        let neverRequirePin = GroupsPinManager.sharedInstance.isPINNeverRequired()
+        let pinTimeoutElapsed = GroupsPinManager.sharedInstance.hasPINTimeoutElapsed()
+
+        guard UserData.sharedInstance.isSignupCompleted() else { return }
+
+        // PIN timeout elapsed → always show PIN, regardless of Face ID
+        if pinTimeoutElapsed {
             let pinVC = PinCodeViewController.instantiate()
-            pinVC.loggingCompletion = {
-                
-                self.updateDefaultTribe()
-                
-                if let currentVC = self.getCurrentVC() {
-                    let _ = DeepLinksHandlerHelper.joinJitsiCall(vc: currentVC, forceJoin: true)
-                    
-                    if let currentVC = currentVC as? DashboardRootViewController {
-                        currentVC.connectToServer()
-                    }
+            pinVC.loggingCompletion = { self.onLoggingCompletion() }
+            WindowsManager.sharedInstance.showConveringWindowWith(rootVC: pinVC, passthroughWindow: false)
+            return
+        }
+        
+        let autoLoginPinSet = UserData.sharedInstance.getAutoLoginPin() != nil
+
+        // Face ID enabled → show biometric on every app entry (covers both neverRequire and specific-timeout cases)
+        if biometricEnabled && autoLoginPinSet {
+            guard WindowsManager.sharedInstance.getCurrentCoveringWindowVC() is BiometricLockViewController else {
+                let biometricLockVC = BiometricLockViewController()
+                biometricLockVC.loggingCompletion = { self.onLoggingCompletion() }
+                WindowsManager.sharedInstance.showConveringWindowWith(rootVC: biometricLockVC, passthroughWindow: false)
+                return
+            }
+            return
+        }
+
+        // No Face ID + no timeout elapsed (or never require) → no auth needed
+
+        // One-time migration: "Never require PIN" users who updated before autoLoginPin
+        // was persisted to keychain have no keychain entry yet. Without it, getMnemonic()
+        // silently fails on the next cold launch (appSessionPin is nil and keychain is empty).
+        // Force a single PIN prompt to seed keychain; subsequent launches restore silently.
+        if UserData.sharedInstance.getAutoLoginPin() == nil {
+            let pinVC = PinCodeViewController.instantiate()
+            pinVC.loggingCompletion = { self.onLoggingCompletion() }
+            WindowsManager.sharedInstance.showConveringWindowWith(rootVC: pinVC, passthroughWindow: false)
+        }
+    }
+
+    func presentBiometricIfNeeded() {
+        if let _ = WindowsManager.sharedInstance.getCurrentCoveringWindowVC() as? BiometricLockViewController {
+            return
+        }
+
+        guard UserData.sharedInstance.isUserLogged() else { return }
+        guard UserDefaults.Keys.biometricAuthEnabled.get(defaultValue: false) else { return }
+        guard !GroupsPinManager.sharedInstance.hasPINTimeoutElapsed() else { return } // PIN takes over when timeout has elapsed
+        guard BiometricAuthenticationHelper().canUseBiometricAuthentication() else { return }
+
+        let biometricLockVC = BiometricLockViewController()
+        biometricLockVC.loggingCompletion = {
+            self.onLoggingCompletion()
+        }
+        WindowsManager.sharedInstance.showConveringWindowWith(
+            rootVC: biometricLockVC,
+            passthroughWindow: false
+        )
+    }
+    
+    func tryBiometricAuth() {
+        if let biometricLockVC = WindowsManager.sharedInstance.getCurrentCoveringWindowVC() as? BiometricLockViewController {
+            biometricLockVC.triggerBiometric()
+            return
+        }
+    }
+    
+    private func onLoggingCompletion() {
+        self.updateDefaultTribe()
+
+        if let currentVC = self.getCurrentVC() {
+            let _ = DeepLinksHandlerHelper.joinJitsiCall(vc: currentVC, forceJoin: true)
+
+            if let currentVC = currentVC as? DashboardRootViewController {
+                // Only reconnect if willEnterForeground didn't already start a connection.
+                // When PIN is in keychain (biometric / never-require users), willEnterForeground
+                // calls reconnectToServer and mqtt is already in flight; skip here to avoid a
+                // redundant sync. When PIN was required from the user (timeout case), mqtt is
+                // nil because willEnterForeground returned early — connect now.
+                if som.mqtt == nil {
+                    currentVC.connectToServer()
                 }
             }
-            WindowsManager.sharedInstance.showConveringWindowWith(
-                rootVC: pinVC,
-                passthroughWindow: false
-            )
         }
     }
 
@@ -580,7 +698,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 }
 
-extension AppDelegate: UNUserNotificationCenterDelegate {
+extension AppDelegate: @preconcurrency UNUserNotificationCenterDelegate {
 
     func application(
         _ application: UIApplication,
@@ -592,29 +710,31 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
             return
         }
         
-        var didEndFetch = false
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 20) {
-            guard !didEndFetch else {
-                return
-            }
-            didEndFetch = true
+        // Skip reconnect if PIN is required but not available in memory
+        // (process was silently relaunched in background after being killed)
+        if UserData.sharedInstance.isPinSet() &&
+           UserData.sharedInstance.getAppPin() == nil {
             completionHandler(.noData)
+            return
         }
         
-        som.reconnectToServer(hideRestoreViewCallback: { _ in
-            guard !didEndFetch else {
-                return
-            }
-            didEndFetch = true
-            completionHandler(.newData)
-        }, errorCallback: {
-            guard !didEndFetch else {
-                return
-            }
-            didEndFetch = true
-            completionHandler(.noData)
-        })
+        // Cancel any pending debounced fetch, immediately satisfying its completion
+        // handler so iOS doesn't warn about a handler that was never called.
+        pendingFetchWorkItem?.cancel()
+        pendingFetchWorkItem = nil
+        pendingFetchCompletion?(.noData)
+        pendingFetchCompletion = nil
+        print("[BGFetch] Notification received — debouncing 1.5s")
+
+        pendingFetchCompletion = completionHandler
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self = self else { return }
+            print("[BGFetch] Debounce elapsed — starting fetch")
+            self.pendingFetchCompletion = nil
+            self.som.beginBackgroundFetch(completionHandler: completionHandler)
+        }
+        pendingFetchWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5, execute: workItem)
     }
 
     func userNotificationCenter(
@@ -688,7 +808,7 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
     }
 }
 
-extension AppDelegate : PKPushRegistryDelegate{
+extension AppDelegate : @preconcurrency PKPushRegistryDelegate {
     func pushRegistry(_ registry: PKPushRegistry, didUpdate pushCredentials: PKPushCredentials, for type: PKPushType) {
         if type == PKPushType.voIP {
             let tokenData = pushCredentials.token
