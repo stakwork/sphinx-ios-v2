@@ -23,9 +23,8 @@ extension ChatMessageTextFieldView {
         if currentString == "" || currentString == placeHolderText {
             if let didTapSendButton = delegate?.didTapSendBlueButton {
                 didTapSendButton()
-            } else {
-                sendButton.isUserInteractionEnabled = true
             }
+            sendButton.isUserInteractionEnabled = true
             return
         }
 
