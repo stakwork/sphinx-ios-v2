@@ -116,15 +116,14 @@ class ChatMessageTextFieldView: UIView {
         
         SoundsPlayer.playHaptic()
         
-        clearMessage()
-        
         delegate?.shouldSendMessage(text: text, type: messageType, completion: { (success, errorMsg) in
-            if !success {
+            if success {
+                self.clearMessage()
+            } else {
                 AlertHelper.showAlert(
                     title: "generic.error.title".localized,
                     message: errorMsg ?? "generic.message.error".localized
                 )
-                self.textView.text = text
             }
             self.sendButton.isUserInteractionEnabled = true
         })
