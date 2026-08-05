@@ -652,6 +652,12 @@ extension SphinxOnionManager {
 
                     let tribe: Chat? = senderInfo?.pubkey.flatMap { tribesMap[$0] }
 
+                    // `tribe != nil` is the authoritative source of truth for the timestamp gate
+                    // in GenericIncomingMessage.init — tribe messages use innerContent.date
+                    // (sender-embedded), DMs use msg.timestamp (relay clock).
+                    // Do NOT substitute ContactServerResponse.isTribeMessage() (checks for a
+                    // `role` field) or the free function isTribeMessage(senderPubkey:) (checks
+                    // Chat existence via ownerPubkey) — both give different answers here.
                     var genericIncomingMessage = GenericIncomingMessage(
                         msg: $0,
                         csr: senderInfo,
