@@ -973,6 +973,7 @@
 		K1L2M3N4O5P6Q7R8S9T0U1V2 /* CreateFeatureViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = L2M3N4O5P6Q7R8S9T0U1V2W3 /* CreateFeatureViewController.swift */; };
 		LC001TEST0001000000000001 /* LiveCallBannerFoundationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC001TEST0001000000000002 /* LiveCallBannerFoundationTests.swift */; };
 		M3N4O5P6Q7R8S9T0U1V2W3X4 /* HiveProcessingBubbleCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = N4O5P6Q7R8S9T0U1V2W3X4Y5 /* HiveProcessingBubbleCell.swift */; };
+		GIM001TEST0001000000000002 /* GenericIncomingMessageTimestampTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = GIM001TEST0001000000000001 /* GenericIncomingMessageTimestampTests.swift */; };
 		MC001TEST0001000000000002 /* MediaCacheUpdateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = MC001TEST0001000000000001 /* MediaCacheUpdateTests.swift */; };
 		MC01AA11BB22CC33DD44EE02 /* MarkdownContentSplitter.swift in Sources */ = {isa = PBXBuildFile; fileRef = MC01AA11BB22CC33DD44EE01 /* MarkdownContentSplitter.swift */; };
 		MT01AA11BB22CC33DD44EE02 /* MarkdownTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = MT01AA11BB22CC33DD44EE01 /* MarkdownTableView.swift */; };
@@ -2391,6 +2392,7 @@
 		J0K1L2M3N4O5P6Q7R8S9T0U1 /* WorkspaceTasksViewControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceTasksViewControllerTests.swift; sourceTree = "<group>"; };
 		L2M3N4O5P6Q7R8S9T0U1V2W3 /* CreateFeatureViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateFeatureViewController.swift; sourceTree = "<group>"; };
 		LC001TEST0001000000000002 /* LiveCallBannerFoundationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveCallBannerFoundationTests.swift; sourceTree = "<group>"; };
+		GIM001TEST0001000000000001 /* GenericIncomingMessageTimestampTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GenericIncomingMessageTimestampTests.swift; sourceTree = "<group>"; };
 		MC001TEST0001000000000001 /* MediaCacheUpdateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaCacheUpdateTests.swift; sourceTree = "<group>"; };
 		MC01AA11BB22CC33DD44EE01 /* MarkdownContentSplitter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownContentSplitter.swift; sourceTree = "<group>"; };
 		MT01AA11BB22CC33DD44EE01 /* MarkdownTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownTableView.swift; sourceTree = "<group>"; };
