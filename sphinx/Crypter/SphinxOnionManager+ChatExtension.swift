@@ -521,6 +521,15 @@ extension SphinxOnionManager {
 //        assignReceiverId(localMsg: localMsg)
 //        localMsg.managedObjectContext?.saveContext()
         
+        // Preserve replyUUID from inner content if the local message doesn't already have one
+        if localMsg.replyUUID == nil,
+           let msg = message.message,
+           let innerContent = MessageInnerContent(JSONString: msg),
+           let replyUuid = innerContent.replyUuid
+        {
+            localMsg.replyUUID = replyUuid
+        }
+        
         return localMsg
     }
     
