@@ -14,6 +14,27 @@ import SwiftyJSON
 
 
 extension SphinxOnionManager {
+    /// Central handler for all `RunReturn` values produced by the sphinxrs FFI layer.
+    ///
+    /// **IMPORTANT — state_mp persistence contract:**
+    /// Every call that returns a `RunReturn` (including all fetch functions) **must** flow
+    /// through `handleRunReturn` (or at minimum `updateStateMap`) so that the `state_mp`
+    /// chunk-buffer delta is merged and persisted. If a caller skips this and returns the
+    /// `RunReturn` directly, any in-flight chunk buffer for that call's `chunk_id` will be
+    /// silently dropped — the next fragment will restart from scratch with no error surfaced.
+    ///
+    /// **Currently exercised fetch call sites (persistence actively verified end-to-end):**
+    /// - `fetchMsgsBatch` → called from `fetchMessageBlock` → always calls `handleRunReturn`
+    /// - `fetchMsgsBatchPerContact` → called from `fetchMessagePerContactBlock` → always calls `handleRunReturn`
+    ///
+    /// **Not yet exercised (persistence theoretically covered but no live caller today):**
+    /// - `fetchMsgs` — generated wrapper exists in `sphinxrs.swift` but has zero call sites
+    ///   in this app's business logic; persistence is only theoretical until a real caller is added.
+    /// - `fetchMsgsBatchOkkey` — same situation as `fetchMsgs` above.
+    ///
+    /// Any future call site that invokes these or any other `RunReturn`-returning function
+    /// **must** call `handleRunReturn(rr:)` (or `updateStateMap(stateMap: rr.stateMp)` at
+    /// minimum) or it will silently break chunk reassembly for multi-fragment messages.
     func handleRunReturn(
         rr: RunReturn,
         topic: String? = nil,
@@ -168,6 +189,14 @@ extension SphinxOnionManager {
         return getMessageTag(messages: rr.msgs, isSendingMessage: isSendingMessage)
     }
     
+    /// Merges and persists the `state_mp` MessagePack delta from a `RunReturn` into
+    /// `UserDefaults` and the in-memory `onionState` via `storeOnionState` → `persist_muts`.
+    ///
+    /// This is called unconditionally from `handleRunReturn` for every `RunReturn`, so any
+    /// chunk-buffer state produced by the sphinxrs FFI layer (including reassembly progress
+    /// for type-34 multi-fragment messages) is automatically persisted as long as the caller
+    /// routes through `handleRunReturn`. See `handleRunReturn` doc comment for the full list
+    /// of which fetch functions are actively exercised vs. only theoretically covered.
     func updateStateMap(stateMap: Data?) {
         if let stateMap = stateMap {
             let _ = storeOnionState(inc: [UInt8](stateMap))
