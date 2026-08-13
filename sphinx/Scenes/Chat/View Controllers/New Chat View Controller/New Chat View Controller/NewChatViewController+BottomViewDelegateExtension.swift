@@ -101,6 +101,8 @@ extension NewChatViewController : ChatMessageTextFieldViewDelegate {
         }
         
         return messageLengthValid
+
+//        return true
     }
     
     func shouldStartGiphy(){

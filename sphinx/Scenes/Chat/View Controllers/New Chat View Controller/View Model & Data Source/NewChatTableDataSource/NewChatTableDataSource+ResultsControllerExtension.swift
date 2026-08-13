@@ -805,7 +805,10 @@ extension NewChatTableDataSource : @preconcurrency NSFetchedResultsControllerDel
             with: items
         )
         
-        if let minIndex = getFetchMinIndex(fetchRequest: fetchRequest), !isThread {
+        let minIndexFetchRequest = fetchRequest
+        minIndexFetchRequest.sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]
+        
+        if let minIndex = getFetchMinIndex(fetchRequest: minIndexFetchRequest), !isThread {
             fetchMinIndex = minIndex
             
             fetchRequest = getFetchRequestFor(
