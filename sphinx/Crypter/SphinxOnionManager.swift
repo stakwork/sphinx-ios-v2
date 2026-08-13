@@ -91,9 +91,15 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
     var hideRestoreCallback: ((Bool) -> ())? = nil
     var errorCallback: (() -> ())? = nil
     var backgroundDisconnectCompletion: (() -> ())?
-    private var connectionInProgress: Bool = false
-    private let connectionLock = NSLock()
+    // Elevated to `internal` so @testable import can drive guard branches in unit tests.
+    var connectionInProgress: Bool = false
+    let connectionLock = NSLock()
     private var connectionTimeoutTimer: Timer?
+
+    // Lightweight test hook: invoked from handleDidConnectAck() immediately after
+    // doInitialInviteSetup() runs, allowing unit tests to assert exactly-once firing
+    // without a real MQTT broker.
+    internal var onInitialInviteSetupFired: (() -> Void)?
     var tribeMembersCallback: (([String: AnyObject]) -> ())? = nil
     var paymentsHistoryCallback: ((String?, String?) -> ())? = nil
     var inviteCreationCallback: ((String?) -> ())? = nil
@@ -581,9 +587,16 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
     ) {
         if let mqtt = self.mqtt {
             if mqtt.connState == .connecting {
+                // Deferred-pending: connection handshake still in flight.
+                // Leave isV2InitialSetup untouched — the in-flight connection's
+                // didConnectAck (routed through handleDidConnectAck) will consume it.
                 return
             }
             if mqtt.connState == .connected && isConnected {
+                // Safe-immediate: connection is confirmed live.
+                // Consume the flag now if set; it is safe to call doInitialInviteSetup()
+                // over a fully established connection.
+                consumeInitialSetupIfPending(source: "reconnectToServer/alreadyConnected")
                 ///If already fetching content, then process is already running
 //                if !isFetchingContent() {
 //                    hideRestoreCallback = hideRestoreViewCallback
@@ -673,11 +686,17 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
 
         if let mqtt = self.mqtt {
             if mqtt.connState == .connecting {
+                // Deferred-pending: handshake still in flight.
+                // Leave isV2InitialSetup untouched so the eventual didConnectAck
+                // (routed through handleDidConnectAck) consumes it.
                 print("[MQTT] connectToServer skipped — already connecting")
                 return
             }
             if mqtt.connState == .connected && isConnected {
+                // Safe-immediate: connection is confirmed live.
+                // Consume the flag now before any other work.
                 print("[MQTT] connectToServer skipped — already connected")
+                consumeInitialSetupIfPending(source: "connectToServer/alreadyConnected")
                 if isV2Restore && !UserDefaults.Keys.isRestoreCompleted.get(defaultValue: false) {
                     syncContactsAndMessages()
                 } else {
@@ -694,6 +713,8 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
         connectionLock.unlock()
 
         guard !alreadyConnecting else {
+            // Deferred-pending: a prior connectToBroker call is already in progress.
+            // Leave isV2InitialSetup untouched — the in-flight didConnectAck will pick it up.
             print("[MQTT] connectToServer skipped — connection already in progress")
             return
         }
@@ -734,38 +755,8 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
         }
         
         mqtt.didConnectAck = { [weak self] _, _ in
-            guard let self = self else {
-                return
-            }
-            self.connectionTimeoutTimer?.invalidate()
-            self.connectionTimeoutTimer = nil
-            self.isConnected = true
-            self.connectionInProgress = false
-            self.endReconnectionTimer()
-            self.reconnectAttemptCount = 0
-            self.startWatchdog()
-            
-            self.subscribeAndPublishMyTopics(pubkey: myPubkey, idx: 0)
-            
-            if self.isV2InitialSetup {
-                self.isV2InitialSetup = false
-                self.doInitialInviteSetup()
-            }
-             
-            if self.isV2Restore && !UserDefaults.Keys.isRestoreCompleted.get(defaultValue: false) {
-                self.hideRestoreCallback = { [weak self] _ in
-                    self?.isV2Restore = false
-                    UserDefaults.Keys.isRestoreCompleted.set(true)
-                    hideRestoreViewCallback?(true)
-                }
-                self.syncContactsAndMessages()
-            } else {
-                self.isV2Restore = false
-                self.contactRestoreCallback = nil
-                self.messageRestoreCallback = nil
-                
-                self.startNewMsgsSync()
-            }
+            guard let self = self else { return }
+            self.handleDidConnectAck(pubkey: myPubkey, hideRestoreViewCallback: hideRestoreViewCallback)
         }
         
         mqtt.didReceiveTrust = { _, _, completionHandler in
@@ -794,6 +785,85 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
         }
     }
     
+    // MARK: - Shared Connection Completion Handler
+
+    /// Shared handler invoked by every didConnectAck path (connectToServer, createMyAccount).
+    /// Performs all per-connection bookkeeping and then atomically consumes isV2InitialSetup.
+    /// Thread-safe: doInitialInviteSetup() is always dispatched onto the main queue, since
+    /// makeFriendRequest writes through the main-thread viewContext (Core Data).
+    func handleDidConnectAck(
+        pubkey: String,
+        hideRestoreViewCallback: ((Bool) -> ())?
+    ) {
+        connectionTimeoutTimer?.invalidate()
+        connectionTimeoutTimer = nil
+        isConnected = true
+        connectionInProgress = false
+        endReconnectionTimer()
+        reconnectAttemptCount = 0
+        startWatchdog()
+
+        subscribeAndPublishMyTopics(pubkey: pubkey, idx: 0)
+
+        // Atomically check-and-clear isV2InitialSetup under the lock, then fire outside it.
+        let shouldFireInitialSetup: Bool
+        connectionLock.lock()
+        if isV2InitialSetup && !isV2Restore {
+            isV2InitialSetup = false
+            shouldFireInitialSetup = true
+        } else {
+            shouldFireInitialSetup = false
+        }
+        connectionLock.unlock()
+
+        if shouldFireInitialSetup {
+            print("[MQTT] handleDidConnectAck — deferred: firing doInitialInviteSetup()")
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                self.doInitialInviteSetup()
+                self.onInitialInviteSetupFired?()
+            }
+        }
+
+        if isV2Restore && !UserDefaults.Keys.isRestoreCompleted.get(defaultValue: false) {
+            hideRestoreCallback = { [weak self] _ in
+                self?.isV2Restore = false
+                UserDefaults.Keys.isRestoreCompleted.set(true)
+                hideRestoreViewCallback?(true)
+            }
+            syncContactsAndMessages()
+        } else {
+            isV2Restore = false
+            contactRestoreCallback = nil
+            messageRestoreCallback = nil
+            startNewMsgsSync()
+        }
+    }
+
+    /// Atomically checks isV2InitialSetup; if set and a pending invite exists, clears the
+    /// flag and calls doInitialInviteSetup() immediately (connection is confirmed live).
+    /// Always dispatched onto the main queue for Core Data safety.
+    func consumeInitialSetupIfPending(source: String) {
+        let shouldFire: Bool
+        connectionLock.lock()
+        if isV2InitialSetup && !isV2Restore {
+            isV2InitialSetup = false
+            shouldFire = true
+        } else {
+            shouldFire = false
+        }
+        connectionLock.unlock()
+
+        if shouldFire {
+            print("[MQTT] consumeInitialSetupIfPending(\(source)) — immediate: firing doInitialInviteSetup()")
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                self.doInitialInviteSetup()
+                self.onInitialInviteSetupFired?()
+            }
+        }
+    }
+
     func endReconnectionTimer() {
         reconnectionTimer?.invalidate()
         reconnectionTimer = nil
@@ -1060,15 +1130,35 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
                 completionHandler(true)
             }
             
-            //subscribe to relevant topics
+            // Route through the shared handler so isV2InitialSetup is consumed
+            // even when createMyAccount's connection completes first (before
+            // DashboardRootViewController.viewDidLoad() calls connectToServer).
             mqtt.didConnectAck = { [weak self] _, _ in
-                self?.isConnected = true
-                
-                self?.subscribeAndPublishMyTopics(
+                guard let self = self else { return }
+                self.connectionInProgress = false
+                self.subscribeAndPublishMyTopics(
                     pubkey: pubkey,
                     idx: idx,
                     inviteCode: inviteCode
                 )
+                // Atomically consume isV2InitialSetup now that the connection is live.
+                let shouldFire: Bool
+                self.connectionLock.lock()
+                if self.isV2InitialSetup && !self.isV2Restore {
+                    self.isV2InitialSetup = false
+                    shouldFire = true
+                } else {
+                    shouldFire = false
+                }
+                self.connectionLock.unlock()
+                if shouldFire {
+                    print("[MQTT] createMyAccount didConnectAck — firing doInitialInviteSetup()")
+                    DispatchQueue.main.async { [weak self] in
+                        guard let self = self else { return }
+                        self.doInitialInviteSetup()
+                        self.onInitialInviteSetupFired?()
+                    }
+                }
             }
         }
         return success

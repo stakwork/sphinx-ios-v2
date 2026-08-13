@@ -110,7 +110,7 @@ extension SphinxOnionManager {//contacts related
             print("INITIATED KEY EXCHANGE WITH RR:\(rr)")
             
         } catch let error {
-            print("Error \(error)")
+            print("Error adding contact (inviteCode=\(inviteCode ?? "nil"), recipientPubkey=\(recipientPubkey)): \(error)")
         }
     }
     
