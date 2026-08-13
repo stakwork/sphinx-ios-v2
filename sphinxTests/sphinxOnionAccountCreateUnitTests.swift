@@ -232,3 +232,232 @@ class sphinxOnionAccountCreateUnitTests: XCTestCase {
 //    }
 
 }
+
+extension sphinxOnionAccountCreateUnitTests {
+    // MARK: - isV2InitialSetup Guard Tests
+    //
+    // These tests drive the connection-guard branches without a real MQTT broker.
+    // They rely on the internal access elevation of isV2InitialSetup,
+    // connectionInProgress, connectionLock, and the onInitialInviteSetupFired
+    // hook added as part of the fix.
+
+    /// Helper: resets all relevant flags on a fresh SphinxOnionManager instance.
+    private func makeFreshManager() -> SphinxOnionManager {
+        SphinxOnionManager.resetSharedInstance()
+        let mgr = SphinxOnionManager.sharedInstance
+        mgr.isV2InitialSetup = false
+        mgr.isV2Restore = false
+        mgr.connectionInProgress = false
+        mgr.stashedInviteCode = nil
+        mgr.stashedContactInfo = nil
+        mgr.onInitialInviteSetupFired = nil
+        return mgr
+    }
+
+    // MARK: consumeInitialSetupIfPending — safe-immediate path
+
+    /// consumeInitialSetupIfPending fires the hook when isV2InitialSetup is true
+    /// and isV2Restore is false (the "already connected" safe-immediate path).
+    func test_consumeInitialSetup_firesWhenFlagSet() {
+        let mgr = makeFreshManager()
+        mgr.isV2InitialSetup = true
+        mgr.isV2Restore = false
+
+        var fireCount = 0
+        let exp = expectation(description: "hook fires")
+        mgr.onInitialInviteSetupFired = {
+            fireCount += 1
+            exp.fulfill()
+        }
+
+        mgr.consumeInitialSetupIfPending(source: "test/safeImmediate")
+        waitForExpectations(timeout: 2)
+
+        XCTAssertEqual(fireCount, 1, "doInitialInviteSetup must fire exactly once")
+        XCTAssertFalse(mgr.isV2InitialSetup, "Flag must be cleared after consumption")
+    }
+
+    /// consumeInitialSetupIfPending must NOT fire when the flag is already false.
+    func test_consumeInitialSetup_doesNotFireWhenFlagClear() {
+        let mgr = makeFreshManager()
+        mgr.isV2InitialSetup = false
+
+        var fired = false
+        mgr.onInitialInviteSetupFired = { fired = true }
+        mgr.consumeInitialSetupIfPending(source: "test/clear")
+
+        let drain = expectation(description: "main drain")
+        DispatchQueue.main.async { drain.fulfill() }
+        waitForExpectations(timeout: 1)
+
+        XCTAssertFalse(fired, "Hook must NOT fire when isV2InitialSetup is false")
+    }
+
+    // MARK: consumeInitialSetupIfPending — one-shot guarantee
+
+    /// Second call after the flag is consumed must not fire again.
+    func test_consumeInitialSetup_oneShotGuarantee() {
+        let mgr = makeFreshManager()
+        mgr.isV2InitialSetup = true
+
+        var fireCount = 0
+        let exp = expectation(description: "first fire")
+        mgr.onInitialInviteSetupFired = {
+            fireCount += 1
+            if fireCount == 1 { exp.fulfill() }
+        }
+
+        mgr.consumeInitialSetupIfPending(source: "test/first")
+        waitForExpectations(timeout: 2)
+
+        // Second call — flag already cleared; must NOT fire.
+        mgr.consumeInitialSetupIfPending(source: "test/second")
+        let drain = expectation(description: "drain after second call")
+        DispatchQueue.main.async { drain.fulfill() }
+        waitForExpectations(timeout: 1)
+
+        XCTAssertEqual(fireCount, 1, "One-shot: must fire exactly once even with two calls")
+    }
+
+    // MARK: consumeInitialSetupIfPending — restore-mode safety
+
+    /// isV2InitialSetup is also set true during account restore (alongside isV2Restore).
+    /// consumeInitialSetupIfPending must NOT fire when isV2Restore is true so a
+    /// restoring user never spuriously triggers the invite friend-request.
+    func test_consumeInitialSetup_doesNotFireInRestoreMode() {
+        let mgr = makeFreshManager()
+        mgr.isV2InitialSetup = true
+        mgr.isV2Restore = true  // restore path
+
+        var fired = false
+        mgr.onInitialInviteSetupFired = { fired = true }
+        mgr.consumeInitialSetupIfPending(source: "test/restoreMode")
+
+        let drain = expectation(description: "main drain")
+        DispatchQueue.main.async { drain.fulfill() }
+        waitForExpectations(timeout: 1)
+
+        XCTAssertFalse(fired, "Hook must NOT fire when isV2Restore=true")
+        XCTAssertTrue(mgr.isV2InitialSetup, "Flag must remain set when restore-mode guard fires")
+    }
+
+    // MARK: handleDidConnectAck — deferred path
+
+    /// handleDidConnectAck fires doInitialInviteSetup when isV2InitialSetup is true
+    /// and isV2Restore is false (the deferred path from didConnectAck).
+    func test_handleDidConnectAck_firesWhenFlagSet() {
+        let mgr = makeFreshManager()
+        mgr.isV2InitialSetup = true
+        mgr.isV2Restore = false
+
+        var fireCount = 0
+        let exp = expectation(description: "hook fires via handleDidConnectAck")
+        mgr.onInitialInviteSetupFired = {
+            fireCount += 1
+            exp.fulfill()
+        }
+
+        // Call the shared handler directly (simulates the didConnectAck path).
+        // Passing a dummy pubkey — subscribeAndPublishMyTopics will no-op safely
+        // since there is no live mqtt object on the fresh manager.
+        mgr.handleDidConnectAck(pubkey: "", hideRestoreViewCallback: nil)
+        waitForExpectations(timeout: 2)
+
+        XCTAssertEqual(fireCount, 1, "Hook must fire exactly once via handleDidConnectAck")
+        XCTAssertFalse(mgr.isV2InitialSetup, "Flag must be cleared after handleDidConnectAck fires it")
+    }
+
+    /// handleDidConnectAck must NOT fire when isV2InitialSetup is already false.
+    func test_handleDidConnectAck_doesNotFireWhenFlagClear() {
+        let mgr = makeFreshManager()
+        mgr.isV2InitialSetup = false
+
+        var fired = false
+        mgr.onInitialInviteSetupFired = { fired = true }
+        mgr.handleDidConnectAck(pubkey: "", hideRestoreViewCallback: nil)
+
+        let drain = expectation(description: "main drain")
+        DispatchQueue.main.async { drain.fulfill() }
+        waitForExpectations(timeout: 1)
+
+        XCTAssertFalse(fired, "Hook must NOT fire when isV2InitialSetup is false")
+    }
+
+    /// Restore-mode safety for handleDidConnectAck: must not fire doInitialInviteSetup
+    /// when isV2Restore is true, even if isV2InitialSetup is also set.
+    func test_handleDidConnectAck_doesNotFireInRestoreMode() {
+        let mgr = makeFreshManager()
+        mgr.isV2InitialSetup = true
+        mgr.isV2Restore = true
+
+        var fired = false
+        mgr.onInitialInviteSetupFired = { fired = true }
+        mgr.handleDidConnectAck(pubkey: "", hideRestoreViewCallback: nil)
+
+        let drain = expectation(description: "main drain")
+        DispatchQueue.main.async { drain.fulfill() }
+        waitForExpectations(timeout: 1)
+
+        XCTAssertFalse(fired, "Hook must NOT fire via handleDidConnectAck when isV2Restore=true")
+    }
+
+    // MARK: Thread-safety
+
+    /// doInitialInviteSetup (via consumeInitialSetupIfPending) is always dispatched
+    /// onto the main queue, even when called from a background thread.
+    /// This mirrors the background-fetch path where reconnectToServer is invoked on
+    /// a non-main queue and must not allow Core Data writes off the main thread.
+    func test_consumeInitialSetup_alwaysFiresOnMainThread() {
+        let mgr = makeFreshManager()
+        mgr.isV2InitialSetup = true
+
+        var firedOnMain = false
+        let exp = expectation(description: "hook fires on main thread")
+        mgr.onInitialInviteSetupFired = {
+            firedOnMain = Thread.isMainThread
+            exp.fulfill()
+        }
+
+        // Invoke from a background queue — simulates the bgfetch netCheck path.
+        DispatchQueue.global(qos: .background).async {
+            mgr.consumeInitialSetupIfPending(source: "test/backgroundThread")
+        }
+
+        waitForExpectations(timeout: 2)
+        XCTAssertTrue(firedOnMain, "doInitialInviteSetup must be dispatched onto the main thread (Core Data safety)")
+    }
+
+    // MARK: Atomic concurrency
+
+    /// Two concurrent callers racing on consumeInitialSetupIfPending must result in
+    /// exactly one invocation of doInitialInviteSetup (check-and-clear is atomic under
+    /// connectionLock, so only one caller wins).
+    func test_consumeInitialSetup_atomicUnderConcurrency() {
+        let mgr = makeFreshManager()
+        mgr.isV2InitialSetup = true
+
+        var fireCount = 0
+        let countLock = NSLock()
+        let exp = expectation(description: "at least one caller fires")
+        exp.assertForOverFulfill = false
+        mgr.onInitialInviteSetupFired = {
+            countLock.lock()
+            fireCount += 1
+            countLock.unlock()
+            exp.fulfill()
+        }
+
+        let q = DispatchQueue(label: "test.concurrent", attributes: .concurrent)
+        q.async { mgr.consumeInitialSetupIfPending(source: "test/concurrent1") }
+        q.async { mgr.consumeInitialSetupIfPending(source: "test/concurrent2") }
+
+        waitForExpectations(timeout: 2)
+
+        // Drain main queue so any second-caller dispatch settles.
+        let drain = expectation(description: "main drain")
+        DispatchQueue.main.async { drain.fulfill() }
+        waitForExpectations(timeout: 1)
+
+        XCTAssertEqual(fireCount, 1, "Exactly one concurrent caller must win check-and-clear; second must not fire")
+    }
+}
