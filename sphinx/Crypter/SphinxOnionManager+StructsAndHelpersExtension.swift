@@ -551,6 +551,7 @@ class MagnetDetailsResponse: Mappable {
 enum SphinxOnionManagerError: Error {
     case SOMNetworkError
     case SOMTimeoutError
+    case SOMSecureRandomFailed(OSStatus)
     
     var localizedDescription: String {
         switch self {
@@ -558,8 +559,9 @@ enum SphinxOnionManagerError: Error {
             return "Network Error"
         case .SOMTimeoutError:
             return "Timeout Error"
+        case .SOMSecureRandomFailed(let status):
+            return "Secure random generation failed with OSStatus: \(status)"
         }
-        
     }
 }
 
@@ -593,6 +595,66 @@ extension SphinxOnionManager {
         return nil
     }
     
+    /// Generates 16 bytes of hardened entropy by combining two randomness sources,
+    /// then hex-encodes the result for use as BIP39 seed entropy.
+    ///
+    /// - Parameter secureRandomFn: Injectable RNG function matching `SecRandomCopyBytes`'s
+    ///   pointer-based signature. Defaults to `SecRandomCopyBytes(kSecRandomDefault, ...)`.
+    ///
+    /// - Throws: `SphinxOnionManagerError.SOMSecureRandomFailed` if the primary RNG fails.
+    ///
+    /// NOTE on entropy source independence: `SecRandomCopyBytes` and `SystemRandomNumberGenerator`
+    /// are NOT fully independent sources on Apple platforms — both ultimately draw from the same
+    /// OS-level CSPRNG lineage (the kernel's Fortuna/yarrow-derived pool). The XOR mixing guards
+    /// against an implementation-level bug or transient failure in either individual API, but does
+    /// NOT protect against a compromise of the shared underlying kernel entropy pool.
+    ///
+    /// NOTE on hex string lifetime: The returned hex `String`, and any copy made when it crosses
+    /// into `mnemonicFromEntropy` at the Rust FFI boundary, cannot be deterministically zeroed
+    /// from Swift. Keep it alive as briefly as possible before the FFI call.
+    func generateHardenedEntropyHex(
+        secureRandomFn: (Int, UnsafeMutableRawPointer) -> OSStatus = { count, pointer in
+            SecRandomCopyBytes(kSecRandomDefault, count, pointer)
+        }
+    ) throws -> String {
+        let byteCount = 16
+
+        // Primary: SecRandomCopyBytes (or injected stub for testing)
+        var primaryBytes = [UInt8](repeating: 0, count: byteCount)
+        let status = primaryBytes.withUnsafeMutableBytes { ptr in
+            secureRandomFn(byteCount, ptr.baseAddress!)
+        }
+        guard status == errSecSuccess else {
+            throw SphinxOnionManagerError.SOMSecureRandomFailed(status)
+        }
+
+        // Secondary: SystemRandomNumberGenerator
+        var rng = SystemRandomNumberGenerator()
+        var secondaryBytes = (0..<byteCount).map { _ in UInt8.random(in: 0...255, using: &rng) }
+
+        // XOR-combine into combined buffer
+        var combined = (0..<byteCount).map { i in primaryBytes[i] ^ secondaryBytes[i] }
+
+        // Optimizer-safe zeroization of primary and secondary buffers
+        // (plain assignment loops are dead-store-elimination candidates in Release builds)
+        primaryBytes.withUnsafeMutableBytes { ptr in
+            _ = memset_s(ptr.baseAddress, ptr.count, 0, ptr.count)
+        }
+        secondaryBytes.withUnsafeMutableBytes { ptr in
+            _ = memset_s(ptr.baseAddress, ptr.count, 0, ptr.count)
+        }
+
+        // Hex-encode combined BEFORE zeroing it, so no ungoverned copy remains after
+        let hexResult = Data(combined).hexString
+
+        // Optimizer-safe zeroization of combined buffer
+        combined.withUnsafeMutableBytes { ptr in
+            _ = memset_s(ptr.baseAddress, ptr.count, 0, ptr.count)
+        }
+
+        return hexResult
+    }
+
     func generateCryptographicallySecureRandomInt(upperBound: Int) -> Int? {
         guard upperBound > 0 else {
             return nil // Ensure that the upperBound is greater than 0

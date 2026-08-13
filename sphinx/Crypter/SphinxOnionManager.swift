@@ -312,17 +312,18 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
     func generateMnemonic() -> String? {
         var result : String? = nil
         do {
-            result = try sphinx.mnemonicFromEntropy(
-                entropy: {
-                    var bytes = [UInt8](repeating: 0, count: 16)
-                    SecRandomCopyBytes(kSecRandomDefault, 16, &bytes)
-                    return Data(bytes).hexString
-                }()
-            )
+            // generateHardenedEntropyHex validates SecRandomCopyBytes success, XOR-mixes
+            // a second source, and zeroizes raw buffers before returning the hex string.
+            // Keep entropyHex alive as briefly as possible before the FFI call.
+            let entropyHex = try generateHardenedEntropyHex()
+            result = try sphinx.mnemonicFromEntropy(entropy: entropyHex)
             guard let result = result else {
                 return nil
             }
             UserData.sharedInstance.save(walletMnemonic: result)
+        } catch SphinxOnionManagerError.SOMSecureRandomFailed(let status) {
+            // Log OSStatus only — never the entropy or mnemonic
+            print("error getting seed: SecRandomCopyBytes failed with OSStatus \(status)")
         } catch let error {
             print("error getting seed\(error)")
         }
