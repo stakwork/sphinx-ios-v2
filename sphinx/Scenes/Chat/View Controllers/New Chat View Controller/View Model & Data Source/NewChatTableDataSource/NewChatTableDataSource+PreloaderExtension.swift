@@ -73,9 +73,10 @@ extension NewChatTableDataSource {
                     animated: true
                 )
             }
-        } else if loadingMoreItems {
+        } else if pagination.shouldRestoreScroll() {
             // After inserting older messages at the beginning, anchor the previously-visible
-            // row back to where it was so the view doesn't jump.
+            // row back to where it was so the view doesn't jump. Same path for a full page
+            // and a short network page.
             if let scrollState = preloaderHelper.getScrollState(
                 for: chat.id,
                 with: dataSource.snapshot().itemIdentifiers
@@ -94,6 +95,8 @@ extension NewChatTableDataSource {
                     }
                 }
             }
+            pendingScrollRestore = false
+            print("pagination pendingScrollRestore consumed")
         }
         
         if tableView.contentOffset.y <= Constants.kChatTableContentInset {
@@ -101,7 +104,10 @@ extension NewChatTableDataSource {
         }
         
         let allContentVisible = tableView.contentSize.height <= tableView.frame.size.height
-        if allContentVisible && !allItemsLoaded && !loadingMoreItems {
+        // Never chain another fetch while loading or while a restore is still pending.
+        // After the originating load settles to idle, allow at most one auto-fill per chat.
+        if pagination.shouldAutoFillOnFirstLoad(allContentVisible: allContentVisible) {
+            pagination.markAutoFilled()
             didScrollToTop()
         }
     }

@@ -65,22 +65,19 @@ extension NewChatTableDataSource: UITableViewDelegate {
         if isSearching {
             return
         }
-        
-        if loadingMoreItems {
+
+        guard pagination.beginUserLoad(isThread: isThread, hasChat: chat != nil) else {
             return
         }
-        
-        if allItemsLoaded {
-            return
-        }
-        
-        loadingMoreItems = true
-        
+
         fetchMoreItems()
     }
     
     func loadMoreItems(itemsCount: Int) {
-        configureResultsController(items: messagesCountRequested + itemsCount)
+        configureResultsController(
+            items: messagesCountRequested + itemsCount,
+            expandingForPagination: true
+        )
     }
     
     @objc func loadMoreItems() {
@@ -89,68 +86,94 @@ extension NewChatTableDataSource: UITableViewDelegate {
     
     func fetchMoreItems() {
         if isThread {
+            pagination.failToStart(reason: "thread")
             return
         }
-        if let publicKey = contact?.publicKey ?? chat?.ownerPubkey {
-            if let chat = chat {
-                let backgroundContext = CoreDataManager.sharedManager.getBackgroundContext()
-                var minIndex: Int? = nil
-                let itemsPerPage = 100
-                
-                backgroundContext.perform {
-                    minIndex = TransactionMessage.getMinMessageIndex(for: chat, context: backgroundContext)
-                    
-                    if let minIndex = minIndex {
-                        if (minIndex - 1) <= 0 {
-                            Task { @MainActor [weak self] in
-                                guard let self else { return }
-                                self.allItemsLoaded = true
-                                self.loadingMoreItems = false
-                                self.processMessages(messages: self.messagesArray, showLoadingMore: false)
-                            }
-                            return
-                        }
-                        SphinxOnionManager.sharedInstance.startChatMsgBlockFetch(
-                            startIndex: minIndex - 1,
-                            itemsPerPage: itemsPerPage,
-                            stopIndex: 0,
-                            publicKey: publicKey
-                        ) { messagesCount in
-                            Task { @MainActor [weak self] in
-                                guard let self = self else { return }
-                                // Fetched messages arrive as unconfirmed — check their send status now
-                                // rather than waiting for the next didChangeContentWith cycle.
-                                SphinxOnionManager.sharedInstance.getMessagesStatusForPendingMessages()
-                                
-                                if messagesCount < itemsPerPage {
-                                    self.allItemsLoaded = true
 
-                                    self.processMessages(
-                                        messages: self.messagesArray,
-                                        showLoadingMore: false
-                                    )
+        guard chat != nil else {
+            pagination.failToStart(reason: "no chat")
+            return
+        }
 
-                                    if self.isSearching {
-                                        self.delegate?.shouldToggleSearchLoadingWheel(active: false)
-                                    }
-                                } else {
-                                    self.loadMoreItems(itemsCount: messagesCount)
-                                }
-                            }
-                        }
-                    } else {
-                        Task { @MainActor [weak self] in
-                            guard let self else { return }
-                            self.allItemsLoaded = true
-                            self.loadingMoreItems = false
-                            self.processMessages(messages: self.messagesArray, showLoadingMore: false)
-                        }
+        guard let publicKey = contact?.publicKey ?? chat?.ownerPubkey else {
+            pagination.failToStart(reason: "no pubkey")
+            return
+        }
+
+        guard SphinxOnionManager.sharedInstance.getAccountSeed() != nil else {
+            pagination.failToStart(reason: "nil seed")
+            return
+        }
+
+        guard let chat = chat else {
+            pagination.failToStart(reason: "no chat")
+            return
+        }
+
+        let backgroundContext = CoreDataManager.sharedManager.getBackgroundContext()
+        var minIndex: Int? = nil
+        let itemsPerPage = 100
+
+        backgroundContext.perform {
+            minIndex = TransactionMessage.getMinMessageIndex(for: chat, context: backgroundContext)
+
+            if let minIndex = minIndex {
+                if (minIndex - 1) <= 0 {
+                    Task { @MainActor [weak self] in
+                        guard let self else { return }
+                        self.finishPaginationPage(messagesCount: 0, itemsPerPage: itemsPerPage, alreadyAtOldest: true)
                     }
+                    return
+                }
+                SphinxOnionManager.sharedInstance.startChatMsgBlockFetch(
+                    startIndex: minIndex - 1,
+                    itemsPerPage: itemsPerPage,
+                    stopIndex: 0,
+                    publicKey: publicKey
+                ) { messagesCount in
+                    Task { @MainActor [weak self] in
+                        guard let self = self else { return }
+                        // Fetched messages arrive as unconfirmed — check their send status now
+                        // rather than waiting for the next didChangeContentWith cycle.
+                        SphinxOnionManager.sharedInstance.getMessagesStatusForPendingMessages()
+                        self.finishPaginationPage(
+                            messagesCount: messagesCount,
+                            itemsPerPage: itemsPerPage,
+                            alreadyAtOldest: false
+                        )
+                    }
+                }
+            } else {
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    self.finishPaginationPage(messagesCount: 0, itemsPerPage: itemsPerPage, alreadyAtOldest: true)
                 }
             }
         }
     }
     
+    func finishPaginationPage(
+        messagesCount: Int,
+        itemsPerPage: Int,
+        alreadyAtOldest: Bool
+    ) {
+        if alreadyAtOldest {
+            pagination.completeAlreadyAtOldest()
+        } else {
+            print("pagination network messagesCount=\(messagesCount) page=\(itemsPerPage)")
+            pagination.completeNetworkPage(
+                messagesCount: messagesCount,
+                itemsPerPage: itemsPerPage
+            )
+        }
+
+        loadMoreItems(itemsCount: messagesCount)
+
+        if isSearching {
+            delegate?.shouldToggleSearchLoadingWheel(active: false)
+        }
+    }
+
     @objc func shouldHideNewMsgsIndicator() -> Bool {
         return tableView.contentOffset.y < -10 || tableView.alpha == 0
     }

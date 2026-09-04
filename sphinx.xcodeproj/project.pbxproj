@@ -106,6 +106,8 @@
 		472092CA2A278B0400468796 /* NewMessageTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 472092C82A278B0400468796 /* NewMessageTableViewCell.xib */; };
 		472092CC2A27985800468796 /* NewChatViewController+TableViewExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 472092CB2A27985800468796 /* NewChatViewController+TableViewExtension.swift */; };
 		472092CE2A27987A00468796 /* NewChatTableDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 472092CD2A27987A00468796 /* NewChatTableDataSource.swift */; };
+		CHATPAGE01FILE0000000002 /* ChatPagination.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHATPAGE01FILE0000000001 /* ChatPagination.swift */; };
+		CHATPAGE01TEST0000000002 /* ChatPaginationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHATPAGE01TEST0000000001 /* ChatPaginationTests.swift */; };
 		472161B1293913230088B87B /* LoadingRecommendationsCollectionViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 472161AF293913230088B87B /* LoadingRecommendationsCollectionViewCell.swift */; };
 		472161B42939158B0088B87B /* NoRecommendationsCollectionViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 472161B22939158B0088B87B /* NoRecommendationsCollectionViewCell.swift */; };
 		472161B6293915E20088B87B /* NoRecommendationsCollectionViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 472161B8293915E20088B87B /* NoRecommendationsCollectionViewCell.xib */; };
@@ -1336,6 +1338,8 @@
 		472092C82A278B0400468796 /* NewMessageTableViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = NewMessageTableViewCell.xib; sourceTree = "<group>"; };
 		472092CB2A27985800468796 /* NewChatViewController+TableViewExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NewChatViewController+TableViewExtension.swift"; sourceTree = "<group>"; };
 		472092CD2A27987A00468796 /* NewChatTableDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewChatTableDataSource.swift; sourceTree = "<group>"; };
+		CHATPAGE01FILE0000000001 /* ChatPagination.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatPagination.swift; sourceTree = "<group>"; };
+		CHATPAGE01TEST0000000001 /* ChatPaginationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatPaginationTests.swift; sourceTree = "<group>"; };
 		472161AF293913230088B87B /* LoadingRecommendationsCollectionViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoadingRecommendationsCollectionViewCell.swift; sourceTree = "<group>"; };
 		472161B22939158B0088B87B /* NoRecommendationsCollectionViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoRecommendationsCollectionViewCell.swift; sourceTree = "<group>"; };
 		472161B7293915E20088B87B /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/NoRecommendationsCollectionViewCell.xib; sourceTree = "<group>"; };
@@ -3809,6 +3813,7 @@
 		4779F178232AA0F300D35E81 /* sphinxTests */ = {
 			isa = PBXGroup;
 			children = (
+				CHATPAGE01TEST0000000001 /* ChatPaginationTests.swift */,
 				9B5504520C1B4722A0EBFA00 /* HiveFeatureTests.swift */,
 				9F4B101D1E0946E1A2ED0FCA /* HiveChatMessageTests.swift */,
 				MC001TEST0001000000000001 /* MediaCacheUpdateTests.swift */,
@@ -4383,6 +4388,7 @@
 		47CFA9482A38C5860030BC23 /* NewChatTableDataSource */ = {
 			isa = PBXGroup;
 			children = (
+				CHATPAGE01FILE0000000001 /* ChatPagination.swift */,
 				472092CD2A27987A00468796 /* NewChatTableDataSource.swift */,
 				47E6A4F62A2F788300A9509E /* NewChatTableDataSource+ResultsControllerExtension.swift */,
 				47BF27EE2A375EAA00F15EE9 /* NewChatTableDataSource+CellDelegateExtension.swift */,
@@ -6137,6 +6143,7 @@
 				F3DC6B24273F60FF00458E09 /* ContentFeedPaymentDestination+CoreDataProperties.swift in Sources */,
 				47E6A5002A30C67400A9509E /* ShimmeringTableView.swift in Sources */,
 				F3188BA0271CD81D00890DDD /* ModalDismissButtonStyle.swift in Sources */,
+				CHATPAGE01FILE0000000002 /* ChatPagination.swift in Sources */,
 				472092CE2A27987A00468796 /* NewChatTableDataSource.swift in Sources */,
 				47CEA4542A449D6D00E936CB /* NewChatTableDataSource+AudioExtension.swift in Sources */,
 				47893AA0240D8ED0002F675B /* IntermitentAlphaAnimatedView.swift in Sources */,
@@ -6469,6 +6476,7 @@
 			files = (
 				8A76E71FD2044567BAC32D0D /* HiveFeatureTests.swift in Sources */,
 				5010E69969BC4B008CB1B8DB /* HiveChatMessageTests.swift in Sources */,
+				CHATPAGE01TEST0000000002 /* ChatPaginationTests.swift in Sources */,
 				MC001TEST0001000000000002 /* MediaCacheUpdateTests.swift in Sources */,
 				FC01AA11BB22CC33DD44EE01 /* FeatureChatMessageCellPublishPromptTests.swift in Sources */,
 				FC01AA11BB22CC33DD44EE02 /* FeatureChatMessageCellPublishScriptTests.swift in Sources */,
