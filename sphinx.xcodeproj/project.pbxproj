@@ -106,8 +106,6 @@
 		472092CA2A278B0400468796 /* NewMessageTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 472092C82A278B0400468796 /* NewMessageTableViewCell.xib */; };
 		472092CC2A27985800468796 /* NewChatViewController+TableViewExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 472092CB2A27985800468796 /* NewChatViewController+TableViewExtension.swift */; };
 		472092CE2A27987A00468796 /* NewChatTableDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 472092CD2A27987A00468796 /* NewChatTableDataSource.swift */; };
-		CHATPAGE01FILE0000000002 /* ChatPagination.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHATPAGE01FILE0000000001 /* ChatPagination.swift */; };
-		CHATPAGE01TEST0000000002 /* ChatPaginationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHATPAGE01TEST0000000001 /* ChatPaginationTests.swift */; };
 		472161B1293913230088B87B /* LoadingRecommendationsCollectionViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 472161AF293913230088B87B /* LoadingRecommendationsCollectionViewCell.swift */; };
 		472161B42939158B0088B87B /* NoRecommendationsCollectionViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 472161B22939158B0088B87B /* NoRecommendationsCollectionViewCell.swift */; };
 		472161B6293915E20088B87B /* NoRecommendationsCollectionViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 472161B8293915E20088B87B /* NoRecommendationsCollectionViewCell.xib */; };
@@ -844,6 +842,8 @@
 		CEF821D62963B68600CBB28F /* DiscoverTribesWebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF821D52963B68600CBB28F /* DiscoverTribesWebViewController.swift */; };
 		CEF88DD129B66B9200DC1C40 /* RecommendationItemWUnifiedViewCollectionViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF88DCF29B66B9200DC1C40 /* RecommendationItemWUnifiedViewCollectionViewCell.swift */; };
 		CEF88DD229B66B9200DC1C40 /* RecommendationItemWUnifiedViewCollectionViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = CEF88DD029B66B9200DC1C40 /* RecommendationItemWUnifiedViewCollectionViewCell.xib */; };
+		CHATPAGE01FILE0000000002 /* ChatPagination.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHATPAGE01FILE0000000001 /* ChatPagination.swift */; };
+		CHATPAGE01TEST0000000002 /* ChatPaginationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHATPAGE01TEST0000000001 /* ChatPaginationTests.swift */; };
 		CQ1A2B3C4D5E6F7A8B9C0D1E /* ClarifyingQuestionMessageCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = CQ2B3C4D5E6F7A8B9C0D1E2F /* ClarifyingQuestionMessageCell.swift */; };
 		D2789CFCCA3E453295F15A2E /* HiveFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44EC6EC0EE1C4D6B8B5FADB2 /* HiveFeature.swift */; };
 		D30E5DF5BD6E4A209227EEB5 /* NewChatViewController+AgentExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 009A40E65F444529AAD5F256 /* NewChatViewController+AgentExtension.swift */; };
@@ -1338,8 +1338,6 @@
 		472092C82A278B0400468796 /* NewMessageTableViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = NewMessageTableViewCell.xib; sourceTree = "<group>"; };
 		472092CB2A27985800468796 /* NewChatViewController+TableViewExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NewChatViewController+TableViewExtension.swift"; sourceTree = "<group>"; };
 		472092CD2A27987A00468796 /* NewChatTableDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewChatTableDataSource.swift; sourceTree = "<group>"; };
-		CHATPAGE01FILE0000000001 /* ChatPagination.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatPagination.swift; sourceTree = "<group>"; };
-		CHATPAGE01TEST0000000001 /* ChatPaginationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatPaginationTests.swift; sourceTree = "<group>"; };
 		472161AF293913230088B87B /* LoadingRecommendationsCollectionViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoadingRecommendationsCollectionViewCell.swift; sourceTree = "<group>"; };
 		472161B22939158B0088B87B /* NoRecommendationsCollectionViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoRecommendationsCollectionViewCell.swift; sourceTree = "<group>"; };
 		472161B7293915E20088B87B /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/NoRecommendationsCollectionViewCell.xib; sourceTree = "<group>"; };
@@ -2247,6 +2245,8 @@
 		CEF821D52963B68600CBB28F /* DiscoverTribesWebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverTribesWebViewController.swift; sourceTree = "<group>"; };
 		CEF88DCF29B66B9200DC1C40 /* RecommendationItemWUnifiedViewCollectionViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendationItemWUnifiedViewCollectionViewCell.swift; sourceTree = "<group>"; };
 		CEF88DD029B66B9200DC1C40 /* RecommendationItemWUnifiedViewCollectionViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = RecommendationItemWUnifiedViewCollectionViewCell.xib; sourceTree = "<group>"; };
+		CHATPAGE01FILE0000000001 /* ChatPagination.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatPagination.swift; sourceTree = "<group>"; };
+		CHATPAGE01TEST0000000001 /* ChatPaginationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatPaginationTests.swift; sourceTree = "<group>"; };
 		CQ2B3C4D5E6F7A8B9C0D1E2F /* ClarifyingQuestionMessageCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClarifyingQuestionMessageCell.swift; sourceTree = "<group>"; };
 		D4E5F6A7B8C9D0E1F2A3B4C5 /* TaskProgressBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskProgressBarView.swift; sourceTree = "<group>"; };
 		D5B2D56F945C46E689DAFEF9 /* AIAgentManager+HiveTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AIAgentManager+HiveTools.swift"; sourceTree = "<group>"; };
@@ -7401,7 +7401,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sphinx/sphinx.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 345;
+				CURRENT_PROJECT_VERSION = 346;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 8297M44YTW;
 				ENABLE_BITCODE = NO;
@@ -7491,7 +7491,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sphinx/sphinx.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 345;
+				CURRENT_PROJECT_VERSION = 346;
 				DEVELOPMENT_TEAM = 8297M44YTW;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
