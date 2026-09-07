@@ -68,10 +68,6 @@ extension NewChatTableDataSource {
             self.saveSnapshotCurrentState()
             self.dataSource.apply(snapshot, animatingDifferences: false)
             self.restoreScrollLastPosition()
-            
-            DelayPerformedHelper.performAfterDelay(seconds: 1.0, completion: {
-                self.loadingMoreItems = false
-            })
         }
     }    
     
@@ -766,17 +762,20 @@ extension NewChatTableDataSource : @preconcurrency NSFetchedResultsControllerDel
         with items: Int,
         and minIndex: Int
     ) -> NSFetchRequest<TransactionMessage> {
+        // Pagination must pass pinnedMessageId: nil so an in-flight pin hold
+        // cannot suppress the (minId, oldestDate) predicate.
         return TransactionMessage.getChatMessagesFetchRequest(
             for: chat,
             with: items,
             and: minIndex,
-            pinnedMessageId: pinnedMessageId
+            pinnedMessageId: nil,
+            oldestDate: fetchOldestDate
         )
     }
     
     func getFetchMinIndex(
         fetchRequest: NSFetchRequest<TransactionMessage>
-    ) -> Int? {
+    ) -> (minId: Int, oldestDate: Date)? {
         let managedContext = CoreDataManager.sharedManager.persistentContainer.viewContext
         var objects: [TransactionMessage] = [TransactionMessage]()
         
@@ -786,36 +785,94 @@ extension NewChatTableDataSource : @preconcurrency NSFetchedResultsControllerDel
             print("Error: " + error.localizedDescription)
         }
         
-        return objects.last?.id
+        print("pagination probe count=\(objects.count)")
+        return ChatPaginationProbe.minIndexAndOldestDate(
+            from: objects.map { ($0.id, $0.date) }
+        )
     }
     
-    func configureResultsController(items: Int) {
+    func configureResultsController(
+        items: Int,
+        expandingForPagination: Bool = false
+    ) {
         guard let chat = chat else {
-            return
-        }
-        
-        if messagesCountFetched < messagesCountRequested {
+            print("pagination configureResultsController skip: no chat")
             return
         }
         
         messagesCountRequested = items
         
-        var fetchRequest = getFetchRequestFor(
-            chat: chat,
-            with: items
-        )
+        var fetchRequest: NSFetchRequest<TransactionMessage>
         
-        let minIndexFetchRequest = fetchRequest
-        minIndexFetchRequest.sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]
-        
-        if let minIndex = getFetchMinIndex(fetchRequest: minIndexFetchRequest), !isThread {
-            fetchMinIndex = minIndex
-            
+        if isThread {
             fetchRequest = getFetchRequestFor(
                 chat: chat,
-                with: items,
-                and: minIndex
+                with: items
             )
+        } else if !expandingForPagination, let pinnedId = pinnedMessageId {
+            let pinnedProbe = TransactionMessage.getPinnedProbeFetchRequest(
+                for: chat,
+                pinnedMessageId: pinnedId
+            )
+            if let result = getFetchMinIndex(fetchRequest: pinnedProbe) {
+                fetchMinIndex = result.minId
+                fetchOldestDate = result.oldestDate
+                print("pagination pinned probe minId=\(result.minId) oldestDate=\(result.oldestDate)")
+            } else {
+                fetchOldestDate = Date.distantPast
+                print("pagination pinned probe empty, oldestDate=distantPast")
+            }
+            fetchRequest = TransactionMessage.getChatMessagesFetchRequest(
+                for: chat,
+                pinnedMessageId: pinnedId,
+                oldestDate: fetchOldestDate
+            )
+        } else if expandingForPagination {
+            let probeRequest = TransactionMessage.getPaginationProbeFetchRequest(
+                for: chat,
+                items: items
+            )
+            if let result = getFetchMinIndex(fetchRequest: probeRequest) {
+                fetchMinIndex = result.minId
+                fetchOldestDate = result.oldestDate
+                print("pagination probe minId=\(result.minId) oldestDate=\(result.oldestDate) items=\(items)")
+                fetchRequest = getFetchRequestFor(
+                    chat: chat,
+                    with: items,
+                    and: result.minId
+                )
+            } else {
+                print("pagination probe empty, expanding fetchLimit=\(items)")
+                fetchRequest = TransactionMessage.getChatMessagesFetchRequest(
+                    for: chat,
+                    with: items,
+                    pinnedMessageId: nil
+                )
+            }
+        } else {
+            // First page stays unbounded (fetchLimit, no minIndex) so provisionals
+            // — including nil-date rows — still appear. Probe only to seed
+            // fetchMinIndex for the secondary FRC.
+            let probeRequest = TransactionMessage.getPaginationProbeFetchRequest(
+                for: chat,
+                items: items
+            )
+            if let result = getFetchMinIndex(fetchRequest: probeRequest) {
+                fetchMinIndex = result.minId
+                fetchOldestDate = result.oldestDate
+                print("pagination first-page probe minId=\(result.minId) oldestDate=\(result.oldestDate)")
+            } else {
+                print("pagination first-page probe empty, fetchLimit=\(items)")
+            }
+            fetchRequest = getFetchRequestFor(
+                chat: chat,
+                with: items
+            )
+        }
+        
+        if expandingForPagination {
+            pendingScrollRestore = true
+            print("pagination pendingScrollRestore=true expand items=\(items)")
         }
         
         messagesResultsController = NSFetchedResultsController(

@@ -141,10 +141,58 @@ import CoreData
     ///Scroll and pagination
     var messagesCountRequested = 0
     var messagesCountFetched = 0
-    var fetchMinIndex = 0
-    var loadingMoreItems = false
-    var allItemsLoaded = false
+    var pagination = PaginationState()
     var scrolledAtBottom = false
+
+    var fetchMinIndex: Int {
+        get { pagination.fetchMinIndex }
+        set { pagination.fetchMinIndex = newValue }
+    }
+
+    var fetchOldestDate: Date? {
+        get { pagination.fetchOldestDate }
+        set { pagination.fetchOldestDate = newValue }
+    }
+
+    var pendingScrollRestore: Bool {
+        get { pagination.pendingScrollRestore }
+        set { pagination.pendingScrollRestore = newValue }
+    }
+
+    var didAutoPageOnFirstLoad: Bool {
+        get { pagination.didAutoPageOnFirstLoad }
+        set { pagination.didAutoPageOnFirstLoad = newValue }
+    }
+
+    var paginationPhase: PaginationPhase {
+        get { pagination.phase }
+        set { pagination.phase = newValue }
+    }
+
+    /// Existing UI / ThreadTableDataSource call sites keep compiling against this name.
+    var allItemsLoaded: Bool {
+        get { pagination.phase == .exhausted }
+        set {
+            if newValue {
+                pagination.phase = .exhausted
+            } else if pagination.phase == .exhausted {
+                pagination.phase = .idle
+            }
+        }
+    }
+
+    var loadingMoreItems: Bool {
+        get { pagination.phase == .loading || pagination.pendingScrollRestore }
+        set {
+            if newValue {
+                if pagination.phase == .idle {
+                    pagination.phase = .loading
+                }
+            } else if pagination.phase == .loading {
+                pagination.phase = .idle
+            }
+        }
+    }
     
     ///Messages statuses restore
     var lastMessageTagRestored = ""
@@ -181,6 +229,8 @@ import CoreData
         
         self.delegate = delegate
         
+        pagination.resetOnChatSwitch()
+
         configureTableView()
         configureDataSource()
         processChatAliases()
