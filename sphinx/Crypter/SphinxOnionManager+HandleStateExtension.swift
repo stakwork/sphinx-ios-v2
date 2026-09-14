@@ -27,6 +27,16 @@ extension SphinxOnionManager {
         if let topic = topic {
             print("V2 Received topic: \(topic) date \(Date().timeIntervalSince1970)")
         }
+        
+        let isAlreadyPaid = isInvoiceAlreadyPaidError(rr.error)
+        if isAlreadyPaid {
+            let paymentHash = rr.msgs.compactMap({ $0.paymentHash }).first
+            if let paymentHash = paymentHash, !paymentHash.isEmpty {
+                print("Run return object error: already paid (network) payment_hash=\(paymentHash)")
+            } else {
+                print("Run return object error: already paid (network)")
+            }
+        }
 
         ///If re-processing delayed RR Object then all inside this IF has been run already. Then skip
         if !skipSettleTopic && !skipAsyncTopic {
@@ -39,8 +49,10 @@ extension SphinxOnionManager {
             ///Handling owner contact
             handleOwnerContact(myContactInfo: rr.myContactInfo)
             
-            ///Handling balance update
-            handleBalanceUpdate(newBalance: rr.newBalance)
+            ///Handling balance update — skip only on confirmed already-paid
+            if !isAlreadyPaid {
+                handleBalanceUpdate(newBalance: rr.newBalance)
+            }
             
             ///Handling messages totals
             handleMessagesCount(msgsCounts: rr.msgsCounts)
@@ -65,8 +77,10 @@ extension SphinxOnionManager {
                     ///Handling key exchange msgs restore
                     self.processKeyExchangeMessages(rr: rr)
 
-                    ///Handling generic msgs restore
-                    self.processGenericMessages(topic: topic, rr: rr)
+                    ///Handling generic msgs restore — skip only on confirmed already-paid
+                    if !isAlreadyPaid {
+                        self.processGenericMessages(topic: topic, rr: rr)
+                    }
 
                     context.saveContext()
 
@@ -76,13 +90,17 @@ extension SphinxOnionManager {
             }
             
             ///Handling invoice paid
-            processInvoicePaid(rr: rr)
+            if !isAlreadyPaid {
+                processInvoicePaid(rr: rr)
+            }
             
             ///Handling messages statused
             handleMessagesStatus(tags: rr.tags)
             
             ///Handling incoming tags
-            handleMessageStatusByTag(rr: rr)
+            if !isAlreadyPaid {
+                handleMessageStatusByTag(rr: rr)
+            }
             
             ///Handling read status
             handleReadStatus(rr: rr)
@@ -103,7 +121,9 @@ extension SphinxOnionManager {
             handlePingDone(msgs: rr.msgs)
             
             ///Handling invoice paid status
-            handleInvoiceSentStatus(sentStatus: rr.sentStatus)
+            if !isAlreadyPaid {
+                handleInvoiceSentStatus(sentStatus: rr.sentStatus)
+            }
             
             ///Handling error
             handleError(error: rr.error)
@@ -284,6 +304,7 @@ extension SphinxOnionManager {
                            let preimage = dictionary["preimage"] as? String,
                            !preimage.isEmpty
                         {
+                            self.markPaymentHashPaid(paymentHash)
                             let userInfo = dictionary as [AnyHashable: Any]
                             DispatchQueue.main.async {
                                 NotificationCenter.default.post(
@@ -542,6 +563,7 @@ extension SphinxOnionManager {
                 if let cachedMessage = TransactionMessage.getMessageWith(tag: tag, context: context) {
                     if (sentStatus.status == SphinxOnionManager.kCompleteStatus) {
                         cachedMessage.status = TransactionMessage.TransactionMessageStatus.received.rawValue
+                        self.markPaymentHashPaid(sentStatus.paymentHash ?? cachedMessage.paymentHash)
                     } else if (sentStatus.status == SphinxOnionManager.kFailedStatus) {
                         cachedMessage.status = TransactionMessage.TransactionMessageStatus.failed.rawValue
                     }

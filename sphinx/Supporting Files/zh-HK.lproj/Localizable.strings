@@ -525,6 +525,7 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 "articles" = "文章";
 "dismiss" = "解散";
 "invoice.paid" = "發票已支付";
+"invoice.already.paid" = "此發票已經支付。";
 "amount" = "金額";
 "memo" = "備忘錄";
 "camera" = "相機";

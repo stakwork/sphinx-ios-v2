@@ -535,6 +535,7 @@
 "articles" = "Articles";
 "dismiss" = "Dismiss";
 "invoice.paid" = "Invoice Paid";
+"invoice.already.paid" = "This invoice has already been paid.";
 "amount" = "Amount";
 "memo" = "Memo";
 "camera" = "Camera";

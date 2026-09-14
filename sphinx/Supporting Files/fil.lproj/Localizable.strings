@@ -516,6 +516,7 @@
 "articles" = "Mga Artikulo";
 "dismiss" = "I-dismiss";
 "invoice.paid" = "Bayad na ang Invoice";
+"invoice.already.paid" = "Bayad na ang invoice na ito.";
 "amount" = "Halaga";
 "memo" = "Memo";
 "camera" = "Camera";

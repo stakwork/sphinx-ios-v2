@@ -568,6 +568,43 @@ extension TransactionMessage {
         return invoice
     }
     
+    /// True when this device already has a confirmed/settled record for `paymentHash`.
+    /// Not limited to `type == payment` (QR/scanner/LSP/web/LSAT rows must match).
+    /// Failed and pending rows are excluded so legitimate retries still go through.
+    /// Queries `backgroundContext` because `handleRunReturn` writes happen there.
+    static func hasSettledPayment(
+        forPaymentHash paymentHash: String,
+        context: NSManagedObjectContext? = nil
+    ) -> Bool {
+        guard !paymentHash.isEmpty else {
+            return false
+        }
+        
+        let settledStatuses = [
+            TransactionMessageStatus.confirmed.rawValue,
+            TransactionMessageStatus.received.rawValue
+        ]
+        let predicate = NSPredicate(
+            format: "paymentHash == %@ AND status IN %@",
+            paymentHash,
+            settledStatuses
+        )
+        let sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]
+        let managedContext = context ?? SphinxOnionManager.sharedInstance.backgroundContext
+        
+        var found = false
+        managedContext.performAndWait {
+            let message: TransactionMessage? = CoreDataManager.sharedManager.getObjectOfTypeWith(
+                predicate: predicate,
+                sortDescriptors: sortDescriptors,
+                entityName: "TransactionMessage",
+                managedContext: managedContext
+            )
+            found = message != nil
+        }
+        return found
+    }
+    
     static func getInvoiceWith(paymentRequestString: String) -> TransactionMessage? {
         let predicate = NSPredicate(format: "type == %d AND invoice == %@", TransactionMessageType.invoice.rawValue, paymentRequestString)
         let sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]
