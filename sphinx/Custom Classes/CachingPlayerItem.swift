@@ -42,7 +42,19 @@ fileprivate extension URL {
 
 open class CachingPlayerItem: AVPlayerItem {
     
+    // URLSession and resource-loader callbacks are serialized on DispatchQueue.main.
     class ResourceLoaderDelegate: NSObject, AVAssetResourceLoaderDelegate, URLSessionDelegate, URLSessionDataDelegate, URLSessionTaskDelegate, @unchecked Sendable {
+        
+        static let resourceLoadErrorDomain = "com.sphinx.CachingPlayerItem"
+        static let resourceLoadErrorCode = 1
+        
+        static func resourceLoadError(_ message: String) -> NSError {
+            NSError(
+                domain: resourceLoadErrorDomain,
+                code: resourceLoadErrorCode,
+                userInfo: [NSLocalizedDescriptionKey: message]
+            )
+        }
         
         var playingFromData = false
         var mimeType: String? // is required when playing from Data
@@ -62,8 +74,11 @@ open class CachingPlayerItem: AVPlayerItem {
                 
                 // If we're playing from a url, we need to download the file.
                 // We start loading the file on first request only.
-                guard let initialUrl = owner?.url else {
-                    fatalError("internal inconsistency")
+                guard canStartDataRequest(), let initialUrl = owner?.url else {
+                    let error = Self.resourceLoadError("media URL is missing")
+                    print("[CachingPlayerItem] resource load failed: media URL is missing")
+                    loadingRequest.finishLoading(with: error)
+                    return true
                 }
 
                 startDataRequest(with: initialUrl)
@@ -75,10 +90,14 @@ open class CachingPlayerItem: AVPlayerItem {
             
         }
         
+        func canStartDataRequest() -> Bool {
+            owner?.url != nil
+        }
+        
         func startDataRequest(with url: URL) {
             let configuration = URLSessionConfiguration.default
             configuration.requestCachePolicy = .reloadIgnoringLocalAndRemoteCacheData
-            session = URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
+            session = URLSession(configuration: configuration, delegate: self, delegateQueue: .main)
             session?.dataTask(with: url).resume()
         }
         
@@ -89,13 +108,13 @@ open class CachingPlayerItem: AVPlayerItem {
         // MARK: URLSession delegate
         
         func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
-            mediaData?.append(data)
-            processPendingRequests()
-            let owner = owner
-            let bytesSoFar = mediaData!.count
-            let bytesExpected = Int(dataTask.countOfBytesExpectedToReceive)
-            DispatchQueue.main.async {
-                owner?.delegate?.playerItem?(owner!, didDownloadBytesSoFar: bytesSoFar, outOf: bytesExpected)
+            guard let progress = appendSessionData(data, bytesExpected: Int(dataTask.countOfBytesExpectedToReceive)) else {
+                return
+            }
+            DispatchQueue.main.async { [weak self] in
+                if let owner = self?.owner {
+                    owner.delegate?.playerItem?(owner, didDownloadBytesSoFar: progress.bytesDownloaded, outOf: progress.bytesExpected)
+                }
             }
         }
 
@@ -107,18 +126,59 @@ open class CachingPlayerItem: AVPlayerItem {
         }
 
         func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-            if let errorUnwrapped = error {
-                let owner = owner
-                DispatchQueue.main.async {
-                    owner?.delegate?.playerItem?(owner!, downloadingFailedWith: errorUnwrapped)
-                }
+            completeSession(error: error)
+        }
+        
+        // MARK: - Testable nil-safe helpers
+        
+        @discardableResult
+        func appendSessionData(_ data: Data, bytesExpected: Int) -> (bytesDownloaded: Int, bytesExpected: Int)? {
+            guard var currentData = mediaData else {
+                print("[CachingPlayerItem] resource load failed: data arrived before response (mediaData is nil)")
+                return nil
+            }
+            currentData.append(data)
+            mediaData = currentData
+            processPendingRequests()
+            return (bytesDownloaded: currentData.count, bytesExpected: bytesExpected)
+        }
+        
+        func completeSession(error: Error?) {
+            if let error {
+                print("[CachingPlayerItem] resource load failed: \(error.localizedDescription)")
+                failPendingRequests(with: error)
+                notifyDownloadingFailed(with: error)
                 return
             }
+            
+            guard let mediaData else {
+                let loadError = Self.resourceLoadError("media data is nil on session completion")
+                print("[CachingPlayerItem] resource load failed: media data is nil on session completion")
+                failPendingRequests(with: loadError)
+                notifyDownloadingFailed(with: loadError)
+                return
+            }
+            
             processPendingRequests()
-            let owner = owner
-            let mediaData = mediaData!
-            DispatchQueue.main.async {
-                owner?.delegate?.playerItem?(owner!, didFinishDownloadingData: mediaData)
+            DispatchQueue.main.async { [weak self] in
+                if let owner = self?.owner {
+                    owner.delegate?.playerItem?(owner, didFinishDownloadingData: mediaData)
+                }
+            }
+        }
+        
+        func failPendingRequests(with error: Error) {
+            for request in pendingRequests {
+                request.finishLoading(with: error)
+            }
+            pendingRequests.removeAll()
+        }
+        
+        private func notifyDownloadingFailed(with error: Error) {
+            DispatchQueue.main.async { [weak self] in
+                if let owner = self?.owner {
+                    owner.delegate?.playerItem?(owner, downloadingFailedWith: error)
+                }
             }
         }
         
@@ -126,27 +186,46 @@ open class CachingPlayerItem: AVPlayerItem {
         
         func processPendingRequests() {
             
-            // get all fullfilled requests
-            let requestsFulfilled = Set<AVAssetResourceLoadingRequest>(pendingRequests.compactMap {
-                self.fillInContentInformationRequest($0.contentInformationRequest)
-                if self.haveEnoughDataToFulfillRequest($0.dataRequest!) {
-                    $0.finishLoading()
-                    return $0
+            var requestsFulfilled = Set<AVAssetResourceLoadingRequest>()
+            
+            for request in pendingRequests {
+                fillInContentInformationRequest(request.contentInformationRequest)
+                
+                if let dataRequest = request.dataRequest {
+                    if haveEnoughDataToFulfillRequest(dataRequest) {
+                        request.finishLoading()
+                        requestsFulfilled.insert(request)
+                    }
+                } else if canFillContentInformation {
+                    // Content-information-only request from AVPlayer.
+                    request.finishLoading()
+                    requestsFulfilled.insert(request)
                 }
-                return nil
-            })
-        
-            // remove fulfilled requests from pending requests
-            _ = requestsFulfilled.map { self.pendingRequests.remove($0) }
+                // Otherwise leave the request pending until content info is available.
+            }
+            
+            for request in requestsFulfilled {
+                pendingRequests.remove(request)
+            }
 
+        }
+        
+        var canFillContentInformation: Bool {
+            if response != nil { return true }
+            if playingFromData && mediaData != nil { return true }
+            return false
         }
         
         func fillInContentInformationRequest(_ contentInformationRequest: AVAssetResourceLoadingContentInformationRequest?) {
             
             // if we play from Data we make no url requests, therefore we have no responses, so we need to fill in contentInformationRequest manually
             if playingFromData {
+                guard let mediaData else {
+                    print("[CachingPlayerItem] resource load failed: mediaData is nil while playing from data")
+                    return
+                }
                 contentInformationRequest?.contentType = self.mimeType
-                contentInformationRequest?.contentLength = Int64(mediaData!.count)
+                contentInformationRequest?.contentLength = Int64(mediaData.count)
                 contentInformationRequest?.isByteRangeAccessSupported = true
                 return
             }
