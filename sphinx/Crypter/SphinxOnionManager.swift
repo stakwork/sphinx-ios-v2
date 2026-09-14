@@ -127,6 +127,22 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
     var pendingSentStatusWorkItem: DispatchWorkItem?
     var pendingStatusCheckTags: Set<String> = []
     
+    /// Process-local payment hashes currently being submitted. Prevents two rapid
+    /// resubmits from both passing the local already-paid check before either write lands.
+    var inFlightPaymentHashes: Set<String> = []
+    /// Process-local payment hashes that this session has confirmed as paid.
+    var paidPaymentHashes: Set<String> = []
+    
+    /// Confirmed mixer/server already-paid error strings. Empty until the
+    /// duplicate-payment fix lands a single confirmed constant.
+    /// TODO: confirm against mixer/server duplicate-payment fix
+    static var confirmedAlreadyPaidErrorSignals: Set<String> = []
+    
+    /// Test seam: when set, `getInvoiceDetails` returns this instead of calling FFI.
+    var invoiceDetailsOverride: ((String) -> ParseInvoiceResult?)? = nil
+    /// Test seam: when set, `checkAndFetchRouteTo` uses this instead of the real router.
+    var checkAndFetchRouteOverride: ((String, String?, Int, @escaping (Bool) -> Void) -> Void)? = nil
+    
     let kHostedTorrentBaseURL = "https://files.bt2.bard.garden:21433"
     let kAllTorrentLookupBaseURL = "https://tome.bt2.bard.garden:21433"
     var btAuthDict : NSDictionary? = nil

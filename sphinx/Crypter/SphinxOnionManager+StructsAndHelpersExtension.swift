@@ -439,6 +439,22 @@ struct ParseInvoiceResult: Mappable {
     var expiry: Int?
     
     init?(map: Map) {}
+    
+    init(
+        value: Int? = nil,
+        paymentHash: String? = nil,
+        pubkey: String? = nil,
+        hopHints: [String]? = nil,
+        description: String? = nil,
+        expiry: Int? = nil
+    ) {
+        self.value = value
+        self.paymentHash = paymentHash
+        self.pubkey = pubkey
+        self.hopHints = hopHints
+        self.description = description
+        self.expiry = expiry
+    }
 
     mutating func mapping(map: Map) {
         value          <- map["value"]

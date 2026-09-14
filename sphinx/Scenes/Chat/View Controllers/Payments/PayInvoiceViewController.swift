@@ -120,8 +120,16 @@ class PayInvoiceViewController: UIViewController {
         
         loading = true
         
-        SphinxOnionManager.sharedInstance.payInvoiceMessage(message: message)
-        shouldDismiss(paymentCreated: true)
+        SphinxOnionManager.sharedInstance.payInvoiceMessage(message: message) { [weak self] success, errorMsg in
+            guard let self = self else { return }
+            DispatchQueue.main.async {
+                if success {
+                    self.shouldDismiss(paymentCreated: true)
+                } else {
+                    self.showErrorAlert(errorMessage: errorMsg ?? "invoice.already.paid".localized)
+                }
+            }
+        }
     }
     
     func showErrorAlert(

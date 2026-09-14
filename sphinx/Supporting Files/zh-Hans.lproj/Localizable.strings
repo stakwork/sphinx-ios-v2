@@ -531,6 +531,7 @@
 "articles" = "文章";
 "dismiss" = "解散";
 "invoice.paid" = "发票已支付";
+"invoice.already.paid" = "此发票已经支付。";
 "amount" = "金额";
 "memo" = "备注";
 "camera" = "相机";

@@ -535,6 +535,7 @@
 "articles" = "Artículos";
 "dismiss" = "Cerrar";
 "invoice.paid" = "Solicitud pagada";
+"invoice.already.paid" = "Esta solicitud ya ha sido pagada.";
 "amount" = "Monto";
 "memo" = "Memo";
 "camera" = "Cámara";
