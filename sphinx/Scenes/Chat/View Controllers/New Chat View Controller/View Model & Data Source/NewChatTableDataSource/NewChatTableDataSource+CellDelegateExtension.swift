@@ -744,7 +744,7 @@ extension NewChatTableDataSource {
             }
         }
         
-        let reload = { [weak self] in
+        let reload: () -> Void = { [weak self] in
             self?.reloadSnapshotItems(
                 messageIds: [messageId],
                 animatingDifferences: true,

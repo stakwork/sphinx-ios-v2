@@ -6,7 +6,7 @@
 //  Copyright © 2023 sphinx. All rights reserved.
 //
 
-import Foundation
+import UIKit
 
 extension ThreadsListDataSource : ThreadListTableViewCellDelegate {
     func shouldLoadLinkImageDataFor(
