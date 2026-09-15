@@ -2096,7 +2096,20 @@ extension TaskChatViewController: PHPickerViewControllerDelegate {
 
         for result in results {
             result.itemProvider.loadObject(ofClass: UIImage.self) { object, error in
-                guard let image = object as? UIImage else { return }
+                guard let image = object as? UIImage else {
+                    if let error = error {
+                        print("[TaskChatViewController] failed to load picked image: \(error)")
+                    }
+                    Task { @MainActor [weak self] in
+                        guard let self = self else { return }
+                        AlertHelper.showAlert(
+                            title: "Invalid file",
+                            message: "Could not load the selected image.",
+                            on: self
+                        )
+                    }
+                    return
+                }
 
                 let mimeType = "image/jpeg"
                 guard let data = image.jpegData(compressionQuality: 0.85) else { return }
