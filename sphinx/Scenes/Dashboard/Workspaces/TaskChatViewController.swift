@@ -2095,68 +2095,68 @@ extension TaskChatViewController: PHPickerViewControllerDelegate {
         let maxBytes = 10 * 1024 * 1024 // 10 MB
 
         for result in results {
-            result.itemProvider.loadObject(ofClass: UIImage.self) { [weak self] object, error in
-                guard let self = self, let image = object as? UIImage else { return }
+            result.itemProvider.loadObject(ofClass: UIImage.self) { object, error in
+                guard let image = object as? UIImage else { return }
 
                 let mimeType = "image/jpeg"
                 guard let data = image.jpegData(compressionQuality: 0.85) else { return }
                 let filename = "image_\(UUID().uuidString).jpg"
                 let size = data.count
 
-                guard allowedMimes.contains(mimeType), size <= maxBytes else {
-                    DispatchQueue.main.async {
+                Task { @MainActor [weak self] in
+                    guard let self = self else { return }
+
+                    guard allowedMimes.contains(mimeType), size <= maxBytes else {
                         AlertHelper.showAlert(
                             title: "Invalid file",
                             message: size > maxBytes ? "File exceeds 10 MB limit." : "Unsupported file type.",
                             on: self
                         )
+                        return
                     }
-                    return
-                }
 
-                let pending = PendingAttachment(
-                    id: UUID(),
-                    image: image,
-                    filename: filename,
-                    mimeType: mimeType,
-                    size: size,
-                    state: .uploading,
-                    s3Path: nil
-                )
-                DispatchQueue.main.async {
+                    let pending = PendingAttachment(
+                        id: UUID(),
+                        image: image,
+                        filename: filename,
+                        mimeType: mimeType,
+                        size: size,
+                        state: .uploading,
+                        s3Path: nil
+                    )
                     self.pendingAttachments.append(pending)
                     self.refreshAttachmentsBar()
                     self.updateSendButtonState()
-                }
 
-                API.sharedInstance.requestUploadPresignedUrlWithAuth(
-                    taskId: self.task.id,
-                    filename: filename,
-                    contentType: mimeType,
-                    size: size,
-                    callback: { [weak self] presignedUrl, s3Path in
-                        guard let self = self,
-                              let presignedUrl = presignedUrl,
-                              let s3Path = s3Path else {
-                            self?.markPending(id: pending.id, state: .failed)
-                            return
-                        }
-                        API.sharedInstance.uploadFileToS3(
-                            presignedUrl: presignedUrl,
-                            data: data,
-                            contentType: mimeType,
-                            callback: { [weak self] in
-                                self?.markPending(id: pending.id, state: .done, s3Path: s3Path)
-                            },
-                            errorCallback: { [weak self] in
+                    API.sharedInstance.requestUploadPresignedUrlWithAuth(
+                        taskId: self.task.id,
+                        filename: filename,
+                        contentType: mimeType,
+                        size: size,
+                        callback: { [weak self] presignedUrl, s3Path in
+                            guard let self = self,
+                                  let presignedUrl = presignedUrl,
+                                  let s3Path = s3Path else {
                                 self?.markPending(id: pending.id, state: .failed)
+                                return
                             }
-                        )
-                    },
-                    errorCallback: { [weak self] in
-                        self?.markPending(id: pending.id, state: .failed)
-                    }
-                )
+                            API.sharedInstance.uploadFileToS3(
+                                presignedUrl: presignedUrl,
+                                data: data,
+                                contentType: mimeType,
+                                callback: { [weak self] in
+                                    self?.markPending(id: pending.id, state: .done, s3Path: s3Path)
+                                },
+                                errorCallback: { [weak self] in
+                                    self?.markPending(id: pending.id, state: .failed)
+                                }
+                            )
+                        },
+                        errorCallback: { [weak self] in
+                            self?.markPending(id: pending.id, state: .failed)
+                        }
+                    )
+                }
             }
         }
     }
