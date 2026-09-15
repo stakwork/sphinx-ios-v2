@@ -844,6 +844,7 @@
 		CEF88DD229B66B9200DC1C40 /* RecommendationItemWUnifiedViewCollectionViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = CEF88DD029B66B9200DC1C40 /* RecommendationItemWUnifiedViewCollectionViewCell.xib */; };
 		CHATPAGE01FILE0000000002 /* ChatPagination.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHATPAGE01FILE0000000001 /* ChatPagination.swift */; };
 		CHATPAGE01TEST0000000002 /* ChatPaginationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHATPAGE01TEST0000000001 /* ChatPaginationTests.swift */; };
+		CP01RLTEST00100000000002 /* CachingPlayerItemResourceLoaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CP01RLTEST00100000000001 /* CachingPlayerItemResourceLoaderTests.swift */; };
 		CQ1A2B3C4D5E6F7A8B9C0D1E /* ClarifyingQuestionMessageCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = CQ2B3C4D5E6F7A8B9C0D1E2F /* ClarifyingQuestionMessageCell.swift */; };
 		D2789CFCCA3E453295F15A2E /* HiveFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44EC6EC0EE1C4D6B8B5FADB2 /* HiveFeature.swift */; };
 		D30E5DF5BD6E4A209227EEB5 /* NewChatViewController+AgentExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 009A40E65F444529AAD5F256 /* NewChatViewController+AgentExtension.swift */; };
@@ -976,8 +977,6 @@
 		LC001TEST0001000000000001 /* LiveCallBannerFoundationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = LC001TEST0001000000000002 /* LiveCallBannerFoundationTests.swift */; };
 		M3N4O5P6Q7R8S9T0U1V2W3X4 /* HiveProcessingBubbleCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = N4O5P6Q7R8S9T0U1V2W3X4Y5 /* HiveProcessingBubbleCell.swift */; };
 		MC001TEST0001000000000002 /* MediaCacheUpdateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = MC001TEST0001000000000001 /* MediaCacheUpdateTests.swift */; };
-		SI001TEST0001000000000002 /* SnapshotIdentityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = SI001TEST0001000000000001 /* SnapshotIdentityTests.swift */; };
-		CP01RLTEST00100000000002 /* CachingPlayerItemResourceLoaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CP01RLTEST00100000000001 /* CachingPlayerItemResourceLoaderTests.swift */; };
 		MC01AA11BB22CC33DD44EE02 /* MarkdownContentSplitter.swift in Sources */ = {isa = PBXBuildFile; fileRef = MC01AA11BB22CC33DD44EE01 /* MarkdownContentSplitter.swift */; };
 		MT01AA11BB22CC33DD44EE02 /* MarkdownTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = MT01AA11BB22CC33DD44EE01 /* MarkdownTableView.swift */; };
 		O5P6Q7R8S9T0U1V2W3X4Y5Z6 /* HiveShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = P6Q7R8S9T0U1V2W3X4Y5Z6A7 /* HiveShareViewController.swift */; };
@@ -988,6 +987,7 @@
 		PS01AA11BB22CC33DD44EE01 /* PublishScriptCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PS01AA11BB22CC33DD44EE00 /* PublishScriptCardView.swift */; };
 		PW01AA11BB22CC33DD44EE01 /* PublishWorkflowCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PW01AA11BB22CC33DD44EE00 /* PublishWorkflowCardView.swift */; };
 		R3S4T5U6V7W8X9Y0Z1A2B3C4 /* PaginationControlViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = S4T5U6V7W8X9Y0Z1A2B3C4D5 /* PaginationControlViewTests.swift */; };
+		SI001TEST0001000000000002 /* SnapshotIdentityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = SI001TEST0001000000000001 /* SnapshotIdentityTests.swift */; };
 		T4U5V6W7X8Y9Z0A1B2C3D4E5 /* StakworkWorkflowData.swift in Sources */ = {isa = PBXBuildFile; fileRef = U5V6W7X8Y9Z0A1B2C3D4E5F6 /* StakworkWorkflowData.swift */; };
 		WMH001AA11BB22CC33DD44EE01 /* WorkspaceMentionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = WMH001AA11BB22CC33DD44EE02 /* WorkspaceMentionHandler.swift */; };
 		WV0000000000000000000001 /* WorkflowVersion.swift in Sources */ = {isa = PBXBuildFile; fileRef = WV0000000000000000000002 /* WorkflowVersion.swift */; };
@@ -2249,6 +2249,7 @@
 		CEF88DD029B66B9200DC1C40 /* RecommendationItemWUnifiedViewCollectionViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = RecommendationItemWUnifiedViewCollectionViewCell.xib; sourceTree = "<group>"; };
 		CHATPAGE01FILE0000000001 /* ChatPagination.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatPagination.swift; sourceTree = "<group>"; };
 		CHATPAGE01TEST0000000001 /* ChatPaginationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatPaginationTests.swift; sourceTree = "<group>"; };
+		CP01RLTEST00100000000001 /* CachingPlayerItemResourceLoaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CachingPlayerItemResourceLoaderTests.swift; sourceTree = "<group>"; };
 		CQ2B3C4D5E6F7A8B9C0D1E2F /* ClarifyingQuestionMessageCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClarifyingQuestionMessageCell.swift; sourceTree = "<group>"; };
 		D4E5F6A7B8C9D0E1F2A3B4C5 /* TaskProgressBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskProgressBarView.swift; sourceTree = "<group>"; };
 		D5B2D56F945C46E689DAFEF9 /* AIAgentManager+HiveTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AIAgentManager+HiveTools.swift"; sourceTree = "<group>"; };
@@ -2398,8 +2399,6 @@
 		L2M3N4O5P6Q7R8S9T0U1V2W3 /* CreateFeatureViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateFeatureViewController.swift; sourceTree = "<group>"; };
 		LC001TEST0001000000000002 /* LiveCallBannerFoundationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveCallBannerFoundationTests.swift; sourceTree = "<group>"; };
 		MC001TEST0001000000000001 /* MediaCacheUpdateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaCacheUpdateTests.swift; sourceTree = "<group>"; };
-		SI001TEST0001000000000001 /* SnapshotIdentityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnapshotIdentityTests.swift; sourceTree = "<group>"; };
-		CP01RLTEST00100000000001 /* CachingPlayerItemResourceLoaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CachingPlayerItemResourceLoaderTests.swift; sourceTree = "<group>"; };
 		MC01AA11BB22CC33DD44EE01 /* MarkdownContentSplitter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownContentSplitter.swift; sourceTree = "<group>"; };
 		MT01AA11BB22CC33DD44EE01 /* MarkdownTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownTableView.swift; sourceTree = "<group>"; };
 		N4O5P6Q7R8S9T0U1V2W3X4Y5 /* HiveProcessingBubbleCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveProcessingBubbleCell.swift; sourceTree = "<group>"; };
@@ -2411,6 +2410,7 @@
 		PW01AA11BB22CC33DD44EE00 /* PublishWorkflowCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublishWorkflowCardView.swift; sourceTree = "<group>"; };
 		Q2R3S4T5U6V7W8X9Y0Z1A2B3 /* PaginationControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaginationControlView.swift; sourceTree = "<group>"; };
 		S4T5U6V7W8X9Y0Z1A2B3C4D5 /* PaginationControlViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaginationControlViewTests.swift; sourceTree = "<group>"; };
+		SI001TEST0001000000000001 /* SnapshotIdentityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnapshotIdentityTests.swift; sourceTree = "<group>"; };
 		U5V6W7X8Y9Z0A1B2C3D4E5F6 /* StakworkWorkflowData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StakworkWorkflowData.swift; sourceTree = "<group>"; };
 		WMH001AA11BB22CC33DD44EE02 /* WorkspaceMentionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceMentionHandler.swift; sourceTree = "<group>"; };
 		WV0000000000000000000002 /* WorkflowVersion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkflowVersion.swift; sourceTree = "<group>"; };
@@ -7409,7 +7409,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sphinx/sphinx.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 346;
+				CURRENT_PROJECT_VERSION = 347;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 8297M44YTW;
 				ENABLE_BITCODE = NO;
@@ -7499,7 +7499,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sphinx/sphinx.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 346;
+				CURRENT_PROJECT_VERSION = 347;
 				DEVELOPMENT_TEAM = 8297M44YTW;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
