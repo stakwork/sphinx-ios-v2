@@ -133,14 +133,18 @@ open class CachingPlayerItem: AVPlayerItem {
         
         @discardableResult
         func appendSessionData(_ data: Data, bytesExpected: Int) -> (bytesDownloaded: Int, bytesExpected: Int)? {
-            guard var currentData = mediaData else {
+            guard mediaData != nil else {
                 print("[CachingPlayerItem] resource load failed: data arrived before response (mediaData is nil)")
                 return nil
             }
-            currentData.append(data)
-            mediaData = currentData
+            // Mutate through the optional directly (`mediaData?.append`), not via a
+            // separate `var` copy — binding the value into a local var keeps a second
+            // reference alive during the append, which defeats Data's copy-on-write
+            // and turns every chunk into a full-buffer copy (O(n) per chunk instead
+            // of amortized O(1)) for the whole download.
+            mediaData?.append(data)
             processPendingRequests()
-            return (bytesDownloaded: currentData.count, bytesExpected: bytesExpected)
+            return (bytesDownloaded: mediaData?.count ?? 0, bytesExpected: bytesExpected)
         }
         
         func completeSession(error: Error?) {
