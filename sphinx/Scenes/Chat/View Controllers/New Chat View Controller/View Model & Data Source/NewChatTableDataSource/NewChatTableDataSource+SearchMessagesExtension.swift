@@ -172,24 +172,10 @@ extension NewChatTableDataSource {
     }
     
     func reloadAllVisibleRows() {
-        let tableCellStates = getTableCellStatesForVisibleRows()
-
-        guard !tableCellStates.isEmpty else {
-            return
+        let messageIds = (tableView.indexPathsForVisibleRows ?? []).compactMap { indexPath in
+            dataSource.itemIdentifier(for: indexPath)?.messageId
         }
-
-        var snapshot = self.dataSource.snapshot()
-        let existingItems = Set(snapshot.itemIdentifiers)
-
-        // Only reload items that exist in the snapshot to prevent crashes
-        let validItems = tableCellStates.filter { existingItems.contains($0) }
-
-        guard !validItems.isEmpty else {
-            return
-        }
-
-        snapshot.reloadItems(validItems)
-        self.dataSource.apply(snapshot, animatingDifferences: false)
+        reloadSnapshotItems(messageIds: messageIds)
     }
     
     func shouldNavigateOnSearchResultsWith(

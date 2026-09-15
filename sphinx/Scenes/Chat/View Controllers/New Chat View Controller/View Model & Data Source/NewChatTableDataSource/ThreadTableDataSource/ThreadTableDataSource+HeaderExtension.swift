@@ -27,18 +27,11 @@ extension ThreadTableDataSource : ThreadHeaderTableViewCellDelegate {
     }
     
     func reloadHeaderRow() {
-        guard let tableCellState = messageTableCellStateArray.last else {
+        var snapshot = dataSource.snapshot()
+        guard let headerItem = snapshot.itemIdentifiers.first(where: { $0.isThreadHeaderMessage }) else {
             return
         }
-
-        Task { @MainActor [weak self] in
-            guard let self else { return }
-            var snapshot = self.dataSource.snapshot()
-
-            if snapshot.itemIdentifiers.contains(tableCellState) {
-                snapshot.reloadItems([tableCellState])
-                self.dataSource.apply(snapshot, animatingDifferences: false)
-            }
-        }
+        snapshot.reloadItems([headerItem])
+        dataSource.apply(snapshot, animatingDifferences: false)
     }
 }

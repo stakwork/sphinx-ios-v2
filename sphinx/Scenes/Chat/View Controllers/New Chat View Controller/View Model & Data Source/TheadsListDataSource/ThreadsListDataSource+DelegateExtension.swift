@@ -6,7 +6,7 @@
 //  Copyright © 2023 sphinx. All rights reserved.
 //
 
-import Foundation
+import UIKit
 
 extension ThreadsListDataSource : ThreadListTableViewCellDelegate {
     func shouldLoadLinkImageDataFor(
@@ -296,17 +296,23 @@ extension ThreadsListDataSource {
         // next cell reconfiguration will show the correct media
         mediaCached[messageId] = updatedCachedMedia
 
-        guard let tableCellState = getTableCellStateFor(
-            messageId: messageId,
-            and: rowIndex
-        ) else { return }
-
-        var snapshot = self.dataSource.snapshot()
-
-        if snapshot.itemIdentifiers.contains(tableCellState.1) {
-            snapshot.reloadItems([tableCellState.1])
-            self.dataSource.apply(snapshot, animatingDifferences: false)
+        reloadSnapshotItems(messageId: messageId)
+    }
+    
+    func reloadSnapshotItems(messageId: Int) {
+        var snapshot = dataSource.snapshot()
+        guard let liveItem = Self.liveSnapshotItem(in: snapshot, messageId: messageId) else {
+            return
         }
+        snapshot.reloadItems([liveItem])
+        dataSource.apply(snapshot, animatingDifferences: false)
+    }
+    
+    static func liveSnapshotItem(
+        in snapshot: NSDiffableDataSourceSnapshot<CollectionViewSection, ThreadTableCellState>,
+        messageId: Int
+    ) -> ThreadTableCellState? {
+        snapshot.itemIdentifiers.first(where: { $0.originalMessage?.id == messageId })
     }
     
     func getTableCellStateFor(

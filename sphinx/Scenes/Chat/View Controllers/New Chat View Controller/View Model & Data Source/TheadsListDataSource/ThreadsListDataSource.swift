@@ -126,12 +126,17 @@ import CoreData
     }
     
     func updateSnapshot() {
-        let snapshot = makeSnapshotForCurrentState()
-
-        DispatchQueue.main.async {
-            self.dataSource.apply(snapshot, animatingDifferences: false)
+        let applyBlock = { [weak self] in
+            guard let self else { return }
+            self.dataSource.apply(self.makeSnapshotForCurrentState(), animatingDifferences: false)
             self.tableView.alpha = 1.0
             self.toggleElementsVisibility()
+        }
+        
+        if Thread.isMainThread {
+            applyBlock()
+        } else {
+            DispatchQueue.main.async(execute: applyBlock)
         }
     }
     
@@ -205,7 +210,11 @@ import CoreData
             return $0.threadMessages.last?.date ?? Date() > $1.threadMessages.last?.date ?? Date()
         })
         
-        updateSnapshot()
+        // Schedule the apply after FRC returns so we never nest a table update
+        // inside `controller(_:didChangeContentWith:)`.
+        DispatchQueue.main.async { [weak self] in
+            self?.updateSnapshot()
+        }
     }
     
     func getThreadMessagesFrom(
