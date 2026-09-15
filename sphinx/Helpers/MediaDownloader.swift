@@ -11,14 +11,17 @@ import Photos
 
 class MediaDownloader {
     
-    static func askForLibraryPermissions(completion: @escaping (Bool) -> ()) {
+    @MainActor
+    static func askForLibraryPermissions(completion: @escaping @MainActor (Bool) -> ()) {
         let photos = PHPhotoLibrary.authorizationStatus()
         if photos == .notDetermined {
             PHPhotoLibrary.requestAuthorization({ status in
-                if status == .authorized {
-                    completion(true)
-                } else {
-                    completion(false)
+                Task { @MainActor in
+                    if status == .authorized {
+                        completion(true)
+                    } else {
+                        completion(false)
+                    }
                 }
             })
         } else {
@@ -30,7 +33,7 @@ class MediaDownloader {
     static func shouldSaveFile(
         message: TransactionMessage?,
         purchaseAcceptMessage: TransactionMessage?,
-        completion: @escaping (Bool, String) -> ()
+        completion: @escaping @MainActor (Bool, String) -> ()
     ) {
         askForLibraryPermissions(completion: { success in
             if !success {
@@ -70,6 +73,8 @@ class MediaDownloader {
                         completion(success, getErrorMessage(success: success, itemType: "video".localized))
                     }
                 )
+            } else {
+                completion(false, getErrorMessage(success: false, itemType: "file".localized))
             }
         })
     }
@@ -77,7 +82,7 @@ class MediaDownloader {
     @MainActor static func saveImageToPhotos(
         message: TransactionMessage?,
         purchaseAcceptMessage: TransactionMessage?,
-        completion: @escaping (Bool) -> ()
+        completion: @escaping @MainActor (Bool) -> ()
     ) {
         if let message = message, let url = purchaseAcceptMessage?.getMediaUrlFromMediaToken() ?? message.getMediaUrlFromMediaToken()  {
             MediaLoader.loadImage(
@@ -109,7 +114,7 @@ class MediaDownloader {
     @MainActor static func saveVideoToPhotos(
         message: TransactionMessage?,
         purchaseAcceptMessage: TransactionMessage?,
-        completion: @escaping (Bool) -> ()
+        completion: @escaping @MainActor (Bool) -> ()
     ) {
         if let message = message, let url = purchaseAcceptMessage?.getMediaUrlFromMediaToken() ?? message.getMediaUrlFromMediaToken()  {
             MediaLoader.loadVideo(
@@ -158,7 +163,7 @@ class MediaDownloader {
     @MainActor static func saveGifToPhotos(
         message: TransactionMessage?,
         purchaseAcceptMessage: TransactionMessage?,
-        completion: @escaping (Bool) -> ()
+        completion: @escaping @MainActor (Bool) -> ()
     ) {
         if let message = message, let url = getGifUrlFrom(
             message: message,
