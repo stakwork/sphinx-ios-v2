@@ -63,11 +63,17 @@ extension NewChatTableDataSource {
     }
     
     func updateSnapshot() {
-        let snapshot = makeSnapshotForCurrentState()
-        DispatchQueue.main.async {
+        let applyBlock = { [weak self] in
+            guard let self else { return }
             self.saveSnapshotCurrentState()
-            self.dataSource.apply(snapshot, animatingDifferences: false)
+            self.dataSource.apply(self.makeSnapshotForCurrentState(), animatingDifferences: false)
             self.restoreScrollLastPosition()
+        }
+        
+        if Thread.isMainThread {
+            applyBlock()
+        } else {
+            DispatchQueue.main.async(execute: applyBlock)
         }
     }    
     

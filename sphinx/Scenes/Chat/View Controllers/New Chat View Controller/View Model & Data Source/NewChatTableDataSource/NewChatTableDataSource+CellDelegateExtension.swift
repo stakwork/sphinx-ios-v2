@@ -628,19 +628,7 @@ extension NewChatTableDataSource {
             .filter { $0.value == roomName }
             .map { $0.key }
 
-        for messageId in affectedMessageIds {
-            if let tableCellState = getTableCellStateFor(messageId: messageId) {
-                let cellState = tableCellState.1
-                Task { @MainActor [weak self] in
-                    guard let self else { return }
-                    var snapshot = self.dataSource.snapshot()
-                    if snapshot.itemIdentifiers.contains(cellState) {
-                        snapshot.reloadItems([cellState])
-                        self.dataSource.apply(snapshot, animatingDifferences: false)
-                    }
-                }
-            }
-        }
+        reloadSnapshotItems(messageIds: affectedMessageIds)
     }
 
     func unsubscribeAllRooms() {
@@ -663,22 +651,13 @@ extension NewChatTableDataSource {
         // next cell reconfiguration will show the correct media
         mediaCached[messageId] = updatedCachedMedia
 
-        guard let tableCellState = getTableCellStateFor(
-            messageId: messageId,
-            and: rowIndex
-        ) else { return }
-
         if rowIndex < 0 {
             self.delegate?.shouldReloadThreadHeaderView()
-        } else {
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                var snapshot = self.dataSource.snapshot()
-                if snapshot.itemIdentifiers.contains(tableCellState.1) {
-                    snapshot.reloadItems([tableCellState.1])
-                    self.dataSource.apply(snapshot, animatingDifferences: false)
-                }
-            }
+            return
+        }
+
+        Task { @MainActor [weak self] in
+            self?.reloadSnapshotItems(messageIds: [messageId])
         }
     }
     
@@ -701,14 +680,8 @@ extension NewChatTableDataSource {
                     (UIScreen.main.bounds.width - (MessageTableCellState.kRowLeftMargin + MessageTableCellState.kRowRightMargin)) * (MessageTableCellState.kBubbleWidthPercentage)
             )
 
-            let cellState = tableCellState.1
             Task { @MainActor [weak self] in
-                guard let self else { return }
-                var snapshot = self.dataSource.snapshot()
-                if snapshot.itemIdentifiers.contains(cellState) {
-                    snapshot.reloadItems([cellState])
-                    self.dataSource.apply(snapshot, animatingDifferences: true)
-                }
+                self?.reloadSnapshotItems(messageIds: [messageId], animatingDifferences: true)
             }
         }
     }
@@ -718,21 +691,10 @@ extension NewChatTableDataSource {
         messageId: Int,
         with updatedUploadProgressData: MessageTableCellState.UploadProgressData
     ) {
-        if let tableCellState = getTableCellStateFor(
-            messageId: messageId,
-            and: rowIndex
-        ) {
-            uploadingProgress[messageId] = updatedUploadProgressData
+        uploadingProgress[messageId] = updatedUploadProgressData
 
-            let cellState = tableCellState.1
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                var snapshot = self.dataSource.snapshot()
-                if snapshot.itemIdentifiers.contains(cellState) {
-                    snapshot.reloadItems([cellState])
-                    self.dataSource.apply(snapshot, animatingDifferences: false)
-                }
-            }
+        Task { @MainActor [weak self] in
+            self?.reloadSnapshotItems(messageIds: [messageId])
         }
     }
 
@@ -748,14 +710,8 @@ extension NewChatTableDataSource {
         {
             preloaderHelper.linksData[linkWeb.link] = linkData
 
-            let cellState = tableCellState.1
             Task { @MainActor [weak self] in
-                guard let self else { return }
-                var snapshot = self.dataSource.snapshot()
-                if snapshot.itemIdentifiers.contains(cellState) {
-                    snapshot.reloadItems([cellState])
-                    self.dataSource.apply(snapshot, animatingDifferences: true)
-                }
+                self?.reloadSnapshotItems(messageIds: [messageId], animatingDifferences: true)
             }
         }
     }
@@ -769,36 +725,37 @@ extension NewChatTableDataSource {
         with height: CGFloat?
     ) {
         replyViewHeight[messageId] = height
+        saveSnapshotCurrentState()
         
-        if var tableCellState = getTableCellStateFor(
-            messageId: messageId,
-            and: rowIndex
-        )
-        {
-            self.saveSnapshotCurrentState()
-            var snapshot = self.dataSource.snapshot()
-            
-            if snapshot.itemIdentifiers.contains(tableCellState.1) {
-                dataSourceQueue.sync {
-                    snapshot.reloadItems([tableCellState.1])
-                    
-                    DispatchQueue.main.async {
-                        self.dataSource.apply(snapshot, animatingDifferences: true) {
-                            if height == nil {
-                                if let messageReply = tableCellState.1.messageReply {
-                                    if let replyingTableCellIndex = self.getTableCellStateFor(messageId: messageReply.messageId)?.0 {
-                                        self.tableView.scrollToRow(
-                                            at: IndexPath(row: replyingTableCellIndex, section: 0),
-                                            at: .top,
-                                            animated: true
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+        let scrollToReply: () -> Void = { [weak self] in
+            guard height == nil, let self else { return }
+            guard let tableCellState = self.getTableCellStateFor(
+                messageId: messageId,
+                and: rowIndex
+            ) else { return }
+            var mutableState = tableCellState.1
+            if let messageReply = mutableState.messageReply,
+               let replyingTableCellIndex = self.getTableCellStateFor(messageId: messageReply.messageId)?.0 {
+                self.tableView.scrollToRow(
+                    at: IndexPath(row: replyingTableCellIndex, section: 0),
+                    at: .top,
+                    animated: true
+                )
             }
+        }
+        
+        let reload = { [weak self] in
+            self?.reloadSnapshotItems(
+                messageIds: [messageId],
+                animatingDifferences: true,
+                completion: scrollToReply
+            )
+        }
+        
+        if Thread.isMainThread {
+            reload()
+        } else {
+            DispatchQueue.main.async(execute: reload)
         }
     }
     

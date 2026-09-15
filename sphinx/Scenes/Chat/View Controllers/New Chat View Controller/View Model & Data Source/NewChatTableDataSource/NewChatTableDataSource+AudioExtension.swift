@@ -57,32 +57,23 @@ extension NewChatTableDataSource : AudioPlayerHelperDelegate {
         duration: Double?,
         currentTime: Double?
     ) {
-        guard let messageId = messageId, let rowIndex = rowIndex else {
+        guard let messageId = messageId else {
             return
         }
+        _ = rowIndex
         
-        if let tableCellState = getTableCellStateFor(
-            messageId: messageId,
-            and: rowIndex
-        ) {
-            if let audioData = mediaCached[messageId], let audioInfo = audioData.audioInfo {
-                
-                mediaCached[messageId] = MessageTableCellState.MediaData(
-                    data: audioData.data,
-                    audioInfo: MessageTableCellState.AudioInfo(
-                        loading: false,
-                        playing: playing,
-                        duration: duration ?? audioInfo.duration,
-                        currentTime: currentTime ?? audioInfo.currentTime
-                    )
+        if let audioData = mediaCached[messageId], let audioInfo = audioData.audioInfo {
+            mediaCached[messageId] = MessageTableCellState.MediaData(
+                data: audioData.data,
+                audioInfo: MessageTableCellState.AudioInfo(
+                    loading: false,
+                    playing: playing,
+                    duration: duration ?? audioInfo.duration,
+                    currentTime: currentTime ?? audioInfo.currentTime
                 )
-                
-                var snapshot = self.dataSource.snapshot()
-                if snapshot.itemIdentifiers.contains(tableCellState.1) {
-                    snapshot.reloadItems([tableCellState.1])
-                    self.dataSource.apply(snapshot, animatingDifferences: false)
-                }
-            }
+            )
+            
+            reloadSnapshotItems(messageIds: [messageId])
         }
     }
 }
@@ -182,28 +173,19 @@ extension NewChatTableDataSource : PlayerDelegate {
         messageId: Int,
         rowIndex: Int
     ) {
-        if let tableCellState = getTableCellStateFor(
-            messageId: messageId,
-            and: rowIndex
-        ) {
-            if let audioData = mediaCached[messageId], let audioInfo = audioData.audioInfo {
-
-                mediaCached[messageId] = MessageTableCellState.MediaData(
-                    data: audioData.data,
-                    audioInfo: MessageTableCellState.AudioInfo(
-                        loading: loading ?? audioInfo.loading,
-                        playing: playing ?? audioInfo.playing,
-                        duration: duration ?? audioInfo.duration,
-                        currentTime: currentTime ?? audioInfo.currentTime
-                    )
+        _ = rowIndex
+        if let audioData = mediaCached[messageId], let audioInfo = audioData.audioInfo {
+            mediaCached[messageId] = MessageTableCellState.MediaData(
+                data: audioData.data,
+                audioInfo: MessageTableCellState.AudioInfo(
+                    loading: loading ?? audioInfo.loading,
+                    playing: playing ?? audioInfo.playing,
+                    duration: duration ?? audioInfo.duration,
+                    currentTime: currentTime ?? audioInfo.currentTime
                 )
+            )
 
-                var snapshot = self.dataSource.snapshot()
-                if snapshot.itemIdentifiers.contains(tableCellState.1) {
-                    snapshot.reloadItems([tableCellState.1])
-                    self.dataSource.apply(snapshot, animatingDifferences: false)
-                }
-            }
+            reloadSnapshotItems(messageIds: [messageId])
         }
     }
 }

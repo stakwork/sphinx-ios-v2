@@ -279,6 +279,47 @@ import CoreData
         return self.mediaCached[messageId]
     }
     
+    /// Reloads chat rows by re-resolving live snapshot identifiers from message ids.
+    /// Never pass a captured `MessageTableCellState` into `reloadItems` — `==` is
+    /// content-based and can match a replacement row while UIKit still rejects it.
+    func reloadSnapshotItems(
+        messageIds: [Int],
+        animatingDifferences: Bool = false,
+        completion: (() -> Void)? = nil
+    ) {
+        guard !messageIds.isEmpty else {
+            completion?()
+            return
+        }
+        
+        var snapshot = dataSource.snapshot()
+        let liveItems = Self.liveSnapshotItems(in: snapshot, messageIds: messageIds)
+        
+        guard !liveItems.isEmpty else {
+            completion?()
+            return
+        }
+        
+        snapshot.reloadItems(liveItems)
+        dataSource.apply(
+            snapshot,
+            animatingDifferences: animatingDifferences,
+            completion: completion
+        )
+    }
+    
+    static func liveSnapshotItems(
+        in snapshot: NSDiffableDataSourceSnapshot<CollectionViewSection, MessageTableCellState>,
+        messageIds: [Int]
+    ) -> [MessageTableCellState] {
+        var seen = Set<UUID>()
+        return messageIds.compactMap { id in
+            snapshot.itemIdentifiers.first(where: {
+                $0.messageId == id || $0.threadOriginalMessage?.id == id
+            })
+        }.filter { seen.insert($0.uniqueID).inserted }
+    }
+    
     func makeCellProvider(
         for tableView: UITableView
     ) -> DataSource.CellProvider {
