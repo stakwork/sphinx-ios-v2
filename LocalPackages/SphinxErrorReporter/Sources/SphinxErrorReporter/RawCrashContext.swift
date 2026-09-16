@@ -120,7 +120,7 @@ struct RawCrashContext {
             var d: [String: Any] = [
                 "frameIndex": frame.frameIndex,
                 "returnAddress": "0x\(String(frame.returnAddress, radix: 16, uppercase: false))",
-                "binaryName": binaryBaseName(frame.binaryName),
+                "binaryName": Self.binaryBaseName(frame.binaryName),
                 "loadAddress": "0x\(String(frame.loadAddress, radix: 16, uppercase: false))"
             ]
             if !frame.binaryUUID.isEmpty {
@@ -131,7 +131,7 @@ struct RawCrashContext {
 
         let imagesData = binaryImages.map { img -> [String: Any] in
             [
-                "name": binaryBaseName(img.name),
+                "name": Self.binaryBaseName(img.name),
                 "uuid": img.uuid,
                 "loadAddress": "0x\(String(img.loadAddress, radix: 16, uppercase: false))",
                 "size": Int(img.size)
@@ -156,11 +156,11 @@ struct RawCrashContext {
             "Binary Images:"
         ]
         for img in binaryImages {
-            lines.append("  \(binaryBaseName(img.name)) (UUID: \(img.uuid)) @ 0x\(String(img.loadAddress, radix: 16)) size=\(img.size)")
+            lines.append("  \(Self.binaryBaseName(img.name)) (UUID: \(img.uuid)) @ 0x\(String(img.loadAddress, radix: 16)) size=\(img.size)")
         }
         lines.append("Frames:")
         for frame in frames {
-            lines.append("  [\(frame.frameIndex)] 0x\(String(frame.returnAddress, radix: 16)) in \(binaryBaseName(frame.binaryName)) (load: 0x\(String(frame.loadAddress, radix: 16)))")
+            lines.append("  [\(frame.frameIndex)] 0x\(String(frame.returnAddress, radix: 16)) in \(Self.binaryBaseName(frame.binaryName)) (load: 0x\(String(frame.loadAddress, radix: 16)))")
         }
         return lines.joined(separator: "\n")
     }

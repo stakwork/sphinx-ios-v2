@@ -8,6 +8,13 @@ import Darwin
 import CrashSignalTrampoline
 @testable import SphinxErrorReporter
 
+/// C function pointers can only be formed from a direct reference to a
+/// top-level `func` or an inline closure literal at the call site — never
+/// from a variable, even one holding a non-capturing closure of the right
+/// type. This must stay a real top-level function so
+/// `NSSetUncaughtExceptionHandler(noopExceptionHandlerDouble)` compiles.
+private func noopExceptionHandlerDouble(_ exception: NSException) {}
+
 final class CrashHandlerTests: XCTestCase {
 
     override func tearDown() {
@@ -21,16 +28,13 @@ final class CrashHandlerTests: XCTestCase {
     // MARK: - Exception handler chaining
 
     func test_install_chains_prior_exception_handler() {
-        var testHandlerCalled = false
-        var testHandlerException: NSException?
-
-        let testDouble: NSUncaughtExceptionHandler = { exception in
-            testHandlerCalled = true
-            testHandlerException = exception
-        }
-
         let previousHandler = NSGetUncaughtExceptionHandler()
-        NSSetUncaughtExceptionHandler(testDouble)
+        NSSetUncaughtExceptionHandler(noopExceptionHandlerDouble)
+        // Read the pointer back rather than passing the literal directly:
+        // NSGetUncaughtExceptionHandler() already returns a raw C function
+        // pointer value, which — unlike a freshly-formed closure literal —
+        // can freely be stored in and passed through variables.
+        let testDouble = NSGetUncaughtExceptionHandler()!
 
         let config = Config(
             hiveBaseURL: URL(string: "https://hive.example.com/api")!,
@@ -45,21 +49,19 @@ final class CrashHandlerTests: XCTestCase {
         XCTAssertNotNil(NSGetUncaughtExceptionHandler(), "Our exception handler should be installed")
 
         let installedHandler = NSGetUncaughtExceptionHandler()!
-        withUnsafePointer(to: testDouble) { testDoublePtr in
-            withUnsafePointer(to: installedHandler) { installedPtr in
-                let testDoubleAddr = UnsafeRawPointer(testDoublePtr)
-                let installedAddr = UnsafeRawPointer(installedPtr)
-                XCTAssertNotEqual(
-                    testDoubleAddr,
-                    installedAddr,
-                    "CrashHandler should wrap the prior handler, not leave it as-is"
-                )
-            }
-        }
+        // Compare the function-pointer *values* (what code they point to),
+        // not `withUnsafePointer(to:)` addresses of the local `let` bindings
+        // — those are always distinct stack slots regardless of what the
+        // pointers hold, which would make this assertion vacuously true.
+        let testDoubleAddr = unsafeBitCast(testDouble, to: UnsafeRawPointer.self)
+        let installedAddr = unsafeBitCast(installedHandler, to: UnsafeRawPointer.self)
+        XCTAssertNotEqual(
+            testDoubleAddr,
+            installedAddr,
+            "CrashHandler should wrap the prior handler, not leave it as-is"
+        )
 
         NSSetUncaughtExceptionHandler(previousHandler)
-        _ = testHandlerCalled
-        _ = testHandlerException
     }
 
     // MARK: - Idempotent start
