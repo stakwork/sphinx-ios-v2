@@ -122,4 +122,32 @@ final class RawCrashContextTests: XCTestCase {
         let metadata = context.asMetadata()
         XCTAssertTrue(JSONSerialization.isValidJSONObject(metadata), "metadata must be JSON-serializable")
     }
+
+    func test_captureLoadedImages_records_nonzero_size() {
+        let images = RawCrashContext.captureLoadedImages()
+        XCTAssertFalse(images.isEmpty)
+        XCTAssertTrue(
+            images.contains { $0.size > 0 },
+            "At least one image must have a real Mach-O segment size"
+        )
+    }
+
+    func test_fromInterruptedPC_puts_binary_name_uuid_address_in_metadata() {
+        let context = RawCrashContext.fromInterruptedPC(
+            pc: 0x1a2000100,
+            imageName: "CoreFoundation",
+            imageUUID: "CF-UUID",
+            loadAddress: 0x1a2000000,
+            imageSize: 0x100000
+        )
+        let metadata = context.asMetadata()
+        let raw = metadata["rawCrash"] as? [String: Any]
+        let frames = raw?["frames"] as? [[String: Any]]
+        XCTAssertEqual(frames?.first?["binaryName"] as? String, "CoreFoundation")
+        XCTAssertEqual(frames?.first?["binaryUUID"] as? String, "CF-UUID")
+        XCTAssertEqual(frames?.first?["returnAddress"] as? String, "0x1a2000100")
+        let images = raw?["binaryImages"] as? [[String: Any]]
+        XCTAssertEqual(images?.first?["uuid"] as? String, "CF-UUID")
+        XCTAssertEqual(images?.first?["size"] as? Int, 0x100000)
+    }
 }

@@ -395,13 +395,16 @@ extension SphinxOnionManager {
     func startDelayedRRTimeoutTimer(
         for key: Int
     ) {
-        delayedRRTimers[key]?.invalidate()
+        runOnMainIfNeeded { [weak self] in
+            guard let self = self else { return }
+            self.delayedRRTimers[key]?.invalidate()
 
-        let timer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: false) { [weak self] timer in
-            self?.handleDelayedRRTimeout(for: key)
+            let timer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: false) { [weak self] timer in
+                self?.handleDelayedRRTimeout(for: key)
+            }
+
+            self.delayedRRTimers[key] = timer
         }
-        
-        delayedRRTimers[key] = timer
     }
 
     func handleDelayedRRTimeout(

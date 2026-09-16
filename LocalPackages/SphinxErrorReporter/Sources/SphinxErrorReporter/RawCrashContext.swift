@@ -2,8 +2,8 @@
 // SphinxErrorReporter
 //
 // Captures raw crash metadata for post-hoc server-side symbolication.
-// Mandatory when debug symbols are stripped (release builds).
-// Uses only signal-handler-safe operations where required.
+// Image capture (including real Mach-O sizes) runs at install / next-launch
+// recovery time — never from the signal handler.
 
 import Foundation
 
@@ -28,8 +28,6 @@ struct RawCrashContext {
     let osVersion: String
     let rawStackTrace: String
 
-    // MARK: - Binary Image capture
-
     struct BinaryImageInfo {
         let name: String
         let uuid: String
@@ -39,8 +37,7 @@ struct RawCrashContext {
 
     // MARK: - Factory
 
-    /// Builds a `RawCrashContext` from the current call stack.
-    /// Safe to call from a signal handler (no heap alloc for path buffer — handled in CrashHandler).
+    /// Builds a `RawCrashContext` from a call stack. Not signal-safe (Foundation).
     static func capture(callStackReturnAddresses: [NSNumber], rawSymbols: [String]) -> RawCrashContext {
         let images = captureLoadedImages()
         let arch = captureArch()
@@ -50,7 +47,6 @@ struct RawCrashContext {
         var rawFrames: [RawFrame] = []
         for (idx, addr) in callStackReturnAddresses.enumerated() {
             let address = UInt(truncatingIfNeeded: addr.uintValue)
-            // Find the owning binary image for this address
             if let image = findImage(for: address, in: images) {
                 rawFrames.append(RawFrame(
                     frameIndex: idx,
@@ -60,7 +56,6 @@ struct RawCrashContext {
                     loadAddress: image.loadAddress
                 ))
             } else {
-                // Unknown binary — still record address
                 rawFrames.append(RawFrame(
                     frameIndex: idx,
                     returnAddress: address,
@@ -80,15 +75,52 @@ struct RawCrashContext {
         )
     }
 
+    /// Reconstructs context from the C trampoline dump (next launch, process context).
+    static func fromInterruptedPC(
+        pc: UInt,
+        imageName: String,
+        imageUUID: String,
+        loadAddress: UInt,
+        imageSize: UInt
+    ) -> RawCrashContext {
+        let resolvedName = imageName.isEmpty ? "unknown" : imageName
+        let images: [BinaryImageInfo]
+        if !imageName.isEmpty, imageSize > 0 {
+            images = [
+                BinaryImageInfo(
+                    name: imageName,
+                    uuid: imageUUID,
+                    loadAddress: loadAddress,
+                    size: imageSize
+                )
+            ]
+        } else {
+            images = []
+        }
+        let frame = RawFrame(
+            frameIndex: 0,
+            returnAddress: pc,
+            binaryName: resolvedName,
+            binaryUUID: imageUUID,
+            loadAddress: loadAddress
+        )
+        return RawCrashContext(
+            frames: [frame],
+            binaryImages: images,
+            arch: captureArch(),
+            osVersion: captureOSVersion(),
+            rawStackTrace: ""
+        )
+    }
+
     // MARK: - Serialization
 
-    /// Produces a JSON-serializable `[String: Any]` for `ErrorReport.metadata`.
     func asMetadata() -> [String: Any] {
         let framesData = frames.map { frame -> [String: Any] in
             var d: [String: Any] = [
                 "frameIndex": frame.frameIndex,
                 "returnAddress": "0x\(String(frame.returnAddress, radix: 16, uppercase: false))",
-                "binaryName": frame.binaryName,
+                "binaryName": Self.binaryBaseName(frame.binaryName),
                 "loadAddress": "0x\(String(frame.loadAddress, radix: 16, uppercase: false))"
             ]
             if !frame.binaryUUID.isEmpty {
@@ -99,10 +131,10 @@ struct RawCrashContext {
 
         let imagesData = binaryImages.map { img -> [String: Any] in
             [
-                "name": img.name,
+                "name": Self.binaryBaseName(img.name),
                 "uuid": img.uuid,
                 "loadAddress": "0x\(String(img.loadAddress, radix: 16, uppercase: false))",
-                "size": img.size
+                "size": Int(img.size)
             ]
         }
 
@@ -116,7 +148,6 @@ struct RawCrashContext {
         ]
     }
 
-    /// Produces a human-readable stack trace string (appended to `stackTrace`).
     func asReadableStackTrace() -> String {
         var lines: [String] = [
             "=== Raw Crash Context ===",
@@ -125,13 +156,54 @@ struct RawCrashContext {
             "Binary Images:"
         ]
         for img in binaryImages {
-            lines.append("  \(img.name) (UUID: \(img.uuid)) @ 0x\(String(img.loadAddress, radix: 16))")
+            lines.append("  \(Self.binaryBaseName(img.name)) (UUID: \(img.uuid)) @ 0x\(String(img.loadAddress, radix: 16)) size=\(img.size)")
         }
         lines.append("Frames:")
         for frame in frames {
-            lines.append("  [\(frame.frameIndex)] 0x\(String(frame.returnAddress, radix: 16)) in \(frame.binaryName) (load: 0x\(String(frame.loadAddress, radix: 16)))")
+            lines.append("  [\(frame.frameIndex)] 0x\(String(frame.returnAddress, radix: 16)) in \(Self.binaryBaseName(frame.binaryName)) (load: 0x\(String(frame.loadAddress, radix: 16)))")
         }
         return lines.joined(separator: "\n")
+    }
+
+    // MARK: - Image lookup
+
+    /// Range-checked: `loadAddress <= address < loadAddress + size`.
+    /// Size 0 never matches. Overlapping ranges prefer the highest loadAddress.
+    static func findImage(for address: UInt, in images: [BinaryImageInfo]) -> BinaryImageInfo? {
+        images
+            .filter { image in
+                image.size > 0
+                    && image.loadAddress <= address
+                    && address < image.loadAddress &+ image.size
+            }
+            .max(by: { $0.loadAddress < $1.loadAddress })
+    }
+
+    static func binaryBaseName(_ path: String) -> String {
+        if let slash = path.lastIndex(of: "/") {
+            return String(path[path.index(after: slash)...])
+        }
+        return path
+    }
+
+    // MARK: - Loaded images (install / recovery — not the signal handler)
+
+    static func captureLoadedImages() -> [BinaryImageInfo] {
+        var images: [BinaryImageInfo] = []
+        #if canImport(MachO)
+        let count = _dyld_image_count()
+        for i in 0..<count {
+            guard let header = _dyld_get_image_header(i),
+                  let rawName = _dyld_get_image_name(i) else { continue }
+            let name = String(cString: rawName)
+            let slide = _dyld_get_image_vmaddr_slide(i)
+            let loadAddress = UInt(bitPattern: header)
+            let uuid = extractUUID(header: header)
+            let size = imageSpan(header: header, slide: slide, loadAddress: loadAddress)
+            images.append(BinaryImageInfo(name: name, uuid: uuid, loadAddress: loadAddress, size: size))
+        }
+        #endif
+        return images
     }
 
     // MARK: - Private helpers
@@ -153,49 +225,75 @@ struct RawCrashContext {
         return "\(v.majorVersion).\(v.minorVersion).\(v.patchVersion)"
     }
 
-    private static func captureLoadedImages() -> [BinaryImageInfo] {
-        var images: [BinaryImageInfo] = []
-        #if canImport(MachO)
-        let count = _dyld_image_count()
-        for i in 0..<count {
-            guard let header = _dyld_get_image_header(i),
-                  let rawName = _dyld_get_image_name(i) else { continue }
-            let name = String(cString: rawName)
-            let slide = _dyld_get_image_vmaddr_slide(i)
-            let loadAddress = UInt(bitPattern: header) 
-
-            // Extract UUID from LC_UUID load command
-            var uuid = ""
-            var cmd: UnsafePointer<load_command>? = UnsafeRawPointer(header)
-                .advanced(by: MemoryLayout<mach_header_64>.size)
-                .assumingMemoryBound(to: load_command.self)
-
-            for _ in 0..<header.pointee.ncmds {
-                guard let current = cmd else { break }
-                if current.pointee.cmd == LC_UUID {
-                    let uuidCmd = UnsafeRawPointer(current).assumingMemoryBound(to: uuid_command.self)
-                    let b = uuidCmd.pointee.uuid
-                    uuid = String(format: "%02X%02X%02X%02X-%02X%02X-%02X%02X-%02X%02X-%02X%02X%02X%02X%02X%02X",
-                                  b.0, b.1, b.2, b.3, b.4, b.5, b.6, b.7,
-                                  b.8, b.9, b.10, b.11, b.12, b.13, b.14, b.15)
-                    break
-                }
-                let nextOffset = Int(current.pointee.cmdsize)
-                guard nextOffset > 0 else { break }
-                cmd = UnsafeRawPointer(current).advanced(by: nextOffset).assumingMemoryBound(to: load_command.self)
+    #if canImport(MachO)
+    private static func extractUUID(header: UnsafePointer<mach_header>) -> String {
+        var uuid = ""
+        iterateLoadCommands(header: header) { cmdPtr, cmd in
+            if cmd == LC_UUID {
+                let uuidCmd = cmdPtr.assumingMemoryBound(to: uuid_command.self)
+                let b = uuidCmd.pointee.uuid
+                uuid = String(
+                    format: "%02X%02X%02X%02X-%02X%02X-%02X%02X-%02X%02X-%02X%02X%02X%02X%02X%02X",
+                    b.0, b.1, b.2, b.3, b.4, b.5, b.6, b.7,
+                    b.8, b.9, b.10, b.11, b.12, b.13, b.14, b.15
+                )
+                return false
             }
-            _ = slide // used implicitly via loadAddress calculation above
-            images.append(BinaryImageInfo(name: name, uuid: uuid, loadAddress: loadAddress, size: 0))
+            return true
         }
-        #endif
-        return images
+        return uuid
     }
 
-    /// Finds the binary image that contains a given return address.
-    private static func findImage(for address: UInt, in images: [BinaryImageInfo]) -> BinaryImageInfo? {
-        // Sort by load address descending and find the first image with loadAddress <= address
-        return images
-            .filter { $0.loadAddress <= address }
-            .max(by: { $0.loadAddress < $1.loadAddress })
+    private static func imageSpan(
+        header: UnsafePointer<mach_header>,
+        slide: Int,
+        loadAddress: UInt
+    ) -> UInt {
+        var maxEnd = loadAddress
+        iterateLoadCommands(header: header) { cmdPtr, cmd in
+            if cmd == LC_SEGMENT_64 {
+                let seg = cmdPtr.assumingMemoryBound(to: segment_command_64.self)
+                if seg.pointee.vmsize > 0 {
+                    let start = UInt(seg.pointee.vmaddr) &+ UInt(bitPattern: slide)
+                    let end = start &+ UInt(seg.pointee.vmsize)
+                    if end > maxEnd {
+                        maxEnd = end
+                    }
+                }
+            } else if cmd == LC_SEGMENT {
+                let seg = cmdPtr.assumingMemoryBound(to: segment_command.self)
+                if seg.pointee.vmsize > 0 {
+                    let start = UInt(seg.pointee.vmaddr) &+ UInt(bitPattern: slide)
+                    let end = start &+ UInt(seg.pointee.vmsize)
+                    if end > maxEnd {
+                        maxEnd = end
+                    }
+                }
+            }
+            return true
+        }
+        return maxEnd > loadAddress ? maxEnd - loadAddress : 0
     }
+
+    /// Walks load commands. `body` returns false to stop.
+    private static func iterateLoadCommands(
+        header: UnsafePointer<mach_header>,
+        body: (UnsafeRawPointer, UInt32) -> Bool
+    ) {
+        let is64 = header.pointee.magic == MH_MAGIC_64 || header.pointee.magic == MH_CIGAM_64
+        let headerSize = is64 ? MemoryLayout<mach_header_64>.size : MemoryLayout<mach_header>.size
+        let ncmds = header.pointee.ncmds
+        var cmdPtr = UnsafeRawPointer(header).advanced(by: headerSize)
+        for _ in 0..<ncmds {
+            let cmd = cmdPtr.assumingMemoryBound(to: load_command.self)
+            let cmdValue = cmd.pointee.cmd
+            let cmdSize = Int(cmd.pointee.cmdsize)
+            guard cmdSize > 0 else { break }
+            if !body(cmdPtr, cmdValue) {
+                break
+            }
+            cmdPtr = cmdPtr.advanced(by: cmdSize)
+        }
+    }
+    #endif
 }

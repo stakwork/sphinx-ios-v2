@@ -24,6 +24,32 @@ struct FrameBuilder {
         return frames.isEmpty ? nil : frames
     }
 
+    /// Builds Hive frames from interrupted PCs + image table (no `callStackSymbols`).
+    /// Address/UUID stay off `Frame`; they belong in `RawCrashContext.asMetadata()`.
+    func build(fromAddresses addresses: [UInt], images: [RawCrashContext.BinaryImageInfo]) -> [Frame]? {
+        guard !addresses.isEmpty else { return nil }
+        let frames: [Frame] = addresses.map { address in
+            let hex = "0x\(String(address, radix: 16, uppercase: false))"
+            if let image = RawCrashContext.findImage(for: address, in: images) {
+                let binaryName = RawCrashContext.binaryBaseName(image.name)
+                let isApp = binaryName == appModuleName
+                return Frame(
+                    filename: "\(binaryName)/\(hex)",
+                    function: nil,
+                    lineno: nil,
+                    inApp: isApp
+                )
+            }
+            return Frame(
+                filename: "unknown/\(hex)",
+                function: nil,
+                lineno: nil,
+                inApp: false
+            )
+        }
+        return frames
+    }
+
     // MARK: - Parsing
 
     /// Parses a single line from `Thread.callStackSymbols`.
