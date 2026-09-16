@@ -252,15 +252,18 @@ extension SphinxOnionManager {
     }
     
     func setupInvoicePaymentTimerFor(invoice: String, tag: String) {
-        let paymentTimer = Timer.scheduledTimer(
-            timeInterval: 60.0,
-            target: self,
-            selector: #selector(self.resetInvoicePaymentTimerFor(timer:)),
-            userInfo: ["invoice": invoice, "tag": tag],
-            repeats: false
-        )
-        
-        paymentTimeoutTimers[tag] = paymentTimer
+        runOnMainIfNeeded { [weak self] in
+            guard let self = self else { return }
+            let paymentTimer = Timer.scheduledTimer(
+                timeInterval: 60.0,
+                target: self,
+                selector: #selector(self.resetInvoicePaymentTimerFor(timer:)),
+                userInfo: ["invoice": invoice, "tag": tag],
+                repeats: false
+            )
+
+            self.paymentTimeoutTimers[tag] = paymentTimer
+        }
     }
     
     func onPaymentStatusReceivedFor(

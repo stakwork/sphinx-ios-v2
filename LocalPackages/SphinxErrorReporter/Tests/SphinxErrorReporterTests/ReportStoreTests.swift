@@ -117,6 +117,75 @@ final class ReportStoreTests: XCTestCase {
 
     // MARK: - Thread safety
 
+    // MARK: - Dump recovery
+
+    func test_recoverPendingDump_valid_builds_error_report_and_deletes_dump() throws {
+        let posted = expectation(description: "dump report posted")
+        var postedJSON: [String: Any]?
+        MockURLProtocol.requestHandler = { req in
+            if let body = req.httpBody,
+               let json = try? JSONSerialization.jsonObject(with: body) as? [String: Any] {
+                postedJSON = json
+            }
+            posted.fulfill()
+            return (HTTPURLResponse(url: req.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, Data())
+        }
+        let store = SphinxErrorReporter._makeStore(config: config, session: .makeMock())
+        guard let dumpURL = CrashDump.fileURL() else {
+            XCTFail("dump URL unavailable")
+            return
+        }
+        let data = CrashDump.encode(
+            signal: SIGSEGV,
+            pc: 0x1a2000100,
+            addressCount: 1,
+            imageName: "CoreFoundation",
+            imageUUID: "CF-UUID",
+            loadAddress: 0x1a2000000,
+            imageSize: 0x100000
+        )
+        try data.write(to: dumpURL)
+
+        let recovered = store.recoverPendingDumpSync(config: config, appModuleName: "sphinx")
+        XCTAssertTrue(recovered)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: dumpURL.path), "Dump must be unlinked after parse")
+        wait(for: [posted], timeout: 3)
+
+        XCTAssertEqual(postedJSON?["exceptionType"] as? String, "Signal/SIGSEGV")
+        let metadata = postedJSON?["metadata"] as? [String: Any]
+        let raw = metadata?["rawCrash"] as? [String: Any]
+        XCTAssertNotNil(raw?["frames"])
+        XCTAssertNotNil(raw?["binaryImages"])
+        let frames = raw?["frames"] as? [[String: Any]]
+        XCTAssertEqual(frames?.first?["binaryName"] as? String, "CoreFoundation")
+        XCTAssertEqual(frames?.first?["binaryUUID"] as? String, "CF-UUID")
+        XCTAssertEqual(frames?.first?["returnAddress"] as? String, "0x1a2000100")
+        let hiveFrames = postedJSON?["frames"] as? [[String: Any]]
+        XCTAssertEqual(hiveFrames?.first?["filename"] as? String, "CoreFoundation/0x1a2000100")
+        XCTAssertEqual(hiveFrames?.first?["inApp"] as? Bool, false)
+    }
+
+    func test_recoverPendingDump_truncated_deletes_without_post() {
+        var postCount = 0
+        MockURLProtocol.requestHandler = { req in
+            postCount += 1
+            return (HTTPURLResponse(url: req.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, Data())
+        }
+        let store = SphinxErrorReporter._makeStore(config: config, session: .makeMock())
+        guard let dumpURL = CrashDump.fileURL() else {
+            XCTFail("dump URL unavailable")
+            return
+        }
+        try? Data([0x00, 0x01, 0x02]).write(to: dumpURL)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: dumpURL.path))
+
+        let recovered = store.recoverPendingDumpSync(config: config, appModuleName: "sphinx")
+        XCTAssertFalse(recovered)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: dumpURL.path), "Corrupt dump must be deleted")
+        XCTAssertEqual(pendingFileCount(), 0, "Corrupt dump must not produce a JSON report")
+        XCTAssertEqual(postCount, 0, "Corrupt dump must not POST")
+    }
+
     func test_enqueue_returns_quickly_on_calling_thread() {
         MockURLProtocol.requestHandler = { req in
             Thread.sleep(forTimeInterval: 0.5) // Simulate slow network
@@ -148,12 +217,20 @@ final class ReportStoreTests: XCTestCase {
     }
 
     private func pendingFileCount() -> Int {
-        guard let dir = pendingDirectory() else { return 0 }
-        return (try? FileManager.default.contentsOfDirectory(atPath: dir.path))?.filter { $0.hasSuffix(".json") }.count ?? 0
+        pendingJSONURLs().count
+    }
+
+    private func pendingJSONURLs() -> [URL] {
+        guard let dir = pendingDirectory() else { return [] }
+        let names = (try? FileManager.default.contentsOfDirectory(atPath: dir.path)) ?? []
+        return names.filter { $0.hasSuffix(".json") }.map { dir.appendingPathComponent($0) }
     }
 
     private func cleanupTestDirectory() {
         guard let dir = pendingDirectory() else { return }
         try? FileManager.default.removeItem(at: dir)
+        if let dump = CrashDump.fileURL() {
+            try? FileManager.default.removeItem(at: dump)
+        }
     }
 }

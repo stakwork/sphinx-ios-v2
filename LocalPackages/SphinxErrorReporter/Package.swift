@@ -15,13 +15,18 @@ let package = Package(
     ],
     targets: [
         .target(
+            name: "CrashSignalTrampoline",
+            path: "Sources/CrashSignalTrampoline",
+            publicHeadersPath: "include"
+        ),
+        .target(
             name: "SphinxErrorReporter",
-            dependencies: [],
+            dependencies: ["CrashSignalTrampoline"],
             path: "Sources/SphinxErrorReporter"
         ),
         .testTarget(
             name: "SphinxErrorReporterTests",
-            dependencies: ["SphinxErrorReporter"],
+            dependencies: ["SphinxErrorReporter", "CrashSignalTrampoline"],
             path: "Tests/SphinxErrorReporterTests",
             resources: [
                 .copy("Fixtures")

@@ -111,6 +111,68 @@ final class FrameBuilderTests: XCTestCase {
         XCTAssertEqual(frames!.first?.inApp, false)
     }
 
+    // MARK: - fromAddresses (no callStackSymbols)
+
+    func test_fromAddresses_classifies_filename_and_inApp() {
+        let images = [
+            RawCrashContext.BinaryImageInfo(
+                name: "/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation",
+                uuid: "CF-UUID",
+                loadAddress: 0x1a2000000,
+                size: 0x100000
+            ),
+            RawCrashContext.BinaryImageInfo(
+                name: "sphinx",
+                uuid: "APP-UUID",
+                loadAddress: 0x100000000,
+                size: 0x100000
+            )
+        ]
+        let frames = builder.build(
+            fromAddresses: [0x1a2000100, 0x100000042],
+            images: images
+        )
+        XCTAssertEqual(frames?.count, 2)
+        XCTAssertEqual(frames?[0].filename, "CoreFoundation/0x1a2000100")
+        XCTAssertEqual(frames?[0].inApp, false)
+        XCTAssertNil(frames?[0].function)
+        XCTAssertEqual(frames?[1].filename, "sphinx/0x100000042")
+        XCTAssertEqual(frames?[1].inApp, true)
+        XCTAssertNil(frames?[1].function)
+    }
+
+    func test_fromAddresses_does_not_leak_address_or_uuid_onto_frame() {
+        let images = [
+            RawCrashContext.BinaryImageInfo(
+                name: "CoreFoundation",
+                uuid: "CF-UUID-MUST-NOT-LEAK",
+                loadAddress: 0x1000,
+                size: 0x1000
+            )
+        ]
+        let frames = builder.build(fromAddresses: [0x1100], images: images)
+        XCTAssertNotNil(frames)
+        let encoder = JSONEncoder()
+        let data = try! encoder.encode(frames![0])
+        let json = try! JSONSerialization.jsonObject(with: data) as! [String: Any]
+        let allowedKeys = Set(["filename", "function", "lineno", "inApp"])
+        XCTAssertTrue(Set(json.keys).subtracting(allowedKeys).isEmpty)
+        XCTAssertNil(json["binaryUUID"])
+        XCTAssertNil(json["returnAddress"])
+        XCTAssertNil(json["uuid"])
+        XCTAssertFalse((json["filename"] as? String)?.contains("CF-UUID") == true)
+    }
+
+    func test_fromAddresses_unknown_image_is_not_inApp() {
+        let frames = builder.build(fromAddresses: [0xDEAD], images: [])
+        XCTAssertEqual(frames?.first?.filename, "unknown/0xdead")
+        XCTAssertEqual(frames?.first?.inApp, false)
+    }
+
+    func test_fromAddresses_empty_returns_nil() {
+        XCTAssertNil(builder.build(fromAddresses: [], images: []))
+    }
+
     // MARK: - Helpers
 
     private func loadFixture(_ name: String) -> [String] {

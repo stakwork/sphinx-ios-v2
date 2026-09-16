@@ -844,6 +844,7 @@
 		CEF88DD229B66B9200DC1C40 /* RecommendationItemWUnifiedViewCollectionViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = CEF88DD029B66B9200DC1C40 /* RecommendationItemWUnifiedViewCollectionViewCell.xib */; };
 		CHATPAGE01FILE0000000002 /* ChatPagination.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHATPAGE01FILE0000000001 /* ChatPagination.swift */; };
 		CHATPAGE01TEST0000000002 /* ChatPaginationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHATPAGE01TEST0000000001 /* ChatPaginationTests.swift */; };
+		MQTTQ01TEST00010000000002 /* SphinxOnionManagerMqttQueueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = MQTTQ01TEST00010000000001 /* SphinxOnionManagerMqttQueueTests.swift */; };
 		CP01RLTEST00100000000002 /* CachingPlayerItemResourceLoaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CP01RLTEST00100000000001 /* CachingPlayerItemResourceLoaderTests.swift */; };
 		CQ1A2B3C4D5E6F7A8B9C0D1E /* ClarifyingQuestionMessageCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = CQ2B3C4D5E6F7A8B9C0D1E2F /* ClarifyingQuestionMessageCell.swift */; };
 		D2789CFCCA3E453295F15A2E /* HiveFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44EC6EC0EE1C4D6B8B5FADB2 /* HiveFeature.swift */; };
@@ -2249,6 +2250,7 @@
 		CEF88DD029B66B9200DC1C40 /* RecommendationItemWUnifiedViewCollectionViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = RecommendationItemWUnifiedViewCollectionViewCell.xib; sourceTree = "<group>"; };
 		CHATPAGE01FILE0000000001 /* ChatPagination.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatPagination.swift; sourceTree = "<group>"; };
 		CHATPAGE01TEST0000000001 /* ChatPaginationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatPaginationTests.swift; sourceTree = "<group>"; };
+		MQTTQ01TEST00010000000001 /* SphinxOnionManagerMqttQueueTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SphinxOnionManagerMqttQueueTests.swift; sourceTree = "<group>"; };
 		CP01RLTEST00100000000001 /* CachingPlayerItemResourceLoaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CachingPlayerItemResourceLoaderTests.swift; sourceTree = "<group>"; };
 		CQ2B3C4D5E6F7A8B9C0D1E2F /* ClarifyingQuestionMessageCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClarifyingQuestionMessageCell.swift; sourceTree = "<group>"; };
 		D4E5F6A7B8C9D0E1F2A3B4C5 /* TaskProgressBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskProgressBarView.swift; sourceTree = "<group>"; };
@@ -3817,6 +3819,7 @@
 		4779F178232AA0F300D35E81 /* sphinxTests */ = {
 			isa = PBXGroup;
 			children = (
+				MQTTQ01TEST00010000000001 /* SphinxOnionManagerMqttQueueTests.swift */,
 				CHATPAGE01TEST0000000001 /* ChatPaginationTests.swift */,
 				9B5504520C1B4722A0EBFA00 /* HiveFeatureTests.swift */,
 				9F4B101D1E0946E1A2ED0FCA /* HiveChatMessageTests.swift */,
@@ -6482,6 +6485,7 @@
 			files = (
 				8A76E71FD2044567BAC32D0D /* HiveFeatureTests.swift in Sources */,
 				5010E69969BC4B008CB1B8DB /* HiveChatMessageTests.swift in Sources */,
+				MQTTQ01TEST00010000000002 /* SphinxOnionManagerMqttQueueTests.swift in Sources */,
 				CHATPAGE01TEST0000000002 /* ChatPaginationTests.swift in Sources */,
 				MC001TEST0001000000000002 /* MediaCacheUpdateTests.swift in Sources */,
 				SI001TEST0001000000000002 /* SnapshotIdentityTests.swift in Sources */,

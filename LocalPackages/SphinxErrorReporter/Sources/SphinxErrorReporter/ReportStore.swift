@@ -75,6 +75,37 @@ final class ReportStore {
         }
     }
 
+    /// Parses a pending C-trampoline dump, enqueues an `ErrorReport`, and unlinks
+    /// the dump. Truncated/corrupt dumps are deleted without throwing or POSTing.
+    func recoverPendingDump(config: Config, appModuleName: String) {
+        queue.async { [weak self] in
+            self?.recoverPendingDumpSync(config: config, appModuleName: appModuleName)
+        }
+    }
+
+    /// Testable, synchronous recovery. Never throws.
+    @discardableResult
+    func recoverPendingDumpSync(config: Config, appModuleName: String) -> Bool {
+        guard let url = CrashDump.fileURL() else { return false }
+        guard FileManager.default.fileExists(atPath: url.path) else { return false }
+
+        let data = try? Data(contentsOf: url, options: [.mappedIfSafe])
+        let byteCount = data?.count ?? 0
+        DebugLogger.log("ReportStore: dump recovery (bytes: \(byteCount))")
+
+        guard let data, let dump = CrashDump.parse(data) else {
+            DebugLogger.log("ReportStore: dump truncated/corrupt — deleting without POST")
+            try? FileManager.default.removeItem(at: url)
+            return false
+        }
+
+        DebugLogger.log("ReportStore: dump recovered (signal: \(dump.signal), addresses: \(dump.addressCount))")
+        let report = CrashDump.makeReport(dump, config: config, appModuleName: appModuleName)
+        enqueue(report)
+        try? FileManager.default.removeItem(at: url)
+        return true
+    }
+
     // MARK: - Persistence helpers
 
     private func storageDirectory() throws -> URL {

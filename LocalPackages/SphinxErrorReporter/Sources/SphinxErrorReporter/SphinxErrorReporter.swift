@@ -65,7 +65,14 @@ public final class SphinxErrorReporter {
 
         DebugLogger.log("SphinxErrorReporter: starting (repo: \(config.mainRepo))")
 
-        // Install crash handler (chains any existing handler like Bugsnag)
+        // Recover any previous-session C-trampoline dump BEFORE installing
+        // handlers (install creates a fresh exclusive dump file).
+        store.recoverPendingDumpSync(
+            config: config,
+            appModuleName: CrashHandler.appModuleName()
+        )
+
+        // Install crash handler (C trampoline owns SIGSEGV/etc.; NSException still chains)
         CrashHandler.install(config: config, store: store)
 
         // Start network monitor and flush reports from previous sessions
