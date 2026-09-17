@@ -26,6 +26,10 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
     }
 
     static func resetSharedInstance() {
+        _sharedInstance?.stopServerHealthTracking()
+        _sharedInstance?.onOnionHandleInvoked = nil
+        _sharedInstance?.onServerStatusIntercepted = nil
+        _sharedInstance?.nowMsProvider = nil
         _sharedInstance = nil
     }
     
@@ -41,6 +45,16 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
     var reconnectionTimer: Timer? = nil
     var watchdogTimer: Timer? = nil
     var lastInboundTime: Date? = nil
+    var lastServerStatus: MixerServerStatus? = nil
+    var lastServerStatusSeenMs: UInt64 = 0
+    var currentServerHealth: MixerServerHealth = .unknown
+    var serverHealthStalenessTimer: Timer? = nil
+    /// Test hook: local clock override for health staleness evaluation.
+    internal var nowMsProvider: (() -> UInt64)?
+    /// Test hook: fired immediately before onion `handle()` in `processMqttMessages`.
+    internal var onOnionHandleInvoked: ((String) -> Void)?
+    /// Test hook: fired when the exact server-status topic is intercepted.
+    internal var onServerStatusIntercepted: ((String) -> Void)?
     var reconnectAttemptCount: Int = 0
     var sendTimeoutTimers: [String: Timer] = [:]
     var paymentTimeoutTimers: [String: Timer] = [:]
@@ -440,6 +454,7 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
         // Cancel reconnection timer and watchdog to prevent background reconnection attempts
         endReconnectionTimer()
         stopWatchdog()
+        resetServerHealthStore()
         connectionTimeoutTimer?.invalidate()
         connectionTimeoutTimer = nil
 
@@ -567,6 +582,7 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
         // isn't blocked by connectionInProgress or a stale .connecting MQTT state.
         endBackgroundFetch(result: .noData)
         stopWatchdog()
+        resetServerHealthStore()
         reconnectAttemptCount = 0
         connectionInProgress = false
         isConnected = false
@@ -974,8 +990,10 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
             )
             
             self.mqtt.subscribe([
-                (tribeMgmtTopic, CocoaMQTTQoS.qos0)
+                (tribeMgmtTopic, CocoaMQTTQoS.qos0),
+                (SphinxServerHealth.topic, CocoaMQTTQoS.qos0)
             ])
+            self.startServerHealthTracking()
         } catch {}
     }
     
@@ -1208,6 +1226,11 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
 
     func processMqttMessages(message: CocoaMQTTMessage) {
         onProcessMqttMessages?(Thread.isMainThread)
+        if SphinxServerHealth.isExactStatusTopic(message.topic) {
+            onServerStatusIntercepted?(message.topic)
+            ingestServerStatusPayload(message.payload)
+            return
+        }
         guard let seed = getAccountSeed() else {
             return
         }
@@ -1219,6 +1242,7 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
             let alias = owner?.nickname ?? ""
             let pic = owner?.avatarUrl ?? ""
             
+            onOnionHandleInvoked?(message.topic)
             let ret4 = try handle(
                 topic: message.topic,
                 payload: Data(message.payload),

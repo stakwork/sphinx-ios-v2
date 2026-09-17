@@ -338,6 +338,10 @@ extension DashboardRootViewController {
         
         handleDeepLinksAndPush()
         Chat.processTimezoneChanges()
+
+        if let window = view.window {
+            ServerHealthBannerPresenter.shared.attach(to: window)
+        }
     }
     
     func refreshUnreadStatus(){

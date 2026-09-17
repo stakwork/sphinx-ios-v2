@@ -129,7 +129,7 @@ class PayInvoiceViewController: UIViewController {
     ) {
         loading = false
         
-        AlertHelper.showAlert(title: "generic.error.title".localized, message: errorMessage ?? "generic.error.message".localized, completion: {
+        AlertHelper.showAlert(title: "generic.error.title".localized, message: SphinxServerHealth.userFacingMessage(forRawError: errorMessage), completion: {
             self.shouldDismiss(paymentCreated: false)
         })
     }

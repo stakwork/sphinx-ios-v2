@@ -10,6 +10,12 @@
 "generic.success.title" = "成功";
 "generic.error.title" = "エラー";
 "generic.error.message" = "エラーが発生しました。しばらくしてからもう一度お試しください。";
+"server.health.unknown" = "ノードの状態が不明です";
+"server.health.degraded" = "ノードが低下しています";
+"mixer.error.cln-unavailable" = "Lightningノードが利用できません";
+"mixer.error.cln-timeout" = "リクエストがタイムアウトしました";
+"mixer.error.insufficient-balance" = "残高不足です";
+"mixer.error.unknown" = "エラーが発生しました。しばらくしてからもう一度お試しください。";
 "generic.message.error" = "メッセージを送信できませんでした。しばらくしてからもう一度お試しください。";
 "generic.contact-support" = "サポート@stakwork.com までサポートにお問い合わせください。";
 "confirm" = "確認";

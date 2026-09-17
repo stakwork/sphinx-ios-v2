@@ -8,6 +8,10 @@
 
 /* Begin PBXBuildFile section */
 		06459E6FBB6344A1A70E298C /* AIAgentManager+HiveTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5B2D56F945C46E689DAFEF9 /* AIAgentManager+HiveTools.swift */; };
+		SH01AA11BB22CC33DD44EE01 /* SphinxServerHealth.swift in Sources */ = {isa = PBXBuildFile; fileRef = SH01AA11BB22CC33DD44EE00 /* SphinxServerHealth.swift */; };
+		SH01AA11BB22CC33DD44EE03 /* SphinxOnionManager+ServerHealth.swift in Sources */ = {isa = PBXBuildFile; fileRef = SH01AA11BB22CC33DD44EE02 /* SphinxOnionManager+ServerHealth.swift */; };
+		SH01AA11BB22CC33DD44EE05 /* ServerHealthBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SH01AA11BB22CC33DD44EE04 /* ServerHealthBannerView.swift */; };
+		SH01AA11BB22CC33DD44EE07 /* SphinxServerHealthTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = SH01AA11BB22CC33DD44EE06 /* SphinxServerHealthTests.swift */; };
 		0DB22AE0228D44FDB51A2A11 /* WorkflowStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8F00239BAA5413399F184E6 /* WorkflowStatus.swift */; };
 		0F3FA12DF80F42E88DAC8AA9 /* TaskDependencyDiagramView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 101C5A13C28347DF905BBCEE /* TaskDependencyDiagramView.swift */; };
 		12075275C652A9404FC48EBC /* Pods_sphinx.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 487E10CEB3D07B0840A84681 /* Pods_sphinx.framework */; };
@@ -2070,6 +2074,10 @@
 		AA11BB22CC33DD44EE55FF66 /* HiveSearchResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveSearchResult.swift; sourceTree = "<group>"; };
 		AA1234560000000000000002 /* WebAppSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppSessionManager.swift; sourceTree = "<group>"; };
 		AABB11221DEF456700AABBBB /* SphinxrsExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SphinxrsExtensions.swift; sourceTree = "<group>"; };
+		SH01AA11BB22CC33DD44EE00 /* SphinxServerHealth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SphinxServerHealth.swift; sourceTree = "<group>"; };
+		SH01AA11BB22CC33DD44EE02 /* SphinxOnionManager+ServerHealth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SphinxOnionManager+ServerHealth.swift"; sourceTree = "<group>"; };
+		SH01AA11BB22CC33DD44EE04 /* ServerHealthBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerHealthBannerView.swift; sourceTree = "<group>"; };
+		SH01AA11BB22CC33DD44EE06 /* SphinxServerHealthTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SphinxServerHealthTests.swift; sourceTree = "<group>"; };
 		B2C3D4E5F60002I9J0K1L2M3 /* HiveLinkNavigator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveLinkNavigator.swift; sourceTree = "<group>"; };
 		B2C3D4E5F6A7B8C9D0E1F2A3 /* TaskProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskProgress.swift; sourceTree = "<group>"; };
 		B4D0E0284E4B436180B0BAAF /* HivePusherManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HivePusherManagerTests.swift; sourceTree = "<group>"; };
@@ -3694,6 +3702,7 @@
 				47341E8328C79A8B00426055 /* CustomAlertController.swift */,
 				477BCF3A2A0144C00080ED65 /* CircularDotView.swift */,
 				A1B2C3D4E5F60001A1B2C3D4 /* SphinxToggleView.swift */,
+				SH01AA11BB22CC33DD44EE04 /* ServerHealthBannerView.swift */,
 			);
 			path = "Custom Classes";
 			sourceTree = "<group>";
@@ -3822,6 +3831,7 @@
 			isa = PBXGroup;
 			children = (
 				MQTTQ01TEST00010000000001 /* SphinxOnionManagerMqttQueueTests.swift */,
+				SH01AA11BB22CC33DD44EE06 /* SphinxServerHealthTests.swift */,
 				CHATPAGE01TEST0000000001 /* ChatPaginationTests.swift */,
 				9B5504520C1B4722A0EBFA00 /* HiveFeatureTests.swift */,
 				9F4B101D1E0946E1A2ED0FCA /* HiveChatMessageTests.swift */,
@@ -4668,6 +4678,8 @@
 				4733ED262CA72AA200078EF2 /* SphinxOnionManager+PeopleExtension.swift */,
 				4733ED302CB5572700078EF2 /* SphinxOnionManager+OnionStateExtension.swift */,
 				AABB11221DEF456700AABBBB /* SphinxrsExtensions.swift */,
+				SH01AA11BB22CC33DD44EE00 /* SphinxServerHealth.swift */,
+				SH01AA11BB22CC33DD44EE02 /* SphinxOnionManager+ServerHealth.swift */,
 			);
 			path = Crypter;
 			sourceTree = "<group>";
@@ -6005,6 +6017,9 @@
 				47FCE2C02CD903B6005DB8AF /* LiveKitCallViewController.swift in Sources */,
 				CE4B53FD2AFC389C00708A0C /* SphinxOnionManager.swift in Sources */,
 				AABB11221DEF456700AABBCC /* SphinxrsExtensions.swift in Sources */,
+				SH01AA11BB22CC33DD44EE01 /* SphinxServerHealth.swift in Sources */,
+				SH01AA11BB22CC33DD44EE03 /* SphinxOnionManager+ServerHealth.swift in Sources */,
+				SH01AA11BB22CC33DD44EE05 /* ServerHealthBannerView.swift in Sources */,
 				CE51F350298870BF00ABBACB /* MemberBadgeDetailVM.swift in Sources */,
 				4705D39F2799C339009C0729 /* UITextField.swift in Sources */,
 				470146232A3F93DA00A00DF8 /* NewChatViewController+AttachmentsExtension.swift in Sources */,
@@ -6489,6 +6504,7 @@
 				8A76E71FD2044567BAC32D0D /* HiveFeatureTests.swift in Sources */,
 				5010E69969BC4B008CB1B8DB /* HiveChatMessageTests.swift in Sources */,
 				MQTTQ01TEST00010000000002 /* SphinxOnionManagerMqttQueueTests.swift in Sources */,
+				SH01AA11BB22CC33DD44EE07 /* SphinxServerHealthTests.swift in Sources */,
 				CHATPAGE01TEST0000000002 /* ChatPaginationTests.swift in Sources */,
 				MC001TEST0001000000000002 /* MediaCacheUpdateTests.swift in Sources */,
 				SI001TEST0001000000000002 /* SnapshotIdentityTests.swift in Sources */,

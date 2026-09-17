@@ -427,7 +427,10 @@ extension SphinxOnionManager {
     
     func handleError(error: String?) {
         if let error = error {
-            print("Run return object error: \(error)")
+            let mapped = SphinxServerHealth.parseMixerErrorCode(error)
+            if mapped != .unknown {
+                presentMappedMixerFailure(code: error)
+            }
             
             if error.contains("async pay not found") {
                 for tag in pingsMap.keys {
@@ -547,6 +550,9 @@ extension SphinxOnionManager {
                         cachedMessage.status = TransactionMessage.TransactionMessageStatus.received.rawValue
                     } else if (sentStatus.status == SphinxOnionManager.kFailedStatus) {
                         cachedMessage.status = TransactionMessage.TransactionMessageStatus.failed.rawValue
+                        if let code = sentStatus.code, !code.isEmpty {
+                            self.presentMappedMixerFailure(code: code)
+                        }
                     }
                     
                     //                    if let uuid = cachedMessage.uuid {
@@ -571,10 +577,24 @@ extension SphinxOnionManager {
                         )
                     }
                     
-                    self.onPaymentStatusReceivedFor(tag: tag, status: sentStatus.status ?? SphinxOnionManager.kFailedStatus)
+                    self.onPaymentStatusReceivedFor(
+                        tag: tag,
+                        status: sentStatus.status ?? SphinxOnionManager.kFailedStatus,
+                        code: sentStatus.code
+                    )
                 }
             }
             context.saveContext()
+        }
+    }
+
+    func presentMappedMixerFailure(code: String?) {
+        let message = SphinxServerHealth.userFacingMessage(forCode: code)
+        DispatchQueue.main.async {
+            AlertHelper.showAlert(
+                title: "generic.error.title".localized,
+                message: message
+            )
         }
     }
     
