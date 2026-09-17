@@ -69,6 +69,14 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
     
     var vc: UIViewController! = nil
     var mqtt: CocoaMQTT! = nil
+    /// How long to keep a torn-down `CocoaMQTT` alive after `disconnect()` so
+    /// GCDAsyncSocket/CFStream workers can finish. Injectable so tests do not wait 1s.
+    internal var mqttTeardownDrainInterval: TimeInterval = 1.0
+    /// Identity bag of MQTT clients whose sockets are still draining.
+    /// Membership and removal use `===` only — not `Hashable`.
+    private var drainingMqtt: [CocoaMQTT] = []
+    /// Test hook: number of clients currently held in the drain bag.
+    internal var drainingMqttCount: Int { drainingMqtt.count }
     
     var isConnected : Bool = false{
         didSet{
@@ -758,13 +766,16 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
             completionHandler(true)
         }
         
-        mqtt.didDisconnect = { [weak self] _, _ in
+        mqtt.didDisconnect = { [weak self] disconnectedInstance, _ in
             self?.runOnMainIfNeeded {
                 self?.connectionTimeoutTimer?.invalidate()
                 self?.connectionTimeoutTimer = nil
                 self?.connectionInProgress = false
                 self?.isConnected = false
-                self?.mqtt = nil
+                self?.retainMqttForDrain(disconnectedInstance)
+                if self?.mqtt === disconnectedInstance {
+                    self?.mqtt = nil
+                }
                 self?.backgroundDisconnectCompletion?()
                 self?.backgroundDisconnectCompletion = nil
                 // Guard before any dispatch — if backgrounded, do not schedule reconnection
@@ -1104,10 +1115,13 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
                 self?.hopProcessIncomingMqttMessage(receivedMessage)
             }
             
-            mqtt.didDisconnect = { [weak self] _, _ in
+            mqtt.didDisconnect = { [weak self] disconnectedInstance, _ in
                 self?.runOnMainIfNeeded {
                     self?.isConnected = false
-                    self?.mqtt = nil
+                    self?.retainMqttForDrain(disconnectedInstance)
+                    if self?.mqtt === disconnectedInstance {
+                        self?.mqtt = nil
+                    }
                     self?.backgroundDisconnectCompletion?()
                     self?.backgroundDisconnectCompletion = nil
                     // Guard before any dispatch — if backgrounded, do not schedule reconnection
@@ -1194,13 +1208,49 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
         }
     }
 
-    /// No-op callbacks first, then disconnect, then nil. Do not wait for didDisconnect.
+    /// Holds `instance` on the main queue for `mqttTeardownDrainInterval` after
+    /// `disconnect()` so GCDAsyncSocket/CFStream workers cannot UAF the client.
+    /// Bag mutation is main-confined; overlapping teardown of the same pointer
+    /// keeps the original drain window (no second append / release timer).
+    private func retainMqttForDrain(_ instance: CocoaMQTT) {
+        runOnMainIfNeeded { [weak self] in
+            guard let self else { return }
+            if self.drainingMqtt.contains(where: { $0 === instance }) {
+                return
+            }
+            self.drainingMqtt.append(instance)
+            print("[MQTT] Teardown retain \(ObjectIdentifier(instance)) state: \(instance.connState)")
+            let interval = self.mqttTeardownDrainInterval
+            DispatchQueue.main.asyncAfter(deadline: .now() + interval) { [weak self] in
+                guard let self else { return }
+                self.drainingMqtt.removeAll { $0 === instance }
+                print("[MQTT] Released draining client \(ObjectIdentifier(instance))")
+            }
+        }
+    }
+
+    /// No-op callbacks first, then disconnect, then drain-retain, then nil the
+    /// live slot. Do not wait for didDisconnect — CFStream close work continues
+    /// after that callback, which is why release is time-based.
     func forceTeardownMqtt(_ instance: CocoaMQTT?) {
         guard let instance = instance else { return }
         instance.didReceiveMessage = { _, _, _ in }
         instance.didDisconnect = { _, _ in }
         instance.didConnectAck = { _, _ in }
+        instance.didReceiveTrust = { _, _, completionHandler in
+            completionHandler(true)
+        }
+        // Force teardown races `disconnectMqtt` (e.g. prepareForForeground vs
+        // finishMessagesFetch). After no-opping didDisconnect, still fire the
+        // in-flight background-fetch completion so it is not left hanging.
+        runOnMainIfNeeded { [weak self] in
+            guard let self else { return }
+            let completion = self.backgroundDisconnectCompletion
+            self.backgroundDisconnectCompletion = nil
+            completion?()
+        }
         instance.disconnect()
+        retainMqttForDrain(instance)
         if mqtt === instance {
             mqtt = nil
         }
