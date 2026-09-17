@@ -8,6 +8,7 @@
 //
 
 import XCTest
+import UIKit
 @testable import sphinx
 
 final class ChatListSnapshotIdentityTests: XCTestCase {
@@ -85,6 +86,95 @@ final class ChatListSnapshotIdentityTests: XCTestCase {
         XCTAssertFalse(gate.isApplying)
         XCTAssertFalse(gate.needsApply)
         XCTAssertTrue(gate.beginApplyIfIdle())
+    }
+
+    func testApplyGateFinishApplyIsIdempotentAndDoesNotSwallowQueuedUpdates() {
+        var gate = ChatListSnapshotApplyGate()
+
+        XCTAssertFalse(gate.finishApply())
+        XCTAssertFalse(gate.isApplying)
+        XCTAssertFalse(gate.needsApply)
+
+        XCTAssertTrue(gate.beginApplyIfIdle())
+        XCTAssertFalse(gate.beginApplyIfIdle())
+        XCTAssertTrue(gate.needsApply)
+
+        XCTAssertTrue(gate.finishApply())
+        XCTAssertFalse(gate.isApplying)
+        XCTAssertFalse(gate.needsApply)
+
+        // Spurious second release must not report a pending apply.
+        XCTAssertFalse(gate.finishApply())
+        XCTAssertFalse(gate.isApplying)
+        XCTAssertFalse(gate.needsApply)
+    }
+
+    func testApplySnapshotFailClosedRecoversFromDuplicateIdentifiersAndReleasesGate() {
+        typealias Section = ChatsCollectionViewController.CollectionViewSection
+        typealias Item = ChatsCollectionViewController.DataSourceItem
+        typealias Snapshot = NSDiffableDataSourceSnapshot<Section, Item>
+
+        let duplicateItems = [
+            Item(objectId: "dup"),
+            Item(objectId: "dup")
+        ]
+        XCTAssertEqual(Item.uniqueByObjectId(duplicateItems).map(\.objectId), ["dup"])
+
+        let layout = UICollectionViewFlowLayout()
+        let collectionView = UICollectionView(
+            frame: CGRect(x: 0, y: 0, width: 320, height: 480),
+            collectionViewLayout: layout
+        )
+        collectionView.register(UICollectionViewCell.self, forCellWithReuseIdentifier: "cell")
+
+        let dataSource = UICollectionViewDiffableDataSource<Section, Item>(
+            collectionView: collectionView
+        ) { collectionView, indexPath, _ in
+            collectionView.dequeueReusableCell(withReuseIdentifier: "cell", for: indexPath)
+        }
+
+        let viewController = ChatsCollectionViewController(collectionViewLayout: layout)
+        viewController.dataSource = dataSource
+        viewController.snapshotGeneration = 1
+        XCTAssertTrue(viewController.applyGate.beginApplyIfIdle())
+
+        var capturedEvents: [(reason: String?, fallbackSucceeded: Bool)] = []
+        viewController.onCollectionViewExceptionCaptured = { reason, fallbackSucceeded in
+            capturedEvents.append((reason, fallbackSucceeded))
+        }
+
+        // Snapshot APIs refuse duplicate identifiers; simulate the UIKit
+        // NSInternalInconsistencyException that apply would throw if duplicates
+        // slipped past uniqueByObjectId.
+        viewController.testForcePrimaryApplyExceptionReason =
+            "Fatal: supplied item identifiers are not unique. Duplicate identifiers: {dup}"
+
+        var snapshot = Snapshot()
+        snapshot.appendSections([.all])
+        snapshot.appendItems([Item(objectId: "dup")], toSection: .all)
+
+        let completionExpectation = expectation(description: "fail-closed completion")
+        var completionCount = 0
+
+        viewController.applySnapshotFailClosed(
+            snapshot,
+            on: dataSource,
+            generation: 1
+        ) {
+            completionCount += 1
+            _ = viewController.applyGate.finishApply()
+            completionExpectation.fulfill()
+        }
+
+        wait(for: [completionExpectation], timeout: 2.0)
+
+        XCTAssertEqual(completionCount, 1, "fail-closed completion must run once (no deadlock / no double-fire)")
+        XCTAssertFalse(viewController.applyGate.isApplying, "apply gate must be released")
+        XCTAssertFalse(capturedEvents.isEmpty, "captureCollectionViewException must be invoked")
+        XCTAssertEqual(
+            capturedEvents.first?.reason,
+            "Fatal: supplied item identifiers are not unique. Duplicate identifiers: {dup}"
+        )
     }
 
     private func hashValue(of item: DataSourceItem) -> Int {

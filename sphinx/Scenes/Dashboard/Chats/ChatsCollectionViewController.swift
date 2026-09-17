@@ -11,13 +11,18 @@ class ChatsCollectionViewController: UICollectionViewController {
     
     private weak var chatsListDelegate: DashboardChatsListDelegate?
 
-    private var dataSource: DataSource!
+    // Internal so snapshot fail-closed recovery can be exercised from tests.
+    var dataSource: DataSource!
     
     private var owner: UserContact!
     
     private var updateWorkItem: DispatchWorkItem?
-    private var applyGate = ChatListSnapshotApplyGate()
-    private var snapshotGeneration = 0
+    var applyGate = ChatListSnapshotApplyGate()
+    var snapshotGeneration = 0
+    var onCollectionViewExceptionCaptured: ((String?, Bool) -> Void)?
+    /// Test-only: when set, the primary apply path raises this ObjC exception
+    /// instead of calling `apply`, simulating a UIKit duplicate-identifier failure.
+    var testForcePrimaryApplyExceptionReason: String?
     
     private let itemContentInsets = NSDirectionalEdgeInsets(
         top: 0,
@@ -387,7 +392,7 @@ extension ChatsCollectionViewController {
         return snapshot
     }
 
-    private func applySnapshotFailClosed(
+    func applySnapshotFailClosed(
         _ snapshot: DataSourceSnapshot,
         on applyingDataSource: DataSource,
         generation: Int,
@@ -399,17 +404,24 @@ extension ChatsCollectionViewController {
             return
         }
 
+        // Always hop a run-loop turn. `apply(animatingDifferences: false)` may
+        // invoke its completion synchronously on iOS 15+, and a same-stack
+        // `finishApply` → `apply` re-entry is not supported by UIKit.
         let finishOnMain = {
-            if Thread.isMainThread {
-                completion()
-            } else {
-                DispatchQueue.main.async(execute: completion)
-            }
+            DispatchQueue.main.async { completion() }
         }
 
+        let forcedPrimaryExceptionReason = testForcePrimaryApplyExceptionReason
         var exceptionReason: NSString?
         let succeeded = NSExceptionCatcher.tryExecute({
-            applyingDataSource.applySnapshotUsingReloadData(snapshot, completion: finishOnMain)
+            if let reason = forcedPrimaryExceptionReason {
+                NSException(
+                    name: .internalInconsistencyException,
+                    reason: reason,
+                    userInfo: nil
+                ).raise()
+            }
+            applyingDataSource.apply(snapshot, animatingDifferences: false, completion: finishOnMain)
         }, exceptionReason: &exceptionReason)
 
         if succeeded {
@@ -456,6 +468,8 @@ extension ChatsCollectionViewController {
         reason: String?,
         fallbackSucceeded: Bool
     ) {
+        onCollectionViewExceptionCaptured?(reason, fallbackSucceeded)
+
         let error = NSError(
             domain: "ChatsCollectionView",
             code: 1,
@@ -502,6 +516,7 @@ struct ChatListSnapshotApplyGate {
 
     /// Marks the in-flight apply finished. Returns `true` if another apply is pending.
     mutating func finishApply() -> Bool {
+        guard isApplying else { return false }  // prevent double-release from swallowing queued updates
         isApplying = false
         let shouldReapply = needsApply
         needsApply = false
