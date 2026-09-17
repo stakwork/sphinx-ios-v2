@@ -179,7 +179,6 @@ public extension UIColor {
             let newColor = UIColor.random()
             if let hexString = newColor.toHexString() {
                 UserDefaults.standard.set(hexString, forKey: key)
-                UserDefaults.standard.synchronize()
                 ColorsManager.sharedInstance.saveColorFor(colorHex: hexString, key: key)
             }
             return newColor
@@ -189,6 +188,5 @@ public extension UIColor {
     static func removeColorFor(key: String) {
         ColorsManager.sharedInstance.removeColorFor(key: key)
         UserDefaults.standard.removeObject(forKey: key)
-        UserDefaults.standard.synchronize()
     }
 }
