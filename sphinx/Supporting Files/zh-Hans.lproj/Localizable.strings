@@ -10,6 +10,12 @@
 "generic.success.title" = "成功";
 "generic.error.title" = "错误";
 "generic.error.message" = "出现错误。请稍后再试。";
+"server.health.unknown" = "节点状态未知";
+"server.health.degraded" = "节点已降级";
+"mixer.error.cln-unavailable" = "Lightning 节点不可用";
+"mixer.error.cln-timeout" = "请求超时";
+"mixer.error.insufficient-balance" = "余额不足";
+"mixer.error.unknown" = "出现错误。请稍后再试。";
 "generic.message.error" = "消息无法发送。请稍后再试。";
 "generic.contact-support" = "请联系支持团队 support@stakwork.com";
 "confirm" = "确认";

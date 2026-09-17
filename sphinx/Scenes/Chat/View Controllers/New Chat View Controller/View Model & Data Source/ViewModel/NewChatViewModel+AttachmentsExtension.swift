@@ -79,7 +79,10 @@ extension NewChatViewModel: AttachmentsManagerDelegate {
                 chat.managedObjectContext?.saveContext()
             }
 
-            AlertHelper.showAlert(title: "generic.error.title".localized, message: errorMessage)
+            AlertHelper.showAlert(
+                title: "generic.error.title".localized,
+                message: SphinxServerHealth.userFacingMessage(forRawError: errorMessage)
+            )
         }
     }
     

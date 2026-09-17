@@ -10,6 +10,12 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 "generic.success.title" = "成功";
 "generic.error.title" = "錯誤";
 "generic.error.message" = "出現錯誤。請稍後再試。";
+"server.health.unknown" = "節點狀態未知";
+"server.health.degraded" = "節點已降級";
+"mixer.error.cln-unavailable" = "Lightning 節點無法使用";
+"mixer.error.cln-timeout" = "請求逾時";
+"mixer.error.insufficient-balance" = "餘額不足";
+"mixer.error.unknown" = "出現錯誤。請稍後再試。";
 "generic.message.error" = "無法發送消息。請稍後再試";
 "generic.contact-support" = "請聯繫支持 support@stakwork.com";
 "boost.error.title" = "Boost error";

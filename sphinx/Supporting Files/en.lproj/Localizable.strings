@@ -10,6 +10,12 @@
 "generic.success.title" = "Success";
 "generic.error.title" = "Error";
 "generic.error.message" = "There was an error. Please try again later.";
+"server.health.unknown" = "Node status unknown";
+"server.health.degraded" = "Node degraded";
+"mixer.error.cln-unavailable" = "Lightning node unavailable";
+"mixer.error.cln-timeout" = "Request timed out";
+"mixer.error.insufficient-balance" = "Insufficient balance";
+"mixer.error.unknown" = "There was an error. Please try again later.";
 "generic.message.error" = "The message could not be sent. Please try again later";
 "generic.contact-support" = "Please contact support at support@stakwork.com";
 "boost.error.title" = "Boost error";

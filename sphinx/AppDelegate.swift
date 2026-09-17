@@ -534,6 +534,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         if let window = window {
             window.rootViewController = rootViewController
             window.makeKeyAndVisible()
+            Task { @MainActor in
+                if isUserLogged {
+                    ServerHealthBannerPresenter.shared.attach(to: window)
+                } else {
+                    ServerHealthBannerPresenter.shared.hide()
+                }
+            }
         }
 
         if isUserLogged {
