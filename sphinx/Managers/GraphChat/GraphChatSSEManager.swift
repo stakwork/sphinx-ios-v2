@@ -29,10 +29,12 @@ class GraphChatSSEManager: NSObject, EventHandler, @unchecked Sendable {
     private var eventSource: EventSource?
 
     // MARK: - Org Stream state (URLSession-based)
-    private var orgDataTask: URLSessionDataTask?
+    // Internal so tests can assert stopOrgStream() fully tears these down.
+    var orgDataTask: URLSessionDataTask?
+    var orgSession: URLSession?
+    var onConversationId: ((String) -> Void)?
     private var orgSSEBuffer = ""
     private var orgConversationIdFired = false
-    private var onConversationId: ((String) -> Void)?
 
     func startStream(
         messages: [[String: String]],
@@ -116,14 +118,16 @@ class GraphChatSSEManager: NSObject, EventHandler, @unchecked Sendable {
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.httpBody = bodyData
 
-        let session = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
-        orgDataTask = session.dataTask(with: request)
+        orgSession = URLSession(configuration: .default, delegate: self, delegateQueue: .main)
+        orgDataTask = orgSession?.dataTask(with: request)
         orgDataTask?.resume()
     }
 
     func stopOrgStream() {
         orgDataTask?.cancel()
+        orgSession?.invalidateAndCancel()
         orgDataTask = nil
+        orgSession = nil
         onConversationId = nil
     }
 

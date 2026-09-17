@@ -846,6 +846,8 @@
 		CHATPAGE01TEST0000000002 /* ChatPaginationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHATPAGE01TEST0000000001 /* ChatPaginationTests.swift */; };
 		CL001TEST0001000000000002 /* ChatListSnapshotIdentityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CL001TEST0001000000000001 /* ChatListSnapshotIdentityTests.swift */; };
 		CP01RLTEST00100000000002 /* CachingPlayerItemResourceLoaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CP01RLTEST00100000000001 /* CachingPlayerItemResourceLoaderTests.swift */; };
+		GC01SSETST00100000000002 /* GraphChatSSEManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = GC01SSETST00100000000001 /* GraphChatSSEManagerTests.swift */; };
+		DS01DLTEST00100000000002 /* DownloadServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DS01DLTEST00100000000001 /* DownloadServiceTests.swift */; };
 		CQ1A2B3C4D5E6F7A8B9C0D1E /* ClarifyingQuestionMessageCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = CQ2B3C4D5E6F7A8B9C0D1E2F /* ClarifyingQuestionMessageCell.swift */; };
 		D2789CFCCA3E453295F15A2E /* HiveFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44EC6EC0EE1C4D6B8B5FADB2 /* HiveFeature.swift */; };
 		D30E5DF5BD6E4A209227EEB5 /* NewChatViewController+AgentExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 009A40E65F444529AAD5F256 /* NewChatViewController+AgentExtension.swift */; };
@@ -2253,6 +2255,8 @@
 		CHATPAGE01TEST0000000001 /* ChatPaginationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatPaginationTests.swift; sourceTree = "<group>"; };
 		CL001TEST0001000000000001 /* ChatListSnapshotIdentityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatListSnapshotIdentityTests.swift; sourceTree = "<group>"; };
 		CP01RLTEST00100000000001 /* CachingPlayerItemResourceLoaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CachingPlayerItemResourceLoaderTests.swift; sourceTree = "<group>"; };
+		GC01SSETST00100000000001 /* GraphChatSSEManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GraphChatSSEManagerTests.swift; sourceTree = "<group>"; };
+		DS01DLTEST00100000000001 /* DownloadServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadServiceTests.swift; sourceTree = "<group>"; };
 		CQ2B3C4D5E6F7A8B9C0D1E2F /* ClarifyingQuestionMessageCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClarifyingQuestionMessageCell.swift; sourceTree = "<group>"; };
 		D4E5F6A7B8C9D0E1F2A3B4C5 /* TaskProgressBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskProgressBarView.swift; sourceTree = "<group>"; };
 		D5B2D56F945C46E689DAFEF9 /* AIAgentManager+HiveTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AIAgentManager+HiveTools.swift"; sourceTree = "<group>"; };
@@ -3829,6 +3833,8 @@
 				SI001TEST0001000000000001 /* SnapshotIdentityTests.swift */,
 				CL001TEST0001000000000001 /* ChatListSnapshotIdentityTests.swift */,
 				CP01RLTEST00100000000001 /* CachingPlayerItemResourceLoaderTests.swift */,
+				GC01SSETST00100000000001 /* GraphChatSSEManagerTests.swift */,
+				DS01DLTEST00100000000001 /* DownloadServiceTests.swift */,
 				FC01AA11BB22CC33DD44EE00 /* FeatureChatMessageCellPublishPromptTests.swift */,
 				FC01AA11BB22CC33DD44EE03 /* FeatureChatMessageCellPublishScriptTests.swift */,
 				FC01AA11BB22CC33DD44EE05 /* FeatureChatMessageCellPublishWorkflowTests.swift */,
@@ -6494,6 +6500,8 @@
 				SI001TEST0001000000000002 /* SnapshotIdentityTests.swift in Sources */,
 				CL001TEST0001000000000002 /* ChatListSnapshotIdentityTests.swift in Sources */,
 				CP01RLTEST00100000000002 /* CachingPlayerItemResourceLoaderTests.swift in Sources */,
+				GC01SSETST00100000000002 /* GraphChatSSEManagerTests.swift in Sources */,
+				DS01DLTEST00100000000002 /* DownloadServiceTests.swift in Sources */,
 				FC01AA11BB22CC33DD44EE01 /* FeatureChatMessageCellPublishPromptTests.swift in Sources */,
 				FC01AA11BB22CC33DD44EE02 /* FeatureChatMessageCellPublishScriptTests.swift in Sources */,
 				FC01AA11BB22CC33DD44EE04 /* FeatureChatMessageCellPublishWorkflowTests.swift in Sources */,
