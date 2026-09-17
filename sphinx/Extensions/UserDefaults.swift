@@ -73,6 +73,7 @@ extension UserDefaults {
         public static let lssNonce = DefaultKey<String>("lssNonce")
         public static let signerKeys = DefaultKey<String>("signerKeys")
         public static let onionState = DefaultKey<String>("onionState")
+        public static let chatColorKeys = DefaultKey<[String]>("chatColorKeys")
         public static let sequence = DefaultKey<String>("sequence")
         public static let deletedTribesPubKeys = DefaultKey<[String]>("deletedTribesPubKeys")
         public static let maxMessageIndex = DefaultKey<Int>("maxMessageIndex")
@@ -90,12 +91,8 @@ extension UserDefaults {
     }
     
     class func resetUserDefaults() {
-        let defaults = UserDefaults.standard
-        let dictionary = defaults.dictionaryRepresentation()
-        dictionary.keys.forEach { key in
-            defaults.removeObject(forKey: key)
-        }
-        defaults.synchronize()
+        guard let bundleIdentifier = Bundle.main.bundleIdentifier else { return }
+        UserDefaults.standard.removePersistentDomain(forName: bundleIdentifier)
     }
     
     func object<T: Codable>(_ type: T.Type, with key: String, usingDecoder decoder: JSONDecoder = JSONDecoder()) -> T? {
@@ -131,7 +128,6 @@ public class DefaultKey<S>: @unchecked Sendable {
     func set<T>(_ value: T?) {
         if let value = value {
             UserDefaults.standard.setValue(value, forKey: name)
-            UserDefaults.standard.synchronize()
         } else {
             removeValue()
         }
@@ -140,7 +136,6 @@ public class DefaultKey<S>: @unchecked Sendable {
     func setObject<T: Codable>(_ object: T?) {
         if let object = object {
             UserDefaults.standard.set(object: object, forKey: name)
-            UserDefaults.standard.synchronize()
         } else {
             removeValue()
         }
@@ -148,6 +143,5 @@ public class DefaultKey<S>: @unchecked Sendable {
     
     public func removeValue() {
         UserDefaults.standard.removeObject(forKey: name)
-        UserDefaults.standard.synchronize()
     }
 }
