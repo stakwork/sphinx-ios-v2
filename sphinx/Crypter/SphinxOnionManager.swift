@@ -69,6 +69,24 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
     
     var vc: UIViewController! = nil
     var mqtt: CocoaMQTT! = nil
+    /// True while a CocoaMQTT instance is disconnecting and still retained so
+    /// in-flight CFStream/GCD callbacks cannot hit a use-after-free.
+    var mqttTeardownInProgress: Bool = false
+    /// Queued `connectToBroker` request. At most one client exists; a new one
+    /// is constructed only after the dying instance finishes draining.
+    var pendingBrokerConnect: (seed: String, xpub: String)?
+    /// Hang-timeout for MQTT teardown. Interval = `kConnectionTimeoutInterval`.
+    var mqttTeardownTimeoutTimer: Timer?
+    /// Overridable hang-timeout interval so unit tests can exercise the path
+    /// without waiting the full production `kConnectionTimeoutInterval`.
+    var mqttTeardownTimeoutInterval: TimeInterval = SphinxOnionManager.kConnectionTimeoutInterval
+    /// Test seam: hang-timeout coverage needs `didDisconnect` to never fire.
+    var invokeMqttDisconnectOnTeardown: Bool = true
+    /// Re-entry guard so `didDisconnect` and the hang timer cannot both drain.
+    private var mqttTeardownCompletionScheduled: Bool = false
+    /// Callbacks (`didConnectAck` / `didReceiveTrust` / `didDisconnect`) to
+    /// install on the replacement client after a queued reconnect.
+    var pendingMqttHandlerInstall: (() -> Void)?
     
     var isConnected : Bool = false{
         didSet{
@@ -272,7 +290,7 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
     // MARK: Background Fetch
     private let backgroundFetchQueue = DispatchQueue(label: "com.sphinx.backgroundFetch")
     private let fetchLock = NSLock()
-    private(set) var backgroundFetchInProgress = false
+    var backgroundFetchInProgress = false
     var backgroundFetchCompletionHandler: ((UIBackgroundFetchResult) -> Void)?
     var activeFetchBackgroundTaskID: UIBackgroundTaskIdentifier = .invalid
     private var bgFetchTimeoutTimer: Timer?
@@ -392,6 +410,17 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
         seed: String,
         xpub: String
     ) -> Bool {
+        if mqtt != nil {
+            pendingBrokerConnect = (seed: seed, xpub: xpub)
+            print("[MQTT] pending connect queued")
+            if !mqttTeardownInProgress {
+                forceTeardownMqtt(mqtt)
+            }
+            // Returning true keeps connectionInProgress set so the reconnection
+            // timer does not race the queued connect.
+            return true
+        }
+
         do {
             let now = getTimeWithEntropy()
 
@@ -400,11 +429,6 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
                 time: now,
                 network: network
             )
-
-            if let existing = self.mqtt {
-                print("[MQTT] Force-closing existing connection (state: \(existing.connState)) before opening new one")
-                forceTeardownMqtt(existing)
-            }
 
             mqtt = CocoaMQTT(
                 clientID: xpub,
@@ -454,7 +478,7 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
                 print("[MQTT] Disconnecting mid-handshake connection (state: .connecting)")
             }
             backgroundDisconnectCompletion = callback.map { cb in { cb(0.0) } }
-            mqtt.disconnect()
+            forceTeardownMqtt(mqtt)
         } else {
             callback?(0.0)
         }
@@ -550,14 +574,14 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
         }
     }
 
-    private func expireBackgroundFetch() {
+    func expireBackgroundFetch() {
         // End the task and fire the completion handler synchronously. The background
         // task expiration handler must return quickly — waiting for an async MQTT
         // disconnect callback that may never arrive (flaky network) leaves
         // endBackgroundTask uncalled and the watchdog kills the process (0x8BADF00D).
         print("[BGFetch] expire triggered — ending task immediately")
         endBackgroundFetch(result: .noData)
-        disconnectMqtt()
+        forceTeardownMqtt(mqtt)
     }
     
     func prepareForForeground(disconnectCallback: @escaping (() -> ())) {
@@ -571,8 +595,14 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
         connectionInProgress = false
         isConnected = false
         if let existing = self.mqtt {
-            forceTeardownMqtt(existing) // fire-and-forget — do not wait for didDisconnect
-            disconnectCallback()
+            // Stash so finishMqttTeardown invokes this after drain, not on the
+            // same turn as force-teardown (which would overlap reconnect).
+            let previous = backgroundDisconnectCompletion
+            backgroundDisconnectCompletion = {
+                previous?()
+                disconnectCallback()
+            }
+            forceTeardownMqtt(existing)
         } else {
             disconnectCallback()
         }
@@ -585,7 +615,7 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
         hideRestoreViewCallback: ((Bool)->())? = nil,
         errorCallback: (()->())? = nil
     ) {
-        if let mqtt = self.mqtt {
+        if let mqtt = self.mqtt, !mqttTeardownInProgress {
             if mqtt.connState == .connecting {
                 // Deferred-pending: connection handshake still in flight.
                 // Leave isV2InitialSetup untouched — the in-flight connection's
@@ -684,7 +714,7 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
             self.contactRestoreCallback?(2)
         }
 
-        if let mqtt = self.mqtt {
+        if let mqtt = self.mqtt, !mqttTeardownInProgress {
             if mqtt.connState == .connecting {
                 // Deferred-pending: handshake still in flight.
                 // Leave isV2InitialSetup untouched so the eventual didConnectAck
@@ -735,50 +765,74 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
             return
         }
 
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-            self.connectionTimeoutTimer?.invalidate()
-            self.connectionTimeoutTimer = Timer.scheduledTimer(withTimeInterval: SphinxOnionManager.kConnectionTimeoutInterval, repeats: false) { [weak self] _ in
-                guard let self = self, self.connectionInProgress else { return }
-                print("[MQTT] Connection timed out after 30s — force-closing and retrying")
-                self.connectionInProgress = false
-                self.forceTeardownMqtt(self.mqtt)
-                let appIsActive = (UIApplication.shared.delegate as? AppDelegate)?.isActive ?? false
-                if appIsActive {
-                    self.startReconnectionTimer()
-                }
-            }
-        }
-        
-        mqtt.didConnectAck = { [weak self] _, _ in
-            self?.hopHandleDidConnectAck(pubkey: myPubkey, hideRestoreViewCallback: hideRestoreViewCallback)
-        }
-        
-        mqtt.didReceiveTrust = { _, _, completionHandler in
-            completionHandler(true)
-        }
-        
-        mqtt.didDisconnect = { [weak self] _, _ in
-            self?.runOnMainIfNeeded {
-                self?.connectionTimeoutTimer?.invalidate()
-                self?.connectionTimeoutTimer = nil
-                self?.connectionInProgress = false
-                self?.isConnected = false
-                self?.mqtt = nil
-                self?.backgroundDisconnectCompletion?()
-                self?.backgroundDisconnectCompletion = nil
-                // Guard before any dispatch — if backgrounded, do not schedule reconnection
-                let appIsActive = (UIApplication.shared.delegate as? AppDelegate)?.isActive ?? false
-                if !appIsActive {
-                    if self?.backgroundFetchInProgress == true {
-                        print("[BGFetch] MQTT dropped mid-fetch — ending background task")
-                        self?.endBackgroundFetch(result: .noData)
+        if !mqttTeardownInProgress && pendingBrokerConnect == nil {
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                self.connectionTimeoutTimer?.invalidate()
+                self.connectionTimeoutTimer = Timer.scheduledTimer(withTimeInterval: SphinxOnionManager.kConnectionTimeoutInterval, repeats: false) { [weak self] _ in
+                    guard let self = self, self.connectionInProgress else { return }
+                    print("[MQTT] Connection timed out after 30s — force-closing and retrying")
+                    self.connectionInProgress = false
+                    self.forceTeardownMqtt(self.mqtt)
+                    let appIsActive = (UIApplication.shared.delegate as? AppDelegate)?.isActive ?? false
+                    if appIsActive {
+                        self.startReconnectionTimer()
                     }
-                    return
                 }
-                self?.stopWatchdog()
-                self?.startReconnectionTimer()
             }
+        }
+        
+        let installMqttHandlers: () -> Void = { [weak self] in
+            guard let self = self, self.mqtt != nil else { return }
+
+            self.mqtt.didConnectAck = { [weak self] _, _ in
+                self?.hopHandleDidConnectAck(pubkey: myPubkey, hideRestoreViewCallback: hideRestoreViewCallback)
+            }
+
+            self.mqtt.didReceiveTrust = { _, _, completionHandler in
+                completionHandler(true)
+            }
+
+            self.mqtt.didDisconnect = { [weak self] _, _ in
+                self?.runOnMainIfNeeded {
+                    self?.connectionTimeoutTimer?.invalidate()
+                    self?.connectionTimeoutTimer = nil
+                    self?.connectionInProgress = false
+                    self?.isConnected = false
+                    if self?.mqttTeardownInProgress == true {
+                        // Teardown owns nilling mqtt. Reconnection after a clean drop
+                        // only runs when !mqttTeardownInProgress and the app is active.
+                        if self?.backgroundFetchInProgress == true {
+                            let appIsActive = (UIApplication.shared.delegate as? AppDelegate)?.isActive ?? false
+                            if !appIsActive {
+                                print("[BGFetch] MQTT dropped mid-fetch — ending background task")
+                                self?.endBackgroundFetch(result: .noData)
+                            }
+                        }
+                        return
+                    }
+                    self?.mqtt = nil
+                    self?.backgroundDisconnectCompletion?()
+                    self?.backgroundDisconnectCompletion = nil
+                    // Guard before any dispatch — if backgrounded, do not schedule reconnection
+                    let appIsActive = (UIApplication.shared.delegate as? AppDelegate)?.isActive ?? false
+                    if !appIsActive {
+                        if self?.backgroundFetchInProgress == true {
+                            print("[BGFetch] MQTT dropped mid-fetch — ending background task")
+                            self?.endBackgroundFetch(result: .noData)
+                        }
+                        return
+                    }
+                    self?.stopWatchdog()
+                    self?.startReconnectionTimer()
+                }
+            }
+        }
+
+        if mqttTeardownInProgress || pendingBrokerConnect != nil {
+            pendingMqttHandlerInstall = installMqttHandlers
+        } else {
+            installMqttHandlers()
         }
     }
     
@@ -1100,56 +1154,69 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
         let idx = 0
         
         if success {
-            mqtt.didReceiveMessage = { [weak self] _, receivedMessage, _ in
-                self?.hopProcessIncomingMqttMessage(receivedMessage)
-            }
-            
-            mqtt.didDisconnect = { [weak self] _, _ in
-                self?.runOnMainIfNeeded {
-                    self?.isConnected = false
-                    self?.mqtt = nil
-                    self?.backgroundDisconnectCompletion?()
-                    self?.backgroundDisconnectCompletion = nil
-                    // Guard before any dispatch — if backgrounded, do not schedule reconnection
-                    let appIsActive = (UIApplication.shared.delegate as? AppDelegate)?.isActive ?? false
-                    guard appIsActive else { return }
-                    self?.stopWatchdog()
-                    self?.startReconnectionTimer()
+            let installMqttHandlers: () -> Void = { [weak self] in
+                guard let self = self, self.mqtt != nil else { return }
+
+                self.mqtt.didReceiveMessage = { [weak self] _, receivedMessage, _ in
+                    self?.hopProcessIncomingMqttMessage(receivedMessage)
                 }
-            }
-            
-            mqtt.didReceiveTrust = { _, _, completionHandler in
-                completionHandler(true)
-            }
-            
-            // Route through the shared handler so isV2InitialSetup is consumed
-            // even when createMyAccount's connection completes first (before
-            // DashboardRootViewController.viewDidLoad() calls connectToServer).
-            mqtt.didConnectAck = { [weak self] _, _ in
-                guard let self = self else { return }
-                self.runOnMainIfNeeded {
-                    self.connectionInProgress = false
-                    self.subscribeAndPublishMyTopics(
-                        pubkey: pubkey,
-                        idx: idx,
-                        inviteCode: inviteCode
-                    )
-                    // Atomically consume isV2InitialSetup now that the connection is live.
-                    let shouldFire: Bool
-                    self.connectionLock.lock()
-                    if self.isV2InitialSetup && !self.isV2Restore {
-                        self.isV2InitialSetup = false
-                        shouldFire = true
-                    } else {
-                        shouldFire = false
-                    }
-                    self.connectionLock.unlock()
-                    if shouldFire {
-                        print("[MQTT] createMyAccount didConnectAck — firing doInitialInviteSetup()")
-                        self.doInitialInviteSetup()
-                        self.onInitialInviteSetupFired?()
+
+                self.mqtt.didDisconnect = { [weak self] _, _ in
+                    self?.runOnMainIfNeeded {
+                        if self?.mqttTeardownInProgress == true {
+                            return
+                        }
+                        self?.isConnected = false
+                        self?.mqtt = nil
+                        self?.backgroundDisconnectCompletion?()
+                        self?.backgroundDisconnectCompletion = nil
+                        // Guard before any dispatch — if backgrounded, do not schedule reconnection
+                        let appIsActive = (UIApplication.shared.delegate as? AppDelegate)?.isActive ?? false
+                        guard appIsActive else { return }
+                        self?.stopWatchdog()
+                        self?.startReconnectionTimer()
                     }
                 }
+
+                self.mqtt.didReceiveTrust = { _, _, completionHandler in
+                    completionHandler(true)
+                }
+
+                // Route through the shared handler so isV2InitialSetup is consumed
+                // even when createMyAccount's connection completes first (before
+                // DashboardRootViewController.viewDidLoad() calls connectToServer).
+                self.mqtt.didConnectAck = { [weak self] _, _ in
+                    guard let self = self else { return }
+                    self.runOnMainIfNeeded {
+                        self.connectionInProgress = false
+                        self.subscribeAndPublishMyTopics(
+                            pubkey: pubkey,
+                            idx: idx,
+                            inviteCode: inviteCode
+                        )
+                        // Atomically consume isV2InitialSetup now that the connection is live.
+                        let shouldFire: Bool
+                        self.connectionLock.lock()
+                        if self.isV2InitialSetup && !self.isV2Restore {
+                            self.isV2InitialSetup = false
+                            shouldFire = true
+                        } else {
+                            shouldFire = false
+                        }
+                        self.connectionLock.unlock()
+                        if shouldFire {
+                            print("[MQTT] createMyAccount didConnectAck — firing doInitialInviteSetup()")
+                            self.doInitialInviteSetup()
+                            self.onInitialInviteSetupFired?()
+                        }
+                    }
+                }
+            }
+
+            if mqttTeardownInProgress || pendingBrokerConnect != nil {
+                pendingMqttHandlerInstall = installMqttHandlers
+            } else {
+                installMqttHandlers()
             }
         }
         return success
@@ -1184,6 +1251,44 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
         )
     }
 
+    /// Attaches a disconnected CocoaMQTT so teardown tests never hit the network.
+    func attachDetachedMqttForTest() {
+        let client = CocoaMQTT(clientID: "test-teardown", host: "127.0.0.1", port: 1883)
+        client.backgroundOnSocket = false
+        mqtt = client
+    }
+
+    func fireAssignedMqttDidDisconnectForTest() {
+        mqtt?.didDisconnect?(mqtt, nil)
+    }
+
+    func fireAssignedMqttDidReceiveMessageForTest() {
+        mqtt?.didReceiveMessage?(
+            mqtt,
+            CocoaMQTTMessage(topic: "test/topic", payload: [UInt8]("x".utf8)),
+            0
+        )
+    }
+
+    func invokeMqttDidReceiveTrustForTest(_ completion: @escaping (Bool) -> Void) {
+        guard let mqtt = mqtt, let handler = mqtt.didReceiveTrust else {
+            completion(true)
+            return
+        }
+        var trust: SecTrust?
+        let status = SecTrustCreateWithCertificates(
+            [] as CFArray,
+            SecPolicyCreateBasicX509(),
+            &trust
+        )
+        if status == errSecSuccess, let trust {
+            handler(mqtt, trust, completion)
+            return
+        }
+        // Production handlers ignore the trust object; bitcast only to satisfy the signature.
+        handler(mqtt, unsafeBitCast(mqtt, to: SecTrust.self), completion)
+    }
+
     /// Connect-ack path shared by `connectToServer`.
     func hopHandleDidConnectAck(
         pubkey: String,
@@ -1194,15 +1299,97 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
         }
     }
 
-    /// No-op callbacks first, then disconnect, then nil. Do not wait for didDisconnect.
+    /// No-op callbacks, disconnect, and retain the client until `didDisconnect`
+    /// plus one main run-loop turn (or hang-timeout). Never nil `mqtt` here.
     func forceTeardownMqtt(_ instance: CocoaMQTT?) {
+        runOnMainIfNeeded { [weak self] in
+            self?.performForceTeardownMqtt(instance)
+        }
+    }
+
+    private func performForceTeardownMqtt(_ instance: CocoaMQTT?) {
         guard let instance = instance else { return }
+        if mqttTeardownInProgress && mqtt === instance {
+            print("[MQTT] teardown started — no-op (already in progress)")
+            return
+        }
+        print("[MQTT] teardown started")
+
         instance.didReceiveMessage = { _, _, _ in }
-        instance.didDisconnect = { _, _ in }
         instance.didConnectAck = { _, _ in }
-        instance.disconnect()
-        if mqtt === instance {
-            mqtt = nil
+        instance.didReceiveTrust = { _, _, completionHandler in
+            completionHandler(false)
+        }
+        // Capture [weak self] only — never strongly capture the CocoaMQTT client
+        // (that would pin it forever if the callback never fires).
+        instance.didDisconnect = { [weak self] _, _ in
+            self?.runOnMainIfNeeded {
+                print("[MQTT] didDisconnect drain")
+                self?.finishMqttTeardown(self?.mqtt)
+            }
+        }
+
+        mqttTeardownInProgress = true
+        mqttTeardownCompletionScheduled = false
+
+        mqttTeardownTimeoutTimer?.invalidate()
+        mqttTeardownTimeoutTimer = Timer.scheduledTimer(
+            withTimeInterval: mqttTeardownTimeoutInterval,
+            repeats: false
+        ) { [weak self] _ in
+            print("[MQTT] hang-timeout drain")
+            self?.finishMqttTeardown(self?.mqtt)
+        }
+
+        if invokeMqttDisconnectOnTeardown {
+            instance.disconnect()
+        }
+    }
+
+    /// Main-only. Releases the dying client after one extra run-loop turn, then
+    /// flushes any queued broker connect and stashed disconnect completion.
+    func finishMqttTeardown(_ instance: CocoaMQTT?) {
+        runOnMainIfNeeded { [weak self] in
+            self?.performFinishMqttTeardown(instance)
+        }
+    }
+
+    private func performFinishMqttTeardown(_ instance: CocoaMQTT?) {
+        mqttTeardownTimeoutTimer?.invalidate()
+        mqttTeardownTimeoutTimer = nil
+
+        guard mqttTeardownInProgress else { return }
+        guard !mqttTeardownCompletionScheduled else { return }
+        mqttTeardownCompletionScheduled = true
+
+        let dying = instance
+        let shouldRelease = (dying != nil && mqtt === dying)
+
+        let complete: () -> Void = { [weak self] in
+            guard let self = self else { return }
+            if shouldRelease, let dying = dying, self.mqtt === dying {
+                self.mqtt = nil
+            }
+            self.mqttTeardownInProgress = false
+            self.mqttTeardownCompletionScheduled = false
+
+            if let pending = self.pendingBrokerConnect {
+                self.pendingBrokerConnect = nil
+                print("[MQTT] pending connect flushed")
+                _ = self.connectToBroker(seed: pending.seed, xpub: pending.xpub)
+                self.pendingMqttHandlerInstall?()
+                self.pendingMqttHandlerInstall = nil
+            }
+
+            let completion = self.backgroundDisconnectCompletion
+            self.backgroundDisconnectCompletion = nil
+            completion?()
+        }
+
+        if shouldRelease {
+            DispatchQueue.main.async(execute: complete)
+        } else {
+            complete()
         }
     }
 

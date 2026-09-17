@@ -13,10 +13,15 @@ import CoreData
 
 final class SphinxOnionManagerMqttQueueTests: XCTestCase {
 
+    private static let testSeed = "dea65b969cd1b0926889f35699586ff7e19469c64e7a944d0c6b68342158a1a8"
+    private static let testXpub = "tpubDAGRb7j9yEF51RrPBjxYk6inEyxzX9oZEqRfWGGtnhEaux2xsma2eQFNBYeRgEHLC5pc4Cif4KPJXXRqS1aTErvhvTiZGaGggq9UoTZdEsH"
+
     override func tearDown() {
         let mgr = SphinxOnionManager.sharedInstance
         mgr.stopWatchdog()
         mgr.endReconnectionTimer()
+        mgr.mqttTeardownTimeoutTimer?.invalidate()
+        mgr.mqttTeardownTimeoutTimer = nil
         mgr.onProcessMqttMessages = nil
         mgr.onHandleDidConnectAck = nil
         mgr.onInitialInviteSetupFired = nil
@@ -243,5 +248,111 @@ final class SphinxOnionManagerMqttQueueTests: XCTestCase {
         mgr.mqtt = nil
         mgr.forceTeardownMqtt(nil)
         XCTAssertNil(mgr.mqtt)
+    }
+
+    func test_forceTeardownMqtt_retainsClientAndNoOpsCallbacks() {
+        let mgr = makeFreshManager()
+        mgr.attachDetachedMqttForTest()
+        let original = mgr.mqtt
+        XCTAssertNotNil(original)
+
+        mgr.forceTeardownMqtt(mgr.mqtt)
+
+        XCTAssertTrue(mgr.mqttTeardownInProgress)
+        XCTAssertNotNil(mgr.mqtt)
+        XCTAssertTrue(mgr.mqtt === original)
+
+        var trustAccepted: Bool?
+        mgr.invokeMqttDidReceiveTrustForTest { trustAccepted = $0 }
+        XCTAssertEqual(trustAccepted, false)
+
+        mgr.fireAssignedMqttDidReceiveMessageForTest()
+        XCTAssertNotNil(mgr.mqtt.didConnectAck)
+        XCTAssertNotNil(mgr.mqtt.didReceiveMessage)
+        XCTAssertNotNil(mgr.mqtt.didReceiveTrust)
+        XCTAssertTrue(mgr.mqttTeardownInProgress)
+        XCTAssertTrue(mgr.mqtt === original)
+    }
+
+    func test_connectToBroker_whileTeardown_doesNotReplaceMqtt() {
+        let mgr = makeFreshManager()
+        mgr.attachDetachedMqttForTest()
+        let original = mgr.mqtt
+
+        mgr.forceTeardownMqtt(mgr.mqtt)
+        XCTAssertTrue(mgr.mqttTeardownInProgress)
+
+        let queued = mgr.connectToBroker(seed: Self.testSeed, xpub: Self.testXpub)
+        XCTAssertTrue(queued)
+        XCTAssertTrue(mgr.mqtt === original)
+        XCTAssertEqual(mgr.pendingBrokerConnect?.seed, Self.testSeed)
+        XCTAssertEqual(mgr.pendingBrokerConnect?.xpub, Self.testXpub)
+    }
+
+    func test_simulatedDidDisconnect_fromBackground_drainsThenFlushesPendingConnect() {
+        let mgr = makeFreshManager()
+        mgr.attachDetachedMqttForTest()
+        let original = mgr.mqtt
+        mgr.forceTeardownMqtt(mgr.mqtt)
+        XCTAssertTrue(mgr.connectToBroker(seed: Self.testSeed, xpub: Self.testXpub))
+        XCTAssertNotNil(mgr.pendingBrokerConnect)
+
+        let exp = expectation(description: "teardown drain + pending connect")
+        DispatchQueue.global(qos: .userInitiated).async {
+            mgr.fireAssignedMqttDidDisconnectForTest()
+            DispatchQueue.main.async {
+                DispatchQueue.main.async {
+                    XCTAssertNil(mgr.mqttTeardownTimeoutTimer, "hang timer must be cancelled on didDisconnect")
+                    XCTAssertFalse(mgr.mqttTeardownInProgress)
+                    XCTAssertNil(mgr.pendingBrokerConnect)
+                    XCTAssertNotNil(mgr.mqtt)
+                    XCTAssertFalse(mgr.mqtt === original)
+                    exp.fulfill()
+                }
+            }
+        }
+
+        waitForExpectations(timeout: 2)
+    }
+
+    func test_hangTimeout_releasesInstanceAndFlushesPendingConnect() {
+        let mgr = makeFreshManager()
+        mgr.mqttTeardownTimeoutInterval = 0.05
+        mgr.invokeMqttDisconnectOnTeardown = false
+        mgr.attachDetachedMqttForTest()
+        let original = mgr.mqtt
+        mgr.forceTeardownMqtt(mgr.mqtt)
+        XCTAssertTrue(mgr.connectToBroker(seed: Self.testSeed, xpub: Self.testXpub))
+
+        let exp = expectation(description: "hang-timeout drain")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+            XCTAssertFalse(mgr.mqttTeardownInProgress)
+            XCTAssertNil(mgr.pendingBrokerConnect)
+            XCTAssertNil(mgr.mqttTeardownTimeoutTimer)
+            XCTAssertNotNil(mgr.mqtt)
+            XCTAssertFalse(mgr.mqtt === original)
+            exp.fulfill()
+        }
+        waitForExpectations(timeout: 2)
+    }
+
+    func test_expireBackgroundFetch_firesCompletionWithoutNillingMqtt() {
+        let mgr = makeFreshManager()
+        mgr.attachDetachedMqttForTest()
+        let original = mgr.mqtt
+
+        var completionFired = false
+        mgr.backgroundFetchInProgress = true
+        mgr.backgroundFetchCompletionHandler = { _ in
+            completionFired = true
+        }
+
+        mgr.expireBackgroundFetch()
+
+        XCTAssertTrue(completionFired)
+        XCTAssertTrue(mgr.mqtt === original)
+        XCTAssertNotNil(mgr.mqtt)
+        XCTAssertTrue(mgr.mqttTeardownInProgress)
+        XCTAssertFalse(mgr.backgroundFetchInProgress)
     }
 }

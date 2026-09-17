@@ -17,9 +17,37 @@ class CallParticipantsSocketManager: NSObject, @unchecked Sendable {
     var socket: WebSocketClient?
     var subscribedRooms: Set<String> = []
 
+    /// Retains managers whose Starscream socket is still draining CFStream events.
+    private nonisolated(unsafe) static var disconnecting: [CallParticipantsSocketManager] = []
+    internal private(set) var isDisconnecting = false
+    /// Hang timeout matching Mac's Starscream request `timeoutInterval` (5s).
+    internal var disconnectHangTimeout: TimeInterval = 5.0
+    private var disconnectHangTimer: Timer?
+    /// Test seam so reconnect after a mid-disconnect subscribe does not hit the network.
+    internal var socketFactory: (() -> WebSocketClient)?
+
+    // MARK: - Test helpers
+
+    internal static func isRetainedForDisconnect(_ manager: CallParticipantsSocketManager) -> Bool {
+        disconnecting.contains { $0 === manager }
+    }
+
+    internal static func resetDisconnectingStateForTests() {
+        for manager in disconnecting {
+            manager.disconnectHangTimer?.invalidate()
+            manager.disconnectHangTimer = nil
+            manager.isDisconnecting = false
+        }
+        disconnecting.removeAll()
+    }
+
     // MARK: - Public API
 
     func subscribe(roomName: String) {
+        if isDisconnecting {
+            subscribedRooms.insert(roomName)
+            return
+        }
         if socket == nil {
             connect()
         }
@@ -43,6 +71,14 @@ class CallParticipantsSocketManager: NSObject, @unchecked Sendable {
     // MARK: - Private helpers
 
     private func connect() {
+        if let socketFactory {
+            let ws = socketFactory()
+            socket = ws
+            ws.connect()
+            print("[CallParticipantsSocket] Connecting (test factory)")
+            return
+        }
+
         let serverBase = API.sharedInstance.kVideoCallServer
         let wsBase = serverBase
             .replacingOccurrences(of: "https://", with: "wss://")
@@ -62,13 +98,38 @@ class CallParticipantsSocketManager: NSObject, @unchecked Sendable {
         print("[CallParticipantsSocket] Connecting to \(urlString)")
     }
 
-    private func disconnect() {
+    func disconnect() {
+        guard socket != nil, !isDisconnecting else { return }
+        CallParticipantsSocketManager.disconnecting.append(self)
+        isDisconnecting = true
+        print("[CallParticipantsSocket] parked")
         socket?.disconnect()
+        startDisconnectHangTimer()
+    }
+
+    private func startDisconnectHangTimer() {
+        disconnectHangTimer?.invalidate()
+        disconnectHangTimer = Timer.scheduledTimer(
+            withTimeInterval: disconnectHangTimeout,
+            repeats: false
+        ) { [weak self] _ in
+            guard let self = self else { return }
+            print("[CallParticipantsSocket] hang-timeout")
+            self.finishDisconnectRelease()
+        }
+    }
+
+    private func finishDisconnectRelease() {
+        disconnectHangTimer?.invalidate()
+        disconnectHangTimer = nil
         socket = nil
-        print("[CallParticipantsSocket] Disconnected")
+        isDisconnecting = false
+        CallParticipantsSocketManager.disconnecting.removeAll { $0 === self }
+        print("[CallParticipantsSocket] released")
     }
 
     private func sendSubscribe(roomName: String) {
+        guard !isDisconnecting else { return }
         let payload: [String: String] = ["action": "subscribe", "roomName": roomName]
         guard let data = try? JSONSerialization.data(withJSONObject: payload),
               let string = String(data: data, encoding: .utf8) else { return }
@@ -167,6 +228,14 @@ extension CallParticipantsSocketManager: WebSocketDelegate {
             print("[CallParticipantsSocket] Disconnected with error: \(error.localizedDescription)")
         } else {
             print("[CallParticipantsSocket] Disconnected cleanly")
+        }
+
+        let roomsToResubscribe = subscribedRooms
+        finishDisconnectRelease()
+
+        if !roomsToResubscribe.isEmpty {
+            connect()
+            roomsToResubscribe.forEach { sendSubscribe(roomName: $0) }
         }
     }
 
