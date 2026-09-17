@@ -107,4 +107,26 @@ final class CachingPlayerItemResourceLoaderTests: XCTestCase {
         )
         XCTAssertEqual(error.localizedDescription, "media URL is missing")
     }
+
+    func testInitUrl_withoutScheme_returnsNilWithoutTrapping() {
+        guard let url = URL(string: "relative/path/audio.mp3") else {
+            XCTFail("Expected URL(string:) to produce a scheme-less URL")
+            return
+        }
+        XCTAssertNil(url.scheme)
+
+        let item = CachingPlayerItem(url: url, customFileExtension: nil)
+
+        XCTAssertNil(item)
+    }
+
+    func testInitData_invalidFileExtension_returnsNilWithoutTrapping() {
+        let item = CachingPlayerItem(
+            data: Data([0x00]),
+            mimeType: "audio/mpeg",
+            fileExtension: "mp3 with space"
+        )
+
+        XCTAssertNil(item)
+    }
 }

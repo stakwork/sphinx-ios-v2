@@ -338,10 +338,14 @@ extension DownloadService : URLSessionDownloadDelegate {
         let newProgress = Int(Float(totalBytesWritten) / Float(totalBytesExpectedToWrite) * 100)
         
         if (newProgress >= 100) { //detect transition from downloading to download complete
-            StorageManager.sharedManager.processGarbageCleanup()
-            
-            if let feedID = download.episode.feedID, let feed = ContentFeed.getFeedById(feedId: feedID) {
-                feed.lastDownloadedEpisodeId = download.episode.itemID
+            let episodeItemID = download.episode.itemID
+            let feedID = download.episode.feedID
+            DispatchQueue.main.async {
+                StorageManager.sharedManager.processGarbageCleanup()
+                
+                if let feedID, let feed = ContentFeed.getFeedById(feedId: feedID) {
+                    feed.lastDownloadedEpisodeId = episodeItemID
+                }
             }
         }
         
