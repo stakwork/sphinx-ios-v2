@@ -347,11 +347,7 @@ extension ChatsCollectionViewController {
 
         guard applyGate.beginApplyIfIdle() else { return }
 
-        // Explicit type: `dataSource` is `DataSource!`, and a plain `let` binding
-        // of an IUO infers `DataSource?` (the "implicit" unwrap only applies at
-        // the original property's use site, not when copying it into a new
-        // binding) — confirmed just-checked non-nil above.
-        let applyingDataSource: DataSource = dataSource
+        let applyingDataSource = dataSource
         let generation = snapshotGeneration
         let snapshot = makeSnapshotFromCurrentObjects()
 
