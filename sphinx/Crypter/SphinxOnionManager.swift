@@ -148,6 +148,8 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
     let kChildIndexesStorageKey = "childIndexesStorageKey"
     
     var onionState: [String: [UInt8]] = [:]
+    /// Serializes in-memory `onionState` dictionary access only — not UserDefaults I/O.
+    let onionStateQueue = DispatchQueue(label: "sphinx.onionState", qos: .userInitiated)
     
     var mutationKeys: [String] {
         get {
