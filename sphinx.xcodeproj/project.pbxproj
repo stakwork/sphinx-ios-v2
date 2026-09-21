@@ -979,6 +979,7 @@
 		MC001TEST0001000000000002 /* MediaCacheUpdateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = MC001TEST0001000000000001 /* MediaCacheUpdateTests.swift */; };
 		MC01AA11BB22CC33DD44EE02 /* MarkdownContentSplitter.swift in Sources */ = {isa = PBXBuildFile; fileRef = MC01AA11BB22CC33DD44EE01 /* MarkdownContentSplitter.swift */; };
 		MQTTQ01TEST00010000000002 /* SphinxOnionManagerMqttQueueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = MQTTQ01TEST00010000000001 /* SphinxOnionManagerMqttQueueTests.swift */; };
+		CPSOCK01TEST00010000000002 /* CallParticipantsSocketManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CPSOCK01TEST00010000000001 /* CallParticipantsSocketManagerTests.swift */; };
 		MT01AA11BB22CC33DD44EE02 /* MarkdownTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = MT01AA11BB22CC33DD44EE01 /* MarkdownTableView.swift */; };
 		O5P6Q7R8S9T0U1V2W3X4Y5Z6 /* HiveShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = P6Q7R8S9T0U1V2W3X4Y5Z6A7 /* HiveShareViewController.swift */; };
 		P1Q2R3S4T5U6V7W8X9Y0Z1A2 /* PaginationControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = Q2R3S4T5U6V7W8X9Y0Z1A2B3 /* PaginationControlView.swift */; };
@@ -2402,6 +2403,7 @@
 		MC001TEST0001000000000001 /* MediaCacheUpdateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaCacheUpdateTests.swift; sourceTree = "<group>"; };
 		MC01AA11BB22CC33DD44EE01 /* MarkdownContentSplitter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownContentSplitter.swift; sourceTree = "<group>"; };
 		MQTTQ01TEST00010000000001 /* SphinxOnionManagerMqttQueueTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SphinxOnionManagerMqttQueueTests.swift; sourceTree = "<group>"; };
+		CPSOCK01TEST00010000000001 /* CallParticipantsSocketManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallParticipantsSocketManagerTests.swift; sourceTree = "<group>"; };
 		MT01AA11BB22CC33DD44EE01 /* MarkdownTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownTableView.swift; sourceTree = "<group>"; };
 		N4O5P6Q7R8S9T0U1V2W3X4Y5 /* HiveProcessingBubbleCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveProcessingBubbleCell.swift; sourceTree = "<group>"; };
 		P6Q7R8S9T0U1V2W3X4Y5Z6A7 /* HiveShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveShareViewController.swift; sourceTree = "<group>"; };
@@ -3820,6 +3822,7 @@
 			isa = PBXGroup;
 			children = (
 				MQTTQ01TEST00010000000001 /* SphinxOnionManagerMqttQueueTests.swift */,
+				CPSOCK01TEST00010000000001 /* CallParticipantsSocketManagerTests.swift */,
 				CHATPAGE01TEST0000000001 /* ChatPaginationTests.swift */,
 				9B5504520C1B4722A0EBFA00 /* HiveFeatureTests.swift */,
 				9F4B101D1E0946E1A2ED0FCA /* HiveChatMessageTests.swift */,
@@ -6486,6 +6489,7 @@
 				8A76E71FD2044567BAC32D0D /* HiveFeatureTests.swift in Sources */,
 				5010E69969BC4B008CB1B8DB /* HiveChatMessageTests.swift in Sources */,
 				MQTTQ01TEST00010000000002 /* SphinxOnionManagerMqttQueueTests.swift in Sources */,
+				CPSOCK01TEST00010000000002 /* CallParticipantsSocketManagerTests.swift in Sources */,
 				CHATPAGE01TEST0000000002 /* ChatPaginationTests.swift in Sources */,
 				MC001TEST0001000000000002 /* MediaCacheUpdateTests.swift in Sources */,
 				SI001TEST0001000000000002 /* SnapshotIdentityTests.swift in Sources */,
