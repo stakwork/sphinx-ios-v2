@@ -35,7 +35,9 @@ class AVViewController: AVPlayerViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        let playerItem = CachingPlayerItem(data: data, mimeType: "video/mp4", fileExtension: "mp4")
+        guard let playerItem = CachingPlayerItem(data: data, mimeType: "video/mp4", fileExtension: "mp4") else {
+            return
+        }
         self.player = AVPlayer(playerItem: playerItem)
         self.player?.automaticallyWaitsToMinimizeStalling = false
         self.player?.play()
