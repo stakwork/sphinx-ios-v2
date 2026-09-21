@@ -286,11 +286,6 @@ open class CachingPlayerItem: AVPlayerItem {
     
     private let cachingPlayerItemScheme = "cachingPlayerItemScheme"
     
-    /// Is used for playing remote files.
-    convenience init?(url: URL) {
-        self.init(url: url, customFileExtension: nil)
-    }
-
     /// Override/append custom file extension to URL path.
     /// This is required for the player to work correctly with the intended file type.
     init?(url: URL, customFileExtension: String?) {

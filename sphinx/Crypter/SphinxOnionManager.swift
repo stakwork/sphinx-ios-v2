@@ -1221,12 +1221,17 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
                 return
             }
             self.drainingMqtt.append(instance)
-            print("[MQTT] Teardown retain \(ObjectIdentifier(instance)) state: \(instance.connState)")
+            let instanceID = ObjectIdentifier(instance)
+            print("[MQTT] Teardown retain \(instanceID) state: \(instance.connState)")
             let interval = self.mqttTeardownDrainInterval
+            // Capture only the (Sendable) identifier, never `instance` itself —
+            // CocoaMQTT isn't Sendable, and this closure crosses the async-after
+            // queue-hop boundary. `drainingMqtt` already holds the real strong
+            // reference; removal only needs identity comparison.
             DispatchQueue.main.asyncAfter(deadline: .now() + interval) { [weak self] in
                 guard let self else { return }
-                self.drainingMqtt.removeAll { $0 === instance }
-                print("[MQTT] Released draining client \(ObjectIdentifier(instance))")
+                self.drainingMqtt.removeAll { ObjectIdentifier($0) == instanceID }
+                print("[MQTT] Released draining client \(instanceID)")
             }
         }
     }
