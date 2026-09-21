@@ -9,6 +9,7 @@
 
 import XCTest
 import CoreData
+import CocoaMQTT
 @testable import sphinx
 
 final class SphinxOnionManagerMqttQueueTests: XCTestCase {
@@ -20,6 +21,7 @@ final class SphinxOnionManagerMqttQueueTests: XCTestCase {
         mgr.onProcessMqttMessages = nil
         mgr.onHandleDidConnectAck = nil
         mgr.onInitialInviteSetupFired = nil
+        mgr.mqttTeardownDrainInterval = 1.0
         SphinxOnionManager.resetSharedInstance()
         super.tearDown()
     }
@@ -33,7 +35,12 @@ final class SphinxOnionManagerMqttQueueTests: XCTestCase {
         mgr.onInitialInviteSetupFired = nil
         mgr.onProcessMqttMessages = nil
         mgr.onHandleDidConnectAck = nil
+        mgr.mqttTeardownDrainInterval = 1.0
         return mgr
+    }
+
+    private func makeTestMqtt() -> CocoaMQTT {
+        CocoaMQTT(clientID: "test", host: "127.0.0.1", port: 1883)
     }
 
     // MARK: - Shared hop helper
@@ -243,5 +250,48 @@ final class SphinxOnionManagerMqttQueueTests: XCTestCase {
         mgr.mqtt = nil
         mgr.forceTeardownMqtt(nil)
         XCTAssertNil(mgr.mqtt)
+        XCTAssertEqual(mgr.drainingMqttCount, 0)
+    }
+
+    func test_forceTeardownMqtt_nilsLiveSlot_andRetainsInDrainBag() {
+        let mgr = makeFreshManager()
+        let instance = makeTestMqtt()
+        mgr.mqtt = instance
+
+        mgr.forceTeardownMqtt(instance)
+
+        XCTAssertNil(mgr.mqtt, "live slot must clear immediately so connectToBroker can assign a new client")
+        XCTAssertGreaterThanOrEqual(mgr.drainingMqttCount, 1, "torn-down client must stay retained for the drain window")
+    }
+
+    func test_forceTeardownMqtt_overlappingSameInstance_doesNotDoubleRetainOrDropEarly() {
+        let mgr = makeFreshManager()
+        let instance = makeTestMqtt()
+        mgr.mqtt = instance
+
+        mgr.forceTeardownMqtt(instance)
+        XCTAssertEqual(mgr.drainingMqttCount, 1)
+        XCTAssertNil(mgr.mqtt)
+
+        mgr.forceTeardownMqtt(instance)
+        XCTAssertEqual(mgr.drainingMqttCount, 1, "overlapping teardown of the same instance must not append twice")
+        XCTAssertNil(mgr.mqtt)
+    }
+
+    func test_forceTeardownMqtt_releasesDrainBagAfterInjectedInterval() {
+        let mgr = makeFreshManager()
+        mgr.mqttTeardownDrainInterval = 0.05
+        let instance = makeTestMqtt()
+        mgr.mqtt = instance
+
+        mgr.forceTeardownMqtt(instance)
+        XCTAssertGreaterThanOrEqual(mgr.drainingMqttCount, 1)
+
+        let exp = expectation(description: "drain bag empty after injected interval")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            XCTAssertEqual(mgr.drainingMqttCount, 0, "drain release is time-based, not didDisconnect")
+            exp.fulfill()
+        }
+        waitForExpectations(timeout: 1.0)
     }
 }
