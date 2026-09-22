@@ -1,5 +1,4 @@
 import UIKit
-import SphinxErrorReporter
 
 
 class ChatsCollectionViewController: UICollectionViewController {
@@ -11,13 +10,13 @@ class ChatsCollectionViewController: UICollectionViewController {
     
     private weak var chatsListDelegate: DashboardChatsListDelegate?
 
+    private var currentDataSnapshot: DataSourceSnapshot!
     private var dataSource: DataSource!
     
     private var owner: UserContact!
     
+    let dataSourceQueue = DispatchQueue(label: "chatList.datasourceQueue", qos: .userInteractive)
     private var updateWorkItem: DispatchWorkItem?
-    private var applyGate = ChatListSnapshotApplyGate()
-    private var snapshotGeneration = 0
     
     private let itemContentInsets = NSDirectionalEdgeInsets(
         top: 0,
@@ -30,8 +29,30 @@ class ChatsCollectionViewController: UICollectionViewController {
         shouldReloadChatRowsFor(chatIds: [chatId])
     }
     
-    func shouldReloadChatRowsFor(chatIds _: [Int]) {
-        applyCurrentSnapshot()
+    func shouldReloadChatRowsFor(chatIds: [Int]) {
+        Task { @MainActor [weak self] in
+            guard let self, let dataSource = self.dataSource else { return }
+
+            var snapshot = dataSource.snapshot()
+
+            let objectIdsToReload = Set(
+                self.chatListObjects
+                    .filter { obj in
+                        if let chatId = obj.getChat()?.id { return chatIds.contains(chatId) }
+                        return false
+                    }
+                    .map { $0.getObjectId() }
+            )
+
+            let itemIdentifiers = snapshot.itemIdentifiers.filter {
+                objectIdsToReload.contains($0.objectId)
+            }
+
+            guard !itemIdentifiers.isEmpty else { return }
+
+            snapshot.reloadItems(itemIdentifiers)
+            self.dataSource.apply(snapshot, animatingDifferences: true)
+        }
     }
 }
 
@@ -69,29 +90,57 @@ extension ChatsCollectionViewController {
     struct DataSourceItem: Hashable {
         
         var objectId: String
+        var messageId: Int?
+        var messageStatus: Int?
+        var message30SecOld: Bool
+        var messageSeen: Bool
+        var unseenCount: Int
+        var contactStatus: Int?
+        var inviteStatus: Int?
+        var muted: Bool
+        var draftText: String?
 
-        init(objectId: String) {
+        init(
+            objectId: String,
+            messageId: Int?,
+            messageStatus: Int?,
+            message30SecOld: Bool,
+            messageSeen: Bool,
+            unseenCount: Int,
+            contactStatus: Int?,
+            inviteStatus: Int?,
+            muted: Bool,
+            draftText: String?
+        )
+        {
             self.objectId = objectId
+            self.messageId = messageId
+            self.messageStatus = messageStatus
+            self.message30SecOld = message30SecOld
+            self.messageSeen = messageSeen
+            self.unseenCount = unseenCount
+            self.contactStatus = contactStatus
+            self.inviteStatus = inviteStatus
+            self.muted = muted
+            self.draftText = draftText
         }
         
         static func == (lhs: DataSourceItem, rhs: DataSourceItem) -> Bool {
-            lhs.objectId == rhs.objectId
-        }
+            return
+                lhs.objectId == rhs.objectId &&
+                lhs.messageId == rhs.messageId &&
+                lhs.messageStatus == rhs.messageStatus &&
+                lhs.message30SecOld == rhs.message30SecOld &&
+                lhs.messageSeen == rhs.messageSeen &&
+                lhs.unseenCount == rhs.unseenCount &&
+                lhs.contactStatus == rhs.contactStatus &&
+                lhs.inviteStatus == rhs.inviteStatus &&
+                lhs.muted == rhs.muted &&
+                lhs.draftText == rhs.draftText
+         }
 
         func hash(into hasher: inout Hasher) {
             hasher.combine(objectId)
-        }
-
-        /// First-wins uniqueness by `objectId`, preserving relative order.
-        static func uniqueByObjectId(_ items: [DataSourceItem]) -> [DataSourceItem] {
-            var seenObjectIds = Set<String>()
-            return items.filter { item in
-                if seenObjectIds.contains(item.objectId) {
-                    return false
-                }
-                seenObjectIds.insert(item.objectId)
-                return true
-            }
         }
     }
 
@@ -267,11 +316,6 @@ extension ChatsCollectionViewController {
 
 
     func configureDataSource(for collectionView: UICollectionView) {
-        updateWorkItem?.cancel()
-        updateWorkItem = nil
-        applyGate.reset()
-        snapshotGeneration += 1
-
         dataSource = makeDataSource(for: collectionView)
         
         updateSnapshot()
@@ -326,186 +370,59 @@ extension ChatsCollectionViewController {
 extension ChatsCollectionViewController {
 
     func updateSnapshot() {
-        updateWorkItem?.cancel()
-        updateWorkItem = nil
-        applyCurrentSnapshot()
-    }
-
-    func applyCurrentSnapshot() {
-        if Thread.isMainThread {
-            performApplyCurrentSnapshot()
-        } else {
-            DispatchQueue.main.async { [weak self] in
-                self?.performApplyCurrentSnapshot()
-            }
-        }
-    }
-
-    private func performApplyCurrentSnapshot() {
-        guard dataSource != nil else { return }
         updateOwner()
 
-        guard applyGate.beginApplyIfIdle() else { return }
-
-        // Explicit type: `dataSource` is `DataSource!`, and a plain `let` binding
-        // of an IUO infers `DataSource?` (the "implicit" unwrap only applies at
-        // the original property's use site, not when copying it into a new
-        // binding) — confirmed just-checked non-nil above.
-        let applyingDataSource: DataSource = dataSource
-        let generation = snapshotGeneration
-        let snapshot = makeSnapshotFromCurrentObjects()
-
-        applySnapshotFailClosed(
-            snapshot,
-            on: applyingDataSource,
-            generation: generation
-        ) { [weak self] in
+        Task { @MainActor [weak self] in
             guard let self else { return }
-            guard self.snapshotGeneration == generation,
-                  self.dataSource === applyingDataSource else {
-                return
+            self.updateWorkItem?.cancel()
+
+            let workItem = DispatchWorkItem { [weak self] in
+                guard let self else { return }
+                var snapshot = DataSourceSnapshot()
+
+                snapshot.appendSections(CollectionViewSection.allCases)
+
+                let items = self.chatListObjects.filter({ $0.getContact()?.isOwner != true }).map { obj -> DataSourceItem in
+                    let chatId = obj.getChat()?.id
+                    let draft = ChatTrackingHandler.shared.getOngoingMessageFor(chatId: chatId)
+                    let nonEmptyDraft = (draft?.isEmpty == false) ? draft : nil
+                    return DataSourceItem(
+                        objectId: obj.getObjectId(),
+                        messageId: obj.lastMessage?.id,
+                        messageStatus: obj.lastMessage?.status,
+                        message30SecOld: (obj.lastMessage?.date ?? Date()) < Date().addingTimeInterval(-30),
+                        messageSeen: obj.isSeen(ownerId: self.owner.id),
+                        unseenCount: obj.getUnseenMessagesCount(ownerId: self.owner.id),
+                        contactStatus: obj.getContactStatus(),
+                        inviteStatus: obj.getInviteStatus(),
+                        muted: obj.isMuted(),
+                        draftText: nonEmptyDraft
+                    )
+                }
+
+                // Filter out duplicates by objectId to prevent diffable data source issues
+                var seenObjectIds = Set<String>()
+                let uniqueItems = items.filter { item in
+                    if seenObjectIds.contains(item.objectId) {
+                        return false
+                    }
+                    seenObjectIds.insert(item.objectId)
+                    return true
+                }
+
+                snapshot.appendItems(uniqueItems, toSection: .all)
+                self.dataSource.apply(snapshot, animatingDifferences: true)
             }
 
-            if self.applyGate.finishApply() {
-                self.applyCurrentSnapshot()
-            }
+            self.updateWorkItem = workItem
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: workItem)
         }
-    }
-
-    private func makeSnapshotFromCurrentObjects() -> DataSourceSnapshot {
-        var snapshot = DataSourceSnapshot()
-        snapshot.appendSections(CollectionViewSection.allCases)
-
-        let items = chatListObjects
-            .filter { $0.getContact()?.isOwner != true }
-            .map { DataSourceItem(objectId: $0.getObjectId()) }
-
-        snapshot.appendItems(
-            DataSourceItem.uniqueByObjectId(items),
-            toSection: .all
-        )
-        return snapshot
-    }
-
-    private func applySnapshotFailClosed(
-        _ snapshot: DataSourceSnapshot,
-        on applyingDataSource: DataSource,
-        generation: Int,
-        completion: @escaping () -> Void
-    ) {
-        guard snapshotGeneration == generation,
-              dataSource === applyingDataSource else {
-            completion()
-            return
-        }
-
-        let finishOnMain = {
-            if Thread.isMainThread {
-                completion()
-            } else {
-                DispatchQueue.main.async(execute: completion)
-            }
-        }
-
-        var exceptionReason: NSString?
-        let succeeded = NSExceptionCatcher.tryExecute({
-            applyingDataSource.applySnapshotUsingReloadData(snapshot, completion: finishOnMain)
-        }, exceptionReason: &exceptionReason)
-
-        if succeeded {
-            return
-        }
-
-        // Do not re-apply the snapshot that just threw. Rebuild from live data.
-        guard snapshotGeneration == generation,
-              dataSource === applyingDataSource else {
-            captureCollectionViewException(
-                reason: exceptionReason as String?,
-                fallbackSucceeded: false
-            )
-            completion()
-            return
-        }
-
-        let rebuiltSnapshot = makeSnapshotFromCurrentObjects()
-        var fallbackReason: NSString?
-        let fallbackSucceeded = NSExceptionCatcher.tryExecute({
-            applyingDataSource.applySnapshotUsingReloadData(
-                rebuiltSnapshot,
-                completion: finishOnMain
-            )
-        }, exceptionReason: &fallbackReason)
-
-        captureCollectionViewException(
-            reason: exceptionReason as String?,
-            fallbackSucceeded: fallbackSucceeded
-        )
-
-        if fallbackSucceeded {
-            return
-        }
-
-        captureCollectionViewException(
-            reason: fallbackReason as String?,
-            fallbackSucceeded: false
-        )
-        completion()
-    }
-
-    private func captureCollectionViewException(
-        reason: String?,
-        fallbackSucceeded: Bool
-    ) {
-        let error = NSError(
-            domain: "ChatsCollectionView",
-            code: 1,
-            userInfo: [NSLocalizedDescriptionKey: reason ?? "Unknown collection view exception"]
-        )
-        SphinxErrorReporter.capture(
-            error,
-            metadata: [
-                "source": "ChatsCollectionView",
-                "exceptionReason": reason ?? "",
-                "fallbackSucceeded": fallbackSucceeded
-            ]
-        )
     }
     
     func updateOwner() {
         if owner == nil {
             owner = UserContact.getOwner()
         }
-    }
-}
-
-/// Serializes overlapping chat-list snapshot applies on the main thread.
-/// Later refresh requests replace earlier ones via `needsApply`.
-struct ChatListSnapshotApplyGate {
-    private(set) var isApplying = false
-    private(set) var needsApply = false
-
-    mutating func reset() {
-        isApplying = false
-        needsApply = false
-    }
-
-    /// Returns `true` when the caller should start an apply now.
-    mutating func beginApplyIfIdle() -> Bool {
-        if isApplying {
-            needsApply = true
-            return false
-        }
-        isApplying = true
-        needsApply = false
-        return true
-    }
-
-    /// Marks the in-flight apply finished. Returns `true` if another apply is pending.
-    mutating func finishApply() -> Bool {
-        isApplying = false
-        let shouldReapply = needsApply
-        needsApply = false
-        return shouldReapply
     }
 }
 
@@ -528,10 +445,9 @@ extension ChatsCollectionViewController {
         didSelectItemAt indexPath: IndexPath
     ) {
         collectionView.deselectItem(at: indexPath, animated: true)
-
-        guard let item = dataSource.itemIdentifier(for: indexPath) else { return }
-        guard let selected = chatListObjects.first(where: { $0.getObjectId() == item.objectId }) else { return }
-        onChatSelected?(selected)
+        
+        let selectedChatObject = chatListObjects[indexPath.row]
+        onChatSelected?(selectedChatObject)
     }
 }
 
