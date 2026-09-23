@@ -10,6 +10,11 @@ import UIKit
 
 @MainActor
 final class ServerHealthBannerView: UIView {
+    /// Single source of truth for the banner's fixed height — also used by
+    /// `ServerHealthBannerPresenter` to reserve the same amount of space at
+    /// the top of the app content, so the banner never covers it.
+    static let height: CGFloat = 42
+
     private let label = UILabel()
 
     override init(frame: CGRect) {
@@ -36,21 +41,22 @@ final class ServerHealthBannerView: UIView {
         addSubview(label)
 
         NSLayoutConstraint.activate([
+            heightAnchor.constraint(equalToConstant: Self.height),
             label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
             label.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
-            label.topAnchor.constraint(equalTo: topAnchor, constant: 6),
-            label.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -6)
+            label.centerYAnchor.constraint(equalTo: centerYAnchor)
         ])
     }
 
     func configure(health: ServerHealth) {
-        if let copy = ServerHealthPresentation.bannerCopy(for: health) {
-            label.text = copy
-            isHidden = false
-        } else {
+        guard SphinxOnionManager.sharedInstance.isServerHealthBannerVisible,
+              let copy = ServerHealthPresentation.bannerCopy(for: health) else {
             label.text = nil
             isHidden = true
+            return
         }
+        label.text = copy
+        isHidden = false
     }
 }
 
@@ -76,10 +82,37 @@ final class ServerHealthBannerPresenter {
     func apply(health: ServerHealth) {
         installBannerIfNeeded(on: window)
         banner?.configure(health: health)
+        updateContentInset()
     }
 
     func hide() {
         banner?.configure(health: .ok)
+        updateContentInset()
+    }
+
+    /// Reserves (or releases) space at the top of the app's own content via
+    /// `additionalSafeAreaInsets` on the window's root view controller, so
+    /// visible app screens — which lay their top chrome out against
+    /// `safeAreaLayoutGuide` — shift down below the banner instead of it
+    /// covering them. Set on the window's root VC (not a specific screen) so
+    /// this applies to whatever's currently on screen, and safe-area insets
+    /// propagate down through any properly-contained child view controllers.
+    private func updateContentInset() {
+        guard let rootViewController = window?.rootViewController else { return }
+
+        let isBannerVisible = !(banner?.isHidden ?? true)
+        let targetInset: CGFloat = isBannerVisible ? ServerHealthBannerView.height : 0
+        guard rootViewController.additionalSafeAreaInsets.top != targetInset else { return }
+
+        UIView.animate(withDuration: 0.25) {
+            rootViewController.additionalSafeAreaInsets = UIEdgeInsets(
+                top: targetInset,
+                left: 0,
+                bottom: 0,
+                right: 0
+            )
+            rootViewController.view.layoutIfNeeded()
+        }
     }
 
     private func installBannerIfNeeded(on window: UIWindow?) {

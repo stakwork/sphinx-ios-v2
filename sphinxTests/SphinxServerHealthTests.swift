@@ -82,6 +82,135 @@ final class ServerHealthTests: XCTestCase {
         let mgr = makeFreshManager()
         XCTAssertEqual(mgr.currentServerHealth, .unknown)
         XCTAssertNil(mgr.lastServerStatus)
+        XCTAssertNil(mgr.serverHealthTrackingStartedAtMs)
+        XCTAssertFalse(mgr.hasReceivedServerStatus)
+        XCTAssertFalse(mgr.isServerHealthBannerVisible)
+    }
+
+    func test_unknownStaysHiddenWhenTrackingHasNotStartedEvenWithLargeNow() {
+        let mgr = makeFreshManager()
+        mgr.nowMsProvider = { UInt64.max }
+        XCTAssertNil(mgr.serverHealthTrackingStartedAtMs)
+        XCTAssertEqual(mgr.currentServerHealth, .unknown)
+        XCTAssertFalse(mgr.isServerHealthBannerVisible)
+    }
+
+    func test_unknownStaysHiddenDuringLaunchGrace() {
+        let mgr = makeFreshManager()
+        let started: UInt64 = 1_700_000_000_000
+        mgr.nowMsProvider = { started }
+        mgr.startServerHealthTracking()
+        XCTAssertEqual(mgr.serverHealthTrackingStartedAtMs, started)
+
+        mgr.nowMsProvider = { started + 1_000 }
+        XCTAssertEqual(mgr.serverHealthTrackingStartedAtMs, started)
+        XCTAssertFalse(mgr.hasReceivedServerStatus)
+        XCTAssertEqual(mgr.currentServerHealth, .unknown)
+        XCTAssertFalse(mgr.isServerHealthBannerVisible)
+    }
+
+    func test_unknownShowsAfterLaunchGraceAndElapsedPostsNotification() {
+        let mgr = makeFreshManager()
+        let started: UInt64 = 1_700_000_000_000
+        mgr.nowMsProvider = { started }
+        mgr.startServerHealthTracking()
+
+        mgr.nowMsProvider = { started + ServerHealthPresentation.launchGraceMs }
+        XCTAssertEqual(mgr.currentServerHealth, .unknown)
+        XCTAssertFalse(mgr.hasReceivedServerStatus)
+        XCTAssertTrue(mgr.isServerHealthBannerVisible)
+
+        let exp = expectation(forNotification: .onServerHealthChanged, object: nil)
+        mgr.handleServerHealthLaunchGraceElapsed()
+        wait(for: [exp], timeout: 1)
+        XCTAssertEqual(mgr.currentServerHealth, .unknown)
+        XCTAssertNil(mgr.serverHealthLaunchGraceTimer)
+    }
+
+    func test_degradedShowsImmediatelyInsideLaunchGrace() {
+        let mgr = makeFreshManager()
+        let started: UInt64 = 1_700_000_000_000
+        mgr.nowMsProvider = { started }
+        mgr.startServerHealthTracking()
+
+        let now = started + 1_000
+        mgr.nowMsProvider = { now }
+        mgr.ingestServerStatusPayloadString(degradedPayload(ts: now), nowMs: now)
+
+        XCTAssertEqual(mgr.currentServerHealth, .degraded)
+        XCTAssertTrue(mgr.hasReceivedServerStatus)
+        XCTAssertNil(mgr.serverHealthLaunchGraceTimer)
+        XCTAssertTrue(mgr.isServerHealthBannerVisible)
+    }
+
+    func test_unknownAfterHealthyShowsImmediatelyInsideLaunchGrace() {
+        let mgr = makeFreshManager()
+        let started: UInt64 = 1_700_000_120_000
+        let healthySeen = started - 120_000
+        mgr.nowMsProvider = { healthySeen }
+        mgr.ingestServerStatusPayloadString(healthyPayload(ts: healthySeen), nowMs: healthySeen)
+        XCTAssertEqual(mgr.currentServerHealth, .ok)
+        XCTAssertTrue(mgr.hasReceivedServerStatus)
+
+        mgr.nowMsProvider = { started }
+        mgr.startServerHealthTracking()
+        XCTAssertEqual(mgr.serverHealthTrackingStartedAtMs, started)
+
+        mgr.nowMsProvider = { started + 1_000 }
+        mgr.reevaluateServerHealthStaleness()
+        XCTAssertEqual(mgr.currentServerHealth, .unknown)
+        XCTAssertTrue(mgr.hasReceivedServerStatus)
+        XCTAssertEqual(mgr.serverHealthTrackingStartedAtMs, started)
+        XCTAssertTrue(mgr.isServerHealthBannerVisible)
+    }
+
+    func test_resetClearsGraceAndNextWindowStartsHidden() {
+        let mgr = makeFreshManager()
+        let seen: UInt64 = 1_700_000_000_000
+        mgr.nowMsProvider = { seen }
+        mgr.ingestServerStatusPayloadString(degradedPayload(ts: seen), nowMs: seen)
+        XCTAssertTrue(mgr.hasReceivedServerStatus)
+        XCTAssertTrue(mgr.isServerHealthBannerVisible)
+
+        mgr.resetServerHealthStore()
+        XCTAssertFalse(mgr.hasReceivedServerStatus)
+        XCTAssertNil(mgr.serverHealthTrackingStartedAtMs)
+        XCTAssertEqual(mgr.currentServerHealth, .unknown)
+        XCTAssertFalse(mgr.isServerHealthBannerVisible)
+
+        let restarted: UInt64 = seen + 30_000
+        mgr.nowMsProvider = { restarted }
+        mgr.startServerHealthTracking()
+        mgr.nowMsProvider = { restarted + 1_000 }
+        XCTAssertEqual(mgr.serverHealthTrackingStartedAtMs, restarted)
+        XCTAssertFalse(mgr.isServerHealthBannerVisible)
+    }
+
+    func test_restartingTrackingDoesNotResetLaunchGraceStart() {
+        let mgr = makeFreshManager()
+        let started: UInt64 = 1_700_000_000_000
+        mgr.nowMsProvider = { started }
+        mgr.startServerHealthTracking()
+        XCTAssertEqual(mgr.serverHealthTrackingStartedAtMs, started)
+
+        mgr.nowMsProvider = { started + 5_000 }
+        mgr.startServerHealthTracking()
+        XCTAssertEqual(mgr.serverHealthTrackingStartedAtMs, started)
+        XCTAssertFalse(mgr.isServerHealthBannerVisible)
+    }
+
+    func test_parseFailureInsideLaunchGraceShowsUnknownImmediately() {
+        let mgr = makeFreshManager()
+        let started: UInt64 = 1_700_000_000_000
+        mgr.nowMsProvider = { started }
+        mgr.startServerHealthTracking()
+
+        mgr.nowMsProvider = { started + 1_000 }
+        mgr.ingestServerStatusPayloadString("not-json", nowMs: started + 1_000)
+
+        XCTAssertEqual(mgr.currentServerHealth, .unknown)
+        XCTAssertTrue(mgr.hasReceivedServerStatus)
+        XCTAssertNil(mgr.serverHealthLaunchGraceTimer)
         XCTAssertTrue(mgr.isServerHealthBannerVisible)
     }
 
