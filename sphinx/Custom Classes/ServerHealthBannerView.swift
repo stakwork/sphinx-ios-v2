@@ -55,8 +55,21 @@ final class ServerHealthBannerView: UIView {
             isHidden = true
             return
         }
+        backgroundColor = Self.backgroundColor(for: health)
         label.text = copy
         isHidden = false
+    }
+
+    /// `.degraded` (node reachable but unhealthy) gets the red treatment;
+    /// `.unknown` (can't tell) keeps the original orange. `.ok` never
+    /// reaches here — the banner is hidden for that state.
+    private static func backgroundColor(for health: ServerHealth) -> UIColor {
+        switch health {
+        case .degraded:
+            return UIColor.Sphinx.PrimaryRed
+        case .unknown, .ok:
+            return UIColor.Sphinx.SphinxOrange
+        }
     }
 }
 
