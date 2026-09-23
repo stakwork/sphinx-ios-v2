@@ -8,10 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		06459E6FBB6344A1A70E298C /* AIAgentManager+HiveTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5B2D56F945C46E689DAFEF9 /* AIAgentManager+HiveTools.swift */; };
-		SH01AA11BB22CC33DD44EE09 /* ServerHealthPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = SH01AA11BB22CC33DD44EE08 /* ServerHealthPresentation.swift */; };
-		SH01AA11BB22CC33DD44EE03 /* SphinxOnionManager+ServerHealth.swift in Sources */ = {isa = PBXBuildFile; fileRef = SH01AA11BB22CC33DD44EE02 /* SphinxOnionManager+ServerHealth.swift */; };
-		SH01AA11BB22CC33DD44EE05 /* ServerHealthBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SH01AA11BB22CC33DD44EE04 /* ServerHealthBannerView.swift */; };
-		SH01AA11BB22CC33DD44EE07 /* SphinxServerHealthTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = SH01AA11BB22CC33DD44EE06 /* SphinxServerHealthTests.swift */; };
 		0DB22AE0228D44FDB51A2A11 /* WorkflowStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8F00239BAA5413399F184E6 /* WorkflowStatus.swift */; };
 		0F3FA12DF80F42E88DAC8AA9 /* TaskDependencyDiagramView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 101C5A13C28347DF905BBCEE /* TaskDependencyDiagramView.swift */; };
 		12075275C652A9404FC48EBC /* Pods_sphinx.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 487E10CEB3D07B0840A84681 /* Pods_sphinx.framework */; };
@@ -995,6 +991,10 @@
 		PS01AA11BB22CC33DD44EE01 /* PublishScriptCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PS01AA11BB22CC33DD44EE00 /* PublishScriptCardView.swift */; };
 		PW01AA11BB22CC33DD44EE01 /* PublishWorkflowCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PW01AA11BB22CC33DD44EE00 /* PublishWorkflowCardView.swift */; };
 		R3S4T5U6V7W8X9Y0Z1A2B3C4 /* PaginationControlViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = S4T5U6V7W8X9Y0Z1A2B3C4D5 /* PaginationControlViewTests.swift */; };
+		SH01AA11BB22CC33DD44EE03 /* SphinxOnionManager+ServerHealth.swift in Sources */ = {isa = PBXBuildFile; fileRef = SH01AA11BB22CC33DD44EE02 /* SphinxOnionManager+ServerHealth.swift */; };
+		SH01AA11BB22CC33DD44EE05 /* ServerHealthBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SH01AA11BB22CC33DD44EE04 /* ServerHealthBannerView.swift */; };
+		SH01AA11BB22CC33DD44EE07 /* SphinxServerHealthTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = SH01AA11BB22CC33DD44EE06 /* SphinxServerHealthTests.swift */; };
+		SH01AA11BB22CC33DD44EE09 /* ServerHealthPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = SH01AA11BB22CC33DD44EE08 /* ServerHealthPresentation.swift */; };
 		SI001TEST0001000000000002 /* SnapshotIdentityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = SI001TEST0001000000000001 /* SnapshotIdentityTests.swift */; };
 		T4U5V6W7X8Y9Z0A1B2C3D4E5 /* StakworkWorkflowData.swift in Sources */ = {isa = PBXBuildFile; fileRef = U5V6W7X8Y9Z0A1B2C3D4E5F6 /* StakworkWorkflowData.swift */; };
 		WMH001AA11BB22CC33DD44EE01 /* WorkspaceMentionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = WMH001AA11BB22CC33DD44EE02 /* WorkspaceMentionHandler.swift */; };
@@ -2076,10 +2076,6 @@
 		AA11BB22CC33DD44EE55FF66 /* HiveSearchResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveSearchResult.swift; sourceTree = "<group>"; };
 		AA1234560000000000000002 /* WebAppSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppSessionManager.swift; sourceTree = "<group>"; };
 		AABB11221DEF456700AABBBB /* SphinxrsExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SphinxrsExtensions.swift; sourceTree = "<group>"; };
-		SH01AA11BB22CC33DD44EE08 /* ServerHealthPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerHealthPresentation.swift; sourceTree = "<group>"; };
-		SH01AA11BB22CC33DD44EE02 /* SphinxOnionManager+ServerHealth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SphinxOnionManager+ServerHealth.swift"; sourceTree = "<group>"; };
-		SH01AA11BB22CC33DD44EE04 /* ServerHealthBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerHealthBannerView.swift; sourceTree = "<group>"; };
-		SH01AA11BB22CC33DD44EE06 /* SphinxServerHealthTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SphinxServerHealthTests.swift; sourceTree = "<group>"; };
 		B2C3D4E5F60002I9J0K1L2M3 /* HiveLinkNavigator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveLinkNavigator.swift; sourceTree = "<group>"; };
 		B2C3D4E5F6A7B8C9D0E1F2A3 /* TaskProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskProgress.swift; sourceTree = "<group>"; };
 		B4D0E0284E4B436180B0BAAF /* HivePusherManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HivePusherManagerTests.swift; sourceTree = "<group>"; };
@@ -2425,6 +2421,10 @@
 		PW01AA11BB22CC33DD44EE00 /* PublishWorkflowCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublishWorkflowCardView.swift; sourceTree = "<group>"; };
 		Q2R3S4T5U6V7W8X9Y0Z1A2B3 /* PaginationControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaginationControlView.swift; sourceTree = "<group>"; };
 		S4T5U6V7W8X9Y0Z1A2B3C4D5 /* PaginationControlViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaginationControlViewTests.swift; sourceTree = "<group>"; };
+		SH01AA11BB22CC33DD44EE02 /* SphinxOnionManager+ServerHealth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SphinxOnionManager+ServerHealth.swift"; sourceTree = "<group>"; };
+		SH01AA11BB22CC33DD44EE04 /* ServerHealthBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerHealthBannerView.swift; sourceTree = "<group>"; };
+		SH01AA11BB22CC33DD44EE06 /* SphinxServerHealthTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SphinxServerHealthTests.swift; sourceTree = "<group>"; };
+		SH01AA11BB22CC33DD44EE08 /* ServerHealthPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerHealthPresentation.swift; sourceTree = "<group>"; };
 		SI001TEST0001000000000001 /* SnapshotIdentityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnapshotIdentityTests.swift; sourceTree = "<group>"; };
 		U5V6W7X8Y9Z0A1B2C3D4E5F6 /* StakworkWorkflowData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StakworkWorkflowData.swift; sourceTree = "<group>"; };
 		WMH001AA11BB22CC33DD44EE02 /* WorkspaceMentionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceMentionHandler.swift; sourceTree = "<group>"; };
@@ -7431,7 +7431,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sphinx/sphinx.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 350;
+				CURRENT_PROJECT_VERSION = 351;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 8297M44YTW;
 				ENABLE_BITCODE = NO;
@@ -7521,7 +7521,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sphinx/sphinx.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 350;
+				CURRENT_PROJECT_VERSION = 351;
 				DEVELOPMENT_TEAM = 8297M44YTW;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
