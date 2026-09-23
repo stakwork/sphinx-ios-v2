@@ -21,6 +21,10 @@ final class SphinxOnionManagerMqttQueueTests: XCTestCase {
         mgr.onProcessMqttMessages = nil
         mgr.onHandleDidConnectAck = nil
         mgr.onInitialInviteSetupFired = nil
+        mgr.onOnionHandleInvoked = nil
+        mgr.onServerStatusIntercepted = nil
+        mgr.nowMsProvider = nil
+        mgr.stopServerHealthTracking()
         mgr.mqttTeardownDrainInterval = 1.0
         SphinxOnionManager.resetSharedInstance()
         super.tearDown()

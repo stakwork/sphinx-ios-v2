@@ -1,6 +1,12 @@
 "generic.success.title" = "Tagumpay";
 "generic.error.title" = " Mali";
 "generic.error.message" = "May mali. Paki ulit sa ilang saglit.";
+"server.health.unknown" = "Hindi alam ang status ng node";
+"server.health.degraded" = "Bumaba ang node";
+"mixer.error.cln-unavailable" = "Hindi available ang Lightning node";
+"mixer.error.cln-timeout" = "Nag-timeout ang request";
+"mixer.error.insufficient-balance" = "Hindi sapat ang balance";
+"mixer.error.unknown" = "May mali. Paki ulit sa ilang saglit.";
 "generic.message.error" = "Hindi maipadala ang mensahe dahil sa isang error sa pag-encrypt.";
 "generic.contact-support" = "Paki contact and suporta sa support@stakwork.com";
 "boost.error.title" = "Boost error";

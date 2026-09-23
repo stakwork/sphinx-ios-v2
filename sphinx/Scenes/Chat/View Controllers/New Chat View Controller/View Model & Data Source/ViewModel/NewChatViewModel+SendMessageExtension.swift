@@ -74,7 +74,10 @@ extension NewChatViewModel {
         let message = validMessage?.makeProvisional(chat: self.chat)
         updateSnapshotWith(message: message)
         
-        completion(validMessage != nil, errorMsg)
+        completion(
+            validMessage != nil,
+            errorMsg.map { SphinxServerHealth.userFacingMessage(forRawError: $0) }
+        )
         
         if let message = validMessage {
             joinIfCallMessage(message: message)
@@ -135,7 +138,13 @@ extension NewChatViewModel {
         message: TransactionMessage
     ) {
         if message.isMessageBoost() && message.failed() {
-            AlertHelper.showAlert(title: "boost.error.title".localized, message: message.errorMessage ?? "generic.error.message".localized)
+            AlertHelper.showAlert(
+                title: "boost.error.title".localized,
+                message: SphinxServerHealth.userFacingMessage(
+                    forRawError: message.errorMessage,
+                    fallback: "generic.error.message".localized
+                )
+            )
         }
     }
 

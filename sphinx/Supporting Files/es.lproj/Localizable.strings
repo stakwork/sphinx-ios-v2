@@ -10,6 +10,12 @@
 "generic.success.title" = "Éxito";
 "generic.error.title" = "Error";
 "generic.error.message" = "Ha habido un problema. Por favor vuelva a intentarlo más tarde.";
+"server.health.unknown" = "Estado del nodo desconocido";
+"server.health.degraded" = "Nodo degradado";
+"mixer.error.cln-unavailable" = "Nodo Lightning no disponible";
+"mixer.error.cln-timeout" = "La solicitud expiró";
+"mixer.error.insufficient-balance" = "Saldo insuficiente";
+"mixer.error.unknown" = "Ha habido un problema. Por favor vuelva a intentarlo más tarde.";
 "generic.message.error" = "El mensaje no pudo ser encriptado correctamente por lo cual no puede ser enviado.";
 "generic.contact-support" = "Por favor contacta con soporte en support@stakwork.com";
 "boost.error.title" = "Boost error";
