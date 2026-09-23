@@ -47,35 +47,45 @@ extension SphinxOnionManager {
     }
 
     func ingestServerStatusPayloadString(_ payload: String, nowMs: UInt64? = nil) {
-        let now = nowMs ?? currentServerHealthNowMs()
-        do {
-            let status = try parseServerStatus(payload: payload)
-            lastServerStatus = status
-            lastServerStatusSeenMs = now
-            let health = evaluateServerHealth(
-                last: status,
-                lastSeenMs: now,
-                nowMs: now,
-                intervalMs: ServerHealthPresentation.heartbeatIntervalMs,
-                maxMissed: ServerHealthPresentation.maxMissedIntervals
-            )
-            applyServerHealth(health)
-        } catch {
-            print("[MQTT] server status parse_failed=true")
-            applyServerHealth(.unknown)
+        let capturedNow = nowMs
+        runOnMainIfNeeded { [weak self] in
+            guard let self else { return }
+            let now = capturedNow ?? self.currentServerHealthNowMs()
+            do {
+                let status = try parseServerStatus(payload: payload)
+                self.lastServerStatus = status
+                self.lastServerStatusSeenMs = now
+                self.applyServerHealth(
+                    evaluateServerHealth(
+                        last: status,
+                        lastSeenMs: now,
+                        nowMs: now,
+                        intervalMs: ServerHealthPresentation.heartbeatIntervalMs,
+                        maxMissed: ServerHealthPresentation.maxMissedIntervals
+                    )
+                )
+            } catch {
+                print("[MQTT] server status parse_failed=true")
+                self.applyServerHealth(.unknown)
+            }
         }
     }
 
     func reevaluateServerHealthStaleness(nowMs: UInt64? = nil) {
-        let now = nowMs ?? currentServerHealthNowMs()
-        let health = evaluateServerHealth(
-            last: lastServerStatus,
-            lastSeenMs: lastServerStatusSeenMs,
-            nowMs: now,
-            intervalMs: ServerHealthPresentation.heartbeatIntervalMs,
-            maxMissed: ServerHealthPresentation.maxMissedIntervals
-        )
-        applyServerHealth(health)
+        let capturedNow = nowMs
+        runOnMainIfNeeded { [weak self] in
+            guard let self else { return }
+            let now = capturedNow ?? self.currentServerHealthNowMs()
+            self.applyServerHealth(
+                evaluateServerHealth(
+                    last: self.lastServerStatus,
+                    lastSeenMs: self.lastServerStatusSeenMs,
+                    nowMs: now,
+                    intervalMs: ServerHealthPresentation.heartbeatIntervalMs,
+                    maxMissed: ServerHealthPresentation.maxMissedIntervals
+                )
+            )
+        }
     }
 
     func currentServerHealthNowMs() -> UInt64 {
