@@ -81,7 +81,7 @@ extension NewChatViewModel: AttachmentsManagerDelegate {
 
             AlertHelper.showAlert(
                 title: "generic.error.title".localized,
-                message: SphinxServerHealth.userFacingMessage(forRawError: errorMessage)
+                message: ServerHealthPresentation.userFacingMessage(forRawError: errorMessage)
             )
         }
     }

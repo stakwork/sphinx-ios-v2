@@ -45,9 +45,9 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
     var reconnectionTimer: Timer? = nil
     var watchdogTimer: Timer? = nil
     var lastInboundTime: Date? = nil
-    var lastServerStatus: MixerServerStatus? = nil
+    var lastServerStatus: ServerStatus? = nil
     var lastServerStatusSeenMs: UInt64 = 0
-    var currentServerHealth: MixerServerHealth = .unknown
+    var currentServerHealth: ServerHealth = .unknown
     var serverHealthStalenessTimer: Timer? = nil
     /// Test hook: local clock override for health staleness evaluation.
     internal var nowMsProvider: (() -> UInt64)?
@@ -1004,7 +1004,7 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
             
             self.mqtt.subscribe([
                 (tribeMgmtTopic, CocoaMQTTQoS.qos0),
-                (SphinxServerHealth.topic, CocoaMQTTQoS.qos0)
+                (serverStatusTopic(), CocoaMQTTQoS.qos0)
             ])
             self.startServerHealthTracking()
         } catch {}
@@ -1283,7 +1283,7 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
 
     func processMqttMessages(message: CocoaMQTTMessage) {
         onProcessMqttMessages?(Thread.isMainThread)
-        if SphinxServerHealth.isExactStatusTopic(message.topic) {
+        if message.topic == serverStatusTopic() {
             onServerStatusIntercepted?(message.topic)
             ingestServerStatusPayload(message.payload)
             return

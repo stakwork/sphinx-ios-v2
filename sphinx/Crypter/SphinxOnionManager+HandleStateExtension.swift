@@ -427,7 +427,7 @@ extension SphinxOnionManager {
     
     func handleError(error: String?) {
         if let error = error {
-            let mapped = SphinxServerHealth.parseMixerErrorCode(error)
+            let mapped = parseMixerErrorCode(raw: error)
             if mapped != .unknown {
                 presentMappedMixerFailure(code: error)
             }
@@ -589,7 +589,7 @@ extension SphinxOnionManager {
     }
 
     func presentMappedMixerFailure(code: String?) {
-        let message = SphinxServerHealth.userFacingMessage(forCode: code)
+        let message = ServerHealthPresentation.userFacingMessage(forCode: code)
         DispatchQueue.main.async {
             AlertHelper.showAlert(
                 title: "generic.error.title".localized,
