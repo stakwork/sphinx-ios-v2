@@ -8,7 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		06459E6FBB6344A1A70E298C /* AIAgentManager+HiveTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5B2D56F945C46E689DAFEF9 /* AIAgentManager+HiveTools.swift */; };
-		SH01AA11BB22CC33DD44EE01 /* SphinxServerHealth.swift in Sources */ = {isa = PBXBuildFile; fileRef = SH01AA11BB22CC33DD44EE00 /* SphinxServerHealth.swift */; };
+		SH01AA11BB22CC33DD44EE09 /* ServerHealthPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = SH01AA11BB22CC33DD44EE08 /* ServerHealthPresentation.swift */; };
 		SH01AA11BB22CC33DD44EE03 /* SphinxOnionManager+ServerHealth.swift in Sources */ = {isa = PBXBuildFile; fileRef = SH01AA11BB22CC33DD44EE02 /* SphinxOnionManager+ServerHealth.swift */; };
 		SH01AA11BB22CC33DD44EE05 /* ServerHealthBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SH01AA11BB22CC33DD44EE04 /* ServerHealthBannerView.swift */; };
 		SH01AA11BB22CC33DD44EE07 /* SphinxServerHealthTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = SH01AA11BB22CC33DD44EE06 /* SphinxServerHealthTests.swift */; };
@@ -2076,7 +2076,7 @@
 		AA11BB22CC33DD44EE55FF66 /* HiveSearchResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveSearchResult.swift; sourceTree = "<group>"; };
 		AA1234560000000000000002 /* WebAppSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppSessionManager.swift; sourceTree = "<group>"; };
 		AABB11221DEF456700AABBBB /* SphinxrsExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SphinxrsExtensions.swift; sourceTree = "<group>"; };
-		SH01AA11BB22CC33DD44EE00 /* SphinxServerHealth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SphinxServerHealth.swift; sourceTree = "<group>"; };
+		SH01AA11BB22CC33DD44EE08 /* ServerHealthPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerHealthPresentation.swift; sourceTree = "<group>"; };
 		SH01AA11BB22CC33DD44EE02 /* SphinxOnionManager+ServerHealth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SphinxOnionManager+ServerHealth.swift"; sourceTree = "<group>"; };
 		SH01AA11BB22CC33DD44EE04 /* ServerHealthBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerHealthBannerView.swift; sourceTree = "<group>"; };
 		SH01AA11BB22CC33DD44EE06 /* SphinxServerHealthTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SphinxServerHealthTests.swift; sourceTree = "<group>"; };
@@ -4674,7 +4674,7 @@
 				4733ED262CA72AA200078EF2 /* SphinxOnionManager+PeopleExtension.swift */,
 				4733ED302CB5572700078EF2 /* SphinxOnionManager+OnionStateExtension.swift */,
 				AABB11221DEF456700AABBBB /* SphinxrsExtensions.swift */,
-				SH01AA11BB22CC33DD44EE00 /* SphinxServerHealth.swift */,
+				SH01AA11BB22CC33DD44EE08 /* ServerHealthPresentation.swift */,
 				SH01AA11BB22CC33DD44EE02 /* SphinxOnionManager+ServerHealth.swift */,
 			);
 			path = Crypter;
@@ -6013,7 +6013,7 @@
 				47FCE2C02CD903B6005DB8AF /* LiveKitCallViewController.swift in Sources */,
 				CE4B53FD2AFC389C00708A0C /* SphinxOnionManager.swift in Sources */,
 				AABB11221DEF456700AABBCC /* SphinxrsExtensions.swift in Sources */,
-				SH01AA11BB22CC33DD44EE01 /* SphinxServerHealth.swift in Sources */,
+				SH01AA11BB22CC33DD44EE09 /* ServerHealthPresentation.swift in Sources */,
 				SH01AA11BB22CC33DD44EE03 /* SphinxOnionManager+ServerHealth.swift in Sources */,
 				SH01AA11BB22CC33DD44EE05 /* ServerHealthBannerView.swift in Sources */,
 				CE51F350298870BF00ABBACB /* MemberBadgeDetailVM.swift in Sources */,

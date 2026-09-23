@@ -76,7 +76,7 @@ extension NewChatViewModel {
         
         completion(
             validMessage != nil,
-            errorMsg.map { SphinxServerHealth.userFacingMessage(forRawError: $0) }
+            errorMsg.map { ServerHealthPresentation.userFacingMessage(forRawError: $0) }
         )
         
         if let message = validMessage {
@@ -140,7 +140,7 @@ extension NewChatViewModel {
         if message.isMessageBoost() && message.failed() {
             AlertHelper.showAlert(
                 title: "boost.error.title".localized,
-                message: SphinxServerHealth.userFacingMessage(
+                message: ServerHealthPresentation.userFacingMessage(
                     forRawError: message.errorMessage,
                     fallback: "generic.error.message".localized
                 )

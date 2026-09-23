@@ -281,7 +281,7 @@ extension SphinxOnionManager {
                 } else if status == SphinxOnionManager.kFailedStatus, let code, !code.isEmpty {
                     AlertHelper.showAlert(
                         title: "generic.error.title".localized,
-                        message: SphinxServerHealth.userFacingMessage(forCode: code)
+                        message: ServerHealthPresentation.userFacingMessage(forCode: code)
                     )
                 } else if let userInfo = timer.userInfo as? [String: String], let invoice = userInfo["invoice"] {
                     self.payInvoiceFromLSP(invoice: invoice)

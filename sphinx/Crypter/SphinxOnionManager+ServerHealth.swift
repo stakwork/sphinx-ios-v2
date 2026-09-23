@@ -47,31 +47,45 @@ extension SphinxOnionManager {
     }
 
     func ingestServerStatusPayloadString(_ payload: String, nowMs: UInt64? = nil) {
-        let now = nowMs ?? currentServerHealthNowMs()
-        do {
-            let status = try SphinxServerHealth.parseServerStatus(payload)
-            lastServerStatus = status
-            lastServerStatusSeenMs = now
-            let health = SphinxServerHealth.evaluate(
-                last: status,
-                lastSeenMs: now,
-                nowMs: now
-            )
-            applyServerHealth(health)
-        } catch {
-            print("[MQTT] server status parse_failed=true")
-            applyServerHealth(.unknown)
+        let capturedNow = nowMs
+        runOnMainIfNeeded { [weak self] in
+            guard let self else { return }
+            let now = capturedNow ?? self.currentServerHealthNowMs()
+            do {
+                let status = try parseServerStatus(payload: payload)
+                self.lastServerStatus = status
+                self.lastServerStatusSeenMs = now
+                self.applyServerHealth(
+                    evaluateServerHealth(
+                        last: status,
+                        lastSeenMs: now,
+                        nowMs: now,
+                        intervalMs: ServerHealthPresentation.heartbeatIntervalMs,
+                        maxMissed: ServerHealthPresentation.maxMissedIntervals
+                    )
+                )
+            } catch {
+                print("[MQTT] server status parse_failed=true")
+                self.applyServerHealth(.unknown)
+            }
         }
     }
 
     func reevaluateServerHealthStaleness(nowMs: UInt64? = nil) {
-        let now = nowMs ?? currentServerHealthNowMs()
-        let health = SphinxServerHealth.evaluate(
-            last: lastServerStatus,
-            lastSeenMs: lastServerStatusSeenMs,
-            nowMs: now
-        )
-        applyServerHealth(health)
+        let capturedNow = nowMs
+        runOnMainIfNeeded { [weak self] in
+            guard let self else { return }
+            let now = capturedNow ?? self.currentServerHealthNowMs()
+            self.applyServerHealth(
+                evaluateServerHealth(
+                    last: self.lastServerStatus,
+                    lastSeenMs: self.lastServerStatusSeenMs,
+                    nowMs: now,
+                    intervalMs: ServerHealthPresentation.heartbeatIntervalMs,
+                    maxMissed: ServerHealthPresentation.maxMissedIntervals
+                )
+            )
+        }
     }
 
     func currentServerHealthNowMs() -> UInt64 {
@@ -82,10 +96,10 @@ extension SphinxOnionManager {
     }
 
     var isServerHealthBannerVisible: Bool {
-        SphinxServerHealth.shouldShowBanner(for: currentServerHealth)
+        ServerHealthPresentation.shouldShowBanner(for: currentServerHealth)
     }
 
-    func applyServerHealth(_ health: MixerServerHealth) {
+    func applyServerHealth(_ health: ServerHealth) {
         let previous = currentServerHealth
         currentServerHealth = health
         if previous != health {
@@ -96,7 +110,7 @@ extension SphinxOnionManager {
 
     private func startServerHealthStalenessTimer() {
         stopServerHealthStalenessTimer()
-        let interval = TimeInterval(SphinxServerHealth.heartbeatIntervalMs) / 1000.0
+        let interval = TimeInterval(ServerHealthPresentation.heartbeatIntervalMs) / 1000.0
         serverHealthStalenessTimer = Timer.scheduledTimer(
             withTimeInterval: interval,
             repeats: true
@@ -111,7 +125,7 @@ extension SphinxOnionManager {
         serverHealthStalenessTimer = nil
     }
 
-    private static func logName(for health: MixerServerHealth) -> String {
+    private static func logName(for health: ServerHealth) -> String {
         switch health {
         case .ok: return "ok"
         case .degraded: return "degraded"

@@ -8,7 +8,7 @@
 import XCTest
 @testable import sphinx
 
-final class SphinxServerHealthTests: XCTestCase {
+final class ServerHealthTests: XCTestCase {
 
     override func tearDown() {
         let mgr = SphinxOnionManager.sharedInstance
@@ -53,11 +53,11 @@ final class SphinxServerHealthTests: XCTestCase {
         mgr.onOnionHandleInvoked = { handleTopic = $0 }
 
         mgr.processMqttMessageForTest(
-            topic: SphinxServerHealth.topic,
+            topic: serverStatusTopic(),
             payload: healthyPayload(ts: 1_700_000_000_000)
         )
 
-        XCTAssertEqual(intercepted, SphinxServerHealth.topic)
+        XCTAssertEqual(intercepted, serverStatusTopic())
         XCTAssertNil(handleTopic, "onion handle() must not run for the exact status topic")
     }
 
@@ -67,13 +67,13 @@ final class SphinxServerHealthTests: XCTestCase {
         mgr.onServerStatusIntercepted = { intercepted = $0 }
 
         mgr.processMqttMessageForTest(
-            topic: "prefix/\(SphinxServerHealth.topic)/suffix",
+            topic: "prefix/\(serverStatusTopic())/suffix",
             payload: healthyPayload(ts: 1_700_000_000_000)
         )
 
         XCTAssertNil(intercepted, "substring topics must not match")
-        XCTAssertFalse(SphinxServerHealth.isExactStatusTopic("prefix/server_status/suffix"))
-        XCTAssertTrue(SphinxServerHealth.isExactStatusTopic("server_status"))
+        XCTAssertFalse("prefix/server_status/suffix" == serverStatusTopic())
+        XCTAssertTrue("server_status" == serverStatusTopic())
     }
 
     // MARK: - Store start / recovery / staleness
@@ -90,7 +90,7 @@ final class SphinxServerHealthTests: XCTestCase {
         var handleTopic: String?
         mgr.onOnionHandleInvoked = { handleTopic = $0 }
 
-        mgr.processMqttMessageForTest(topic: SphinxServerHealth.topic, payload: "not-json")
+        mgr.processMqttMessageForTest(topic: serverStatusTopic(), payload: "not-json")
 
         XCTAssertEqual(mgr.currentServerHealth, .unknown)
         XCTAssertNil(handleTopic)
@@ -112,8 +112,8 @@ final class SphinxServerHealthTests: XCTestCase {
 
     func test_stalenessTransitionsToUnknownWhileMqttRemainsUp() {
         let mgr = makeFreshManager()
-        let interval = SphinxServerHealth.heartbeatIntervalMs
-        let n = UInt64(SphinxServerHealth.maxMissedIntervals)
+        let interval = ServerHealthPresentation.heartbeatIntervalMs
+        let n = UInt64(ServerHealthPresentation.maxMissedIntervals)
         let seen: UInt64 = 1_700_000_000_000
         mgr.isConnected = true
         mgr.nowMsProvider = { seen }
@@ -137,7 +137,7 @@ final class SphinxServerHealthTests: XCTestCase {
     func test_staleRetainedTsDoesNotFlashOk() {
         let mgr = makeFreshManager()
         let now: UInt64 = 1_700_000_090_000
-        let staleTs = now - (SphinxServerHealth.heartbeatIntervalMs * 10)
+        let staleTs = now - (ServerHealthPresentation.heartbeatIntervalMs * 10)
         mgr.nowMsProvider = { now }
 
         mgr.ingestServerStatusPayloadString(healthyPayload(ts: staleTs), nowMs: now)
@@ -149,44 +149,44 @@ final class SphinxServerHealthTests: XCTestCase {
 
     func test_mappedErrorCopyForKnownAndUnknownCodes() {
         XCTAssertEqual(
-            SphinxServerHealth.parseMixerErrorCode("CLN_UNAVAILABLE"),
+            parseMixerErrorCode(raw: "CLN_UNAVAILABLE"),
             .clnUnavailable
         )
         XCTAssertEqual(
-            SphinxServerHealth.parseMixerErrorCode("{\"code\":\"CLN_TIMEOUT\"}"),
+            parseMixerErrorCode(raw: "{\"code\":\"CLN_TIMEOUT\"}"),
             .clnTimeout
         )
         XCTAssertEqual(
-            SphinxServerHealth.parseMixerErrorCode("INSUFFICIENT_BALANCE"),
+            parseMixerErrorCode(raw: "INSUFFICIENT_BALANCE"),
             .insufficientBalance
         )
         XCTAssertEqual(
-            SphinxServerHealth.parseMixerErrorCode("not-a-code"),
+            parseMixerErrorCode(raw: "not-a-code"),
             .unknown
         )
 
         XCTAssertEqual(
-            SphinxServerHealth.userFacingMessage(for: .clnUnavailable),
+            ServerHealthPresentation.userFacingMessage(for: .clnUnavailable),
             "mixer.error.cln-unavailable".localized
         )
         XCTAssertEqual(
-            SphinxServerHealth.userFacingMessage(for: .clnTimeout),
+            ServerHealthPresentation.userFacingMessage(for: .clnTimeout),
             "mixer.error.cln-timeout".localized
         )
         XCTAssertEqual(
-            SphinxServerHealth.userFacingMessage(for: .insufficientBalance),
+            ServerHealthPresentation.userFacingMessage(for: .insufficientBalance),
             "mixer.error.insufficient-balance".localized
         )
         XCTAssertEqual(
-            SphinxServerHealth.userFacingMessage(forCode: nil),
+            ServerHealthPresentation.userFacingMessage(forCode: nil),
             "generic.error.message".localized
         )
         XCTAssertEqual(
-            SphinxServerHealth.userFacingMessage(forCode: "UNKNOWN"),
+            ServerHealthPresentation.userFacingMessage(forCode: "UNKNOWN"),
             "mixer.error.unknown".localized
         )
         XCTAssertEqual(
-            SphinxServerHealth.userFacingMessage(forRawError: "Account seed not found"),
+            ServerHealthPresentation.userFacingMessage(forRawError: "Account seed not found"),
             "Account seed not found"
         )
     }
@@ -196,23 +196,23 @@ final class SphinxServerHealthTests: XCTestCase {
         let sent = SentStatus(JSONString: json)
         XCTAssertEqual(sent?.code, "CLN_UNAVAILABLE")
         XCTAssertEqual(
-            SphinxServerHealth.userFacingMessage(forCode: sent?.code),
+            ServerHealthPresentation.userFacingMessage(forCode: sent?.code),
             "mixer.error.cln-unavailable".localized
         )
     }
 
     func test_bannerCopyNeverUsesPayloadReason() {
         XCTAssertEqual(
-            SphinxServerHealth.bannerCopy(for: .degraded),
+            ServerHealthPresentation.bannerCopy(for: .degraded),
             "server.health.degraded".localized
         )
         XCTAssertEqual(
-            SphinxServerHealth.bannerCopy(for: .unknown),
+            ServerHealthPresentation.bannerCopy(for: .unknown),
             "server.health.unknown".localized
         )
-        XCTAssertNil(SphinxServerHealth.bannerCopy(for: .ok))
+        XCTAssertNil(ServerHealthPresentation.bannerCopy(for: .ok))
         XCTAssertFalse(
-            SphinxServerHealth.bannerCopy(for: .degraded)?.contains("cln down") == true
+            ServerHealthPresentation.bannerCopy(for: .degraded)?.contains("cln down") == true
         )
     }
 }
