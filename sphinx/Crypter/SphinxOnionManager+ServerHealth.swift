@@ -15,20 +15,26 @@ extension SphinxOnionManager {
             guard let self else { return }
             self.lastServerStatus = nil
             self.lastServerStatusSeenMs = 0
+            self.clearServerHealthLaunchGrace()
             self.applyServerHealth(.unknown)
             self.stopServerHealthStalenessTimer()
+            NotificationCenter.default.post(name: .onServerHealthChanged, object: nil)
         }
     }
 
     func startServerHealthTracking() {
         runOnMainIfNeeded { [weak self] in
+            self?.armServerHealthLaunchGraceIfNeeded()
             self?.startServerHealthStalenessTimer()
         }
     }
 
     func stopServerHealthTracking() {
         runOnMainIfNeeded { [weak self] in
-            self?.stopServerHealthStalenessTimer()
+            guard let self else { return }
+            self.stopServerHealthStalenessTimer()
+            self.clearServerHealthLaunchGrace()
+            NotificationCenter.default.post(name: .onServerHealthChanged, object: nil)
         }
     }
 
@@ -51,22 +57,22 @@ extension SphinxOnionManager {
         runOnMainIfNeeded { [weak self] in
             guard let self else { return }
             let now = capturedNow ?? self.currentServerHealthNowMs()
+            self.markServerStatusReceived()
             do {
                 let status = try parseServerStatus(payload: payload)
                 self.lastServerStatus = status
                 self.lastServerStatusSeenMs = now
-                self.applyServerHealth(
-                    evaluateServerHealth(
-                        last: status,
-                        lastSeenMs: now,
-                        nowMs: now,
-                        intervalMs: ServerHealthPresentation.heartbeatIntervalMs,
-                        maxMissed: ServerHealthPresentation.maxMissedIntervals
-                    )
+                let health = evaluateServerHealth(
+                    last: status,
+                    lastSeenMs: now,
+                    nowMs: now,
+                    intervalMs: ServerHealthPresentation.heartbeatIntervalMs,
+                    maxMissed: ServerHealthPresentation.maxMissedIntervals
                 )
+                self.applyServerHealthAndRefreshIfUnchanged(health)
             } catch {
                 print("[MQTT] server status parse_failed=true")
-                self.applyServerHealth(.unknown)
+                self.applyServerHealthAndRefreshIfUnchanged(.unknown)
             }
         }
     }
@@ -96,7 +102,12 @@ extension SphinxOnionManager {
     }
 
     var isServerHealthBannerVisible: Bool {
-        ServerHealthPresentation.shouldShowBanner(for: currentServerHealth)
+        ServerHealthPresentation.shouldShowBanner(
+            health: currentServerHealth,
+            hasReceivedServerStatus: hasReceivedServerStatus,
+            trackingStartedAtMs: serverHealthTrackingStartedAtMs,
+            nowMs: currentServerHealthNowMs()
+        )
     }
 
     func applyServerHealth(_ health: ServerHealth) {
@@ -106,6 +117,24 @@ extension SphinxOnionManager {
             print("[MQTT] server health \(Self.logName(for: previous)) -> \(Self.logName(for: health))")
             NotificationCenter.default.post(name: .onServerHealthChanged, object: nil)
         }
+    }
+
+    func armServerHealthLaunchGraceIfNeeded() {
+        guard serverHealthTrackingStartedAtMs == nil else { return }
+        serverHealthTrackingStartedAtMs = currentServerHealthNowMs()
+        let interval = TimeInterval(ServerHealthPresentation.launchGraceMs) / 1000.0
+        serverHealthLaunchGraceTimer = Timer.scheduledTimer(
+            withTimeInterval: interval,
+            repeats: false
+        ) { [weak self] _ in
+            self?.handleServerHealthLaunchGraceElapsed()
+        }
+        NotificationCenter.default.post(name: .onServerHealthChanged, object: nil)
+    }
+
+    func handleServerHealthLaunchGraceElapsed() {
+        invalidateServerHealthLaunchGraceTimer()
+        NotificationCenter.default.post(name: .onServerHealthChanged, object: nil)
     }
 
     private func startServerHealthStalenessTimer() {
@@ -123,6 +152,30 @@ extension SphinxOnionManager {
     private func stopServerHealthStalenessTimer() {
         serverHealthStalenessTimer?.invalidate()
         serverHealthStalenessTimer = nil
+    }
+
+    private func markServerStatusReceived() {
+        hasReceivedServerStatus = true
+        invalidateServerHealthLaunchGraceTimer()
+    }
+
+    private func applyServerHealthAndRefreshIfUnchanged(_ health: ServerHealth) {
+        let previous = currentServerHealth
+        applyServerHealth(health)
+        if previous == health {
+            NotificationCenter.default.post(name: .onServerHealthChanged, object: nil)
+        }
+    }
+
+    private func clearServerHealthLaunchGrace() {
+        hasReceivedServerStatus = false
+        serverHealthTrackingStartedAtMs = nil
+        invalidateServerHealthLaunchGraceTimer()
+    }
+
+    private func invalidateServerHealthLaunchGraceTimer() {
+        serverHealthLaunchGraceTimer?.invalidate()
+        serverHealthLaunchGraceTimer = nil
     }
 
     private static func logName(for health: ServerHealth) -> String {

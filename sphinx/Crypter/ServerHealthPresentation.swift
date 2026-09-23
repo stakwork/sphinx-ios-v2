@@ -12,6 +12,7 @@ import Foundation
 enum ServerHealthPresentation {
     static let heartbeatIntervalMs: UInt64 = 30_000
     static let maxMissedIntervals: UInt32 = 3
+    static let launchGraceMs: UInt64 = 15_000
 
     static func userFacingMessage(
         forCode code: String?,
@@ -57,8 +58,29 @@ enum ServerHealthPresentation {
         }
     }
 
-    static func shouldShowBanner(for health: ServerHealth) -> Bool {
-        health != .ok
+    static func shouldShowBanner(
+        health: ServerHealth,
+        hasReceivedServerStatus: Bool,
+        trackingStartedAtMs: UInt64?,
+        nowMs: UInt64
+    ) -> Bool {
+        switch health {
+        case .ok:
+            return false
+        case .degraded:
+            return true
+        case .unknown:
+            if hasReceivedServerStatus {
+                return true
+            }
+            guard let startedAt = trackingStartedAtMs else {
+                return false
+            }
+            guard nowMs >= startedAt else {
+                return false
+            }
+            return nowMs - startedAt >= launchGraceMs
+        }
     }
 
     private static func userFacingMessage(

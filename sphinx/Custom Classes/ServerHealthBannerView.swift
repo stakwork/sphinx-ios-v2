@@ -36,21 +36,22 @@ final class ServerHealthBannerView: UIView {
         addSubview(label)
 
         NSLayoutConstraint.activate([
+            heightAnchor.constraint(equalToConstant: 42),
             label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
             label.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
-            label.topAnchor.constraint(equalTo: topAnchor, constant: 6),
-            label.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -6)
+            label.centerYAnchor.constraint(equalTo: centerYAnchor)
         ])
     }
 
     func configure(health: ServerHealth) {
-        if let copy = ServerHealthPresentation.bannerCopy(for: health) {
-            label.text = copy
-            isHidden = false
-        } else {
+        guard SphinxOnionManager.sharedInstance.isServerHealthBannerVisible,
+              let copy = ServerHealthPresentation.bannerCopy(for: health) else {
             label.text = nil
             isHidden = true
+            return
         }
+        label.text = copy
+        isHidden = false
     }
 }
 

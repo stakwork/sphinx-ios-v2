@@ -48,7 +48,12 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
     var lastServerStatus: ServerStatus? = nil
     var lastServerStatusSeenMs: UInt64 = 0
     var currentServerHealth: ServerHealth = .unknown
+    /// When health tracking started. Nil means tracking has not started; do not use 0.
+    var serverHealthTrackingStartedAtMs: UInt64? = nil
+    /// Sticky for the current tracking session. Set when any status payload is consumed.
+    var hasReceivedServerStatus: Bool = false
     var serverHealthStalenessTimer: Timer? = nil
+    var serverHealthLaunchGraceTimer: Timer? = nil
     /// Test hook: local clock override for health staleness evaluation.
     internal var nowMsProvider: (() -> UInt64)?
     /// Test hook: fired immediately before onion `handle()` in `processMqttMessages`.
