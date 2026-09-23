@@ -49,10 +49,10 @@ extension SphinxOnionManager {
     func ingestServerStatusPayloadString(_ payload: String, nowMs: UInt64? = nil) {
         let now = nowMs ?? currentServerHealthNowMs()
         do {
-            let status = try SphinxServerHealth.parseServerStatus(payload)
+            let status = try parseServerStatus(payload: payload)
             lastServerStatus = status
             lastServerStatusSeenMs = now
-            let health = SphinxServerHealth.evaluate(
+            let health = SphinxServerHealthMapping.evaluate(
                 last: status,
                 lastSeenMs: now,
                 nowMs: now
@@ -66,7 +66,7 @@ extension SphinxOnionManager {
 
     func reevaluateServerHealthStaleness(nowMs: UInt64? = nil) {
         let now = nowMs ?? currentServerHealthNowMs()
-        let health = SphinxServerHealth.evaluate(
+        let health = SphinxServerHealthMapping.evaluate(
             last: lastServerStatus,
             lastSeenMs: lastServerStatusSeenMs,
             nowMs: now
@@ -82,10 +82,10 @@ extension SphinxOnionManager {
     }
 
     var isServerHealthBannerVisible: Bool {
-        SphinxServerHealth.shouldShowBanner(for: currentServerHealth)
+        SphinxServerHealthMapping.shouldShowBanner(for: currentServerHealth)
     }
 
-    func applyServerHealth(_ health: MixerServerHealth) {
+    func applyServerHealth(_ health: ServerHealth) {
         let previous = currentServerHealth
         currentServerHealth = health
         if previous != health {
@@ -96,7 +96,7 @@ extension SphinxOnionManager {
 
     private func startServerHealthStalenessTimer() {
         stopServerHealthStalenessTimer()
-        let interval = TimeInterval(SphinxServerHealth.heartbeatIntervalMs) / 1000.0
+        let interval = TimeInterval(SphinxServerHealthMapping.heartbeatIntervalMs) / 1000.0
         serverHealthStalenessTimer = Timer.scheduledTimer(
             withTimeInterval: interval,
             repeats: true
@@ -111,7 +111,7 @@ extension SphinxOnionManager {
         serverHealthStalenessTimer = nil
     }
 
-    private static func logName(for health: MixerServerHealth) -> String {
+    private static func logName(for health: ServerHealth) -> String {
         switch health {
         case .ok: return "ok"
         case .degraded: return "degraded"

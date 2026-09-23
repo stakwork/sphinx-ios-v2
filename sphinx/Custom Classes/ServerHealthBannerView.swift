@@ -43,8 +43,8 @@ final class ServerHealthBannerView: UIView {
         ])
     }
 
-    func configure(health: MixerServerHealth) {
-        if let copy = SphinxServerHealth.bannerCopy(for: health) {
+    func configure(health: ServerHealth) {
+        if let copy = SphinxServerHealthMapping.bannerCopy(for: health) {
             label.text = copy
             isHidden = false
         } else {
@@ -73,7 +73,7 @@ final class ServerHealthBannerPresenter {
         apply(health: SphinxOnionManager.sharedInstance.currentServerHealth)
     }
 
-    func apply(health: MixerServerHealth) {
+    func apply(health: ServerHealth) {
         installBannerIfNeeded(on: window)
         banner?.configure(health: health)
     }
