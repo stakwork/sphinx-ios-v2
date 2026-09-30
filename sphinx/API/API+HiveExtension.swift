@@ -728,8 +728,17 @@ extension API {
         model: String? = nil,
         authToken: String,
         callback: @escaping HiveFeatureCallback,
-        errorCallback: @escaping EmptyCallback
+        errorCallback: @escaping EmptyCallback,
+        statusErrorCallback: ((Int?) -> Void)? = nil,
+        description: String? = nil
     ) {
+        let fail: (Int?) -> Void = { status in
+            if let statusErrorCallback = statusErrorCallback {
+                statusErrorCallback(status)
+            } else {
+                errorCallback()
+            }
+        }
         let urlString = "\(API.kHiveBaseUrl)/features"
         var params: [String: AnyObject] = [
             "title": title as AnyObject,
@@ -738,16 +747,19 @@ extension API {
         if let model = model {
             params["model"] = model as AnyObject
         }
+        if let description = description {
+            params["description"] = description as AnyObject
+        }
 
         guard let request = createRequest(urlString, bodyParams: params as NSDictionary, method: "POST", token: authToken) else {
-            errorCallback()
+            fail(nil)
             return
         }
 
         session()?.request(request).responseData { response in
             if let statusCode = response.response?.statusCode, statusCode == 401 {
                 print("[HiveAPI] Create feature unauthorized (401) - token may be expired")
-                errorCallback()
+                fail(response.response?.statusCode)
                 return
             }
 
@@ -757,15 +769,21 @@ extension API {
 
                 if let error = json["error"].string {
                     print("[HiveAPI] Create feature error: \(error)")
-                    errorCallback()
+                    fail(response.response?.statusCode)
                     return
                 }
 
-                let feature = HiveFeature(json: json["data"])
-                callback(feature)
+                if let statusCode = response.response?.statusCode, !(200..<300).contains(statusCode) {
+                    print("[HiveAPI] Create feature failed with status \(statusCode)")
+                    fail(statusCode)
+                    return
+                }
+
+                // nil here means 2xx but the body could not be parsed.
+                callback(HiveFeatureParser.parseCreated(json: json))
             case .failure(let error):
                 print("[HiveAPI] Create feature failed: \(error.localizedDescription)")
-                errorCallback()
+                fail(response.response?.statusCode)
             }
         }
     }
@@ -833,24 +851,32 @@ extension API {
         featureId: String,
         authToken: String,
         callback: @escaping HiveChatMessagesCallback,
-        errorCallback: @escaping EmptyCallback
+        errorCallback: @escaping EmptyCallback,
+        statusErrorCallback: ((Int?) -> Void)? = nil
     ) {
+        let fail: (Int?) -> Void = { status in
+            if let statusErrorCallback = statusErrorCallback {
+                statusErrorCallback(status)
+            } else {
+                errorCallback()
+            }
+        }
         guard let encodedFeatureId = featureId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
-            errorCallback()
+            fail(nil)
             return
         }
 
         let urlString = "\(API.kHiveBaseUrl)/features/\(encodedFeatureId)/chat"
 
         guard let request = createRequest(urlString, bodyParams: nil, method: "GET", token: authToken) else {
-            errorCallback()
+            fail(nil)
             return
         }
 
         session()?.request(request).responseData { response in
             if let statusCode = response.response?.statusCode, statusCode == 401 {
                 print("[HiveAPI] Feature chat fetch unauthorized (401) - token may be expired")
-                errorCallback()
+                fail(response.response?.statusCode)
                 return
             }
 
@@ -860,13 +886,13 @@ extension API {
 
                 if let error = json["error"].string {
                     print("[HiveAPI] Feature chat fetch error: \(error)")
-                    errorCallback()
+                    fail(response.response?.statusCode)
                     return
                 }
 
                 guard json["success"].bool == true else {
                     print("[HiveAPI] Feature chat fetch returned success=false")
-                    errorCallback()
+                    fail(response.response?.statusCode)
                     return
                 }
 
@@ -874,7 +900,7 @@ extension API {
                 callback(messages)
             case .failure(let error):
                 print("[HiveAPI] Feature chat fetch failed: \(error.localizedDescription)")
-                errorCallback()
+                fail(response.response?.statusCode)
             }
         }
     }
@@ -935,10 +961,26 @@ extension API {
         selectedRepositoryIds: [String]? = nil,
         authToken: String,
         callback: @escaping HiveChatMessageCallback,
-        errorCallback: @escaping EmptyCallback
+        errorCallback: @escaping EmptyCallback,
+        statusErrorCallback: ((Int?) -> Void)? = nil,
+        errorBodyCallback: ((Int?, Data?) -> Void)? = nil
     ) {
+        let fail: (Int?) -> Void = { status in
+            if let statusErrorCallback = statusErrorCallback {
+                statusErrorCallback(status)
+            } else {
+                errorCallback()
+            }
+        }
+        let failWithBody: (Int?, Data?) -> Void = { status, body in
+            if let errorBodyCallback = errorBodyCallback {
+                errorBodyCallback(status, body)
+            } else {
+                fail(status)
+            }
+        }
         guard let encodedFeatureId = featureId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
-            errorCallback()
+            fail(nil)
             return
         }
 
@@ -955,14 +997,25 @@ extension API {
         }
 
         guard let request = createRequest(urlString, bodyParams: params as NSDictionary, method: "POST", token: authToken) else {
-            errorCallback()
+            fail(nil)
             return
         }
 
         session()?.request(request).responseData { response in
+            // 409 (planner busy) must be checked before any body/`error` inspection.
+            if let statusCode = response.response?.statusCode, statusCode == 409 {
+                print("[HiveAPI] Send chat message conflict (409) - planner busy")
+                failWithBody(409, response.data)
+                return
+            }
+            if let statusCode = response.response?.statusCode, statusCode == 404 || statusCode == 403 || statusCode >= 500 {
+                print("[HiveAPI] Send chat message failed with status \(statusCode)")
+                failWithBody(statusCode, response.data)
+                return
+            }
             if let statusCode = response.response?.statusCode, statusCode == 401 {
                 print("[HiveAPI] Send chat message unauthorized (401) - token may be expired")
-                errorCallback()
+                fail(response.response?.statusCode)
                 return
             }
 
@@ -972,26 +1025,26 @@ extension API {
 
                 if let error = json["error"].string {
                     print("[HiveAPI] Send chat message error: \(error)")
-                    errorCallback()
+                    fail(response.response?.statusCode)
                     return
                 }
 
                 guard json["success"].bool == true else {
                     print("[HiveAPI] Send chat message returned success=false")
-                    errorCallback()
+                    fail(response.response?.statusCode)
                     return
                 }
 
                 guard let sentMessage = HiveChatMessage(json: json["message"]) else {
                     print("[HiveAPI] Send chat message - failed to parse returned message")
-                    errorCallback()
+                    fail(response.response?.statusCode)
                     return
                 }
 
                 callback(sentMessage)
             case .failure(let error):
                 print("[HiveAPI] Send chat message failed: \(error.localizedDescription)")
-                errorCallback()
+                fail(response.response?.statusCode)
             }
         }
     }
@@ -1778,24 +1831,32 @@ extension API {
         featureId: String,
         authToken: String,
         callback: @escaping HiveFeatureCallback,
-        errorCallback: @escaping EmptyCallback
+        errorCallback: @escaping EmptyCallback,
+        statusErrorCallback: ((Int?) -> Void)? = nil
     ) {
+        let fail: (Int?) -> Void = { status in
+            if let statusErrorCallback = statusErrorCallback {
+                statusErrorCallback(status)
+            } else {
+                errorCallback()
+            }
+        }
         guard let encodedId = featureId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
-            errorCallback()
+            fail(nil)
             return
         }
 
         let urlString = "\(API.kHiveBaseUrl)/features/\(encodedId)"
 
         guard let request = createRequest(urlString, bodyParams: nil, method: "GET", token: authToken) else {
-            errorCallback()
+            fail(nil)
             return
         }
 
         session()?.request(request).responseData { response in
             if let statusCode = response.response?.statusCode, statusCode == 401 {
                 print("[HiveAPI] Feature detail fetch unauthorized (401)")
-                errorCallback()
+                fail(response.response?.statusCode)
                 return
             }
 
@@ -1806,14 +1867,14 @@ extension API {
                 guard json["success"].bool == true,
                       let feature = HiveFeature(json: json["data"]) else {
                     print("[HiveAPI] Feature detail parse failed: \(json)")
-                    errorCallback()
+                    fail(response.response?.statusCode)
                     return
                 }
 
                 callback(feature)
             case .failure(let error):
                 print("[HiveAPI] Feature detail fetch failed: \(error.localizedDescription)")
-                errorCallback()
+                fail(response.response?.statusCode)
             }
         }
     }
