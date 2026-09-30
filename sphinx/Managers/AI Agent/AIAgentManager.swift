@@ -122,7 +122,8 @@ final class AIAgentManager: @unchecked Sendable {
     (show the exact message and get confirmation first; if the planner is still running, \
     tell the user to try again shortly and do not retry automatically). \
     answering the planner's clarifying questions -> answer_planner_form \
-    (use plannerMessageId from get_plan_chat_history; show the exact answer and get confirmation first).
+    (planner_message_id is optional — omit it to answer the latest open question, or pass \
+    the id from get_plan_chat_history to target a specific one; show the exact answer and get confirmation first).
 
     When in doubt, prefer query_hive_graph. Never ask the user which tool to use. \
     Do NOT ask for a workspace name before calling query_hive_graph.
@@ -135,6 +136,8 @@ final class AIAgentManager: @unchecked Sendable {
     - search_workspace: Search within a workspace for tasks, features, or content matching a query string.
     - list_features: List all features in a workspace. Includes feature title, status, and ID. Shows a hint if more exist.
     - get_feature_detail: Get detailed info about a specific feature (title, status, priority, description, task count) by name.
+    - get_feature_plan: Get a feature's plan (brief, user stories, requirements, architecture, and whether the planner is working or idle) by workspace_name and feature_name.
+    - get_plan_chat_history: Get the last 20 planner chat messages (and artifact summaries) for a feature, plus any open clarifying questions (with message id, usable as planner_message_id for answer_planner_form).
     - list_tasks: List tasks in a workspace. Optionally pass include_archived=true to include archived tasks. Shows up to 50 with a hint if more exist.
     - get_task_detail: Get full details about a specific task (status, priority, assignee, feature, workflow status, repo, timestamps) by name.
     - get_task_messages: Get the last 20 chat messages for a specific task, formatted as [role]: message.
@@ -147,6 +150,8 @@ final class AIAgentManager: @unchecked Sendable {
     - start_task: Start (assign and begin) a task. Requires workspace_name and task_name.
     - retry_task_workflow: Retry the workflow for a failed or stalled task.
     - archive_task: Archive a task so it no longer appears in active task lists.
+    - send_to_planner: Send a free-form message to a feature's planner (no reply target). Requires workspace_name, feature_name, message. Call at most once per user request; never retry after a busy result.
+    - answer_planner_form: Answer a feature's open PLAN clarifying questions. Requires workspace_name, feature_name, and either answers (one per question, in order) or a single answer string, plus optional planner_message_id (defaults to the latest open clarifying-questions message). Call at most once per user request; never retry after a busy result.
 
     ### Hive Ambiguity Behaviour
     - If a workspace/feature/task name is ambiguous, the tool returns a list of candidates — ask the user to clarify before retrying.
