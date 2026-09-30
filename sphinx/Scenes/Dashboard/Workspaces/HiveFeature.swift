@@ -49,7 +49,8 @@ struct HiveFeature {
     var title: String
     let description: String?
     let brief: String?
-    let userStories: [String]?  // Can be array or string
+    let userStories: [String]?  // Derived titles; kept for existing UI callers
+    var userStoryItems: [HiveUserStory] = []
     let requirements: String?
     let architecture: String?
     var status: String?
@@ -160,6 +161,8 @@ struct HiveFeature {
         //   - Array of strings                                      (older format)
         //   - A single string
         if let storiesArray = json["userStories"].array {
+            self.userStoryItems = storiesArray.compactMap { HiveUserStory(json: $0) }
+                .sorted { $0.order < $1.order }
             let titles = storiesArray.compactMap { item -> String? in
                 if let title = item["title"].string { return title }
                 return item.string
@@ -193,5 +196,21 @@ struct HiveFeature {
 
         // Parse top-level tasks not inside a phase
         self.looseTasks = json["tasks"].arrayValue.compactMap { WorkspaceTask(json: $0) }
+    }
+}
+
+
+struct HiveUserStory: Sendable, Equatable {
+    let id: String
+    let title: String
+    let order: Int
+    let completed: Bool
+
+    init?(json: JSON) {
+        guard let title = json["title"].string else { return nil }
+        self.id = json["id"].string ?? ""
+        self.title = title
+        self.order = json["order"].int ?? 0
+        self.completed = json["completed"].bool ?? false
     }
 }
