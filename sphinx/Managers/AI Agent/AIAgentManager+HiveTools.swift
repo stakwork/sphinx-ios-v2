@@ -427,7 +427,6 @@ extension AIAgentManager {
                     "Status: \(feature.status ?? "unknown")",
                     "Priority: \(feature.priority ?? "unknown")",
                     "Workflow Status: \(feature.workflowStatus ?? "none")",
-                    "Deployment Status: \(feature.deploymentStatus ?? "none")",
                     "Assignee: \(assigneeName)",
                     "Task Count: \(taskCount)",
                 ]

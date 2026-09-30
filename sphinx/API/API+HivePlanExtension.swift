@@ -45,6 +45,11 @@ enum HiveStatusMapper {
         return statusCode == 401
     }
 
+    /// At most one re-auth per call chain.
+    static func shouldReauthAndRetry(statusCode: Int?, hasRetried: Bool) -> Bool {
+        return !hasRetried && shouldReauthAndRetry(statusCode: statusCode)
+    }
+
     static func createResult(statusCode: Int?, body: JSON?) -> CreateFeatureResult {
         guard let code = statusCode, (200..<300).contains(code) else { return .failed(statusCode) }
         guard let body = body else { return .createdUnparseable }
@@ -82,6 +87,7 @@ extension API {
         featureId: String,
         message: String,
         selectedRepositoryIds: [String]? = nil,
+        hasRetried: Bool = false,
         completion: @escaping (FeatureChatSendResult) -> Void
     ) {
         withHiveToken(onFailure: { completion(.failed) }) { token, canRetry in
@@ -95,11 +101,11 @@ extension API {
                 },
                 errorCallback: { completion(.failed) },
                 statusErrorCallback: { status, body in
-                    if canRetry, HiveStatusMapper.shouldReauthAndRetry(statusCode: status) {
+                    if canRetry, HiveStatusMapper.shouldReauthAndRetry(statusCode: status, hasRetried: hasRetried) {
                         self.reauthenticateHive(onFailure: { completion(.failed) }) { newToken in
                             self.sendFeatureChatMessageResult(
                                 featureId: featureId, message: message,
-                                selectedRepositoryIds: selectedRepositoryIds, completion: completion)
+                                selectedRepositoryIds: selectedRepositoryIds, hasRetried: true, completion: completion)
                         }
                         return
                     }
@@ -117,6 +123,7 @@ extension API {
         workspaceId: String,
         title: String,
         description: String?,
+        hasRetried: Bool = false,
         completion: @escaping (CreateFeatureResult) -> Void
     ) {
         withHiveToken(onFailure: { completion(.failed(401)) }) { token, canRetry in
@@ -130,11 +137,11 @@ extension API {
                 },
                 errorCallback: { completion(.failed(nil)) },
                 statusErrorCallback: { status, _ in
-                    if canRetry, HiveStatusMapper.shouldReauthAndRetry(statusCode: status) {
+                    if canRetry, HiveStatusMapper.shouldReauthAndRetry(statusCode: status, hasRetried: hasRetried) {
                         self.reauthenticateHive(onFailure: { completion(.failed(401)) }) { _ in
                             self.createFeatureResult(
                                 workspaceId: workspaceId, title: title,
-                                description: description, completion: completion)
+                                description: description, hasRetried: true, completion: completion)
                         }
                         return
                     }

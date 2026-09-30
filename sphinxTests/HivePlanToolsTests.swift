@@ -37,6 +37,19 @@ final class HivePlanToolsTests: XCTestCase {
         if case .failed(let c) = HiveStatusMapper.createResult(statusCode: 500, body: nil) { XCTAssertEqual(c, 500) } else { XCTFail() }
     }
 
+    func testRepeated401ReauthsExactlyOnce() {
+        var reauths = 0
+        var hasRetried = false
+        for _ in 0..<5 {
+            if HiveStatusMapper.shouldReauthAndRetry(statusCode: 401, hasRetried: hasRetried) {
+                reauths += 1
+                hasRetried = true
+            }
+        }
+        XCTAssertEqual(reauths, 1)
+        XCTAssertFalse(HiveStatusMapper.shouldReauthAndRetry(statusCode: 409, hasRetried: false))
+    }
+
     func testMatchOrg() {
         XCTAssertEqual(HivePlanFormatter.matchOrg(logins: ["a"], slugsByLogin: [:], slug: "x"), "a")
         XCTAssertEqual(HivePlanFormatter.matchOrg(logins: ["a", "b"], slugsByLogin: ["a": ["y"], "b": ["x"]], slug: "x"), "b")
