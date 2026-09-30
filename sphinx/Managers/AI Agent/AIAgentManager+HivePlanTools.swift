@@ -2,9 +2,7 @@
 //  AIAgentManager+HivePlanTools.swift
 //  sphinx
 //
-//  get_feature_plan, get_plan_chat_history, send_to_planner.
-//  answer_planner_form is intentionally not registered: the FORM-answer route
-//  has not been confirmed against Hive fixtures.
+//  get_feature_plan, get_plan_chat_history, send_to_planner, answer_planner_form.
 //
 
 import Foundation
@@ -16,6 +14,14 @@ extension AIAgentManager {
         let workspace_name: String
         let feature_name: String
         let message: String
+    }
+
+    struct AnswerPlannerFormInput: Codable, Sendable {
+        let workspace_name: String
+        let feature_name: String
+        let planner_message_id: String
+        let answers: [String]?
+        let answer: String?
     }
 
     enum FeatureResolution {
@@ -163,5 +169,105 @@ extension AIAgentManager {
            let ids = UserDefaults.standard.object([String].self, with: "hiveFeatureRepos_\(f)"), !ids.isEmpty { return ids }
         if let ids = UserDefaults.standard.object([String].self, with: "hiveWorkspaceRepos_\(workspaceId)"), !ids.isEmpty { return ids }
         return nil
+    }
+
+    // MARK: - resolveOrgLogin
+
+    /// Org owning the workspace slug; never guesses and never falls back to a stored login.
+    func resolveOrgLogin(workspaceSlug: String) async -> Result<String, Error> {
+        struct OrgError: LocalizedError {
+            let message: String
+            var errorDescription: String? { message }
+        }
+        let failure = Result<String, Error>.failure(
+            OrgError(message: "Couldn't determine which Hive org owns workspace \(workspaceSlug).")
+        )
+        guard let token: String = UserDefaults.Keys.hiveToken.get() else { return failure }
+        if let cached = await HiveOrgLoginCache.shared.login(for: workspaceSlug, token: token) {
+            return .success(cached)
+        }
+        let orgs: [HiveOrg]? = await withCheckedContinuation { c in
+            API.sharedInstance.fetchAllOrgs(
+                authToken: token,
+                callback: { c.resume(returning: $0) },
+                errorCallback: { c.resume(returning: nil) })
+        }
+        guard let all = orgs, !all.isEmpty else {
+            print("[AIAgent] resolveOrgLogin: unresolved ws=\(workspaceSlug)")
+            return failure
+        }
+        var slugsByLogin: [String: [String]] = [:]
+        if all.count > 1 {
+            for org in all {
+                let slugs: [String]? = await withCheckedContinuation { c in
+                    API.sharedInstance.fetchOrgWorkspaces(
+                        githubLogin: org.githubLogin, authToken: token,
+                        callback: { c.resume(returning: $0) },
+                        errorCallback: { c.resume(returning: nil) })
+                }
+                slugsByLogin[org.githubLogin] = slugs ?? []
+            }
+        }
+        guard let login = HivePlanFormatter.matchOrg(
+            logins: all.map { $0.githubLogin }, slugsByLogin: slugsByLogin, slug: workspaceSlug
+        ) else {
+            print("[AIAgent] resolveOrgLogin: unresolved ws=\(workspaceSlug)")
+            return failure
+        }
+        await HiveOrgLoginCache.shared.store(login, for: workspaceSlug, token: token)
+        print("[AIAgent] resolveOrgLogin: resolved ws=\(workspaceSlug)")
+        return .success(login)
+    }
+
+    // MARK: - answer_planner_form (confirmation required)
+
+    func buildAnswerPlannerFormTool() -> TypedTool<AnswerPlannerFormInput, JSONValue> {
+        tool(
+            description: "Answer the planner's clarifying questions on a Hive feature (use plannerMessageId from get_plan_chat_history). Supply either `answers` (one per question, in order) or a single `answer`, never both. IMPORTANT: Before invoking, show the user the exact answer text that will be sent and ask for explicit confirmation. Only invoke after the user confirms.",
+            execute: { (input: AnswerPlannerFormInput, _: ToolCallOptions) async throws -> ToolExecutionResult<JSONValue> in
+                print("[AIAgent] answer_planner_form: ws=\(input.workspace_name) messageId=\(input.planner_message_id)")
+                if input.answers != nil && input.answer != nil {
+                    return .value(.string("Provide either `answers` or `answer`, not both."))
+                }
+                let parts = (input.answers ?? input.answer.map { [$0] } ?? [])
+                    .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                    .filter { !$0.isEmpty }
+                guard !parts.isEmpty else { return .value(.string("No answer text was provided.")) }
+                switch await self.resolveFeature(workspaceName: input.workspace_name, featureName: input.feature_name) {
+                case .failure(let m): return .value(.string(m))
+                case .found(let ws, let feature):
+                    guard let slug = ws.slug else {
+                        return .value(.string("Workspace '\(ws.name)' has no slug; cannot resolve its Hive org."))
+                    }
+                    let msgs: [HiveChatMessage]? = await withCheckedContinuation { c in
+                        API.sharedInstance.fetchFeatureChatWithAuth(
+                            featureId: feature.id,
+                            callback: { c.resume(returning: $0) },
+                            errorCallback: { c.resume(returning: nil) })
+                    }
+                    guard let messages = msgs else {
+                        return .value(.string("Failed to fetch plan chat (feature missing or no access)."))
+                    }
+                    guard messages.contains(where: {
+                        $0.id == input.planner_message_id && HivePlanFormatter.isClarifyingPlannerMessage($0)
+                    }) else {
+                        print("[AIAgent] answer_planner_form: message not in feature chat feature=\(feature.id)")
+                        return .value(.string("That plannerMessageId is not a planner clarifying-questions message in this feature's chat. Use get_plan_chat_history to find it."))
+                    }
+                    guard case .success(let login) = await self.resolveOrgLogin(workspaceSlug: slug) else {
+                        return .value(.string("Couldn't determine which Hive org owns workspace \(slug)."))
+                    }
+                    let result: PlannerFormAnswerResult = await withCheckedContinuation { c in
+                        API.sharedInstance.answerPlannerForm(
+                            githubLogin: login, featureId: feature.id,
+                            plannerMessageId: input.planner_message_id,
+                            answer: parts.joined(separator: "\n\n"),
+                            completion: { c.resume(returning: $0) })
+                    }
+                    print("[AIAgent] answer_planner_form: done feature=\(feature.id)")
+                    return .value(.string(HivePlanFormatter.answerResultMessage(result)))
+                }
+            }
+        )
     }
 }

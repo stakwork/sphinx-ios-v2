@@ -27,12 +27,11 @@ enum HiveStatusMapper {
     static func sendResult(statusCode: Int?, body: JSON?) -> FeatureChatSendResult {
         switch statusCode {
         case 409:
-            return .plannerBusy(body?["error"].string ?? body?["message"].string)
+            return .plannerBusy(body?["error"].string)
         case 404: return .notFound
         case 403: return .forbidden
         case .some(let code) where (200..<300).contains(code):
-            if let body = body, body["success"].bool == true,
-               let m = HiveChatMessage(json: body["message"]) {
+            if let body = body, let m = HiveChatMessage(json: body["message"]) {
                 return .sent(m)
             }
             return .failed
@@ -48,6 +47,25 @@ enum HiveStatusMapper {
     /// At most one re-auth per call chain.
     static func shouldReauthAndRetry(statusCode: Int?, hasRetried: Bool) -> Bool {
         return !hasRetried && shouldReauthAndRetry(statusCode: statusCode)
+    }
+
+    static func answerResult(statusCode: Int?, body: JSON?) -> PlannerFormAnswerResult {
+        let err = body?["error"].string
+        switch statusCode {
+        case 200?:
+            switch body?["status"].string {
+            case "answered": return .answered
+            case "already_answered": return .alreadyAnswered
+            default: return .failed
+            }
+        case 400?: return .badRequest
+        case 403?: return .forbidden
+        case 404?: return .notFound(err)
+        case 409?, 500?:
+            if let e = err, e.range(of: "already running", options: .caseInsensitive) != nil { return .plannerBusy(e) }
+            return .failed
+        default: return .failed
+        }
     }
 
     static func createResult(statusCode: Int?, body: JSON?) -> CreateFeatureResult {
@@ -72,6 +90,7 @@ extension API {
     }
 
     private func reauthenticateHive(onFailure: @escaping () -> Void, then: @escaping (String) -> Void) {
+        Task { await HiveOrgLoginCache.shared.clear() }
         authenticateWithHive(
             callback: { [weak self] token in
                 guard let token = token else { onFailure(); return }
@@ -165,6 +184,84 @@ extension API {
             guard response.response?.statusCode != 401, case .success(let data) = response.result,
                   let arr = JSON(data).array else { errorCallback(); return }
             callback(arr.compactMap { HiveOrg(json: $0) })
+        }
+    }
+}
+
+
+enum PlannerFormAnswerResult: Sendable, Equatable {
+    case answered
+    case alreadyAnswered
+    case badRequest
+    case notFound(String?)
+    case forbidden
+    case plannerBusy(String?)
+    case failed
+}
+
+/// Actor-isolated slug -> githubLogin cache, bound to the token it was built with so it is never reused across users.
+actor HiveOrgLoginCache {
+    static let shared = HiveOrgLoginCache()
+    private var token: String?
+    private var logins: [String: String] = [:]
+
+    func login(for slug: String, token: String) -> String? {
+        guard self.token == token else { return nil }
+        return logins[slug]
+    }
+
+    func store(_ login: String, for slug: String, token: String) {
+        if self.token != token { self.token = token; logins = [:] }
+        logins[slug] = login
+    }
+
+    func clear() { token = nil; logins = [:] }
+}
+
+extension API {
+
+    /// Answers a planner clarifying-questions message. Re-authenticates and retries ONLY on 401, once.
+    func answerPlannerForm(
+        githubLogin: String,
+        featureId: String,
+        plannerMessageId: String,
+        answer: String,
+        hasRetried: Bool = false,
+        completion: @escaping (PlannerFormAnswerResult) -> Void
+    ) {
+        let allowed = CharacterSet.urlPathAllowed.subtracting(CharacterSet(charactersIn: "/"))
+        guard let login = githubLogin.addingPercentEncoding(withAllowedCharacters: allowed) else {
+            completion(.failed)
+            return
+        }
+        let params: NSDictionary = [
+            "featureId": featureId,
+            "plannerMessageId": plannerMessageId,
+            "answer": answer
+        ]
+        withHiveToken(onFailure: { completion(.failed) }) { token, canRetry in
+            guard let request = self.createRequest(
+                "\(API.kHiveBaseUrl)/orgs/\(login)/planner-forms/answer",
+                bodyParams: params, method: "POST", token: token
+            ) else { completion(.failed); return }
+            self.session()?.request(request).responseData { response in
+                let status = response.response?.statusCode
+                if canRetry, HiveStatusMapper.shouldReauthAndRetry(statusCode: status, hasRetried: hasRetried) {
+                    self.reauthenticateHive(onFailure: { completion(.failed) }) { _ in
+                        self.answerPlannerForm(githubLogin: githubLogin, featureId: featureId,
+                                               plannerMessageId: plannerMessageId, answer: answer,
+                                               hasRetried: true, completion: completion)
+                    }
+                    return
+                }
+                var body: JSON?
+                if case .success(let data) = response.result { body = JSON(data) }
+                let result = HiveStatusMapper.answerResult(statusCode: status, body: body)
+                if result != .answered && result != .alreadyAnswered {
+                    print("[HiveAPI] planner form answer status \(status ?? -1) feature=\(featureId)")
+                }
+                completion(result)
+            }
         }
     }
 }

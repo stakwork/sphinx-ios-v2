@@ -74,4 +74,39 @@ final class HivePlanToolsTests: XCTestCase {
         let idle = HiveFeature(json: JSON(["id": "f2", "title": "F", "brief": "B"]))!
         XCTAssertTrue(HivePlanFormatter.formatPlan(idle).contains("idle"))
     }
+
+    func testAnswerResultMapping() {
+        XCTAssertEqual(HiveStatusMapper.answerResult(statusCode: 200, body: JSON(["status": "answered"])), .answered)
+        XCTAssertEqual(HiveStatusMapper.answerResult(statusCode: 200, body: JSON(["status": "already_answered"])), .alreadyAnswered)
+        XCTAssertEqual(HiveStatusMapper.answerResult(statusCode: 200, body: JSON(["status": "other"])), .failed)
+        XCTAssertEqual(HiveStatusMapper.answerResult(statusCode: 400, body: nil), .badRequest)
+        XCTAssertEqual(HiveStatusMapper.answerResult(statusCode: 403, body: JSON(["error": "x"])), .forbidden)
+        XCTAssertEqual(HiveStatusMapper.answerResult(statusCode: 404, body: JSON(["error": "Feature not found"])), .notFound("Feature not found"))
+        let busy = JSON(["error": "A planning workflow is already running for this feature"])
+        XCTAssertEqual(HiveStatusMapper.answerResult(statusCode: 409, body: busy), .plannerBusy("A planning workflow is already running for this feature"))
+        XCTAssertEqual(HiveStatusMapper.answerResult(statusCode: 500, body: busy), .plannerBusy("A planning workflow is already running for this feature"))
+        XCTAssertEqual(HiveStatusMapper.answerResult(statusCode: 500, body: JSON(["error": "boom"])), .failed)
+    }
+
+    func testAnsweredDetectionUsesReplyId() {
+        let planner = HiveChatMessage(json: JSON(["id": "p1", "role": "ASSISTANT", "message": "Q"]))!
+        let reply = HiveChatMessage(json: JSON(["id": "u1", "role": "USER", "message": "A", "replyId": "p1"]))!
+        let other = HiveChatMessage(json: JSON(["id": "u2", "role": "USER", "message": "B"]))!
+        XCTAssertEqual(HivePlanFormatter.answeredPlannerMessageIds([planner, reply, other]), ["p1"])
+        XCTAssertEqual(HivePlanFormatter.answeredPlannerMessageIds([planner, other]), [])
+        XCTAssertFalse(HivePlanFormatter.isClarifyingPlannerMessage(planner))
+    }
+
+    func testUserStoriesParsedAsObjectsSortedByOrder() {
+        let json = JSON(["id": "f1", "title": "T", "userStories": [
+            ["id": "s2", "title": "Second", "order": 1, "completed": false],
+            ["id": "s1", "title": "First", "order": 0, "completed": true]
+        ]])
+        let f = HiveFeature(json: json)!
+        XCTAssertEqual(f.userStoryItems.map { $0.title }, ["First", "Second"])
+        XCTAssertEqual(f.userStories ?? [], ["Second", "First"])
+        let text = HivePlanFormatter.formatPlan(f)
+        XCTAssertTrue(text.contains("✓ First"))
+        XCTAssertTrue(text.contains("○ Second"))
+    }
 }

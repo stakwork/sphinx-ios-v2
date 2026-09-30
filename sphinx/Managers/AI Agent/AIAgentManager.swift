@@ -121,7 +121,8 @@ final class AIAgentManager: @unchecked Sendable {
     telling the planner something / moving the plan forward -> send_to_planner \
     (show the exact message and get confirmation first; if the planner is still running, \
     tell the user to try again shortly and do not retry automatically). \
-    Answering planner FORMs is not supported yet; tell the user to answer it in Hive.
+    answering the planner's clarifying questions -> answer_planner_form \
+    (use plannerMessageId from get_plan_chat_history; show the exact answer and get confirmation first).
 
     When in doubt, prefer query_hive_graph. Never ask the user which tool to use. \
     Do NOT ask for a workspace name before calling query_hive_graph.
@@ -422,6 +423,7 @@ final class AIAgentManager: @unchecked Sendable {
             "get_feature_plan":        buildGetFeaturePlanTool().eraseToTool(),
             "get_plan_chat_history":   buildGetPlanChatHistoryTool().eraseToTool(),
             "send_to_planner":         buildSendToPlannerTool().eraseToTool(),
+            "answer_planner_form":     buildAnswerPlannerFormTool().eraseToTool(),
             "update_feature":          buildUpdateFeatureTool().eraseToTool(),
             "trigger_task_generation": buildTriggerTaskGenerationTool().eraseToTool(),
             "update_task_status":      buildUpdateTaskStatusTool().eraseToTool(),

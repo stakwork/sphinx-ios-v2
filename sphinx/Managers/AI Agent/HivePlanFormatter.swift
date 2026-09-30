@@ -17,8 +17,10 @@ enum HivePlanFormatter {
     }
 
     static func formatPlan(_ f: HiveFeature) -> String {
-        let stories = (f.userStories ?? []).filter { !$0.isEmpty }
-        let storiesText = stories.isEmpty ? nil : stories.map { "- \($0)" }.joined(separator: "\n")
+        let items = f.userStoryItems.isEmpty
+            ? (f.userStories ?? []).filter { !$0.isEmpty }.map { "- \($0)" }
+            : f.userStoryItems.map { "- \($0.completed ? "✓" : "○") \($0.title)" }
+        let storiesText = items.isEmpty ? nil : items.joined(separator: "\n")
         let running = f.workflowStatus == "IN_PROGRESS"
         return [
             "Feature: \(f.title)",
@@ -44,19 +46,30 @@ enum HivePlanFormatter {
         }
     }
 
-    static func formatMessage(_ m: HiveChatMessage) -> String {
-        let who = m.createdBy?.name ?? (m.isUserMessage ? "User" : "Planner")
+    static func answeredPlannerMessageIds(_ messages: [HiveChatMessage]) -> Set<String> {
+        var ids = Set<String>()
+        for m in messages where m.role == "USER" {
+            if let r = m.replyId { ids.insert(r) }
+        }
+        return ids
+    }
+
+    static func isClarifyingPlannerMessage(_ m: HiveChatMessage) -> Bool {
+        return m.role == "ASSISTANT" && m.artifacts.contains { $0.isClarifyingQuestions }
+    }
+
+    static func formatMessage(_ m: HiveChatMessage, answeredIds: Set<String> = []) -> String {
+        let who = m.createdBy?.name ?? (m.role == "USER" ? "User" : "Planner")
         var lines = ["[\(m.createdAt ?? "?")] \(m.role) \(who): \(m.resolvedDisplayText)"]
         for a in m.artifacts {
             if a.isClarifyingQuestions, let qs = a.clarifyingQuestions {
-                lines.append("  PLAN clarifying questions:")
-                for q in qs {
-                    lines.append("   - \(q.question) [\(q.type)] options: \(q.options.joined(separator: " | "))")
+                let state = answeredIds.contains(m.id) ? "ANSWERED" : "UNANSWERED"
+                lines.append("  PLAN clarifying questions (plannerMessageId: \(m.id)) - \(state):")
+                for (i, q) in qs.enumerated() {
+                    lines.append("   \(i + 1). \(q.question) options: \(q.options.joined(separator: " | "))")
                 }
             } else if a.type == "PLAN" {
                 lines.append("  PLAN update")
-            } else if a.type == "FORM" {
-                lines.append("  FORM (id: \(a.id ?? "unknown")) - answered status unknown")
             }
         }
         return lines.joined(separator: "\n")
@@ -64,7 +77,20 @@ enum HivePlanFormatter {
 
     static func formatHistory(_ messages: [HiveChatMessage], limit: Int = 20) -> String {
         if messages.isEmpty { return "No plan chat messages yet." }
-        return messages.suffix(limit).map { formatMessage($0) }.joined(separator: "\n\n")
+        let answered = answeredPlannerMessageIds(messages)
+        return messages.suffix(limit).map { formatMessage($0, answeredIds: answered) }.joined(separator: "\n\n")
+    }
+
+    static func answerResultMessage(_ r: PlannerFormAnswerResult) -> String {
+        switch r {
+        case .answered: return "Answer sent. The planner will continue."
+        case .alreadyAnswered: return "Those questions were already answered."
+        case .badRequest: return "Hive rejected the request: a required field was missing."
+        case .notFound(let m): return "\(m ?? "Feature or organization not found")."
+        case .forbidden: return "This feature does not belong to that organization."
+        case .plannerBusy: return "Planner is still running - try again shortly."
+        case .failed: return "Failed to send the answer. Nothing was double-sent; it is safe to retry."
+        }
     }
 
     static func openingMessage(title: String, description: String?) -> String {
