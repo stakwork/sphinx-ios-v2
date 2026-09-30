@@ -67,7 +67,15 @@ class ChatListHeader: UIView {
         NotificationCenter.default.addObserver(forName: .onConnectionStatusChanged, object: nil, queue: OperationQueue.main) { (n: Notification) in
             self.updateConnectionSign()
         }
-        
+
+        // Device-reachability transitions (handled in SphinxOnionManager+ServerHealth)
+        // post this independently of MQTT's own `isConnected` — without this observer
+        // the bolt only catches up once MQTT itself times out or reconnects, instead
+        // of flipping instantly alongside the server-health banner.
+        NotificationCenter.default.addObserver(forName: .onServerHealthChanged, object: nil, queue: OperationQueue.main) { (n: Notification) in
+            self.updateConnectionSign()
+        }
+
         NotificationCenter.default.addObserver(forName: .onMQTTConnectionStatusChanged, object: nil, queue: OperationQueue.main) { (n: Notification) in
             self.updateSigningStatusSign()
         }

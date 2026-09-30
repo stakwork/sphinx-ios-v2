@@ -58,6 +58,49 @@ enum HivePlanFormatter {
         return m.role == "ASSISTANT" && m.artifacts.contains { $0.isClarifyingQuestions }
     }
 
+    enum PlannerMessageResolution: Equatable {
+        /// The message to reply to.
+        case target(id: String)
+        case alreadyAnswered(id: String)
+        /// No PLAN clarifying-questions message is currently open.
+        case noOpenQuestions
+        /// `plannerMessageId` was given but is not an open-able PLAN question message
+        /// in this feature's own chat history (missing, wrong feature, or wrong type).
+        case invalidMessageId
+    }
+
+    /// Pure. Resolves the target planner message for `answer_planner_form`:
+    /// - an explicit `plannerMessageId` must belong to `messages` and carry a PLAN
+    ///   clarifying-questions artifact, else `.invalidMessageId`;
+    /// - otherwise defaults to the LATEST open (unanswered) clarifying-questions
+    ///   message, else `.noOpenQuestions`.
+    /// "Answered" uses `answeredPlannerMessageIds` (a later message's `replyId` match) —
+    /// the same signal `formatMessage`'s ANSWERED/UNANSWERED tag already relies on.
+    static func resolvePlannerMessage(
+        messages: [HiveChatMessage],
+        plannerMessageId: String?
+    ) -> PlannerMessageResolution {
+        let answeredIds = answeredPlannerMessageIds(messages)
+
+        if let targetId = plannerMessageId {
+            guard let msg = messages.first(where: { $0.id == targetId }),
+                  isClarifyingPlannerMessage(msg) else {
+                return .invalidMessageId
+            }
+            if answeredIds.contains(targetId) {
+                return .alreadyAnswered(id: targetId)
+            }
+            return .target(id: targetId)
+        }
+
+        for msg in messages.reversed() where isClarifyingPlannerMessage(msg) {
+            if !answeredIds.contains(msg.id) {
+                return .target(id: msg.id)
+            }
+        }
+        return .noOpenQuestions
+    }
+
     static func formatMessage(_ m: HiveChatMessage, answeredIds: Set<String> = []) -> String {
         let who = m.createdBy?.name ?? (m.role == "USER" ? "User" : "Planner")
         var lines = ["[\(m.createdAt ?? "?")] \(m.role) \(who): \(m.resolvedDisplayText)"]
@@ -81,18 +124,6 @@ enum HivePlanFormatter {
         return messages.suffix(limit).map { formatMessage($0, answeredIds: answered) }.joined(separator: "\n\n")
     }
 
-    static func answerResultMessage(_ r: PlannerFormAnswerResult) -> String {
-        switch r {
-        case .answered: return "Answer sent. The planner will continue."
-        case .alreadyAnswered: return "Those questions were already answered."
-        case .badRequest: return "Hive rejected the request: a required field was missing."
-        case .notFound(let m): return "\(m ?? "Feature or organization not found")."
-        case .forbidden: return "This feature does not belong to that organization."
-        case .plannerBusy: return "Planner is still running - try again shortly."
-        case .failed: return "Failed to send the answer. Nothing was double-sent; it is safe to retry."
-        }
-    }
-
     static func openingMessage(title: String, description: String?) -> String {
         if let d = description?.trimmingCharacters(in: .whitespacesAndNewlines), !d.isEmpty {
             return "\(title)\n\n\(d)"
@@ -114,11 +145,5 @@ enum HivePlanFormatter {
             }
             return "Feature WAS created (ID: \(f.id)) in workspace '\(workspace)', but the first plan message did not go through. Use send_to_planner to retry the message - do not create the feature again."
         }
-    }
-
-    /// Picks the org owning `slug`; never guesses.
-    static func matchOrg(logins: [String], slugsByLogin: [String: [String]], slug: String) -> String? {
-        if logins.count == 1 { return logins[0] }
-        return logins.first { slugsByLogin[$0]?.contains(slug) == true }
     }
 }

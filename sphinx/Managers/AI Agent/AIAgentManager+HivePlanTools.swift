@@ -19,7 +19,8 @@ extension AIAgentManager {
     struct AnswerPlannerFormInput: Codable, Sendable {
         let workspace_name: String
         let feature_name: String
-        let planner_message_id: String
+        /// Optional — defaults to the latest open (unanswered) clarifying-questions message.
+        let planner_message_id: String?
         let answers: [String]?
         let answer: String?
     }
@@ -171,61 +172,20 @@ extension AIAgentManager {
         return nil
     }
 
-    // MARK: - resolveOrgLogin
-
-    /// Org owning the workspace slug; never guesses and never falls back to a stored login.
-    func resolveOrgLogin(workspaceSlug: String) async -> Result<String, Error> {
-        struct OrgError: LocalizedError {
-            let message: String
-            var errorDescription: String? { message }
-        }
-        let failure = Result<String, Error>.failure(
-            OrgError(message: "Couldn't determine which Hive org owns workspace \(workspaceSlug).")
-        )
-        guard let token: String = UserDefaults.Keys.hiveToken.get() else { return failure }
-        if let cached = await HiveOrgLoginCache.shared.login(for: workspaceSlug, token: token) {
-            return .success(cached)
-        }
-        let orgs: [HiveOrg]? = await withCheckedContinuation { c in
-            API.sharedInstance.fetchAllOrgs(
-                authToken: token,
-                callback: { c.resume(returning: $0) },
-                errorCallback: { c.resume(returning: nil) })
-        }
-        guard let all = orgs, !all.isEmpty else {
-            print("[AIAgent] resolveOrgLogin: unresolved ws=\(workspaceSlug)")
-            return failure
-        }
-        var slugsByLogin: [String: [String]] = [:]
-        if all.count > 1 {
-            for org in all {
-                let slugs: [String]? = await withCheckedContinuation { c in
-                    API.sharedInstance.fetchOrgWorkspaces(
-                        githubLogin: org.githubLogin, authToken: token,
-                        callback: { c.resume(returning: $0) },
-                        errorCallback: { c.resume(returning: nil) })
-                }
-                slugsByLogin[org.githubLogin] = slugs ?? []
-            }
-        }
-        guard let login = HivePlanFormatter.matchOrg(
-            logins: all.map { $0.githubLogin }, slugsByLogin: slugsByLogin, slug: workspaceSlug
-        ) else {
-            print("[AIAgent] resolveOrgLogin: unresolved ws=\(workspaceSlug)")
-            return failure
-        }
-        await HiveOrgLoginCache.shared.store(login, for: workspaceSlug, token: token)
-        print("[AIAgent] resolveOrgLogin: resolved ws=\(workspaceSlug)")
-        return .success(login)
-    }
-
     // MARK: - answer_planner_form (confirmation required)
+    //
+    // Answers are posted as an ordinary chat message with `replyId` set to the target
+    // PLAN clarifying-questions message — the exact same mechanism `send_to_planner`
+    // and the UI's own `FeaturePlanViewController.sendClarifyingAnswers` use. There is
+    // no dedicated forms-answer route: "already answered" is detected client-side by
+    // scanning chat history for an existing reply (`HivePlanFormatter.resolvePlannerMessage`),
+    // matching Mac's implementation of this same tool.
 
     func buildAnswerPlannerFormTool() -> TypedTool<AnswerPlannerFormInput, JSONValue> {
         tool(
-            description: "Answer the planner's clarifying questions on a Hive feature (use plannerMessageId from get_plan_chat_history). Supply either `answers` (one per question, in order) or a single `answer`, never both. IMPORTANT: Before invoking, show the user the exact answer text that will be sent and ask for explicit confirmation. Only invoke after the user confirms.",
+            description: "Answer the planner's open PLAN clarifying questions on a Hive feature. Supply either `answers` (one per question, in order) or a single `answer`, never both. If planner_message_id is omitted, the latest open clarifying-questions message is answered. IMPORTANT: Before invoking, show the user the exact answer text that will be sent and ask for explicit confirmation. Only invoke after the user confirms. Never call this twice for the same user request, and never retry after a 'planner is still running' (busy) result.",
             execute: { (input: AnswerPlannerFormInput, _: ToolCallOptions) async throws -> ToolExecutionResult<JSONValue> in
-                print("[AIAgent] answer_planner_form: ws=\(input.workspace_name) messageId=\(input.planner_message_id)")
+                print("[AIAgent] answer_planner_form: ws=\(input.workspace_name)")
                 if input.answers != nil && input.answer != nil {
                     return .value(.string("Provide either `answers` or `answer`, not both."))
                 }
@@ -236,9 +196,6 @@ extension AIAgentManager {
                 switch await self.resolveFeature(workspaceName: input.workspace_name, featureName: input.feature_name) {
                 case .failure(let m): return .value(.string(m))
                 case .found(let ws, let feature):
-                    guard let slug = ws.slug else {
-                        return .value(.string("Workspace '\(ws.name)' has no slug; cannot resolve its Hive org."))
-                    }
                     let msgs: [HiveChatMessage]? = await withCheckedContinuation { c in
                         API.sharedInstance.fetchFeatureChatWithAuth(
                             featureId: feature.id,
@@ -248,24 +205,33 @@ extension AIAgentManager {
                     guard let messages = msgs else {
                         return .value(.string("Failed to fetch plan chat (feature missing or no access)."))
                     }
-                    guard messages.contains(where: {
-                        $0.id == input.planner_message_id && HivePlanFormatter.isClarifyingPlannerMessage($0)
-                    }) else {
+
+                    let resolution = HivePlanFormatter.resolvePlannerMessage(
+                        messages: messages, plannerMessageId: input.planner_message_id
+                    )
+                    let targetId: String
+                    switch resolution {
+                    case .invalidMessageId:
                         print("[AIAgent] answer_planner_form: message not in feature chat feature=\(feature.id)")
-                        return .value(.string("That plannerMessageId is not a planner clarifying-questions message in this feature's chat. Use get_plan_chat_history to find it."))
+                        return .value(.string("That plannerMessageId is not an open clarifying-questions message in this feature's chat. Use get_plan_chat_history to find it."))
+                    case .noOpenQuestions:
+                        return .value(.string("No open clarifying questions for this feature."))
+                    case .alreadyAnswered:
+                        return .value(.string("Those questions were already answered."))
+                    case .target(let id):
+                        targetId = id
                     }
-                    guard case .success(let login) = await self.resolveOrgLogin(workspaceSlug: slug) else {
-                        return .value(.string("Couldn't determine which Hive org owns workspace \(slug)."))
-                    }
-                    let result: PlannerFormAnswerResult = await withCheckedContinuation { c in
-                        API.sharedInstance.answerPlannerForm(
-                            githubLogin: login, featureId: feature.id,
-                            plannerMessageId: input.planner_message_id,
-                            answer: parts.joined(separator: "\n\n"),
+
+                    let repos = await self.validatedRepositoryIds(featureId: feature.id, workspace: ws)
+                    let result: FeatureChatSendResult = await withCheckedContinuation { c in
+                        API.sharedInstance.sendFeatureChatMessageResult(
+                            featureId: feature.id, message: parts.joined(separator: "\n\n"),
+                            replyId: targetId,
+                            selectedRepositoryIds: repos,
                             completion: { c.resume(returning: $0) })
                     }
                     print("[AIAgent] answer_planner_form: done feature=\(feature.id)")
-                    return .value(.string(HivePlanFormatter.answerResultMessage(result)))
+                    return .value(.string(HivePlanFormatter.sendResultMessage(result)))
                 }
             }
         )

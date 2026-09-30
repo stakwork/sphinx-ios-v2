@@ -50,12 +50,6 @@ final class HivePlanToolsTests: XCTestCase {
         XCTAssertFalse(HiveStatusMapper.shouldReauthAndRetry(statusCode: 409, hasRetried: false))
     }
 
-    func testMatchOrg() {
-        XCTAssertEqual(HivePlanFormatter.matchOrg(logins: ["a"], slugsByLogin: [:], slug: "x"), "a")
-        XCTAssertEqual(HivePlanFormatter.matchOrg(logins: ["a", "b"], slugsByLogin: ["a": ["y"], "b": ["x"]], slug: "x"), "b")
-        XCTAssertNil(HivePlanFormatter.matchOrg(logins: ["a", "b"], slugsByLogin: ["a": ["y"], "b": ["z"]], slug: "x"))
-    }
-
     func testOpeningMessageAndCreateReplies() {
         XCTAssertEqual(HivePlanFormatter.openingMessage(title: "T", description: nil), "T")
         XCTAssertEqual(HivePlanFormatter.openingMessage(title: "T", description: "D"), "T\n\nD")
@@ -75,17 +69,84 @@ final class HivePlanToolsTests: XCTestCase {
         XCTAssertTrue(HivePlanFormatter.formatPlan(idle).contains("idle"))
     }
 
-    func testAnswerResultMapping() {
-        XCTAssertEqual(HiveStatusMapper.answerResult(statusCode: 200, body: JSON(["status": "answered"])), .answered)
-        XCTAssertEqual(HiveStatusMapper.answerResult(statusCode: 200, body: JSON(["status": "already_answered"])), .alreadyAnswered)
-        XCTAssertEqual(HiveStatusMapper.answerResult(statusCode: 200, body: JSON(["status": "other"])), .failed)
-        XCTAssertEqual(HiveStatusMapper.answerResult(statusCode: 400, body: nil), .badRequest)
-        XCTAssertEqual(HiveStatusMapper.answerResult(statusCode: 403, body: JSON(["error": "x"])), .forbidden)
-        XCTAssertEqual(HiveStatusMapper.answerResult(statusCode: 404, body: JSON(["error": "Feature not found"])), .notFound("Feature not found"))
-        let busy = JSON(["error": "A planning workflow is already running for this feature"])
-        XCTAssertEqual(HiveStatusMapper.answerResult(statusCode: 409, body: busy), .plannerBusy("A planning workflow is already running for this feature"))
-        XCTAssertEqual(HiveStatusMapper.answerResult(statusCode: 500, body: busy), .plannerBusy("A planning workflow is already running for this feature"))
-        XCTAssertEqual(HiveStatusMapper.answerResult(statusCode: 500, body: JSON(["error": "boom"])), .failed)
+    private func clarifyingQuestionMessage(id: String, question: String = "Q1?") -> HiveChatMessage {
+        HiveChatMessage(json: JSON([
+            "id": id, "role": "ASSISTANT", "message": "",
+            "artifacts": [[
+                "id": "a-\(id)", "type": "PLAN",
+                "content": [
+                    "tool_use": "ask_clarifying_questions",
+                    "content": [["question": question, "options": ["A", "B"], "type": "single"]]
+                ]
+            ]]
+        ]))!
+    }
+
+    private func replyMessage(id: String, replyId: String) -> HiveChatMessage {
+        HiveChatMessage(json: JSON(["id": id, "role": "USER", "message": "answer", "replyId": replyId]))!
+    }
+
+    func testResolvePlannerMessage_defaultsToLatestOpen() {
+        let q1 = clarifyingQuestionMessage(id: "p1")
+        let q2 = clarifyingQuestionMessage(id: "p2")
+        XCTAssertEqual(
+            HivePlanFormatter.resolvePlannerMessage(messages: [q1, q2], plannerMessageId: nil),
+            .target(id: "p2")
+        )
+    }
+
+    func testResolvePlannerMessage_skipsAlreadyAnsweredWhenDefaulting() {
+        let q1 = clarifyingQuestionMessage(id: "p1")
+        let a1 = replyMessage(id: "u1", replyId: "p1")
+        let q2 = clarifyingQuestionMessage(id: "p2")
+        XCTAssertEqual(
+            HivePlanFormatter.resolvePlannerMessage(messages: [q1, a1, q2], plannerMessageId: nil),
+            .target(id: "p2")
+        )
+    }
+
+    func testResolvePlannerMessage_noOpenQuestions() {
+        let q1 = clarifyingQuestionMessage(id: "p1")
+        let a1 = replyMessage(id: "u1", replyId: "p1")
+        XCTAssertEqual(
+            HivePlanFormatter.resolvePlannerMessage(messages: [q1, a1], plannerMessageId: nil),
+            .noOpenQuestions
+        )
+        XCTAssertEqual(HivePlanFormatter.resolvePlannerMessage(messages: [], plannerMessageId: nil), .noOpenQuestions)
+    }
+
+    func testResolvePlannerMessage_explicitIdNotPlanMessage_rejected() {
+        let notClarifying = HiveChatMessage(json: JSON(["id": "p1", "role": "ASSISTANT", "message": "plain"]))!
+        XCTAssertEqual(
+            HivePlanFormatter.resolvePlannerMessage(messages: [notClarifying], plannerMessageId: "p1"),
+            .invalidMessageId
+        )
+    }
+
+    func testResolvePlannerMessage_explicitIdFromOtherFeature_rejected() {
+        let q1 = clarifyingQuestionMessage(id: "p1")
+        XCTAssertEqual(
+            HivePlanFormatter.resolvePlannerMessage(messages: [q1], plannerMessageId: "does-not-exist"),
+            .invalidMessageId
+        )
+    }
+
+    func testResolvePlannerMessage_explicitIdAlreadyAnswered() {
+        let q1 = clarifyingQuestionMessage(id: "p1")
+        let a1 = replyMessage(id: "u1", replyId: "p1")
+        XCTAssertEqual(
+            HivePlanFormatter.resolvePlannerMessage(messages: [q1, a1], plannerMessageId: "p1"),
+            .alreadyAnswered(id: "p1")
+        )
+    }
+
+    func testResolvePlannerMessage_explicitIdOpen() {
+        let q1 = clarifyingQuestionMessage(id: "p1")
+        let q2 = clarifyingQuestionMessage(id: "p2")
+        XCTAssertEqual(
+            HivePlanFormatter.resolvePlannerMessage(messages: [q1, q2], plannerMessageId: "p1"),
+            .target(id: "p1")
+        )
     }
 
     func testAnsweredDetectionUsesReplyId() {
