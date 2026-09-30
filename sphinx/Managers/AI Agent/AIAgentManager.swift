@@ -121,6 +121,12 @@ final class AIAgentManager: @unchecked Sendable {
     ## Hive Workspace / Feature / Task Tools
 
     ### Read Tools (no confirmation required)
+    - get_feature_plan: Read a feature's plan (brief, user stories, requirements, architecture, status, planner state). \
+    USE THIS, not query_hive_graph, for questions about a feature's plan.
+    - get_plan_chat_history: Read the last 20 messages of a feature's plan chat with the planner, including clarifying \
+    questions. USE THIS for "what did the planner ask/say".
+    - send_to_planner: Send a message to a feature's planner (confirmation required; repeat the exact text first).
+    - Answering planner FORM questions is not supported yet; tell the user to answer them in Hive.
     - list_hive_workspaces: List all Hive workspaces the user has access to with name, slug, role, and member count.
     - get_workspace_detail: Get full details about a workspace (description, members list) by workspace name.
     - search_workspace: Search within a workspace for tasks, features, or content matching a query string.
@@ -411,6 +417,9 @@ final class AIAgentManager: @unchecked Sendable {
             "get_task_detail":         buildGetTaskDetailTool().eraseToTool(),
             "get_task_messages":       buildGetTaskMessagesTool().eraseToTool(),
             "create_feature":          buildCreateFeatureTool().eraseToTool(),
+            "get_feature_plan":        buildGetFeaturePlanTool().eraseToTool(),
+            "get_plan_chat_history":   buildGetPlanChatHistoryTool().eraseToTool(),
+            "send_to_planner":         buildSendToPlannerTool().eraseToTool(),
             "update_feature":          buildUpdateFeatureTool().eraseToTool(),
             "trigger_task_generation": buildTriggerTaskGenerationTool().eraseToTool(),
             "update_task_status":      buildUpdateTaskStatusTool().eraseToTool(),

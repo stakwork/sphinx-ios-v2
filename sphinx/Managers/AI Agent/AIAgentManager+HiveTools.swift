@@ -81,6 +81,7 @@ extension AIAgentManager {
     struct CreateFeatureInput: Codable, Sendable {
         let workspace_name: String
         let title: String
+        let description: String?
     }
 
     struct UpdateFeatureInput: Codable, Sendable {
@@ -628,9 +629,9 @@ extension AIAgentManager {
 
     func buildCreateFeatureTool() -> TypedTool<CreateFeatureInput, JSONValue> {
         tool(
-            description: "Create a new feature in a Hive workspace. IMPORTANT: Before invoking this tool, describe the action to the user and ask for explicit confirmation. Only invoke after the user confirms.",
+            description: "Create a new feature in a Hive workspace, with an optional description. The title (and description) is also posted as the opening message in the feature's plan chat, which starts the planner. IMPORTANT: Before invoking this tool, describe the action to the user and ask for explicit confirmation. Only invoke after the user confirms.",
             execute: { (input: CreateFeatureInput, _: ToolCallOptions) async throws -> ToolExecutionResult<JSONValue> in
-                print("[AIAgent] create_feature: \(input.workspace_name)/\(input.title)")
+                print("[AIAgent] create_feature: workspace=\(input.workspace_name)")
                 guard let workspaces = await self.fetchWorkspacesAsync() else {
                     return .value(.string("Failed to fetch Hive workspaces. Make sure your Hive token is configured."))
                 }
@@ -643,18 +644,40 @@ extension AIAgentManager {
                     return .value(.string("Multiple workspaces match '\(input.workspace_name)': \(candidates.joined(separator: ", ")). Please be more specific."))
                 }
 
-                let created: HiveFeature? = await withCheckedContinuation { continuation in
-                    API.sharedInstance.createFeatureWithAuth(
-                        workspaceId: workspace.id,
-                        title: input.title,
-                        callback: { feature in continuation.resume(returning: feature) },
-                        errorCallback: { continuation.resume(returning: nil) }
+                let createResult = await API.sharedInstance.createFeatureResult(
+                    workspaceId: workspace.id,
+                    title: input.title,
+                    description: input.description
+                )
+                var seed: FeatureChatSendResult? = nil
+                switch createResult {
+                case .created(let feature):
+                    print("[AIAgent] create_feature: created feature=\(feature.id)")
+                    let opening: String
+                    if let d = input.description, !d.isEmpty {
+                        opening = "\(input.title)\n\n\(d)"
+                    } else {
+                        opening = input.title
+                    }
+                    let repoIds = AIAgentManager.savedRepositoryIds(workspaceId: workspace.id, featureId: nil)
+                    seed = await API.sharedInstance.sendFeatureChatMessageResult(
+                        featureId: feature.id,
+                        message: opening,
+                        selectedRepositoryIds: repoIds
                     )
+                    if case .sent = seed! {
+                        print("[AIAgent] create_feature: seeded feature=\(feature.id)")
+                    } else {
+                        print("[AIAgent] create_feature: seed not delivered feature=\(feature.id)")
+                    }
+                case .createdUnparseable:
+                    print("[AIAgent] create_feature: created but unparseable")
+                case .failed(let status):
+                    print("[HiveAPI] create_feature failed status=\(status ?? -1)")
                 }
-                guard created != nil else {
-                    return .value(.string("Failed to create feature '\(input.title)' in workspace '\(workspace.name)'."))
-                }
-                return .value(.string("Feature '\(input.title)' created successfully in workspace '\(workspace.name)'."))
+                return .value(.string(HivePlanFormatter.createReply(
+                    title: input.title, workspace: workspace.name, result: createResult, seed: seed
+                )))
             }
         )
     }
