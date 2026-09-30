@@ -115,6 +115,14 @@ final class AIAgentManager: @unchecked Sendable {
     - "Create feature X" → create_feature (with confirmation)
     - "Update task X to DONE" → update_task_status (with confirmation)
 
+    PLAN / PLANNER QUESTIONS (do NOT use query_hive_graph for these): \
+    plan, brief, requirements, architecture, planner idle/working -> get_feature_plan; \
+    plan chat history, pending FORM or PLAN questions -> get_plan_chat_history; \
+    telling the planner something / moving the plan forward -> send_to_planner \
+    (show the exact message and get confirmation first; if the planner is still running, \
+    tell the user to try again shortly and do not retry automatically). \
+    Answering planner FORMs is not supported yet; tell the user to answer it in Hive.
+
     When in doubt, prefer query_hive_graph. Never ask the user which tool to use. \
     Do NOT ask for a workspace name before calling query_hive_graph.
 
@@ -411,6 +419,9 @@ final class AIAgentManager: @unchecked Sendable {
             "get_task_detail":         buildGetTaskDetailTool().eraseToTool(),
             "get_task_messages":       buildGetTaskMessagesTool().eraseToTool(),
             "create_feature":          buildCreateFeatureTool().eraseToTool(),
+            "get_feature_plan":        buildGetFeaturePlanTool().eraseToTool(),
+            "get_plan_chat_history":   buildGetPlanChatHistoryTool().eraseToTool(),
+            "send_to_planner":         buildSendToPlannerTool().eraseToTool(),
             "update_feature":          buildUpdateFeatureTool().eraseToTool(),
             "trigger_task_generation": buildTriggerTaskGenerationTool().eraseToTool(),
             "update_task_status":      buildUpdateTaskStatusTool().eraseToTool(),

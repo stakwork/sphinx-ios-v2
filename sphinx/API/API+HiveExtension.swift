@@ -16,6 +16,7 @@ typealias HiveTasksCallback = (([WorkspaceTask], PaginationInfo) -> ())
 typealias HiveWorkspaceImageCallback = ((String?) -> ())
 typealias HiveFeaturesCallback = (([HiveFeature], PaginationInfo) -> ())
 typealias HiveFeatureCallback = ((HiveFeature?) -> ())
+typealias HiveStatusErrorCallback = ((Int?, JSON?) -> Void)
 typealias HiveUpdateFeatureCallback = ((HiveFeature?) -> ())
 typealias HiveChatMessagesCallback = (([HiveChatMessage]) -> ())
 typealias HiveTaskMessagesCallback = (([HiveChatMessage], String?) -> ())
@@ -725,16 +726,21 @@ extension API {
     func createFeature(
         workspaceId: String,
         title: String,
+        description: String? = nil,
         model: String? = nil,
         authToken: String,
         callback: @escaping HiveFeatureCallback,
-        errorCallback: @escaping EmptyCallback
+        errorCallback: @escaping EmptyCallback,
+        statusErrorCallback: HiveStatusErrorCallback? = nil
     ) {
         let urlString = "\(API.kHiveBaseUrl)/features"
         var params: [String: AnyObject] = [
             "title": title as AnyObject,
             "workspaceId": workspaceId as AnyObject
         ]
+        if let description = description {
+            params["description"] = description as AnyObject
+        }
         if let model = model {
             params["model"] = model as AnyObject
         }
@@ -745,6 +751,11 @@ extension API {
         }
 
         session()?.request(request).responseData { response in
+            let hiveStatus = response.response?.statusCode
+            if let statusErrorCallback = statusErrorCallback, hiveStatus == nil || !(200..<300).contains(hiveStatus!) {
+                statusErrorCallback(hiveStatus, (try? response.result.get()).map { JSON($0) })
+                return
+            }
             if let statusCode = response.response?.statusCode, statusCode == 401 {
                 print("[HiveAPI] Create feature unauthorized (401) - token may be expired")
                 errorCallback()
@@ -761,7 +772,7 @@ extension API {
                     return
                 }
 
-                let feature = HiveFeature(json: json["data"])
+                let feature = (HiveFeature(json: json["data"]) ?? HiveFeature(json: json))
                 callback(feature)
             case .failure(let error):
                 print("[HiveAPI] Create feature failed: \(error.localizedDescription)")
@@ -833,7 +844,8 @@ extension API {
         featureId: String,
         authToken: String,
         callback: @escaping HiveChatMessagesCallback,
-        errorCallback: @escaping EmptyCallback
+        errorCallback: @escaping EmptyCallback,
+        statusErrorCallback: HiveStatusErrorCallback? = nil
     ) {
         guard let encodedFeatureId = featureId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
             errorCallback()
@@ -848,6 +860,11 @@ extension API {
         }
 
         session()?.request(request).responseData { response in
+            let hiveStatus = response.response?.statusCode
+            if let statusErrorCallback = statusErrorCallback, hiveStatus == nil || !(200..<300).contains(hiveStatus!) {
+                statusErrorCallback(hiveStatus, (try? response.result.get()).map { JSON($0) })
+                return
+            }
             if let statusCode = response.response?.statusCode, statusCode == 401 {
                 print("[HiveAPI] Feature chat fetch unauthorized (401) - token may be expired")
                 errorCallback()
@@ -935,7 +952,8 @@ extension API {
         selectedRepositoryIds: [String]? = nil,
         authToken: String,
         callback: @escaping HiveChatMessageCallback,
-        errorCallback: @escaping EmptyCallback
+        errorCallback: @escaping EmptyCallback,
+        statusErrorCallback: HiveStatusErrorCallback? = nil
     ) {
         guard let encodedFeatureId = featureId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
             errorCallback()
@@ -960,6 +978,11 @@ extension API {
         }
 
         session()?.request(request).responseData { response in
+            let hiveStatus = response.response?.statusCode
+            if let statusErrorCallback = statusErrorCallback, hiveStatus == nil || !(200..<300).contains(hiveStatus!) {
+                statusErrorCallback(hiveStatus, (try? response.result.get()).map { JSON($0) })
+                return
+            }
             if let statusCode = response.response?.statusCode, statusCode == 401 {
                 print("[HiveAPI] Send chat message unauthorized (401) - token may be expired")
                 errorCallback()
@@ -1778,7 +1801,8 @@ extension API {
         featureId: String,
         authToken: String,
         callback: @escaping HiveFeatureCallback,
-        errorCallback: @escaping EmptyCallback
+        errorCallback: @escaping EmptyCallback,
+        statusErrorCallback: HiveStatusErrorCallback? = nil
     ) {
         guard let encodedId = featureId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
             errorCallback()
@@ -1793,6 +1817,11 @@ extension API {
         }
 
         session()?.request(request).responseData { response in
+            let hiveStatus = response.response?.statusCode
+            if let statusErrorCallback = statusErrorCallback, hiveStatus == nil || !(200..<300).contains(hiveStatus!) {
+                statusErrorCallback(hiveStatus, (try? response.result.get()).map { JSON($0) })
+                return
+            }
             if let statusCode = response.response?.statusCode, statusCode == 401 {
                 print("[HiveAPI] Feature detail fetch unauthorized (401)")
                 errorCallback()

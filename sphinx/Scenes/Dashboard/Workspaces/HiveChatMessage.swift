@@ -122,7 +122,7 @@ struct HiveChatMessageArtifact: @unchecked Sendable {
     /// Parsed longform content when type == "LONGFORM"
     let longformContent: LongformContent?
     /// Raw JSON content for PLAN artifacts
-    let contentJSON: JSON?
+    var contentJSON: JSON?
     /// Parsed clarifying questions when type == "PLAN" and tool_use == "ask_clarifying_questions"
     let clarifyingQuestions: [ClarifyingQuestion]?
     /// Parsed stream info when type == "STREAM"
@@ -333,6 +333,10 @@ struct HiveChatMessageArtifact: @unchecked Sendable {
             self.publishWorkflowContent = nil
             self.publishPromptContent = nil
         }
+
+        if self.contentJSON == nil, json["content"].type == .dictionary {
+            self.contentJSON = json["content"]
+        }
     }
 }
 
@@ -410,8 +414,8 @@ struct HiveChatMessage: @unchecked Sendable {
 
     init?(json: JSON) {
         guard let id = json["id"].string,
-              let message = json["message"].string,
               let role = json["role"].string else { return nil }
+        let message = json["message"].string ?? ""
         self.id = id
         self.featureId = json["featureId"].string
         self.taskId = json["taskId"].string
