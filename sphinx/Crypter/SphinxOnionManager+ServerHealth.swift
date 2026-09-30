@@ -106,8 +106,77 @@ extension SphinxOnionManager {
             health: currentServerHealth,
             hasReceivedServerStatus: hasReceivedServerStatus,
             trackingStartedAtMs: serverHealthTrackingStartedAtMs,
-            nowMs: currentServerHealthNowMs()
+            nowMs: currentServerHealthNowMs(),
+            isDeviceOnline: isDeviceOnline
         )
+    }
+
+    /// UI-facing device reachability. Returns the test provider if set,
+    /// otherwise `NetworkMonitor.shared.isReachableOrUnknown`. This is what
+    /// drives banner visibility; it is not used for the header bolt's MQTT
+    /// state directly (the bolt gates on both `isConnected` and this value).
+    var isDeviceOnline: Bool {
+        if let deviceOnlineProvider {
+            return deviceOnlineProvider()
+        }
+        return NetworkMonitor.shared.isReachableOrUnknown
+    }
+
+    /// Registers block observers for device-reachability notifications so the
+    /// banner (and, indirectly, the bolt) can react instantly to network
+    /// changes rather than waiting for the next server-health event. Must be
+    /// paired with `removeReachabilityObservers()`.
+    func registerReachabilityObservers() {
+        let handler: (Notification) -> Void = { [weak self] _ in
+            self?.handleDeviceReachabilityChange()
+        }
+        reachabilityObserverTokens = [
+            NotificationCenter.default.addObserver(
+                forName: .connectedToInternet,
+                object: nil,
+                queue: .main,
+                using: handler
+            ),
+            NotificationCenter.default.addObserver(
+                forName: .disconnectedFromInternet,
+                object: nil,
+                queue: .main,
+                using: handler
+            ),
+            NotificationCenter.default.addObserver(
+                forName: .networkReachabilitySeeded,
+                object: nil,
+                queue: .main,
+                using: handler
+            ),
+        ]
+    }
+
+    /// Removes reachability observers. Call from `deinit` and from
+    /// `resetSharedInstance()` before the shared instance is torn down, so
+    /// observers (and their captured `[weak self]`) don't pile up across
+    /// instances and tests.
+    func removeReachabilityObservers() {
+        for token in reachabilityObserverTokens {
+            NotificationCenter.default.removeObserver(token)
+        }
+        reachabilityObserverTokens = []
+    }
+
+    /// Re-evaluates device reachability and, on a real transition, logs and
+    /// posts `.onServerHealthChanged` so the banner refreshes immediately.
+    /// De-duplicated against `lastReportedDeviceOnline` so repeated posts
+    /// (e.g. Mac's per-callback notifications) don't spam. Main thread only.
+    func handleDeviceReachabilityChange() {
+        let online = isDeviceOnline
+        guard online != lastReportedDeviceOnline else { return }
+        lastReportedDeviceOnline = online
+        if online {
+            print("[MQTT] device online — server-health banner re-evaluated")
+        } else {
+            print("[MQTT] device offline — server-health banner suppressed")
+        }
+        NotificationCenter.default.post(name: .onServerHealthChanged, object: nil)
     }
 
     func applyServerHealth(_ health: ServerHealth) {

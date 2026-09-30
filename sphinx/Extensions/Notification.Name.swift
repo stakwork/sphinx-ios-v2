@@ -34,6 +34,11 @@ extension Notification.Name {
     static let sentInvoiceSettled = Notification.Name("sentInvoiceSettled")
     static let connectedToInternet = Notification.Name("connectedToInternet")
     static let disconnectedFromInternet = Notification.Name("disconnectedFromInternet")
+    /// Posted once, silently, after `NetworkMonitor` seeds its initial reachability
+    /// reading. Unlike `.connectedToInternet`, this must NOT trigger MQTT reconnect
+    /// logic — it only exists so UI (banner/bolt) can re-evaluate device reachability
+    /// as soon as it becomes known.
+    static let networkReachabilitySeeded = Notification.Name("networkReachabilitySeeded")
     static let onKeysendStatusReceived = Notification.Name("onKeysendStatusReceived")
     static let appDidEnterBackground = Notification.Name("appDidEnterBackground")
     static let appWillEnterForeground = Notification.Name("appWillEnterForeground")

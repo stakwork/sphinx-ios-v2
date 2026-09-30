@@ -27,12 +27,23 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
 
     static func resetSharedInstance() {
         _sharedInstance?.stopServerHealthTracking()
+        _sharedInstance?.removeReachabilityObservers()
         _sharedInstance?.onOnionHandleInvoked = nil
         _sharedInstance?.onServerStatusIntercepted = nil
         _sharedInstance?.nowMsProvider = nil
+        _sharedInstance?.deviceOnlineProvider = nil
         _sharedInstance = nil
     }
     
+    override init() {
+        super.init()
+        registerReachabilityObservers()
+    }
+
+    deinit {
+        removeReachabilityObservers()
+    }
+
     let walletBalanceService = WalletBalanceService()
     
     ///Invite
@@ -60,6 +71,14 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
     internal var onOnionHandleInvoked: ((String) -> Void)?
     /// Test hook: fired when the exact server-status topic is intercepted.
     internal var onServerStatusIntercepted: ((String) -> Void)?
+    /// Test hook: overrides `isDeviceOnline` for deterministic unit tests.
+    internal var deviceOnlineProvider: (() -> Bool)?
+    /// Last device-reachability value reported via `handleDeviceReachabilityChange()`,
+    /// used to de-duplicate repeated notifications (e.g. Mac's per-callback posts).
+    var lastReportedDeviceOnline: Bool? = nil
+    /// Tokens for `.connectedToInternet` / `.disconnectedFromInternet` /
+    /// `.networkReachabilitySeeded` observers, removed in `removeReachabilityObservers()`.
+    var reachabilityObserverTokens: [NSObjectProtocol] = []
     var reconnectAttemptCount: Int = 0
     var sendTimeoutTimers: [String: Timer] = [:]
     var paymentTimeoutTimers: [String: Timer] = [:]
