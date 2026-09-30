@@ -82,7 +82,8 @@ class ChatListHeader: UIView {
     }
     
     func updateConnectionSign() {
-        let connected = SphinxOnionManager.sharedInstance.isConnected
+        let som = SphinxOnionManager.sharedInstance
+        let connected = som.isConnected && som.isDeviceOnline
         healthCheckButton.setTitleColor(connected ? ChatListHeader.kConnectedColor : ChatListHeader.kNotConnectedColor, for: .normal)
     }
     

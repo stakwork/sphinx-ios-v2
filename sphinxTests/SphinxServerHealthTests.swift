@@ -19,6 +19,7 @@ final class ServerHealthTests: XCTestCase {
         mgr.onOnionHandleInvoked = nil
         mgr.onServerStatusIntercepted = nil
         mgr.nowMsProvider = nil
+        mgr.deviceOnlineProvider = nil
         SphinxOnionManager.resetSharedInstance()
         super.tearDown()
     }
@@ -32,6 +33,7 @@ final class ServerHealthTests: XCTestCase {
         mgr.onOnionHandleInvoked = nil
         mgr.onServerStatusIntercepted = nil
         mgr.nowMsProvider = nil
+        mgr.deviceOnlineProvider = { true }
         return mgr
     }
 
@@ -343,5 +345,158 @@ final class ServerHealthTests: XCTestCase {
         XCTAssertFalse(
             ServerHealthPresentation.bannerCopy(for: .degraded)?.contains("cln down") == true
         )
+    }
+
+    // MARK: - Device reachability (banner hidden when offline)
+
+    func test_shouldShowBanner_hiddenWhenDeviceOffline_forAllHealthStates() {
+        let now: UInt64 = 1_700_000_000_000
+
+        // .ok is always false regardless of connectivity, kept here for completeness.
+        XCTAssertFalse(
+            ServerHealthPresentation.shouldShowBanner(
+                health: .ok,
+                hasReceivedServerStatus: true,
+                trackingStartedAtMs: now,
+                nowMs: now,
+                isDeviceOnline: false
+            )
+        )
+
+        // .degraded would normally show immediately — offline suppresses it.
+        XCTAssertFalse(
+            ServerHealthPresentation.shouldShowBanner(
+                health: .degraded,
+                hasReceivedServerStatus: true,
+                trackingStartedAtMs: now,
+                nowMs: now,
+                isDeviceOnline: false
+            )
+        )
+
+        // .unknown after the grace period would normally show — offline suppresses it.
+        XCTAssertFalse(
+            ServerHealthPresentation.shouldShowBanner(
+                health: .unknown,
+                hasReceivedServerStatus: false,
+                trackingStartedAtMs: now,
+                nowMs: now + ServerHealthPresentation.launchGraceMs,
+                isDeviceOnline: false
+            )
+        )
+
+        // .unknown after staleness (hasReceivedServerStatus true) — offline suppresses it.
+        XCTAssertFalse(
+            ServerHealthPresentation.shouldShowBanner(
+                health: .unknown,
+                hasReceivedServerStatus: true,
+                trackingStartedAtMs: now,
+                nowMs: now + ServerHealthPresentation.heartbeatIntervalMs * 10,
+                isDeviceOnline: false
+            )
+        )
+    }
+
+    func test_shouldShowBanner_onlineBehaviorUnchanged() {
+        let now: UInt64 = 1_700_000_000_000
+
+        XCTAssertFalse(
+            ServerHealthPresentation.shouldShowBanner(
+                health: .ok,
+                hasReceivedServerStatus: true,
+                trackingStartedAtMs: now,
+                nowMs: now,
+                isDeviceOnline: true
+            )
+        )
+        XCTAssertTrue(
+            ServerHealthPresentation.shouldShowBanner(
+                health: .degraded,
+                hasReceivedServerStatus: true,
+                trackingStartedAtMs: now,
+                nowMs: now,
+                isDeviceOnline: true
+            )
+        )
+        XCTAssertFalse(
+            ServerHealthPresentation.shouldShowBanner(
+                health: .unknown,
+                hasReceivedServerStatus: false,
+                trackingStartedAtMs: now,
+                nowMs: now + 1_000,
+                isDeviceOnline: true
+            ),
+            "still inside launch grace"
+        )
+        XCTAssertTrue(
+            ServerHealthPresentation.shouldShowBanner(
+                health: .unknown,
+                hasReceivedServerStatus: false,
+                trackingStartedAtMs: now,
+                nowMs: now + ServerHealthPresentation.launchGraceMs,
+                isDeviceOnline: true
+            ),
+            "grace elapsed"
+        )
+        XCTAssertTrue(
+            ServerHealthPresentation.shouldShowBanner(
+                health: .unknown,
+                hasReceivedServerStatus: true,
+                trackingStartedAtMs: now,
+                nowMs: now + ServerHealthPresentation.heartbeatIntervalMs * 10,
+                isDeviceOnline: true
+            )
+        )
+    }
+
+    func test_isServerHealthBannerVisible_falseWhenDeviceOfflineProvider() {
+        let mgr = makeFreshManager()
+        let now: UInt64 = 1_700_000_000_000
+        mgr.nowMsProvider = { now }
+        mgr.ingestServerStatusPayloadString(degradedPayload(ts: now), nowMs: now)
+        XCTAssertEqual(mgr.currentServerHealth, .degraded)
+
+        mgr.deviceOnlineProvider = { true }
+        XCTAssertTrue(mgr.isServerHealthBannerVisible)
+
+        mgr.deviceOnlineProvider = { false }
+        XCTAssertFalse(mgr.isServerHealthBannerVisible)
+    }
+
+    func test_isServerHealthBannerVisible_trueWhenOnlineProvider_noRegression() {
+        let mgr = makeFreshManager()
+        let started: UInt64 = 1_700_000_000_000
+        mgr.deviceOnlineProvider = { true }
+        mgr.nowMsProvider = { started }
+        mgr.startServerHealthTracking()
+
+        mgr.nowMsProvider = { started + ServerHealthPresentation.launchGraceMs }
+        XCTAssertTrue(mgr.isServerHealthBannerVisible)
+    }
+
+    // MARK: - handleDeviceReachabilityChange transitions
+
+    func test_handleDeviceReachabilityChange_postsOnRealTransition() {
+        let mgr = makeFreshManager()
+        mgr.deviceOnlineProvider = { true }
+        mgr.handleDeviceReachabilityChange() // establish baseline (online -> online is a no-op transition from nil)
+
+        mgr.deviceOnlineProvider = { false }
+        let exp = expectation(forNotification: .onServerHealthChanged, object: nil)
+        mgr.handleDeviceReachabilityChange()
+        wait(for: [exp], timeout: 1)
+        XCTAssertEqual(mgr.lastReportedDeviceOnline, false)
+    }
+
+    func test_handleDeviceReachabilityChange_repeatedSameValueDoesNotPost() {
+        let mgr = makeFreshManager()
+        mgr.deviceOnlineProvider = { false }
+        mgr.handleDeviceReachabilityChange()
+        XCTAssertEqual(mgr.lastReportedDeviceOnline, false)
+
+        let exp = expectation(forNotification: .onServerHealthChanged, object: nil)
+        exp.isInverted = true
+        mgr.handleDeviceReachabilityChange() // same value again, should not re-post
+        wait(for: [exp], timeout: 0.3)
     }
 }

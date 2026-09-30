@@ -81,6 +81,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         isActive = true
         
+        NetworkMonitor.shared.startMonitoring()
+        
         if #available(iOS 15.0, *) {
             UITableView.appearance().sectionHeaderTopPadding = CGFloat(0)
         }
@@ -223,6 +225,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         pendingFetchWorkItem = nil
         pendingFetchCompletion?(.noData)
         pendingFetchCompletion = nil
+        NetworkMonitor.shared.startMonitoring()
         getDashboardVC()?.resumeNetworkObservers()
         HivePusherManager.shared.resumeFromBackground()
         NotificationCenter.default.post(name: .appWillEnterForeground, object: nil)
