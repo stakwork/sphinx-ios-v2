@@ -674,6 +674,7 @@
 		5C016925F69F495B8E05C3C9 /* SetupAIAgentViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E36EF502A7E64ABA8FCF503E /* SetupAIAgentViewController.swift */; };
 		64CDB65F07D741A49647B221 /* NewChatViewController+LiveCallBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30E251FCC194421EAB4B8997 /* NewChatViewController+LiveCallBanner.swift */; };
 		685B3ADA82094C84B9B72C3B /* TaskDependencyDiagramViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87516064474D4E7BB35029E5 /* TaskDependencyDiagramViewTests.swift */; };
+		6E789B32191642A6BB78CDCF /* AIAgentHiveMultiOrgTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A09E48123F64DA0A742BEE3 /* AIAgentHiveMultiOrgTests.swift */; };
 		731EF373B8FBD726748501FC /* WorkspaceTaskTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = E6E60B7E071F2F4E54B84E16 /* WorkspaceTaskTableViewCell.xib */; };
 		7605C48395834E8F9EF5BBA2 /* AIAgentManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C8F6F4C52D48F59440969F /* AIAgentManager.swift */; };
 		81D6970D2A7742A888F18562 /* WorkspaceFeatureTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6957C94054A8404294F1E644 /* WorkspaceFeatureTableViewCell.swift */; };
@@ -975,7 +976,6 @@
 		FC01AA11BB22CC33DD44EE02 /* FeatureChatMessageCellPublishScriptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC01AA11BB22CC33DD44EE03 /* FeatureChatMessageCellPublishScriptTests.swift */; };
 		FC01AA11BB22CC33DD44EE04 /* FeatureChatMessageCellPublishWorkflowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC01AA11BB22CC33DD44EE05 /* FeatureChatMessageCellPublishWorkflowTests.swift */; };
 		FC5116AF46B1BEB6FB7FF4A4 /* HivePlanToolsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB105455A6C31C13B45B7E72 /* HivePlanToolsTests.swift */; };
-		6E789B32191642A6BB78CDCF /* AIAgentHiveMultiOrgTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A09E48123F64DA0A742BEE3 /* AIAgentHiveMultiOrgTests.swift */; };
 		FDF80E5B06DF4B2B911CEDC8 /* WorkflowDiagramView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E255EF5E6864CF986414022 /* WorkflowDiagramView.swift */; };
 		G7H8I9J0K1L2M3N4O5P6Q7R8 /* WorkspaceTaskTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = H8I9J0K1L2M3N4O5P6Q7R8S9 /* WorkspaceTaskTests.swift */; };
 		GC01SSETST00100000000002 /* GraphChatSSEManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = GC01SSETST00100000000001 /* GraphChatSSEManagerTests.swift */; };
@@ -2050,6 +2050,7 @@
 		487E10CEB3D07B0840A84681 /* Pods_sphinx.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_sphinx.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C31187BFB7EDD28A632A1FD /* FeaturePlanViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeaturePlanViewController.swift; sourceTree = "<group>"; };
 		4D3D01957AEB49A4B50A5180 /* ProposalApprovalCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProposalApprovalCardView.swift; sourceTree = "<group>"; };
+		5A09E48123F64DA0A742BEE3 /* AIAgentHiveMultiOrgTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIAgentHiveMultiOrgTests.swift; sourceTree = "<group>"; };
 		60E020F2675C40F7ADDF3C84 /* WorkflowDiagramModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkflowDiagramModel.swift; sourceTree = "<group>"; };
 		667BC9B05F7A484EB3EE6CB7 /* HiveAnyCableManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveAnyCableManagerTests.swift; sourceTree = "<group>"; };
 		67772AC47A65482197752799 /* AIAgentManager+HiveGraphTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AIAgentManager+HiveGraphTool.swift"; sourceTree = "<group>"; };
@@ -2084,7 +2085,6 @@
 		AA1234560000000000000002 /* WebAppSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebAppSessionManager.swift; sourceTree = "<group>"; };
 		AABB11221DEF456700AABBBB /* SphinxrsExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SphinxrsExtensions.swift; sourceTree = "<group>"; };
 		AB105455A6C31C13B45B7E72 /* HivePlanToolsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HivePlanToolsTests.swift; sourceTree = "<group>"; };
-		5A09E48123F64DA0A742BEE3 /* AIAgentHiveMultiOrgTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIAgentHiveMultiOrgTests.swift; sourceTree = "<group>"; };
 		B2C3D4E5F60002I9J0K1L2M3 /* HiveLinkNavigator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveLinkNavigator.swift; sourceTree = "<group>"; };
 		B2C3D4E5F6A7B8C9D0E1F2A3 /* TaskProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskProgress.swift; sourceTree = "<group>"; };
 		B4D0E0284E4B436180B0BAAF /* HivePusherManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HivePusherManagerTests.swift; sourceTree = "<group>"; };
@@ -7451,7 +7451,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sphinx/sphinx.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 353;
+				CURRENT_PROJECT_VERSION = 354;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 8297M44YTW;
 				ENABLE_BITCODE = NO;
@@ -7541,7 +7541,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = sphinx/sphinx.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 353;
+				CURRENT_PROJECT_VERSION = 354;
 				DEVELOPMENT_TEAM = 8297M44YTW;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
