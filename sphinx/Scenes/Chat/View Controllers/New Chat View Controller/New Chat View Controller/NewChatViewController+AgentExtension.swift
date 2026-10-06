@@ -143,12 +143,22 @@ extension NewChatViewController {
         // Belt-and-suspenders reload in case init ran before UserDefaults was populated
         AIAgentManager.sharedInstance.loadPersistedPendingProposal()
         guard let pending = AIAgentManager.sharedInstance.pendingProposal else { return }
-        // Load canvas history so the idempotency check in executeApproveProposal/executeRejectProposal works
-        guard let orgId: String = UserDefaults.Keys.hiveOrgId.get(), !orgId.isEmpty else { return }
-        AIAgentManager.sharedInstance.loadCanvasHistory(orgId: orgId)
+
+        // Derive the proposal's own org the same way approve/reject do. If no single
+        // org can be determined to own it, don't restore the card — never fall back
+        // to a shared/ambiguous history.
+        guard case .success(let org) = AIAgentManager.resolveProposalOrg(
+            proposalId: pending.proposalId,
+            pendingProposal: pending
+        ) else { return }
+
+        // Pure read — does NOT mutate the shared canvasChatHistory mirror, so it can't
+        // swap history out from under an in-flight query to a different org.
+        let history = AIAgentManager.canvasHistory(orgId: org.id)
+
         // Skip restore if the proposal was already actioned in a previous session
         let proposalNames: Set<String> = ["propose_feature", "propose_initiative", "propose_milestone"]
-        let alreadyActioned = AIAgentManager.sharedInstance.canvasChatHistory.contains(where: {
+        let alreadyActioned = history.contains(where: {
             guard let toolCalls = $0.toolCalls else { return false }
             return toolCalls.contains(where: {
                 proposalNames.contains($0.toolName) &&
