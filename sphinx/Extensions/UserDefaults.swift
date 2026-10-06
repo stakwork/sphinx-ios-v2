@@ -28,10 +28,15 @@ extension UserDefaults {
         public static let attachmentsTokenExpDate = DefaultKey<Date>("attachmentsTokenExpDate")
         public static let hiveToken = DefaultKey<String>("hiveToken")
         public static let hiveDeviceToken = DefaultKey<String>("hiveDeviceToken")
+        // Legacy single-org keys — no longer read or written (kept only so stale
+        // values left on-device don't collide with new keys). See hiveOrgs / hiveOrgSlugsByOrg.
         public static let hiveOrgId               = DefaultKey<String>("hiveOrgId")
         public static let hiveGithubLogin         = DefaultKey<String>("hiveGithubLogin")
         public static let hiveOrgSlugs            = DefaultKey<Data>("hiveOrgSlugs")            // JSON-encoded [String]
         public static let hiveOrgSlugsCacheDate   = DefaultKey<Double>("hiveOrgSlugsCacheDate") // Date.timeIntervalSince1970
+        // Multi-org support: full cached org list and per-org slug cache.
+        public static let hiveOrgs                = DefaultKey<Data>("hiveOrgs")                // JSON-encoded {orgs: [HiveOrg], cachedAt}
+        public static let hiveOrgSlugsByOrg       = DefaultKey<Data>("hiveOrgSlugsByOrg")       // JSON-encoded [orgId: {slugs, cachedAt}]
         public static let hiveConversationIdByOrg = DefaultKey<Data>("hiveConversationIdByOrg") // JSON-encoded [String: String]
         public static let hiveCanvasChatHistoryByOrg = DefaultKey<Data>("hiveCanvasChatHistoryByOrg") // JSON-encoded [String: [CanvasChatMessage]]
         public static let hivePendingProposal = DefaultKey<Data>("hivePendingProposal")         // JSON-encoded PendingProposal

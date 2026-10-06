@@ -316,10 +316,15 @@ final class AIAgentManager: @unchecked Sendable {
             reset()
         }
 
-        // Pre-fetch and cache Hive org info for Jamie org-wide context
+        // Pre-fetch and cache the full Hive org list for Jamie org-wide context.
+        // Only eagerly fetch slugs when there's exactly one org — multi-org users
+        // load each org's slugs lazily on that org's first query_hive_graph call,
+        // avoiding an N-way fan-out at startup.
         Task {
-            await AIAgentManager.fetchAndCacheHiveOrg()
-            await AIAgentManager.fetchAndCacheOrgSlugs()
+            await AIAgentManager.fetchAndCacheHiveOrgs()
+            if let only = AIAgentManager.defaultOrg {
+                await AIAgentManager.fetchAndCacheOrgSlugs(org: only)
+            }
         }
 
         // Create agent contact + chat if not already present
@@ -407,8 +412,9 @@ final class AIAgentManager: @unchecked Sendable {
         saveHistory()
 
         // Resolved once per turn (Core Data is main-confined) and threaded into
-        // query_hive_graph's description — see buildQueryHiveGraphTool(ownerNickname:).
+        // query_hive_graph's description — see buildQueryHiveGraphTool(ownerNickname:orgs:).
         let ownerNickname: String? = await MainActor.run { UserContact.getOwner()?.nickname }
+        let cachedOrgs = AIAgentManager.cachedHiveOrgs()
 
         var tools: ToolSet = [
             "send_sphinx_message":     buildSendMessageTool().eraseToTool(),
@@ -422,7 +428,7 @@ final class AIAgentManager: @unchecked Sendable {
             "connect_with_user":       buildConnectWithUserTool().eraseToTool(),
             "create_tribe":            buildCreateTribeTool().eraseToTool(),
             "read_app_logs":           buildReadAppLogsTool().eraseToTool(),
-            "query_hive_graph":        buildQueryHiveGraphTool(ownerNickname: ownerNickname).eraseToTool(),
+            "query_hive_graph":        buildQueryHiveGraphTool(ownerNickname: ownerNickname, orgs: cachedOrgs).eraseToTool(),
             "list_hive_workspaces":    buildListHiveWorkspacesTool().eraseToTool(),
             "get_workspace_detail":    buildGetWorkspaceDetailTool().eraseToTool(),
             "search_workspace":        buildSearchWorkspaceTool().eraseToTool(),
