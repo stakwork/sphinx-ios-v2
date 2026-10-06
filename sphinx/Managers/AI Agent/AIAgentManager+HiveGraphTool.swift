@@ -13,7 +13,7 @@ import SwiftAISDK
 
 /// Minimal recursive Codable value supporting strings and nested dicts.
 /// Used for ToolCall.output so `payload` / `meta` can be nested objects.
-enum CodableJSONValue: Codable {
+enum CodableJSONValue: Codable, Sendable {
     case string(String)
     case object([String: CodableJSONValue])
 
@@ -42,14 +42,14 @@ extension Dictionary where Key == String, Value == CodableJSONValue {
 
 extension AIAgentManager {
 
-    struct CanvasChatMessage: Codable {
+    struct CanvasChatMessage: Codable, Sendable {
         let role: String           // "user" or "assistant"
         let content: String
         var toolCalls: [ToolCall]?
         var approvalResult: ApprovalResult?
     }
 
-    struct ToolCall: Codable {
+    struct ToolCall: Codable, Sendable {
         let id: String?            // toolCallId from SSE (e.g. "toulu_01RZ8...")
         let toolName: String
         let status: String?        // "output-available" once output is known
@@ -913,7 +913,14 @@ To reject it, call reject_proposal with proposalId "\(pid)".
                             approvalResult: result
                         )
                         AIAgentManager.persistCanvasHistory(orgId: orgId, history: localCanvasHistory)
-                        Task { @MainActor in self.setCanvasHistoryMirror(localCanvasHistory) }
+                        // Snapshot into a fresh `let` right at the send site: `localCanvasHistory`
+                        // is a `var` mutated just above inside this same (non-Sendable-context)
+                        // completion closure, so handing it to `Task { @MainActor in }` directly
+                        // trips Swift's region checker ("sending risks causing data races") even
+                        // though the array element types are Sendable — a new, singly-captured
+                        // binding is what the checker needs to prove disconnection.
+                        let historyToMirror = localCanvasHistory
+                        Task { @MainActor in self.setCanvasHistoryMirror(historyToMirror) }
                     }
                     self.clearPersistedPendingProposal()
                     DispatchQueue.main.async {
@@ -1067,7 +1074,11 @@ To reject it, call reject_proposal with proposalId "\(pid)".
                             approvalResult: rejectionResult
                         )
                         AIAgentManager.persistCanvasHistory(orgId: orgId, history: localCanvasHistory)
-                        Task { @MainActor in self.setCanvasHistoryMirror(localCanvasHistory) }
+                        // See matching comment in executeApproveProposal — snapshot into a fresh
+                        // `let` right at the send site so Swift's region checker can prove
+                        // `historyToMirror` is disconnected from this closure's mutable capture.
+                        let historyToMirror = localCanvasHistory
+                        Task { @MainActor in self.setCanvasHistoryMirror(historyToMirror) }
                     }
                     self.clearPersistedPendingProposal()
                     DispatchQueue.main.async {

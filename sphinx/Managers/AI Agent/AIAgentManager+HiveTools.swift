@@ -108,7 +108,13 @@ extension AIAgentManager {
     }
 
     /// Pure resolution of an org reference (login, id, or name) against the cached org list.
-    /// Trims `ref`, then matches exact login, then exact id, then name — all case-insensitive.
+    /// Trims `ref`, then matches exact login → exact id → fuzzy name — all case-insensitive.
+    /// Login/id are structured identifiers so they stay exact match; name is free text a
+    /// user or model may type loosely, so it goes through the same 3-pass fuzzy match
+    /// (exact → contains → Levenshtein) as `resolveHiveItem`/`resolveWorkspace`, using the
+    /// same `normalizeName`/`levenshteinDistance` helpers — kept inline rather than calling
+    /// `resolveHiveItem` directly so `.ambiguous` can keep carrying full `HiveOrg` objects
+    /// (that generic helper returns `[String]` display names).
     /// More than one match at a given pass is always `.ambiguous`, never resolved to the first.
     /// A nil/empty `ref` resolves to the only org, `.ambiguous(all)` when there are several,
     /// or `.noOrgs` when there are none. The returned value is always an element of `orgs`.
@@ -131,9 +137,33 @@ extension AIAgentManager {
         if idMatches.count == 1 { return .success(idMatches[0]) }
         if idMatches.count > 1 { return .failure(.ambiguous(idMatches)) }
 
-        let nameMatches = orgs.filter { $0.name.lowercased() == lower }
-        if nameMatches.count == 1 { return .success(nameMatches[0]) }
-        if nameMatches.count > 1 { return .failure(.ambiguous(nameMatches)) }
+        // Name: 3-pass fuzzy match (exact → contains → Levenshtein). Exact uses
+        // filter + count-check, not `.first(where:)`, so a tie stays `.ambiguous`
+        // rather than silently picking one.
+        let normalizedQuery = normalizeName(trimmed)
+
+        let exactNameMatches = orgs.filter { normalizeName($0.name) == normalizedQuery }
+        if exactNameMatches.count == 1 { return .success(exactNameMatches[0]) }
+        if exactNameMatches.count > 1 { return .failure(.ambiguous(exactNameMatches)) }
+
+        let containsMatches = orgs.filter { normalizeName($0.name).contains(normalizedQuery) }
+        if containsMatches.count == 1 { return .success(containsMatches[0]) }
+        if containsMatches.count > 1  { return .failure(.ambiguous(containsMatches)) }
+
+        let threshold = max(1, normalizedQuery.count / 4)
+        var fuzzyMatches: [(org: HiveOrg, dist: Int)] = orgs.compactMap { org in
+            let d = levenshteinDistance(normalizeName(org.name), normalizedQuery)
+            return d <= threshold ? (org: org, dist: d) : nil
+        }
+        fuzzyMatches.sort { $0.dist < $1.dist }
+
+        if fuzzyMatches.count == 1 { return .success(fuzzyMatches[0].org) }
+        if fuzzyMatches.count > 1 {
+            if fuzzyMatches[0].dist + 2 <= fuzzyMatches[1].dist {
+                return .success(fuzzyMatches[0].org)
+            }
+            return .failure(.ambiguous(fuzzyMatches.map { $0.org }))
+        }
 
         return .failure(.unknown)
     }
