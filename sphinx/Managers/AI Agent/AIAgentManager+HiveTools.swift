@@ -278,6 +278,13 @@ extension AIAgentManager {
                     UserDefaults.Keys.hiveCanvasChatHistoryByOrg.set(encoded)
                 }
             }
+            if let data: Data = UserDefaults.Keys.hiveLastQueryAtByOrg.get(),
+               var dict = try? JSONDecoder().decode([String: Double].self, from: data) {
+                for id in removedIds { dict.removeValue(forKey: id) }
+                if let encoded = try? JSONEncoder().encode(dict) {
+                    UserDefaults.Keys.hiveLastQueryAtByOrg.set(encoded)
+                }
+            }
             if let data: Data = UserDefaults.Keys.hivePendingProposal.get(),
                let proposal = try? JSONDecoder().decode(PendingProposal.self, from: data),
                let orgId = proposal.orgId, removedIds.contains(orgId) {
@@ -326,13 +333,12 @@ extension AIAgentManager {
 
             guard slugsChanged else { return }
 
-            let pendingBelongsToOrg: Bool = {
-                guard let pData: Data = UserDefaults.Keys.hivePendingProposal.get(),
-                      let proposal = try? JSONDecoder().decode(PendingProposal.self, from: pData) else { return false }
-                return proposal.orgId == org.id
-            }()
-
-            if pendingBelongsToOrg {
+            // Reuses the same unactioned-proposal check the conversation-reset
+            // decision uses (pending slot OR an unactioned proposal card in this
+            // org's own canvas history) — strengthens this guard the same way.
+            // Caller already holds `withHiveCacheLock` here, so the `Locked`
+            // variant (which never takes the lock itself) is required.
+            if hasUnactionedProposalLocked(orgId: org.id) {
                 print("[AIAgent] fetchAndCacheOrgSlugs: slugs changed for org \(org.id) — keeping conversationId (pending proposal)")
                 return
             }

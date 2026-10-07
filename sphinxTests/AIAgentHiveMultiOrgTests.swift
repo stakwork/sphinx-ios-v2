@@ -33,6 +33,74 @@ final class AIAgentHiveMultiOrgTests: XCTestCase {
         UserDefaults.Keys.hiveConversationIdByOrg.removeValue()
         UserDefaults.Keys.hiveCanvasChatHistoryByOrg.removeValue()
         UserDefaults.Keys.hivePendingProposal.removeValue()
+        UserDefaults.Keys.hiveLastQueryAtByOrg.removeValue()
+    }
+
+    // MARK: - HiveConversation test helpers
+
+    private func setConversationId(_ id: String?, orgId: String) {
+        var dict: [String: String] = [:]
+        if let data: Data = UserDefaults.Keys.hiveConversationIdByOrg.get(),
+           let existing = try? JSONDecoder().decode([String: String].self, from: data) {
+            dict = existing
+        }
+        if let id = id {
+            dict[orgId] = id
+        } else {
+            dict.removeValue(forKey: orgId)
+        }
+        if let encoded = try? JSONEncoder().encode(dict) {
+            UserDefaults.Keys.hiveConversationIdByOrg.set(encoded)
+        }
+    }
+
+    private func getConversationId(orgId: String) -> String? {
+        guard let data: Data = UserDefaults.Keys.hiveConversationIdByOrg.get(),
+              let dict = try? JSONDecoder().decode([String: String].self, from: data) else { return nil }
+        return dict[orgId]
+    }
+
+    private func setLastQueryAt(_ date: Date?, orgId: String) {
+        var dict: [String: Double] = [:]
+        if let data: Data = UserDefaults.Keys.hiveLastQueryAtByOrg.get(),
+           let existing = try? JSONDecoder().decode([String: Double].self, from: data) {
+            dict = existing
+        }
+        if let date = date {
+            dict[orgId] = date.timeIntervalSince1970
+        } else {
+            dict.removeValue(forKey: orgId)
+        }
+        if let encoded = try? JSONEncoder().encode(dict) {
+            UserDefaults.Keys.hiveLastQueryAtByOrg.set(encoded)
+        }
+    }
+
+    private func setPendingProposal(_ proposal: AIAgentManager.PendingProposal?) {
+        guard let proposal = proposal, let data = try? JSONEncoder().encode(proposal) else {
+            UserDefaults.Keys.hivePendingProposal.removeValue()
+            return
+        }
+        UserDefaults.Keys.hivePendingProposal.set(data)
+    }
+
+    /// An unactioned proposal card: a canvas message with a propose_* tool call
+    /// and no `approvalResult` yet.
+    private func unactionedProposalMessage(proposalId: String) -> AIAgentManager.CanvasChatMessage {
+        proposalMessage(proposalId: proposalId)
+    }
+
+    /// An actioned proposal card: same shape, but with `approvalResult` set.
+    private func actionedProposalMessage(proposalId: String) -> AIAgentManager.CanvasChatMessage {
+        let toolCall = AIAgentManager.ToolCall(
+            id: "call-\(proposalId)",
+            toolName: "propose_feature",
+            status: "output-available",
+            input: ["proposalId": proposalId, "kind": "feature", "title": "Test"],
+            output: ["proposalId": .string(proposalId), "kind": .string("feature")]
+        )
+        let result = AIAgentManager.ApprovalResult(approved: true, proposalId: proposalId)
+        return AIAgentManager.CanvasChatMessage(role: "assistant", content: "result", toolCalls: [toolCall], approvalResult: result)
     }
 
     // MARK: - Fixtures
@@ -322,5 +390,329 @@ final class AIAgentHiveMultiOrgTests: XCTestCase {
 
         // Clean up the extra keys this test created.
         UserDefaults.Keys.hiveCanvasChatHistoryByOrg.removeValue()
+    }
+
+    // MARK: - hasUnactionedProposal
+
+    func testHasUnactionedProposal_viaPendingSlot() {
+        setPendingProposal(AIAgentManager.PendingProposal(
+            proposalId: "p1", kind: "feature", title: "T", description: nil,
+            toolCallId: nil, rawInput: nil, orgId: orgA.id, orgGithubLogin: orgA.githubLogin
+        ))
+        XCTAssertTrue(AIAgentManager.hasUnactionedProposal(orgId: orgA.id))
+        XCTAssertFalse(AIAgentManager.hasUnactionedProposal(orgId: orgB.id))
+    }
+
+    func testHasUnactionedProposal_viaCanvasHistory_whenPendingSlotBelongsToAnotherOrg() {
+        // Org B occupies the single pending slot, but org A has an unactioned
+        // card sitting in its own canvas history — A must still be guarded.
+        setPendingProposal(AIAgentManager.PendingProposal(
+            proposalId: "p-b", kind: "feature", title: "T", description: nil,
+            toolCallId: nil, rawInput: nil, orgId: orgB.id, orgGithubLogin: orgB.githubLogin
+        ))
+        AIAgentManager.persistCanvasHistory(orgId: orgA.id, history: [unactionedProposalMessage(proposalId: "p-a")])
+
+        XCTAssertTrue(AIAgentManager.hasUnactionedProposal(orgId: orgA.id))
+        XCTAssertTrue(AIAgentManager.hasUnactionedProposal(orgId: orgB.id))
+    }
+
+    func testHasUnactionedProposal_falseWhenCardIsActioned() {
+        AIAgentManager.persistCanvasHistory(orgId: orgA.id, history: [actionedProposalMessage(proposalId: "p-a")])
+        XCTAssertFalse(AIAgentManager.hasUnactionedProposal(orgId: orgA.id))
+    }
+
+    func testHasUnactionedProposal_falseWhenNothingStored() {
+        XCTAssertFalse(AIAgentManager.hasUnactionedProposal(orgId: "unknown-org"))
+    }
+
+    // MARK: - conversationIdForQuery: scoped reset
+
+    func testConversationIdForQuery_requestNew_clearsOnlyTargetOrg() {
+        setConversationId("conv-a", orgId: orgA.id)
+        setConversationId("conv-b", orgId: orgB.id)
+
+        let (id, decision) = AIAgentManager.conversationIdForQuery(orgId: orgA.id, requestNew: true, now: Date())
+
+        XCTAssertNil(id)
+        XCTAssertEqual(decision.outcome, .reset)
+        XCTAssertTrue(decision.requestedNew)
+        XCTAssertFalse(decision.blockedByProposal)
+        XCTAssertNil(getConversationId(orgId: orgA.id))
+        XCTAssertEqual(getConversationId(orgId: orgB.id), "conv-b")
+    }
+
+    func testConversationIdForQuery_noFlagNoIdle_continues() {
+        setConversationId("conv-a", orgId: orgA.id)
+        setLastQueryAt(Date(), orgId: orgA.id)
+
+        let (id, decision) = AIAgentManager.conversationIdForQuery(orgId: orgA.id, requestNew: false, now: Date())
+
+        XCTAssertEqual(id, "conv-a")
+        XCTAssertEqual(decision.outcome, .continued)
+        XCTAssertFalse(decision.requestedNew)
+        XCTAssertFalse(decision.idleExpired)
+    }
+
+    // MARK: - conversationIdForQuery: pending-slot guard
+
+    func testConversationIdForQuery_requestNew_blockedBySameOrgPendingProposal() {
+        setConversationId("conv-a", orgId: orgA.id)
+        setPendingProposal(AIAgentManager.PendingProposal(
+            proposalId: "p1", kind: "feature", title: "T", description: nil,
+            toolCallId: nil, rawInput: nil, orgId: orgA.id, orgGithubLogin: orgA.githubLogin
+        ))
+
+        let (id, decision) = AIAgentManager.conversationIdForQuery(orgId: orgA.id, requestNew: true, now: Date())
+
+        XCTAssertEqual(id, "conv-a")
+        XCTAssertEqual(decision.outcome, .continued)
+        XCTAssertTrue(decision.blockedByProposal)
+        XCTAssertEqual(getConversationId(orgId: orgA.id), "conv-a")
+    }
+
+    func testConversationIdForQuery_requestNew_notBlockedByOtherOrgPendingProposal() {
+        setConversationId("conv-a", orgId: orgA.id)
+        setPendingProposal(AIAgentManager.PendingProposal(
+            proposalId: "p1", kind: "feature", title: "T", description: nil,
+            toolCallId: nil, rawInput: nil, orgId: orgB.id, orgGithubLogin: orgB.githubLogin
+        ))
+
+        let (id, decision) = AIAgentManager.conversationIdForQuery(orgId: orgA.id, requestNew: true, now: Date())
+
+        XCTAssertNil(id)
+        XCTAssertEqual(decision.outcome, .reset)
+        XCTAssertFalse(decision.blockedByProposal)
+    }
+
+    // MARK: - conversationIdForQuery: canvas-history guard (proposal pushed out of slot)
+
+    func testConversationIdForQuery_requestNew_blockedByCanvasHistoryProposal_pushedOutOfSlot() {
+        setConversationId("conv-a", orgId: orgA.id)
+        // Org A has an unactioned card in its own history...
+        AIAgentManager.persistCanvasHistory(orgId: orgA.id, history: [unactionedProposalMessage(proposalId: "p-a")])
+        // ...but the single pending slot now holds org B's proposal.
+        setPendingProposal(AIAgentManager.PendingProposal(
+            proposalId: "p-b", kind: "feature", title: "T", description: nil,
+            toolCallId: nil, rawInput: nil, orgId: orgB.id, orgGithubLogin: orgB.githubLogin
+        ))
+
+        let (id, decision) = AIAgentManager.conversationIdForQuery(orgId: orgA.id, requestNew: true, now: Date())
+
+        XCTAssertEqual(id, "conv-a")
+        XCTAssertEqual(decision.outcome, .continued)
+        XCTAssertTrue(decision.blockedByProposal)
+    }
+
+    func testConversationIdForQuery_requestNew_goesThroughOnceCanvasCardIsActioned() {
+        setConversationId("conv-a", orgId: orgA.id)
+        AIAgentManager.persistCanvasHistory(orgId: orgA.id, history: [actionedProposalMessage(proposalId: "p-a")])
+        setPendingProposal(AIAgentManager.PendingProposal(
+            proposalId: "p-b", kind: "feature", title: "T", description: nil,
+            toolCallId: nil, rawInput: nil, orgId: orgB.id, orgGithubLogin: orgB.githubLogin
+        ))
+
+        let (id, decision) = AIAgentManager.conversationIdForQuery(orgId: orgA.id, requestNew: true, now: Date())
+
+        XCTAssertNil(id)
+        XCTAssertEqual(decision.outcome, .reset)
+        XCTAssertFalse(decision.blockedByProposal)
+    }
+
+    // MARK: - conversationIdForQuery: idle backstop
+
+    func test29MinutesIdle_continues() {
+        setConversationId("conv-a", orgId: orgA.id)
+        setLastQueryAt(Date().addingTimeInterval(-29 * 60), orgId: orgA.id)
+
+        let (id, decision) = AIAgentManager.conversationIdForQuery(orgId: orgA.id, requestNew: false, now: Date())
+
+        XCTAssertEqual(id, "conv-a")
+        XCTAssertEqual(decision.outcome, .continued)
+        XCTAssertFalse(decision.idleExpired)
+    }
+
+    func test31MinutesIdle_resets() {
+        setConversationId("conv-a", orgId: orgA.id)
+        setLastQueryAt(Date().addingTimeInterval(-31 * 60), orgId: orgA.id)
+
+        let (id, decision) = AIAgentManager.conversationIdForQuery(orgId: orgA.id, requestNew: false, now: Date())
+
+        XCTAssertNil(id)
+        XCTAssertEqual(decision.outcome, .reset)
+        XCTAssertTrue(decision.idleExpired)
+    }
+
+    func testMissingTimestamp_withStoredId_resets() {
+        setConversationId("conv-a", orgId: orgA.id)
+        // No timestamp set at all.
+        let (id, decision) = AIAgentManager.conversationIdForQuery(orgId: orgA.id, requestNew: false, now: Date())
+
+        XCTAssertNil(id)
+        XCTAssertEqual(decision.outcome, .reset)
+        XCTAssertTrue(decision.idleExpired)
+    }
+
+    func testMissingTimestamp_withNoId_isNoOp() {
+        // Neither a timestamp nor a stored id — nothing to reset.
+        let (id, decision) = AIAgentManager.conversationIdForQuery(orgId: orgA.id, requestNew: false, now: Date())
+
+        XCTAssertNil(id)
+        XCTAssertEqual(decision.outcome, .continued)
+        XCTAssertFalse(decision.idleExpired)
+    }
+
+    func testIdleReset_blockedByUnactionedProposal() {
+        setConversationId("conv-a", orgId: orgA.id)
+        setLastQueryAt(Date().addingTimeInterval(-31 * 60), orgId: orgA.id)
+        setPendingProposal(AIAgentManager.PendingProposal(
+            proposalId: "p1", kind: "feature", title: "T", description: nil,
+            toolCallId: nil, rawInput: nil, orgId: orgA.id, orgGithubLogin: orgA.githubLogin
+        ))
+
+        let (id, decision) = AIAgentManager.conversationIdForQuery(orgId: orgA.id, requestNew: false, now: Date())
+
+        XCTAssertEqual(id, "conv-a")
+        XCTAssertEqual(decision.outcome, .continued)
+        XCTAssertTrue(decision.idleExpired)
+        XCTAssertTrue(decision.blockedByProposal)
+    }
+
+    // MARK: - storeConversationId (compare-and-set)
+
+    func testStoreConversationId_staleStartedWith_doesNotOverwriteNewerId() {
+        setConversationId("new-id", orgId: orgA.id)
+        let wrote = AIAgentManager.storeConversationId(orgId: orgA.id, newId: "late-id", startedWith: "old-id")
+
+        XCTAssertFalse(wrote)
+        XCTAssertEqual(getConversationId(orgId: orgA.id), "new-id")
+    }
+
+    func testStoreConversationId_nilStartedWith_writesIntoEmptySlot() {
+        let wrote = AIAgentManager.storeConversationId(orgId: orgA.id, newId: "first-id", startedWith: nil)
+
+        XCTAssertTrue(wrote)
+        XCTAssertEqual(getConversationId(orgId: orgA.id), "first-id")
+    }
+
+    func testStoreConversationId_twoNilStartedWrites_firstWins() {
+        let firstWrote = AIAgentManager.storeConversationId(orgId: orgA.id, newId: "race-first", startedWith: nil)
+        XCTAssertTrue(firstWrote)
+
+        // Second racer also started with nil, but the slot is no longer nil —
+        // it must not clobber the first writer's id.
+        let secondWrote = AIAgentManager.storeConversationId(orgId: orgA.id, newId: "race-second", startedWith: nil)
+        XCTAssertFalse(secondWrote)
+        XCTAssertEqual(getConversationId(orgId: orgA.id), "race-first")
+    }
+
+    func testStoreConversationId_lateWriteCannotResurrectAClearedId() {
+        setConversationId("old-id", orgId: orgA.id)
+        // A reset clears the slot...
+        setConversationId(nil, orgId: orgA.id)
+        // ...then a late response from the stream that started with "old-id" arrives.
+        let wrote = AIAgentManager.storeConversationId(orgId: orgA.id, newId: "late-id", startedWith: "old-id")
+
+        XCTAssertFalse(wrote)
+        XCTAssertNil(getConversationId(orgId: orgA.id))
+    }
+
+    func testStoreConversationId_sameValueAsNewId_stillWrites() {
+        setConversationId("same-id", orgId: orgA.id)
+        let wrote = AIAgentManager.storeConversationId(orgId: orgA.id, newId: "same-id", startedWith: "something-else")
+        XCTAssertTrue(wrote)
+        XCTAssertEqual(getConversationId(orgId: orgA.id), "same-id")
+    }
+
+    // MARK: - recordHiveQuery
+
+    func testRecordHiveQuery_writesTimestamp() {
+        let now = Date()
+        AIAgentManager.recordHiveQuery(orgId: orgA.id, at: now)
+
+        guard let data: Data = UserDefaults.Keys.hiveLastQueryAtByOrg.get(),
+              let dict = try? JSONDecoder().decode([String: Double].self, from: data),
+              let stored = dict[orgA.id] else {
+            return XCTFail("expected a stored timestamp")
+        }
+        XCTAssertEqual(stored, now.timeIntervalSince1970, accuracy: 0.001)
+    }
+
+    // MARK: - QueryHiveGraphInput decoding
+
+    func testQueryHiveGraphInput_decodesWithoutNewConversation() {
+        let json = """
+        {"question": "what is up?"}
+        """.data(using: .utf8)!
+        let decoded = try! JSONDecoder().decode(AIAgentManager.QueryHiveGraphInput.self, from: json)
+        XCTAssertEqual(decoded.question, "what is up?")
+        XCTAssertNil(decoded.newConversation)
+    }
+
+    func testQueryHiveGraphInput_decodesWithNewConversation() {
+        let json = """
+        {"question": "what is up?", "org": "org-a-login", "new_conversation": true}
+        """.data(using: .utf8)!
+        let decoded = try! JSONDecoder().decode(AIAgentManager.QueryHiveGraphInput.self, from: json)
+        XCTAssertEqual(decoded.question, "what is up?")
+        XCTAssertEqual(decoded.org, "org-a-login")
+        XCTAssertEqual(decoded.newConversation, true)
+    }
+
+    // MARK: - Pruning hiveLastQueryAtByOrg
+
+    func testPruning_removesLastQueryAtForRemovedOrgs() {
+        // Simulates the pruning block in fetchAndCacheHiveOrgs: orgB is removed
+        // from the cached org list, so its activity timestamp should be pruned
+        // the same way its slugs/conversation id/canvas history already are.
+        setLastQueryAt(Date(), orgId: orgA.id)
+        setLastQueryAt(Date(), orgId: orgB.id)
+
+        let removedIds: Set<String> = [orgB.id]
+        if let data: Data = UserDefaults.Keys.hiveLastQueryAtByOrg.get(),
+           var dict = try? JSONDecoder().decode([String: Double].self, from: data) {
+            for id in removedIds { dict.removeValue(forKey: id) }
+            if let encoded = try? JSONEncoder().encode(dict) {
+                UserDefaults.Keys.hiveLastQueryAtByOrg.set(encoded)
+            }
+        }
+
+        guard let data: Data = UserDefaults.Keys.hiveLastQueryAtByOrg.get(),
+              let dict = try? JSONDecoder().decode([String: Double].self, from: data) else {
+            return XCTFail("expected remaining data")
+        }
+        XCTAssertNotNil(dict[orgA.id])
+        XCTAssertNil(dict[orgB.id])
+    }
+
+    // MARK: - Regression: fetchAndCacheOrgSlugs still respects proposal guard
+
+    func testHasUnactionedProposalLocked_matchesPreviousInlinePendingCheck() {
+        // Regression check for the fetchAndCacheOrgSlugs switch to
+        // hasUnactionedProposalLocked: a pending proposal belonging to this
+        // org must still be detected (this was the only case the old inline
+        // check covered).
+        setPendingProposal(AIAgentManager.PendingProposal(
+            proposalId: "p1", kind: "feature", title: "T", description: nil,
+            toolCallId: nil, rawInput: nil, orgId: orgA.id, orgGithubLogin: orgA.githubLogin
+        ))
+        XCTAssertTrue(AIAgentManager.withHiveCacheLock { AIAgentManager.hasUnactionedProposalLocked(orgId: orgA.id) })
+        XCTAssertFalse(AIAgentManager.withHiveCacheLock { AIAgentManager.hasUnactionedProposalLocked(orgId: orgB.id) })
+    }
+
+    // MARK: - No deadlock: conversationIdForQuery can be called from a context
+    // that does not already hold the lock, repeatedly and concurrently.
+
+    func testConversationIdForQuery_noDeadlockUnderConcurrency() {
+        let orgIds = (0..<10).map { "concurrent-conv-org-\($0)" }
+        let expectation = self.expectation(description: "all decisions complete")
+        expectation.expectedFulfillmentCount = orgIds.count
+
+        DispatchQueue.concurrentPerform(iterations: orgIds.count) { i in
+            let orgId = orgIds[i]
+            _ = AIAgentManager.conversationIdForQuery(orgId: orgId, requestNew: true, now: Date())
+            expectation.fulfill()
+        }
+
+        wait(for: [expectation], timeout: 10)
     }
 }

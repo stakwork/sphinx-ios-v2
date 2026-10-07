@@ -171,6 +171,9 @@ private class HiveGraphBridge: GraphChatSSEDelegate {
     var sseManager: GraphChatSSEManager?
     var buffer: String = ""
     var resumed: Bool = false
+    /// Set when `onError` fires — lets the caller skip `recordHiveQuery` for a
+    /// turn that never reached Hive successfully.
+    var hadError: Bool = false
 
     /// Captured tool calls from the SSE stream (including empty-toolName canvas entry).
     var capturedToolCalls: [(name: String, toolCallId: String, inputStr: String, outputStr: String)] = []
@@ -191,6 +194,7 @@ private class HiveGraphBridge: GraphChatSSEDelegate {
     func onError(_ text: String) {
         guard !resumed else { return }
         resumed = true
+        hadError = true
         print("AIAgent [HiveGraph] error: \(text)")
         sseManager?.stopOrgStream()
         continuation?.resume(returning: "Hive graph error: \(text)")
@@ -387,10 +391,16 @@ extension AIAgentManager {
         print("AIAgent [HiveGraph] canvas history persisted — org: \(orgId), \(capped.count) messages")
     }
 
+    /// Locked so the guard in `hasUnactionedProposalLocked` (read under the same
+    /// lock) always sees a consistent write — an unlocked write here could race
+    /// a concurrent conversation-reset decision and bring back a slot that
+    /// decision just relied on being settled.
     func persistPendingProposal() {
         guard let proposal = pendingProposal,
               let data = try? JSONEncoder().encode(proposal) else { return }
-        UserDefaults.Keys.hivePendingProposal.set(data)
+        AIAgentManager.withHiveCacheLock {
+            UserDefaults.Keys.hivePendingProposal.set(data)
+        }
     }
 
     func loadPersistedPendingProposal() {
@@ -401,7 +411,9 @@ extension AIAgentManager {
     }
 
     func clearPersistedPendingProposal() {
-        UserDefaults.Keys.hivePendingProposal.removeValue()
+        AIAgentManager.withHiveCacheLock {
+            UserDefaults.Keys.hivePendingProposal.removeValue()
+        }
         pendingProposal = nil
     }
 
@@ -470,6 +482,16 @@ extension AIAgentManager {
         /// a lookup key only, resolved against the cached org list server-side
         /// (never used directly in a URL/body). Omit when there's exactly one org.
         var org: String? = nil
+        /// When true, starts a fresh Jamie conversation for this org instead of
+        /// continuing the stored one — ignored while a proposal in this org is
+        /// awaiting approval. See AIAgentManager+HiveConversation.swift.
+        var newConversation: Bool? = nil
+
+        enum CodingKeys: String, CodingKey {
+            case question
+            case org
+            case newConversation = "new_conversation"
+        }
     }
 
     /// Strips newlines/control characters, collapses whitespace, and truncates — used
@@ -520,17 +542,36 @@ extension AIAgentManager {
             """
         }
 
+        // `Input` here is `QueryHiveGraphInput`, not `JSONValue` — the Mirror-based
+        // auto-schema generator (JSONSchemaGenerator) reflects Swift property
+        // labels, NOT `CodingKeys`, so it would expose `newConversation` instead
+        // of the snake_case `new_conversation` the system prompt and server both
+        // expect. An explicit schema (decoded via `Schema.codable`, which DOES
+        // honour `CodingKeys`) is required to get the wire name right.
+        let inputSchema: FlexibleSchema<QueryHiveGraphInput> = .jsonSchema(
+            .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "question": .object(["type": .string("string")]),
+                    "org": .object(["type": .string("string")]),
+                    "new_conversation": .object(["type": .string("boolean")])
+                ]),
+                "required": .array([.string("question")])
+            ])
+        )
+
         return tool(
-            description: "Query the Hive org knowledge graph via Jamie (the Hive AI agent). DEFAULT tool for any Hive question that is analytical, open-ended, or requires org-wide context — features, tasks, workspaces, codebase, architecture, team activity, or project status. Call this proactively WITHOUT waiting for the user to mention 'Jamie'. No workspace name needed. Only skip in favour of specific Hive CRUD tools when the user explicitly requests a targeted operation (list, detail, create, update, archive)." + identityNote + orgNote,
+            description: "Query the Hive org knowledge graph via Jamie (the Hive AI agent). DEFAULT tool for any Hive question that is analytical, open-ended, or requires org-wide context — features, tasks, workspaces, codebase, architecture, team activity, or project status. Call this proactively WITHOUT waiting for the user to mention 'Jamie'. No workspace name needed. Only skip in favour of specific Hive CRUD tools when the user explicitly requests a targeted operation (list, detail, create, update, archive). Optional `new_conversation: true` starts a fresh Jamie conversation for this org. It is ignored while a proposal in this org is awaiting approval." + identityNote + orgNote,
+            inputSchema: inputSchema,
             execute: { [weak self] (input: QueryHiveGraphInput, _: ToolCallOptions) async throws -> ToolExecutionResult<JSONValue> in
                 guard let self = self else { return .value(.string("Agent unavailable.")) }
-                let result = await self.executeQueryHiveGraph(question: input.question, org: input.org)
+                let result = await self.executeQueryHiveGraph(question: input.question, org: input.org, newConversation: input.newConversation ?? false)
                 return .value(.string(result))
             }
         )
     }
 
-    func executeQueryHiveGraph(question: String, org: String? = nil) async -> String {
+    func executeQueryHiveGraph(question: String, org: String? = nil, newConversation: Bool = false) async -> String {
 
         // 0. Resolve which org this question targets. Never call the network with an
         // ambiguous/unknown org — surface the candidates so the agent can ask the user.
@@ -573,14 +614,9 @@ extension AIAgentManager {
         // shared `canvasChatHistory` mirror to decide anything.
         var localCanvasHistory = AIAgentManager.canvasHistory(orgId: orgId)
 
-        // 2. Read persisted conversationId for this org (nil on first call).
-        let conversationId: String? = {
-            guard let data: Data = UserDefaults.Keys.hiveConversationIdByOrg.get(),
-                  let dict = try? JSONDecoder().decode([String: String].self, from: data) else { return nil }
-            return dict[orgId]
-        }()
-
-        // 3. Resolve auth token
+        // 2. Resolve auth token. Token/slug failures above and here must never
+        // clear a conversation — that's why the reset decision (step 2.5) comes
+        // strictly AFTER both, right before the stream opens.
         let token: String? = await withCheckedContinuation { cont in
             API.sharedInstance.resolveHiveToken(
                 callback: { cont.resume(returning: $0) },
@@ -591,7 +627,32 @@ extension AIAgentManager {
             return "Hive authentication failed. Please check your Hive configuration."
         }
 
-        // 4. Stream via org SSE
+        // 2.5. Decide whether this turn continues the stored conversation or
+        // starts a new one (model flag, idle timeout, or neither) — guarded by
+        // any unactioned proposal in this org. The returned id becomes the
+        // `startedWith` baseline for the compare-and-set write in
+        // `onConversationId`, so a reset whose stream then fails still leaves
+        // no stored id (next question starts fresh), and a token/slug failure
+        // above never reaches this point at all.
+        let (conversationId, decision) = AIAgentManager.conversationIdForQuery(
+            orgId: orgId, requestNew: newConversation, now: Date()
+        )
+        print("AIAgent [HiveConversation] org=\(orgId) requestedNew=\(decision.requestedNew) idleExpired=\(decision.idleExpired) blockedByProposal=\(decision.blockedByProposal) outcome=\(decision.outcome.rawValue)")
+
+        // Short note appended to the tool result so the model (and, indirectly,
+        // the user) knows what happened to the conversation — nothing is added
+        // on a normal continue.
+        let conversationNote: String
+        switch decision.outcome {
+        case .reset:
+            conversationNote = "\n\n[Started a new Jamie conversation for this org.]"
+        case .continued:
+            conversationNote = decision.requestedNew && decision.blockedByProposal
+                ? "\n\n[Kept the existing conversation: a proposal in this org is awaiting approval.]"
+                : ""
+        }
+
+        // 3. Stream via org SSE
         let bridge = HiveGraphBridge()
         let sseManager = GraphChatSSEManager()
         bridge.sseManager = sseManager
@@ -608,20 +669,20 @@ extension AIAgentManager {
                 conversationId: conversationId,
                 token: token,
                 onConversationId: { newCid in
-                    var dict: [String: String] = [:]
-                    if let data: Data = UserDefaults.Keys.hiveConversationIdByOrg.get(),
-                       let existing = try? JSONDecoder().decode([String: String].self, from: data) {
-                        dict = existing
-                    }
-                    dict[orgId] = newCid
-                    if let encoded = try? JSONEncoder().encode(dict) {
-                        UserDefaults.Keys.hiveConversationIdByOrg.set(encoded)
-                    }
+                    AIAgentManager.storeConversationId(orgId: orgId, newId: newCid, startedWith: conversationId)
                 }
             )
         }
 
-        // 5. Append user turn to the LOCAL canvas history for this org
+        // Only a turn that actually reached Hive counts as activity for the
+        // idle backstop: no error, and either a conversation id arrived or the
+        // buffered result is non-empty (empty + no error is the "No response."
+        // placeholder from `onFinish`, which still means the stream completed).
+        if !bridge.hadError {
+            AIAgentManager.recordHiveQuery(orgId: orgId, at: Date())
+        }
+
+        // 4. Append user turn to the LOCAL canvas history for this org
         localCanvasHistory.append(CanvasChatMessage(role: "user", content: question))
 
         // Convert captured tool calls from bridge.
@@ -744,10 +805,10 @@ title: \(title)\(desc.map { "\ndescription: \($0)" } ?? "")
 To approve this proposal, call approve_proposal with proposalId "\(pid)".
 To reject it, call reject_proposal with proposalId "\(pid)".
 """
-            return result + proposalContext
+            return result + proposalContext + conversationNote
         }
 
-        return result
+        return result + conversationNote
     }
 
     // MARK: - Approve Proposal Tool
@@ -857,9 +918,22 @@ To reject it, call reject_proposal with proposalId "\(pid)".
             } ?? []
         )
 
-        // Extract workspaceSlug from the canvas entry's meta (features only)
+        // Extract workspaceSlug from the canvas entry's meta — but only from the
+        // message whose propose_* tool call matches THIS proposalId, not just
+        // the first meta found. After a reset, an earlier proposal's canvas
+        // message (from a prior conversation in this org's history) could
+        // otherwise supply the wrong workspace slug.
         let proposalWorkspaceSlug: String? = messages.lazy.compactMap { msg -> String? in
-            guard let toolCalls = msg["toolCalls"] as? [[String: Any]],
+            guard let toolCalls = msg["toolCalls"] as? [[String: Any]] else { return nil }
+            let matchesThisProposal = toolCalls.contains { tc in
+                guard let name = tc["toolName"] as? String,
+                      proposalNames.contains(name) else { return false }
+                let output = tc["output"] as? [String: Any]
+                let input = tc["input"] as? [String: Any]
+                return (output?["proposalId"] as? String) == proposalId
+                    || (input?["proposalId"] as? String) == proposalId
+            }
+            guard matchesThisProposal,
                   let canvas = toolCalls.first(where: { ($0["toolName"] as? String) == "" }),
                   let output = canvas["output"] as? [String: Any],
                   let meta = output["meta"] as? [String: Any] else { return nil }
@@ -922,7 +996,15 @@ To reject it, call reject_proposal with proposalId "\(pid)".
                         let historyToMirror = localCanvasHistory
                         Task { @MainActor in self.setCanvasHistoryMirror(historyToMirror) }
                     }
-                    self.clearPersistedPendingProposal()
+                    // Only clear the single pending-proposal slot if IT holds this
+                    // proposal. Actioning org A's (possibly older) card must not
+                    // clear org B's pending slot — that would remove B's guard
+                    // against a conversation reset while B's card is still awaiting
+                    // approval/rejection.
+                    if self.pendingProposal?.proposalId == proposalId {
+                        self.clearPersistedPendingProposal()
+                    }
+                    AIAgentManager.recordHiveQuery(orgId: orgId, at: Date())
                     DispatchQueue.main.async {
                         NotificationCenter.default.post(name: .aiAgentProposalActioned, object: nil, userInfo: ["result": result])
                     }
@@ -1080,7 +1162,12 @@ To reject it, call reject_proposal with proposalId "\(pid)".
                         let historyToMirror = localCanvasHistory
                         Task { @MainActor in self.setCanvasHistoryMirror(historyToMirror) }
                     }
-                    self.clearPersistedPendingProposal()
+                    // See matching comment in executeApproveProposal — only clear
+                    // the pending slot if it actually holds THIS proposal.
+                    if self.pendingProposal?.proposalId == proposalId {
+                        self.clearPersistedPendingProposal()
+                    }
+                    AIAgentManager.recordHiveQuery(orgId: orgId, at: Date())
                     DispatchQueue.main.async {
                         NotificationCenter.default.post(name: .aiAgentProposalActioned, object: nil, userInfo: ["result": rejectionResult])
                     }

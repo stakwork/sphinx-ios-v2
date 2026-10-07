@@ -40,6 +40,9 @@ extension UserDefaults {
         public static let hiveConversationIdByOrg = DefaultKey<Data>("hiveConversationIdByOrg") // JSON-encoded [String: String]
         public static let hiveCanvasChatHistoryByOrg = DefaultKey<Data>("hiveCanvasChatHistoryByOrg") // JSON-encoded [String: [CanvasChatMessage]]
         public static let hivePendingProposal = DefaultKey<Data>("hivePendingProposal")         // JSON-encoded PendingProposal
+        // Per-org Jamie conversation activity, used by the idle backstop (see
+        // AIAgentManager+HiveConversation.swift). Epoch seconds, keyed by orgId.
+        public static let hiveLastQueryAtByOrg = DefaultKey<Data>("hiveLastQueryAtByOrg")       // JSON-encoded [String: Double]
         public static let inviterNickname = DefaultKey<String>("inviterNickname")
         public static let inviterPubkey = DefaultKey<String>("inviterPubkey")
         public static let inviterRouteHint = DefaultKey<String>("inviterRouteHint")
