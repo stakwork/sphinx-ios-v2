@@ -660,6 +660,7 @@ extension AIAgentManager {
 
         print("AIAgent [HiveGraph] querying org '\(orgId)' with \(orgSlugs.count) slug(s): \(question)")
 
+        var receivedConversationId: String? = nil
         let result: String = await withCheckedContinuation { cont in
             bridge.continuation = cont
             sseManager.startOrgStream(
@@ -669,6 +670,7 @@ extension AIAgentManager {
                 conversationId: conversationId,
                 token: token,
                 onConversationId: { newCid in
+                    receivedConversationId = newCid
                     AIAgentManager.storeConversationId(orgId: orgId, newId: newCid, startedWith: conversationId)
                 }
             )
@@ -678,7 +680,7 @@ extension AIAgentManager {
         // idle backstop: no error, and either a conversation id arrived or the
         // buffered result is non-empty (empty + no error is the "No response."
         // placeholder from `onFinish`, which still means the stream completed).
-        if !bridge.hadError {
+        if !bridge.hadError && (receivedConversationId != nil || !result.isEmpty) {
             AIAgentManager.recordHiveQuery(orgId: orgId, at: Date())
         }
 
