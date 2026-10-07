@@ -107,7 +107,7 @@ enum AIAgentThreadingRules {
         guard let ref = ref else {
             return .refused(reason: "message not found")
         }
-        guard ref.uuid != nil else {
+        guard let uuid = ref.uuid, !uuid.isEmpty else {
             return .refused(reason: "message is not yet confirmed (no uuid), nothing to reply to")
         }
         if ref.isDeleted {

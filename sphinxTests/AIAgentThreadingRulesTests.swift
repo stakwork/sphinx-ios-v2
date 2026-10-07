@@ -107,6 +107,14 @@ final class AIAgentThreadingRulesTests: XCTestCase {
         XCTAssertFalse(result.isOK)
     }
 
+    func test_validateReplyTarget_emptyUUID_pending() {
+        // A non-nil but empty uuid is still "not yet confirmed" — must be refused
+        // the same way a nil uuid is, not treated as a valid reply target.
+        let ref = AgentMessageRef(uuid: "", threadUUID: nil, replyUUID: nil, chatId: 1)
+        let result = AIAgentThreadingRules.validateReplyTarget(ref, chatId: 1)
+        XCTAssertFalse(result.isOK)
+    }
+
     func test_validateReplyTarget_deleted() {
         let ref = AgentMessageRef(uuid: "u1", threadUUID: nil, replyUUID: nil, chatId: 1, isDeleted: true)
         let result = AIAgentThreadingRules.validateReplyTarget(ref, chatId: 1)
