@@ -676,8 +676,10 @@
 		64CDB65F07D741A49647B221 /* NewChatViewController+LiveCallBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30E251FCC194421EAB4B8997 /* NewChatViewController+LiveCallBanner.swift */; };
 		685B3ADA82094C84B9B72C3B /* TaskDependencyDiagramViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87516064474D4E7BB35029E5 /* TaskDependencyDiagramViewTests.swift */; };
 		6E789B32191642A6BB78CDCF /* AIAgentHiveMultiOrgTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A09E48123F64DA0A742BEE3 /* AIAgentHiveMultiOrgTests.swift */; };
+		9292EEB51EF8E4AB18B8C374 /* AIAgentThreadingRulesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D725EA3D95E5BE2E9456EC3 /* AIAgentThreadingRulesTests.swift */; };
 		731EF373B8FBD726748501FC /* WorkspaceTaskTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = E6E60B7E071F2F4E54B84E16 /* WorkspaceTaskTableViewCell.xib */; };
 		7605C48395834E8F9EF5BBA2 /* AIAgentManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C8F6F4C52D48F59440969F /* AIAgentManager.swift */; };
+		DDAF65FFB8BAEF3EBFE83DB8 /* AIAgentThreadingRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10B78A952825A6B21E064850 /* AIAgentThreadingRules.swift */; };
 		81D6970D2A7742A888F18562 /* WorkspaceFeatureTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6957C94054A8404294F1E644 /* WorkspaceFeatureTableViewCell.swift */; };
 		82A4B54DBB694A0A810EB4AF /* AIAgentManager+HiveGraphTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67772AC47A65482197752799 /* AIAgentManager+HiveGraphTool.swift */; };
 		87BC1E0C10D34B4AB9519D57 /* SelectedStepChipView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DA529CF166A42808FC3A554 /* SelectedStepChipView.swift */; };
@@ -1056,6 +1058,7 @@
 		1E4F57C2163FD2868CFBA160 /* API+HivePlanExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+HivePlanExtension.swift"; sourceTree = "<group>"; };
 		30E251FCC194421EAB4B8997 /* NewChatViewController+LiveCallBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NewChatViewController+LiveCallBanner.swift"; sourceTree = "<group>"; };
 		31C8F6F4C52D48F59440969F /* AIAgentManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIAgentManager.swift; sourceTree = "<group>"; };
+		10B78A952825A6B21E064850 /* AIAgentThreadingRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIAgentThreadingRules.swift; sourceTree = "<group>"; };
 		334B3B522B8268CD0003EA63 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
 		334B3B532B8268CD0003EA63 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/RecommendationsHeaderCollectionReusableView.strings; sourceTree = "<group>"; };
 		334B3B542B8268CD0003EA63 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/Chat.strings; sourceTree = "<group>"; };
@@ -2052,6 +2055,7 @@
 		4C31187BFB7EDD28A632A1FD /* FeaturePlanViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeaturePlanViewController.swift; sourceTree = "<group>"; };
 		4D3D01957AEB49A4B50A5180 /* ProposalApprovalCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProposalApprovalCardView.swift; sourceTree = "<group>"; };
 		5A09E48123F64DA0A742BEE3 /* AIAgentHiveMultiOrgTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIAgentHiveMultiOrgTests.swift; sourceTree = "<group>"; };
+		9D725EA3D95E5BE2E9456EC3 /* AIAgentThreadingRulesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIAgentThreadingRulesTests.swift; sourceTree = "<group>"; };
 		60E020F2675C40F7ADDF3C84 /* WorkflowDiagramModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkflowDiagramModel.swift; sourceTree = "<group>"; };
 		667BC9B05F7A484EB3EE6CB7 /* HiveAnyCableManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiveAnyCableManagerTests.swift; sourceTree = "<group>"; };
 		67772AC47A65482197752799 /* AIAgentManager+HiveGraphTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AIAgentManager+HiveGraphTool.swift"; sourceTree = "<group>"; };
@@ -3845,6 +3849,7 @@
 				9F4B101D1E0946E1A2ED0FCA /* HiveChatMessageTests.swift */,
 				AB105455A6C31C13B45B7E72 /* HivePlanToolsTests.swift */,
 				5A09E48123F64DA0A742BEE3 /* AIAgentHiveMultiOrgTests.swift */,
+				9D725EA3D95E5BE2E9456EC3 /* AIAgentThreadingRulesTests.swift */,
 				MC001TEST0001000000000001 /* MediaCacheUpdateTests.swift */,
 				SI001TEST0001000000000001 /* SnapshotIdentityTests.swift */,
 				CP01RLTEST00100000000001 /* CachingPlayerItemResourceLoaderTests.swift */,
@@ -4779,6 +4784,7 @@
 			isa = PBXGroup;
 			children = (
 				31C8F6F4C52D48F59440969F /* AIAgentManager.swift */,
+				10B78A952825A6B21E064850 /* AIAgentThreadingRules.swift */,
 				67772AC47A65482197752799 /* AIAgentManager+HiveGraphTool.swift */,
 				D5B2D56F945C46E689DAFEF9 /* AIAgentManager+HiveTools.swift */,
 				789BC287F57D4573A1B2969D /* AIAgentManager+HiveConversation.swift */,
@@ -6106,6 +6112,7 @@
 				47978EFD2F040D3D0092B516 /* DataSyncManager.swift in Sources */,
 				47978EFE2F040D420092B516 /* DataSyncModels.swift in Sources */,
 				7605C48395834E8F9EF5BBA2 /* AIAgentManager.swift in Sources */,
+				DDAF65FFB8BAEF3EBFE83DB8 /* AIAgentThreadingRules.swift in Sources */,
 				82A4B54DBB694A0A810EB4AF /* AIAgentManager+HiveGraphTool.swift in Sources */,
 				06459E6FBB6344A1A70E298C /* AIAgentManager+HiveTools.swift in Sources */,
 				899C68AEC5CD464D93AAA789 /* AIAgentManager+HiveConversation.swift in Sources */,
@@ -6523,6 +6530,7 @@
 				5010E69969BC4B008CB1B8DB /* HiveChatMessageTests.swift in Sources */,
 				FC5116AF46B1BEB6FB7FF4A4 /* HivePlanToolsTests.swift in Sources */,
 				6E789B32191642A6BB78CDCF /* AIAgentHiveMultiOrgTests.swift in Sources */,
+				9292EEB51EF8E4AB18B8C374 /* AIAgentThreadingRulesTests.swift in Sources */,
 				MQTTQ01TEST00010000000002 /* SphinxOnionManagerMqttQueueTests.swift in Sources */,
 				SH01AA11BB22CC33DD44EE07 /* SphinxServerHealthTests.swift in Sources */,
 				ONIONST01TEST00010000000002 /* OnionStateUserDefaultsTests.swift in Sources */,
