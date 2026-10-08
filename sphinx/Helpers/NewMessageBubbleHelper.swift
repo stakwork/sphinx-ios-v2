@@ -68,35 +68,43 @@ class NewMessageBubbleHelper {
         }
     }
     
+    /// - Parameter ignoresTouchEvents: When true the bubble is purely informational —
+    ///   it does not disable the window's user interaction, and the bubble view itself
+    ///   does not intercept touches either, so the user can keep using the app while
+    ///   it's shown. Defaults to false, matching the prior (fully blocking) behaviour.
     @MainActor func showLoadingWheel(
         text: String? = nil,
         textColor: UIColor = UIColor.Sphinx.Body,
         backColor: UIColor = UIColor.Sphinx.Text,
-        backAlpha: CGFloat = 0.8
+        backAlpha: CGFloat = 0.8,
+        ignoresTouchEvents: Bool = false
     ) {
         var label: UILabel? = nil
-        
+
         if let text = text {
             label = getGenericMessageLabel(text: text, textColor: textColor)
             label?.frame.origin.y = loadingWheelSize
             label?.textAlignment = .center
         }
         let view = getGenericMessageBubbleView(label: label, backColor: backColor, backAlpha: backAlpha, hasWheel: true)
-        
+        view.isUserInteractionEnabled = !ignoresTouchEvents
+
         if let label = label {
             view.addSubview(label)
         }
-        
+
         let loadingWheel = UIActivityIndicatorView(frame: CGRect(x: (view.frame.size.width / 2 - loadingWheelSize / 2), y: 0, width: loadingWheelSize, height: loadingWheelSize))
         loadingWheel.color = UIColor.Sphinx.Body
         loadingWheel.startAnimating()
-        
+
         view.addSubview(loadingWheel)
         view.alpha = 0.0
         view.tag = NewMessageBubbleHelper.loadingViewTag
-        
+
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene, let window = windowScene.windows.first {
-            window.isUserInteractionEnabled = false
+            if !ignoresTouchEvents {
+                window.isUserInteractionEnabled = false
+            }
             self.toggleGenericBubbleView(view: view, show: true, tag: NewMessageBubbleHelper.loadingViewTag)
         }
     }

@@ -164,6 +164,16 @@ extension Notification.Name {
         if linkUrl.isLiveKitCallLink, let room = linkUrl.liveKitRoomName {
             guard !isStartingCall else { return }
             isStartingCall = true
+
+            // The call server may be hibernating, in which case the connection-details
+            // request can take 10+ seconds. Show a non-blocking loading wheel so the
+            // user knows the call is being set up but can keep using the app meanwhile.
+            let bubbleHelper = NewMessageBubbleHelper()
+            bubbleHelper.showLoadingWheel(
+                text: "livekit.connecting.to.server".localized,
+                ignoresTouchEvents: true
+            )
+
             API.sharedInstance.getLiveKitToken(
                 room: room,
                 alias: owner.nickname ?? "",
@@ -173,6 +183,8 @@ extension Notification.Name {
                 callback: { url, token in
                     Task { @MainActor [weak self] in
                         guard let self = self else { return }
+                        bubbleHelper.hideLoadingWheel()
+
                         let liveKitVC = LiveKitCallViewController()
                         liveKitVC.url = url
                         liveKitVC.startRecording = linkUrl.contains("record=true") || shouldStartRecording
@@ -210,6 +222,7 @@ extension Notification.Name {
                 },
                 errorCallback: { error in
                     Task { @MainActor [weak self] in
+                        bubbleHelper.hideLoadingWheel()
                         self?.isStartingCall = false
                         AlertHelper.showAlert(title: "error.getting.token.title".localized, message: error)
                     }
