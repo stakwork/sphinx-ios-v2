@@ -500,6 +500,7 @@
 "only-mentions" = "Mga Pagbanggit lamang";
 "mute-chat" = "I-Mute ang Chat";
 "error.getting.token.title" = "Error sa pagkuha ng token";
+"livekit.connecting.to.server" = "Nakikipag-ugnayan sa LiveKit server, mangyaring maghintay...";
 "error.getting.token.description" = "Nagkaroon ng error sa pagkuha ng token para sumali sa tawag. Pakisubukang muli mamaya";
 "contact.info" = "Mga Detalye ng Pakikipag-ugnayan";
 "contact.connected.since" = "Nakakonekta mula noong %@";
